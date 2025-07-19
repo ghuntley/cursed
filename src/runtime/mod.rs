@@ -42,6 +42,9 @@ pub mod production_gc_test;
 #[cfg(test)]
 pub mod panic_recover_tests;
 
+// Platform Abstraction Layer
+pub mod pal;         // Platform-specific abstractions for memory and scheduling
+
 // Memory management system
 pub mod gc;          // Comprehensive garbage collection system
 pub mod gc_tuning;   // GC performance tuning and tri-color collection
@@ -97,6 +100,9 @@ pub use heap_optimizer::{HeapOptimizer, HeapOptimizerConfig, HeapStats, Allocati
 pub use gc_monitor::{GcMonitor, GcMonitorConfig, GcEvent, GcEventType, EventSeverity, 
                     TuningRecommendation, RecommendationType};
 pub use memory_bridge::{initialize_memory_system, shutdown_memory_system};
+
+// Platform Abstraction Layer exports
+pub use pal::{PlatformAbstraction, Architecture, OperatingSystem, PlatformError, create_platform_abstraction};
 
 // Additional exports needed by other modules - ADVANCED FEATURES ENABLED
 pub use goroutine::{GoroutineScheduler, GoroutineSchedulerWrapper, SchedulerConfig, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};

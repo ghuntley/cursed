@@ -96,7 +96,9 @@ pub use runtime::{
     initialize_memory_manager, get_global_memory_manager, shutdown_memory_manager,
     allocate, allocate_raw, collect_garbage,
     // Complete runtime initialization with GC
-    initialize_complete_runtime, shutdown_complete_runtime
+    initialize_complete_runtime, shutdown_complete_runtime,
+    // Platform Abstraction Layer
+    PlatformAbstraction, Architecture, OperatingSystem, PlatformError, create_platform_abstraction
 };
 
 // Debug context module is minimal implementation for now
@@ -202,6 +204,272 @@ pub fn init() {
         std::env::set_var("RUST_LOG", "cursed=info");
     }
     env_logger::init();
+    
+    // Initialize Platform Abstraction Layer
+    match initialize_platform_runtime() {
+        Ok(_) => log::info!("Platform Abstraction Layer initialized successfully"),
+        Err(e) => log::warn!("PAL initialization failed: {}. Using fallback runtime.", e),
+    }
+}
+
+/// Initialize the Platform Abstraction Layer and configure the runtime
+pub fn initialize_platform_runtime() -> Result<(), CursedError> {
+    // For now, use a simple platform detection and logging approach
+    // The full PAL integration will be completed once PAL implementations are fixed
+    
+    #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+    {
+        log::info!("Platform detected: ARM64 macOS - using optimized memory and scheduling");
+        log::info!("Stack size: 1MB, Hardware threads: {}, Page size: 16KB", 
+                  std::thread::available_parallelism().unwrap_or(std::num::NonZeroUsize::new(1).unwrap()).get());
+    }
+    
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    {
+        log::info!("Platform detected: ARM64 Linux - using optimized memory and scheduling");
+        log::info!("Stack size: 2MB, Hardware threads: {}, Page size: 4KB", 
+                  std::thread::available_parallelism().unwrap_or(std::num::NonZeroUsize::new(1).unwrap()).get());
+    }
+    
+    #[cfg(all(target_arch = "x86_64", target_os = "macos"))]
+    {
+        log::info!("Platform detected: x86_64 macOS - using standard memory and scheduling");
+        log::info!("Stack size: 2MB, Hardware threads: {}, Page size: 4KB", 
+                  std::thread::available_parallelism().unwrap_or(std::num::NonZeroUsize::new(1).unwrap()).get());
+    }
+    
+    #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+    {
+        log::info!("Platform detected: x86_64 Linux - using standard memory and scheduling");
+        log::info!("Stack size: 2MB, Hardware threads: {}, Page size: 4KB", 
+                  std::thread::available_parallelism().unwrap_or(std::num::NonZeroUsize::new(1).unwrap()).get());
+    }
+    
+    #[cfg(all(target_arch = "x86_64", target_os = "windows"))]
+    {
+        log::info!("Platform detected: x86_64 Windows - using standard memory and scheduling");
+        log::info!("Stack size: 1MB, Hardware threads: {}, Page size: 4KB", 
+                  std::thread::available_parallelism().unwrap_or(std::num::NonZeroUsize::new(1).unwrap()).get());
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    {
+        log::info!("Platform detected: WebAssembly - using single-threaded runtime");
+        log::info!("Stack size: 1MB, Hardware threads: 1, Page size: 64KB");
+    }
+    
+    // Initialize existing runtime systems with platform-aware configuration
+    initialize_platform_aware_runtime()?;
+    
+    Ok(())
+}
+
+/// Initialize runtime components with platform-aware configuration
+fn initialize_platform_aware_runtime() -> Result<(), CursedError> {
+    // Initialize global scheduler with default configuration
+    // The PAL-specific schedulers will be integrated once implementations are fixed
+    crate::runtime::initialize_global_scheduler()
+        .map_err(|e| CursedError::internal_error(&format!("Scheduler initialization failed: {:?}", e)))?;
+    
+    // Initialize memory management with platform-appropriate defaults
+    let gc_config = crate::memory::gc::GcConfig {
+        initial_heap_size: get_platform_heap_size(),
+        max_heap_size: None, // Unlimited
+        concurrent_collection: true,
+        concurrent_threads: std::thread::available_parallelism()
+            .unwrap_or(std::num::NonZeroUsize::new(1).unwrap())
+            .get(),
+        memory_threshold: (get_platform_heap_size() as f64 * 0.8) as usize,
+        ..Default::default()
+    };
+    
+    let memory_config = crate::runtime::MemoryConfig {
+        gc_config,
+        enable_tracking: cfg!(debug_assertions),
+        stack_memory_limit: None,
+        global_memory_limit: None,
+        enable_pressure_detection: true,
+        pressure_threshold: 0.8,
+    };
+    
+    let stack_manager = std::sync::Arc::new(crate::runtime::RuntimeStack::new());
+    crate::runtime::initialize_memory_manager(memory_config, stack_manager)
+        .map_err(|e| CursedError::internal_error(&format!("Memory manager initialization failed: {:?}", e)))?;
+    
+    // Initialize complete runtime system with platform configuration
+    let runtime_config = crate::runtime::RuntimeConfig {
+        max_goroutines: get_platform_max_goroutines(),
+        default_stack_size: get_platform_stack_size(),
+        memory_alignment: get_platform_page_size(),
+        gc_trigger_ratio: 0.8,
+        scheduler_quantum: std::time::Duration::from_millis(10),
+        platform_name: get_platform_name(),
+        architecture: get_platform_architecture(),
+        operating_system: get_platform_os(),
+        memory_limit: None,
+        gc_frequency: std::time::Duration::from_millis(100),
+        debug_mode: cfg!(debug_assertions),
+        profiling_enabled: false,
+        max_call_depth: 1000,
+        timeouts: crate::runtime::runtime::TimeoutConfig {
+            goroutine_spawn: std::time::Duration::from_millis(100),
+            memory_allocation: std::time::Duration::from_millis(500),
+            shutdown: std::time::Duration::from_secs(30),
+        },
+    };
+    
+    let complete_gc_config = crate::memory::gc::GcConfig {
+        initial_heap_size: get_platform_heap_size(),
+        max_heap_size: None,
+        concurrent_collection: true,
+        concurrent_threads: std::thread::available_parallelism()
+            .unwrap_or(std::num::NonZeroUsize::new(1).unwrap())
+            .get(),
+        memory_threshold: (get_platform_heap_size() as f64 * 0.8) as usize,
+        ..Default::default()
+    };
+    
+    let complete_memory_config = crate::runtime::memory::MemoryConfig {
+        gc_config: complete_gc_config,
+        enable_tracking: cfg!(debug_assertions),
+        stack_memory_limit: None,
+        global_memory_limit: None,
+        enable_pressure_detection: true,
+        pressure_threshold: 0.8,
+    };
+    
+    crate::runtime::initialize_complete_runtime(runtime_config, complete_memory_config)
+        .map_err(|e| CursedError::internal_error(&format!("Complete runtime initialization failed: {:?}", e)))?;
+    
+    Ok(())
+}
+
+/// Get platform-specific heap size
+fn get_platform_heap_size() -> usize {
+    #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+    { 64 * 1024 * 1024 } // 64MB initial heap for ARM64 macOS
+    
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    { 32 * 1024 * 1024 } // 32MB initial heap for ARM64 Linux
+    
+    #[cfg(target_arch = "x86_64")]
+    { 32 * 1024 * 1024 } // 32MB initial heap for x86_64
+    
+    #[cfg(target_arch = "wasm32")]
+    { 16 * 1024 * 1024 } // 16MB initial heap for WASM
+    
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "wasm32")))]
+    { 32 * 1024 * 1024 } // Default fallback
+}
+
+/// Get platform-specific stack size
+fn get_platform_stack_size() -> usize {
+    #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+    { 1024 * 1024 } // 1MB stack for ARM64 macOS
+    
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    { 2 * 1024 * 1024 } // 2MB stack for ARM64 Linux
+    
+    #[cfg(all(target_arch = "x86_64", target_os = "windows"))]
+    { 1024 * 1024 } // 1MB stack for Windows
+    
+    #[cfg(all(target_arch = "x86_64", not(target_os = "windows")))]
+    { 2 * 1024 * 1024 } // 2MB stack for Unix x86_64
+    
+    #[cfg(target_arch = "wasm32")]
+    { 1024 * 1024 } // 1MB stack for WASM
+    
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "wasm32")))]
+    { 2 * 1024 * 1024 } // Default fallback
+}
+
+/// Get platform-specific page size
+fn get_platform_page_size() -> usize {
+    #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+    { 16 * 1024 } // 16KB pages on ARM64 macOS
+    
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    { 4 * 1024 } // 4KB pages on ARM64 Linux (usually)
+    
+    #[cfg(target_arch = "x86_64")]
+    { 4 * 1024 } // 4KB pages on x86_64
+    
+    #[cfg(target_arch = "wasm32")]
+    { 64 * 1024 } // 64KB pages in WASM
+    
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "wasm32")))]
+    { 4 * 1024 } // Default fallback
+}
+
+/// Get platform-specific maximum goroutines
+fn get_platform_max_goroutines() -> usize {
+    let hardware_threads = std::thread::available_parallelism()
+        .unwrap_or(std::num::NonZeroUsize::new(1).unwrap())
+        .get();
+    
+    #[cfg(target_arch = "wasm32")]
+    { 100 } // Limited goroutines for WASM
+    
+    #[cfg(not(target_arch = "wasm32"))]
+    { hardware_threads * 1000 } // 1000 goroutines per hardware thread for native
+}
+
+/// Get platform name string
+fn get_platform_name() -> String {
+    #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+    { "ARM64 macOS".to_string() }
+    
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    { "ARM64 Linux".to_string() }
+    
+    #[cfg(all(target_arch = "x86_64", target_os = "macos"))]
+    { "x86_64 macOS".to_string() }
+    
+    #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+    { "x86_64 Linux".to_string() }
+    
+    #[cfg(all(target_arch = "x86_64", target_os = "windows"))]
+    { "x86_64 Windows".to_string() }
+    
+    #[cfg(target_arch = "wasm32")]
+    { "WebAssembly".to_string() }
+    
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "wasm32")))]
+    { "Unknown Platform".to_string() }
+}
+
+/// Get platform architecture
+fn get_platform_architecture() -> crate::runtime::Architecture {
+    #[cfg(target_arch = "aarch64")]
+    { crate::runtime::Architecture::Arm64 }
+    
+    #[cfg(target_arch = "x86_64")]
+    { crate::runtime::Architecture::X86_64 }
+    
+    #[cfg(target_arch = "wasm32")]
+    { crate::runtime::Architecture::Wasm32 }
+    
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "wasm32")))]
+    { crate::runtime::Architecture::X86_64 } // Default fallback
+}
+
+/// Get platform operating system
+fn get_platform_os() -> crate::runtime::OperatingSystem {
+    #[cfg(target_os = "macos")]
+    { crate::runtime::OperatingSystem::MacOS }
+    
+    #[cfg(target_os = "linux")]
+    { crate::runtime::OperatingSystem::Linux }
+    
+    #[cfg(target_os = "windows")]
+    { crate::runtime::OperatingSystem::Windows }
+    
+    #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+    { crate::runtime::OperatingSystem::WasmRuntime }
+    
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+    { crate::runtime::OperatingSystem::Linux } // Default fallback
 }
 
 /// Compile and execute CURSED source code

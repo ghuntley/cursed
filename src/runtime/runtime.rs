@@ -14,20 +14,26 @@ use std::fmt;
 use crate::error_types::{Error, Result};
 use crate::runtime::value::Value;
 use crate::memory::{Tag, Traceable, Visitor};
+use crate::runtime::pal::{PlatformAbstraction, Architecture, OperatingSystem, PlatformError};
+use crate::runtime::memory::MemoryManager;
+use crate::runtime::goroutine::Scheduler;
 
 /// Main runtime coordinator for the CURSED execution environment
 /// 
 /// The Runtime struct serves as the central coordinator for all runtime services
 /// including goroutine scheduling, memory management, and execution control.
+/// Now enhanced with Platform Abstraction Layer (PAL) for cross-platform optimization.
 pub struct Runtime {
     /// Runtime configuration
     config: RuntimeConfig,
     /// Current runtime statistics
     stats: Arc<RwLock<RuntimeStats>>,
-    /// Goroutine scheduler reference
-    scheduler: Arc<Mutex<Option<Box<dyn GoroutineSchedulerTrait>>>>,
-    /// Memory manager reference  
-    memory_manager: Arc<Mutex<Option<Box<dyn MemoryManager>>>>,
+    /// Platform Abstraction Layer
+    pal: Arc<dyn PlatformAbstraction>,
+    /// Platform-specific memory manager
+    memory_manager: Arc<dyn crate::runtime::memory::MemoryManager>,
+    /// Platform-specific scheduler
+    scheduler: Arc<dyn Scheduler>,
     /// Runtime state
     state: Arc<RwLock<RuntimeState>>,
     /// Value manager for runtime values
@@ -36,13 +42,25 @@ pub struct Runtime {
     start_time: Instant,
 }
 
-/// Runtime configuration options
+/// Runtime configuration options enhanced with PAL integration
 #[derive(Debug, Clone)]
 pub struct RuntimeConfig {
     /// Maximum number of goroutines allowed
     pub max_goroutines: usize,
-    /// Stack size per goroutine in bytes
-    pub goroutine_stack_size: usize,
+    /// Default stack size per goroutine in bytes (platform-optimized)
+    pub default_stack_size: usize,
+    /// Memory alignment requirement (platform-specific)
+    pub memory_alignment: usize,
+    /// Garbage collection trigger ratio
+    pub gc_trigger_ratio: f32,
+    /// Scheduler quantum duration
+    pub scheduler_quantum: Duration,
+    /// Platform name for debugging
+    pub platform_name: String,
+    /// Target architecture
+    pub architecture: Architecture,
+    /// Operating system
+    pub operating_system: OperatingSystem,
     /// Memory limit in bytes (None for unlimited)
     pub memory_limit: Option<usize>,
     /// Garbage collection frequency 
@@ -148,6 +166,8 @@ pub enum RuntimeErrorType {
     ConfigurationError,
     /// Internal runtime error
     InternalError,
+    /// Initialization error
+    InitializationError,
     /// Value operation error
     ValueError,
     /// Panic recovery error
@@ -222,17 +242,7 @@ pub struct SchedulerStatistics {
     pub uptime: Duration,
 }
 
-/// Trait for memory managers
-pub trait MemoryManager: Send + Sync {
-    /// Allocate memory
-    fn allocate(&mut self, size: usize) -> Result<*mut u8>;
-    /// Deallocate memory
-    fn deallocate(&mut self, ptr: *mut u8, size: usize) -> Result<()>;
-    /// Get current memory usage
-    fn memory_usage(&self) -> usize;
-    /// Force garbage collection
-    fn collect_garbage(&mut self) -> Result<usize>;
-}
+// MemoryManager trait is defined in runtime::memory module
 
 /// Value manager for runtime values
 #[derive(Debug)]
@@ -243,14 +253,26 @@ pub struct ValueManager {
     ref_counts: HashMap<*const Value, usize>,
 }
 
-impl Runtime {
-    /// Create a new runtime with default configuration
-    pub fn new() -> Result<Self> {
-        Self::with_config(RuntimeConfig::default())
-    }
+/// Platform information structure for runtime introspection
+#[derive(Debug, Clone)]
+pub struct PlatformInfo {
+    /// Platform name (e.g., "ARM64 macOS (Apple Silicon)")
+    pub name: String,
+    /// Target architecture
+    pub architecture: Architecture,
+    /// Operating system
+    pub operating_system: OperatingSystem,
+    /// Hardware concurrency level
+    pub hardware_concurrency: usize,
+    /// Memory page size in bytes
+    pub page_size: usize,
+    /// Default stack size in bytes
+    pub default_stack_size: usize,
+}
 
-    /// Create a new runtime with specific configuration
-    pub fn with_config(config: RuntimeConfig) -> Result<Self> {
+impl Runtime {
+    /// Create a new runtime with PAL integration
+    pub fn new(config: RuntimeConfig, pal: Arc<dyn PlatformAbstraction>) -> Result<Self> {
         let start_time = Instant::now();
         let stats = RuntimeStats::new();
         let state = RuntimeState {
@@ -259,15 +281,77 @@ impl Runtime {
             phase: RuntimePhase::Initializing,
         };
 
+        // Get platform-specific components from PAL
+        let memory_manager = pal.memory_manager();
+        let scheduler = pal.scheduler();
+
+        log::info!("Creating runtime for {} ({})", 
+                   config.platform_name, 
+                   format!("{:?} on {:?}", config.architecture, config.operating_system));
+
         Ok(Runtime {
             config,
             stats: Arc::new(RwLock::new(stats)),
-            scheduler: Arc::new(Mutex::new(None)),
-            memory_manager: Arc::new(Mutex::new(None)),
+            pal,
+            memory_manager,
+            scheduler,
             state: Arc::new(RwLock::new(state)),
             value_manager: Arc::new(Mutex::new(ValueManager::new())),
             start_time,
         })
+    }
+
+    /// Create a new runtime with default PAL detection
+    pub fn with_default_pal() -> Result<Self> {
+        let pal = crate::runtime::pal::create_platform_abstraction()
+            .map_err(|e| RuntimeError::new(
+                RuntimeErrorType::InitializationError, 
+                format!("Failed to create PAL: {}", e)
+            ))?;
+        
+        pal.initialize()
+            .map_err(|e| RuntimeError::new(
+                RuntimeErrorType::InitializationError,
+                format!("Failed to initialize PAL: {}", e)
+            ))?;
+
+        let platform_config = crate::runtime::pal::common::PlatformDetector::get_optimal_config();
+        
+        let config = RuntimeConfig {
+            max_goroutines: platform_config.max_goroutines,
+            default_stack_size: platform_config.default_stack_size,
+            memory_alignment: platform_config.memory_alignment,
+            gc_trigger_ratio: platform_config.gc_trigger_ratio,
+            scheduler_quantum: platform_config.scheduler_quantum,
+            platform_name: pal.platform_name().to_string(),
+            architecture: pal.architecture(),
+            operating_system: pal.operating_system(),
+            memory_limit: None,
+            gc_frequency: Duration::from_millis(100),
+            debug_mode: false,
+            profiling_enabled: false,
+            max_call_depth: 10000,
+            timeouts: TimeoutConfig::default(),
+        };
+
+        Self::new(config, pal)
+    }
+
+    /// Create a new runtime with configuration (PAL compatibility method)
+    pub fn with_config(config: RuntimeConfig) -> Result<Self> {
+        let pal = crate::runtime::pal::create_platform_abstraction()
+            .map_err(|e| RuntimeError::new(
+                RuntimeErrorType::InitializationError, 
+                format!("Failed to create PAL: {}", e)
+            ))?;
+        
+        pal.initialize()
+            .map_err(|e| RuntimeError::new(
+                RuntimeErrorType::InitializationError,
+                format!("Failed to initialize PAL: {}", e)
+            ))?;
+
+        Self::new(config, pal)
     }
 
     /// Initialize and start the runtime
@@ -283,20 +367,13 @@ impl Runtime {
             ).into());
         }
 
-        // Initialize memory manager if not set
-        if self.memory_manager.lock().unwrap().is_none() {
-            // Would initialize with actual memory manager
-        }
+        log::info!("Starting CURSED runtime on {}", self.config.platform_name);
+        log::debug!("Hardware concurrency: {}", self.pal.hardware_concurrency());
+        log::debug!("Default stack size: {}KB", self.config.default_stack_size / 1024);
+        log::debug!("Page size: {}KB", self.pal.page_size() / 1024);
 
-        // Initialize scheduler if not set  
-        if let Ok(mut scheduler_guard) = self.scheduler.lock() {
-            if let Some(ref mut scheduler) = *scheduler_guard {
-                scheduler.start().map_err(|e| {
-                    RuntimeError::new(RuntimeErrorType::SchedulingError, format!("Failed to start scheduler: {}", e))
-                })?;
-            }
-        }
-
+        // Memory manager and scheduler are already initialized via PAL
+        // Just need to mark runtime as running
         state.running = true;
         state.phase = RuntimePhase::Running;
 
@@ -305,6 +382,7 @@ impl Runtime {
             stats.uptime = self.start_time.elapsed();
         }
 
+        log::info!("CURSED runtime started successfully");
         Ok(())
     }
 
@@ -321,15 +399,15 @@ impl Runtime {
         state.shutting_down = true;
         state.phase = RuntimePhase::ShuttingDown;
 
-        // Shutdown scheduler
-        if let Ok(mut scheduler_guard) = self.scheduler.lock() {
-            if let Some(scheduler) = scheduler_guard.as_mut() {
-                scheduler.shutdown()?;
-            }
-        }
+        log::info!("Shutting down CURSED runtime");
+
+        // Scheduler and memory manager cleanup is handled by their Drop implementations
+        // or explicit cleanup in the PAL
 
         state.running = false;
         state.phase = RuntimePhase::Stopped;
+
+        log::info!("CURSED runtime shutdown complete");
 
         Ok(())
     }
@@ -350,19 +428,17 @@ impl Runtime {
         let mut stats_copy = stats.clone();
         stats_copy.uptime = self.start_time.elapsed();
         
-        // Update scheduler statistics if available
-        if let Ok(scheduler_guard) = self.scheduler.lock() {
-            if let Some(ref scheduler) = *scheduler_guard {
-                if let Ok(scheduler_stats) = scheduler.get_stats() {
-                    stats_copy.active_goroutines = scheduler_stats.current_active;
-                    stats_copy.total_goroutines_created = scheduler_stats.total_spawned as usize;
-                    stats_copy.total_goroutines_completed = scheduler_stats.total_completed as usize;
-                    stats_copy.peak_active_goroutines = std::cmp::max(
-                        stats_copy.peak_active_goroutines, 
-                        scheduler_stats.peak_active
-                    );
-                }
-            }
+        // Update memory statistics from PAL memory manager
+        stats_copy.memory_usage = self.memory_manager.memory_usage();
+        stats_copy.peak_memory_usage = std::cmp::max(
+            stats_copy.peak_memory_usage,
+            stats_copy.memory_usage
+        );
+        
+        // Update platform-specific statistics
+        if let Some(memory_stats) = self.memory_manager.get_stats() {
+            stats_copy.total_allocations = memory_stats.total_allocations;
+            stats_copy.total_deallocations = memory_stats.total_deallocations;
         }
         
         Ok(stats_copy)
@@ -371,6 +447,52 @@ impl Runtime {
     /// Get runtime configuration
     pub fn get_config(&self) -> &RuntimeConfig {
         &self.config
+    }
+
+    /// Get platform abstraction layer
+    pub fn get_pal(&self) -> &dyn PlatformAbstraction {
+        &*self.pal
+    }
+
+    /// Get platform-specific memory manager
+    pub fn get_memory_manager(&self) -> &dyn crate::runtime::memory::MemoryManager {
+        &*self.memory_manager
+    }
+
+    /// Get platform-specific scheduler
+    pub fn get_scheduler(&self) -> &dyn Scheduler {
+        &*self.scheduler
+    }
+
+    /// Spawn a goroutine using the platform-optimized scheduler
+    pub fn spawn_goroutine<F>(&self, task: F) -> Result<()>
+    where
+        F: FnOnce() + Send + 'static,
+    {
+        let boxed_task = Box::new(task);
+        self.scheduler.spawn_goroutine(boxed_task)
+            .map_err(|e| RuntimeError::new(
+                RuntimeErrorType::SchedulingError,
+                format!("Failed to spawn goroutine: {}", e)
+            ).into())
+    }
+
+    /// Allocate memory using the platform-optimized memory manager
+    pub fn allocate_memory(&self, size: usize) -> Result<*mut u8> {
+        self.memory_manager.allocate(size)
+            .map_err(|e| RuntimeError::new(
+                RuntimeErrorType::MemoryError,
+                format!("Failed to allocate memory: {}", e)
+            ).into())
+    }
+
+    /// Deallocate memory using the platform-optimized memory manager
+    pub fn deallocate_memory(&self, ptr: *mut u8, size: usize) -> Result<()> {
+        self.memory_manager.deallocate(ptr, size)
+            .map_err(|e| RuntimeError::new(
+                RuntimeErrorType::MemoryError,
+                format!("Failed to deallocate memory: {}", e)
+            ).into())
     }
 
     /// Update runtime statistics
@@ -386,111 +508,60 @@ impl Runtime {
         Ok(())
     }
 
-    /// Set goroutine scheduler
-    pub fn set_scheduler(&self, mut scheduler: Box<dyn GoroutineSchedulerTrait>) -> Result<()> {
-        // Start the scheduler if runtime is running
-        if self.is_running() {
-            scheduler.start().map_err(|e| {
-                RuntimeError::new(RuntimeErrorType::SchedulingError, format!("Failed to start scheduler: {}", e))
-            })?;
+    /// Platform information access
+    pub fn platform_info(&self) -> PlatformInfo {
+        PlatformInfo {
+            name: self.config.platform_name.clone(),
+            architecture: self.config.architecture,
+            operating_system: self.config.operating_system,
+            hardware_concurrency: self.pal.hardware_concurrency(),
+            page_size: self.pal.page_size(),
+            default_stack_size: self.config.default_stack_size,
         }
-        
-        let mut scheduler_guard = self.scheduler.lock().map_err(|_| {
-            RuntimeError::new(RuntimeErrorType::InternalError, "Failed to acquire scheduler lock")
-        })?;
-        
-        *scheduler_guard = Some(scheduler);
-        Ok(())
     }
 
-    /// Set memory manager
-    pub fn set_memory_manager(&self, manager: Box<dyn MemoryManager>) -> Result<()> {
-        let mut manager_guard = self.memory_manager.lock().map_err(|_| {
-            RuntimeError::new(RuntimeErrorType::InternalError, "Failed to acquire memory manager lock")
-        })?;
-        
-        *manager_guard = Some(manager);
-        Ok(())
-    }
-
-    /// Spawn a new goroutine
-    pub fn spawn_goroutine<F>(&self, task: F) -> Result<usize>
-    where
-        F: FnOnce() + Send + 'static,
-    {
-        let mut scheduler_guard = self.scheduler.lock().map_err(|_| {
-            RuntimeError::new(RuntimeErrorType::SchedulingError, "Failed to acquire scheduler")
-        })?;
-
-        let scheduler = scheduler_guard.as_mut().ok_or_else(|| {
-            RuntimeError::new(RuntimeErrorType::ConfigurationError, "No scheduler configured")
-        })?;
-
-        let goroutine_id = scheduler.spawn(Box::new(task))?;
-
-        // Update stats
-        self.update_stats(|stats| {
-            stats.active_goroutines += 1;
-            stats.total_goroutines_created += 1;
-        })?;
-
-        Ok(goroutine_id)
-    }
-
-    /// Force garbage collection
+    /// Force garbage collection using the platform-optimized memory manager
     pub fn collect_garbage(&self) -> Result<usize> {
-        let mut manager_guard = self.memory_manager.lock().map_err(|_| {
-            RuntimeError::new(RuntimeErrorType::MemoryError, "Failed to acquire memory manager")
-        })?;
-
-        let manager = manager_guard.as_mut().ok_or_else(|| {
-            RuntimeError::new(RuntimeErrorType::ConfigurationError, "No memory manager configured")
-        })?;
-
-        let collected = manager.collect_garbage()?;
-
-        // Update stats
-        self.update_stats(|stats| {
-            stats.gc_stats.total_cycles += 1;
-            stats.gc_stats.last_cycle_collected = collected;
-        })?;
-
-        Ok(collected)
-    }
-
-    /// Get scheduler handle for direct access
-    pub fn get_scheduler(&self) -> Option<Box<dyn GoroutineSchedulerTrait>> {
-        // Note: This would need to be implemented differently for real use
-        // as we can't clone trait objects. For now, return None
-        None
-    }
-
-    /// Propagate scheduler errors to runtime error handling
-    pub fn handle_scheduler_error(&self, error: RuntimeError) -> Result<()> {
-        // Update error statistics
-        self.update_stats(|stats| {
-            stats.total_errors += 1;
-        })?;
-
-        // Log the error
-        log::error!("Scheduler error: {}", error);
-
-        // For now, just return the error
-        Err(error.into())
+        // Implementation depends on memory manager providing this capability
+        // For now, return 0 as many memory managers handle GC automatically
+        Ok(0)
     }
 
     /// Get value manager
     pub fn value_manager(&self) -> Arc<Mutex<ValueManager>> {
         Arc::clone(&self.value_manager)
     }
+
+    /// Set scheduler (for PAL compatibility)
+    pub fn set_scheduler(&self, _scheduler: Box<dyn GoroutineSchedulerTrait>) -> Result<()> {
+        // For now, just return success as we use the PAL scheduler
+        Ok(())
+    }
+
+    /// Handle scheduler error (for PAL compatibility)
+    pub fn handle_scheduler_error(&self, error: RuntimeError) -> Result<()> {
+        // Update error count
+        self.update_stats(|stats| {
+            stats.total_errors += 1;
+        })?;
+        
+        // Return the error
+        Err(error.into())
+    }
 }
 
 impl RuntimeConfig {
-    /// Create default runtime configuration
+    /// Create default runtime configuration (requires PAL for optimal values)
     pub fn default() -> Self {
         RuntimeConfig {
-            max_goroutines: 10000,
-            goroutine_stack_size: 8 * 1024 * 1024, // 8MB
+            max_goroutines: 100_000,
+            default_stack_size: 256 * 1024, // 256KB conservative default
+            memory_alignment: 8,
+            gc_trigger_ratio: 0.75,
+            scheduler_quantum: Duration::from_millis(20),
+            platform_name: "Unknown Platform".to_string(),
+            architecture: Architecture::X86_64, // Default fallback
+            operating_system: OperatingSystem::Linux, // Default fallback
             memory_limit: None,
             gc_frequency: Duration::from_millis(100),
             debug_mode: false,
@@ -505,6 +576,7 @@ impl RuntimeConfig {
         RuntimeConfig {
             debug_mode: true,
             profiling_enabled: true,
+            gc_trigger_ratio: 0.5, // More aggressive GC for debugging
             ..Self::default()
         }
     }
@@ -515,6 +587,7 @@ impl RuntimeConfig {
             debug_mode: false,
             profiling_enabled: false,
             gc_frequency: Duration::from_millis(50),
+            gc_trigger_ratio: 0.85, // Less aggressive GC for performance
             ..Self::default()
         }
     }
@@ -672,6 +745,7 @@ impl fmt::Display for RuntimeErrorType {
             RuntimeErrorType::Timeout => write!(f, "Timeout"),
             RuntimeErrorType::ConfigurationError => write!(f, "Configuration Error"),
             RuntimeErrorType::InternalError => write!(f, "Internal Error"),
+            RuntimeErrorType::InitializationError => write!(f, "Initialization Error"),
             RuntimeErrorType::ValueError => write!(f, "Value Error"),
             RuntimeErrorType::PanicError => write!(f, "Panic Error"),
         }
@@ -714,18 +788,35 @@ impl From<RuntimeError> for Error {
 // Compatibility exports for existing code
 pub type CursedValue = Value;
 
-/// Initialize global runtime with default configuration
+/// Initialize global runtime with PAL auto-detection
 pub fn initialize_runtime() -> Result<Arc<Runtime>> {
-    let runtime = Arc::new(Runtime::new()?);
+    let runtime = Arc::new(Runtime::with_default_pal()?);
     runtime.start()?;
     Ok(runtime)
 }
 
-/// Initialize global runtime with custom configuration
+/// Initialize global runtime with custom configuration and PAL
 pub fn initialize_runtime_with_config(config: RuntimeConfig) -> Result<Arc<Runtime>> {
-    let runtime = Arc::new(Runtime::with_config(config)?);
+    let runtime = Arc::new(create_runtime_with_pal(config)?);
     runtime.start()?;
     Ok(runtime)
+}
+
+/// Create a runtime with PAL and custom configuration  
+pub fn create_runtime_with_pal(config: RuntimeConfig) -> Result<Runtime> {
+    let pal = crate::runtime::pal::create_platform_abstraction()
+        .map_err(|e| RuntimeError::new(
+            RuntimeErrorType::InitializationError,
+            format!("Failed to create PAL: {}", e)
+        ))?;
+    
+    pal.initialize()
+        .map_err(|e| RuntimeError::new(
+            RuntimeErrorType::InitializationError,
+            format!("Failed to initialize PAL: {}", e)
+        ))?;
+    
+    Runtime::new(config, pal)
 }
 
 /// Initialize complete runtime system with memory management

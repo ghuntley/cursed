@@ -179,7 +179,7 @@ pub struct HeapOptimizer {
     /// Garbage collector reference
     gc_ref: Option<Arc<GarbageCollector>>,
     /// Memory manager reference
-    memory_manager: Option<Arc<MemoryManager>>,
+    memory_manager: Option<Arc<dyn MemoryManager>>,
     /// Profiler reference
     profiler: Option<Arc<MemoryProfiler>>,
     /// Running flag
@@ -860,7 +860,7 @@ impl HeapOptimizer {
     }
 
     /// Set memory manager reference
-    pub fn set_memory_manager(&mut self, memory_manager: Arc<MemoryManager>) {
+    pub fn set_memory_manager(&mut self, memory_manager: Arc<dyn MemoryManager>) {
         self.memory_manager = Some(memory_manager);
     }
 

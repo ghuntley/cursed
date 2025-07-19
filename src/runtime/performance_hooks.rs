@@ -319,7 +319,7 @@ pub struct PerformanceHooks {
     
     // External references
     gc_ref: Option<Arc<GarbageCollector>>,
-    memory_manager_ref: Option<Arc<MemoryManager>>,
+    memory_manager_ref: Option<Arc<dyn MemoryManager>>,
     
     // Callbacks
     event_callbacks: Arc<RwLock<Vec<Box<dyn Fn(&PerformanceMetrics) + Send + Sync>>>>,
@@ -654,7 +654,7 @@ impl PerformanceHooks {
     }
 
     /// Set memory manager reference
-    pub fn set_memory_manager_ref(&mut self, memory_manager: Arc<MemoryManager>) {
+    pub fn set_memory_manager_ref(&mut self, memory_manager: Arc<dyn MemoryManager>) {
         self.memory_manager_ref = Some(memory_manager);
     }
 
