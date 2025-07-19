@@ -279,7 +279,11 @@ impl GcRaceDetector {
             return;
         }
         
-        let recent_access = &accesses[accesses.len() - 1];
+        // Safe access with bounds checking
+        let recent_access = match accesses.last() {
+            Some(access) => access,
+            None => return, // Safety check
+        };
         
         // Check against recent accesses from different threads
         for prev_access in accesses.iter().rev().skip(1).take(10) {
@@ -288,7 +292,14 @@ impl GcRaceDetector {
             }
             
             // Check temporal proximity (within 100ms)
-            if recent_access.timestamp.duration_since(prev_access.timestamp) > Duration::from_millis(100) {
+            // Use saturating duration to avoid panic if timestamps are out of order
+            let time_diff = if recent_access.timestamp >= prev_access.timestamp {
+                recent_access.timestamp.duration_since(prev_access.timestamp)
+            } else {
+                prev_access.timestamp.duration_since(recent_access.timestamp)
+            };
+            
+            if time_diff > Duration::from_millis(100) {
                 continue; // Too far apart
             }
             
@@ -412,10 +423,15 @@ static GLOBAL_RACE_DETECTOR: OnceLock<Arc<Mutex<GcRaceDetector>>> = OnceLock::ne
 
 /// Initialize global race detector
 pub fn initialize_race_detector(max_history_size: usize) -> Result<(), CursedError> {
+    // Check if already initialized and return OK if so
+    if GLOBAL_RACE_DETECTOR.get().is_some() {
+        return Ok(());
+    }
+    
     let detector = GcRaceDetector::new(max_history_size);
     
-    GLOBAL_RACE_DETECTOR.set(Arc::new(Mutex::new(detector)))
-        .map_err(|_| CursedError::runtime_error("Race detector already initialized"))?;
+    // Try to set, but don't error if it's already set (race condition during initialization)
+    let _ = GLOBAL_RACE_DETECTOR.set(Arc::new(Mutex::new(detector)));
     
     Ok(())
 }
@@ -423,6 +439,23 @@ pub fn initialize_race_detector(max_history_size: usize) -> Result<(), CursedErr
 /// Get global race detector
 pub fn get_race_detector() -> Option<Arc<Mutex<GcRaceDetector>>> {
     GLOBAL_RACE_DETECTOR.get().cloned()
+}
+
+/// Reset global race detector (for testing)
+#[cfg(test)]
+pub fn reset_race_detector() -> Result<(), CursedError> {
+    // We can't reset OnceLock, but we can replace the detector instance
+    if let Some(detector_arc) = get_race_detector() {
+        let mut detector = detector_arc.lock()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire race detector lock"))?;
+        
+        // Disable and clear the existing detector
+        let _ = detector.disable();
+        
+        // Replace with new detector
+        *detector = GcRaceDetector::new(1000);
+    }
+    Ok(())
 }
 
 /// Enable global race detection
@@ -585,6 +618,9 @@ mod tests {
     
     #[test]
     fn test_global_race_detector() {
+        // Reset any existing state
+        let _ = reset_race_detector();
+        
         initialize_race_detector(1000).unwrap();
         
         enable_race_detection().unwrap();
@@ -598,6 +634,9 @@ mod tests {
     #[test]
     fn test_concurrent_access_detection() {
         use std::sync::Barrier;
+        
+        // Reset any existing state
+        let _ = reset_race_detector();
         
         initialize_race_detector(1000).unwrap();
         enable_race_detection().unwrap();

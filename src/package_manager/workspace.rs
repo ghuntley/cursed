@@ -55,7 +55,7 @@ impl WorkspaceManager {
     /// Initialize a new workspace with the given members
     pub fn init_workspace(root: &Path, members: Vec<String>) -> crate::error::Result<Self> {
         let config = WorkspaceConfig {
-            members,
+            members: members.clone(),
             exclude: Vec::new(),
             dependencies: HashMap::new(),
             dev_dependencies: HashMap::new(),
@@ -69,9 +69,46 @@ impl WorkspaceManager {
         
         std::fs::write(workspace_toml, toml_content)?;
         
+        // Create workspace members with minimal metadata
+        let mut workspace_members = Vec::new();
+        for member_name in &members {
+            let member_path = root.join(member_name);
+            
+            // Create member directory if it doesn't exist
+            std::fs::create_dir_all(&member_path)?;
+            
+            // Create minimal package metadata
+            let metadata = WorkspacePackageMetadata {
+                name: member_name.clone(),
+                version: "0.1.0".to_string(),
+                description: format!("Package {}", member_name),
+                authors: vec!["CURSED Workspace".to_string()],
+                dependencies: HashMap::new(),
+                dev_dependencies: HashMap::new(),
+                repository: None,
+                license: Some("MIT".to_string()),
+                keywords: Vec::new(),
+                categories: Vec::new(),
+            };
+            
+            // Create CursedPackage.toml for the member
+            let package_toml = member_path.join("CursedPackage.toml");
+            let package_content = toml::to_string_pretty(&metadata)
+                .map_err(|e| crate::error::CursedError::General(format!("Failed to serialize package metadata for {}: {}", member_name, e)))?;
+            std::fs::write(package_toml, package_content)?;
+            
+            workspace_members.push(WorkspaceMember {
+                name: member_name.clone(),
+                path: member_path,
+                metadata,
+                local_dependencies: Vec::new(),
+                external_dependencies: HashMap::new(),
+            });
+        }
+        
         Ok(Self {
             config,
-            members: Vec::new(),
+            members: workspace_members,
             root_path: root.to_path_buf(),
         })
     }

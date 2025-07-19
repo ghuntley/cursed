@@ -144,6 +144,11 @@ impl<'a> AdvancedSignatureParser<'a> {
         // Parse where clauses
         let where_clauses = self.parse_where_clauses()?;
 
+        // Skip function body if present
+        if self.current_token_is(&TokenKind::LeftBrace) {
+            self.skip_function_body()?;
+        }
+
         Ok(AdvancedFunctionSignature {
             name,
             type_parameters,
@@ -302,6 +307,23 @@ impl<'a> AdvancedSignatureParser<'a> {
     /// Parse a single advanced parameter
     fn parse_advanced_parameter(&mut self) -> Result<AdvancedParameter, CursedError> {
         // Check for variadic parameter (...)
+        if self.current_token_is(&TokenKind::DotDotDot) {
+            self.advance(); // consume '...'
+
+            let name = self.parse_identifier()?;
+            let param_type = Some(self.parse_type()?);
+
+            return Ok(AdvancedParameter {
+                name,
+                param_type,
+                is_mutable: false,
+                is_variadic: true,
+                default_value: None,
+                documentation: None,
+            });
+        }
+
+        // Check for variadic parameter with three separate dots (fallback)
         if self.current_token_matches_sequence(&[TokenKind::Dot, TokenKind::Dot, TokenKind::Dot]) {
             self.advance(); // consume first '.'
             self.advance(); // consume second '.'
@@ -321,7 +343,7 @@ impl<'a> AdvancedSignatureParser<'a> {
         }
 
         // Parse optional mutability
-        let is_mutable = self.consume_if_matches(&TokenKind::Mut);
+        let is_mutable = self.consume_if_matches(&TokenKind::Mut) || self.consume_if_matches(&TokenKind::Sus);
 
         // Parse parameter name
         let name = self.parse_identifier()?;
@@ -443,11 +465,83 @@ impl<'a> AdvancedSignatureParser<'a> {
             let element_type = self.parse_type()?;
             Ok(Type::Slice(Box::new(element_type)))
         } else {
-            // Array type [N]T with size expression
-            let size_expr = self.parse_expression()?;
-            self.expect_token(TokenKind::RightBracket)?;
-            let element_type = self.parse_type()?;
-            Ok(Type::Array(Box::new(element_type), Some(Box::new(size_expr))))
+            // Check if this is a nested array (starts with '[')
+            if self.current_token_is(&TokenKind::LeftBracket) {
+                // Parse nested array type recursively: [[T; size2]; size1]
+                let inner_array_type = self.parse_array_or_slice_type()?;
+                
+                // Expect either ';' for sized array or ']' for completion
+                if self.current_token_is(&TokenKind::Semicolon) {
+                    self.advance(); // consume ';'
+                    let size_expr = self.parse_expression()?;
+                    self.expect_token(TokenKind::RightBracket)?;
+                    Ok(Type::Array(Box::new(inner_array_type), Some(Box::new(size_expr))))
+                } else {
+                    // Just a nested array without size specification
+                    self.expect_token(TokenKind::RightBracket)?;
+                    Ok(Type::Array(Box::new(inner_array_type), None))
+                }
+            } else {
+                // Regular array type [T; N] or [expr]T
+                let first_element = self.parse_expression()?;
+                
+                if self.current_token_is(&TokenKind::Semicolon) {
+                    // [T; N] format - first element is type, second is size
+                    self.advance(); // consume ';'
+                    let size_expr = self.parse_expression()?;
+                    self.expect_token(TokenKind::RightBracket)?;
+                    
+                    // First element should be a type identifier
+                    if let Expression::Identifier(type_name) = first_element {
+                        let element_type = match type_name.as_str() {
+                            "normie" => Type::Normie,
+                            "smol" => Type::Smol,
+                            "mid" => Type::Mid,
+                            "thicc" => Type::Thicc,
+                            "snack" => Type::Snack,
+                            "meal" => Type::Meal,
+                            "tea" => Type::Tea,
+                            "lit" => Type::Lit,
+                            "sip" => Type::Sip,
+                            "byte" => Type::Byte,
+                            "rune" => Type::Rune,
+                            "extra" => Type::Extra,
+                            _ => Type::Custom(type_name),
+                        };
+                        Ok(Type::Array(Box::new(element_type), Some(Box::new(size_expr))))
+                    } else {
+                        Err(CursedError::Parse("Expected type identifier in array type".to_string()))
+                    }
+                } else if self.current_token_is(&TokenKind::RightBracket) {
+                    // [T] format - slice or type parameter
+                    self.advance(); // consume ']'
+                    if let Expression::Identifier(type_name) = first_element {
+                        let element_type = match type_name.as_str() {
+                            "normie" => Type::Normie,
+                            "smol" => Type::Smol,
+                            "mid" => Type::Mid,
+                            "thicc" => Type::Thicc,
+                            "snack" => Type::Snack,
+                            "meal" => Type::Meal,
+                            "tea" => Type::Tea,
+                            "lit" => Type::Lit,
+                            "sip" => Type::Sip,
+                            "byte" => Type::Byte,
+                            "rune" => Type::Rune,
+                            "extra" => Type::Extra,
+                            _ => Type::Custom(type_name),
+                        };
+                        Ok(Type::Slice(Box::new(element_type)))
+                    } else {
+                        Err(CursedError::Parse("Expected type identifier in slice type".to_string()))
+                    }
+                } else {
+                    // [N]T format - first element is size, then comes type
+                    self.expect_token(TokenKind::RightBracket)?;
+                    let element_type = self.parse_type()?;
+                    Ok(Type::Array(Box::new(element_type), Some(Box::new(first_element))))
+                }
+            }
         }
     }
 
@@ -485,7 +579,7 @@ impl<'a> AdvancedSignatureParser<'a> {
     fn parse_where_clauses(&mut self) -> Result<Vec<WhereClause>, CursedError> {
         let mut where_clauses = Vec::new();
 
-        while self.current_token_is_identifier("where") {
+        while self.current_token_is_identifier("where") || self.current_token_is(&TokenKind::Where) {
             self.advance(); // consume 'where'
             let constraints = self.parse_type_constraints()?;
             where_clauses.push(WhereClause { constraints });
@@ -648,16 +742,98 @@ impl<'a> AdvancedSignatureParser<'a> {
                     self.advance();
                     Ok(Expression::Integer(value))
                 }
+                TokenKind::Integer(value_str) => {
+                    let value = value_str.parse::<i64>()
+                        .map_err(|_| CursedError::Parse("Invalid integer literal".to_string()))?;
+                    self.advance();
+                    Ok(Expression::Integer(value))
+                }
+                TokenKind::Number => {
+                    let value = token.lexeme.parse::<i64>()
+                        .map_err(|_| CursedError::Parse("Invalid number literal".to_string()))?;
+                    self.advance();
+                    Ok(Expression::Integer(value))
+                }
                 TokenKind::Identifier => {
                     let name = token.lexeme.clone();
                     self.advance();
                     Ok(Expression::Identifier(name))
                 }
-                _ => Err(CursedError::Parse("Expected expression".to_string())),
+                // Handle type tokens as identifiers for array types
+                TokenKind::Normie => {
+                    self.advance();
+                    Ok(Expression::Identifier("normie".to_string()))
+                }
+                TokenKind::Smol => {
+                    self.advance();
+                    Ok(Expression::Identifier("smol".to_string()))
+                }
+                TokenKind::Mid => {
+                    self.advance();
+                    Ok(Expression::Identifier("mid".to_string()))
+                }
+                TokenKind::Thicc => {
+                    self.advance();
+                    Ok(Expression::Identifier("thicc".to_string()))
+                }
+                TokenKind::Snack => {
+                    self.advance();
+                    Ok(Expression::Identifier("snack".to_string()))
+                }
+                TokenKind::Meal => {
+                    self.advance();
+                    Ok(Expression::Identifier("meal".to_string()))
+                }
+                TokenKind::Tea => {
+                    self.advance();
+                    Ok(Expression::Identifier("tea".to_string()))
+                }
+                TokenKind::Lit => {
+                    self.advance();
+                    Ok(Expression::Identifier("lit".to_string()))
+                }
+                TokenKind::Sip => {
+                    self.advance();
+                    Ok(Expression::Identifier("sip".to_string()))
+                }
+                TokenKind::Byte => {
+                    self.advance();
+                    Ok(Expression::Identifier("byte".to_string()))
+                }
+                TokenKind::Rune => {
+                    self.advance();
+                    Ok(Expression::Identifier("rune".to_string()))
+                }
+                TokenKind::Extra => {
+                    self.advance();
+                    Ok(Expression::Identifier("extra".to_string()))
+                }
+                _ => Err(CursedError::Parse(format!("Expected expression, found {:?} with lexeme '{}'", token.kind, token.lexeme))),
             }
         } else {
             Err(CursedError::Parse("Expected expression, found EOF".to_string()))
         }
+    }
+
+    /// Skip function body for signature parsing
+    fn skip_function_body(&mut self) -> Result<(), CursedError> {
+        if !self.current_token_is(&TokenKind::LeftBrace) {
+            return Ok(());
+        }
+
+        self.advance(); // consume '{'
+        let mut brace_depth = 1;
+
+        while !self.is_at_end() && brace_depth > 0 {
+            match self.current_token().map(|t| &t.kind) {
+                Some(TokenKind::LeftBrace) => brace_depth += 1,
+                Some(TokenKind::RightBrace) => brace_depth -= 1,
+                _ => {}
+            }
+            self.advance();
+        }
+
+        Ok(())
     }
 }
 
@@ -744,6 +920,9 @@ mod tests {
         let mut parser = AdvancedSignatureParser::new(&tokens);
         
         let result = parser.parse_advanced_function_signature();
+        if let Err(ref e) = result {
+            panic!("Failed to parse generic with bounds: {:?}", e);
+        }
         assert!(result.is_ok());
         
         let signature = result.unwrap();
@@ -759,6 +938,9 @@ mod tests {
         let mut parser = AdvancedSignatureParser::new(&tokens);
         
         let result = parser.parse_advanced_function_signature();
+        if let Err(ref e) = result {
+            panic!("Failed to parse complex array type: {:?}", e);
+        }
         assert!(result.is_ok());
         
         let signature = result.unwrap();
