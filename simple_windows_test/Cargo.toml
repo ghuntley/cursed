@@ -1,0 +1,11 @@
+[package]
+name = "simple_windows_test"
+version = "0.1.0"
+edition = "2021"
+
+# Exclude from parent workspace
+[workspace]
+
+[[bin]]
+name = "test_windows"
+path = "src/main.rs"

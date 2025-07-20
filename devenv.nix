@@ -59,7 +59,12 @@ in
     pkgs.pkgsCross.mingwW64.stdenv.cc     # Windows x86_64 cross-compilation
     pkgs.pkgsCross.mingwW64.stdenv        # Windows standard environment
     pkgs.pkgsCross.mingwW64.buildPackages.gcc
-    pkgs.pkgsCross.mingwW64.windows.pthreads  # Windows pthreads library
+    # Windows threading libraries - complete pthread stack
+    pkgs.pkgsCross.mingwW64.windows.mcfgthreads        # Modern Windows threading library
+    pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads # Primary Windows pthreads library
+    pkgs.pkgsCross.mingwW64.windows.pthreads          # Fallback pthreads implementation
+    # Essential Windows runtime libraries for complete toolchain
+    pkgs.pkgsCross.mingwW64.windows.mingw_w64         # Core MinGW-w64 runtime
     pkgs.wasm-pack                        # WebAssembly toolchain
     # Linux cross-compilation with complete toolchains
     pkgs.pkgsCross.gnu64.stdenv.cc        # Linux x86_64 cross-compiler
@@ -111,9 +116,6 @@ in
 
 
   enterShell = ''
-    # Use system clang for native builds (don't set CC/CXX to avoid NIX pollution)
-    # cc-rs will find the system compiler automatically
-    
     # LLVM configuration
     export LLVM_SYS_181_PREFIX="${pkgs.llvmPackages_18.llvm.dev}"
     export LLVM_CONFIG_PATH="${pkgs.llvmPackages_18.llvm.dev}/bin/llvm-config"
@@ -123,8 +125,6 @@ in
     export CXX_x86_64_unknown_linux_gnu="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-g++"
     export AR_x86_64_unknown_linux_gnu="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-ar"
 
-
-
     export CC_aarch64_unknown_linux_gnu="${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin/aarch64-unknown-linux-gnu-gcc"
     export CXX_aarch64_unknown_linux_gnu="${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin/aarch64-unknown-linux-gnu-g++"
     export AR_aarch64_unknown_linux_gnu="${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin/aarch64-unknown-linux-gnu-ar"
@@ -133,17 +133,25 @@ in
     export CXX_x86_64_pc_windows_gnu="${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-g++"
     export AR_x86_64_pc_windows_gnu="${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-ar"
 
+    # Windows pthread library paths - ensure all pthread libraries are in search path
+    export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS="-L ${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib -L ${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib -L ${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib -C link-arg=-Wl,-L${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib -C link-arg=-Wl,-L${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib"
+
+    # MinGW linker library search paths - critical for finding libpthread.a
+    export LIBRARY_PATH_x86_64_pc_windows_gnu="${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib:${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib:${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib"
+
+    # Windows linker flags - ensure libpthread.a can be found
+    export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LDFLAGS="-L${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib -L${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib -L${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib"
+
+    # Critical: Set include and library search paths for MinGW cross-compilation
+    export CPATH_x86_64_pc_windows_gnu="${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/include:${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/include:${pkgs.pkgsCross.mingwW64.windows.pthreads}/include"
+    export C_INCLUDE_PATH_x86_64_pc_windows_gnu="${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/include:${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/include:${pkgs.pkgsCross.mingwW64.windows.pthreads}/include"
+    export CPLUS_INCLUDE_PATH_x86_64_pc_windows_gnu="${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/include:${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/include:${pkgs.pkgsCross.mingwW64.windows.pthreads}/include"
+    export LIBRARY_PATH="${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib:${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib:${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib:$LIBRARY_PATH"
+
     # macOS cross-compilation (use clang for x86_64-apple-darwin)
     export CC_x86_64_apple_darwin="${pkgs.clang}/bin/clang"
     export CXX_x86_64_apple_darwin="${pkgs.clang}/bin/clang++"
     export AR_x86_64_apple_darwin="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
-
-
-
-    # Library paths for runtime and compilation
-    export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib:$LD_LIBRARY_PATH"
-    export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib:$LIBRARY_PATH"
-    export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.libxml2.dev}/lib/pkgconfig:${pkgs.sqlite.dev}/lib/pkgconfig"
 
     # Cross-compilation sysroots and linkers
     export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-gcc"
@@ -151,25 +159,56 @@ in
     export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
     export CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER="${pkgs.clang}/bin/clang"
 
-    # Clear any cross-compilation include paths that might pollute builds
+    # Force LLVM ar/ranlib for all targets to fix archive corruption
+    export CARGO_TARGET_AARCH64_APPLE_DARWIN_AR="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
+    export CARGO_TARGET_X86_64_APPLE_DARWIN_AR="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
+
+    # CRITICAL: Clear ALL compiler environment variables that might interfere with cc-rs
+    unset CC
+    unset CXX
+    unset AR
+    unset RANLIB
+    unset STRIP
+    unset OBJCOPY
     unset C_INCLUDE_PATH
     unset CPLUS_INCLUDE_PATH
     unset CPATH
-    unset LIBRARY_PATH
     unset MACOSX_DEPLOYMENT_TARGET
-    
+
     # CRITICAL: Clear host stdenv cc-wrapper variables that pollute cross-compilation
-    # These contain Linux glibc paths that the Windows cross-compiler inherits
     unset NIX_CFLAGS_COMPILE
-    unset NIX_CFLAGS_LINK  
+    unset NIX_CFLAGS_LINK
     unset NIX_CXXSTDLIB_COMPILE
     unset NIX_CXXSTDLIB_LINK
     unset NIX_LDFLAGS
 
-    # Make sure LLVM tools are available but don't override system compilers for native builds
+    # CRITICAL FIX: Set linker library search path for MinGW to find libpthread.a
+    export RUSTFLAGS_x86_64_pc_windows_gnu="-L ${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib -L ${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib -L ${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib"
+
+    # Set library paths for native builds AFTER clearing cross-compilation pollution
+    export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib:$LD_LIBRARY_PATH"
+    export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib"
+    export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.libxml2.dev}/lib/pkgconfig:${pkgs.sqlite.dev}/lib/pkgconfig"
+
+    # Critical: macOS-specific fixes for cc-rs build scripts finding libiconv
+    ${lib.optionalString pkgs.stdenv.isDarwin ''
+      # Ensure cc-rs can find system clang (not cross-compilers)
+      export PATH="/usr/bin:$PATH"
+
+      # Set linker and compiler flags so cc-rs can find libiconv
+      export LDFLAGS="-L${pkgs.libiconv}/lib $LDFLAGS"
+      export CPPFLAGS="-I${pkgs.libiconv}/include $CPPFLAGS"
+      export CFLAGS="-I${pkgs.libiconv}/include $CFLAGS"
+      export CXXFLAGS="-I${pkgs.libiconv}/include $CXXFLAGS"
+
+      # Ensure pkg-config can find libiconv if packages support it
+      export PKG_CONFIG_PATH="${pkgs.libiconv}/lib/pkgconfig:$PKG_CONFIG_PATH"
+    ''}
+
+    # Make sure LLVM tools are available
     export PATH="${pkgs.llvmPackages_18.llvm}/bin:$PATH"
-    
-    # Add cross-compilation tools to PATH but at the end
+
+    # Add cross-compilation tools to PATH but at the end (after system tools)
     export PATH="$PATH:${pkgs.pkgsCross.gnu64.stdenv.cc}/bin:${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin:${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin"
   '';
 

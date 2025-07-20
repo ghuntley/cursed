@@ -150,6 +150,19 @@ fn get_next_socket_id() -> i32 {
         .current_dir(&runtime_dir)
         .env("CARGO_TARGET_DIR", runtime_dir.join("target"));
     
+    // Clear environment variables that could cause cross-compilation confusion
+    build_cmd.env_remove("CC");
+    build_cmd.env_remove("CXX");
+    build_cmd.env_remove("AR");
+    build_cmd.env_remove("MACOSX_DEPLOYMENT_TARGET");
+    
+    // Set up for proper cross-compilation target if building for a different target
+    if let Ok(target) = env::var("TARGET") {
+        if target != env::var("HOST").unwrap_or_default() {
+            build_cmd.arg("--target").arg(&target);
+        }
+    }
+    
     let output = build_cmd.output().expect("Failed to build runtime library");
     
     if !output.status.success() {
