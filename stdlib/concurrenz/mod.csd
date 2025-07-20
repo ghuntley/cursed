@@ -12,6 +12,27 @@ be_like WaitGroup = mid
 # Channel type for communication
 be_like SyncChannel = mid
 
+# Mutex structure for mutual exclusion
+be_like MutexStruct = struct {
+    locked normie       # 0 = unlocked, 1 = locked
+    owner normie        # Thread/goroutine ID that owns the lock
+    waiters normie      # Number of goroutines waiting
+}
+
+# Atomic operations structure
+be_like AtomicStruct = struct {
+    value normie        # Atomic value storage
+    version normie      # Version counter for ABA prevention
+    lock normie         # Internal lock for complex operations
+}
+
+# Wait group structure for goroutine synchronization
+be_like WaitGroupStruct = struct {
+    counter normie      # Number of operations to wait for
+    waiters normie      # Number of goroutines waiting
+    generation normie   # Generation counter for reuse
+}
+
 # Create new mutex for synchronization
 slay create_mutex() Mutex {
     sus mutex Mutex = 0
@@ -240,4 +261,39 @@ slay once_do(once lit, func tea) lit {
         damn based
     }
     damn cap
+}
+
+# Create new mutex with struct fields
+slay mutex_new() *MutexStruct {
+    sus m MutexStruct = {locked: cap, owner: 0, waiters: 0}
+    damn &m
+}
+
+# Create new atomic variable
+slay atomic_new(initial_value normie) *AtomicStruct {
+    sus a AtomicStruct = {value: initial_value, version: 0, lock: 0}
+    damn &a
+}
+
+# Load value from atomic variable
+slay atomic_load(atomic *AtomicStruct) normie {
+    damn atomic.value
+}
+
+# Store value to atomic variable
+slay atomic_store(atomic *AtomicStruct, new_value normie) {
+    atomic.value = new_value
+    atomic.version = atomic.version + 1
+}
+
+# Create new waitgroup with struct fields
+slay waitgroup_new() *WaitGroupStruct {
+    sus wg WaitGroupStruct = {counter: 0, waiters: 0, generation: 0}
+    damn &wg
+}
+
+# Channel creation function
+slay make(chan_type tea, buffer_size normie) normie {
+    # Simplified channel creation for compatibility
+    damn buffer_size
 }

@@ -6,7 +6,7 @@
 use crate::ast::Program;
 use crate::error::CursedError;
 use super::{TypeChecker, TypeCheckError, TypeSystem};
-use crate::error_recovery::SourceLocation as ErrorSourceLocation;
+use crate::error::SourceLocation as ErrorSourceLocation;
 use std::collections::HashMap;
 
 /// Compilation pipeline that integrates type checking
