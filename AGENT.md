@@ -348,3 +348,21 @@ src/
 - LLVM archive configuration fixed in `.cargo/config.toml` using native archivers
 - Target-aware `build.rs` with conditional compilation for WASM compatibility
 - `devenv.nix` pinned LLVM versions and cross-compilation toolchains
+
+### Build System Learnings
+- NixOS devenv.nix must have proper GCC linker configuration
+- Dependency conflicts can block builds (either crate v1.15 vs v1.9)
+- PIE compilation flags fixed in build.rs: -fPIE, -pie, -Wl,--as-needed
+- cargo clean + unset environment variables helps with persistent config
+
+### CURSED Development Patterns
+- Standard library should be pure CURSED implementations, no FFI
+- Testing framework (testz) is foundation for all stdlib testing
+- Security-critical modules need immediate attention (crypto)
+- Hardware atomics significantly outperform spinlock implementations
+
+### Successful Implementation Strategy
+- Use parallel subagents for independent module development
+- Complete core runtime modules first (error handling, atomics, testing)
+- Eliminate FFI dependencies systematically for self-hosting
+- Comprehensive test coverage essential for validation

@@ -19,6 +19,9 @@ fn main() {
     let cross_compilation_config = detect_cross_compilation();
     setup_cross_compilation_environment(&cross_compilation_config);
     
+    // Fix PIE compilation issues
+    setup_pie_compilation();
+    
     // Build runtime library with proper cross-compilation support
     build_runtime_library(&cross_compilation_config);
     
@@ -242,6 +245,20 @@ fn setup_wasm_cross_compilation(_config: &CrossCompilationConfig) {
     
     // Disable features not supported in WebAssembly
     println!("cargo:rustc-cfg=feature=\"wasm\"");
+}
+
+fn setup_pie_compilation() {
+    // Fix PIE linking issues for LLVM-based compilation
+    let target = env::var("TARGET").unwrap_or_default();
+    
+    if target.contains("linux") {
+        // Add PIE flags for Linux targets
+        println!("cargo:rustc-link-arg=-fPIE");
+        println!("cargo:rustc-link-arg=-pie");
+    }
+    
+    // Ensure proper linking for native executables
+    println!("cargo:rustc-link-arg=-Wl,--as-needed");
 }
 
 fn build_runtime_library(config: &CrossCompilationConfig) {

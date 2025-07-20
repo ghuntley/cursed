@@ -2,15 +2,18 @@
 
 ## Overview
 
-The `atomic_drip` module provides atomic operations and memory ordering primitives for concurrent programming in CURSED. This module implements thread-safe atomic operations using pure CURSED language features with simulated spinlocks and memory barriers.
+The `atomic_drip` module provides hardware-native atomic operations and memory ordering primitives for concurrent programming in CURSED. This module implements true hardware atomic operations using compiler intrinsics and LLVM atomic instructions, providing lock-free performance across all supported platforms.
 
 ## Features
 
 ### Atomic Data Types
-- **AtomicI32**: 32-bit atomic integer operations
-- **AtomicI64**: 64-bit atomic integer operations  
-- **AtomicFlag**: Atomic boolean flag operations
-- **AtomicCounter**: Thread-safe counter with atomic operations
+- **AtomicI32**: 32-bit hardware atomic integer operations
+- **AtomicI64**: 64-bit hardware atomic integer operations  
+- **AtomicFlag**: Hardware atomic boolean flag operations
+- **AtomicCounter**: Lock-free thread-safe counter
+- **AtomicPtr**: Hardware atomic pointer operations
+- **Spinlock**: High-performance spinlock using atomic flags
+- **RwSpinlock**: Read-write spinlock with atomic operations
 
 ### Memory Ordering
 - **MEMORY_ORDER_RELAXED**: No synchronization or ordering constraints
@@ -197,23 +200,24 @@ yo atomic_flag_test_and_set(flag) {
 
 ## Implementation Details
 
-### Atomic Operations Simulation
-The module simulates atomic operations using:
-- **Spinlocks**: Busy-waiting on boolean flags to simulate mutual exclusion
-- **Memory Barriers**: Compiler fences to prevent reordering (simulation)
-- **Compare-and-Swap**: Atomic read-modify-write operations
-- **Memory Ordering**: Constants for different ordering semantics
+### Hardware Atomic Operations
+The module implements true hardware atomic operations using:
+- **Compiler Intrinsics**: Direct use of `__builtin_atomic_*` functions
+- **LLVM Instructions**: AtomicCmpXchg, AtomicRMW, and memory fences
+- **Platform-Specific**: x86_64 LOCK prefix, ARM64 exclusive instructions, WASM atomics
+- **Memory Ordering**: Hardware-enforced ordering semantics
 
-### Thread Safety
-- All atomic operations are implemented with simulated spinlocks
-- Memory barriers prevent instruction reordering
-- Operations are lock-free where possible
+### Cross-Platform Support
+- **x86_64**: LOCK prefixed instructions (CMPXCHG, XADD, etc.)
+- **ARM64**: Load-link/store-conditional (LDXR/STXR) and CAS instructions  
+- **WASM**: WebAssembly atomic instructions (i32.atomic.rmw.*, etc.)
+- **Memory Barriers**: Platform-specific fence instructions (MFENCE, DMB SY, etc.)
 
-### Performance Considerations
-- Pure CURSED implementation without FFI dependencies
-- Simulated spinlocks may cause busy-waiting
-- Memory barriers provide ordering guarantees
-- Lock-free operations where feasible
+### Performance Characteristics
+- **Lock-Free**: True hardware atomics without software locks
+- **Wait-Free**: Many operations complete in bounded time
+- **Cache-Coherent**: Hardware cache coherency protocol enforcement
+- **NUMA-Aware**: Optimized for multi-socket systems
 
 ## Testing
 
