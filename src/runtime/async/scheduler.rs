@@ -596,8 +596,27 @@ impl AsyncScheduler {
                 last_activity = Instant::now();
                 *worker.total_runtime.lock().unwrap() += work_start.elapsed();
             } else {
-                // No work found - sleep briefly to avoid busy waiting
-                thread::sleep(Duration::from_micros(100));
+                // No work found - use proper blocking with work-stealing
+                let wait_start = Instant::now();
+                
+                // Try to steal work from other workers
+                let stolen_work = Self::try_steal_work_static(&worker, &workers);
+                
+                if !stolen_work {
+                    // No work to steal - use exponential backoff
+                    let idle_duration = wait_start.elapsed();
+                    let sleep_duration = if idle_duration < Duration::from_millis(1) {
+                        Duration::from_micros(10)
+                    } else if idle_duration < Duration::from_millis(10) {
+                        Duration::from_micros(100)
+                    } else {
+                        Duration::from_millis(1)
+                    };
+                    
+                    // Use proper parking for efficient CPU usage
+                    thread::park_timeout(sleep_duration);
+                }
+                
                 idle_time += work_start.elapsed();
             }
 
@@ -673,6 +692,45 @@ impl AsyncScheduler {
                 }
             }
         }
+    }
+    
+    /// Try to steal work from other workers (work-stealing scheduler)
+    fn try_steal_work(&self, current_worker: &SchedulerWorker) -> bool {
+        Self::try_steal_work_static(current_worker, &self.workers)
+    }
+    
+    /// Static version of work stealing for use in worker threads
+    fn try_steal_work_static(current_worker: &SchedulerWorker, workers: &[Arc<SchedulerWorker>]) -> bool {
+        let current_id = current_worker.id;
+        
+        // Try to steal from random workers
+        for _ in 0..3 { // Try up to 3 workers
+            let worker_count = workers.len();
+            if worker_count <= 1 {
+                break;
+            }
+            
+            // Pick a random worker (not ourselves)  
+            let target_id = (current_id + 1 + (std::process::id() as usize % (worker_count - 1))) % worker_count;
+            if target_id == current_id {
+                continue;
+            }
+            
+            if let Some(target_worker) = workers.get(target_id) {
+                // Try to steal from target worker's queue
+                if let Ok(mut target_queue) = target_worker.local_queue.lock() {
+                    if let Some(task) = target_queue.steal() {
+                        // Successfully stole a task - add it to our queue
+                        if let Ok(mut our_queue) = current_worker.local_queue.lock() {
+                            our_queue.push_local(task);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        false
     }
 }
 

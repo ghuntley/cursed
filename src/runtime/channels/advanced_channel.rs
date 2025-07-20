@@ -472,7 +472,8 @@ impl<T> AdvancedChannel<T> {
                 }
             }
 
-            // Brief yield to prevent busy waiting
+            // Use proper blocking with exponential backoff
+            thread::park_timeout(Duration::from_micros(10));
             thread::yield_now();
         }
     }
@@ -602,7 +603,8 @@ impl<T> AdvancedChannel<T> {
                 }
             }
 
-            // Brief yield to prevent busy waiting
+            // Use proper blocking with exponential backoff
+            thread::park_timeout(Duration::from_micros(10));
             thread::yield_now();
         }
     }

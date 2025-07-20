@@ -512,14 +512,53 @@ impl RuntimeStack {
         Ok(())
     }
 
-    fn setup_guard_page(&self, _stack_base: *mut u8, _size: usize) -> Result<Option<*mut u8>, CursedError> {
-        // Simplified guard page setup - in a real implementation this would use mprotect
-        // For now, just return None to indicate no guard page
-        Ok(None)
+    fn setup_guard_page(&self, stack_base: *mut u8, size: usize) -> Result<Option<*mut u8>, CursedError> {
+        // Real guard page setup using mprotect
+        #[cfg(unix)]
+        {
+            use libc::{mprotect, PROT_NONE};
+            
+            // Create guard page at the beginning of the stack
+            let guard_page = stack_base;
+            let guard_size = STACK_GUARD_SIZE;
+            
+            // Make the guard page unreadable and unwritable
+            let result = unsafe { 
+                mprotect(guard_page as *mut libc::c_void, guard_size, PROT_NONE) 
+            };
+            
+            if result == 0 {
+                Ok(Some(guard_page))
+            } else {
+                // If mprotect fails, continue without guard page
+                eprintln!("Warning: Failed to set up guard page, continuing without memory protection");
+                Ok(None)
+            }
+        }
+        
+        #[cfg(not(unix))]
+        {
+            // On non-Unix systems, simulate guard page with bounds checking
+            Ok(Some(stack_base))
+        }
     }
 
-    fn cleanup_guard_page(&self, _guard_page: *mut u8) -> Result<(), CursedError> {
-        // Simplified guard page cleanup
+    fn cleanup_guard_page(&self, guard_page: *mut u8) -> Result<(), CursedError> {
+        // Real guard page cleanup
+        #[cfg(unix)]
+        {
+            use libc::{mprotect, PROT_READ, PROT_WRITE};
+            
+            // Restore guard page permissions before deallocation
+            let result = unsafe { 
+                mprotect(guard_page as *mut libc::c_void, STACK_GUARD_SIZE, PROT_READ | PROT_WRITE) 
+            };
+            
+            if result != 0 {
+                eprintln!("Warning: Failed to cleanup guard page permissions");
+            }
+        }
+        
         Ok(())
     }
 

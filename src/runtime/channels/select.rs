@@ -300,9 +300,12 @@ impl Select {
                 return Ok(SelectResult::AllClosed);
             }
             
-            // Exponential backoff to avoid busy waiting
-            thread::sleep(Duration::from_nanos(backoff_nanos));
+            // Use proper backoff with thread yielding to reduce CPU usage
+            thread::park_timeout(Duration::from_nanos(backoff_nanos));
             backoff_nanos = (backoff_nanos * 2).min(max_backoff_nanos);
+            
+            // Yield to other threads to prevent starving other tasks
+            thread::yield_now();
         }
     }
     

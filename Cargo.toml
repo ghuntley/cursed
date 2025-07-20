@@ -43,10 +43,13 @@ libc = "0.2"  # For C functions like strlen
 inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
 atty = "0.2"  # For checking if stdin/stdout is a terminal
 libloading = "0.8"  # Dynamic library loading for plugins
+backtrace = { version = "0.3", optional = true }  # Stack trace capture
 
 
 # Stack walking and debug information dependencies
 # rustc-demangle already included above
+
+# Features moved to main [features] section below
 
 # Documentation generation dependencies
 serde = { version = "1.0", features = ["derive"] }  # Serialization for config and output
@@ -219,7 +222,7 @@ thread_local = "1.1"  # Thread-local storage
 parking_lot = "0.12"  # Better RwLock implementation with timeout support
 
 # Memory profiling and debug information
-backtrace = "0.3.69"  # For stack trace capture
+# backtrace = "0.3.69"  # For stack trace capture (moved to optional dependency)
 rustc-demangle = "0.1"  # For demangling Rust symbols
 gimli = "0.28"  # DWARF debug information parsing and generation
 object = "0.32"  # Object file parsing for debug information
@@ -348,7 +351,8 @@ mach2 = "0.4"  # Mach kernel interface for shared memory
 
 [features]
 # Default features for production builds
-default = ["concurrent_gc", "enhanced_dynamic_dispatch"]
+default = ["concurrent_gc", "enhanced_dynamic_dispatch", "backtrace"]
+backtrace = ["dep:backtrace"]
 
 # Enable binary compilation support
 binary_compiler = []

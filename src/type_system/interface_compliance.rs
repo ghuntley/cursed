@@ -7,6 +7,7 @@
 // - Auto-dereference rules for interfaces
 
 use crate::ast::{InterfaceStatement, MethodSignature, Parameter, Type as AstType, StructStatement, TypeParameter as AstTypeParameter};
+use crate::error::SourceLocation;
 use crate::core::Type;
 use crate::error_types::CursedError;
 use std::collections::HashMap;
@@ -18,6 +19,7 @@ pub struct InterfaceMethodRequirement {
     pub parameters: Vec<Parameter>,
     pub return_type: Option<AstType>,
     pub receiver_type: ReceiverType,
+    pub source_location: Option<SourceLocation>,
 }
 
 /// Generic interface definition
@@ -51,6 +53,7 @@ pub struct ConcreteMethodImplementation {
     pub parameters: Vec<Parameter>,
     pub return_type: Option<AstType>,
     pub receiver_type: ReceiverType,
+    pub source_location: Option<SourceLocation>,
 }
 
 /// Interface compliance checker
@@ -90,6 +93,7 @@ impl InterfaceComplianceChecker {
                 parameters: method.parameters.clone(),
                 return_type: method.return_type.clone(),
                 receiver_type,
+                source_location: None, // TODO: Add source location to MethodSignature
             };
             
             method_requirements.push(requirement);
@@ -718,6 +722,7 @@ mod tests {
             parameters: vec![],
             return_type: Some(AstType::Normie),
             receiver_type: ReceiverType::Value,
+            source_location: None,
         };
         
         assert!(checker.register_type_methods("TestType", vec![implementation]).is_ok());
@@ -775,12 +780,14 @@ mod tests {
                 parameters: vec![],
                 return_type: Some(AstType::Normie),
                 receiver_type: ReceiverType::Value,
+                source_location: None,
             },
             ConcreteMethodImplementation {
                 name: "derived_method".to_string(),
                 parameters: vec![],
                 return_type: Some(AstType::Normie),
                 receiver_type: ReceiverType::Value,
+                source_location: None,
             }
         ];
         

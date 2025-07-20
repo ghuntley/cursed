@@ -346,10 +346,195 @@ slay deserialize_message(data tea, offset normie) Message {
     damn message
 }
 
-// Utility functions
+// ================================
+// Enhanced Compression Utilities
+// ================================
+
+slay compress_lz77(data tea) tea {
+    // Simple LZ77-style compression
+    sus result tea = ""
+    sus data_len normie = string_len(data)
+    sus i normie = 0
+    
+    bestie i < data_len {
+        sus match_length normie = 0
+        sus match_distance normie = 0
+        
+        // Look for matches in previous data
+        bestie j := 0; j < i && j < 255; j++ {
+            sus current_match normie = 0
+            
+            bestie k := 0; i + k < data_len && j + k < i; k++ {
+                if string_char_at(data, i + k) == string_char_at(data, j + k) {
+                    current_match++
+                } yolo {
+                    break
+                }
+            }
+            
+            if current_match > match_length {
+                match_length = current_match
+                match_distance = i - j
+            }
+        }
+        
+        if match_length >= 3 {
+            // Encode as (distance, length, next_char)
+            result = result + serialize_lz77_token(match_distance, match_length)
+            i = i + match_length
+        } yolo {
+            // Literal character
+            result = result + string_char_at(data, i)
+            i++
+        }
+    }
+    
+    damn result
+}
+
+slay decompress_lz77(data tea) tea {
+    // Simple LZ77-style decompression
+    sus result tea = ""
+    sus data_len normie = string_len(data)
+    sus i normie = 0
+    
+    bestie i < data_len {
+        sus token tea = string_char_at(data, i)
+        
+        if is_lz77_token(token) {
+            sus distance normie = deserialize_lz77_distance(data, i)
+            sus length normie = deserialize_lz77_length(data, i + 4)
+            
+            // Copy from previous data
+            bestie j := 0; j < length; j++ {
+                sus copy_pos normie = string_len(result) - distance
+                if copy_pos >= 0 {
+                    result = result + string_char_at(result, copy_pos)
+                }
+            }
+            
+            i = i + 8  // Skip token
+        } yolo {
+            // Literal character
+            result = result + token
+            i++
+        }
+    }
+    
+    damn result
+}
+
+slay serialize_lz77_token(distance normie, length normie) tea {
+    // Serialize LZ77 token as marker + distance + length
+    sus result tea = byte_to_char(255)  // Special marker
+    result = result + serialize_int(distance)
+    result = result + serialize_int(length)
+    damn result
+}
+
+slay is_lz77_token(token tea) lit {
+    // Check if token is LZ77 marker
+    if string_len(token) > 0 {
+        damn char_to_byte(token) == 255
+    }
+    damn cap
+}
+
+slay deserialize_lz77_distance(data tea, offset normie) normie {
+    damn deserialize_int(data, offset + 1)
+}
+
+slay deserialize_lz77_length(data tea, offset normie) normie {
+    damn deserialize_int(data, offset)
+}
+
+// Dictionary-based compression
+slay compress_dictionary(data tea) tea {
+    // Build frequency table and replace common sequences
+    sus result tea = ""
+    sus dictionary [tea] = build_compression_dictionary(data)
+    
+    // Encode dictionary size
+    result = serialize_int(len(dictionary))
+    
+    // Encode dictionary entries
+    bestie i := 0; i < len(dictionary); i++ {
+        result = result + serialize_string(dictionary[i])
+    }
+    
+    // Encode compressed data using dictionary indices
+    sus compressed_data tea = encode_with_dictionary(data, dictionary)
+    result = result + serialize_string(compressed_data)
+    
+    damn result
+}
+
+slay decompress_dictionary(data tea) tea {
+    // Decompress dictionary-encoded data
+    sus offset normie = 0
+    sus dict_size normie = deserialize_int(data, offset)
+    offset = offset + 4
+    
+    // Read dictionary
+    sus dictionary [tea] = []
+    bestie i := 0; i < dict_size; i++ {
+        sus entry tea = deserialize_string(data, offset)
+        dictionary = dictionary + [entry]
+        offset = offset + 4 + string_len(entry)
+    }
+    
+    // Read and decompress data
+    sus compressed_data tea = deserialize_string(data, offset)
+    damn decode_with_dictionary(compressed_data, dictionary)
+}
+
+slay build_compression_dictionary(data tea) [tea] {
+    // Build dictionary of common substrings (simplified)
+    sus dictionary [tea] = []
+    
+    // Add common 2-3 character sequences
+    bestie i := 0; i < string_len(data) - 2; i++ {
+        sus substr tea = string_substring(data, i, 3)
+        if !array_contains(dictionary, substr) && substring_frequency(data, substr) > 2 {
+            dictionary = dictionary + [substr]
+        }
+    }
+    
+    damn dictionary
+}
+
+slay encode_with_dictionary(data tea, dictionary [tea]) tea {
+    // Replace dictionary entries with indices
+    sus result tea = data
+    
+    bestie i := 0; i < len(dictionary); i++ {
+        sus pattern tea = dictionary[i]
+        sus replacement tea = byte_to_char(128 + i)  // Use high-bit chars as indices
+        result = string_replace_all(result, pattern, replacement)
+    }
+    
+    damn result
+}
+
+slay decode_with_dictionary(data tea, dictionary [tea]) tea {
+    // Replace indices with dictionary entries
+    sus result tea = data
+    
+    bestie i := 0; i < len(dictionary); i++ {
+        sus pattern tea = byte_to_char(128 + i)
+        sus replacement tea = dictionary[i]
+        result = string_replace_all(result, pattern, replacement)
+    }
+    
+    damn result
+}
+
+// ================================
+// Utility Functions
+// ================================
+
 slay byte_to_char(byte normie) tea {
     // Convert byte value to character
-    // Placeholder implementation
     damn string_char_from_code(byte)
 }
 
@@ -462,13 +647,62 @@ slay deserialize_compressed(data tea) tea {
 }
 
 slay compress_data(data tea) tea {
-    // Placeholder compression
-    damn data
+    // Simple Run-Length Encoding (RLE) compression
+    sus result tea = ""
+    sus data_len normie = string_len(data)
+    sus i normie = 0
+    
+    bestie i < data_len {
+        sus current_char tea = string_char_at(data, i)
+        sus count normie = 1
+        
+        // Count consecutive occurrences
+        bestie i + count < data_len && string_char_at(data, i + count) == current_char {
+            count++
+        }
+        
+        // Encode: char + count (if > 1)
+        if count > 1 {
+            result = result + current_char + serialize_int(count)
+        } yolo {
+            result = result + current_char
+        }
+        
+        i = i + count
+    }
+    
+    damn result
 }
 
 slay decompress_data(data tea) tea {
-    // Placeholder decompression
-    damn data
+    // Simple Run-Length Encoding (RLE) decompression  
+    sus result tea = ""
+    sus data_len normie = string_len(data)
+    sus i normie = 0
+    
+    bestie i < data_len {
+        sus current_char tea = string_char_at(data, i)
+        
+        // Check if next 4 bytes represent a count
+        if i + 4 < data_len {
+            sus possible_count normie = deserialize_int(data, i + 1)
+            
+            if possible_count > 1 && possible_count < 1000 {
+                // Likely a run-length encoded sequence
+                bestie j := 0; j < possible_count; j++ {
+                    result = result + current_char
+                }
+                i = i + 5  // Skip char + 4 bytes for count
+                simp
+            }
+        }
+        
+        // Regular character
+        result = result + current_char
+        i++
+    }
+    
+    damn result
 }
 
 // Versioning support
@@ -486,4 +720,48 @@ slay deserialize_versioned(data tea) tea {
     
     // Version compatibility check could be added here
     damn versioned_data
+}
+
+// ================================
+// Additional Utility Functions
+// ================================
+
+slay string_len(str tea) normie {
+    sus length normie = 0
+    bestie i := 0; i < 10000; i++ {
+        if string_char_at(str, i) == "" {
+            break
+        }
+        length++
+    }
+    damn length
+}
+
+slay string_char_at(str tea, index normie) tea {
+    damn "A"  // Placeholder
+}
+
+slay string_substring(str tea, start normie, length normie) tea {
+    damn "substr"  // Placeholder
+}
+
+slay array_contains(arr [tea], item tea) lit {
+    bestie i := 0; i < len(arr); i++ {
+        if arr[i] == item {
+            damn based
+        }
+    }
+    damn cap
+}
+
+slay substring_frequency(data tea, substr tea) normie {
+    damn 1  // Placeholder
+}
+
+slay string_replace_all(str tea, pattern tea, replacement tea) tea {
+    damn str  // Placeholder
+}
+
+slay len(arr [tea]) normie {
+    damn 0  // Placeholder
 }

@@ -6,6 +6,7 @@
 use crate::error_types::Error as CursedError;
 use crate::type_system::{TypeExpression, TypeEnvironment};
 use crate::ast::TypeParameter;
+use crate::error::SourceLocation;
 use std::collections::{HashMap, HashSet};
 
 /// Comprehensive constraint checker for generic types
@@ -34,7 +35,10 @@ pub struct ConstraintViolation {
     pub type_name: String,
     pub reason: ViolationReason,
     pub suggestion: Option<String>,
+    pub source_location: Option<SourceLocation>,
 }
+
+// Use existing SourceLocation from error module
 
 /// Reason for constraint violation
 #[derive(Debug, Clone)]
@@ -235,6 +239,7 @@ impl GenericConstraintChecker {
                     type_name: format!("{:?}", type_expr),
                     reason: ViolationReason::MissingMethod(method.clone()),
                     suggestion: Some(format!("Implement method '{}' for type '{:?}'", method, type_expr)),
+                    source_location: None, // TODO: Extract from type_expr if available
                 })
                 .collect();
 
@@ -271,6 +276,7 @@ impl GenericConstraintChecker {
                         actual: format!("{:?}", type_expr),
                     },
                     suggestion: None,
+                    source_location: None,
                 }],
                 required_implementations: vec![],
             })
@@ -302,6 +308,7 @@ impl GenericConstraintChecker {
                         actual: format!("{:?}", type_expr),
                     },
                     suggestion: None,
+                    source_location: None,
                 }],
                 required_implementations: vec![],
             })
@@ -333,6 +340,7 @@ impl GenericConstraintChecker {
                         actual: format!("{:?}", type_expr),
                     },
                     suggestion: None,
+                    source_location: None,
                 }],
                 required_implementations: vec![],
             })
@@ -411,32 +419,164 @@ impl GenericConstraintChecker {
 /// Extension methods for TypeEnvironment
 impl TypeEnvironment {
     /// Check if a type implements an interface
-    pub fn type_implements_interface(&self, _type_expr: &TypeExpression, _interface_name: &str) -> bool {
-        // Implementation would check stored implementations
+    pub fn type_implements_interface(&self, type_expr: &TypeExpression, interface_name: &str) -> bool {
+        // Check if the type has a stored implementation for this interface
+        if let Some(type_name) = &type_expr.name {
+            // Look for type implementations in the type definitions
+            if let Some(type_def) = self.type_definitions.get(type_name) {
+                // Check if the type has all methods required by the interface
+                return self.check_interface_implementation(type_def, interface_name);
+            }
+        }
         false
     }
 
     /// Check if two types are equal
-    pub fn types_equal(&self, _type1: &TypeExpression, _type2: &TypeExpression) -> bool {
-        // Implementation would check type equality
-        false
+    pub fn types_equal(&self, type1: &TypeExpression, type2: &TypeExpression) -> bool {
+        match (&type1.name, &type2.name) {
+            (Some(n1), Some(n2)) => {
+                if n1 != n2 {
+                    return false;
+                }
+                
+                // Check parameters if both have them
+                if type1.parameters.len() != type2.parameters.len() {
+                    return false;
+                }
+                
+                for (p1, p2) in type1.parameters.iter().zip(type2.parameters.iter()) {
+                    if !self.types_equal(p1, p2) {
+                        return false;
+                    }
+                }
+                
+                // Check return types if both have them
+                match (&type1.return_type, &type2.return_type) {
+                    (Some(rt1), Some(rt2)) => self.types_equal(rt1, rt2),
+                    (None, None) => true,
+                    _ => false,
+                }
+            }
+            (None, None) => type1.kind == type2.kind,
+            _ => false,
+        }
     }
 
     /// Check if type1 is a subtype of type2
-    pub fn is_subtype(&self, _type1: &TypeExpression, _type2: &TypeExpression) -> bool {
-        // Implementation would check subtype relationship
-        false
+    pub fn is_subtype(&self, type1: &TypeExpression, type2: &TypeExpression) -> bool {
+        // If types are equal, type1 is a subtype of type2
+        if self.types_equal(type1, type2) {
+            return true;
+        }
+        
+        // Check for built-in subtype relationships
+        if let (Some(t1_name), Some(t2_name)) = (&type1.name, &type2.name) {
+            match (t1_name.as_str(), t2_name.as_str()) {
+                // Integer hierarchy: smol <: mid <: normie <: thicc
+                ("smol", "mid") | ("smol", "normie") | ("smol", "thicc") => true,
+                ("mid", "normie") | ("mid", "thicc") => true,
+                ("normie", "thicc") => true,
+                
+                // Float hierarchy: snack <: meal
+                ("snack", "meal") => true,
+                
+                // Integer to float promotion
+                ("smol", "snack") | ("mid", "snack") | ("normie", "meal") => true,
+                
+                // Check interface implementations
+                _ => {
+                    if let Some(type_def) = self.type_definitions.get(t1_name) {
+                        // Check if type1 implements interface type2
+                        if let Some(interface_def) = self.type_definitions.get(t2_name) {
+                            if interface_def.kind == crate::type_system::TypeKind::Interface {
+                                return self.check_interface_implementation(type_def, t2_name);
+                            }
+                        }
+                    }
+                    false
+                }
+            }
+        } else {
+            false
+        }
     }
 
     /// Check if a type has a method
-    pub fn type_has_method(&self, _type_expr: &TypeExpression, _method_name: &str) -> bool {
-        // Implementation would check method existence
+    pub fn type_has_method(&self, type_expr: &TypeExpression, method_name: &str) -> bool {
+        if let Some(type_name) = &type_expr.name {
+            if let Some(type_def) = self.type_definitions.get(type_name) {
+                return type_def.methods.iter().any(|method| method.name == method_name);
+            }
+        }
         false
     }
 
     /// Add a type implementation
-    pub fn add_type_implementation(&mut self, _implementation: TypeImplementation) {
-        // Implementation would store the implementation
+    pub fn add_type_implementation(&mut self, implementation: TypeImplementation) {
+        // Store the implementation by adding methods to the type definition
+        if let Some(type_def) = self.type_definitions.get_mut(&implementation.type_name) {
+            // Add interface methods to the type's method list
+            for method_impl in implementation.methods {
+                let method_sig = crate::type_system::MethodSignature {
+                    name: method_impl.name,
+                    parameters: method_impl.parameters,
+                    return_type: method_impl.return_type,
+                    type_parameters: Vec::new(),
+                    constraints: Vec::new(),
+                };
+                
+                // Only add if not already present
+                if !type_def.methods.iter().any(|m| m.name == method_sig.name) {
+                    type_def.methods.push(method_sig);
+                }
+            }
+        }
+    }
+    
+    /// Helper method to check if a type implements an interface
+    fn check_interface_implementation(&self, type_def: &crate::type_system::TypeDefinition, interface_name: &str) -> bool {
+        if let Some(interface_def) = self.type_definitions.get(interface_name) {
+            if interface_def.kind != crate::type_system::TypeKind::Interface {
+                return false;
+            }
+            
+            // Check if type has all required interface methods
+            for interface_method in &interface_def.methods {
+                let has_method = type_def.methods.iter().any(|type_method| {
+                    // Check method name matches
+                    if type_method.name != interface_method.name {
+                        return false;
+                    }
+                    
+                    // Check parameter count matches
+                    if type_method.parameters.len() != interface_method.parameters.len() {
+                        return false;
+                    }
+                    
+                    // Check parameter types are compatible
+                    for (type_param, interface_param) in type_method.parameters.iter().zip(interface_method.parameters.iter()) {
+                        if !self.types_equal(type_param, interface_param) {
+                            return false;
+                        }
+                    }
+                    
+                    // Check return types are compatible
+                    match (&type_method.return_type, &interface_method.return_type) {
+                        (Some(type_ret), Some(interface_ret)) => self.types_equal(type_ret, interface_ret),
+                        (None, None) => true,
+                        _ => false,
+                    }
+                });
+                
+                if !has_method {
+                    return false;
+                }
+            }
+            
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -540,6 +680,7 @@ mod tests {
             type_name: "CustomType".to_string(),
             reason: ViolationReason::MissingMethod("display".to_string()),
             suggestion: Some("Implement display method".to_string()),
+            source_location: None,
         };
         assert_eq!(violation.constraint_name, "Display");
         assert!(violation.suggestion.is_some());
