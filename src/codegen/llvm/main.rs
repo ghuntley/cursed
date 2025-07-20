@@ -1177,8 +1177,8 @@ impl LlvmCodeGenerator {
                 self.generate_struct_definition(struct_stmt)?;
             },
             Statement::Interface(interface_stmt) => {
-                // Skip interface definition generation for simple dispatch
-                // self.generate_interface_definition(interface_stmt)?;
+                // Generate interface definition for vtable generation
+                self.generate_interface_definition(interface_stmt)?;
             },
             Statement::Panic(panic_stmt) => {
                 self.ir_code.push_str("  ; Panic statement with complete defer cleanup and exception throwing\n");
@@ -1365,6 +1365,11 @@ impl LlvmCodeGenerator {
                 // For codegen, we just ignore them as they're compile-time constructs
                 // Type alias handled at semantic analysis
             },
+            // TODO: Add impl statement support when AST is updated
+            // Statement::Impl(impl_stmt) => {
+            //     // Generate vtable constants for impl statements
+            //     self.generate_impl_vtables(impl_stmt)?;
+            // },
         }
         Ok(())
     }
@@ -2376,7 +2381,14 @@ impl LlvmCodeGenerator {
         // Determine return type
         let ret_type = match return_type {
             Some(t) => self.map_type_to_llvm(t),
-            None => "void".to_string(),
+            None => {
+                // Main function should return i32 by default to match C calling conventions
+                if name == "main" {
+                    "i32".to_string()
+                } else {
+                    "void".to_string()
+                }
+            },
         };
         
         // Generate parameter list and collect parameter info
@@ -3840,6 +3852,54 @@ pub type LlvmModule = String;
 
 impl LlvmCodeGenerator {
     // Interface code generation methods
+    
+    // TODO: Uncomment when AST supports impl statements
+    // fn generate_impl_vtables(&mut self, impl_stmt: &crate::ast::ImplStatement) -> Result<(), CursedError> {
+    //     self.ir_code.push_str(&format!("  ; Implementation vtables for {} -> {}\n", 
+    //         impl_stmt.implementing_type, impl_stmt.interface_name));
+    //     
+    //     // Generate vtable constant for this implementation
+    //     if let Some(interface_def) = self.interface_registry.get(&impl_stmt.interface_name).cloned() {
+    //         self.generate_vtable_constant(&interface_def, &impl_stmt.implementing_type, &impl_stmt.methods)?;
+    //     }
+    //     
+    //     Ok(())
+    // }
+    
+    // TODO: Uncomment when AST supports impl statements
+    // fn generate_vtable_constant(&mut self, interface_def: &InterfaceDefinition, impl_type: &str, impl_methods: &[crate::ast::MethodStatement]) -> Result<(), CursedError> {
+    //     let vtable_name = format!("@vtable.{}.{}", interface_def.name, impl_type);
+    //     
+    //     // Generate vtable global constant
+    //     self.ir_code.push_str(&format!("{} = global %interface.{}.vtable {{", vtable_name, interface_def.name));
+    //     
+    //     // Generate method pointers in the correct order
+    //     for (i, interface_method) in interface_def.methods.iter().enumerate() {
+    //         if i > 0 {
+    //             self.ir_code.push_str(", ");
+    //         }
+    //         
+    //         // Find corresponding implementation method
+    //         if let Some(impl_method) = impl_methods.iter().find(|m| m.name == interface_method.name) {
+    //             let method_func_name = format!("@{}.{}", impl_type, impl_method.name);
+    //             let return_type = impl_method.return_type.as_ref()
+    //                 .map(|t| self.convert_cursed_type_to_llvm(t))
+    //                 .transpose()?
+    //                 .unwrap_or_else(|| "void".to_string());
+    //             
+    //             // Generate function type and pointer
+    //             self.ir_code.push_str(&format!(" {} (i8*)* {}", return_type, method_func_name));
+    //         } else {
+    //             return Err(CursedError::compiler_error(
+    //                 &format!("Method {} not implemented for type {}", interface_method.name, impl_type)
+    //             ));
+    //         }
+    //     }
+    //     
+    //     self.ir_code.push_str(" }\n");
+    //     
+    //     Ok(())
+    // }
     
     fn generate_interface_definition(&mut self, interface_stmt: &InterfaceStatement) -> Result<(), CursedError> {
         self.ir_code.push_str(&format!("  ; Interface definition: {}\n", interface_stmt.name));

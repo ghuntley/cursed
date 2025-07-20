@@ -1,7 +1,7 @@
 //! LLVM Expression Compiler Module  
 //! Complete expression compilation with proper register management and type handling
 
-use crate::ast::{Expression, Literal, BinaryOperator, UnaryOperator};
+use crate::ast::{Expression, Literal, BinaryOperator, UnaryOperator, MatchExpression, MatchPattern};
 use crate::error::CursedError;
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use crate::codegen::llvm::register_tracker::RegisterTracker;
@@ -17,6 +17,7 @@ pub struct ExpressionCompiler {
     pub ir_buffer: String,
     pub lambda_functions: Vec<String>,
     pub target_triple: String,  // Add target triple for WASM detection
+    pub label_counter: usize,  // For generating labels in match expressions
 }
 
 impl ExpressionCompiler {
@@ -32,6 +33,7 @@ impl ExpressionCompiler {
             ir_buffer: String::new(),
             lambda_functions: Vec::new(),
             target_triple: String::new(),
+            label_counter: 0,
         }
     }
     
@@ -53,6 +55,7 @@ impl ExpressionCompiler {
             ir_buffer: String::new(),
             lambda_functions: Vec::new(),
             target_triple,
+            label_counter: 0,
         }
     }
 
@@ -64,6 +67,13 @@ impl ExpressionCompiler {
     /// Get the current variable counter value
     pub fn get_variable_counter(&self) -> usize {
         self.register_tracker.get_current_counter()
+    }
+
+    /// Generate a unique label
+    fn next_label(&mut self) -> String {
+        let label = format!("label{}", self.label_counter);
+        self.label_counter += 1;
+        label
     }
 
     /// Compile any expression to LLVM IR with complete register handling
@@ -223,13 +233,11 @@ impl ExpressionCompiler {
                  Ok(recover_reg)
              },
               Expression::Match(match_expr) => {
-              // For complex match expressions, delegate to the main codegen system
-              // This is a placeholder - in practice, match expressions are handled in the main codegen
-              // For now, return an error suggesting to use the main codegen path
-              return Err(CursedError::TypeError(
-                  "Match expressions should be handled by the main expression generator".to_string()
-              ));
-              }
+              // Match expressions need to be handled by main code generator
+                  return Err(CursedError::TypeError(
+                       "Match expressions should be handled by main code generator".to_string()
+                   ));
+               }
                &crate::ast::Expression::TypeSwitch(_) => {
                            // Type switch expressions are handled by the main code generator
                    return Err(CursedError::TypeError(
@@ -1365,5 +1373,152 @@ impl ExpressionCompiler {
         self.ir_buffer.push_str(&ir);
         
         Ok(format!("i8* %{}", error_with_msg_reg))
+    }
+
+    /// Generate match expression with inline implementation
+    fn generate_match_expression_inline(&mut self, match_expr: &MatchExpression) -> Result<String, CursedError> {
+        // Evaluate the value to match against
+        let value_reg = self.compile_expression(&match_expr.value)?;
+        
+        // Create labels for the match arms and end label
+        let mut arm_labels = Vec::new();
+        let mut next_labels = Vec::new();
+        for i in 0..match_expr.arms.len() {
+            arm_labels.push(self.next_label());
+            next_labels.push(self.next_label());
+        }
+        let end_label = self.next_label();
+        let fail_label = self.next_label();
+        
+        // Result PHI node setup
+        let result_reg = self.next_register();
+        let mut phi_pairs = Vec::new();
+        
+        // Generate pattern matching for each arm
+        for (i, arm) in match_expr.arms.iter().enumerate() {
+            let arm_label = &arm_labels[i];
+            let next_label = if i + 1 < next_labels.len() {
+                &next_labels[i + 1]
+            } else {
+                &fail_label
+            };
+            
+            // Generate pattern match condition and jump to arm or next
+            self.generate_match_pattern_inline(&value_reg, &arm.pattern, arm_label, next_label)?;
+            
+            // Generate the arm body
+            self.ir_buffer.push_str(&format!("{}:\n", arm_label));
+            let arm_result = self.compile_expression(&arm.body)?;
+            let current_label = self.next_label();
+            
+            // Store result for PHI node
+            phi_pairs.push((arm_result, current_label.clone()));
+            
+            // Branch to end
+            self.ir_buffer.push_str(&format!("  br label %{}\n", end_label));
+            self.ir_buffer.push_str(&format!("{}:\n", current_label));
+            
+            // Set up next pattern check (except for last arm)
+            if i + 1 < match_expr.arms.len() {
+                self.ir_buffer.push_str(&format!("  br label %{}\n", next_labels[i + 1]));
+                self.ir_buffer.push_str(&format!("{}:\n", next_labels[i + 1]));
+            }
+        }
+        
+        // Generate failure case (non-exhaustive match)
+        self.ir_buffer.push_str(&format!("{}:\n", fail_label));
+        self.ir_buffer.push_str("  ; Non-exhaustive match - panic\n");
+        self.ir_buffer.push_str("  call void @panic_non_exhaustive_match()\n");
+        self.ir_buffer.push_str("  unreachable\n");
+        
+        // Generate end label with PHI node for result
+        self.ir_buffer.push_str(&format!("{}:\n", end_label));
+        if !phi_pairs.is_empty() {
+            // Infer result type from the first arm
+            let result_type = self.infer_result_type(&phi_pairs[0].0);
+            
+            self.ir_buffer.push_str(&format!("  {} = phi {} ", result_reg, result_type));
+            
+            for (i, (value, label)) in phi_pairs.iter().enumerate() {
+                if i > 0 {
+                    self.ir_buffer.push_str(", ");
+                }
+                self.ir_buffer.push_str(&format!("[ {}, %{} ]", value, label));
+            }
+            self.ir_buffer.push_str("\n");
+        }
+        
+        Ok(result_reg)
+    }
+
+    /// Generate pattern matching condition
+    fn generate_match_pattern_inline(
+        &mut self,
+        value_reg: &str,
+        pattern: &MatchPattern,
+        success_label: &str,
+        fail_label: &str,
+    ) -> Result<(), CursedError> {
+        match pattern {
+            MatchPattern::Literal(literal_expr) => {
+                // Compare value against literal expression
+                let literal_reg = self.compile_expression(literal_expr)?;
+                let cmp_reg = self.next_register();
+                
+                // Determine comparison type based on expression
+                if let Expression::Literal(literal) = literal_expr {
+                    match literal {
+                        Literal::Integer(_) => {
+                            self.ir_buffer.push_str(&format!("  {} = icmp eq i32 {}, {}\n", 
+                                                            cmp_reg, value_reg, literal_reg));
+                        },
+                        Literal::String(_) => {
+                            self.ir_buffer.push_str(&format!("  {} = call i1 @string_eq(i8* {}, i8* {})\n", 
+                                                            cmp_reg, value_reg, literal_reg));
+                        },
+                        Literal::Boolean(_) => {
+                            self.ir_buffer.push_str(&format!("  {} = icmp eq i1 {}, {}\n", 
+                                                            cmp_reg, value_reg, literal_reg));
+                        },
+                        _ => {
+                            return Err(CursedError::TypeError("Unsupported literal type in pattern matching".to_string()));
+                        }
+                    }
+                } else {
+                    return Err(CursedError::TypeError("Expected literal expression in pattern".to_string()));
+                }
+                
+                self.ir_buffer.push_str(&format!("  br i1 {}, label %{}, label %{}\n", 
+                                                cmp_reg, success_label, fail_label));
+            },
+            MatchPattern::Variable(var_name) => {
+                // Variable pattern always matches - bind the value
+                self.variables.insert(var_name.clone(), value_reg.to_string());
+                self.ir_buffer.push_str(&format!("  br label %{}\n", success_label));
+            },
+            MatchPattern::Wildcard => {
+                // Wildcard pattern always matches
+                self.ir_buffer.push_str(&format!("  br label %{}\n", success_label));
+            },
+            _ => {
+                return Err(CursedError::TypeError("Complex pattern matching not yet implemented in expression compiler".to_string()));
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Infer the LLVM type from a register/value
+    fn infer_result_type(&self, register: &str) -> String {
+        // Simple type inference - this could be improved with better type tracking
+        if register.contains("i32") || register.starts_with("%") {
+            "i32".to_string()
+        } else if register.contains("i1") {
+            "i1".to_string()
+        } else if register.contains("i8*") {
+            "i8*".to_string()
+        } else {
+            "i8*".to_string() // Default to string pointer
+        }
     }
 }

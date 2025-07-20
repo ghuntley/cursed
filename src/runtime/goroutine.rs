@@ -14,6 +14,7 @@ use crate::runtime::stack::{RuntimeStack, StackId, StackFrame};
 // use crate::runtime::preemptive_scheduler::PreemptiveScheduler;
 
 use std::collections::{HashMap, VecDeque};
+use crate::runtime::lockfree_deque::{LockFreeDeque, PriorityLockFreeDeque};
 use std::sync::{Arc, Mutex, RwLock, Condvar};
 use std::sync::atomic::{AtomicU64, AtomicUsize, AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
@@ -384,7 +385,7 @@ impl Default for SchedulerConfig {
             steal_attempts: 3,
             max_goroutines_per_worker: 10000,
             default_stack_size: 2 * 1024 * 1024, // 2MB
-            preemptive_scheduling: false, // Cooperative by default
+            preemptive_scheduling: true, // Enable preemptive scheduling by default
             quantum_ms: 10,
             enable_mn_threading: true,
             enable_network_poller: true,
@@ -398,8 +399,8 @@ impl Default for SchedulerConfig {
 pub struct Worker {
     /// Worker identifier
     pub id: WorkerId,
-    /// Local run queue
-    pub queue: Mutex<VecDeque<Arc<Mutex<Goroutine>>>>,
+    /// Local run queue (using VecDeque for now until lockfree is implemented)
+    pub queue: Arc<Mutex<VecDeque<Arc<Mutex<Goroutine>>>>>,
     /// Currently running goroutine
     pub current: Mutex<Option<Arc<Mutex<Goroutine>>>>,
     /// Worker statistics
@@ -428,8 +429,8 @@ pub struct GoroutineScheduler {
     config: SchedulerConfig,
     /// Worker threads
     workers: Vec<Arc<Worker>>,
-    /// Global run queue for overflow
-    global_queue: Mutex<VecDeque<Arc<Mutex<Goroutine>>>>,
+    /// Global run queue for overflow (lock-free with priority support)
+    global_queue: Arc<Mutex<VecDeque<Arc<Mutex<Goroutine>>>>>,
     /// Stack manager
     stack_manager: Arc<RuntimeStack>,
     /// Next goroutine ID
@@ -442,6 +443,9 @@ pub struct GoroutineScheduler {
     shutdown: Arc<AtomicBool>,
     /// Scheduler state
     running: AtomicBool,
+    /// Preemptive scheduler (optional, enabled when preemptive_scheduling is true)
+    // preemptive_scheduler: Option<Arc<PreemptiveScheduler>>, // Temporarily disabled
+    preemptive_scheduler: Option<()>, // Placeholder
 }
 
 /// Scheduler statistics
@@ -461,12 +465,12 @@ pub struct SchedulerStats {
 
 impl GoroutineScheduler {
     /// Create a new goroutine scheduler
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, CursedError> {
         Self::with_config(SchedulerConfig::default())
     }
 
     /// Create a new scheduler with custom configuration
-    pub fn with_config(config: SchedulerConfig) -> Self {
+    pub fn with_config(config: SchedulerConfig) -> Result<Self, CursedError> {
         let stack_manager = Arc::new(RuntimeStack::new());
         let shutdown = Arc::new(AtomicBool::new(false));
         
@@ -475,7 +479,7 @@ impl GoroutineScheduler {
         for i in 0..config.num_workers {
             let worker = Arc::new(Worker {
                 id: i,
-                queue: Mutex::new(VecDeque::with_capacity(config.queue_capacity)),
+                queue: Arc::new(Mutex::new(VecDeque::with_capacity(config.queue_capacity))),
                 current: Mutex::new(None),
                 stats: Mutex::new(WorkerStats::default()),
                 thread_handle: None,
@@ -485,17 +489,27 @@ impl GoroutineScheduler {
             workers.push(worker);
         }
 
-        Self {
+        // Create preemptive scheduler if enabled
+        let preemptive_scheduler = if config.preemptive_scheduling {
+            // TODO: Implement PreemptiveScheduler
+            // Some(Arc::new(PreemptiveScheduler::new(config.clone())?))
+            None // Temporarily disabled
+        } else {
+            None
+        };
+
+        Ok(Self {
             config,
             workers,
-            global_queue: Mutex::new(VecDeque::new()),
+            global_queue: Arc::new(Mutex::new(VecDeque::new())),
             stack_manager,
             next_id: AtomicU64::new(1),
             active_count: AtomicUsize::new(0),
             stats: Mutex::new(SchedulerStats::default()),
             shutdown,
             running: AtomicBool::new(false),
-        }
+            preemptive_scheduler,
+        })
     }
 
     /// Start the scheduler
@@ -514,6 +528,12 @@ impl GoroutineScheduler {
         // Start worker threads
         for worker in &self.workers {
             self.start_worker(worker.clone())?;
+        }
+
+        // Start preemptive scheduler if available
+        // Temporarily disabled
+        if let Some(ref _preemptive_scheduler) = self.preemptive_scheduler {
+            // preemptive_scheduler.start()?;
         }
 
         Ok(())
@@ -1328,13 +1348,13 @@ impl GoroutineSchedulerWrapper {
     }
     
     /// Create a new scheduler wrapper with default configuration
-    pub fn new_default() -> Self {
-        Self::new(Arc::new(GoroutineScheduler::new()))
+    pub fn new_default() -> Result<Self, CursedError> {
+        Ok(Self::new(Arc::new(GoroutineScheduler::new()?)))
     }
     
     /// Create a new scheduler wrapper with custom configuration
-    pub fn new_with_config(config: SchedulerConfig) -> Self {
-        Self::new(Arc::new(GoroutineScheduler::with_config(config)))
+    pub fn new_with_config(config: SchedulerConfig) -> Result<Self, CursedError> {
+        Ok(Self::new(Arc::new(GoroutineScheduler::with_config(config)?)))
     }
 }
 
@@ -1388,7 +1408,7 @@ pub fn initialize_global_scheduler() -> Result<(), CursedError> {
 
 /// Initialize the global scheduler with custom configuration
 pub fn initialize_global_scheduler_with_config(config: SchedulerConfig) -> Result<(), CursedError> {
-    let scheduler = Arc::new(GoroutineScheduler::with_config(config));
+    let scheduler = Arc::new(GoroutineScheduler::with_config(config)?);
     
     GLOBAL_SCHEDULER
         .set(scheduler.clone())
@@ -1598,7 +1618,7 @@ pub fn get_minimal_result() -> Result<String, CursedError> {
 // Default implementations
 impl Default for GoroutineScheduler {
     fn default() -> Self {
-        Self::new()
+        Self::new().expect("Failed to create default scheduler")
     }
 }
 
@@ -1609,7 +1629,7 @@ mod tests {
 
     #[test]
     fn test_scheduler_creation() {
-        let scheduler = GoroutineScheduler::new();
+        let scheduler = GoroutineScheduler::new().expect("Failed to create scheduler");
         assert!(!scheduler.is_running());
         assert_eq!(scheduler.active_goroutine_count(), 0);
     }

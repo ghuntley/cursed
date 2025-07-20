@@ -787,7 +787,8 @@ pub fn create_runtime_with_scheduler(
     let runtime = Arc::new(Runtime::with_config(runtime_config)?);
     
     // Create scheduler wrapper
-    let scheduler = Box::new(crate::runtime::goroutine::GoroutineSchedulerWrapper::new_with_config(scheduler_config));
+    let scheduler = Box::new(crate::runtime::goroutine::GoroutineSchedulerWrapper::new_with_config(scheduler_config)
+        .map_err(|e| Error::Runtime(format!("Failed to create scheduler: {}", e)))?);
     
     // Set the scheduler
     runtime.set_scheduler(scheduler)?;

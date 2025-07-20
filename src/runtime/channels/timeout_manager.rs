@@ -253,7 +253,7 @@ impl TimeoutManager {
 
         while running.load(Ordering::Acquire) {
             // Process commands with timeout to allow periodic cleanup
-            match receiver.recv_timeout(Duration::from_millis(100)) {
+            match receiver.recv_timeout(Duration::from_millis(10)) {
                 Ok(TimeoutCommand::AddTimeout(request)) => {
                     pending_timeouts.insert(request.id, request);
                 }
