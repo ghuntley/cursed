@@ -10,7 +10,6 @@ use crate::error::CursedError;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::ptr;
-use std::fs::{self, OpenOptions, File};
 use std::io::{self, Write, Read, BufRead, BufReader, BufWriter, Seek, SeekFrom};
 use std::env;
 use regex::Regex;
@@ -22,6 +21,11 @@ use chrono::{DateTime, Utc, Local, TimeZone, Datelike, Timelike, Weekday, NaiveD
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::sync::{Mutex, atomic::{AtomicI32, Ordering}};
+
+// Conditional imports for non-WASM targets
+#[cfg(not(target_arch = "wasm32"))]
+use std::fs::{self, OpenOptions, File};
+#[cfg(not(target_arch = "wasm32"))]
 use std::net::{TcpListener, TcpStream, UdpSocket, SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
 use libc;
 
@@ -42,13 +46,18 @@ pub fn initialize_runtime_functions() -> Result<(), CursedError> {
 
 // Global file handle management for stream I/O
 lazy_static::lazy_static! {
+    // File I/O handle management (non-WASM)
+    #[cfg(not(target_arch = "wasm32"))]
     static ref FILE_HANDLES: Mutex<HashMap<i32, File>> = Mutex::new(HashMap::new());
     static ref BUFFER_HANDLES: Mutex<HashMap<i32, Vec<u8>>> = Mutex::new(HashMap::new());
     static ref NEXT_HANDLE_ID: AtomicI32 = AtomicI32::new(1);
     
-    // Network socket handle management
+    // Network socket handle management (non-WASM)
+    #[cfg(not(target_arch = "wasm32"))]
     static ref TCP_SOCKETS: Mutex<HashMap<i32, TcpStream>> = Mutex::new(HashMap::new());
+    #[cfg(not(target_arch = "wasm32"))]
     static ref TCP_LISTENERS: Mutex<HashMap<i32, TcpListener>> = Mutex::new(HashMap::new());
+    #[cfg(not(target_arch = "wasm32"))]
     static ref UDP_SOCKETS: Mutex<HashMap<i32, UdpSocket>> = Mutex::new(HashMap::new());
     static ref NEXT_SOCKET_ID: AtomicI32 = AtomicI32::new(1000);
 }
@@ -68,10 +77,18 @@ fn get_next_socket_id() -> i32 {
 /// Create a TCP socket (implementation for net_tcp_create)
 #[no_mangle]
 pub extern "C" fn net_tcp_create() -> i32 {
-    // Use pure CURSED implementation from stdlib/network
-    // cursed_bridge::cursed_tcp_create()
-    // Fallback implementation for testing
-    -1 // Return error code indicating not implemented
+    #[cfg(target_arch = "wasm32")]
+    {
+        -2 // Return WASM unsupported error code
+    }
+    
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // Use pure CURSED implementation from stdlib/network
+        // cursed_bridge::cursed_tcp_create()
+        // Fallback implementation for testing
+        -1 // Return error code indicating not implemented
+    }
 }
 
 /// Connect TCP socket to remote address (implementation for net_tcp_connect)

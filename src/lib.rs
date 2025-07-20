@@ -4,6 +4,22 @@
 /// A comprehensive programming language implementation with Gen Z slang syntax,
 /// LLVM-based compilation, and advanced type system features.
 
+// WebAssembly compatibility
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
+
+// Initialize WASM panic handler when targeting WASM
+#[cfg(target_arch = "wasm32")]
+pub fn init_wasm() {
+    wasm::init_panic_hook();
+}
+
+// No-op for non-WASM targets
+#[cfg(not(target_arch = "wasm32"))]
+pub fn init_wasm() {
+    // No-op for non-WASM targets
+}
+
 // Core modules
 pub mod error;
 pub mod error_types;

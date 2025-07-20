@@ -338,10 +338,10 @@ impl TypeSpecializer {
     ) -> Result<TypeExpression, CursedError> {
         // Create cache key
         let type_args_str: Vec<String> = type_args.iter()
-            .map(|t| t.name.as_ref().unwrap_or(&"unknown".to_string()).clone())
+            .map(|t| t.name.clone().unwrap_or_else(|| "unknown".to_string()))
             .collect();
         let cache_key = format!("{}<{}>", 
-            generic_type.name.as_ref().unwrap_or(&"unknown".to_string()),
+            generic_type.name.as_ref().unwrap_or("unknown"),
             type_args_str.join(",")
         );
         

@@ -28,12 +28,14 @@ in
     pkgs.git
     pkgs.ninja
     pkgs.cmake
+    # Use LLVM 18 (closest stable to Rust's LLVM 20.1.5)
     pkgs.llvmPackages_18.clang
     pkgs.llvmPackages_18.llvm
     pkgs.llvmPackages_18.libllvm
     pkgs.llvmPackages_18.libllvm.dev
-    pkgs.llvmPackages_18.mlir
     pkgs.llvmPackages_18.stdenv
+    # Zig as universal fallback linker
+    pkgs.zig
     # C compiler and build tools for cc-rs
     pkgs.gcc
     pkgs.binutils
@@ -118,7 +120,7 @@ in
   enterShell = ''
     echo "🔧 Setting up CURSED development environment..."
     
-    # LLVM configuration
+    # LLVM configuration - using LLVM 18 for stability
     export LLVM_SYS_181_PREFIX="${pkgs.llvmPackages_18.llvm.dev}"
     export LLVM_CONFIG_PATH="${pkgs.llvmPackages_18.llvm.dev}/bin/llvm-config"
     
@@ -127,6 +129,7 @@ in
     echo "  LLVM_SYS_181_PREFIX: $LLVM_SYS_181_PREFIX"
     echo "  LLVM_CONFIG_PATH: $LLVM_CONFIG_PATH"
     echo "  LLVM version: $(${pkgs.llvmPackages_18.llvm.dev}/bin/llvm-config --version 2>/dev/null || echo 'N/A')"
+    echo "  Rust LLVM: $(rustc -vV | grep 'LLVM version' || echo 'N/A')"
     echo "  llvm-ar path: ${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
     echo "  llvm-ar exists: $(test -f ${pkgs.llvmPackages_18.llvm}/bin/llvm-ar && echo 'YES' || echo 'NO')"
 
@@ -163,11 +166,15 @@ in
     export CXX_x86_64_apple_darwin="${pkgs.clang}/bin/clang++"
     export AR_x86_64_apple_darwin="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
 
-    # Cross-compilation sysroots and linkers
+    # Cross-compilation sysroots and linkers with Zig fallback
     export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-gcc"
     export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin/aarch64-unknown-linux-gnu-gcc"
     export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
     export CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER="${pkgs.clang}/bin/clang"
+    
+    # Zig universal linker as fallback for complex cross-compilation
+    export ZIG_CC="${pkgs.zig}/bin/zig cc"
+    export ZIG_CXX="${pkgs.zig}/bin/zig c++"
 
     # Force LLVM ar/ranlib for cross-compilation targets only
     export CARGO_TARGET_AARCH64_APPLE_DARWIN_AR="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
@@ -218,8 +225,11 @@ in
       export RANLIB="${pkgs.binutils}/bin/ranlib"
     ''}
 
-    # Make sure LLVM tools are available
+    # Make sure LLVM tools are available (updated to LLVM 20)
     export PATH="${pkgs.llvmPackages_18.llvm}/bin:$PATH"
+    
+    # Add Zig to PATH for universal cross-compilation fallback
+    export PATH="${pkgs.zig}/bin:$PATH"
     
     # For macOS native builds, add GNU binutils BEFORE system tools to avoid LLVM version conflicts
     ${lib.optionalString pkgs.stdenv.isDarwin ''

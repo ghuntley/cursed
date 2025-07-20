@@ -263,8 +263,8 @@ impl PackageRegistry {
             .map_err(|e| CursedError::General(format!("Failed to parse versions response: {}", e)))?;
         
         let mut versions = Vec::new();
-        for version_str in versions_response.versions {
-            match Version::parse(&version_str) {
+        for version_str in versions_response.versions.iter() {
+            match Version::parse(version_str) {
                 Ok(version) => versions.push(version),
                 Err(e) => tracing::warn!("Failed to parse version '{}': {}", version_str, e),
             }
@@ -342,9 +342,9 @@ impl PackageRegistry {
             .text("dependencies", serde_json::to_string(&package_metadata.dependencies).unwrap_or_default())
             .text("keywords", serde_json::to_string(&package_metadata.keywords).unwrap_or_default())
             .text("categories", serde_json::to_string(&package_metadata.categories).unwrap_or_default())
-            .text("license", package_metadata.license.as_ref().unwrap_or(&"".to_string()).clone())
-            .text("homepage", package_metadata.homepage.as_ref().unwrap_or(&"".to_string()).clone())
-            .text("repository", package_metadata.repository.as_ref().unwrap_or(&"".to_string()).clone())
+            .text("license", package_metadata.license.clone().unwrap_or_default())
+            .text("homepage", package_metadata.homepage.clone().unwrap_or_default())
+            .text("repository", package_metadata.repository.clone().unwrap_or_default())
             .part("archive", reqwest::multipart::Part::bytes(package_archive.to_vec())
                 .file_name("package.tar.gz")
                 .mime_str("application/gzip")

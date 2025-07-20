@@ -353,7 +353,7 @@ impl ErrorHandlingCodegen {
                     Ok(value_ir) => {
                         let var_name = match &let_stmt.target {
                             crate::ast::LetTarget::Single(name) => name.clone(),
-                            crate::ast::LetTarget::Tuple(names) => names.first().unwrap_or(&"temp".to_string()).clone(),
+                            crate::ast::LetTarget::Tuple(names) => names.first().cloned().unwrap_or_else(|| "temp".to_string()),
                         };
                         Ok(format!("{}  ; Variable {} allocated in recovery block\n", value_ir, var_name))
                     }
@@ -368,7 +368,7 @@ impl ErrorHandlingCodegen {
                     Ok(value_ir) => {
                         let var_name = match &assign_stmt.target {
                             crate::ast::AssignmentTarget::Single(name) => name.clone(),
-                            crate::ast::AssignmentTarget::Tuple(names) => names.first().unwrap_or(&"temp".to_string()).clone(),
+                            crate::ast::AssignmentTarget::Tuple(names) => names.first().cloned().unwrap_or_else(|| "temp".to_string()),
                         };
                         Ok(format!("{}  ; Assignment to {} in recovery block\n", value_ir, var_name))
                     }
