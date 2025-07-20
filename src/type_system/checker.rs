@@ -1451,6 +1451,7 @@ impl TypeChecker {
                 return_type,
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             });
         }
         

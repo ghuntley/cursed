@@ -148,9 +148,11 @@ mod tests {
                     return_type: Some(super::super::TypeExpression::named("T")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 }
             ],
             is_builtin: false,
+            source_location: None,
         };
         
         let variances = analyzer.compute_variance(&array_type).unwrap();

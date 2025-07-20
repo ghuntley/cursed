@@ -1,0 +1,97 @@
+{{#with this}}
+<div class="variable-doc" id="{{name}}">
+    <div class="variable-header">
+        <div class="variable-title">
+            <h3>{{name}}</h3>
+            <div class="variable-badges">
+                {{#if is_mutable}}
+                <span class="badge badge-mutable">Mutable</span>
+                {{else}}
+                <span class="badge badge-immutable">Immutable</span>
+                {{/if}}
+                {{#if is_deprecated}}
+                <span class="badge badge-deprecated">Deprecated</span>
+                {{/if}}
+                <span class="badge badge-visibility">{{visibility}}</span>
+            </div>
+        </div>
+        
+        <div class="variable-signature">
+            <pre class="signature-code"><code class="language-cursed">{{declaration}}</code></pre>
+            {{#if show_source_links}}
+            <a href="{{source_url}}" class="source-link" title="View source" target="_blank">📄</a>
+            {{/if}}
+        </div>
+    </div>
+
+    <div class="variable-body">
+        <div class="variable-info-grid">
+            <div class="info-item">
+                <span class="info-label">Type:</span>
+                <code class="type-name">{{var_type}}</code>
+            </div>
+            {{#if initial_value}}
+            <div class="info-item">
+                <span class="info-label">Initial Value:</span>
+                <code class="initial-value">{{initial_value}}</code>
+            </div>
+            {{/if}}
+            {{#if source_line}}
+            <div class="info-item">
+                <span class="info-label">Defined at:</span>
+                <span class="source-location">Line {{source_line}}</span>
+            </div>
+            {{/if}}
+        </div>
+
+        {{#if description}}
+        <div class="variable-description">
+            <p>{{description}}</p>
+        </div>
+        {{else}}
+        <div class="variable-description missing">
+            <p class="missing-description">No description available for this variable.</p>
+        </div>
+        {{/if}}
+
+        {{#if examples.length}}
+        <div class="variable-examples">
+            <h4>Examples</h4>
+            {{#each examples}}
+            <div class="example-block">
+                {{#if this.title}}
+                <h5 class="example-title">{{this.title}}</h5>
+                {{/if}}
+                <div class="example-code-container">
+                    <pre class="example-code"><code class="language-cursed">{{this.code}}</code></pre>
+                    <button class="copy-button" title="Copy code">📋</button>
+                </div>
+                {{#if this.output}}
+                <div class="example-output">
+                    <h6>Output:</h6>
+                    <pre class="output-code"><code>{{this.output}}</code></pre>
+                </div>
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if notes}}
+        <div class="variable-notes">
+            <h4>Notes</h4>
+            <div class="notes-content">
+                {{#each notes}}
+                <div class="note note-{{this.type}}">
+                    {{#if this.title}}
+                    <strong>{{this.title}}:</strong>
+                    {{/if}}
+                    {{this.content}}
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/with}}

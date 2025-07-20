@@ -22,6 +22,7 @@ fn test_interface_inheritance_method_resolution() {
                     }
                 ],
                 return_type: Some(Type::Integer),
+                source_location: None,
             }
         ],
         visibility: Visibility::Public,
@@ -39,6 +40,7 @@ fn test_interface_inheritance_method_resolution() {
                 receiver: None,
                 parameters: vec![],
                 return_type: Some(Type::String),
+                source_location: None,
             }
         ],
         visibility: Visibility::Public,
@@ -69,6 +71,7 @@ fn test_multiple_inheritance_method_resolution() {
                 receiver: None,
                 parameters: vec![],
                 return_type: Some(Type::String),
+                source_location: None,
             }
         ],
         visibility: Visibility::Public,
@@ -91,6 +94,7 @@ fn test_multiple_inheritance_method_resolution() {
                     }
                 ],
                 return_type: Some(Type::Integer),
+                source_location: None,
             }
         ],
         visibility: Visibility::Public,
@@ -108,6 +112,7 @@ fn test_multiple_inheritance_method_resolution() {
                 receiver: None,
                 parameters: vec![],
                 return_type: Some(Type::Integer),
+                source_location: None,
             }
         ],
         visibility: Visibility::Public,
@@ -146,6 +151,7 @@ fn test_transitive_inheritance_method_resolution() {
                     }
                 ],
                 return_type: Some(Type::Integer),
+                source_location: None,
             }
         ],
         visibility: Visibility::Public,
@@ -163,6 +169,7 @@ fn test_transitive_inheritance_method_resolution() {
                 receiver: None,
                 parameters: vec![],
                 return_type: Some(Type::String),
+                source_location: None,
             }
         ],
         visibility: Visibility::Public,
@@ -180,6 +187,7 @@ fn test_transitive_inheritance_method_resolution() {
                 receiver: None,
                 parameters: vec![],
                 return_type: Some(Type::Integer),
+                source_location: None,
             }
         ],
         visibility: Visibility::Public,

@@ -16,7 +16,7 @@ use crate::ast::{Ast, AstNode, FunctionDeclaration, VariableDeclaration, Comment
 
 pub mod generator;
 pub mod comment_parser;
-// pub mod html_generator;
+pub mod html_generator;
 pub mod markdown_generator;
 pub mod json_generator;
 pub mod api_extractor;
@@ -24,6 +24,8 @@ pub mod coverage_analyzer;
 pub mod cross_reference;
 pub mod examples;
 pub mod testing;
+pub mod live_server;
+pub mod build_integration;
 
 /// Documentation configuration loaded from .cursed-doc.toml
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -267,7 +269,7 @@ impl DocumentationGenerator {
     }
 
     /// Load configuration from file
-    fn load_config(config_path: Option<&str>) -> Result<DocConfig, CursedError> {
+    pub fn load_config(config_path: Option<&str>) -> Result<DocConfig, CursedError> {
         let path = config_path.unwrap_or(".cursed-doc.toml");
         
         if !Path::new(path).exists() {
@@ -282,7 +284,7 @@ impl DocumentationGenerator {
     }
 
     /// Generate default configuration
-    fn default_config() -> DocConfig {
+    pub fn default_config() -> DocConfig {
         DocConfig {
             general: GeneralConfig {
                 project_name: "CURSED Project".to_string(),
@@ -604,11 +606,10 @@ impl DocumentationGenerator {
 
     /// Generate HTML documentation
     fn generate_html(&self) -> Result<(), CursedError> {
-        // use crate::documentation::html_generator::HtmlGenerator;
+        use crate::documentation::html_generator::HtmlGenerator;
         
-        // let html_generator = HtmlGenerator::new(&self.config);
-        // html_generator.generate(&self.documentation)
-        Ok(())
+        let html_generator = HtmlGenerator::new(&self.config);
+        html_generator.generate(&self.documentation)
     }
 
     /// Generate Markdown documentation

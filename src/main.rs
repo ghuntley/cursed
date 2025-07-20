@@ -19,6 +19,8 @@ use cursed::tools::{CursedTools, Profiler};
 use cursed::repl::CursedRepl;
 use cursed::execution::pure_cursed_bridge::PureCursedBridge;
 use cursed::coverage;
+use cursed::optimization::advanced_llvm_passes::{SizeOptLevel, LtoLevel, PassPipeline};
+use std::os::unix::fs::PermissionsExt;
 
 // Dropz integration helpers to replace std::fs calls
 struct DropzFilesystem {
@@ -966,7 +968,7 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
         advanced_config.target_platform = Some("wasm".to_string());
         advanced_config.enable_wasm_optimizations = true;
         advanced_config.enable_size_optimization = true; // WASM benefits from smaller binaries
-        advanced_config.size_optimization_level = cursed::optimization::SizeOptLevel::Size;
+        advanced_config.size_optimization_level = SizeOptLevel::Size;
     }
     
     if matches.get_flag("verbose") || global_matches.get_flag("verbose") {
@@ -1170,29 +1172,29 @@ fn create_advanced_optimization_config(matches: &ArgMatches, global_matches: &Ar
     // Set LTO level if specified
     if let Some(lto_level) = matches.get_one::<String>("lto-level") {
         config.lto_level = match lto_level.as_str() {
-            "thin" => cursed::optimization::LtoLevel::Thin,
-            "full" => cursed::optimization::LtoLevel::Full,
-            _ => cursed::optimization::LtoLevel::Full,
+            "thin" => LtoLevel::Thin,
+            "full" => LtoLevel::Full,
+            _ => LtoLevel::Full,
         };
     }
 
     // Set size optimization level if specified
     if let Some(size_level) = matches.get_one::<String>("size-level") {
         config.size_optimization_level = match size_level.as_str() {
-            "s" => cursed::optimization::SizeOptLevel::Size,
-            "z" => cursed::optimization::SizeOptLevel::SizeAggressive,
-            _ => cursed::optimization::SizeOptLevel::Size,
+            "s" => SizeOptLevel::Size,
+            "z" => SizeOptLevel::SizeAggressive,
+            _ => SizeOptLevel::Size,
         };
     }
 
     // Set pass pipeline if specified
     if let Some(pipeline) = matches.get_one::<String>("pass-pipeline") {
         config.pass_pipeline = match pipeline.as_str() {
-            "default" => cursed::optimization::PassPipeline::Default,
-            "pgo" => cursed::optimization::PassPipeline::ProfileGuided,
-            "size" => cursed::optimization::PassPipeline::SizeOptimized,
-            "production" => cursed::optimization::PassPipeline::Production,
-            _ => cursed::optimization::PassPipeline::Default,
+            "default" => PassPipeline::Default,
+            "pgo" => PassPipeline::ProfileGuided,
+            "size" => PassPipeline::SizeOptimized,
+            "production" => PassPipeline::Production,
+            _ => PassPipeline::Default,
         };
     }
 

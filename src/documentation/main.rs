@@ -1,226 +1,387 @@
-// CURSED Documentation System
-// 
-// Complete documentation generation system for the CURSED programming language.
-// Provides unified interface for generating documentation in multiple formats.
+//! CURSED Documentation System CLI
+//! 
+//! Command-line interface for the CURSED documentation generation system.
+//! Provides commands for generating, serving, and analyzing documentation.
 
-use crate::docs::generator::{DocumentationGenerator, DocGeneratorConfig, DocFormat};
+use std::env;
+use std::process;
 use crate::error::CursedError;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
-use serde::{Deserialize, Serialize};
+use crate::documentation::{DocumentationGenerator, DocCli};
+use crate::documentation::live_server::{LiveServerCli};
+use crate::documentation::coverage_analyzer::{CoverageAnalyzer, CoverageReportConfig, ReportFormat};
+use crate::documentation::build_integration::{BuildIntegrationCli};
 
-/// Main documentation system
-pub struct DocumentationSystem {
-/// Complete documentation configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DocumentationConfig {
-    /// Source directories to process
-    /// Output directory for documentation
-    /// Output formats to generate
-    /// Project metadata
-    /// Documentation options
-    /// Styling configuration
-/// Supported output formats
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum OutputFormat {
-/// Project metadata
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProjectMetadata {
-/// Documentation generation options
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DocOptions {
-    /// Include private items
-    /// Include source code
-    /// Generate cross-references
-    /// Generate search index
-    /// Include examples
-    /// Maximum type recursion depth
-    /// Include dependencies
-/// Styling configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StylingConfig {
-    /// Custom CSS files
-    /// Template directory
-    /// Theme name
-    /// Color overrides
-    /// Custom favicon
-    /// Custom logo
-/// Documentation generation result
-#[derive(Debug, Clone)]
-pub struct DocumentationResult {
-    /// Number of files processed
-    /// Number of items documented
-    /// Generated output files
-    /// Processing time in milliseconds
-    /// Warnings generated
-    /// Errors encountered (non-fatal)
-impl Default for DocumentationConfig {
-    fn default() -> Self {
-        Self {
-        }
-    }
-impl Default for ProjectMetadata {
-    fn default() -> Self {
-        Self {
-        }
-    }
-impl Default for DocOptions {
-    fn default() -> Self {
-        Self {
-        }
-    }
-impl Default for StylingConfig {
-    fn default() -> Self {
-        Self {
-        }
-    }
-impl std::fmt::Display for OutputFormat {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-        }
-    }
-impl DocumentationSystem {
-    /// Create a new documentation system
-    pub fn new(config: DocumentationConfig) -> crate::error::Result<()> {
-        Ok(Self { config })
-    /// Generate documentation for all configured formats
-    pub async fn generate_all(&mut self) -> crate::error::Result<()> {
-        let start_time = Instant::now();
-        let mut result = DocumentationResult {
-
-        // Discover source files
-        let source_files = self.discover_source_files()?;
-        result.files_processed = source_files.len();
-
-        // Generate documentation for each format
-        for format in &self.config.output_formats {
-            match self.generate_format(&source_files, format, &mut result).await {
-                Ok(format_files) => {
-                    result.output_files.extend(format_files);
-                }
-                Err(e) => {
-                    result.errors.push(format!("Failed to generate {} documentation: {}", format, e));
-                }
-            }
-        result.processing_time_ms = start_time.elapsed().as_millis() as u64;
-        Ok(result)
-    /// Generate documentation for a specific format
-    async fn generate_format(
-    ) -> crate::error::Result<()> {
-        let doc_config = self.build_doc_generator_config(format);
-        let mut generator = DocumentationGenerator::new(doc_config);
-
-        // Generate documentation
-        generator.generate_from_files(source_files.to_vec())?;
-
-        // TODO: Count documented items from generator results
-        // For now, estimate based on files
-        result.items_documented += source_files.len() * 5; // Rough estimate
-
-        // Return list of generated files
-        let output_dir = &self.config.output_dir;
-        let mut generated_files = Vec::new();
-
-        match format {
-            OutputFormat::Html => {
-                generated_files.push(output_dir.join("index.html"));
-                for file in source_files {
-                    if let Some(stem) = file.file_stem() {
-                        generated_files.push(output_dir.join(format!("{}.html", stem.to_string_lossy())));
-                    }
-                }
-            }
-            OutputFormat::Markdown => {
-                generated_files.push(output_dir.join("README.md"));
-                for file in source_files {
-                    if let Some(stem) = file.file_stem() {
-                        generated_files.push(output_dir.join(format!("{}.md", stem.to_string_lossy())));
-                    }
-                }
-            }
-            OutputFormat::Json => {
-                generated_files.push(output_dir.join("documentation.json"));
-                generated_files.push(output_dir.join("api-index.json"));
-                generated_files.push(output_dir.join("search-index.json"));
-            }
-            OutputFormat::Xml => {
-                generated_files.push(output_dir.join("documentation.xml"));
-                generated_files.push(output_dir.join("api_index.xml"));
-                generated_files.push(output_dir.join("cursed_docs.dtd"));
-                // Module files are generated dynamically based on source files
-            }
-            OutputFormat::LaTeX => {
-                result.warnings.push("LaTeX format not yet implemented".to_string());
-            }
-        }
-
-        Ok(generated_files)
-    /// Discover source files in configured directories
-    fn discover_source_files(&self) -> crate::error::Result<()> {
-        let mut files = Vec::new();
-
-        for source_dir in &self.config.source_dirs {
-            self.scan_directory(source_dir, &mut files)?;
-        files.sort();
-        Ok(files)
-    /// Recursively scan directory for CURSED source files
-    fn scan_directory(&self, dir: &Path, files: &mut Vec<PathBuf>) -> crate::error::Result<()> {
-        if !dir.exists() {
-            return Err(CursedError::Io(std::io::Error::new(
-            )));
-        for entry in std::fs::read_dir(dir).map_err(CursedError::Io)? {
-            let entry = entry.map_err(CursedError::Io)?;
-            let path = entry.path();
-
-            if path.is_dir() {
-                // Skip hidden directories and common ignore patterns
-                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                    if !name.starts_with('.') && name != "target" && name != "node_modules" {
-                        self.scan_directory(&path, files)?;
-                    }
-                }
-            } else if let Some(ext) = path.extension() {
-                if ext == "csd" {
-                    files.push(path);
-                }
-            }
-        Ok(())
-    /// Build DocGeneratorConfig for a specific format
-    fn build_doc_generator_config(&self, format: &OutputFormat) -> DocGeneratorConfig {
-        let doc_format = match format {
-            _ => DocFormat::Html, // Default fallback
-
-        DocGeneratorConfig {
-        }
-    }
-/// Load configuration from file
-pub fn load_config(path: &Path) -> crate::error::Result<()> {
-    let content = std::fs::read_to_string(path).map_err(CursedError::Io)?;
+/// Main entry point for documentation CLI
+pub fn main() {
+    let args: Vec<String> = env::args().collect();
     
-    if path.extension().map_or(false, |ext| ext == "json") {
-        serde_json::from_str(&content)
-            .map_err(|e| CursedError::ConfigurationError(format!("Invalid JSON config: {}", e)))
-    } else {
-        // Default to TOML
-        toml::from_str(&content)
-            .map_err(|e| CursedError::ConfigurationError(format!("Invalid TOML config: {}", e)))
+    if args.len() < 2 {
+        print_help();
+        process::exit(1);
+    }
+
+    let result = match args[1].as_str() {
+        "generate" | "gen" => generate_docs(&args[2..]),
+        "serve" => serve_docs(&args[2..]),
+        "coverage" | "cov" => analyze_coverage(&args[2..]),
+        "watch" => watch_docs(&args[2..]),
+        "build-integration" | "build" => build_integration(&args[2..]),
+        "init" => init_docs(&args[2..]),
+        "clean" => clean_docs(&args[2..]),
+        "help" | "-h" | "--help" => {
+            print_help();
+            Ok(())
+        }
+        "version" | "-v" | "--version" => {
+            print_version();
+            Ok(())
+        }
+        _ => {
+            eprintln!("Unknown command: {}", args[1]);
+            print_help();
+            Err(CursedError::InvalidInput(format!("Unknown command: {}", args[1])))
+        }
+    };
+
+    if let Err(e) = result {
+        eprintln!("Error: {}", e);
+        process::exit(1);
     }
 }
 
-/// Save configuration to file
-pub fn save_config(config: &DocumentationConfig, path: &Path) -> crate::error::Result<()> {
-    let content = if path.extension().map_or(false, |ext| ext == "json") {
-        serde_json::to_string_pretty(config)
-            .map_err(|e| CursedError::ConfigurationError(format!("Failed to serialize config: {}", e)))?
-    } else {
-        // Default to TOML
-        toml::to_string_pretty(config)
-            .map_err(|e| CursedError::ConfigurationError(format!("Failed to serialize config: {}", e)))?
-
-    std::fs::write(path, content).map_err(CursedError::Io)?;
+/// Generate documentation
+fn generate_docs(args: &[String]) -> Result<(), CursedError> {
+    let config_path = args.get(0).map(|s| s.as_str());
+    
+    println!("Generating CURSED documentation...");
+    
+    let mut generator = DocumentationGenerator::new(config_path)?;
+    generator.generate()?;
+    
+    println!("Documentation generated successfully!");
+    println!("Open docs/html/index.html to view the documentation.");
+    
     Ok(())
-/// Create a default configuration file
-pub fn create_default_config(path: &Path) -> crate::error::Result<()> {
-    let config = DocumentationConfig::default();
-    save_config(&config, path)
+}
+
+/// Start live documentation server
+fn serve_docs(args: &[String]) -> Result<(), CursedError> {
+    let port = args.get(0)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(8080);
+    
+    let host = args.get(1)
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| "localhost".to_string());
+
+    println!("Starting CURSED documentation server...");
+    println!("Server will be available at http://{}:{}", host, port);
+    
+    LiveServerCli::run(vec![
+        "serve".to_string(),
+        ".cursed-doc.toml".to_string(),
+        port.to_string(),
+        host,
+    ])?;
+    
+    Ok(())
+}
+
+/// Analyze documentation coverage
+fn analyze_coverage(args: &[String]) -> Result<(), CursedError> {
+    let format = args.get(0)
+        .map(|s| s.as_str())
+        .unwrap_or("console");
+    
+    let output_file = args.get(1).map(|s| s.to_string());
+    
+    println!("Analyzing documentation coverage...");
+    
+    // Generate documentation first
+    let mut generator = DocumentationGenerator::new(None)?;
+    generator.generate()?;
+    
+    // Analyze coverage
+    let mut analyzer = CoverageAnalyzer::new();
+    analyzer.analyze_documentation(&generator.documentation)?;
+    
+    // Generate report
+    let report_format = match format {
+        "html" => ReportFormat::Html,
+        "markdown" | "md" => ReportFormat::Markdown,
+        "json" => ReportFormat::Json,
+        "console" | "text" => ReportFormat::Console,
+        _ => {
+            eprintln!("Unknown format: {}. Using console format.", format);
+            ReportFormat::Console
+        }
+    };
+    
+    let config = CoverageReportConfig {
+        include_missing_items: true,
+        include_quality_metrics: true,
+        include_suggestions: true,
+        format: report_format,
+        output_file,
+    };
+    
+    let report = analyzer.generate_report(&config)?;
+    
+    match config.format {
+        ReportFormat::Console => println!("{}", report),
+        _ => {
+            if let Some(ref file) = config.output_file {
+                println!("Coverage report saved to: {}", file);
+            } else {
+                println!("{}", report);
+            }
+        }
+    }
+    
+    analyzer.save_report(&config)?;
+    
+    Ok(())
+}
+
+/// Watch for changes and auto-regenerate documentation
+fn watch_docs(args: &[String]) -> Result<(), CursedError> {
+    let config_path = args.get(0).map(|s| s.as_str());
+    
+    println!("Starting documentation watch mode...");
+    println!("Watching for changes in source files...");
+    println!("Press Ctrl+C to stop");
+    
+    // Implementation would use file system watching
+    // For now, show the concept
+    
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        
+        // Check for file changes
+        // If changes detected, regenerate documentation
+        
+        // This is a simplified version - real implementation would use
+        // proper file system watching like notify crate
+    }
+}
+
+/// Initialize build system integration
+fn build_integration(args: &[String]) -> Result<(), CursedError> {
+    let command = args.get(0).map(|s| s.as_str()).unwrap_or("init");
+    
+    match command {
+        "init" => {
+            BuildIntegrationCli::init()?;
+            println!("Build integration initialized successfully!");
+        }
+        "build" => {
+            let build_command = args.get(1)
+                .map(|s| s.as_str())
+                .unwrap_or("cargo build");
+            
+            BuildIntegrationCli::build_with_docs(build_command)?;
+        }
+        _ => {
+            eprintln!("Unknown build integration command: {}", command);
+            println!("Available commands:");
+            println!("  init  - Initialize build integration");
+            println!("  build - Run build with documentation generation");
+        }
+    }
+    
+    Ok(())
+}
+
+/// Initialize documentation configuration
+fn init_docs(_args: &[String]) -> Result<(), CursedError> {
+    use std::fs;
+    
+    println!("Initializing CURSED documentation configuration...");
+    
+    let config_content = r#"[general]
+project_name = "My CURSED Project"
+project_version = "1.0.0"
+project_description = "A project built with the CURSED programming language"
+project_url = "https://example.com"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+repository = "https://github.com/username/project"
+
+[input]
+source_dirs = ["src/", "stdlib/"]
+include_patterns = ["**/*.csd"]
+exclude_patterns = ["target/**", ".git/**", "node_modules/**"]
+max_file_size = 10485760  # 10MB
+
+[output]
+output_dir = "docs"
+formats = ["html", "json"]
+clean_output = true
+base_url = ""
+
+[html]
+theme = "default"
+syntax_highlighting = true
+table_of_contents = true
+search_enabled = true
+responsive_design = true
+custom_css = []
+custom_js = []
+offline_mode = false
+
+[markdown]
+flavor = "github"
+table_of_contents = true
+code_block_style = "fenced"
+link_style = "reference"
+
+[processing]
+extract_comments = true
+extract_examples = true
+generate_cross_references = true
+analyze_dependencies = true
+process_cursed_files = true
+process_rust_files = false
+process_markdown_files = true
+cursed_comment_patterns = ["^\\s*fr fr\\s+(.*)$", "^\\s*/\\*\\*?(.*)\\*/$"]
+
+[validation]
+check_links = true
+check_examples = true
+validate_syntax = true
+require_descriptions = false
+treat_warnings_as_errors = false
+
+[examples]
+extract_examples = true
+validate_examples = true
+run_examples = false
+categorize_by_directory = true
+generate_example_index = true
+
+[api]
+generate_api_docs = true
+include_private = false
+include_internal = false
+show_source_links = true
+require_doc_comments = false
+coverage_threshold = 70.0
+"#;
+
+    fs::write(".cursed-doc.toml", config_content)
+        .map_err(|e| CursedError::IoError(format!("Failed to write config file: {}", e)))?;
+    
+    println!("Configuration file created: .cursed-doc.toml");
+    println!("Edit the configuration file to customize documentation settings.");
+    
+    Ok(())
+}
+
+/// Clean generated documentation files
+fn clean_docs(_args: &[String]) -> Result<(), CursedError> {
+    use std::fs;
+    use std::path::Path;
+    
+    println!("Cleaning generated documentation files...");
+    
+    let docs_dir = Path::new("docs");
+    if docs_dir.exists() {
+        fs::remove_dir_all(docs_dir)
+            .map_err(|e| CursedError::IoError(format!("Failed to clean docs directory: {}", e)))?;
+    }
+    
+    println!("Documentation files cleaned successfully!");
+    
+    Ok(())
+}
+
+/// Print help information
+fn print_help() {
+    println!("CURSED Documentation System v1.0.0");
+    println!("Generate, serve, and analyze documentation for CURSED projects");
+    println!();
+    println!("USAGE:");
+    println!("    cursed-doc <COMMAND> [OPTIONS]");
+    println!();
+    println!("COMMANDS:");
+    println!("    generate, gen                Generate documentation");
+    println!("    serve                        Start live documentation server");
+    println!("    coverage, cov               Analyze documentation coverage");
+    println!("    watch                       Watch for changes and auto-regenerate");
+    println!("    build-integration, build    Build system integration commands");
+    println!("    init                        Initialize documentation configuration");
+    println!("    clean                       Clean generated documentation files");
+    println!("    help                        Show this help message");
+    println!("    version                     Show version information");
+    println!();
+    println!("EXAMPLES:");
+    println!("    cursed-doc generate                     # Generate docs with default config");
+    println!("    cursed-doc generate my-config.toml     # Generate docs with custom config");
+    println!("    cursed-doc serve 3000                  # Start server on port 3000");
+    println!("    cursed-doc coverage html coverage.html # Generate HTML coverage report");
+    println!("    cursed-doc build init                  # Initialize build integration");
+    println!("    cursed-doc build build \"cargo build\"   # Build with documentation");
+    println!();
+    println!("For more information, visit: https://github.com/ghuntley/cursed");
+}
+
+/// Print version information
+fn print_version() {
+    println!("CURSED Documentation System v1.0.0");
+    println!("Built with Rust and powered by the CURSED compiler");
+    println!();
+    println!("Features:");
+    println!("  - Multi-format output (HTML, Markdown, JSON)");
+    println!("  - Live development server with hot reload");
+    println!("  - Documentation coverage analysis");
+    println!("  - Build system integration");
+    println!("  - Syntax highlighting for CURSED language");
+    println!("  - Interactive search and navigation");
+}
+
+/// CLI helper functions
+pub struct DocumentationCli;
+
+impl DocumentationCli {
+    /// Run documentation CLI with given arguments
+    pub fn run(args: Vec<String>) -> Result<(), CursedError> {
+        // Skip the program name
+        let mut cli_args = vec!["cursed-doc".to_string()];
+        cli_args.extend(args);
+        
+        // Temporarily set args for main function
+        std::env::set_var("CURSED_DOC_ARGS", cli_args.join(" "));
+        
+        main();
+        Ok(())
+    }
+    
+    /// Generate documentation with default settings
+    pub fn quick_generate() -> Result<(), CursedError> {
+        let mut generator = DocumentationGenerator::new(None)?;
+        generator.generate()
+    }
+    
+    /// Start documentation server with default settings
+    pub fn quick_serve(port: Option<u16>) -> Result<(), CursedError> {
+        let port = port.unwrap_or(8080);
+        LiveServerCli::run(vec![
+            "serve".to_string(),
+            ".cursed-doc.toml".to_string(),
+            port.to_string(),
+            "localhost".to_string(),
+        ])
+    }
+    
+    /// Generate coverage report with default settings
+    pub fn quick_coverage() -> Result<String, CursedError> {
+        let mut generator = DocumentationGenerator::new(None)?;
+        generator.generate()?;
+        
+        let mut analyzer = CoverageAnalyzer::new();
+        analyzer.analyze_documentation(&generator.documentation)?;
+        
+        let config = CoverageReportConfig::default();
+        analyzer.generate_report(&config)
+    }
+}

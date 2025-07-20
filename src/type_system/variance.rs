@@ -268,9 +268,11 @@ mod tests {
                     return_type: Some(TypeExpression::named("T")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 }
             ],
             is_builtin: false,
+            source_location: None,
         };
 
         let variances = analyzer.compute_variance(&type_def).unwrap();
@@ -295,9 +297,11 @@ mod tests {
                     return_type: Some(TypeExpression::named("R")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 }
             ],
             is_builtin: false,
+            source_location: None,
         };
 
         let variances = analyzer.compute_variance(&type_def).unwrap();

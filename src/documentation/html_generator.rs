@@ -402,7 +402,7 @@ impl<'a> HtmlGenerator<'a> {
     fn generate_module_html(&self, module: &DocumentedModule, documentation: &Documentation) -> Result<String, CursedError> {
         let mut html = String::new();
 
-        html.push_str(&format!(r#"<!DOCTYPE html>
+        html.push_str(&format!(r##"<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -445,7 +445,7 @@ impl<'a> HtmlGenerator<'a> {
 
                 <section id="functions" class="functions">
                     <h2>Functions</h2>
-"#, 
+"##, 
             module.name,
             documentation.project_info.project_name,
             documentation.project_info.project_name,

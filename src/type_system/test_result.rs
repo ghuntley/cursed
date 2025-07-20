@@ -605,6 +605,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::test_result()),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
             MethodSignature {
                 name: "fail".to_string(),
@@ -612,6 +613,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::test_result()),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
             MethodSignature {
                 name: "is_pass".to_string(),
@@ -619,6 +621,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::named("lit")),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
             MethodSignature {
                 name: "is_fail".to_string(),
@@ -626,6 +629,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::named("lit")),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
         ],
         fields: vec![
@@ -651,6 +655,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
             },
         ],
         is_builtin: true,
+        source_location: None,
     };
     
     // Register TestSuite type
@@ -666,6 +671,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::test_suite()),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
             MethodSignature {
                 name: "add_test".to_string(),
@@ -673,6 +679,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: None,
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
             MethodSignature {
                 name: "success_rate".to_string(),
@@ -680,6 +687,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::named("meal")),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
         ],
         fields: vec![
@@ -695,6 +703,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
             },
         ],
         is_builtin: true,
+        source_location: None,
     };
     
     // Register TestReport type  
@@ -710,6 +719,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::test_report()),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
             MethodSignature {
                 name: "add_suite".to_string(),
@@ -717,6 +727,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: None,
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
             MethodSignature {
                 name: "to_json".to_string(),
@@ -724,6 +735,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::named("tea")),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
             MethodSignature {
                 name: "to_xml".to_string(),
@@ -731,6 +743,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::named("tea")),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
             MethodSignature {
                 name: "to_html".to_string(),
@@ -738,6 +751,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
                 return_type: Some(TypeExpression::named("tea")),
                 type_parameters: Vec::new(),
                 constraints: Vec::new(),
+                source_location: None,
             },
         ],
         fields: vec![
@@ -758,6 +772,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
             },
         ],
         is_builtin: true,
+        source_location: None,
     };
     
     // Register TestStatus enum
@@ -769,6 +784,7 @@ pub fn register_test_result_types(type_system: &mut TypeSystem) {
         methods: vec![],
         fields: vec![],
         is_builtin: true,
+        source_location: None,
     };
     
     // Add all types to the type system

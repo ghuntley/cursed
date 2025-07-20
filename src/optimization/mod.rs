@@ -28,11 +28,16 @@ pub use enhanced_llvm_optimizer::{
     OptimizationStats
 };
 
+// Re-export advanced passes types
+pub mod advanced_llvm_passes;
+pub use advanced_llvm_passes::{BenchmarkReport, AdvancedOptimizationConfig};
+
 // Re-export existing optimization modules
 pub mod llvm_passes;
 pub mod pgo;
 pub mod link_time_optimization;
-pub mod optimization_manager;
+pub mod optimization_manager_simple;
+pub use optimization_manager_simple::OptimizationManager;
 
 /// Initialize the global performance optimization system
 pub fn initialize_optimizations() -> Result<(), String> {

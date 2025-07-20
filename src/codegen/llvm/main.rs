@@ -18,6 +18,8 @@ use crate::codegen::llvm::register_tracker::RegisterTracker;
 use crate::codegen::llvm::interface_dispatch::{InterfaceDispatchCodegen, InterfaceDispatchOptimizer, InterfaceOptimizationPasses};
 use crate::codegen::llvm::interface_type_checking::InterfaceTypeChecker;
 use crate::codegen::llvm::simple_defer_panic::{SimpleDeferPanicSystem, create_simple_defer_panic_system};
+use crate::codegen::llvm::lto_integration::{LlvmLtoIntegration, get_lto_result};
+use crate::optimization::link_time_optimization::LTOConfig;
 use crate::type_system::monomorphizer::{Monomorphizer, MonomorphizedInstance, ConcreteAST, ConcreteFunctionDeclaration, ConcreteStructDeclaration, ConcreteMethodDeclaration};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -135,6 +137,8 @@ pub struct LlvmCodeGenerator {
     monomorphizer: Monomorphizer,
     monomorphized_instances: HashMap<String, MonomorphizedInstance>,
     generic_function_queue: Vec<(String, Vec<String>)>, // (function_name, type_args)
+    // LTO integration
+    lto_integration: Option<LlvmLtoIntegration>,
 }
 
 impl LlvmCodeGenerator {
@@ -211,6 +215,8 @@ impl LlvmCodeGenerator {
             monomorphizer: Monomorphizer::new(),
             monomorphized_instances: HashMap::new(),
             generic_function_queue: Vec::new(),
+            // LTO integration
+            lto_integration: None,
         })
     }
 
@@ -3123,6 +3129,24 @@ impl LlvmCodeGenerator {
             OptimizationLevel::Default => 2, // Default optimization, treat as O2
         };
         self.optimization_enabled = true;
+        
+        // Initialize LTO if enabled
+        if self.optimization_config.enable_lto {
+            let lto_config = LTOConfig {
+                enabled: true,
+                optimization_level: self.optimization_level as u32,
+                max_inline_iterations: 10,
+                enable_ipo: true,
+                enable_wpo: true,
+                enable_cross_module: true,
+                enable_dce: true,
+                enable_constant_propagation: true,
+                enable_function_merging: true,
+                time_budget: std::time::Duration::from_secs(30),
+            };
+            self.lto_integration = Some(LlvmLtoIntegration::with_config(lto_config));
+        }
+        
         Ok(())
     }
     
@@ -5446,6 +5470,55 @@ impl LlvmCodeGenerator {
         // Check if object has method that satisfies interface requirement
         // This is a simplified check - real implementation would check method signatures
         Ok(true) // Default to true for now
+    }
+
+    /// Apply LTO optimization to generated IR
+    pub fn apply_lto_optimization(&mut self, module_name: &str) -> Result<String, CursedError> {
+        if let Some(ref mut lto) = self.lto_integration {
+            // Add current module to LTO optimizer
+            lto.add_module(module_name, &self.ir_code)?;
+            
+            // Perform LTO optimization
+            let optimized_modules = lto.optimize()?;
+            
+            // Get optimized IR for current module
+            if let Some(optimized_ir) = optimized_modules.get(module_name) {
+                self.ir_code = optimized_ir.clone();
+                Ok(optimized_ir.clone())
+            } else {
+                Ok(self.ir_code.clone())
+            }
+        } else {
+            Ok(self.ir_code.clone())
+        }
+    }
+
+    /// Get LTO statistics
+    pub fn get_lto_stats(&self) -> Result<String, CursedError> {
+        if let Some(ref lto) = self.lto_integration {
+            lto.get_stats()
+        } else {
+            Ok("LTO not enabled".to_string())
+        }
+    }
+
+    /// Enable LTO optimization
+    pub fn enable_lto(&mut self) -> Result<(), CursedError> {
+        if self.lto_integration.is_none() {
+            let lto_config = LTOConfig::default();
+            self.lto_integration = Some(LlvmLtoIntegration::with_config(lto_config));
+        }
+        if let Some(ref mut lto) = self.lto_integration {
+            lto.enable_lto();
+        }
+        Ok(())
+    }
+
+    /// Disable LTO optimization
+    pub fn disable_lto(&mut self) {
+        if let Some(ref mut lto) = self.lto_integration {
+            lto.disable_lto();
+        }
     }
 }
 

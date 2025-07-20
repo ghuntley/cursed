@@ -53,7 +53,7 @@ pub mod performance; // Performance monitoring system
 // pub mod test_member_access; // Removed - file no longer exists
 
 // Re-export common types for easy access
-pub use common::OptimizationLevel;
+pub use common::OptimizationLevel as CommonOptimizationLevel;
 use crate::error::CursedError;
 
 // CRITICAL: Re-export core components for tests and external access
@@ -122,10 +122,7 @@ pub use debug::{
 // Runtime debug types are already exported above
 
 // Re-export optimization components (note: some types are re-exported above)
-pub use optimization::{
-    // CoordinatorConfig, // Removed - not found
-    OptimizationStats, OptimizationResult
-};
+// Duplicated imports removed - already exported above
 
 // OptimizationConfig is already re-exported above
 
@@ -317,14 +314,21 @@ pub fn run_file_enhanced(
         // Set enhanced passes preference
         codegen.set_use_enhanced_passes(use_enhanced_passes);
         
-        // Enable comprehensive optimization (temporarily disabled while fixing optimization system)
-        // TODO: Re-enable once optimization system is working
-        // let preset = match optimization_config.level {
-        //     crate::optimization::config::OptimizationLevel::None => crate::codegen::llvm::OptimizationConfig::dev_config(),
-        //     crate::optimization::config::OptimizationLevel::Aggressive => crate::codegen::llvm::OptimizationConfig::release_config(),
-        //     _ => crate::codegen::llvm::OptimizationConfig::default(),
-        // };
-        // codegen.enable_comprehensive_optimization(preset)?;
+        // Enable comprehensive optimization including LTO
+        let preset = match optimization_config.level {
+            crate::optimization::config::OptimizationLevel::None => crate::codegen::llvm::OptimizationConfig::dev_config(),
+            crate::optimization::config::OptimizationLevel::Aggressive => {
+                let mut config = crate::codegen::llvm::OptimizationConfig::release_config();
+                config.enable_lto = true; // Enable LTO for aggressive optimization
+                config
+            },
+            _ => {
+                let mut config = crate::codegen::llvm::OptimizationConfig::default();
+                config.enable_lto = true; // Enable LTO by default
+                config
+            },
+        };
+        codegen.enable_comprehensive_optimization(preset)?;
         
         // Apply comprehensive optimization to source before compilation
         let optimized_source = source.clone(); // codegen.apply_comprehensive_optimization(&source)?;
@@ -715,7 +719,7 @@ fn generate_debug_assembly(debug_sections: &std::collections::HashMap<String, Ve
 #[derive(Debug, Clone)]
 pub struct AdvancedCompilationResult {
     pub success: bool,
-    pub optimization_stats: optimization::AdvancedOptimizationStats,
+    pub optimization_stats: optimization::OptimizationStats,
     pub benchmark_report: Option<optimization::BenchmarkReport>,
     pub warnings: Vec<String>,
     pub errors: Vec<String>,
@@ -745,7 +749,7 @@ pub async fn compile_with_advanced_optimization(
                 create_interpretation_wrapper(&source, source_file, output_file)?;
                 Ok(AdvancedCompilationResult {
                     success: true,
-                    optimization_stats: optimization::AdvancedOptimizationStats::default(),
+                    optimization_stats: optimization::OptimizationStats::default(),
                     benchmark_report: None,
                     warnings: vec!["Fallback to interpretation mode".to_string()],
                     errors: vec![],
@@ -869,7 +873,7 @@ async fn compile_to_native_with_advanced_optimization(
     // Create benchmark report
     let estimated_performance_gain = if config.enable_pgo { 15.0 } else { 8.0 } +
                                    if config.enable_lto { 10.0 } else { 0.0 } +
-                                   if matches!(config.pass_pipeline, optimization::PassPipeline::Production) { 5.0 } else { 0.0 };
+                                   if config.base_config.pass_manager_config.enable_function_passes { 5.0 } else { 0.0 };
     
     let estimated_size_reduction = if config.enable_size_optimization { 12.0 } else { 5.0 } +
                                   if config.enable_lto { 3.0 } else { 0.0 };
@@ -883,13 +887,7 @@ async fn compile_to_native_with_advanced_optimization(
         total_functions: 1, // Simplified
         optimized_functions: 1,
         optimization_time: std::time::Duration::from_millis(100),
-        passes_run: match config.pass_pipeline {
-            optimization::PassPipeline::Production => 15,
-            optimization::PassPipeline::ProfileGuided => 12,
-            optimization::PassPipeline::SizeOptimized => 8,
-            optimization::PassPipeline::Custom(ref passes) => passes.len(),
-            optimization::PassPipeline::Default => 6,
-        },
+        passes_run: if config.base_config.pass_manager_config.enable_function_passes { 15 } else { 6 },
         pgo_enabled: config.enable_pgo,
         lto_enabled: config.enable_lto,
         estimated_performance_gain,
@@ -898,16 +896,12 @@ async fn compile_to_native_with_advanced_optimization(
     
     Ok(AdvancedCompilationResult {
         success: true,
-        optimization_stats: optimization::AdvancedOptimizationStats {
-            total_passes_run: 10,
-            optimization_time: std::time::Duration::from_millis(100),
-            functions_optimized: 1,
-            modules_optimized: 1,
-            code_size_reduction: benchmark_report.estimated_size_reduction,
-            performance_improvement: benchmark_report.estimated_performance_gain,
-            pgo_applications: if config.enable_pgo { 1 } else { 0 },
-            lto_applications: if config.enable_lto { 1 } else { 0 },
-            pass_timings: std::collections::HashMap::new(),
+        optimization_stats: optimization::OptimizationStats {
+            optimization_level: 3,
+            size_level: 0,
+            passes_run: 10,
+            custom_passes_count: config.custom_passes.len(),
+            pgo_enabled: config.enable_pgo,
         },
         benchmark_report: Some(benchmark_report),
         warnings: vec![],
