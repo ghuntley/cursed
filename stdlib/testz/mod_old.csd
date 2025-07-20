@@ -69,11 +69,11 @@ slay assert_false(condition lit) lit {
 
 # Greater than assertion
 slay assert_gt(actual normie, expected normie) lit {
-    lowkey actual > expected {
+    vibes actual > expected {
         pass_count = pass_count + 1
         vibez.spill("  ✅ assert_gt passed: ", actual, " > ", expected)
         damn based
-    } else {
+    } sus {
         fail_count = fail_count + 1
         vibez.spill("  ❌ assert_gt failed: ", actual, " <= ", expected)
         damn cap
@@ -82,11 +82,11 @@ slay assert_gt(actual normie, expected normie) lit {
 
 # Less than assertion
 slay assert_lt(actual normie, expected normie) lit {
-    lowkey actual < expected {
+    vibes actual < expected {
         pass_count = pass_count + 1
         vibez.spill("  ✅ assert_lt passed: ", actual, " < ", expected)
         damn based
-    } else {
+    } sus {
         fail_count = fail_count + 1
         vibez.spill("  ❌ assert_lt failed: ", actual, " >= ", expected)
         damn cap
@@ -95,11 +95,11 @@ slay assert_lt(actual normie, expected normie) lit {
 
 # Not null assertion
 slay assert_not_null(value tea) lit {
-    lowkey value != "" {
+    vibes value != "" {
         pass_count = pass_count + 1
         vibez.spill("  ✅ assert_not_null passed")
         damn based
-    } else {
+    } sus {
         fail_count = fail_count + 1
         vibez.spill("  ❌ assert_not_null failed: value was empty/null")
         damn cap
@@ -114,9 +114,9 @@ slay print_test_summary() cringe {
     vibez.spill("  Passed: ", pass_count)
     vibez.spill("  Failed: ", fail_count)
     
-    lowkey fail_count == 0 {
+    vibes fail_count == 0 {
         vibez.spill("  🎉 ALL TESTS PASSED!")
-    } else {
+    } sus {
         vibez.spill("  💥 SOME TESTS FAILED!")
     }
     

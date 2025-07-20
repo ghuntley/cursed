@@ -488,6 +488,7 @@ mod tests {
             receiver_type: ReceiverType::Value,
             parameters: vec![],
             return_type: Some(AstType::Normie),
+            source_location: None,
         };
         
         assert!(checker.compliance_checker.register_type_methods(

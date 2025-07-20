@@ -100,9 +100,10 @@ slay string_length(input tea) normie {
 
 # Character at index helper  
 slay char_at(input tea, index normie) normie {
-    # This would interface with runtime string operations
-    # For pure CURSED implementation, we'll use basic indexing
-    damn 65 + index  # Placeholder implementation
+    # Get UTF-8 character code at string index
+    # Real implementation would properly decode UTF-8
+    sus char_value normie = get_string_byte_at(input, index)
+    damn char_value
 }
 
 # Runtime type checking
@@ -240,4 +241,228 @@ slay runtime_is_error(value RuntimeValue) lit {
     # Check if value represents an error
     sus type_name tea = runtime_get_type(value)
     damn type_name == "error"
+}
+
+# ================================
+# Enhanced Runtime Functions
+# ================================
+
+# Runtime memory management interface
+slay get_string_byte_at(str tea, index normie) normie {
+    # Interface with runtime string byte access
+    # In real implementation, this would access string internal representation
+    # Placeholder using modulo arithmetic for valid ASCII range
+    sus length normie = string_length(str)
+    lowkey index >= 0 && index < length {
+        # Simulate character codes for demo
+        damn 65 + (index % 26)
+    }
+    damn 0
+}
+
+# Enhanced string length calculation  
+slay string_length_enhanced(input tea) normie {
+    # More robust string length calculation
+    sus length normie = 0
+    sus max_length normie = 10000  # Reasonable limit
+    
+    bestie index := 0; index < max_length; index++ {
+        sus char_val normie = get_string_byte_at(input, index)
+        lowkey char_val == 0 {
+            break
+        }
+        length++
+    }
+    damn length
+}
+
+# Runtime value comparison
+slay runtime_values_equal(a RuntimeValue, b RuntimeValue) lit {
+    sus type_a tea = runtime_get_type(a)
+    sus type_b tea = runtime_get_type(b)
+    
+    lowkey type_a != type_b {
+        damn cap
+    }
+    
+    vibe_check (a) {
+        mood normie {
+            damn a == b.(normie)
+        }
+        mood drip {
+            # Float comparison with small epsilon
+            sus diff drip = a.(drip) - b.(drip)
+            lowkey diff < 0.0 {
+                diff = -diff
+            }
+            damn diff < 0.0001
+        }
+        mood tea {
+            damn runtime_strings_equal(a.(tea), b.(tea))
+        }
+        mood lit {
+            damn a.(lit) == b.(lit)
+        }
+        basic {
+            damn based  # Both nil
+        }
+    }
+}
+
+# String equality check
+slay runtime_strings_equal(a tea, b tea) lit {
+    sus len_a normie = string_length_enhanced(a)
+    sus len_b normie = string_length_enhanced(b)
+    
+    lowkey len_a != len_b {
+        damn cap
+    }
+    
+    bestie i := 0; i < len_a; i++ {
+        sus char_a normie = get_string_byte_at(a, i)
+        sus char_b normie = get_string_byte_at(b, i)
+        lowkey char_a != char_b {
+            damn cap
+        }
+    }
+    
+    damn based
+}
+
+# Runtime array operations
+slay runtime_array_length(arr [RuntimeValue]) normie {
+    # Get array length through runtime interface
+    damn array_get_length(arr)
+}
+
+slay runtime_array_get(arr [RuntimeValue], index normie) RuntimeValue {
+    # Safe array access with bounds checking
+    sus length normie = runtime_array_length(arr)
+    lowkey index >= 0 && index < length {
+        damn array_get_element(arr, index)
+    }
+    damn cringe  # Nil for out of bounds
+}
+
+slay runtime_array_set(arr [RuntimeValue], index normie, value RuntimeValue) lit {
+    # Safe array assignment with bounds checking
+    sus length normie = runtime_array_length(arr)
+    lowkey index >= 0 && index < length {
+        array_set_element(arr, index, value)
+        damn based
+    }
+    damn cap  # Failed
+}
+
+# Runtime map operations
+slay runtime_map_get(map map[tea]RuntimeValue, key tea) RuntimeValue {
+    # Map access through runtime interface
+    lowkey map_has_key(map, key) {
+        damn map_get_value(map, key)
+    }
+    damn cringe
+}
+
+slay runtime_map_set(map map[tea]RuntimeValue, key tea, value RuntimeValue) lit {
+    # Map assignment through runtime interface
+    map_set_value(map, key, value)
+    damn based
+}
+
+# Runtime function call interface
+slay runtime_call_function(func_name tea, args [RuntimeValue]) RuntimeValue {
+    # Dynamic function calling through runtime
+    damn call_runtime_function(func_name, args)
+}
+
+# Runtime error creation with stack trace
+slay runtime_create_detailed_error(message tea, error_type tea, stack_trace [tea]) RuntimeValue {
+    # Create comprehensive error with debugging info
+    sus error_info tea = error_type + ": " + message
+    
+    # Add stack trace if available
+    lowkey stack_trace != cringe && runtime_array_length(stack_trace) > 0 {
+        error_info = error_info + "\nStack trace:"
+        bestie i := 0; i < runtime_array_length(stack_trace); i++ {
+            sus frame tea = stack_trace[i].(tea)
+            error_info = error_info + "\n  " + frame
+        }
+    }
+    
+    damn error_info
+}
+
+# Runtime performance tracking
+slay runtime_performance_start(operation_name tea) normie {
+    # Start performance tracking for operation
+    damn get_current_time_nanos()
+}
+
+slay runtime_performance_end(operation_name tea, start_time normie) lit {
+    # End performance tracking and log results
+    sus end_time normie = get_current_time_nanos()
+    sus duration normie = end_time - start_time
+    log_performance_metric(operation_name, duration)
+    damn based
+}
+
+# Runtime garbage collection interface
+slay runtime_gc_collect() lit {
+    # Trigger garbage collection
+    trigger_gc_collection()
+    damn based
+}
+
+slay runtime_gc_stats() tea {
+    # Get garbage collection statistics
+    damn get_gc_statistics()
+}
+
+# ================================
+# Runtime System Interface Stubs
+# ================================
+
+# These would be implemented by the runtime system
+slay array_get_length(arr [RuntimeValue]) normie {
+    damn 0  # Stub
+}
+
+slay array_get_element(arr [RuntimeValue], index normie) RuntimeValue {
+    damn cringe  # Stub
+}
+
+slay array_set_element(arr [RuntimeValue], index normie, value RuntimeValue) lit {
+    damn cap  # Stub
+}
+
+slay map_has_key(map map[tea]RuntimeValue, key tea) lit {
+    damn cap  # Stub
+}
+
+slay map_get_value(map map[tea]RuntimeValue, key tea) RuntimeValue {
+    damn cringe  # Stub
+}
+
+slay map_set_value(map map[tea]RuntimeValue, key tea, value RuntimeValue) lit {
+    damn cap  # Stub
+}
+
+slay call_runtime_function(func_name tea, args [RuntimeValue]) RuntimeValue {
+    damn cringe  # Stub
+}
+
+slay get_current_time_nanos() normie {
+    damn 1704067200000000000  # Stub timestamp
+}
+
+slay log_performance_metric(operation tea, duration normie) lit {
+    damn cap  # Stub
+}
+
+slay trigger_gc_collection() lit {
+    damn cap  # Stub
+}
+
+slay get_gc_statistics() tea {
+    damn "GC Stats: Collections=0, Memory=0"  # Stub
 }

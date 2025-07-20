@@ -221,6 +221,7 @@ impl InterfaceInheritanceTree {
                     parameters: method.parameters.clone(),
                     return_type: method.return_type.clone(),
                     receiver_type: ReceiverType::Value, // Default, should be determined from signature
+                    source_location: None,
                 });
             }
 
@@ -265,6 +266,7 @@ impl InterfaceInheritanceTree {
                     parameters: method.parameters.clone(),
                     return_type: method.return_type.clone(),
                     receiver_type: ReceiverType::Value,
+                    source_location: None,
                 });
             }
         }
@@ -339,6 +341,7 @@ impl InterfaceInheritanceChecker {
                         parameters: method.parameters.clone(),
                         return_type: method.return_type.clone(),
                         receiver_type: ReceiverType::Value,
+                        source_location: None,
                     }
                 }).collect(),
             };

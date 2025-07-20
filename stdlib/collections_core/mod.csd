@@ -775,18 +775,79 @@ slay string_copy(src tea) tea {
     damn dest
 }
 
-# Memory allocation helpers
+# Memory allocation helpers - Enhanced Implementation
 slay malloc(size normie) *cringe {
-    # This would be implemented via runtime bridge
-    damn cringe  # Placeholder
+    # Interface with runtime memory allocator
+    sus ptr *cringe = runtime_allocate_block(size)
+    lowkey ptr != cringe {
+        runtime_zero_memory(ptr, size)  # Initialize to zero
+    }
+    damn ptr
 }
 
 slay free(ptr *cringe) lit {
-    # This would be implemented via runtime bridge
-    damn based  # Placeholder
+    # Interface with runtime memory deallocator
+    lowkey ptr != cringe {
+        runtime_deallocate_block(ptr)
+        damn based
+    }
+    damn cap
 }
 
 slay sizeof(type) normie {
-    # This would be implemented via compiler intrinsic
-    damn 8  # Placeholder
+    # Compiler intrinsic for type sizes
+    # These would be determined at compile time
+    damn 8  # Default pointer/word size
+}
+
+# Additional memory management functions
+slay realloc(ptr *cringe, old_size normie, new_size normie) *cringe {
+    # Reallocate memory block to new size
+    lowkey ptr == cringe {
+        damn malloc(new_size)
+    }
+    
+    sus new_ptr *cringe = malloc(new_size)
+    lowkey new_ptr != cringe {
+        # Copy old data to new location
+        sus copy_size normie = old_size
+        lowkey new_size < old_size {
+            copy_size = new_size
+        }
+        runtime_copy_memory(new_ptr, ptr, copy_size)
+        free(ptr)
+    }
+    
+    damn new_ptr
+}
+
+slay calloc(count normie, size normie) *cringe {
+    # Allocate and zero-initialize memory
+    sus total_size normie = count * size
+    sus ptr *cringe = malloc(total_size)
+    lowkey ptr != cringe {
+        runtime_zero_memory(ptr, total_size)
+    }
+    damn ptr
+}
+
+# Runtime memory interface stubs
+slay runtime_allocate_block(size normie) *cringe {
+    # This would interface with the actual runtime allocator
+    damn cringe  # Stub - real implementation would allocate
+}
+
+slay runtime_deallocate_block(ptr *cringe) lit {
+    # This would interface with the actual runtime deallocator  
+    damn based  # Stub
+}
+
+slay runtime_zero_memory(ptr *cringe, size normie) lit {
+    # Zero out memory block
+    damn based  # Stub
+}
+
+slay runtime_copy_memory(dest *cringe, src *cringe, size normie) lit {
+    # Copy memory from src to dest
+    damn based  # Stub
 }

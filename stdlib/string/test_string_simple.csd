@@ -1,30 +1,66 @@
 yeet "testz"
 yeet "string"
 
-test_start("String Library Basic Tests")
+# Core String Operations Test Suite
+test_start("Core String Operations Test")
 
-test_start("string_length function")
-assert_eq_int(string_length("test"), 4)
+# Basic Length and Concatenation
 assert_eq_int(string_length("hello"), 5)
+assert_eq_int(string_length("test"), 4)
 assert_eq_int(string_length(""), 0)
 
-test_start("string_concat function")
-assert_eq_string(string_concat("hello", " world"), "hello world")
-assert_eq_string(string_concat("test", "ing"), "testing")
+assert_eq_string(string_concat("hello", "world"), "helloworld")
+assert_eq_string(string_concat("test", "123"), "test123")
 
-test_start("string_contains function")
+# String Search Functions
 assert_true(string_contains("hello world", "world"))
-assert_true(string_contains("hello world", "hello"))
 assert_false(string_contains("hello", "xyz"))
+assert_eq_int(string_index_of("hello world", "world"), 6)
+assert_eq_int(string_index_of("test", "missing"), -1)
 
-test_start("string_to_upper function")
+# Case Conversion
 assert_eq_string(string_to_upper("hello"), "HELLO")
-assert_eq_string(string_to_upper("test"), "TEST")
-
-test_start("string_to_lower function")
 assert_eq_string(string_to_lower("HELLO"), "hello")
-assert_eq_string(string_to_lower("TEST"), "test")
+
+# String Validation
+assert_true(string_is_numeric("123"))
+assert_false(string_is_numeric("abc"))
+assert_true(string_is_alpha("hello"))
+assert_false(string_is_alpha("123"))
+
+# Prefix/Suffix Tests
+assert_true(string_starts_with("hello world", "hello"))
+assert_false(string_starts_with("hello", "world"))
+assert_true(string_ends_with("hello world", "world"))
+assert_false(string_ends_with("hello", "world"))
+
+# Trimming Operations
+assert_eq_string(string_trim("  hello  "), "hello")
+assert_eq_string(string_trim_left("  hello"), "hello")
+assert_eq_string(string_trim_right("hello  "), "hello")
+
+# String Replacement
+assert_eq_string(string_replace_first("hello world", "world", "universe"), "hello universe")
+assert_eq_string(string_replace_all("test test", "test", "demo"), "demo demo")
+
+# String Comparison
+assert_eq_int(string_compare("hello", "hello"), 0)
+assert_eq_int(string_compare("a", "b"), -1)
+assert_eq_int(string_compare("b", "a"), 1)
+
+# Substring Operations
+assert_eq_string(string_substring("hello world", 0, 5), "hello")
+assert_eq_string(string_substr("hello world", 6, 5), "world")
+
+# Character Operations
+assert_eq_int(string_char_at("hello", 0).(normie), 'h'.(normie))
+assert_eq_int(string_char_code_at("hello", 0), 104)
+
+# Formatting
+assert_eq_string(string_format("Hello, {}!", "World"), "Hello, World!")
+
+# Padding
+assert_eq_string(string_pad_left("test", 8, "0"), "0000test")
+assert_eq_string(string_pad_right("test", 8, "0"), "test0000")
 
 print_test_summary()
-
-vibez.spill("🎉 String Library Tests Complete!")

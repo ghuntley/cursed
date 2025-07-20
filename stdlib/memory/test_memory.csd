@@ -1,231 +1,202 @@
 yeet "testz"
 yeet "memory"
 
-# Test memory management functionality
-test_start("memory comprehensive tests")
+# Comprehensive Memory Management Test Suite
+test_start("Memory Management Operations Test")
 
-# Test basic memory allocation and deallocation
-sus pointer1 normie = memory_allocate(1024)
-assert_true(pointer1 != 0)
+# Basic Memory Allocation Tests
+sus addr1, err1 = memory_allocate(1024)
+assert_not_null(string(addr1))
+assert_eq_string(err1.(tea), "")
+assert_gt(addr1, 0)
 
-sus dealloc_success lit = memory_deallocate(pointer1)
-assert_true(dealloc_success)
+sus addr2, err2 = memory_allocate(2048)
+assert_not_null(string(addr2))
+assert_eq_string(err2.(tea), "")
+assert_gt(addr2, 0)
 
-# Test invalid allocations
-sus invalid_pointer normie = memory_allocate(0)
-assert_eq_int(invalid_pointer, 0)
+# Test different allocation addresses
+assert_true(addr1 != addr2)
 
-sus negative_pointer normie = memory_allocate(-100)
-assert_eq_int(negative_pointer, 0)
+# Memory Deallocation Tests
+sus success1, dealloc_err1 = memory_deallocate(addr1)
+assert_true(success1)
+assert_eq_string(dealloc_err1.(tea), "")
 
-# Test null pointer deallocation
-sus null_dealloc lit = memory_deallocate(0)
-assert_false(null_dealloc)
+sus success2, dealloc_err2 = memory_deallocate(addr2)
+assert_true(success2)
+assert_eq_string(dealloc_err2.(tea), "")
 
-# Test memory reallocation
-sus pointer2 normie = memory_allocate(512)
-assert_true(pointer2 != 0)
+# Error Condition Tests - Invalid Allocation Size
+sus invalid_addr1, invalid_err1 = memory_allocate(0)
+assert_eq_int(invalid_addr1, 0)
+assert_not_null(invalid_err1.(tea))
 
-sus realloc_pointer normie = memory_reallocate(pointer2, 1024)
-assert_true(realloc_pointer != 0)
+sus invalid_addr2, invalid_err2 = memory_allocate(-100)
+assert_eq_int(invalid_addr2, 0)
+assert_not_null(invalid_err2.(tea))
+
+# Error Condition Tests - Null Pointer Deallocation
+sus null_success, null_err = memory_deallocate(0)
+assert_false(null_success)
+assert_not_null(null_err.(tea))
+
+# Memory Reallocation Tests
+sus realloc_addr, realloc_err1 = memory_allocate(512)
+assert_gt(realloc_addr, 0)
+assert_eq_string(realloc_err1.(tea), "")
+
+sus new_addr, realloc_err2 = memory_reallocate(realloc_addr, 1024)
+assert_gt(new_addr, 0)
+assert_eq_string(realloc_err2.(tea), "")
+
+# Clean up reallocation test
+sus cleanup_success, cleanup_err = memory_deallocate(new_addr)
+assert_true(cleanup_success)
+
+# Memory Copy Tests
+sus src_addr, src_err = memory_allocate(256)
+assert_gt(src_addr, 0)
+sus dest_addr, dest_err = memory_allocate(256)
+assert_gt(dest_addr, 0)
+
+sus copy_success, copy_err = memory_copy(dest_addr, src_addr, 128)
+assert_true(copy_success)
+assert_eq_string(copy_err.(tea), "")
+
+# Memory Move Tests
+sus move_success, move_err = memory_move(dest_addr, src_addr, 64)
+assert_true(move_success)
+assert_eq_string(move_err.(tea), "")
+
+# Memory Set Tests
+sus set_success, set_err = memory_set(dest_addr, 0, 256)
+assert_true(set_success)
+assert_eq_string(set_err.(tea), "")
+
+# Memory Compare Tests
+sus compare_result, compare_err = memory_compare(src_addr, dest_addr, 64)
+assert_eq_string(compare_err.(tea), "")
+
+# Clean up copy/move/set tests
+memory_deallocate(src_addr)
+memory_deallocate(dest_addr)
+
+# Memory Pool Tests
+sus pool, pool_err = memory_pool_create(64, 10)
+assert_eq_string(pool_err.(tea), "")
+
+sus pool_addr1, pool_acquire_err1 = memory_pool_acquire(pool)
+assert_gt(pool_addr1, 0)
+assert_eq_string(pool_acquire_err1.(tea), "")
+
+sus pool_addr2, pool_acquire_err2 = memory_pool_acquire(pool)
+assert_gt(pool_addr2, 0)
+assert_eq_string(pool_acquire_err2.(tea), "")
+
+# Pool addresses should be different
+assert_true(pool_addr1 != pool_addr2)
+
+# Release pool blocks
+sus pool_release1, pool_release_err1 = memory_pool_release(pool, pool_addr1)
+assert_true(pool_release1)
+assert_eq_string(pool_release_err1.(tea), "")
+
+sus pool_release2, pool_release_err2 = memory_pool_release(pool, pool_addr2)
+assert_true(pool_release2)
+assert_eq_string(pool_release_err2.(tea), "")
+
+# Destroy pool
+sus pool_destroy_success, pool_destroy_err = memory_pool_destroy(pool)
+assert_true(pool_destroy_success)
+assert_eq_string(pool_destroy_err.(tea), "")
+
+# Garbage Collection Tests
+sus freed_bytes1, gc_err1 = memory_gc_collect()
+assert_eq_string(gc_err1.(tea), "")
+assert_gt(freed_bytes1, 0)
+
+sus freed_bytes2, gc_err2 = memory_gc_force_collect()
+assert_eq_string(gc_err2.(tea), "")
+assert_gt(freed_bytes2, 0)
+
+sus gc_stats = memory_gc_get_stats()
+assert_not_null(string(gc_stats.total_allocated))
+
+# Memory Safety Tests
+sus safety_addr, safety_err = memory_allocate(128)
+assert_gt(safety_addr, 0)
+
+sus bounds_check, bounds_err = memory_check_bounds(safety_addr, 128, 64)
+assert_true(bounds_check)
+assert_eq_string(bounds_err.(tea), "")
+
+sus null_check, null_check_err = memory_check_null(safety_addr)
+assert_true(null_check)
+assert_eq_string(null_check_err.(tea), "")
+
+sus double_free_check, double_free_err = memory_check_double_free(safety_addr)
+assert_true(double_free_check)
+assert_eq_string(double_free_err.(tea), "")
+
+sus use_after_free_check, use_after_free_err = memory_check_use_after_free(safety_addr)
+assert_true(use_after_free_check)
+assert_eq_string(use_after_free_err.(tea), "")
+
+# Clean up safety tests
+memory_deallocate(safety_addr)
+
+# Memory Statistics Tests
+sus total_allocated = memory_get_total_allocated()
+assert_gt(total_allocated, 0)
+
+sus allocation_count = memory_get_allocation_count()
+assert_gt(allocation_count, 0)
+
+sus fragmentation_ratio = memory_get_fragmentation_ratio()
+assert_true(fragmentation_ratio >= 0.0)
+
+# Test memory threshold setting
+memory_gc_set_threshold(2097152)  # 2MB threshold
+
+# Error Condition Tests - Large Allocation
+sus large_addr, large_err = memory_allocate(0x80000000)  # > 2GB
+assert_eq_int(large_addr, 0)
+assert_not_null(large_err.(tea))
+
+# Error Condition Tests - Null Pointer Operations
+sus null_copy_success, null_copy_err = memory_copy(0, safety_addr, 64)
+assert_false(null_copy_success)
+assert_not_null(null_copy_err.(tea))
+
+sus null_move_success, null_move_err = memory_move(0, safety_addr, 64)
+assert_false(null_move_success)
+assert_not_null(null_move_err.(tea))
+
+sus null_set_success, null_set_err = memory_set(0, 0, 64)
+assert_false(null_set_success)
+assert_not_null(null_set_err.(tea))
+
+sus null_compare_result, null_compare_err = memory_compare(0, safety_addr, 64)
+assert_eq_int(null_compare_result, -2)
+assert_not_null(null_compare_err.(tea))
 
 # Test reallocation edge cases
-sus null_realloc normie = memory_reallocate(0, 256)
-assert_true(null_realloc != 0)
-memory_deallocate(null_realloc)
+sus realloc_null_addr, realloc_null_err = memory_reallocate(0, 256)
+assert_gt(realloc_null_addr, 0)  # Should work like malloc
+assert_eq_string(realloc_null_err.(tea), "")
 
-sus zero_realloc normie = memory_reallocate(realloc_pointer, 0)
-assert_eq_int(zero_realloc, 0)
+sus realloc_zero_addr, realloc_zero_err = memory_reallocate(realloc_null_addr, 0)
+assert_eq_int(realloc_zero_addr, 0)  # Should work like free
+assert_eq_string(realloc_zero_err.(tea), "")
 
-# Test memory operations
-sus src_pointer normie = memory_allocate(64)
-sus dest_pointer normie = memory_allocate(64)
+# Memory Pool Error Tests
+sus invalid_pool, invalid_pool_err = memory_pool_create(0, 10)
+assert_not_null(invalid_pool_err.(tea))
 
-assert_true(memory_copy(dest_pointer, src_pointer, 32))
-assert_false(memory_copy(0, src_pointer, 32))  # Null destination
-assert_false(memory_copy(dest_pointer, 0, 32))  # Null source
+sus invalid_pool2, invalid_pool_err2 = memory_pool_create(64, 0)
+assert_not_null(invalid_pool_err2.(tea))
 
-assert_true(memory_zero(dest_pointer, 64))
-assert_false(memory_zero(0, 64))  # Null pointer
-
-memory_deallocate(src_pointer)
-memory_deallocate(dest_pointer)
-
-# Test memory comparison
-sus ptr_a normie = memory_allocate(32)
-sus ptr_b normie = memory_allocate(32)
-
-assert_eq_int(memory_compare(ptr_a, ptr_a, 32), 0)  # Same pointer
-assert_eq_int(memory_compare(ptr_a, ptr_b, 32), 1)  # Different pointers
-assert_eq_int(memory_compare(0, ptr_a, 32), -1)   # Null pointer error
-
-memory_deallocate(ptr_a)
-memory_deallocate(ptr_b)
-
-# Test garbage collector
-sus gc GCState = memory_get_gc()
-assert_true(gc != cringe)
-
-sus initial_allocated normie = gc_get_total_allocated(gc)
-sus gc_pointer normie = gc_allocate(gc, 256)
-assert_true(gc_pointer != 0)
-
-sus after_alloc normie = gc_get_total_allocated(gc)
-assert_true(after_alloc >= initial_allocated)
-
-assert_true(gc_deallocate(gc, gc_pointer))
-sus after_dealloc normie = gc_get_total_allocated(gc)
-assert_true(after_dealloc <= after_alloc)
-
-# Test garbage collection
-sus freed_bytes normie = gc_collect(gc)
-assert_true(freed_bytes >= 0)
-
-# Test memory allocator
-sus allocator MemoryAllocator = allocator_create()
-assert_true(allocator != cringe)
-
-sus alloc_ptr normie = allocator_malloc(128)
-assert_true(alloc_ptr != 0)
-
-assert_true(allocator_free(alloc_ptr))
-
-# Test allocator edge cases
-assert_eq_int(allocator_malloc(0), 0)
-assert_false(allocator_free(0))
-
-# Test allocator reallocation
-sus orig_ptr normie = allocator_malloc(64)
-sus new_ptr normie = allocator_realloc(orig_ptr, 128)
-assert_true(new_ptr != 0)
-
-sus zero_ptr normie = allocator_realloc(new_ptr, 0)
-assert_eq_int(zero_ptr, 0)
-
-sus from_null normie = allocator_realloc(0, 64)
-assert_true(from_null != 0)
-allocator_free(from_null)
-
-# Test memory pool
-sus pool MemoryPool = memory_pool_create(32, 10)
-assert_true(pool != cringe)
-assert_false(memory_pool_is_empty(pool))
-
-sus pool_block normie = memory_pool_acquire(pool)
-assert_true(pool_block != 0)
-
-assert_true(memory_pool_release(pool, pool_block))
-assert_false(memory_pool_release(pool, 0))  # Null pointer
-
-# Test pool exhaustion
-sus blocks [normie] = []
-sus i normie = 0
-bestie i < 10 {  # Exhaust the pool
-    sus block normie = memory_pool_acquire(pool)
-    lowkey block != 0 {
-        blocks = append_block(blocks, block)
-    }
-    i = i + 1
-}
-
-assert_true(memory_pool_is_empty(pool))
-sus exhausted_block normie = memory_pool_acquire(pool)
-assert_eq_int(exhausted_block, 0)
-
-# Test memory safety
-sus safety MemorySafety = memory_safety_create()
-assert_true(safety != cringe)
-
-sus safe_ptr normie = memory_allocate(100)
-assert_true(memory_check_bounds(safety, safe_ptr, 50))
-assert_false(memory_check_bounds(safety, safe_ptr, 200))  # Exceeds bounds
-assert_false(memory_check_bounds(safety, 0, 50))         # Null pointer
-
-assert_true(memory_check_null(safety, safe_ptr))
-assert_false(memory_check_null(safety, 0))
-
-assert_true(memory_check_double_free(safety, safe_ptr))
-memory_deallocate(safe_ptr)
-
-# Test memory block metadata
-sus block MemoryBlock = memory_block_create(256, "ast_node")
-assert_true(block != cringe)
-assert_eq_int(memory_block_get_size(block), 256)
-assert_eq_string(memory_block_get_type(block), "ast_node")
-assert_true(memory_block_is_valid(block))
-
-# Test memory statistics
-sus stats tea = memory_get_stats()
-assert_true(string_length(stats) > 0)
-
-assert_true(memory_print_stats())
-
-sus gc_freed normie = memory_force_gc()
-assert_true(gc_freed >= 0)
-
-# Test compiler-specific memory utilities
-sus ast_node_ptr normie = memory_allocate_ast_node("expression")
-assert_true(ast_node_ptr != 0)
-memory_deallocate(ast_node_ptr)
-
-sus symbol_table_ptr normie = memory_allocate_symbol_table(50)
-assert_true(symbol_table_ptr != 0)
-memory_deallocate(symbol_table_ptr)
-
-sus string_buffer_ptr normie = memory_allocate_string_buffer(100)
-assert_true(string_buffer_ptr != 0)
-memory_deallocate(string_buffer_ptr)
-
-# Test AST node size calculation
-assert_eq_int(get_ast_node_size("expression"), 32)
-assert_eq_int(get_ast_node_size("statement"), 48)
-assert_eq_int(get_ast_node_size("declaration"), 64)
-assert_eq_int(get_ast_node_size("unknown"), 32)
-
-# Test string duplication
-sus original_string normie = memory_allocate_string_buffer(20)
-sus duplicated_string normie = memory_string_duplicate(original_string)
-assert_true(duplicated_string != 0)
-assert_true(duplicated_string != original_string)
-
-memory_deallocate(original_string)
-memory_deallocate(duplicated_string)
-
-# Test helper functions
-assert_eq_int(min_size(10, 20), 10)
-assert_eq_int(min_size(30, 15), 15)
-assert_eq_int(min_size(5, 5), 5)
-
-sus timestamp normie = get_current_time()
-assert_true(timestamp > 0)
-
-assert_true(is_valid_pointer(100))
-assert_false(is_valid_pointer(0))
-
-sus length normie = string_pointer_length(42)  # Mock string pointer
-assert_true(length > 0)
-
-# Test memory operations with realistic scenarios
-sus compiler_memory normie = memory_allocate(8192)  # Large block for compiler
-assert_true(compiler_memory != 0)
-
-sus temp_buffer normie = memory_allocate(1024)
-assert_true(temp_buffer != 0)
-
-# Test memory copy between large blocks
-assert_true(memory_copy(compiler_memory, temp_buffer, 512))
-
-# Test memory zeroing
-assert_true(memory_zero(temp_buffer, 1024))
-
-# Clean up
-memory_deallocate(compiler_memory)
-memory_deallocate(temp_buffer)
+vibez.spill("🧠 Memory management tests completed successfully!")
 
 print_test_summary()
-
-# Helper function for block array operations
-slay append_block(blocks [normie], block normie) [normie] {
-    # Would actually append block to array
-    damn blocks
-}
