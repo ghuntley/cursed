@@ -431,25 +431,25 @@ impl RuntimePlatformDetector {
     // Runtime feature detection helpers
     fn can_execute_cpuid(&self) -> bool {
         // Try to execute CPUID instruction safely
-        std::panic::catch_unwind(|| {
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        std::panic::catch_unwind(|| -> bool {
+            #[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), not(target_os = "linux"), feature = "inline_asm"))]
             {
                 unsafe {
                     let mut eax = 0u32;
-                    let mut ebx = 0u32;
                     let mut ecx = 0u32;
                     let mut edx = 0u32;
                     std::arch::asm!(
                         "cpuid",
                         inout("eax") eax,
-                        out("ebx") ebx,
-                        out("ecx") ecx,
-                        out("edx") edx,
+                        lateout("ecx") ecx,
+                        lateout("edx") edx,
+                        options(preserves_flags)
                     );
-                    true
                 }
+                return true;
             }
-            #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+            
+            // All other cases - fallback for cross-compilation or unsupported platforms
             false
         }).unwrap_or(false)
     }

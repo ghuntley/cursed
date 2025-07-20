@@ -471,7 +471,7 @@ impl StackTraceCollector {
         #[cfg(not(feature = "backtrace"))]
         {
             // Fallback: Use basic frame information
-            if let Ok(current_thread) = std::thread::current().name() {
+            if let Some(current_thread) = std::thread::current().name() {
                 let frame = StackFrame::new(
                     format!("thread_{}", current_thread),
                     FrameType::Function

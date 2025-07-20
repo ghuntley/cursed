@@ -17,13 +17,13 @@ use crate::error::{CursedError, SourceLocation};
 /// Cross-platform register access
 fn get_platform_stack_pointer() -> u64 {
     cfg_if::cfg_if! {
-        if #[cfg(target_arch = "x86_64")] {
+        if #[cfg(all(target_arch = "x86_64", feature = "inline_asm"))] {
             let rsp: u64;
             unsafe {
                 std::arch::asm!("mov {}, rsp", out(reg) rsp);
             }
             rsp
-        } else if #[cfg(target_arch = "aarch64")] {
+        } else if #[cfg(all(target_arch = "aarch64", feature = "inline_asm"))] {
             let sp: u64;
             unsafe {
                 std::arch::asm!("mov {}, sp", out(reg) sp);
@@ -37,13 +37,13 @@ fn get_platform_stack_pointer() -> u64 {
 
 fn get_platform_base_pointer() -> u64 {
     cfg_if::cfg_if! {
-        if #[cfg(target_arch = "x86_64")] {
+        if #[cfg(all(target_arch = "x86_64", feature = "inline_asm"))] {
             let rbp: u64;
             unsafe {
                 std::arch::asm!("mov {}, rbp", out(reg) rbp);
             }
             rbp
-        } else if #[cfg(target_arch = "aarch64")] {
+        } else if #[cfg(all(target_arch = "aarch64", feature = "inline_asm"))] {
             let fp: u64;
             unsafe {
                 std::arch::asm!("mov {}, x29", out(reg) fp);

@@ -65,8 +65,7 @@ once_cell = "1.19"  # For lazy static initialization
 cfg-if = "1.0"      # For conditional compilation
 
 # Basic cryptography dependencies
-getrandom = "0.2"  # Secure random number generation
-# hex = "0.4"     # Hex encoding/decoding (duplicate removed)
+getrandom = { version = "0.2", features = [] }  # Secure random number generation
 crc32fast = "1.3"  # Fast CRC32 computation for ZIP archives
 hex = "0.4"       # Hex encoding/decoding
 rand = "0.8"    # Random number generation
@@ -166,9 +165,7 @@ tokio-util = { version = "0.7", features = ["codec"] }  # Tokio utilities
 indicatif = "0.17"  # Progress bars for CLI
 
 # System interaction dependencies
-nix = { version = "0.27", features = ["process", "signal", "mman", "fs"] }  # Unix system calls and utilities
-num-integer = "0.1"       # Integer operations and algorithms 
-lz4_flex = "0.11"         # LZ4 compression
+num-integer = "0.1"       # Integer operations and algorithms
 
 # Optimization system dependencies
 # num_cpus = "1.16"         # For detecting number of CPU cores (already included above)
@@ -180,7 +177,7 @@ tracing = { version = "0.1", features = ["attributes"] }  # For structured loggi
 tracing-subscriber = { version = "0.3", features = ["env-filter"] } # For tracing subscriber implementations
 
 # Session store dependencies
-redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }  # Redis client and session store
+# redis moved to non-WASM dependencies below
 
 # MongoDB dependencies (temporarily disabled to resolve build issues)
 # mongodb = { version = "2.7", features = ["tokio-runtime", "bson-chrono-0_4"] }  # MongoDB driver
@@ -273,13 +270,8 @@ url = "2.4"             # URL parsing and manipulation
 reqwest = { version = "0.11", features = ["json", "stream", "rustls-tls", "multipart"], default-features = false }  # HTTP client for package registry
 bytes = "1.5"           # Byte manipulation for package data
 
-# Archive and compression dependencies
-flate2 = "1.0.28"       # Gzip compression/decompression
-bzip2 = "0.4"           # BZIP2 compression/decompression
-tar = "0.4.40"          # TAR archive handling
-zip = "0.6.6"           # ZIP archive handling
-brotli = "3.4"          # Brotli compression/decompression
-zstd = "0.13"           # Zstandard compression (high performance alternative)
+# Archive and compression dependencies (not available for WASM)
+# Moved to platform-specific sections below
 
 # Distributed compilation dependencies (dependencies already included above)
 
@@ -294,11 +286,7 @@ either = "=1.8.0"       # Fix either crate dependency conflict
 # Database driver dependencies
 rusqlite = { version = "0.29", features = ["bundled", "blob", "functions", "trace", "backup"] }  # SQLite
 # redis already defined above
-tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }  # PostgreSQL async driver
-postgres-types = { version = "0.2", features = ["derive", "with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }  # PostgreSQL type system
-mysql = { version = "25.0", default-features = false, features = ["native-tls"] }  # MySQL driver
-bb8 = "0.8"                                        # Connection pooling
-bb8-postgres = "0.8"                               # PostgreSQL connection pool
+# Database drivers moved to non-WASM dependencies below
 
 # Missing dependencies for web_vibez (uuid already defined above)
 
@@ -325,6 +313,29 @@ siphasher = "0.3"
 winapi = { version = "0.3", features = ["memoryapi", "handleapi", "errhandlingapi", "winnt", "minwindef", "processthreadsapi", "psapi", "tlhelp32", "winbase", "fileapi", "wincon", "namedpipeapi", "synchapi", "jobapi2", "sysinfoapi", "securitybaseapi"] }
 windows-sys = { version = "0.52", features = ["Win32_System_Memory", "Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Pipes", "Win32_System_Threading"] }
 
+# Non-WASM dependencies (native platforms)
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Archive and compression dependencies
+flate2 = "1.0.28"       # Gzip compression/decompression
+bzip2 = "0.4"           # BZIP2 compression/decompression
+tar = "0.4.40"          # TAR archive handling
+zip = "0.6.6"           # ZIP archive handling
+brotli = "3.4"          # Brotli compression/decompression
+zstd = "0.13"           # Zstandard compression (high performance alternative)
+lz4_flex = "0.11"       # LZ4 compression
+
+# Database drivers that use native libraries
+mysql = { version = "25.0", default-features = false, features = ["native-tls"] }  # MySQL driver
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }  # PostgreSQL async driver
+postgres-types = { version = "0.2", features = ["derive", "with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }  # PostgreSQL type system
+bb8 = "0.8"                                        # Connection pooling
+bb8-postgres = "0.8"                               # PostgreSQL connection pool
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }  # Redis client and session store
+
+# Unix-specific dependencies (Linux and macOS)
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.27", features = ["process", "signal", "mman", "fs"] }  # Unix system calls and utilities
+
 # Linux-specific dependencies
 [target.'cfg(target_os = "linux")'.dependencies]
 # Linux-specific dependencies for system integration
@@ -348,6 +359,11 @@ core-foundation = "0.9"  # Core Foundation framework
 core-foundation-sys = "0.8"  # Core Foundation system bindings
 libc = "0.2"  # Already included above but needed for macOS system calls
 mach2 = "0.4"  # Mach kernel interface for shared memory
+
+# WebAssembly-specific dependencies
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }  # Enable JS feature for WASM
+# tokio excluded for now since it still pulls in mio
 
 # Template system dependencies (moved above)
 # md5, dashmap, ropey, tree-sitter moved to main dependencies section
@@ -379,6 +395,10 @@ async = []
 sync = []
 # Enable testing framework
 testing = []
+# Enable inline assembly (disabled for cross-compilation)
+inline_asm = []
+# Enable Windows API access (only on Windows)
+winapi = []
 
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking

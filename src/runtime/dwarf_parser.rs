@@ -288,7 +288,7 @@ impl RegisterMap {
         map
     }
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", feature = "inline_asm"))]
     fn get_stack_pointer() -> u64 {
         let rsp: u64;
         unsafe {
@@ -297,7 +297,7 @@ impl RegisterMap {
         rsp
     }
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", feature = "inline_asm"))]
     fn get_base_pointer() -> u64 {
         let rbp: u64;
         unsafe {
@@ -306,7 +306,7 @@ impl RegisterMap {
         rbp
     }
 
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(all(target_arch = "aarch64", feature = "inline_asm"))]
     fn get_stack_pointer() -> u64 {
         let sp: u64;
         unsafe {
@@ -315,13 +315,23 @@ impl RegisterMap {
         sp
     }
 
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(all(target_arch = "aarch64", feature = "inline_asm"))]
     fn get_base_pointer() -> u64 {
         let fp: u64;
         unsafe {
             std::arch::asm!("mov {}, x29", out(reg) fp);
         }
         fp
+    }
+    
+    #[cfg(not(feature = "inline_asm"))]
+    fn get_stack_pointer() -> u64 {
+        0  // Fallback for cross-compilation
+    }
+    
+    #[cfg(not(feature = "inline_asm"))]
+    fn get_base_pointer() -> u64 {
+        0  // Fallback for cross-compilation
     }
 
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]

@@ -140,20 +140,33 @@ impl CrossPlatformContext {
         Ok(())
     }
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", feature = "inline_asm"))]
     fn save_x86_64_context(regs: &mut X86_64Registers) -> Result<(), CursedError> {
         unsafe {
+            // Save registers in smaller chunks to avoid register pressure
             std::arch::asm!(
                 "mov {rax}, rax", "mov {rbx}, rbx", "mov {rcx}, rcx", "mov {rdx}, rdx",
-                "mov {rsi}, rsi", "mov {rdi}, rdi", "mov {r8}, r8", "mov {r9}, r9",
-                "mov {r10}, r10", "mov {r11}, r11", "mov {r12}, r12", "mov {r13}, r13",
-                "mov {r14}, r14", "mov {r15}, r15", "mov {rsp}, rsp", "mov {rbp}, rbp",
                 rax = out(reg) regs.rax, rbx = out(reg) regs.rbx,
                 rcx = out(reg) regs.rcx, rdx = out(reg) regs.rdx,
+                options(nostack, preserves_flags)
+            );
+            
+            std::arch::asm!(
+                "mov {rsi}, rsi", "mov {rdi}, rdi", "mov {r8}, r8", "mov {r9}, r9",
                 rsi = out(reg) regs.rsi, rdi = out(reg) regs.rdi,
                 r8 = out(reg) regs.r8, r9 = out(reg) regs.r9,
+                options(nostack, preserves_flags)
+            );
+            
+            std::arch::asm!(
+                "mov {r10}, r10", "mov {r11}, r11", "mov {r12}, r12", "mov {r13}, r13",
                 r10 = out(reg) regs.r10, r11 = out(reg) regs.r11,
                 r12 = out(reg) regs.r12, r13 = out(reg) regs.r13,
+                options(nostack, preserves_flags)
+            );
+            
+            std::arch::asm!(
+                "mov {r14}, r14", "mov {r15}, r15", "mov {rsp}, rsp", "mov {rbp}, rbp",
                 r14 = out(reg) regs.r14, r15 = out(reg) regs.r15,
                 rsp = out(reg) regs.rsp, rbp = out(reg) regs.rbp,
                 options(nostack, preserves_flags)
@@ -167,8 +180,16 @@ impl CrossPlatformContext {
         }
         Ok(())
     }
+    
+    #[cfg(all(target_arch = "x86_64", not(feature = "inline_asm")))]
+    fn save_x86_64_context(regs: &mut X86_64Registers) -> Result<(), CursedError> {
+        // Fallback implementation for cross-compilation targets
+        // Zero out registers to provide consistent behavior
+        *regs = X86_64Registers::default();
+        Ok(())
+    }
 
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(all(target_arch = "aarch64", feature = "inline_asm"))]
     fn save_arm64_context(regs: &mut ARM64Registers) -> Result<(), CursedError> {
         // Save ARM64 registers in smaller chunks to avoid register pressure
         unsafe {
@@ -200,6 +221,13 @@ impl CrossPlatformContext {
                 options(nostack, preserves_flags)
             );
         }
+        Ok(())
+    }
+    
+    #[cfg(all(target_arch = "aarch64", not(feature = "inline_asm")))]
+    fn save_arm64_context(regs: &mut ARM64Registers) -> Result<(), CursedError> {
+        // Fallback implementation for cross-compilation targets
+        *regs = ARM64Registers::default();
         Ok(())
     }
 

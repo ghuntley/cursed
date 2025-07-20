@@ -865,7 +865,7 @@ pub struct PerformanceHooksStats {
 
 /// Global performance hooks instance
 static GLOBAL_HOOKS: once_cell::sync::Lazy<Arc<PerformanceHooks>> = 
-    once_cell::sync::Lazy::new(|| Arc::new(PerformanceHooks::new()));
+    once_cell::sync::Lazy::new(|| Arc::new(PerformanceHooks::new(PerformanceHooksConfig::default())));
 static HOOKS_INIT: std::sync::Once = std::sync::Once::new();
 
 /// Initialize global performance hooks

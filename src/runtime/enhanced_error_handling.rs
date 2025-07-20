@@ -254,37 +254,21 @@ impl StackTraceCapture {
     pub fn capture_enhanced_trace(&self) -> Vec<EnhancedStackFrame> {
         let mut frames = Vec::new();
         
-        let bt = backtrace::Backtrace::new();
+        let bt = std::backtrace::Backtrace::capture();
         
-        for (i, frame) in bt.frames().iter().enumerate() {
+        let bt_string = format!("{}", bt);
+        for (i, line) in bt_string.lines().enumerate() {
             if i >= self.max_frames {
                 break;
             }
             
-            for symbol in frame.symbols() {
-                let function_name = symbol.name()
-                    .map(|n| rustc_demangle::demangle(&n.to_string()).to_string())
-                    .unwrap_or_else(|| "<unknown>".to_string());
-                
-                let file_name = symbol.filename()
-                    .map(|f| f.to_string_lossy().to_string())
-                    .unwrap_or_else(|| "<unknown>".to_string());
-                
-                let line_number = symbol.lineno().unwrap_or(0);
-                let column_number = symbol.colno().unwrap_or(0);
-                
-                let source_context = if self.enable_source_context {
-                    self.read_source_context(&file_name, line_number)
-                } else {
-                    None
-                };
-                
+            if !line.trim().is_empty() {
                 frames.push(EnhancedStackFrame {
-                    function_name,
-                    file_name,
-                    line_number,
-                    column_number,
-                    source_context,
+                    function_name: line.trim().to_string(),
+                    file_name: "<unknown>".to_string(),
+                    line_number: 0,
+                    column_number: 0,
+                    source_context: None,
                     frame_index: i,
                 });
             }
