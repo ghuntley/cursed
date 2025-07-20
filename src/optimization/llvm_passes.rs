@@ -1,7 +1,7 @@
 //! Real LLVM optimization passes integration
 
 use crate::error::{CursedError, Result};
-use crate::optimization::config::OptimizationConfig;
+use crate::optimization::OptimizationConfig;
 use inkwell::{
     context::Context,
     module::Module,

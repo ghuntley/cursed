@@ -182,6 +182,8 @@ pub struct PreemptiveWorker {
     pub priority_queue: Mutex<BTreeSet<PriorityQueueEntry>>,
     /// Context switch overhead tracking
     pub context_switch_overhead: Mutex<Duration>,
+    /// Thread handle for the worker thread
+    pub thread_handle: Mutex<Option<JoinHandle<()>>>,
 }
 
 /// Enhanced scheduler statistics
@@ -616,9 +618,20 @@ impl PreemptiveScheduler {
 
     /// Start a worker thread
     fn start_worker(&self, worker: Arc<PreemptiveWorker>) -> Result<(), CursedError> {
-        // TODO: Implement proper worker thread startup
-        // For now, return success without starting threads to avoid unsafe code
-        log::info!("Worker {} started (placeholder implementation)", worker.base.id);
+        let worker_clone = worker.clone();
+        let shutdown = self.shutdown.clone();
+        let run_queue = self.run_queue.clone();
+        
+        let handle = thread::spawn(move || {
+            log::info!("Worker {} started", worker_clone.base.id);
+            worker_clone.run(shutdown, run_queue);
+        });
+        
+        // Store the thread handle in the worker
+        let mut thread_handle = worker.thread_handle.lock()
+            .map_err(|_| CursedError::runtime_error("Failed to lock thread handle"))?;
+        *thread_handle = Some(handle);
+        
         Ok(())
     }
 
@@ -660,10 +673,62 @@ impl PreemptiveScheduler {
 
     /// Start load balancer
     fn start_load_balancer(&self) -> Result<(), CursedError> {
-    // TODO: Implement proper load balancer without unsafe code
-    // For now, return success without starting the load balancer thread
-    log::info!("Load balancer started (placeholder implementation)");
-    Ok(())
+        let workers = self.workers.clone();
+        let run_queue = self.run_queue.clone();
+        let shutdown = self.shutdown.clone();
+        let stats = self.stats.clone();
+        
+        let handle = thread::spawn(move || {
+            log::info!("Load balancer started");
+            
+            while !shutdown.load(Ordering::SeqCst) {
+                thread::sleep(Duration::from_millis(100)); // Check every 100ms
+                
+                // Get current worker loads
+                let workers_read = match workers.read() {
+                    Ok(w) => w,
+                    Err(_) => continue,
+                };
+                
+                let mut loads: Vec<(usize, f64)> = Vec::new();
+                for (idx, worker) in workers_read.iter().enumerate() {
+                    let load = worker.get_load();
+                    loads.push((idx, load));
+                }
+                
+                // Sort by load (ascending)
+                loads.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+                
+                // Redistribute work from high-load to low-load workers
+                if loads.len() >= 2 {
+                    let (low_idx, low_load) = loads[0];
+                    let (high_idx, high_load) = loads[loads.len() - 1];
+                    
+                    // If load difference is significant, try to balance
+                    if high_load - low_load > 2.0 {
+                        if let (Some(high_worker), Some(low_worker)) = 
+                            (workers_read.get(high_idx), workers_read.get(low_idx)) {
+                            
+                            // Try to steal work from high-load worker
+                            if let Some(stolen_goroutine) = high_worker.try_steal_work() {
+                                low_worker.add_goroutine(stolen_goroutine);
+                                
+                                // Update stats
+                                let mut stats_lock = stats.lock().unwrap();
+                                stats_lock.work_steal_attempts += 1;
+                                stats_lock.work_steal_successes += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        let mut balancer = self.load_balancer.lock()
+            .map_err(|_| CursedError::runtime_error("Failed to lock load balancer"))?;
+        *balancer = Some(handle);
+        
+        Ok(())
     }
 
     /// Calculate total load across all workers
@@ -1129,6 +1194,7 @@ impl PreemptiveWorker {
             cpu_affinity: None,
             priority_queue: Mutex::new(BTreeSet::new()),
             context_switch_overhead: Mutex::new(Duration::ZERO),
+            thread_handle: Mutex::new(None),
         })
     }
 
@@ -1137,6 +1203,88 @@ impl PreemptiveWorker {
         self.cpu_affinity = Some(cpu_id);
         // In a real implementation, this would set thread affinity
         Ok(())
+    }
+    
+    /// Main worker thread execution loop
+    pub fn run(&self, shutdown: Arc<AtomicBool>, run_queue: Arc<PriorityLockFreeDeque<GoroutineId, GoroutinePriority>>) {
+        while !shutdown.load(Ordering::SeqCst) {
+            // Check for preemption signal
+            if self.preemption_signal.load(Ordering::SeqCst) {
+                self.handle_preemption();
+            }
+            
+            // Try to get work from local queue first
+            if let Some(goroutine_id) = self.try_get_local_work() {
+                self.execute_goroutine(goroutine_id);
+                continue;
+            }
+            
+            // Try to steal work from global queue
+            if let Some((goroutine_id, _priority)) = run_queue.pop() {
+                self.execute_goroutine(goroutine_id);
+                continue;
+            }
+            
+            // No work available, wait briefly
+            thread::sleep(Duration::from_micros(100));
+        }
+    }
+    
+    /// Handle preemption signal
+    fn handle_preemption(&self) {
+        self.preemption_signal.store(false, Ordering::SeqCst);
+        
+        // Update quantum start time
+        let mut quantum_start = self.quantum_start.lock().unwrap();
+        *quantum_start = Some(Instant::now());
+        
+        // Update preemptive stats
+        let mut stats = self.preemptive_stats.lock().unwrap();
+        stats.preemptions += 1;
+    }
+    
+    /// Try to get work from local queue
+    fn try_get_local_work(&self) -> Option<GoroutineId> {
+        let mut queue = self.base.queue.lock().unwrap();
+        queue.pop_front()
+    }
+    
+    /// Execute a goroutine
+    fn execute_goroutine(&self, _goroutine_id: GoroutineId) {
+        // Update current goroutine
+        let mut current = self.base.current.lock().unwrap();
+        *current = Some(_goroutine_id);
+        
+        // Update stats
+        let mut stats = self.base.stats.lock().unwrap();
+        stats.tasks_completed += 1;
+        
+        // Simulate work execution
+        thread::sleep(Duration::from_micros(10));
+        
+        // Clear current goroutine
+        *current = None;
+    }
+    
+    /// Get current load of this worker
+    pub fn get_load(&self) -> f64 {
+        let queue = self.base.queue.lock().unwrap();
+        queue.len() as f64
+    }
+    
+    /// Try to steal work from this worker
+    pub fn try_steal_work(&self) -> Option<GoroutineId> {
+        let mut queue = self.base.queue.lock().unwrap();
+        queue.pop_back() // Steal from back of queue
+    }
+    
+    /// Add a goroutine to this worker's queue
+    pub fn add_goroutine(&self, goroutine_id: GoroutineId) {
+        let mut queue = self.base.queue.lock().unwrap();
+        queue.push_back(goroutine_id);
+        
+        // Notify worker thread
+        self.base.work_available.notify_one();
     }
 }
 

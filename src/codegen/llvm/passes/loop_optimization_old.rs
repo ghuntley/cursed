@@ -1,5 +1,5 @@
 use crate::error::{CursedError, Result};
-use crate::optimization::config::OptimizationConfig;
+use crate::optimization::OptimizationConfig;
 use inkwell::values::{FunctionValue, InstructionValue};
 use inkwell::basic_block::BasicBlock;
 use inkwell::context::Context;

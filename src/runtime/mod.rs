@@ -11,7 +11,7 @@ pub mod panic;
 pub mod panic_recover;
 pub mod goroutine;
 pub mod lockfree_deque; // Lock-free work stealing deques
-// pub mod preemptive_scheduler; // Temporarily disabled due to build issues
+// pub mod preemptive_scheduler; // Temporarily disabled due to interface mismatches
 pub mod error_handling;
 pub mod enhanced_error_handling;
 pub mod simple_enhanced_error_handling;
@@ -73,6 +73,8 @@ pub use runtime::{Runtime, RuntimeConfig, RuntimeStats, RuntimeError, RuntimeErr
 
 // Production runtime exports
 pub mod production_runtime;
+pub mod gc_production;        // Production garbage collector
+pub mod performance_monitor;  // Production performance monitoring
 pub use production_runtime::{
     ProductionRuntime, ProductionRuntimeConfig, ProductionRuntimeStats,
     ChannelConfig, ErrorStats, PerformanceMetrics,

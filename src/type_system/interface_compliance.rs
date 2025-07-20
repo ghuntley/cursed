@@ -93,7 +93,7 @@ impl InterfaceComplianceChecker {
                 parameters: method.parameters.clone(),
                 return_type: method.return_type.clone(),
                 receiver_type,
-                source_location: None, // TODO: Add source location to MethodSignature
+                source_location: method.source_location.clone(),
             };
             
             method_requirements.push(requirement);

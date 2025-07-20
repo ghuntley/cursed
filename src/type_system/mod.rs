@@ -99,6 +99,7 @@ impl TypeSystem {
             ],
             fields: vec![], // Built-in vibez has no fields
             is_builtin: true,
+            source_location: None,
         };
         environment.type_definitions.insert("vibez".to_string(), vibez_type);
         
@@ -767,6 +768,7 @@ pub struct TypeDefinition {
     pub methods: Vec<MethodSignature>,
     pub fields: Vec<crate::ast::StructField>, // For struct field storage
     pub is_builtin: bool,
+    pub source_location: Option<crate::error::SourceLocation>,
 }
 
 #[derive(Debug, Clone)]
@@ -1117,6 +1119,7 @@ impl TypeEnvironment {
             methods: Vec::new(),
             fields: Vec::new(), // Built-in types have no fields by default
             is_builtin: true,
+            source_location: None,
         };
         self.type_definitions.insert(name.to_string(), type_def);
     }
@@ -1198,6 +1201,7 @@ impl TypeEnvironment {
             methods: Vec::new(),
             fields: Vec::new(),
             is_builtin: false,
+            source_location: None,
         };
         
         self.type_definitions.insert(name.to_string(), type_def);
@@ -1218,6 +1222,7 @@ impl TypeEnvironment {
             methods: Vec::new(),
             fields: Vec::new(),
             is_builtin: false,
+            source_location: None,
         };
         
         self.type_definitions.insert(name.to_string(), type_def);

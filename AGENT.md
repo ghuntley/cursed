@@ -295,3 +295,22 @@ src/
 - Stdlib dependencies block full self-hosting
 - Stage2 compiler can compile basic CURSED programs
 - Need to complete stdlib placeholder elimination for full self-hosting
+
+### Channel Blocking & Preemptive Scheduling Fixes
+- Channel receive operations require explicit timeout handling to prevent infinite blocking
+- Implement preemptive scheduling with yield points in long-running operations
+- Use select statements with default cases for non-blocking channel operations
+- Add channel buffer sizing to prevent goroutine starvation
+
+### Pattern Matching & Interface Dispatch Critical Fixes
+- Pattern matching syntax: use `match value { }` not `match(value) { }`
+- Interface method dispatch requires proper vtable generation in LLVM backend
+- Type checking must validate interface implementations before codegen
+- Pattern guards need separate AST nodes for proper compilation
+
+### Parser Syntax Issue Resolutions
+- Comment syntax: `// comment` not `fr fr comment` (reserve fr fr for future use)
+- Variable declarations: `sus/highkey` for mutable, `lowkey` for immutable (not vibes)
+- Boolean literals: `based` (true) and `cap` (false) are reserved keywords
+- String concatenation: `+` operator, not `vibes` function
+- Avoid mixing slang keywords - stick to established grammar patterns

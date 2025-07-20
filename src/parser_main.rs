@@ -3124,6 +3124,7 @@ impl Parser {
             receiver: None, // Interface methods don't have receivers
             parameters,
             return_type,
+            source_location: None, // TODO: Extract from parser context
         })
     }
     

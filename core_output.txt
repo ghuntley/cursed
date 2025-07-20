@@ -1,2 +1,0 @@
-Core features working: 
-42

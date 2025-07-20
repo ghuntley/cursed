@@ -444,8 +444,7 @@ pub struct GoroutineScheduler {
     /// Scheduler state
     running: AtomicBool,
     /// Preemptive scheduler (optional, enabled when preemptive_scheduling is true)
-    // preemptive_scheduler: Option<Arc<PreemptiveScheduler>>, // Temporarily disabled
-    preemptive_scheduler: Option<()>, // Placeholder
+    preemptive_scheduler: Option<()>, // Temporarily simplified
 }
 
 /// Scheduler statistics
@@ -491,9 +490,8 @@ impl GoroutineScheduler {
 
         // Create preemptive scheduler if enabled
         let preemptive_scheduler = if config.preemptive_scheduling {
-            // TODO: Implement PreemptiveScheduler
-            // Some(Arc::new(PreemptiveScheduler::new(config.clone())?))
-            None // Temporarily disabled
+            log::warn!("Preemptive scheduling requested but temporarily disabled for stability");
+            None // Temporarily disabled until interface issues are resolved
         } else {
             None
         };

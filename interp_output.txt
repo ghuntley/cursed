@@ -1,2 +1,0 @@
-Running debug_string_var.csd
-test

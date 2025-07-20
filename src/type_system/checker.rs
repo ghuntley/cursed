@@ -1372,6 +1372,7 @@ impl TypeChecker {
             methods: Vec::new(),
             fields: validated_fields,
             is_builtin: false,
+            source_location: None,
         };
         
         self.type_system.environment.type_definitions.insert(
@@ -1462,6 +1463,7 @@ impl TypeChecker {
             methods: validated_methods,
             fields: Vec::new(), // Interfaces don't have fields
             is_builtin: false,
+            source_location: None,
         };
         
         self.type_system.environment.type_definitions.insert(

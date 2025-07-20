@@ -1,1 +1,0 @@
-Running /home/ghuntley/code/cursed/test_simple_features.csd

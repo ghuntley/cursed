@@ -1,5 +1,0 @@
-Running test_simple_features.csd
-Simple compilation test
-Number:42
-Flag:true
-Name:CURSED
