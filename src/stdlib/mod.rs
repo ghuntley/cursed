@@ -19,6 +19,7 @@ pub mod stringz;
 pub mod vibez;
 pub mod net;
 pub mod squish_core;
+pub mod ffi;
 
 // Additional stdlib modules
 pub mod template;

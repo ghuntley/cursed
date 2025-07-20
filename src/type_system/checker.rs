@@ -11,7 +11,7 @@ use crate::ast::{Expression, Statement, Program, BinaryExpression, CallExpressio
                  ChannelCreationExpression, TypeAliasStatement, DeferStatement, AstVisitor};
 use crate::error::CursedError;
 use crate::core::Type;
-use crate::error_recovery::SourceLocation;
+use crate::error::SourceLocation;
 use super::{TypeExpression, TypeSystem, TypeEnvironment, InferenceContext, 
             TypeSubstitution, ConstraintResolver, ConstraintViolation, TypeDefinition, 
             TypeKind, MethodSignature, ConstraintTracker, ConstraintStatus};
