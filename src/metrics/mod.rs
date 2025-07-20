@@ -721,32 +721,25 @@ pub fn get_global_metrics() -> Arc<MetricsManager> {
 
 /// Start global metrics collection
 pub fn start_global_metrics() -> Result<(), CursedError> {
-    if let Some(metrics) = get_global_metrics() {
-        metrics.start()
-    } else {
-        Err(CursedError::runtime_error("Global metrics not initialized"))
-    }
+    let metrics = get_global_metrics();
+    metrics.start()
 }
 
 /// Stop global metrics collection
 pub fn stop_global_metrics() -> Result<(), CursedError> {
-    if let Some(metrics) = get_global_metrics() {
-        metrics.stop()
-    } else {
-        Ok(()) // Not initialized, nothing to stop
-    }
+    let metrics = get_global_metrics();
+    metrics.stop()
 }
 
 /// Record compilation metrics globally
 pub fn record_global_compilation_metrics(metrics: CompilationMetrics) {
-    if let Some(manager) = get_global_metrics() {
-        manager.record_compilation_metrics(metrics);
-    }
+    let manager = get_global_metrics();
+    manager.record_compilation_metrics(metrics);
 }
 
 /// Generate global metrics report
-pub fn generate_global_report() -> Option<MetricsReport> {
-    get_global_metrics().map(|m| m.generate_report())
+pub fn generate_global_report() -> MetricsReport {
+    get_global_metrics().generate_report()
 }
 
 /// Convenience macros for metrics integration

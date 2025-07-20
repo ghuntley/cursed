@@ -2063,7 +2063,8 @@ fn is_llvm_missing_error(error: &CursedError) -> bool {
 /// Create a wrapper script that runs the program in interpretation mode
 fn create_interpretation_wrapper(source: &str, source_file: &str, output_file: &str) -> crate::error::Result<()> {
     use std::fs;
-    use std::os::unix::fs::PermissionsExt;
+    #[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
     
     tracing::info!("Creating interpretation wrapper for {} -> {}", source_file, output_file);
     
@@ -2122,6 +2123,7 @@ exec {} "$SOURCE_FILE" "$@"
     let metadata = fs::metadata(output_file)
         .map_err(|e| CursedError::Io(format!("Failed to get file metadata: {}", e)))?;
     let mut permissions = metadata.permissions();
+    #[cfg(unix)]
     permissions.set_mode(0o755);
     fs::set_permissions(output_file, permissions)
         .map_err(|e| CursedError::Io(format!("Failed to set file permissions: {}", e)))?;
@@ -2474,11 +2476,13 @@ fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::e
     // Make the output file executable
     #[cfg(unix)]
     {
-        use std::os::unix::fs::PermissionsExt;
+        #[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
         let metadata = std::fs::metadata(output_file)
             .map_err(|e| CursedError::Io(format!("Failed to get file metadata: {}", e)))?;
         let mut permissions = metadata.permissions();
-        permissions.set_mode(0o755); // rwxr-xr-x
+        #[cfg(unix)]
+    permissions.set_mode(0o755); // rwxr-xr-x
         std::fs::set_permissions(output_file, permissions)
             .map_err(|e| CursedError::Io(format!("Failed to set executable permissions: {}", e)))?;
     }
