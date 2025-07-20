@@ -384,32 +384,47 @@ fn link_system_libraries() {
         }
     }
     
-    // Build architecture-specific library search paths
-    let mut possible_libffi_paths = vec![
-        "/nix/store/09b5m303v4d52wjry30xsabj65vnhkni-libffi-3.4.7/lib",
-        "/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib",
-        "/nix/store/n0lzbpbc5dwq03s1vjr885b28cjbp2gs-libffi-3.4.7/lib",
-        "/nix/store/paqdsvmj4fwhc2w6rr884c3kymxl69k0-libffi-3.4.8/lib",
-        "/usr/local/lib",
-    ];
+    // Helper function to find Nix store paths for libraries
+    fn find_nix_library_paths(lib_name: &str) -> Vec<String> {
+        let mut paths = Vec::new();
+        
+        // Look for libraries in Nix store
+        if let Ok(entries) = std::fs::read_dir("/nix/store") {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if name.contains(lib_name) {
+                        let lib_path = path.join("lib");
+                        if lib_path.exists() {
+                            if let Some(path_str) = lib_path.to_str() {
+                                paths.push(path_str.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        paths
+    }
     
-    let mut possible_ncurses_paths = vec![
-        "/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib",
-        "/usr/local/lib",
-    ];
+    // Build architecture-specific library search paths with dynamic Nix discovery
+    let mut possible_libffi_paths = find_nix_library_paths("libffi");
+    possible_libffi_paths.push("/usr/local/lib".to_string());
     
-    let mut possible_xml2_paths = vec![
-        "/nix/store/0z4hrksbdrwv9xb8ycjk3rq9ppmw0350-libxml2-2.13.5/lib",
-        "/usr/local/lib",
-    ];
+    let mut possible_ncurses_paths = find_nix_library_paths("ncurses");
+    possible_ncurses_paths.push("/usr/local/lib".to_string());
+    
+    let mut possible_xml2_paths = find_nix_library_paths("libxml2");
+    possible_xml2_paths.push("/usr/local/lib".to_string());
 
     // Add architecture-specific paths
     match (target_arch.as_str(), target_os.as_str()) {
         ("aarch64", "macos") => {
             // macOS arm64 (M1/M2/M3) - Homebrew installs to /opt/homebrew
-            possible_libffi_paths.push("/opt/homebrew/lib");
-            possible_ncurses_paths.push("/opt/homebrew/lib");
-            possible_xml2_paths.push("/opt/homebrew/lib");
+            possible_libffi_paths.push("/opt/homebrew/lib".to_string());
+            possible_ncurses_paths.push("/opt/homebrew/lib".to_string());
+            possible_xml2_paths.push("/opt/homebrew/lib".to_string());
             println!("cargo:rustc-link-search=native=/opt/homebrew/lib");
             println!("cargo:rustc-link-search=native=/System/Library/Frameworks");
             println!("cargo:rustc-link-search=framework=/System/Library/Frameworks");
@@ -419,45 +434,45 @@ fn link_system_libraries() {
         },
         ("aarch64", "linux") => {
             // Linux arm64 (aarch64)
-            possible_libffi_paths.push("/usr/lib/aarch64-linux-gnu");
-            possible_ncurses_paths.push("/usr/lib/aarch64-linux-gnu");
-            possible_xml2_paths.push("/usr/lib/aarch64-linux-gnu");
+            possible_libffi_paths.push("/usr/lib/aarch64-linux-gnu".to_string());
+            possible_ncurses_paths.push("/usr/lib/aarch64-linux-gnu".to_string());
+            possible_xml2_paths.push("/usr/lib/aarch64-linux-gnu".to_string());
             println!("cargo:rustc-link-search=native=/usr/lib/aarch64-linux-gnu");
         },
         ("x86_64", "macos") => {
             // macOS x86_64 - Homebrew installs to /usr/local
-            possible_libffi_paths.push("/usr/local/lib");
-            possible_ncurses_paths.push("/usr/local/lib");
-            possible_xml2_paths.push("/usr/local/lib");
+            possible_libffi_paths.push("/usr/local/lib".to_string());
+            possible_ncurses_paths.push("/usr/local/lib".to_string());
+            possible_xml2_paths.push("/usr/local/lib".to_string());
         },
         ("x86_64", "linux") => {
             // Linux x86_64
-            possible_libffi_paths.push("/usr/lib/x86_64-linux-gnu");
-            possible_ncurses_paths.push("/usr/lib/x86_64-linux-gnu");
-            possible_xml2_paths.push("/usr/lib/x86_64-linux-gnu");
+            possible_libffi_paths.push("/usr/lib/x86_64-linux-gnu".to_string());
+            possible_ncurses_paths.push("/usr/lib/x86_64-linux-gnu".to_string());
+            possible_xml2_paths.push("/usr/lib/x86_64-linux-gnu".to_string());
         },
         _ => {
             // Default fallback paths
-            possible_libffi_paths.push("/usr/lib");
-            possible_ncurses_paths.push("/usr/lib");
-            possible_xml2_paths.push("/usr/lib");
+            possible_libffi_paths.push("/usr/lib".to_string());
+            possible_ncurses_paths.push("/usr/lib".to_string());
+            possible_xml2_paths.push("/usr/lib".to_string());
         }
     }
     
     for path in possible_libffi_paths {
-        if std::path::Path::new(path).exists() {
+        if std::path::Path::new(&path).exists() {
             println!("cargo:rustc-link-search=native={}", path);
         }
     }
     
     for path in possible_ncurses_paths {
-        if std::path::Path::new(path).exists() {
+        if std::path::Path::new(&path).exists() {
             println!("cargo:rustc-link-search=native={}", path);
         }
     }
     
     for path in possible_xml2_paths {
-        if std::path::Path::new(path).exists() {
+        if std::path::Path::new(&path).exists() {
             println!("cargo:rustc-link-search=native={}", path);
         }
     }
