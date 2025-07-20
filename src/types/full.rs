@@ -384,6 +384,7 @@ pub mod full_type_utils {
                     return_type: Some(TypeExpression::named("void")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 },
                 MethodSignature {
                     name: "get".to_string(),
@@ -391,6 +392,7 @@ pub mod full_type_utils {
                     return_type: Some(TypeExpression::generic("Option", vec![TypeExpression::named("T")])),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 }
             ],
             fields: Vec::new(),
@@ -412,6 +414,7 @@ pub mod full_type_utils {
                     return_type: Some(TypeExpression::named("bool")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 },
                 MethodSignature {
                     name: "unwrap".to_string(),
@@ -419,6 +422,7 @@ pub mod full_type_utils {
                     return_type: Some(TypeExpression::named("T")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 }
             ],
             fields: Vec::new(),
@@ -440,6 +444,7 @@ pub mod full_type_utils {
                     return_type: Some(TypeExpression::named("bool")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 },
                 MethodSignature {
                     name: "unwrap".to_string(),
@@ -447,6 +452,7 @@ pub mod full_type_utils {
                     return_type: Some(TypeExpression::named("T")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 }
             ],
             fields: Vec::new(),

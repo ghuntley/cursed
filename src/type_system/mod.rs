@@ -95,6 +95,7 @@ impl TypeSystem {
                     return_type: Some(TypeExpression::named("cap")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
+                    source_location: None,
                 }
             ],
             fields: vec![], // Built-in vibez has no fields
@@ -880,6 +881,7 @@ pub struct MethodSignature {
     pub return_type: Option<TypeExpression>,
     pub type_parameters: Vec<String>,
     pub constraints: Vec<GenericConstraint>,
+    pub source_location: Option<crate::error::SourceLocation>,
 }
 
 #[derive(Debug, Clone)]

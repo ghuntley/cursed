@@ -1,6 +1,5 @@
-sus x normie = 42;
-sus y normie = 28;
-sus result normie = x + y;
-vibez.spill("Arithmetic test: ");
-vibez.spill(result);
-vibez.spill("Test complete");
+// Test arithmetic operations
+sus x drip = 5
+sus y drip = 3
+sus result drip = x + y
+vibez.spill("Result: " + result.tea())

@@ -684,6 +684,7 @@ mod tests {
                     receiver: None,
                     parameters: vec![],
                     return_type: Some(AstType::Normie),
+                    source_location: None,
                 }
             ],
             visibility: Visibility::Public,
@@ -709,6 +710,7 @@ mod tests {
                     receiver: None,
                     parameters: vec![],
                     return_type: Some(AstType::Normie),
+                    source_location: None,
                 }
             ],
             visibility: Visibility::Public,
@@ -747,6 +749,7 @@ mod tests {
                     receiver: None,
                     parameters: vec![],
                     return_type: Some(AstType::Normie),
+                    source_location: None,
                 }
             ],
             visibility: Visibility::Public,
@@ -766,6 +769,7 @@ mod tests {
                     receiver: None,
                     parameters: vec![],
                     return_type: Some(AstType::Normie),
+                    source_location: None,
                 }
             ],
             visibility: Visibility::Public,

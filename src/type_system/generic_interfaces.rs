@@ -827,6 +827,7 @@ mod tests {
                         }
                     ],
                     return_type: Some(AstType::Normie),
+                    source_location: None,
                 }
             ],
             visibility: Visibility::Public,

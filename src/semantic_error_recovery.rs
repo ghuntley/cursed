@@ -314,6 +314,7 @@ impl TypeChecker {
             methods: Vec::new(),
             fields: Vec::new(),
             is_builtin: true,
+            source_location: None,
         };
         
         // Add to type system (this would need proper integration)

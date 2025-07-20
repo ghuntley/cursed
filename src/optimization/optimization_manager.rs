@@ -12,8 +12,8 @@ pub struct PerformanceMetrics {
     pub optimization_level: String,
 }
 
-// Use the OptimizationResult from types module
-pub type OptimizationResult = crate::optimization::types::OptimizationResult;
+// Use the OptimizationResult from performance_optimizer module
+pub type OptimizationResult = crate::optimization::performance_optimizer::OptimizationResult;
 
 #[derive(Debug)]
 pub struct AdvancedOptimizationManager {
