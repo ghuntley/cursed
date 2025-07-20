@@ -209,19 +209,80 @@ impl<T> SimpleChannel<T> {
     
     /// Send with timeout
     pub fn send_timeout(&self, value: T, timeout: Duration) -> SendResult<T> {
-        let start = Instant::now();
-        let mut result = self.try_send(value);
-        
-        while let SendResult::WouldBlock(v) = result {
-            if start.elapsed() >= timeout {
-                return SendResult::WouldBlock(v);
-            }
-            
-            std::thread::sleep(Duration::from_millis(1));
-            result = self.try_send(v);
+        // Check closed status atomically before acquiring lock
+        if self.is_closed() {
+            return SendResult::Closed(value);
         }
         
-        result
+        let start = Instant::now();
+        let deadline = start + timeout;
+        let mut buffer = match self.buffer.lock() {
+            Ok(guard) => guard,
+            Err(_) => return SendResult::Closed(value),
+        };
+        
+        // For unbuffered channels, wait for receiver
+        if self.capacity == 0 {
+            // Wait for receiver to be available with timeout
+            while self.receiver_count.load(Ordering::Acquire) == 0 && !self.is_closed() {
+                if Instant::now() >= deadline {
+                    return SendResult::WouldBlock(value);
+                }
+                
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                let (new_guard, timeout_result) = self.sender_notify.wait_timeout(buffer, remaining)
+                    .unwrap_or_else(|_| panic!("Mutex poisoned"));
+                
+                buffer = new_guard;
+                if timeout_result.timed_out() {
+                    return SendResult::WouldBlock(value);
+                }
+            }
+            
+            if self.is_closed() {
+                return SendResult::Closed(value);
+            }
+            
+            buffer.push_back(value);
+            drop(buffer);
+            self.receiver_notify.notify_one();
+            
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.total_sent += 1;
+            }
+            
+            return SendResult::Sent;
+        }
+        
+        // For buffered channels, wait for space with timeout
+        while buffer.len() >= self.capacity && !self.is_closed() {
+            if Instant::now() >= deadline {
+                return SendResult::WouldBlock(value);
+            }
+            
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            let (new_guard, timeout_result) = self.sender_notify.wait_timeout(buffer, remaining)
+                .unwrap_or_else(|_| panic!("Mutex poisoned"));
+                
+            buffer = new_guard;
+            if timeout_result.timed_out() {
+                return SendResult::WouldBlock(value);
+            }
+        }
+        
+        if self.is_closed() {
+            return SendResult::Closed(value);
+        }
+        
+        buffer.push_back(value);
+        drop(buffer);
+        self.receiver_notify.notify_one();
+        
+        if let Ok(mut stats) = self.stats.lock() {
+            stats.total_sent += 1;
+        }
+        
+        SendResult::Sent
     }
     
     /// Receive a value (blocking)
@@ -285,19 +346,44 @@ impl<T> SimpleChannel<T> {
     
     /// Receive with timeout
     pub fn recv_timeout(&self, timeout: Duration) -> ReceiveResult<T> {
-        let start = Instant::now();
-        let mut result = self.try_recv();
+        let deadline = Instant::now() + timeout;
+        let mut buffer = match self.buffer.lock() {
+            Ok(guard) => guard,
+            Err(_) => return ReceiveResult::Closed,
+        };
         
-        while let ReceiveResult::WouldBlock = result {
-            if start.elapsed() >= timeout {
+        // Wait for data or channel close with timeout
+        while buffer.is_empty() && !self.is_closed() {
+            if Instant::now() >= deadline {
                 return ReceiveResult::WouldBlock;
             }
             
-            std::thread::sleep(Duration::from_millis(1));
-            result = self.try_recv();
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            let (new_guard, timeout_result) = self.receiver_notify.wait_timeout(buffer, remaining)
+                .unwrap_or_else(|_| panic!("Mutex poisoned"));
+            
+            buffer = new_guard;
+            if timeout_result.timed_out() {
+                return ReceiveResult::WouldBlock;
+            }
         }
         
-        result
+        if let Some(value) = buffer.pop_front() {
+            drop(buffer);
+            self.sender_notify.notify_one();
+            
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.total_received += 1;
+            }
+            
+            return ReceiveResult::Received(value);
+        }
+        
+        if self.is_closed() {
+            ReceiveResult::Closed
+        } else {
+            ReceiveResult::WouldBlock
+        }
     }
     
     /// Close the channel

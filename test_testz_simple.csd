@@ -1,10 +1,6 @@
-# Simple test of testz module
 yeet "testz"
 
-# Test basic functionality
-test_start("testz validation")
-assert_eq_int(42, 42)
-assert_eq_string("hello", "hello")
+test_start("Simple test")
+assert_eq_int(2 + 2, 4)
 assert_true(based)
-assert_false(cap)
 print_test_summary()

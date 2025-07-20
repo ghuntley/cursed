@@ -399,6 +399,7 @@ impl Parser {
                 TokenKind::Byte => { self.next_token()?; Some(Type::Byte) },
                 TokenKind::Rune => { self.next_token()?; Some(Type::Rune) },
                 TokenKind::Extra => { self.next_token()?; Some(Type::Extra) },
+                TokenKind::Cap => { self.next_token()?; Some(Type::Void) },  // cringe -> void
                 _ => None
             }
         } else {
@@ -442,26 +443,7 @@ impl Parser {
                 self.next_token()?;
                 
                 // Parse parameter type if present
-                let param_type = if let Some(token) = self.current_token.as_ref() {
-                    // Check if next token is a type token
-                    match token.kind {
-                        TokenKind::Normie => { self.next_token()?; Some(Type::Normie) },
-                        TokenKind::Smol => { self.next_token()?; Some(Type::Smol) },
-                        TokenKind::Mid => { self.next_token()?; Some(Type::Mid) },
-                        TokenKind::Thicc => { self.next_token()?; Some(Type::Thicc) },
-                        TokenKind::Snack => { self.next_token()?; Some(Type::Snack) },
-                        TokenKind::Meal => { self.next_token()?; Some(Type::Meal) },
-                        TokenKind::Tea => { self.next_token()?; Some(Type::Tea) },
-                        TokenKind::Lit => { self.next_token()?; Some(Type::Lit) },
-                        TokenKind::Sip => { self.next_token()?; Some(Type::Sip) },
-                        TokenKind::Byte => { self.next_token()?; Some(Type::Byte) },
-                        TokenKind::Rune => { self.next_token()?; Some(Type::Rune) },
-                        TokenKind::Extra => { self.next_token()?; Some(Type::Extra) },
-                        _ => None
-                    }
-                } else {
-                    None
-                };
+                let param_type = self.parse_type()?;
                 
                 parameters.push(Parameter {
                     name: param_name,
@@ -581,6 +563,7 @@ impl Parser {
                 TokenKind::Byte => { self.next_token()?; Some(Type::Byte) },
                 TokenKind::Rune => { self.next_token()?; Some(Type::Rune) },
                 TokenKind::Extra => { self.next_token()?; Some(Type::Extra) },
+                TokenKind::Cap => { self.next_token()?; Some(Type::Void) },  // cringe -> void
                 _ => None
             }
         } else {
@@ -899,7 +882,7 @@ impl Parser {
                 } else {
                     return Err(Error::Parse("Expected '<' after 'dm' for channel type".to_string()));
                 }
-            } else if token.kind == TokenKind::Identifier || token.kind == TokenKind::Normie || token.kind == TokenKind::Tea || token.kind == TokenKind::Lit || token.kind == TokenKind::Sip || token.kind == TokenKind::Smol || token.kind == TokenKind::Mid || token.kind == TokenKind::Thicc || token.kind == TokenKind::Snack || token.kind == TokenKind::Meal || token.kind == TokenKind::Byte || token.kind == TokenKind::Rune || token.kind == TokenKind::Extra {
+            } else if token.kind == TokenKind::Identifier || token.kind == TokenKind::Normie || token.kind == TokenKind::Tea || token.kind == TokenKind::Lit || token.kind == TokenKind::Sip || token.kind == TokenKind::Smol || token.kind == TokenKind::Mid || token.kind == TokenKind::Thicc || token.kind == TokenKind::Snack || token.kind == TokenKind::Meal || token.kind == TokenKind::Byte || token.kind == TokenKind::Rune || token.kind == TokenKind::Extra || token.kind == TokenKind::Cap {
                 // Basic type parsing
                 let type_name = token.lexeme.clone();
                 self.next_token()?;
@@ -916,6 +899,7 @@ impl Parser {
                     "byte" => Type::Byte,
                     "rune" => Type::Rune,
                     "extra" => Type::Extra,
+                    "cringe" => Type::Void,  // cringe -> void
                     "drip" => Type::Float,  // Legacy support
                     // TestResult type system
                     "TestResult" => Type::TestResult,

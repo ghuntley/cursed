@@ -16,6 +16,7 @@ use std::marker::PhantomData;
 
 use crate::runtime::channels::{ChannelError, ChannelResult, SendResult, ReceiveResult};
 use crate::runtime::channels::buffer::ChannelBuffer;
+use crate::runtime::channels::sync::{PriorityWaitQueue, WaitQueueEntry, WaitOperationType, get_global_channel_sync};
 use crate::runtime::goroutine::GoroutineId;
 
 /// Operation priority levels
@@ -197,12 +198,24 @@ impl<T> SendOperation<T> {
                         return SendResult::Closed(value);
                     }
                     
-                    // Exponential backoff to reduce CPU usage
-                    let sleep_time = std::cmp::min(
+                    // Use proper blocking instead of busy-wait
+                    let channel_sync = get_global_channel_sync();
+                    let goroutine_id = self.options.goroutine_id.unwrap_or(0);
+                    let wait_time = std::cmp::min(
                         INITIAL_SLEEP_MS * (1 << std::cmp::min(retry_count / 100, 6)),
                         MAX_SLEEP_MS
                     );
-                    thread::sleep(Duration::from_millis(sleep_time));
+                    
+                    // Block using wait queue with exponential backoff timeout
+                    let _ = channel_sync.block_on_send(
+                        0, // Channel ID would need to be passed through
+                        goroutine_id,
+                        self.options.priority,
+                        Some(Duration::from_millis(wait_time))
+                    );
+                    
+                    // Small yield to allow other operations
+                    thread::yield_now();
                 }
             }
         }
@@ -235,8 +248,18 @@ impl<T> SendOperation<T> {
                         return SendResult::WouldBlock(value);
                     }
                     
-                    // Block briefly
-                    thread::sleep(Duration::from_millis(1));
+                    // Use proper blocking with remaining timeout
+                    let channel_sync = get_global_channel_sync();
+                    let goroutine_id = self.options.goroutine_id.unwrap_or(0);
+                    let remaining_time = deadline.saturating_duration_since(Instant::now());
+                    let wait_time = std::cmp::min(remaining_time, Duration::from_millis(10));
+                    
+                    let _ = channel_sync.block_on_send(
+                        0, // Channel ID would need to be passed through
+                        goroutine_id,
+                        self.options.priority,
+                        Some(wait_time)
+                    );
                 }
             }
         }
@@ -353,12 +376,22 @@ impl<T> ReceiveOperation<T> {
                         return ReceiveResult::Closed;
                     }
                     
-                    // Exponential backoff to reduce CPU usage
-                    let sleep_time = std::cmp::min(
+                    // Use proper blocking instead of busy-wait
+                    let channel_sync = get_global_channel_sync();
+                    let goroutine_id = self.options.goroutine_id.unwrap_or(0);
+                    let wait_time = std::cmp::min(
                         INITIAL_SLEEP_MS * (1 << std::cmp::min(retry_count / 100, 6)),
                         MAX_SLEEP_MS
                     );
-                    thread::sleep(Duration::from_millis(sleep_time));
+                    
+                    let _ = channel_sync.block_on_receive(
+                        0, // Channel ID would need to be passed through
+                        goroutine_id,
+                        self.options.priority,
+                        Some(Duration::from_millis(wait_time))
+                    );
+                    
+                    thread::yield_now();
                 }
                 Err(ChannelError::Closed) => {
                     ReceiveOperation::<T>::mark_completed(self);
@@ -372,11 +405,21 @@ impl<T> ReceiveOperation<T> {
                         return ReceiveResult::Closed;
                     }
                     
-                    let sleep_time = std::cmp::min(
+                    let wait_time = std::cmp::min(
                         INITIAL_SLEEP_MS * (1 << std::cmp::min(retry_count / 100, 6)),
                         MAX_SLEEP_MS
                     );
-                    thread::sleep(Duration::from_millis(sleep_time));
+                    
+                    let channel_sync = get_global_channel_sync();
+                    let goroutine_id = self.options.goroutine_id.unwrap_or(0);
+                    let _ = channel_sync.block_on_receive(
+                        0, // Channel ID would need to be passed through
+                        goroutine_id,
+                        self.options.priority,
+                        Some(Duration::from_millis(wait_time))
+                    );
+                    
+                    thread::yield_now();
                 }
             }
         }
@@ -402,7 +445,17 @@ impl<T> ReceiveOperation<T> {
                         return ReceiveResult::WouldBlock;
                     }
                     
-                    thread::sleep(Duration::from_millis(1));
+                    let channel_sync = get_global_channel_sync();
+                    let goroutine_id = self.options.goroutine_id.unwrap_or(0);
+                    let remaining_time = deadline.saturating_duration_since(Instant::now());
+                    let wait_time = std::cmp::min(remaining_time, Duration::from_millis(10));
+                    
+                    let _ = channel_sync.block_on_receive(
+                        0, // Channel ID would need to be passed through
+                        goroutine_id,
+                        self.options.priority,
+                        Some(wait_time)
+                    );
                 }
                 Err(ChannelError::Closed) => {
                     ReceiveOperation::<T>::mark_completed(self);
@@ -414,7 +467,17 @@ impl<T> ReceiveOperation<T> {
                         return ReceiveResult::WouldBlock;
                     }
                     
-                    thread::sleep(Duration::from_millis(1));
+                    let channel_sync = get_global_channel_sync();
+                    let goroutine_id = self.options.goroutine_id.unwrap_or(0);
+                    let remaining_time = deadline.saturating_duration_since(Instant::now());
+                    let wait_time = std::cmp::min(remaining_time, Duration::from_millis(10));
+                    
+                    let _ = channel_sync.block_on_receive(
+                        0, // Channel ID would need to be passed through
+                        goroutine_id,
+                        self.options.priority,
+                        Some(wait_time)
+                    );
                 }
             }
         }

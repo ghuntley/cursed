@@ -262,3 +262,36 @@ src/
 ├── debug/                  # Debug information
 └── linter/                 # Code quality analysis
 ```
+
+## Key Development Learnings
+
+### Stdlib Completion Priorities
+- Focus on placeholder elimination over large-scale migrations
+- Target FFI-dependent modules first (cryptz, concurrenz, vibe_net)
+- Implement missing functions before adding new features
+- Prioritize runtime-critical modules (error_drip, atomic_drip, gc)
+
+### Parallel Subagent Coordination 
+- Use concurrent codebase_search_agent calls for independent research
+- Split by functional area: parser, codegen, runtime, stdlib
+- Share results through focused summary reports
+- Avoid overlapping file modifications between agents
+
+### Successful Runtime Improvements
+- RegisterTracker centralization fixed register allocation issues
+- Unified error handling through ErrorCore eliminated crashes
+- Channel lifecycle management resolved memory leaks
+- Interface dispatch optimization improved performance
+
+### Effective Stdlib Testing Strategy
+- Test modules individually with dedicated test_module.csd files
+- Use testz framework for all stdlib testing
+- Verify both interpretation and compilation modes
+- Run comprehensive_stdlib_test.csd for integration validation
+
+### Self-Hosting Progress State
+- Bootstrap compilation works for simple programs
+- Core language features fully self-hosting capable
+- Stdlib dependencies block full self-hosting
+- Stage2 compiler can compile basic CURSED programs
+- Need to complete stdlib placeholder elimination for full self-hosting
