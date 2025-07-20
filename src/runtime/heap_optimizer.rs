@@ -91,25 +91,28 @@ pub struct SizeClass {
     pub size: usize,
     /// Number of objects per chunk
     pub objects_per_chunk: usize,
-    /// Free list for this size class
-    pub free_list: VecDeque<NonNull<u8>>,
-    /// Allocated chunks
-    pub chunks: Vec<NonNull<u8>>,
+    /// Free list for this size class (use usize for thread safety)
+    pub free_list: VecDeque<usize>,
+    /// Allocated chunks (use usize for thread safety)
+    pub chunks: Vec<usize>,
     /// Statistics
     pub allocated_objects: usize,
     pub freed_objects: usize,
     pub total_chunks: usize,
 }
 
+unsafe impl Send for SizeClass {}
+unsafe impl Sync for SizeClass {}
+
 /// Thread-local allocation buffer
 #[derive(Debug)]
 pub struct ThreadLocalBuffer {
     /// Buffer start address
-    pub start: NonNull<u8>,
+    pub start: usize, // Use usize instead of NonNull for thread safety
     /// Buffer end address
-    pub end: NonNull<u8>,
+    pub end: usize, // Use usize instead of NonNull for thread safety
     /// Current allocation pointer
-    pub current: NonNull<u8>,
+    pub current: usize, // Use usize instead of NonNull for thread safety
     /// Buffer size
     pub size: usize,
     /// Remaining space
@@ -117,6 +120,9 @@ pub struct ThreadLocalBuffer {
     /// Buffer generation
     pub generation: usize,
 }
+
+unsafe impl Send for ThreadLocalBuffer {}
+unsafe impl Sync for ThreadLocalBuffer {}
 
 /// Heap allocation statistics
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -206,15 +212,18 @@ pub struct LargeObjectInfo {
 pub struct MemoryPool {
     /// Pool object size
     pub object_size: usize,
-    /// Available objects
-    pub available: VecDeque<NonNull<u8>>,
+    /// Available objects (use usize for thread safety)
+    pub available: VecDeque<usize>,
     /// Total pool size
     pub total_size: usize,
     /// Used objects
     pub used_objects: usize,
-    /// Pool chunks
-    pub chunks: Vec<NonNull<u8>>,
+    /// Pool chunks (use usize for thread safety)
+    pub chunks: Vec<usize>,
 }
+
+unsafe impl Send for MemoryPool {}
+unsafe impl Sync for MemoryPool {}
 
 impl HeapOptimizer {
     /// Create new heap optimizer
@@ -359,9 +368,9 @@ impl HeapOptimizer {
             self.create_tlab().unwrap_or_else(|_| {
                 // Fallback to empty TLAB
                 ThreadLocalBuffer {
-                    start: NonNull::dangling(),
-                    end: NonNull::dangling(),
-                    current: NonNull::dangling(),
+                    start: 0,
+                    end: 0,
+                    current: 0,
                     size: 0,
                     remaining: 0,
                     generation: 0,
@@ -372,17 +381,17 @@ impl HeapOptimizer {
         // Try to allocate from TLAB
         if tlab.remaining >= size {
             let ptr = tlab.current;
-            tlab.current = unsafe { NonNull::new_unchecked(tlab.current.as_ptr().add(size)) };
+            tlab.current = tlab.current + size;
             tlab.remaining -= size;
-            Ok(ptr)
+            Ok(unsafe { NonNull::new_unchecked(ptr as *mut u8) })
         } else {
             // TLAB is full, need to allocate new one or fallback
             *tlab = self.create_tlab()?;
             if tlab.remaining >= size {
                 let ptr = tlab.current;
-                tlab.current = unsafe { NonNull::new_unchecked(tlab.current.as_ptr().add(size)) };
+                tlab.current = tlab.current + size;
                 tlab.remaining -= size;
-                Ok(ptr)
+                Ok(unsafe { NonNull::new_unchecked(ptr as *mut u8) })
             } else {
                 Err(CursedError::runtime_error("Object too large for TLAB"))
             }
@@ -412,7 +421,7 @@ impl HeapOptimizer {
             // Try to allocate from free list
             if let Some(ptr) = size_class.free_list.pop_front() {
                 size_class.allocated_objects += 1;
-                return Ok(ptr);
+                return Ok(unsafe { NonNull::new_unchecked(ptr as *mut u8) });
             }
             
             // Need to allocate new chunk
@@ -426,13 +435,13 @@ impl HeapOptimizer {
             }
             
             let chunk = unsafe { NonNull::new_unchecked(chunk_ptr) };
-            size_class.chunks.push(chunk);
+            size_class.chunks.push(chunk.as_ptr() as usize);
             size_class.total_chunks += 1;
             
             // Add objects to free list
             for i in 1..size_class.objects_per_chunk {
                 let obj_ptr = unsafe { chunk_ptr.add(i * size_class.size) };
-                size_class.free_list.push_back(unsafe { NonNull::new_unchecked(obj_ptr) });
+                size_class.free_list.push_back(obj_ptr as usize);
             }
             
             // Return first object
@@ -477,7 +486,7 @@ impl HeapOptimizer {
         let mut size_classes = self.size_classes.write().unwrap();
         
         if let Some(size_class) = size_classes.get_mut(size_class_index) {
-            size_class.free_list.push_back(ptr);
+            size_class.free_list.push_back(ptr.as_ptr() as usize);
             size_class.freed_objects += 1;
         }
         
@@ -517,8 +526,8 @@ impl HeapOptimizer {
             return Err(CursedError::runtime_error("Failed to allocate TLAB"));
         }
         
-        let start = unsafe { NonNull::new_unchecked(ptr) };
-        let end = unsafe { NonNull::new_unchecked(ptr.add(self.config.tlab_size)) };
+        let start = ptr as usize;
+        let end = start + self.config.tlab_size;
         
         Ok(ThreadLocalBuffer {
             start,
@@ -600,7 +609,7 @@ impl HeapOptimizer {
             for chunk in pool.chunks.drain(..) {
                 let layout = Layout::from_size_align(pool.object_size * 100, self.config.alignment)
                     .map_err(|e| CursedError::runtime_error(&format!("Layout error: {}", e)))?;
-                unsafe { dealloc(chunk.as_ptr(), layout) };
+                unsafe { dealloc(chunk as *mut u8, layout) };
             }
         }
         
@@ -624,7 +633,7 @@ impl HeapOptimizer {
                 let chunk_size = size_class.size * size_class.objects_per_chunk;
                 let layout = Layout::from_size_align(chunk_size, self.config.alignment)
                     .map_err(|e| CursedError::runtime_error(&format!("Layout error: {}", e)))?;
-                unsafe { dealloc(chunk.as_ptr(), layout) };
+                unsafe { dealloc(chunk as *mut u8, layout) };
             }
             
             size_class.free_list.clear();
@@ -692,14 +701,14 @@ impl HeapOptimizer {
             if let Some(pool) = pools.get_mut(&pool_size) {
                 if let Some(ptr) = pool.available.pop_front() {
                     pool.used_objects += 1;
-                    return Ok(ptr);
+                    return Ok(unsafe { NonNull::new_unchecked(ptr as *mut u8) });
                 }
                 
                 // Allocate new chunk for pool
                 self.allocate_pool_chunk(pool)?;
                 if let Some(ptr) = pool.available.pop_front() {
                     pool.used_objects += 1;
-                    return Ok(ptr);
+                    return Ok(unsafe { NonNull::new_unchecked(ptr as *mut u8) });
                 }
             }
         }
@@ -809,7 +818,7 @@ impl HeapOptimizer {
         // Try to get from available objects
         if let Some(ptr) = pool.available.pop_front() {
             pool.used_objects += 1;
-            return Ok(ptr);
+            return Ok(unsafe { NonNull::new_unchecked(ptr as *mut u8) });
         }
         
         // Allocate new chunk
@@ -817,7 +826,7 @@ impl HeapOptimizer {
         
         if let Some(ptr) = pool.available.pop_front() {
             pool.used_objects += 1;
-            Ok(ptr)
+            Ok(unsafe { NonNull::new_unchecked(ptr as *mut u8) })
         } else {
             Err(CursedError::runtime_error("Failed to allocate from pool"))
         }
@@ -837,13 +846,13 @@ impl HeapOptimizer {
         }
         
         let chunk = unsafe { NonNull::new_unchecked(chunk_ptr) };
-        pool.chunks.push(chunk);
+        pool.chunks.push(chunk.as_ptr() as usize);
         pool.total_size += chunk_size;
         
         // Add objects to available list
         for i in 0..OBJECTS_PER_CHUNK {
             let obj_ptr = unsafe { chunk_ptr.add(i * pool.object_size) };
-            pool.available.push_back(unsafe { NonNull::new_unchecked(obj_ptr) });
+            pool.available.push_back(obj_ptr as usize);
         }
         
         Ok(())
