@@ -119,6 +119,36 @@ cargo run --bin cursed -- compile stdlib/module/test_module.csd
 ./test_module                                       # Should work without external deps
 ```
 
+## Cross-Compilation Commands
+
+```bash
+# Cross-compilation for multiple platforms
+make cross-compile                                  # Build for all target platforms
+make cross-check                                    # Validate all cross-compilation targets
+make cross-test                                     # Run enhanced cross-compilation test script
+make cross-help                                     # Show detailed cross-compilation help
+
+# Individual platform targets
+make cross-mac-intel                                # Build for macOS x86_64
+make cross-linux-x64                               # Build for Linux x86_64
+make cross-linux-arm64                             # Build for Linux ARM64
+make cross-windows                                  # Build for Windows x86_64
+make cross-wasm                                     # Build for WebAssembly
+
+# Cross-compilation matrix builds
+make cross-matrix                                   # Build debug and release for all targets
+make cross-debug                                    # Build debug versions for all targets
+make cross-release                                  # Build release versions for all targets
+make cross-validate                                 # Comprehensive cross-compilation validation
+
+# Manual cross-compilation
+cargo build --target x86_64-apple-darwin           # macOS Intel
+cargo build --target x86_64-unknown-linux-gnu      # Linux x64
+cargo build --target aarch64-unknown-linux-gnu     # Linux ARM64
+cargo build --target x86_64-pc-windows-gnu         # Windows
+cargo build --target wasm32-unknown-unknown        # WebAssembly
+```
+
 ## Critical Build Commands & Workarounds
 
 ```bash
@@ -271,7 +301,7 @@ src/
 - Implement missing functions before adding new features
 - Prioritize runtime-critical modules (error_drip, atomic_drip, gc)
 
-### Parallel Subagent Coordination 
+### Parallel Subagent Coordination
 - Use concurrent codebase_search_agent calls for independent research
 - Split by functional area: parser, codegen, runtime, stdlib
 - Share results through focused summary reports
@@ -309,8 +339,12 @@ src/
 - Pattern guards need separate AST nodes for proper compilation
 
 ### Parser Syntax Issue Resolutions
-- Comment syntax: `// comment` not `fr fr comment` (reserve fr fr for future use)
-- Variable declarations: `sus/highkey` for mutable, `lowkey` for immutable (not vibes)
 - Boolean literals: `based` (true) and `cap` (false) are reserved keywords
 - String concatenation: `+` operator, not `vibes` function
 - Avoid mixing slang keywords - stick to established grammar patterns
+
+### Cross-Compilation Infrastructure
+- Complete Makefile integration with 5 target platforms (macOS, Linux x64/ARM64, Windows, WASM)
+- LLVM archive configuration fixed in `.cargo/config.toml` using native archivers
+- Target-aware `build.rs` with conditional compilation for WASM compatibility
+- `devenv.nix` pinned LLVM versions and cross-compilation toolchains
