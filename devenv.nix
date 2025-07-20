@@ -53,6 +53,8 @@ in
     pkgs.openssl
     pkgs.pkg-config
     pkgs.cacert
+    # libiconv for build scripts
+    pkgs.libiconv
     # Cross-compilation toolchains with complete environments
     pkgs.pkgsCross.mingwW64.stdenv.cc     # Windows x86_64 cross-compilation
     pkgs.pkgsCross.mingwW64.stdenv        # Windows standard environment
@@ -81,6 +83,7 @@ in
     pkgs.darwin.apple_sdk.frameworks.CoreFoundation
     pkgs.darwin.apple_sdk.frameworks.Security
     pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+
   ];
 
   # https://devenv.sh/languages/
@@ -138,8 +141,8 @@ in
 
 
     # Library paths for runtime and compilation
-    export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:$LD_LIBRARY_PATH"
-    export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:$LIBRARY_PATH"
+    export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib:$LD_LIBRARY_PATH"
+    export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib:$LIBRARY_PATH"
     export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.libxml2.dev}/lib/pkgconfig:${pkgs.sqlite.dev}/lib/pkgconfig"
 
     # Cross-compilation sysroots and linkers
