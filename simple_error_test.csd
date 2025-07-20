@@ -1,30 +1,24 @@
-# Simple test to verify error handling syntax parsing
 yeet "testz"
+yeet "error_drip"
 
-# Test basic error syntax
-slay test_basic_error() {
-    test_start("Basic Error Test")
-    
-    # Test yikes error creation  
-    sus err = yikes("Test error message")
-    assert_true(err != cringe)
-    
-    # Test simple function with error return
-    sus result, error = simple_divide(10, 2)
-    assert_eq_int(result, 5)
-    assert_true(error == cringe)
-    
-    print_test_summary()
-}
+# Simple error_drip test
+test_start("basic error creation")
+sus new_error := error_new("test message")
+vibez.spill("Created error successfully")
+print_test_summary()
 
-# Simple function that returns Result-like values
-slay simple_divide(a normie, b normie) (normie, yikes) {
-    vibe_check b {
-        mood 0:
-            damn 0, yikes("Division by zero")
-        basic:
-            damn a / b, cringe
-    }
-}
+test_start("error message extraction")
+sus test_error := error_new("extract test")
+sus msg := error_message(test_error)
+vibez.spill("Extracted message: " + msg)
+assert_eq_string(msg, "extract test")
+print_test_summary()
 
-test_basic_error()
+test_start("error type verification")
+sus typed_error := error_new("type test")
+sus err_type := error_type(typed_error)
+vibez.spill("Error type: " + err_type)
+assert_eq_string(err_type, "base_error")
+print_test_summary()
+
+vibez.spill("Basic error_drip functionality verified")

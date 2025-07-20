@@ -5,7 +5,7 @@
 # ar = "llvm-ar"  # Removed - let Cargo use native platform archiver
 
 [target.x86_64-unknown-linux-gnu]
-linker = "x86_64-unknown-linux-gnu-gcc"
+linker = "gcc"  # Use native gcc for native builds
 # ar = "llvm-ar"  # Removed - let Cargo use native platform archiver
 rustflags = ["-C", "target-cpu=generic"]
 

@@ -134,9 +134,10 @@ in
     echo "  llvm-ar exists: $(test -f ${pkgs.llvmPackages_18.llvm}/bin/llvm-ar && echo 'YES' || echo 'NO')"
 
     # Cross-compilation configuration - use target-specific compilers
-    export CC_x86_64_unknown_linux_gnu="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-gcc"
-    export CXX_x86_64_unknown_linux_gnu="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-g++"
-    export AR_x86_64_unknown_linux_gnu="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-ar"
+    # Skip native x86_64 Linux cross-compilation (we're already on x86_64 Linux)
+    # export CC_x86_64_unknown_linux_gnu="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-gcc"
+    # export CXX_x86_64_unknown_linux_gnu="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-g++"
+    # export AR_x86_64_unknown_linux_gnu="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-ar"
 
     export CC_aarch64_unknown_linux_gnu="${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin/aarch64-unknown-linux-gnu-gcc"
     export CXX_aarch64_unknown_linux_gnu="${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin/aarch64-unknown-linux-gnu-g++"
@@ -166,8 +167,9 @@ in
     export CXX_x86_64_apple_darwin="${pkgs.clang}/bin/clang++"
     export AR_x86_64_apple_darwin="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
 
-    # Cross-compilation sysroots and linkers with Zig fallback
-    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-gcc"
+    # Cross-compilation linkers - only for actual cross-compilation
+    # For native x86_64 Linux builds, use the native linker (don't override)
+    # export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-gcc"
     export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin/aarch64-unknown-linux-gnu-gcc"
     export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
     export CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER="${pkgs.clang}/bin/clang"
@@ -180,16 +182,12 @@ in
     export CARGO_TARGET_AARCH64_APPLE_DARWIN_AR="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
     export CARGO_TARGET_X86_64_APPLE_DARWIN_AR="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
 
-    # CRITICAL: Clear ALL compiler environment variables that might interfere with cc-rs
-    unset CC
-    unset CXX
-    # Do NOT unset AR/RANLIB yet - we may need them for native builds
+    # Clear problematic variables that could interfere (set CC/CXX later)
     unset STRIP
     unset OBJCOPY
     unset C_INCLUDE_PATH
     unset CPLUS_INCLUDE_PATH
     unset CPATH
-    unset MACOSX_DEPLOYMENT_TARGET
 
     # CRITICAL: Clear host stdenv cc-wrapper variables that pollute cross-compilation
     unset NIX_CFLAGS_COMPILE
@@ -204,7 +202,20 @@ in
     # Set library paths for native builds AFTER clearing cross-compilation pollution
     export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib:$LD_LIBRARY_PATH"
     export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib"
-    export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.libxml2.dev}/lib/pkgconfig:${pkgs.sqlite.dev}/lib/pkgconfig"
+    export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.sqlite.dev}/lib/pkgconfig"
+
+    # CRITICAL: Set native compiler environment for cc-rs AFTER clearing
+    export CC="${pkgs.gcc}/bin/gcc"
+    export CXX="${pkgs.gcc}/bin/g++"
+    export AR="${pkgs.binutils}/bin/ar"
+    export RANLIB="${pkgs.binutils}/bin/ranlib"
+    
+    # Debug compiler setup
+    echo "🔧 Final Compiler Configuration:"
+    echo "  CC: $CC"
+    echo "  CXX: $CXX"
+    echo "  AR: $AR"
+    echo "  RANLIB: $RANLIB"
 
     # Critical: macOS-specific fixes for cc-rs build scripts finding libiconv
     ${lib.optionalString pkgs.stdenv.isDarwin ''

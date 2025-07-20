@@ -85,6 +85,9 @@ pub mod generic_optimization;
 // pub mod test_inkwell_migration;
 use crate::error::CursedError;
 
+// Atomic operations module
+pub mod atomic_operations;
+
 // Re-export from main module
 pub use main::*;
 
