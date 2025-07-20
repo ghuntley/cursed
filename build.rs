@@ -1,34 +1,272 @@
-// Build script for the CURSED programming language
-// Creates a static runtime library and handles linking with system libraries
+// Enhanced Build script for the CURSED programming language
+// Supports robust cross-compilation across platforms and architectures
 
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::collections::HashMap;
 
 fn main() {
     println!("cargo:rerun-if-changed=src/execution/runtime_functions.rs");
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=runtime/");
+    println!("cargo:rerun-if-env-changed=TARGET");
+    println!("cargo:rerun-if-env-changed=HOST");
+    println!("cargo:rerun-if-env-changed=CARGO_CFG_TARGET_TRIPLE");
     
-    // Enable runtime library build
-    build_runtime_library();
+    // Cross-compilation detection and setup
+    let cross_compilation_config = detect_cross_compilation();
+    setup_cross_compilation_environment(&cross_compilation_config);
     
-    // Link with system libraries (existing code)
-    link_system_libraries();
+    // Build runtime library with proper cross-compilation support
+    build_runtime_library(&cross_compilation_config);
+    
+    // Link with system libraries using target-aware resolution
+    link_system_libraries(&cross_compilation_config);
 }
 
-fn build_runtime_library() {
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let profile = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string());
+#[derive(Debug, Clone)]
+struct CrossCompilationConfig {
+    target_triple: String,
+    host_triple: String,
+    target_arch: String,
+    target_os: String,
+    target_env: String,
+    is_cross_compiling: bool,
+    cargo_metadata: CargoMetadata,
+}
+
+#[derive(Debug, Clone)]
+struct CargoMetadata {
+    target_dir: PathBuf,
+    out_dir: PathBuf,
+    profile: String,
+    manifest_dir: PathBuf,
+}
+
+fn detect_cross_compilation() -> CrossCompilationConfig {
+    let target_triple = env::var("TARGET")
+        .or_else(|_| env::var("CARGO_CFG_TARGET_TRIPLE"))
+        .unwrap_or_else(|_| get_host_triple());
     
-    println!("cargo:warning=Building CURSED runtime library...");
+    let host_triple = env::var("HOST")
+        .or_else(|_| env::var("CARGO_CFG_HOST_TRIPLE"))
+        .unwrap_or_else(|_| get_host_triple());
     
-    // Create a separate runtime crate in OUT_DIR
-    let runtime_dir = Path::new(&out_dir).join("cursed_runtime");
+    let is_cross_compiling = target_triple != host_triple;
+    
+    // Parse target triple components
+    let target_parts: Vec<&str> = target_triple.split('-').collect();
+    let target_arch = target_parts.get(0).unwrap_or(&"unknown").to_string();
+    let target_os = if target_triple.contains("darwin") {
+        "macos".to_string()
+    } else if target_triple.contains("linux") {
+        "linux".to_string()
+    } else if target_triple.contains("windows") {
+        "windows".to_string()
+    } else if target_triple.contains("wasm") {
+        "wasm".to_string()
+    } else {
+        target_parts.get(2).unwrap_or(&"unknown").to_string()
+    };
+    
+    let target_env = if target_triple.contains("musl") {
+        "musl".to_string()
+    } else if target_triple.contains("gnu") {
+        "gnu".to_string()
+    } else if target_triple.contains("msvc") {
+        "msvc".to_string()
+    } else {
+        "".to_string()
+    };
+    
+    let cargo_metadata = CargoMetadata {
+        target_dir: PathBuf::from(env::var("CARGO_TARGET_DIR")
+            .unwrap_or_else(|_| "target".to_string())),
+        out_dir: PathBuf::from(env::var("OUT_DIR").unwrap()),
+        profile: env::var("PROFILE").unwrap_or_else(|_| "debug".to_string()),
+        manifest_dir: PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()),
+    };
+    
+    println!("cargo:warning=Cross-compilation config: target={}, host={}, cross={}", 
+             target_triple, host_triple, is_cross_compiling);
+    
+    CrossCompilationConfig {
+        target_triple,
+        host_triple,
+        target_arch,
+        target_os,
+        target_env,
+        is_cross_compiling,
+        cargo_metadata,
+    }
+}
+
+fn get_host_triple() -> String {
+    // Fallback host triple detection
+    format!("{}-{}-{}",
+        env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_else(|_| std::env::consts::ARCH.to_string()),
+        env::var("CARGO_CFG_TARGET_VENDOR").unwrap_or_else(|_| "unknown".to_string()),
+        env::var("CARGO_CFG_TARGET_OS").unwrap_or_else(|_| std::env::consts::OS.to_string())
+    )
+}
+
+fn setup_cross_compilation_environment(config: &CrossCompilationConfig) {
+    if !config.is_cross_compiling {
+        return;
+    }
+    
+    println!("cargo:warning=Setting up cross-compilation environment for {}", config.target_triple);
+    
+    // Propagate essential environment variables for cross-compilation
+    let env_vars_to_propagate = [
+        "RUSTFLAGS",
+        "CARGO_TARGET_DIR",
+        "CC", "CXX", "AR", "RANLIB", "STRIP",
+        "CFLAGS", "CXXFLAGS", "LDFLAGS",
+        "PKG_CONFIG_PATH", "PKG_CONFIG_LIBDIR",
+        "LIBRARY_PATH", "LD_LIBRARY_PATH",
+        "MACOSX_DEPLOYMENT_TARGET",
+        "SDKROOT",
+    ];
+    
+    for var in &env_vars_to_propagate {
+        if let Ok(value) = env::var(var) {
+            println!("cargo:rustc-env={}={}", var, value);
+        }
+    }
+    
+    // Set up target-specific configurations
+    setup_target_specific_config(config);
+}
+
+fn setup_target_specific_config(config: &CrossCompilationConfig) {
+    match (config.target_arch.as_str(), config.target_os.as_str()) {
+        ("aarch64", "macos") => {
+            // Apple Silicon macOS
+            println!("cargo:rustc-env=MACOSX_DEPLOYMENT_TARGET=11.0");
+            if env::var("SDKROOT").is_err() {
+                // Try to find macOS SDK
+                let sdk_paths = [
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+                    "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+                ];
+                for sdk_path in &sdk_paths {
+                    if Path::new(sdk_path).exists() {
+                        println!("cargo:rustc-env=SDKROOT={}", sdk_path);
+                        break;
+                    }
+                }
+            }
+        },
+        ("x86_64", "macos") => {
+            // Intel macOS
+            println!("cargo:rustc-env=MACOSX_DEPLOYMENT_TARGET=10.9");
+        },
+        ("aarch64", "linux") => {
+            // ARM64 Linux
+            setup_linux_cross_compilation("aarch64-linux-gnu", config);
+        },
+        ("x86_64", "linux") => {
+            // x86_64 Linux
+            setup_linux_cross_compilation("x86_64-linux-gnu", config);
+        },
+        ("x86_64", "windows") => {
+            // Windows x86_64
+            setup_windows_cross_compilation(config);
+        },
+        ("wasm32", _) => {
+            // WebAssembly
+            setup_wasm_cross_compilation(config);
+        },
+        _ => {
+            println!("cargo:warning=Unknown target architecture: {}-{}", 
+                     config.target_arch, config.target_os);
+        }
+    }
+}
+
+fn setup_linux_cross_compilation(gnu_triple: &str, _config: &CrossCompilationConfig) {
+    // Set up cross-compilation toolchain if not already configured
+    if env::var("CC").is_err() {
+        println!("cargo:rustc-env=CC={}-gcc", gnu_triple);
+    }
+    if env::var("CXX").is_err() {
+        println!("cargo:rustc-env=CXX={}-g++", gnu_triple);
+    }
+    if env::var("AR").is_err() {
+        println!("cargo:rustc-env=AR={}-ar", gnu_triple);
+    }
+    if env::var("RANLIB").is_err() {
+        println!("cargo:rustc-env=RANLIB={}-ranlib", gnu_triple);
+    }
+    
+    // Set up sysroot for cross-compilation
+    let possible_sysroots = [
+        format!("/usr/{}", gnu_triple),
+        format!("/usr/lib/{}", gnu_triple),
+        format!("/opt/cross/{}", gnu_triple),
+    ];
+    
+    for sysroot in &possible_sysroots {
+        if Path::new(sysroot).exists() {
+            println!("cargo:rustc-link-search=native={}/lib", sysroot);
+            break;
+        }
+    }
+}
+
+fn setup_windows_cross_compilation(_config: &CrossCompilationConfig) {
+    // Set up MinGW cross-compilation
+    if env::var("CC").is_err() {
+        println!("cargo:rustc-env=CC=x86_64-w64-mingw32-gcc");
+    }
+    if env::var("CXX").is_err() {
+        println!("cargo:rustc-env=CXX=x86_64-w64-mingw32-g++");
+    }
+    if env::var("AR").is_err() {
+        println!("cargo:rustc-env=AR=x86_64-w64-mingw32-ar");
+    }
+    
+    // Windows-specific linking
+    println!("cargo:rustc-link-lib=ws2_32");
+    println!("cargo:rustc-link-lib=advapi32");
+    println!("cargo:rustc-link-lib=userenv");
+}
+
+fn setup_wasm_cross_compilation(_config: &CrossCompilationConfig) {
+    // WebAssembly-specific configuration
+    println!("cargo:rustc-link-arg=--no-entry");
+    println!("cargo:rustc-link-arg=--export-dynamic");
+    
+    // Disable features not supported in WebAssembly
+    println!("cargo:rustc-cfg=feature=\"wasm\"");
+}
+
+fn build_runtime_library(config: &CrossCompilationConfig) {
+    println!("cargo:warning=Building CURSED runtime library for {}", config.target_triple);
+    
+    // Create runtime build directory using cargo metadata
+    let runtime_dir = config.cargo_metadata.out_dir.join("cursed_runtime");
     fs::create_dir_all(&runtime_dir).unwrap();
     
-    // Create runtime Cargo.toml
-    let runtime_cargo_toml = r#"[package]
+    // Create target-aware runtime Cargo.toml
+    let runtime_cargo_toml = create_runtime_cargo_toml(config);
+    fs::write(runtime_dir.join("Cargo.toml"), runtime_cargo_toml).unwrap();
+    
+    // Create runtime library source
+    create_runtime_library_source(&runtime_dir, config);
+    
+    // Build runtime with proper cross-compilation support
+    build_runtime_with_cargo(&runtime_dir, config);
+    
+    // Copy and link the built library
+    link_runtime_library(&runtime_dir, config);
+}
+
+fn create_runtime_cargo_toml(config: &CrossCompilationConfig) -> String {
+    let mut cargo_toml = String::from(r#"[package]
 name = "cursed_runtime"
 version = "0.1.0"
 edition = "2021"
@@ -41,7 +279,11 @@ name = "cursed_runtime"
 crate-type = ["staticlib"]
 
 [dependencies]
-regex = "1.10"
+"#);
+    
+    // Add dependencies based on target platform
+    if config.target_os != "wasm" {
+        cargo_toml.push_str(r#"regex = "1.10"
 base64 = "0.22"
 libc = "0.2"
 hex = "0.4"
@@ -61,12 +303,43 @@ subtle = "2.5.0"
 base64ct = "=1.6.0"
 chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.4"
-"#;
+"#);
+    } else {
+        // WebAssembly-compatible subset
+        cargo_toml.push_str(r#"base64 = "0.22"
+hex = "0.4"
+sha2 = "0.10"
+blake3 = "1.5"
+subtle = "2.5.0"
+"#);
+    }
     
-    fs::write(runtime_dir.join("Cargo.toml"), runtime_cargo_toml).unwrap();
+    cargo_toml
+}
+
+fn create_runtime_library_source(runtime_dir: &Path, config: &CrossCompilationConfig) {
+    fs::create_dir_all(runtime_dir.join("src")).unwrap();
     
-    // Create runtime src/lib.rs
-    let runtime_lib_rs = r#"//! CURSED Runtime Library
+    let runtime_lib_rs = if config.target_os == "wasm" {
+        create_wasm_runtime_source()
+    } else {
+        create_native_runtime_source()
+    };
+    
+    // Read and filter the original runtime functions
+    let main_runtime_path = Path::new("src/execution/runtime_functions.rs");
+    if main_runtime_path.exists() {
+        let runtime_content = fs::read_to_string(main_runtime_path).unwrap();
+        let filtered_content = filter_runtime_content(&runtime_content, config);
+        let full_runtime_lib = format!("{}\n{}", runtime_lib_rs, filtered_content);
+        fs::write(runtime_dir.join("src/lib.rs"), full_runtime_lib).unwrap();
+    } else {
+        fs::write(runtime_dir.join("src/lib.rs"), runtime_lib_rs).unwrap();
+    }
+}
+
+fn create_native_runtime_source() -> String {
+    r#"//! CURSED Runtime Library
 //! 
 //! This library provides external C functions for the CURSED standard library.
 //! These functions are compiled into a static library and linked with CURSED executables.
@@ -125,95 +398,174 @@ fn get_next_socket_id() -> i32 {
 }
 
 // Export all runtime functions with C linkage
-"#;
-    
-    fs::create_dir_all(runtime_dir.join("src")).unwrap();
-    
-    // Read the runtime functions from the main crate
-    let main_runtime_path = Path::new("src/execution/runtime_functions.rs");
-    let runtime_content = fs::read_to_string(main_runtime_path).unwrap();
-    
-    // Filter out the original imports and crate-specific content
-    let filtered_content = filter_runtime_content(&runtime_content);
-    
-    // Include filtered content
-    let full_runtime_lib = format!("{}\n{}", runtime_lib_rs, filtered_content);
-    fs::write(runtime_dir.join("src/lib.rs"), full_runtime_lib).unwrap();
-    
-    // Build the runtime library
+"#.to_string()
+}
+
+fn create_wasm_runtime_source() -> String {
+    r#"//! CURSED Runtime Library - WebAssembly
+//! 
+//! This library provides WebAssembly-compatible runtime functions.
+
+use std::ffi::{CStr, CString, c_void};
+use std::os::raw::c_char;
+use std::ptr;
+use std::collections::HashMap;
+use std::sync::{Mutex, atomic::{AtomicI32, Ordering}};
+use base64::{Engine as _, engine::general_purpose};
+use sha2::{Sha256, Digest};
+use blake3::Hasher as Blake3Hasher;
+use hex;
+use subtle::ConstantTimeEq;
+
+// Simplified globals for WebAssembly
+static NEXT_HANDLE_ID: AtomicI32 = AtomicI32::new(1);
+
+fn get_next_handle() -> i32 {
+    NEXT_HANDLE_ID.fetch_add(1, Ordering::SeqCst)
+}
+
+// Export WebAssembly-compatible runtime functions
+"#.to_string()
+}
+
+fn build_runtime_with_cargo(runtime_dir: &Path, config: &CrossCompilationConfig) {
     let cargo_path = env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
     let mut build_cmd = Command::new(&cargo_path);
+    
     build_cmd
         .arg("build")
         .arg("--release")
         .arg("--lib")
-        .current_dir(&runtime_dir)
-        .env("CARGO_TARGET_DIR", runtime_dir.join("target"));
+        .current_dir(&runtime_dir);
     
-    // Clear environment variables that could cause cross-compilation confusion
-    build_cmd.env_remove("CC");
-    build_cmd.env_remove("CXX");
-    build_cmd.env_remove("AR");
-    build_cmd.env_remove("MACOSX_DEPLOYMENT_TARGET");
+    // Set target directory to avoid conflicts
+    let target_dir = runtime_dir.join("target");
+    build_cmd.env("CARGO_TARGET_DIR", &target_dir);
     
-    // Set up for proper cross-compilation target if building for a different target
-    if let Ok(target) = env::var("TARGET") {
-        if target != env::var("HOST").unwrap_or_default() {
-            build_cmd.arg("--target").arg(&target);
-        }
+    // Cross-compilation setup
+    if config.is_cross_compiling {
+        build_cmd.arg("--target").arg(&config.target_triple);
+        
+        // Pass through cross-compilation environment variables
+        propagate_cross_compilation_env(&mut build_cmd, config);
+    } else {
+        // For same-platform builds, clean environment to avoid confusion
+        clean_build_environment(&mut build_cmd);
     }
     
+    // Execute build
     let output = build_cmd.output().expect("Failed to build runtime library");
     
     if !output.status.success() {
-        panic!("Failed to build runtime library:\n{}", String::from_utf8_lossy(&output.stderr));
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        panic!("Failed to build runtime library:\nSTDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);
     }
     
-    // Copy the built library to a location where the linker can find it
-    let lib_name = "libcursed_runtime.a";
-    let target_triple = env::var("TARGET").unwrap_or_else(|_| {
-        // Default to the current platform's target triple
-        if cfg!(target_arch = "aarch64") && cfg!(target_os = "macos") {
-            "aarch64-apple-darwin".to_string()
-        } else if cfg!(target_arch = "aarch64") && cfg!(target_os = "linux") {
-            "aarch64-unknown-linux-gnu".to_string()
-        } else if cfg!(target_arch = "x86_64") && cfg!(target_os = "macos") {
-            "x86_64-apple-darwin".to_string()
-        } else if cfg!(target_arch = "x86_64") && cfg!(target_os = "linux") {
-            "x86_64-unknown-linux-gnu".to_string()
-        } else {
-            format!("{}-unknown-{}", 
-                env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_else(|_| "unknown".to_string()),
-                env::var("CARGO_CFG_TARGET_OS").unwrap_or_else(|_| "unknown".to_string())
-            )
-        }
-    });
-    let src_lib_path_release = runtime_dir.join("target").join(&target_triple).join("release").join(lib_name);
-    let src_lib_path_debug = runtime_dir.join("target").join(&target_triple).join("debug").join(lib_name);
-    let dest_lib_path = Path::new(&out_dir).join(lib_name);
-    
-    let src_lib_path = if src_lib_path_release.exists() {
-        src_lib_path_release
-    } else if src_lib_path_debug.exists() {
-        src_lib_path_debug
-    } else {
-        println!("cargo:warning=Runtime library not found at {} or {}", 
-                 src_lib_path_release.display(), src_lib_path_debug.display());
-        return;
-    };
-    
-    fs::copy(&src_lib_path, &dest_lib_path).unwrap();
-    println!("cargo:rustc-link-search=native={}", out_dir);
-    println!("cargo:rustc-link-lib=static=cursed_runtime");
-    println!("cargo:warning=Successfully built runtime library at {}", dest_lib_path.display());
+    println!("cargo:warning=Successfully built runtime library for {}", config.target_triple);
 }
 
-fn filter_runtime_content(content: &str) -> String {
+fn propagate_cross_compilation_env(build_cmd: &mut Command, config: &CrossCompilationConfig) {
+    // Propagate essential cross-compilation environment variables
+    let env_vars = [
+        "CC", "CXX", "AR", "RANLIB", "STRIP",
+        "CFLAGS", "CXXFLAGS", "LDFLAGS",
+        "PKG_CONFIG_PATH", "PKG_CONFIG_LIBDIR",
+        "LIBRARY_PATH", "LD_LIBRARY_PATH",
+        "MACOSX_DEPLOYMENT_TARGET", "SDKROOT",
+        "RUSTFLAGS",
+    ];
+    
+    for var in &env_vars {
+        if let Ok(value) = env::var(var) {
+            build_cmd.env(var, value);
+        }
+    }
+    
+    // Set target-specific environment variables
+    match config.target_os.as_str() {
+        "macos" => {
+            if let Ok(sdk) = env::var("SDKROOT") {
+                build_cmd.env("SDKROOT", sdk);
+            }
+            if let Ok(target) = env::var("MACOSX_DEPLOYMENT_TARGET") {
+                build_cmd.env("MACOSX_DEPLOYMENT_TARGET", target);
+            }
+        },
+        "linux" => {
+            // Linux-specific cross-compilation setup
+            if config.target_env == "musl" {
+                build_cmd.env("RUSTFLAGS", "--cfg target_env=\"musl\"");
+            }
+        },
+        _ => {}
+    }
+}
+
+fn clean_build_environment(build_cmd: &mut Command) {
+    // Remove environment variables that could interfere with same-platform builds
+    let vars_to_remove = [
+        "CC", "CXX", "AR", "RANLIB",
+        "MACOSX_DEPLOYMENT_TARGET",
+    ];
+    
+    for var in &vars_to_remove {
+        build_cmd.env_remove(var);
+    }
+}
+
+fn link_runtime_library(runtime_dir: &Path, config: &CrossCompilationConfig) {
+    let lib_name = "libcursed_runtime.a";
+    
+    // Use cargo metadata to find the correct artifact location
+    let target_dir = runtime_dir.join("target");
+    let artifact_path = if config.is_cross_compiling {
+        target_dir.join(&config.target_triple).join("release").join(lib_name)
+    } else {
+        target_dir.join("release").join(lib_name)
+    };
+    
+    if !artifact_path.exists() {
+        // Try debug build as fallback
+        let debug_artifact_path = if config.is_cross_compiling {
+            target_dir.join(&config.target_triple).join("debug").join(lib_name)
+        } else {
+            target_dir.join("debug").join(lib_name)
+        };
+        
+        if debug_artifact_path.exists() {
+            link_library_artifact(&debug_artifact_path, config);
+        } else {
+            println!("cargo:warning=Runtime library not found at {} or {}", 
+                     artifact_path.display(), debug_artifact_path.display());
+        }
+    } else {
+        link_library_artifact(&artifact_path, config);
+    }
+}
+
+fn link_library_artifact(lib_path: &Path, config: &CrossCompilationConfig) {
+    let dest_lib_path = config.cargo_metadata.out_dir.join("libcursed_runtime.a");
+    fs::copy(lib_path, &dest_lib_path).unwrap();
+    
+    println!("cargo:rustc-link-search=native={}", config.cargo_metadata.out_dir.display());
+    println!("cargo:rustc-link-lib=static=cursed_runtime");
+    println!("cargo:warning=Successfully linked runtime library from {}", lib_path.display());
+}
+
+fn filter_runtime_content(content: &str, config: &CrossCompilationConfig) -> String {
     let mut result = String::new();
     let excluded_functions = vec![
         "initialize_runtime_functions",
         "get_minimal_result",
     ];
+    
+    // Additional exclusions for WebAssembly
+    let wasm_excluded_functions = if config.target_os == "wasm" {
+        vec!["file_", "network_", "thread_", "process_"]
+    } else {
+        vec![]
+    };
     
     let mut skip_until_next_function = false;
     
@@ -225,7 +577,8 @@ fn filter_runtime_content(content: &str) -> String {
         
         // Check for function start
         if line.contains("pub fn ") && !line.contains("extern \"C\"") {
-            let should_skip = excluded_functions.iter().any(|func| line.contains(func));
+            let should_skip = excluded_functions.iter().any(|func| line.contains(func))
+                || (config.target_os == "wasm" && wasm_excluded_functions.iter().any(|func| line.contains(func)));
             skip_until_next_function = should_skip || line.contains("CursedError");
             if skip_until_next_function {
                 continue;
@@ -234,10 +587,15 @@ fn filter_runtime_content(content: &str) -> String {
         
         // Check for extern C function start
         if line.contains("#[no_mangle]") || line.contains("pub extern \"C\" fn") {
-            skip_until_next_function = false; // Always include extern C functions
+            // For WebAssembly, skip functions that use unsupported features
+            if config.target_os == "wasm" {
+                skip_until_next_function = wasm_excluded_functions.iter().any(|func| line.contains(func));
+            } else {
+                skip_until_next_function = false; // Always include extern C functions for native targets
+            }
         }
         
-        // Skip lines that reference CursedError
+        // Skip lines that reference CursedError or unsupported features
         if line.contains("CursedError") || line.contains("crate::error::") {
             skip_until_next_function = true;
             continue;
@@ -260,144 +618,179 @@ fn fix_line(line: &str) -> String {
     fixed_line
 }
 
-fn build_runtime_libraries() {
-    use std::process::Command;
+fn link_system_libraries(config: &CrossCompilationConfig) {
+    println!("cargo:warning=Linking system libraries for {} on {}", 
+             config.target_arch, config.target_os);
     
-    println!("cargo:warning=Building runtime libraries for current architecture...");
-    
-    // Check if runtime libraries need to be rebuilt
-    let runtime_dir = Path::new("runtime");
-    let build_script = runtime_dir.join("build_runtime.sh");
-    
-    if !build_script.exists() {
-        println!("cargo:warning=Runtime build script not found, skipping runtime library build");
-        return;
+    // Target-specific library linking
+    match config.target_os.as_str() {
+        "macos" => link_macos_libraries(config),
+        "linux" => link_linux_libraries(config),
+        "windows" => link_windows_libraries(config),
+        "wasm" => link_wasm_libraries(config),
+        _ => link_fallback_libraries(config),
     }
     
-    // Check if libraries exist and are recent
-    let libs = [
-        "libcursed_minimal_shims.a",
-        "libcursed_interface_runtime.a", 
-        "libcursed_type_assertion_runtime.a",
-        "libcursed_type_checking.a"
-    ];
+    // Build and link additional runtime libraries
+    build_and_link_runtime_libraries(config);
+}
+
+fn link_macos_libraries(config: &CrossCompilationConfig) {
+    // Core libraries
+    println!("cargo:rustc-link-lib=sqlite3");
+    println!("cargo:rustc-link-lib=ffi");
+    println!("cargo:rustc-link-lib=xml2");
     
-    let mut needs_rebuild = false;
-    for lib in &libs {
-        let lib_path = runtime_dir.join(lib);
-        if !lib_path.exists() {
-            needs_rebuild = true;
-            break;
+    // macOS-specific paths
+    let library_paths = match config.target_arch.as_str() {
+        "aarch64" => vec![
+            "/opt/homebrew/lib",
+            "/usr/local/lib",
+            "/usr/lib",
+            "/System/Library/Frameworks",
+        ],
+        "x86_64" => vec![
+            "/usr/local/lib",
+            "/opt/homebrew/lib", // Fallback for Rosetta
+            "/usr/lib",
+            "/System/Library/Frameworks",
+        ],
+        _ => vec!["/usr/lib"],
+    };
+    
+    for path in library_paths {
+        if Path::new(path).exists() {
+            println!("cargo:rustc-link-search=native={}", path);
         }
     }
     
-    if needs_rebuild {
-        println!("cargo:warning=Rebuilding runtime libraries...");
-        let output = Command::new("bash")
-            .arg(&build_script)
-            .current_dir(runtime_dir)
-            .output();
-            
-        match output {
-            Ok(result) => {
-                if !result.status.success() {
-                    let stderr = String::from_utf8_lossy(&result.stderr);
-                    println!("cargo:warning=Runtime library build failed: {}", stderr);
-                } else {
-                    println!("cargo:warning=Runtime libraries built successfully");
-                    // Run ranlib on all archives to ensure proper indexing
-                    for lib in &libs {
-                        let lib_path = runtime_dir.join(lib);
-                        if lib_path.exists() {
-                            let ranlib_result = Command::new("ranlib")
-                                .arg(&lib_path)
-                                .output();
-                            match ranlib_result {
-                                Ok(ranlib_output) => {
-                                    if !ranlib_output.status.success() {
-                                        println!("cargo:warning=Failed to run ranlib on {}: {}", 
-                                                lib, String::from_utf8_lossy(&ranlib_output.stderr));
-                                    }
-                                }
-                                Err(e) => {
-                                    println!("cargo:warning=Failed to run ranlib on {}: {}", lib, e);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Err(e) => {
-                println!("cargo:warning=Failed to run runtime build script: {}", e);
-            }
-        }
+    // Framework search paths
+    println!("cargo:rustc-link-search=framework=/System/Library/Frameworks");
+    println!("cargo:rustc-link-search=framework=/Library/Frameworks");
+    
+    // Set deployment target based on architecture
+    if config.target_arch == "aarch64" {
+        println!("cargo:rustc-env=MACOSX_DEPLOYMENT_TARGET=11.0");
     } else {
-        println!("cargo:warning=Runtime libraries are up to date");
-        // Even if up to date, ensure proper indexing
-        for lib in &libs {
-            let lib_path = runtime_dir.join(lib);
-            if lib_path.exists() {
-                let ranlib_result = Command::new("ranlib")
-                    .arg(&lib_path)
-                    .output();
-                match ranlib_result {
-                    Ok(ranlib_output) => {
-                        if !ranlib_output.status.success() {
-                            println!("cargo:warning=Failed to run ranlib on {}: {}", 
-                                    lib, String::from_utf8_lossy(&ranlib_output.stderr));
-                        }
-                    }
-                    Err(e) => {
-                        println!("cargo:warning=Failed to run ranlib on {}: {}", lib, e);
-                    }
-                }
-            }
-        }
+        println!("cargo:rustc-env=MACOSX_DEPLOYMENT_TARGET=10.9");
     }
 }
 
-fn link_system_libraries() {
-    // Use runtime platform detection for cross-platform library resolution
-    let target_arch = detect_target_architecture();
-    let target_os = detect_target_operating_system();
-    
-    println!("cargo:warning=Detected platform: {} on {}", target_arch, target_os);
-
-    // Link with SQLite3 library
+fn link_linux_libraries(config: &CrossCompilationConfig) {
+    // Core libraries
     println!("cargo:rustc-link-lib=sqlite3");
-    
-    // Link with libffi library
     println!("cargo:rustc-link-lib=ffi");
-    
-    // Link with terminfo/ncurses library
-    println!("cargo:rustc-link-lib=tinfo");
-    
-    // Link with libxml2 library
     println!("cargo:rustc-link-lib=xml2");
     
-    // For the Nix environment, add the specific library path
-    if let Ok(library_path) = env::var("LIBRARY_PATH") {
-        for path in library_path.split(':') {
-            if !path.is_empty() {
+    // Linux-specific libraries
+    if config.target_env != "musl" {
+        println!("cargo:rustc-link-lib=dl");
+        println!("cargo:rustc-link-lib=pthread");
+    }
+    
+    // Architecture-specific library paths
+    let lib_paths = match config.target_arch.as_str() {
+        "aarch64" => vec![
+            "/usr/lib/aarch64-linux-gnu",
+            "/lib/aarch64-linux-gnu",
+            "/usr/local/lib",
+        ],
+        "x86_64" => vec![
+            "/usr/lib/x86_64-linux-gnu",
+            "/lib/x86_64-linux-gnu",
+            "/usr/local/lib",
+        ],
+        _ => vec!["/usr/lib", "/lib"],
+    };
+    
+    for path in lib_paths {
+        if Path::new(path).exists() {
+            println!("cargo:rustc-link-search=native={}", path);
+        }
+    }
+    
+    // Add pkg-config paths if available
+    add_pkg_config_paths();
+}
+
+fn link_windows_libraries(config: &CrossCompilationConfig) {
+    // Windows-specific libraries
+    println!("cargo:rustc-link-lib=ws2_32");
+    println!("cargo:rustc-link-lib=advapi32");
+    println!("cargo:rustc-link-lib=userenv");
+    println!("cargo:rustc-link-lib=shell32");
+    println!("cargo:rustc-link-lib=ole32");
+    
+    // Try to link optional libraries
+    println!("cargo:rustc-link-lib=sqlite3");
+    println!("cargo:rustc-link-lib=libxml2");
+    
+    // MinGW library paths
+    if config.is_cross_compiling {
+        let mingw_paths = [
+            "/usr/x86_64-w64-mingw32/lib",
+            "/usr/i686-w64-mingw32/lib",
+            "/opt/mingw64/lib",
+        ];
+        
+        for path in &mingw_paths {
+            if Path::new(path).exists() {
                 println!("cargo:rustc-link-search=native={}", path);
             }
         }
     }
+}
+
+fn link_wasm_libraries(_config: &CrossCompilationConfig) {
+    // WebAssembly doesn't link with traditional system libraries
+    println!("cargo:warning=WebAssembly target: skipping system library linking");
+}
+
+fn link_fallback_libraries(config: &CrossCompilationConfig) {
+    println!("cargo:warning=Unknown target OS {}, using fallback library linking", config.target_os);
     
-    // Helper function to find Nix store paths for libraries
-    fn find_nix_library_paths(lib_name: &str) -> Vec<String> {
-        let mut paths = Vec::new();
+    // Try common library names
+    println!("cargo:rustc-link-lib=sqlite3");
+    println!("cargo:rustc-link-lib=ffi");
+    
+    // Common library paths
+    let common_paths = ["/usr/lib", "/usr/local/lib", "/lib"];
+    for path in &common_paths {
+        if Path::new(path).exists() {
+            println!("cargo:rustc-link-search=native={}", path);
+        }
+    }
+}
+
+fn add_pkg_config_paths() {
+    if let Ok(pkg_config_path) = env::var("PKG_CONFIG_PATH") {
+        for path in pkg_config_path.split(':') {
+            if !path.is_empty() {
+                let lib_path = path.replace("/pkgconfig", "");
+                if Path::new(&lib_path).exists() {
+                    println!("cargo:rustc-link-search=native={}", lib_path);
+                }
+            }
+        }
+    }
+}
+
+fn add_nix_store_paths() {
+    // Dynamic Nix store library discovery
+    if let Ok(entries) = fs::read_dir("/nix/store") {
+        let mut found_paths = HashMap::new();
         
-        // Look for libraries in Nix store
-        if let Ok(entries) = std::fs::read_dir("/nix/store") {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                    if name.contains(lib_name) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                // Look for relevant packages
+                let packages = ["libffi", "sqlite", "ncurses", "libxml2", "llvm"];
+                for package in &packages {
+                    if name.contains(package) {
                         let lib_path = path.join("lib");
                         if lib_path.exists() {
                             if let Some(path_str) = lib_path.to_str() {
-                                paths.push(path_str.to_string());
+                                found_paths.insert(package.to_string(), path_str.to_string());
                             }
                         }
                     }
@@ -405,208 +798,78 @@ fn link_system_libraries() {
             }
         }
         
-        paths
+        // Add found paths
+        for (package, path) in found_paths {
+            println!("cargo:rustc-link-search=native={}", path);
+            println!("cargo:warning=Found {} in Nix store: {}", package, path);
+        }
     }
-    
-    // Build architecture-specific library search paths with dynamic Nix discovery
-    let mut possible_libffi_paths = find_nix_library_paths("libffi");
-    possible_libffi_paths.push("/usr/local/lib".to_string());
-    
-    let mut possible_ncurses_paths = find_nix_library_paths("ncurses");
-    possible_ncurses_paths.push("/usr/local/lib".to_string());
-    
-    let mut possible_xml2_paths = find_nix_library_paths("libxml2");
-    possible_xml2_paths.push("/usr/local/lib".to_string());
+}
 
-    // Add architecture-specific paths
-    match (target_arch.as_str(), target_os.as_str()) {
-        ("aarch64", "macos") => {
-            // macOS arm64 (M1/M2/M3) - Homebrew installs to /opt/homebrew
-            possible_libffi_paths.push("/opt/homebrew/lib".to_string());
-            possible_ncurses_paths.push("/opt/homebrew/lib".to_string());
-            possible_xml2_paths.push("/opt/homebrew/lib".to_string());
-            println!("cargo:rustc-link-search=native=/opt/homebrew/lib");
-            println!("cargo:rustc-link-search=native=/System/Library/Frameworks");
-            println!("cargo:rustc-link-search=framework=/System/Library/Frameworks");
-            // Add essential macOS system library paths
-            println!("cargo:rustc-link-search=native=/usr/lib");
-            println!("cargo:rustc-link-search=native=/usr/local/lib");
-        },
-        ("aarch64", "linux") => {
-            // Linux arm64 (aarch64)
-            possible_libffi_paths.push("/usr/lib/aarch64-linux-gnu".to_string());
-            possible_ncurses_paths.push("/usr/lib/aarch64-linux-gnu".to_string());
-            possible_xml2_paths.push("/usr/lib/aarch64-linux-gnu".to_string());
-            println!("cargo:rustc-link-search=native=/usr/lib/aarch64-linux-gnu");
-        },
-        ("x86_64", "macos") => {
-            // macOS x86_64 - Homebrew installs to /usr/local
-            possible_libffi_paths.push("/usr/local/lib".to_string());
-            possible_ncurses_paths.push("/usr/local/lib".to_string());
-            possible_xml2_paths.push("/usr/local/lib".to_string());
-        },
-        ("x86_64", "linux") => {
-            // Linux x86_64
-            possible_libffi_paths.push("/usr/lib/x86_64-linux-gnu".to_string());
-            possible_ncurses_paths.push("/usr/lib/x86_64-linux-gnu".to_string());
-            possible_xml2_paths.push("/usr/lib/x86_64-linux-gnu".to_string());
-        },
-        _ => {
-            // Default fallback paths
-            possible_libffi_paths.push("/usr/lib".to_string());
-            possible_ncurses_paths.push("/usr/lib".to_string());
-            possible_xml2_paths.push("/usr/lib".to_string());
-        }
+fn build_and_link_runtime_libraries(config: &CrossCompilationConfig) {
+    let runtime_dir = Path::new("runtime");
+    if !runtime_dir.exists() {
+        println!("cargo:warning=Runtime directory not found, skipping additional runtime libraries");
+        return;
     }
     
-    for path in possible_libffi_paths {
-        if std::path::Path::new(&path).exists() {
-            println!("cargo:rustc-link-search=native={}", path);
-        }
+    // Check for build script
+    let build_script = runtime_dir.join("build_runtime.sh");
+    if !build_script.exists() {
+        println!("cargo:warning=Runtime build script not found");
+        return;
     }
     
-    for path in possible_ncurses_paths {
-        if std::path::Path::new(&path).exists() {
-            println!("cargo:rustc-link-search=native={}", path);
-        }
+    // Build runtime libraries for target platform
+    println!("cargo:warning=Building additional runtime libraries for {}", config.target_triple);
+    
+    let mut build_cmd = Command::new("bash");
+    build_cmd
+        .arg(&build_script)
+        .current_dir(runtime_dir);
+    
+    // Set cross-compilation environment for runtime build
+    if config.is_cross_compiling {
+        propagate_cross_compilation_env(&mut build_cmd, config);
     }
     
-    for path in possible_xml2_paths {
-        if std::path::Path::new(&path).exists() {
-            println!("cargo:rustc-link-search=native={}", path);
-        }
-    }
-    
-    // Also check for pkg-config for SQLite3
-    if let Ok(pkg_config_path) = env::var("PKG_CONFIG_PATH") {
-        for path in pkg_config_path.split(':') {
-            if !path.is_empty() {
-                println!("cargo:rustc-link-search=native={}", path.replace("/pkgconfig", ""));
-            }
-        }
-    }
-    
-    // macOS-specific configuration for dylib loading (already handled above by architecture)
-    // Additional common macOS paths
-    if target_os == "macos" {
-        println!("cargo:rustc-link-search=native=/System/Library/Frameworks");
-        println!("cargo:rustc-link-search=native=/Library/Frameworks");
-    }
-    
-    // Add LLVM bin paths to environment for compilation
-    let mut possible_llvm_bin_paths = vec![
-        "/nix/store/013b6qj9g2n2pmxcllnch9drrf9m0zwf-llvm-17.0.6/bin",
-        "/nix/store/s5a4igx64mngxrz3d4s2mxz6764mdv47-llvm-17.0.6/bin",
-        "/nix/store/8qpf7pp0a71psdngm5nxc64jahw0vlwl-llvm-19.1.7/bin",
-        "/nix/store/vnxd8nqfibccfbczxwd9li5hw42k5kmw-llvm-19.1.6/bin",
-        "/usr/bin",
-        "/usr/local/bin",
-    ];
-
-    // Add architecture-specific LLVM paths
-    if target_arch == "aarch64" && target_os == "macos" {
-        possible_llvm_bin_paths.push("/opt/homebrew/bin");
-        possible_llvm_bin_paths.push("/opt/homebrew/opt/llvm/bin");
-    }
-    
-    for path in possible_llvm_bin_paths {
-        if std::path::Path::new(path).exists() {
-            if let Ok(current_path) = env::var("PATH") {
-                println!("cargo:rustc-env=PATH={}:{}", path, current_path);
-                break;
+    match build_cmd.output() {
+        Ok(output) => {
+            if output.status.success() {
+                println!("cargo:warning=Additional runtime libraries built successfully");
+                link_additional_runtime_libraries();
             } else {
-                println!("cargo:rustc-env=PATH={}", path);
-                break;
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                println!("cargo:warning=Runtime library build failed: {}", stderr);
             }
         }
+        Err(e) => {
+            println!("cargo:warning=Failed to run runtime build script: {}", e);
+        }
     }
+}
+
+fn link_additional_runtime_libraries() {
+    // Link additional static runtime libraries
+    let runtime_libs = [
+        "cursed_minimal_shims",
+        "cursed_interface_runtime",
+        "cursed_type_assertion_runtime",
+        "cursed_type_checking",
+        "cursed_memory_runtime",
+    ];
     
-    // Tell cargo to rerun build script if environment changes
-    println!("cargo:rerun-if-env-changed=LIBRARY_PATH");
-    println!("cargo:rerun-if-env-changed=PKG_CONFIG_PATH");
-    println!("cargo:rerun-if-env-changed=PATH");
-    
-    // Ensure runtime libraries are built for current architecture
-    build_runtime_libraries();
-    
-    // Link minimal C shims for self-hosting
-    println!("cargo:rustc-link-lib=static=cursed_minimal_shims");
     println!("cargo:rustc-link-search=native=runtime");
     
-    // Link interface runtime for self-hosting
-    println!("cargo:rustc-link-lib=static=cursed_interface_runtime");
-    println!("cargo:rustc-link-lib=static=cursed_type_assertion_runtime");
-    println!("cargo:rustc-link-lib=static=cursed_type_checking");
-    println!("cargo:rustc-link-lib=static=cursed_memory_runtime");
-}
-
-/// Runtime architecture detection without compile-time cfg! macros
-fn detect_target_architecture() -> String {
-    // Check environment variable first
-    if let Ok(arch) = env::var("CARGO_CFG_TARGET_ARCH") {
-        return arch;
+    for lib in &runtime_libs {
+        let lib_path = format!("runtime/lib{}.a", lib);
+        if Path::new(&lib_path).exists() {
+            println!("cargo:rustc-link-lib=static={}", lib);
+            
+            // Ensure proper indexing with ranlib
+            if let Ok(_) = Command::new("ranlib").arg(&lib_path).output() {
+                // ranlib succeeded
+            }
+        }
     }
-    
-    // Runtime detection through system calls or CPU identification
-    if can_detect_x86_64() {
-        "x86_64".to_string()
-    } else if can_detect_aarch64() {
-        "aarch64".to_string()
-    } else if can_detect_wasm32() {
-        "wasm32".to_string()
-    } else {
-        // Fallback to std::env::consts but with runtime verification
-        std::env::consts::ARCH.to_string()
-    }
-}
-
-/// Runtime operating system detection without compile-time cfg! macros
-fn detect_target_operating_system() -> String {
-    // Check environment variable first
-    if let Ok(os) = env::var("CARGO_CFG_TARGET_OS") {
-        return os;
-    }
-    
-    // Runtime OS detection through system-specific APIs
-    if can_detect_linux() {
-        "linux".to_string()
-    } else if can_detect_macos() {
-        "macos".to_string()
-    } else if can_detect_windows() {
-        "windows".to_string()
-    } else {
-        // Fallback to std::env::consts
-        std::env::consts::OS.to_string()
-    }
-}
-
-// Runtime detection helpers
-fn can_detect_x86_64() -> bool {
-    // Try to detect x86_64 specific features at build time
-    std::env::consts::ARCH == "x86_64"
-}
-
-fn can_detect_aarch64() -> bool {
-    // Try to detect aarch64 specific features at build time
-    std::env::consts::ARCH == "aarch64"
-}
-
-fn can_detect_wasm32() -> bool {
-    // WebAssembly detection
-    std::env::consts::ARCH == "wasm32"
-}
-
-fn can_detect_linux() -> bool {
-    // Linux-specific detection
-    std::env::consts::OS == "linux"
-}
-
-fn can_detect_macos() -> bool {
-    // macOS-specific detection
-    std::env::consts::OS == "macos"
-}
-
-fn can_detect_windows() -> bool {
-    // Windows-specific detection
-    std::env::consts::OS == "windows"
 }

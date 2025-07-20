@@ -170,7 +170,7 @@ MIT
         let config: PackageConfig = toml::from_str(&config_str)?;
 
         let mut resolved_deps = HashMap::new();
-        let mut to_resolve = Vec::new();
+        let mut to_resolve: Vec<(String, String)> = Vec::new();
 
         // Collect all dependencies
         for (name, version) in &config.dependencies {
@@ -193,7 +193,7 @@ MIT
                 dependencies: resolved_version.dependencies.clone(),
             };
 
-            resolved_deps.insert(name.clone(), locked_dep);
+            resolved_deps.insert(name, locked_dep);
 
             // Add transitive dependencies
             for (dep_name, dep_version) in &resolved_version.dependencies {

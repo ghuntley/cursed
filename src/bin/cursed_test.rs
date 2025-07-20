@@ -371,7 +371,7 @@ fn print_json_results(results: &[TestResult]) {
             assertion_name: "main".to_string(),
             status,
             message: if result.passed { "Test passed".to_string() } else { 
-                result.error.as_ref().unwrap_or(&"Test failed".to_string()).clone()
+                result.error.clone().unwrap_or_else(|| "Test failed".to_string())
             },
             expected: None,
             actual: None,

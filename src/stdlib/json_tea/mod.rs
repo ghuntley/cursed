@@ -89,7 +89,7 @@ pub mod tags {
             if self.skip {
                 None
             } else {
-                Some(self.name.as_ref().unwrap_or(&field_name.to_string()).clone())
+                Some(self.name.clone().unwrap_or_else(|| field_name.to_string()))
             }
         }
     }

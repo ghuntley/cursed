@@ -4,14 +4,12 @@
 /// with comprehensive subcommands and advanced features.
 
 use std::env;
-use std::fs;
 use std::process;
 use std::path::Path;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use clap::{Arg, Command, ArgMatches, value_parser};
 use colored::*;
-use glob::glob;
 use serde_json::json;
 use cursed::{self, optimization::{OptimizationConfig, OptimizationLevel as OptOptimizationLevel}};
 use cursed::package_manager::{PackageManagerConfig, PackageManager};
@@ -20,6 +18,13 @@ use cursed::repl::CursedRepl;
 use cursed::execution::pure_cursed_bridge::PureCursedBridge;
 use cursed::coverage;
 use cursed::optimization::advanced_llvm_passes::{SizeOptLevel, LtoLevel, PassPipeline};
+
+// Conditional imports for non-WASM targets
+#[cfg(not(target_arch = "wasm32"))]
+use std::fs;
+#[cfg(not(target_arch = "wasm32"))]
+use glob::glob;
+#[cfg(not(target_arch = "wasm32"))]
 use std::os::unix::fs::PermissionsExt;
 
 // Dropz integration helpers to replace std::fs calls
@@ -47,6 +52,7 @@ impl DropzFilesystem {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() {
     // Initialize environment
@@ -79,6 +85,28 @@ async fn main() {
         eprintln!("{}: {}", "Error".red(), e);
         process::exit(1);
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    // Initialize WASM environment
+    cursed::init_wasm();
+    
+    // For WASM, we can't run the full CLI
+    // Instead, provide a limited interface
+    wasm_main();
+}
+
+#[cfg(target_arch = "wasm32")]
+fn wasm_main() {
+    println!("CURSED Programming Language - WASM Edition");
+    println!("Limited functionality available in WebAssembly mode");
+    println!("Use the native version for full CLI features");
+    
+    // You could add basic WASM-compatible functionality here:
+    // - Simple parsing and compilation
+    // - Limited execution of simple programs
+    // - Export functions for JavaScript integration
 }
 
 fn build_cli() -> Command {
