@@ -116,9 +116,19 @@ in
 
 
   enterShell = ''
+    echo "🔧 Setting up CURSED development environment..."
+    
     # LLVM configuration
     export LLVM_SYS_181_PREFIX="${pkgs.llvmPackages_18.llvm.dev}"
     export LLVM_CONFIG_PATH="${pkgs.llvmPackages_18.llvm.dev}/bin/llvm-config"
+    
+    # Debug LLVM setup
+    echo "📋 LLVM Debug Information:"
+    echo "  LLVM_SYS_181_PREFIX: $LLVM_SYS_181_PREFIX"
+    echo "  LLVM_CONFIG_PATH: $LLVM_CONFIG_PATH"
+    echo "  LLVM version: $(${pkgs.llvmPackages_18.llvm.dev}/bin/llvm-config --version 2>/dev/null || echo 'N/A')"
+    echo "  llvm-ar path: ${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
+    echo "  llvm-ar exists: $(test -f ${pkgs.llvmPackages_18.llvm}/bin/llvm-ar && echo 'YES' || echo 'NO')"
 
     # Cross-compilation configuration - use target-specific compilers
     export CC_x86_64_unknown_linux_gnu="${pkgs.pkgsCross.gnu64.stdenv.cc}/bin/x86_64-unknown-linux-gnu-gcc"
@@ -159,15 +169,14 @@ in
     export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
     export CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER="${pkgs.clang}/bin/clang"
 
-    # Force LLVM ar/ranlib for all targets to fix archive corruption
+    # Force LLVM ar/ranlib for cross-compilation targets only
     export CARGO_TARGET_AARCH64_APPLE_DARWIN_AR="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
     export CARGO_TARGET_X86_64_APPLE_DARWIN_AR="${pkgs.llvmPackages_18.llvm}/bin/llvm-ar"
 
     # CRITICAL: Clear ALL compiler environment variables that might interfere with cc-rs
     unset CC
     unset CXX
-    unset AR
-    unset RANLIB
+    # Do NOT unset AR/RANLIB yet - we may need them for native builds
     unset STRIP
     unset OBJCOPY
     unset C_INCLUDE_PATH
@@ -203,13 +212,31 @@ in
 
       # Ensure pkg-config can find libiconv if packages support it
       export PKG_CONFIG_PATH="${pkgs.libiconv}/lib/pkgconfig:$PKG_CONFIG_PATH"
+      
+      # Try using GNU ar for native builds on macOS to avoid LLVM version conflicts
+      export AR="${pkgs.binutils}/bin/ar"
+      export RANLIB="${pkgs.binutils}/bin/ranlib"
     ''}
 
     # Make sure LLVM tools are available
     export PATH="${pkgs.llvmPackages_18.llvm}/bin:$PATH"
+    
+    # For macOS native builds, add GNU binutils BEFORE system tools to avoid LLVM version conflicts
+    ${lib.optionalString pkgs.stdenv.isDarwin ''
+      export PATH="${pkgs.binutils}/bin:$PATH"
+    ''}
 
     # Add cross-compilation tools to PATH but at the end (after system tools)
     export PATH="$PATH:${pkgs.pkgsCross.gnu64.stdenv.cc}/bin:${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin:${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin"
+    
+    # Debug final environment
+    echo "🔍 Final Environment Check:"
+    echo "  which llvm-ar: $(which llvm-ar 2>/dev/null || echo 'NOT FOUND')"
+    echo "  which llvm-config: $(which llvm-config 2>/dev/null || echo 'NOT FOUND')"
+    echo "  PATH includes LLVM: $(echo $PATH | grep -q llvm && echo 'YES' || echo 'NO')"
+    echo "  Native CC: $(which cc 2>/dev/null || echo 'NOT FOUND')"
+    echo "  Native AR: $(which ar 2>/dev/null || echo 'NOT FOUND')"
+    echo "✅ Environment setup complete!"
   '';
 
 
