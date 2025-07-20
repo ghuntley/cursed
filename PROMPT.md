@@ -2,6 +2,7 @@
 
 0b. The source code of the compiler is in src/
 
+1. Study @fix_plan.md for compiler errors
 
 1. Your task is to implement missing functionality and produce an compiled application in the cursed language via LLVM for that functionality using parrallel subagents that cross compiles (see Makefile).  Before making changes search codebase (don't assume not implemented) using subagents. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of rust.
 
