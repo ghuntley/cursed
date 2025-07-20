@@ -816,6 +816,7 @@ pub struct MethodSignature {
     pub receiver: Option<MethodReceiver>, // Method receiver for concrete implementations
     pub parameters: Vec<Parameter>,
     pub return_type: Option<Type>,
+    pub source_location: Option<crate::error::SourceLocation>,
 }
 
 /// Method declaration (full method implementation)

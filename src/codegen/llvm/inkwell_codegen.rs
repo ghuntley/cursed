@@ -427,7 +427,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
         Ok(self.get_ir_string())
     }
     
-    /// Add WebAssembly-specific function exports
+    /// Add WebAssembly-specific function exports with enhanced features
     fn add_wasm_exports(&mut self) {
         // Add export directives for WebAssembly
         // This will make functions visible from the WASM module
@@ -435,14 +435,173 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
         // Memory management exports for WASM
         let i32_type = self.context.i32_type();
         let void_type = self.context.void_type();
+        let i8_ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
         
-        // Export memory allocation function
-        let malloc_type = i32_type.fn_type(&[i32_type.into()], false);
+        // Enhanced memory allocation function
+        let malloc_type = i8_ptr_type.fn_type(&[i32_type.into()], false);
         self.module.add_function("__wasm_malloc", malloc_type, Some(Linkage::External));
         
-        // Export memory deallocation function
-        let free_type = void_type.fn_type(&[i32_type.into()], false);
+        // Enhanced memory deallocation function
+        let free_type = void_type.fn_type(&[i8_ptr_type.into()], false);
         self.module.add_function("__wasm_free", free_type, Some(Linkage::External));
+        
+        // Memory management utilities
+        let memory_grow_type = void_type.fn_type(&[i32_type.into()], false);
+        self.module.add_function("__wasm_memory_grow", memory_grow_type, Some(Linkage::External));
+        
+        let memory_size_type = i32_type.fn_type(&[], false);
+        self.module.add_function("__wasm_memory_size", memory_size_type, Some(Linkage::External));
+        
+        // Bulk memory operations
+        let memory_fill_type = void_type.fn_type(&[
+            i8_ptr_type.into(),
+            self.context.i8_type().into(),
+            i32_type.into()
+        ], false);
+        self.module.add_function("__wasm_memory_fill", memory_fill_type, Some(Linkage::External));
+        
+        let memory_copy_type = void_type.fn_type(&[
+            i8_ptr_type.into(),
+            i8_ptr_type.into(),
+            i32_type.into()
+        ], false);
+        self.module.add_function("__wasm_memory_copy", memory_copy_type, Some(Linkage::External));
+        
+        // SIMD support functions (conditional on target features)
+        if self.has_simd_support() {
+            let v128_type = self.context.i8_type().vec_type(16);
+            let v128_ptr_type = v128_type.ptr_type(AddressSpace::default());
+            
+            let simd_load_type = v128_type.fn_type(&[v128_ptr_type.into()], false);
+            self.module.add_function("__wasm_v128_load", simd_load_type, Some(Linkage::External));
+            
+            let simd_store_type = void_type.fn_type(&[v128_ptr_type.into(), v128_type.into()], false);
+            self.module.add_function("__wasm_v128_store", simd_store_type, Some(Linkage::External));
+        }
+        
+        // Threading support (conditional on target features)
+        if self.has_threading_support() {
+            let atomic_wait_type = i32_type.fn_type(&[
+                i32_type.ptr_type(AddressSpace::default()).into(),
+                i32_type.into(),
+                self.context.i64_type().into()
+            ], false);
+            self.module.add_function("__wasm_atomic_wait32", atomic_wait_type, Some(Linkage::External));
+            
+            let atomic_notify_type = i32_type.fn_type(&[
+                i32_type.ptr_type(AddressSpace::default()).into(),
+                i32_type.into()
+            ], false);
+            self.module.add_function("__wasm_atomic_notify", atomic_notify_type, Some(Linkage::External));
+        }
+    }
+    
+    /// Check if SIMD support is available
+    fn has_simd_support(&self) -> bool {
+        // In a real implementation, this would check target features
+        // For now, assume SIMD is available
+        true
+    }
+    
+    /// Check if threading support is available
+    fn has_threading_support(&self) -> bool {
+        // In a real implementation, this would check target features
+        // For now, assume threading is available
+        true
+    }
+    
+    /// Enhanced WASM IR compilation with debugging support
+    pub fn compile_to_wasm_ir_with_debug(&mut self, program: &Program, debug_info: bool) -> Result<String, CursedError> {
+        // Configure for WebAssembly target with debug information
+        self.set_target_triple("wasm32-unknown-unknown");
+        
+        // Enable debug information if requested
+        if debug_info {
+            self.enable_debug_info();
+        }
+        
+        // Add WebAssembly-specific function exports
+        self.add_wasm_exports();
+        
+        // Add debug helper functions
+        if debug_info {
+            self.add_debug_functions();
+        }
+        
+        // Compile the program
+        self.compile(program)?;
+        
+        // Return the generated IR with debug annotations
+        let mut ir = self.get_ir_string();
+        
+        if debug_info {
+            ir = self.add_debug_metadata(ir);
+        }
+        
+        Ok(ir)
+    }
+    
+    /// Add debug helper functions for WASM
+    fn add_debug_functions(&mut self) {
+        let i32_type = self.context.i32_type();
+        let void_type = self.context.void_type();
+        let i8_ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
+        
+        // Debug trace function
+        let debug_trace_type = void_type.fn_type(&[
+            i8_ptr_type.into(),
+            i32_type.into()
+        ], false);
+        self.module.add_function("__wasm_debug_trace", debug_trace_type, Some(Linkage::External));
+        
+        // Performance profiling function
+        let profile_enter_type = void_type.fn_type(&[i8_ptr_type.into()], false);
+        self.module.add_function("__wasm_profile_enter", profile_enter_type, Some(Linkage::External));
+        
+        let profile_exit_type = void_type.fn_type(&[i8_ptr_type.into()], false);
+        self.module.add_function("__wasm_profile_exit", profile_exit_type, Some(Linkage::External));
+        
+        // Memory debugging functions
+        let debug_alloc_type = i8_ptr_type.fn_type(&[
+            i32_type.into(),
+            i8_ptr_type.into(),
+            i32_type.into()
+        ], false);
+        self.module.add_function("__wasm_debug_alloc", debug_alloc_type, Some(Linkage::External));
+        
+        let debug_free_type = void_type.fn_type(&[
+            i8_ptr_type.into(),
+            i8_ptr_type.into(),
+            i32_type.into()
+        ], false);
+        self.module.add_function("__wasm_debug_free", debug_free_type, Some(Linkage::External));
+    }
+    
+    /// Enable debug information generation
+    fn enable_debug_info(&mut self) {
+        // In a real implementation, this would configure LLVM debug info
+        // For now, this is a placeholder for debug configuration
+    }
+    
+    /// Add debug metadata to IR
+    fn add_debug_metadata(&self, mut ir: String) -> String {
+        // Add debug metadata annotations to the IR
+        let debug_header = format!(
+            "; Debug Information for CURSED WebAssembly Module\n\
+             ; Generated with debug support enabled\n\
+             !llvm.dbg.cu = !{{{0}}}\n\
+             !llvm.module.flags = !{{{{!1, !2}}}}\n\
+             \n\
+             !0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: \"CURSED Compiler\", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)\n\
+             !1 = !{{i32 2, !\"Dwarf Version\", i32 4}}\n\
+             !2 = !{{i32 2, !\"Debug Info Version\", i32 3}}\n\
+             !3 = !DIFile(filename: \"cursed_module.csd\", directory: \".\")\n\n"
+        );
+        
+        // Insert debug metadata at the beginning
+        ir = format!("{}{}", debug_header, ir);
+        
+        ir
     }
 
     /// Compile to object file

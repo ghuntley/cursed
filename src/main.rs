@@ -1020,15 +1020,100 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
             .map_err(|e| format!("Failed to write assembly: {}", e))?;
         println!("{} Assembly to {}.s", "Generated".green().bold(), output);
     } else {
-        // Handle WebAssembly compilation
+        // Enhanced WebAssembly compilation
         if target.starts_with("wasm") {
             let wasm_output = if output.ends_with(".wasm") { 
                 output.to_string() 
             } else { 
                 format!("{}.wasm", output) 
             };
-            cursed::compile_to_wasm(input, &wasm_output, &advanced_config).await?;
-            println!("{} WebAssembly module: {}", "Generated".green().bold(), wasm_output);
+            
+            // Create enhanced WASM compilation configuration
+            let mut wasm_config = cursed::WasmCompilationConfig::default();
+            
+            // Configure based on optimization level
+            match advanced_config.base_config.level {
+                cursed::optimization::OptimizationLevel::Size | 
+                cursed::optimization::OptimizationLevel::SizeAggressive => {
+                    wasm_config.code_size_optimization = true;
+                    wasm_config.memory_optimization_level = cursed::WasmMemoryOptLevel::Aggressive;
+                    wasm_config.dead_code_elimination = true;
+                }
+                cursed::optimization::OptimizationLevel::Aggressive => {
+                    wasm_config.enable_simd = true;
+                    wasm_config.enable_bulk_memory = true;
+                    wasm_config.function_table_optimization = true;
+                    wasm_config.memory_optimization_level = cursed::WasmMemoryOptLevel::Aggressive;
+                }
+                _ => {
+                    // Default configuration already set
+                }
+            }
+            
+            // Enable debugging if verbose mode
+            if matches.get_flag("verbose") {
+                wasm_config.generate_debug_info = true;
+                wasm_config.generate_source_maps = true;
+                wasm_config.validation_level = cursed::WasmValidationLevel::Strict;
+            }
+            
+            // Enable WASI if environment variable set
+            if std::env::var("CURSED_WASM_WASI").is_ok() {
+                wasm_config.enable_wasi = true;
+            }
+            
+            // Enable advanced features based on environment
+            if std::env::var("CURSED_WASM_SIMD").is_ok() {
+                wasm_config.enable_simd = true;
+            }
+            if std::env::var("CURSED_WASM_THREADS").is_ok() {
+                wasm_config.enable_threads = true;
+            }
+            
+            // Use enhanced WASM compilation
+            let result = cursed::compile_to_wasm_with_optimizations(
+                input, 
+                &wasm_output, 
+                &advanced_config,
+                &wasm_config
+            ).await?;
+            
+            // Print enhanced compilation results
+            println!("{} WebAssembly module: {}", "Generated".green().bold(), result.output_file);
+            println!("  Binary size: {} bytes", result.binary_size);
+            println!("  Compilation time: {:?}", result.compilation_time);
+            println!("  Functions optimized: {}", result.optimization_stats.functions_optimized);
+            if result.optimization_stats.code_size_reduction > 0.0 {
+                println!("  Code size reduction: {:.1}%", result.optimization_stats.code_size_reduction);
+            }
+            if result.debug_info_generated {
+                println!("  Debug information: Generated");
+            }
+            if result.source_maps_generated {
+                println!("  Source maps: Generated");
+            }
+            
+            // Print validation results if verbose
+            if matches.get_flag("verbose") {
+                if !result.validation_result.validation_errors.is_empty() {
+                    println!("⚠ Validation errors:");
+                    for error in &result.validation_result.validation_errors {
+                        println!("    {}", error);
+                    }
+                }
+                if !result.validation_result.warnings.is_empty() {
+                    println!("⚠ Validation warnings:");
+                    for warning in &result.validation_result.warnings {
+                        println!("    {}", warning);
+                    }
+                }
+                if !result.validation_result.performance_suggestions.is_empty() {
+                    println!("💡 Performance suggestions:");
+                    for suggestion in &result.validation_result.performance_suggestions {
+                        println!("    {}", suggestion);
+                    }
+                }
+            }
         }
         // Handle native-only flag
         else if matches.get_flag("native-only") {
@@ -2354,9 +2439,56 @@ async fn handle_clean(matches: &ArgMatches, _global_matches: &ArgMatches) -> Res
     
     println!("{} build artifacts", "Cleaning".yellow().bold());
     
-    // TODO: Implement cleaning
-    println!("{} Clean not yet implemented", "Warning".yellow().bold());
+    let mut cleaned_count = 0;
     
+    // Clean target directory
+    if std::path::Path::new("target").exists() {
+        println!("Removing target/ directory...");
+        std::fs::remove_dir_all("target")?;
+        cleaned_count += 1;
+    }
+    
+    // Clean compiled executables
+    for entry in std::fs::read_dir(".")? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_file() {
+            if let Some(file_name) = path.file_name() {
+                let name_str = file_name.to_string_lossy();
+                // Remove CURSED compiled executables (no extension)
+                if !name_str.contains('.') && path.metadata()?.permissions().mode() & 0o111 != 0 {
+                    // Check if it's a CURSED-compiled binary
+                    if let Ok(metadata) = std::fs::metadata(&path) {
+                        if metadata.len() > 0 {
+                            println!("Removing compiled executable: {}", name_str);
+                            std::fs::remove_file(&path)?;
+                            cleaned_count += 1;
+                        }
+                    }
+                }
+                // Remove LLVM IR files
+                if name_str.ends_with(".ll") || name_str.ends_with(".bc") {
+                    println!("Removing LLVM file: {}", name_str);
+                    std::fs::remove_file(&path)?;
+                    cleaned_count += 1;
+                }
+                // Remove object files
+                if name_str.ends_with(".o") {
+                    println!("Removing object file: {}", name_str);
+                    std::fs::remove_file(&path)?;
+                    cleaned_count += 1;
+                }
+                // Remove output files
+                if name_str.ends_with("_output.txt") || name_str.ends_with("_out.txt") {
+                    println!("Removing output file: {}", name_str);
+                    std::fs::remove_file(&path)?;
+                    cleaned_count += 1;
+                }
+            }
+        }
+    }
+    
+    println!("{} Cleaned {} artifacts", "Success".green().bold(), cleaned_count);
     Ok(())
 }
 

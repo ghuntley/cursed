@@ -128,6 +128,29 @@ impl GenericConstraintChecker {
             interfaces: HashMap::new(),
         }
     }
+    
+    /// Extract source location from type expression
+    fn extract_source_location_from_type(&self, type_expr: &TypeExpression) -> Option<SourceLocation> {
+        // Try to extract location from type name context
+        if let Some(name) = &type_expr.name {
+            // Look up the type in the environment to get its declaration location
+            if let Some(type_info) = self.type_env.get_type(name) {
+                return type_info.source_location.clone();
+            }
+        }
+        
+        // For composite types, try to extract from parameters
+        if !type_expr.parameters.is_empty() {
+            for param in &type_expr.parameters {
+                if let Some(location) = self.extract_source_location_from_type(param) {
+                    return Some(location);
+                }
+            }
+        }
+        
+        // Default to unknown location
+        None
+    }
 
     /// Add an interface definition
     pub fn add_interface(&mut self, interface: InterfaceDefinition) {
@@ -239,7 +262,7 @@ impl GenericConstraintChecker {
                     type_name: format!("{:?}", type_expr),
                     reason: ViolationReason::MissingMethod(method.clone()),
                     suggestion: Some(format!("Implement method '{}' for type '{:?}'", method, type_expr)),
-                    source_location: None, // TODO: Extract from type_expr if available
+                    source_location: self.extract_source_location_from_type(type_expr),
                 })
                 .collect();
 

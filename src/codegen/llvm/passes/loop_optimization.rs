@@ -2,7 +2,7 @@ use inkwell::module::Module;
 use inkwell::values::{FunctionValue, InstructionValue};
 use inkwell::basic_block::BasicBlock as LLVMBasicBlock;
 use crate::error::{CursedError, Result};
-use crate::optimization::config::OptimizationConfig;
+use crate::optimization::OptimizationConfig;
 use std::collections::{HashMap, HashSet};
 
 /// Loop optimization pass for LLVM IR

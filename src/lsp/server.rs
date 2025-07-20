@@ -440,9 +440,114 @@ impl CursedLanguageServer {
     }
 
     /// Extract semantic tokens from AST
-    fn extract_semantic_tokens(&self, _program: &Program, _tokens: &mut Vec<SemanticToken>) {
-        // TODO: Implement semantic token extraction from AST
-        // This would analyze the AST and generate semantic tokens for highlighting
+    fn extract_semantic_tokens(&self, program: &Program, tokens: &mut Vec<SemanticToken>) {
+        for statement in &program.statements {
+            self.extract_tokens_from_statement(statement, tokens);
+        }
+    }
+    
+    /// Extract tokens from a statement
+    fn extract_tokens_from_statement(&self, statement: &Statement, tokens: &mut Vec<SemanticToken>) {
+        match statement {
+            Statement::Function(func) => {
+                // Function name
+                if let Some(name) = &func.name {
+                    tokens.push(SemanticToken {
+                        delta_line: 0, // TODO: Get actual line from AST
+                        delta_start: 0,
+                        length: name.len() as u32,
+                        token_type: SemanticTokenType::FUNCTION as u32,
+                        token_modifiers_bitset: 0,
+                    });
+                }
+                
+                // Function parameters
+                for param in &func.parameters {
+                    tokens.push(SemanticToken {
+                        delta_line: 0,
+                        delta_start: 0,
+                        length: param.name.len() as u32,
+                        token_type: SemanticTokenType::PARAMETER as u32,
+                        token_modifiers_bitset: 0,
+                    });
+                }
+                
+                // Function body
+                for stmt in &func.body {
+                    self.extract_tokens_from_statement(stmt, tokens);
+                }
+            },
+            Statement::VariableDeclaration(var) => {
+                tokens.push(SemanticToken {
+                    delta_line: 0,
+                    delta_start: 0,
+                    length: var.name.len() as u32,
+                    token_type: SemanticTokenType::VARIABLE as u32,
+                    token_modifiers_bitset: if var.is_mutable { 1 } else { 0 }, // READONLY modifier
+                });
+                
+                if let Some(init) = &var.initializer {
+                    self.extract_tokens_from_expression(init, tokens);
+                }
+            },
+            Statement::Return(ret) => {
+                if let Some(expr) = &ret.value {
+                    self.extract_tokens_from_expression(expr, tokens);
+                }
+            },
+            Statement::Expression(expr) => {
+                self.extract_tokens_from_expression(expr, tokens);
+            },
+            _ => {} // Handle other statement types as needed
+        }
+    }
+    
+    /// Extract tokens from an expression
+    fn extract_tokens_from_expression(&self, expression: &Expression, tokens: &mut Vec<SemanticToken>) {
+        match expression {
+            Expression::Identifier(id) => {
+                tokens.push(SemanticToken {
+                    delta_line: 0,
+                    delta_start: 0,
+                    length: id.name.len() as u32,
+                    token_type: SemanticTokenType::VARIABLE as u32,
+                    token_modifiers_bitset: 0,
+                });
+            },
+            Expression::String(s) => {
+                tokens.push(SemanticToken {
+                    delta_line: 0,
+                    delta_start: 0,
+                    length: s.value.len() as u32 + 2, // Include quotes
+                    token_type: SemanticTokenType::STRING as u32,
+                    token_modifiers_bitset: 0,
+                });
+            },
+            Expression::Number(n) => {
+                let length = n.value.to_string().len() as u32;
+                tokens.push(SemanticToken {
+                    delta_line: 0,
+                    delta_start: 0,
+                    length,
+                    token_type: SemanticTokenType::NUMBER as u32,
+                    token_modifiers_bitset: 0,
+                });
+            },
+            Expression::FunctionCall(call) => {
+                tokens.push(SemanticToken {
+                    delta_line: 0,
+                    delta_start: 0,
+                    length: call.name.len() as u32,
+                    token_type: SemanticTokenType::FUNCTION as u32,
+                    token_modifiers_bitset: 0,
+                });
+                
+                for arg in &call.arguments {
+                    self.extract_tokens_from_expression(arg, tokens);
+                }
+            },
+            _ => {} // Handle other expression types as needed
+        }
     }
 }
 

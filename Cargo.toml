@@ -49,6 +49,8 @@ backtrace = { version = "0.3", optional = true }  # Stack trace capture
 # Stack walking and debug information dependencies
 # rustc-demangle already included above
 
+# Dependencies for production modules already included below
+
 # Features moved to main [features] section below
 
 # Documentation generation dependencies
@@ -64,8 +66,9 @@ cfg-if = "1.0"      # For conditional compilation
 
 # Basic cryptography dependencies
 getrandom = "0.2"  # Secure random number generation
-hex = "0.4"     # Hex encoding/decoding
+# hex = "0.4"     # Hex encoding/decoding (duplicate removed)
 crc32fast = "1.3"  # Fast CRC32 computation for ZIP archives
+hex = "0.4"       # Hex encoding/decoding
 rand = "0.8"    # Random number generation
 rand_distr = "0.4"  # Random distributions
 sha2 = "0.10"   # SHA-2 hashing for build cache

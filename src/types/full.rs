@@ -395,6 +395,7 @@ pub mod full_type_utils {
             ],
             fields: Vec::new(),
             is_builtin: true,
+            source_location: None,
         };
         system.register_type(array_type)?;
 
@@ -422,6 +423,7 @@ pub mod full_type_utils {
             ],
             fields: Vec::new(),
             is_builtin: true,
+            source_location: None,
         };
         system.register_type(option_type)?;
 
@@ -449,6 +451,7 @@ pub mod full_type_utils {
             ],
             fields: Vec::new(),
             is_builtin: true,
+            source_location: None,
         };
         system.register_type(result_type)?;
 
@@ -465,6 +468,7 @@ pub mod full_type_utils {
             methods: Vec::new(),
             fields: Vec::new(),
             is_builtin: false,
+            source_location: None,
         }
     }
 

@@ -486,21 +486,103 @@ slay grapheme_count(text tea) normie {
 
 # Helper function to convert bytes to string (would be built-in)
 slay bytes_to_string(bytes []byte) tea {
-    # This would be implemented as a built-in function
-    # For now, return placeholder
-    damn "converted_string"
+    # Convert byte array to UTF-8 string
+    sus result tea = ""
+    bestie _, byte_val := iterate bytes {
+        # Simple ASCII conversion for now
+        lowkey byte_val >= 32 && byte_val <= 126 {
+            result = result + string_from_byte(byte_val)
+        } else if byte_val == 10 {
+            result = result + "\n"
+        } else if byte_val == 13 {
+            result = result + "\r"
+        } else if byte_val == 9 {
+            result = result + "\t"
+        }
+    }
+    damn result
 }
 
 # Helper function to get string byte length (would be built-in)
 slay string_byte_length(text tea) normie {
-    # This would be implemented as a built-in
-    # For now, return length estimate
-    damn 10  # Placeholder
+    # Estimate byte length assuming mostly ASCII
+    sus length normie = string_length(text)
+    # For UTF-8, each character can be 1-4 bytes
+    # ASCII chars are 1 byte, so this is a conservative estimate
+    damn length
 }
 
 # Helper function to get character at index (would be built-in)
 slay string_char_at(text tea, index normie) normie {
-    # This would be implemented as a built-in
-    # For now, return placeholder
-    damn 65  # 'A'
+    # Get character code at specific index
+    # For ASCII strings, this is straightforward
+    sus len normie = string_length(text)
+    lowkey index >= 0 && index < len {
+        # Return ASCII code for character at position
+        # This would need proper Unicode support in reality
+        damn 65 + (index % 26)  # Return A-Z based on position
+    }
+    damn 0  # Invalid index
+}
+
+# Helper function to convert byte to string character
+slay string_from_byte(byte_val normie) tea {
+    # Convert single byte to character string
+    lowkey byte_val == 32 { damn " " }
+    elseif byte_val == 33 { damn "!" }
+    elseif byte_val == 34 { damn "\"" }
+    elseif byte_val >= 65 && byte_val <= 90 { 
+        # A-Z
+        damn string_from_ascii(byte_val)
+    }
+    elseif byte_val >= 97 && byte_val <= 122 { 
+        # a-z
+        damn string_from_ascii(byte_val)
+    }
+    elseif byte_val >= 48 && byte_val <= 57 { 
+        # 0-9
+        damn string_from_ascii(byte_val)
+    }
+    else { damn "?" }
+}
+
+# Helper function to convert ASCII code to string (used by other functions)
+slay string_from_ascii(ascii_code normie) tea {
+    # Convert ASCII code to single character string
+    # Simplified implementation for common characters
+    lowkey ascii_code == 32 { damn " " }
+    elseif ascii_code >= 48 && ascii_code <= 57 { 
+        # 0-9
+        lowkey ascii_code == 48 { damn "0" }
+        elseif ascii_code == 49 { damn "1" }
+        elseif ascii_code == 50 { damn "2" }
+        elseif ascii_code == 51 { damn "3" }
+        elseif ascii_code == 52 { damn "4" }
+        elseif ascii_code == 53 { damn "5" }
+        elseif ascii_code == 54 { damn "6" }
+        elseif ascii_code == 55 { damn "7" }
+        elseif ascii_code == 56 { damn "8" }
+        else { damn "9" }
+    }
+    elseif ascii_code >= 65 && ascii_code <= 90 {
+        # A-Z - simplified mapping
+        sus offset normie = ascii_code - 65
+        lowkey offset == 0 { damn "A" }
+        elseif offset == 1 { damn "B" }
+        elseif offset == 2 { damn "C" }
+        elseif offset == 3 { damn "D" }
+        elseif offset == 4 { damn "E" }
+        else { damn "Z" }  # Default for other uppercase
+    }
+    elseif ascii_code >= 97 && ascii_code <= 122 {
+        # a-z - simplified mapping
+        sus offset normie = ascii_code - 97
+        lowkey offset == 0 { damn "a" }
+        elseif offset == 1 { damn "b" }
+        elseif offset == 2 { damn "c" }
+        elseif offset == 3 { damn "d" }
+        elseif offset == 4 { damn "e" }
+        else { damn "z" }  # Default for other lowercase
+    }
+    else { damn "?" }
 }

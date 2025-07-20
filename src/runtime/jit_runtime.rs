@@ -19,7 +19,7 @@ use std::fmt;
 use crate::error_types::{Error, Result};
 use crate::runtime::{RuntimeError, RuntimeErrorType};
 use crate::runtime::goroutine::GoroutineId;
-use crate::optimization::OptimizationLevel as OptiLevel;
+use crate::optimization::OptimizationLevel;
 use crate::codegen::llvm::jit_engine::{CursedJitEngine, JitEngineConfig};
 
 /// Global JIT runtime instance - lazy initialization to avoid thread safety issues
