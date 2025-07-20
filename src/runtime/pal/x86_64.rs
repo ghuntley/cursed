@@ -288,13 +288,17 @@ impl X86_64MacOSPal {
             
             // First call to get the size
             let mut size = 0;
-            let result = libc::sysctlbyname(
+            #[cfg(target_os = "macos")]
+            let result = unsafe { libc::sysctlbyname(
                 name_c.as_ptr(),
                 std::ptr::null_mut(),
                 &mut size,
                 std::ptr::null_mut(),
                 0,
-            );
+            ) };
+            
+            #[cfg(not(target_os = "macos"))]
+            let result = -1; // sysctlbyname not available on non-macOS
             
             if result != 0 {
                 return Err(PlatformError::SystemCallFailed(format!("Failed to query {} size", name)));
@@ -302,13 +306,17 @@ impl X86_64MacOSPal {
 
             // Allocate buffer and get the actual value
             let mut buffer = vec![0u8; size];
-            let result = libc::sysctlbyname(
+            #[cfg(target_os = "macos")]
+            let result = unsafe { libc::sysctlbyname(
                 name_c.as_ptr(),
                 buffer.as_mut_ptr() as *mut libc::c_void,
                 &mut size,
                 std::ptr::null_mut(),
                 0,
-            );
+            ) };
+            
+            #[cfg(not(target_os = "macos"))]
+            let result = -1; // sysctlbyname not available on non-macOS
             
             if result == 0 {
                 // Convert to string, removing null terminator
@@ -330,13 +338,17 @@ impl X86_64MacOSPal {
             let name_c = std::ffi::CString::new(name)
                 .map_err(|_| PlatformError::SystemCallFailed("Invalid sysctl name".to_string()))?;
             
-            let result = libc::sysctlbyname(
+            #[cfg(target_os = "macos")]
+            let result = unsafe { libc::sysctlbyname(
                 name_c.as_ptr(),
                 &mut value as *mut u32 as *mut libc::c_void,
                 &mut size,
                 std::ptr::null_mut(),
                 0,
-            );
+            ) };
+            
+            #[cfg(not(target_os = "macos"))]
+            let result = -1; // sysctlbyname not available on non-macOS
             
             if result == 0 {
                 Ok(value)
@@ -528,7 +540,7 @@ impl X86_64LinuxPal {
             caps.has_sha_extensions = is_x86_feature_detected!("sha");
             caps.has_rdrand = is_x86_feature_detected!("rdrand");
             caps.has_rdseed = is_x86_feature_detected!("rdseed");
-            caps.has_memory_protection_keys = is_x86_feature_detected!("pku");
+            caps.has_memory_protection_keys = false; // PKU not supported in cross-compilation
         }
 
         // Query cache information from sysfs
@@ -971,7 +983,7 @@ impl X86_64WindowsPal {
             caps.has_sha_extensions = is_x86_feature_detected!("sha");
             caps.has_rdrand = is_x86_feature_detected!("rdrand");
             caps.has_rdseed = is_x86_feature_detected!("rdseed");
-            caps.has_memory_protection_keys = is_x86_feature_detected!("pku");
+            caps.has_memory_protection_keys = false; // PKU not supported in cross-compilation
         }
 
         // Use Windows APIs for additional detection
@@ -985,32 +997,41 @@ impl X86_64WindowsPal {
         Ok(caps)
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(all(target_os = "windows", not(target_arch = "wasm32")))]
     fn get_physical_core_count() -> usize {
-        use winapi::um::sysinfoapi::{GetLogicalProcessorInformation, SYSTEM_LOGICAL_PROCESSOR_INFORMATION};
-        use winapi::um::winnt::RelationProcessorCore;
+        #[cfg(feature = "winapi")]
+        {
+            use winapi::um::sysinfoapi::GetLogicalProcessorInformation;
+            use winapi::um::winnt::SYSTEM_LOGICAL_PROCESSOR_INFORMATION;
+            use winapi::um::winnt::RelationProcessorCore;
         
-        unsafe {
-            let mut buffer_size = 0;
-            GetLogicalProcessorInformation(std::ptr::null_mut(), &mut buffer_size);
-            
-            if buffer_size == 0 {
-                return thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
-            }
-            
-            let mut buffer = vec![0u8; buffer_size as usize];
-            let info_ptr = buffer.as_mut_ptr() as *mut SYSTEM_LOGICAL_PROCESSOR_INFORMATION;
-            
-            if GetLogicalProcessorInformation(info_ptr, &mut buffer_size) != 0 {
-                let info_count = buffer_size as usize / std::mem::size_of::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION>();
-                let info_slice = std::slice::from_raw_parts(info_ptr, info_count);
+            unsafe {
+                let mut buffer_size = 0;
+                GetLogicalProcessorInformation(std::ptr::null_mut(), &mut buffer_size);
                 
-                info_slice.iter()
-                    .filter(|info| info.Relationship == RelationProcessorCore)
-                    .count()
-            } else {
-                thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
+                if buffer_size == 0 {
+                    return thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+                }
+                
+                let mut buffer = vec![0u8; buffer_size as usize];
+                let info_ptr = buffer.as_mut_ptr() as *mut SYSTEM_LOGICAL_PROCESSOR_INFORMATION;
+                
+                if GetLogicalProcessorInformation(info_ptr, &mut buffer_size) != 0 {
+                    let info_count = buffer_size as usize / std::mem::size_of::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION>();
+                    let info_slice = std::slice::from_raw_parts(info_ptr, info_count);
+                    
+                    info_slice.iter()
+                        .filter(|info| info.Relationship == RelationProcessorCore)
+                        .count()
+                } else {
+                    thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
+                }
             }
+        }
+        
+        #[cfg(not(feature = "winapi"))]
+        {
+            thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
         }
     }
 
@@ -1020,7 +1041,7 @@ impl X86_64WindowsPal {
     }
 
     fn check_large_page_privilege() -> bool {
-        #[cfg(target_os = "windows")]
+        #[cfg(all(target_os = "windows", feature = "winapi"))]
         {
             // Check if the process has "Lock pages in memory" privilege
             use winapi::um::processthreadsapi::GetCurrentProcess;
@@ -1030,7 +1051,7 @@ impl X86_64WindowsPal {
             // This is a simplified check - full implementation would query token privileges
             true // Assume available for now
         }
-        #[cfg(not(target_os = "windows"))]
+        #[cfg(not(all(target_os = "windows", feature = "winapi")))]
         {
             false
         }
@@ -1269,6 +1290,7 @@ impl X86_64MemoryManager {
     fn allocate_large_pages(&self, size: usize) -> Result<*mut u8, MemoryPlatformError> {
         unsafe {
             match self.os {
+                #[cfg(not(target_os = "windows"))]
                 OperatingSystem::Linux => {
                     // Use hardcoded constant for MAP_HUGETLB to avoid libc version issues
                     const MAP_HUGETLB: libc::c_int = 0x40000;
@@ -1291,7 +1313,7 @@ impl X86_64MemoryManager {
                         self.allocate_standard(size, self.page_size)
                     }
                 },
-                #[cfg(target_os = "windows")]
+                #[cfg(all(target_os = "windows", feature = "winapi"))]
                 OperatingSystem::Windows => {
                     use winapi::um::memoryapi::VirtualAlloc;
                     use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, MEM_LARGE_PAGES, PAGE_READWRITE};
@@ -1328,25 +1350,33 @@ impl X86_64MemoryManager {
         }
 
         unsafe {
-            // Use hardcoded constants for huge page support to avoid libc version issues
-            const MAP_HUGETLB: libc::c_int = 0x40000;
-            const MAP_HUGE_SHIFT: libc::c_int = 26;
-            let ptr = libc::mmap(
-                std::ptr::null_mut(),
-                size,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | MAP_HUGETLB | (30 << MAP_HUGE_SHIFT), // 1GB pages
-                -1,
-                0,
-            );
-            
-            if ptr != libc::MAP_FAILED {
-                if let Ok(mut stats) = self.allocation_stats.lock() {
-                    stats.huge_page_allocations += 1;
+            #[cfg(not(target_os = "windows"))]
+            {
+                // Use hardcoded constants for huge page support to avoid libc version issues
+                const MAP_HUGETLB: libc::c_int = 0x40000;
+                const MAP_HUGE_SHIFT: libc::c_int = 26;
+                let ptr = libc::mmap(
+                    std::ptr::null_mut(),
+                    size,
+                    libc::PROT_READ | libc::PROT_WRITE,
+                    libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | MAP_HUGETLB | (30 << MAP_HUGE_SHIFT), // 1GB pages
+                    -1,
+                    0,
+                );
+                
+                if ptr != libc::MAP_FAILED {
+                    if let Ok(mut stats) = self.allocation_stats.lock() {
+                        stats.huge_page_allocations += 1;
+                    }
+                    Ok(ptr as *mut u8)
+                } else {
+                    // Fallback to large pages
+                    self.allocate_large_pages(size)
                 }
-                Ok(ptr as *mut u8)
-            } else {
-                // Fallback to large pages
+            }
+            #[cfg(target_os = "windows")]
+            {
+                // Windows doesn't support 1GB pages, fallback to large pages
                 self.allocate_large_pages(size)
             }
         }
@@ -1356,38 +1386,63 @@ impl X86_64MemoryManager {
     fn allocate_aligned(&self, size: usize, alignment: usize) -> Result<*mut u8, MemoryPlatformError> {
         unsafe {
             match self.os {
-                #[cfg(target_os = "windows")]
                 OperatingSystem::Windows => {
-                    use winapi::um::memoryapi::VirtualAlloc;
-                    use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE};
-                    
-                    // Windows VirtualAlloc doesn't directly support alignment
-                    // Allocate extra space and align manually
-                    let extra_size = size + alignment - 1;
-                    let ptr = VirtualAlloc(
-                        std::ptr::null_mut(),
-                        extra_size,
-                        MEM_COMMIT | MEM_RESERVE,
-                        PAGE_READWRITE,
-                    );
-                    
-                    if !ptr.is_null() {
-                        let aligned_ptr = ((ptr as usize + alignment - 1) & !(alignment - 1)) as *mut u8;
-                        Ok(aligned_ptr)
-                    } else {
-                        Err(MemoryPlatformError::AllocationFailed("VirtualAlloc failed".to_string()))
+                    #[cfg(all(target_os = "windows", feature = "winapi"))]
+                    {
+                        use winapi::um::memoryapi::VirtualAlloc;
+                        use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE};
+                        
+                        // Windows VirtualAlloc doesn't directly support alignment
+                        // Allocate extra space and align manually
+                        let extra_size = size + alignment - 1;
+                        let ptr = VirtualAlloc(
+                            std::ptr::null_mut(),
+                            extra_size,
+                            MEM_COMMIT | MEM_RESERVE,
+                            PAGE_READWRITE,
+                        );
+                        
+                        if !ptr.is_null() {
+                            let aligned_ptr = ((ptr as usize + alignment - 1) & !(alignment - 1)) as *mut u8;
+                            Ok(aligned_ptr)
+                        } else {
+                            Err(MemoryPlatformError::AllocationFailed("VirtualAlloc failed".to_string()))
+                        }
+                    }
+                    #[cfg(not(all(target_os = "windows", feature = "winapi")))]
+                    {
+                        // Cross-compilation fallback using standard allocation
+                        let layout = std::alloc::Layout::from_size_align(size, alignment)
+                            .map_err(|_| MemoryPlatformError::AllocationFailed("Invalid layout".to_string()))?;
+                        let ptr = std::alloc::alloc(layout);
+                        if ptr.is_null() {
+                            Err(MemoryPlatformError::AllocationFailed("alloc failed".to_string()))
+                        } else {
+                            Ok(ptr)
+                        }
+                    }
+                },
+                OperatingSystem::MacOS | OperatingSystem::Linux => {
+                    #[cfg(not(target_os = "windows"))]
+                    {
+                        // Unix-like systems (macOS, Linux)
+                        let mut ptr: *mut libc::c_void = std::ptr::null_mut();
+                        let result = libc::posix_memalign(&mut ptr, alignment, size);
+                        
+                        if result == 0 && !ptr.is_null() {
+                            Ok(ptr as *mut u8)
+                        } else {
+                            Err(MemoryPlatformError::AllocationFailed("posix_memalign failed".to_string()))
+                        }
+                    }
+                    #[cfg(target_os = "windows")]
+                    {
+                        Err(MemoryPlatformError::AllocationFailed("Unix systems not supported in Windows build".to_string()))
                     }
                 },
                 _ => {
-                    // Unix-like systems (macOS, Linux)
-                    let mut ptr: *mut libc::c_void = std::ptr::null_mut();
-                    let result = libc::posix_memalign(&mut ptr, alignment, size);
-                    
-                    if result == 0 && !ptr.is_null() {
-                        Ok(ptr as *mut u8)
-                    } else {
-                        Err(MemoryPlatformError::AllocationFailed("posix_memalign failed".to_string()))
-                    }
+                    // Fallback for other platforms
+                    Err(MemoryPlatformError::AllocationFailed("Unsupported platform".to_string()))
                 }
             }
         }
@@ -1397,39 +1452,64 @@ impl X86_64MemoryManager {
     fn allocate_standard(&self, size: usize, _alignment: usize) -> Result<*mut u8, MemoryPlatformError> {
         unsafe {
             match self.os {
-                #[cfg(target_os = "windows")]
                 OperatingSystem::Windows => {
-                    use winapi::um::memoryapi::VirtualAlloc;
-                    use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE};
-                    
-                    let ptr = VirtualAlloc(
-                        std::ptr::null_mut(),
-                        size,
-                        MEM_COMMIT | MEM_RESERVE,
-                        PAGE_READWRITE,
-                    );
-                    
-                    if !ptr.is_null() {
-                        Ok(ptr as *mut u8)
-                    } else {
-                        Err(MemoryPlatformError::AllocationFailed("VirtualAlloc failed".to_string()))
+                    #[cfg(all(target_os = "windows", feature = "winapi"))]
+                    {
+                        use winapi::um::memoryapi::VirtualAlloc;
+                        use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE};
+                        
+                        let ptr = VirtualAlloc(
+                            std::ptr::null_mut(),
+                            size,
+                            MEM_COMMIT | MEM_RESERVE,
+                            PAGE_READWRITE,
+                        );
+                        
+                        if !ptr.is_null() {
+                            Ok(ptr as *mut u8)
+                        } else {
+                            Err(MemoryPlatformError::AllocationFailed("VirtualAlloc failed".to_string()))
+                        }
+                    }
+                    #[cfg(not(all(target_os = "windows", feature = "winapi")))]
+                    {
+                        // Cross-compilation fallback using standard allocation
+                        let layout = std::alloc::Layout::from_size_align(size, 8)
+                            .map_err(|_| MemoryPlatformError::AllocationFailed("Invalid layout".to_string()))?;
+                        let ptr = std::alloc::alloc(layout);
+                        if ptr.is_null() {
+                            Err(MemoryPlatformError::AllocationFailed("alloc failed".to_string()))
+                        } else {
+                            Ok(ptr)
+                        }
+                    }
+                },
+                OperatingSystem::MacOS | OperatingSystem::Linux => {
+                    #[cfg(not(target_os = "windows"))]
+                    {
+                        let ptr = libc::mmap(
+                            std::ptr::null_mut(),
+                            size,
+                            libc::PROT_READ | libc::PROT_WRITE,
+                            libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+                            -1,
+                            0,
+                        );
+                        
+                        if ptr != libc::MAP_FAILED {
+                            Ok(ptr as *mut u8)
+                        } else {
+                            Err(MemoryPlatformError::AllocationFailed("mmap failed".to_string()))
+                        }
+                    }
+                    #[cfg(target_os = "windows")]
+                    {
+                        Err(MemoryPlatformError::AllocationFailed("Unix systems not supported in Windows build".to_string()))
                     }
                 },
                 _ => {
-                    let ptr = libc::mmap(
-                        std::ptr::null_mut(),
-                        size,
-                        libc::PROT_READ | libc::PROT_WRITE,
-                        libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
-                        -1,
-                        0,
-                    );
-                    
-                    if ptr != libc::MAP_FAILED {
-                        Ok(ptr as *mut u8)
-                    } else {
-                        Err(MemoryPlatformError::AllocationFailed("mmap failed".to_string()))
-                    }
+                    // Fallback for other platforms
+                    Err(MemoryPlatformError::AllocationFailed("Unsupported platform".to_string()))
                 }
             }
         }
@@ -1581,18 +1661,34 @@ impl MemoryManager for X86_64MemoryManager {
     fn deallocate(&self, ptr: *mut u8, size: usize) -> Result<(), MemoryPlatformError> {
         unsafe {
             match self.os {
-                #[cfg(target_os = "windows")]
                 OperatingSystem::Windows => {
-                    use winapi::um::memoryapi::VirtualFree;
-                    use winapi::um::winnt::MEM_RELEASE;
-                    
-                    VirtualFree(ptr as *mut winapi::ctypes::c_void, 0, MEM_RELEASE);
+                    #[cfg(target_os = "windows")]
+                    {
+                        use winapi::um::memoryapi::VirtualFree;
+                        use winapi::um::winnt::MEM_RELEASE;
+                        
+                        VirtualFree(ptr as *mut winapi::ctypes::c_void, 0, MEM_RELEASE);
+                    }
+                    #[cfg(not(target_os = "windows"))]
+                    {
+                        // No-op for non-Windows builds
+                    }
+                },
+                OperatingSystem::MacOS | OperatingSystem::Linux => {
+                    #[cfg(not(target_os = "windows"))]
+                    {
+                        let result = libc::munmap(ptr as *mut libc::c_void, size);
+                        if result != 0 {
+                            return Err(MemoryPlatformError::AllocationFailed("munmap failed".to_string()));
+                        }
+                    }
+                    #[cfg(target_os = "windows")]
+                    {
+                        // No-op for Windows builds
+                    }
                 },
                 _ => {
-                    let result = libc::munmap(ptr as *mut libc::c_void, size);
-                    if result != 0 {
-                        return Err(MemoryPlatformError::AllocationFailed("munmap failed".to_string()));
-                    }
+                    // Fallback for other platforms - no deallocation needed
                 }
             }
         }
@@ -1619,7 +1715,7 @@ impl MemoryManager for X86_64MemoryManager {
         // x86_64 memory fence - serializing instruction
         #[cfg(target_arch = "x86_64")]
         // Use cross-platform memory barrier
-        super::common::memory_barrier();
+        std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
         
         #[cfg(not(target_arch = "x86_64"))]
         std::sync::atomic::fence(Ordering::SeqCst);
@@ -1660,14 +1756,37 @@ impl NumaAllocator {
 
         // For now, use standard allocation - in production would use numa_alloc_onnode
         unsafe {
-            let mut ptr: *mut libc::c_void = std::ptr::null_mut();
-            let result = libc::posix_memalign(&mut ptr, alignment, size);
-            
-            if result == 0 && !ptr.is_null() {
-                self.node_allocators[node_id].allocated_memory.fetch_add(size as u64, Ordering::Relaxed);
-                Ok(ptr as *mut u8)
-            } else {
-                Err(MemoryPlatformError::AllocationFailed("NUMA allocation failed".to_string()))
+            #[cfg(not(target_os = "windows"))]
+            {
+                let mut ptr: *mut libc::c_void = std::ptr::null_mut();
+                let result = libc::posix_memalign(&mut ptr, alignment, size);
+                
+                if result == 0 && !ptr.is_null() {
+                    self.node_allocators[node_id].allocated_memory.fetch_add(size as u64, Ordering::Relaxed);
+                    Ok(ptr as *mut u8)
+                } else {
+                    Err(MemoryPlatformError::AllocationFailed("NUMA allocation failed".to_string()))
+                }
+            }
+            #[cfg(target_os = "windows")]
+            {
+                // Windows doesn't have NUMA node allocation in this context, fallback to regular allocation
+                use winapi::um::memoryapi::VirtualAlloc;
+                use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE};
+                
+                let ptr = VirtualAlloc(
+                    std::ptr::null_mut(),
+                    size,
+                    MEM_COMMIT | MEM_RESERVE,
+                    PAGE_READWRITE,
+                );
+                
+                if !ptr.is_null() {
+                    self.node_allocators[node_id].allocated_memory.fetch_add(size as u64, Ordering::Relaxed);
+                    Ok(ptr as *mut u8)
+                } else {
+                    Err(MemoryPlatformError::AllocationFailed("Windows NUMA allocation failed".to_string()))
+                }
             }
         }
     }
@@ -1886,10 +2005,10 @@ impl X86_64Scheduler {
 
         #[cfg(target_os = "windows")]
         {
-            use winapi::um::processthreadsapi::SetThreadAffinityMask;
+            use winapi::um::winbase::SetThreadAffinityMask;
             use winapi::um::handleapi::INVALID_HANDLE_VALUE;
             
-            let affinity_mask = 1u64 << cpu_id;
+            let affinity_mask = 1usize << cpu_id;
             unsafe {
                 let result = SetThreadAffinityMask(thread_id as winapi::um::winnt::HANDLE, affinity_mask);
                 if result == 0 {

@@ -174,6 +174,7 @@ impl Arm64MacOSPal {
     }
 
     /// Query a boolean sysctl value
+    #[cfg(target_os = "macos")]
     fn query_sysctl_bool(name: &str) -> Result<bool, PlatformError> {
         unsafe {
             let mut value: u32 = 0;
@@ -198,6 +199,12 @@ impl Arm64MacOSPal {
             }
         }
     }
+    
+    #[cfg(not(target_os = "macos"))]
+    fn query_sysctl_bool(_name: &str) -> Result<bool, PlatformError> {
+        // sysctlbyname not available on non-macOS
+        Ok(false)
+    }
 
     /// Query a u32 sysctl value
     fn query_sysctl_u32(name: &str) -> Result<u32, PlatformError> {
@@ -208,13 +215,17 @@ impl Arm64MacOSPal {
             let name_c = std::ffi::CString::new(name)
                 .map_err(|_| PlatformError::SystemCallFailed("Invalid sysctl name".to_string()))?;
             
-            let result = libc::sysctlbyname(
+            #[cfg(target_os = "macos")]
+            let result = unsafe { libc::sysctlbyname(
                 name_c.as_ptr(),
                 &mut value as *mut u32 as *mut libc::c_void,
                 &mut size,
                 std::ptr::null_mut(),
                 0,
-            );
+            ) };
+            
+            #[cfg(not(target_os = "macos"))]
+            let result = -1; // sysctlbyname not available on non-macOS
             
             if result == 0 {
                 Ok(value)
@@ -641,7 +652,7 @@ impl Arm64MemoryManager {
     fn allocate_mte(&self, size: usize) -> Result<*mut u8, MemoryPlatformError> {
         unsafe {
             // Use mmap with PROT_MTE flag on Linux
-            #[cfg(target_os = "linux")]
+            #[cfg(all(target_os = "linux", not(target_os = "windows")))]
             {
                 let ptr = libc::mmap(
                     std::ptr::null_mut(),
@@ -661,7 +672,7 @@ impl Arm64MemoryManager {
                 Ok(ptr as *mut u8)
             }
             
-            #[cfg(not(target_os = "linux"))]
+            #[cfg(not(all(target_os = "linux", not(target_os = "windows"))))]
             {
                 // Fallback to regular allocation
                 self.allocate_aligned(size, 16)
@@ -698,11 +709,26 @@ impl MemoryManager for Arm64MemoryManager {
     
     fn deallocate(&self, ptr: *mut u8, size: usize) -> Result<(), MemoryPlatformError> {
         unsafe {
-            let result = libc::munmap(ptr as *mut libc::c_void, size);
-            if result != 0 {
-                return Err(MemoryPlatformError::AllocationFailed(
-                    "munmap failed".to_string()
-                ));
+            #[cfg(not(target_os = "windows"))]
+            {
+                let result = libc::munmap(ptr as *mut libc::c_void, size);
+                if result != 0 {
+                    return Err(MemoryPlatformError::AllocationFailed(
+                        "munmap failed".to_string()
+                    ));
+                }
+            }
+            #[cfg(all(target_os = "windows", feature = "winapi"))]
+            {
+                // Windows VirtualFree - ARM64 Windows not typically supported but adding for completeness
+                use winapi::um::memoryapi::VirtualFree;
+                use winapi::um::winnt::MEM_RELEASE;
+                VirtualFree(ptr as *mut winapi::ctypes::c_void, 0, MEM_RELEASE);
+            }
+            #[cfg(not(all(target_os = "windows", feature = "winapi")))]
+            {
+                // Cross-compilation fallback
+                std::alloc::dealloc(ptr, std::alloc::Layout::from_size_align_unchecked(size, 8));
             }
         }
 
@@ -726,12 +752,12 @@ impl MemoryManager for Arm64MemoryManager {
     
     fn memory_barrier(&self) {
         // ARM64 memory barrier - data memory barrier with system scope
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(all(target_arch = "aarch64", feature = "inline_asm"))]
         unsafe {
             std::arch::asm!("dmb sy", options(nostack, preserves_flags));
         }
         
-        #[cfg(not(target_arch = "aarch64"))]
+        #[cfg(not(all(target_arch = "aarch64", feature = "inline_asm")))]
         std::sync::atomic::fence(Ordering::SeqCst);
     }
     
@@ -766,27 +792,63 @@ impl MemoryManager for Arm64MemoryManager {
 impl Arm64MemoryManager {
     fn allocate_aligned(&self, size: usize, alignment: usize) -> Result<*mut u8, MemoryPlatformError> {
         unsafe {
-            let ptr = libc::mmap(
-                std::ptr::null_mut(),
-                size,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
-                -1,
-                0,
-            );
-            
-            if ptr == libc::MAP_FAILED {
-                Err(MemoryPlatformError::AllocationFailed(
-                    "mmap failed for ARM64 allocation".to_string()
-                ))
-            } else {
-                // Check alignment
-                if (ptr as usize) % alignment != 0 {
-                    // Unmap and retry with aligned allocation
-                    libc::munmap(ptr, size);
-                    self.allocate_aligned_retry(size, alignment)
+            #[cfg(not(target_os = "windows"))]
+            {
+                let ptr = libc::mmap(
+                    std::ptr::null_mut(),
+                    size,
+                    libc::PROT_READ | libc::PROT_WRITE,
+                    libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+                    -1,
+                    0,
+                );
+                
+                if ptr == libc::MAP_FAILED {
+                    Err(MemoryPlatformError::AllocationFailed(
+                        "mmap failed for ARM64 allocation".to_string()
+                    ))
                 } else {
-                    Ok(ptr as *mut u8)
+                    // Check alignment
+                    if (ptr as usize) % alignment != 0 {
+                        // Unmap and retry with aligned allocation
+                        libc::munmap(ptr, size);
+                        self.allocate_aligned_retry(size, alignment)
+                    } else {
+                        Ok(ptr as *mut u8)
+                    }
+                }
+            }
+            #[cfg(all(target_os = "windows", feature = "winapi"))]
+            {
+                // Windows VirtualAlloc for ARM64
+                use winapi::um::memoryapi::VirtualAlloc;
+                use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE};
+                
+                let extra_size = size + alignment - 1;
+                let ptr = VirtualAlloc(
+                    std::ptr::null_mut(),
+                    extra_size,
+                    MEM_COMMIT | MEM_RESERVE,
+                    PAGE_READWRITE,
+                );
+                
+                if !ptr.is_null() {
+                    let aligned_ptr = ((ptr as usize + alignment - 1) & !(alignment - 1)) as *mut u8;
+                    Ok(aligned_ptr)
+                } else {
+                    Err(MemoryPlatformError::AllocationFailed("VirtualAlloc failed for ARM64".to_string()))
+                }
+            }
+            #[cfg(all(target_os = "windows", not(feature = "winapi")))]
+            {
+                // Cross-compilation fallback using standard allocation
+                let layout = std::alloc::Layout::from_size_align(size, alignment)
+                    .map_err(|_| MemoryPlatformError::AllocationFailed("Invalid layout".to_string()))?;
+                let ptr = std::alloc::alloc(layout);
+                if ptr.is_null() {
+                    Err(MemoryPlatformError::AllocationFailed("alloc failed".to_string()))
+                } else {
+                    Ok(ptr)
                 }
             }
         }
@@ -794,52 +856,62 @@ impl Arm64MemoryManager {
 
     fn allocate_aligned_retry(&self, size: usize, alignment: usize) -> Result<*mut u8, MemoryPlatformError> {
         unsafe {
-            // Allocate extra space to ensure we can align
-            let extra_size = size + alignment - 1;
-            let ptr = libc::mmap(
-                std::ptr::null_mut(),
-                extra_size,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
-                -1,
-                0,
-            );
-            
-            if ptr == libc::MAP_FAILED {
-                return Err(MemoryPlatformError::AllocationFailed(
-                    "aligned mmap failed".to_string()
-                ));
-            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                // Allocate extra space to ensure we can align
+                let extra_size = size + alignment - 1;
+                let ptr = libc::mmap(
+                    std::ptr::null_mut(),
+                    extra_size,
+                    libc::PROT_READ | libc::PROT_WRITE,
+                    libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+                    -1,
+                    0,
+                );
+                
+                if ptr == libc::MAP_FAILED {
+                    return Err(MemoryPlatformError::AllocationFailed(
+                        "aligned mmap failed".to_string()
+                    ));
+                }
 
-            // Calculate aligned pointer
-            let aligned_ptr = ((ptr as usize + alignment - 1) & !(alignment - 1)) as *mut u8;
-            
-            // Unmap unused regions
-            let prefix_size = aligned_ptr as usize - ptr as usize;
-            if prefix_size > 0 {
-                libc::munmap(ptr, prefix_size);
-            }
-            
-            let suffix_start = aligned_ptr.add(size);
-            let suffix_size = extra_size - prefix_size - size;
-            if suffix_size > 0 {
-                libc::munmap(suffix_start as *mut libc::c_void, suffix_size);
-            }
+                // Calculate aligned pointer
+                let aligned_ptr = ((ptr as usize + alignment - 1) & !(alignment - 1)) as *mut u8;
+                
+                // Unmap unused regions
+                let prefix_size = aligned_ptr as usize - ptr as usize;
+                if prefix_size > 0 {
+                    libc::munmap(ptr, prefix_size);
+                }
+                
+                let suffix_start = aligned_ptr.add(size);
+                let suffix_size = extra_size - prefix_size - size;
+                if suffix_size > 0 {
+                    libc::munmap(suffix_start as *mut libc::c_void, suffix_size);
+                }
 
-            Ok(aligned_ptr)
+                Ok(aligned_ptr)
+            }
+            #[cfg(target_os = "windows")]
+            {
+                // Simple aligned allocation for Windows
+                self.allocate_aligned(size, alignment)
+            }
         }
     }
 
     fn allocate_large_pages(&self, size: usize) -> Result<*mut u8, MemoryPlatformError> {
         unsafe {
-            #[cfg(target_os = "linux")]
+            #[cfg(all(target_os = "linux", not(target_os = "windows")))]
             {
                 // Try to allocate using transparent huge pages
+                // Use hardcoded constant for MAP_HUGETLB to avoid libc version issues
+                const MAP_HUGETLB: libc::c_int = 0x40000;
                 let ptr = libc::mmap(
                     std::ptr::null_mut(),
                     size,
                     libc::PROT_READ | libc::PROT_WRITE,
-                    libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_HUGETLB,
+                    libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | MAP_HUGETLB,
                     -1,
                     0,
                 );
@@ -1014,12 +1086,12 @@ impl Scheduler for Arm64Scheduler {
     
     fn yield_now(&self) -> Result<(), GoroutinePlatformError> {
         // ARM64 yield instruction for cooperative scheduling
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(all(target_arch = "aarch64", feature = "inline_asm"))]
         unsafe {
             std::arch::asm!("yield", options(nostack, preserves_flags));
         }
         
-        #[cfg(not(target_arch = "aarch64"))]
+        #[cfg(not(all(target_arch = "aarch64", feature = "inline_asm")))]
         thread::yield_now();
         
         Ok(())
@@ -1064,14 +1136,14 @@ impl Arm64PerformanceMonitor {
             return 0;
         }
 
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(all(target_arch = "aarch64", feature = "inline_asm"))]
         unsafe {
             let mut cycle_count: u64;
             std::arch::asm!("mrs {}, cntvct_el0", out(reg) cycle_count, options(nostack, preserves_flags));
             cycle_count
         }
 
-        #[cfg(not(target_arch = "aarch64"))]
+        #[cfg(not(all(target_arch = "aarch64", feature = "inline_asm")))]
         {
             self.start_time.get()
                 .map(|start| start.elapsed().as_nanos() as u64)

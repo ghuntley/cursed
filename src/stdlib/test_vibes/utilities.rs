@@ -33,7 +33,7 @@ pub fn random_float(min: f64, max: f64) -> f64 {
 /// Generate random bytes for testing
 pub fn random_bytes(length: usize) -> Vec<u8> {
     let mut rng = rand::thread_rng();
-    (0..length).map(|_| rng.gen()).collect()
+    (0..length).map(|_| rng.gen::<u8>()).collect()
 }
 
 /// Test operations handler

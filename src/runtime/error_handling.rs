@@ -677,31 +677,22 @@ impl ErrorRuntime {
         let mut frames = Vec::new();
         
         // Use backtrace crate to capture the current stack
-        let bt = backtrace::Backtrace::new();
+        let bt = std::backtrace::Backtrace::capture();
         
-        for (i, frame) in bt.frames().iter().enumerate() {
+        // For cross-compilation, create simple stack frames from string representation
+        let bt_string = format!("{}", bt);
+        for (i, line) in bt_string.lines().enumerate() {
             if i > self.config.max_stack_trace_depth {
                 break;
             }
             
-            for symbol in frame.symbols() {
-                let function_name = symbol.name()
-                    .map(|n| rustc_demangle::demangle(&n.to_string()).to_string())
-                    .unwrap_or_else(|| "<unknown>".to_string());
-                
-                let file_name = symbol.filename()
-                    .map(|f| f.to_string_lossy().to_string())
-                    .unwrap_or_else(|| "<unknown>".to_string());
-                
-                let line_number = symbol.lineno().unwrap_or(0);
-                let column_number = symbol.colno().unwrap_or(0);
-                
+            if !line.trim().is_empty() {
                 frames.push(StackFrame {
-                    function_name,
-                    file_name,
-                    line_number,
-                    column_number,
-                    source_snippet: None, // Could be enhanced to read actual source
+                    function_name: line.trim().to_string(),
+                    file_name: "<unknown>".to_string(),
+                    line_number: 0,
+                    column_number: 0,
+                    source_snippet: None,
                 });
             }
         }
@@ -848,36 +839,13 @@ impl ErrorRuntime {
         let mut trace = Vec::new();
         
         // Use backtrace crate to capture the current stack
-        let bt = backtrace::Backtrace::new();
+        let bt = std::backtrace::Backtrace::capture();
         
-        // Format the backtrace into readable strings
-        for frame in bt.frames() {
-            for symbol in frame.symbols() {
-                let mut line = String::new();
-                
-                // Function name
-                if let Some(name) = symbol.name() {
-                    // Demangle Rust symbols for readability
-                    let name_str = name.to_string();
-                    let demangled = rustc_demangle::demangle(&name_str);
-                    line.push_str(&format!("{}", demangled));
-                } else {
-                    line.push_str("<unknown>");
-                }
-                
-                // File and line number
-                if let (Some(file), Some(line_no)) = (symbol.filename(), symbol.lineno()) {
-                    line.push_str(&format!(" at {}:{}", file.display(), line_no));
-                } else if let Some(file) = symbol.filename() {
-                    line.push_str(&format!(" at {}", file.display()));
-                }
-                
-                // Memory address for debugging
-                if let Some(addr) = symbol.addr() {
-                    line.push_str(&format!(" (0x{:x})", addr as usize));
-                }
-                
-                trace.push(line);
+        // For cross-compilation, use simple string format
+        let bt_string = format!("{}", bt);
+        for line in bt_string.lines() {
+            if !line.trim().is_empty() {
+                trace.push(line.trim().to_string());
             }
         }
         

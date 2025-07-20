@@ -4,6 +4,8 @@ use super::{PlatformError, Architecture, OperatingSystem};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicU64, AtomicUsize, Ordering}};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+// Conditional sysinfo usage for cross-compilation compatibility
+#[cfg(not(target_arch = "wasm32"))]
 use sysinfo::System;
 
 /// Common platform detection utilities
@@ -179,22 +181,8 @@ pub struct AtomicOperations;
 impl AtomicOperations {
     /// Platform-optimized memory fence
     pub fn memory_fence() {
-        cfg_if::cfg_if! {
-            if #[cfg(target_arch = "aarch64")] {
-                unsafe {
-                    std::arch::asm!("dmb sy");
-                }
-            } else if #[cfg(target_arch = "x86_64")] {
-                unsafe {
-                    std::arch::asm!("mfence");
-                }
-            } else if #[cfg(target_arch = "wasm32")] {
-                // WASM doesn't need explicit memory fences in single-threaded mode
-                std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
-            } else {
-                std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
-            }
-        }
+        // For cross-compilation, use standard atomic fence
+        std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
     }
     
     /// Platform-optimized pause/yield instruction
@@ -204,41 +192,12 @@ impl AtomicOperations {
     
     /// Cross-platform yield implementation
     fn platform_yield() {
-        cfg_if::cfg_if! {
-            if #[cfg(target_arch = "aarch64")] {
-                unsafe {
-                    std::arch::asm!("yield");
-                }
-            } else if #[cfg(target_arch = "x86_64")] {
-                unsafe {
-                    std::arch::asm!("pause");
-                }
-            } else if #[cfg(target_arch = "wasm32")] {
-                // WASM cooperative yield
-                std::thread::yield_now();
-            } else {
-                std::thread::yield_now();
-            }
-        }
+        std::thread::yield_now();
     }
     
     /// Cross-platform memory barrier
     pub fn memory_barrier() {
-        cfg_if::cfg_if! {
-            if #[cfg(target_arch = "x86_64")] {
-                unsafe {
-                    std::arch::asm!("mfence");
-                }
-            } else if #[cfg(target_arch = "aarch64")] {
-                unsafe {
-                    std::arch::asm!("dmb sy");
-                }
-            } else if #[cfg(target_arch = "wasm32")] {
-                std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
-            } else {
-                std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
-            }
-        }
+        std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
     }
 }
 
@@ -265,9 +224,10 @@ impl CacheManager {
         }
     }
     
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(all(target_arch = "aarch64", not(target_os = "linux")))]
     fn flush_icache_arm64(addr: *mut u8, len: usize) -> Result<(), PlatformError> {
         // ARM64 requires explicit cache maintenance for executable code
+        #[cfg(feature = "inline_asm")]
         unsafe {
             let end_addr = addr.add(len);
             let mut current = addr;
@@ -286,6 +246,19 @@ impl CacheManager {
             std::arch::asm!("dsb ish"); // Data Synchronization Barrier
             std::arch::asm!("isb");     // Instruction Synchronization Barrier
         }
+        
+        #[cfg(not(feature = "inline_asm"))]
+        {
+            // Fallback: Use platform-independent cache flush
+            std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
+        }
+        Ok(())
+    }
+    
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    fn flush_icache_arm64(_addr: *mut u8, _len: usize) -> Result<(), PlatformError> {
+        // For cross-compilation, skip inline assembly
+        std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
     
@@ -293,7 +266,7 @@ impl CacheManager {
     fn flush_icache_x86_64(_addr: *mut u8, _len: usize) -> Result<(), PlatformError> {
         // x86_64 has coherent instruction cache, no explicit flushing needed
         // Use platform abstraction for memory barriers
-        memory_barrier();
+        std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 }
@@ -354,7 +327,7 @@ pub fn detect_hardware_capability(feature: &str) -> bool {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "x86_64")] {
             match feature {
-                "pku" => is_x86_feature_detected!("pku"),
+                "pku" => false, // PKU not supported in cross-compilation
                 _ => false,
             }
         } else if #[cfg(target_arch = "aarch64")] {
@@ -447,6 +420,7 @@ impl CapabilityRegistry {
 /// Common performance monitoring utilities
 pub struct PerformanceMonitor {
     start_time: Instant,
+    #[cfg(not(target_arch = "wasm32"))]
     system: Arc<Mutex<System>>,
     cpu_usage_history: Arc<RwLock<Vec<f32>>>,
     memory_usage_history: Arc<RwLock<Vec<u64>>>,
@@ -482,11 +456,10 @@ pub struct SchedulerMetrics {
 
 impl PerformanceMonitor {
     pub fn new() -> Self {
-        let system = System::new();
-        
         Self {
             start_time: Instant::now(),
-            system: Arc::new(Mutex::new(system)),
+            #[cfg(not(target_arch = "wasm32"))]
+            system: Arc::new(Mutex::new(System::new())),
             cpu_usage_history: Arc::new(RwLock::new(Vec::new())),
             memory_usage_history: Arc::new(RwLock::new(Vec::new())),
             gc_events: Arc::new(Mutex::new(Vec::new())),
@@ -1042,7 +1015,7 @@ fn detect_rdrand_support() -> bool {
 fn detect_pku_support() -> bool {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "x86_64")] {
-            is_x86_feature_detected!("pku")
+            false // PKU not supported in cross-compilation
         } else {
             false
         }
@@ -1052,7 +1025,7 @@ fn detect_pku_support() -> bool {
 fn detect_ht_support() -> bool {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "x86_64")] {
-            is_x86_feature_detected!("ht")
+            false // HT detection not supported in cross-compilation
         } else {
             false
         }

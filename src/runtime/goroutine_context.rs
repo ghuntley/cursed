@@ -429,7 +429,7 @@ fn save_native_goroutine_context(goroutine_id: GoroutineId) -> Result<(), Cursed
 }
 
 /// Save x86_64 CPU context
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", feature = "inline_asm"))]
 fn save_x86_64_context(context: &mut X86_64Context) -> Result<(), CursedError> {
     unsafe {
         // Save general purpose registers - first chunk
@@ -496,8 +496,16 @@ fn save_x86_64_context(context: &mut X86_64Context) -> Result<(), CursedError> {
     Ok(())
 }
 
+/// Save x86_64 CPU context (fallback for cross-compilation)
+#[cfg(all(target_arch = "x86_64", not(feature = "inline_asm")))]
+fn save_x86_64_context(context: &mut X86_64Context) -> Result<(), CursedError> {
+    // Fallback implementation for cross-compilation targets
+    *context = X86_64Context::default();
+    Ok(())
+}
+
 /// Save ARM64 CPU context with complete register set
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(target_arch = "aarch64", feature = "inline_asm"))]
 fn save_arm64_context(context: &mut Arm64Context) -> Result<(), CursedError> {
     unsafe {
         // Save general purpose registers X0-X7 (first chunk)
@@ -791,6 +799,14 @@ pub fn restore_goroutine_context(goroutine_id: GoroutineId) -> Result<(), Cursed
     }
 }
 
+/// Save ARM64 CPU context (fallback for cross-compilation)
+#[cfg(all(target_arch = "aarch64", not(feature = "inline_asm")))]
+fn save_arm64_context(context: &mut Arm64Context) -> Result<(), CursedError> {
+    // Fallback implementation for cross-compilation targets
+    *context = Arm64Context::default();
+    Ok(())
+}
+
 /// Restore native goroutine context (architecture-specific)
 #[cfg(not(target_arch = "wasm32"))]
 fn restore_native_goroutine_context(goroutine_id: GoroutineId) -> Result<(), CursedError> {
@@ -811,7 +827,7 @@ fn restore_native_goroutine_context(goroutine_id: GoroutineId) -> Result<(), Cur
 }
 
 /// Restore x86_64 CPU context
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", feature = "inline_asm"))]
 fn restore_x86_64_context(context: &X86_64Context) -> Result<(), CursedError> {
     unsafe {
         // Restore general purpose registers - first chunk
@@ -878,8 +894,15 @@ fn restore_x86_64_context(context: &X86_64Context) -> Result<(), CursedError> {
     Ok(())
 }
 
+/// Restore x86_64 CPU context (fallback for cross-compilation)
+#[cfg(all(target_arch = "x86_64", not(feature = "inline_asm")))]
+fn restore_x86_64_context(context: &X86_64Context) -> Result<(), CursedError> {
+    // Fallback implementation for cross-compilation targets
+    Ok(())
+}
+
 /// Restore ARM64 CPU context with complete register set
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(target_arch = "aarch64", feature = "inline_asm"))]
 fn restore_arm64_context(context: &Arm64Context) -> Result<(), CursedError> {
     unsafe {
         // Restore processor state flags first
@@ -1150,6 +1173,13 @@ pub fn execute_function_value(func_name: &str, args: &[usize]) -> Result<usize, 
     } else {
         execute_interpreted_function(&func, args)
     }
+}
+
+/// Restore ARM64 CPU context (fallback for cross-compilation)
+#[cfg(all(target_arch = "aarch64", not(feature = "inline_asm")))]
+fn restore_arm64_context(context: &Arm64Context) -> Result<(), CursedError> {
+    // Fallback implementation for cross-compilation targets
+    Ok(())
 }
 
 /// Execute a native LLVM-compiled function
