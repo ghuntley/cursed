@@ -49,8 +49,6 @@ where
 {
     /// Create a new promise with resolver and rejector
     pub fn new() -> (Self, PromiseResolver<T, E>, PromiseRejector<T, E>) {
-        // EMERGENCY FIX: Log Promise creation to detect if this is called during basic execution
-        eprintln!("WARNING: Promise::new() called - this may trigger stack overflow");
         let inner = Arc::new(Mutex::new(PromiseInner::new()));
         
         let promise = Self {

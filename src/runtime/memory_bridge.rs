@@ -250,7 +250,107 @@ pub extern "C" fn rust_stack_size() -> i32 {
 /// Check for stack overflow
 #[no_mangle]
 pub extern "C" fn rust_check_stack_overflow() -> bool {
-    // Placeholder - would check actual stack usage
+    // Try goroutine-based stack overflow detection first
+    if let Some(scheduler) = crate::runtime::goroutine::get_global_scheduler() {
+        if let Some(goroutine_id) = scheduler.get_current_goroutine_id() {
+            // Try to get stack overflow status from scheduler if it tracks this
+            // For now, we'll use the platform-specific fallback
+        }
+    }
+    
+    // Use platform-specific stack detection
+    detect_platform_stack_overflow()
+}
+
+/// Platform-specific stack overflow detection as fallback
+fn detect_platform_stack_overflow() -> bool {
+    // Use platform-specific methods to detect stack overflow
+    #[cfg(unix)]
+    {
+        detect_unix_stack_overflow()
+    }
+    
+    #[cfg(windows)]
+    {
+        detect_windows_stack_overflow()
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    {
+        detect_wasm_stack_overflow()
+    }
+    
+    #[cfg(not(any(unix, windows, target_arch = "wasm32")))]
+    {
+        // Generic fallback - check current stack pointer
+        detect_generic_stack_overflow()
+    }
+}
+
+#[cfg(unix)]
+fn detect_unix_stack_overflow() -> bool {
+    unsafe {
+        let mut stack_ptr: *mut u8 = std::ptr::null_mut();
+        
+        // Get current stack pointer for supported architectures
+        #[cfg(target_arch = "x86_64")]
+        std::arch::asm!("mov {}, rsp", out(reg) stack_ptr);
+        
+        #[cfg(target_arch = "aarch64")]
+        std::arch::asm!("mov {}, sp", out(reg) stack_ptr);
+        
+        // If we couldn't get the stack pointer on an unsupported architecture, return false
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+        {
+            return false;
+        }
+        
+        // Get stack limits using getrlimit
+        let mut rlimit = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
+        if libc::getrlimit(libc::RLIMIT_STACK, &mut rlimit) == 0 {
+            // Get the stack base (approximate)
+            let mut stack_base = std::ptr::null_mut();
+            let mut stack_size = 0;
+            
+            // Use pthread_attr_getstack to get actual stack info
+            let mut attr: libc::pthread_attr_t = std::mem::zeroed();
+            if libc::pthread_getattr_np(libc::pthread_self(), &mut attr) == 0 {
+                if libc::pthread_attr_getstack(&attr, &mut stack_base as *mut *mut _ as *mut _, &mut stack_size) == 0 {
+                    // Check if current stack pointer is near the limit
+                    let stack_end = (stack_base as usize).wrapping_sub(stack_size);
+                    let current_pos = stack_ptr as usize;
+                    let threshold = 64 * 1024; // 64KB threshold
+                    
+                    libc::pthread_attr_destroy(&mut attr);
+                    return current_pos <= stack_end + threshold;
+                }
+                libc::pthread_attr_destroy(&mut attr);
+            }
+        }
+        
+        // Fallback: simple heuristic
+        false
+    }
+}
+
+#[cfg(windows)]
+fn detect_windows_stack_overflow() -> bool {
+    // Windows-specific stack overflow detection
+    // This would use Windows APIs like GetCurrentThreadStackLimits
+    // For now, return false as a placeholder
+    false
+}
+
+#[cfg(target_arch = "wasm32")]
+fn detect_wasm_stack_overflow() -> bool {
+    // WASM-specific stack overflow detection
+    // Check if we're near the end of the linear memory stack
+    false
+}
+
+#[cfg(not(any(unix, windows, target_arch = "wasm32")))]
+fn detect_generic_stack_overflow() -> bool {
+    // Generic fallback that doesn't rely on platform-specific APIs
     false
 }
 
