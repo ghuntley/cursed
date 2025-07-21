@@ -53,8 +53,7 @@ impl DropzFilesystem {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-#[tokio::main]
-async fn main() {
+fn main() {
     // Initialize environment
     cursed::init();
     
@@ -67,7 +66,7 @@ async fn main() {
        !matches!(args[1].as_str(), "compile" | "run" | "test" | "pkg" | "debug" | "lint" | "fmt" | "doc" | "build" | "clean" | "check") {
         // Direct file execution for backward compatibility
         let filename = &args[1];
-        match run_file_direct(filename).await {
+        match cursed::run_file(filename) {
             Ok(_) => {},
             Err(e) => {
                 eprintln!("{}: {}", "Error".red(), e);
@@ -80,8 +79,9 @@ async fn main() {
     // Parse CLI arguments
     let matches = build_cli().get_matches();
     
-    // Handle subcommands
-    if let Err(e) = handle_command(matches).await {
+    // Handle subcommands - create runtime only when needed for async operations
+    let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
+    if let Err(e) = rt.block_on(handle_command(matches)) {
         eprintln!("{}: {}", "Error".red(), e);
         process::exit(1);
     }

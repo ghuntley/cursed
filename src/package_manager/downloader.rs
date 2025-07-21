@@ -285,14 +285,26 @@ mod tests {
         let download_url = "https://mock.example.com/test-package-1.0.0.tar.gz";
         
         // Test with mock URL - should create placeholder file
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        let result = rt.block_on(downloader.download_package(
+        // Use current runtime handle instead of creating new runtime
+        let result = if let Ok(handle) = tokio::runtime::Handle::try_current() {
+            handle.block_on(downloader.download_package(
             "test-package",
             &version,
             download_url,
             output_path.clone(),
             None, // Skip checksum validation for test
-        ));
+        ))
+        } else {
+            // Create temporary runtime if no current handle
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(downloader.download_package(
+                "test-package",
+                &version,
+                download_url,
+                output_path.clone(),
+                None, // Skip checksum validation for test
+            ))
+        };
 
         // Should complete without error in mock implementation
         assert!(result.is_ok());
@@ -321,8 +333,14 @@ mod tests {
             ),
         ];
 
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        let results = rt.block_on(downloader.download_packages(requests));
+        // Use current runtime handle instead of creating new runtime
+        let results = if let Ok(handle) = tokio::runtime::Handle::try_current() {
+            handle.block_on(downloader.download_packages(requests))
+        } else {
+            // Create temporary runtime if no current handle
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(downloader.download_packages(requests))
+        };
         assert!(results.is_ok());
         assert_eq!(results.unwrap().len(), 2);
     }
