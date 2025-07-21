@@ -201,9 +201,24 @@ in
     export RUSTFLAGS_x86_64_pc_windows_gnu="-L ${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib -L ${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib -L ${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib"
 
     # Set library paths for native builds AFTER clearing cross-compilation pollution
-    export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.openssl}/lib:${pkgs.libiconv}/lib:$LD_LIBRARY_PATH"
-    export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.openssl}/lib:${pkgs.libiconv}/lib"
+    # Note: Use the main sqlite package (not sqlite.bin) for libraries
+    # Get sqlite library path from pkg-config to ensure correct Nix store path
+    SQLITE_LIB_PATH=$(pkg-config --variable=libdir sqlite3 2>/dev/null || echo "${pkgs.sqlite}/lib")
+    export SQLITE3_LIB_DIR="$SQLITE_LIB_PATH"
+    export SQLITE3_INCLUDE_DIR="${pkgs.sqlite.dev}/include"
+    export LD_LIBRARY_PATH="$SQLITE_LIB_PATH:${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.openssl}/lib:${pkgs.libiconv}/lib:$LD_LIBRARY_PATH"
+    export LIBRARY_PATH="$SQLITE_LIB_PATH:${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.openssl}/lib:${pkgs.libiconv}/lib"
     export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.sqlite.dev}/lib/pkgconfig:${pkgs.openssl.dev}/lib/pkgconfig"
+    
+    # SQLite3 specific configuration - use direct paths for reliability
+    export SQLITE3_STATIC=0  # Use dynamic linking
+    
+    # Ensure SQLite3 can be found by the linker - add to RUSTFLAGS for cargo
+    export RUSTFLAGS="$RUSTFLAGS -L $SQLITE_LIB_PATH -C link-arg=-Wl,-rpath,$SQLITE_LIB_PATH"
+    export LDFLAGS="-L$SQLITE_LIB_PATH -Wl,-rpath,$SQLITE_LIB_PATH $LDFLAGS"
+    
+    # Additional library search paths for linker
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-L $SQLITE_LIB_PATH -C link-arg=-Wl,-rpath,$SQLITE_LIB_PATH"
 
     # CRITICAL: Set native compiler environment for cc-rs AFTER clearing
     export CC="${pkgs.gcc}/bin/gcc"
@@ -217,6 +232,15 @@ in
     echo "  CXX: $CXX"
     echo "  AR: $AR"
     echo "  RANLIB: $RANLIB"
+    
+    # Debug SQLite3 setup
+    echo "📊 SQLite3 Configuration:"
+    echo "  SQLITE3_LIB_DIR: $SQLITE3_LIB_DIR"
+    echo "  SQLITE3_INCLUDE_DIR: $SQLITE3_INCLUDE_DIR"
+    echo "  SQLite3 library exists: $(test -f ${pkgs.sqlite}/lib/libsqlite3.so && echo 'YES' || echo 'NO')"
+    echo "  pkg-config sqlite3: $(pkg-config --exists sqlite3 && echo 'YES' || echo 'NO')"
+    echo "  LIBRARY_PATH contains sqlite: $(echo $LIBRARY_PATH | grep -q sqlite && echo 'YES' || echo 'NO')"
+    echo "  RUSTFLAGS contains sqlite: $(echo $RUSTFLAGS | grep -q sqlite && echo 'YES' || echo 'NO')"
 
     # Critical: macOS-specific fixes for cc-rs build scripts finding libiconv
     ${lib.optionalString pkgs.stdenv.isDarwin ''

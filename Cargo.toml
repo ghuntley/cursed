@@ -72,13 +72,14 @@ crossbeam-epoch = "0.9"
 semver = "1.0"
 either = "=1.8.1"
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.0", features = ["v4"] }
 tempfile = "3.0"
 tokio-util = "0.7"
 log = "0.4"
 tokio = { version = "1.0", features = ["full"] }
 mockito = "1.0"
+warp = "0.3"
 
 # Crypto dependencies
 sha2 = "0.10"

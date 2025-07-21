@@ -1,7 +1,6 @@
-vibe main
-
-yeet "vibez"
+vibe "hello"
 
 slay main() {
-    vibez.spill("Hello, World!")
+    vibez.spill("Hello, CURSED world!")
+    vibez.spill("Compilation successful! 🎉")
 }

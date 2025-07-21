@@ -23,6 +23,7 @@ pub mod jit_executor;
 pub mod runtime_functions;
 pub mod value_manager;
 pub mod pure_cursed_bridge;
+pub mod test_recursion_limit;
 // Temporarily disabled for JIT testing
 // pub mod cursed_bridge;
 
@@ -50,7 +51,7 @@ impl CursedExecutionEngine {
             goroutine_support: true,
             gc_enabled: true,
             recursion_depth: 0,
-            max_recursion_depth: 1000,
+            max_recursion_depth: 100,
         })
     }
     
@@ -60,7 +61,7 @@ impl CursedExecutionEngine {
             goroutine_support: true,
             gc_enabled: true,
             recursion_depth: 0,
-            max_recursion_depth: 1000,
+            max_recursion_depth: 100,
         })
     }
     
@@ -169,7 +170,7 @@ impl CursedExecutionEngine {
         Ok(source)
     }
     
-    fn execute_interpreted(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
+    pub fn execute_interpreted(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
         tracing::info!("🔄 Interpreted execution");
         
         // Create execution context
@@ -1275,10 +1276,31 @@ impl CursedExecutionEngine {
         }
     }
     
-    fn evaluate_expression(&mut self, expression: &crate::ast::Expression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+    pub fn evaluate_expression(&mut self, expression: &crate::ast::Expression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
         use crate::ast::Expression;
         
-        log::debug!("🔍 Evaluating expression type: {:?}", std::mem::discriminant(expression));
+        // Check recursion depth to prevent stack overflow
+        if self.recursion_depth >= self.max_recursion_depth {
+            return Err(CursedError::RuntimeError(format!(
+                "Maximum recursion depth exceeded ({})", self.max_recursion_depth
+            )));
+        }
+        
+        // Increment recursion depth for this expression evaluation
+        self.recursion_depth += 1;
+        
+        log::debug!("🔍 Evaluating expression type: {:?} (depth: {})", std::mem::discriminant(expression), self.recursion_depth);
+        
+        let result = self.evaluate_expression_inner(expression, context);
+        
+        // Decrement recursion depth before returning
+        self.recursion_depth -= 1;
+        
+        result
+    }
+    
+    fn evaluate_expression_inner(&mut self, expression: &crate::ast::Expression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        use crate::ast::Expression;
         match expression {
             Expression::Integer(i) => Ok(CursedValue::Integer(*i)),
             Expression::Float(f) => Ok(CursedValue::Float(*f)),
@@ -2575,22 +2597,13 @@ impl CursedExecutionEngine {
                         if let Some(func_def) = context.get_function(func_name) {
                             log::info!("✅ Found function: {}", func_name);
                             
-                            // Check recursion depth
-                            if self.recursion_depth >= self.max_recursion_depth {
-                                return Err(CursedError::RuntimeError(format!(
-                                    "Maximum recursion depth exceeded ({})", self.max_recursion_depth
-                                )));
-                            }
-                            
-                            // Increment recursion depth
-                            self.recursion_depth += 1;
+                            // Note: recursion depth is already checked and incremented in evaluate_expression
                             
                             // Create child context for function execution (inherits functions)
                             let mut func_context = context.new_child();
                             
                             // Bind parameters
                             if call_expr.arguments.len() != func_def.parameters.len() {
-                                self.recursion_depth -= 1; // Restore depth on error
                                 return Err(CursedError::RuntimeError(format!(
                                     "Function {} expects {} arguments, got {}",
                                     func_name, func_def.parameters.len(), call_expr.arguments.len()
@@ -2673,8 +2686,6 @@ impl CursedExecutionEngine {
                                 return Err(CursedError::runtime_error("Function execution failed"));
                             }
                             
-                            // Decrement recursion depth before returning
-                            self.recursion_depth -= 1;
                             Ok(result)
                         } else {
                             log::error!("❌ Function not found: {}", func_name);
@@ -3959,71 +3970,6 @@ impl ValueManager {
         format!("Stack trace: Current execution context with details")
     }
     
-    /// Dispatch interface method calls
-    fn dispatch_interface_method(&mut self, obj_name: &str, method_name: &str, args: &[crate::ast::Expression], context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
-        // Get the interface object from the context
-        let interface_obj = context.get_variable(obj_name)
-            .ok_or_else(|| CursedError::RuntimeError(format!("Interface object '{}' not found", obj_name)))?;
-        
-        // Extract interface value from CursedValue
-        let interface_value = match interface_obj {
-            CursedValue::Interface { vtable_ptr, data_ptr, interface_name, concrete_type } => {
-                // Create interface value for dispatch
-                crate::runtime::interface_dispatch::InterfaceValue::new(
-                    // TODO: Get actual vtable from registry
-                    std::sync::Arc::new(crate::runtime::interface_dispatch::InterfaceVTable::new(
-                        interface_name.clone(),
-                        concrete_type.clone()
-                    )),
-                    data_ptr,
-                    interface_name.clone(),
-                    concrete_type.clone()
-                )
-            },
-            _ => return Err(CursedError::RuntimeError(format!(
-                "Object '{}' is not an interface value", obj_name
-            ))),
-        };
-        
-        // Evaluate arguments using a temporary execution engine
-        let mut engine = CursedExecutionEngine::new()?;
-        let mut arg_values = Vec::new();
-        for arg in args {
-            let arg_value = engine.evaluate_expression(arg, context)?;
-            // Convert CursedValue to runtime::value::Value
-            let runtime_value = match arg_value {
-                CursedValue::Integer(i) => crate::runtime::value::Value::integer(i),
-                CursedValue::String(s) => crate::runtime::value::Value::string(s),
-                CursedValue::Boolean(b) => crate::runtime::value::Value::bool(b),
-                CursedValue::Float(f) => crate::runtime::value::Value::number(f),
-                CursedValue::Nil => crate::runtime::value::Value::null(),
-                // TODO: Add more conversions as needed
-                _ => return Err(CursedError::RuntimeError(format!(
-                    "Unsupported argument type for interface method call: {:?}", arg_value
-                ))),
-            };
-            arg_values.push(runtime_value);
-        }
-        
-        // Dispatch method through global registry
-        match crate::runtime::interface_dispatch::dispatch_global_method(&interface_value, method_name, &arg_values) {
-            Ok(result) => {
-                // Convert result back to CursedValue
-                let cursed_result = match result {
-                    crate::runtime::value::Value::Integer(i) => CursedValue::Integer(i),
-                    crate::runtime::value::Value::String(s) => CursedValue::String(s),
-                    crate::runtime::value::Value::Bool(b) => CursedValue::Boolean(b),
-                    crate::runtime::value::Value::Number(f) => CursedValue::Float(f),
-                    crate::runtime::value::Value::Null => CursedValue::Nil,
-                    // TODO: Add more conversions as needed
-                    _ => return Err(CursedError::RuntimeError(format!(
-                        "Unsupported return type from interface method: {:?}", result
-                    ))),
-                };
-                Ok(cursed_result)
-            },
-            Err(e) => Err(e.into()),
-        }
-    }
+
 
 }
