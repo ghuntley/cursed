@@ -1,6 +1,6 @@
 //! CLI integration for structured error reporting
 
-use crate::error::{ErrorReporter, ErrorCode, StructuredError, ErrorSourceLocation};
+use crate::error::{ErrorReporter, ErrorCode, StructuredError};
 use clap::Parser;
 use std::fs;
 use std::path::Path;

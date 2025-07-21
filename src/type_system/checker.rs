@@ -3261,7 +3261,7 @@ mod tests {
         let file_location = error_with_file.location.as_ref().unwrap();
         assert_eq!(file_location.line, 10);
         assert_eq!(file_location.column, 5);
-        assert_eq!(file_location.file.as_ref().unwrap(), "test.csd");
+        assert_eq!(file_location.file, "test.csd");
         
         // Test error display with file location
         let display_with_file = format!("{}", error_with_file);
@@ -3289,7 +3289,7 @@ mod tests {
         let location = error.location.as_ref().unwrap();
         assert_eq!(location.line, 20);
         assert_eq!(location.column, 8);
-        assert_eq!(location.file.as_ref().unwrap(), "my_program.csd");
+        assert_eq!(location.file, "my_program.csd");
         
         // Test error display
         let display = format!("{}", error);

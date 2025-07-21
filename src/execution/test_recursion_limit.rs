@@ -3,6 +3,7 @@ mod tests {
     use super::*;
     use crate::ast::*;
     use crate::execution::execution_context::ExecutionContext;
+    use crate::{CursedExecutionEngine, CursedValue};
     
     #[test]
     fn test_recursion_depth_limit() {

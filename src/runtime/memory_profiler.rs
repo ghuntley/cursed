@@ -591,7 +591,7 @@ mod tests {
     #[test]
     fn test_profiler_creation() {
         let config = ProfilingConfig::default();
-        let profiler = MemoryProfiler::new(config);
+        let profiler = MemoryProfiler::new();
         
         let stats = profiler.get_stats();
         assert_eq!(stats.total_allocations, 0);
@@ -601,7 +601,7 @@ mod tests {
     #[test]
     fn test_allocation_recording() {
         let config = ProfilingConfig::default();
-        let profiler = MemoryProfiler::new(config);
+        let profiler = MemoryProfiler::new();
         
         profiler.record_allocation(0x1000, 64, Tag::Object, None).unwrap();
         
@@ -614,7 +614,7 @@ mod tests {
     #[test]
     fn test_deallocation_recording() {
         let config = ProfilingConfig::default();
-        let profiler = MemoryProfiler::new(config);
+        let profiler = MemoryProfiler::new();
         
         profiler.record_allocation(0x1000, 64, Tag::Object, None).unwrap();
         profiler.record_deallocation(0x1000).unwrap();
@@ -632,7 +632,7 @@ mod tests {
             leak_threshold_seconds: 0, // Immediate leak detection
             ..Default::default()
         };
-        let profiler = MemoryProfiler::new(config);
+        let profiler = MemoryProfiler::new();
         
         profiler.record_allocation(0x1000, 64, Tag::Object, None).unwrap();
         
@@ -647,7 +647,7 @@ mod tests {
     #[test]
     fn test_report_generation() {
         let config = ProfilingConfig::default();
-        let profiler = MemoryProfiler::new(config);
+        let profiler = MemoryProfiler::new();
         
         profiler.record_allocation(0x1000, 64, Tag::Object, None).unwrap();
         profiler.record_allocation(0x2000, 128, Tag::String, None).unwrap();

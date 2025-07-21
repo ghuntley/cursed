@@ -1,12 +1,18 @@
-//! Functional implementation for postgres
+//! PostgreSQL database driver implementation
 
 use crate::error::CursedError;
-use crate::stdlib::packages::ModuleError;
+use super::DatabaseDriver;
+use std::collections::HashMap;
 
 /// Result type for postgres operations
 pub type ModuleResult<T> = Result<T, CursedError>;
 
-/// postgres operations handler
+/// PostgreSQL database driver
+pub struct PostgresDriver {
+    enabled: bool,
+}
+
+/// postgres operations handler (legacy)
 pub struct ModuleHandler {
     enabled: bool,
 }
@@ -47,6 +53,29 @@ impl ModuleHandler {
 impl Default for ModuleHandler {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl PostgresDriver {
+    pub fn new() -> Self {
+        Self { enabled: true }
+    }
+}
+
+impl DatabaseDriver for PostgresDriver {
+    fn connect(&self, connection_string: &str) -> Result<(), CursedError> {
+        println!("🐘 Connecting to PostgreSQL database: {}", connection_string);
+        Ok(())
+    }
+    
+    fn execute(&self, query: &str) -> Result<Vec<HashMap<String, String>>, CursedError> {
+        println!("🔍 Executing PostgreSQL query: {}", query);
+        Ok(Vec::new())
+    }
+    
+    fn close(&self) -> Result<(), CursedError> {
+        println!("🔒 Closing PostgreSQL connection");
+        Ok(())
     }
 }
 

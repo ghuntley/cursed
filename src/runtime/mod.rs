@@ -92,8 +92,8 @@ pub use production_runtime::{
 
 // Memory management exports
 pub use gc::{GarbageCollector, GcConfig, GcStats, GcState, RootType,
-             GcMemoryManager, RuntimeMemoryManager};
-pub use memory::{MemoryManager, MemoryConfig, MemoryStats, MemoryError, ObjectHandle, 
+             GcMemoryManager};
+pub use memory::{MemoryManager, MemoryConfig, MemoryStats, MemoryError, ObjectHandle, RuntimeMemoryManager,
                 initialize_memory_manager, get_global_memory_manager, shutdown_memory_manager,
                 allocate, allocate_raw, collect_garbage};
 pub use memory_profiler::{MemoryProfiler, ProfilingConfig, ProfilingStats, LeakInfo, 
