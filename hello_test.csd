@@ -1,5 +1,1 @@
-vibe "test"
-
-slay main() {
-    vibez.spill("Hello, CURSED world!")
-}
+vibez.spill("Hello from CURSED!")

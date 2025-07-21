@@ -224,3 +224,8 @@ fn detect_operating_system() -> OperatingSystem {
         }
     }
 }
+
+/// Alias for create_platform_abstraction for backward compatibility
+pub fn detect_platform() -> Result<Arc<dyn PlatformAbstraction>, PlatformError> {
+    create_platform_abstraction()
+}

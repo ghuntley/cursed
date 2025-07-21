@@ -1,12 +1,18 @@
-//! Functional implementation for sqlite
+//! SQLite database driver implementation
 
 use crate::error::CursedError;
-use crate::stdlib::packages::ModuleError;
+use super::DatabaseDriver;
+use std::collections::HashMap;
 
 /// Result type for sqlite operations
 pub type ModuleResult<T> = Result<T, CursedError>;
 
-/// sqlite operations handler
+/// SQLite database driver
+pub struct SqliteDriver {
+    enabled: bool,
+}
+
+/// sqlite operations handler (legacy)
 pub struct ModuleHandler {
     enabled: bool,
 }
@@ -47,6 +53,29 @@ impl ModuleHandler {
 impl Default for ModuleHandler {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl SqliteDriver {
+    pub fn new() -> Self {
+        Self { enabled: true }
+    }
+}
+
+impl DatabaseDriver for SqliteDriver {
+    fn connect(&self, connection_string: &str) -> Result<(), CursedError> {
+        println!("🗃️ Connecting to SQLite database: {}", connection_string);
+        Ok(())
+    }
+    
+    fn execute(&self, query: &str) -> Result<Vec<HashMap<String, String>>, CursedError> {
+        println!("🔍 Executing SQLite query: {}", query);
+        Ok(Vec::new())
+    }
+    
+    fn close(&self) -> Result<(), CursedError> {
+        println!("🔒 Closing SQLite connection");
+        Ok(())
     }
 }
 

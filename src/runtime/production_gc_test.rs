@@ -12,7 +12,7 @@ mod tests {
     
     use crate::runtime::gc::{GarbageCollector, GcConfig, GcState};
     use crate::runtime::gc_tuning::{TriColorCollector, GcPerformanceTuner, GcTuningParams};
-    use crate::runtime::memory::{MemoryManager, MemoryConfig};
+    use crate::runtime::memory::{MemoryManager, MemoryConfig, RuntimeMemoryManager};
     use crate::runtime::memory_profiler::{MemoryProfiler, ProfilingConfig};
     use crate::runtime::concurrent_gc::{ConcurrentGarbageCollector, ConcurrentGcConfig};
     use crate::runtime::heap_optimizer::{HeapOptimizer, HeapOptimizerConfig, AllocationStrategy};
@@ -29,7 +29,7 @@ mod tests {
             ..Default::default()
         };
         
-        let profiler = MemoryProfiler::new(profiling_config);
+        let profiler = MemoryProfiler::new();
         
         // Simulate allocation without deallocation
         profiler.record_allocation(0x1000, 1024, Tag::Object, None).unwrap();
@@ -151,7 +151,7 @@ mod tests {
             sampling_rate: 10, // Sample every 10th allocation
             ..Default::default()
         };
-        let profiler = Arc::new(MemoryProfiler::new(profiling_config));
+        let profiler = Arc::new(MemoryProfiler::new());
         
         let start_time = std::time::Instant::now();
         

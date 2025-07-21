@@ -101,7 +101,7 @@ pub use linter::{
 pub use runtime::{
     Runtime, RuntimeConfig, RuntimeStats, RuntimeError, RuntimeErrorType,
     GoroutineScheduler, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler,
-    RuntimeStack, ValueManager, CursedValue, Value,
+    RuntimeStack, ValueManager, Value,
     PanicRuntime, ErrorRuntime, JitRuntime,
     StackTraceCapture, EnhancedStackTraceConfig, SymbolResolver, SymbolInfo,
     DebugManager, SourceFile, FunctionDebugInfo, DebugManagerConfig, DebugManagerStats,
@@ -190,7 +190,7 @@ pub use ast::{
 };
 
 // Re-export execution types
-pub use execution::{CursedExecutionEngine, ExecutionContext};
+pub use execution::{CursedExecutionEngine, ExecutionContext, CursedValue, LambdaValue, ExecutionFlow};
 
 // Re-export type system components
 pub use type_system::{

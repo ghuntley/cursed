@@ -1,72 +1,41 @@
-//! Functional implementation for mock
+//! Mock database driver implementation for testing
 
 use crate::error::CursedError;
-use crate::stdlib::packages::ModuleError;
+use super::DatabaseDriver;
+use std::collections::HashMap;
 
-/// Result type for mock operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// mock operations handler
-pub struct ModuleHandler {
+/// Mock database driver for testing
+pub struct MockDriver {
     enabled: bool,
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
+impl MockDriver {
     pub fn new() -> Self {
-        Self {
-            enabled: true,
-        }
-    }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error(&"Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: mock, Enabled: {}", self.enabled)
+        Self { enabled: true }
     }
 }
 
-impl Default for ModuleHandler {
+impl DatabaseDriver for MockDriver {
+    fn connect(&self, connection_string: &str) -> Result<(), CursedError> {
+        println!("🧪 Mock connecting to database: {}", connection_string);
+        Ok(())
+    }
+    
+    fn execute(&self, query: &str) -> Result<Vec<HashMap<String, String>>, CursedError> {
+        println!("🧪 Mock executing query: {}", query);
+        let mut result = HashMap::new();
+        result.insert("mock_column".to_string(), "mock_value".to_string());
+        Ok(vec![result])
+    }
+    
+    fn close(&self) -> Result<(), CursedError> {
+        println!("🧪 Mock closing connection");
+        Ok(())
+    }
+}
+
+impl Default for MockDriver {
     fn default() -> Self {
         Self::new()
     }
-}
-
-/// Initialize mock processing
-pub fn init_mock() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error(&"Module test failed"));
-    }
-    println!("⚙️  Module processing (mock) initialized");
-    Ok(())
-}
-
-/// Test mock functionality
-pub fn test_mock() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error(&"Module test failed"));
-    }
-    Ok(())
 }
