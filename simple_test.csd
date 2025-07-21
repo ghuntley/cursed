@@ -1,1 +1,1 @@
-vibez.spill("Hello World!")
+vibez.spill("Hello, CURSED world!")

@@ -514,11 +514,9 @@ pub fn run(source: &str) -> crate::error::Result<()> {
 pub fn run_with_packages(source: &str, source_file: Option<&std::path::Path>) -> crate::error::Result<()> {
     tracing::info!("Running CURSED source code with package management");
     
-    // Use enhanced LLVM package integration
-    let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| CursedError::Io(e.to_string()))?;
-    
-    rt.block_on(async {
+    // Use current runtime context, avoiding nested runtime creation
+    // Since we're already in a tokio context, create a Future that can be awaited
+    let runtime_result = async {
         // Create package manager and LLVM code generator with package integration
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
@@ -539,7 +537,19 @@ pub fn run_with_packages(source: &str, source_file: Option<&std::path::Path>) ->
         
         tracing::info!("CURSED compilation with LLVM package integration completed successfully");
         Ok(())
-    })
+    };
+    
+    // Use the current runtime handle if available, otherwise execute synchronously
+    if let Ok(handle) = tokio::runtime::Handle::try_current() {
+        // We are in an async context, spawn the future
+        let future = runtime_result;
+        futures::executor::block_on(future)
+    } else {
+        // No runtime context, create temporary runtime
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| CursedError::Io(e.to_string()))?;
+        rt.block_on(runtime_result)
+    }
 }
 
 /// Compile and execute CURSED source file
@@ -582,11 +592,8 @@ pub fn run_file_enhanced(
     let source = std::fs::read_to_string(path)
         .map_err(|e| CursedError::Io(e.to_string()))?;
     
-    // Use the compile and run approach with enhanced optimization
-    let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| CursedError::Io(e.to_string()))?;
-    
-    rt.block_on(async {
+    // Use the current runtime context to avoid nested runtime creation
+    let runtime_result = async {
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
             crate::package_manager::PackageManager::new(package_manager_config)
@@ -665,7 +672,18 @@ pub fn run_file_enhanced(
         
         tracing::info!("CURSED file execution with enhanced optimization completed successfully");
         Ok(())
-    })
+    };
+    
+    // Handle runtime context properly
+    if let Ok(_handle) = tokio::runtime::Handle::try_current() {
+        // We are in an async context
+        futures::executor::block_on(runtime_result)
+    } else {
+        // No runtime context, create temporary runtime
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| CursedError::Io(e.to_string()))?;
+        rt.block_on(runtime_result)
+    }
 }
 
 /// Compile and execute CURSED source file with optimization
@@ -676,11 +694,8 @@ pub fn run_file_optimized(path: &str, optimization_config: crate::optimization::
     let source = std::fs::read_to_string(path)
         .map_err(|e| CursedError::Io(e.to_string()))?;
     
-    // Use the compile and run approach with optimization
-    let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| CursedError::Io(e.to_string()))?;
-    
-    rt.block_on(async {
+    // Use current runtime context to avoid nested runtime creation
+    let runtime_result = async {
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
             crate::package_manager::PackageManager::new(package_manager_config)
@@ -716,7 +731,18 @@ pub fn run_file_optimized(path: &str, optimization_config: crate::optimization::
         
         tracing::info!("CURSED file execution with optimization completed successfully");
         Ok(())
-    })
+    };
+    
+    // Handle runtime context properly
+    if let Ok(_handle) = tokio::runtime::Handle::try_current() {
+        // We are in an async context
+        futures::executor::block_on(runtime_result)
+    } else {
+        // No runtime context, create temporary runtime
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| CursedError::Io(e.to_string()))?;
+        rt.block_on(runtime_result)
+    }
 }
 
 /// Compile CURSED source to LLVM IR
@@ -737,10 +763,7 @@ pub fn compile_to_ir_with_optimization_and_packages(
 ) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR with optimization and package management");
     
-    let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| CursedError::Io(e.to_string()))?;
-    
-    rt.block_on(async {
+    let runtime_result = async {
         // Create enhanced LLVM package integration
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
@@ -782,7 +805,18 @@ pub fn compile_to_ir_with_optimization_and_packages(
         
         tracing::debug!("Generated optimized LLVM IR with package integration:\n{}", ir);
         Ok(ir)
-    })
+    };
+    
+    // Handle runtime context properly
+    if let Ok(_handle) = tokio::runtime::Handle::try_current() {
+        // We are in an async context
+        futures::executor::block_on(runtime_result)
+    } else {
+        // No runtime context, create temporary runtime
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| CursedError::Io(e.to_string()))?;
+        rt.block_on(runtime_result)
+    }
 }
 
 /// Compile CURSED source to assembly
@@ -808,10 +842,7 @@ pub fn compile_to_assembly(source: &str) -> crate::error::Result<String> {
 pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path::Path>) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR with package management");
     
-    let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| CursedError::Io(e.to_string()))?;
-    
-    rt.block_on(async {
+    let runtime_result = async {
         // Create enhanced LLVM package integration
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
@@ -832,7 +863,18 @@ pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path:
         
         tracing::debug!("Generated LLVM IR with package integration:\n{}", ir);
         Ok(ir)
-    })
+    };
+    
+    // Handle runtime context properly
+    if let Ok(_handle) = tokio::runtime::Handle::try_current() {
+        // We are in an async context
+        futures::executor::block_on(runtime_result)
+    } else {
+        // No runtime context, create temporary runtime
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| CursedError::Io(e.to_string()))?;
+        rt.block_on(runtime_result)
+    }
 }
 
 /// Check CURSED source for errors without executing

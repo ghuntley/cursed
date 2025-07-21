@@ -196,7 +196,7 @@ pub struct AsyncExecutor {
     tasks: Arc<Mutex<HashMap<TaskId, AsyncTask>>>,
     ready_queue: Arc<Mutex<VecDeque<TaskId>>>,
     high_priority_queue: Arc<Mutex<VecDeque<TaskId>>>,
-    tokio_runtime: tokio::runtime::Runtime,
+    tokio_handle: Option<tokio::runtime::Handle>,
     stats: Arc<Mutex<ExecutorStats>>,
     shutdown: Arc<std::sync::atomic::AtomicBool>,
 }
@@ -207,16 +207,18 @@ impl AsyncExecutor {
     }
 
     pub fn with_config(config: ExecutorConfig) -> Result<Self, CursedError> {
-        let mut builder = tokio::runtime::Builder::new_multi_thread();
-        builder
-            .worker_threads(config.max_threads)
-            .max_blocking_threads(config.max_blocking_threads)
-            .thread_stack_size(config.thread_stack_size)
-            .thread_keep_alive(config.keep_alive_duration)
-            .enable_all();
-
-        let tokio_runtime = builder.build()
-            .map_err(|e| CursedError::runtime_error(&format!("Failed to create tokio runtime: {}", e)))?;
+        // Try to use current runtime handle instead of creating new runtime
+        let tokio_handle = match tokio::runtime::Handle::try_current() {
+            Ok(handle) => {
+                // We're already in a tokio runtime, use it
+                Some(handle)
+            }
+            Err(_) => {
+                // No current runtime, we'll need to create one when needed
+                // This should not happen in the CURSED executor since main uses #[tokio::main]
+                None
+            }
+        };
 
         let mut stats = ExecutorStats::default();
         stats.started_at = Some(Instant::now());
@@ -227,7 +229,7 @@ impl AsyncExecutor {
             tasks: Arc::new(Mutex::new(HashMap::new())),
             ready_queue: Arc::new(Mutex::new(VecDeque::new())),
             high_priority_queue: Arc::new(Mutex::new(VecDeque::new())),
-            tokio_runtime,
+            tokio_handle,
             stats: Arc::new(Mutex::new(stats)),
             shutdown: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         })
@@ -324,12 +326,23 @@ impl AsyncExecutor {
     where
         F: Future,
     {
-        self.tokio_runtime.block_on(future)
+        if let Some(handle) = &self.tokio_handle {
+            // Use current runtime - cannot call block_on from within a runtime
+            // This should not be called from within an async context
+            panic!("Cannot call block_on from within an async runtime context")
+        } else {
+            // Create a temporary runtime if no current handle
+            let rt = tokio::runtime::Runtime::new()
+                .expect("Failed to create temporary runtime");
+            rt.block_on(future)
+        }
     }
 
     /// Enter the runtime context
-    pub fn enter(&self) -> tokio::runtime::EnterGuard<'_> {
-        self.tokio_runtime.enter()
+    pub fn enter(&self) -> Option<tokio::runtime::EnterGuard<'_>> {
+        // Cannot create EnterGuard from Handle, and we're already in the runtime context
+        // This method is no longer needed with the new implementation
+        None
     }
 
     /// Run the executor's main loop

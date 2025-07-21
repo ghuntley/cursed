@@ -158,39 +158,9 @@ impl AsyncRuntime {
         F: Future<Output = T> + Send + 'static,
         T: Send + 'static,
     {
-        if let Some(scheduler) = &self.goroutine_scheduler {
-            // Clone what we need before borrowing
-            let executor = self.executor.clone();
-            let stats = self.stats.clone();
-            
-            // Spawn a goroutine that runs the async task
-            let _goroutine_id = scheduler.spawn({
-                let executor = executor.clone();
-                let stats = stats.clone();
-                move || {
-                    // Create a new tokio runtime for this goroutine
-                    let rt = tokio::runtime::Runtime::new().unwrap();
-                    rt.block_on(async move {
-                        // We can't use the original future here since it was moved
-                        // This is a placeholder for proper goroutine integration
-                        let mut stats_guard = stats.lock().unwrap();
-                        stats_guard.tasks_completed += 1;
-                    });
-                }
-            })?;
-
-            // Update statistics
-            {
-                let mut stats = self.stats.lock().unwrap();
-                stats.goroutines_spawned += 1;
-            }
-
-            // Spawn the future through the regular executor
-            self.spawn(future)
-        } else {
-            // Fall back to regular spawn
-            self.spawn(future)
-        }
+        // Temporarily disable goroutine integration to avoid nested runtime issues
+        // Fall back to regular spawn for now
+        self.spawn(future)
     }
 
     /// Spawn a blocking task
@@ -276,7 +246,7 @@ impl AsyncRuntime {
     }
 
     /// Enter the runtime context
-    pub fn enter(&self) -> tokio::runtime::EnterGuard<'_> {
+    pub fn enter(&self) -> Option<tokio::runtime::EnterGuard<'_>> {
         self.executor.enter()
     }
 
