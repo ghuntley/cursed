@@ -54,7 +54,7 @@ slay test_boolean_assertions() cringe {
     
     # Test basic boolean assertions
     assert_true(based)
-    assert_false(cap)
+    assert_false(cringe)
     
     # Test expression evaluation
     assert_true(5 > 3)
@@ -83,7 +83,7 @@ slay test_state_management() cringe {
     # Run some assertions to modify state
     assert_true(based)
     assert_eq_int(42, 42)
-    assert_false(cap)
+    assert_false(cringe)
     
     # Verify state tracking
     assert_eq_int(get_pass_count(), 3)

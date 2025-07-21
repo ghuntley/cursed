@@ -167,11 +167,16 @@ slay sqrt_meal(x meal) meal {
     sus guess meal = x / 2.0
     sus prev meal = 0.0
     sus diff meal = 1.0
+    sus iterations normie = 0
     
-    bestie iterations := 0; diff > EPSILON && iterations < 100; iterations++ {
+    vibes diff > EPSILON {
+        lowkey iterations >= 100 {
+            break
+        }
         prev = guess
         guess = (guess + (x / guess)) / 2.0
         diff = abs_meal(guess - prev)
+        iterations = iterations + 1
     }
     
     damn guess
@@ -191,10 +196,15 @@ slay ln_meal(x meal) meal {
     sus y_squared meal = y * y
     sus term meal = y
     sus result meal = y
+    sus n normie = 1
     
-    bestie n := 1; n < 50 && abs_meal(term) > EPSILON; n++ {
+    vibes n < 50 {
+        lowkey abs_meal(term) <= EPSILON {
+            break
+        }
         term = term * y_squared / (2.0 * n + 1.0)
         result = result + term
+        n = n + 1
     }
     
     damn 2.0 * result
@@ -208,10 +218,15 @@ slay exp_meal(x meal) meal {
     
     sus result meal = 1.0
     sus term meal = 1.0
+    sus n normie = 1
     
-    bestie n := 1; n < 50 && abs_meal(term) > EPSILON; n++ {
+    vibes n < 50 {
+        lowkey abs_meal(term) <= EPSILON {
+            break
+        }
         term = term * x / n
         result = result + term
+        n = n + 1
     }
     
     damn result
@@ -231,10 +246,15 @@ slay sin_meal(x meal) meal {
     sus result meal = normalized
     sus term meal = normalized
     sus x_squared meal = normalized * normalized
+    sus n normie = 1
     
-    bestie n := 1; n < 20 && abs_meal(term) > EPSILON; n++ {
+    vibes n < 20 {
+        lowkey abs_meal(term) <= EPSILON {
+            break
+        }
         term = -term * x_squared / ((2.0 * n) * (2.0 * n + 1.0))
         result = result + term
+        n = n + 1
     }
     
     damn result

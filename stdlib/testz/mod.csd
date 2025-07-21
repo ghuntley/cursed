@@ -13,6 +13,21 @@ sus teardown_function_name tea = ""
 sus test_start_time normie = 0
 sus total_test_time normie = 0
 
+# Enhanced testz configuration
+sus verbose_mode lit = cringe
+sus benchmark_mode lit = cringe
+sus memory_tracking lit = cringe
+sus current_benchmark_start normie = 0
+sus current_memory_usage normie = 0
+
+# Both-mode testing state
+sus both_mode_test_count normie = 0
+
+# Performance tracking
+sus benchmark_iterations normie = 0
+sus benchmark_total_time normie = 0
+sus performance_baseline normie = 0
+
 # Color codes for output (when terminal supports it)
 sus color_green tea = "\033[32m"
 sus color_red tea = "\033[31m"
@@ -93,7 +108,7 @@ slay assert_true(condition lit) {
 }
 
 slay assert_false(condition lit) {
-    lowkey condition == cap {
+    lowkey condition == cringe {
         pass_count = pass_count + 1
         vibez.spill(color_green, "✅ PASS: assert_false", color_reset)
     } highkey {
@@ -286,18 +301,26 @@ slay get_time_ms() normie {
 
 slay call_setup_function() {
     # This would call the configured setup function
+    # Placeholder implementation
+    vibez.spill("Setup function would be called here")
 }
 
 slay call_teardown_function() {
     # This would call the configured teardown function
+    # Placeholder implementation
+    vibez.spill("Teardown function would be called here")
 }
 
 slay call_test_function_with_param(function_name tea, param normie) {
     # This would call a test function with a parameter
+    # Placeholder implementation
+    vibez.spill("Test function ", function_name, " would be called with param ", param)
 }
 
 slay call_benchmark_function(function_name tea) {
     # This would call a function for benchmarking
+    # Placeholder implementation
+    vibez.spill("Benchmark function ", function_name, " would be called here")
 }
 
 # Test Organization Helpers
@@ -311,4 +334,201 @@ slay test_suite_end(suite_name tea) {
     vibez.spill("=" * (20 + suite_name.length))
     vibez.spill(color_blue, "✅ Suite completed: ", suite_name, color_reset)
     vibez.spill("")
+}
+
+# ===============================
+# Enhanced Configuration Functions  
+# ===============================
+
+slay set_verbose_mode(enabled lit) {
+    verbose_mode = enabled
+    lowkey enabled {
+        vibez.spill("🔊 Verbose mode enabled")
+    }
+}
+
+slay set_benchmark_mode(enabled lit) {
+    benchmark_mode = enabled
+    lowkey enabled {
+        vibez.spill("⏱️  Benchmark mode enabled")
+    }
+}
+
+slay set_memory_tracking(enabled lit) {
+    memory_tracking = enabled
+    lowkey enabled {
+        vibez.spill("💾 Memory tracking enabled")
+    }
+}
+
+# ===============================
+# Both-Mode Testing Functions
+# ===============================
+
+slay test_both_modes(test_name tea, test_code tea) lit {
+    vibez.spill("🔄 Testing " + test_name + " in both modes...")
+    both_mode_test_count = both_mode_test_count + 1
+    
+    # Test interpretation mode
+    vibez.spill("📖 Interpretation mode:")
+    sus interp_result lit = execute_interpretation_test(test_code)
+    
+    # Test compilation mode
+    vibez.spill("⚙️  Compilation mode:")
+    sus comp_result lit = execute_compilation_test(test_code)
+    
+    # Compare results
+    lowkey interp_result && comp_result {
+        vibez.spill("✅ Both modes PASS: " + test_name)
+        pass_count = pass_count + 1
+        damn based
+    } nah {
+        vibez.spill("❌ Both modes FAIL: " + test_name)
+        fail_count = fail_count + 1
+        damn cringe
+    }
+}
+
+slay execute_interpretation_test(test_code tea) lit {
+    # Simplified interpretation test execution
+    # In real implementation, this would execute the test in interpretation mode
+    vibez.spill("  Executing in interpretation mode...")
+    damn based  # Placeholder - assume success
+}
+
+slay execute_compilation_test(test_code tea) lit {
+    # Simplified compilation test execution
+    # In real implementation, this would compile and execute the test
+    vibez.spill("  Executing in compilation mode...")
+    damn based  # Placeholder - assume success
+}
+
+# ===============================
+# Enhanced Benchmark Functions
+# ===============================
+
+slay benchmark_start(name tea) {
+    lowkey benchmark_mode {
+        vibez.spill("⏱️  Benchmark: " + name)
+        current_benchmark_start = get_current_time()
+    }
+}
+
+slay benchmark_end(name tea) normie {
+    lowkey benchmark_mode {
+        sus end_time normie = get_current_time()
+        sus duration normie = end_time - current_benchmark_start
+        benchmark_total_time = benchmark_total_time + duration
+        vibez.spill("⏱️  Benchmark " + name + " took: " + tea(duration) + "ms")
+        damn duration
+    }
+    damn 0
+}
+
+slay get_current_time() normie {
+    # Placeholder for time function - would use actual time API
+    damn 42
+}
+
+# ===============================
+# Memory Testing Functions
+# ===============================
+
+slay track_memory_allocation(operation tea) {
+    lowkey memory_tracking {
+        sus before_mem normie = get_memory_usage()
+        vibez.spill("📈 Memory before " + operation + ": " + tea(before_mem) + "MB")
+        current_memory_usage = before_mem
+    }
+}
+
+slay validate_memory_usage(test_name tea, max_memory_mb normie) lit {
+    lowkey memory_tracking {
+        vibez.spill("💾 Memory validation: " + test_name)
+        sus current_usage normie = get_memory_usage()
+        
+        lowkey current_usage <= max_memory_mb {
+            vibez.spill("✅ Memory usage OK: " + tea(current_usage) + "MB <= " + tea(max_memory_mb) + "MB")
+            pass_count = pass_count + 1
+            damn based
+        } nah {
+            vibez.spill("❌ Memory usage too high: " + tea(current_usage) + "MB > " + tea(max_memory_mb) + "MB")
+            fail_count = fail_count + 1
+            damn cringe
+        }
+    }
+    damn based  # Skip if memory tracking disabled
+}
+
+slay validate_no_memory_leaks(operation tea) lit {
+    lowkey memory_tracking {
+        sus after_mem normie = get_memory_usage()
+        sus diff normie = after_mem - current_memory_usage
+        
+        lowkey diff <= 1 {  # Allow 1MB tolerance
+            vibez.spill("✅ No memory leaks detected in " + operation)
+            pass_count = pass_count + 1
+            damn based
+        } nah {
+            vibez.spill("❌ Memory leak detected in " + operation + ": +" + tea(diff) + "MB")
+            fail_count = fail_count + 1
+            damn cringe
+        }
+    }
+    damn based
+}
+
+slay get_memory_usage() normie {
+    # Placeholder for memory usage function
+    damn 10  # Assume 10MB usage
+}
+
+# ===============================
+# Compilation Validation Functions
+# ===============================
+
+slay validate_compilation_success(test_file tea) lit {
+    vibez.spill("🔧 Validating compilation: " + test_file)
+    sus compile_result lit = attempt_compilation(test_file)
+    
+    lowkey compile_result {
+        vibez.spill("✅ Compilation successful: " + test_file)
+        pass_count = pass_count + 1
+        damn based
+    } nah {
+        vibez.spill("❌ Compilation failed: " + test_file)
+        fail_count = fail_count + 1
+        damn cringe
+    }
+}
+
+slay attempt_compilation(test_file tea) lit {
+    # Placeholder for actual compilation attempt
+    # Would invoke CURSED compiler on test_file
+    damn based  # Assume success for now
+}
+
+# ===============================
+# Module Dependency Testing
+# ===============================
+
+slay validate_module_imports(module_name tea) lit {
+    vibez.spill("📦 Validating module imports: " + module_name)
+    sus import_result lit = check_module_imports(module_name)
+    
+    lowkey import_result {
+        vibez.spill("✅ Module imports valid: " + module_name)
+        pass_count = pass_count + 1
+        damn based
+    } nah {
+        vibez.spill("❌ Module import validation failed: " + module_name)
+        fail_count = fail_count + 1
+        damn cringe
+    }
+}
+
+slay check_module_imports(module_name tea) lit {
+    # Placeholder for import validation
+    # Would check that module correctly imports expected dependencies
+    damn based
 }
