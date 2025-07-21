@@ -70,13 +70,15 @@ Traditional programming keywords are replaced with Gen Z slang. Here's the mappi
 | interface  | collab        |
 | map        | vibes         |
 | chan       | dm            |
-| go         | stan / yolo   |
+| go         | stan          |
 | range      | flex          |
 | defer      | later         |
 | select     | ready         |
 | true       | based         |
 | false      | cringe        |
 | nil        | nah           |
+| panic      | shook         |
+| recover    | fam           |
 
 ## Operators and Punctuation
 

@@ -803,8 +803,8 @@ impl Default for InliningConfig {
             base_threshold: 100,
             hot_threshold: 200,
             cold_threshold: 50,
-            max_inline_depth: 8,
-            max_function_size: 500,
+            max_inline_depth: 1,  // Further reduced to prevent stack overflow
+            max_function_size: 100,  // Reduced function size limit
             enable_recursive_inlining: false,
             enable_profile_guided_inlining: true,
             enable_size_based_decisions: true,

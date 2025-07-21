@@ -1,12 +1,6 @@
-sus test_count normie = 0
-sus pass_count normie = 0
-sus fail_count normie = 0
-sus current_test_name tea = ""
+# Minimal testz module test
+yeet "testz"
 
-slay test_start(name tea) {
-    current_test_name = name
-    test_count = test_count + 1
-    vibez.spill("Starting test: ", name)
-}
-
-vibez.spill("Testz module loaded")
+# Just try calling one simple function
+test_start("minimal test")
+print_test_summary()

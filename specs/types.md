@@ -8,7 +8,7 @@ CURSED has several built-in basic types:
 
 | Type Category | CURSED Types | Description |
 |---------------|--------------|-------------|
-| Boolean       | `lit`        | Represents `based` (true) or `cap` (false) values |
+| Boolean       | `lit`        | Represents `based` (true) or `cringe` (false) values |
 | Numeric       | `smol`       | 8-bit signed integer |
 |               | `mid`        | 16-bit signed integer |
 |               | `normie`     | 32-bit signed integer |
