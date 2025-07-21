@@ -2371,7 +2371,8 @@ fn compile_ir_to_executable_with_optimization(ir: &str, output_file: &str, optim
     llc_cmd.arg("-filetype=obj")
         .arg("-o")
         .arg(&temp_obj_file)
-        .arg(&temp_ir_file);
+        .arg(&temp_ir_file)
+        .arg("-relocation-model=pic"); // Enable Position Independent Code
     
     // Apply optimization level to llc
     if let Some(level) = optimization_level {
