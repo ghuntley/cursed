@@ -49,10 +49,12 @@ impl SimpleDwarfIntegration {
             if let Some(ref database) = *db_lock {
                 if let Some(line_info) = database.get_source_location_for_address(address) {
                     return Some(SourceLocation {
-                        file: line_info.file.to_string_lossy().to_string(),
+file: line_info.file.to_string_lossy().to_string(),
                         line: line_info.line as usize,
                         column: line_info.column as usize,
-                    });
+                    
+                    offset: 0,
+                });
                 }
             }
         }

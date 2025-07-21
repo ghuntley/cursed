@@ -196,7 +196,7 @@ impl CursedRepl {
             ":history" => Some(self.get_history_text()),
             ":clear" => Some(self.clear_screen()),
             ":vars" => Some(self.show_variables()),
-            ":version" => Some(format!("CURSED REPL v{}", env!("CARGO_PKG_VERSION"))),
+            ":version" => Some(format!("CURSED REPL v{}", option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"))),
             _ if input.starts_with(':') => Some(format!("Unknown command: {}. Type :help for available commands.", input)),
             _ => None,
         }

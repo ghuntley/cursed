@@ -355,6 +355,26 @@ src/
 - PIE compilation flags fixed in build.rs: -fPIE, -pie, -Wl,--as-needed
 - cargo clean + unset environment variables helps with persistent config
 
+### Build Environment Setup (NixOS)
+```bash
+# OpenSSL environment configuration
+export OPENSSL_DIR=$(nix-store -q --outputs $(nix-instantiate '<nixpkgs>' -A openssl.dev))
+export OPENSSL_LIB_DIR="$OPENSSL_DIR/lib"
+export OPENSSL_INCLUDE_DIR="$OPENSSL_DIR/include"
+export PKG_CONFIG_PATH="$OPENSSL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+# Fix environment conflicts
+unset RUST_SRC_PATH CARGO_TARGET_DIR    # Clear conflicting variables
+direnv reload                            # Reload devenv after changes
+cargo clean                             # Clean build artifacts
+```
+
+### Environment Conflict Resolution
+- Always reload devenv.nix changes with `direnv reload`
+- Unset conflicting Rust environment variables before building
+- Use `nix-store -q` to find proper OpenSSL paths in NixOS
+- Clear cargo cache when switching between build environments
+
 ### CURSED Development Patterns
 - Standard library should be pure CURSED implementations, no FFI
 - Testing framework (testz) is foundation for all stdlib testing

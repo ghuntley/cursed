@@ -335,12 +335,14 @@ impl Lexer {
                 } else {
                     let error = StructuredError::new(ErrorCode::E0001, "Unexpected character: '&'".to_string())
                         .with_location(ErrorSourceLocation {
-                            file: "".to_string(),
+file: "".to_string(),
                             line: self.line,
                             column: start_column,
                             length: 1,
                             source_line: None,
-                        })
+                        
+                    offset: 0,
+                })
                         .with_suggestions(vec![
                             "Use '&&' for logical AND".to_string(),
                             "Use bitwise operations if intended".to_string(),
@@ -379,12 +381,14 @@ impl Lexer {
             _ => {
                 let error = StructuredError::new(ErrorCode::E0005, format!("Unexpected character: {}", c))
                     .with_location(ErrorSourceLocation {
-                        file: "".to_string(),
+file: "".to_string(),
                         line: self.line,
                         column: start_column,
                         length: 1,
                         source_line: None,
-                    })
+                    
+                    offset: 0,
+                })
                     .with_suggestions(vec![
                         "Check for typos in the source code".to_string(),
                         "Ensure the character is valid CURSED syntax".to_string(),

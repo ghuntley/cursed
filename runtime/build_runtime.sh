@@ -1,107 +1,79 @@
 #!/bin/bash
-# Build script for CURSED runtime libraries with arm64 optimization
-# This script ensures proper compilation for different architectures
 
-set -e
+# CURSED Runtime Library Build Script
+# This script builds the CURSED runtime library for various targets
 
-# Detect architecture and OS
-ARCH=$(uname -m)
-OS=$(uname -s)
+set -euo pipefail
 
-echo "Building CURSED runtime libraries for ${ARCH} on ${OS}..."
+# Default values
+TARGET=""
+PROFILE="debug"
+VERBOSE=false
+CLEAN=false
 
-# Set architecture-specific compiler flags
-case "${ARCH}" in
-    "arm64"|"aarch64")
-        if [[ "${OS}" == "Darwin" ]]; then
-            # macOS arm64 (M1/M2/M3)
-            CC=${CC:-clang}
-            CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -O2 -g -Wall -Wextra"
-            LDFLAGS="-arch arm64"
-            echo "Configuring for macOS arm64 (Apple Silicon)"
-        else
-            # Linux arm64
-            CC=${CC:-gcc}
-            CFLAGS="-march=armv8-a -O2 -g -Wall -Wextra -fPIC"
-            LDFLAGS=""
-            echo "Configuring for Linux arm64"
-        fi
-        ;;
-    "x86_64")
-        if [[ "${OS}" == "Darwin" ]]; then
-            # macOS x86_64
-            CC=${CC:-clang}
-            CFLAGS="-arch x86_64 -mmacosx-version-min=10.12 -O2 -g -Wall -Wextra"
-            LDFLAGS="-arch x86_64"
-            echo "Configuring for macOS x86_64"
-        else
-            # Linux x86_64
-            CC=${CC:-gcc}
-            CFLAGS="-march=x86-64 -O2 -g -Wall -Wextra -fPIC"
-            LDFLAGS=""
-            echo "Configuring for Linux x86_64"
-        fi
-        ;;
-    *)
-        echo "Warning: Unknown architecture ${ARCH}, using default settings"
-        CC=${CC:-gcc}
-        CFLAGS="-O2 -g -Wall -Wextra"
-        LDFLAGS=""
-        ;;
-esac
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --target)
+            TARGET="$2"
+            shift 2
+            ;;
+        --release)
+            PROFILE="release"
+            shift
+            ;;
+        --verbose)
+            VERBOSE=true
+            shift
+            ;;
+        --clean)
+            CLEAN=true
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [OPTIONS]"
+            echo "  --target TARGET    Build for specific target"
+            echo "  --release          Build in release mode"
+            echo "  --verbose          Verbose output"
+            echo "  --clean            Clean before building"
+            echo "  -h, --help         Show this help"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
 
-# Function to compile and archive a library
-build_library() {
-    local source_file="$1"
-    local lib_name="$2"
-    local obj_file="${source_file%.c}.o"
-    local lib_file="lib${lib_name}.a"
-    
-    echo "Building ${lib_file} from ${source_file}..."
-    
-    # Compile source to object file
-    ${CC} ${CFLAGS} -c "${source_file}" -o "${obj_file}"
-    
-    # Create static library
-    ar rcs "${lib_file}" "${obj_file}"
-    
-    # Index the archive with ranlib to fix linking issues
-    ranlib "${lib_file}"
-    
-    # Verify architecture
-    echo "Verifying architecture of ${lib_file}:"
-    if command -v lipo &> /dev/null; then
-        lipo -info "${lib_file}"
-    elif command -v file &> /dev/null; then
-        file "${lib_file}"
-    fi
-    
-    echo "✅ Successfully built ${lib_file}"
-}
+# Set default target if not provided
+if [[ -z "$TARGET" ]]; then
+    TARGET=$(rustc -vV | grep host | cut -d' ' -f2)
+fi
 
-# Clean old builds
-echo "Cleaning old builds..."
-rm -f *.o *.a
+echo "Building CURSED runtime for target: $TARGET"
+echo "Profile: $PROFILE"
 
-# Build runtime libraries
-build_library "minimal_shims.c" "cursed_minimal_shims"
-build_library "interface_runtime.c" "cursed_interface_runtime"
-build_library "type_assertion_runtime.c" "cursed_type_assertion_runtime"
-build_library "type_checking.c" "cursed_type_checking"
-build_library "memory_runtime.c" "cursed_memory_runtime"
-build_library "pattern_matching_runtime.c" "cursed_pattern_matching_runtime"
+# Clean if requested
+if [[ "$CLEAN" == "true" ]]; then
+    echo "Cleaning..."
+    cargo clean
+fi
 
-# Set library search paths for the linker
-echo ""
-echo "Runtime libraries built successfully!"
-echo "Architecture: ${ARCH}"
-echo "Compiler: ${CC}"
-echo "Flags: ${CFLAGS}"
+# Build arguments
+BUILD_ARGS=("--lib")
+if [[ "$TARGET" != "" ]]; then
+    BUILD_ARGS+=("--target" "$TARGET")
+fi
+if [[ "$PROFILE" == "release" ]]; then
+    BUILD_ARGS+=("--release")
+fi
+if [[ "$VERBOSE" == "true" ]]; then
+    BUILD_ARGS+=("--verbose")
+fi
 
-# Verify all libraries exist
-echo ""
-echo "Built libraries:"
-ls -la *.a
+# Build the runtime
+echo "Building runtime with: cargo build ${BUILD_ARGS[*]}"
+cargo build "${BUILD_ARGS[@]}"
 
-echo ""
-echo "✅ Runtime library build complete!"
+echo "Runtime build completed successfully for $TARGET"

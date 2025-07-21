@@ -683,7 +683,7 @@ pub struct VersionReporter;
 
 impl VersionReporter {
     pub fn get_runtime_version() -> String {
-        format!("CURSED Runtime v{}", env!("CARGO_PKG_VERSION"))
+        format!("CURSED Runtime v{}", option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"))
     }
 
     pub fn get_platform_info() -> PlatformInfo {
@@ -692,7 +692,7 @@ impl VersionReporter {
 
     pub fn get_compiler_version() -> String {
         format!("CURSED Compiler v{} (LLVM {})", 
-                env!("CARGO_PKG_VERSION"),
+                option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
                 Self::get_llvm_version())
     }
 

@@ -550,6 +550,8 @@ pub struct SourceLocation {
     pub column: u32,
     /// Function name (if known)
     pub function: Option<String>,
+    /// Byte offset in the source file
+    pub offset: usize,
 }
 
 pub trait DebugEventListener: Send + Sync {
@@ -916,10 +918,12 @@ impl RuntimeDebugger {
         if let Ok(stack_info) = self.stack_tracker.capture_stack_trace() {
             if let Some(frame) = stack_info.frames.last() {
                 return Some(SourceLocation {
-                    file: frame.source_file.clone(),
+file: frame.source_file.clone(),
                     line: frame.line_number,
                     column: frame.column_number,
                     function: Some(frame.function_name.clone()),
+                
+                    offset: 0,
                 });
             }
         }
@@ -1574,11 +1578,13 @@ mod tests {
         let breakpoint = Breakpoint {
             id: 0, // Will be assigned by manager
             location: SourceLocation {
-                file: PathBuf::from("test.csd"),
+file: PathBuf::from("test.csd"),
                 line: 10,
                 column: 5,
                 function: Some("test_function".to_string()),
-            },
+            
+                    offset: 0,
+                },
             condition: None,
             enabled: true,
             hit_count: 0,

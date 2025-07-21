@@ -860,7 +860,7 @@ impl Default for SystemInfo {
             architecture: std::env::consts::ARCH.to_string(),
             cpu_cores: num_cpus::get() as u32,
             total_memory: 1024 * 1024 * 1024 * 8, // 8GB default
-            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+            compiler_version: option_env!("CARGO_PKG_VERSION").unwrap_or("unknown").to_string(),
             rust_version: "1.70.0".to_string(), // This would be detected
         }
     }

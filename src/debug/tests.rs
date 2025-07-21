@@ -132,19 +132,23 @@ mod tests {
             "test_variable",
             SymbolType::Variable,
             SourceLocation {
-                file: "test_debug.csd".to_string(),
+file: "test_debug.csd".to_string(),
                 line: 1,
                 column: 1,
-            },
+            
+                    offset: 0,
+                },
         );
         manager.add_debug_symbol(symbol);
         
         // Test source context
         let location = SourceLocation {
-            file: "test_debug.csd".to_string(),
+file: "test_debug.csd".to_string(),
             line: 1,
             column: 5,
-        };
+        
+                    offset: 0,
+                };
         
         let context_result = manager.get_source_context(&location);
         assert!(context_result.is_ok(), "Failed to get source context: {:?}", context_result);
@@ -443,10 +447,12 @@ slay main() normie {
         
         // Test invalid source location
         let invalid_location = SourceLocation {
-            file: "non_existent.csd".to_string(),
+file: "non_existent.csd".to_string(),
             line: 999,
             column: 999,
-        };
+        
+                    offset: 0,
+                };
         
         let context_result = manager.get_source_context(&invalid_location);
         assert!(context_result.is_err());
@@ -537,10 +543,12 @@ slay main() normie {
         
         // 7. Test source context
         let location = SourceLocation {
-            file: "factorial_test.csd".to_string(),
+file: "factorial_test.csd".to_string(),
             line: 3,
             column: 9,
-        };
+        
+                    offset: 0,
+                };
         
         let context = debug_manager.get_source_context(&location);
         assert!(context.is_ok());

@@ -152,6 +152,7 @@ impl DebugIntegratedCodegen {
                     file: "main.csd".to_string(),
                     line: statement_index + 1,
                     column: 1,
+                    offset: 0,
                 };
                 
                 self.enter_function(&func_stmt.name, location.clone())?;
@@ -192,6 +193,7 @@ impl DebugIntegratedCodegen {
                         file: "main.csd".to_string(),
                         line: statement_index + 1,
                         column: 1,
+                        offset: 0,
                     };
                     
                     self.add_variable(var_name, "i32", location.clone())?;
@@ -215,6 +217,7 @@ impl DebugIntegratedCodegen {
                     file: "main.csd".to_string(),
                     line: statement_index + 1,
                     column: 1,
+                    offset: 0,
                 };
                 
                 self.set_current_location(location.clone());

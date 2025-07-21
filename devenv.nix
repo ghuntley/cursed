@@ -53,6 +53,7 @@ in
     # Package manager additional dependencies
     pkgs.curl
     pkgs.openssl
+    pkgs.openssl.dev
     pkgs.pkg-config
     pkgs.cacert
     # libiconv for build scripts
@@ -119,11 +120,11 @@ in
 
   enterShell = ''
     echo "🔧 Setting up CURSED development environment..."
-    
+
     # LLVM configuration - using LLVM 18 for stability
     export LLVM_SYS_181_PREFIX="${pkgs.llvmPackages_18.llvm.dev}"
     export LLVM_CONFIG_PATH="${pkgs.llvmPackages_18.llvm.dev}/bin/llvm-config"
-    
+
     # Debug LLVM setup
     echo "📋 LLVM Debug Information:"
     echo "  LLVM_SYS_181_PREFIX: $LLVM_SYS_181_PREFIX"
@@ -173,7 +174,7 @@ in
     export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin/aarch64-unknown-linux-gnu-gcc"
     export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
     export CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER="${pkgs.clang}/bin/clang"
-    
+
     # Zig universal linker as fallback for complex cross-compilation
     export ZIG_CC="${pkgs.zig}/bin/zig cc"
     export ZIG_CXX="${pkgs.zig}/bin/zig c++"
@@ -200,16 +201,16 @@ in
     export RUSTFLAGS_x86_64_pc_windows_gnu="-L ${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib -L ${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib -L ${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib"
 
     # Set library paths for native builds AFTER clearing cross-compilation pollution
-    export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib:$LD_LIBRARY_PATH"
-    export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.libiconv}/lib"
-    export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.sqlite.dev}/lib/pkgconfig"
+    export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.openssl}/lib:${pkgs.libiconv}/lib:$LD_LIBRARY_PATH"
+    export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:${pkgs.openssl}/lib:${pkgs.libiconv}/lib"
+    export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.sqlite.dev}/lib/pkgconfig:${pkgs.openssl.dev}/lib/pkgconfig"
 
     # CRITICAL: Set native compiler environment for cc-rs AFTER clearing
     export CC="${pkgs.gcc}/bin/gcc"
     export CXX="${pkgs.gcc}/bin/g++"
     export AR="${pkgs.binutils}/bin/ar"
     export RANLIB="${pkgs.binutils}/bin/ranlib"
-    
+
     # Debug compiler setup
     echo "🔧 Final Compiler Configuration:"
     echo "  CC: $CC"
@@ -230,7 +231,7 @@ in
 
       # Ensure pkg-config can find libiconv if packages support it
       export PKG_CONFIG_PATH="${pkgs.libiconv}/lib/pkgconfig:$PKG_CONFIG_PATH"
-      
+
       # Try using GNU ar for native builds on macOS to avoid LLVM version conflicts
       export AR="${pkgs.binutils}/bin/ar"
       export RANLIB="${pkgs.binutils}/bin/ranlib"
@@ -238,10 +239,10 @@ in
 
     # Make sure LLVM tools are available (updated to LLVM 20)
     export PATH="${pkgs.llvmPackages_18.llvm}/bin:$PATH"
-    
+
     # Add Zig to PATH for universal cross-compilation fallback
     export PATH="${pkgs.zig}/bin:$PATH"
-    
+
     # For macOS native builds, add GNU binutils BEFORE system tools to avoid LLVM version conflicts
     ${lib.optionalString pkgs.stdenv.isDarwin ''
       export PATH="${pkgs.binutils}/bin:$PATH"
@@ -249,7 +250,7 @@ in
 
     # Add cross-compilation tools to PATH but at the end (after system tools)
     export PATH="$PATH:${pkgs.pkgsCross.gnu64.stdenv.cc}/bin:${pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc}/bin:${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin"
-    
+
     # Debug final environment
     echo "🔍 Final Environment Check:"
     echo "  which llvm-ar: $(which llvm-ar 2>/dev/null || echo 'NOT FOUND')"

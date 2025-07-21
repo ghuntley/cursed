@@ -243,10 +243,12 @@ impl EnhancedDebugManager {
         let mock_frame = StackFrame {
             function_name: "current_function".to_string(),
             source_location: SourceLocation {
-                file: "main.csd".to_string(),
+file: "main.csd".to_string(),
                 line: 10,
                 column: 5,
-            },
+            
+                    offset: 0,
+                },
             local_variables: HashMap::new(),
             instruction_pointer: Some(0x1000),
             frame_pointer: Some(0x2000),

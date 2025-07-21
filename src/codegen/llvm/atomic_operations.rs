@@ -99,7 +99,7 @@ impl<'ctx> AtomicOperationsCompiler<'ctx> {
     ) -> Result<IntValue<'ctx>, CursedError> {
         // Use LLVM's cmpxchg instruction
         let cmpxchg_result = self.builder
-            .build_atomic_cmpxchg(
+            .build_cmpxchg(
                 ptr,
                 expected,
                 desired,
@@ -416,8 +416,10 @@ impl<'ctx> AtomicOperationsCompiler<'ctx> {
         let function = intrinsics.get(builtin_name)
             .ok_or_else(|| CursedError::CodegenError(format!("Unknown atomic builtin: {}", builtin_name)))?;
 
+        // Convert BasicValueEnum to BasicMetadataValueEnum
+        let metadata_args: Vec<_> = args.iter().map(|arg| (*arg).into()).collect();
         let call_result = self.builder
-            .build_call(*function, args, builtin_name)
+            .build_call(*function, &metadata_args, builtin_name)
             .map_err(|e| CursedError::CodegenError(format!("Failed to call atomic builtin {}: {:?}", builtin_name, e)))?;
 
         Ok(call_result.try_as_basic_value().left())
@@ -441,15 +443,15 @@ pub enum AtomicOpType {
 
 /// Atomic operation metadata
 #[derive(Debug, Clone)]
-pub struct AtomicOpMetadata {
+pub struct AtomicOpMetadata<'ctx> {
     pub op_type: AtomicOpType,
     pub ordering: AtomicOrdering,
     pub is_weak: bool,
-    pub value_type: BasicTypeEnum,
+    pub value_type: BasicTypeEnum<'ctx>,
 }
 
-impl AtomicOpMetadata {
-    pub fn new(op_type: AtomicOpType, ordering: AtomicOrdering, value_type: BasicTypeEnum) -> Self {
+impl<'ctx> AtomicOpMetadata<'ctx> {
+    pub fn new(op_type: AtomicOpType, ordering: AtomicOrdering, value_type: BasicTypeEnum<'ctx>) -> Self {
         Self {
             op_type,
             ordering,

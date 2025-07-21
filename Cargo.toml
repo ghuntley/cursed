@@ -11,7 +11,7 @@ path = "src/main.rs"
 # This is a standalone package
 
 [features]
-default = ["std", "networking", "ffi", "crypto-rustcrypto"]
+default = ["std", "crypto-rustcrypto"]
 std = []
 networking = ["tokio", "mio"]
 ffi = ["libc"]
@@ -43,7 +43,7 @@ chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.4"
 colored = "2.0"
 futures = "0.3"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "multipart"] }
 tar = "0.4"
 zip = "0.6"
 inkwell = { version = "0.4", features = ["llvm17-0"] }
@@ -67,8 +67,43 @@ fastrand = "2.0"
 tower-lsp = "0.20"
 flate2 = "1.0"
 crossbeam = "0.8"
+crossbeam-utils = "0.8"
+crossbeam-epoch = "0.9"
 semver = "1.0"
 either = "=1.8.1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+uuid = { version = "1.0", features = ["v4"] }
+tempfile = "3.0"
+tokio-util = "0.7"
+log = "0.4"
+tokio = { version = "1.0", features = ["full"] }
+mockito = "1.0"
+
+# Crypto dependencies
+sha2 = "0.10"
+blake3 = "1.5"
+sha3 = "0.10"
+hmac = "0.12"
+pbkdf2 = "0.12"
+scrypt = "0.11"
+argon2 = "0.5"
+bcrypt = "0.15"
+ed25519-dalek = "2.0"
+aes = "0.8"
+aes-gcm = "0.10"
+chacha20poly1305 = "0.10"
+x25519-dalek = "2.0"
+p256 = "0.13"
+rsa = "0.9"
+tiny-keccak = { version = "2.0", features = ["sha3", "keccak"] }
+getrandom = "0.2"
+rand_chacha = "0.3"
+
+# Additional dependencies
+rustyline = "14.0"
+walkdir = "2.0"
+ring = "0.17"
 
 # Platform-specific dependencies for native targets
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -91,15 +126,4 @@ web-sys = { version = "0.3", features = [
 ], optional = true }
 wasi = "0.11"
 
-# Crypto dependencies available on both native and WASM
-sha2 = "0.10"
-blake3 = "1.5"
-sha3 = "0.10"
-hmac = "0.12"
-pbkdf2 = "0.12"
-scrypt = "0.11"
-argon2 = "0.5"
-bcrypt = "0.15"
-ed25519-dalek = "2.0"
-aes = "0.8"
-aes-gcm = "0.10"
+# Move crypto dependencies to main dependencies section

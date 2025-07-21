@@ -29,6 +29,20 @@ use std::fs::{self, OpenOptions, File};
 use std::net::{TcpListener, TcpStream, UdpSocket, SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
 use libc;
 
+// Crypto imports
+use sha2::{Sha256, Sha512, Digest};
+use blake3::Hasher as Blake3Hasher;
+use rand::{Rng, RngCore};
+use rand::distributions::Alphanumeric;
+use aes_gcm::{Aes128Gcm, KeyInit, aead::{Aead, AeadCore, OsRng}};
+use hmac::{Hmac, Mac};
+use pbkdf2::pbkdf2_hmac;
+use scrypt::{scrypt, Params};
+use argon2::{Argon2, password_hash::{PasswordHasher, PasswordVerifier, SaltString}};
+use bcrypt::{hash, verify};
+use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer};
+use subtle::ConstantTimeEq;
+
 /// Initialize all runtime functions for the CURSED standard library
 pub fn initialize_runtime_functions() -> Result<(), CursedError> {
     // Runtime function initialization - registers all external functions
@@ -2248,20 +2262,6 @@ pub extern "C" fn collections_set_is_empty(set_ptr: *const HashSet<i64>) -> i32 
 // ================================
 // Crypto Implementation Functions
 // ================================
-
-use sha2::{Sha256, Sha512, Digest};
-// MD5 import not needed, we'll use md5::compute directly
-use blake3::Hasher as Blake3Hasher;
-use rand::{Rng, RngCore};
-use rand::distributions::Alphanumeric;
-use aes_gcm::{Aes128Gcm, KeyInit, aead::{Aead, AeadCore, OsRng}};
-use hmac::{Hmac, Mac};
-use pbkdf2::pbkdf2_hmac;
-use scrypt::{scrypt, Params};
-use argon2::{Argon2, password_hash::{PasswordHasher, PasswordVerifier, SaltString}};
-use bcrypt::{hash, verify};
-use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer};
-use subtle::ConstantTimeEq;
 
 // Hash Functions
 #[no_mangle]

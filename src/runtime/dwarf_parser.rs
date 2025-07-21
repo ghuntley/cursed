@@ -155,9 +155,11 @@ impl DwarfDebugDatabase {
             // Get source location
             if let Some(line_info) = self.get_source_location_for_address(address) {
                 frame_info.source_location = Some(SourceLocation {
-                    file: line_info.file.to_string_lossy().to_string(),
+file: line_info.file.to_string_lossy().to_string(),
                     line: line_info.line as usize,
                     column: line_info.column as usize,
+                
+                    offset: 0,
                 });
             }
         }

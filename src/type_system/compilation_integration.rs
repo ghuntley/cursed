@@ -30,6 +30,7 @@ pub struct SourceLocation {
     pub line: usize,
     pub column: usize,
     pub span: (usize, usize), // Start and end byte offsets
+    pub offset: usize,
 }
 
 /// Compilation context with type information
@@ -186,16 +187,20 @@ impl TypedCompilationPipeline {
         type_errors.into_iter().map(|type_error| {
             let location = type_error.location.as_ref()
                 .map(|loc| SourceLocation {
-                    file: loc.file.clone().unwrap_or_else(|| source_file.to_string()),
+                    file: if loc.file.is_empty() { source_file.to_string() } else { loc.file.clone() },
                     line: loc.line,
                     column: loc.column,
                     span: (loc.offset, loc.offset),
+                
+                    offset: 0,
                 })
                 .unwrap_or_else(|| SourceLocation {
-                    file: source_file.to_string(),
+file: source_file.to_string(),
                     line: 0,
                     column: 0,
                     span: (0, 0),
+                
+                    offset: 0,
                 });
             let suggestions = self.generate_error_suggestions(&type_error);
             CompilationErrorDetails {

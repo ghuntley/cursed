@@ -1605,9 +1605,11 @@ impl DwarfDebugDatabase {
             // Get source location
             if let Some(line_info) = self.get_source_location_for_address(address) {
                 frame_info.source_location = Some(SourceLocation {
-                    file: line_info.file.to_string_lossy().to_string(),
+file: line_info.file.to_string_lossy().to_string(),
                     line: line_info.line as usize,
                     column: line_info.column as usize,
+                
+                    offset: 0,
                 });
             }
         }
@@ -1651,10 +1653,12 @@ impl LlvmDebugInfo {
     pub fn get_source_location(&self, address: u64) -> Result<Option<SourceLocation>, CursedError> {
         if let Some(metadata) = self.debug_metadata.get(&address) {
             Ok(Some(SourceLocation {
-                file: metadata.file_path.to_string_lossy().to_string(),
+file: metadata.file_path.to_string_lossy().to_string(),
                 line: metadata.line as usize,
                 column: metadata.column as usize,
-            }))
+            
+                    offset: 0,
+                }))
         } else {
             Ok(None)
         }
@@ -1749,30 +1753,38 @@ impl LlvmDebugInfo {
             for site in inline_sites {
                 let inline_site = if let Some((file, line, col)) = &site.inline_location {
                     SourceLocation {
-                        file: file.to_string_lossy().to_string(),
+file: file.to_string_lossy().to_string(),
                         line: *line as usize,
                         column: *col as usize,
-                    }
+                    
+                    offset: 0,
+                }
                 } else {
                     SourceLocation {
-                        file: "unknown".to_string(),
+file: "unknown".to_string(),
                         line: 0,
                         column: 0,
-                    }
+                    
+                    offset: 0,
+                }
                 };
                 
                 let original_location = if let Some((file, line, col)) = &site.original_location {
                     SourceLocation {
-                        file: file.to_string_lossy().to_string(),
+file: file.to_string_lossy().to_string(),
                         line: *line as usize,
                         column: *col as usize,
-                    }
+                    
+                    offset: 0,
+                }
                 } else {
                     SourceLocation {
-                        file: "unknown".to_string(),
+file: "unknown".to_string(),
                         line: 0,
                         column: 0,
-                    }
+                    
+                    offset: 0,
+                }
                 };
                 
                 inline_infos.push(InlineInfo {
@@ -2181,15 +2193,19 @@ mod tests {
         let inline_info = InlineInfo {
             function_name: "inlined_func".to_string(),
             inline_site: SourceLocation {
-                file: "caller.csd".to_string(),
+file: "caller.csd".to_string(),
                 line: 15,
                 column: 5,
-            },
+            
+                    offset: 0,
+                },
             original_location: SourceLocation {
-                file: "original.csd".to_string(),
+file: "original.csd".to_string(),
                 line: 25,
                 column: 10,
-            },
+            
+                    offset: 0,
+                },
         };
 
         assert_eq!(inline_info.function_name, "inlined_func");

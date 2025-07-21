@@ -48,6 +48,7 @@ impl From<CursedError> for StructuredError {
             CursedError::FamRecovery(msg) => StructuredError::new(ErrorCode::E0500, msg),
             CursedError::MemoryError(msg) => StructuredError::new(ErrorCode::E0500, msg),
             CursedError::PanicError(msg) => StructuredError::new(ErrorCode::E0500, msg),
+            CursedError::CodegenError(msg) => StructuredError::new(ErrorCode::E0207, msg),
         }
     }
 }
@@ -84,12 +85,14 @@ pub type Result<T> = std::result::Result<T, EnhancedError>;
 pub fn syntax_error_with_location(message: &str, line: usize, column: usize, source: Option<String>) -> StructuredError {
     let mut error = StructuredError::syntax_error(message);
     error.location = Some(super::structured::ErrorSourceLocation {
-        file: "".to_string(),
+file: "".to_string(),
         line,
         column,
         length: 1,
         source_line: source,
-    });
+    
+                    offset: 0,
+                });
     error
 }
 

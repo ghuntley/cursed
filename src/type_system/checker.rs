@@ -124,8 +124,8 @@ impl std::fmt::Display for TypeCheckError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.location {
             Some(location) => {
-                if let Some(ref file) = location.file {
-                    write!(f, "{}:{}:{}: {}", file, location.line, location.column, self.message)
+                if !location.file.is_empty() {
+                    write!(f, "{}:{}:{}: {}", location.file, location.line, location.column, self.message)
                 } else {
                     write!(f, "{}:{}: {}", location.line, location.column, self.message)
                 }
