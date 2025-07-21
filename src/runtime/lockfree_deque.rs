@@ -84,6 +84,7 @@ impl<T> LockFreeDeque<T> {
 
         let new_node = Box::into_raw(Box::new(Node::new(item)));
         
+        let mut backoff = 1;
         loop {
             let current_head = self.head.load(Ordering::Acquire);
             
@@ -107,11 +108,23 @@ impl<T> LockFreeDeque<T> {
             unsafe {
                 (*new_node).next.store(ptr::null_mut(), Ordering::Relaxed);
             }
+            
+            // Exponential backoff to prevent busy waiting
+            if backoff < 64 {
+                for _ in 0..backoff {
+                    std::hint::spin_loop();
+                }
+                backoff *= 2;
+            } else {
+                std::thread::yield_now();
+                backoff = 1;
+            }
         }
     }
 
     /// Pop an item from the head (owner thread only)
     pub fn pop(&self) -> Option<T> {
+        let mut backoff = 1;
         loop {
             let current_head = self.head.load(Ordering::Acquire);
             
@@ -143,11 +156,23 @@ impl<T> LockFreeDeque<T> {
                     return data;
                 }
             }
+            
+            // Exponential backoff to prevent busy waiting
+            if backoff < 64 {
+                for _ in 0..backoff {
+                    std::hint::spin_loop();
+                }
+                backoff *= 2;
+            } else {
+                std::thread::yield_now();
+                backoff = 1;
+            }
         }
     }
 
     /// Steal an item from the tail (other threads)
     pub fn steal(&self) -> Option<T> {
+        let mut backoff = 1;
         loop {
             let current_tail = self.tail.load(Ordering::Acquire);
             
@@ -178,6 +203,17 @@ impl<T> LockFreeDeque<T> {
                     
                     return data;
                 }
+            }
+            
+            // Exponential backoff to prevent busy waiting
+            if backoff < 64 {
+                for _ in 0..backoff {
+                    std::hint::spin_loop();
+                }
+                backoff *= 2;
+            } else {
+                std::thread::yield_now();
+                backoff = 1;
             }
         }
     }

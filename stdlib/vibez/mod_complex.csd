@@ -264,16 +264,18 @@ slay runtime_console_write(message tea) lit {
 }
 
 slay runtime_write_stdout(data tea) lit {
-    # Write to standard output
-    damn based  # Stub
+    # Write to standard output via runtime bridge
+    io_print(data)
+    damn based
 }
 
 slay runtime_write_stderr(data tea) lit {
-    # Write to standard error
-    damn based  # Stub
+    # Write to standard error via runtime bridge
+    io_eprint(data)
+    damn based
 }
 
 slay runtime_read_stdin() tea {
-    # Read from standard input
-    damn ""  # Stub
+    # Read from standard input via runtime bridge
+    damn io_read_line()
 }

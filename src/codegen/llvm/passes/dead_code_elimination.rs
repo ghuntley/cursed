@@ -138,9 +138,17 @@ impl<'ctx> DeadCodeEliminationPass<'ctx> {
         
         // Iteratively remove dead code until no more changes
         let mut iterations = 0;
-        const MAX_ITERATIONS: u32 = 10;
+        const MAX_ITERATIONS: u32 = 20; // Increased limit
+        let start_time = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(30); // 30 second timeout
         
         while iterations < MAX_ITERATIONS {
+            // Check timeout
+            if start_time.elapsed() > timeout {
+                eprintln!("Warning: Dead code elimination timed out after {} iterations", iterations);
+                break;
+            }
+            
             iterations += 1;
             
             let changed = self.eliminate_dead_code(&function)?;
@@ -149,6 +157,10 @@ impl<'ctx> DeadCodeEliminationPass<'ctx> {
             }
             
             result.instructions_eliminated += 1; // This is a rough estimate
+        }
+        
+        if iterations >= MAX_ITERATIONS {
+            eprintln!("Warning: Dead code elimination reached maximum iterations limit ({})", MAX_ITERATIONS);
         }
         
         result.iterations = iterations;

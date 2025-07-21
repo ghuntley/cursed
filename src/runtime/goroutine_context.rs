@@ -2615,15 +2615,11 @@ pub extern "C" fn nodeYieldToEventLoop() {
     std::thread::sleep(std::time::Duration::from_micros(1));
 }
 
-/// WASI sched_yield implementation
+/// WASI sched_yield implementation - simplified to prevent log flooding
 #[no_mangle]
 pub extern "C" fn sched_yield() -> i32 {
-    log::debug!("WASI sched_yield called");
-    
-    // Cooperative yield in WASI environment
-    std::thread::yield_now();
-    
-    // Return 0 for success (POSIX convention)
+    // Do nothing in WASI - it's single-threaded and host will preempt
+    // Removed debug logging to prevent infinite log flooding
     0
 }
 
@@ -2755,6 +2751,88 @@ pub extern "C" fn cursed_realloc(ptr: *mut u8, old_size: usize, new_size: usize)
     };
     
     unsafe { std::alloc::realloc(ptr, old_layout, new_size) }
+}
+
+/// Memory allocation with GC integration (called from collections_core)
+#[no_mangle]
+pub extern "C" fn cursed_runtime_malloc(size: usize, tag: i32) -> *mut std::ffi::c_void {
+    // Map tag to appropriate allocation strategy
+    match tag {
+        1 => {
+            // Object allocation - try GC first, fallback to system
+            if let Some(gc) = crate::runtime::gc::get_global_gc() {
+                match gc.allocate(size, crate::memory::Tag::Object) {
+                    Ok(ptr) => ptr.as_ptr() as *mut std::ffi::c_void,
+                    Err(_) => cursed_malloc(size) as *mut std::ffi::c_void,
+                }
+            } else {
+                cursed_malloc(size) as *mut std::ffi::c_void
+            }
+        }
+        2 => {
+            // Array allocation
+            if let Some(gc) = crate::runtime::gc::get_global_gc() {
+                match gc.allocate(size, crate::memory::Tag::Array) {
+                    Ok(ptr) => ptr.as_ptr() as *mut std::ffi::c_void,
+                    Err(_) => cursed_malloc(size) as *mut std::ffi::c_void,
+                }
+            } else {
+                cursed_malloc(size) as *mut std::ffi::c_void
+            }
+        }
+        _ => {
+            // Generic allocation
+            cursed_malloc(size) as *mut std::ffi::c_void
+        }
+    }
+}
+
+/// Memory deallocation (called from collections_core)
+#[no_mangle]
+pub extern "C" fn cursed_runtime_free(ptr: *mut std::ffi::c_void) -> bool {
+    if ptr.is_null() {
+        return false;
+    }
+    
+    // Try GC deallocation first, fallback to system free
+    if let Some(gc) = crate::runtime::gc::get_global_gc() {
+        if gc.deallocate(ptr as *mut u8).is_ok() {
+            return true;
+        }
+    }
+    
+    // Fallback: we don't know the size, so use system free
+    // This is a limitation - ideally we'd track allocation sizes
+    unsafe {
+        libc::free(ptr);
+    }
+    true
+}
+
+/// Zero memory implementation (called from collections_core)
+#[no_mangle]
+pub extern "C" fn cursed_runtime_zero_memory(ptr: *mut std::ffi::c_void, size: usize) -> bool {
+    if ptr.is_null() || size == 0 {
+        return false;
+    }
+    
+    unsafe {
+        std::ptr::write_bytes(ptr as *mut u8, 0, size);
+    }
+    true
+}
+
+/// Copy memory implementation (called from collections_core)
+#[no_mangle]
+pub extern "C" fn cursed_runtime_copy_memory(dest: *mut std::ffi::c_void, src: *mut std::ffi::c_void, size: usize) -> bool {
+    if dest.is_null() || src.is_null() || size == 0 {
+        return false;
+    }
+    
+    unsafe {
+        std::ptr::copy_nonoverlapping(src as *const u8, dest as *mut u8, size);
+    }
+    true
 }
 
 // Goroutine-specific external functions

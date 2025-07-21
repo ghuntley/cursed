@@ -336,10 +336,27 @@ slay eprintln(message tea) {
 }
 
 slay read_line() (tea, tea) {
+    # Simulated console input for testing
     damn ("User input line", "")
 }
 
+slay read_char() (tea, tea) {
+    # Simulated single character input
+    damn ("U", "")
+}
+
+slay read_int() (normie, tea) {
+    # Simulated integer input
+    damn (42, "")
+}
+
+slay read_float() (meal, tea) {
+    # Simulated float input
+    damn (3.14, "")
+}
+
 slay read_password() (tea, tea) {
+    # Simulated password input (hidden)
     damn ("hidden_password", "")
 }
 

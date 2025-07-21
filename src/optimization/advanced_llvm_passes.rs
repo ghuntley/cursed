@@ -287,7 +287,7 @@ impl<'ctx> AdvancedLlvmPassManager<'ctx> {
             "generic", // CPU
             "",        // Features
             opt_level,
-            RelocMode::Default,
+            RelocMode::PIC,
             CodeModel::Default,
         ).ok_or_else(|| CursedError::RuntimeError("Failed to create target machine".to_string()))?;
 

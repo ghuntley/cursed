@@ -389,15 +389,17 @@ impl ImportResolver {
             }
         }
         
-        // Check if the module exists in the stdlib directory
+        // Check if the module exists in the stdlib directory with timeout
         let module_path = self.config.stdlib_path.join(&normalized_name);
-        if module_path.exists() || module_path.join("mod.csd").exists() {
+        if crate::subprocess_utils::file_exists_with_timeout(&module_path, 10) || 
+           crate::subprocess_utils::file_exists_with_timeout(&module_path.join("mod.csd"), 10) {
             return true;
         }
         
         // Check with original case
         let original_module_path = self.config.stdlib_path.join(name);
-        original_module_path.exists() || original_module_path.join("mod.csd").exists()
+        crate::subprocess_utils::file_exists_with_timeout(&original_module_path, 10) || 
+        crate::subprocess_utils::file_exists_with_timeout(&original_module_path.join("mod.csd"), 10)
     }
 
     /// Get the stdlib path mapping for a module name
@@ -613,8 +615,8 @@ impl ImportResolver {
             }
         }
 
-        // Read source file
-        let source = fs::read_to_string(path)
+        // Read source file with timeout
+        let source = crate::subprocess_utils::read_file_with_timeout(path, 30)
             .map_err(|e| CursedError::ImportError(format!("Failed to read module {}: {}", path.display(), e)))?;
 
         // Basic syntax validation - check for obvious errors
@@ -814,8 +816,8 @@ impl ImportResolver {
             ImportSource::Stdlib(name) => self.resolve_stdlib_import(name)?,
         };
         
-        // Read the file and extract dependencies
-        let source = match fs::read_to_string(&file_path) {
+        // Read the file and extract dependencies with timeout
+        let source = match crate::subprocess_utils::read_file_with_timeout(&file_path, 30) {
             Ok(content) => content,
             Err(_) => return Ok(Vec::new()), // If we can't read the file, assume no dependencies
         };
@@ -885,7 +887,7 @@ impl ImportResolver {
             }
             ImportSource::Package(name, _version) => {
                 let package_path = self.config.package_cache_dir.join(name);
-                Ok(package_path.exists())
+                Ok(crate::subprocess_utils::file_exists_with_timeout(&package_path, 10))
             }
             ImportSource::Stdlib(name) => {
                 Ok(self.resolve_stdlib_import(name).is_ok())

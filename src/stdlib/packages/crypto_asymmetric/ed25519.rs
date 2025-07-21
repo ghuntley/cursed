@@ -106,9 +106,10 @@ pub fn ed25519_verify(public_key: &[u8], data: &[u8], signature: &[u8]) -> Crypt
     let signature_array: [u8; 64] = signature.try_into()
         .map_err(|_| CryptoError::Other("Failed to convert signature".to_string()))?;
     
-    let verifying_key = VerifyingKey::from_bytes(&public_key_array)
+    let verifying_key = VerifyingKey::try_from(&public_key_array[..])
         .map_err(|_| CryptoError::Other("Invalid Ed25519 public key".to_string()))?;
-    let signature = Signature::from_bytes(&signature_array);
+    let signature = Signature::try_from(&signature_array[..])
+        .map_err(|_| CryptoError::Other("Invalid Ed25519 signature".to_string()))?;
     
     match verifying_key.verify(data, &signature) {
         Ok(()) => Ok(true),

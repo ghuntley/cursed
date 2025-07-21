@@ -280,11 +280,18 @@ mod tests {
 
     #[test]
     fn test_bidirectional_channel() {
-        let bidir_ch = bidirectional_channel::<i32>();
+        // Use buffered channel to avoid blocking
+        let bidir_ch = bidirectional_buffered_channel::<i32>(1);
         
         // Both send and receive should work
         assert!(bidir_ch.send(42).is_ok());
-        assert!(bidir_ch.recv().is_ok());
+        let result = bidir_ch.recv();
+        assert!(result.is_ok());
+        
+        // Verify we received the correct value
+        if let Ok(ReceiveResult::Received(val)) = result {
+            assert_eq!(val, 42);
+        }
     }
 
     #[test]

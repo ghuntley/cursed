@@ -131,7 +131,7 @@ impl EnhancedLlvmOptimizer {
         let cpu = &config.target_cpu;
         let features = config.target_features.join(",");
         
-        let reloc_mode = RelocMode::Default;
+        let reloc_mode = RelocMode::PIC;
         let code_model = CodeModel::Default;
         let opt_level = if config.pgo_enabled {
             InkwellOptLevel::Aggressive

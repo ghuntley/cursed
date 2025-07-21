@@ -48,6 +48,7 @@ pub mod tools;
 pub mod config;
 pub mod bootstrap;
 pub mod execution;
+pub mod subprocess_utils;
 pub mod optimization;
 pub mod common;
 pub mod common_types;
@@ -1063,23 +1064,32 @@ pub async fn compile_with_advanced_optimization(
     output_file: &str, 
     config: &optimization::AdvancedOptimizationConfig
 ) -> crate::error::Result<AdvancedCompilationResult> {
-    tracing::info!("Compiling CURSED source file {} to executable {} with advanced optimization", source_file, output_file);
+    let progress = crate::subprocess_utils::ProgressReporter::new(
+        format!("Compiling {} to {}", source_file, output_file)
+    );
     
-    // Read the source file
-    let source = std::fs::read_to_string(source_file)
+    progress.report("Reading source file");
+    
+    // Read the source file with timeout
+    let source = crate::subprocess_utils::read_file_with_timeout(source_file, 30)
         .map_err(|e| CursedError::Io(e.to_string()))?;
 
+    progress.report("Starting native compilation with advanced optimization");
+    
     // Try native compilation with advanced optimization
     match compile_to_native_with_advanced_optimization(&source, source_file, output_file, config).await {
         Ok(result) => {
+            progress.complete();
             tracing::info!("Successfully compiled {} to native executable {} with advanced optimization", source_file, output_file);
             Ok(result)
         }
         Err(e) => {
             if is_llvm_missing_error(&e) {
+                progress.report("LLVM tools not available, falling back to interpretation mode");
                 tracing::warn!("LLVM tools not available, falling back to interpretation mode");
                 tracing::debug!("LLVM error details: {:?}", e);
                 create_interpretation_wrapper(&source, source_file, output_file)?;
+                progress.complete();
                 Ok(AdvancedCompilationResult {
                     success: true,
                     optimization_stats: optimization::OptimizationStats::default(),
@@ -1088,6 +1098,7 @@ pub async fn compile_with_advanced_optimization(
                     errors: vec![],
                 })
             } else {
+                progress.report(&format!("Compilation failed: {}", e));
                 Err(e)
             }
         }
@@ -1775,8 +1786,11 @@ async fn compile_ir_to_wasm_binary(
     }
     
     // Execute llc compilation
-    let llc_output = llc_cmd.output()
-        .map_err(|e| CursedError::Io(format!("Failed to execute llc: {}", e)))?;
+    let llc_output = crate::subprocess_utils::execute_with_timeout(
+        llc_cmd, 
+        120, // 2 minute timeout for cross-compilation
+        "llc cross-compilation"
+    )?;
     
     if !llc_output.status.success() {
         let error_msg = String::from_utf8_lossy(&llc_output.stderr);
@@ -2330,24 +2344,19 @@ fn compile_ir_to_executable_with_optimization(ir: &str, output_file: &str, optim
     ];
     
     let mut llc_path = None;
+    let progress = crate::subprocess_utils::ProgressReporter::new("LLVM tool discovery".to_string());
+    
     for location in &llc_locations {
-        tracing::debug!("Trying llc at: {}", location);
-        let llc_result = Command::new(location)
-            .arg("--version")
-            .output();
+        progress.report(&format!("Checking llc at: {}", location));
         
-        if let Ok(output) = llc_result {
-            if output.status.success() {
-                tracing::info!("Found llc at: {}", location);
-                llc_path = Some(location.clone());
-                break;
-            } else {
-                tracing::debug!("llc command failed at: {}", location);
-            }
-        } else {
-            tracing::debug!("llc not found at: {}", location);
+        if crate::subprocess_utils::check_tool_availability(location, 10) {
+            tracing::info!("Found llc at: {}", location);
+            llc_path = Some(location.clone());
+            break;
         }
     }
+    
+    progress.complete();
     
     let llc_command = match llc_path {
         Some(path) => path,
@@ -2379,8 +2388,11 @@ fn compile_ir_to_executable_with_optimization(ir: &str, output_file: &str, optim
         llc_cmd.arg("-O2");
     }
     
-    let llc_output = llc_cmd.output()
-        .map_err(|e| CursedError::Io(format!("Failed to run llc: {}", e)))?;
+    let llc_output = crate::subprocess_utils::execute_with_timeout(
+        llc_cmd, 
+        120, // 2 minute timeout for compilation
+        "llc compilation"
+    )?;
     
     if !llc_output.status.success() {
         let error_msg = String::from_utf8_lossy(&llc_output.stderr);
@@ -2405,22 +2417,19 @@ fn link_object_to_executable(obj_file: &str, output_file: &str) -> crate::error:
     // Try different linkers in order of preference
     let linkers = ["clang", "gcc", "ld"];
     
+    let progress = crate::subprocess_utils::ProgressReporter::new("Linker discovery".to_string());
+    
     for linker in &linkers {
-        let result = Command::new(linker)
-            .arg("--version")
-            .output();
-            
-        if let Ok(output) = result {
-            if output.status.success() {
-                tracing::info!("Using {} as linker", linker);
-                return link_with_linker(linker, obj_file, output_file);
-            } else {
-                tracing::debug!("Linker command failed: {}", linker);
-            }
-        } else {
-            tracing::debug!("Linker not found: {}", linker);
+        progress.report(&format!("Checking linker: {}", linker));
+        
+        if crate::subprocess_utils::check_tool_availability(linker, 10) {
+            tracing::info!("Using {} as linker", linker);
+            progress.complete();
+            return link_with_linker(linker, obj_file, output_file);
         }
     }
+    
+    progress.complete();
     
     Err(CursedError::CompilerError(
         "No suitable linker found. Please install clang, gcc, or ld.".to_string()
@@ -2470,6 +2479,11 @@ fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::e
             cmd.arg("-o")
                .arg(output_file)
                .arg(obj_file);
+            
+            // Add PIE (Position Independent Executable) compilation flags
+            cmd.arg("-fPIE")
+               .arg("-pie")
+               .arg("-Wl,--as-needed");
             
             // Link with CURSED runtime library
             if let Some(runtime_lib) = find_runtime_library() {
@@ -2530,8 +2544,11 @@ fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::e
     }
     
     tracing::info!("Running linker command: {:?}", cmd);
-    let link_output = cmd.output()
-        .map_err(|e| CursedError::Io(format!("Failed to run linker {}: {}", linker, e)))?;
+    let link_output = crate::subprocess_utils::execute_with_timeout(
+        cmd, 
+        180, // 3 minute timeout for linking 
+        &format!("linking with {}", linker)
+    )?;
     
     if !link_output.status.success() {
         let error_msg = String::from_utf8_lossy(&link_output.stderr);
