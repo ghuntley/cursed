@@ -1,6 +1,12 @@
 # CURSED Collections Core Module
-# Pure CURSED implementation of fundamental data structures
-# No FFI dependencies - 100% native CURSED
+# Implementation of fundamental data structures with runtime memory management
+# Interfaces with CURSED runtime memory system
+
+# FFI declarations for runtime memory functions
+extern slay cursed_runtime_malloc(size normie, tag normie) *cringe
+extern slay cursed_runtime_free(ptr *cringe) lit
+extern slay cursed_runtime_zero_memory(ptr *cringe, size normie) lit
+extern slay cursed_runtime_copy_memory(dest *cringe, src *cringe, size normie) lit
 
 # ===== DYNAMIC VECTOR/ARRAY =====
 sus VectorNode collab {
@@ -831,23 +837,39 @@ slay calloc(count normie, size normie) *cringe {
     damn ptr
 }
 
-# Runtime memory interface stubs
+# Runtime memory interface - Proper Implementation
+# These functions bridge to the actual runtime memory system through FFI
+
+# Memory allocation with GC tracking - interfaces with cursed_runtime_malloc
 slay runtime_allocate_block(size normie) *cringe {
-    # This would interface with the actual runtime allocator
-    damn cringe  # Stub - real implementation would allocate
+    # Interface with runtime memory allocator through FFI bridge
+    # Tag 1 = OBJECT_TAG for general allocation
+    damn cursed_runtime_malloc(size, 1)
 }
 
+# Memory deallocation through GC system - interfaces with cursed_runtime_free  
 slay runtime_deallocate_block(ptr *cringe) lit {
-    # This would interface with the actual runtime deallocator  
-    damn based  # Stub
+    # Interface with runtime memory deallocator through FFI bridge
+    lowkey ptr != cringe {
+        damn cursed_runtime_free(ptr)
+    }
+    damn based
 }
 
+# Zero memory implementation - interfaces with cursed_runtime_zero_memory
 slay runtime_zero_memory(ptr *cringe, size normie) lit {
-    # Zero out memory block
-    damn based  # Stub
+    # Zero out memory block through runtime bridge
+    lowkey ptr != cringe && size > 0 {
+        damn cursed_runtime_zero_memory(ptr, size)
+    }
+    damn cap
 }
 
+# Copy memory implementation - interfaces with cursed_runtime_copy_memory
 slay runtime_copy_memory(dest *cringe, src *cringe, size normie) lit {
-    # Copy memory from src to dest
-    damn based  # Stub
+    # Copy memory from src to dest through runtime bridge
+    lowkey dest != cringe && src != cringe && size > 0 {
+        damn cursed_runtime_copy_memory(dest, src, size)
+    }
+    damn cap
 }

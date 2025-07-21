@@ -618,7 +618,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
             "generic",
             "",
             self.optimization_level,
-            RelocMode::Default,
+            RelocMode::PIC,
             CodeModel::Default,
         ).ok_or_else(|| CursedError::CompilerError("Failed to create target machine".to_string()))?;
 

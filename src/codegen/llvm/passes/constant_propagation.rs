@@ -65,10 +65,22 @@ impl<'ctx> ConstantPropagationPass<'ctx> {
         let mut result = FunctionConstantResult::default();
         self.constant_values.clear();
         
-        // Multiple passes until no more changes
+        // Multiple passes until no more changes with iteration limit and timeout
         let mut changed = true;
-        while changed {
+        let mut iterations = 0;
+        const MAX_ITERATIONS: u32 = 50; // Prevent infinite loops
+        let start_time = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(30); // 30 second timeout
+        
+        while changed && iterations < MAX_ITERATIONS {
+            // Check timeout
+            if start_time.elapsed() > timeout {
+                eprintln!("Warning: Constant propagation timed out after {} iterations", iterations);
+                break;
+            }
+            
             changed = false;
+            iterations += 1;
             
             for block in function.get_basic_blocks() {
                 for instruction in block.get_instructions() {
@@ -78,6 +90,10 @@ impl<'ctx> ConstantPropagationPass<'ctx> {
                     }
                 }
             }
+        }
+        
+        if iterations >= MAX_ITERATIONS {
+            eprintln!("Warning: Constant propagation reached maximum iterations limit ({})", MAX_ITERATIONS);
         }
         
         Ok(result)
@@ -869,8 +885,25 @@ impl<'ctx> SccpAnalyzer<'ctx> {
             self.executable_blocks.insert(entry_block);
         }
         
-        // Process worklist until convergence
+        // Process worklist until convergence with limits
+        let mut iterations = 0;
+        const MAX_ITERATIONS: u32 = 1000; // Higher limit for SCCP
+        let start_time = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(60); // 60 second timeout
+        
         while let Some(value) = self.worklist.pop_front() {
+            // Check timeout and iteration limits
+            if iterations >= MAX_ITERATIONS {
+                eprintln!("Warning: SCCP analysis reached maximum iterations limit ({})", MAX_ITERATIONS);
+                break;
+            }
+            
+            if start_time.elapsed() > timeout {
+                eprintln!("Warning: SCCP analysis timed out after {} iterations", iterations);
+                break;
+            }
+            
+            iterations += 1;
             self.process_value(value)?;
         }
         

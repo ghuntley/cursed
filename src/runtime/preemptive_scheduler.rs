@@ -358,6 +358,9 @@ impl NetworkPoller {
                         pending.push_back(io_event);
                     }
                 }
+            } else if num_events == 0 {
+                // No events available, sleep briefly to prevent busy waiting
+                std::thread::sleep(Duration::from_millis(1));
             }
 
             // Check for timeouts

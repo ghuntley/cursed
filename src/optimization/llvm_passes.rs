@@ -48,7 +48,7 @@ impl<'ctx> LlvmPassManager<'ctx> {
             "generic",
             "",
             self.config.level.to_llvm_level(),
-            inkwell::targets::RelocMode::Default,
+            inkwell::targets::RelocMode::PIC,
             inkwell::targets::CodeModel::Default,
         ).ok_or_else(|| CursedError::runtime_error("Failed to create target machine"))?;
         

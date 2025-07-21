@@ -147,8 +147,8 @@ impl ModuleLoader {
 
     /// Load a module from disk without using cache
     fn load_module_from_disk(&self, path: &PathBuf) -> Result<LoadedModule> {
-        // Read source file
-        let source = fs::read_to_string(path)
+        // Read source file with timeout
+        let source = crate::subprocess_utils::read_file_with_timeout(path, 30)
             .map_err(|e| CursedError::ImportError(format!("Failed to read {}: {}", path.display(), e)))?;
 
         // Calculate source hash

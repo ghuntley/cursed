@@ -1050,7 +1050,7 @@ impl ProductionScheduler {
         rng: &mut concurrent::FastRng,
         config: &WorkStealingConfig,
     ) -> bool {
-        for _ in 0..config.max_steal_attempts {
+        for attempt in 0..config.max_steal_attempts {
             // Pick a random victim
             let victim_id = rng.next_range(workers.len());
             if victim_id == worker.id {
@@ -1091,6 +1091,18 @@ impl ProductionScheduler {
             }
             
             worker.stats.failed_steals.fetch_add(1, Ordering::Relaxed);
+            
+            // Add exponential backoff to prevent busy waiting
+            if attempt < config.max_steal_attempts - 1 {
+                if attempt < 16 {
+                    for _ in 0..(1 << (attempt / 4)) {
+                        std::hint::spin_loop();
+                    }
+                } else if attempt % 8 == 7 {
+                    // Every 8th attempt after backoff limit, yield briefly
+                    std::thread::yield_now();
+                }
+            }
         }
         
         false

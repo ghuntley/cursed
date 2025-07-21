@@ -208,14 +208,13 @@ impl<T> SendOperation<T> {
                     
                     // Block using wait queue with exponential backoff timeout
                     let _ = channel_sync.block_on_send(
-                        0, // Channel ID would need to be passed through
-                        goroutine_id,
-                        self.options.priority,
-                        Some(Duration::from_millis(wait_time))
+                    0, // Channel ID would need to be passed through
+                    goroutine_id,
+                    self.options.priority,
+                    Some(Duration::from_millis(wait_time))
                     );
                     
-                    // Small yield to allow other operations
-                    thread::yield_now();
+                    // Note: Removed yield_now() since we're using proper blocking
                 }
             }
         }
@@ -385,13 +384,13 @@ impl<T> ReceiveOperation<T> {
                     );
                     
                     let _ = channel_sync.block_on_receive(
-                        0, // Channel ID would need to be passed through
-                        goroutine_id,
-                        self.options.priority,
-                        Some(Duration::from_millis(wait_time))
+                    0, // Channel ID would need to be passed through
+                    goroutine_id,
+                    self.options.priority,
+                    Some(Duration::from_millis(wait_time))
                     );
                     
-                    thread::yield_now();
+                    // Note: Removed yield_now() since we're using proper blocking
                 }
                 Err(ChannelError::Closed) => {
                     ReceiveOperation::<T>::mark_completed(self);
