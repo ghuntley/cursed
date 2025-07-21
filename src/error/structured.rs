@@ -122,6 +122,7 @@ pub struct ErrorSourceLocation {
     pub column: usize,
     pub length: usize,
     pub source_line: Option<String>,
+    pub offset: usize,
 }
 
 /// Error reporter with colored output and multiple error handling
@@ -311,12 +312,14 @@ impl StructuredError {
     pub fn unterminated_string(line: usize, column: usize) -> Self {
         Self::new(ErrorCode::E0002, "Unterminated string literal".to_string())
             .with_location(ErrorSourceLocation {
-                file: "".to_string(),
+file: "".to_string(),
                 line,
                 column,
                 length: 1,
                 source_line: None,
-            })
+            
+                    offset: 0,
+                })
             .with_suggestions(vec![
                 "Add a closing quote (\") to terminate the string".to_string(),
                 "Check for unescaped quotes within the string".to_string(),
@@ -326,12 +329,14 @@ impl StructuredError {
     pub fn unexpected_token(expected: &str, found: &str, line: usize, column: usize) -> Self {
         Self::new(ErrorCode::E0001, format!("Expected {}, found {}", expected, found))
             .with_location(ErrorSourceLocation {
-                file: "".to_string(),
+file: "".to_string(),
                 line,
                 column,
                 length: found.len(),
                 source_line: None,
-            })
+            
+                    offset: 0,
+                })
             .with_suggestions(vec![
                 format!("Replace {} with {}", found, expected),
                 "Check the syntax around this location".to_string(),
@@ -341,12 +346,14 @@ impl StructuredError {
     pub fn unknown_variable(name: &str, line: usize, column: usize) -> Self {
         Self::new(ErrorCode::E0109, format!("Variable '{}' not found", name))
             .with_location(ErrorSourceLocation {
-                file: "".to_string(),
+file: "".to_string(),
                 line,
                 column,
                 length: name.len(),
                 source_line: None,
-            })
+            
+                    offset: 0,
+                })
             .with_suggestions(vec![
                 format!("Declare the variable with 'sus {} = ...'", name),
                 "Check the variable name for typos".to_string(),
@@ -357,12 +364,14 @@ impl StructuredError {
     pub fn type_mismatch(expected: &str, found: &str, line: usize, column: usize) -> Self {
         Self::new(ErrorCode::E0100, format!("Type mismatch: expected {}, found {}", expected, found))
             .with_location(ErrorSourceLocation {
-                file: "".to_string(),
+file: "".to_string(),
                 line,
                 column,
                 length: 1,
                 source_line: None,
-            })
+            
+                    offset: 0,
+                })
             .with_suggestions(vec![
                 format!("Convert {} to {}", found, expected),
                 "Check the types in this expression".to_string(),
@@ -373,12 +382,14 @@ impl StructuredError {
     pub fn function_not_found(name: &str, line: usize, column: usize) -> Self {
         Self::new(ErrorCode::E0110, format!("Function '{}' not found", name))
             .with_location(ErrorSourceLocation {
-                file: "".to_string(),
+file: "".to_string(),
                 line,
                 column,
                 length: name.len(),
                 source_line: None,
-            })
+            
+                    offset: 0,
+                })
             .with_suggestions(vec![
                 format!("Define the function with 'slay {}() {{ ... }}'", name),
                 "Check the function name for typos".to_string(),
@@ -389,12 +400,14 @@ impl StructuredError {
     pub fn unterminated_block_comment(line: usize, column: usize) -> Self {
         Self::new(ErrorCode::E0003, "Unterminated block comment".to_string())
             .with_location(ErrorSourceLocation {
-                file: "".to_string(),
+file: "".to_string(),
                 line,
                 column,
                 length: 1,
                 source_line: None,
-            })
+            
+                    offset: 0,
+                })
             .with_suggestions(vec![
                 "Add 'on god' to close the block comment".to_string(),
                 "Check for missing 'on god' in block comments".to_string(),
@@ -404,12 +417,14 @@ impl StructuredError {
     pub fn invalid_escape_sequence(sequence: &str, line: usize, column: usize) -> Self {
         Self::new(ErrorCode::E0004, format!("Invalid escape sequence: \\{}", sequence))
             .with_location(ErrorSourceLocation {
-                file: "".to_string(),
+file: "".to_string(),
                 line,
                 column,
                 length: sequence.len() + 1,
                 source_line: None,
-            })
+            
+                    offset: 0,
+                })
             .with_suggestions(vec![
                 "Use a valid escape sequence (\\n, \\t, \\r, \\\\, \\\", \\')".to_string(),
                 "Escape the backslash if literal: \\\\".to_string(),

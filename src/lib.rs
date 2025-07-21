@@ -174,6 +174,13 @@ pub mod testing;
 // Type system
 pub mod type_system;
 
+// Missing modules that exist in src/ (temporarily disabled due to dependency issues)
+// pub mod ffi; // Foreign Function Interface - depends on external FFI crates
+// pub mod process; // Process management - may have external dependencies  
+// pub mod ratelimit; // Rate limiting - may have external dependencies
+// pub mod tokio; // Tokio async runtime - depends on tokio crate
+// pub mod web; // Web-related functionality - may have external dependencies
+
 // Re-export AST types for external access
 pub use ast::{
     Program, Statement, Expression, ImportStatement, PackageDeclaration,
@@ -193,7 +200,7 @@ pub use type_system::{
 };
 
 // Re-export tools
-pub use tools::{CursedTools, PackageManager, PackageConfig, Profiler, ProfilerConfig, ProfileReport};
+pub use tools::{CursedTools, Profiler, ProfilerConfig, ProfileReport};
 
 // Re-export core types that are actually implemented  
 pub use core::{Type as CoreType, CharMethods, CharObject, PerformancePipeline, ParallelConfig, IncrementalConfig, ProgressConfig};

@@ -39,12 +39,14 @@ fn test_basic_error_reporting() {
     // Create some test errors
     let error1 = StructuredError::syntax_error("Missing semicolon")
         .with_location(ErrorSourceLocation {
-            file: "test.csd".to_string(),
+file: "test.csd".to_string(),
             line: 10,
             column: 15,
             length: 1,
             source_line: Some("    sus x = 42".to_string()),
-        })
+        
+                    offset: 0,
+                })
         .with_suggestions(vec!["Add a semicolon at the end of the statement".to_string()]);
     
     let error2 = StructuredError::type_mismatch("normie", "tea", 15, 20)

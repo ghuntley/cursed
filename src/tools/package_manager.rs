@@ -332,9 +332,8 @@ MIT
 
         // Upload to registry
         let client = reqwest::Client::new();
-        let file = tokio::fs::File::open(&archive_path).await?;
-        let stream = tokio_util::codec::FramedRead::new(file, tokio_util::codec::BytesCodec::new());
-        let body = reqwest::Body::wrap_stream(stream);
+        let file_data = tokio::fs::read(&archive_path).await?;
+        let body = reqwest::Body::from(file_data);
 
         let response = client
             .post(&format!("{}/packages", self.registry_url))

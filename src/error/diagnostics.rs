@@ -107,12 +107,14 @@ impl ErrorDiagnostics {
                 fix_type: FixType::TokenInsertion,
                 auto_fix: Some(AutoFix {
                     location: ErrorSourceLocation {
-                        file: "".to_string(),
+file: "".to_string(),
                         line: 0,
                         column: 0,
                         length: 0,
                         source_line: None,
-                    },
+                    
+                    offset: 0,
+                },
                     replacement_text: "\"".to_string(),
                     description: "Insert closing quote".to_string(),
                 }),
@@ -590,14 +592,16 @@ impl Default for ErrorDiagnostics {
 }
 
 impl Default for ErrorSourceLocation {
-    fn default() -> Self {
+fn default() -> Self {
         Self {
             file: "unknown".to_string(),
             line: 0,
             column: 0,
             length: 0,
             source_line: None,
-        }
+        
+                    offset: 0,
+                }
     }
 }
 

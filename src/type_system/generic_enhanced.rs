@@ -341,7 +341,7 @@ impl TypeSpecializer {
             .map(|t| t.name.clone().unwrap_or_else(|| "unknown".to_string()))
             .collect();
         let cache_key = format!("{}<{}>", 
-            generic_type.name.as_ref().unwrap_or("unknown"),
+            generic_type.name.as_ref().unwrap_or(&"unknown".to_string()),
             type_args_str.join(",")
         );
         

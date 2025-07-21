@@ -3457,7 +3457,7 @@ impl LlvmCodeGenerator {
         &self,
         source: &str,
         source_file: Option<&Path>,
-        package_manager: &crate::package_manager::PackageManager
+        package_manager: &PackageManager
     ) -> Result<String, CursedError> {
         use crate::lexer::Lexer;
         use crate::parser::Parser;

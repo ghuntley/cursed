@@ -231,12 +231,14 @@ impl PipelineErrorManager {
         // Add context information
         if let Some(ctx) = context {
             let location = crate::error::structured::ErrorSourceLocation {
-                file: ctx.file_path.clone(),
+file: ctx.file_path.clone(),
                 line: ctx.current_line,
                 column: 0,
                 length: 1,
                 source_line: None,
-            };
+            
+                    offset: 0,
+                };
             structured_error = structured_error.with_location(location);
             
             // Add contextual information

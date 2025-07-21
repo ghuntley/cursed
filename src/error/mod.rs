@@ -55,13 +55,32 @@ pub enum CursedError {
     SerializationError(String),
     // Error handling variants
     FamRecovery(String),
+    // Codegen error variant
+    CodegenError(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SourceLocation {
     pub file: String,
     pub line: usize,
     pub column: usize,
+    pub offset: usize,
+}
+
+impl SourceLocation {
+    pub fn new(line: usize, column: usize, offset: usize) -> Self {
+        Self {
+            file: String::new(),
+            line,
+            column,
+            offset,
+        }
+    }
+
+    pub fn with_file(mut self, file: String) -> Self {
+        self.file = file;
+        self
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -102,6 +121,7 @@ impl std::fmt::Display for CursedError {
             CursedError::FamRecovery(msg) => write!(f, "Fam recovery: {}", msg),
             CursedError::MemoryError(msg) => write!(f, "Memory error: {}", msg),
             CursedError::PanicError(msg) => write!(f, "Panic error: {}", msg),
+            CursedError::CodegenError(msg) => write!(f, "Codegen error: {}", msg),
         }
     }
 }
@@ -213,6 +233,10 @@ impl CursedError {
     
     pub fn string_error(msg: &str) -> Self {
         CursedError::StringError(msg.to_string())
+    }
+    
+    pub fn codegen_error(msg: &str) -> Self {
+        CursedError::CodegenError(msg.to_string())
     }
 }
 

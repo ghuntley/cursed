@@ -1738,10 +1738,9 @@ pub struct X86_64Scheduler {
 impl X86_64Scheduler {
     pub fn new_macos() -> Result<Self, PlatformError> {
         let config = SchedulerConfig::default();
-        let base = Arc::new(GoroutineScheduler::with_config(config));
-        
-        // Start the scheduler
-        base.start().map_err(|e| PlatformError::SchedulerError(e.to_string()))?;
+        let scheduler = GoroutineScheduler::with_config(config)
+            .map_err(|e| PlatformError::SchedulerError(e.to_string()))?;
+        let base = Arc::new(scheduler);
         
         Ok(Self { base })
     }
@@ -1772,14 +1771,18 @@ pub struct Arm64Scheduler {
 
 impl Arm64Scheduler {
     pub fn new_macos() -> Result<Self, PlatformError> {
+        let scheduler = GoroutineScheduler::with_config(SchedulerConfig::default())
+            .map_err(|e| PlatformError::SchedulerError(e.to_string()))?;
         Ok(Self {
-            inner: GoroutineScheduler::with_config(SchedulerConfig::default()),
+            inner: scheduler,
         })
     }
     
     pub fn new_linux() -> Result<Self, PlatformError> {
+        let scheduler = GoroutineScheduler::with_config(SchedulerConfig::default())
+            .map_err(|e| PlatformError::SchedulerError(e.to_string()))?;
         Ok(Self {
-            inner: GoroutineScheduler::with_config(SchedulerConfig::default()),
+            inner: scheduler,
         })
     }
 }
@@ -1800,8 +1803,10 @@ pub struct WasmScheduler {
 
 impl WasmScheduler {
     pub fn new(_runtime_type: crate::runtime::pal::wasm::WasmRuntimeType) -> Result<Self, PlatformError> {
+        let scheduler = GoroutineScheduler::with_config(SchedulerConfig::default())
+            .map_err(|e| PlatformError::SchedulerError(e.to_string()))?;
         Ok(Self {
-            inner: GoroutineScheduler::with_config(SchedulerConfig::default()),
+            inner: scheduler,
         })
     }
 }

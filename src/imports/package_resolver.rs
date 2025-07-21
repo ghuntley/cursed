@@ -7,7 +7,8 @@
 //! - Integration with package manager
 
 use crate::error::{CursedError, Result};
-use crate::package_manager::{PackageManager, PackageManagerConfig, Version, VersionReq};
+use crate::package_manager::{PackageManager, PackageManagerConfig};
+use semver::{Version, VersionReq};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::fs;
