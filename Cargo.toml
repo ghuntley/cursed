@@ -13,7 +13,7 @@ path = "src/main.rs"
 [features]
 default = ["std", "crypto-rustcrypto"]
 std = []
-networking = ["tokio", "mio"]
+networking = ["mio"]
 ffi = ["libc"]
 wasm = ["wasm-bindgen", "js-sys", "web-sys"]
 crypto-ring = ["ring"]
@@ -77,7 +77,7 @@ uuid = { version = "1.0", features = ["v4"] }
 tempfile = "3.0"
 tokio-util = "0.7"
 log = "0.4"
-tokio = { version = "1.0", features = ["full"] }
+# tokio moved to target-specific sections
 mockito = "1.0"
 warp = "0.3"
 
@@ -98,7 +98,7 @@ x25519-dalek = "2.0"
 p256 = "0.13"
 rsa = "0.9"
 tiny-keccak = { version = "2.0", features = ["sha3", "keccak"] }
-getrandom = "0.2"
+getrandom = { version = "0.2", features = ["js"] }
 rand_chacha = "0.3"
 
 # Additional dependencies
@@ -110,7 +110,7 @@ ring = "0.17"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 libc = "0.2"
 llvm-sys = "181"
-tokio = { version = "1.0", features = ["full"], optional = true }
+tokio = { version = "1.0", features = ["full"] }
 mio = { version = "0.8", optional = true }
 # Native targets can use ring for crypto
 ring = { version = "0.17", optional = true }
@@ -126,5 +126,7 @@ web-sys = { version = "0.3", features = [
   "Worker",
 ], optional = true }
 wasi = "0.11"
+# WASM-compatible tokio without net features
+tokio = { version = "1.0", default-features = false, features = ["rt", "macros", "time"] }
 
 # Move crypto dependencies to main dependencies section

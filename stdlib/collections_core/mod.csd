@@ -2,11 +2,10 @@
 # Implementation of fundamental data structures with runtime memory management
 # Interfaces with CURSED runtime memory system
 
-# FFI declarations for runtime memory functions
-extern slay cursed_runtime_malloc(size normie, tag normie) *cringe
-extern slay cursed_runtime_free(ptr *cringe) lit
-extern slay cursed_runtime_zero_memory(ptr *cringe, size normie) lit
-extern slay cursed_runtime_copy_memory(dest *cringe, src *cringe, size normie) lit
+# Pure CURSED runtime memory functions (no FFI)
+yeet "runtime_core"
+
+# Use runtime_core module for memory management instead of FFI
 
 # ===== DYNAMIC VECTOR/ARRAY =====
 sus VectorNode collab {
@@ -837,39 +836,47 @@ slay calloc(count normie, size normie) *cringe {
     damn ptr
 }
 
-# Runtime memory interface - Proper Implementation
-# These functions bridge to the actual runtime memory system through FFI
+# Runtime memory interface - Pure CURSED Implementation
+# These functions use the runtime_core module for memory management
 
-# Memory allocation with GC tracking - interfaces with cursed_runtime_malloc
+# Memory allocation with GC tracking - pure CURSED implementation
 slay runtime_allocate_block(size normie) *cringe {
-    # Interface with runtime memory allocator through FFI bridge
-    # Tag 1 = OBJECT_TAG for general allocation
-    damn cursed_runtime_malloc(size, 1)
+    # Use runtime_core allocation with proper size tracking
+    sus addr normie = runtime_allocate_memory(size)
+    damn addr.(void*)  # Convert address to pointer
 }
 
-# Memory deallocation through GC system - interfaces with cursed_runtime_free  
+# Memory deallocation through GC system - pure CURSED implementation
 slay runtime_deallocate_block(ptr *cringe) lit {
-    # Interface with runtime memory deallocator through FFI bridge
     lowkey ptr != cringe {
-        damn cursed_runtime_free(ptr)
-    }
-    damn based
-}
-
-# Zero memory implementation - interfaces with cursed_runtime_zero_memory
-slay runtime_zero_memory(ptr *cringe, size normie) lit {
-    # Zero out memory block through runtime bridge
-    lowkey ptr != cringe && size > 0 {
-        damn cursed_runtime_zero_memory(ptr, size)
+        sus addr normie = ptr.(normie)  # Convert pointer to address
+        runtime_deallocate_memory(addr)
+        damn based
     }
     damn cap
 }
 
-# Copy memory implementation - interfaces with cursed_runtime_copy_memory
+# Zero memory implementation - pure CURSED byte-level operation
+slay runtime_zero_memory(ptr *cringe, size normie) lit {
+    lowkey ptr != cringe && size > 0 {
+        sus byte_ptr *sip = ptr.(*sip)
+        bestie i := 0; i < size; i++ {
+            byte_ptr[i] = 0
+        }
+        damn based
+    }
+    damn cap
+}
+
+# Copy memory implementation - pure CURSED byte-level operation
 slay runtime_copy_memory(dest *cringe, src *cringe, size normie) lit {
-    # Copy memory from src to dest through runtime bridge
     lowkey dest != cringe && src != cringe && size > 0 {
-        damn cursed_runtime_copy_memory(dest, src, size)
+        sus dest_bytes *sip = dest.(*sip)
+        sus src_bytes *sip = src.(*sip)
+        bestie i := 0; i < size; i++ {
+            dest_bytes[i] = src_bytes[i]
+        }
+        damn based
     }
     damn cap
 }

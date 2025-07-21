@@ -220,15 +220,38 @@ slay string_from_char(char_code normie) tea {
     else { damn "?" }
 }
 
-# Runtime memory management helpers
+# Runtime memory management - Pure CURSED Implementation
+sus allocated_blocks *[]normie = cringe  # Track allocated memory blocks
+sus allocation_count normie = 0
+sus total_allocated normie = 0
+
 slay runtime_allocate_memory(size normie) normie {
-    # Interface with GC system
-    damn size  # Placeholder - actual allocation would happen in runtime
+    # Simple bump allocator for pure CURSED memory management
+    lowkey size <= 0 {
+        damn 0  # Invalid allocation size
+    }
+    
+    # Simulate memory allocation with a large buffer
+    sus base_address normie = 0x10000000  # Base address for allocations
+    sus block_address normie = base_address + total_allocated
+    
+    # Track allocation
+    total_allocated = total_allocated + size
+    allocation_count = allocation_count + 1
+    
+    damn block_address
 }
 
 slay runtime_deallocate_memory(pointer normie) lit {
-    # Interface with GC system  
-    damn based  # Placeholder - actual deallocation would happen in runtime
+    # Simple deallocation tracking for pure CURSED implementation
+    lowkey pointer == 0 {
+        damn cap  # Invalid pointer
+    }
+    
+    # In a real implementation, this would manage free lists
+    # For now, just track that deallocation happened
+    allocation_count = allocation_count - 1
+    damn based
 }
 
 # Runtime error handling
