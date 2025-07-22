@@ -33,7 +33,7 @@ impl ConstraintResolver {
         }
     }
 
-    /// Enhanced constraint resolution for monomorphisation
+    /// Enhanced constraint resolution for monomorphisation with where-clause support
     pub fn resolve_for_monomorphisation(&mut self, 
                                        type_parameters: &[String],
                                        type_arguments: &[TypeExpression],
@@ -50,6 +50,14 @@ impl ConstraintResolver {
             self.verify_constraint_with_substitutions(constraint, &substitutions, env)?;
         }
 
+        // Apply constraint propagation to solve complex where-clauses
+        let propagated_substitutions = self.propagate_constraints(&substitutions, constraints, env)?;
+        
+        // Merge propagated substitutions with original ones
+        for (key, value) in propagated_substitutions {
+            substitutions.insert(key, value);
+        }
+
         // Build enhanced constraint solution
         Ok(ConstraintSolution {
             substitutions,
@@ -57,6 +65,121 @@ impl ConstraintResolver {
             is_satisfied: true,
             violations: Vec::new(),
         })
+    }
+
+    /// Propagate constraints to solve where-clauses and complex bounds
+    fn propagate_constraints(&self, 
+                           initial_substitutions: &HashMap<String, TypeExpression>,
+                           constraints: &[GenericConstraint],
+                           env: &TypeEnvironment) -> Result<HashMap<String, TypeExpression>, ConstraintViolation> {
+        let mut propagated = HashMap::new();
+        
+        // For each constraint, check if we can derive additional type information
+        for constraint in constraints {
+            // Check where-clause style constraints (T: Trait where T::AssocType = U)
+            for bound in &constraint.bounds {
+                if bound.contains("::") {
+                    // This is an associated type constraint
+                    let parts: Vec<&str> = bound.split("::").collect();
+                    if parts.len() == 2 {
+                        let base_type = parts[0];
+                        let assoc_type = parts[1];
+                        
+                        // Find the concrete type for base_type
+                        for param in &constraint.type_parameters {
+                            if let Some(concrete_type) = initial_substitutions.get(param) {
+                                if param == base_type {
+                                    // Resolve associated type for concrete_type
+                                    if let Some(resolved_assoc) = self.resolve_associated_type(concrete_type, assoc_type, env) {
+                                        propagated.insert(format!("{}::{}", param, assoc_type), resolved_assoc);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Check for interface constraints that might imply additional bounds
+            self.check_interface_constraint_implications(constraint, initial_substitutions, &mut propagated, env)?;
+        }
+        
+        Ok(propagated)
+    }
+
+    /// Resolve associated type for a concrete type
+    fn resolve_associated_type(&self, concrete_type: &TypeExpression, assoc_type: &str, env: &TypeEnvironment) -> Option<TypeExpression> {
+        // Look up the type's implementation of traits to find associated type
+        if let Some(type_name) = &concrete_type.name {
+            if let Some(type_def) = env.get_type(type_name) {
+                // For built-in types, provide default associated types
+                match (type_name.as_str(), assoc_type) {
+                    ("Vec", "Item") => {
+                        if let Some(element_type) = concrete_type.parameters.first() {
+                            return Some(element_type.clone());
+                        }
+                    }
+                    ("HashMap", "Key") => {
+                        if let Some(key_type) = concrete_type.parameters.first() {
+                            return Some(key_type.clone());
+                        }
+                    }
+                    ("HashMap", "Value") => {
+                        if concrete_type.parameters.len() >= 2 {
+                            return Some(concrete_type.parameters[1].clone());
+                        }
+                    }
+                    ("Iterator", "Item") => {
+                        if let Some(item_type) = concrete_type.parameters.first() {
+                            return Some(item_type.clone());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        
+        None
+    }
+
+    /// Check if interface constraints imply additional type bounds
+    fn check_interface_constraint_implications(&self,
+                                             constraint: &GenericConstraint,
+                                             substitutions: &HashMap<String, TypeExpression>,
+                                             propagated: &mut HashMap<String, TypeExpression>,
+                                             env: &TypeEnvironment) -> Result<(), ConstraintViolation> {
+        // Check if implementing an interface implies implementing super-interfaces
+        for bound in &constraint.bounds {
+            if let Some(interface_def) = env.get_type(bound) {
+                if interface_def.kind == super::TypeKind::Interface {
+                    // Check if this interface extends other interfaces
+                    for method in &interface_def.methods {
+                        // If method signature implies additional constraints, propagate them
+                        if method.name == "clone" && !constraint.bounds.contains(&"Clone".to_string()) {
+                            // This interface implies Clone trait
+                            for param in &constraint.type_parameters {
+                                if let Some(concrete_type) = substitutions.get(param) {
+                                    // Verify that concrete_type implements Clone
+                                    if self.type_implements_clone(concrete_type) {
+                                        propagated.insert(format!("{}_Clone", param), TypeExpression::named("Clone"));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Check if a type implements Clone
+    fn type_implements_clone(&self, type_expr: &TypeExpression) -> bool {
+        // Built-in types that implement Clone
+        matches!(type_expr.name.as_deref(),
+                Some("normie") | Some("tea") | Some("lit") | Some("smol") | 
+                Some("mid") | Some("thicc") | Some("meal") | Some("snack"))
     }
 
     /// Verify a constraint is satisfied with given type substitutions

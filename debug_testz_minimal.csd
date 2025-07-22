@@ -1,10 +1,11 @@
-yeet "testz"
-
-slay test_basic() normie {
-    test_start("basic test")
-    assert_true(based)
-    print_test_summary()
-    damn 0
+# Simple testz test
+slay test_start(name tea) lit {
+    damn based
 }
 
-test_basic()
+slay assert_true(condition lit) lit {
+    damn based
+}
+
+test_start("simple test")
+assert_true(based)

@@ -1,22 +1,30 @@
 [target.aarch64-apple-darwin]
-# ar = "llvm-ar"  # Removed - let Cargo use native platform archiver
+# macOS ARM64 - requires macOS SDK (skip on Linux)
 
-[target.x86_64-apple-darwin]
-# ar = "llvm-ar"  # Removed - let Cargo use native platform archiver
+[target.x86_64-apple-darwin]  
+# macOS Intel - requires macOS SDK (skip on Linux)
 
 [target.x86_64-unknown-linux-gnu]
 linker = "gcc"  # Use native gcc for native builds
-# ar = "llvm-ar"  # Removed - let Cargo use native platform archiver
 rustflags = ["-C", "target-cpu=generic"]
 
 [target.aarch64-unknown-linux-gnu]
 linker = "aarch64-unknown-linux-gnu-gcc"
-# ar = "llvm-ar"  # Removed - let Cargo use native platform archiver
-rustflags = ["-C", "target-cpu=generic"]
+rustflags = [
+    "-C", "target-cpu=generic",
+    "-C", "relocation-model=pic"
+]
 
 [target.x86_64-pc-windows-gnu]
 linker = "x86_64-w64-mingw32-gcc"
-# ar = "llvm-ar"  # Removed - let Cargo use native platform archiver
+rustflags = [
+    "-C", "target-feature=+crt-static",
+    "-C", "link-arg=-static-libgcc",
+    "-C", "link-arg=-static-libstdc++",
+    "-C", "link-arg=-Wl,-Bstatic",
+    "-C", "link-arg=-lpthread",
+    "-C", "link-arg=-Wl,-Bdynamic"
+]
 
 
 

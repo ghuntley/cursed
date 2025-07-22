@@ -30,11 +30,17 @@ fn main() {
 
 fn handle_cross_compilation() {
     let target = env::var("TARGET").unwrap_or_else(|_| "unknown".to_string());
+    let host = env::var("HOST").unwrap_or_else(|_| "unknown".to_string());
     
-    // Handle macOS cross-compilation issues with ring
-    if target.contains("apple-darwin") && !cfg!(target_os = "macos") {
-        println!("cargo:warning=Cross-compiling to macOS from non-macOS host - disabling ring crypto");
+    println!("cargo:warning=Cross-compilation check: target={}, host={}", target, host);
+    
+    // Handle macOS cross-compilation - completely unsupported from Linux
+    if target.contains("apple-darwin") && !host.contains("apple-darwin") {
+        println!("cargo:warning=macOS cross-compilation from Linux is not supported - requires macOS SDK");
+        println!("cargo:warning=Skipping macOS target build");
         println!("cargo:rustc-cfg=no_ring_crypto");
+        println!("cargo:rustc-cfg=unsupported_target");
+        std::process::exit(1); // Exit early for unsupported targets
     }
     
     // Handle WASM compatibility - disable all native dependencies
@@ -52,6 +58,22 @@ fn handle_cross_compilation() {
     if target.contains("windows") {
         println!("cargo:warning=Building for Windows - enabling winapi features");
         println!("cargo:rustc-cfg=windows_target");
+        
+        // Set Windows-specific environment variables
+        if !host.contains("windows") {
+            println!("cargo:warning=Cross-compiling to Windows - setting MinGW environment");
+            env::set_var("CRATE_CC_NO_DEFAULTS", "1");
+            env::set_var("TARGET_CC", "x86_64-w64-mingw32-gcc");
+            env::set_var("TARGET_AR", "x86_64-w64-mingw32-ar");
+        }
+    }
+    
+    // Handle ARM64 Linux cross-compilation
+    if target.contains("aarch64") && target.contains("linux") && !host.contains("aarch64") {
+        println!("cargo:warning=Cross-compiling to Linux ARM64");
+        env::set_var("CRATE_CC_NO_DEFAULTS", "1");
+        env::set_var("TARGET_CC", "aarch64-unknown-linux-gnu-gcc");
+        env::set_var("TARGET_AR", "aarch64-unknown-linux-gnu-ar");
     }
 }
 

@@ -476,3 +476,76 @@ cargo run --bin cursed stdlib/testz/test_testz.csd # Stdlib testing framework wo
 - **Common issue**: Missing testz imports - add `yeet "testz"` first line
 - **Validation pattern**: Test both interpretation and compilation modes for each module
 - **Debug tip**: Use minimal test files when stdlib tests fail to isolate issues
+
+#### Compiler Functionality Testing (Latest Session)
+```bash
+# Simple program validation workflow
+echo 'vibez.spill("Hello CURSED!")' > simple_test.csd
+cargo run --bin cursed simple_test.csd                # Interpretation - validates parser/runtime
+cargo run --bin cursed -- compile simple_test.csd     # Compilation - validates LLVM backend
+./simple_test                                         # Execute compiled binary
+
+# Testing specific language features
+echo 'sus x drip = 42; vibez.spill(x)' > var_test.csd         # Variable declaration
+echo 'slay test() { damn "ok" } vibez.spill(test())' > func_test.csd  # Function calls
+echo '(a, b) := (1, 2); vibez.spill(a + b)' > tuple_test.csd  # Tuple assignment
+
+# Debugging compilation issues
+cargo run --bin cursed -- compile --verbose program.csd       # Verbose LLVM IR generation
+cargo run --bin cursed -- compile --debug program.csd         # Add debug symbols
+llvm-dis program.ll                                           # Human-readable LLVM IR
+```
+
+#### LLVM Backend Architecture Insights
+- **RegisterTracker centralization**: All register allocation goes through single tracker for consistency
+- **Error propagation**: Use `ErrorCore` for unified error handling across compilation pipeline  
+- **Memory safety**: LLVM IR generation requires careful lifetime management for values
+- **Debug symbols**: Essential for troubleshooting compiled executable crashes
+- **Optimization passes**: Apply in specific order to prevent infinite loops in optimization
+
+#### Missing Functionality Implementation Patterns
+```bash
+# Stub pattern for missing stdlib functions
+slay placeholder_function(param normie) normie {
+    damn "PLACEHOLDER: function not implemented"
+}
+
+# Test-driven development for stdlib
+cat > stdlib/newmodule/test_newmodule.csd << 'EOF'
+yeet "testz"
+yeet "newmodule"
+test_start("function_name test")
+assert_eq_string(function_name("input"), "expected")
+print_test_summary()
+EOF
+
+# Implementation verification cycle
+cargo run --bin cursed stdlib/newmodule/test_newmodule.csd     # Test interpretation
+cargo run --bin cursed -- compile stdlib/newmodule/test_newmodule.csd  # Test compilation
+./test_newmodule                                               # Verify executable
+```
+
+#### Cross-Compilation Development Status (Latest Session)
+- **Working targets**: Linux x86_64 (primary development platform)
+- **Partial functionality**: macOS x86_64 (builds but runtime issues)
+- **Blocked targets**: Windows, ARM64, WASM (LLVM archive/PIE configuration issues)
+- **Fix approach**: Address `-relocation-model=pic` and archive handling in build.rs
+- **Validation**: Use `make cross-compile` for comprehensive platform testing
+
+#### Development Workflow Improvements (Latest Session)
+```bash
+# Continuous development cycle
+cargo check --watch                    # Background syntax validation
+cargo test --lib --watch              # Background test monitoring  
+./run_fast_tests_final.sh             # 3-second integration validation
+
+# Error isolation strategy
+cargo build --verbose                 # Detailed compilation error messages
+cargo check --all-targets            # Validate all build targets
+cargo clean && cargo build           # Reset build state for clean errors
+
+# Runtime debugging workflow
+gdb ./compiled_program                # Debug compiled executables
+valgrind ./compiled_program           # Memory safety validation
+ldd ./compiled_program                # Check dynamic library dependencies
+```

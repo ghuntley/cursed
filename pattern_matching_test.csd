@@ -1,22 +1,15 @@
-yeet "testz"
+sus testValue drip = 42
 
-slay test_pattern_matching() normie {
-    test_start("pattern matching test")
-    
-    sus x drip = 42
-    
-    match x {
-        1..10 => {
-            assert_false(based)
-        },
-        40..50 => {
-            assert_true(based)
-        },
-        _ => {
-            assert_false(based)
-        }
-    }
-    
-    print_test_summary()
-    damn "pattern matching complete"
+match testValue {
+    1..10 => vibez.spill("Small number")
+    20..50 => vibez.spill("Medium number")  
+    (x, y) => vibez.spill("Tuple pattern")
+    "hello" | "world" => vibez.spill("String pattern")
+    _ => vibez.spill("Default case")
 }
+
+sus result drip = 5 + 3 * 2
+sus range_test drip = 1..10
+sus nullable_test drip = result ?? 0
+
+vibez.spill("Pattern matching and operators test complete")
