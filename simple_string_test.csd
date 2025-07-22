@@ -1,18 +1,20 @@
-vibez.spill("Testing string fixes...")
+fr fr Simple test for string_simple module improvements
+yeet "testz"
+yeet "string_simple"
 
-# Test simple string concatenation
-sus s1 tea = "hello"
-sus s2 tea = " world"
-sus result tea = s1 + s2
-vibez.spill("Concat result: " + result)
+test_start("string concatenation test")
+result := string_concat("hello", " world")
+assert_eq_string(result, "hello world")
+print_test_summary()
 
-# Test simple string comparison
-sus str1 tea = "test"
-sus str2 tea = "test"
-vibes str1 == str2 {
-    vibez.spill("String comparison works!")
-} nah {
-    vibez.spill("String comparison failed!")
-}
+test_start("string equality test")
+assert_true(string_equal("test", "test"))
+assert_false(string_equal("test", "different"))
+print_test_summary()
 
-vibez.spill("Basic string operations completed!")
+test_start("string formatting test")
+formatted := string_format_bool(based)
+assert_eq_string(formatted, "true")
+print_test_summary()
+
+vibez.spill("✅ String_simple module enhanced successfully!")

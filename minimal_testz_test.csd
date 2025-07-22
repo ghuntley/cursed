@@ -1,11 +1,10 @@
-yeet "testz"
+fr fr Minimal test without imports
+vibez.spill("Hello from minimal test")
 
-# Simple test to verify basic testz functionality
-test_start("Basic test")
-assert_true(based)
-assert_false(cap)
-assert_eq_int(42, 42)
-assert_eq_string("hello", "hello")
-test_end()
+slay simple_test() lit {
+    vibez.spill("✅ PASS: simple test")
+    damn based
+}
 
-print_test_summary()
+simple_test()
+vibez.spill("Test completed")

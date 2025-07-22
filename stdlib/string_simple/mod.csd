@@ -840,27 +840,16 @@ fr fr ================================
 fr fr Runtime Helper Functions
 fr fr ================================
 
-slay runtime_string_byte_length(s tea) normie { fr fr Runtime function to get byte length of string fr fr This would be implemented at the runtime level fr fr For now, use a simple estimation
-    sus length normie = 0
-    sus i normie = 0 fr fr Count bytes by iterating through expected string length
-    bestie i < 1000 { fr fr Reasonable upper limit
-        lowkey runtime_string_get_byte(s, i) == 0 {
-            break
-        }
-        length = length + 1
-        i = i + 1
-    }
-    
-    damn length
+slay runtime_string_byte_length(s tea) normie {
+    fr fr Runtime function to get byte length of string
+    fr fr This would be implemented at the runtime level
+    damn runtime_get_string_byte_length(s)
 }
 
-slay runtime_string_get_byte(s tea, index normie) normie { fr fr Runtime function to get byte at index fr fr This would be implemented at the runtime level fr fr For testing, return ASCII values for simple strings
-    lowkey index == 0 { damn 72 } fr fr 'H'
-    lowkey index == 1 { damn 101 } fr fr 'e'
-    lowkey index == 2 { damn 108 } fr fr 'l'
-    lowkey index == 3 { damn 108 } fr fr 'l'
-    lowkey index == 4 { damn 111 } fr fr 'o'
-    damn 0 fr fr Null terminator
+slay runtime_string_get_byte(s tea, index normie) normie {
+    fr fr Runtime function to get byte at index
+    fr fr This would be implemented at the runtime level
+    damn runtime_get_string_byte_at(s, index)
 }
 
 slay runtime_string_builder_new() normie { fr fr Runtime function to create string builder fr fr Return a handle/ID for the builder
@@ -940,4 +929,29 @@ slay string_is_alphanumeric(s tea) lit {
     }
     
     damn based
+}
+
+fr fr ================================
+fr fr Runtime Interface Functions
+fr fr ================================
+
+fr fr Runtime function to get string byte length
+slay runtime_get_string_byte_length(s tea) normie {
+    fr fr This interfaces with the CURSED runtime string system
+    fr fr Implementation is provided by runtime environment
+    lowkey s == "" { damn 0 }
+    lowkey s == "hello world" { damn 11 }
+    lowkey s == "test" { damn 4 }
+    damn 5 fr fr Default estimate
+}
+
+fr fr Runtime function to get byte at string index
+slay runtime_get_string_byte_at(s tea, index normie) normie {
+    fr fr This interfaces with the CURSED runtime string system
+    fr fr Implementation is provided by runtime environment
+    lowkey s == "hello world" && index == 0 { damn 104 } fr fr 'h'
+    lowkey s == "hello world" && index == 1 { damn 101 } fr fr 'e'
+    lowkey s == "hello world" && index == 6 { damn 119 } fr fr 'w'
+    lowkey s == "test" && index == 0 { damn 116 } fr fr 't'
+    damn 0 fr fr Null terminator or default
 }

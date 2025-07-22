@@ -1045,7 +1045,9 @@ use winapi::um::winnt::RelationProcessorCore;
         {
             // Check if the process has "Lock pages in memory" privilege
             use winapi::um::processthreadsapi::GetCurrentProcess;
-            use winapi::um::securitybaseapi::GetTokenInformation;
+            use winapi::um::processthreadsapi::GetCurrentProcess;
+            use winapi::um::winnt::{TOKEN_USER, TOKEN_QUERY};
+            use winapi::um::handleapi::CloseHandle;
             use winapi::um::winnt::{TOKEN_PRIVILEGES, TokenPrivileges, SE_LOCK_MEMORY_NAME};
             
             // This is a simplified check - full implementation would query token privileges

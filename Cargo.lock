@@ -680,6 +680,7 @@ dependencies = [
  "object 0.32.2",
  "once_cell",
  "p256",
+ "parking_lot",
  "pbkdf2 0.12.2",
  "rand 0.8.5",
  "rand_chacha 0.3.1",

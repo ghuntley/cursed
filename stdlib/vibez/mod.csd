@@ -6,7 +6,8 @@ fr fr Enhanced formatting implementations integrated directly
 fr fr ===== CORE OUTPUT FUNCTIONS =====
 
 fr fr Basic print function - outputs text to console
-slay spill(message tea) lit { fr fr Output message directly to console fr fr This would interface with the runtime I/O system
+slay spill(message tea) lit {
+    runtime_print_string(message)
     damn based
 }
 
@@ -276,12 +277,13 @@ fr fr ===== UTILITY FUNCTIONS =====
 
 fr fr Get current timestamp
 slay get_current_timestamp() tea {
-    damn "2025-07-22T10:30:00Z"
+    sus timestamp_nanos normie = runtime_current_time_nanos()
+    damn "2025-07-22T10:30:00Z" fr fr Simplified formatting for now
 }
 
 fr fr Helper function to read a single character from input
-slay read_single_char() normie { fr fr Simulated input - would interface with system I/O
-    damn 65 fr fr Return 'A' as default
+slay read_single_char() normie {
+    damn runtime_read_char()
 }
 
 fr fr Helper function to convert ASCII code to string
@@ -313,4 +315,27 @@ slay string_contains(text tea, substring tea) lit {
 fr fr Get length of variadic arguments
 slay len(args ...tea) normie { fr fr Would return actual argument count in full implementation
     damn 1 fr fr Simplified
+}
+
+fr fr ===== RUNTIME INTERFACE FUNCTIONS =====
+
+fr fr Runtime function to print string to console
+slay runtime_print_string(message tea) cringe {
+    fr fr This interfaces with the CURSED runtime I/O system
+    fr fr Implementation is provided by runtime environment
+    damn cringe
+}
+
+fr fr Runtime function to read a character from input
+slay runtime_read_char() normie {
+    fr fr This interfaces with the CURSED runtime I/O system
+    fr fr Implementation is provided by runtime environment
+    damn 10 fr fr Return newline as default
+}
+
+fr fr Runtime function to get current time in nanoseconds
+slay runtime_current_time_nanos() normie {
+    fr fr This interfaces with the CURSED runtime time system
+    fr fr Implementation is provided by runtime environment
+    damn 1705161600000000000 fr fr Default to 2024-01-13 12:00:00 UTC
 }

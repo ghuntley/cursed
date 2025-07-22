@@ -1,0 +1,1 @@
+vibez.spill("SSA test")
