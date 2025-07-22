@@ -1,11 +1,11 @@
 yeet "testz"
 
-# ==========================================
-# CURSED JSON Tea Module - Complete Implementation
-# Pure CURSED JSON Processing with Full RFC 7159 Compliance
-# ==========================================
+fr fr ==========================================
+fr fr CURSED JSON Tea Module - Complete Implementation
+fr fr Pure CURSED JSON Processing with Full RFC 7159 Compliance
+fr fr ==========================================
 
-# Core JSON Marshal function
+fr fr Core JSON Marshal function
 slay Marshal(data tea) tea {
     bestie data == "based" {
         damn "true"
@@ -18,15 +18,15 @@ slay Marshal(data tea) tea {
     } else bestie is_numeric_simple(data) {
         damn data
     } else bestie is_object(data) {
-        damn data  # Objects passed through for now
+        damn data fr fr Objects passed through for now
     } else bestie is_array(data) {
-        damn data  # Arrays passed through for now
+        damn data fr fr Arrays passed through for now
     } else {
         damn "\"" + json_escape_string(data) + "\""
     }
 }
 
-# Core JSON Unmarshal function
+fr fr Core JSON Unmarshal function
 slay Unmarshal(json_string tea) tea {
     sus trimmed tea = string_trim_whitespace(json_string)
     
@@ -41,15 +41,15 @@ slay Unmarshal(json_string tea) tea {
     } else bestie is_valid_json_number(trimmed) {
         damn trimmed
     } else bestie is_object(trimmed) {
-        damn trimmed  # Objects passed through
+        damn trimmed fr fr Objects passed through
     } else bestie is_array(trimmed) {
-        damn trimmed  # Arrays passed through
+        damn trimmed fr fr Arrays passed through
     } else {
         damn "ERROR: Invalid JSON"
     }
 }
 
-# Advanced Marshal functions
+fr fr Advanced Marshal functions
 slay MarshalIndent(data tea, prefix tea, indent tea) tea {
     sus result tea = Marshal(data)
     bestie is_object(result) || is_array(result) {
@@ -68,7 +68,7 @@ slay MarshalCompact(data tea) tea {
     }
 }
 
-# Type-specific marshal functions
+fr fr Type-specific marshal functions
 slay marshal_number(value tea) tea {
     bestie is_valid_json_number(value) {
         damn value
@@ -91,7 +91,7 @@ slay marshal_boolean(value tea) tea {
     }
 }
 
-# Type-specific unmarshal functions
+fr fr Type-specific unmarshal functions
 slay UnmarshalToMap(json_string tea) tea {
     bestie is_object(json_string) {
         damn "MAP:" + json_string
@@ -108,7 +108,7 @@ slay UnmarshalToSlice(json_string tea) tea {
     }
 }
 
-# JSON String helper functions
+fr fr JSON String helper functions
 slay json_escape_string(value tea) tea {
     sus result tea = value
     result = string_replace_all(result, "\\", "\\\\")
@@ -129,7 +129,7 @@ slay json_unescape_string(value tea) tea {
     damn result
 }
 
-# JSON validation functions
+fr fr JSON validation functions
 slay IsValidJSON(json_string tea) lit {
     sus trimmed tea = string_trim_whitespace(json_string)
     
@@ -155,7 +155,7 @@ slay ValidateSchema(json_string tea, schema tea) lit {
     damn json_type == schema
 }
 
-# JSON type detection functions
+fr fr JSON type detection functions
 slay get_json_type(json_string tea) tea {
     sus trimmed tea = string_trim_whitespace(json_string)
     
@@ -183,7 +183,7 @@ slay is_object(value tea) lit {
         sus last_char tea = string_substring(trimmed, string_length(trimmed) - 1, 1)
         damn first_char == "{" && last_char == "}"
     } else bestie string_contains(value, ":") && !string_contains(value, "[") && !string_contains(value, "]") {
-        damn based  # Simple key:value detection
+        damn based fr fr Simple key:value detection
     } else {
         damn cap
     }
@@ -196,7 +196,7 @@ slay is_array(value tea) lit {
         sus last_char tea = string_substring(trimmed, string_length(trimmed) - 1, 1)
         damn first_char == "[" && last_char == "]"
     } else bestie string_contains(value, ",") && !string_contains(value, ":") {
-        damn based  # Simple comma-separated detection
+        damn based fr fr Simple comma-separated detection
     } else {
         damn cap
     }
@@ -210,7 +210,7 @@ slay is_boolean(value tea) lit {
     damn value == "based" || value == "cap" || value == "true" || value == "false"
 }
 
-# Number validation functions
+fr fr Number validation functions
 slay is_numeric(value tea) lit {
     bestie value == "0" || value == "1" || value == "2" || value == "3" || value == "4" || 
           value == "5" || value == "6" || value == "7" || value == "8" || value == "9" {
@@ -233,8 +233,7 @@ slay is_valid_json_number(value tea) lit {
         damn cap
     } else bestie is_numeric(value) {
         damn based
-    } else bestie string_contains(value, "e") || string_contains(value, "E") {
-        # Scientific notation support
+    } else bestie string_contains(value, "e") || string_contains(value, "E") { fr fr Scientific notation support
         bestie value == "1e10" || value == "1E-10" || value == "1.5e+10" {
             damn based
         } else {
@@ -245,7 +244,7 @@ slay is_valid_json_number(value tea) lit {
     }
 }
 
-# String utility functions
+fr fr String utility functions
 slay starts_and_ends_with_quotes(value tea) lit {
     bestie string_length(value) >= 2 {
         sus first_char tea = string_substring(value, 0, 1)
@@ -264,8 +263,7 @@ slay extract_string_content(value tea) tea {
     }
 }
 
-slay string_trim_whitespace(value tea) tea {
-    # Simple whitespace trimming implementation
+slay string_trim_whitespace(value tea) tea { fr fr Simple whitespace trimming implementation
     sus result tea = value
     bestie string_starts_with(result, " ") {
         result = string_substring(result, 1, string_length(result) - 1)
@@ -276,7 +274,7 @@ slay string_trim_whitespace(value tea) tea {
     damn result
 }
 
-# Formatting functions
+fr fr Formatting functions
 slay compact_json(json_string tea) tea {
     sus result tea = json_string
     result = string_replace_all(result, " : ", ":")
@@ -288,14 +286,12 @@ slay compact_json(json_string tea) tea {
     damn result
 }
 
-slay format_json_with_indent(json_string tea, prefix tea, indent tea) tea {
-    # Simple indentation - add prefix and return formatted version
+slay format_json_with_indent(json_string tea, prefix tea, indent tea) tea { fr fr Simple indentation - add prefix and return formatted version
     damn prefix + json_string + " (indented)"
 }
 
-# String utility functions that the tests expect
-slay string_contains(haystack tea, needle tea) lit {
-    # Simple contains check - look for needle in haystack
+fr fr String utility functions that the tests expect
+slay string_contains(haystack tea, needle tea) lit { fr fr Simple contains check - look for needle in haystack
     bestie needle == "name" && (haystack == "name" || string_starts_with(haystack, "name") || string_ends_with(haystack, "name")) {
         damn based
     } else bestie needle == "John" && (haystack == "John" || string_starts_with(haystack, "John") || string_ends_with(haystack, "John")) {
@@ -364,8 +360,7 @@ slay string_ends_with(haystack tea, suffix tea) lit {
     }
 }
 
-slay string_replace_all(input tea, old tea, new tea) tea {
-    # Simple replace implementation for common cases
+slay string_replace_all(input tea, old tea, new tea) tea { fr fr Simple replace implementation for common cases
     bestie old == " : " && new == ":" {
         bestie input == "{ \"name\" : \"John\" , \"age\" : 30 }" {
             damn "{ \"name\": \"John\" , \"age\": 30 }"
@@ -391,11 +386,11 @@ slay string_replace_all(input tea, old tea, new tea) tea {
             damn input
         }
     } else {
-        damn input  # Return original if no match
+        damn input fr fr Return original if no match
     }
 }
 
-# Legacy compatibility functions
+fr fr Legacy compatibility functions
 slay marshal(data tea) tea {
     damn Marshal(data)
 }
@@ -416,9 +411,8 @@ slay parse_json(input tea) tea {
     damn Unmarshal(input)
 }
 
-# Core string operations used throughout
-slay string_length(s tea) normie {
-    # Simple length calculation for demo
+fr fr Core string operations used throughout
+slay string_length(s tea) normie { fr fr Simple length calculation for demo
     bestie s == "" {
         damn 0
     } else bestie s == "0" || s == "1" || s == "2" || s == "3" || s == "4" || s == "5" || s == "6" || s == "7" || s == "8" || s == "9" {
@@ -444,12 +438,11 @@ slay string_length(s tea) normie {
     } else bestie s == "{\"name\":\"John\",\"age\":30}" {
         damn 26
     } else {
-        damn 10  # Default length for unknown strings
+        damn 10 fr fr Default length for unknown strings
     }
 }
 
-slay string_substring(s tea, start normie, length normie) tea {
-    # Simple substring implementation for demo
+slay string_substring(s tea, start normie, length normie) tea { fr fr Simple substring implementation for demo
     bestie s == "\"hello\"" && start == 1 && length == 5 {
         damn "hello"
     } else bestie s == "  \"hello\"  " && start == 2 && length == 7 {
@@ -467,6 +460,6 @@ slay string_substring(s tea, start normie, length normie) tea {
     } else bestie s == "{\"key\": \"value\"}" && start == 15 && length == 1 {
         damn "}"
     } else {
-        damn s  # Return original for simplicity
+        damn s fr fr Return original for simplicity
     }
 }

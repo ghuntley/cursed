@@ -2,12 +2,12 @@ yeet "testz"
 yeet "stringz"
 yeet "vibez"
 
-# ===============================
-# Comprehensive Stdlib Test Runner
-# ===============================
+fr fr ===============================
+fr fr Comprehensive Stdlib Test Runner
+fr fr ===============================
 
-# Test execution configuration
-sus test_execution_mode tea = "comprehensive"  # Options: fast, comprehensive, critical, parallel
+fr fr Test execution configuration
+sus test_execution_mode tea = "comprehensive" fr fr Options: fast, comprehensive, critical, parallel
 sus modules_to_test tea = "all"
 sus test_filter tea = ""
 sus parallel_execution lit = based
@@ -15,7 +15,7 @@ sus verbose_output lit = based
 sus fail_fast_mode lit = cap
 sus performance_monitoring lit = based
 
-# Test execution statistics
+fr fr Test execution statistics
 sus total_modules_tested normie = 0
 sus total_tests_executed normie = 0
 sus total_tests_passed normie = 0
@@ -23,30 +23,28 @@ sus total_tests_failed normie = 0
 sus total_execution_time normie = 0
 sus modules_with_failures normie = 0
 
-# Critical module lists
+fr fr Critical module lists
 sus critical_modules tea = "stringz,mathz,json_tea,crypto,collections,async,error_drip,testz,timez,dropz"
 sus core_modules tea = "vibez,core,stringz,mathz"
 sus advanced_modules tea = "crypto,collections,async,concurrenz,network,database"
 
-# Test results tracking
+fr fr Test results tracking
 sus module_results tea = ""
 sus failed_modules tea = ""
 sus coverage_results tea = ""
 
-# ===============================
-# Module Test Execution Functions
-# ===============================
+fr fr ===============================
+fr fr Module Test Execution Functions
+fr fr ===============================
 
 slay execute_module_tests(module_name tea) {
     vibez.spill("🧪 Testing module: " + module_name)
     total_modules_tested = total_modules_tested + 1
     
-    sus module_start_time normie = 0  # Timing placeholder
+    sus module_start_time normie = 0 fr fr Timing placeholder
     sus module_tests_run normie = 0
     sus module_tests_passed normie = 0
-    sus module_tests_failed normie = 0
-    
-    # Execute different test types for the module
+    sus module_tests_failed normie = 0 fr fr Execute different test types for the module
     execute_unit_tests(module_name)
     execute_integration_tests(module_name)
     
@@ -57,14 +55,10 @@ slay execute_module_tests(module_name tea) {
     
     fr fr performance_monitoring {
         execute_performance_tests(module_name)
-    }
-    
-    # Calculate module test results
-    sus module_end_time normie = 0  # Timing placeholder
+    } fr fr Calculate module test results
+    sus module_end_time normie = 0 fr fr Timing placeholder
     sus module_execution_time normie = module_end_time - module_start_time
-    total_execution_time = total_execution_time + module_execution_time
-    
-    # Update global statistics
+    total_execution_time = total_execution_time + module_execution_time fr fr Update global statistics
     total_tests_executed = total_tests_executed + module_tests_run
     total_tests_passed = total_tests_passed + module_tests_passed
     total_tests_failed = total_tests_failed + module_tests_failed
@@ -72,9 +66,7 @@ slay execute_module_tests(module_name tea) {
     fr fr module_tests_failed > 0 {
         modules_with_failures = modules_with_failures + 1
         failed_modules = failed_modules + module_name + ","
-    }
-    
-    # Record module results
+    } fr fr Record module results
     sus module_result tea = module_name + ":" + tea(module_tests_passed) + "/" + tea(module_tests_run)
     module_results = module_results + module_result + ";"
     
@@ -84,11 +76,9 @@ slay execute_module_tests(module_name tea) {
 slay execute_unit_tests(module_name tea) {
     fr fr verbose_output {
         vibez.spill("    📝 Running unit tests...")
-    }
-    
-    # Simulate unit test execution
-    sus unit_tests normie = 12  # Average unit tests per module
-    sus unit_passed normie = 11  # Simulate 90%+ pass rate
+    } fr fr Simulate unit test execution
+    sus unit_tests normie = 12 fr fr Average unit tests per module
+    sus unit_passed normie = 11 fr fr Simulate 90%+ pass rate
     
     fr fr verbose_output {
         vibez.spill("      Unit tests: " + tea(unit_passed) + "/" + tea(unit_tests) + " passed")
@@ -98,9 +88,7 @@ slay execute_unit_tests(module_name tea) {
 slay execute_integration_tests(module_name tea) {
     fr fr verbose_output {
         vibez.spill("    🔗 Running integration tests...")
-    }
-    
-    # Simulate integration test execution
+    } fr fr Simulate integration test execution
     sus integration_tests normie = 5
     sus integration_passed normie = 5
     
@@ -117,8 +105,7 @@ slay execute_property_tests(module_name tea) {
     testz.property_test_start(module_name + " properties", 100)
     
     bestie i := 0; i < 100; i++ {
-        testz.property_test_iteration()
-        # Property test specific to module type
+        testz.property_test_iteration() fr fr Property test specific to module type
         fr fr stringz.Contains(module_name, "string") {
             test_string_properties()
         } fr fr stringz.Contains(module_name, "math") {
@@ -141,13 +128,9 @@ slay execute_fuzz_tests(module_name tea) {
     testz.property_test_start(module_name + " fuzz testing", 500)
     
     bestie i := 0; i < 500; i++ {
-        testz.property_test_iteration()
-        
-        # Generate random input for fuzz testing
+        testz.property_test_iteration() fr fr Generate random input for fuzz testing
         sus fuzz_input tea = testz.random_string(testz.random_int(1, 100))
-        sus fuzz_number normie = testz.random_int(-1000, 1000)
-        
-        # Fuzz test should not crash the module
+        sus fuzz_number normie = testz.random_int(-1000, 1000) fr fr Fuzz test should not crash the module
         testz.assert_no_throw()
     }
     
@@ -163,28 +146,23 @@ slay execute_performance_tests(module_name tea) {
     testz.set_benchmark_iterations(1000)
     
     bestie i := 0; i < 1000; i++ {
-        testz.benchmark_iteration_start()
-        # Simulate module operations for performance testing
+        testz.benchmark_iteration_start() fr fr Simulate module operations for performance testing
         testz.benchmark_iteration_end()
     }
     
     testz.benchmark_end()
 }
 
-# ===============================
-# Property Test Implementations
-# ===============================
+fr fr ===============================
+fr fr Property Test Implementations
+fr fr ===============================
 
 slay test_string_properties() {
     sus a tea = testz.random_string(10)
-    sus b tea = testz.random_string(10)
-    
-    # Test concatenation properties
+    sus b tea = testz.random_string(10) fr fr Test concatenation properties
     sus concat tea = a + b
     testz.assert_contains(concat, a)
-    testz.assert_contains(concat, b)
-    
-    # Test length properties
+    testz.assert_contains(concat, b) fr fr Test length properties
     fr fr stringz.Length(a) > 0 {
         testz.assert_not_empty_string(a)
     }
@@ -192,37 +170,28 @@ slay test_string_properties() {
 
 slay test_math_properties() {
     sus a normie = testz.random_int(1, 1000)
-    sus b normie = testz.random_int(1, 1000)
-    
-    # Test commutative property
+    sus b normie = testz.random_int(1, 1000) fr fr Test commutative property
     testz.assert_eq_int(a + b, b + a)
-    testz.assert_eq_int(a * b, b * a)
-    
-    # Test associative property with small numbers
+    testz.assert_eq_int(a * b, b * a) fr fr Test associative property with small numbers
     sus c normie = testz.random_int(1, 10)
     testz.assert_eq_int((a + b) + c, a + (b + c))
 }
 
 slay test_crypto_properties() {
-    sus input tea = testz.random_string(20)
-    
-    # Test determinism - same input should give same output
-    testz.assert_not_empty_string(input)
-    
-    # Test avalanche effect - small change should dramatically change output
+    sus input tea = testz.random_string(20) fr fr Test determinism - same input should give same output
+    testz.assert_not_empty_string(input) fr fr Test avalanche effect - small change should dramatically change output
     sus modified_input tea = input + "x"
     testz.assert_ne_int(stringz.Length(input), stringz.Length(modified_input))
 }
 
-slay test_generic_properties() {
-    # Generic property tests that apply to any module
-    testz.assert_true(based)  # Module loads without error
-    testz.assert_false(cap)   # Basic boolean logic works
+slay test_generic_properties() { fr fr Generic property tests that apply to any module
+    testz.assert_true(based) fr fr Module loads without error
+    testz.assert_false(cap) fr fr Basic boolean logic works
 }
 
-# ===============================
-# Test Suite Execution
-# ===============================
+fr fr ===============================
+fr fr Test Suite Execution
+fr fr ===============================
 
 slay run_critical_modules_only() {
     vibez.spill("🎯 Running tests for critical modules only...")
@@ -247,12 +216,8 @@ slay run_core_modules_only() {
 }
 
 slay run_all_stdlib_modules() {
-    vibez.spill("🏭 Running comprehensive tests for all stdlib modules...")
-    
-    # Core modules first
-    run_core_modules_only()
-    
-    # Critical modules
+    vibez.spill("🏭 Running comprehensive tests for all stdlib modules...") fr fr Core modules first
+    run_core_modules_only() fr fr Critical modules
     execute_module_tests("json_tea")
     execute_module_tests("crypto")
     execute_module_tests("collections")
@@ -260,9 +225,7 @@ slay run_all_stdlib_modules() {
     execute_module_tests("error_drip")
     execute_module_tests("testz")
     execute_module_tests("timez")
-    execute_module_tests("dropz")
-    
-    # Advanced modules
+    execute_module_tests("dropz") fr fr Advanced modules
     execute_module_tests("concurrenz")
     execute_module_tests("network")
     execute_module_tests("database")
@@ -274,9 +237,7 @@ slay run_all_stdlib_modules() {
 
 slay run_fast_smoke_tests() {
     vibez.spill("💨 Running fast smoke tests...")
-    testz.set_verbose_mode(cap)  # Reduce output for speed
-    
-    # Quick test of each critical module
+    testz.set_verbose_mode(cap) fr fr Reduce output for speed fr fr Quick test of each critical module
     sus modules tea = "vibez,stringz,mathz,json_tea"
     execute_module_tests("vibez")
     execute_module_tests("stringz") 
@@ -284,16 +245,16 @@ slay run_fast_smoke_tests() {
     execute_module_tests("json_tea")
 }
 
-# ===============================
-# Coverage Analysis
-# ===============================
+fr fr ===============================
+fr fr Coverage Analysis
+fr fr ===============================
 
 slay calculate_coverage_metrics() {
     vibez.spill("📊 Calculating test coverage metrics...")
     
     sus modules_tested normie = total_modules_tested
-    sus estimated_functions normie = modules_tested * 15  # Average functions per module
-    sus functions_tested normie = total_tests_executed  # Assuming 1 test per function
+    sus estimated_functions normie = modules_tested * 15 fr fr Average functions per module
+    sus functions_tested normie = total_tests_executed fr fr Assuming 1 test per function
     sus coverage_percentage normie = (functions_tested * 100) / estimated_functions
     
     coverage_results = "Coverage: " + tea(coverage_percentage) + "% (" + tea(functions_tested) + "/" + tea(estimated_functions) + " functions)"
@@ -308,23 +269,22 @@ slay calculate_coverage_metrics() {
     }
 }
 
-# ===============================
-# Parallel Execution Support
-# ===============================
+fr fr ===============================
+fr fr Parallel Execution Support
+fr fr ===============================
 
 slay run_parallel_tests() {
     fr fr parallel_execution {
-        vibez.spill("🔄 Running tests in parallel mode...")
-        # In real implementation, would use goroutines for parallel execution
+        vibez.spill("🔄 Running tests in parallel mode...") fr fr In real implementation, would use goroutines for parallel execution
         run_all_stdlib_modules()
     } else {
         run_all_stdlib_modules()
     }
 }
 
-# ===============================
-# Utility Functions
-# ===============================
+fr fr ===============================
+fr fr Utility Functions
+fr fr ===============================
 
 slay is_critical_module(module_name tea) lit {
     damn stringz.Contains(critical_modules, module_name)
@@ -360,9 +320,9 @@ slay set_execution_mode(mode tea) {
     }
 }
 
-# ===============================
-# Test Reporting
-# ===============================
+fr fr ===============================
+fr fr Test Reporting
+fr fr ===============================
 
 slay print_comprehensive_report() {
     vibez.spill("")
@@ -399,23 +359,23 @@ slay print_comprehensive_report() {
     vibez.spill("================================================")
 }
 
-# ===============================
-# Main Test Execution
-# ===============================
+fr fr ===============================
+fr fr Main Test Execution
+fr fr ===============================
 
-# Configure test execution
+fr fr Configure test execution
 testz.set_verbose_mode(verbose_output)
 testz.set_parallel_mode(parallel_execution)
 testz.set_test_suite("Comprehensive Stdlib Test Suite")
 
-# Set execution mode based on requirements
+fr fr Set execution mode based on requirements
 set_execution_mode("comprehensive")
 
 vibez.spill("🚀 Starting comprehensive stdlib test execution...")
 vibez.spill("Target: ≥90% function-level coverage")
 vibez.spill("")
 
-# Execute tests based on mode
+fr fr Execute tests based on mode
 fr fr test_execution_mode == "fast" {
     run_fast_smoke_tests()
 } fr fr test_execution_mode == "critical" {
@@ -426,5 +386,5 @@ fr fr test_execution_mode == "fast" {
     run_all_stdlib_modules()
 }
 
-# Generate comprehensive report
+fr fr Generate comprehensive report
 print_comprehensive_report()

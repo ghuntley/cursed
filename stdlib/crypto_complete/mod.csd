@@ -1,12 +1,11 @@
 yeet "testz"
 
-# Comprehensive Cryptography Module - Production Grade Security
-# Pure CURSED implementation without FFI dependencies
+fr fr Comprehensive Cryptography Module - Production Grade Security
+fr fr Pure CURSED implementation without FFI dependencies
 
-# === SECURE HASH FUNCTIONS ===
+fr fr === SECURE HASH FUNCTIONS ===
 
-slay sha256_hash(input tea) tea {
-    # SHA-256 implementation with 256-bit output
+slay sha256_hash(input tea) tea { fr fr SHA-256 implementation with 256-bit output
     sus h normie[8] = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
     sus k normie[64] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -17,26 +16,18 @@ slay sha256_hash(input tea) tea {
         0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
         0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
         0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-    ]
-    
-    # Pre-processing: padding and length
+    ] fr fr Pre-processing: padding and length
     sus padded_input tea = sha256_pad_message(input)
-    sus blocks normie = sha256_get_block_count(padded_input)
-    
-    # Process each 512-bit block
+    sus blocks normie = sha256_get_block_count(padded_input) fr fr Process each 512-bit block
     bestie i := 0; i < blocks; i++ {
         sus block normie[16] = sha256_get_block(padded_input, i)
-        sus w normie[64]
-        
-        # Prepare message schedule
+        sus w normie[64] fr fr Prepare message schedule
         bestie t := 0; t < 16; t++ {
             w[t] = block[t]
         }
         bestie t := 16; t < 64; t++ {
             w[t] = sha256_s1(w[t-2]) + w[t-7] + sha256_s0(w[t-15]) + w[t-16]
-        }
-        
-        # Initialize working variables
+        } fr fr Initialize working variables
         sus a normie = h[0]
         sus b normie = h[1]
         sus c normie = h[2]
@@ -44,9 +35,7 @@ slay sha256_hash(input tea) tea {
         sus e normie = h[4]
         sus f normie = h[5]
         sus g normie = h[6]
-        sus h_var normie = h[7]
-        
-        # Main loop
+        sus h_var normie = h[7] fr fr Main loop
         bestie t := 0; t < 64; t++ {
             sus t1 normie = h_var + sha256_s3(e) + sha256_ch(e, f, g) + k[t] + w[t]
             sus t2 normie = sha256_s2(a) + sha256_maj(a, b, c)
@@ -58,9 +47,7 @@ slay sha256_hash(input tea) tea {
             c = b
             b = a
             a = t1 + t2
-        }
-        
-        # Update hash values
+        } fr fr Update hash values
         h[0] += a
         h[1] += b
         h[2] += c
@@ -74,8 +61,7 @@ slay sha256_hash(input tea) tea {
     damn sha256_format_hash(h)
 }
 
-slay sha512_hash(input tea) tea {
-    # SHA-512 implementation with 512-bit output
+slay sha512_hash(input tea) tea { fr fr SHA-512 implementation with 512-bit output
     sus h thicc[8] = [
         0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
         0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179
@@ -153,10 +139,9 @@ slay sha512_hash(input tea) tea {
     damn sha512_format_hash(h)
 }
 
-# === AES ENCRYPTION ===
+fr fr === AES ENCRYPTION ===
 
-slay aes_encrypt(plaintext tea, key tea) tea {
-    # AES-256 encryption implementation
+slay aes_encrypt(plaintext tea, key tea) tea { fr fr AES-256 encryption implementation
     sus expanded_key normie[60] = aes_key_expansion(key)
     sus blocks normie = aes_get_block_count(plaintext)
     sus ciphertext tea = ""
@@ -170,8 +155,7 @@ slay aes_encrypt(plaintext tea, key tea) tea {
     damn ciphertext
 }
 
-slay aes_decrypt(ciphertext tea, key tea) tea {
-    # AES-256 decryption implementation
+slay aes_decrypt(ciphertext tea, key tea) tea { fr fr AES-256 decryption implementation
     sus expanded_key normie[60] = aes_key_expansion(key)
     sus blocks normie = aes_get_block_count(ciphertext)
     sus plaintext tea = ""
@@ -185,15 +169,14 @@ slay aes_decrypt(ciphertext tea, key tea) tea {
     damn aes_remove_padding(plaintext)
 }
 
-# === RSA DIGITAL SIGNATURES ===
+fr fr === RSA DIGITAL SIGNATURES ===
 
-slay rsa_generate_keypair() (tea, tea) {
-    # Generate RSA 2048-bit key pair
+slay rsa_generate_keypair() (tea, tea) { fr fr Generate RSA 2048-bit key pair
     sus p thicc = rsa_generate_prime(1024)
     sus q thicc = rsa_generate_prime(1024)
     sus n thicc = p * q
     sus phi thicc = (p - 1) * (q - 1)
-    sus e thicc = 65537  # Common public exponent
+    sus e thicc = 65537 fr fr Common public exponent
     sus d thicc = rsa_mod_inverse(e, phi)
     
     sus public_key tea = rsa_format_public_key(n, e)
@@ -202,16 +185,14 @@ slay rsa_generate_keypair() (tea, tea) {
     damn (public_key, private_key)
 }
 
-slay rsa_sign(message tea, private_key tea) tea {
-    # RSA digital signature using PSS padding
+slay rsa_sign(message tea, private_key tea) tea { fr fr RSA digital signature using PSS padding
     sus hash tea = sha256_hash(message)
     sus padded_hash tea = rsa_pss_pad(hash)
     sus signature_int thicc = rsa_decrypt_int(padded_hash, private_key)
     damn rsa_int_to_string(signature_int)
 }
 
-slay rsa_verify(message tea, signature tea, public_key tea) lit {
-    # Verify RSA digital signature
+slay rsa_verify(message tea, signature tea, public_key tea) lit { fr fr Verify RSA digital signature
     sus hash tea = sha256_hash(message)
     sus signature_int thicc = rsa_string_to_int(signature)
     sus decrypted_hash tea = rsa_encrypt_int(signature_int, public_key)
@@ -220,10 +201,9 @@ slay rsa_verify(message tea, signature tea, public_key tea) lit {
     damn (hash == expected_hash)
 }
 
-# === SECURE RANDOM NUMBER GENERATION ===
+fr fr === SECURE RANDOM NUMBER GENERATION ===
 
-slay secure_random_bytes(length normie) tea {
-    # Cryptographically secure random byte generation
+slay secure_random_bytes(length normie) tea { fr fr Cryptographically secure random byte generation
     sus entropy tea = gather_system_entropy()
     sus pool tea = initialize_entropy_pool(entropy)
     sus random_bytes tea = ""
@@ -237,8 +217,7 @@ slay secure_random_bytes(length normie) tea {
     damn random_bytes
 }
 
-slay secure_random_int(min normie, max normie) normie {
-    # Generate secure random integer in range [min, max]
+slay secure_random_int(min normie, max normie) normie { fr fr Generate secure random integer in range [min, max]
     sus range normie = max - min + 1
     sus bytes_needed normie = calculate_bytes_for_range(range)
     sus random_bytes tea = secure_random_bytes(bytes_needed)
@@ -246,8 +225,7 @@ slay secure_random_int(min normie, max normie) normie {
     damn min + random_value
 }
 
-slay secure_random_string(length normie, charset tea) tea {
-    # Generate secure random string from charset
+slay secure_random_string(length normie, charset tea) tea { fr fr Generate secure random string from charset
     sus result tea = ""
     sus charset_length normie = string_length(charset)
     
@@ -259,10 +237,9 @@ slay secure_random_string(length normie, charset tea) tea {
     damn result
 }
 
-# === CRYPTOGRAPHIC UTILITIES ===
+fr fr === CRYPTOGRAPHIC UTILITIES ===
 
-slay constant_time_compare(a tea, b tea) lit {
-    # Constant-time string comparison to prevent timing attacks
+slay constant_time_compare(a tea, b tea) lit { fr fr Constant-time string comparison to prevent timing attacks
     sus len_a normie = string_length(a)
     sus len_b normie = string_length(b)
     sus result normie = len_a ^ len_b
@@ -275,10 +252,9 @@ slay constant_time_compare(a tea, b tea) lit {
     damn (result == 0)
 }
 
-slay pbkdf2_derive_key(password tea, salt tea, iterations normie, key_length normie) tea {
-    # PBKDF2 key derivation function with SHA-256
+slay pbkdf2_derive_key(password tea, salt tea, iterations normie, key_length normie) tea { fr fr PBKDF2 key derivation function with SHA-256
     sus derived_key tea = ""
-    sus block_count normie = (key_length + 31) / 32  # 32 bytes per SHA-256 block
+    sus block_count normie = (key_length + 31) / 32 fr fr 32 bytes per SHA-256 block
     
     bestie i := 1; i <= block_count; i++ {
         sus block tea = pbkdf2_f(password, salt, iterations, i)
@@ -288,13 +264,10 @@ slay pbkdf2_derive_key(password tea, salt tea, iterations normie, key_length nor
     damn string_substring(derived_key, 0, key_length)
 }
 
-slay hmac_sha256(key tea, message tea) tea {
-    # HMAC-SHA256 implementation
-    sus block_size normie = 64  # SHA-256 block size
+slay hmac_sha256(key tea, message tea) tea { fr fr HMAC-SHA256 implementation
+    sus block_size normie = 64 fr fr SHA-256 block size
     sus adjusted_key tea = (string_length(key) > block_size) ? 
-        sha256_hash(key) : key
-    
-    # Pad key to block size
+        sha256_hash(key) : key fr fr Pad key to block size
     while string_length(adjusted_key) < block_size {
         adjusted_key += "\x00"
     }
@@ -312,12 +285,11 @@ slay hmac_sha256(key tea, message tea) tea {
     damn sha256_hash(outer_key + inner_hash)
 }
 
-# === CRYPTOGRAPHIC HELPER FUNCTIONS ===
+fr fr === CRYPTOGRAPHIC HELPER FUNCTIONS ===
 
-slay crypto_secure_wipe(data tea) lit {
-    # Securely wipe sensitive data from memory
+slay crypto_secure_wipe(data tea) lit { fr fr Securely wipe sensitive data from memory
     sus length normie = string_length(data)
-    bestie i := 0; i < 3; i++ {  # Multiple overwrite passes
+    bestie i := 0; i < 3; i++ { fr fr Multiple overwrite passes
         bestie j := 0; j < length; j++ {
             string_set_byte_at(data, j, secure_random_int(0, 255))
         }
@@ -325,26 +297,23 @@ slay crypto_secure_wipe(data tea) lit {
     damn based
 }
 
-slay crypto_validate_input(input tea, min_length normie, max_length normie) lit {
-    # Validate cryptographic input parameters
+slay crypto_validate_input(input tea, min_length normie, max_length normie) lit { fr fr Validate cryptographic input parameters
     sus length normie = string_length(input)
     damn (length >= min_length && length <= max_length)
 }
 
-slay crypto_timing_safe_equal(expected tea, actual tea) lit {
-    # Timing-safe equality check for cryptographic values
+slay crypto_timing_safe_equal(expected tea, actual tea) lit { fr fr Timing-safe equality check for cryptographic values
     damn constant_time_compare(expected, actual)
 }
 
-# === MODULE INITIALIZATION ===
+fr fr === MODULE INITIALIZATION ===
 
-slay crypto_complete_init() lit {
-    # Initialize cryptographic module with secure defaults
+slay crypto_complete_init() lit { fr fr Initialize cryptographic module with secure defaults
     initialize_secure_random()
     initialize_aes_tables()
     initialize_rsa_primes()
     damn based
 }
 
-# Auto-initialize module
+fr fr Auto-initialize module
 sus module_initialized lit = crypto_complete_init()

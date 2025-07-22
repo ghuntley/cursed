@@ -386,9 +386,9 @@ print_test_summary()
 
 // Edge case testing
 test_start("core_funcs.print edge cases")
-sus edge_test1 lit = core_funcs.print("")  # Empty string
+sus edge_test1 lit = core_funcs.print("") fr fr Empty string
 assert_true(edge_test1)
-sus edge_test2 lit = core_funcs.print("A")  # Single character
+sus edge_test2 lit = core_funcs.print("A") fr fr Single character
 assert_true(edge_test2)
 sus long_string tea = ""
 sus m normie = 0
@@ -396,7 +396,7 @@ stan m < 50 {
     long_string = long_string + "test"
     m++
 }
-sus edge_test3 lit = core_funcs.print(long_string)  # Long string
+sus edge_test3 lit = core_funcs.print(long_string) fr fr Long string
 assert_true(edge_test3)
 print_test_summary()
 
@@ -416,7 +416,7 @@ print_test_summary()
 test_start("core_funcs comprehensive validation")
 sus final_validation lit = based
 
-# Test that all major functions work together
+fr fr Test that all major functions work together
 sus validation_msg tea = "Validation test"
 lowkey core_funcs.print(validation_msg) == cap {
     final_validation = cap

@@ -2,38 +2,38 @@ yeet "testz"
 yeet "timez"
 yeet "stringz"
 
-# Quick Test - Advanced Testing Framework for CURSED
-# Provides property-based testing, fixtures, benchmarks, mocks, and reporting
+fr fr Quick Test - Advanced Testing Framework for CURSED
+fr fr Provides property-based testing, fixtures, benchmarks, mocks, and reporting
 
-# Test Suite Management
+fr fr Test Suite Management
 sus current_suite tea = ""
 sus test_fixtures [100]tea
 sus fixture_count normie = 0
 sus setup_function tea = ""
 sus teardown_function tea = ""
 
-# Property-Based Testing
+fr fr Property-Based Testing
 sus property_iterations normie = 100
 sus property_generators [50]tea
 sus generator_count normie = 0
 
-# Benchmark Testing
+fr fr Benchmark Testing
 sus benchmark_iterations normie = 1000
 sus benchmark_results [100]normie
 sus benchmark_count normie = 0
 
-# Mock/Stub System
+fr fr Mock/Stub System
 sus mock_functions [50]tea
 sus mock_count normie = 0
 sus stub_responses [50]tea
 sus stub_count normie = 0
 
-# Test Reporting
+fr fr Test Reporting
 sus report_format tea = "text"
 sus test_results [1000]tea
 sus result_count normie = 0
 
-# Core Testing Functions
+fr fr Core Testing Functions
 slay qt_start_suite(suite_name tea) lit {
     current_suite = suite_name
     vibez.spill("🚀 Starting test suite: " + suite_name)
@@ -46,15 +46,12 @@ slay qt_end_suite() lit {
     damn based
 }
 
-# Property-Based Testing Framework
+fr fr Property-Based Testing Framework
 slay qt_property_test(test_name tea, generator_func tea, property_func tea) lit {
     vibez.spill("🔄 Property test: " + test_name)
     
-    bestie i := 0; i < property_iterations; i++ {
-        # Generate test data using generator function
-        test_data := qt_generate_data(generator_func)
-        
-        # Apply property function and check result
+    bestie i := 0; i < property_iterations; i++ { fr fr Generate test data using generator function
+        test_data := qt_generate_data(generator_func) fr fr Apply property function and check result
         result := qt_apply_property(property_func, test_data)
         
         lowkey !result {
@@ -68,8 +65,7 @@ slay qt_property_test(test_name tea, generator_func tea, property_func tea) lit 
     damn based
 }
 
-slay qt_generate_data(generator tea) tea {
-    # Simple data generators for property testing
+slay qt_generate_data(generator tea) tea { fr fr Simple data generators for property testing
     lowkey generator == "int" {
         damn timez.now_unix() % 1000
     }
@@ -82,8 +78,7 @@ slay qt_generate_data(generator tea) tea {
     damn "default_value"
 }
 
-slay qt_apply_property(property_func tea, test_data tea) lit {
-    # Apply property function to test data
+slay qt_apply_property(property_func tea, test_data tea) lit { fr fr Apply property function to test data
     lowkey property_func == "non_empty" {
         damn stringz.length(test_data) > 0
     }
@@ -98,12 +93,11 @@ slay qt_apply_property(property_func tea, test_data tea) lit {
     damn based
 }
 
-slay qt_transform_data(data tea) tea {
-    # Example transformation for idempotent testing
+slay qt_transform_data(data tea) tea { fr fr Example transformation for idempotent testing
     damn stringz.uppercase(data)
 }
 
-# Test Fixtures and Setup/Teardown
+fr fr Test Fixtures and Setup/Teardown
 slay qt_add_fixture(fixture_name tea, fixture_data tea) lit {
     lowkey fixture_count < 100 {
         test_fixtures[fixture_count] = fixture_name + ":" + fixture_data
@@ -137,8 +131,7 @@ slay qt_teardown(teardown_func tea) lit {
 
 slay qt_run_setup() lit {
     lowkey setup_function != "" {
-        vibez.spill("🔧 Running setup: " + setup_function)
-        # Execute setup function
+        vibez.spill("🔧 Running setup: " + setup_function) fr fr Execute setup function
         damn based
     }
     damn based
@@ -146,14 +139,13 @@ slay qt_run_setup() lit {
 
 slay qt_run_teardown() lit {
     lowkey teardown_function != "" {
-        vibez.spill("🧽 Running teardown: " + teardown_function)
-        # Execute teardown function
+        vibez.spill("🧽 Running teardown: " + teardown_function) fr fr Execute teardown function
         damn based
     }
     damn based
 }
 
-# Parameterized Testing
+fr fr Parameterized Testing
 slay qt_parameterized_test(test_name tea, params [10]tea, param_count normie, test_func tea) lit {
     vibez.spill("📊 Parameterized test: " + test_name)
     
@@ -175,8 +167,7 @@ slay qt_parameterized_test(test_name tea, params [10]tea, param_count normie, te
     damn based
 }
 
-slay qt_execute_with_param(test_func tea, param tea) lit {
-    # Execute test function with specific parameter
+slay qt_execute_with_param(test_func tea, param tea) lit { fr fr Execute test function with specific parameter
     lowkey test_func == "string_length" {
         damn stringz.length(param) >= 0
     }
@@ -189,7 +180,7 @@ slay qt_execute_with_param(test_func tea, param tea) lit {
     damn based
 }
 
-# Benchmark Testing Framework
+fr fr Benchmark Testing Framework
 slay qt_benchmark(bench_name tea, bench_func tea) normie {
     vibez.spill("⏱️  Benchmarking: " + bench_name)
     
@@ -216,8 +207,7 @@ slay qt_benchmark(bench_name tea, bench_func tea) normie {
     damn avg_time
 }
 
-slay qt_execute_benchmark(bench_func tea) lit {
-    # Execute benchmark function
+slay qt_execute_benchmark(bench_func tea) lit { fr fr Execute benchmark function
     lowkey bench_func == "string_concat" {
         result := "test" + "_" + "benchmark"
         damn based
@@ -234,7 +224,7 @@ slay qt_execute_benchmark(bench_func tea) lit {
     damn based
 }
 
-# Mock and Stub Generation
+fr fr Mock and Stub Generation
 slay qt_create_mock(function_name tea, return_value tea) lit {
     lowkey mock_count < 50 {
         mock_functions[mock_count] = function_name + ":" + return_value
@@ -279,13 +269,11 @@ slay qt_call_stub(function_name tea) tea {
     damn "stub_not_found"
 }
 
-# Test Discovery and Organization
+fr fr Test Discovery and Organization
 slay qt_discover_tests(pattern tea) normie {
     vibez.spill("🔍 Discovering tests with pattern: " + pattern)
     
-    discovered_count := 0
-    
-    # Simulate test discovery
+    discovered_count := 0 fr fr Simulate test discovery
     test_patterns := ["test_basic", "test_advanced", "test_integration", "test_performance"]
     
     bestie i := 0; i < 4; i++ {
@@ -316,7 +304,7 @@ slay qt_organize_tests(category tea) lit {
     damn based
 }
 
-# Test Reporting in Multiple Formats
+fr fr Test Reporting in Multiple Formats
 slay qt_set_report_format(format tea) lit {
     report_format = format
     vibez.spill("📊 Report format set to: " + format)
@@ -386,7 +374,7 @@ slay qt_generate_text_report() lit {
     damn based
 }
 
-# Integration with testz for compatibility
+fr fr Integration with testz for compatibility
 slay qt_testz_assert_true(condition lit) lit {
     lowkey condition {
         vibez.spill("✅ Assertion passed")
@@ -408,75 +396,45 @@ slay qt_testz_assert_eq(actual tea, expected tea) lit {
 }
 
 slay qt_run_with_testz(test_name tea) lit {
-    vibez.spill("🔗 Running test with testz compatibility: " + test_name)
-    
-    # Start testz-compatible test
-    test_start(test_name)
-    
-    # Run quick_test features
-    qt_run_setup()
-    
-    # Example test assertions
+    vibez.spill("🔗 Running test with testz compatibility: " + test_name) fr fr Start testz-compatible test
+    test_start(test_name) fr fr Run quick_test features
+    qt_run_setup() fr fr Example test assertions
     assert_true(based)
     assert_eq_string("test", "test")
     
-    qt_run_teardown()
-    
-    # Print testz summary
+    qt_run_teardown() fr fr Print testz summary
     print_test_summary()
     
     damn based
 }
 
-# Comprehensive Testing Workflow
+fr fr Comprehensive Testing Workflow
 slay qt_run_comprehensive_test() lit {
-    vibez.spill("🚀 Running comprehensive quick_test demonstration")
-    
-    # Start test suite
-    qt_start_suite("QuickTest Comprehensive Demo")
-    
-    # Setup fixtures
+    vibez.spill("🚀 Running comprehensive quick_test demonstration") fr fr Start test suite
+    qt_start_suite("QuickTest Comprehensive Demo") fr fr Setup fixtures
     qt_add_fixture("test_data", "sample_value")
-    qt_add_fixture("config", "test_config")
-    
-    # Setup and teardown
+    qt_add_fixture("config", "test_config") fr fr Setup and teardown
     qt_setup("initialize_test_environment")
-    qt_teardown("cleanup_test_environment")
-    
-    # Property-based testing
+    qt_teardown("cleanup_test_environment") fr fr Property-based testing
     qt_property_test("string_properties", "string", "non_empty")
-    qt_property_test("integer_properties", "int", "positive")
-    
-    # Parameterized testing
+    qt_property_test("integer_properties", "int", "positive") fr fr Parameterized testing
     test_params := ["test1", "test2", "test3"]
-    qt_parameterized_test("string_tests", test_params, 3, "string_length")
-    
-    # Benchmark testing
+    qt_parameterized_test("string_tests", test_params, 3, "string_length") fr fr Benchmark testing
     qt_benchmark("string_concat_benchmark", "string_concat")
-    qt_benchmark("math_operation_benchmark", "math_operation")
-    
-    # Mock and stub testing
+    qt_benchmark("math_operation_benchmark", "math_operation") fr fr Mock and stub testing
     qt_create_mock("database_query", "mock_result")
     qt_create_stub("api_call", "stub_response")
     
     mock_result := qt_call_mock("database_query")
-    stub_result := qt_call_stub("api_call")
-    
-    # Test discovery
+    stub_result := qt_call_stub("api_call") fr fr Test discovery
     qt_discover_tests("test_")
-    qt_organize_tests("unit")
-    
-    # Generate reports in different formats
+    qt_organize_tests("unit") fr fr Generate reports in different formats
     qt_set_report_format("json")
     qt_generate_report()
     
     qt_set_report_format("xml")
-    qt_generate_report()
-    
-    # Testz compatibility
-    qt_run_with_testz("compatibility_test")
-    
-    # End test suite
+    qt_generate_report() fr fr Testz compatibility
+    qt_run_with_testz("compatibility_test") fr fr End test suite
     qt_end_suite()
     
     vibez.spill("✅ Comprehensive quick_test demonstration completed successfully!")

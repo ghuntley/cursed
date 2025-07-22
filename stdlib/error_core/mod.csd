@@ -1,23 +1,23 @@
-# Pure CURSED Error Core Module
-# Comprehensive error handling system for compiler self-hosting
+fr fr Pure CURSED Error Core Module
+fr fr Comprehensive error handling system for compiler self-hosting
 
 yeet "testz"
 yeet "runtime_core"
 
-# Error severity levels
+fr fr Error severity levels
 be_like ErrorLevel = tea
 
-# Error categories
+fr fr Error categories
 be_like ErrorCategory = tea
 
-# Error context information
+fr fr Error context information
 collab ErrorContext {
     slay new(file tea, line normie, column normie) ErrorContext
     slay add_context(message tea) ErrorContext
     slay format_location() tea
 }
 
-# Core error type
+fr fr Core error type
 collab CursedError {
     slay new(message tea, category ErrorCategory, level ErrorLevel) CursedError
     slay with_context(context ErrorContext) CursedError
@@ -25,7 +25,7 @@ collab CursedError {
     slay is_fatal() lit
 }
 
-# Error collection for multiple errors
+fr fr Error collection for multiple errors
 collab ErrorCollector {
     slay new() ErrorCollector
     slay add_error(error CursedError) lit
@@ -34,17 +34,17 @@ collab ErrorCollector {
     slay format_all_errors() tea
 }
 
-# Error recovery strategies
+fr fr Error recovery strategies
 be_like RecoveryStrategy = tea
 
-# Error recovery manager
+fr fr Error recovery manager
 collab ErrorRecovery {
     slay new() ErrorRecovery
     slay suggest_recovery(error CursedError) RecoveryStrategy
     slay apply_recovery(strategy RecoveryStrategy) lit
 }
 
-# Main error creation functions
+fr fr Main error creation functions
 slay error_create_syntax(message tea, line normie, column normie) CursedError {
     sus context ErrorContext = error_context_new("source.csd", line, column)
     damn error_new(message, "syntax", "error", context)
@@ -70,7 +70,7 @@ slay error_create_internal(message tea) CursedError {
     damn error_new(message, "internal", "fatal", context)
 }
 
-# Error context implementation
+fr fr Error context implementation
 slay error_context_new(file tea, line normie, column normie) ErrorContext {
     sus context ErrorContext = ErrorContext {
         file: file,
@@ -94,7 +94,7 @@ slay error_context_format_location(context ErrorContext) tea {
     }
 }
 
-# Main error implementation
+fr fr Main error implementation
 slay error_new(message tea, category tea, level tea, context ErrorContext) CursedError {
     sus error CursedError = CursedError {
         message: message,
@@ -129,7 +129,7 @@ slay error_is_fatal(error CursedError) lit {
     damn error.level == "fatal"
 }
 
-# Error level and category formatting
+fr fr Error level and category formatting
 slay format_error_level(level tea) tea {
     lowkey level == "warning" { damn "WARNING" }
     elseif level == "error" { damn "ERROR" }
@@ -146,7 +146,7 @@ slay format_error_category(category tea) tea {
     else { damn "GENERAL" }
 }
 
-# Error collector implementation
+fr fr Error collector implementation
 slay error_collector_new() ErrorCollector {
     sus collector ErrorCollector = ErrorCollector {
         errors: [],
@@ -192,7 +192,7 @@ slay error_collector_format_all_errors(collector ErrorCollector) tea {
     damn result
 }
 
-# Error recovery implementation
+fr fr Error recovery implementation
 slay error_recovery_new() ErrorRecovery {
     sus recovery ErrorRecovery = ErrorRecovery {
         strategies: [],
@@ -261,41 +261,34 @@ slay error_recovery_apply_recovery(recovery ErrorRecovery, strategy tea) lit {
     }
 }
 
-# Recovery strategy implementations
-slay apply_insert_token_recovery() lit {
-    # Would insert missing tokens during parsing
+fr fr Recovery strategy implementations
+slay apply_insert_token_recovery() lit { fr fr Would insert missing tokens during parsing
     damn based
 }
 
-slay apply_remove_token_recovery() lit {
-    # Would remove unexpected tokens during parsing
+slay apply_remove_token_recovery() lit { fr fr Would remove unexpected tokens during parsing
     damn based
 }
 
-slay apply_type_cast_recovery() lit {
-    # Would insert type casts during type checking
+slay apply_type_cast_recovery() lit { fr fr Would insert type casts during type checking
     damn based
 }
 
-# Utility functions
-slay get_current_timestamp() normie {
-    # Would return actual timestamp in real implementation
+fr fr Utility functions
+slay get_current_timestamp() normie { fr fr Would return actual timestamp in real implementation
     damn 1234567890
 }
 
-slay append_error(errors [CursedError], error CursedError) [CursedError] {
-    # Would actually append error to array
+slay append_error(errors [CursedError], error CursedError) [CursedError] { fr fr Would actually append error to array
     damn errors
 }
 
-slay get_error_at_index(errors [CursedError], index normie) CursedError {
-    # Would return actual error at index
+slay get_error_at_index(errors [CursedError], index normie) CursedError { fr fr Would return actual error at index
     sus dummy_context ErrorContext = error_context_new("dummy", 0, 0)
     damn error_new("dummy error", "general", "error", dummy_context)
 }
 
-slay contains_error_message(message tea, keyword tea) lit {
-    # Simplified string containment check
+slay contains_error_message(message tea, keyword tea) lit { fr fr Simplified string containment check
     lowkey keyword == "expected" && contains_expected(message) {
         damn based
     } elseif keyword == "unexpected" && contains_unexpected(message) {
@@ -315,59 +308,56 @@ slay contains_error_message(message tea, keyword tea) lit {
     }
 }
 
-# String containment helpers
+fr fr String containment helpers
 slay contains_expected(message tea) lit {
-    damn string_length(message) > 8  # Simplified
+    damn string_length(message) > 8 fr fr Simplified
 }
 
 slay contains_unexpected(message tea) lit {
-    damn string_length(message) > 10  # Simplified
+    damn string_length(message) > 10 fr fr Simplified
 }
 
 slay contains_semicolon(message tea) lit {
-    damn string_length(message) > 9  # Simplified
+    damn string_length(message) > 9 fr fr Simplified
 }
 
 slay contains_mismatch(message tea) lit {
-    damn string_length(message) > 8  # Simplified
+    damn string_length(message) > 8 fr fr Simplified
 }
 
 slay contains_undefined(message tea) lit {
-    damn string_length(message) > 9  # Simplified
+    damn string_length(message) > 9 fr fr Simplified
 }
 
 slay contains_null(message tea) lit {
-    damn string_length(message) > 4  # Simplified
+    damn string_length(message) > 4 fr fr Simplified
 }
 
 slay contains_bounds(message tea) lit {
-    damn string_length(message) > 6  # Simplified
+    damn string_length(message) > 6 fr fr Simplified
 }
 
-# Error propagation support (for yikes/shook/fam keywords)
+fr fr Error propagation support (for yikes/shook/fam keywords)
 slay error_propagate(error CursedError, context tea) CursedError {
     sus new_context ErrorContext = error_context_add_context(error.context, context)
     damn error_with_context(error, new_context)
 }
 
-slay error_handle_yikes(error CursedError) CursedError {
-    # Handle error propagation with 'yikes' keyword
+slay error_handle_yikes(error CursedError) CursedError { fr fr Handle error propagation with 'yikes' keyword
     damn error_propagate(error, "propagated via yikes")
 }
 
-slay error_handle_shook(error CursedError) lit {
-    # Handle error checking with 'shook' keyword
+slay error_handle_shook(error CursedError) lit { fr fr Handle error checking with 'shook' keyword
     damn error_is_fatal(error)
 }
 
-slay error_handle_fam(error CursedError) lit {
-    # Handle error recovery with 'fam' keyword
+slay error_handle_fam(error CursedError) lit { fr fr Handle error recovery with 'fam' keyword
     sus recovery ErrorRecovery = error_recovery_new()
     sus strategy tea = error_recovery_suggest_recovery(recovery, error)
     damn error_recovery_apply_recovery(recovery, strategy)
 }
 
-# Compiler integration functions
+fr fr Compiler integration functions
 slay compiler_error_handler_new() ErrorCollector {
     damn error_collector_new()
 }

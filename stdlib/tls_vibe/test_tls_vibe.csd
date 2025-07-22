@@ -723,7 +723,7 @@ slay test_tls_connection_state() lit {
     fr fr Test peer certificates
     conn.peer_certificates = ["cert1", "cert2", "cert3"]
     sus peer_certs [tea] = tls_get_peer_certificates(conn)
-    assert_eq_int(len(peer_certs), 10)  # Simulated length
+    assert_eq_int(len(peer_certs), 10) fr fr Simulated length
     
     fr fr Test connection metrics
     sus metrics tea = tls_get_connection_metrics(conn)

@@ -1,10 +1,10 @@
 yeet "testz"
 yeet "database_complete"
 
-# Test Database Driver Creation
+fr fr Test Database Driver Creation
 test_start("Database Driver Creation")
 
-# Test PostgreSQL driver
+fr fr Test PostgreSQL driver
 sus pg_driver database_complete.DatabaseDriver = database_complete.create_postgresql_driver()
 assert_eq_string(pg_driver.driver_name, "PostgreSQL")
 assert_eq_string(pg_driver.version, "14.0")
@@ -12,7 +12,7 @@ assert_true(pg_driver.supports_transactions)
 assert_true(pg_driver.supports_prepared_statements)
 assert_eq_int(pg_driver.max_connections, 100)
 
-# Test MySQL driver
+fr fr Test MySQL driver
 sus mysql_driver database_complete.DatabaseDriver = database_complete.create_mysql_driver()
 assert_eq_string(mysql_driver.driver_name, "MySQL")
 assert_eq_string(mysql_driver.version, "8.0")
@@ -20,7 +20,7 @@ assert_true(mysql_driver.supports_transactions)
 assert_true(mysql_driver.supports_prepared_statements)
 assert_eq_int(mysql_driver.max_connections, 150)
 
-# Test SQLite driver
+fr fr Test SQLite driver
 sus sqlite_driver database_complete.DatabaseDriver = database_complete.create_sqlite_driver()
 assert_eq_string(sqlite_driver.driver_name, "SQLite")
 assert_eq_string(sqlite_driver.version, "3.39")
@@ -28,7 +28,7 @@ assert_true(sqlite_driver.supports_transactions)
 assert_true(sqlite_driver.supports_prepared_statements)
 assert_eq_int(sqlite_driver.max_connections, 1)
 
-# Test MongoDB driver
+fr fr Test MongoDB driver
 sus mongo_driver database_complete.DatabaseDriver = database_complete.create_mongodb_driver()
 assert_eq_string(mongo_driver.driver_name, "MongoDB")
 assert_eq_string(mongo_driver.version, "6.0")
@@ -36,7 +36,7 @@ assert_true(mongo_driver.supports_transactions)
 assert_false(mongo_driver.supports_prepared_statements)
 assert_eq_int(mongo_driver.max_connections, 200)
 
-# Test Redis driver
+fr fr Test Redis driver
 sus redis_driver database_complete.DatabaseDriver = database_complete.create_redis_driver()
 assert_eq_string(redis_driver.driver_name, "Redis")
 assert_eq_string(redis_driver.version, "7.0")
@@ -46,10 +46,10 @@ assert_eq_int(redis_driver.max_connections, 50)
 
 print_test_summary()
 
-# Test Connection String Building
+fr fr Test Connection String Building
 test_start("Connection String Building")
 
-# Test PostgreSQL connection string
+fr fr Test PostgreSQL connection string
 sus pg_config database_complete.DatabaseConfig = database_complete.DatabaseConfig{
     driver_type: "postgresql",
     host: "localhost",
@@ -69,7 +69,7 @@ assert_true(stringz.contains(pg_conn_str, "port=5432"))
 assert_true(stringz.contains(pg_conn_str, "dbname=testdb"))
 assert_true(stringz.contains(pg_conn_str, "user=testuser"))
 
-# Test MySQL connection string
+fr fr Test MySQL connection string
 sus mysql_config database_complete.DatabaseConfig = database_complete.DatabaseConfig{
     driver_type: "mysql",
     host: "localhost",
@@ -88,7 +88,7 @@ assert_true(stringz.contains(mysql_conn_str, "root:password"))
 assert_true(stringz.contains(mysql_conn_str, "@tcp(localhost:3306)"))
 assert_true(stringz.contains(mysql_conn_str, "/testdb"))
 
-# Test SQLite connection string
+fr fr Test SQLite connection string
 sus sqlite_config database_complete.DatabaseConfig = database_complete.DatabaseConfig{
     driver_type: "sqlite",
     host: "",
@@ -107,7 +107,7 @@ assert_true(stringz.contains(sqlite_conn_str, "file:test.db"))
 
 print_test_summary()
 
-# Test Connection Pool Management
+fr fr Test Connection Pool Management
 test_start("Connection Pool Management")
 
 sus pool database_complete.ConnectionPool = database_complete.init_connection_pool(pg_config)
@@ -117,41 +117,41 @@ assert_eq_int(pool.current_size, 0)
 assert_eq_int(pool.available_connections, 0)
 assert_true(pool.is_initialized)
 
-# Test getting connection from pool
+fr fr Test getting connection from pool
 sus conn_id tea = database_complete.get_connection(pool)
 assert_true(stringz.length(conn_id) > 0)
 assert_true(stringz.contains(conn_id, "conn_"))
 
-# Test returning connection to pool
+fr fr Test returning connection to pool
 sus return_success lit = database_complete.return_connection(pool, conn_id)
 assert_true(return_success)
 
 print_test_summary()
 
-# Test Transaction Management
+fr fr Test Transaction Management
 test_start("Transaction Management")
 
 sus test_conn_id tea = "test_connection_1"
 
-# Test beginning transaction
+fr fr Test beginning transaction
 sus tx database_complete.Transaction = database_complete.begin_transaction(test_conn_id, "READ_COMMITTED")
 assert_eq_string(tx.connection_id, test_conn_id)
 assert_eq_string(tx.isolation_level, "READ_COMMITTED")
 assert_true(tx.is_active)
 assert_true(tx.rollback_on_error)
 
-# Test committing transaction
+fr fr Test committing transaction
 sus commit_success lit = database_complete.commit_transaction(tx)
 assert_true(commit_success)
 
-# Test rollback transaction
+fr fr Test rollback transaction
 sus tx2 database_complete.Transaction = database_complete.begin_transaction(test_conn_id, "SERIALIZABLE")
 sus rollback_success lit = database_complete.rollback_transaction(tx2)
 assert_true(rollback_success)
 
 print_test_summary()
 
-# Test SQL Query Execution
+fr fr Test SQL Query Execution
 test_start("SQL Query Execution")
 
 sus query_result database_complete.QueryResult = database_complete.execute_query(test_conn_id, "SELECT * FROM users")
@@ -162,7 +162,7 @@ assert_eq_string(query_result.columns[1], "name")
 assert_eq_string(query_result.columns[2], "email")
 assert_eq_string(query_result.columns[3], "created_at")
 
-# Check first row of data
+fr fr Check first row of data
 assert_eq_string(query_result.data[0][0], "1")
 assert_eq_string(query_result.data[0][1], "John Doe")
 assert_eq_string(query_result.data[0][2], "john@example.com")
@@ -173,14 +173,14 @@ assert_true(query_result.execution_time_ms >= 0)
 
 print_test_summary()
 
-# Test Prepared Statements
+fr fr Test Prepared Statements
 test_start("Prepared Statements")
 
 sus prepared_stmt database_complete.PreparedStatement = database_complete.prepare_statement(test_conn_id, "SELECT * FROM users WHERE id = $1")
 assert_true(stringz.length(prepared_stmt) > 0)
 assert_true(stringz.contains(prepared_stmt, "stmt_"))
 
-# Test executing prepared statement
+fr fr Test executing prepared statement
 sus params [tea] = ["1"]
 sus prepared_result database_complete.QueryResult = database_complete.execute_prepared(test_conn_id, prepared_stmt, params)
 assert_eq_int(prepared_result.rows_affected, 1)
@@ -189,21 +189,21 @@ assert_eq_string(prepared_result.columns[0], "result")
 
 print_test_summary()
 
-# Test Schema Operations
+fr fr Test Schema Operations
 test_start("Schema Operations")
 
-# Test creating table
+fr fr Test creating table
 sus columns [tea] = ["id INTEGER PRIMARY KEY", "name VARCHAR(100)", "email VARCHAR(255)"]
 sus create_success lit = database_complete.create_table(test_conn_id, "test_users", columns)
 assert_true(create_success)
 
-# Test dropping table
+fr fr Test dropping table
 sus drop_success lit = database_complete.drop_table(test_conn_id, "test_users")
 assert_true(drop_success)
 
 print_test_summary()
 
-# Test Batch Operations
+fr fr Test Batch Operations
 test_start("Batch Operations")
 
 sus batch_queries [tea] = [
@@ -215,23 +215,23 @@ sus batch_queries [tea] = [
 sus batch_results [database_complete.QueryResult] = database_complete.execute_batch(test_conn_id, batch_queries)
 assert_eq_int(stringz.length(batch_results), 3)
 
-# Check each result
+fr fr Check each result
 bestie i := 0; i < stringz.length(batch_results); i++ {
     assert_true(batch_results[i].execution_time_ms >= 0)
 }
 
 print_test_summary()
 
-# Test Database Utilities
+fr fr Test Database Utilities
 test_start("Database Utilities")
 
-# Test SQL string escaping
+fr fr Test SQL string escaping
 sus unsafe_string tea = "'; DROP TABLE users; --"
 sus safe_string tea = database_complete.escape_sql_string(unsafe_string)
 assert_true(stringz.contains(safe_string, "''"))
 assert_false(stringz.contains(safe_string, "'; DROP"))
 
-# Test query formatting with parameters
+fr fr Test query formatting with parameters
 sus query_template tea = "SELECT * FROM users WHERE name = $1 AND email = $2"
 sus format_params [tea] = ["John Doe", "john@example.com"]
 sus formatted_query tea = database_complete.format_query(query_template, format_params)
@@ -242,7 +242,7 @@ assert_false(stringz.contains(formatted_query, "$2"))
 
 print_test_summary()
 
-# Test Error Handling
+fr fr Test Error Handling
 test_start("Error Handling")
 
 sus conn_error database_complete.DatabaseError = database_complete.create_connection_error("Failed to connect")
@@ -259,23 +259,23 @@ assert_true(stringz.contains(tx_error, "Transaction deadlock"))
 
 print_test_summary()
 
-# Test High-Level API
+fr fr Test High-Level API
 test_start("High-Level Database API")
 
-# Test database connection
+fr fr Test database connection
 sus api_conn_id tea = database_complete.db_connect(pg_config)
 assert_true(stringz.length(api_conn_id) > 0)
 
-# Test simple query
+fr fr Test simple query
 sus api_result database_complete.QueryResult = database_complete.db_query(api_conn_id, "SELECT COUNT(*) FROM users")
 assert_true(api_result.rows_affected >= 0)
 
-# Test parameterized query
+fr fr Test parameterized query
 sus api_params [tea] = ["John", "john@example.com"]
 sus api_exec_result database_complete.QueryResult = database_complete.db_exec(api_conn_id, "INSERT INTO users (name, email) VALUES ($1, $2)", api_params)
 assert_true(api_exec_result.rows_affected >= 0)
 
-# Test transaction with multiple queries
+fr fr Test transaction with multiple queries
 sus tx_queries [tea] = [
     "INSERT INTO users (name, email) VALUES ('Transaction User 1', 'tx1@example.com')",
     "INSERT INTO users (name, email) VALUES ('Transaction User 2', 'tx2@example.com')"
@@ -283,13 +283,13 @@ sus tx_queries [tea] = [
 sus tx_success lit = database_complete.db_transaction(api_conn_id, tx_queries)
 assert_true(tx_success)
 
-# Test database connection close
+fr fr Test database connection close
 sus close_success lit = database_complete.db_close(api_conn_id)
 assert_true(close_success)
 
 print_test_summary()
 
-# Test Connection Health Monitoring
+fr fr Test Connection Health Monitoring
 test_start("Connection Health Monitoring")
 
 sus health_status lit = database_complete.check_connection_health(test_conn_id)
@@ -303,7 +303,7 @@ assert_true(stringz.contains(pool_status, "Available"))
 
 print_test_summary()
 
-# Test Migration Support
+fr fr Test Migration Support
 test_start("Migration Support")
 
 sus migration_sql tea = "CREATE TABLE migrations (id INTEGER PRIMARY KEY, version VARCHAR(50), applied_at TIMESTAMP)"
@@ -312,7 +312,7 @@ assert_true(migration_success)
 
 print_test_summary()
 
-# Test Prepared Statement Caching
+fr fr Test Prepared Statement Caching
 test_start("Prepared Statement Caching")
 
 sus cache database_complete.PreparedStatementCache = database_complete.PreparedStatementCache{
@@ -332,25 +332,21 @@ assert_true(stringz.contains(cached_stmt, "cached_stmt"))
 
 print_test_summary()
 
-# Performance and Stress Testing
+fr fr Performance and Stress Testing
 test_start("Performance and Stress Testing")
 
-# Test multiple connections
+fr fr Test multiple connections
 sus connection_count normie = 5
 bestie i := 0; i < connection_count; i++ {
     sus stress_conn_id tea = database_complete.get_connection(pool)
-    assert_true(stringz.length(stress_conn_id) > 0)
-    
-    # Execute query on each connection
+    assert_true(stringz.length(stress_conn_id) > 0) fr fr Execute query on each connection
     sus stress_result database_complete.QueryResult = database_complete.execute_query(stress_conn_id, "SELECT 1")
-    assert_true(stress_result.rows_affected >= 0)
-    
-    # Return connection to pool
+    assert_true(stress_result.rows_affected >= 0) fr fr Return connection to pool
     sus stress_return lit = database_complete.return_connection(pool, stress_conn_id)
     assert_true(stress_return)
 }
 
-# Test large batch operation
+fr fr Test large batch operation
 sus large_batch [tea]
 bestie i := 0; i < 10; i++ {
     sus batch_query tea = stringz.concat("SELECT ", stringz.from_int(i))

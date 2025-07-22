@@ -2,7 +2,7 @@ yeet "testz"
 yeet "x509_certs_tea"
 yeet "string"
 
-# Test X.509 certificate parsing
+fr fr Test X.509 certificate parsing
 slay test_x509_parse_cert() {
     test_start("x509_parse_cert")
     
@@ -26,7 +26,7 @@ qUE9fgZ6DdqNVpvtKlQ=
     assert_true(string.length(cert.public_key) > 0)
 }
 
-# Test X.509 private key parsing
+fr fr Test X.509 private key parsing
 slay test_x509_parse_key() {
     test_start("x509_parse_key")
     
@@ -44,7 +44,7 @@ hmybCc6lAgMBAAECggEBAJtXeB6rLZXKJmGgHIaFyGVQZHRJwSFOjZJhUcGMvnGr
     assert_true(string.length(key.public_key) > 0)
 }
 
-# Test X.509 public key parsing
+fr fr Test X.509 public key parsing
 slay test_x509_parse_pubkey() {
     test_start("x509_parse_pubkey")
     
@@ -59,7 +59,7 @@ gvgp8/3aWYMH9jDqVVEgUgOm/nKHRbXAjSrZGhqgKBhMbGCGbJsJzqUCAwEAAQ==
     assert_true(string.length(pubkey.key_data) > 0)
 }
 
-# Test X.509 certificate request parsing
+fr fr Test X.509 certificate request parsing
 slay test_x509_parse_csr() {
     test_start("x509_parse_csr")
     
@@ -78,7 +78,7 @@ N3QeVSCH
     assert_true(string.length(csr.public_key) > 0)
 }
 
-# Test X.509 certificate encoding
+fr fr Test X.509 certificate encoding
 slay test_x509_encode_cert() {
     test_start("x509_encode_cert")
     
@@ -100,7 +100,7 @@ slay test_x509_encode_cert() {
     assert_true(string.length(encoded_cert) > 100)
 }
 
-# Test X.509 private key encoding
+fr fr Test X.509 private key encoding
 slay test_x509_encode_key() {
     test_start("x509_encode_key")
     
@@ -117,7 +117,7 @@ slay test_x509_encode_key() {
     assert_true(string.length(encoded_key) > 100)
 }
 
-# Test X.509 public key encoding
+fr fr Test X.509 public key encoding
 slay test_x509_encode_pubkey() {
     test_start("x509_encode_pubkey")
     
@@ -134,7 +134,7 @@ slay test_x509_encode_pubkey() {
     assert_true(string.length(encoded_pubkey) > 100)
 }
 
-# Test X.509 certificate verification
+fr fr Test X.509 certificate verification
 slay test_x509_verify_cert() {
     test_start("x509_verify_cert")
     
@@ -164,7 +164,7 @@ slay test_x509_verify_cert() {
     assert_true(is_valid)
 }
 
-# Test X.509 certificate chain verification
+fr fr Test X.509 certificate chain verification
 slay test_x509_verify_chain() {
     test_start("x509_verify_chain")
     
@@ -206,7 +206,7 @@ slay test_x509_verify_chain() {
     assert_true(is_valid)
 }
 
-# Test X.509 certificate field extraction
+fr fr Test X.509 certificate field extraction
 slay test_x509_get_fields() {
     test_start("x509_get_fields")
     
@@ -232,7 +232,7 @@ slay test_x509_get_fields() {
     assert_true(string.contains(x509_get_extensions(cert), "SAN:DNS:example.com"))
 }
 
-# Test X.509 hostname verification
+fr fr Test X.509 hostname verification
 slay test_x509_check_hostname() {
     test_start("x509_check_hostname")
     
@@ -245,22 +245,14 @@ slay test_x509_check_hostname() {
         public_key: "test_public_key_data",
         extensions: "SAN:DNS:example.com,DNS:*.example.com,DNS:test.example.com",
         signature: "test_signature"
-    }
-    
-    # Test exact match
-    assert_true(x509_check_hostname(cert, "example.com"))
-    
-    # Test SAN match
-    assert_true(x509_check_hostname(cert, "test.example.com"))
-    
-    # Test wildcard match
-    assert_true(x509_check_hostname(cert, "sub.example.com"))
-    
-    # Test no match
+    } fr fr Test exact match
+    assert_true(x509_check_hostname(cert, "example.com")) fr fr Test SAN match
+    assert_true(x509_check_hostname(cert, "test.example.com")) fr fr Test wildcard match
+    assert_true(x509_check_hostname(cert, "sub.example.com")) fr fr Test no match
     assert_false(x509_check_hostname(cert, "other.com"))
 }
 
-# Test X.509 email verification
+fr fr Test X.509 email verification
 slay test_x509_check_email() {
     test_start("x509_check_email")
     
@@ -273,19 +265,13 @@ slay test_x509_check_email() {
         public_key: "test_public_key_data",
         extensions: "SAN:email:user@example.com,email:admin@example.com",
         signature: "test_signature"
-    }
-    
-    # Test subject email match
-    assert_true(x509_check_email(cert, "user@example.com"))
-    
-    # Test SAN email match
-    assert_true(x509_check_email(cert, "admin@example.com"))
-    
-    # Test no match
+    } fr fr Test subject email match
+    assert_true(x509_check_email(cert, "user@example.com")) fr fr Test SAN email match
+    assert_true(x509_check_email(cert, "admin@example.com")) fr fr Test no match
     assert_false(x509_check_email(cert, "other@example.com"))
 }
 
-# Test X.509 IP address verification
+fr fr Test X.509 IP address verification
 slay test_x509_check_ip() {
     test_start("x509_check_ip")
     
@@ -298,21 +284,15 @@ slay test_x509_check_ip() {
         public_key: "test_public_key_data",
         extensions: "SAN:IP:192.168.1.1,IP:10.0.0.1",
         signature: "test_signature"
-    }
-    
-    # Test IP match
+    } fr fr Test IP match
     assert_true(x509_check_ip(cert, "192.168.1.1"))
-    assert_true(x509_check_ip(cert, "10.0.0.1"))
-    
-    # Test no match
+    assert_true(x509_check_ip(cert, "10.0.0.1")) fr fr Test no match
     assert_false(x509_check_ip(cert, "192.168.1.2"))
 }
 
-# Test comprehensive X.509 operations
+fr fr Test comprehensive X.509 operations
 slay test_x509_comprehensive() {
-    test_start("x509_comprehensive")
-    
-    # Test full certificate lifecycle
+    test_start("x509_comprehensive") fr fr Test full certificate lifecycle
     sus cert_pem tea = `-----BEGIN CERTIFICATE-----
 MIIBkTCB+wIJALHHVYGGfxqhMA0GCSqGSIb3DQEBCwUAMB4xHDAaBgNVBAMME1Rl
 c3QgQ2VydGlmaWNhdGUgQ0EwHhcNMjMwMTAxMDAwMDAwWhcNMjQwMTAxMDAwMDAw
@@ -321,27 +301,19 @@ SwAwSAJBALRiMLAh9iimur8VA7qVK7u7fGK6nu4dgvgp8/3aWYMH9jDqVVEgUgOm
 /nKHRbXAjSrZGhqgKBhMbGCGbJsJzqUCAwEAATANBgkqhkiG9w0BAQsFAANBAKz0
 JLnkFCtPXZJUXIlAkc1cqLxOAjMrXQvlJQVZkDcqE8ZRhH4vfh8WyHKOiANH9lRN
 qUE9fgZ6DdqNVpvtKlQ=
------END CERTIFICATE-----`
-    
-    # Parse certificate
-    sus cert X509Cert = x509_parse_cert(cert_pem)
-    
-    # Verify certificate structure
+-----END CERTIFICATE-----` fr fr Parse certificate
+    sus cert X509Cert = x509_parse_cert(cert_pem) fr fr Verify certificate structure
     assert_true(string.length(cert.subject) > 0)
     assert_true(string.length(cert.issuer) > 0)
-    assert_true(string.length(cert.serial_number) > 0)
-    
-    # Re-encode certificate
+    assert_true(string.length(cert.serial_number) > 0) fr fr Re-encode certificate
     sus encoded_cert tea = x509_encode_cert(cert)
-    assert_true(string.contains(encoded_cert, "-----BEGIN CERTIFICATE-----"))
-    
-    # Test certificate validation
+    assert_true(string.contains(encoded_cert, "-----BEGIN CERTIFICATE-----")) fr fr Test certificate validation
     sus hostname_valid lit = x509_check_hostname(cert, "example.com")
     
     vibez.spill("X.509 comprehensive test completed successfully")
 }
 
-# Main test execution
+fr fr Main test execution
 test_x509_parse_cert()
 test_x509_parse_key()
 test_x509_parse_pubkey()

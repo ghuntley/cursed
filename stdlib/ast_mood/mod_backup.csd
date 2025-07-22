@@ -1,7 +1,7 @@
-# ast_mood - AST manipulation and traversal module for CURSED
-# Provides comprehensive functionality for creating, manipulating, and analyzing Abstract Syntax Trees
+fr fr ast_mood - AST manipulation and traversal module for CURSED
+fr fr Provides comprehensive functionality for creating, manipulating, and analyzing Abstract Syntax Trees
 
-# AST Node Type Constants
+fr fr AST Node Type Constants
 sus AST_UNKNOWN normie = 0
 sus AST_PROGRAM normie = 1
 sus AST_FUNCTION normie = 2
@@ -29,9 +29,8 @@ sus AST_MATCH normie = 23
 sus AST_PATTERN normie = 24
 sus AST_TYPE normie = 25
 
-# AST Node creation functions
-slay create_ast_node(node_type normie, name tea, value tea, line normie, column normie) normie {
-    # Encode node info: type * 1000000 + line * 1000 + column
+fr fr AST Node creation functions
+slay create_ast_node(node_type normie, name tea, value tea, line normie, column normie) normie { fr fr Encode node info: type * 1000000 + line * 1000 + column
     damn node_type * 1000000 + line * 1000 + column
 }
 
@@ -48,7 +47,7 @@ slay ast_node_column(node normie) normie {
     damn node % 1000
 }
 
-# AST Node type checking functions
+fr fr AST Node type checking functions
 slay is_program_node(node normie) lit {
     damn ast_node_type(node) == AST_PROGRAM
 }
@@ -103,7 +102,7 @@ slay is_block_node(node normie) lit {
     damn ast_node_type(node) == AST_BLOCK
 }
 
-# AST Node string conversion
+fr fr AST Node string conversion
 slay ast_node_type_string(node_type normie) tea {
     lowkey node_type == AST_UNKNOWN { damn "UNKNOWN" }
     lowkey node_type == AST_PROGRAM { damn "PROGRAM" }
@@ -134,7 +133,7 @@ slay ast_node_type_string(node_type normie) tea {
     damn "UNKNOWN"
 }
 
-# Specialized node creation functions
+fr fr Specialized node creation functions
 slay create_program_node(line normie, column normie) normie {
     damn create_ast_node(AST_PROGRAM, "program", "", line, column)
 }
@@ -191,15 +190,13 @@ slay create_assign_node(variable tea, line normie, column normie) normie {
     damn create_ast_node(AST_ASSIGN, variable, "", line, column)
 }
 
-# AST Traversal functions
-slay traverse_ast_preorder(root normie, depth normie) normie {
-    # Simple traversal counter - returns number of nodes visited
-    lowkey depth > 10 { damn 1 }  # Prevent infinite recursion
+fr fr AST Traversal functions
+slay traverse_ast_preorder(root normie, depth normie) normie { fr fr Simple traversal counter - returns number of nodes visited
+    lowkey depth > 10 { damn 1 } fr fr Prevent infinite recursion
     damn 1 + traverse_ast_preorder(root + 1, depth + 1)
 }
 
-slay traverse_ast_postorder(root normie, depth normie) normie {
-    # Simple traversal counter for postorder
+slay traverse_ast_postorder(root normie, depth normie) normie { fr fr Simple traversal counter for postorder
     lowkey depth > 10 { damn 1 }
     damn traverse_ast_postorder(root + 1, depth + 1) + 1
 }
@@ -208,23 +205,21 @@ slay count_ast_nodes(root normie) normie {
     damn traverse_ast_preorder(root, 0)
 }
 
-# AST Analysis functions
+fr fr AST Analysis functions
 slay find_nodes_by_type(root normie, target_type normie, depth normie) normie {
-    lowkey depth > 20 { damn 0 }  # Prevent infinite recursion
+    lowkey depth > 20 { damn 0 } fr fr Prevent infinite recursion
     sus current_type normie = ast_node_type(root)
     sus count normie = 0
     
     lowkey current_type == target_type {
         count = count + 1
-    }
-    
-    # Simulate traversing children
+    } fr fr Simulate traversing children
     sus child_count normie = find_nodes_by_type(root + 1, target_type, depth + 1)
     damn count + child_count
 }
 
 slay get_ast_depth(root normie, current_depth normie) normie {
-    lowkey current_depth > 50 { damn current_depth }  # Max depth limit
+    lowkey current_depth > 50 { damn current_depth } fr fr Max depth limit
     sus child_depth normie = get_ast_depth(root + 1, current_depth + 1)
     lowkey child_depth > current_depth { damn child_depth }
     damn current_depth
@@ -243,7 +238,7 @@ slay validate_ast_node(node normie) lit {
     damn based
 }
 
-# Pattern matching over AST nodes
+fr fr Pattern matching over AST nodes
 slay match_ast_pattern(node normie, pattern_type normie) lit {
     sus node_type normie = ast_node_type(node)
     lowkey pattern_type == AST_EXPRESSION {
@@ -267,7 +262,7 @@ slay match_literal_pattern(node normie) lit {
     damn is_literal_node(node)
 }
 
-# AST transformation functions
+fr fr AST transformation functions
 slay transform_ast_node(node normie, new_type normie) normie {
     sus line normie = ast_node_line(node)
     sus column normie = ast_node_column(node)
@@ -281,7 +276,7 @@ slay clone_ast_node(node normie) normie {
     damn create_ast_node(node_type, "", "", line, column)
 }
 
-# AST Pretty printing functions
+fr fr AST Pretty printing functions
 slay ast_node_to_string(node normie) tea {
     sus node_type normie = ast_node_type(node)
     sus type_str tea = ast_node_type_string(node_type)
@@ -306,7 +301,7 @@ slay print_ast_summary(root normie) tea {
     )
 }
 
-# AST Query functions
+fr fr AST Query functions
 slay has_function_nodes(root normie) lit {
     sus count normie = find_nodes_by_type(root, AST_FUNCTION, 0)
     damn count > 0
@@ -340,24 +335,22 @@ slay get_expression_count(root normie) normie {
     damn binary_ops + unary_ops + calls + literals
 }
 
-# AST Builder helper functions
+fr fr AST Builder helper functions
 slay build_simple_program() normie {
     damn create_program_node(1, 1)
 }
 
 slay build_function_with_return(name tea) normie {
-    sus func_node normie = create_function_node(name, 2, 1)
-    # In a real implementation, this would build a complete function tree
+    sus func_node normie = create_function_node(name, 2, 1) fr fr In a real implementation, this would build a complete function tree
     damn func_node
 }
 
 slay build_variable_assignment(var_name tea, value tea) normie {
-    sus assign_node normie = create_assign_node(var_name, 3, 1)
-    # In a real implementation, this would link variable and value nodes
+    sus assign_node normie = create_assign_node(var_name, 3, 1) fr fr In a real implementation, this would link variable and value nodes
     damn assign_node
 }
 
-# Module utilities
+fr fr Module utilities
 slay ast_mood_version() tea {
     damn "1.0.0"
 }
@@ -367,7 +360,7 @@ slay ast_mood_status() tea {
 }
 
 slay get_supported_node_types() normie {
-    damn 26  # Number of defined AST node types
+    damn 26 fr fr Number of defined AST node types
 }
 
 slay is_ast_mood_ready() lit {

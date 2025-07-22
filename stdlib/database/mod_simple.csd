@@ -1,6 +1,6 @@
 yeet "testz"
 
-# Database connection types
+fr fr Database connection types
 be_like DatabaseType = normie
 facts {
     DB_POSTGRES normie = 1
@@ -8,7 +8,7 @@ facts {
     DB_SQLITE normie = 3
 }
 
-# Simple connection configuration
+fr fr Simple connection configuration
 be_like DatabaseConfig = {
     db_type DatabaseType
     host tea
@@ -18,14 +18,14 @@ be_like DatabaseConfig = {
     password tea
 }
 
-# Simple query result
+fr fr Simple query result
 be_like QueryResult = {
     success lit
     row_count normie
     error_message tea
 }
 
-# Simple connection management
+fr fr Simple connection management
 slay create_database_config(
     db_type DatabaseType,
     host tea,
@@ -45,28 +45,28 @@ slay create_database_config(
     damn config
 }
 
-# PostgreSQL connection
+fr fr PostgreSQL connection
 slay connect_postgres(config DatabaseConfig) tea {
     sus connection_id tea = "pg_conn_12345"
     vibez.spill("Connecting to PostgreSQL database")
     damn connection_id
 }
 
-# MySQL connection
+fr fr MySQL connection
 slay connect_mysql(config DatabaseConfig) tea {
     sus connection_id tea = "mysql_conn_67890"
     vibez.spill("Connecting to MySQL database")
     damn connection_id
 }
 
-# SQLite connection
+fr fr SQLite connection
 slay connect_sqlite(database_path tea) tea {
     sus connection_id tea = "sqlite_conn_54321"
     vibez.spill("Connecting to SQLite database")
     damn connection_id
 }
 
-# Universal connection function
+fr fr Universal connection function
 slay connect_database(config DatabaseConfig) tea {
     ready config.db_type {
         1 -> {
@@ -84,7 +84,7 @@ slay connect_database(config DatabaseConfig) tea {
     }
 }
 
-# Simple query execution
+fr fr Simple query execution
 slay execute_query(connection_id tea, query tea) QueryResult {
     sus result QueryResult = {
         success: based,
@@ -96,7 +96,7 @@ slay execute_query(connection_id tea, query tea) QueryResult {
     damn result
 }
 
-# Close connection
+fr fr Close connection
 slay close_connection(connection_id tea) lit {
     vibez.spill("Closing connection: " + connection_id)
     damn based

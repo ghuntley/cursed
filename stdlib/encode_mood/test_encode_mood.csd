@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "encode_mood"
 
-# Test Base64 encoding
+fr fr Test Base64 encoding
 test_start("Base64 encoding basic test")
 sus input tea = "Hello"
 sus encoded tea = base64_encode(input)
@@ -17,7 +17,7 @@ sus special_input tea = "Hello, World! 123"
 sus special_encoded tea = base64_encode(special_input)
 assert_true(string_length(special_encoded) > 0)
 
-# Test Base64 decoding
+fr fr Test Base64 decoding
 test_start("Base64 decoding basic test")
 sus decoded tea = base64_decode("SGVsbG8=")
 assert_eq_string(decoded, "Hello")
@@ -28,7 +28,7 @@ sus round_trip_encoded tea = base64_encode(original)
 sus round_trip_decoded tea = base64_decode(round_trip_encoded)
 assert_eq_string(round_trip_decoded, original)
 
-# Test Hex encoding
+fr fr Test Hex encoding
 test_start("Hex encoding basic test")
 sus hex_input tea = "ABC"
 sus hex_encoded tea = hex_encode(hex_input)
@@ -43,7 +43,7 @@ test_start("Hex encoding numbers")
 sus hex_nums tea = hex_encode("123")
 assert_true(string_length(hex_nums) == 6)
 
-# Test Hex decoding
+fr fr Test Hex decoding
 test_start("Hex decoding basic test")
 sus hex_decoded tea = hex_decode("414243")
 assert_eq_string(hex_decoded, "ABC")
@@ -54,7 +54,7 @@ sus hex_round_encoded tea = hex_encode(hex_original)
 sus hex_round_decoded tea = hex_decode(hex_round_encoded)
 assert_eq_string(hex_round_decoded, hex_original)
 
-# Test Binary encoding
+fr fr Test Binary encoding
 test_start("Binary encoding basic test")
 sus bin_input tea = "A"
 sus bin_encoded tea = binary_encode(bin_input)
@@ -69,7 +69,7 @@ test_start("Binary encoding multiple chars")
 sus bin_multi tea = binary_encode("AB")
 assert_true(string_length(bin_multi) == 16)
 
-# Test Binary decoding
+fr fr Test Binary decoding
 test_start("Binary decoding basic test")
 sus bin_decoded tea = binary_decode("01000001")
 assert_eq_string(bin_decoded, "A")
@@ -80,7 +80,7 @@ sus bin_round_encoded tea = binary_encode(bin_original)
 sus bin_round_decoded tea = binary_decode(bin_round_encoded)
 assert_eq_string(bin_round_decoded, bin_original)
 
-# Test URL-safe Base64
+fr fr Test URL-safe Base64
 test_start("URL-safe Base64 encoding test")
 sus url_input tea = "Hello>?"
 sus url_encoded tea = base64_url_encode(url_input)
@@ -92,7 +92,7 @@ sus url_round_encoded tea = base64_url_encode(url_original)
 sus url_round_decoded tea = base64_url_decode(url_round_encoded)
 assert_eq_string(url_round_decoded, url_original)
 
-# Test Percent encoding
+fr fr Test Percent encoding
 test_start("Percent encoding basic test")
 sus percent_input tea = "Hello World"
 sus percent_encoded tea = percent_encode(percent_input)
@@ -109,19 +109,19 @@ sus percent_round_encoded tea = percent_encode(percent_original)
 sus percent_round_decoded tea = percent_decode(percent_round_encoded)
 assert_eq_string(percent_round_decoded, percent_original)
 
-# Test MIME Base64
+fr fr Test MIME Base64
 test_start("MIME Base64 encoding test")
 sus mime_input tea = "This is a long string that should be broken into multiple lines when encoded as MIME Base64"
 sus mime_encoded tea = base64_mime_encode(mime_input)
 assert_true(string_contains(mime_encoded, "\r\n"))
 
-# Test Quoted-printable
+fr fr Test Quoted-printable
 test_start("Quoted-printable encoding test")
 sus qp_input tea = "Hello=World"
 sus qp_encoded tea = quoted_printable_encode(qp_input)
 assert_true(string_contains(qp_encoded, "=3D"))
 
-# Test validation functions
+fr fr Test validation functions
 test_start("Base64 validation test")
 assert_true(is_valid_base64("SGVsbG8="))
 assert_false(is_valid_base64("Invalid@Base64"))
@@ -137,7 +137,7 @@ assert_true(is_valid_binary("01000001"))
 assert_false(is_valid_binary("01000002"))
 assert_false(is_valid_binary("0100000"))
 
-# Test encoding constants
+fr fr Test encoding constants
 test_start("Base64 alphabet constant test")
 assert_true(string_length(BASE64_ALPHABET) == 64)
 assert_true(string_contains(BASE64_ALPHABET, "A"))
@@ -154,7 +154,7 @@ assert_true(string_length(BINARY_ALPHABET) == 2)
 assert_true(string_contains(BINARY_ALPHABET, "0"))
 assert_true(string_contains(BINARY_ALPHABET, "1"))
 
-# Test helper functions
+fr fr Test helper functions
 test_start("Base64 char to value test")
 assert_eq_int(base64_char_to_value('A'), 0)
 assert_eq_int(base64_char_to_value('Z'), 25)
@@ -185,7 +185,7 @@ assert_false(is_url_safe_char(' '))
 assert_false(is_url_safe_char('@'))
 assert_false(is_url_safe_char('!'))
 
-# Test character validation functions
+fr fr Test character validation functions
 test_start("Base64 character validation test")
 assert_true(is_base64_char('A'))
 assert_true(is_base64_char('z'))
@@ -206,7 +206,7 @@ assert_true(is_hex_char('f'))
 assert_false(is_hex_char('G'))
 assert_false(is_hex_char('@'))
 
-# Test edge cases
+fr fr Test edge cases
 test_start("Base64 padding edge cases")
 sus pad1 tea = base64_encode("M")
 sus pad2 tea = base64_encode("Ma")
@@ -233,18 +233,15 @@ assert_true(string_length(large_hex) == string_length(large_data) * 2)
 
 print_test_summary()
 
-# Helper functions for testing (assume these exist in core stdlib)
-slay string_contains(s tea, substr tea) lit {
-    # Implementation would be in core stdlib
+fr fr Helper functions for testing (assume these exist in core stdlib)
+slay string_contains(s tea, substr tea) lit { fr fr Implementation would be in core stdlib
     damn based
 }
 
-slay string_from_byte(b byte) tea {
-    # Implementation would be in core stdlib
+slay string_from_byte(b byte) tea { fr fr Implementation would be in core stdlib
     damn "test"
 }
 
-slay string_repeat(s tea, count normie) tea {
-    # Implementation would be in core stdlib
+slay string_repeat(s tea, count normie) tea { fr fr Implementation would be in core stdlib
     damn s
 }

@@ -3,13 +3,13 @@ yeet "parser"
 
 test_start("basic parser functionality")
 
-# Test keyword recognition
+fr fr Test keyword recognition
 assert_true(is_keyword("sus"))
 assert_true(is_keyword("slay"))
 assert_true(is_keyword("damn"))
 assert_false(is_keyword("notakeyword"))
 
-# Test character classification
+fr fr Test character classification
 assert_true(is_operator('+'))
 assert_true(is_operator('-'))
 assert_false(is_operator('a'))

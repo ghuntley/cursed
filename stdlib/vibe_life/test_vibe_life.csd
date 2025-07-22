@@ -2,12 +2,12 @@ yeet "testz"
 yeet "vibe_life"
 yeet "core"
 
-# Initialize vibe_life module for testing
+fr fr Initialize vibe_life module for testing
 init_vibe_life()
 
-# ==============================================================================
-# COMMAND LINE ARGUMENT TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr COMMAND LINE ARGUMENT TESTS
+fr fr ==============================================================================
 
 test_start("get_args basic functionality")
 sus args [tea] = vibe_life.get_args()
@@ -22,7 +22,7 @@ assert_eq_int(count, 2)
 test_start("get_arg by index")
 assert_eq_string(vibe_life.get_arg(0), "cursed")
 assert_eq_string(vibe_life.get_arg(1), "program.csd")
-assert_eq_string(vibe_life.get_arg(99), "")  # Out of bounds
+assert_eq_string(vibe_life.get_arg(99), "") fr fr Out of bounds
 
 test_start("set_args functionality")
 sus new_args [tea] = ["test", "file.csd", "--debug"]
@@ -30,9 +30,9 @@ vibe_life.set_args(new_args)
 assert_eq_int(vibe_life.get_arg_count(), 3)
 assert_eq_string(vibe_life.get_arg(2), "--debug")
 
-# ==============================================================================
-# ENVIRONMENT VARIABLE TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr ENVIRONMENT VARIABLE TESTS
+fr fr ==============================================================================
 
 test_start("get_env default variables")
 assert_eq_string(vibe_life.get_env("HOME"), "/home/user")
@@ -55,11 +55,11 @@ assert_false(vibe_life.unset_env("NONEXISTENT"))
 
 test_start("get_env_keys functionality")
 sus env_keys [tea] = vibe_life.get_env_keys()
-assert_true(env_keys.length() >= 4)  # At least default vars
+assert_true(env_keys.length() >= 4) fr fr At least default vars
 
-# ==============================================================================
-# PROCESS CONTROL TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr PROCESS CONTROL TESTS
+fr fr ==============================================================================
 
 test_start("get_pid functionality")
 sus pid normie = vibe_life.get_pid()
@@ -73,9 +73,9 @@ test_start("exit code management")
 vibe_life.exit(42)
 assert_eq_int(vibe_life.get_exit_code(), 42)
 
-# ==============================================================================
-# WORKING DIRECTORY TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr WORKING DIRECTORY TESTS
+fr fr ==============================================================================
 
 test_start("get_cwd default")
 assert_eq_string(vibe_life.get_cwd(), "/home/user")
@@ -83,7 +83,7 @@ assert_eq_string(vibe_life.get_cwd(), "/home/user")
 test_start("set_cwd functionality")
 assert_true(vibe_life.set_cwd("/tmp"))
 assert_eq_string(vibe_life.get_cwd(), "/tmp")
-assert_false(vibe_life.set_cwd(""))  # Empty path should fail
+assert_false(vibe_life.set_cwd("")) fr fr Empty path should fail
 
 test_start("join_path functionality")
 assert_eq_string(vibe_life.join_path("/home", "user"), "/home/user")
@@ -101,9 +101,9 @@ assert_eq_string(vibe_life.basename("/home/user/file.txt"), "file.txt")
 assert_eq_string(vibe_life.basename("file.txt"), "file.txt")
 assert_eq_string(vibe_life.basename("/home/user/"), "")
 
-# ==============================================================================
-# FILE SYSTEM OPERATION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr FILE SYSTEM OPERATION TESTS
+fr fr ==============================================================================
 
 test_start("file_exists default files")
 assert_true(vibe_life.file_exists("/tmp/cursed.log"))
@@ -127,7 +127,7 @@ assert_true(vibe_life.append_file("/tmp/test.txt", " Appended"))
 assert_eq_string(vibe_life.read_file("/tmp/test.txt"), "Hello World Appended")
 
 test_start("get_file_size functionality")
-assert_eq_int(vibe_life.get_file_size("/tmp/test.txt"), 19)  # "Hello World Appended"
+assert_eq_int(vibe_life.get_file_size("/tmp/test.txt"), 19) fr fr "Hello World Appended"
 assert_eq_int(vibe_life.get_file_size("/nonexistent"), -1)
 
 test_start("delete_file functionality")
@@ -137,35 +137,35 @@ assert_false(vibe_life.delete_file("/nonexistent"))
 
 test_start("list_files functionality")
 sus files [tea] = vibe_life.list_files()
-assert_true(files.length() >= 2)  # At least default files
+assert_true(files.length() >= 2) fr fr At least default files
 
 test_start("create_dir functionality")
 assert_true(vibe_life.create_dir("/tmp/testdir"))
 assert_true(vibe_life.is_dir("/tmp/testdir"))
 assert_false(vibe_life.is_dir("/tmp/test2.txt"))
 
-# ==============================================================================
-# UTILITY FUNCTION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr UTILITY FUNCTION TESTS
+fr fr ==============================================================================
 
 test_start("get_timestamp functionality")
 sus timestamp normie = vibe_life.get_timestamp()
 assert_true(timestamp > 0)
 
 test_start("sleep functionality")
-vibe_life.sleep(1)  # Should print sleep message
+vibe_life.sleep(1) fr fr Should print sleep message
 
 test_start("get_module_info functionality")
 sus info tea = vibe_life.get_module_info()
 assert_true(info.contains("vibe_life"))
 assert_true(info.contains("v1.0"))
 
-# ==============================================================================
-# INTEGRATION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr INTEGRATION TESTS
+fr fr ==============================================================================
 
 test_start("file and directory integration")
-# Create directory and file
+fr fr Create directory and file
 assert_true(vibe_life.create_dir("/home/projects"))
 assert_true(vibe_life.create_file("/home/projects/main.csd", "slay main() { vibez.spill(\"Hello\") }"))
 assert_true(vibe_life.file_exists("/home/projects/main.csd"))
@@ -184,9 +184,9 @@ sus current_dir tea = vibe_life.get_cwd()
 sus main_file tea = vibe_life.join_path(current_dir, vibe_life.get_arg(2))
 assert_eq_string(main_file, "/home/projects/main.csd")
 
-# ==============================================================================
-# EDGE CASE TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr EDGE CASE TESTS
+fr fr ==============================================================================
 
 test_start("empty and null inputs")
 assert_eq_string(vibe_life.get_env(""), "")
@@ -209,7 +209,7 @@ assert_eq_string(vibe_life.dirname("/"), "")
 assert_eq_string(vibe_life.basename("/"), "")
 assert_eq_string(vibe_life.join_path("/", "root"), "/root")
 
-# Print comprehensive test summary
+fr fr Print comprehensive test summary
 print_test_summary()
 
 vibez.spill("vibe_life module comprehensive testing complete!")

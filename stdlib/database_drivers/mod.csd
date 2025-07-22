@@ -1,9 +1,9 @@
 yeet "testz"
 
-# Pure CURSED Database Driver Registry Implementation
-# Eliminates unsafe global static access with safe state management
+fr fr Pure CURSED Database Driver Registry Implementation
+fr fr Eliminates unsafe global static access with safe state management
 
-# Driver information structure
+fr fr Driver information structure
 slay DriverInfo() {
     name: tea
     version: tea
@@ -13,7 +13,7 @@ slay DriverInfo() {
     is_active: lit
 }
 
-# Connection information structure
+fr fr Connection information structure
 slay ConnectionInfo() {
     driver_name: tea
     is_open: lit
@@ -22,7 +22,7 @@ slay ConnectionInfo() {
     transaction_active: lit
 }
 
-# Query result structure
+fr fr Query result structure
 slay QueryResult() {
     rows_affected: normie
     columns: [tea]
@@ -31,7 +31,7 @@ slay QueryResult() {
     success: lit
 }
 
-# Statement information structure
+fr fr Statement information structure
 slay StatementInfo() {
     query: tea
     parameter_count: normie
@@ -39,7 +39,7 @@ slay StatementInfo() {
     bound_parameters: [tea]
 }
 
-# Transaction information structure
+fr fr Transaction information structure
 slay TransactionInfo() {
     connection_id: normie
     is_active: lit
@@ -47,7 +47,7 @@ slay TransactionInfo() {
     started_at: tea
 }
 
-# Driver registry structure - safe state container
+fr fr Driver registry structure - safe state container
 slay DriverRegistry() {
     drivers: [DriverInfo]
     next_connection_id: normie
@@ -56,7 +56,7 @@ slay DriverRegistry() {
     active_transactions: [TransactionInfo]
 }
 
-# Create new driver registry instance
+fr fr Create new driver registry instance
 slay create_driver_registry() DriverRegistry {
     registry := DriverRegistry{
         drivers: [],
@@ -68,18 +68,15 @@ slay create_driver_registry() DriverRegistry {
     damn registry
 }
 
-# Register a database driver
+fr fr Register a database driver
 slay register_driver(registry: *DriverRegistry, name: tea, version: tea, 
-                    supports_tx: lit, supports_prep: lit) lit {
-    # Check if driver already exists
+                    supports_tx: lit, supports_prep: lit) lit { fr fr Check if driver already exists
     bestie i := 0; i < len(registry.drivers); i++ {
         if registry.drivers[i].name == name {
             vibez.spill("⚠️  Driver already registered:", name)
             damn cap
         }
-    }
-    
-    # Create new driver info
+    } fr fr Create new driver info
     driver := DriverInfo{
         name: name,
         version: version,
@@ -87,23 +84,19 @@ slay register_driver(registry: *DriverRegistry, name: tea, version: tea,
         supports_prepared_statements: supports_prep,
         connection_string: "",
         is_active: based
-    }
-    
-    # Add to registry
+    } fr fr Add to registry
     registry.drivers = append(registry.drivers, driver)
     vibez.spill("📦 Registered database driver:", name, "version:", version)
     damn based
 }
 
-# Get driver by name
+fr fr Get driver by name
 slay get_driver(registry: *DriverRegistry, name: tea) DriverInfo {
     bestie i := 0; i < len(registry.drivers); i++ {
         if registry.drivers[i].name == name {
             damn registry.drivers[i]
         }
-    }
-    
-    # Return empty driver if not found
+    } fr fr Return empty driver if not found
     empty_driver := DriverInfo{
         name: "",
         version: "",
@@ -115,7 +108,7 @@ slay get_driver(registry: *DriverRegistry, name: tea) DriverInfo {
     damn empty_driver
 }
 
-# List all registered drivers
+fr fr List all registered drivers
 slay list_drivers(registry: *DriverRegistry) [tea] {
     driver_names := []tea{}
     bestie i := 0; i < len(registry.drivers); i++ {
@@ -124,16 +117,15 @@ slay list_drivers(registry: *DriverRegistry) [tea] {
     damn driver_names
 }
 
-# Count registered drivers
+fr fr Count registered drivers
 slay driver_count(registry: *DriverRegistry) normie {
     damn len(registry.drivers)
 }
 
-# Remove driver by name
+fr fr Remove driver by name
 slay unregister_driver(registry: *DriverRegistry, name: tea) lit {
     bestie i := 0; i < len(registry.drivers); i++ {
-        if registry.drivers[i].name == name {
-            # Remove driver from slice
+        if registry.drivers[i].name == name { fr fr Remove driver from slice
             registry.drivers = append(registry.drivers[:i], registry.drivers[i+1:]...)
             vibez.spill("🗑️  Unregistered driver:", name)
             damn based
@@ -142,13 +134,13 @@ slay unregister_driver(registry: *DriverRegistry, name: tea) lit {
     damn cap
 }
 
-# Clear all drivers
+fr fr Clear all drivers
 slay clear_drivers(registry: *DriverRegistry) {
     registry.drivers = []DriverInfo{}
     vibez.spill("🧹 Cleared all drivers")
 }
 
-# Create database connection
+fr fr Create database connection
 slay create_connection(registry: *DriverRegistry, driver_name: tea) ConnectionInfo {
     driver := get_driver(registry, driver_name)
     if driver.name == "" {
@@ -161,9 +153,7 @@ slay create_connection(registry: *DriverRegistry, driver_name: tea) ConnectionIn
             transaction_active: cap
         }
         damn empty_conn
-    }
-    
-    # Create new connection
+    } fr fr Create new connection
     connection := ConnectionInfo{
         driver_name: driver_name,
         is_open: based,
@@ -178,9 +168,8 @@ slay create_connection(registry: *DriverRegistry, driver_name: tea) ConnectionIn
     damn connection
 }
 
-# Execute query on connection
-slay execute_query(registry: *DriverRegistry, connection_id: normie, query: tea) QueryResult {
-    # Find connection
+fr fr Execute query on connection
+slay execute_query(registry: *DriverRegistry, connection_id: normie, query: tea) QueryResult { fr fr Find connection
     bestie i := 0; i < len(registry.active_connections); i++ {
         if registry.active_connections[i].connection_id == connection_id {
             if registry.active_connections[i].is_open == cap {
@@ -193,13 +182,9 @@ slay execute_query(registry: *DriverRegistry, connection_id: normie, query: tea)
                     success: cap
                 }
                 damn result
-            }
-            
-            # Update last query
+            } fr fr Update last query
             registry.active_connections[i].last_query = query
-            vibez.spill("🔍 Executing query on connection", connection_id, ":", query)
-            
-            # Simulate successful query execution
+            vibez.spill("🔍 Executing query on connection", connection_id, ":", query) fr fr Simulate successful query execution
             result := QueryResult{
                 rows_affected: 1,
                 columns: ["id", "name", "created_at"],
@@ -209,9 +194,7 @@ slay execute_query(registry: *DriverRegistry, connection_id: normie, query: tea)
             }
             damn result
         }
-    }
-    
-    # Connection not found
+    } fr fr Connection not found
     vibez.spill("❌ Connection", connection_id, "not found")
     result := QueryResult{
         rows_affected: 0,
@@ -223,9 +206,8 @@ slay execute_query(registry: *DriverRegistry, connection_id: normie, query: tea)
     damn result
 }
 
-# Prepare statement
-slay prepare_statement(registry: *DriverRegistry, connection_id: normie, query: tea) StatementInfo {
-    # Check if connection exists and supports prepared statements
+fr fr Prepare statement
+slay prepare_statement(registry: *DriverRegistry, connection_id: normie, query: tea) StatementInfo { fr fr Check if connection exists and supports prepared statements
     bestie i := 0; i < len(registry.active_connections); i++ {
         if registry.active_connections[i].connection_id == connection_id {
             driver := get_driver(registry, registry.active_connections[i].driver_name)
@@ -238,9 +220,7 @@ slay prepare_statement(registry: *DriverRegistry, connection_id: normie, query: 
                     bound_parameters: []
                 }
                 damn empty_stmt
-            }
-            
-            # Create prepared statement
+            } fr fr Create prepared statement
             stmt := StatementInfo{
                 query: query,
                 parameter_count: 0,
@@ -252,9 +232,7 @@ slay prepare_statement(registry: *DriverRegistry, connection_id: normie, query: 
             vibez.spill("📝 Prepared statement:", query)
             damn stmt
         }
-    }
-    
-    # Connection not found
+    } fr fr Connection not found
     vibez.spill("❌ Connection", connection_id, "not found for statement preparation")
     empty_stmt := StatementInfo{
         query: "",
@@ -265,9 +243,8 @@ slay prepare_statement(registry: *DriverRegistry, connection_id: normie, query: 
     damn empty_stmt
 }
 
-# Begin transaction
-slay begin_transaction(registry: *DriverRegistry, connection_id: normie) TransactionInfo {
-    # Find connection
+fr fr Begin transaction
+slay begin_transaction(registry: *DriverRegistry, connection_id: normie) TransactionInfo { fr fr Find connection
     bestie i := 0; i < len(registry.active_connections); i++ {
         if registry.active_connections[i].connection_id == connection_id {
             if registry.active_connections[i].transaction_active {
@@ -279,9 +256,7 @@ slay begin_transaction(registry: *DriverRegistry, connection_id: normie) Transac
                     started_at: ""
                 }
                 damn empty_tx
-            }
-            
-            # Check if driver supports transactions
+            } fr fr Check if driver supports transactions
             driver := get_driver(registry, registry.active_connections[i].driver_name)
             if driver.supports_transactions == cap {
                 vibez.spill("❌ Driver does not support transactions")
@@ -292,9 +267,7 @@ slay begin_transaction(registry: *DriverRegistry, connection_id: normie) Transac
                     started_at: ""
                 }
                 damn empty_tx
-            }
-            
-            # Create transaction
+            } fr fr Create transaction
             tx := TransactionInfo{
                 connection_id: connection_id,
                 is_active: based,
@@ -307,9 +280,7 @@ slay begin_transaction(registry: *DriverRegistry, connection_id: normie) Transac
             vibez.spill("🔄 Started transaction on connection", connection_id)
             damn tx
         }
-    }
-    
-    # Connection not found
+    } fr fr Connection not found
     vibez.spill("❌ Connection", connection_id, "not found for transaction")
     empty_tx := TransactionInfo{
         connection_id: 0,
@@ -320,18 +291,13 @@ slay begin_transaction(registry: *DriverRegistry, connection_id: normie) Transac
     damn empty_tx
 }
 
-# Commit transaction
-slay commit_transaction(registry: *DriverRegistry, connection_id: normie) lit {
-    # Find and commit transaction
+fr fr Commit transaction
+slay commit_transaction(registry: *DriverRegistry, connection_id: normie) lit { fr fr Find and commit transaction
     bestie i := 0; i < len(registry.active_transactions); i++ {
         if registry.active_transactions[i].connection_id == connection_id &&
-           registry.active_transactions[i].is_active {
-            
-            # Remove transaction from active list
+           registry.active_transactions[i].is_active { fr fr Remove transaction from active list
             registry.active_transactions = append(registry.active_transactions[:i], 
-                                                 registry.active_transactions[i+1:]...)
-            
-            # Update connection status
+                                                 registry.active_transactions[i+1:]...) fr fr Update connection status
             bestie j := 0; j < len(registry.active_connections); j++ {
                 if registry.active_connections[j].connection_id == connection_id {
                     registry.active_connections[j].transaction_active = cap
@@ -347,18 +313,13 @@ slay commit_transaction(registry: *DriverRegistry, connection_id: normie) lit {
     damn cap
 }
 
-# Rollback transaction
-slay rollback_transaction(registry: *DriverRegistry, connection_id: normie) lit {
-    # Find and rollback transaction
+fr fr Rollback transaction
+slay rollback_transaction(registry: *DriverRegistry, connection_id: normie) lit { fr fr Find and rollback transaction
     bestie i := 0; i < len(registry.active_transactions); i++ {
         if registry.active_transactions[i].connection_id == connection_id &&
-           registry.active_transactions[i].is_active {
-            
-            # Remove transaction from active list
+           registry.active_transactions[i].is_active { fr fr Remove transaction from active list
             registry.active_transactions = append(registry.active_transactions[:i], 
-                                                 registry.active_transactions[i+1:]...)
-            
-            # Update connection status
+                                                 registry.active_transactions[i+1:]...) fr fr Update connection status
             bestie j := 0; j < len(registry.active_connections); j++ {
                 if registry.active_connections[j].connection_id == connection_id {
                     registry.active_connections[j].transaction_active = cap
@@ -374,7 +335,7 @@ slay rollback_transaction(registry: *DriverRegistry, connection_id: normie) lit 
     damn cap
 }
 
-# Close connection
+fr fr Close connection
 slay close_connection(registry: *DriverRegistry, connection_id: normie) lit {
     bestie i := 0; i < len(registry.active_connections); i++ {
         if registry.active_connections[i].connection_id == connection_id {
@@ -388,15 +349,13 @@ slay close_connection(registry: *DriverRegistry, connection_id: normie) lit {
     damn cap
 }
 
-# Get connection status
+fr fr Get connection status
 slay get_connection_status(registry: *DriverRegistry, connection_id: normie) ConnectionInfo {
     bestie i := 0; i < len(registry.active_connections); i++ {
         if registry.active_connections[i].connection_id == connection_id {
             damn registry.active_connections[i]
         }
-    }
-    
-    # Return empty connection if not found
+    } fr fr Return empty connection if not found
     empty_conn := ConnectionInfo{
         driver_name: "",
         is_open: cap,
@@ -407,31 +366,21 @@ slay get_connection_status(registry: *DriverRegistry, connection_id: normie) Con
     damn empty_conn
 }
 
-# Initialize with default drivers
+fr fr Initialize with default drivers
 slay init_default_drivers(registry: *DriverRegistry) lit {
-    sus success lit = based
-    
-    # Register PostgreSQL driver
+    sus success lit = based fr fr Register PostgreSQL driver
     if register_driver(registry, "postgresql", "14.0.0", based, based) == cap {
         success = cap
-    }
-    
-    # Register MySQL driver
+    } fr fr Register MySQL driver
     if register_driver(registry, "mysql", "8.0.0", based, based) == cap {
         success = cap
-    }
-    
-    # Register SQLite driver
+    } fr fr Register SQLite driver
     if register_driver(registry, "sqlite", "3.39.0", based, based) == cap {
         success = cap
-    }
-    
-    # Register Redis driver (no transactions/prepared statements)
+    } fr fr Register Redis driver (no transactions/prepared statements)
     if register_driver(registry, "redis", "7.0.0", cap, cap) == cap {
         success = cap
-    }
-    
-    # Register MongoDB driver
+    } fr fr Register MongoDB driver
     if register_driver(registry, "mongodb", "6.0.0", based, cap) == cap {
         success = cap
     }
@@ -445,7 +394,7 @@ slay init_default_drivers(registry: *DriverRegistry) lit {
     damn success
 }
 
-# Get registry statistics
+fr fr Get registry statistics
 slay get_registry_stats(registry: *DriverRegistry) {
     vibez.spill("📊 Database Driver Registry Statistics:")
     vibez.spill("   Registered drivers:", driver_count(registry))
@@ -455,7 +404,7 @@ slay get_registry_stats(registry: *DriverRegistry) {
     vibez.spill("   Next connection ID:", registry.next_connection_id)
 }
 
-# Validate driver configuration
+fr fr Validate driver configuration
 slay validate_driver_config(registry: *DriverRegistry, driver_name: tea) lit {
     driver := get_driver(registry, driver_name)
     if driver.name == "" {

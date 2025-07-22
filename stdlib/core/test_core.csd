@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "core"
 
-# Test Core Runtime Module
+fr fr Test Core Runtime Module
 
 test_start("Runtime Initialization")
 sus init_result lit = runtime_init()
@@ -13,7 +13,7 @@ runtime_enable()
 assert_true(runtime_is_enabled())
 runtime_disable()
 assert_false(runtime_is_enabled())
-runtime_enable()  # Re-enable for other tests
+runtime_enable() fr fr Re-enable for other tests
 
 test_start("Type Conversions - String")
 sus str_result tea = to_string(42)
@@ -27,7 +27,7 @@ assert_eq_int(int_zero, 0)
 
 test_start("Type Conversions - Float")
 sus float_result meal = to_float("3.14")
-# Note: Using approximate comparison for floats
+fr fr Note: Using approximate comparison for floats
 lowkey float_result > 3.1 {
     test_pass("Float conversion works")
 } else {

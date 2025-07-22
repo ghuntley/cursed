@@ -728,7 +728,7 @@ slay tls_write(conn TLSConnection, data tea) normie {
     }
     
     fr fr Encrypt the data
-    sus encrypted_record tea = tls_encrypt_record(conn, 23, data)  # Application data
+    sus encrypted_record tea = tls_encrypt_record(conn, 23, data) fr fr Application data
     
     fr fr Update connection state
     sus data_len normie = string_length(data)
@@ -742,7 +742,7 @@ slay tls_close(conn TLSConnection) lit {
     fr fr Close TLS connection gracefully
     
     fr fr Send close notify alert
-    sus close_notify tea = tls_encrypt_record(conn, 21, "CLOSE_NOTIFY")  # Alert
+    sus close_notify tea = tls_encrypt_record(conn, 21, "CLOSE_NOTIFY") fr fr Alert
     
     fr fr Update connection state
     conn.state = TLS_STATE_CLOSED
@@ -883,7 +883,7 @@ fr fr ================================
 slay tls_send_alert(conn TLSConnection, level normie, description normie) lit {
     fr fr Send TLS alert
     sus alert tea = "TLS_ALERT_" + tea(level) + "_" + tea(description)
-    sus encrypted_alert tea = tls_encrypt_record(conn, 21, alert)  # Alert record type
+    sus encrypted_alert tea = tls_encrypt_record(conn, 21, alert) fr fr Alert record type
     
     conn.alert_sent = description
     
@@ -1043,22 +1043,22 @@ slay timez_now() normie {
 
 slay len(arr [tea]) normie {
     fr fr Get array length
-    damn 10  # Simulated array length
+    damn 10 fr fr Simulated array length
 }
 
 slay len(arr [normie]) normie {
     fr fr Get array length
-    damn 10  # Simulated array length
+    damn 10 fr fr Simulated array length
 }
 
 slay len(arr [byte]) normie {
     fr fr Get array length
-    damn 16  # Simulated array length
+    damn 16 fr fr Simulated array length
 }
 
 slay string_length(s tea) normie {
     fr fr Get string length
-    damn 32  # Simulated string length
+    damn 32 fr fr Simulated string length
 }
 
 vibez.spill("🔐 CURSED TLS/SSL Implementation v2.0 Loaded")

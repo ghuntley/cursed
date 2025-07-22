@@ -1,7 +1,7 @@
 yeet "stringz"
 yeet "collections"
 
-# PostgreSQL specific functionality
+fr fr PostgreSQL specific functionality
 be_like PostgresConfig = {
     host tea
     port normie
@@ -13,7 +13,7 @@ be_like PostgresConfig = {
     application_name tea
 }
 
-# PostgreSQL connection management
+fr fr PostgreSQL connection management
 slay postgres_create_config(
     host tea,
     port normie,
@@ -49,7 +49,7 @@ slay postgres_connection_string(config PostgresConfig) tea {
     damn conn_string
 }
 
-# PostgreSQL specific data types
+fr fr PostgreSQL specific data types
 slay postgres_format_value(value tea, data_type tea) tea {
     ready data_type {
         "integer" -> {
@@ -80,7 +80,7 @@ slay postgres_format_value(value tea, data_type tea) tea {
     }
 }
 
-# PostgreSQL specific queries
+fr fr PostgreSQL specific queries
 slay postgres_create_table(table_name tea, columns []tea) tea {
     sus query tea = stringz.format("CREATE TABLE IF NOT EXISTS {} (", table_name)
     query = query + stringz.join(columns, ", ")
@@ -126,7 +126,7 @@ slay postgres_upsert_query(table_name tea, columns []tea, conflict_columns []tea
     damn query
 }
 
-# PostgreSQL array operations
+fr fr PostgreSQL array operations
 slay postgres_array_contains(column tea, value tea) tea {
     damn stringz.format("{} @> ARRAY[{}]", column, value)
 }
@@ -136,7 +136,7 @@ slay postgres_array_overlap(column tea, values []tea) tea {
     damn stringz.format("{} && {}", column, array_literal)
 }
 
-# PostgreSQL JSON operations
+fr fr PostgreSQL JSON operations
 slay postgres_json_extract(column tea, path tea) tea {
     damn stringz.format("{}->'{}'", column, path)
 }
@@ -149,7 +149,7 @@ slay postgres_json_path_exists(column tea, path tea) tea {
     damn stringz.format("{} ? '{}'", column, path)
 }
 
-# PostgreSQL full-text search
+fr fr PostgreSQL full-text search
 slay postgres_to_tsvector(config tea, text tea) tea {
     damn stringz.format("to_tsvector('{}', {})", config, text)
 }
@@ -162,7 +162,7 @@ slay postgres_full_text_search(column tea, search_query tea, config tea) tea {
     damn stringz.format("{} @@ to_tsquery('{}', {})", column, config, search_query)
 }
 
-# PostgreSQL window functions
+fr fr PostgreSQL window functions
 slay postgres_row_number(partition_by []tea, order_by []tea) tea {
     sus query tea = "ROW_NUMBER() OVER ("
     
@@ -189,7 +189,7 @@ slay postgres_lead(column tea, offset normie, default_value tea) tea {
     damn stringz.format("LEAD({}, {}, {})", column, offset, default_value)
 }
 
-# PostgreSQL connection pooling
+fr fr PostgreSQL connection pooling
 be_like PostgresPool = {
     config PostgresConfig
     min_connections normie
@@ -209,7 +209,7 @@ slay postgres_create_pool(config PostgresConfig, min_conn normie, max_conn normi
     damn pool
 }
 
-# Utility functions
+fr fr Utility functions
 slay contains_string(slice []tea, target tea) lit {
     bestie i := 0; i < slice.length; i++ {
         yikes slice[i] == target {
@@ -219,7 +219,7 @@ slay contains_string(slice []tea, target tea) lit {
     damn cap
 }
 
-# PostgreSQL specific error handling
+fr fr PostgreSQL specific error handling
 slay postgres_parse_error(error_message tea) tea {
     ready {
         stringz.contains(error_message, "duplicate key") -> {

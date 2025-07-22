@@ -9,22 +9,22 @@ fr fr ================================
 
 test_start("ChaCha20-based Secure RNG")
 
-# Test secure seeding
+fr fr Test secure seeding
 crypto_secure_seed(0x12345678, 0x9abcdef0, 0xfedcba98)
 
-# Test secure random number generation
+fr fr Test secure random number generation
 sus random1 normie = crypto_secure_random_u32()
 sus random2 normie = crypto_secure_random_u32()
 sus random3 normie = crypto_secure_random_u32()
 
-# Verify randomness (should be different values)
+fr fr Verify randomness (should be different values)
 assert_true(random1 != random2)
 assert_true(random2 != random3)
 assert_true(random1 != random3)
 
 vibez.spill("✅ Secure RNG generates unique values")
 
-# Test secure random bytes
+fr fr Test secure random bytes
 sus random_bytes [normie] = crypto_secure_random_bytes(16)
 assert_true(len(random_bytes) >= 16)
 
@@ -38,16 +38,16 @@ fr fr ================================
 
 test_start("SHA-256 Secure Implementation")
 
-# Test SHA-256 with known input
+fr fr Test SHA-256 with known input
 sus test_input tea = "test_message"
 sus hash_result tea = crypto_sha256_secure(test_input)
 
-# Verify hash is proper length (64 hex characters)
+fr fr Verify hash is proper length (64 hex characters)
 assert_true(crypto_string_length_secure(hash_result) >= 32)
 
 vibez.spill("✅ SHA-256 produces proper length output")
 
-# Test different inputs produce different hashes
+fr fr Test different inputs produce different hashes
 sus test_input2 tea = "different_message"
 sus hash_result2 tea = crypto_sha256_secure(test_input2)
 
@@ -71,7 +71,7 @@ assert_true(crypto_string_length_secure(hmac_result) >= 32)
 
 vibez.spill("✅ HMAC-SHA256 produces proper length output")
 
-# Test different keys produce different HMACs
+fr fr Test different keys produce different HMACs
 sus key2 tea = "different_key"
 sus hmac_result2 tea = crypto_hmac_sha256_secure(message, key2)
 
@@ -92,7 +92,7 @@ sus key [normie] = [0x11111111, 0x22222222, 0x33333333, 0x44444444]
 
 sus ciphertext [normie] = crypto_aes256_encrypt_secure(plaintext, key)
 
-# Verify encryption produces different output
+fr fr Verify encryption produces different output
 assert_true(ciphertext[0] != plaintext[0])
 
 vibez.spill("✅ AES-256 encryption transforms data")
@@ -109,10 +109,10 @@ sus string1 tea = "equal_string"
 sus string2 tea = "equal_string"
 sus string3 tea = "different_string"
 
-# Test equal strings
+fr fr Test equal strings
 assert_true(crypto_constant_time_compare(string1, string2))
 
-# Test different strings
+fr fr Test different strings
 assert_false(crypto_constant_time_compare(string1, string3))
 
 vibez.spill("✅ Constant-time comparison works correctly")
@@ -134,7 +134,7 @@ assert_true(crypto_string_length_secure(derived_key) >= 16)
 
 vibez.spill("✅ PBKDF2 key derivation works")
 
-# Test different passwords produce different keys
+fr fr Test different passwords produce different keys
 sus password2 tea = "different_password"
 sus derived_key2 tea = crypto_pbkdf2_secure(password2, salt, iterations, 32)
 
@@ -154,7 +154,7 @@ sus charset tea = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345678
 sus random_string1 tea = crypto_secure_random_string(16, charset)
 sus random_string2 tea = crypto_secure_random_string(16, charset)
 
-# Verify different random strings
+fr fr Verify different random strings
 assert_true(random_string1 != random_string2)
 assert_true(crypto_string_length_secure(random_string1) >= 8)
 
@@ -168,7 +168,7 @@ fr fr ================================
 
 test_start("Security Validation")
 
-# Verify no use of insecure algorithms
+fr fr Verify no use of insecure algorithms
 vibez.spill("🔍 Security Audit Results:")
 vibez.spill("✅ No MD5 implementation found")
 vibez.spill("✅ No SHA1 implementation found") 
@@ -182,7 +182,7 @@ vibez.spill("✅ HMAC-SHA256 with proper key handling")
 vibez.spill("✅ Constant-time operations for side-channel protection")
 vibez.spill("✅ PBKDF2 for key derivation")
 
-assert_true(based)  # All security checks pass
+assert_true(based) fr fr All security checks pass
 
 print_test_summary()
 
@@ -192,29 +192,29 @@ fr fr ================================
 
 test_start("Performance and Compatibility")
 
-# Test that all functions complete without errors
+fr fr Test that all functions complete without errors
 vibez.spill("🚀 Performance Tests:")
 
-# RNG performance
-sus start_time normie = 0  # Simplified timing
+fr fr RNG performance
+sus start_time normie = 0 fr fr Simplified timing
 bestie i := 0; i < 100; i++ {
     crypto_secure_random_u32()
 }
 vibez.spill("✅ RNG performance: 100 calls completed")
 
-# Hash performance
+fr fr Hash performance
 bestie i := 0; i < 10; i++ {
     crypto_sha256_secure("test_message")
 }
 vibez.spill("✅ SHA-256 performance: 10 hashes completed")
 
-# HMAC performance
+fr fr HMAC performance
 bestie i := 0; i < 10; i++ {
     crypto_hmac_sha256_secure("message", "key")
 }
 vibez.spill("✅ HMAC performance: 10 computations completed")
 
-assert_true(based)  # Performance tests pass
+assert_true(based) fr fr Performance tests pass
 
 print_test_summary()
 
@@ -240,7 +240,7 @@ vibez.spill("  - No placeholder implementations")
 vibez.spill("  - Production-ready cryptography")
 vibez.spill("  - Timing attack resistant")
 
-assert_true(based)  # Integration test passes
+assert_true(based) fr fr Integration test passes
 
 print_test_summary()
 

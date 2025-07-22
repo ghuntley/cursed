@@ -1,10 +1,10 @@
 yeet "testz"
 
-# Comprehensive I/O Module for CURSED Language
-# Full implementation according to YeetIO and SlayIO specifications
-# Pure CURSED implementation with production-ready features
+fr fr Comprehensive I/O Module for CURSED Language
+fr fr Full implementation according to YeetIO and SlayIO specifications
+fr fr Pure CURSED implementation with production-ready features
 
-# === ERROR CONSTANTS ===
+fr fr === ERROR CONSTANTS ===
 facts ErrYoinkBruh tea = "no more to yoink, bruh"
 facts ErrBufferOverflow tea = "Buffer overflow error"
 facts ErrBufferUnderflow tea = "Buffer underflow error"
@@ -16,7 +16,7 @@ facts ErrTimeout tea = "Operation timeout"
 facts ErrInvalidInput tea = "Invalid input"
 facts ErrNetworkError tea = "Network error"
 
-# === CORE DATA STRUCTURES ===
+fr fr === CORE DATA STRUCTURES ===
 
 struct IOResult {
     success lit,
@@ -75,9 +75,9 @@ struct AsyncOperation {
     completed_time tea
 }
 
-# === YEETIO CORE INTERFACES ===
+fr fr === YEETIO CORE INTERFACES ===
 
-# Yeeter interface - writes data to destinations
+fr fr Yeeter interface - writes data to destinations
 struct Yeeter {
     target tea,
     is_active lit,
@@ -86,7 +86,7 @@ struct Yeeter {
     mode tea
 }
 
-# Yoink interface - reads data from sources
+fr fr Yoink interface - reads data from sources
 struct Yoink {
     source tea,
     is_active lit,
@@ -95,7 +95,7 @@ struct Yoink {
     position normie
 }
 
-# Combined YoinkYeeter interface
+fr fr Combined YoinkYeeter interface
 struct YoinkYeeter {
     source tea,
     target tea,
@@ -105,7 +105,7 @@ struct YoinkYeeter {
     bytes_written normie
 }
 
-# === SLAYIO BUFFERED INTERFACES ===
+fr fr === SLAYIO BUFFERED INTERFACES ===
 
 struct SlayReader {
     source tea,
@@ -138,7 +138,7 @@ struct SlayReadWriter {
     is_active lit
 }
 
-# === YEETER OPERATIONS ===
+fr fr === YEETER OPERATIONS ===
 
 slay new_yeeter(target tea, buffer_size normie) Yeeter {
     vibez.spill("🎯 Creating new Yeeter for: " + target)
@@ -170,10 +170,8 @@ slay yeeter_yeet(yeeter Yeeter, data tea) IOResult {
             error: ErrInvalidInput,
             bytes_processed: 0
         }
-    }
-    
-    # Simulate writing data
-    sus bytes_written normie = 100  # Simulate processing
+    } fr fr Simulate writing data
+    sus bytes_written normie = 100 fr fr Simulate processing
     
     damn IOResult{
         success: based,
@@ -214,7 +212,7 @@ slay yeeter_close(yeeter Yeeter) IOResult {
     }
 }
 
-# === YOINK OPERATIONS ===
+fr fr === YOINK OPERATIONS ===
 
 slay new_yoink(source tea, buffer_size normie) Yoink {
     vibez.spill("🎯 Creating new Yoink for: " + source)
@@ -246,9 +244,7 @@ slay yoink_yoink(yoink Yoink, max_bytes normie) IOResult {
             error: ErrInvalidInput,
             bytes_processed: 0
         }
-    }
-    
-    # Simulate reading data based on source
+    } fr fr Simulate reading data based on source
     bestie yoink.source == "stdin" {
         damn IOResult{
             success: based,
@@ -311,7 +307,7 @@ slay yoink_close(yoink Yoink) IOResult {
     }
 }
 
-# === YEETALL UTILITY FUNCTION ===
+fr fr === YEETALL UTILITY FUNCTION ===
 
 slay yeet_all(dst Yeeter, src Yoink) IOResult {
     vibez.spill("🚀 Yeet all from " + src.source + " to " + dst.target)
@@ -323,10 +319,8 @@ slay yeet_all(dst Yeeter, src Yoink) IOResult {
             error: "Source or destination not active",
             bytes_processed: 0
         }
-    }
-    
-    # Simulate copying all data
-    sus total_bytes normie = 1024  # Simulate processing
+    } fr fr Simulate copying all data
+    sus total_bytes normie = 1024 fr fr Simulate processing
     
     damn IOResult{
         success: based,
@@ -336,7 +330,7 @@ slay yeet_all(dst Yeeter, src Yoink) IOResult {
     }
 }
 
-# === LIMITED YOINK FUNCTION ===
+fr fr === LIMITED YOINK FUNCTION ===
 
 slay limited_yoink(yoink Yoink, limit normie) IOResult {
     vibez.spill("🎯 Limited yoink from " + yoink.source + " with limit " + limit)
@@ -357,9 +351,7 @@ slay limited_yoink(yoink Yoink, limit normie) IOResult {
             error: ErrInvalidInput,
             bytes_processed: 0
         }
-    }
-    
-    # Simulate limited reading
+    } fr fr Simulate limited reading
     sus actual_bytes normie = 100
     bestie actual_bytes > limit {
         actual_bytes = limit
@@ -373,7 +365,7 @@ slay limited_yoink(yoink Yoink, limit normie) IOResult {
     }
 }
 
-# === SLAYREADER OPERATIONS ===
+fr fr === SLAYREADER OPERATIONS ===
 
 slay new_slay_reader(source tea, buffer_size normie) SlayReader {
     vibez.spill("📖 Creating SlayReader for: " + source)
@@ -417,9 +409,7 @@ slay slay_reader_read(reader SlayReader, num_bytes normie) IOResult {
             error: ErrInvalidInput,
             bytes_processed: 0
         }
-    }
-    
-    # Simulate buffered reading
+    } fr fr Simulate buffered reading
     bestie reader.source == "large_file.txt" {
         damn IOResult{
             success: based,
@@ -447,9 +437,7 @@ slay slay_reader_read_line(reader SlayReader) IOResult {
             error: ErrYoinkBruh,
             bytes_processed: 0
         }
-    }
-    
-    # Simulate line reading
+    } fr fr Simulate line reading
     bestie reader.source == "multi_line.txt" {
         damn IOResult{
             success: based,
@@ -498,7 +486,7 @@ slay slay_reader_reset(reader SlayReader) IOResult {
     }
 }
 
-# === SLAYWRITER OPERATIONS ===
+fr fr === SLAYWRITER OPERATIONS ===
 
 slay new_slay_writer(target tea, buffer_size normie) SlayWriter {
     vibez.spill("📝 Creating SlayWriter for: " + target)
@@ -533,9 +521,7 @@ slay slay_writer_write(writer SlayWriter, data tea) IOResult {
             error: ErrInvalidInput,
             bytes_processed: 0
         }
-    }
-    
-    # Check buffer capacity
+    } fr fr Check buffer capacity
     bestie writer.buffer.size + 100 > writer.buffer.capacity {
         damn IOResult{
             success: cap,
@@ -543,10 +529,8 @@ slay slay_writer_write(writer SlayWriter, data tea) IOResult {
             error: ErrBufferOverflow,
             bytes_processed: 0
         }
-    }
-    
-    # Simulate buffered writing
-    sus bytes_written normie = 50  # Simulate processing
+    } fr fr Simulate buffered writing
+    sus bytes_written normie = 50 fr fr Simulate processing
     
     damn IOResult{
         success: based,
@@ -593,7 +577,7 @@ slay slay_writer_reset(writer SlayWriter) IOResult {
     }
 }
 
-# === SLAYSCANNER OPERATIONS ===
+fr fr === SLAYSCANNER OPERATIONS ===
 
 slay new_slay_scanner(source tea) SlayScanner {
     vibez.spill("🔍 Creating SlayScanner for: " + source)
@@ -620,9 +604,7 @@ slay new_slay_scanner(source tea) SlayScanner {
 }
 
 slay slay_scanner_scan(scanner SlayScanner) lit {
-    vibez.spill("🔍 Scanning next token from: " + scanner.source)
-    
-    # Simulate scanning logic
+    vibez.spill("🔍 Scanning next token from: " + scanner.source) fr fr Simulate scanning logic
     bestie scanner.source == "empty.txt" {
         damn cap
     } else {
@@ -661,7 +643,7 @@ slay slay_scanner_err(scanner SlayScanner) tea {
     }
 }
 
-# === SLAYREADWRITER OPERATIONS ===
+fr fr === SLAYREADWRITER OPERATIONS ===
 
 slay new_slay_read_writer(reader SlayReader, writer SlayWriter) SlayReadWriter {
     vibez.spill("🔄 Creating SlayReadWriter")
@@ -703,7 +685,7 @@ slay slay_read_writer_write(rw SlayReadWriter, data tea) IOResult {
     damn slay_writer_write(rw.writer, data)
 }
 
-# === FILE OPERATIONS ===
+fr fr === FILE OPERATIONS ===
 
 slay read_file(filename tea) IOResult {
     vibez.spill("📖 Reading file: " + filename)
@@ -715,9 +697,7 @@ slay read_file(filename tea) IOResult {
             error: ErrInvalidInput,
             bytes_processed: 0
         }
-    }
-    
-    # Simulate file reading with different scenarios
+    } fr fr Simulate file reading with different scenarios
     bestie filename == "test.csd" {
         damn IOResult{
             success: based,
@@ -782,10 +762,8 @@ slay write_file(filename tea, content tea) IOResult {
             error: ErrPermissionDenied,
             bytes_processed: 0
         }
-    }
-    
-    # Simulate successful write
-    sus bytes_written normie = 200  # Simulate processing
+    } fr fr Simulate successful write
+    sus bytes_written normie = 200 fr fr Simulate processing
     
     damn IOResult{
         success: based,
@@ -807,7 +785,7 @@ slay append_file(filename tea, content tea) IOResult {
         }
     }
     
-    sus bytes_written normie = 150  # Simulate processing
+    sus bytes_written normie = 150 fr fr Simulate processing
     
     damn IOResult{
         success: based,
@@ -822,9 +800,7 @@ slay exists(path tea) lit {
     
     bestie path == "" {
         damn cap
-    }
-    
-    # Simulate file/directory existence
+    } fr fr Simulate file/directory existence
     bestie path == "test.csd" || path == "main.csd" || path == "." || path == "src" || 
            path == "stdlib" || path == "config.json" || path == "large.txt" {
         damn based
@@ -869,7 +845,7 @@ slay get_file_size(filename tea) IOResult {
     }
 }
 
-# === DIRECTORY OPERATIONS ===
+fr fr === DIRECTORY OPERATIONS ===
 
 slay list_dir(dirname tea) IOResult {
     vibez.spill("📋 Listing directory: " + dirname)
@@ -972,7 +948,7 @@ slay remove_dir(dirname tea) IOResult {
     }
 }
 
-# === STANDARD I/O OPERATIONS ===
+fr fr === STANDARD I/O OPERATIONS ===
 
 slay print_io(message tea) IOResult {
     vibez.spill(message)
@@ -1018,7 +994,7 @@ slay read_input() IOResult {
     }
 }
 
-# === STREAM OPERATIONS ===
+fr fr === STREAM OPERATIONS ===
 
 slay stream_create(name tea, mode tea) StreamState {
     vibez.spill("🌊 Creating stream: " + name + " with mode: " + mode)
@@ -1102,7 +1078,7 @@ slay stream_close(stream StreamState) IOResult {
     }
 }
 
-# === ASYNC I/O OPERATIONS ===
+fr fr === ASYNC I/O OPERATIONS ===
 
 slay async_read_file(filename tea) AsyncOperation {
     vibez.spill("⚡ Async reading file: " + filename)
@@ -1150,7 +1126,7 @@ slay async_copy_file(source tea, dest tea) AsyncOperation {
     }
 }
 
-# === PIPE OPERATIONS ===
+fr fr === PIPE OPERATIONS ===
 
 slay pipe_create(name tea) StreamState {
     vibez.spill("🔧 Creating pipe: " + name)
@@ -1205,7 +1181,7 @@ slay pipe_write(pipe StreamState, data tea) IOResult {
     }
 }
 
-# === UTILITY FUNCTIONS ===
+fr fr === UTILITY FUNCTIONS ===
 
 slay copy_file(source tea, dest tea) IOResult {
     vibez.spill("📄 Copying file: " + source + " → " + dest)
@@ -1234,9 +1210,7 @@ slay move_file(source tea, dest tea) IOResult {
     sus copy_result IOResult = copy_file(source, dest)
     bestie !copy_result.success {
         damn copy_result
-    }
-    
-    # Simulate removing source file
+    } fr fr Simulate removing source file
     damn IOResult{
         success: based,
         data: "File moved successfully",
@@ -1265,7 +1239,7 @@ slay remove_file(filename tea) IOResult {
     }
 }
 
-# === INITIALIZATION AND CLEANUP ===
+fr fr === INITIALIZATION AND CLEANUP ===
 
 slay init_io() IOResult {
     vibez.spill("🚀 Initializing Comprehensive CURSED I/O Module")
@@ -1303,7 +1277,7 @@ slay shutdown_io() IOResult {
     }
 }
 
-# === PERFORMANCE MONITORING ===
+fr fr === PERFORMANCE MONITORING ===
 
 slay io_stats() IOResult {
     vibez.spill("📊 I/O Performance Statistics")
@@ -1331,5 +1305,5 @@ slay io_benchmark() IOResult {
     }
 }
 
-# Module ready for production use
+fr fr Module ready for production use
 vibez.spill("🎯 Comprehensive CURSED I/O Module loaded successfully")

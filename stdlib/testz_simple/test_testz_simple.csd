@@ -1,13 +1,13 @@
 yeet "testz"
 
-# Test the simplified testz module
+fr fr Test the simplified testz module
 testz_simple.set_verbose_mode(based)
 testz_simple.set_test_suite("Enhanced Testz Simple Framework Tests")
 testz_simple.before_all_tests()
 
-# ===============================
-# Test Core Functionality
-# ===============================
+fr fr ===============================
+fr fr Test Core Functionality
+fr fr ===============================
 
 testz_simple.test_start("Basic test functionality")
 testz_simple.assert_true(based)
@@ -35,9 +35,9 @@ testz_simple.assert_range_int(0, 0, 100)
 testz_simple.assert_range_int(100, 0, 100)
 testz_simple.test_end()
 
-# ===============================
-# Test Fixtures
-# ===============================
+fr fr ===============================
+fr fr Test Fixtures
+fr fr ===============================
 
 testz_simple.test_start("Fixture functionality")
 testz_simple.set_fixture_data("test_data_123")
@@ -50,9 +50,9 @@ testz_simple.set_teardown_function("my_teardown")
 testz_simple.assert_true(based)
 testz_simple.test_end()
 
-# ===============================
-# Test Property-Based Testing
-# ===============================
+fr fr ===============================
+fr fr Test Property-Based Testing
+fr fr ===============================
 
 testz_simple.test_start("Property-based testing")
 testz_simple.property_test_start("Integer comparison", 10)
@@ -60,14 +60,10 @@ testz_simple.property_test_start("Integer comparison", 10)
 bestie i := 0; i < 10; i++ {
     testz_simple.property_test_iteration()
     sus a normie = testz_simple.random_int(1, 100)
-    sus b normie = testz_simple.random_int(1, 100)
-    
-    # Test that a number is equal to itself
+    sus b normie = testz_simple.random_int(1, 100) fr fr Test that a number is equal to itself
     fr fr a != a {
         testz_simple.property_test_fail("Self-equality failed")
-    }
-    
-    # Test that random boolean is either true or false
+    } fr fr Test that random boolean is either true or false
     sus bool_val lit = testz_simple.random_boolean()
     fr fr bool_val != based && bool_val != cap {
         testz_simple.property_test_fail("Boolean generation failed")
@@ -77,9 +73,9 @@ bestie i := 0; i < 10; i++ {
 testz_simple.property_test_end()
 testz_simple.test_end()
 
-# ===============================
-# Test Benchmarking
-# ===============================
+fr fr ===============================
+fr fr Test Benchmarking
+fr fr ===============================
 
 testz_simple.test_start("Benchmark functionality")
 testz_simple.set_benchmark_iterations(10)
@@ -93,17 +89,17 @@ testz_simple.benchmark_end()
 testz_simple.assert_true(based)
 testz_simple.test_end()
 
-# ===============================
-# Test Configuration
-# ===============================
+fr fr ===============================
+fr fr Test Configuration
+fr fr ===============================
 
 testz_simple.test_start("Configuration modes")
 testz_simple.assert_true(testz_simple.is_verbose_mode())
 testz_simple.test_end()
 
-# ===============================
-# Test Statistics
-# ===============================
+fr fr ===============================
+fr fr Test Statistics
+fr fr ===============================
 
 testz_simple.test_start("Test statistics")
 testz_simple.assert_gt_int(testz_simple.get_test_results(), 0)
@@ -113,9 +109,9 @@ testz_simple.assert_gt_int(testz_simple.get_assertion_count(), 0)
 testz_simple.assert_ge_int(testz_simple.get_success_rate(), 0)
 testz_simple.test_end()
 
-# ===============================
-# Test Utilities
-# ===============================
+fr fr ===============================
+fr fr Test Utilities
+fr fr ===============================
 
 testz_simple.test_start("Test utilities")
 testz_simple.focus_test()
@@ -127,9 +123,9 @@ testz_simple.pending_test("This feature is under development")
 testz_simple.assert_true(based)
 testz_simple.test_end()
 
-# ===============================
-# Test Reset Functionality
-# ===============================
+fr fr ===============================
+fr fr Test Reset Functionality
+fr fr ===============================
 
 testz_simple.test_start("Reset functionality")
 sus old_total normie = testz_simple.get_test_results()
@@ -137,9 +133,9 @@ testz_simple.reset_test_state()
 testz_simple.assert_eq_int(testz_simple.get_test_results(), 0)
 testz_simple.test_end()
 
-# ===============================
-# Final Test Summary
-# ===============================
+fr fr ===============================
+fr fr Final Test Summary
+fr fr ===============================
 
 testz_simple.after_all_tests()
 

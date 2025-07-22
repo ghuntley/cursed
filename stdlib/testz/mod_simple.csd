@@ -1,20 +1,20 @@
-# Simplified CURSED Testing Framework (testz)
-# Basic testing utilities for stdlib development
+fr fr Simplified CURSED Testing Framework (testz)
+fr fr Basic testing utilities for stdlib development
 
-# Global test state
+fr fr Global test state
 sus test_count normie = 0
 sus pass_count normie = 0
 sus fail_count normie = 0
 sus current_test_name tea = ""
 
-# Core Test Management Functions
+fr fr Core Test Management Functions
 slay test_start(name tea) lit {
     current_test_name = name
     test_count = test_count + 1
     damn based
 }
 
-# Basic Assertion Functions
+fr fr Basic Assertion Functions
 slay assert_eq_int(actual normie, expected normie) lit {
     lowkey actual == expected {
         pass_count = pass_count + 1
@@ -59,7 +59,7 @@ slay assert_false(condition lit) lit {
     damn based
 }
 
-# State Accessors
+fr fr State Accessors
 slay get_pass_count() normie {
     damn pass_count
 }
@@ -72,7 +72,7 @@ slay get_total_count() normie {
     damn test_count
 }
 
-# Test Reporting
+fr fr Test Reporting
 slay print_test_summary() lit {
     sus total_assertions normie = pass_count + fail_count
     sus success_rate normie = 0
@@ -100,7 +100,7 @@ slay print_test_summary() lit {
     damn based
 }
 
-# Reset function
+fr fr Reset function
 slay reset_test_state() lit {
     test_count = 0
     pass_count = 0

@@ -1,15 +1,13 @@
 yeet "testz"
 yeet "quick_test"
 
-# Comprehensive test suite for the quick_test module
-# Tests all advanced testing capabilities
+fr fr Comprehensive test suite for the quick_test module
+fr fr Tests all advanced testing capabilities
 
 slay test_suite_management() lit {
     vibez.spill("🧪 Testing suite management...")
     
-    test_start("suite_management")
-    
-    # Test suite start/end
+    test_start("suite_management") fr fr Test suite start/end
     result1 := qt_start_suite("Test Suite Management")
     assert_true(result1)
     
@@ -23,9 +21,7 @@ slay test_suite_management() lit {
 slay test_property_based_testing() lit {
     vibez.spill("🧪 Testing property-based testing...")
     
-    test_start("property_based_testing")
-    
-    # Test property testing with different generators
+    test_start("property_based_testing") fr fr Test property testing with different generators
     result1 := qt_property_test("string_property_test", "string", "non_empty")
     assert_true(result1)
     
@@ -42,27 +38,19 @@ slay test_property_based_testing() lit {
 slay test_fixtures_and_setup() lit {
     vibez.spill("🧪 Testing fixtures and setup/teardown...")
     
-    test_start("fixtures_and_setup")
-    
-    # Test fixture management
+    test_start("fixtures_and_setup") fr fr Test fixture management
     result1 := qt_add_fixture("test_fixture_1", "fixture_data_1")
     assert_true(result1)
     
     result2 := qt_add_fixture("test_fixture_2", "fixture_data_2")
-    assert_true(result2)
-    
-    # Test fixture retrieval
+    assert_true(result2) fr fr Test fixture retrieval
     fixture_data := qt_get_fixture("test_fixture_1")
-    assert_eq_string(fixture_data, "fixture_data_1")
-    
-    # Test setup/teardown registration
+    assert_eq_string(fixture_data, "fixture_data_1") fr fr Test setup/teardown registration
     result3 := qt_setup("test_setup_function")
     assert_true(result3)
     
     result4 := qt_teardown("test_teardown_function")
-    assert_true(result4)
-    
-    # Test setup/teardown execution
+    assert_true(result4) fr fr Test setup/teardown execution
     result5 := qt_run_setup()
     assert_true(result5)
     
@@ -76,16 +64,10 @@ slay test_fixtures_and_setup() lit {
 slay test_parameterized_testing() lit {
     vibez.spill("🧪 Testing parameterized testing...")
     
-    test_start("parameterized_testing")
-    
-    # Create test parameters
-    test_params := ["param1", "param2", "param3", "param4", "param5"]
-    
-    # Test parameterized testing with string length function
+    test_start("parameterized_testing") fr fr Create test parameters
+    test_params := ["param1", "param2", "param3", "param4", "param5"] fr fr Test parameterized testing with string length function
     result1 := qt_parameterized_test("string_length_test", test_params, 5, "string_length")
-    assert_true(result1)
-    
-    # Test parameterized testing with non-empty string function
+    assert_true(result1) fr fr Test parameterized testing with non-empty string function
     non_empty_params := ["test", "hello", "world"]
     result2 := qt_parameterized_test("non_empty_test", non_empty_params, 3, "string_not_empty")
     assert_true(result2)
@@ -97,9 +79,7 @@ slay test_parameterized_testing() lit {
 slay test_benchmark_testing() lit {
     vibez.spill("🧪 Testing benchmark framework...")
     
-    test_start("benchmark_testing")
-    
-    # Test different benchmark functions
+    test_start("benchmark_testing") fr fr Test different benchmark functions
     time1 := qt_benchmark("string_concat_benchmark", "string_concat")
     assert_true(time1 > 0)
     
@@ -118,37 +98,27 @@ slay test_benchmark_testing() lit {
 slay test_mock_and_stub_system() lit {
     vibez.spill("🧪 Testing mock and stub generation...")
     
-    test_start("mock_and_stub_system")
-    
-    # Test mock creation
+    test_start("mock_and_stub_system") fr fr Test mock creation
     result1 := qt_create_mock("mock_function_1", "mock_return_1")
     assert_true(result1)
     
     result2 := qt_create_mock("mock_function_2", "mock_return_2")
-    assert_true(result2)
-    
-    # Test stub creation
+    assert_true(result2) fr fr Test stub creation
     result3 := qt_create_stub("stub_function_1", "stub_response_1")
     assert_true(result3)
     
     result4 := qt_create_stub("stub_function_2", "stub_response_2")
-    assert_true(result4)
-    
-    # Test mock calling
+    assert_true(result4) fr fr Test mock calling
     mock_result1 := qt_call_mock("mock_function_1")
     assert_eq_string(mock_result1, "mock_return_1")
     
     mock_result2 := qt_call_mock("mock_function_2")
-    assert_eq_string(mock_result2, "mock_return_2")
-    
-    # Test stub calling
+    assert_eq_string(mock_result2, "mock_return_2") fr fr Test stub calling
     stub_result1 := qt_call_stub("stub_function_1")
     assert_eq_string(stub_result1, "stub_response_1")
     
     stub_result2 := qt_call_stub("stub_function_2")
-    assert_eq_string(stub_result2, "stub_response_2")
-    
-    # Test non-existent mock/stub
+    assert_eq_string(stub_result2, "stub_response_2") fr fr Test non-existent mock/stub
     missing_mock := qt_call_mock("non_existent_mock")
     assert_eq_string(missing_mock, "mock_not_found")
     
@@ -162,9 +132,7 @@ slay test_mock_and_stub_system() lit {
 slay test_discovery_and_organization() lit {
     vibez.spill("🧪 Testing test discovery and organization...")
     
-    test_start("discovery_and_organization")
-    
-    # Test test discovery with patterns
+    test_start("discovery_and_organization") fr fr Test test discovery with patterns
     discovered1 := qt_discover_tests("test_")
     assert_true(discovered1 > 0)
     
@@ -172,9 +140,7 @@ slay test_discovery_and_organization() lit {
     assert_true(discovered2 >= 0)
     
     discovered3 := qt_discover_tests("advanced")
-    assert_true(discovered3 >= 0)
-    
-    # Test test organization by categories
+    assert_true(discovered3 >= 0) fr fr Test test organization by categories
     result1 := qt_organize_tests("unit")
     assert_true(result1)
     
@@ -194,30 +160,22 @@ slay test_discovery_and_organization() lit {
 slay test_reporting_system() lit {
     vibez.spill("🧪 Testing multi-format reporting...")
     
-    test_start("reporting_system")
-    
-    # Test report format setting
+    test_start("reporting_system") fr fr Test report format setting
     result1 := qt_set_report_format("json")
     assert_true(result1)
     
     result2 := qt_generate_report()
-    assert_true(result2)
-    
-    # Test XML format
+    assert_true(result2) fr fr Test XML format
     result3 := qt_set_report_format("xml")
     assert_true(result3)
     
     result4 := qt_generate_report()
-    assert_true(result4)
-    
-    # Test HTML format
+    assert_true(result4) fr fr Test HTML format
     result5 := qt_set_report_format("html")
     assert_true(result5)
     
     result6 := qt_generate_report()
-    assert_true(result6)
-    
-    # Test text format (default)
+    assert_true(result6) fr fr Test text format (default)
     result7 := qt_set_report_format("text")
     assert_true(result7)
     
@@ -231,9 +189,7 @@ slay test_reporting_system() lit {
 slay test_testz_integration() lit {
     vibez.spill("🧪 Testing testz integration...")
     
-    test_start("testz_integration")
-    
-    # Test quick_test assertion functions
+    test_start("testz_integration") fr fr Test quick_test assertion functions
     result1 := qt_testz_assert_true(based)
     assert_true(result1)
     
@@ -244,9 +200,7 @@ slay test_testz_integration() lit {
     assert_true(result3)
     
     result4 := qt_testz_assert_eq("hello", "world")
-    assert_false(result4)
-    
-    # Test running with testz compatibility
+    assert_false(result4) fr fr Test running with testz compatibility
     result5 := qt_run_with_testz("testz_compatibility_test")
     assert_true(result5)
     
@@ -257,9 +211,7 @@ slay test_testz_integration() lit {
 slay test_data_generators() lit {
     vibez.spill("🧪 Testing data generators...")
     
-    test_start("data_generators")
-    
-    # Test different data generators
+    test_start("data_generators") fr fr Test different data generators
     int_data := qt_generate_data("int")
     assert_true(int_data != "")
     
@@ -279,20 +231,14 @@ slay test_data_generators() lit {
 slay test_property_functions() lit {
     vibez.spill("🧪 Testing property functions...")
     
-    test_start("property_functions")
-    
-    # Test non-empty property
+    test_start("property_functions") fr fr Test non-empty property
     result1 := qt_apply_property("non_empty", "test_string")
     assert_true(result1)
     
     result2 := qt_apply_property("non_empty", "")
-    assert_false(result2)
-    
-    # Test positive property
+    assert_false(result2) fr fr Test positive property
     result3 := qt_apply_property("positive", "42")
-    assert_true(result3)
-    
-    # Test idempotent property
+    assert_true(result3) fr fr Test idempotent property
     result4 := qt_apply_property("idempotent", "test")
     assert_true(result4)
     
@@ -300,11 +246,11 @@ slay test_property_functions() lit {
     damn based
 }
 
-# Main comprehensive test runner
+fr fr Main comprehensive test runner
 vibez.spill("🚀 Starting comprehensive quick_test module testing...")
 vibez.spill("===============================================")
 
-# Run all test functions
+fr fr Run all test functions
 test_suite_management()
 test_property_based_testing()
 test_fixtures_and_setup()
@@ -320,7 +266,7 @@ test_property_functions()
 vibez.spill("===============================================")
 vibez.spill("🎉 All quick_test module tests completed!")
 
-# Run the comprehensive demonstration
+fr fr Run the comprehensive demonstration
 vibez.spill("===============================================")
 vibez.spill("🚀 Running comprehensive quick_test demonstration...")
 qt_run_comprehensive_test()

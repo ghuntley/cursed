@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "glyph_gang"
 
-# Test character classification functions
+fr fr Test character classification functions
 test_start("Character Classification - IsLetter")
 assert_true(IsLetter('A'))
 assert_true(IsLetter('z'))
@@ -72,7 +72,7 @@ assert_true(IsMath('='))
 assert_false(IsMath('A'))
 assert_false(IsMath('1'))
 
-# Test character conversion functions
+fr fr Test character conversion functions
 test_start("Character Conversion - ToUpper")
 assert_eq_int(normie(ToUpper('a')), normie('A'))
 assert_eq_int(normie(ToUpper('z')), normie('Z'))
@@ -97,7 +97,7 @@ test_start("Character Conversion - SimpleFold")
 assert_eq_int(normie(SimpleFold('A')), normie('a'))
 assert_eq_int(normie(SimpleFold('Z')), normie('z'))
 
-# Test string operations
+fr fr Test string operations
 test_start("String Operations - ToUpperString")
 assert_eq_string(ToUpperString("hello"), "HELLO")
 assert_eq_string(ToUpperString("Hello World"), "HELLO WORLD")
@@ -119,7 +119,7 @@ test_start("String Operations - NormalizeString")
 assert_eq_string(NormalizeString("hello", NFC), "hello")
 assert_eq_string(NormalizeString("world", NFD), "world")
 
-# Test string analysis functions
+fr fr Test string analysis functions
 test_start("String Analysis - RuneCount")
 assert_eq_int(RuneCount("hello"), 5)
 assert_eq_int(RuneCount(""), 0)
@@ -161,7 +161,7 @@ assert_eq_string(Reverse(""), "")
 assert_eq_string(Reverse("a"), "a")
 assert_eq_string(Reverse("abc"), "cba")
 
-# Test emoji support
+fr fr Test emoji support
 test_start("Emoji Support - ContainsEmoji")
 assert_false(ContainsEmoji("Hello World"))
 assert_false(ContainsEmoji("123"))
@@ -177,7 +177,7 @@ assert_eq_string(FindEmojiByName("smile"), "😊")
 assert_eq_string(FindEmojiByName("joy"), "😂")
 assert_eq_string(FindEmojiByName("unknown"), "")
 
-# Test bidirectional text support
+fr fr Test bidirectional text support
 test_start("Bidirectional Text - GetDirection")
 assert_eq_int(GetDirection('A'), LTR)
 
@@ -190,7 +190,7 @@ assert_true(IsLTR("Hello"))
 test_start("Bidirectional Text - IsRTL")
 assert_false(IsRTL("Hello"))
 
-# Test script detection
+fr fr Test script detection
 test_start("Script Detection - DetectScript")
 assert_eq_int(DetectScript("Hello"), ScriptLatin)
 
@@ -200,7 +200,7 @@ assert_eq_string(GetScriptName(ScriptGreek), "Greek")
 assert_eq_string(GetScriptName(ScriptCyrillic), "Cyrillic")
 assert_eq_string(GetScriptName(ScriptHebrew), "Hebrew")
 
-# Test character width functions
+fr fr Test character width functions
 test_start("Character Width - GetCharWidth")
 assert_eq_int(GetCharWidth('A'), 1)
 assert_eq_int(GetCharWidth('1'), 1)
@@ -215,7 +215,7 @@ assert_eq_string(TruncateWithEllipsis("Hello World", 8), "Hello...")
 assert_eq_string(TruncateWithEllipsis("Hello", 10), "Hello")
 assert_eq_string(TruncateWithEllipsis("Hello", 3), "...")
 
-# Test case folding functions
+fr fr Test case folding functions
 test_start("Case Folding - FoldString")
 assert_eq_string(FoldString("Hello"), "hello")
 assert_eq_string(FoldString("WORLD"), "world")
@@ -227,7 +227,7 @@ assert_true(EqualFold("WORLD", "world"))
 assert_true(EqualFold("MiXeD", "mixed"))
 assert_false(EqualFold("Hello", "world"))
 
-# Test character name functions
+fr fr Test character name functions
 test_start("Character Names - CharacterName")
 assert_eq_string(CharacterName('A'), "LATIN CAPITAL LETTER A")
 assert_eq_string(CharacterName('a'), "LATIN SMALL LETTER a")
@@ -242,7 +242,7 @@ char_unknown, found_unknown := FindCharacterByName("UNKNOWN CHARACTER")
 assert_eq_int(normie(char_unknown), 0)
 assert_false(found_unknown)
 
-# Test character properties
+fr fr Test character properties
 test_start("Character Properties - GetBlockName")
 assert_eq_string(GetBlockName('A'), "Basic Latin")
 
@@ -257,7 +257,7 @@ test_start("Character Properties - GetCodePoint")
 assert_eq_string(GetCodePoint('A'), "U+0041")
 assert_eq_string(GetCodePoint('0'), "U+0030")
 
-# Test helper functions
+fr fr Test helper functions
 test_start("Helper Functions - FormatHex")
 assert_eq_string(FormatHex(0), "0000")
 assert_eq_string(FormatHex(10), "000A")

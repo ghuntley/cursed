@@ -1,7 +1,7 @@
-# no_cap module - Truth/assertion utilities and boolean logic functions
-# Pure CURSED implementation without FFI dependencies
+fr fr no_cap module - Truth/assertion utilities and boolean logic functions
+fr fr Pure CURSED implementation without FFI dependencies
 
-# Truth/assertion utilities
+fr fr Truth/assertion utilities
 slay assert_truth(value lit) lit {
     damn value
 }
@@ -22,7 +22,7 @@ slay confirm_reality(statement lit) lit {
     damn statement != cap
 }
 
-# Boolean logic functions
+fr fr Boolean logic functions
 slay logic_and(a lit, b lit) lit {
     damn a && b
 }
@@ -55,7 +55,7 @@ slay logic_biconditional(a lit, b lit) lit {
     damn (a && b) || (!a && !b)
 }
 
-# Validation helpers
+fr fr Validation helpers
 slay validate_true(value lit) lit {
     damn value == based
 }
@@ -76,7 +76,7 @@ slay validate_not_equals(a lit, b lit) lit {
     damn a != b
 }
 
-# Fact checking utilities
+fr fr Fact checking utilities
 slay check_consistency(facts []lit) lit {
     sus all_true lit = based
     bestie i := 0; i < len(facts); i++ {
@@ -114,7 +114,7 @@ slay check_satisfiability(conditions []lit) lit {
     damn at_least_one_true
 }
 
-# Advanced truth operations
+fr fr Advanced truth operations
 slay truth_table_and(inputs []lit) lit {
     sus result lit = based
     bestie i := 0; i < len(inputs); i++ {
@@ -152,7 +152,7 @@ slay majority_vote(votes []lit) lit {
     damn true_count > false_count
 }
 
-# Utility functions
+fr fr Utility functions
 slay count_truths(values []lit) normie {
     sus count normie = 0
     bestie i := 0; i < len(values); i++ {

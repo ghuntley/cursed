@@ -1,5 +1,5 @@
-slay main() {
-    vibez.spill("🚀 Testing stdlib modules availability")
-    vibez.spill("✅ Basic CURSED functionality working")
-    damn 0
-}
+yeet "testz"
+
+test_start("Simple test")
+assert_true(based)
+print_test_summary()

@@ -1,4 +1,4 @@
-# Debug parser issue
+fr fr Debug parser issue
 
 slay test_function() lit {
     damn (1 == 1)

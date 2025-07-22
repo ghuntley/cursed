@@ -1,9 +1,9 @@
 yeet "testz"
 
-# Simple CURSED Build System
-# Core functionality for building CURSED projects
+fr fr Simple CURSED Build System
+fr fr Core functionality for building CURSED projects
 
-# Create basic build configuration
+fr fr Create basic build configuration
 slay create_simple_config() map[tea]interface{} {
     sus config map[tea]interface{} = map[tea]interface{}{}
     config["name"] = "simple_project"
@@ -14,28 +14,25 @@ slay create_simple_config() map[tea]interface{} {
     damn config
 }
 
-# Parse build configuration from file  
+fr fr Parse build configuration from file  
 slay parse_config(config_path tea) map[tea]interface{} {
-    vibez.spill("Parsing configuration from: " + config_path)
-    # For now, return default config
+    vibez.spill("Parsing configuration from: " + config_path) fr fr For now, return default config
     damn create_simple_config()
 }
 
-# Build a single project
+fr fr Build a single project
 slay build_project_simple(config_path tea) lit {
     vibez.spill("🔨 Starting CURSED build...")
     
     sus config map[tea]interface{} = parse_config(config_path)
     sus project_name tea = config["name"].(tea)
     
-    vibez.spill("Building project: " + project_name)
-    
-    # Simulate build process
+    vibez.spill("Building project: " + project_name) fr fr Simulate build process
     vibez.spill("✅ Build completed successfully!")
     damn based
 }
 
-# Clean build artifacts
+fr fr Clean build artifacts
 slay clean_project_simple(config map[tea]interface{}) lit {
     vibez.spill("🧹 Cleaning project...")
     sus output_dir tea = config["output_dir"].(tea)
@@ -43,28 +40,28 @@ slay clean_project_simple(config map[tea]interface{}) lit {
     damn based
 }
 
-# Run tests
+fr fr Run tests
 slay run_tests_simple(config map[tea]interface{}) lit {
     vibez.spill("🧪 Running tests...")
     vibez.spill("All tests passed!")
     damn based
 }
 
-# Install package
+fr fr Install package
 slay install_package_simple(name tea, version tea) lit {
     vibez.spill("📦 Installing package: " + name + "@" + version)
     vibez.spill("Package installed successfully!")
     damn based
 }
 
-# List installed packages
+fr fr List installed packages
 slay list_packages_simple() []tea {
     vibez.spill("📋 Installed packages:")
     sus packages []tea = []tea{"testz", "stringz", "fs"}
     damn packages
 }
 
-# Main build system entry point
+fr fr Main build system entry point
 slay build_system_main_simple(args []tea) normie {
     lowkey len(args) < 2 {
         vibez.spill("Usage: cursed_build <command> [options]")

@@ -2,12 +2,12 @@ yeet "testz"
 yeet "database_drivers"
 yeet "postgresql"
 
-# PostgreSQL Database Driver Tests
-# Comprehensive test suite for PostgreSQL driver functionality
+fr fr PostgreSQL Database Driver Tests
+fr fr Comprehensive test suite for PostgreSQL driver functionality
 
 test_start("PostgreSQL driver comprehensive tests")
 
-# Test 1: Configuration creation
+fr fr Test 1: Configuration creation
 test_start("PostgreSQL configuration creation")
 config := create_postgresql_config()
 assert_eq_string(config.host, "localhost")
@@ -19,7 +19,7 @@ assert_eq_int(config.connect_timeout, 30)
 assert_eq_int(config.max_connections, 100)
 vibez.spill("✅ PostgreSQL configuration created successfully")
 
-# Test 2: Connection creation
+fr fr Test 2: Connection creation
 test_start("PostgreSQL connection creation")
 connection := create_postgresql_connection(config)
 assert_eq_string(connection.config.host, "localhost")
@@ -33,7 +33,7 @@ assert_eq_string(connection.transaction_status, "idle")
 assert_eq_int(connection.query_count, 0)
 vibez.spill("✅ PostgreSQL connection created successfully")
 
-# Test 3: Database connection
+fr fr Test 3: Database connection
 test_start("PostgreSQL database connection")
 connect_result := connect_postgresql(&connection)
 assert_true(connect_result)
@@ -44,7 +44,7 @@ assert_eq_int(connection.secret_key, 67890)
 assert_eq_string(connection.transaction_status, "idle")
 vibez.spill("✅ PostgreSQL database connection established")
 
-# Test 4: Query execution - SELECT
+fr fr Test 4: Query execution - SELECT
 test_start("PostgreSQL SELECT query execution")
 select_result := execute_postgresql_query(&connection, "SELECT * FROM users")
 assert_true(select_result.success)
@@ -61,7 +61,7 @@ assert_eq_string(select_result.error_code, "")
 assert_eq_string(select_result.error_message, "")
 vibez.spill("✅ PostgreSQL SELECT query executed successfully")
 
-# Test 5: Query execution - INSERT
+fr fr Test 5: Query execution - INSERT
 test_start("PostgreSQL INSERT query execution")
 insert_result := execute_postgresql_query(&connection, "INSERT INTO users (name, email) VALUES ('Test User', 'test@example.com')")
 assert_true(insert_result.success)
@@ -72,7 +72,7 @@ assert_eq_string(insert_result.error_message, "")
 assert_eq_int(insert_result.execution_time, 25)
 vibez.spill("✅ PostgreSQL INSERT query executed successfully")
 
-# Test 6: Query execution - UPDATE
+fr fr Test 6: Query execution - UPDATE
 test_start("PostgreSQL UPDATE query execution")
 update_result := execute_postgresql_query(&connection, "UPDATE users SET name = 'Updated User' WHERE id = 1")
 assert_true(update_result.success)
@@ -82,7 +82,7 @@ assert_eq_string(update_result.error_message, "")
 assert_eq_int(update_result.execution_time, 30)
 vibez.spill("✅ PostgreSQL UPDATE query executed successfully")
 
-# Test 7: Query execution - DELETE
+fr fr Test 7: Query execution - DELETE
 test_start("PostgreSQL DELETE query execution")
 delete_result := execute_postgresql_query(&connection, "DELETE FROM users WHERE id = 1")
 assert_true(delete_result.success)
@@ -92,7 +92,7 @@ assert_eq_string(delete_result.error_message, "")
 assert_eq_int(delete_result.execution_time, 35)
 vibez.spill("✅ PostgreSQL DELETE query executed successfully")
 
-# Test 8: Prepared statement creation
+fr fr Test 8: Prepared statement creation
 test_start("PostgreSQL prepared statement creation")
 stmt := prepare_postgresql_statement(&connection, "SELECT * FROM users WHERE id = $1 AND name = $2")
 assert_true(stmt.is_prepared)
@@ -105,7 +105,7 @@ assert_eq_string(stmt.parameter_types[1], "integer")
 assert_eq_int(len(stmt.bound_parameters), 2)
 vibez.spill("✅ PostgreSQL prepared statement created successfully")
 
-# Test 9: Parameter binding
+fr fr Test 9: Parameter binding
 test_start("PostgreSQL parameter binding")
 bind_result1 := bind_parameter(&stmt, 0, "1")
 bind_result2 := bind_parameter(&stmt, 1, "John Doe")
@@ -115,7 +115,7 @@ assert_eq_string(stmt.bound_parameters[0], "1")
 assert_eq_string(stmt.bound_parameters[1], "John Doe")
 vibez.spill("✅ PostgreSQL parameters bound successfully")
 
-# Test 10: Prepared statement execution
+fr fr Test 10: Prepared statement execution
 test_start("PostgreSQL prepared statement execution")
 exec_result := execute_prepared_statement(&stmt)
 assert_true(exec_result.success)
@@ -127,7 +127,7 @@ assert_eq_string(exec_result.error_code, "")
 assert_eq_string(exec_result.error_message, "")
 vibez.spill("✅ PostgreSQL prepared statement executed successfully")
 
-# Test 11: Transaction management
+fr fr Test 11: Transaction management
 test_start("PostgreSQL transaction management")
 tx := begin_postgresql_transaction(&connection, "READ COMMITTED")
 assert_true(tx.is_active)
@@ -137,7 +137,7 @@ assert_eq_int(tx.operations_count, 0)
 assert_eq_string(connection.transaction_status, "active")
 vibez.spill("✅ PostgreSQL transaction started successfully")
 
-# Test 12: Transaction commit
+fr fr Test 12: Transaction commit
 test_start("PostgreSQL transaction commit")
 commit_result := commit_postgresql_transaction(&connection, &tx)
 assert_true(commit_result)
@@ -145,7 +145,7 @@ assert_false(tx.is_active)
 assert_eq_string(connection.transaction_status, "idle")
 vibez.spill("✅ PostgreSQL transaction committed successfully")
 
-# Test 13: Transaction rollback
+fr fr Test 13: Transaction rollback
 test_start("PostgreSQL transaction rollback")
 tx2 := begin_postgresql_transaction(&connection, "SERIALIZABLE")
 assert_true(tx2.is_active)
@@ -155,7 +155,7 @@ assert_false(tx2.is_active)
 assert_eq_string(connection.transaction_status, "idle")
 vibez.spill("✅ PostgreSQL transaction rolled back successfully")
 
-# Test 14: Savepoint management
+fr fr Test 14: Savepoint management
 test_start("PostgreSQL savepoint management")
 tx3 := begin_postgresql_transaction(&connection, "READ COMMITTED")
 assert_true(tx3.is_active)
@@ -168,7 +168,7 @@ assert_true(rollback_savepoint_result)
 commit_postgresql_transaction(&connection, &tx3)
 vibez.spill("✅ PostgreSQL savepoint management successful")
 
-# Test 15: Connection pool creation
+fr fr Test 15: Connection pool creation
 test_start("PostgreSQL connection pool creation")
 pool := create_postgresql_pool(config, 10)
 assert_eq_int(pool.max_connections, 10)
@@ -177,7 +177,7 @@ assert_eq_int(len(pool.connections), 0)
 assert_eq_int(len(pool.available_connections), 0)
 vibez.spill("✅ PostgreSQL connection pool created successfully")
 
-# Test 16: Pool connection management
+fr fr Test 16: Pool connection management
 test_start("PostgreSQL pool connection management")
 pool_conn := get_pool_connection(&pool)
 assert_true(pool_conn.is_connected)
@@ -188,30 +188,30 @@ assert_true(return_result)
 assert_eq_int(len(pool.available_connections), 1)
 vibez.spill("✅ PostgreSQL pool connection management successful")
 
-# Test 17: Health check
+fr fr Test 17: Health check
 test_start("PostgreSQL health check")
 health_result := health_check_postgresql(&connection)
 assert_true(health_result)
 vibez.spill("✅ PostgreSQL health check passed")
 
-# Test 18: Server information
+fr fr Test 18: Server information
 test_start("PostgreSQL server information")
 get_postgresql_server_info(&connection)
 vibez.spill("✅ PostgreSQL server information retrieved")
 
-# Test 19: Pool statistics
+fr fr Test 19: Pool statistics
 test_start("PostgreSQL pool statistics")
 get_pool_stats(&pool)
 vibez.spill("✅ PostgreSQL pool statistics retrieved")
 
-# Test 20: Connection disconnection
+fr fr Test 20: Connection disconnection
 test_start("PostgreSQL connection disconnection")
 disconnect_result := disconnect_postgresql(&connection)
 assert_true(disconnect_result)
 assert_false(connection.is_connected)
 vibez.spill("✅ PostgreSQL connection disconnected successfully")
 
-# Test 21: Error handling - disconnected connection
+fr fr Test 21: Error handling - disconnected connection
 test_start("PostgreSQL error handling - disconnected connection")
 error_result := execute_postgresql_query(&connection, "SELECT 1")
 assert_false(error_result.success)
@@ -219,7 +219,7 @@ assert_eq_string(error_result.error_code, "08003")
 assert_eq_string(error_result.error_message, "Connection does not exist")
 vibez.spill("✅ PostgreSQL error handling working correctly")
 
-# Test 22: Parameter binding error handling
+fr fr Test 22: Parameter binding error handling
 test_start("PostgreSQL parameter binding error handling")
 stmt_error := prepare_postgresql_statement(&connection, "SELECT 1")
 assert_false(stmt_error.is_prepared)
@@ -227,7 +227,7 @@ bind_error := bind_parameter(&stmt_error, 0, "test")
 assert_false(bind_error)
 vibez.spill("✅ PostgreSQL parameter binding error handling working")
 
-# Test 23: Invalid parameter index
+fr fr Test 23: Invalid parameter index
 test_start("PostgreSQL invalid parameter index")
 reconnect_postgresql(&connection)
 stmt_valid := prepare_postgresql_statement(&connection, "SELECT * FROM users WHERE id = $1")
@@ -235,7 +235,7 @@ bind_invalid := bind_parameter(&stmt_valid, 5, "test")
 assert_false(bind_invalid)
 vibez.spill("✅ PostgreSQL invalid parameter index handled correctly")
 
-# Test 24: Configuration validation
+fr fr Test 24: Configuration validation
 test_start("PostgreSQL configuration validation")
 custom_config := PostgreSQLConfig{
     host: "custom.host.com",
@@ -256,7 +256,7 @@ assert_eq_string(custom_connection.config.database, "custom_db")
 assert_eq_string(custom_connection.config.ssl_mode, "require")
 vibez.spill("✅ PostgreSQL configuration validation successful")
 
-# Test 25: Multiple connections
+fr fr Test 25: Multiple connections
 test_start("PostgreSQL multiple connections")
 config2 := create_postgresql_config()
 config2.database = "test_db2"
@@ -268,7 +268,7 @@ assert_eq_string(connection2.config.database, "test_db2")
 disconnect_postgresql(&connection2)
 vibez.spill("✅ PostgreSQL multiple connections working correctly")
 
-# Helper function for reconnection
+fr fr Helper function for reconnection
 slay reconnect_postgresql(connection: *PostgreSQLConnection) {
     if connection.is_connected == cap {
         connect_postgresql(connection)

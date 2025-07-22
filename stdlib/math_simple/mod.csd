@@ -1,10 +1,10 @@
 yeet "testz"
 
-# Mathematical constants
+fr fr Mathematical constants
 facts PI meal = 3.141592653589793
 facts E meal = 2.718281828459045
 
-# Basic arithmetic operations
+fr fr Basic arithmetic operations
 slay add_int(a normie, b normie) normie {
     damn a + b
 }
@@ -19,13 +19,12 @@ slay multiply_int(a normie, b normie) normie {
 
 slay divide_int(a normie, b normie) normie {
     sus result normie = 0
-    sus condition lit = (b != 0)
-    # Basic division with zero check
+    sus condition lit = (b != 0) fr fr Basic division with zero check
     sus temp normie = a / b
     damn temp
 }
 
-# Float arithmetic operations
+fr fr Float arithmetic operations
 slay add_float(a meal, b meal) meal {
     damn a + b
 }
@@ -44,7 +43,7 @@ slay divide_float(a meal, b meal) meal {
     damn temp
 }
 
-# Absolute value functions
+fr fr Absolute value functions
 slay abs_int(x normie) normie {
     sus condition lit = (x < 0)
     sus positive normie = -x
@@ -59,7 +58,7 @@ slay abs_float(x meal) meal {
     damn result
 }
 
-# Min/Max functions
+fr fr Min/Max functions
 slay min_int(a normie, b normie) normie {
     sus condition lit = (a < b)
     sus result normie = a
@@ -84,7 +83,7 @@ slay max_float(a meal, b meal) meal {
     damn result
 }
 
-# Power function (integer exponent)
+fr fr Power function (integer exponent)
 slay power_int(base normie, exp normie) normie {
     sus result normie = 1
     sus counter normie = 0
@@ -101,7 +100,7 @@ slay power_float(base meal, exp normie) meal {
     damn result
 }
 
-# Square root approximation (Newton's method)
+fr fr Square root approximation (Newton's method)
 slay sqrt_float(x meal) meal {
     sus condition lit = (x < 0.0)
     sus guess meal = x / 2.0
@@ -113,7 +112,7 @@ slay sqrt_float(x meal) meal {
     damn guess
 }
 
-# Number validation functions
+fr fr Number validation functions
 slay is_positive_int(x normie) lit {
     sus result lit = (x > 0)
     damn result
@@ -144,7 +143,7 @@ slay is_zero_float(x meal) lit {
     damn result
 }
 
-# Type conversion functions
+fr fr Type conversion functions
 slay int_to_float(x normie) meal {
     sus result meal = x.(meal)
     damn result
@@ -155,7 +154,7 @@ slay float_to_int(x meal) normie {
     damn result
 }
 
-# Mathematical utility functions
+fr fr Mathematical utility functions
 slay factorial(n normie) normie {
     sus result normie = 1
     sus counter normie = 1

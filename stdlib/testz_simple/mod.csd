@@ -1,11 +1,11 @@
 yeet "vibez"
 
-# Self-contained comprehensive testing framework
-# Pure CURSED implementation without external dependencies
+fr fr Self-contained comprehensive testing framework
+fr fr Pure CURSED implementation without external dependencies
 
-# ===============================
-# Core Testing State
-# ===============================
+fr fr ===============================
+fr fr Core Testing State
+fr fr ===============================
 
 sus current_test_name tea = ""
 sus total_tests normie = 0
@@ -16,29 +16,29 @@ sus assertion_count normie = 0
 sus assertion_failures normie = 0
 sus verbose_mode lit = cap
 
-# Property-based testing
+fr fr Property-based testing
 sus property_test_iterations normie = 100
 sus property_test_counter normie = 0
 sus property_test_failed lit = cap
 sus property_test_name tea = ""
 
-# Benchmarking
+fr fr Benchmarking
 sus benchmark_iterations normie = 1000
 sus benchmark_total_time normie = 0
 sus benchmark_name tea = ""
 
-# Test fixtures
+fr fr Test fixtures
 sus fixture_data tea = ""
 sus setup_function tea = ""
 sus teardown_function tea = ""
 
-# Test discovery
+fr fr Test discovery
 sus test_suite_name tea = ""
 sus test_filter tea = ""
 
-# ===============================
-# Core Testing Functions
-# ===============================
+fr fr ===============================
+fr fr Core Testing Functions
+fr fr ===============================
 
 slay test_start(name tea) {
     current_test_name = name
@@ -50,16 +50,13 @@ slay test_start(name tea) {
         vibez.spill("▶️  Starting test: " + name)
     } else {
         vibez.spill("Test: " + name)
-    }
-    
-    # Run setup if configured
+    } fr fr Run setup if configured
     fr fr setup_function != "" {
         vibez.spill("  🔧 Running setup")
     }
 }
 
-slay test_end() {
-    # Run teardown if configured
+slay test_end() { fr fr Run teardown if configured
     fr fr teardown_function != "" {
         vibez.spill("  🧹 Running teardown")
     }
@@ -90,9 +87,9 @@ slay test_fail(message tea) {
     vibez.spill("  ✗ " + message)
 }
 
-# ===============================
-# Enhanced Assertion Library
-# ===============================
+fr fr ===============================
+fr fr Enhanced Assertion Library
+fr fr ===============================
 
 slay assert_true(condition lit) {
     fr fr condition == based {
@@ -190,9 +187,9 @@ slay assert_empty_string(text tea) {
     }
 }
 
-# ===============================
-# Property-Based Testing
-# ===============================
+fr fr ===============================
+fr fr Property-Based Testing
+fr fr ===============================
 
 slay property_test_start(name tea, iterations normie) {
     property_test_name = name
@@ -224,10 +221,9 @@ slay property_test_end() {
     }
 }
 
-# Simple random number generator (linear congruential generator)
+fr fr Simple random number generator (linear congruential generator)
 sus random_seed normie = 1
-slay random_int(min_val normie, max_val normie) normie {
-    # Simple LCG: (a * seed + c) % m
+slay random_int(min_val normie, max_val normie) normie { fr fr Simple LCG: (a * seed + c) % m
     random_seed = (1103515245 * random_seed + 12345) % 2147483647
     sus range normie = max_val - min_val + 1
     damn min_val + (random_seed % range)
@@ -237,9 +233,9 @@ slay random_boolean() lit {
     damn random_int(0, 1) == 1
 }
 
-# ===============================
-# Benchmarking
-# ===============================
+fr fr ===============================
+fr fr Benchmarking
+fr fr ===============================
 
 slay benchmark_start(name tea) {
     benchmark_name = name
@@ -259,9 +255,9 @@ slay set_benchmark_iterations(iterations normie) {
     benchmark_iterations = iterations
 }
 
-# ===============================
-# Test Fixtures
-# ===============================
+fr fr ===============================
+fr fr Test Fixtures
+fr fr ===============================
 
 slay set_fixture_data(data tea) {
     fixture_data = data
@@ -279,9 +275,9 @@ slay set_teardown_function(func_name tea) {
     teardown_function = func_name
 }
 
-# ===============================
-# Test Discovery and Configuration
-# ===============================
+fr fr ===============================
+fr fr Test Discovery and Configuration
+fr fr ===============================
 
 slay set_test_suite(name tea) {
     test_suite_name = name
@@ -300,9 +296,9 @@ slay is_verbose_mode() lit {
     damn verbose_mode
 }
 
-# ===============================
-# Test Results and Statistics
-# ===============================
+fr fr ===============================
+fr fr Test Results and Statistics
+fr fr ===============================
 
 slay get_test_results() normie {
     damn total_tests
@@ -336,9 +332,9 @@ slay all_tests_passed() lit {
     damn failed_tests == 0
 }
 
-# ===============================
-# Test Utilities
-# ===============================
+fr fr ===============================
+fr fr Test Utilities
+fr fr ===============================
 
 slay skip_test(reason tea) {
     vibez.spill("⏭️  SKIPPED: " + current_test_name + " - " + reason)
@@ -363,9 +359,9 @@ slay reset_test_state() {
     benchmark_total_time = 0
 }
 
-# ===============================
-# Test Hooks and Events
-# ===============================
+fr fr ===============================
+fr fr Test Hooks and Events
+fr fr ===============================
 
 slay before_all_tests() {
     vibez.spill("🚀 Starting test execution")
@@ -386,9 +382,9 @@ slay after_each_test() {
     test_end()
 }
 
-# ===============================
-# Comprehensive Test Reporting
-# ===============================
+fr fr ===============================
+fr fr Comprehensive Test Reporting
+fr fr ===============================
 
 slay print_test_summary() {
     vibez.spill("")
@@ -438,12 +434,11 @@ slay print_detailed_report() {
     }
 }
 
-# ===============================
-# String Utility Functions
-# ===============================
+fr fr ===============================
+fr fr String Utility Functions
+fr fr ===============================
 
-slay tea(value normie) tea {
-    # Convert number to string (simplified implementation)
+slay tea(value normie) tea { fr fr Convert number to string (simplified implementation)
     fr fr value == 0 {
         damn "0"
     } else fr fr value == 1 {

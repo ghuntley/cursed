@@ -1,10 +1,10 @@
 yeet "testz"
 yeet "math"
 
-# Comprehensive Enhanced Mathematical Functions Test Suite
+fr fr Comprehensive Enhanced Mathematical Functions Test Suite
 test_start("Enhanced Mathematical Functions Test")
 
-# Basic Arithmetic Tests
+fr fr Basic Arithmetic Tests
 assert_eq_int(add(5, 3), 8)
 assert_eq_int(add(-5, 3), -2)
 assert_eq_int(add(0, 0), 0)
@@ -21,7 +21,7 @@ assert_eq_int(divide(20, 4), 5)
 assert_eq_int(divide(15, 3), 5)
 assert_eq_int(divide(-12, 3), -4)
 
-# Absolute Value Tests
+fr fr Absolute Value Tests
 assert_eq_int(abs_int(-42), 42)
 assert_eq_int(abs_int(42), 42)
 assert_eq_int(abs_int(0), 0)
@@ -30,7 +30,7 @@ assert_true(abs_float(-3.14) > 3.13 && abs_float(-3.14) < 3.15)
 assert_true(abs_float(3.14) > 3.13 && abs_float(3.14) < 3.15)
 assert_true(abs_float(0.0) == 0.0)
 
-# Min/Max Tests
+fr fr Min/Max Tests
 assert_eq_int(max_int(10, 5), 10)
 assert_eq_int(max_int(-3, -7), -3)
 assert_eq_int(max_int(0, 0), 0)
@@ -42,7 +42,7 @@ assert_eq_int(min_int(0, 0), 0)
 assert_true(max_float(3.14, 2.71) > 3.13 && max_float(3.14, 2.71) < 3.15)
 assert_true(min_float(3.14, 2.71) > 2.70 && min_float(3.14, 2.71) < 2.72)
 
-# Power Functions Tests
+fr fr Power Functions Tests
 assert_eq_int(pow_int(2, 3), 8)
 assert_eq_int(pow_int(5, 2), 25)
 assert_eq_int(pow_int(10, 0), 1)
@@ -51,7 +51,7 @@ assert_eq_int(pow_int(3, 4), 81)
 sus pow_result meal = pow_float(2.0, 3.0)
 assert_true(pow_result > 7.9 && pow_result < 8.1)
 
-# Square Root Tests
+fr fr Square Root Tests
 sus sqrt_result meal = sqrt(9.0)
 assert_true(sqrt_result > 2.9 && sqrt_result < 3.1)
 
@@ -61,7 +61,7 @@ assert_true(sqrt_result2 > 3.9 && sqrt_result2 < 4.1)
 sus sqrt_result3 meal = sqrt(0.0)
 assert_true(sqrt_result3 == 0.0)
 
-# Exponential and Logarithmic Tests
+fr fr Exponential and Logarithmic Tests
 sus exp_result meal = exp_float(0.0)
 assert_true(exp_result > 0.9 && exp_result < 1.1)
 
@@ -80,7 +80,7 @@ assert_true(log10_result > 1.9 && log10_result < 2.1)
 sus log2_result meal = log2(8.0)
 assert_true(log2_result > 2.9 && log2_result < 3.1)
 
-# Trigonometric Function Tests
+fr fr Trigonometric Function Tests
 sus sin_result meal = sin(0.0)
 assert_true(sin_result > -0.1 && sin_result < 0.1)
 
@@ -99,7 +99,7 @@ assert_true(tan_result > -0.1 && tan_result < 0.1)
 sus tan_result2 meal = tan(PI / 4.0)
 assert_true(tan_result2 > 0.9 && tan_result2 < 1.1)
 
-# Inverse Trigonometric Tests
+fr fr Inverse Trigonometric Tests
 sus asin_result meal = asin(0.0)
 assert_true(asin_result > -0.1 && asin_result < 0.1)
 
@@ -118,7 +118,7 @@ assert_true(atan_result2 > PI / 4.0 - 0.1 && atan_result2 < PI / 4.0 + 0.1)
 sus atan2_result meal = atan2(1.0, 1.0)
 assert_true(atan2_result > PI / 4.0 - 0.1 && atan2_result < PI / 4.0 + 0.1)
 
-# Hyperbolic Function Tests
+fr fr Hyperbolic Function Tests
 sus sinh_result meal = sinh(0.0)
 assert_true(sinh_result > -0.1 && sinh_result < 0.1)
 
@@ -128,7 +128,7 @@ assert_true(cosh_result > 0.9 && cosh_result < 1.1)
 sus tanh_result meal = tanh(0.0)
 assert_true(tanh_result > -0.1 && tanh_result < 0.1)
 
-# Special Function Tests
+fr fr Special Function Tests
 sus factorial_result meal = factorial(5)
 assert_true(factorial_result > 119.0 && factorial_result < 121.0)
 
@@ -144,7 +144,7 @@ assert_true(gamma_result > 0.9 && gamma_result < 1.1)
 sus gamma_result2 meal = gamma(2.0)
 assert_true(gamma_result2 > 0.9 && gamma_result2 < 1.1)
 
-# Helper Function Tests
+fr fr Helper Function Tests
 sus floor_result meal = floor_float(3.7)
 assert_true(floor_result == 3.0)
 
@@ -166,7 +166,7 @@ assert_true(round_result2 == 3.0)
 sus round_result3 meal = round_float(-2.6)
 assert_true(round_result3 == -3.0)
 
-# Statistical Function Tests
+fr fr Statistical Function Tests
 sus values []meal = []meal{1.0, 2.0, 3.0, 4.0, 5.0}
 sus mean_result meal = mean(values, 5)
 assert_true(mean_result > 2.9 && mean_result < 3.1)
@@ -180,7 +180,7 @@ assert_true(std_dev_result > 1.5 && std_dev_result < 1.7)
 sus median_result meal = median(values, 5)
 assert_true(median_result > 2.9 && median_result < 3.1)
 
-# Numerical Analysis Tests
+fr fr Numerical Analysis Tests
 sus f_vals []meal = []meal{1.0, 4.0, 9.0, 16.0, 25.0}
 sus integration_result meal = integrate_simpson(f_vals, 5, 1.0)
 assert_true(integration_result > 0.0)
@@ -191,7 +191,7 @@ assert_true(diff_result != 0.0)
 sus linear_solution meal = solve_linear_2x2(2.0, 1.0, 5.0, 1.0, 1.0, 3.0)
 assert_true(linear_solution > 1.9 && linear_solution < 2.1)
 
-# Utility Function Tests
+fr fr Utility Function Tests
 assert_eq_int(gcd(12, 8), 4)
 assert_eq_int(gcd(17, 13), 1)
 assert_eq_int(gcd(0, 5), 5)
@@ -211,7 +211,7 @@ assert_eq_int(fibonacci(1), 1)
 assert_eq_int(fibonacci(5), 5)
 assert_eq_int(fibonacci(8), 21)
 
-# Edge Case Tests
+fr fr Edge Case Tests
 sus sqrt_negative = sqrt(-1.0)
 assert_true(sqrt_negative == 0.0)
 
@@ -221,7 +221,7 @@ assert_true(ln_negative == 0.0)
 sus ln_zero = ln(0.0)
 assert_true(ln_zero == 0.0)
 
-# Constants Tests
+fr fr Constants Tests
 assert_true(PI > 3.14 && PI < 3.15)
 assert_true(E > 2.71 && E < 2.72)
 assert_true(LN2 > 0.69 && LN2 < 0.70)

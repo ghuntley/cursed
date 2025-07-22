@@ -401,9 +401,9 @@ slay generate_tap_report() tea {
             tap_output = tap_output + "  actual: " + result.actual + "\n"
             tap_output = tap_output + "  ...\n"
         } highkey lowkey result.status == "SKIP" {
-            tap_output = tap_output + "ok " + tea(test_number) + " - " + result.test_name + ": " + result.assertion_name + " # SKIP " + result.message + "\n"
+            tap_output = tap_output + "ok " + tea(test_number) + " - " + result.test_name + ": " + result.assertion_name + " fr fr SKIP " + result.message + "\n"
         } highkey lowkey result.status == "ERROR" {
-            tap_output = tap_output + "not ok " + tea(test_number) + " - " + result.test_name + ": " + result.assertion_name + " # ERROR " + result.message + "\n"
+            tap_output = tap_output + "not ok " + tea(test_number) + " - " + result.test_name + ": " + result.assertion_name + " fr fr ERROR " + result.message + "\n"
         }
         
         i = i + 1

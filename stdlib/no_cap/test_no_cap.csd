@@ -1,10 +1,10 @@
-# no_cap module comprehensive test suite
-# Tests all truth/assertion utilities, boolean logic functions, and validation helpers
+fr fr no_cap module comprehensive test suite
+fr fr Tests all truth/assertion utilities, boolean logic functions, and validation helpers
 
 yeet "testz"
 yeet "no_cap"
 
-# Test truth/assertion utilities
+fr fr Test truth/assertion utilities
 test_start("assert_truth with true")
 assert_true(assert_truth(based))
 
@@ -29,7 +29,7 @@ assert_true(confirm_reality(based))
 test_start("confirm_reality with false")
 assert_false(confirm_reality(cap))
 
-# Test boolean logic functions
+fr fr Test boolean logic functions
 test_start("logic_and - true and true")
 assert_true(logic_and(based, based))
 
@@ -99,7 +99,7 @@ assert_true(logic_biconditional(based, based))
 test_start("logic_biconditional - true biconditional false")
 assert_false(logic_biconditional(based, cap))
 
-# Test validation helpers
+fr fr Test validation helpers
 test_start("validate_true with true")
 assert_true(validate_true(based))
 
@@ -130,7 +130,7 @@ assert_true(validate_not_equals(based, cap))
 test_start("validate_not_equals with same values")
 assert_false(validate_not_equals(based, based))
 
-# Test fact checking utilities
+fr fr Test fact checking utilities
 test_start("check_consistency with all true")
 sus all_true_facts []lit = [based, based, based]
 assert_true(check_consistency(all_true_facts))
@@ -161,7 +161,7 @@ test_start("check_satisfiability with all false")
 sus unsatisfiable []lit = [cap, cap, cap]
 assert_false(check_satisfiability(unsatisfiable))
 
-# Test advanced truth operations
+fr fr Test advanced truth operations
 test_start("truth_table_and with all true")
 sus and_inputs []lit = [based, based, based]
 assert_true(truth_table_and(and_inputs))
@@ -186,7 +186,7 @@ test_start("majority_vote with majority false")
 sus majority_false []lit = [cap, cap, based]
 assert_false(majority_vote(majority_false))
 
-# Test utility functions
+fr fr Test utility functions
 test_start("count_truths")
 sus count_test []lit = [based, cap, based, based]
 assert_eq_int(count_truths(count_test), 3)
@@ -222,7 +222,7 @@ test_start("none_true with at least one true")
 sus none_true_mixed []lit = [cap, based, cap]
 assert_false(none_true(none_true_mixed))
 
-# Test empty arrays
+fr fr Test empty arrays
 test_start("truth_ratio with empty array")
 sus empty_array []lit = []
 assert_eq_int(truth_ratio(empty_array).(normie), 0)

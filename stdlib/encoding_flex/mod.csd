@@ -1,18 +1,18 @@
-# Simplified encoding_flex module
+fr fr Simplified encoding_flex module
 
-# Base64 encoding function - simplified
+fr fr Base64 encoding function - simplified
 slay EncodeBase64(data tea) tea {
     sus result tea = "encoded_" + data
     damn result
 }
 
-# Hex encoding function - simplified  
+fr fr Hex encoding function - simplified  
 slay EncodeHex(data tea) tea {
     sus result tea = "hex_" + data
     damn result
 }
 
-# Hex decoding function - simplified
+fr fr Hex decoding function - simplified
 slay DecodeHex(hexStr tea) tea {
     if len(hexStr) == 0 {
         damn "error: empty hex string"
@@ -21,7 +21,7 @@ slay DecodeHex(hexStr tea) tea {
     damn result
 }
 
-# URI encoding function - simplified
+fr fr URI encoding function - simplified
 slay EncodeURI(data tea) tea {
     sus result tea = data
     sus i normie = 0
@@ -34,19 +34,19 @@ slay EncodeURI(data tea) tea {
     damn result + "_encoded"
 }
 
-# URI decoding function - simplified
+fr fr URI decoding function - simplified
 slay DecodeURI(uriStr tea) tea {
     sus result tea = "decoded_" + uriStr
     damn result
 }
 
-# JSON encoding function - simplified
+fr fr JSON encoding function - simplified
 slay MarshalJSON(data tea) tea {
     sus result tea = "\"" + data + "\""
     damn result
 }
 
-# JSON decoding function - simplified
+fr fr JSON decoding function - simplified
 slay UnmarshalJSON(jsonStr tea) tea {
     if len(jsonStr) > 2 {
         sus result tea = jsonStr[1:len(jsonStr)-1]
@@ -55,7 +55,7 @@ slay UnmarshalJSON(jsonStr tea) tea {
     damn jsonStr
 }
 
-# Binary write function - simplified
+fr fr Binary write function - simplified
 slay WriteUint16BE(value normie) tea {
     sus high normie = value / 256
     sus low normie = value % 256
@@ -63,7 +63,7 @@ slay WriteUint16BE(value normie) tea {
     damn result
 }
 
-# Binary read function - simplified
+fr fr Binary read function - simplified
 slay ReadUint16BE(data tea) normie {
     if len(data) < 8 {
         damn 0

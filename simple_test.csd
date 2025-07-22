@@ -1,1 +1,1 @@
-vibez.spill("CURSED functionality test!")
+vibez.spill("Hello CURSED!")

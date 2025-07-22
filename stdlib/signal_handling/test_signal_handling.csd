@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "signal_handling"
 
-# Basic signal handling tests
+fr fr Basic signal handling tests
 
 test_start("signal_init")
 assert_true(signal_init())

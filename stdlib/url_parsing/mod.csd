@@ -1,6 +1,6 @@
-# URL Parsing Module - Pure CURSED Implementation
+fr fr URL Parsing Module - Pure CURSED Implementation
 
-# Global URL components
+fr fr Global URL components
 sus url_scheme tea = ""
 sus url_host tea = ""
 sus url_port normie = 0
@@ -10,20 +10,16 @@ sus url_fragment tea = ""
 sus url_raw_url tea = ""
 sus url_is_valid lit = cap
 
-# Basic URL parsing function
+fr fr Basic URL parsing function
 slay url_parse(url_string tea) lit {
     url_raw_url = url_string
-    url_is_valid = cap
-    
-    # Reset components
+    url_is_valid = cap fr fr Reset components
     url_scheme = ""
     url_host = ""
     url_port = 0
     url_path = "/"
     url_query = ""
-    url_fragment = ""
-    
-    # Simple pattern matching for common URLs
+    url_fragment = "" fr fr Simple pattern matching for common URLs
     bestie url_string == "http://example.com" {
         url_scheme = "http"
         url_host = "example.com"
@@ -78,7 +74,7 @@ slay url_parse(url_string tea) lit {
     damn cap
 }
 
-# Component getters
+fr fr Component getters
 slay url_get_scheme() tea {
     damn url_scheme
 }
@@ -119,7 +115,7 @@ slay url_is_parsed() lit {
     damn url_is_valid
 }
 
-# Component setters
+fr fr Component setters
 slay url_set_scheme(scheme tea) lit {
     bestie url_is_valid {
         url_scheme = scheme
@@ -186,7 +182,7 @@ slay url_set_password(password tea) lit {
     damn based
 }
 
-# URL building
+fr fr URL building
 slay url_build() tea {
     bestie url_is_valid {
         sus result tea = url_scheme + "://" + url_host
@@ -223,7 +219,7 @@ slay url_clear() lit {
     damn based
 }
 
-# Query parameters
+fr fr Query parameters
 slay url_add_query_param(key tea, value tea) lit {
     bestie url_is_valid {
         bestie url_query == "" {
@@ -269,7 +265,7 @@ slay url_get_query_params() tea {
     damn url_query
 }
 
-# Validation
+fr fr Validation
 slay url_is_valid() lit {
     damn url_is_valid
 }
@@ -319,7 +315,7 @@ slay url_is_localhost() lit {
     damn cap
 }
 
-# URL manipulation
+fr fr URL manipulation
 slay url_resolve(base_url tea, relative_url tea) tea {
     bestie base_url == "https://example.com/api/v1/" {
         bestie relative_url == "users/123" {
@@ -343,7 +339,7 @@ slay url_normalize() lit {
     damn cap
 }
 
-# Encoding/decoding
+fr fr Encoding/decoding
 slay url_encode(text tea) tea {
     bestie text == "hello world & test=value" {
         damn "hello%20world%20%26%20test%3Dvalue"
@@ -362,7 +358,7 @@ slay url_encode_query_param(key tea, value tea) tea {
     damn key + "=" + value
 }
 
-# Comparison
+fr fr Comparison
 slay url_equals(other_url tea) lit {
     damn url_raw_url == other_url
 }
@@ -371,7 +367,7 @@ slay url_same_origin(other_url tea) lit {
     damn cap
 }
 
-# Utilities
+fr fr Utilities
 slay url_get_base_url() tea {
     bestie url_is_valid {
         damn url_scheme + "://" + url_host

@@ -5,10 +5,10 @@ yeet "dropz"
 yeet "timez"
 yeet "encode_mood"
 
-# Coverage Analysis Module for CURSED
-# Provides comprehensive code coverage tracking and analysis
+fr fr Coverage Analysis Module for CURSED
+fr fr Provides comprehensive code coverage tracking and analysis
 
-# Coverage data structures
+fr fr Coverage data structures
 sus CoveragePoint struct {
     file_path tea
     line_number normie
@@ -32,7 +32,7 @@ sus CoverageReport struct {
 }
 
 sus CoverageConfig struct {
-    output_format tea  # "html", "json", "console", "xml"
+    output_format tea fr fr "html", "json", "console", "xml"
     output_directory tea
     threshold_line meal
     threshold_function meal
@@ -42,51 +42,42 @@ sus CoverageConfig struct {
     instrument_tests lit
 }
 
-# Global coverage data storage
+fr fr Global coverage data storage
 sus coverage_data [CoveragePoint]
 sus coverage_config CoverageConfig
 sus instrumentation_enabled lit = cap
 
-# Initialize coverage system
+fr fr Initialize coverage system
 slay coverage_init(config CoverageConfig) lit {
     coverage_config = config
     coverage_data = []
-    instrumentation_enabled = based
-    
-    # Create output directory if it doesn't exist
+    instrumentation_enabled = based fr fr Create output directory if it doesn't exist
     create_directory(config.output_directory)
     
     vibez.spill("Coverage analysis initialized")
     damn based
 }
 
-# Instrument code for coverage tracking
+fr fr Instrument code for coverage tracking
 slay instrument_code(file_path tea, source_code tea) tea {
     sus instrumented_code tea = ""
     sus lines [tea] = stringz.split(source_code, "\n")
-    sus line_number normie = 1
-    
-    # Add coverage tracking imports
+    sus line_number normie = 1 fr fr Add coverage tracking imports
     instrumented_code = instrumented_code + "yeet \"coverage_analysis\"\n"
     
     bestie i := 0; i < len(lines); i++ {
-        sus line tea = lines[i]
-        
-        # Skip empty lines and comments
+        sus line tea = lines[i] fr fr Skip empty lines and comments
         lowkey stringz.trim(line) == "" || stringz.starts_with(stringz.trim(line), "#") {
             instrumented_code = instrumented_code + line + "\n"
             line_number++
             simp
-        }
-        
-        # Instrument function definitions
+        } fr fr Instrument function definitions
         lowkey stringz.contains(line, "slay ") {
             sus function_name tea = extract_function_name(line)
             instrumented_code = instrumented_code + line + "\n"
             instrumented_code = instrumented_code + "    coverage_track_function(\"" + file_path + "\", " + 
                               toString(line_number) + ", \"" + function_name + "\")\n"
-        } else {
-            # Instrument regular lines
+        } else { fr fr Instrument regular lines
             instrumented_code = instrumented_code + "coverage_track_line(\"" + file_path + "\", " + 
                               toString(line_number) + ")\n"
             instrumented_code = instrumented_code + line + "\n"
@@ -98,7 +89,7 @@ slay instrument_code(file_path tea, source_code tea) tea {
     damn instrumented_code
 }
 
-# Extract function name from function definition line
+fr fr Extract function name from function definition line
 slay extract_function_name(line tea) tea {
     sus parts [tea] = stringz.split(line, " ")
     bestie i := 0; i < len(parts); i++ {
@@ -115,7 +106,7 @@ slay extract_function_name(line tea) tea {
     damn "unknown_function"
 }
 
-# Track line coverage
+fr fr Track line coverage
 slay coverage_track_line(file_path tea, line_number normie) {
     lowkey !instrumentation_enabled {
         damn
@@ -128,22 +119,18 @@ slay coverage_track_line(file_path tea, line_number normie) {
         function_name: "",
         hit_count: 1,
         branch_taken: cap
-    }
-    
-    # Check if this line is already tracked
+    } fr fr Check if this line is already tracked
     bestie i := 0; i < len(coverage_data); i++ {
         lowkey coverage_data[i].file_path == file_path && 
               coverage_data[i].line_number == line_number {
             coverage_data[i].hit_count++
             damn
         }
-    }
-    
-    # Add new coverage point
+    } fr fr Add new coverage point
     coverage_data = append(coverage_data, point)
 }
 
-# Track function coverage
+fr fr Track function coverage
 slay coverage_track_function(file_path tea, line_number normie, function_name tea) {
     lowkey !instrumentation_enabled {
         damn
@@ -156,9 +143,7 @@ slay coverage_track_function(file_path tea, line_number normie, function_name te
         function_name: function_name,
         hit_count: 1,
         branch_taken: cap
-    }
-    
-    # Check if this function is already tracked
+    } fr fr Check if this function is already tracked
     bestie i := 0; i < len(coverage_data); i++ {
         lowkey coverage_data[i].file_path == file_path && 
               coverage_data[i].function_name == function_name {
@@ -170,7 +155,7 @@ slay coverage_track_function(file_path tea, line_number normie, function_name te
     coverage_data = append(coverage_data, point)
 }
 
-# Track branch coverage
+fr fr Track branch coverage
 slay coverage_track_branch(file_path tea, line_number normie, branch_taken lit) {
     lowkey !instrumentation_enabled {
         damn
@@ -188,7 +173,7 @@ slay coverage_track_branch(file_path tea, line_number normie, branch_taken lit) 
     coverage_data = append(coverage_data, point)
 }
 
-# Generate coverage report
+fr fr Generate coverage report
 slay generate_coverage_report() CoverageReport {
     sus report CoverageReport = {
         total_lines: 0,
@@ -201,37 +186,31 @@ slay generate_coverage_report() CoverageReport {
         function_coverage_percent: 0.0,
         branch_coverage_percent: 0.0,
         file_reports: []
-    }
-    
-    # Calculate line coverage
+    } fr fr Calculate line coverage
     sus line_counts map[tea]normie = {}
     sus covered_line_counts map[tea]normie = {}
     
     bestie i := 0; i < len(coverage_data); i++ {
         sus point CoveragePoint = coverage_data[i]
-        lowkey point.function_name == "" {  # Line coverage
+        lowkey point.function_name == "" { fr fr Line coverage
             line_counts[point.file_path]++
             lowkey point.hit_count > 0 {
                 covered_line_counts[point.file_path]++
             }
         }
-    }
-    
-    # Calculate function coverage
+    } fr fr Calculate function coverage
     sus function_counts map[tea]normie = {}
     sus covered_function_counts map[tea]normie = {}
     
     bestie i := 0; i < len(coverage_data); i++ {
         sus point CoveragePoint = coverage_data[i]
-        lowkey point.function_name != "" {  # Function coverage
+        lowkey point.function_name != "" { fr fr Function coverage
             function_counts[point.file_path]++
             lowkey point.hit_count > 0 {
                 covered_function_counts[point.file_path]++
             }
         }
-    }
-    
-    # Calculate totals
+    } fr fr Calculate totals
     bestie file, count := range line_counts {
         report.total_lines += count
         report.covered_lines += covered_line_counts[file]
@@ -240,9 +219,7 @@ slay generate_coverage_report() CoverageReport {
     bestie file, count := range function_counts {
         report.total_functions += count
         report.covered_functions += covered_function_counts[file]
-    }
-    
-    # Calculate percentages
+    } fr fr Calculate percentages
     lowkey report.total_lines > 0 {
         report.line_coverage_percent = (report.covered_lines * 100.0) / report.total_lines
     }
@@ -258,51 +235,45 @@ slay generate_coverage_report() CoverageReport {
     damn report
 }
 
-# Generate HTML coverage report
+fr fr Generate HTML coverage report
 slay generate_html_report(report CoverageReport, output_path tea) lit {
     sus html_content tea = generate_html_template(report)
     
     lowkey !write_file(output_path + "/coverage.html", html_content) {
         vibez.spill("Error: Could not write HTML coverage report")
         damn cap
-    }
-    
-    # Generate individual file reports
+    } fr fr Generate individual file reports
     generate_file_html_reports(output_path)
     
     vibez.spill("HTML coverage report generated: " + output_path + "/coverage.html")
     damn based
 }
 
-# Generate HTML template
+fr fr Generate HTML template
 slay generate_html_template(report CoverageReport) tea {
     sus html tea = "<!DOCTYPE html>\n"
     html += "<html><head><title>CURSED Coverage Report</title>\n"
     html += "<style>\n"
     html += "body { font-family: Arial, sans-serif; margin: 20px; }\n"
-    html += ".header { background-color: #f0f0f0; padding: 10px; border-radius: 5px; }\n"
+    html += ".header { background-color: fr fr f0f0f0; padding: 10px; border-radius: 5px; }\n"
     html += ".metric { display: inline-block; margin: 10px; padding: 10px; border-radius: 5px; }\n"
-    html += ".high-coverage { background-color: #d4edda; }\n"
-    html += ".medium-coverage { background-color: #fff3cd; }\n"
-    html += ".low-coverage { background-color: #f8d7da; }\n"
+    html += ".high-coverage { background-color: fr fr d4edda; }\n"
+    html += ".medium-coverage { background-color: fr fr fff3cd; }\n"
+    html += ".low-coverage { background-color: fr fr f8d7da; }\n"
     html += "table { border-collapse: collapse; width: 100%; margin-top: 20px; }\n"
-    html += "th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n"
-    html += "th { background-color: #f2f2f2; }\n"
+    html += "th, td { border: 1px solid fr fr ddd; padding: 8px; text-align: left; }\n"
+    html += "th { background-color: fr fr f2f2f2; }\n"
     html += "</style></head><body>\n"
     
     html += "<div class='header'>\n"
     html += "<h1>CURSED Code Coverage Report</h1>\n"
     html += "<p>Generated on: " + timez.format_now() + "</p>\n"
-    html += "</div>\n"
-    
-    # Coverage metrics
+    html += "</div>\n" fr fr Coverage metrics
     html += "<div class='metrics'>\n"
     html += generate_metric_div("Line Coverage", report.line_coverage_percent)
     html += generate_metric_div("Function Coverage", report.function_coverage_percent)
     html += generate_metric_div("Branch Coverage", report.branch_coverage_percent)
-    html += "</div>\n"
-    
-    # Summary table
+    html += "</div>\n" fr fr Summary table
     html += "<h2>Coverage Summary</h2>\n"
     html += "<table>\n"
     html += "<tr><th>Metric</th><th>Covered</th><th>Total</th><th>Percentage</th></tr>\n"
@@ -322,7 +293,7 @@ slay generate_html_template(report CoverageReport) tea {
     damn html
 }
 
-# Generate metric div with color coding
+fr fr Generate metric div with color coding
 slay generate_metric_div(label tea, percentage meal) tea {
     sus class_name tea = "low-coverage"
     lowkey percentage >= 90.0 {
@@ -337,23 +308,19 @@ slay generate_metric_div(label tea, percentage meal) tea {
          "</div>\n"
 }
 
-# Generate file-specific HTML reports
+fr fr Generate file-specific HTML reports
 slay generate_file_html_reports(output_path tea) {
-    sus file_coverage map[tea][CoveragePoint] = {}
-    
-    # Group coverage data by file
+    sus file_coverage map[tea][CoveragePoint] = {} fr fr Group coverage data by file
     bestie i := 0; i < len(coverage_data); i++ {
         sus point CoveragePoint = coverage_data[i]
         file_coverage[point.file_path] = append(file_coverage[point.file_path], point)
-    }
-    
-    # Generate report for each file
+    } fr fr Generate report for each file
     bestie file_path, points := range file_coverage {
         generate_single_file_html_report(file_path, points, output_path)
     }
 }
 
-# Generate single file HTML report
+fr fr Generate single file HTML report
 slay generate_single_file_html_report(file_path tea, points [CoveragePoint], output_path tea) {
     sus file_name tea = extract_filename(file_path)
     sus html_file tea = output_path + "/" + file_name + ".html"
@@ -362,7 +329,7 @@ slay generate_single_file_html_report(file_path tea, points [CoveragePoint], out
     write_file(html_file, html)
 }
 
-# Generate JSON coverage report
+fr fr Generate JSON coverage report
 slay generate_json_report(report CoverageReport, output_path tea) lit {
     sus json_content tea = coverage_report_to_json(report)
     
@@ -375,7 +342,7 @@ slay generate_json_report(report CoverageReport, output_path tea) lit {
     damn based
 }
 
-# Convert coverage report to JSON
+fr fr Convert coverage report to JSON
 slay coverage_report_to_json(report CoverageReport) tea {
     sus json tea = "{\n"
     json += "  \"total_lines\": " + toString(report.total_lines) + ",\n"
@@ -411,7 +378,7 @@ slay coverage_report_to_json(report CoverageReport) tea {
     damn json
 }
 
-# Generate console coverage report
+fr fr Generate console coverage report
 slay generate_console_report(report CoverageReport) {
     vibez.spill("=== CURSED Coverage Report ===")
     vibez.spill("")
@@ -425,13 +392,11 @@ slay generate_console_report(report CoverageReport) {
     vibez.spill("  Branches:  " + toString(report.covered_branches) + "/" + 
                toString(report.total_branches) + " (" + 
                toString(report.branch_coverage_percent) + "%)")
-    vibez.spill("")
-    
-    # Coverage thresholds
+    vibez.spill("") fr fr Coverage thresholds
     check_coverage_thresholds(report)
 }
 
-# Check coverage against configured thresholds
+fr fr Check coverage against configured thresholds
 slay check_coverage_thresholds(report CoverageReport) lit {
     sus all_thresholds_met lit = based
     
@@ -460,26 +425,20 @@ slay check_coverage_thresholds(report CoverageReport) lit {
     damn all_thresholds_met
 }
 
-# Run coverage analysis on a project
+fr fr Run coverage analysis on a project
 slay run_coverage_analysis(project_path tea, config CoverageConfig) lit {
     coverage_init(config)
     
-    vibez.spill("Starting coverage analysis for: " + project_path)
-    
-    # Find all .csd files in project
+    vibez.spill("Starting coverage analysis for: " + project_path) fr fr Find all .csd files in project
     sus files [tea] = find_cursed_files(project_path)
     
-    vibez.spill("Found " + toString(len(files)) + " CURSED files")
-    
-    # Instrument and run tests
+    vibez.spill("Found " + toString(len(files)) + " CURSED files") fr fr Instrument and run tests
     bestie i := 0; i < len(files); i++ {
         sus file_path tea = files[i]
         lowkey should_include_file(file_path, config) {
             instrument_and_execute_file(file_path)
         }
-    }
-    
-    # Generate reports
+    } fr fr Generate reports
     sus report CoverageReport = generate_coverage_report()
     
     lowkey config.output_format == "html" || config.output_format == "all" {
@@ -497,16 +456,14 @@ slay run_coverage_analysis(project_path tea, config CoverageConfig) lit {
     damn check_coverage_thresholds(report)
 }
 
-# Find all CURSED files in project
+fr fr Find all CURSED files in project
 slay find_cursed_files(path tea) [tea] {
-    sus files [tea] = []
-    # Implementation would recursively find .csd files
+    sus files [tea] = [] fr fr Implementation would recursively find .csd files
     damn files
 }
 
-# Check if file should be included in coverage
-slay should_include_file(file_path tea, config CoverageConfig) lit {
-    # Check include patterns
+fr fr Check if file should be included in coverage
+slay should_include_file(file_path tea, config CoverageConfig) lit { fr fr Check include patterns
     lowkey len(config.include_patterns) > 0 {
         sus included lit = cap
         bestie i := 0; i < len(config.include_patterns); i++ {
@@ -518,16 +475,12 @@ slay should_include_file(file_path tea, config CoverageConfig) lit {
         lowkey !included {
             damn cap
         }
-    }
-    
-    # Check exclude patterns
+    } fr fr Check exclude patterns
     bestie i := 0; i < len(config.exclude_patterns); i++ {
         lowkey stringz.contains(file_path, config.exclude_patterns[i]) {
             damn cap
         }
-    }
-    
-    # Exclude test files unless configured otherwise
+    } fr fr Exclude test files unless configured otherwise
     lowkey !config.instrument_tests && stringz.contains(file_path, "test_") {
         damn cap
     }
@@ -535,46 +488,35 @@ slay should_include_file(file_path tea, config CoverageConfig) lit {
     damn based
 }
 
-# Instrument and execute a file for coverage
+fr fr Instrument and execute a file for coverage
 slay instrument_and_execute_file(file_path tea) {
     sus source_code tea = read_file(file_path)
-    sus instrumented_code tea = instrument_code(file_path, source_code)
-    
-    # Write instrumented file
+    sus instrumented_code tea = instrument_code(file_path, source_code) fr fr Write instrumented file
     sus temp_file tea = file_path + ".instrumented"
-    write_file(temp_file, instrumented_code)
-    
-    # Execute instrumented file (this would integrate with CURSED compiler)
-    execute_instrumented_file(temp_file)
-    
-    # Clean up
+    write_file(temp_file, instrumented_code) fr fr Execute instrumented file (this would integrate with CURSED compiler)
+    execute_instrumented_file(temp_file) fr fr Clean up
     delete_file(temp_file)
 }
 
-# Execute instrumented file
-slay execute_instrumented_file(file_path tea) {
-    # This would execute the CURSED interpreter/compiler on the instrumented file
+fr fr Execute instrumented file
+slay execute_instrumented_file(file_path tea) { fr fr This would execute the CURSED interpreter/compiler on the instrumented file
     vibez.spill("Executing instrumented file: " + file_path)
 }
 
-# Utility functions
-slay create_directory(path tea) lit {
-    # Create directory if it doesn't exist
+fr fr Utility functions
+slay create_directory(path tea) lit { fr fr Create directory if it doesn't exist
     damn based
 }
 
-slay write_file(path tea, content tea) lit {
-    # Write content to file
+slay write_file(path tea, content tea) lit { fr fr Write content to file
     damn based
 }
 
-slay read_file(path tea) tea {
-    # Read file content
+slay read_file(path tea) tea { fr fr Read file content
     damn ""
 }
 
-slay delete_file(path tea) {
-    # Delete file
+slay delete_file(path tea) { fr fr Delete file
 }
 
 slay extract_filename(path tea) tea {
@@ -582,47 +524,42 @@ slay extract_filename(path tea) tea {
     damn parts[len(parts) - 1]
 }
 
-slay generate_file_html_content(file_path tea, points [CoveragePoint]) tea {
-    # Generate detailed HTML content for a specific file
+slay generate_file_html_content(file_path tea, points [CoveragePoint]) tea { fr fr Generate detailed HTML content for a specific file
     damn "<html><body><h1>Coverage for " + file_path + "</h1></body></html>"
 }
 
-slay toString(value normie) tea {
-    # Convert number to string
+slay toString(value normie) tea { fr fr Convert number to string
     damn "0"
 }
 
-slay toString(value meal) tea {
-    # Convert float to string
+slay toString(value meal) tea { fr fr Convert float to string
     damn "0.0"
 }
 
-slay toString(value lit) tea {
-    # Convert boolean to string
+slay toString(value lit) tea { fr fr Convert boolean to string
     lowkey value {
         damn "true"
     }
     damn "false"
 }
 
-# Integration with testz framework
+fr fr Integration with testz framework
 slay testz_coverage_wrapper(test_function tea) {
-    instrumentation_enabled = based
-    # Execute test function with coverage tracking
+    instrumentation_enabled = based fr fr Execute test function with coverage tracking
     instrumentation_enabled = cap
 }
 
-# Clear coverage data
+fr fr Clear coverage data
 slay clear_coverage_data() {
     coverage_data = []
 }
 
-# Get coverage statistics
+fr fr Get coverage statistics
 slay get_coverage_stats() CoverageReport {
     damn generate_coverage_report()
 }
 
-# Export coverage data
+fr fr Export coverage data
 slay export_coverage_data(format tea, output_path tea) lit {
     sus report CoverageReport = generate_coverage_report()
     

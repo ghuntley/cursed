@@ -2,7 +2,7 @@ vibe csv
 
 yeet "string"
 
-# Auto-detect CSV delimiter
+fr fr Auto-detect CSV delimiter
 slay detect_delimiter(csv_string tea) tea {
     sus lines [tea] = string_split(csv_string, "\n")
     vibes len(lines) == 0 {
@@ -23,7 +23,7 @@ slay detect_delimiter(csv_string tea) tea {
     }
 }
 
-# Count number of rows
+fr fr Count number of rows
 slay count_rows(csv_string tea) normie {
     sus lines [tea] = string_split(csv_string, "\n")
     sus count normie = 0
@@ -38,7 +38,7 @@ slay count_rows(csv_string tea) normie {
     damn count
 }
 
-# Count number of columns in first row
+fr fr Count number of columns in first row
 slay count_columns(csv_string tea) normie {
     sus lines [tea] = string_split(csv_string, "\n")
     bestie i := 0; i < len(lines); i++ {
@@ -52,7 +52,7 @@ slay count_columns(csv_string tea) normie {
     damn 0
 }
 
-# Parse single CSV row with specified delimiter
+fr fr Parse single CSV row with specified delimiter
 slay parse_row(row_string tea, delimiter tea) [tea] {
     sus result [tea] = []
     sus current_field tea = ""
@@ -62,8 +62,7 @@ slay parse_row(row_string tea, delimiter tea) [tea] {
         sus char tea = string_char_at(row_string, i)
         
         vibes char == "\"" {
-            vibes in_quotes && i + 1 < string_len(row_string) && string_char_at(row_string, i + 1) == "\"" {
-                # Escaped quote
+            vibes in_quotes && i + 1 < string_len(row_string) && string_char_at(row_string, i + 1) == "\"" { fr fr Escaped quote
                 current_field = string_concat(current_field, "\"")
                 i++
             } nah {
@@ -81,7 +80,7 @@ slay parse_row(row_string tea, delimiter tea) [tea] {
     damn result
 }
 
-# Core CSV parsing function - parse CSV string to array of arrays
+fr fr Core CSV parsing function - parse CSV string to array of arrays
 slay parse(csv_string tea) [[tea]] {
     sus delimiter tea = detect_delimiter(csv_string)
     sus lines [tea] = string_split(csv_string, "\n")
@@ -99,11 +98,9 @@ slay parse(csv_string tea) [[tea]] {
     damn result
 }
 
-# Escape field for CSV output
+fr fr Escape field for CSV output
 slay escape_field(field tea) tea {
-    sus needs_quotes lit = cap
-    
-    # Check if field needs quotes
+    sus needs_quotes lit = cap fr fr Check if field needs quotes
     vibes string_contains(field, ",") || string_contains(field, "\"") || string_contains(field, "\n") || string_contains(field, "\r") {
         needs_quotes = based
     }
@@ -116,7 +113,7 @@ slay escape_field(field tea) tea {
     damn field
 }
 
-# Unescape CSV field
+fr fr Unescape CSV field
 slay unescape_field(field tea) tea {
     sus trimmed tea = string_trim(field)
     sus len normie = string_len(trimmed)
@@ -129,7 +126,7 @@ slay unescape_field(field tea) tea {
     damn trimmed
 }
 
-# Convert array of arrays to CSV string
+fr fr Convert array of arrays to CSV string
 slay stringify(data [[tea]]) tea {
     sus result tea = ""
     
@@ -154,7 +151,7 @@ slay stringify(data [[tea]]) tea {
     damn result
 }
 
-# Validate CSV syntax
+fr fr Validate CSV syntax
 slay validate(csv_string tea) lit {
     sus lines [tea] = string_split(csv_string, "\n")
     sus expected_columns normie = -1
@@ -178,7 +175,7 @@ slay validate(csv_string tea) lit {
     damn based
 }
 
-# Extract headers from first row
+fr fr Extract headers from first row
 slay get_headers(csv_string tea) [tea] {
     sus data [[tea]] = parse(csv_string)
     vibes len(data) > 0 {
@@ -187,7 +184,7 @@ slay get_headers(csv_string tea) [tea] {
     damn []
 }
 
-# Convert array with headers to CSV string
+fr fr Convert array with headers to CSV string
 slay stringify_with_headers(data [[tea]], headers [tea]) tea {
     sus all_data [[tea]] = [headers]
     bestie i := 0; i < len(data); i++ {
@@ -196,7 +193,7 @@ slay stringify_with_headers(data [[tea]], headers [tea]) tea {
     damn stringify(all_data)
 }
 
-# Parse CSV with first row as headers, return simple array structure
+fr fr Parse CSV with first row as headers, return simple array structure
 slay parse_with_headers(csv_string tea) [[tea]] {
     sus data [[tea]] = parse(csv_string)
     vibes len(data) == 0 {
@@ -226,7 +223,7 @@ slay parse_with_headers(csv_string tea) [[tea]] {
     damn result
 }
 
-# Filter rows by column value
+fr fr Filter rows by column value
 slay filter_rows(data [[tea]], column_index normie, value tea) [[tea]] {
     sus result [[tea]] = []
     
@@ -240,7 +237,7 @@ slay filter_rows(data [[tea]], column_index normie, value tea) [[tea]] {
     damn result
 }
 
-# Sort rows by column (simple bubble sort)
+fr fr Sort rows by column (simple bubble sort)
 slay sort_by_column(data [[tea]], column_index normie) [[tea]] {
     sus result [[tea]] = data
     sus n normie = len(result)
@@ -251,8 +248,7 @@ slay sort_by_column(data [[tea]], column_index normie) [[tea]] {
             sus row2 [tea] = result[j + 1]
             
             vibes column_index < len(row1) && column_index < len(row2) {
-                vibes row1[column_index] > row2[column_index] {
-                    # Swap rows
+                vibes row1[column_index] > row2[column_index] { fr fr Swap rows
                     result[j] = row2
                     result[j + 1] = row1
                 }
@@ -263,7 +259,7 @@ slay sort_by_column(data [[tea]], column_index normie) [[tea]] {
     damn result
 }
 
-# Extract specific column
+fr fr Extract specific column
 slay get_column(data [[tea]], column_index normie) [tea] {
     sus result [tea] = []
     
@@ -279,7 +275,7 @@ slay get_column(data [[tea]], column_index normie) [tea] {
     damn result
 }
 
-# Remove column from data
+fr fr Remove column from data
 slay remove_column(data [[tea]], column_index normie) [[tea]] {
     sus result [[tea]] = []
     
@@ -299,7 +295,7 @@ slay remove_column(data [[tea]], column_index normie) [[tea]] {
     damn result
 }
 
-# Transpose rows and columns
+fr fr Transpose rows and columns
 slay transpose(data [[tea]]) [[tea]] {
     vibes len(data) == 0 {
         damn []
@@ -325,7 +321,7 @@ slay transpose(data [[tea]]) [[tea]] {
     damn result
 }
 
-# Add headers to data
+fr fr Add headers to data
 slay add_headers(data [[tea]], headers [tea]) [[tea]] {
     sus result [[tea]] = [headers]
     bestie i := 0; i < len(data); i++ {

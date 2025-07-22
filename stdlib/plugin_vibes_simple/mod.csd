@@ -1,10 +1,9 @@
 yeet "testz"
 
-# Simple plugin system for CURSED
+fr fr Simple plugin system for CURSED
 sus loaded_plugins tea = ""
 
-slay load_plugin(plugin_name tea) lit {
-    # Simple plugin loading
+slay load_plugin(plugin_name tea) lit { fr fr Simple plugin loading
     bestie plugin_name == "auth" {
         loaded_plugins = plugin_name
         damn based

@@ -1,16 +1,16 @@
-# Simplified working test for web_vibez HTTP Module
+fr fr Simplified working test for web_vibez HTTP Module
 yeet "testz"
 yeet "web_vibez"
 
-# Test basic HTTP functionality
+fr fr Test basic HTTP functionality
 test_start("web_vibez HTTP module basic functionality")
 
-# Test HTTP status codes
+fr fr Test HTTP status codes
 assert_eq_string(web_vibez.status_text(200), "OK")
 assert_eq_string(web_vibez.status_text(404), "Not Found")
 assert_eq_string(web_vibez.status_text(500), "Internal Server Error")
 
-# Test method validation
+fr fr Test method validation
 assert_true(web_vibez.validate_method("GET"))
 assert_true(web_vibez.validate_method("POST"))
 assert_false(web_vibez.validate_method("INVALID"))
@@ -19,7 +19,7 @@ vibez.spill("✅ Basic HTTP status and validation working")
 
 test_end()
 
-# Test HTTP utilities
+fr fr Test HTTP utilities
 test_start("HTTP utility functions")
 
 sus json_response tea = web_vibez.create_json_response("test data")
@@ -34,7 +34,7 @@ vibez.spill("✅ HTTP utility functions working")
 
 test_end()
 
-# Test form data encoding/decoding
+fr fr Test form data encoding/decoding
 test_start("HTTP form data handling")
 
 sus encoded tea = web_vibez.encode_form_data("hello world")
@@ -47,7 +47,7 @@ vibez.spill("✅ Form data encoding/decoding working")
 
 test_end()
 
-# Test header sanitization
+fr fr Test header sanitization
 test_start("HTTP security functions")
 
 sus clean_value tea = web_vibez.sanitize_header_value("normal value")

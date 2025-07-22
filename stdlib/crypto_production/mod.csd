@@ -1,12 +1,12 @@
-# Crypto Production - Production-grade cryptographic module
-# Full implementations replacing all stubs and placeholders
-# Pure CURSED implementation with proper security
+fr fr Crypto Production - Production-grade cryptographic module
+fr fr Full implementations replacing all stubs and placeholders
+fr fr Pure CURSED implementation with proper security
 
 yeet "testz"
 
-# ===== SECURE RANDOM NUMBER GENERATION =====
+fr fr ===== SECURE RANDOM NUMBER GENERATION =====
 
-# Cryptographically secure random state with multiple entropy sources
+fr fr Cryptographically secure random state with multiple entropy sources
 sus crypto_random_state_1 normie = 1234567890
 sus crypto_random_state_2 normie = 9876543210
 sus crypto_random_state_3 normie = 1357924680
@@ -14,10 +14,9 @@ sus crypto_random_entropy_pool [256]normie = [0; 256]
 sus crypto_entropy_index normie = 0
 sus crypto_reseed_counter normie = 0
 
-# Initialize entropy pool with system-like entropy
+fr fr Initialize entropy pool with system-like entropy
 slay crypto_init_entropy() lit {
-    bestie i := 0; i < 256; i++ {
-        # Mix multiple sources of entropy
+    bestie i := 0; i < 256; i++ { fr fr Mix multiple sources of entropy
         sus entropy_val normie = ((i * 2654435761) ^ (i << 13) ^ (i >> 9)) % 2147483647
         crypto_random_state_1 = (crypto_random_state_1 * 1103515245 + entropy_val) % 2147483647
         crypto_random_state_2 = (crypto_random_state_2 * 1664525 + entropy_val + 12345) % 2147483647
@@ -30,34 +29,24 @@ slay crypto_init_entropy() lit {
     damn based
 }
 
-# Secure random bytes using cryptographic PRNG
-slay crypto_random_bytes(length normie) tea {
-    # Reseed periodically for forward secrecy
+fr fr Secure random bytes using cryptographic PRNG
+slay crypto_random_bytes(length normie) tea { fr fr Reseed periodically for forward secrecy
     bestie crypto_reseed_counter > 1000 {
         crypto_init_entropy()
     }
     
     sus result tea = ""
-    bestie i := 0; i < length && i < 1000; i++ {
-        # Use all three entropy sources
+    bestie i := 0; i < length && i < 1000; i++ { fr fr Use all three entropy sources
         crypto_random_state_1 = (crypto_random_state_1 * 1103515245 + 12345) % 2147483647
         crypto_random_state_2 = (crypto_random_state_2 * 1664525 + 1013904223) % 2147483647
-        crypto_random_state_3 = (crypto_random_state_3 * 69069 + 1) % 2147483647
-        
-        # Mix with entropy pool
+        crypto_random_state_3 = (crypto_random_state_3 * 69069 + 1) % 2147483647 fr fr Mix with entropy pool
         sus pool_index normie = crypto_entropy_index % 256
         sus pool_val normie = crypto_entropy_pool[pool_index]
-        crypto_entropy_index = (crypto_entropy_index + 1) % 256
-        
-        # Combine all sources with bit rotation
+        crypto_entropy_index = (crypto_entropy_index + 1) % 256 fr fr Combine all sources with bit rotation
         sus combined normie = crypto_random_state_1 ^ crypto_random_state_2 ^ crypto_random_state_3 ^ pool_val
-        combined = ((combined << 7) | (combined >> 25)) % 2147483647
-        
-        # Extract secure byte
+        combined = ((combined << 7) | (combined >> 25)) % 2147483647 fr fr Extract secure byte
         sus byte_val normie = combined % 256
-        result = result + char(byte_val)
-        
-        # Update entropy pool with feedback
+        result = result + char(byte_val) fr fr Update entropy pool with feedback
         crypto_entropy_pool[pool_index] = (crypto_entropy_pool[pool_index] ^ combined) % 2147483647
     }
     
@@ -65,16 +54,14 @@ slay crypto_random_bytes(length normie) tea {
     damn result
 }
 
-# Secure random integers in range
+fr fr Secure random integers in range
 slay crypto_random_int(min_val normie, max_val normie) normie {
     bestie max_val <= min_val {
         damn min_val
     }
     
     sus range normie = max_val - min_val + 1
-    sus random_bytes tea = crypto_random_bytes(4)
-    
-    # Convert bytes to integer
+    sus random_bytes tea = crypto_random_bytes(4) fr fr Convert bytes to integer
     sus random_int normie = 0
     bestie i := 0; i < 4 && i < string_length(random_bytes); i++ {
         sus byte_val normie = char_code(random_bytes[i])
@@ -84,9 +71,9 @@ slay crypto_random_int(min_val normie, max_val normie) normie {
     damn (random_int % range) + min_val
 }
 
-# ===== ADVANCED HASH FUNCTIONS =====
+fr fr ===== ADVANCED HASH FUNCTIONS =====
 
-# SHA-256 Implementation (Production Grade)
+fr fr SHA-256 Implementation (Production Grade)
 sus sha256_h [8]normie = [
     1779033703, 3144134277, 1013904242, 2773480762,
     1359893119, 2600822924, 528734635, 1541459225
@@ -131,8 +118,7 @@ slay sha256_gamma1(x normie) normie {
     damn sha256_rotr(x, 17) ^ sha256_rotr(x, 19) ^ (x >> 10)
 }
 
-slay crypto_sha256_hash(data tea) tea {
-    # Initialize working variables
+slay crypto_sha256_hash(data tea) tea { fr fr Initialize working variables
     sus h0 normie = sha256_h[0]
     sus h1 normie = sha256_h[1]
     sus h2 normie = sha256_h[2]
@@ -140,15 +126,10 @@ slay crypto_sha256_hash(data tea) tea {
     sus h4 normie = sha256_h[4]
     sus h5 normie = sha256_h[5]
     sus h6 normie = sha256_h[6]
-    sus h7 normie = sha256_h[7]
-    
-    # Prepare message (simplified for CURSED constraints)
+    sus h7 normie = sha256_h[7] fr fr Prepare message (simplified for CURSED constraints)
     sus padded_length normie = ((string_length(data) + 8) / 64 + 1) * 64
-    sus w [64]normie = [0; 64]
-    
-    # Process message in 512-bit chunks
-    bestie chunk_start := 0; chunk_start < padded_length; chunk_start += 64 {
-        # Prepare message schedule
+    sus w [64]normie = [0; 64] fr fr Process message in 512-bit chunks
+    bestie chunk_start := 0; chunk_start < padded_length; chunk_start += 64 { fr fr Prepare message schedule
         bestie i := 0; i < 16; i++ {
             sus byte_index normie = chunk_start + i * 4
             bestie byte_index < string_length(data) {
@@ -163,14 +144,10 @@ slay crypto_sha256_hash(data tea) tea {
                     w[i] = w[i] | char_code(data[byte_index + 3])
                 }
             }
-        }
-        
-        # Extend message schedule
+        } fr fr Extend message schedule
         bestie i := 16; i < 64; i++ {
             w[i] = (sha256_gamma1(w[i-2]) + w[i-7] + sha256_gamma0(w[i-15]) + w[i-16]) % 4294967296
-        }
-        
-        # Initialize working variables for this chunk
+        } fr fr Initialize working variables for this chunk
         sus a normie = h0
         sus b normie = h1
         sus c normie = h2
@@ -178,9 +155,7 @@ slay crypto_sha256_hash(data tea) tea {
         sus e normie = h4
         sus f normie = h5
         sus g normie = h6
-        sus h normie = h7
-        
-        # Main hash computation
+        sus h normie = h7 fr fr Main hash computation
         bestie i := 0; i < 64; i++ {
             sus temp1 normie = (h + sha256_sigma1(e) + sha256_ch(e, f, g) + sha256_k[i] + w[i]) % 4294967296
             sus temp2 normie = (sha256_sigma0(a) + sha256_maj(a, b, c)) % 4294967296
@@ -193,9 +168,7 @@ slay crypto_sha256_hash(data tea) tea {
             c = b
             b = a
             a = (temp1 + temp2) % 4294967296
-        }
-        
-        # Add chunk's hash to result
+        } fr fr Add chunk's hash to result
         h0 = (h0 + a) % 4294967296
         h1 = (h1 + b) % 4294967296
         h2 = (h2 + c) % 4294967296
@@ -204,9 +177,7 @@ slay crypto_sha256_hash(data tea) tea {
         h5 = (h5 + f) % 4294967296
         h6 = (h6 + g) % 4294967296
         h7 = (h7 + h) % 4294967296
-    }
-    
-    # Convert hash to hex string
+    } fr fr Convert hash to hex string
     sus result tea = ""
     result = result + crypto_int_to_hex(h0)
     result = result + crypto_int_to_hex(h1)
@@ -220,7 +191,7 @@ slay crypto_sha256_hash(data tea) tea {
     damn result
 }
 
-# Convert 32-bit integer to 8-digit hex
+fr fr Convert 32-bit integer to 8-digit hex
 slay crypto_int_to_hex(value normie) tea {
     sus hex_chars tea = "0123456789abcdef"
     sus result tea = ""
@@ -233,7 +204,7 @@ slay crypto_int_to_hex(value normie) tea {
     damn result
 }
 
-# ===== SYMMETRIC ENCRYPTION (AES-256) =====
+fr fr ===== SYMMETRIC ENCRYPTION (AES-256) =====
 
 sus aes_sbox [256]normie = [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -254,12 +225,10 @@ sus aes_sbox [256]normie = [
     0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 ]
 
-# AES key expansion for 256-bit keys
+fr fr AES key expansion for 256-bit keys
 slay aes_key_expansion(key tea) [60]normie {
     sus expanded_key [60]normie = [0; 60]
-    sus rcon [10]normie = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
-    
-    # Copy original key
+    sus rcon [10]normie = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36] fr fr Copy original key
     bestie i := 0; i < 8 && i < string_length(key) / 4; i++ {
         sus key_word normie = 0
         bestie j := 0; j < 4; j++ {
@@ -269,14 +238,11 @@ slay aes_key_expansion(key tea) [60]normie {
             }
         }
         expanded_key[i] = key_word
-    }
-    
-    # Generate remaining round keys
+    } fr fr Generate remaining round keys
     bestie i := 8; i < 60; i++ {
         sus temp normie = expanded_key[i - 1]
         
-        bestie i % 8 == 0 {
-            # RotWord and SubWord
+        bestie i % 8 == 0 { fr fr RotWord and SubWord
             sus rotated normie = ((temp << 8) | (temp >> 24)) % 4294967296
             sus substituted normie = 0
             bestie j := 0; j < 4; j++ {
@@ -284,8 +250,7 @@ slay aes_key_expansion(key tea) [60]normie {
                 substituted = (substituted << 8) | aes_sbox[byte_val]
             }
             temp = substituted ^ (rcon[(i / 8) - 1] << 24)
-        } else if i % 8 == 4 {
-            # SubWord for 256-bit keys
+        } else if i % 8 == 4 { fr fr SubWord for 256-bit keys
             sus substituted normie = 0
             bestie j := 0; j < 4; j++ {
                 sus byte_val normie = (temp >> (24 - j * 8)) & 0xFF
@@ -300,45 +265,33 @@ slay aes_key_expansion(key tea) [60]normie {
     damn expanded_key
 }
 
-slay aes_encrypt_block(plaintext tea, round_keys [60]normie) tea {
-    # Initialize state from plaintext
+slay aes_encrypt_block(plaintext tea, round_keys [60]normie) tea { fr fr Initialize state from plaintext
     sus state [16]normie = [0; 16]
     bestie i := 0; i < 16 && i < string_length(plaintext); i++ {
         state[i] = char_code(plaintext[i])
-    }
-    
-    # AddRoundKey (initial)
+    } fr fr AddRoundKey (initial)
     bestie i := 0; i < 4; i++ {
         bestie j := 0; j < 4; j++ {
             sus key_byte normie = (round_keys[i] >> (24 - j * 8)) & 0xFF
             state[i * 4 + j] = state[i * 4 + j] ^ key_byte
         }
-    }
-    
-    # Main rounds (simplified)
-    bestie round := 1; round < 14; round++ {
-        # SubBytes
+    } fr fr Main rounds (simplified)
+    bestie round := 1; round < 14; round++ { fr fr SubBytes
         bestie i := 0; i < 16; i++ {
             state[i] = aes_sbox[state[i]]
-        }
-        
-        # ShiftRows (simplified)
+        } fr fr ShiftRows (simplified)
         sus temp1 normie = state[1]
         state[1] = state[5]
         state[5] = state[9]
         state[9] = state[13]
-        state[13] = temp1
-        
-        # AddRoundKey
+        state[13] = temp1 fr fr AddRoundKey
         bestie i := 0; i < 4; i++ {
             bestie j := 0; j < 4; j++ {
                 sus key_byte normie = (round_keys[round * 4 + i] >> (24 - j * 8)) & 0xFF
                 state[i * 4 + j] = state[i * 4 + j] ^ key_byte
             }
         }
-    }
-    
-    # Convert state back to string
+    } fr fr Convert state back to string
     sus result tea = ""
     bestie i := 0; i < 16; i++ {
         result = result + char(state[i])
@@ -354,16 +307,14 @@ slay crypto_aes_encrypt(plaintext tea, key tea) tea {
     }
     
     sus round_keys [60]normie = aes_key_expansion(key)
-    sus result tea = ""
-    
-    # Process in 16-byte blocks
+    sus result tea = "" fr fr Process in 16-byte blocks
     bestie i := 0; i < string_length(plaintext); i += 16 {
         sus block tea = ""
         bestie j := 0; j < 16; j++ {
             bestie i + j < string_length(plaintext) {
                 block = block + char(char_code(plaintext[i + j]))
             } else {
-                block = block + char(16 - j)  # PKCS7 padding
+                block = block + char(16 - j) fr fr PKCS7 padding
             }
         }
         
@@ -374,14 +325,13 @@ slay crypto_aes_encrypt(plaintext tea, key tea) tea {
     damn result
 }
 
-# ===== DIGITAL SIGNATURES (Ed25519) =====
+fr fr ===== DIGITAL SIGNATURES (Ed25519) =====
 
-# Ed25519 prime field
-sus ed25519_p normie = 2147483647  # Simplified for CURSED arithmetic
+fr fr Ed25519 prime field
+sus ed25519_p normie = 2147483647 fr fr Simplified for CURSED arithmetic
 
-# Ed25519 point operations (simplified but correct structure)
-slay ed25519_point_add(x1 normie, y1 normie, x2 normie, y2 normie) (normie, normie) {
-    # Edwards curve addition formula (simplified)
+fr fr Ed25519 point operations (simplified but correct structure)
+slay ed25519_point_add(x1 normie, y1 normie, x2 normie, y2 normie) (normie, normie) { fr fr Edwards curve addition formula (simplified)
     sus x3 normie = (x1 * y2 + y1 * x2) % ed25519_p
     sus y3 normie = (y1 * y2 - x1 * x2) % ed25519_p
     damn (x3, y3)
@@ -404,17 +354,12 @@ slay ed25519_scalar_mult(scalar normie, base_x normie, base_y normie) (normie, n
     damn (result_x, result_y)
 }
 
-slay crypto_ed25519_keygen() (tea, tea) {
-    # Generate private key
-    sus private_key tea = crypto_random_bytes(32)
-    
-    # Derive public key (simplified)
+slay crypto_ed25519_keygen() (tea, tea) { fr fr Generate private key
+    sus private_key tea = crypto_random_bytes(32) fr fr Derive public key (simplified)
     sus private_scalar normie = 0
     bestie i := 0; i < 8 && i < string_length(private_key); i++ {
         private_scalar = (private_scalar * 256 + char_code(private_key[i])) % ed25519_p
-    }
-    
-    # Ed25519 base point (simplified)
+    } fr fr Ed25519 base point (simplified)
     sus base_x normie = 15112221349535400772501151409588531511454012693041857206046113283949847762202
     sus base_y normie = 46316835694926478169428394003475163141307993866256225615783033603165251855960
     
@@ -425,49 +370,33 @@ slay crypto_ed25519_keygen() (tea, tea) {
     damn (private_key, public_key)
 }
 
-slay crypto_ed25519_sign(private_key tea, message tea) tea {
-    # Hash message
-    sus message_hash tea = crypto_sha256_hash(message)
-    
-    # Generate nonce
+slay crypto_ed25519_sign(private_key tea, message tea) tea { fr fr Hash message
+    sus message_hash tea = crypto_sha256_hash(message) fr fr Generate nonce
     sus nonce tea = crypto_random_bytes(32)
-    sus nonce_hash tea = crypto_sha256_hash(nonce + message)
-    
-    # Create signature (simplified)
+    sus nonce_hash tea = crypto_sha256_hash(nonce + message) fr fr Create signature (simplified)
     sus signature tea = "ed25519_sig_" + crypto_sha256_hash(private_key + message_hash + nonce_hash)
     
     damn signature
 }
 
-slay crypto_ed25519_verify(public_key tea, message tea, signature tea) lit {
-    # Verify signature format
+slay crypto_ed25519_verify(public_key tea, message tea, signature tea) lit { fr fr Verify signature format
     bestie string_length(signature) < 12 || signature[0:12] != "ed25519_sig_" {
         damn cap
-    }
-    
-    # Extract signature hash
-    sus sig_hash tea = signature[12:]
-    
-    # Recompute expected signature
+    } fr fr Extract signature hash
+    sus sig_hash tea = signature[12:] fr fr Recompute expected signature
     sus message_hash tea = crypto_sha256_hash(message)
-    sus expected_hash tea = crypto_sha256_hash(public_key + message_hash)
-    
-    # Constant-time comparison
+    sus expected_hash tea = crypto_sha256_hash(public_key + message_hash) fr fr Constant-time comparison
     damn crypto_constant_time_compare(sig_hash, expected_hash)
 }
 
-# ===== SECURE KEY DERIVATION (PBKDF2) =====
+fr fr ===== SECURE KEY DERIVATION (PBKDF2) =====
 
 slay crypto_pbkdf2(password tea, salt tea, iterations normie, key_length normie) tea {
     sus derived_key tea = ""
-    sus current_hash tea = password + salt
-    
-    # Perform iterations
+    sus current_hash tea = password + salt fr fr Perform iterations
     bestie i := 0; i < iterations && i < 10000; i++ {
         current_hash = crypto_sha256_hash(current_hash)
-    }
-    
-    # Extract key material
+    } fr fr Extract key material
     bestie i := 0; i < key_length && i < string_length(current_hash); i++ {
         derived_key = derived_key + char(char_code(current_hash[i % string_length(current_hash)]))
     }
@@ -475,26 +404,20 @@ slay crypto_pbkdf2(password tea, salt tea, iterations normie, key_length normie)
     damn derived_key
 }
 
-# ===== PASSWORD HASHING (Argon2) =====
+fr fr ===== PASSWORD HASHING (Argon2) =====
 
 slay crypto_argon2_hash(password tea, salt tea) tea {
     bestie string_length(salt) < 16 {
         vibez.spill("❌ Salt must be at least 16 bytes")
         damn ""
-    }
-    
-    # Argon2 parameters
-    sus memory_size normie = 1024  # 1KB memory cost
-    sus time_cost normie = 3       # 3 iterations
-    sus parallelism normie = 1     # 1 thread
-    
-    # Initialize memory blocks
+    } fr fr Argon2 parameters
+    sus memory_size normie = 1024 fr fr 1KB memory cost
+    sus time_cost normie = 3 fr fr 3 iterations
+    sus parallelism normie = 1 fr fr 1 thread fr fr Initialize memory blocks
     sus memory_block tea = password + salt
     bestie i := 0; i < time_cost; i++ {
         memory_block = crypto_sha256_hash(memory_block + string(i))
-    }
-    
-    # Final hash
+    } fr fr Final hash
     sus final_hash tea = crypto_sha256_hash(memory_block + string(memory_size) + string(time_cost))
     
     damn "argon2_" + crypto_int_to_hex(memory_size) + "_" + crypto_int_to_hex(time_cost) + "_" + final_hash
@@ -503,20 +426,15 @@ slay crypto_argon2_hash(password tea, salt tea) tea {
 slay crypto_argon2_verify(hashed_password tea, password tea) lit {
     bestie string_length(hashed_password) < 7 || hashed_password[0:7] != "argon2_" {
         damn cap
-    }
-    
-    # Extract parameters and hash from stored password
+    } fr fr Extract parameters and hash from stored password
     sus parts []tea = string_split(hashed_password, "_")
     bestie string_length(parts) < 4 {
         damn cap
-    }
-    
-    # For verification, we'd need to extract salt and re-hash
-    # Simplified verification - check format
+    } fr fr For verification, we'd need to extract salt and re-hash fr fr Simplified verification - check format
     damn based
 }
 
-# ===== UTILITY FUNCTIONS =====
+fr fr ===== UTILITY FUNCTIONS =====
 
 slay crypto_constant_time_compare(a tea, b tea) lit {
     bestie string_length(a) != string_length(b) {
@@ -531,8 +449,7 @@ slay crypto_constant_time_compare(a tea, b tea) lit {
     damn result == 0
 }
 
-slay crypto_secure_wipe(data tea) lit {
-    # In a real implementation, this would overwrite memory
+slay crypto_secure_wipe(data tea) lit { fr fr In a real implementation, this would overwrite memory
     vibez.spill("🧹 Secure wipe completed")
     damn based
 }
@@ -562,9 +479,7 @@ slay crypto_hex_decode(hex_string tea) tea {
             sus low_char normie = char_code(hex_string[i + 1])
             
             sus high_val normie = 0
-            sus low_val normie = 0
-            
-            # Convert hex character to value
+            sus low_val normie = 0 fr fr Convert hex character to value
             bestie high_char >= 48 && high_char <= 57 {
                 high_val = high_char - 48
             } else if high_char >= 97 && high_char <= 102 {
@@ -589,7 +504,7 @@ slay crypto_hex_decode(hex_string tea) tea {
     damn result
 }
 
-# ===== HIGH-LEVEL API FUNCTIONS =====
+fr fr ===== HIGH-LEVEL API FUNCTIONS =====
 
 slay crypto_generate_key(key_size normie) tea {
     damn crypto_random_bytes(key_size)
@@ -599,15 +514,10 @@ slay crypto_hash_data(data tea) tea {
     damn crypto_sha256_hash(data)
 }
 
-slay crypto_encrypt_data(data tea, password tea) tea {
-    # Derive key from password
+slay crypto_encrypt_data(data tea, password tea) tea { fr fr Derive key from password
     sus salt tea = crypto_random_bytes(16)
-    sus key tea = crypto_pbkdf2(password, salt, 1000, 32)
-    
-    # Encrypt with AES-256
-    sus encrypted tea = crypto_aes_encrypt(data, key)
-    
-    # Prepend salt for decryption
+    sus key tea = crypto_pbkdf2(password, salt, 1000, 32) fr fr Encrypt with AES-256
+    sus encrypted tea = crypto_aes_encrypt(data, key) fr fr Prepend salt for decryption
     damn salt + encrypted
 }
 
@@ -619,7 +529,7 @@ slay crypto_verify_signature(data tea, signature tea, public_key tea) lit {
     damn crypto_ed25519_verify(public_key, data, signature)
 }
 
-# ===== INITIALIZATION =====
+fr fr ===== INITIALIZATION =====
 
 slay crypto_initialize() lit {
     crypto_init_entropy()
@@ -634,21 +544,17 @@ slay crypto_initialize() lit {
     damn based
 }
 
-# ===== SELF-TEST =====
+fr fr ===== SELF-TEST =====
 
 slay crypto_self_test() lit {
-    vibez.spill("🧪 Running crypto self-tests...")
-    
-    # Test random generation
+    vibez.spill("🧪 Running crypto self-tests...") fr fr Test random generation
     sus random1 tea = crypto_random_bytes(16)
     sus random2 tea = crypto_random_bytes(16)
     bestie random1 == random2 {
         vibez.spill("❌ Random generator failed - produced identical output")
         damn cap
     }
-    vibez.spill("✅ Random generation test passed")
-    
-    # Test hashing
+    vibez.spill("✅ Random generation test passed") fr fr Test hashing
     sus test_data tea = "Hello, CURSED Crypto!"
     sus hash1 tea = crypto_sha256_hash(test_data)
     sus hash2 tea = crypto_sha256_hash(test_data)
@@ -656,9 +562,7 @@ slay crypto_self_test() lit {
         vibez.spill("❌ Hash function failed - inconsistent results")
         damn cap
     }
-    vibez.spill("✅ Hash function test passed")
-    
-    # Test encryption
+    vibez.spill("✅ Hash function test passed") fr fr Test encryption
     sus key tea = crypto_random_bytes(32)
     sus plaintext tea = "Test encryption"
     sus ciphertext tea = crypto_aes_encrypt(plaintext, key)
@@ -666,9 +570,7 @@ slay crypto_self_test() lit {
         vibez.spill("❌ Encryption failed")
         damn cap
     }
-    vibez.spill("✅ Encryption test passed")
-    
-    # Test digital signatures
+    vibez.spill("✅ Encryption test passed") fr fr Test digital signatures
     (sus private_key tea, sus public_key tea) = crypto_ed25519_keygen()
     sus message tea = "Test message"
     sus signature tea = crypto_ed25519_sign(private_key, message)
@@ -683,7 +585,7 @@ slay crypto_self_test() lit {
     damn based
 }
 
-# Utility function for string operations
+fr fr Utility function for string operations
 slay string_length(s tea) normie {
     sus length normie = 0
     bestie i := 0; i < 10000; i++ {
@@ -703,7 +605,6 @@ slay char(code normie) normie {
     damn code
 }
 
-slay string_split(s tea, delimiter tea) []tea {
-    # Simplified string split - return array with original string
+slay string_split(s tea, delimiter tea) []tea { fr fr Simplified string split - return array with original string
     damn [s]
 }

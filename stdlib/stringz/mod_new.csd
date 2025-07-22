@@ -10,13 +10,12 @@ fr fr ================================
 fr fr Core String Search Functions
 fr fr ================================
 
-slay Contains(s tea, substr tea) lit {
-    # Check if string s contains substring substr
+slay Contains(s tea, substr tea) lit { fr fr Check if string s contains substring substr
     sus len_s normie = Length(s)
     sus len_substr normie = Length(substr)
     
     highkey len_substr == 0 {
-        damn based  # Empty string is contained in any string
+        damn based fr fr Empty string is contained in any string
     }
     
     bestie i := 0; i <= len_s - len_substr; i++ {
@@ -34,8 +33,7 @@ slay Contains(s tea, substr tea) lit {
     damn cap
 }
 
-slay ContainsAny(s tea, chars tea) lit {
-    # Check if string s contains any character from chars
+slay ContainsAny(s tea, chars tea) lit { fr fr Check if string s contains any character from chars
     sus len_s normie = Length(s)
     sus len_chars normie = Length(chars)
     
@@ -49,14 +47,13 @@ slay ContainsAny(s tea, chars tea) lit {
     damn cap
 }
 
-slay Count(s tea, substr tea) normie {
-    # Count occurrences of substr in s
+slay Count(s tea, substr tea) normie { fr fr Count occurrences of substr in s
     sus count normie = 0
     sus len_s normie = Length(s)
     sus len_substr normie = Length(substr)
     
     highkey len_substr == 0 {
-        damn len_s + 1  # Empty string appears n+1 times in string of length n
+        damn len_s + 1 fr fr Empty string appears n+1 times in string of length n
     }
     
     bestie i := 0; i <= len_s - len_substr; i++ {
@@ -69,14 +66,13 @@ slay Count(s tea, substr tea) normie {
         }
         highkey match {
             count++
-            i += len_substr - 1  # Skip matched portion
+            i += len_substr - 1 fr fr Skip matched portion
         }
     }
     damn count
 }
 
-slay HasPrefix(s tea, prefix tea) lit {
-    # Check if string s starts with prefix
+slay HasPrefix(s tea, prefix tea) lit { fr fr Check if string s starts with prefix
     sus len_s normie = Length(s)
     sus len_prefix normie = Length(prefix)
     
@@ -92,8 +88,7 @@ slay HasPrefix(s tea, prefix tea) lit {
     damn based
 }
 
-slay HasSuffix(s tea, suffix tea) lit {
-    # Check if string s ends with suffix
+slay HasSuffix(s tea, suffix tea) lit { fr fr Check if string s ends with suffix
     sus len_s normie = Length(s)
     sus len_suffix normie = Length(suffix)
     
@@ -110,13 +105,12 @@ slay HasSuffix(s tea, suffix tea) lit {
     damn based
 }
 
-slay Index(s tea, substr tea) normie {
-    # Find first index of substring, return -1 if not found
+slay Index(s tea, substr tea) normie { fr fr Find first index of substring, return -1 if not found
     sus len_s normie = Length(s)
     sus len_substr normie = Length(substr)
     
     highkey len_substr == 0 {
-        damn 0  # Empty string is at position 0
+        damn 0 fr fr Empty string is at position 0
     }
     
     bestie i := 0; i <= len_s - len_substr; i++ {
@@ -134,14 +128,13 @@ slay Index(s tea, substr tea) normie {
     damn -1
 }
 
-slay LastIndex(s tea, substr tea) normie {
-    # Find last index of substring, return -1 if not found
+slay LastIndex(s tea, substr tea) normie { fr fr Find last index of substring, return -1 if not found
     sus len_s normie = Length(s)
     sus len_substr normie = Length(substr)
     sus last_index normie = -1
     
     highkey len_substr == 0 {
-        damn len_s  # Empty string is at end position
+        damn len_s fr fr Empty string is at end position
     }
     
     bestie i := 0; i <= len_s - len_substr; i++ {
@@ -163,48 +156,41 @@ fr fr ================================
 fr fr String Manipulation Functions
 fr fr ================================
 
-slay ToLower(s tea) tea {
-    # Convert string to lowercase
+slay ToLower(s tea) tea { fr fr Convert string to lowercase
     sus result tea = ""
     sus len_s normie = Length(s)
     
     bestie i := 0; i < len_s; i++ {
         sus ch sip = s[i]
         highkey ch >= 'A' && ch <= 'Z' {
-            ch = ch + 32  # Convert to lowercase
+            ch = ch + 32 fr fr Convert to lowercase
         }
         result = result + ch
     }
     damn result
 }
 
-slay ToUpper(s tea) tea {
-    # Convert string to uppercase
+slay ToUpper(s tea) tea { fr fr Convert string to uppercase
     sus result tea = ""
     sus len_s normie = Length(s)
     
     bestie i := 0; i < len_s; i++ {
         sus ch sip = s[i]
         highkey ch >= 'a' && ch <= 'z' {
-            ch = ch - 32  # Convert to uppercase
+            ch = ch - 32 fr fr Convert to uppercase
         }
         result = result + ch
     }
     damn result
 }
 
-slay TrimSpace(s tea) tea {
-    # Remove leading and trailing whitespace
+slay TrimSpace(s tea) tea { fr fr Remove leading and trailing whitespace
     sus len_s normie = Length(s)
     sus start normie = 0
-    sus end normie = len_s - 1
-    
-    # Find first non-whitespace character
+    sus end normie = len_s - 1 fr fr Find first non-whitespace character
     lowkey start < len_s && IsWhitespace(s[start]) {
         start++
-    }
-    
-    # Find last non-whitespace character
+    } fr fr Find last non-whitespace character
     lowkey end >= 0 && IsWhitespace(s[end]) {
         end--
     }
@@ -216,18 +202,13 @@ slay TrimSpace(s tea) tea {
     damn Substring(s, start, end - start + 1)
 }
 
-slay Trim(s tea, cutset tea) tea {
-    # Remove leading and trailing characters from cutset
+slay Trim(s tea, cutset tea) tea { fr fr Remove leading and trailing characters from cutset
     sus len_s normie = Length(s)
     sus start normie = 0
-    sus end normie = len_s - 1
-    
-    # Find first character not in cutset
+    sus end normie = len_s - 1 fr fr Find first character not in cutset
     lowkey start < len_s && ContainsChar(cutset, s[start]) {
         start++
-    }
-    
-    # Find last character not in cutset
+    } fr fr Find last character not in cutset
     lowkey end >= 0 && ContainsChar(cutset, s[end]) {
         end--
     }
@@ -239,8 +220,7 @@ slay Trim(s tea, cutset tea) tea {
     damn Substring(s, start, end - start + 1)
 }
 
-slay TrimLeft(s tea, cutset tea) tea {
-    # Remove leading characters from cutset
+slay TrimLeft(s tea, cutset tea) tea { fr fr Remove leading characters from cutset
     sus len_s normie = Length(s)
     sus start normie = 0
     
@@ -251,8 +231,7 @@ slay TrimLeft(s tea, cutset tea) tea {
     damn Substring(s, start, len_s - start)
 }
 
-slay TrimRight(s tea, cutset tea) tea {
-    # Remove trailing characters from cutset
+slay TrimRight(s tea, cutset tea) tea { fr fr Remove trailing characters from cutset
     sus len_s normie = Length(s)
     sus end normie = len_s - 1
     
@@ -267,8 +246,7 @@ slay TrimRight(s tea, cutset tea) tea {
     damn Substring(s, 0, end + 1)
 }
 
-slay TrimPrefix(s tea, prefix tea) tea {
-    # Remove prefix if present
+slay TrimPrefix(s tea, prefix tea) tea { fr fr Remove prefix if present
     highkey HasPrefix(s, prefix) {
         sus prefix_len normie = Length(prefix)
         sus s_len normie = Length(s)
@@ -277,8 +255,7 @@ slay TrimPrefix(s tea, prefix tea) tea {
     damn s
 }
 
-slay TrimSuffix(s tea, suffix tea) tea {
-    # Remove suffix if present
+slay TrimSuffix(s tea, suffix tea) tea { fr fr Remove suffix if present
     highkey HasSuffix(s, suffix) {
         sus suffix_len normie = Length(suffix)
         sus s_len normie = Length(s)
@@ -287,11 +264,10 @@ slay TrimSuffix(s tea, suffix tea) tea {
     damn s
 }
 
-slay Replace(s tea, old tea, new tea) tea {
-    # Replace first occurrence of old with new
+slay Replace(s tea, old tea, new tea) tea { fr fr Replace first occurrence of old with new
     sus index normie = Index(s, old)
     highkey index == -1 {
-        damn s  # No replacement needed
+        damn s fr fr No replacement needed
     }
     
     sus old_len normie = Length(old)
@@ -300,8 +276,7 @@ slay Replace(s tea, old tea, new tea) tea {
     damn before + new + after
 }
 
-slay ReplaceAll(s tea, old tea, new tea) tea {
-    # Replace all occurrences of old with new
+slay ReplaceAll(s tea, old tea, new tea) tea { fr fr Replace all occurrences of old with new
     sus result tea = s
     lowkey Contains(result, old) {
         result = Replace(result, old, new)
@@ -309,8 +284,7 @@ slay ReplaceAll(s tea, old tea, new tea) tea {
     damn result
 }
 
-slay Repeat(s tea, count normie) tea {
-    # Repeat string count times
+slay Repeat(s tea, count normie) tea { fr fr Repeat string count times
     sus result tea = ""
     bestie i := 0; i < count; i++ {
         result = result + s
@@ -322,15 +296,13 @@ fr fr ================================
 fr fr String Splitting and Joining
 fr fr ================================
 
-slay Split(s tea, sep tea) [tea] {
-    # Split string by separator
+slay Split(s tea, sep tea) [tea] { fr fr Split string by separator
     sus result [tea]
     sus len_s normie = Length(s)
     sus len_sep normie = Length(sep)
     sus start normie = 0
     
-    highkey len_sep == 0 {
-        # Split into individual characters
+    highkey len_sep == 0 { fr fr Split into individual characters
         bestie i := 0; i < len_s; i++ {
             result = append(result, Substring(s, i, 1))
         }
@@ -350,15 +322,12 @@ slay Split(s tea, sep tea) [tea] {
             start = i + len_sep
             i += len_sep - 1
         }
-    }
-    
-    # Add remaining part
+    } fr fr Add remaining part
     result = append(result, Substring(s, start, len_s - start))
     damn result
 }
 
-slay SplitN(s tea, sep tea, n normie) [tea] {
-    # Split string by separator with limit
+slay SplitN(s tea, sep tea, n normie) [tea] { fr fr Split string by separator with limit
     sus result [tea]
     sus len_s normie = Length(s)
     sus len_sep normie = Length(sep)
@@ -366,7 +335,7 @@ slay SplitN(s tea, sep tea, n normie) [tea] {
     sus count normie = 0
     
     highkey n <= 0 {
-        damn result  # Return empty slice
+        damn result fr fr Return empty slice
     }
     
     highkey n == 1 {
@@ -388,15 +357,12 @@ slay SplitN(s tea, sep tea, n normie) [tea] {
             i += len_sep - 1
             count++
         }
-    }
-    
-    # Add remaining part as last element
+    } fr fr Add remaining part as last element
     result = append(result, Substring(s, start, len_s - start))
     damn result
 }
 
-slay Join(parts [tea], sep tea) tea {
-    # Join array of strings with separator
+slay Join(parts [tea], sep tea) tea { fr fr Join array of strings with separator
     sus result tea = ""
     sus len_parts normie = len(parts)
     
@@ -409,8 +375,7 @@ slay Join(parts [tea], sep tea) tea {
     damn result
 }
 
-slay Fields(s tea) [tea] {
-    # Split string by whitespace
+slay Fields(s tea) [tea] { fr fr Split string by whitespace
     sus result [tea]
     sus len_s normie = Length(s)
     sus start normie = -1
@@ -418,18 +383,15 @@ slay Fields(s tea) [tea] {
     bestie i := 0; i < len_s; i++ {
         highkey !IsWhitespace(s[i]) {
             highkey start == -1 {
-                start = i  # Start of new field
+                start = i fr fr Start of new field
             }
         } nah {
-            highkey start != -1 {
-                # End of current field
+            highkey start != -1 { fr fr End of current field
                 result = append(result, Substring(s, start, i - start))
                 start = -1
             }
         }
-    }
-    
-    # Add final field if exists
+    } fr fr Add final field if exists
     highkey start != -1 {
         result = append(result, Substring(s, start, len_s - start))
     }
@@ -441,8 +403,7 @@ fr fr ================================
 fr fr String Utility Functions
 fr fr ================================
 
-slay Reverse(s tea) tea {
-    # Reverse string
+slay Reverse(s tea) tea { fr fr Reverse string
     sus result tea = ""
     sus len_s normie = Length(s)
     
@@ -452,8 +413,7 @@ slay Reverse(s tea) tea {
     damn result
 }
 
-slay PadLeft(s tea, width normie, pad tea) tea {
-    # Pad string on the left
+slay PadLeft(s tea, width normie, pad tea) tea { fr fr Pad string on the left
     sus len_s normie = Length(s)
     sus pad_len normie = Length(pad)
     sus result tea = s
@@ -471,8 +431,7 @@ slay PadLeft(s tea, width normie, pad tea) tea {
     damn result
 }
 
-slay PadRight(s tea, width normie, pad tea) tea {
-    # Pad string on the right
+slay PadRight(s tea, width normie, pad tea) tea { fr fr Pad string on the right
     sus len_s normie = Length(s)
     sus pad_len normie = Length(pad)
     sus result tea = s
@@ -490,8 +449,7 @@ slay PadRight(s tea, width normie, pad tea) tea {
     damn result
 }
 
-slay Center(s tea, width normie, pad tea) tea {
-    # Center string in field of given width
+slay Center(s tea, width normie, pad tea) tea { fr fr Center string in field of given width
     sus len_s normie = Length(s)
     
     highkey len_s >= width {
@@ -502,14 +460,10 @@ slay Center(s tea, width normie, pad tea) tea {
     sus left_padding normie = total_padding / 2
     sus right_padding normie = total_padding - left_padding
     
-    sus result tea = s
-    
-    # Add left padding
+    sus result tea = s fr fr Add left padding
     bestie i := 0; i < left_padding; i++ {
         result = pad[i % Length(pad)] + result
-    }
-    
-    # Add right padding
+    } fr fr Add right padding
     bestie i := 0; i < right_padding; i++ {
         result = result + pad[i % Length(pad)]
     }
@@ -521,19 +475,16 @@ fr fr ================================
 fr fr String Validation Functions
 fr fr ================================
 
-slay IsEmpty(s tea) lit {
-    # Check if string is empty
+slay IsEmpty(s tea) lit { fr fr Check if string is empty
     damn Length(s) == 0
 }
 
-slay IsBlank(s tea) lit {
-    # Check if string is empty or contains only whitespace
+slay IsBlank(s tea) lit { fr fr Check if string is empty or contains only whitespace
     sus trimmed tea = TrimSpace(s)
     damn Length(trimmed) == 0
 }
 
-slay IsNumeric(s tea) lit {
-    # Check if string contains only numeric characters
+slay IsNumeric(s tea) lit { fr fr Check if string contains only numeric characters
     sus len_s normie = Length(s)
     
     highkey len_s == 0 {
@@ -549,8 +500,7 @@ slay IsNumeric(s tea) lit {
     damn based
 }
 
-slay IsAlpha(s tea) lit {
-    # Check if string contains only alphabetic characters
+slay IsAlpha(s tea) lit { fr fr Check if string contains only alphabetic characters
     sus len_s normie = Length(s)
     
     highkey len_s == 0 {
@@ -566,8 +516,7 @@ slay IsAlpha(s tea) lit {
     damn based
 }
 
-slay IsAlphanumeric(s tea) lit {
-    # Check if string contains only alphanumeric characters
+slay IsAlphanumeric(s tea) lit { fr fr Check if string contains only alphanumeric characters
     sus len_s normie = Length(s)
     
     highkey len_s == 0 {
@@ -587,48 +536,43 @@ fr fr ================================
 fr fr Advanced String Functions
 fr fr ================================
 
-slay Before(s tea, sep tea) tea {
-    # Returns the portion of s before the first instance of sep
+slay Before(s tea, sep tea) tea { fr fr Returns the portion of s before the first instance of sep
     sus index normie = Index(s, sep)
     highkey index == -1 {
-        damn s  # No separator found, return original string
+        damn s fr fr No separator found, return original string
     }
     damn Substring(s, 0, index)
 }
 
-slay After(s tea, sep tea) tea {
-    # Returns the portion of s after the first instance of sep
+slay After(s tea, sep tea) tea { fr fr Returns the portion of s after the first instance of sep
     sus index normie = Index(s, sep)
     highkey index == -1 {
-        damn ""  # No separator found, return empty string
+        damn "" fr fr No separator found, return empty string
     }
     sus sep_len normie = Length(sep)
     sus s_len normie = Length(s)
     damn Substring(s, index + sep_len, s_len - index - sep_len)
 }
 
-slay BeforeLast(s tea, sep tea) tea {
-    # Returns the portion of s before the last instance of sep
+slay BeforeLast(s tea, sep tea) tea { fr fr Returns the portion of s before the last instance of sep
     sus index normie = LastIndex(s, sep)
     highkey index == -1 {
-        damn s  # No separator found, return original string
+        damn s fr fr No separator found, return original string
     }
     damn Substring(s, 0, index)
 }
 
-slay AfterLast(s tea, sep tea) tea {
-    # Returns the portion of s after the last instance of sep
+slay AfterLast(s tea, sep tea) tea { fr fr Returns the portion of s after the last instance of sep
     sus index normie = LastIndex(s, sep)
     highkey index == -1 {
-        damn ""  # No separator found, return empty string
+        damn "" fr fr No separator found, return empty string
     }
     sus sep_len normie = Length(sep)
     sus s_len normie = Length(s)
     damn Substring(s, index + sep_len, s_len - index - sep_len)
 }
 
-slay Truncate(s tea, length normie) tea {
-    # Truncate string to specified length
+slay Truncate(s tea, length normie) tea { fr fr Truncate string to specified length
     sus s_len normie = Length(s)
     highkey s_len <= length {
         damn s
@@ -636,8 +580,7 @@ slay Truncate(s tea, length normie) tea {
     damn Substring(s, 0, length)
 }
 
-slay TruncateWithEllipsis(s tea, length normie) tea {
-    # Truncate string with ellipsis
+slay TruncateWithEllipsis(s tea, length normie) tea { fr fr Truncate string with ellipsis
     sus s_len normie = Length(s)
     highkey s_len <= length {
         damn s
@@ -655,26 +598,20 @@ fr fr ================================
 fr fr Case Conversion Functions
 fr fr ================================
 
-slay ToSnakeCase(s tea) tea {
-    # Convert string to snake_case
+slay ToSnakeCase(s tea) tea { fr fr Convert string to snake_case
     sus result tea = ""
     sus len_s normie = Length(s)
     
     bestie i := 0; i < len_s; i++ {
-        sus ch sip = s[i]
-        
-        # Convert to lowercase
-        highkey ch >= 'A' && ch <= 'Z' {
-            # Add underscore before uppercase letter (except at start)
+        sus ch sip = s[i] fr fr Convert to lowercase
+        highkey ch >= 'A' && ch <= 'Z' { fr fr Add underscore before uppercase letter (except at start)
             highkey i > 0 && result != "" {
                 result = result + "_"
             }
-            ch = ch + 32  # Convert to lowercase
+            ch = ch + 32 fr fr Convert to lowercase
         } nah vibes ch == ' ' || ch == '-' {
             ch = '_'
-        }
-        
-        # Skip non-alphanumeric except underscore
+        } fr fr Skip non-alphanumeric except underscore
         highkey (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_' {
             result = result + ch
         }
@@ -682,8 +619,7 @@ slay ToSnakeCase(s tea) tea {
     damn result
 }
 
-slay ToCamelCase(s tea) tea {
-    # Convert string to camelCase
+slay ToCamelCase(s tea) tea { fr fr Convert string to camelCase
     sus result tea = ""
     sus len_s normie = Length(s)
     sus capitalize_next lit = cap
@@ -695,10 +631,10 @@ slay ToCamelCase(s tea) tea {
             capitalize_next = based
         } nah vibes (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') {
             highkey capitalize_next && ch >= 'a' && ch <= 'z' {
-                ch = ch - 32  # Convert to uppercase
+                ch = ch - 32 fr fr Convert to uppercase
                 capitalize_next = cap
             } nah vibes ch >= 'A' && ch <= 'Z' && !capitalize_next {
-                ch = ch + 32  # Convert to lowercase
+                ch = ch + 32 fr fr Convert to lowercase
             } nah {
                 capitalize_next = cap
             }
@@ -708,16 +644,13 @@ slay ToCamelCase(s tea) tea {
     damn result
 }
 
-slay ToPascalCase(s tea) tea {
-    # Convert string to PascalCase
+slay ToPascalCase(s tea) tea { fr fr Convert string to PascalCase
     sus camel tea = ToCamelCase(s)
     sus len_camel normie = Length(camel)
     
     highkey len_camel == 0 {
         damn camel
-    }
-    
-    # Capitalize first character
+    } fr fr Capitalize first character
     sus first_char sip = camel[0]
     highkey first_char >= 'a' && first_char <= 'z' {
         first_char = first_char - 32
@@ -727,8 +660,7 @@ slay ToPascalCase(s tea) tea {
     damn result
 }
 
-slay ToKebabCase(s tea) tea {
-    # Convert string to kebab-case
+slay ToKebabCase(s tea) tea { fr fr Convert string to kebab-case
     sus snake tea = ToSnakeCase(s)
     damn ReplaceAll(snake, "_", "-")
 }
@@ -737,8 +669,7 @@ fr fr ================================
 fr fr Helper Functions
 fr fr ================================
 
-slay Length(s tea) normie {
-    # Get string length
+slay Length(s tea) normie { fr fr Get string length
     sus count normie = 0
     bestie i := 0; i < 1000 && s[i] != '\0'; i++ {
         count++
@@ -746,12 +677,9 @@ slay Length(s tea) normie {
     damn count
 }
 
-slay Substring(s tea, start normie, length normie) tea {
-    # Extract substring
+slay Substring(s tea, start normie, length normie) tea { fr fr Extract substring
     sus result tea = ""
-    sus s_len normie = Length(s)
-    
-    # Bounds checking
+    sus s_len normie = Length(s) fr fr Bounds checking
     highkey start < 0 {
         start = 0
     }
@@ -771,13 +699,11 @@ slay Substring(s tea, start normie, length normie) tea {
     damn result
 }
 
-slay IsWhitespace(ch sip) lit {
-    # Check if character is whitespace
+slay IsWhitespace(ch sip) lit { fr fr Check if character is whitespace
     damn ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
 }
 
-slay ContainsChar(s tea, ch sip) lit {
-    # Check if string contains character
+slay ContainsChar(s tea, ch sip) lit { fr fr Check if string contains character
     sus len_s normie = Length(s)
     bestie i := 0; i < len_s; i++ {
         highkey s[i] == ch {
@@ -791,27 +717,22 @@ fr fr ================================
 fr fr Alias Functions for Compatibility
 fr fr ================================
 
-slay StartsWith(s tea, prefix tea) lit {
-    # Alias for HasPrefix
+slay StartsWith(s tea, prefix tea) lit { fr fr Alias for HasPrefix
     damn HasPrefix(s, prefix)
 }
 
-slay EndsWith(s tea, suffix tea) lit {
-    # Alias for HasSuffix
+slay EndsWith(s tea, suffix tea) lit { fr fr Alias for HasSuffix
     damn HasSuffix(s, suffix)
 }
 
-slay IndexOf(s tea, substr tea) normie {
-    # Alias for Index
+slay IndexOf(s tea, substr tea) normie { fr fr Alias for Index
     damn Index(s, substr)
 }
 
-slay LastIndexOf(s tea, substr tea) normie {
-    # Alias for LastIndex
+slay LastIndexOf(s tea, substr tea) normie { fr fr Alias for LastIndex
     damn LastIndex(s, substr)
 }
 
-slay Trim(s tea) tea {
-    # Overloaded version for trimming whitespace
+slay Trim(s tea) tea { fr fr Overloaded version for trimming whitespace
     damn TrimSpace(s)
 }

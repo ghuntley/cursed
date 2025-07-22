@@ -1,12 +1,12 @@
-# Reflection module - Runtime type information and introspection
-# Critical for self-hosting and dynamic behavior
+fr fr Reflection module - Runtime type information and introspection
+fr fr Critical for self-hosting and dynamic behavior
 
 yeet "testz"
 
-# Type information structures
-# TypeInfo represents runtime type information
-# Implemented as a tuple: (kind, name, size, fields)
-# Kind: 0=int, 1=string, 2=bool, 3=float, 4=struct, 5=array, 6=func, 7=interface
+fr fr Type information structures
+fr fr TypeInfo represents runtime type information
+fr fr Implemented as a tuple: (kind, name, size, fields)
+fr fr Kind: 0=int, 1=string, 2=bool, 3=float, 4=struct, 5=array, 6=func, 7=interface
 
 slay type_info_int() (normie, tea, normie, []tea) {
     damn (0, "normie", 4, []tea{})
@@ -49,7 +49,7 @@ slay type_info_interface(name tea, methods []tea) (normie, tea, normie, []tea) {
     damn (7, name, 8, methods)
 }
 
-# Type checking functions
+fr fr Type checking functions
 slay is_int_type(type_info (normie, tea, normie, []tea)) lit {
     damn type_info.0 == 0
 }
@@ -82,7 +82,7 @@ slay is_interface_type(type_info (normie, tea, normie, []tea)) lit {
     damn type_info.0 == 7
 }
 
-# Type metadata accessors
+fr fr Type metadata accessors
 slay get_type_kind(type_info (normie, tea, normie, []tea)) normie {
     damn type_info.0
 }
@@ -99,10 +99,10 @@ slay get_type_fields(type_info (normie, tea, normie, []tea)) []tea {
     damn type_info.3
 }
 
-# Value representation for reflection
-# Value represents a runtime value with type information
-# Implemented as a tuple: (type_info, data_ptr, is_valid)
-# For simplicity, data_ptr is represented as a string
+fr fr Value representation for reflection
+fr fr Value represents a runtime value with type information
+fr fr Implemented as a tuple: (type_info, data_ptr, is_valid)
+fr fr For simplicity, data_ptr is represented as a string
 
 slay value_from_int(val normie) ((normie, tea, normie, []tea), tea, lit) {
     damn (type_info_int(), core.tea(val), based)
@@ -127,7 +127,7 @@ slay invalid_value() ((normie, tea, normie, []tea), tea, lit) {
     damn (type_info_int(), "", cap)
 }
 
-# Value operations
+fr fr Value operations
 slay is_valid(value ((normie, tea, normie, []tea), tea, lit)) lit {
     damn value.2
 }
@@ -148,22 +148,16 @@ slay value_type_kind(value ((normie, tea, normie, []tea), tea, lit)) normie {
     damn get_type_kind(value.0)
 }
 
-# Type conversion and casting
+fr fr Type conversion and casting
 slay can_convert(from_type (normie, tea, normie, []tea), to_type (normie, tea, normie, []tea)) lit {
     sus from_kind := get_type_kind(from_type)
-    sus to_kind := get_type_kind(to_type)
-    
-    # Same type
+    sus to_kind := get_type_kind(to_type) fr fr Same type
     bestie from_kind == to_kind {
         damn based
-    }
-    
-    # Numeric conversions
+    } fr fr Numeric conversions
     bestie (from_kind == 0 && to_kind == 3) || (from_kind == 3 && to_kind == 0) {
         damn based
-    }
-    
-    # String conversions
+    } fr fr String conversions
     bestie to_kind == 1 {
         damn based
     }
@@ -183,24 +177,16 @@ slay convert_value(value ((normie, tea, normie, []tea), tea, lit), target_type (
     
     sus from_kind := get_type_kind(from_type)
     sus to_kind := get_type_kind(target_type)
-    sus data := get_value_data(value)
-    
-    # Same type conversion
+    sus data := get_value_data(value) fr fr Same type conversion
     bestie from_kind == to_kind {
         damn (target_type, data, based)
-    }
-    
-    # Convert to string
+    } fr fr Convert to string
     bestie to_kind == 1 {
         damn (target_type, data, based)
-    }
-    
-    # Int to float
+    } fr fr Int to float
     bestie from_kind == 0 && to_kind == 3 {
         damn (target_type, data + ".0", based)
-    }
-    
-    # Float to int
+    } fr fr Float to int
     bestie from_kind == 3 && to_kind == 0 {
         damn (target_type, data, based)
     }
@@ -208,7 +194,7 @@ slay convert_value(value ((normie, tea, normie, []tea), tea, lit), target_type (
     damn invalid_value()
 }
 
-# Struct field access
+fr fr Struct field access
 slay get_struct_field_count(type_info (normie, tea, normie, []tea)) normie {
     bestie is_struct_type(type_info) {
         damn stringz.len(get_type_fields(type_info))
@@ -238,7 +224,7 @@ slay has_struct_field(type_info (normie, tea, normie, []tea), field_name tea) li
     damn cap
 }
 
-# Function introspection
+fr fr Function introspection
 slay get_func_param_count(type_info (normie, tea, normie, []tea)) normie {
     bestie is_func_type(type_info) {
         damn stringz.len(get_type_fields(type_info))
@@ -256,7 +242,7 @@ slay get_func_param_type(type_info (normie, tea, normie, []tea), index normie) t
     damn ""
 }
 
-# Interface method introspection
+fr fr Interface method introspection
 slay get_interface_method_count(type_info (normie, tea, normie, []tea)) normie {
     bestie is_interface_type(type_info) {
         damn stringz.len(get_type_fields(type_info))
@@ -286,7 +272,7 @@ slay has_interface_method(type_info (normie, tea, normie, []tea), method_name te
     damn cap
 }
 
-# Array introspection
+fr fr Array introspection
 slay get_array_element_type(type_info (normie, tea, normie, []tea)) tea {
     bestie is_array_type(type_info) {
         sus fields := get_type_fields(type_info)
@@ -299,10 +285,8 @@ slay get_array_element_type(type_info (normie, tea, normie, []tea)) tea {
 
 slay get_array_size(type_info (normie, tea, normie, []tea)) normie {
     bestie is_array_type(type_info) {
-        sus name := get_type_name(type_info)
-        # Extract size from name like "[5]int"
-        bestie stringz.contains(name, "[") && stringz.contains(name, "]") {
-            # Simplified size extraction
+        sus name := get_type_name(type_info) fr fr Extract size from name like "[5]int"
+        bestie stringz.contains(name, "[") && stringz.contains(name, "]") { fr fr Simplified size extraction
             bestie stringz.contains(name, "[5]") {
                 damn 5
             }
@@ -318,7 +302,7 @@ slay get_array_size(type_info (normie, tea, normie, []tea)) normie {
     damn 0
 }
 
-# Comparison functions
+fr fr Comparison functions
 slay types_equal(type1 (normie, tea, normie, []tea), type2 (normie, tea, normie, []tea)) lit {
     damn get_type_kind(type1) == get_type_kind(type2) && 
          get_type_name(type1) == get_type_name(type2)
@@ -332,7 +316,7 @@ slay values_equal(val1 ((normie, tea, normie, []tea), tea, lit), val2 ((normie, 
          get_value_data(val1) == get_value_data(val2)
 }
 
-# Debugging and string representation
+fr fr Debugging and string representation
 slay type_to_string(type_info (normie, tea, normie, []tea)) tea {
     sus kind := get_type_kind(type_info)
     sus name := get_type_name(type_info)
@@ -350,7 +334,7 @@ slay value_to_string(value ((normie, tea, normie, []tea), tea, lit)) tea {
     damn "Value{type: " + type_name + ", data: " + data + "}"
 }
 
-# Runtime type registration (simplified)
+fr fr Runtime type registration (simplified)
 sus registered_types := []tea{}
 
 slay register_type(type_name tea) {
@@ -365,7 +349,7 @@ slay get_registered_types() []tea {
     damn registered_types
 }
 
-# Initialize with built-in types
+fr fr Initialize with built-in types
 slay init_reflection() {
     register_type("normie")
     register_type("tea")

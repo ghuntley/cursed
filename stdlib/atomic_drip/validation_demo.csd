@@ -1,21 +1,17 @@
-# CURSED Atomic Operations Validation Demo
-# Demonstrates hardware atomic operations functionality
+fr fr CURSED Atomic Operations Validation Demo
+fr fr Demonstrates hardware atomic operations functionality
 
 yeet "testz"
 yeet "atomic_drip"
 
-# Simple atomic operations demonstration
+fr fr Simple atomic operations demonstration
 slay demo_basic_atomics() {
-    vibez.spill("🔬 Basic Atomic Operations Demo")
-    
-    # Create atomic integers
+    vibez.spill("🔬 Basic Atomic Operations Demo") fr fr Create atomic integers
     sus atomic_i32 *AtomicI32 = atomic_i32_new(42)
     sus atomic_i64 *AtomicI64 = atomic_i64_new(1000000)
     
     vibez.spill("Initial i32 value:", atomic_load_i32(atomic_i32))
-    vibez.spill("Initial i64 value:", atomic_load_i64(atomic_i64))
-    
-    # Test store operations
+    vibez.spill("Initial i64 value:", atomic_load_i64(atomic_i64)) fr fr Test store operations
     atomic_store_i32(atomic_i32, 100)
     atomic_store_i64(atomic_i64, 2000000)
     
@@ -25,26 +21,22 @@ slay demo_basic_atomics() {
     vibez.spill("✅ Basic atomics work correctly")
 }
 
-# Demonstrate compare-and-swap operations
+fr fr Demonstrate compare-and-swap operations
 slay demo_cas_operations() {
     vibez.spill("🔄 Compare-and-Swap Demo")
     
-    sus atomic *AtomicI32 = atomic_i32_new(50)
-    
-    # Successful CAS
+    sus atomic *AtomicI32 = atomic_i32_new(50) fr fr Successful CAS
     sus success lit = atomic_cas_i32(atomic, 50, 75)
     vibez.spill("CAS 50->75 success:", success)
-    vibez.spill("Value after CAS:", atomic_load_i32(atomic))
-    
-    # Failed CAS
+    vibez.spill("Value after CAS:", atomic_load_i32(atomic)) fr fr Failed CAS
     sus failure lit = atomic_cas_i32(atomic, 50, 100)
-    vibez.spill("CAS 50->100 success:", failure)  # Should be false
+    vibez.spill("CAS 50->100 success:", failure) fr fr Should be false
     vibez.spill("Value unchanged:", atomic_load_i32(atomic))
     
     vibez.spill("✅ CAS operations work correctly")
 }
 
-# Demonstrate atomic arithmetic
+fr fr Demonstrate atomic arithmetic
 slay demo_atomic_arithmetic() {
     vibez.spill("➕ Atomic Arithmetic Demo")
     
@@ -67,7 +59,7 @@ slay demo_atomic_arithmetic() {
     vibez.spill("✅ Atomic arithmetic works correctly")
 }
 
-# Demonstrate atomic flags
+fr fr Demonstrate atomic flags
 slay demo_atomic_flags() {
     vibez.spill("🚩 Atomic Flag Demo")
     
@@ -85,23 +77,19 @@ slay demo_atomic_flags() {
     vibez.spill("✅ Atomic flags work correctly")
 }
 
-# Demonstrate memory ordering
+fr fr Demonstrate memory ordering
 slay demo_memory_ordering() {
     vibez.spill("🧠 Memory Ordering Demo")
     
-    sus atomic *AtomicI32 = atomic_i32_new(1)
-    
-    # Test different memory orderings
+    sus atomic *AtomicI32 = atomic_i32_new(1) fr fr Test different memory orderings
     atomic_store_i32_ordered(atomic, 2, MEMORY_ORDER_RELAXED)
     vibez.spill("Relaxed store, value:", atomic_load_i32_ordered(atomic, MEMORY_ORDER_RELAXED))
     
     atomic_store_i32_ordered(atomic, 3, MEMORY_ORDER_RELEASE)
     vibez.spill("Release store, value:", atomic_load_i32_ordered(atomic, MEMORY_ORDER_ACQUIRE))
     
-    atomic_store_i32(atomic, 4)  # SEQ_CST by default
-    vibez.spill("SeqCst store, value:", atomic_load_i32(atomic))
-    
-    # Test memory fences
+    atomic_store_i32(atomic, 4) fr fr SEQ_CST by default
+    vibez.spill("SeqCst store, value:", atomic_load_i32(atomic)) fr fr Test memory fences
     memory_fence()
     compiler_fence()
     acquire_fence()
@@ -111,20 +99,16 @@ slay demo_memory_ordering() {
     vibez.spill("✅ Memory ordering works correctly")
 }
 
-# Demonstrate high-level synchronization
+fr fr Demonstrate high-level synchronization
 slay demo_synchronization() {
-    vibez.spill("🔒 Synchronization Primitives Demo")
-    
-    # Test spinlock
+    vibez.spill("🔒 Synchronization Primitives Demo") fr fr Test spinlock
     sus lock *Spinlock = spinlock_new()
     
     yo spinlock_try_lock(lock) {
         vibez.spill("Acquired spinlock")
         spinlock_unlock(lock)
         vibez.spill("Released spinlock")
-    }
-    
-    # Test read-write spinlock
+    } fr fr Test read-write spinlock
     sus rw_lock *RwSpinlock = rw_spinlock_new()
     
     rw_spinlock_read_lock(rw_lock)
@@ -139,7 +123,7 @@ slay demo_synchronization() {
     vibez.spill("✅ Synchronization primitives work correctly")
 }
 
-# Main demo function
+fr fr Main demo function
 slay main() {
     vibez.spill("🚀 CURSED Hardware Atomic Operations Validation Demo")
     vibez.spill("====================================================")

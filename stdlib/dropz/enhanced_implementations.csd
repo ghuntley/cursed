@@ -1,27 +1,23 @@
-# Enhanced dropz implementations - replacing placeholders with real functionality
-# Focus on core file I/O operations needed for basic programs
+fr fr Enhanced dropz implementations - replacing placeholders with real functionality
+fr fr Focus on core file I/O operations needed for basic programs
 
 yeet "vibez"
 yeet "stringz"
 yeet "core"
 
-# Enhanced string operations to replace placeholders
+fr fr Enhanced string operations to replace placeholders
 slay string_length_real(s tea) normie {
     check s == "" {
         damn 0
-    }
-    
-    # Real string length calculation
+    } fr fr Real string length calculation
     sus count normie = 0
-    sus i normie = 0
-    
-    # Count characters until null terminator or end
+    sus i normie = 0 fr fr Count characters until null terminator or end
     bestie based {
-        check i >= 1000 {  # Safety limit
+        check i >= 1000 { fr fr Safety limit
             ghosted
         }
         sus char_code normie = stringz.char_code_at(s, i)
-        check char_code == 0 {  # Null terminator
+        check char_code == 0 { fr fr Null terminator
             ghosted
         }
         count++
@@ -41,9 +37,7 @@ slay string_contains_real(s tea, substr tea) lit {
     
     check substr_len > s_len {
         damn cap
-    }
-    
-    # Simple substring search algorithm
+    } fr fr Simple substring search algorithm
     bestie i := 0; i <= s_len - substr_len; i++ {
         sus match lit = based
         bestie j := 0; j < substr_len; j++ {
@@ -60,29 +54,23 @@ slay string_contains_real(s tea, substr tea) lit {
     damn cap
 }
 
-# Enhanced file descriptor management with real state tracking
-sus global_fd_counter normie = 3  # Start after stdin/stdout/stderr
-sus fd_map [100]lit  # Track open file descriptors
-sus fd_names [100]tea  # Track filenames for each fd
+fr fr Enhanced file descriptor management with real state tracking
+sus global_fd_counter normie = 3 fr fr Start after stdin/stdout/stderr
+sus fd_map [100]lit fr fr Track open file descriptors
+sus fd_names [100]tea fr fr Track filenames for each fd
 
 slay get_file_descriptor_real(filename tea, flags normie, mode normie) normie {
     check filename == "" {
         damn -1
-    }
-    
-    # Check for permission-related filenames
+    } fr fr Check for permission-related filenames
     check string_contains_real(filename, "permission") ||
           string_contains_real(filename, "/root/") {
         damn -3
-    }
-    
-    # Check for explicitly non-existent files
+    } fr fr Check for explicitly non-existent files
     check string_contains_real(filename, "nonexistent") ||
           string_contains_real(filename, "missing") {
         damn -2
-    }
-    
-    # Find available file descriptor
+    } fr fr Find available file descriptor
     bestie i := 3; i < 100; i++ {
         check fd_map[i] == cap {
             fd_map[i] = based
@@ -92,7 +80,7 @@ slay get_file_descriptor_real(filename tea, flags normie, mode normie) normie {
         }
     }
     
-    damn -1  # No available descriptors
+    damn -1 fr fr No available descriptors
 }
 
 slay close_file_descriptor(fd normie) tea {
@@ -109,31 +97,24 @@ slay close_file_descriptor(fd normie) tea {
     damn ""
 }
 
-# Enhanced file operations with real data handling
+fr fr Enhanced file operations with real data handling
 slay read_file_real(filename tea) ([]byte, tea) {
     sus file, err := open_real(filename)
     check err != "" {
         damn [], err
-    }
-    
-    # Simulate reading based on filename patterns
+    } fr fr Simulate reading based on filename patterns
     sus data []byte
     
-    check string_contains_real(filename, ".txt") {
-        # Text file content
-        data = []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}  # "Hello World"
-    } elseif string_contains_real(filename, ".csd") {
-        # CURSED source file
-        data = []byte{118, 105, 98, 101, 122, 46, 115, 112, 105, 108, 108, 40, 34, 72, 105, 34, 41}  # vibez.spill("Hi")
-    } elseif string_contains_real(filename, ".json") {
-        # JSON content
-        data = []byte{123, 34, 116, 101, 115, 116, 34, 58, 116, 114, 117, 101, 125}  # {"test":true}
-    } elseif string_contains_real(filename, "config") {
-        # Configuration content
-        data = []byte{110, 97, 109, 101, 61, 116, 101, 115, 116}  # name=test
-    } else {
-        # Default content for unknown file types
-        data = []byte{100, 97, 116, 97}  # "data"
+    check string_contains_real(filename, ".txt") { fr fr Text file content
+        data = []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100} fr fr "Hello World"
+    } elseif string_contains_real(filename, ".csd") { fr fr CURSED source file
+        data = []byte{118, 105, 98, 101, 122, 46, 115, 112, 105, 108, 108, 40, 34, 72, 105, 34, 41} fr fr vibez.spill("Hi")
+    } elseif string_contains_real(filename, ".json") { fr fr JSON content
+        data = []byte{123, 34, 116, 101, 115, 116, 34, 58, 116, 114, 117, 101, 125} fr fr {"test":true}
+    } elseif string_contains_real(filename, "config") { fr fr Configuration content
+        data = []byte{110, 97, 109, 101, 61, 116, 101, 115, 116} fr fr name=test
+    } else { fr fr Default content for unknown file types
+        data = []byte{100, 97, 116, 97} fr fr "data"
     }
     
     file.close_real()
@@ -144,15 +125,13 @@ slay write_file_real(filename tea, data []byte, perm normie) tea {
     sus file, err := create_real(filename)
     check err != "" {
         damn err
-    }
-    
-    # Validate data size
+    } fr fr Validate data size
     check len(data) == 0 {
         file.close_real()
         damn "no data to write"
     }
     
-    check len(data) > 1048576 {  # 1MB limit
+    check len(data) > 1048576 { fr fr 1MB limit
         file.close_real()
         damn "file too large"
     }
@@ -162,7 +141,7 @@ slay write_file_real(filename tea, data []byte, perm normie) tea {
     damn write_err
 }
 
-# Enhanced File struct with real methods
+fr fr Enhanced File struct with real methods
 struct FileReal {
     fd normie,
     name tea,
@@ -180,9 +159,7 @@ slay open_real(filename tea) (*FileReal, tea) {
     sus file_descriptor normie = get_file_descriptor_real(filename, O_RDONLY, 0)
     check file_descriptor < 0 {
         damn cringe, get_file_error(file_descriptor)
-    }
-    
-    # Determine file size based on type
+    } fr fr Determine file size based on type
     sus file_size thicc = 0
     check string_contains_real(filename, ".txt") {
         file_size = 1024
@@ -226,7 +203,7 @@ slay create_real(filename tea) (*FileReal, tea) {
     damn &f, ""
 }
 
-# Enhanced file methods with real behavior
+fr fr Enhanced file methods with real behavior
 slay (f *FileReal) read_real(b []byte) (normie, tea) {
     check f.is_open != based {
         damn 0, "file not open"
@@ -234,23 +211,18 @@ slay (f *FileReal) read_real(b []byte) (normie, tea) {
     
     check len(b) == 0 {
         damn 0, ""
-    }
-    
-    # Calculate how much we can read
+    } fr fr Calculate how much we can read
     sus remaining thicc = f.size - f.position
     check remaining <= 0 {
-        damn 0, ""  # EOF
+        damn 0, "" fr fr EOF
     }
     
     sus to_read normie = len(b)
     check remaining < to_read {
         to_read = remaining
-    }
-    
-    # Simulate reading data
-    bestie i := 0; i < to_read; i++ {
-        # Fill buffer with simulated data
-        b[i] = 65 + (f.position + i) % 26  # A-Z pattern
+    } fr fr Simulate reading data
+    bestie i := 0; i < to_read; i++ { fr fr Fill buffer with simulated data
+        b[i] = 65 + (f.position + i) % 26 fr fr A-Z pattern
     }
     
     f.position = f.position + to_read
@@ -269,9 +241,7 @@ slay (f *FileReal) write_real(b []byte) (normie, tea) {
     sus bytes_to_write normie = len(b)
     check bytes_to_write == 0 {
         damn 0, ""
-    }
-    
-    # Update file size and position
+    } fr fr Update file size and position
     sus new_position thicc = f.position + bytes_to_write
     check new_position > f.size {
         f.size = new_position
@@ -316,15 +286,13 @@ slay (f *FileReal) seek_real(offset thicc, whence normie) (thicc, tea) {
     damn new_position, ""
 }
 
-# Enhanced directory operations
+fr fr Enhanced directory operations
 slay read_dir_real(dirname tea) ([]DirEntry, tea) {
     check dirname == "" {
         damn [], "invalid directory name"
     }
     
-    sus entries []DirEntry
-    
-    # Simulate directory contents based on path
+    sus entries []DirEntry fr fr Simulate directory contents based on path
     check dirname == "/" {
         entries = []DirEntry{
             DirEntry{
@@ -390,24 +358,21 @@ slay read_dir_real(dirname tea) ([]DirEntry, tea) {
                 mod_time: 1720857600
             }
         }
-    } else {
-        # Empty directory for unknown paths
+    } else { fr fr Empty directory for unknown paths
         entries = []DirEntry{}
     }
     
     damn entries, ""
 }
 
-# Enhanced path operations with real logic
+fr fr Enhanced path operations with real logic
 slay join_paths_real(path1 tea, path2 tea) tea {
     check path1 == "" {
         damn path2
     }
     check path2 == "" {
         damn path1
-    }
-    
-    # Add separator if needed
+    } fr fr Add separator if needed
     sus needs_separator lit = cap
     sus path1_len normie = string_length_real(path1)
     check path1_len > 0 {
@@ -432,9 +397,7 @@ slay dir_real(path tea) tea {
     sus path_len normie = string_length_real(path)
     check path_len <= 1 {
         damn "/"
-    }
-    
-    # Find last slash
+    } fr fr Find last slash
     sus last_slash_pos normie = -1
     bestie i := path_len - 1; i >= 0; i-- {
         check stringz.char_at(path, i) == "/" {
@@ -462,9 +425,7 @@ slay base_real(path tea) tea {
     sus path_len normie = string_length_real(path)
     check path_len == 0 {
         damn ""
-    }
-    
-    # Remove trailing slashes
+    } fr fr Remove trailing slashes
     sus end_pos normie = path_len
     bestie end_pos > 0 && stringz.char_at(path, end_pos - 1) == "/" {
         end_pos--
@@ -472,9 +433,7 @@ slay base_real(path tea) tea {
     
     check end_pos == 0 {
         damn "/"
-    }
-    
-    # Find last slash before the end
+    } fr fr Find last slash before the end
     sus last_slash_pos normie = -1
     bestie i := end_pos - 1; i >= 0; i-- {
         check stringz.char_at(path, i) == "/" {
@@ -492,9 +451,7 @@ slay base_real(path tea) tea {
 
 slay ext_real(path tea) tea {
     sus basename tea = base_real(path)
-    sus basename_len normie = string_length_real(basename)
-    
-    # Find last dot
+    sus basename_len normie = string_length_real(basename) fr fr Find last dot
     sus last_dot_pos normie = -1
     bestie i := basename_len - 1; i >= 0; i-- {
         check stringz.char_at(basename, i) == "." {
@@ -513,32 +470,24 @@ slay ext_real(path tea) tea {
 slay is_abs_real(path tea) lit {
     check path == "" {
         damn cap
-    }
-    
-    # Check if path starts with '/'
+    } fr fr Check if path starts with '/'
     damn stringz.char_at(path, 0) == "/"
 }
 
-# Enhanced existence check with better simulation
+fr fr Enhanced existence check with better simulation
 slay exists_real(path tea) lit {
     check path == "" {
         damn cap
-    }
-    
-    # Simulate existence for common system paths
+    } fr fr Simulate existence for common system paths
     check path == "/" || path == "/home" || path == "/usr" || path == "/tmp" {
         damn based
-    }
-    
-    # Simulate existence for certain file patterns
+    } fr fr Simulate existence for certain file patterns
     check string_contains_real(path, ".txt") ||
           string_contains_real(path, ".csd") ||
           string_contains_real(path, ".json") ||
           string_contains_real(path, "config") {
         damn based
-    }
-    
-    # Check for explicitly non-existent patterns
+    } fr fr Check for explicitly non-existent patterns
     check string_contains_real(path, "nonexistent") ||
           string_contains_real(path, "missing") ||
           string_contains_real(path, "deleted") {

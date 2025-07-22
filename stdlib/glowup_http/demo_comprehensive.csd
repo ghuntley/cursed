@@ -1,22 +1,22 @@
 yeet "glowup_http"
 
-# Comprehensive glowup_http Framework Demo
-# Showcasing all HTTP client/server and WebSocket features
+fr fr Comprehensive glowup_http Framework Demo
+fr fr Showcasing all HTTP client/server and WebSocket features
 
 vibez.spill("🔥 glowup_http Framework - Comprehensive Demo")
 vibez.spill("=" * 50)
 
-# Initialize the framework
+fr fr Initialize the framework
 glowup_http_main()
 
-# =============================================================================
-# 1. HTTP SERVER DEMO
-# =============================================================================
+fr fr =============================================================================
+fr fr 1. HTTP SERVER DEMO
+fr fr =============================================================================
 
 vibez.spill("📡 HTTP Server Demo")
 vibez.spill("-" * 20)
 
-# Create server configuration
+fr fr Create server configuration
 sus server_config ServerConfig
 server_config.host = "localhost"
 server_config.port = 8080
@@ -25,10 +25,10 @@ server_config.timeout = 30
 server_config.keep_alive = based
 server_config.compression = based
 
-# Create and start server
+fr fr Create and start server
 http_server_create(server_config)
 
-# Register multiple routes
+fr fr Register multiple routes
 http_route_get("/", "home_handler")
 http_route_get("/api/status", "status_handler")
 http_route_get("/api/users", "users_handler")
@@ -36,7 +36,7 @@ http_route_post("/api/users", "create_user_handler")
 http_route_put("/api/users/:id", "update_user_handler")
 http_route_delete("/api/users/:id", "delete_user_handler")
 
-# Test different route responses
+fr fr Test different route responses
 sus routes tea = "/, /api/status, /api/health, /api/users, /missing"
 vibez.spill("Testing routes: " + routes)
 
@@ -56,15 +56,15 @@ sus missing_req HttpRequest = http_request_new(METHOD_GET, "/missing")
 sus missing_resp HttpResponse = http_handle_request(missing_req)
 vibez.spill("GET /missing: " + http_int_to_string(missing_resp.status_code) + " - " + missing_resp.body)
 
-# =============================================================================
-# 2. HTTP CLIENT DEMO
-# =============================================================================
+fr fr =============================================================================
+fr fr 2. HTTP CLIENT DEMO
+fr fr =============================================================================
 
 vibez.spill("")
 vibez.spill("📱 HTTP Client Demo")
 vibez.spill("-" * 20)
 
-# Create client configuration
+fr fr Create client configuration
 sus client_config ClientConfig
 client_config.timeout = 30
 client_config.max_redirects = 5
@@ -72,7 +72,7 @@ client_config.user_agent = "glowup_http_demo/1.0"
 client_config.follow_redirects = based
 client_config.verify_ssl = based
 
-# Test all HTTP methods
+fr fr Test all HTTP methods
 vibez.spill("Testing HTTP methods:")
 
 sus get_resp HttpResponse = http_client_get("https://api.example.com/users")
@@ -89,22 +89,22 @@ vibez.spill("PUT: " + http_int_to_string(put_resp.status_code) + " - " + put_res
 sus delete_resp HttpResponse = http_client_delete("https://api.example.com/users/1")
 vibez.spill("DELETE: " + http_int_to_string(delete_resp.status_code) + " - " + delete_resp.body)
 
-# =============================================================================
-# 3. WEBSOCKET DEMO
-# =============================================================================
+fr fr =============================================================================
+fr fr 3. WEBSOCKET DEMO
+fr fr =============================================================================
 
 vibez.spill("")
 vibez.spill("🔌 WebSocket Demo")
 vibez.spill("-" * 15)
 
-# WebSocket handshake
+fr fr WebSocket handshake
 sus ws_key tea = "dGhlIHNhbXBsZSBub25jZQ=="
 sus ws_accept tea = websocket_handshake(ws_key)
 vibez.spill("WebSocket handshake complete")
 vibez.spill("Client key: " + ws_key)
 vibez.spill("Accept key: " + ws_accept)
 
-# Create different frame types
+fr fr Create different frame types
 sus text_frame WebSocketFrame = websocket_create_frame(1, "Hello WebSocket!")
 sus binary_frame WebSocketFrame = websocket_create_frame(2, "Binary data")
 sus ping_frame WebSocketFrame = websocket_create_frame(9, "")
@@ -116,7 +116,7 @@ vibez.spill("Binary frame opcode: " + http_int_to_string(binary_frame.opcode))
 vibez.spill("Ping frame opcode: " + http_int_to_string(ping_frame.opcode))
 vibez.spill("Pong frame opcode: " + http_int_to_string(pong_frame.opcode))
 
-# Send WebSocket messages
+fr fr Send WebSocket messages
 vibez.spill("Sending WebSocket messages:")
 websocket_send_text("Welcome to glowup_http WebSocket!")
 websocket_send_text("{\"type\": \"message\", \"content\": \"JSON data\"}")
@@ -124,40 +124,40 @@ websocket_send_binary("Binary message content")
 websocket_ping()
 websocket_pong()
 
-# =============================================================================
-# 4. MIDDLEWARE DEMO
-# =============================================================================
+fr fr =============================================================================
+fr fr 4. MIDDLEWARE DEMO
+fr fr =============================================================================
 
 vibez.spill("")
 vibez.spill("🛡️ Middleware Demo")
 vibez.spill("-" * 17)
 
-# Test middleware functions
+fr fr Test middleware functions
 sus middleware_req HttpRequest = http_request_new(METHOD_GET, "/api/data")
 middleware_req.headers = "Authorization: Bearer token123"
 sus middleware_resp HttpResponse = http_response_new(HTTP_OK, "Protected data")
 
-# Apply CORS middleware
+fr fr Apply CORS middleware
 sus cors_resp HttpResponse = http_middleware_cors(middleware_req, middleware_resp)
 vibez.spill("CORS middleware applied")
 
-# Apply logging middleware
+fr fr Apply logging middleware
 http_middleware_logging(middleware_req)
 vibez.spill("Logging middleware applied")
 
-# Test authentication middleware
+fr fr Test authentication middleware
 sus auth_result lit = http_middleware_auth(middleware_req)
 vibez.spill("Authentication result: " + (auth_result ? "authorized" : "unauthorized"))
 
-# =============================================================================
-# 5. SESSION & COOKIE DEMO
-# =============================================================================
+fr fr =============================================================================
+fr fr 5. SESSION & COOKIE DEMO
+fr fr =============================================================================
 
 vibez.spill("")
 vibez.spill("🍪 Session & Cookie Demo")
 vibez.spill("-" * 24)
 
-# Session management
+fr fr Session management
 sus session_id tea = "user_session_" + http_int_to_string(12345)
 session_create(session_id)
 vibez.spill("Session created: " + session_id)
@@ -165,27 +165,27 @@ vibez.spill("Session created: " + session_id)
 sus session_data tea = session_get(session_id)
 vibez.spill("Session data: " + session_data)
 
-# Cookie management
+fr fr Cookie management
 sus cookie_header tea = cookie_set("session_id", session_id)
 vibez.spill("Cookie set: " + cookie_header)
 
 sus cookie_value tea = cookie_get("Cookie: session_id=" + session_id, "session_id")
 vibez.spill("Cookie retrieved: " + cookie_value)
 
-# =============================================================================
-# 6. TEMPLATE & JSON DEMO
-# =============================================================================
+fr fr =============================================================================
+fr fr 6. TEMPLATE & JSON DEMO
+fr fr =============================================================================
 
 vibez.spill("")
 vibez.spill("📄 Template & JSON Demo")
 vibez.spill("-" * 23)
 
-# Template rendering
+fr fr Template rendering
 sus template_data tea = "{\"title\": \"glowup_http Demo\", \"version\": \"1.0\"}"
 sus rendered_html tea = template_render("demo_template", template_data)
 vibez.spill("Template rendered: " + rendered_html)
 
-# JSON utilities
+fr fr JSON utilities
 sus json_data tea = "{\"framework\": \"glowup_http\", \"features\": [\"HTTP\", \"WebSocket\"]}"
 sus parsed_json tea = json_parse(json_data)
 vibez.spill("JSON parsed: " + parsed_json)
@@ -193,15 +193,15 @@ vibez.spill("JSON parsed: " + parsed_json)
 sus json_string tea = json_stringify("demo_object")
 vibez.spill("JSON stringified: " + json_string)
 
-# =============================================================================
-# 7. URL UTILITIES DEMO
-# =============================================================================
+fr fr =============================================================================
+fr fr 7. URL UTILITIES DEMO
+fr fr =============================================================================
 
 vibez.spill("")
 vibez.spill("🌐 URL Utilities Demo")
 vibez.spill("-" * 21)
 
-# URL manipulation
+fr fr URL manipulation
 sus test_url tea = "https://example.com/api/v1/users?page=1&limit=10"
 sus parsed_url tea = url_parse(test_url)
 vibez.spill("URL parsed: " + parsed_url)
@@ -212,39 +212,39 @@ vibez.spill("URL encoded: " + encoded_url)
 sus decoded_url tea = url_decode("hello%20world")
 vibez.spill("URL decoded: " + decoded_url)
 
-# =============================================================================
-# 8. ADVANCED FEATURES DEMO
-# =============================================================================
+fr fr =============================================================================
+fr fr 8. ADVANCED FEATURES DEMO
+fr fr =============================================================================
 
 vibez.spill("")
 vibez.spill("⚡ Advanced Features Demo")
 vibez.spill("-" * 26)
 
-# HTTP response generation
+fr fr HTTP response generation
 sus advanced_resp HttpResponse = http_response_new(HTTP_OK, "Advanced response")
 advanced_resp.content_type = "application/json"
 sus response_string tea = http_response_to_string(advanced_resp)
 vibez.spill("Generated HTTP response:")
 vibez.spill("Response contains OK: " + (http_string_contains(response_string, "200 OK") ? "yes" : "no"))
 
-# WebSocket constants
+fr fr WebSocket constants
 vibez.spill("WebSocket magic string: " + WEBSOCKET_MAGIC)
 
-# HTTP constants verification
+fr fr HTTP constants verification
 vibez.spill("HTTP constants:")
 vibez.spill("OK: " + http_int_to_string(HTTP_OK))
 vibez.spill("Created: " + http_int_to_string(HTTP_CREATED))
 vibez.spill("Not Found: " + http_int_to_string(HTTP_NOT_FOUND))
 
-# =============================================================================
-# 9. PERFORMANCE & LOAD TESTING
-# =============================================================================
+fr fr =============================================================================
+fr fr 9. PERFORMANCE & LOAD TESTING
+fr fr =============================================================================
 
 vibez.spill("")
 vibez.spill("🚀 Performance Test")
 vibez.spill("-" * 18)
 
-# Simulate multiple requests
+fr fr Simulate multiple requests
 vibez.spill("Simulating 10 concurrent requests:")
 bestie i := 0; i < 10; i++ {
     sus perf_req HttpRequest = http_request_new(METHOD_GET, "/api/perf/" + http_int_to_string(i))
@@ -252,16 +252,16 @@ bestie i := 0; i < 10; i++ {
     vibez.spill("Request " + http_int_to_string(i) + ": " + http_int_to_string(perf_resp.status_code))
 }
 
-# WebSocket stress test
+fr fr WebSocket stress test
 vibez.spill("WebSocket stress test - 5 messages:")
 bestie j := 0; j < 5; j++ {
     sus msg tea = "Stress test message " + http_int_to_string(j)
     websocket_send_text(msg)
 }
 
-# =============================================================================
-# 10. FINAL SUMMARY
-# =============================================================================
+fr fr =============================================================================
+fr fr 10. FINAL SUMMARY
+fr fr =============================================================================
 
 vibez.spill("")
 vibez.spill("✅ Demo Complete - All Features Tested")

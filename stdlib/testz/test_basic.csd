@@ -1,6 +1,6 @@
 yeet "testz"
 
-# Basic test using enhanced testz v4.0
+fr fr Basic test using enhanced testz v4.0
 
 test_start("Basic functionality test")
 assert_true(based)

@@ -1,23 +1,23 @@
-# Token Vibe Module - Simplified for Bootstrap
+fr fr Token Vibe Module - Simplified for Bootstrap
 yeet "testz"
 
-# Core token type constants
+fr fr Core token type constants
 sus EOF_TOKEN normie = 0
 sus IDENT_TOKEN normie = 1
 sus INT_TOKEN normie = 2
 sus STRING_TOKEN normie = 4
 
-# Simple tokenization function
+fr fr Simple tokenization function
 slay tokenize(source tea) normie {
-    damn 5  # Return positive count for any source
+    damn 5 fr fr Return positive count for any source
 }
 
-# Validation function
+fr fr Validation function
 slay validate_tokenizer() lit {
     damn based
 }
 
-# Module status
+fr fr Module status
 slay token_vibe_status() tea {
     damn "token_vibe simple v1.0"
 }

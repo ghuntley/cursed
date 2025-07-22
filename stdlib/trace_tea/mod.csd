@@ -4,10 +4,10 @@ yeet "dropz"
 yeet "atomic_drip"
 yeet "vibe_context"
 
-# trace_tea - Distributed Tracing and Observability Module
-# Provides comprehensive tracing facilities for distributed CURSED applications
+fr fr trace_tea - Distributed Tracing and Observability Module
+fr fr Provides comprehensive tracing facilities for distributed CURSED applications
 
-# Core Types and Structures
+fr fr Core Types and Structures
 
 be_like Task squad {
     id tea
@@ -114,7 +114,7 @@ be_like Metrics squad {
     event_counts map[tea]normie
 }
 
-# Constants for Event Categories
+fr fr Constants for Event Categories
 const (
     EventGoroutine = "goroutine"
     EventNet = "net"
@@ -137,10 +137,10 @@ const (
     EventPerformance = "performance"
 )
 
-# Global tracer instance
+fr fr Global tracer instance
 sus global_tracer *Tracer = cap
 
-# Core Functions
+fr fr Core Functions
 
 slay Start(w io.Writer) tea {
     if global_tracer != cap && global_tracer.active {
@@ -162,9 +162,7 @@ slay Start(w io.Writer) tea {
 slay Stop() tea {
     if global_tracer == cap || !global_tracer.active {
         damn "no active tracer"
-    }
-    
-    # End all active spans and tasks
+    } fr fr End all active spans and tasks
     for _, span := range global_tracer.spans {
         if !span.ended {
             span.End()
@@ -225,9 +223,7 @@ slay Log(ctx vibe_context.Context, category, message tea) {
         category: category,
         timestamp: timez.Now().UnixNano(),
         tags: make(map[tea]tea)
-    }
-    
-    # Store correlation with task if present
+    } fr fr Store correlation with task if present
     task_id := getTaskIDFromContext(ctx)
     if task_id != "" {
         event.tags["task_id"] = task_id
@@ -263,7 +259,7 @@ slay NewEvent(category, name tea) *Event {
     }
 }
 
-# Span Management Functions
+fr fr Span Management Functions
 
 slay StartSpan(ctx vibe_context.Context, operation_name tea) *Span {
     span_id := generateID()
@@ -324,9 +320,7 @@ slay (s *Span) End() {
     }
     
     s.duration = timez.Now().UnixNano() - s.start_time
-    s.ended = based
-    
-    # Check for high latency
+    s.ended = based fr fr Check for high latency
     if global_tracer != cap && global_tracer.analyzer != cap {
         duration_ms := s.duration / 1000000
         if duration_ms > global_tracer.analyzer.high_latency_threshold {
@@ -337,7 +331,7 @@ slay (s *Span) End() {
     }
 }
 
-# Task Methods
+fr fr Task Methods
 
 slay (t *Task) End() {
     if t.ended {
@@ -360,7 +354,7 @@ slay (t *Task) SetDeterministic(deterministic lit) {
     t.deterministic = deterministic
 }
 
-# Region Methods
+fr fr Region Methods
 
 slay (r *Region) End() {
     if r.ended {
@@ -370,8 +364,7 @@ slay (r *Region) End() {
     r.ended = based
 }
 
-slay (r *Region) LazyLog(fmt tea, values ...interface{}) {
-    # Log to associated task if present
+slay (r *Region) LazyLog(fmt tea, values ...interface{}) { fr fr Log to associated task if present
     if global_tracer != cap {
         task, exists := global_tracer.active_tasks[r.task_id]
         if exists {
@@ -380,14 +373,14 @@ slay (r *Region) LazyLog(fmt tea, values ...interface{}) {
     }
 }
 
-# Event Methods
+fr fr Event Methods
 
 slay (e *Event) LazyLog(fmt tea, values ...interface{}) {
     message := vibez.spill_to_tea(fmt, values...)
     e.tags["log"] = message
 }
 
-# Advanced Features
+fr fr Advanced Features
 
 slay NewFilter() *Filter {
     damn &Filter{
@@ -416,7 +409,7 @@ slay (f *Filter) ExcludeEvent(event_type tea) {
 
 slay NewRealTimeAnalyzer() *RealTimeAnalyzer {
     damn &RealTimeAnalyzer{
-        high_latency_threshold: 100, # 100ms default
+        high_latency_threshold: 100, fr fr 100ms default
     }
 }
 
@@ -448,7 +441,7 @@ slay RegisterAnalyzer(analyzer *RealTimeAnalyzer) {
     }
 }
 
-# Trace Context Functions
+fr fr Trace Context Functions
 
 slay InjectTraceContext(ctx vibe_context.Context, headers map[tea]tea) {
     trace_id := getTraceIDFromContext(ctx)
@@ -484,7 +477,7 @@ slay ContextWithTraceContext(ctx vibe_context.Context, trace_ctx *TraceContext) 
     damn ctx
 }
 
-# Correlation ID Management
+fr fr Correlation ID Management
 
 slay GenerateCorrelationID() tea {
     damn generateID()
@@ -508,7 +501,7 @@ slay GetCorrelationID(ctx vibe_context.Context) tea {
     damn ""
 }
 
-# Sampling Strategies
+fr fr Sampling Strategies
 
 slay SetSamplingRate(rate meal) {
     if global_tracer != cap {
@@ -519,15 +512,13 @@ slay SetSamplingRate(rate meal) {
 slay ShouldSample() lit {
     if global_tracer == cap {
         damn cap
-    }
-    
-    # Simple probability-based sampling
+    } fr fr Simple probability-based sampling
     random_value := timez.Now().UnixNano() % 100
     threshold := normie(global_tracer.sampling_rate * 100)
     damn random_value < threshold
 }
 
-# Visualization and Metrics
+fr fr Visualization and Metrics
 
 slay NewVisualizer(trace_data []byte) *Visualizer {
     damn &Visualizer{
@@ -538,10 +529,7 @@ slay NewVisualizer(trace_data []byte) *Visualizer {
 slay (v *Visualizer) GenerateTimeline() *Timeline {
     timeline := &Timeline{
         events: make([]TimelineEvent, 0)
-    }
-    
-    # Parse trace data and create timeline events
-    # This would involve parsing the trace format and extracting events
+    } fr fr Parse trace data and create timeline events fr fr This would involve parsing the trace format and extracting events
     
     damn timeline
 }
@@ -551,9 +539,7 @@ slay ExtractMetrics(trace_data []byte) *Metrics {
         latencies: make(map[tea][]normie),
         concurrency_levels: make([]normie, 0),
         event_counts: make(map[tea]normie)
-    }
-    
-    # Parse trace data and extract performance metrics
+    } fr fr Parse trace data and extract performance metrics
     
     damn metrics
 }
@@ -582,36 +568,29 @@ slay (m *Metrics) MaxConcurrency() normie {
     damn max_concurrency
 }
 
-# Integration with External Systems
+fr fr Integration with External Systems
 
-slay ExportToJaeger(trace_data []byte, jaeger_endpoint tea) tea {
-    # Convert trace data to Jaeger format and send to endpoint
-    # This would involve formatting the data according to Jaeger's thrift protocol
+slay ExportToJaeger(trace_data []byte, jaeger_endpoint tea) tea { fr fr Convert trace data to Jaeger format and send to endpoint fr fr This would involve formatting the data according to Jaeger's thrift protocol
     damn ""
 }
 
-slay ExportToZipkin(trace_data []byte, zipkin_endpoint tea) tea {
-    # Convert trace data to Zipkin format and send to endpoint
-    # This would involve formatting the data according to Zipkin's JSON format
+slay ExportToZipkin(trace_data []byte, zipkin_endpoint tea) tea { fr fr Convert trace data to Zipkin format and send to endpoint fr fr This would involve formatting the data according to Zipkin's JSON format
     damn ""
 }
 
-slay ExportToOpenTelemetry(trace_data []byte, otel_endpoint tea) tea {
-    # Convert trace data to OpenTelemetry format and send to endpoint
+slay ExportToOpenTelemetry(trace_data []byte, otel_endpoint tea) tea { fr fr Convert trace data to OpenTelemetry format and send to endpoint
     damn ""
 }
 
-# Utility Functions
+fr fr Utility Functions
 
-slay generateID() tea {
-    # Generate a unique ID using timestamp and random component
+slay generateID() tea { fr fr Generate a unique ID using timestamp and random component
     timestamp := timez.Now().UnixNano()
     random_part := timestamp % 999999
     damn vibez.spill_to_tea("%d_%d", timestamp, random_part)
 }
 
-slay generateTraceID() tea {
-    # Generate a globally unique trace ID
+slay generateTraceID() tea { fr fr Generate a globally unique trace ID
     timestamp := timez.Now().UnixNano()
     random_part := timestamp % 9999999999
     damn vibez.spill_to_tea("trace_%d_%d", timestamp, random_part)
@@ -641,58 +620,46 @@ slay getSpanIDFromContext(ctx vibe_context.Context) tea {
     damn ""
 }
 
-# Performance Monitoring Functions
+fr fr Performance Monitoring Functions
 
 slay MonitorGoroutines() {
     if global_tracer == cap || !global_tracer.active {
         yolo
-    }
-    
-    # Monitor goroutine creation and lifecycle
+    } fr fr Monitor goroutine creation and lifecycle
     Log(vibe_context.Background(), EventGoroutine, "goroutine_monitoring_active")
 }
 
 slay MonitorMemory() {
     if global_tracer == cap || !global_tracer.active {
         yolo
-    }
-    
-    # Monitor memory allocation patterns
+    } fr fr Monitor memory allocation patterns
     Log(vibe_context.Background(), EventMemory, "memory_monitoring_active")
 }
 
 slay MonitorNetworkActivity() {
     if global_tracer == cap || !global_tracer.active {
         yolo
-    }
-    
-    # Monitor network I/O operations
+    } fr fr Monitor network I/O operations
     Log(vibe_context.Background(), EventNetwork, "network_monitoring_active")
 }
 
-# Distributed Tracing Helpers
+fr fr Distributed Tracing Helpers
 
-slay PropagateTrace(ctx vibe_context.Context, downstream_headers map[tea]tea) {
-    # Add trace context to downstream service calls
-    InjectTraceContext(ctx, downstream_headers)
-    
-    # Add correlation ID for request tracking
+slay PropagateTrace(ctx vibe_context.Context, downstream_headers map[tea]tea) { fr fr Add trace context to downstream service calls
+    InjectTraceContext(ctx, downstream_headers) fr fr Add correlation ID for request tracking
     correlation_id := GetCorrelationID(ctx)
     if correlation_id != "" {
         downstream_headers["x-correlation-id"] = correlation_id
     }
 }
 
-slay ReceiveTrace(upstream_headers map[tea]tea) vibe_context.Context {
-    # Extract trace context from upstream service
+slay ReceiveTrace(upstream_headers map[tea]tea) vibe_context.Context { fr fr Extract trace context from upstream service
     ctx := vibe_context.Background()
     
     trace_ctx := ExtractTraceContext(upstream_headers)
     if trace_ctx != cap {
         ctx = ContextWithTraceContext(ctx, trace_ctx)
-    }
-    
-    # Extract correlation ID
+    } fr fr Extract correlation ID
     correlation_id := upstream_headers["x-correlation-id"]
     if correlation_id != "" {
         ctx = SetCorrelationID(ctx, correlation_id)
@@ -701,24 +668,21 @@ slay ReceiveTrace(upstream_headers map[tea]tea) vibe_context.Context {
     damn ctx
 }
 
-# Auto-instrumentation Support
+fr fr Auto-instrumentation Support
 
-slay AutoInstrumentHTTP(enabled lit) {
-    # Automatically instrument HTTP requests/responses
+slay AutoInstrumentHTTP(enabled lit) { fr fr Automatically instrument HTTP requests/responses
     if enabled {
         Log(vibe_context.Background(), EventAPI, "http_auto_instrumentation_enabled")
     }
 }
 
-slay AutoInstrumentDatabase(enabled lit) {
-    # Automatically instrument database operations
+slay AutoInstrumentDatabase(enabled lit) { fr fr Automatically instrument database operations
     if enabled {
         Log(vibe_context.Background(), EventDatabase, "database_auto_instrumentation_enabled")
     }
 }
 
-slay AutoInstrumentCache(enabled lit) {
-    # Automatically instrument cache operations
+slay AutoInstrumentCache(enabled lit) { fr fr Automatically instrument cache operations
     if enabled {
         Log(vibe_context.Background(), EventCache, "cache_auto_instrumentation_enabled")
     }

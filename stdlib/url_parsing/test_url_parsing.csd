@@ -1,11 +1,11 @@
 yeet "url_parsing"
 
-# Comprehensive test suite for url_parsing module
-# Simplified tests without testz framework
+fr fr Comprehensive test suite for url_parsing module
+fr fr Simplified tests without testz framework
 
 vibez.spill("=== URL Parsing Module Test Suite ===")
 
-# Test 1: Basic HTTP URL parsing
+fr fr Test 1: Basic HTTP URL parsing
 vibez.spill("Test 1: Basic HTTP URL parsing")
 bestie url_parse("http://example.com") {
     vibez.spill("✓ URL parsed successfully")
@@ -55,7 +55,7 @@ bestie url_parse("http://example.com") {
 
 vibez.spill("")
 
-# Test 2: Basic HTTPS URL parsing
+fr fr Test 2: Basic HTTPS URL parsing
 vibez.spill("Test 2: Basic HTTPS URL parsing")
 bestie url_parse("https://example.com") {
     vibez.spill("✓ HTTPS URL parsed successfully")
@@ -83,7 +83,7 @@ bestie url_parse("https://example.com") {
 
 vibez.spill("")
 
-# Test 3: Component setters
+fr fr Test 3: Component setters
 vibez.spill("Test 3: Component setters")
 bestie url_parse("http://example.com") {
     bestie url_set_scheme("https") {
@@ -127,7 +127,7 @@ bestie url_parse("http://example.com") {
 
 vibez.spill("")
 
-# Test 4: URL building
+fr fr Test 4: URL building
 vibez.spill("Test 4: URL building")
 bestie url_parse("http://example.com") {
     bestie url_set_scheme("https") {
@@ -150,7 +150,7 @@ bestie url_parse("http://example.com") {
 
 vibez.spill("")
 
-# Test 5: Query parameters
+fr fr Test 5: Query parameters
 vibez.spill("Test 5: Query parameters")
 bestie url_parse("https://example.com") {
     bestie url_add_query_param("name", "test") {
@@ -179,7 +179,7 @@ bestie url_parse("https://example.com") {
 
 vibez.spill("")
 
-# Test 6: Localhost detection
+fr fr Test 6: Localhost detection
 vibez.spill("Test 6: Localhost detection")
 bestie url_parse("http://localhost:3000") {
     bestie url_is_localhost() {
@@ -203,7 +203,7 @@ bestie url_parse("http://127.0.0.1:8080") {
 
 vibez.spill("")
 
-# Test 7: URL encoding/decoding
+fr fr Test 7: URL encoding/decoding
 vibez.spill("Test 7: URL encoding/decoding")
 sus original tea = "hello world & test=value"
 sus encoded tea = url_encode(original)
@@ -221,7 +221,7 @@ bestie decoded == original {
 
 vibez.spill("")
 
-# Test 8: URL normalization
+fr fr Test 8: URL normalization
 vibez.spill("Test 8: URL normalization")
 bestie url_parse("http://example.com") {
     bestie url_normalize() {
@@ -235,7 +235,7 @@ bestie url_parse("http://example.com") {
 
 vibez.spill("")
 
-# Test 9: URL comparison
+fr fr Test 9: URL comparison
 vibez.spill("Test 9: URL comparison")
 bestie url_parse("https://example.com/path") {
     bestie url_equals("https://example.com/path") {
@@ -249,7 +249,7 @@ bestie url_parse("https://example.com/path") {
 
 vibez.spill("")
 
-# Test 10: URL resolution
+fr fr Test 10: URL resolution
 vibez.spill("Test 10: URL resolution")
 sus base tea = "https://example.com/api/v1/"
 sus relative tea = "users/123"
@@ -266,7 +266,7 @@ bestie resolved != "" {
 
 vibez.spill("")
 
-# Test 11: URL joining
+fr fr Test 11: URL joining
 vibez.spill("Test 11: URL joining")
 sus base_url tea = "https://example.com/api"
 sus path tea = "v1/users"
@@ -283,7 +283,7 @@ bestie joined != "" {
 
 vibez.spill("")
 
-# Test 12: Relative URL parsing
+fr fr Test 12: Relative URL parsing
 vibez.spill("Test 12: Relative URL parsing")
 bestie url_parse("/relative/path") {
     vibez.spill("✓ Relative URL parsed")
@@ -299,7 +299,7 @@ bestie url_parse("/relative/path") {
 
 vibez.spill("")
 
-# Test 13: Clear functionality
+fr fr Test 13: Clear functionality
 vibez.spill("Test 13: Clear functionality")
 bestie url_parse("https://example.com") {
     bestie url_is_parsed() {
@@ -329,7 +329,7 @@ bestie url_parse("https://example.com") {
 
 vibez.spill("")
 
-# Test 14: Invalid port handling
+fr fr Test 14: Invalid port handling
 vibez.spill("Test 14: Invalid port handling")
 bestie url_parse("https://example.com") {
     bestie !url_set_port(-1) {
@@ -355,7 +355,7 @@ bestie url_parse("https://example.com") {
 
 vibez.spill("")
 
-# Test 15: Utility functions
+fr fr Test 15: Utility functions
 vibez.spill("Test 15: Utility functions")
 bestie url_parse("https://example.com") {
     sus base_url tea = url_get_base_url()

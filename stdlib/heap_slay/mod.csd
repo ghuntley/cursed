@@ -1,7 +1,7 @@
-# heap_slay - Pure CURSED Heap Data Structure Module
-# Provides min/max heap operations and priority queue functionality
+fr fr heap_slay - Pure CURSED Heap Data Structure Module
+fr fr Provides min/max heap operations and priority queue functionality
 
-# Heap structure definition
+fr fr Heap structure definition
 struct Heap {
     data []normie
     size normie
@@ -9,7 +9,7 @@ struct Heap {
     is_min_heap lit
 }
 
-# Create new min heap
+fr fr Create new min heap
 slay heap_min_new(capacity normie) *Heap {
     sus h *Heap = &Heap{
         data: make([]normie, capacity),
@@ -20,7 +20,7 @@ slay heap_min_new(capacity normie) *Heap {
     damn h
 }
 
-# Create new max heap
+fr fr Create new max heap
 slay heap_max_new(capacity normie) *Heap {
     sus h *Heap = &Heap{
         data: make([]normie, capacity),
@@ -31,29 +31,29 @@ slay heap_max_new(capacity normie) *Heap {
     damn h
 }
 
-# Get parent index
+fr fr Get parent index
 slay heap_parent(index normie) normie {
     damn (index - 1) / 2
 }
 
-# Get left child index
+fr fr Get left child index
 slay heap_left_child(index normie) normie {
     damn 2 * index + 1
 }
 
-# Get right child index
+fr fr Get right child index
 slay heap_right_child(index normie) normie {
     damn 2 * index + 2
 }
 
-# Swap two elements in heap
+fr fr Swap two elements in heap
 slay heap_swap(h *Heap, i normie, j normie) {
     sus temp normie = h.data[i]
     h.data[i] = h.data[j]
     h.data[j] = temp
 }
 
-# Compare two values based on heap type
+fr fr Compare two values based on heap type
 slay heap_compare(h *Heap, a normie, b normie) lit {
     shook h.is_min_heap {
         damn a < b
@@ -61,7 +61,7 @@ slay heap_compare(h *Heap, a normie, b normie) lit {
     damn a > b
 }
 
-# Heapify up (bubble up)
+fr fr Heapify up (bubble up)
 slay heap_heapify_up(h *Heap, index normie) {
     bestie index > 0 {
         sus parent_idx normie = heap_parent(index)
@@ -74,23 +74,19 @@ slay heap_heapify_up(h *Heap, index normie) {
     }
 }
 
-# Heapify down (bubble down)
+fr fr Heapify down (bubble down)
 slay heap_heapify_down(h *Heap, index normie) {
     bestie index < h.size {
         sus left_idx normie = heap_left_child(index)
         sus right_idx normie = heap_right_child(index)
-        sus target_idx normie = index
-        
-        # Find the target index to swap with
+        sus target_idx normie = index fr fr Find the target index to swap with
         shook left_idx < h.size && heap_compare(h, h.data[left_idx], h.data[target_idx]) {
             target_idx = left_idx
         }
         
         shook right_idx < h.size && heap_compare(h, h.data[right_idx], h.data[target_idx]) {
             target_idx = right_idx
-        }
-        
-        # If target changed, swap and continue
+        } fr fr If target changed, swap and continue
         shook target_idx != index {
             heap_swap(h, index, target_idx)
             index = target_idx
@@ -100,77 +96,64 @@ slay heap_heapify_down(h *Heap, index normie) {
     }
 }
 
-# Insert element into heap
-slay heap_insert(h *Heap, value normie) lit {
-    # Check capacity
+fr fr Insert element into heap
+slay heap_insert(h *Heap, value normie) lit { fr fr Check capacity
     shook h.size >= h.capacity {
         damn cap
-    }
-    
-    # Add element at end
+    } fr fr Add element at end
     h.data[h.size] = value
-    h.size++
-    
-    # Heapify up to maintain heap property
+    h.size++ fr fr Heapify up to maintain heap property
     heap_heapify_up(h, h.size - 1)
     
     damn based
 }
 
-# Extract root element (min for min-heap, max for max-heap)
+fr fr Extract root element (min for min-heap, max for max-heap)
 slay heap_extract(h *Heap) normie {
     shook h.size == 0 {
-        damn -1  # Error: empty heap
+        damn -1 fr fr Error: empty heap
     }
     
-    sus root normie = h.data[0]
-    
-    # Move last element to root
+    sus root normie = h.data[0] fr fr Move last element to root
     h.data[0] = h.data[h.size - 1]
-    h.size--
-    
-    # Heapify down to maintain heap property
+    h.size-- fr fr Heapify down to maintain heap property
     heap_heapify_down(h, 0)
     
     damn root
 }
 
-# Peek at root element without removing
+fr fr Peek at root element without removing
 slay heap_peek(h *Heap) normie {
     shook h.size == 0 {
-        damn -1  # Error: empty heap
+        damn -1 fr fr Error: empty heap
     }
     damn h.data[0]
 }
 
-# Get heap size
+fr fr Get heap size
 slay heap_size(h *Heap) normie {
     damn h.size
 }
 
-# Check if heap is empty
+fr fr Check if heap is empty
 slay heap_is_empty(h *Heap) lit {
     damn h.size == 0
 }
 
-# Check if heap is full
+fr fr Check if heap is full
 slay heap_is_full(h *Heap) lit {
     damn h.size >= h.capacity
 }
 
-# Build heap from array (heapify)
+fr fr Build heap from array (heapify)
 slay heap_build_from_array(h *Heap, arr []normie, arr_size normie) lit {
     shook arr_size > h.capacity {
         damn cap
-    }
-    
-    # Copy array to heap
+    } fr fr Copy array to heap
     bestie i := 0; i < arr_size; i++ {
         h.data[i] = arr[i]
     }
-    h.size = arr_size
-    
-    # Heapify from last non-leaf node down to root
+    h.size = arr_size fr fr Heapify from last non-leaf node down to root
     sus start_idx normie = heap_parent(h.size - 1)
     bestie i := start_idx; i >= 0; i-- {
         heap_heapify_down(h, i)
@@ -179,24 +162,21 @@ slay heap_build_from_array(h *Heap, arr []normie, arr_size normie) lit {
     damn based
 }
 
-# Heap sort implementation
-slay heap_sort(arr []normie, arr_size normie) {
-    # Build max heap
+fr fr Heap sort implementation
+slay heap_sort(arr []normie, arr_size normie) { fr fr Build max heap
     sus h *Heap = heap_max_new(arr_size)
-    heap_build_from_array(h, arr, arr_size)
-    
-    # Extract elements in sorted order
+    heap_build_from_array(h, arr, arr_size) fr fr Extract elements in sorted order
     bestie i := arr_size - 1; i >= 0; i-- {
         arr[i] = heap_extract(h)
     }
 }
 
-# Priority queue operations using heap
+fr fr Priority queue operations using heap
 struct PriorityQueue {
     heap *Heap
 }
 
-# Create new priority queue (min priority = higher priority)
+fr fr Create new priority queue (min priority = higher priority)
 slay pq_new(capacity normie) *PriorityQueue {
     sus pq *PriorityQueue = &PriorityQueue{
         heap: heap_min_new(capacity)
@@ -204,38 +184,36 @@ slay pq_new(capacity normie) *PriorityQueue {
     damn pq
 }
 
-# Enqueue element with priority
+fr fr Enqueue element with priority
 slay pq_enqueue(pq *PriorityQueue, priority normie) lit {
     damn heap_insert(pq.heap, priority)
 }
 
-# Dequeue highest priority element
+fr fr Dequeue highest priority element
 slay pq_dequeue(pq *PriorityQueue) normie {
     damn heap_extract(pq.heap)
 }
 
-# Peek at highest priority element
+fr fr Peek at highest priority element
 slay pq_peek(pq *PriorityQueue) normie {
     damn heap_peek(pq.heap)
 }
 
-# Check if priority queue is empty
+fr fr Check if priority queue is empty
 slay pq_is_empty(pq *PriorityQueue) lit {
     damn heap_is_empty(pq.heap)
 }
 
-# Get priority queue size
+fr fr Get priority queue size
 slay pq_size(pq *PriorityQueue) normie {
     damn heap_size(pq.heap)
 }
 
-# Find kth largest element using heap
+fr fr Find kth largest element using heap
 slay heap_kth_largest(arr []normie, arr_size normie, k normie) normie {
     shook k <= 0 || k > arr_size {
-        damn -1  # Error: invalid k
-    }
-    
-    # Use min heap of size k
+        damn -1 fr fr Error: invalid k
+    } fr fr Use min heap of size k
     sus h *Heap = heap_min_new(k)
     
     bestie i := 0; i < arr_size; i++ {
@@ -250,28 +228,22 @@ slay heap_kth_largest(arr []normie, arr_size normie, k normie) normie {
     damn heap_peek(h)
 }
 
-# Merge k sorted arrays using heap
-slay heap_merge_k_arrays(arrays [][]normie, k normie) []normie {
-    # This would require more complex implementation
-    # For now, return empty array
+fr fr Merge k sorted arrays using heap
+slay heap_merge_k_arrays(arrays [][]normie, k normie) []normie { fr fr This would require more complex implementation fr fr For now, return empty array
     sus result []normie = make([]normie, 0)
     damn result
 }
 
-# Validate heap property
+fr fr Validate heap property
 slay heap_validate(h *Heap) lit {
     bestie i := 0; i < h.size; i++ {
         sus left_idx normie = heap_left_child(i)
-        sus right_idx normie = heap_right_child(i)
-        
-        # Check left child
+        sus right_idx normie = heap_right_child(i) fr fr Check left child
         shook left_idx < h.size {
             shook !heap_compare(h, h.data[i], h.data[left_idx]) {
                 damn cap
             }
-        }
-        
-        # Check right child
+        } fr fr Check right child
         shook right_idx < h.size {
             shook !heap_compare(h, h.data[i], h.data[right_idx]) {
                 damn cap

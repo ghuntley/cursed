@@ -72,7 +72,7 @@ assert_true(clear_result)
 print_test_summary()
 
 test_start("vibez.scan input functionality")
-# Note: scan() returns a string, so we test it exists and works
+fr fr Note: scan() returns a string, so we test it exists and works
 sus scan_result tea = vibez.scan()
 assert_true(scan_result != cringe)
 print_test_summary()

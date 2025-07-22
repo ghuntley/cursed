@@ -397,9 +397,9 @@ slay TestReport.to_html(report TestReport) tea {
     html = html + ".skip { color: orange; }\n"
     html = html + ".error { color: purple; }\n"
     html = html + "table { border-collapse: collapse; width: 100%; }\n"
-    html = html + "th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n"
-    html = html + "th { background-color: #f2f2f2; }\n"
-    html = html + ".summary { background-color: #f9f9f9; padding: 15px; margin-bottom: 20px; }\n"
+    html = html + "th, td { border: 1px solid fr fr ddd; padding: 8px; text-align: left; }\n"
+    html = html + "th { background-color: fr fr f2f2f2; }\n"
+    html = html + ".summary { background-color: fr fr f9f9f9; padding: 15px; margin-bottom: 20px; }\n"
     html = html + "</style>\n"
     html = html + "</head>\n<body>\n"
     

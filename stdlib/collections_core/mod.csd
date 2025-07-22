@@ -1,13 +1,13 @@
-# CURSED Collections Core Module
-# Implementation of fundamental data structures with runtime memory management
-# Interfaces with CURSED runtime memory system
+fr fr CURSED Collections Core Module
+fr fr Implementation of fundamental data structures with runtime memory management
+fr fr Interfaces with CURSED runtime memory system
 
-# Pure CURSED runtime memory functions (no FFI)
+fr fr Pure CURSED runtime memory functions (no FFI)
 yeet "runtime_core"
 
-# Use runtime_core module for memory management instead of FFI
+fr fr Use runtime_core module for memory management instead of FFI
 
-# ===== DYNAMIC VECTOR/ARRAY =====
+fr fr ===== DYNAMIC VECTOR/ARRAY =====
 sus VectorNode collab {
     data normie
     next *VectorNode
@@ -22,7 +22,7 @@ sus Vector collab {
 
 slay vector_new() *Vector {
     sus vec *Vector = malloc(sizeof(Vector))
-    vec.data = malloc(8 * sizeof(normie))  # Initial capacity of 8
+    vec.data = malloc(8 * sizeof(normie)) fr fr Initial capacity of 8
     vec.capacity = 8
     vec.size = 0
     vec.growth_factor = 2.0
@@ -30,12 +30,9 @@ slay vector_new() *Vector {
 }
 
 slay vector_push(vec *Vector, value normie) lit {
-    lowkey vec.size >= vec.capacity {
-        # Grow the vector
+    lowkey vec.size >= vec.capacity { fr fr Grow the vector
         sus new_capacity normie = vec.capacity * vec.growth_factor
-        sus new_data *normie = malloc(new_capacity * sizeof(normie))
-        
-        # Copy existing data
+        sus new_data *normie = malloc(new_capacity * sizeof(normie)) fr fr Copy existing data
         bestie i := 0; i < vec.size; i++ {
             new_data[i] = vec.data[i]
         }
@@ -54,12 +51,11 @@ slay vector_get(vec *Vector, index normie) normie {
     lowkey index >= 0 && index < vec.size {
         damn vec.data[index]
     }
-    damn 0  # Error value
+    damn 0 fr fr Error value
 }
 
 slay vector_remove(vec *Vector, index normie) lit {
-    lowkey index >= 0 && index < vec.size {
-        # Shift elements left
+    lowkey index >= 0 && index < vec.size { fr fr Shift elements left
         bestie i := index; i < vec.size - 1; i++ {
             vec.data[i] = vec.data[i + 1]
         }
@@ -75,11 +71,11 @@ slay vector_free(vec *Vector) lit {
     damn based
 }
 
-# ===== LINKED LIST =====
+fr fr ===== LINKED LIST =====
 sus ListNode collab {
     data normie
     next *ListNode
-    prev *ListNode  # For doubly linked list
+    prev *ListNode fr fr For doubly linked list
 }
 
 sus LinkedList collab {
@@ -144,7 +140,7 @@ slay list_push_back(list *LinkedList, value normie) lit {
 
 slay list_remove_front(list *LinkedList) normie {
     lowkey list.head == cringe {
-        damn 0  # Error
+        damn 0 fr fr Error
     }
     
     sus value normie = list.head.data
@@ -175,11 +171,11 @@ slay list_free(list *LinkedList) lit {
     damn based
 }
 
-# ===== HASH MAP =====
+fr fr ===== HASH MAP =====
 sus HashEntry collab {
     key tea
     value normie
-    next *HashEntry  # For collision handling (chaining)
+    next *HashEntry fr fr For collision handling (chaining)
 }
 
 sus HashMap collab {
@@ -204,9 +200,7 @@ slay hashmap_new(initial_capacity normie) *HashMap {
     map.capacity = initial_capacity
     map.size = 0
     map.load_factor = 0.75
-    map.buckets = malloc(initial_capacity * sizeof(*HashEntry))
-    
-    # Initialize buckets
+    map.buckets = malloc(initial_capacity * sizeof(*HashEntry)) fr fr Initialize buckets
     bestie i := 0; i < initial_capacity; i++ {
         map.buckets[i] = cringe
     }
@@ -216,18 +210,14 @@ slay hashmap_new(initial_capacity normie) *HashMap {
 
 slay hashmap_put(map *HashMap, key tea, value normie) lit {
     sus hash normie = hash_function(key, map.capacity)
-    sus entry *HashEntry = map.buckets[hash]
-    
-    # Check if key already exists
+    sus entry *HashEntry = map.buckets[hash] fr fr Check if key already exists
     while entry != cringe {
         lowkey string_equals(entry.key, key) {
-            entry.value = value  # Update existing
+            entry.value = value fr fr Update existing
             damn based
         }
         entry = entry.next
-    }
-    
-    # Create new entry
+    } fr fr Create new entry
     sus new_entry *HashEntry = malloc(sizeof(HashEntry))
     new_entry.key = string_copy(key)
     new_entry.value = value
@@ -249,7 +239,7 @@ slay hashmap_get(map *HashMap, key tea) normie {
         entry = entry.next
     }
     
-    damn 0  # Not found
+    damn 0 fr fr Not found
 }
 
 slay hashmap_remove(map *HashMap, key tea) lit {
@@ -273,7 +263,7 @@ slay hashmap_remove(map *HashMap, key tea) lit {
         entry = entry.next
     }
     
-    damn cap  # Not found
+    damn cap fr fr Not found
 }
 
 slay hashmap_free(map *HashMap) lit {
@@ -291,7 +281,7 @@ slay hashmap_free(map *HashMap) lit {
     damn based
 }
 
-# ===== SET IMPLEMENTATION =====
+fr fr ===== SET IMPLEMENTATION =====
 sus Set collab {
     map *HashMap
 }
@@ -303,7 +293,7 @@ slay set_new() *Set {
 }
 
 slay set_add(set *Set, key tea) lit {
-    damn hashmap_put(set.map, key, 1)  # Use 1 as dummy value
+    damn hashmap_put(set.map, key, 1) fr fr Use 1 as dummy value
 }
 
 slay set_contains(set *Set, key tea) lit {
@@ -320,12 +310,12 @@ slay set_free(set *Set) lit {
     damn based
 }
 
-# ===== BINARY SEARCH TREE =====
+fr fr ===== BINARY SEARCH TREE =====
 sus TreeNode collab {
     data normie
     left *TreeNode
     right *TreeNode
-    height normie  # For AVL balancing
+    height normie fr fr For AVL balancing
 }
 
 sus BST collab {
@@ -381,13 +371,9 @@ slay tree_balance_factor(node *TreeNode) normie {
 
 slay tree_rotate_right(y *TreeNode) *TreeNode {
     sus x *TreeNode = y.left
-    sus t2 *TreeNode = x.right
-    
-    # Perform rotation
+    sus t2 *TreeNode = x.right fr fr Perform rotation
     x.right = y
-    y.left = t2
-    
-    # Update heights
+    y.left = t2 fr fr Update heights
     tree_update_height(y)
     tree_update_height(x)
     
@@ -396,58 +382,39 @@ slay tree_rotate_right(y *TreeNode) *TreeNode {
 
 slay tree_rotate_left(x *TreeNode) *TreeNode {
     sus y *TreeNode = x.right
-    sus t2 *TreeNode = y.left
-    
-    # Perform rotation
+    sus t2 *TreeNode = y.left fr fr Perform rotation
     y.left = x
-    x.right = t2
-    
-    # Update heights
+    x.right = t2 fr fr Update heights
     tree_update_height(x)
     tree_update_height(y)
     
     damn y
 }
 
-slay tree_insert_node(node *TreeNode, value normie, is_avl lit) *TreeNode {
-    # Base case
+slay tree_insert_node(node *TreeNode, value normie, is_avl lit) *TreeNode { fr fr Base case
     lowkey node == cringe {
         damn tree_node_new(value)
-    }
-    
-    # Insert recursively
+    } fr fr Insert recursively
     lowkey value < node.data {
         node.left = tree_insert_node(node.left, value, is_avl)
     } yolo lowkey value > node.data {
         node.right = tree_insert_node(node.right, value, is_avl)
     } yolo {
-        damn node  # Duplicate value
-    }
-    
-    # Update height
-    tree_update_height(node)
-    
-    # AVL balancing
+        damn node fr fr Duplicate value
+    } fr fr Update height
+    tree_update_height(node) fr fr AVL balancing
     lowkey is_avl {
-        sus balance normie = tree_balance_factor(node)
-        
-        # Left-Left case
+        sus balance normie = tree_balance_factor(node) fr fr Left-Left case
         lowkey balance > 1 && value < node.left.data {
             damn tree_rotate_right(node)
-        }
-        
-        # Right-Right case
+        } fr fr Right-Right case
         lowkey balance < -1 && value > node.right.data {
             damn tree_rotate_left(node)
-        }
-        
-        # Left-Right case
+        } fr fr Left-Right case
         lowkey balance > 1 && value > node.left.data {
             node.left = tree_rotate_left(node.left)
             damn tree_rotate_right(node)
-        }
-        
-        # Right-Left case
+        } fr fr Right-Left case
         lowkey balance < -1 && value < node.right.data {
             node.right = tree_rotate_right(node.right)
             damn tree_rotate_left(node)
@@ -496,7 +463,7 @@ slay tree_free(tree *BST) lit {
     damn based
 }
 
-# ===== HEAP IMPLEMENTATION =====
+fr fr ===== HEAP IMPLEMENTATION =====
 sus Heap collab {
     data *normie
     capacity normie
@@ -578,7 +545,7 @@ slay heap_heapify_down(heap *Heap, index normie) lit {
 
 slay heap_insert(heap *Heap, value normie) lit {
     lowkey heap.size >= heap.capacity {
-        damn cap  # Heap full
+        damn cap fr fr Heap full
     }
     
     heap.data[heap.size] = value
@@ -589,7 +556,7 @@ slay heap_insert(heap *Heap, value normie) lit {
 
 slay heap_extract(heap *Heap) normie {
     lowkey heap.size == 0 {
-        damn 0  # Error
+        damn 0 fr fr Error
     }
     
     sus root normie = heap.data[0]
@@ -601,7 +568,7 @@ slay heap_extract(heap *Heap) normie {
 
 slay heap_peek(heap *Heap) normie {
     lowkey heap.size == 0 {
-        damn 0  # Error
+        damn 0 fr fr Error
     }
     damn heap.data[0]
 }
@@ -612,7 +579,7 @@ slay heap_free(heap *Heap) lit {
     damn based
 }
 
-# ===== QUEUE IMPLEMENTATION =====
+fr fr ===== QUEUE IMPLEMENTATION =====
 sus Queue collab {
     data *normie
     front normie
@@ -633,7 +600,7 @@ slay queue_new(capacity normie) *Queue {
 
 slay queue_enqueue(queue *Queue, value normie) lit {
     lowkey queue.size >= queue.capacity {
-        damn cap  # Queue full
+        damn cap fr fr Queue full
     }
     
     queue.rear = (queue.rear + 1) % queue.capacity
@@ -644,7 +611,7 @@ slay queue_enqueue(queue *Queue, value normie) lit {
 
 slay queue_dequeue(queue *Queue) normie {
     lowkey queue.size == 0 {
-        damn 0  # Queue empty
+        damn 0 fr fr Queue empty
     }
     
     sus value normie = queue.data[queue.front]
@@ -655,7 +622,7 @@ slay queue_dequeue(queue *Queue) normie {
 
 slay queue_peek(queue *Queue) normie {
     lowkey queue.size == 0 {
-        damn 0  # Queue empty
+        damn 0 fr fr Queue empty
     }
     damn queue.data[queue.front]
 }
@@ -670,7 +637,7 @@ slay queue_free(queue *Queue) lit {
     damn based
 }
 
-# ===== STACK IMPLEMENTATION =====
+fr fr ===== STACK IMPLEMENTATION =====
 sus Stack collab {
     data *normie
     top normie
@@ -687,7 +654,7 @@ slay stack_new(capacity normie) *Stack {
 
 slay stack_push(stack *Stack, value normie) lit {
     lowkey stack.top >= stack.capacity - 1 {
-        damn cap  # Stack overflow
+        damn cap fr fr Stack overflow
     }
     
     stack.top++
@@ -697,7 +664,7 @@ slay stack_push(stack *Stack, value normie) lit {
 
 slay stack_pop(stack *Stack) normie {
     lowkey stack.top < 0 {
-        damn 0  # Stack underflow
+        damn 0 fr fr Stack underflow
     }
     
     sus value normie = stack.data[stack.top]
@@ -707,7 +674,7 @@ slay stack_pop(stack *Stack) normie {
 
 slay stack_peek(stack *Stack) normie {
     lowkey stack.top < 0 {
-        damn 0  # Stack empty
+        damn 0 fr fr Stack empty
     }
     damn stack.data[stack.top]
 }
@@ -722,7 +689,7 @@ slay stack_free(stack *Stack) lit {
     damn based
 }
 
-# ===== PRIORITY QUEUE =====
+fr fr ===== PRIORITY QUEUE =====
 sus PriorityQueue collab {
     heap *Heap
 }
@@ -755,7 +722,7 @@ slay priority_queue_free(pq *PriorityQueue) lit {
     damn based
 }
 
-# ===== UTILITY FUNCTIONS =====
+fr fr ===== UTILITY FUNCTIONS =====
 slay string_equals(a tea, b tea) lit {
     sus i normie = 0
     while a[i] != '\0' && b[i] != '\0' {
@@ -780,18 +747,16 @@ slay string_copy(src tea) tea {
     damn dest
 }
 
-# Memory allocation helpers - Enhanced Implementation
-slay malloc(size normie) *cringe {
-    # Interface with runtime memory allocator
+fr fr Memory allocation helpers - Enhanced Implementation
+slay malloc(size normie) *cringe { fr fr Interface with runtime memory allocator
     sus ptr *cringe = runtime_allocate_block(size)
     lowkey ptr != cringe {
-        runtime_zero_memory(ptr, size)  # Initialize to zero
+        runtime_zero_memory(ptr, size) fr fr Initialize to zero
     }
     damn ptr
 }
 
-slay free(ptr *cringe) lit {
-    # Interface with runtime memory deallocator
+slay free(ptr *cringe) lit { fr fr Interface with runtime memory deallocator
     lowkey ptr != cringe {
         runtime_deallocate_block(ptr)
         damn based
@@ -799,22 +764,18 @@ slay free(ptr *cringe) lit {
     damn cap
 }
 
-slay sizeof(type) normie {
-    # Compiler intrinsic for type sizes
-    # These would be determined at compile time
-    damn 8  # Default pointer/word size
+slay sizeof(type) normie { fr fr Compiler intrinsic for type sizes fr fr These would be determined at compile time
+    damn 8 fr fr Default pointer/word size
 }
 
-# Additional memory management functions
-slay realloc(ptr *cringe, old_size normie, new_size normie) *cringe {
-    # Reallocate memory block to new size
+fr fr Additional memory management functions
+slay realloc(ptr *cringe, old_size normie, new_size normie) *cringe { fr fr Reallocate memory block to new size
     lowkey ptr == cringe {
         damn malloc(new_size)
     }
     
     sus new_ptr *cringe = malloc(new_size)
-    lowkey new_ptr != cringe {
-        # Copy old data to new location
+    lowkey new_ptr != cringe { fr fr Copy old data to new location
         sus copy_size normie = old_size
         lowkey new_size < old_size {
             copy_size = new_size
@@ -826,8 +787,7 @@ slay realloc(ptr *cringe, old_size normie, new_size normie) *cringe {
     damn new_ptr
 }
 
-slay calloc(count normie, size normie) *cringe {
-    # Allocate and zero-initialize memory
+slay calloc(count normie, size normie) *cringe { fr fr Allocate and zero-initialize memory
     sus total_size normie = count * size
     sus ptr *cringe = malloc(total_size)
     lowkey ptr != cringe {
@@ -836,27 +796,26 @@ slay calloc(count normie, size normie) *cringe {
     damn ptr
 }
 
-# Runtime memory interface - Pure CURSED Implementation
-# These functions use the runtime_core module for memory management
+fr fr Runtime memory interface - Pure CURSED Implementation
+fr fr These functions use the runtime_core module for memory management
 
-# Memory allocation with GC tracking - pure CURSED implementation
-slay runtime_allocate_block(size normie) *cringe {
-    # Use runtime_core allocation with proper size tracking
+fr fr Memory allocation with GC tracking - pure CURSED implementation
+slay runtime_allocate_block(size normie) *cringe { fr fr Use runtime_core allocation with proper size tracking
     sus addr normie = runtime_allocate_memory(size)
-    damn addr.(void*)  # Convert address to pointer
+    damn addr.(void*) fr fr Convert address to pointer
 }
 
-# Memory deallocation through GC system - pure CURSED implementation
+fr fr Memory deallocation through GC system - pure CURSED implementation
 slay runtime_deallocate_block(ptr *cringe) lit {
     lowkey ptr != cringe {
-        sus addr normie = ptr.(normie)  # Convert pointer to address
+        sus addr normie = ptr.(normie) fr fr Convert pointer to address
         runtime_deallocate_memory(addr)
         damn based
     }
     damn cap
 }
 
-# Zero memory implementation - pure CURSED byte-level operation
+fr fr Zero memory implementation - pure CURSED byte-level operation
 slay runtime_zero_memory(ptr *cringe, size normie) lit {
     lowkey ptr != cringe && size > 0 {
         sus byte_ptr *sip = ptr.(*sip)
@@ -868,7 +827,7 @@ slay runtime_zero_memory(ptr *cringe, size normie) lit {
     damn cap
 }
 
-# Copy memory implementation - pure CURSED byte-level operation
+fr fr Copy memory implementation - pure CURSED byte-level operation
 slay runtime_copy_memory(dest *cringe, src *cringe, size normie) lit {
     lowkey dest != cringe && src != cringe && size > 0 {
         sus dest_bytes *sip = dest.(*sip)

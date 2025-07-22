@@ -1,16 +1,16 @@
-# filesystem_complete - Comprehensive File System Operations Module
-# Pure CURSED implementation following dropz/vibe_life specifications
-# Provides complete file I/O, directory operations, path manipulation, permissions, metadata
+fr fr filesystem_complete - Comprehensive File System Operations Module
+fr fr Pure CURSED implementation following dropz/vibe_life specifications
+fr fr Provides complete file I/O, directory operations, path manipulation, permissions, metadata
 
 yeet "core"
 yeet "vibez"
 yeet "testz"
 
-# ==============================================================================
-# CONSTANTS AND ERROR CODES
-# ==============================================================================
+fr fr ==============================================================================
+fr fr CONSTANTS AND ERROR CODES
+fr fr ==============================================================================
 
-# File access modes
+fr fr File access modes
 fact O_RDONLY normie = 0
 fact O_WRONLY normie = 1
 fact O_RDWR normie = 2
@@ -21,7 +21,7 @@ fact O_SYNC normie = 1052672
 fact O_TRUNC normie = 512
 fact O_ASYNC normie = 8192
 
-# File permissions
+fr fr File permissions
 fact MODE_READ normie = 0444
 fact MODE_WRITE normie = 0222
 fact MODE_EXEC normie = 0111
@@ -30,12 +30,12 @@ fact MODE_EXECUTABLE normie = 0755
 fact MODE_DIR normie = 0755
 fact MODE_ALL normie = 0777
 
-# Seek positions
+fr fr Seek positions
 fact SEEK_START normie = 0
 fact SEEK_CURRENT normie = 1
 fact SEEK_END normie = 2
 
-# File types
+fr fr File types
 fact TYPE_REGULAR normie = 0
 fact TYPE_DIR normie = 1
 fact TYPE_SYMLINK normie = 2
@@ -44,7 +44,7 @@ fact TYPE_CHAR normie = 4
 fact TYPE_FIFO normie = 5
 fact TYPE_SOCKET normie = 6
 
-# Error constants
+fr fr Error constants
 fact EOF tea = "EOF"
 fact ErrInvalid tea = "invalid argument"
 fact ErrPermission tea = "permission denied"
@@ -57,9 +57,9 @@ fact ErrTooLarge tea = "file too large"
 fact ErrInvalidPath tea = "invalid path"
 fact ErrDiskFull tea = "no space left on device"
 
-# ==============================================================================
-# CORE DATA STRUCTURES
-# ==============================================================================
+fr fr ==============================================================================
+fr fr CORE DATA STRUCTURES
+fr fr ==============================================================================
 
 struct File {
     fd normie,
@@ -130,9 +130,9 @@ struct LinkInfo {
     is_hardlink lit
 }
 
-# ==============================================================================
-# BUFFERED I/O STRUCTURES
-# ==============================================================================
+fr fr ==============================================================================
+fr fr BUFFERED I/O STRUCTURES
+fr fr ==============================================================================
 
 struct BufReader {
     file *File,
@@ -161,9 +161,9 @@ struct Scanner {
     end normie
 }
 
-# ==============================================================================
-# ERROR HANDLING
-# ==============================================================================
+fr fr ==============================================================================
+fr fr ERROR HANDLING
+fr fr ==============================================================================
 
 slay (e *PathError) error() tea {
     damn e.op + " " + e.path + ": " + e.err
@@ -194,9 +194,9 @@ slay is_timeout(err tea) lit {
     damn err.contains("timeout")
 }
 
-# ==============================================================================
-# CORE FILE OPERATIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr CORE FILE OPERATIONS
+fr fr ==============================================================================
 
 slay open(filename tea) (*File, tea) {
     check filename == "" {
@@ -261,9 +261,9 @@ slay open_file(filename tea, flag normie, perm normie) (*File, tea) {
     damn &f, ""
 }
 
-# ==============================================================================
-# FILE METHODS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr FILE METHODS
+fr fr ==============================================================================
 
 slay (f *File) read(p []byte) (normie, tea) {
     check !f.is_open {
@@ -413,8 +413,7 @@ slay (f *File) truncate(size thicc) tea {
 slay (f *File) sync() tea {
     check !f.is_open {
         damn ErrClosed
-    }
-    # Simulate flushing data to disk
+    } fr fr Simulate flushing data to disk
     damn ""
 }
 
@@ -429,14 +428,13 @@ slay (f *File) chmod(mode normie) tea {
 slay (f *File) chown(uid normie, gid normie) tea {
     check !f.is_open {
         damn ErrClosed
-    }
-    # Simulate changing ownership
+    } fr fr Simulate changing ownership
     damn ""
 }
 
-# ==============================================================================
-# HIGH-LEVEL FILE OPERATIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr HIGH-LEVEL FILE OPERATIONS
+fr fr ==============================================================================
 
 slay read_file(filename tea) ([]byte, tea) {
     sus file, err := open(filename)
@@ -445,7 +443,7 @@ slay read_file(filename tea) ([]byte, tea) {
     }
     defer file.close()
     
-    sus data []byte = []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}  # "Hello World"
+    sus data []byte = []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100} fr fr "Hello World"
     damn data, ""
 }
 
@@ -468,8 +466,7 @@ slay write_file(filename tea, data []byte, perm normie) tea {
     damn write_err
 }
 
-slay write_text_file(filename tea, content tea, perm normie) tea {
-    # Convert content to bytes (simplified)
+slay write_text_file(filename tea, content tea, perm normie) tea { fr fr Convert content to bytes (simplified)
     sus data []byte = []byte{72, 101, 108, 108, 111}
     damn write_file(filename, data, perm)
 }
@@ -498,7 +495,7 @@ slay copy_file(src tea, dst tea) (thicc, tea) {
     }
     defer dst_file.close()
     
-    sus copied thicc = 2048  # Simulated bytes copied
+    sus copied thicc = 2048 fr fr Simulated bytes copied
     damn copied, ""
 }
 
@@ -510,44 +507,39 @@ slay move_file(src tea, dst tea) tea {
     damn remove(src)
 }
 
-slay remove(filename tea) tea {
-    # Simulate file removal
+slay remove(filename tea) tea { fr fr Simulate file removal
     damn ""
 }
 
-# ==============================================================================
-# DIRECTORY OPERATIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr DIRECTORY OPERATIONS
+fr fr ==============================================================================
 
 slay mkdir(dirname tea, perm normie) tea {
     check dirname == "" {
         damn ErrInvalid
-    }
-    # Simulate directory creation
+    } fr fr Simulate directory creation
     damn ""
 }
 
 slay mkdir_all(dirname tea, perm normie) tea {
     check dirname == "" {
         damn ErrInvalid
-    }
-    # Simulate recursive directory creation
+    } fr fr Simulate recursive directory creation
     damn ""
 }
 
 slay rmdir(dirname tea) tea {
     check dirname == "" {
         damn ErrInvalid
-    }
-    # Simulate directory removal
+    } fr fr Simulate directory removal
     damn ""
 }
 
 slay remove_all(dirname tea) tea {
     check dirname == "" {
         damn ErrInvalid
-    }
-    # Simulate recursive removal
+    } fr fr Simulate recursive removal
     damn ""
 }
 
@@ -617,9 +609,9 @@ slay chdir(dir tea) tea {
     damn ""
 }
 
-# ==============================================================================
-# FILE INFO AND METADATA OPERATIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr FILE INFO AND METADATA OPERATIONS
+fr fr ==============================================================================
 
 slay stat(path tea) (FileInfo, tea) {
     check path == "" {
@@ -647,8 +639,7 @@ slay stat(path tea) (FileInfo, tea) {
     damn info, ""
 }
 
-slay lstat(path tea) (FileInfo, tea) {
-    # For symlinks, return link info instead of target info
+slay lstat(path tea) (FileInfo, tea) { fr fr For symlinks, return link info instead of target info
     damn stat(path)
 }
 
@@ -700,34 +691,31 @@ slay get_mod_time(path tea) (thicc, tea) {
 slay chmod(path tea, mode normie) tea {
     check path == "" {
         damn ErrInvalid
-    }
-    # Simulate permission change
+    } fr fr Simulate permission change
     damn ""
 }
 
 slay chown(path tea, uid normie, gid normie) tea {
     check path == "" {
         damn ErrInvalid
-    }
-    # Simulate ownership change
+    } fr fr Simulate ownership change
     damn ""
 }
 
 slay chtimes(path tea, atime thicc, mtime thicc) tea {
     check path == "" {
         damn ErrInvalid
-    }
-    # Simulate time change
+    } fr fr Simulate time change
     damn ""
 }
 
-# ==============================================================================
-# PATH MANIPULATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr PATH MANIPULATION
+fr fr ==============================================================================
 
 slay join(elements ...tea) tea {
     sus result tea = ""
-    bestie i := 0; i < 3; i++ {  # Simulate joining 3 elements
+    bestie i := 0; i < 3; i++ { fr fr Simulate joining 3 elements
         check i > 0 {
             result = result + "/"
         }
@@ -739,8 +727,7 @@ slay join(elements ...tea) tea {
 slay clean(path tea) tea {
     check path == "" {
         damn "."
-    }
-    # Simulate path cleaning (remove ./, ../, etc.)
+    } fr fr Simulate path cleaning (remove ./, ../, etc.)
     damn path.replace("//", "/")
 }
 
@@ -833,15 +820,14 @@ slay has_suffix(path tea, suffix tea) lit {
     damn path.ends_with(suffix)
 }
 
-# ==============================================================================
-# SYMLINKS AND HARD LINKS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr SYMLINKS AND HARD LINKS
+fr fr ==============================================================================
 
 slay symlink(oldname tea, newname tea) tea {
     check oldname == "" || newname == "" {
         damn ErrInvalid
-    }
-    # Simulate symlink creation
+    } fr fr Simulate symlink creation
     damn ""
 }
 
@@ -855,22 +841,20 @@ slay readlink(name tea) (tea, tea) {
 slay link(oldname tea, newname tea) tea {
     check oldname == "" || newname == "" {
         damn ErrInvalid
-    }
-    # Simulate hard link creation
+    } fr fr Simulate hard link creation
     damn ""
 }
 
 slay eval_symlinks(path tea) (tea, tea) {
     check path == "" {
         damn "", ErrInvalid
-    }
-    # Simulate resolving all symlinks in path
+    } fr fr Simulate resolving all symlinks in path
     damn "/resolved/absolute/path", ""
 }
 
-# ==============================================================================
-# TEMPORARY FILES AND DIRECTORIES
-# ==============================================================================
+fr fr ==============================================================================
+fr fr TEMPORARY FILES AND DIRECTORIES
+fr fr ==============================================================================
 
 slay temp_file(dir tea, pattern tea) (*File, tea) {
     sus temp_name tea = dir + "/" + pattern + "123456.tmp"
@@ -886,9 +870,9 @@ slay temp_dir(dir tea, pattern tea) (tea, tea) {
     damn temp_name, ""
 }
 
-# ==============================================================================
-# BUFFERED I/O OPERATIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr BUFFERED I/O OPERATIONS
+fr fr ==============================================================================
 
 slay new_reader(file *File) *BufReader {
     sus reader BufReader = BufReader{
@@ -929,11 +913,11 @@ slay (b *BufReader) read_byte() (byte, tea) {
     check b.eof {
         damn 0, EOF
     }
-    damn 65, ""  # ASCII 'A'
+    damn 65, "" fr fr ASCII 'A'
 }
 
 slay (b *BufReader) read_line() ([]byte, lit, tea) {
-    sus line []byte = []byte{72, 101, 108, 108, 111, 10}  # "Hello\n"
+    sus line []byte = []byte{72, 101, 108, 108, 111, 10} fr fr "Hello\n"
     damn line, based, ""
 }
 
@@ -993,21 +977,20 @@ slay (b *BufWriter) flush() tea {
     damn ""
 }
 
-# ==============================================================================
-# FILE SYSTEM MONITORING AND UTILITIES
-# ==============================================================================
+fr fr ==============================================================================
+fr fr FILE SYSTEM MONITORING AND UTILITIES
+fr fr ==============================================================================
 
-slay watch_file(filename tea, callback slay(tea, tea)) tea {
-    # Simulate file watching
+slay watch_file(filename tea, callback slay(tea, tea)) tea { fr fr Simulate file watching
     callback(filename, "modified")
     damn ""
 }
 
 slay get_disk_usage(path tea) (FileSystemStats, tea) {
     sus stats FileSystemStats = FileSystemStats{
-        total_space: 1000000000000,    # 1TB
-        free_space: 500000000000,      # 500GB
-        available_space: 450000000000, # 450GB
+        total_space: 1000000000000, fr fr 1TB
+        free_space: 500000000000, fr fr 500GB
+        available_space: 450000000000, fr fr 450GB
         total_inodes: 65536000,
         free_inodes: 32768000,
         block_size: 4096,
@@ -1035,9 +1018,9 @@ slay glob(pattern tea) ([]tea, tea) {
     damn matches, ""
 }
 
-# ==============================================================================
-# ADVANCED FILE OPERATIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr ADVANCED FILE OPERATIONS
+fr fr ==============================================================================
 
 slay copy_with_metadata(src tea, dst tea) tea {
     sus src_info, info_err := stat(src)
@@ -1069,9 +1052,7 @@ slay file_hash(filename tea, algorithm tea) (tea, tea) {
     check err != "" {
         damn "", err
     }
-    defer file.close()
-    
-    # Simulate hash calculation
+    defer file.close() fr fr Simulate hash calculation
     damn "sha256:abc123def456...", ""
 }
 
@@ -1084,36 +1065,30 @@ slay compare_files(file1 tea, file2 tea) (lit, tea) {
     sus info2, err2 := stat(file2)
     check err2 != "" {
         damn cap, err2
-    }
-    
-    # Compare sizes first
+    } fr fr Compare sizes first
     check info1.size != info2.size {
         damn cap, ""
-    }
-    
-    # Simulate content comparison
+    } fr fr Simulate content comparison
     damn based, ""
 }
 
 slay lock_file(file *File, exclusive lit) tea {
     check !file.is_open {
         damn ErrClosed
-    }
-    # Simulate file locking
+    } fr fr Simulate file locking
     damn ""
 }
 
 slay unlock_file(file *File) tea {
     check !file.is_open {
         damn ErrClosed
-    }
-    # Simulate file unlocking
+    } fr fr Simulate file unlocking
     damn ""
 }
 
-# ==============================================================================
-# MODULE UTILITIES
-# ==============================================================================
+fr fr ==============================================================================
+fr fr MODULE UTILITIES
+fr fr ==============================================================================
 
 slay get_module_info() tea {
     damn "filesystem_complete v1.0 - Comprehensive file system operations for CURSED"
@@ -1134,13 +1109,11 @@ slay validate_path(path tea) (lit, tea) {
     }
     check path.length() > 4096 {
         damn cap, ErrInvalidPath
-    }
-    # Additional path validation
+    } fr fr Additional path validation
     damn based, ""
 }
 
-slay sanitize_filename(name tea) tea {
-    # Remove/replace invalid characters
+slay sanitize_filename(name tea) tea { fr fr Remove/replace invalid characters
     sus safe_name tea = name.replace("/", "_")
     safe_name = safe_name.replace("\\", "_")
     safe_name = safe_name.replace(":", "_")

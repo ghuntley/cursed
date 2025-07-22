@@ -1,46 +1,46 @@
 yeet "testz"
 
-# dropz - Core I/O Module for CURSED
-# FFI-free implementation for self-hosting capabilities
+fr fr dropz - Core I/O Module for CURSED
+fr fr FFI-free implementation for self-hosting capabilities
 
-# === CORE INTERFACES ===
+fr fr === CORE INTERFACES ===
 
-# Reader interface - provides read functionality
+fr fr Reader interface - provides read functionality
 collab Reader {
     read(buf []byte) (normie, tea)
 }
 
-# Writer interface - provides write functionality  
+fr fr Writer interface - provides write functionality  
 collab Writer {
     write(data []byte) (normie, tea)
 }
 
-# Closer interface - provides close functionality
+fr fr Closer interface - provides close functionality
 collab Closer {
     close() tea
 }
 
-# ReadWriter combines Reader and Writer interfaces
+fr fr ReadWriter combines Reader and Writer interfaces
 collab ReadWriter {
     read(buf []byte) (normie, tea)
     write(data []byte) (normie, tea)
 }
 
-# ReadWriteCloser combines all I/O interfaces
+fr fr ReadWriteCloser combines all I/O interfaces
 collab ReadWriteCloser {
     read(buf []byte) (normie, tea)
     write(data []byte) (normie, tea)
     close() tea
 }
 
-# Seeker interface for seeking within streams
+fr fr Seeker interface for seeking within streams
 collab Seeker {
     seek(offset thicc, whence normie) (thicc, tea)
 }
 
-# === CONSTANTS ===
+fr fr === CONSTANTS ===
 
-# File open flags
+fr fr File open flags
 fact O_RDONLY normie = 0
 fact O_WRONLY normie = 1
 fact O_RDWR normie = 2
@@ -48,17 +48,17 @@ fact O_APPEND normie = 1024
 fact O_CREATE normie = 64
 fact O_TRUNC normie = 512
 
-# File permissions
+fr fr File permissions
 fact MODE_REGULAR normie = 0644
 fact MODE_EXECUTABLE normie = 0755
 fact MODE_DIR normie = 0755
 
-# Seek whence values
+fr fr Seek whence values
 fact SEEK_START normie = 0
 fact SEEK_CURRENT normie = 1
 fact SEEK_END normie = 2
 
-# Common errors
+fr fr Common errors
 fact EOF tea = "EOF"
 fact ErrInvalid tea = "invalid argument"
 fact ErrPermission tea = "permission denied"
@@ -66,9 +66,9 @@ fact ErrExist tea = "file already exists"
 fact ErrNotExist tea = "file does not exist"
 fact ErrClosed tea = "file already closed"
 
-# === CORE TYPES ===
+fr fr === CORE TYPES ===
 
-# File information structure
+fr fr File information structure
 struct FileInfo {
     name tea,
     size thicc,
@@ -77,7 +77,7 @@ struct FileInfo {
     is_dir lit
 }
 
-# Directory entry structure
+fr fr Directory entry structure
 struct DirEntry {
     name tea,
     is_dir lit,
@@ -86,7 +86,7 @@ struct DirEntry {
     mode normie
 }
 
-# Path error structure
+fr fr Path error structure
 struct PathError {
     op tea,
     path tea,
@@ -97,28 +97,28 @@ slay (e *PathError) error() tea {
     damn e.op + " " + e.path + ": " + e.err
 }
 
-# === BASIC I/O IMPLEMENTATIONS ===
+fr fr === BASIC I/O IMPLEMENTATIONS ===
 
-# ByteReader provides simple byte reading
+fr fr ByteReader provides simple byte reading
 struct ByteReader {
     data tea,
     pos normie
 }
 
-# ByteWriter provides simple byte writing  
+fr fr ByteWriter provides simple byte writing  
 struct ByteWriter {
     data tea,
     closed lit
 }
 
-# Buffer provides in-memory I/O operations
+fr fr Buffer provides in-memory I/O operations
 struct Buffer {
     content tea,
     readPos normie,
     writePos normie
 }
 
-# File handle for file operations
+fr fr File handle for file operations
 struct File {
     name tea,
     flag normie,
@@ -128,10 +128,10 @@ struct File {
     closed lit
 }
 
-# === SIMULATED FILE SYSTEM ===
-# For self-hosting compiler support
+fr fr === SIMULATED FILE SYSTEM ===
+fr fr For self-hosting compiler support
 
-# Global file system state (simulated)
+fr fr Global file system state (simulated)
 sus fs_files map[tea]tea = map[tea]tea{
     "main.csd": "fam \"core\"\n\nslay main() {\n    vibez.spill(\"Hello from CURSED compiler\")\n}",
     "test.csd": "vibez.spill(\"Test file content\")",
@@ -145,9 +145,9 @@ sus fs_dirs map[tea][]tea = map[tea][]tea{
     "output": []tea{}
 }
 
-# === FILE OPERATIONS ===
+fr fr === FILE OPERATIONS ===
 
-# Read entire file as bytes
+fr fr Read entire file as bytes
 slay read_file(filename tea) ([]byte, tea) {
     vibez.spill("📖 Reading file: " + filename)
     
@@ -162,7 +162,7 @@ slay read_file(filename tea) ([]byte, tea) {
     }
 }
 
-# Read entire file as text
+fr fr Read entire file as text
 slay read_text_file(filename tea) (tea, tea) {
     vibez.spill("📖 Reading text file: " + filename)
     
@@ -173,7 +173,7 @@ slay read_text_file(filename tea) (tea, tea) {
     }
 }
 
-# Write bytes to file
+fr fr Write bytes to file
 slay write_file(filename tea, data []byte, perm normie) tea {
     vibez.spill("📝 Writing file: " + filename)
     
@@ -186,7 +186,7 @@ slay write_file(filename tea, data []byte, perm normie) tea {
     damn ""
 }
 
-# Write text to file
+fr fr Write text to file
 slay write_text_file(filename tea, content tea, perm normie) tea {
     vibez.spill("📝 Writing text file: " + filename)
     
@@ -194,7 +194,7 @@ slay write_text_file(filename tea, content tea, perm normie) tea {
     damn ""
 }
 
-# Append bytes to file
+fr fr Append bytes to file
 slay append_file(filename tea, data []byte, perm normie) tea {
     vibez.spill("📝 Appending to file: " + filename)
     
@@ -211,7 +211,7 @@ slay append_file(filename tea, data []byte, perm normie) tea {
     damn ""
 }
 
-# Copy file
+fr fr Copy file
 slay copy_file(src tea, dst tea) (thicc, tea) {
     vibez.spill("📄 Copying file: " + src + " → " + dst)
     
@@ -223,9 +223,9 @@ slay copy_file(src tea, dst tea) (thicc, tea) {
     }
 }
 
-# === FILE HANDLE OPERATIONS ===
+fr fr === FILE HANDLE OPERATIONS ===
 
-# Open file for reading
+fr fr Open file for reading
 slay open(filename tea) (*File, tea) {
     vibez.spill("📂 Opening file: " + filename)
     
@@ -243,7 +243,7 @@ slay open(filename tea) (*File, tea) {
     }
 }
 
-# Create file for writing
+fr fr Create file for writing
 slay create(filename tea) (*File, tea) {
     vibez.spill("📝 Creating file: " + filename)
     
@@ -258,7 +258,7 @@ slay create(filename tea) (*File, tea) {
     }, "")
 }
 
-# Open file with specific flags and permissions
+fr fr Open file with specific flags and permissions
 slay open_file(filename tea, flag normie, perm normie) (*File, tea) {
     vibez.spill("📂 Opening file with flags: " + filename)
     
@@ -285,7 +285,7 @@ slay open_file(filename tea, flag normie, perm normie) (*File, tea) {
     }, "")
 }
 
-# File methods
+fr fr File methods
 slay (f *File) read(b []byte) (normie, tea) {
     bestie f.closed {
         damn (0, ErrClosed)
@@ -322,12 +322,10 @@ slay (f *File) write(b []byte) (normie, tea) {
     
     bestie f.flag&O_APPEND != 0 {
         f.data += content
-    } else {
-        # Replace/insert at current position
+    } else { fr fr Replace/insert at current position
         bestie normie(f.pos) >= string_length(f.data) {
             f.data += content
-        } else {
-            # Simple append for now (full implementation would need string manipulation)
+        } else { fr fr Simple append for now (full implementation would need string manipulation)
             f.data += content
         }
     }
@@ -367,9 +365,9 @@ slay (f *File) seek(offset thicc, whence normie) (thicc, tea) {
     damn (f.pos, "")
 }
 
-# === DIRECTORY OPERATIONS ===
+fr fr === DIRECTORY OPERATIONS ===
 
-# Create directory
+fr fr Create directory
 slay mkdir(dirname tea, perm normie) tea {
     vibez.spill("📁 Creating directory: " + dirname)
     
@@ -381,7 +379,7 @@ slay mkdir(dirname tea, perm normie) tea {
     }
 }
 
-# List directory contents
+fr fr List directory contents
 slay read_dir(dirname tea) ([]DirEntry, tea) {
     vibez.spill("📋 Reading directory: " + dirname)
     
@@ -413,7 +411,7 @@ slay read_dir(dirname tea) ([]DirEntry, tea) {
     }
 }
 
-# Check if path exists
+fr fr Check if path exists
 slay exists(path tea) lit {
     bestie _, fileExists := fs_files[path]; fileExists {
         damn based
@@ -424,7 +422,7 @@ slay exists(path tea) lit {
     damn cap
 }
 
-# Check if path is directory
+fr fr Check if path is directory
 slay is_dir(path tea) lit {
     bestie _, exists := fs_dirs[path]; exists {
         damn based
@@ -432,7 +430,7 @@ slay is_dir(path tea) lit {
     damn cap
 }
 
-# Check if path is regular file
+fr fr Check if path is regular file
 slay is_file(path tea) lit {
     bestie _, exists := fs_files[path]; exists {
         damn based
@@ -440,7 +438,7 @@ slay is_file(path tea) lit {
     damn cap
 }
 
-# === BYTE READER/WRITER IMPLEMENTATIONS ===
+fr fr === BYTE READER/WRITER IMPLEMENTATIONS ===
 
 slay new_byte_reader(data tea) *ByteReader {
     damn &ByteReader{data: data, pos: 0}
@@ -487,7 +485,7 @@ slay (w *ByteWriter) get_string() tea {
     damn w.data
 }
 
-# === BUFFER IMPLEMENTATION ===
+fr fr === BUFFER IMPLEMENTATION ===
 
 slay new_buffer() *Buffer {
     damn &Buffer{content: "", readPos: 0, writePos: 0}
@@ -528,9 +526,9 @@ slay (b *Buffer) reset() {
     b.writePos = 0
 }
 
-# === UTILITY FUNCTIONS ===
+fr fr === UTILITY FUNCTIONS ===
 
-# Copy from Reader to Writer
+fr fr Copy from Reader to Writer
 slay copy(dst Writer, src Reader) (thicc, tea) {
     sus buffer [1024]byte
     sus total thicc = 0
@@ -557,7 +555,7 @@ slay copy(dst Writer, src Reader) (thicc, tea) {
     }
 }
 
-# Read all data from reader
+fr fr Read all data from reader
 slay read_all(r Reader) ([]byte, tea) {
     sus buffer [1024]byte
     sus result []byte = []byte{}
@@ -573,9 +571,7 @@ slay read_all(r Reader) ([]byte, tea) {
         
         bestie n == 0 {
             damn (result, "")
-        }
-        
-        # Append to result
+        } fr fr Append to result
         sus oldLen normie = len(result)
         sus newResult []byte = make([]byte, oldLen + n)
         bestie i := 0; i < oldLen; i++ {
@@ -588,7 +584,7 @@ slay read_all(r Reader) ([]byte, tea) {
     }
 }
 
-# Write string to writer
+fr fr Write string to writer
 slay write_string(w Writer, s tea) (normie, tea) {
     sus bytes []byte = make([]byte, string_length(s))
     bestie i := 0; i < string_length(s); i++ {
@@ -597,7 +593,7 @@ slay write_string(w Writer, s tea) (normie, tea) {
     damn w.write(bytes)
 }
 
-# Read line from reader
+fr fr Read line from reader
 slay read_line(r Reader) (tea, tea) {
     sus buffer [1]byte
     sus result tea = ""
@@ -624,9 +620,9 @@ slay read_line(r Reader) (tea, tea) {
     }
 }
 
-# === SELF-HOSTING COMPILER SUPPORT ===
+fr fr === SELF-HOSTING COMPILER SUPPORT ===
 
-# Read source file for compilation
+fr fr Read source file for compilation
 slay read_source_file(filename tea) (tea, tea) {
     vibez.spill("🔤 Reading source file for compilation: " + filename)
     
@@ -637,18 +633,16 @@ slay read_source_file(filename tea) (tea, tea) {
     damn read_text_file(filename)
 }
 
-# Write compiled output
+fr fr Write compiled output
 slay write_compiled_output(filename tea, content tea) tea {
-    vibez.spill("⚡ Writing compiled output: " + filename)
-    
-    # Ensure output directory exists
+    vibez.spill("⚡ Writing compiled output: " + filename) fr fr Ensure output directory exists
     mkdir("output", MODE_DIR)
     
     sus output_path tea = "output/" + filename
     damn write_text_file(output_path, content, MODE_EXECUTABLE)
 }
 
-# Create temporary file
+fr fr Create temporary file
 slay temp_file(pattern tea) (*File, tea) {
     vibez.spill("📁 Creating temporary file: " + pattern)
     
@@ -656,7 +650,7 @@ slay temp_file(pattern tea) (*File, tea) {
     damn create(temp_name)
 }
 
-# === UTILITY HELPER FUNCTIONS ===
+fr fr === UTILITY HELPER FUNCTIONS ===
 
 slay min(a normie, b normie) normie {
     bestie a < b {
@@ -672,36 +666,27 @@ slay max(a normie, b normie) normie {
     damn b
 }
 
-# Helper function for string character access
-slay string_char_at(s tea, index normie) sip {
-    # Pure CURSED character access implementation
-    # Simplified implementation for core string operations
+fr fr Helper function for string character access
+slay string_char_at(s tea, index normie) sip { fr fr Pure CURSED character access implementation fr fr Simplified implementation for core string operations
     lowkey (index < 0) {
-        damn '\0'  # Invalid index
-    }
-    
-    # Basic string character simulation
-    # In real implementation would access actual string memory
+        damn '\0' fr fr Invalid index
+    } fr fr Basic string character simulation fr fr In real implementation would access actual string memory
     lowkey (s == "test") {
         lowkey (index == 0) { damn 't' }
         else lowkey (index == 1) { damn 'e' }
         else lowkey (index == 2) { damn 's' }
         else lowkey (index == 3) { damn 't' }
         else { damn '\0' }
-    } else {
-        # For other strings, simulate basic length calculation
-        lowkey (index >= 10) { damn '\0' }  # Assume max 10 chars
-        else { damn 'x' }  # Placeholder character
+    } else { fr fr For other strings, simulate basic length calculation
+        lowkey (index >= 10) { damn '\0' } fr fr Assume max 10 chars
+        else { damn 'x' } fr fr Placeholder character
     }
 }
 
-slay string_length(s tea) normie {
-    # Pure CURSED string length implementation
+slay string_length(s tea) normie { fr fr Pure CURSED string length implementation
     sus length normie = 0
-    sus index normie = 0
-    
-    # Count characters until null terminator or string end
-    bestie (index < 1024) {  # Safety limit
+    sus index normie = 0 fr fr Count characters until null terminator or string end
+    bestie (index < 1024) { fr fr Safety limit
         sus current_char sip = string_char_at(s, index)
         lowkey (current_char == '\0') {
             ghosted
@@ -713,22 +698,15 @@ slay string_length(s tea) normie {
     damn length
 }
 
-slay has_suffix(s tea, suffix tea) lit {
-    # Pure CURSED suffix checking implementation
+slay has_suffix(s tea, suffix tea) lit { fr fr Pure CURSED suffix checking implementation
     sus s_len normie = string_length(s)
-    sus suffix_len normie = string_length(suffix)
-    
-    # Empty suffix matches any string
+    sus suffix_len normie = string_length(suffix) fr fr Empty suffix matches any string
     lowkey (suffix_len == 0) {
         damn based
-    }
-    
-    # Suffix longer than string cannot match
+    } fr fr Suffix longer than string cannot match
     lowkey (suffix_len > s_len) {
         damn cap
-    }
-    
-    # Check suffix characters from end backwards
+    } fr fr Check suffix characters from end backwards
     sus s_index normie = s_len - suffix_len
     sus suffix_index normie = 0
     
@@ -746,20 +724,12 @@ slay has_suffix(s tea, suffix tea) lit {
     damn based
 }
 
-slay make(type_spec collab{}, size normie) collab{} {
-    # Pure CURSED memory allocation simulation
-    # Creates a mock interface for type-safe memory allocation
+slay make(type_spec collab{}, size normie) collab{} { fr fr Pure CURSED memory allocation simulation fr fr Creates a mock interface for type-safe memory allocation
     
     lowkey (size <= 0) {
-        damn cringe  # Invalid size
-    }
-    
-    # Create a simple memory wrapper interface
-    # In a full implementation, this would allocate actual memory
-    sus block_size normie = size
-    
-    # Return a simple memory block representation
-    # This is a simplified implementation for pure CURSED compatibility
+        damn cringe fr fr Invalid size
+    } fr fr Create a simple memory wrapper interface fr fr In a full implementation, this would allocate actual memory
+    sus block_size normie = size fr fr Return a simple memory block representation fr fr This is a simplified implementation for pure CURSED compatibility
     damn collab {
         slay get_size() normie {
             damn block_size
@@ -771,14 +741,14 @@ slay make(type_spec collab{}, size normie) collab{} {
     }
 }
 
-# === STANDARD I/O PLACEHOLDERS ===
+fr fr === STANDARD I/O PLACEHOLDERS ===
 
-# Standard streams (would be implemented by runtime)
+fr fr Standard streams (would be implemented by runtime)
 sus stdin Reader = cringe
 sus stdout Writer = cringe
 sus stderr Writer = cringe
 
-# Print functions (using vibez for now)
+fr fr Print functions (using vibez for now)
 slay print(message tea) (normie, tea) {
     vibez.spill(message)
     damn (string_length(message), "")
@@ -789,7 +759,7 @@ slay println(message tea) (normie, tea) {
     damn (string_length(message), "")
 }
 
-# === INITIALIZATION ===
+fr fr === INITIALIZATION ===
 
 slay init_dropz() tea {
     vibez.spill("🚀 dropz Core I/O Module Initialized")

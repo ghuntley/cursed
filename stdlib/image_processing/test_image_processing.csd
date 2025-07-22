@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "image_processing"
 
-# Test image format detection
+fr fr Test image format detection
 test_start("Image format detection - PNG")
 sus png_format tea = img_detect_format("test.png")
 assert_eq_string(png_format, "PNG")
@@ -30,7 +30,7 @@ test_start("Image format detection - Unknown")
 sus unknown_format tea = img_detect_format("file.txt")
 assert_eq_string(unknown_format, "UNKNOWN")
 
-# Test image loading from bytes
+fr fr Test image loading from bytes
 test_start("Load image from bytes - PNG")
 sus png_data tea = PNG_SIGNATURE + "test_data"
 sus png_img ImageData = img_load_from_bytes(png_data, "PNG")
@@ -63,7 +63,7 @@ assert_eq_int(bmp_img.width, 100)
 assert_eq_int(bmp_img.height, 100)
 assert_eq_int(bmp_img.channels, 3)
 
-# Test image saving to bytes
+fr fr Test image saving to bytes
 test_start("Save image to bytes - PNG")
 sus test_img ImageData
 test_img.format = "PNG"
@@ -95,7 +95,7 @@ test_img.pixels = img_create_placeholder_pixels(50, 50, 3)
 sus saved_bmp tea = img_save_to_bytes(test_img, "BMP")
 assert_true(string_length(saved_bmp) > 0)
 
-# Test image resizing
+fr fr Test image resizing
 test_start("Image resize operation")
 sus original ImageData
 original.format = "PNG"
@@ -125,7 +125,7 @@ assert_eq_int(scaled_up.width, 200)
 assert_eq_int(scaled_up.height, 200)
 assert_eq_int(scaled_up.channels, 4)
 
-# Test image cropping
+fr fr Test image cropping
 test_start("Image crop operation")
 sus cropped ImageData = img_crop(original, 10, 10, 50, 50)
 assert_eq_string(cropped.format, "PNG")
@@ -139,22 +139,22 @@ sus full_crop ImageData = img_crop(original, 0, 0, 100, 100)
 assert_eq_int(full_crop.width, 100)
 assert_eq_int(full_crop.height, 100)
 
-# Test image rotation
+fr fr Test image rotation
 test_start("Image rotate 90 degrees")
-sus rotated ImageData = img_rotate(original, 1.5708)  # 90 degrees in radians
+sus rotated ImageData = img_rotate(original, 1.5708) fr fr 90 degrees in radians
 assert_eq_string(rotated.format, "PNG")
 assert_eq_int(rotated.channels, 4)
 assert_true(rotated.width > 0)
 assert_true(rotated.height > 0)
 
 test_start("Image rotate 45 degrees")
-sus rotated_45 ImageData = img_rotate(original, 0.7854)  # 45 degrees in radians
+sus rotated_45 ImageData = img_rotate(original, 0.7854) fr fr 45 degrees in radians
 assert_eq_string(rotated_45.format, "PNG")
 assert_eq_int(rotated_45.channels, 4)
-assert_true(rotated_45.width > original.width)  # Should be larger due to rotation
+assert_true(rotated_45.width > original.width) fr fr Should be larger due to rotation
 assert_true(rotated_45.height > original.height)
 
-# Test image flipping
+fr fr Test image flipping
 test_start("Image flip horizontal")
 sus flipped_h ImageData = img_flip_horizontal(original)
 assert_eq_string(flipped_h.format, "PNG")
@@ -169,7 +169,7 @@ assert_eq_int(flipped_v.width, original.width)
 assert_eq_int(flipped_v.height, original.height)
 assert_eq_int(flipped_v.channels, original.channels)
 
-# Test image filters
+fr fr Test image filters
 test_start("Apply blur filter")
 sus blurred ImageData = img_apply_filter(original, FILTER_BLUR)
 assert_eq_string(blurred.format, "PNG")
@@ -219,7 +219,7 @@ assert_eq_string(unchanged.format, "PNG")
 assert_eq_int(unchanged.width, original.width)
 assert_eq_int(unchanged.height, original.height)
 
-# Test brightness and contrast adjustments
+fr fr Test brightness and contrast adjustments
 test_start("Adjust brightness increase")
 sus brighter ImageData = img_adjust_brightness(original, 1.2)
 assert_eq_string(brighter.format, "PNG")
@@ -244,7 +244,7 @@ assert_eq_string(lower_contrast.format, "PNG")
 assert_eq_int(lower_contrast.width, original.width)
 assert_eq_int(lower_contrast.height, original.height)
 
-# Test custom filters
+fr fr Test custom filters
 test_start("Apply custom filter")
 sus custom_kernel tea = "0.1,0.1,0.1,0.1,0.2,0.1,0.1,0.1,0.1"
 sus custom_filtered ImageData = img_custom_filter(original, custom_kernel, 3)
@@ -252,7 +252,7 @@ assert_eq_string(custom_filtered.format, "PNG")
 assert_eq_int(custom_filtered.width, original.width)
 assert_eq_int(custom_filtered.height, original.height)
 
-# Test pixel manipulation
+fr fr Test pixel manipulation
 test_start("Get pixel color")
 sus pixel_color normie = img_get_pixel(original, 50, 50)
 assert_true(pixel_color >= 0)
@@ -273,13 +273,13 @@ test_start("Color histogram calculation")
 sus histogram tea = img_color_histogram(original)
 assert_true(string_length(histogram) > 0)
 
-# Test metadata operations
+fr fr Test metadata operations
 test_start("Get image metadata")
 sus metadata ImageMetadata = img_get_metadata(original)
 assert_eq_string(metadata.format, "PNG")
 assert_eq_int(metadata.width, 100)
 assert_eq_int(metadata.height, 100)
-assert_eq_int(metadata.color_depth, 32)  # 4 channels * 8 bits
+assert_eq_int(metadata.color_depth, 32) fr fr 4 channels * 8 bits
 assert_eq_string(metadata.compression, "DEFLATE")
 assert_eq_string(metadata.author, "CURSED Image Processor")
 
@@ -296,7 +296,7 @@ new_metadata.author = "Test Author"
 sus updated_img ImageData = img_set_metadata(original, new_metadata)
 assert_eq_string(updated_img.format, "JPEG")
 
-# Test image composition
+fr fr Test image composition
 test_start("Image overlay operation")
 sus overlay_img ImageData
 overlay_img.format = "PNG"
@@ -310,7 +310,7 @@ assert_eq_string(overlaid.format, "PNG")
 assert_eq_int(overlaid.width, original.width)
 assert_eq_int(overlaid.height, original.height)
 
-# Test image analysis
+fr fr Test image analysis
 test_start("Calculate image similarity - identical")
 sus similarity_identical drip = img_calculate_similarity(original, original)
 assert_true(similarity_identical >= 0.0)
@@ -330,7 +330,7 @@ test_start("Find contours")
 sus contours tea = img_find_contours(original)
 assert_true(string_length(contours) >= 0)
 
-# Test constants
+fr fr Test constants
 test_start("PNG signature constant")
 assert_true(string_length(PNG_SIGNATURE) > 0)
 
@@ -346,7 +346,7 @@ assert_true(string_length(BMP_SIGNATURE) > 0)
 test_start("WEBP signature constant")
 assert_true(string_length(WEBP_SIGNATURE) > 0)
 
-# Test color constants
+fr fr Test color constants
 test_start("Color constants validation")
 assert_eq_int(COLOR_RED, 0xFF0000)
 assert_eq_int(COLOR_GREEN, 0x00FF00)
@@ -355,7 +355,7 @@ assert_eq_int(COLOR_WHITE, 0xFFFFFF)
 assert_eq_int(COLOR_BLACK, 0x000000)
 assert_eq_int(COLOR_TRANSPARENT, 0x00000000)
 
-# Test filter constants
+fr fr Test filter constants
 test_start("Filter constants validation")
 assert_eq_int(FILTER_BLUR, 1)
 assert_eq_int(FILTER_SHARPEN, 2)
@@ -367,25 +367,25 @@ assert_eq_int(FILTER_INVERT, 7)
 assert_eq_int(FILTER_BRIGHTNESS, 8)
 assert_eq_int(FILTER_CONTRAST, 9)
 
-# Test utility functions
+fr fr Test utility functions
 test_start("Create placeholder pixels")
 sus placeholder_pixels tea = img_create_placeholder_pixels(10, 10, 3)
-assert_eq_int(string_length(placeholder_pixels), 300)  # 10 * 10 * 3
+assert_eq_int(string_length(placeholder_pixels), 300) fr fr 10 * 10 * 3
 
 test_start("Bilinear resize utility")
 sus original_pixels tea = img_create_placeholder_pixels(4, 4, 3)
 sus resized_pixels tea = img_bilinear_resize(original_pixels, 4, 4, 8, 8, 3)
-assert_eq_int(string_length(resized_pixels), 192)  # 8 * 8 * 3
+assert_eq_int(string_length(resized_pixels), 192) fr fr 8 * 8 * 3
 
 test_start("Apply blur utility")
 sus blur_pixels tea = img_apply_blur(original_pixels, 4, 4, 3)
-assert_eq_int(string_length(blur_pixels), 48)  # 4 * 4 * 3
+assert_eq_int(string_length(blur_pixels), 48) fr fr 4 * 4 * 3
 
 test_start("Apply grayscale utility")
 sus gray_pixels tea = img_apply_grayscale(original_pixels, 4, 4, 3)
-assert_eq_int(string_length(gray_pixels), 48)  # 4 * 4 * 3
+assert_eq_int(string_length(gray_pixels), 48) fr fr 4 * 4 * 3
 
-# Test error handling and edge cases
+fr fr Test error handling and edge cases
 test_start("Empty image handling")
 sus empty_img ImageData
 empty_img.width = 0
@@ -412,14 +412,14 @@ assert_eq_int(single_enlarged.height, 10)
 
 test_start("Negative scale factor handling")
 sus negative_scaled ImageData = img_scale(original, -1.0)
-# Should handle gracefully, possibly returning original or minimum size
+fr fr Should handle gracefully, possibly returning original or minimum size
 
 test_start("Zero angle rotation")
 sus zero_rotated ImageData = img_rotate(original, 0.0)
 assert_eq_int(zero_rotated.width, original.width)
 assert_eq_int(zero_rotated.height, original.height)
 
-# Test compression detection
+fr fr Test compression detection
 test_start("PNG compression detection")
 sus png_compression tea = img_detect_compression("PNG")
 assert_eq_string(png_compression, "DEFLATE")
@@ -436,7 +436,7 @@ test_start("Unknown format compression")
 sus unknown_compression tea = img_detect_compression("UNKNOWN")
 assert_eq_string(unknown_compression, "NONE")
 
-# Test format-specific encoding
+fr fr Test format-specific encoding
 test_start("PNG encoding with signature")
 sus png_encoded tea = img_encode_png(original)
 assert_true(string_length(png_encoded) > string_length(PNG_SIGNATURE))
@@ -453,7 +453,7 @@ test_start("BMP encoding with signature")
 sus bmp_encoded tea = img_encode_bmp(original)
 assert_true(string_length(bmp_encoded) > string_length(BMP_SIGNATURE))
 
-# Test large image operations
+fr fr Test large image operations
 test_start("Large image resize")
 sus large_img ImageData
 large_img.format = "PNG"
@@ -471,13 +471,13 @@ sus large_blurred ImageData = img_apply_filter(large_img, FILTER_BLUR)
 assert_eq_int(large_blurred.width, 1000)
 assert_eq_int(large_blurred.height, 1000)
 
-# Test mathematical edge cases
+fr fr Test mathematical edge cases
 test_start("Math utility functions")
 sus cos_result drip = math_cos(0.0)
-assert_true(cos_result >= 0.9)  # cos(0) should be close to 1
+assert_true(cos_result >= 0.9) fr fr cos(0) should be close to 1
 
 sus sin_result drip = math_sin(0.0)
-assert_true(sin_result >= -0.1 && sin_result <= 0.1)  # sin(0) should be close to 0
+assert_true(sin_result >= -0.1 && sin_result <= 0.1) fr fr sin(0) should be close to 0
 
 sus abs_positive drip = math_abs(5.5)
 assert_eq_float(abs_positive, 5.5)
@@ -485,7 +485,7 @@ assert_eq_float(abs_positive, 5.5)
 sus abs_negative drip = math_abs(-3.7)
 assert_eq_float(abs_negative, 3.7)
 
-# Test type conversion utilities
+fr fr Test type conversion utilities
 test_start("Float to int conversion")
 sus converted_int normie = float_to_int(42.7)
 assert_eq_int(converted_int, 42)
@@ -506,13 +506,11 @@ assert_eq_int(byte_to_int(int_byte), 150)
 
 print_test_summary()
 
-# Helper functions for testing (assume these exist in core stdlib)
-slay string_length(s tea) normie {
-    # Implementation would be in core stdlib
+fr fr Helper functions for testing (assume these exist in core stdlib)
+slay string_length(s tea) normie { fr fr Implementation would be in core stdlib
     damn 10
 }
 
-slay assert_eq_float(actual drip, expected drip) {
-    # Implementation would compare floats with tolerance
+slay assert_eq_float(actual drip, expected drip) { fr fr Implementation would compare floats with tolerance
     assert_true(math_abs(actual - expected) < 0.001)
 }

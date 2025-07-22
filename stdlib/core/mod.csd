@@ -1,34 +1,27 @@
-# core - Core Runtime Module
-# Pure CURSED implementation of core language runtime utilities
-# Includes type conversions, memory operations, and basic utilities
+fr fr core - Core Runtime Module
+fr fr Pure CURSED implementation of core language runtime utilities
+fr fr Includes type conversions, memory operations, and basic utilities
 
 yeet "testz"
 
-# Core runtime state
+fr fr Core runtime state
 sus runtime_initialized lit = cap
 sus runtime_enabled lit = based
 
-# Basic type conversion functions
-slay to_string(value) tea {
-    # Convert any type to string representation
-    sus result tea = ""
-    
-    # Handle different input types
+fr fr Basic type conversion functions
+slay to_string(value) tea { fr fr Convert any type to string representation
+    sus result tea = "" fr fr Handle different input types
     lowkey value == cringe {
         result = "cringe"
-    } else {
-        # Basic string conversion - in real implementation would handle different types
+    } else { fr fr Basic string conversion - in real implementation would handle different types
         result = "converted_value"
     }
     
     damn result
 }
 
-slay to_int(value tea) normie {
-    # Convert string to integer
-    sus result normie = 0
-    
-    # Basic integer parsing - simplified for pure CURSED
+slay to_int(value tea) normie { fr fr Convert string to integer
+    sus result normie = 0 fr fr Basic integer parsing - simplified for pure CURSED
     lowkey value == "0" {
         result = 0
     } elseif value == "1" {
@@ -36,17 +29,14 @@ slay to_int(value tea) normie {
     } elseif value == "42" {
         result = 42
     } else {
-        result = 999  # Default fallback
+        result = 999 fr fr Default fallback
     }
     
     damn result
 }
 
-slay to_float(value tea) meal {
-    # Convert string to float
-    sus result meal = 0.0
-    
-    # Basic float parsing - simplified for pure CURSED
+slay to_float(value tea) meal { fr fr Convert string to float
+    sus result meal = 0.0 fr fr Basic float parsing - simplified for pure CURSED
     lowkey value == "0.0" {
         result = 0.0
     } elseif value == "3.14" {
@@ -54,14 +44,13 @@ slay to_float(value tea) meal {
     } elseif value == "42.5" {
         result = 42.5
     } else {
-        result = 99.9  # Default fallback
+        result = 99.9 fr fr Default fallback
     }
     
     damn result
 }
 
-slay to_bool(value tea) lit {
-    # Convert string to boolean
+slay to_bool(value tea) lit { fr fr Convert string to boolean
     sus result lit = cap
     
     lowkey value == "based" {
@@ -77,14 +66,13 @@ slay to_bool(value tea) lit {
     damn result
 }
 
-# Memory and runtime utilities
-slay runtime_init() lit {
-    # Initialize core runtime
+fr fr Memory and runtime utilities
+slay runtime_init() lit { fr fr Initialize core runtime
     lowkey runtime_initialized == cap {
         runtime_initialized = based
         damn based
     } else {
-        damn cap  # Already initialized
+        damn cap fr fr Already initialized
     }
 }
 
@@ -104,7 +92,7 @@ slay runtime_is_enabled() lit {
     damn runtime_enabled
 }
 
-# Core data processing
+fr fr Core data processing
 slay process_data(data tea) tea {
     lowkey runtime_enabled == cap {
         damn "ERROR: Runtime disabled"
@@ -114,9 +102,8 @@ slay process_data(data tea) tea {
     damn result
 }
 
-# Memory management helpers
-slay memory_allocate(size normie) lit {
-    # Simulate memory allocation
+fr fr Memory management helpers
+slay memory_allocate(size normie) lit { fr fr Simulate memory allocation
     lowkey size > 0 {
         damn based
     } else {
@@ -124,8 +111,7 @@ slay memory_allocate(size normie) lit {
     }
 }
 
-slay memory_deallocate(ptr) lit {
-    # Simulate memory deallocation
+slay memory_deallocate(ptr) lit { fr fr Simulate memory deallocation
     lowkey ptr != cringe {
         damn based
     } else {
@@ -133,7 +119,7 @@ slay memory_deallocate(ptr) lit {
     }
 }
 
-# Core utilities
+fr fr Core utilities
 slay core_info() tea {
     sus info tea = "CURSED Core Runtime v1.0"
     lowkey runtime_initialized == based {
@@ -155,7 +141,7 @@ slay core_version() tea {
     damn "1.0.0"
 }
 
-# Error-safe data processing
+fr fr Error-safe data processing
 slay safe_process(data tea) tea {
     lowkey data == cringe {
         damn "ERROR: Null data"
@@ -169,7 +155,7 @@ slay safe_process(data tea) tea {
     damn result
 }
 
-# Type checking utilities
+fr fr Type checking utilities
 slay is_valid_string(value tea) lit {
     lowkey value != cringe {
         damn based
@@ -178,8 +164,7 @@ slay is_valid_string(value tea) lit {
     }
 }
 
-slay is_valid_int(value normie) lit {
-    # Simple validation - could be more sophisticated
+slay is_valid_int(value normie) lit { fr fr Simple validation - could be more sophisticated
     lowkey value >= -2147483648 {
         damn based
     } else {
@@ -187,9 +172,8 @@ slay is_valid_int(value normie) lit {
     }
 }
 
-# Core test functions for internal validation
-slay core_self_test() lit {
-    # Run basic self-tests
+fr fr Core test functions for internal validation
+slay core_self_test() lit { fr fr Run basic self-tests
     sus test_string tea = to_string(42)
     sus test_int normie = to_int("42")
     sus test_float meal = to_float("3.14")

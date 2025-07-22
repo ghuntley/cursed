@@ -1,16 +1,16 @@
-# CURSED GlyphGang Unicode Library
-# Pure CURSED implementation for Unicode character and string processing
+fr fr CURSED GlyphGang Unicode Library
+fr fr Pure CURSED implementation for Unicode character and string processing
 
-# ================================
-# Constants
-# ================================
+fr fr ================================
+fr fr Constants
+fr fr ================================
 
-# Direction constants for bidirectional text
+fr fr Direction constants for bidirectional text
 sus LTR normie = 0
 sus RTL normie = 1
 sus Mixed normie = 2
 
-# Script constants for script detection
+fr fr Script constants for script detection
 sus ScriptUnknown normie = 0
 sus ScriptLatin normie = 1
 sus ScriptGreek normie = 2
@@ -22,258 +22,235 @@ sus ScriptHiragana normie = 7
 sus ScriptKatakana normie = 8
 sus ScriptHangul normie = 9
 
-# Normalization form constants
+fr fr Normalization form constants
 sus NFC normie = 0
 sus NFD normie = 1
 sus NFKC normie = 2
 sus NFKD normie = 3
 
-# ================================
-# Character Classification Functions
-# ================================
+fr fr ================================
+fr fr Character Classification Functions
+fr fr ================================
 
-slay IsLetter(r rune) lit {
-    # Check if character is a letter (A-Z, a-z, and Unicode letters)
+slay IsLetter(r rune) lit { fr fr Check if character is a letter (A-Z, a-z, and Unicode letters)
     code := normie(r)
     if code >= 65 && code <= 90 {
-        damn based # A-Z
+        damn based fr fr A-Z
     }
     if code >= 97 && code <= 122 {
-        damn based # a-z
+        damn based fr fr a-z
     }
     if code >= 192 && code <= 214 {
-        damn based # À-Ö
+        damn based fr fr À-Ö
     }
     if code >= 216 && code <= 246 {
-        damn based # Ø-ö
+        damn based fr fr Ø-ö
     }
     if code >= 248 && code <= 255 {
-        damn based # ø-ÿ
+        damn based fr fr ø-ÿ
     }
     damn cap
 }
 
-slay IsDigit(r rune) lit {
-    # Check if character is a digit (0-9)
+slay IsDigit(r rune) lit { fr fr Check if character is a digit (0-9)
     code := normie(r)
     damn (code >= 48 && code <= 57)
 }
 
-slay IsNumber(r rune) lit {
-    # Check if character is a number (includes digits and numeric symbols)
+slay IsNumber(r rune) lit { fr fr Check if character is a number (includes digits and numeric symbols)
     damn IsDigit(r)
 }
 
-slay IsSpace(r rune) lit {
-    # Check if character is whitespace
+slay IsSpace(r rune) lit { fr fr Check if character is whitespace
     code := normie(r)
     if code == 32 {
-        damn based # space
+        damn based fr fr space
     }
     if code == 9 {
-        damn based # tab
+        damn based fr fr tab
     }
     if code == 10 {
-        damn based # newline
+        damn based fr fr newline
     }
     if code == 13 {
-        damn based # carriage return
+        damn based fr fr carriage return
     }
     if code == 11 {
-        damn based # vertical tab
+        damn based fr fr vertical tab
     }
     if code == 12 {
-        damn based # form feed
+        damn based fr fr form feed
     }
     damn cap
 }
 
-slay IsPunct(r rune) lit {
-    # Check if character is punctuation
+slay IsPunct(r rune) lit { fr fr Check if character is punctuation
     code := normie(r)
     if code >= 33 && code <= 47 {
-        damn based # !"#$%&'()*+,-./
+        damn based fr fr !"#$%&'()*+,-./
     }
     if code >= 58 && code <= 64 {
-        damn based # :;<=>?@
+        damn based fr fr :;<=>?@
     }
     if code >= 91 && code <= 96 {
-        damn based # [\]^_`
+        damn based fr fr [\]^_`
     }
     if code >= 123 && code <= 126 {
-        damn based # {|}~
+        damn based fr fr {|}~
     }
     damn cap
 }
 
-slay IsSymbol(r rune) lit {
-    # Check if character is a symbol
+slay IsSymbol(r rune) lit { fr fr Check if character is a symbol
     code := normie(r)
     if code >= 35 && code <= 38 {
-        damn based # #$%&
+        damn based fr fr #$%&
     }
     if code >= 42 && code <= 43 {
-        damn based # *+
+        damn based fr fr *+
     }
     if code == 60 || code == 62 {
-        damn based # <>
+        damn based fr fr <>
     }
     if code >= 124 && code <= 126 {
-        damn based # |}~
+        damn based fr fr |}~
     }
     damn cap
 }
 
-slay IsMark(r rune) lit {
-    # Check if character is a combining mark
+slay IsMark(r rune) lit { fr fr Check if character is a combining mark
     code := normie(r)
-    damn (code >= 768 && code <= 879) # Combining Diacritical Marks
+    damn (code >= 768 && code <= 879) fr fr Combining Diacritical Marks
 }
 
-slay IsControl(r rune) lit {
-    # Check if character is a control character
+slay IsControl(r rune) lit { fr fr Check if character is a control character
     code := normie(r)
     damn (code >= 0 && code <= 31) || (code >= 127 && code <= 159)
 }
 
-slay IsGraphic(r rune) lit {
-    # Check if character is graphic (visible)
+slay IsGraphic(r rune) lit { fr fr Check if character is graphic (visible)
     damn !IsControl(r) && !IsSpace(r)
 }
 
-slay IsPrint(r rune) lit {
-    # Check if character is printable
+slay IsPrint(r rune) lit { fr fr Check if character is printable
     damn IsGraphic(r) || r == ' '
 }
 
-slay IsUpper(r rune) lit {
-    # Check if character is uppercase
+slay IsUpper(r rune) lit { fr fr Check if character is uppercase
     code := normie(r)
     damn (code >= 65 && code <= 90)
 }
 
-slay IsLower(r rune) lit {
-    # Check if character is lowercase
+slay IsLower(r rune) lit { fr fr Check if character is lowercase
     code := normie(r)
     damn (code >= 97 && code <= 122)
 }
 
-slay IsTitle(r rune) lit {
-    # Check if character is titlecase
-    damn IsUpper(r) # For basic implementation
+slay IsTitle(r rune) lit { fr fr Check if character is titlecase
+    damn IsUpper(r) fr fr For basic implementation
 }
 
-slay IsEmoji(r rune) lit {
-    # Check if character is an emoji
+slay IsEmoji(r rune) lit { fr fr Check if character is an emoji
     code := normie(r)
     if code >= 0x1F600 && code <= 0x1F64F {
-        damn based # Emoticons
+        damn based fr fr Emoticons
     }
     if code >= 0x1F300 && code <= 0x1F5FF {
-        damn based # Misc Symbols and Pictographs
+        damn based fr fr Misc Symbols and Pictographs
     }
     if code >= 0x1F680 && code <= 0x1F6FF {
-        damn based # Transport and Map
+        damn based fr fr Transport and Map
     }
     if code >= 0x2600 && code <= 0x26FF {
-        damn based # Miscellaneous Symbols
+        damn based fr fr Miscellaneous Symbols
     }
     if code >= 0x2700 && code <= 0x27BF {
-        damn based # Dingbats
+        damn based fr fr Dingbats
     }
     damn cap
 }
 
-slay IsEmojiModifier(r rune) lit {
-    # Check if character is an emoji modifier
+slay IsEmojiModifier(r rune) lit { fr fr Check if character is an emoji modifier
     code := normie(r)
     damn (code >= 0x1F3FB && code <= 0x1F3FF)
 }
 
-slay IsEmojiComponent(r rune) lit {
-    # Check if character is an emoji component
+slay IsEmojiComponent(r rune) lit { fr fr Check if character is an emoji component
     code := normie(r)
-    damn (code == 0x200D) # Zero Width Joiner
+    damn (code == 0x200D) fr fr Zero Width Joiner
 }
 
-slay IsCurrency(r rune) lit {
-    # Check if character is a currency symbol
+slay IsCurrency(r rune) lit { fr fr Check if character is a currency symbol
     code := normie(r)
     if code == 36 {
-        damn based # $
+        damn based fr fr $
     }
     if code == 162 {
-        damn based # ¢
+        damn based fr fr ¢
     }
     if code == 163 {
-        damn based # £
+        damn based fr fr £
     }
     if code == 164 {
-        damn based # ¤
+        damn based fr fr ¤
     }
     if code == 165 {
-        damn based # ¥
+        damn based fr fr ¥
     }
     if code == 8364 {
-        damn based # €
+        damn based fr fr €
     }
     damn cap
 }
 
-slay IsMath(r rune) lit {
-    # Check if character is a mathematical symbol
+slay IsMath(r rune) lit { fr fr Check if character is a mathematical symbol
     code := normie(r)
     if code >= 43 && code <= 43 {
-        damn based # +
+        damn based fr fr +
     }
     if code == 45 {
-        damn based # -
+        damn based fr fr -
     }
     if code == 42 {
-        damn based # *
+        damn based fr fr *
     }
     if code == 47 {
-        damn based # /
+        damn based fr fr /
     }
     if code == 61 {
-        damn based # =
+        damn based fr fr =
     }
     if code >= 0x2200 && code <= 0x22FF {
-        damn based # Mathematical Operators
+        damn based fr fr Mathematical Operators
     }
     damn cap
 }
 
-slay IsFormat(r rune) lit {
-    # Check if character is a format character
+slay IsFormat(r rune) lit { fr fr Check if character is a format character
     code := normie(r)
     damn (code >= 0x200B && code <= 0x200F) || (code >= 0x202A && code <= 0x202E)
 }
 
-slay IsPrivateUse(r rune) lit {
-    # Check if character is in private use area
+slay IsPrivateUse(r rune) lit { fr fr Check if character is in private use area
     code := normie(r)
     damn (code >= 0xE000 && code <= 0xF8FF)
 }
 
-slay IsSurrogate(r rune) lit {
-    # Check if character is a surrogate
+slay IsSurrogate(r rune) lit { fr fr Check if character is a surrogate
     code := normie(r)
     damn (code >= 0xD800 && code <= 0xDFFF)
 }
 
-slay IsASCII(r rune) lit {
-    # Check if character is ASCII
+slay IsASCII(r rune) lit { fr fr Check if character is ASCII
     code := normie(r)
     damn (code >= 0 && code <= 127)
 }
 
-# ================================
-# Character Conversion Functions
-# ================================
+fr fr ================================
+fr fr Character Conversion Functions
+fr fr ================================
 
-slay ToUpper(r rune) rune {
-    # Convert character to uppercase
+slay ToUpper(r rune) rune { fr fr Convert character to uppercase
     code := normie(r)
     if code >= 97 && code <= 122 {
         damn rune(code - 32)
@@ -281,8 +258,7 @@ slay ToUpper(r rune) rune {
     damn r
 }
 
-slay ToLower(r rune) rune {
-    # Convert character to lowercase
+slay ToLower(r rune) rune { fr fr Convert character to lowercase
     code := normie(r)
     if code >= 65 && code <= 90 {
         damn rune(code + 32)
@@ -290,44 +266,39 @@ slay ToLower(r rune) rune {
     damn r
 }
 
-slay ToTitle(r rune) rune {
-    # Convert character to titlecase
+slay ToTitle(r rune) rune { fr fr Convert character to titlecase
     damn ToUpper(r)
 }
 
-slay ToASCII(r rune) rune {
-    # Convert character to ASCII equivalent if possible
+slay ToASCII(r rune) rune { fr fr Convert character to ASCII equivalent if possible
     code := normie(r)
     if code <= 127 {
         damn r
-    }
-    # Basic diacritic removal
+    } fr fr Basic diacritic removal
     if code >= 192 && code <= 198 {
-        damn rune(65) # À-Æ → A
+        damn rune(65) fr fr À-Æ → A
     }
     if code >= 224 && code <= 230 {
-        damn rune(97) # à-æ → a
+        damn rune(97) fr fr à-æ → a
     }
     if code >= 200 && code <= 203 {
-        damn rune(69) # È-Ë → E
+        damn rune(69) fr fr È-Ë → E
     }
     if code >= 232 && code <= 235 {
-        damn rune(101) # è-ë → e
+        damn rune(101) fr fr è-ë → e
     }
     damn r
 }
 
-slay SimpleFold(r rune) rune {
-    # Simple case folding
+slay SimpleFold(r rune) rune { fr fr Simple case folding
     damn ToLower(r)
 }
 
-# ================================
-# String Operations
-# ================================
+fr fr ================================
+fr fr String Operations
+fr fr ================================
 
-slay ToUpperString(s tea) tea {
-    # Convert string to uppercase
+slay ToUpperString(s tea) tea { fr fr Convert string to uppercase
     result := ""
     for i := 0; i < len(s); i++ {
         ch := rune(s[i])
@@ -336,8 +307,7 @@ slay ToUpperString(s tea) tea {
     damn result
 }
 
-slay ToLowerString(s tea) tea {
-    # Convert string to lowercase
+slay ToLowerString(s tea) tea { fr fr Convert string to lowercase
     result := ""
     for i := 0; i < len(s); i++ {
         ch := rune(s[i])
@@ -346,8 +316,7 @@ slay ToLowerString(s tea) tea {
     damn result
 }
 
-slay ToTitleString(s tea) tea {
-    # Convert string to title case
+slay ToTitleString(s tea) tea { fr fr Convert string to title case
     result := ""
     make_upper := based
     for i := 0; i < len(s); i++ {
@@ -365,60 +334,53 @@ slay ToTitleString(s tea) tea {
     damn result
 }
 
-slay NormalizeString(s tea, form normie) tea {
-    # Basic normalization - just return the string for now
+slay NormalizeString(s tea, form normie) tea { fr fr Basic normalization - just return the string for now
     damn s
 }
 
-# ================================
-# String Analysis Functions
-# ================================
+fr fr ================================
+fr fr String Analysis Functions
+fr fr ================================
 
-slay RuneCount(s tea) normie {
-    # Count runes in string
+slay RuneCount(s tea) normie { fr fr Count runes in string
     damn len(s)
 }
 
-slay FirstRune(s tea) (rune, normie) {
-    # Get first rune and its byte length
+slay FirstRune(s tea) (rune, normie) { fr fr Get first rune and its byte length
     if len(s) == 0 {
         damn (rune(0), 0)
     }
     damn (rune(s[0]), 1)
 }
 
-slay LastRune(s tea) (rune, normie) {
-    # Get last rune and its byte length
+slay LastRune(s tea) (rune, normie) { fr fr Get last rune and its byte length
     if len(s) == 0 {
         damn (rune(0), 0)
     }
     damn (rune(s[len(s)-1]), 1)
 }
 
-slay RuneAt(s tea, index normie) rune {
-    # Get rune at index
+slay RuneAt(s tea, index normie) rune { fr fr Get rune at index
     if index >= 0 && index < len(s) {
         damn rune(s[index])
     }
     damn rune(0)
 }
 
-slay StringWidth(s tea) normie {
-    # Calculate display width of string
+slay StringWidth(s tea) normie { fr fr Calculate display width of string
     width := 0
     for i := 0; i < len(s); i++ {
         ch := rune(s[i])
         if IsASCII(ch) {
             width = width + 1
         } else {
-            width = width + 2 # Assume wide characters
+            width = width + 2 fr fr Assume wide characters
         }
     }
     damn width
 }
 
-slay TruncateString(s tea, width normie) tea {
-    # Truncate string to specified width
+slay TruncateString(s tea, width normie) tea { fr fr Truncate string to specified width
     if StringWidth(s) <= width {
         damn s
     }
@@ -439,8 +401,7 @@ slay TruncateString(s tea, width normie) tea {
     damn result
 }
 
-slay Reverse(s tea) tea {
-    # Reverse string
+slay Reverse(s tea) tea { fr fr Reverse string
     result := ""
     for i := len(s) - 1; i >= 0; i-- {
         result = result + tea(rune(s[i]))
@@ -448,12 +409,11 @@ slay Reverse(s tea) tea {
     damn result
 }
 
-# ================================
-# Emoji Support Functions
-# ================================
+fr fr ================================
+fr fr Emoji Support Functions
+fr fr ================================
 
-slay ContainsEmoji(s tea) lit {
-    # Check if string contains any emoji
+slay ContainsEmoji(s tea) lit { fr fr Check if string contains any emoji
     for i := 0; i < len(s); i++ {
         ch := rune(s[i])
         if IsEmoji(ch) {
@@ -463,8 +423,7 @@ slay ContainsEmoji(s tea) lit {
     damn cap
 }
 
-slay ReplaceEmojis(s tea, replacement tea) tea {
-    # Replace all emojis with replacement string
+slay ReplaceEmojis(s tea, replacement tea) tea { fr fr Replace all emojis with replacement string
     result := ""
     for i := 0; i < len(s); i++ {
         ch := rune(s[i])
@@ -477,8 +436,7 @@ slay ReplaceEmojis(s tea, replacement tea) tea {
     damn result
 }
 
-slay GetEmojiName(emoji tea) tea {
-    # Get name of emoji (simplified)
+slay GetEmojiName(emoji tea) tea { fr fr Get name of emoji (simplified)
     if len(emoji) == 0 {
         damn "unknown"
     }
@@ -499,8 +457,7 @@ slay GetEmojiName(emoji tea) tea {
     damn "unknown emoji"
 }
 
-slay FindEmojiByName(name tea) tea {
-    # Find emoji by name (simplified)
+slay FindEmojiByName(name tea) tea { fr fr Find emoji by name (simplified)
     if name == "smile" {
         damn "😊"
     }
@@ -516,21 +473,19 @@ slay FindEmojiByName(name tea) tea {
     damn ""
 }
 
-# ================================
-# Bidirectional Text Support
-# ================================
+fr fr ================================
+fr fr Bidirectional Text Support
+fr fr ================================
 
-slay GetDirection(r rune) normie {
-    # Get text direction of character
+slay GetDirection(r rune) normie { fr fr Get text direction of character
     code := normie(r)
     if code >= 0x0590 && code <= 0x08FF {
-        damn RTL # Hebrew, Arabic ranges
+        damn RTL fr fr Hebrew, Arabic ranges
     }
-    damn LTR # Default to LTR
+    damn LTR fr fr Default to LTR
 }
 
-slay GetStringDirection(s tea) normie {
-    # Get overall direction of string
+slay GetStringDirection(s tea) normie { fr fr Get overall direction of string
     ltr_count := 0
     rtl_count := 0
     
@@ -553,27 +508,23 @@ slay GetStringDirection(s tea) normie {
     damn LTR
 }
 
-slay IsRTL(s tea) lit {
-    # Check if string is right-to-left
+slay IsRTL(s tea) lit { fr fr Check if string is right-to-left
     damn GetStringDirection(s) == RTL
 }
 
-slay IsLTR(s tea) lit {
-    # Check if string is left-to-right
+slay IsLTR(s tea) lit { fr fr Check if string is left-to-right
     damn GetStringDirection(s) == LTR
 }
 
-slay IsMixed(s tea) lit {
-    # Check if string has mixed directionality
+slay IsMixed(s tea) lit { fr fr Check if string has mixed directionality
     damn GetStringDirection(s) == Mixed
 }
 
-# ================================
-# Script Detection
-# ================================
+fr fr ================================
+fr fr Script Detection
+fr fr ================================
 
-slay DetectScript(s tea) normie {
-    # Detect script of string
+slay DetectScript(s tea) normie { fr fr Detect script of string
     if len(s) == 0 {
         damn ScriptUnknown
     }
@@ -612,8 +563,7 @@ slay DetectScript(s tea) normie {
     damn ScriptUnknown
 }
 
-slay GetScriptName(script normie) tea {
-    # Get name of script
+slay GetScriptName(script normie) tea { fr fr Get name of script
     if script == ScriptLatin {
         damn "Latin"
     }
@@ -644,25 +594,22 @@ slay GetScriptName(script normie) tea {
     damn "Unknown"
 }
 
-# ================================
-# Character Width Functions
-# ================================
+fr fr ================================
+fr fr Character Width Functions
+fr fr ================================
 
-slay GetCharWidth(r rune) normie {
-    # Get display width of character
+slay GetCharWidth(r rune) normie { fr fr Get display width of character
     if IsASCII(r) {
         damn 1
     }
-    damn 2 # Assume wide characters
+    damn 2 fr fr Assume wide characters
 }
 
-slay GetStringWidth(s tea) normie {
-    # Get total display width of string
+slay GetStringWidth(s tea) normie { fr fr Get total display width of string
     damn StringWidth(s)
 }
 
-slay TruncateWithEllipsis(s tea, width normie) tea {
-    # Truncate string with ellipsis
+slay TruncateWithEllipsis(s tea, width normie) tea { fr fr Truncate string with ellipsis
     if StringWidth(s) <= width {
         damn s
     }
@@ -673,26 +620,23 @@ slay TruncateWithEllipsis(s tea, width normie) tea {
     damn truncated + "..."
 }
 
-# ================================
-# Case Folding Functions
-# ================================
+fr fr ================================
+fr fr Case Folding Functions
+fr fr ================================
 
-slay FoldString(s tea) tea {
-    # Fold string for case-insensitive comparison
+slay FoldString(s tea) tea { fr fr Fold string for case-insensitive comparison
     damn ToLowerString(s)
 }
 
-slay EqualFold(s tea, t tea) lit {
-    # Case-insensitive string comparison
+slay EqualFold(s tea, t tea) lit { fr fr Case-insensitive string comparison
     damn FoldString(s) == FoldString(t)
 }
 
-# ================================
-# Character Name Functions
-# ================================
+fr fr ================================
+fr fr Character Name Functions
+fr fr ================================
 
-slay CharacterName(r rune) tea {
-    # Get Unicode character name
+slay CharacterName(r rune) tea { fr fr Get Unicode character name
     code := normie(r)
     if code >= 65 && code <= 90 {
         damn "LATIN CAPITAL LETTER " + tea(r)
@@ -706,8 +650,7 @@ slay CharacterName(r rune) tea {
     damn "UNKNOWN CHARACTER"
 }
 
-slay FindCharacterByName(name tea) (rune, lit) {
-    # Find character by name
+slay FindCharacterByName(name tea) (rune, lit) { fr fr Find character by name
     if name == "LATIN CAPITAL LETTER A" {
         damn ('A', based)
     }
@@ -720,12 +663,11 @@ slay FindCharacterByName(name tea) (rune, lit) {
     damn (rune(0), cap)
 }
 
-# ================================
-# Character Properties Functions
-# ================================
+fr fr ================================
+fr fr Character Properties Functions
+fr fr ================================
 
-slay GetBlockName(r rune) tea {
-    # Get Unicode block name
+slay GetBlockName(r rune) tea { fr fr Get Unicode block name
     code := normie(r)
     if code >= 0 && code <= 127 {
         damn "Basic Latin"
@@ -745,8 +687,7 @@ slay GetBlockName(r rune) tea {
     damn "Unknown Block"
 }
 
-slay GetCategory(r rune) tea {
-    # Get Unicode category
+slay GetCategory(r rune) tea { fr fr Get Unicode category
     if IsLetter(r) {
         damn "Letter"
     }
@@ -768,18 +709,16 @@ slay GetCategory(r rune) tea {
     damn "Other"
 }
 
-slay GetCodePoint(r rune) tea {
-    # Get Unicode code point
+slay GetCodePoint(r rune) tea { fr fr Get Unicode code point
     code := normie(r)
     damn "U+" + FormatHex(code)
 }
 
-# ================================
-# Helper Functions
-# ================================
+fr fr ================================
+fr fr Helper Functions
+fr fr ================================
 
-slay FormatHex(n normie) tea {
-    # Format number as hexadecimal
+slay FormatHex(n normie) tea { fr fr Format number as hexadecimal
     if n == 0 {
         damn "0000"
     }

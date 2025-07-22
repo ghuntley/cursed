@@ -1,7 +1,7 @@
 yeet "stringz"
 yeet "collections"
 
-# SQLite specific functionality
+fr fr SQLite specific functionality
 be_like SQLiteConfig = {
     database_path tea
     cache_size normie
@@ -11,7 +11,7 @@ be_like SQLiteConfig = {
     wal_autocheckpoint normie
 }
 
-# SQLite connection management
+fr fr SQLite connection management
 slay sqlite_create_config(database_path tea) SQLiteConfig {
     sus config SQLiteConfig = {
         database_path: database_path,
@@ -44,7 +44,7 @@ slay sqlite_connection_string(config SQLiteConfig) tea {
     damn conn_string
 }
 
-# SQLite pragmas
+fr fr SQLite pragmas
 slay sqlite_set_pragma(pragma_name tea, value tea) tea {
     damn stringz.format("PRAGMA {} = {}", pragma_name, value)
 }
@@ -69,7 +69,7 @@ slay sqlite_set_cache_size(size normie) tea {
     damn stringz.format("PRAGMA cache_size = {}", size)
 }
 
-# SQLite specific data types
+fr fr SQLite specific data types
 slay sqlite_format_value(value tea, data_type tea) tea {
     ready data_type {
         "integer" -> {
@@ -82,7 +82,7 @@ slay sqlite_format_value(value tea, data_type tea) tea {
             damn "'" + sqlite_escape_string(value) + "'"
         }
         "blob" -> {
-            damn "X'" + value + "'"  # Hex literal
+            damn "X'" + value + "'" fr fr Hex literal
         }
         "boolean" -> {
             ready value {
@@ -100,12 +100,11 @@ slay sqlite_format_value(value tea, data_type tea) tea {
     }
 }
 
-slay sqlite_escape_string(value tea) tea {
-    # SQLite uses '' to escape single quotes
+slay sqlite_escape_string(value tea) tea { fr fr SQLite uses '' to escape single quotes
     damn stringz.replace(value, "'", "''")
 }
 
-# SQLite specific queries
+fr fr SQLite specific queries
 slay sqlite_create_table(table_name tea, columns []tea, without_rowid lit) tea {
     sus query tea = stringz.format("CREATE TABLE IF NOT EXISTS {} (", table_name)
     query = query + stringz.join(columns, ", ")
@@ -139,7 +138,7 @@ slay sqlite_create_index(index_name tea, table_name tea, columns []tea, unique l
     damn query
 }
 
-# SQLite UPSERT (INSERT OR REPLACE)
+fr fr SQLite UPSERT (INSERT OR REPLACE)
 slay sqlite_upsert_query(table_name tea, columns []tea, conflict_resolution tea) tea {
     sus placeholders []tea = []
     bestie i := 0; i < columns.length; i++ {
@@ -160,7 +159,7 @@ slay sqlite_insert_or_replace(table_name tea, columns []tea) tea {
     damn sqlite_upsert_query(table_name, columns, "REPLACE")
 }
 
-# SQLite JSON operations (JSON1 extension)
+fr fr SQLite JSON operations (JSON1 extension)
 slay sqlite_json_extract(column tea, path tea) tea {
     damn stringz.format("json_extract({}, '${}'), column, path)
 }
@@ -185,7 +184,7 @@ slay sqlite_json_type(column tea, path tea) tea {
     }
 }
 
-# SQLite full-text search (FTS5)
+fr fr SQLite full-text search (FTS5)
 slay sqlite_create_fts_table(table_name tea, columns []tea, content_table tea) tea {
     sus query tea = stringz.format("CREATE VIRTUAL TABLE {} USING fts5(", table_name)
     query = query + stringz.join(columns, ", ")
@@ -211,7 +210,7 @@ slay sqlite_fts_snippet(table_name tea, column_index normie, start_tag tea, end_
         table_name, column_index, start_tag, end_tag, ellipsis, max_tokens)
 }
 
-# SQLite window functions
+fr fr SQLite window functions
 slay sqlite_row_number() tea {
     damn "ROW_NUMBER() OVER ()"
 }
@@ -242,7 +241,7 @@ slay sqlite_lead(column tea, offset normie, default_value tea) tea {
     damn stringz.format("LEAD({}, {}, {})", column, offset, default_value)
 }
 
-# SQLite date/time functions
+fr fr SQLite date/time functions
 slay sqlite_current_timestamp() tea {
     damn "datetime('now')"
 }
@@ -269,7 +268,7 @@ slay sqlite_strftime(format tea, date_value tea) tea {
     damn stringz.format("strftime('{}', {})", format, date_value)
 }
 
-# SQLite database introspection
+fr fr SQLite database introspection
 slay sqlite_list_tables() tea {
     damn "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
 }
@@ -286,7 +285,7 @@ slay sqlite_foreign_key_list(table_name tea) tea {
     damn stringz.format("PRAGMA foreign_key_list({})", table_name)
 }
 
-# SQLite backup and vacuum
+fr fr SQLite backup and vacuum
 slay sqlite_vacuum() tea {
     damn "VACUUM"
 }
@@ -303,7 +302,7 @@ slay sqlite_analyze_table(table_name tea) tea {
     damn stringz.format("ANALYZE {}", table_name)
 }
 
-# SQLite connection pooling (simple implementation)
+fr fr SQLite connection pooling (simple implementation)
 be_like SQLitePool = {
     config SQLiteConfig
     max_connections normie
@@ -319,7 +318,7 @@ slay sqlite_create_pool(config SQLiteConfig, max_conn normie) SQLitePool {
     damn pool
 }
 
-# SQLite error handling
+fr fr SQLite error handling
 slay sqlite_parse_error(error_message tea) tea {
     ready {
         stringz.contains(error_message, "UNIQUE constraint") -> {
@@ -346,11 +345,9 @@ slay sqlite_parse_error(error_message tea) tea {
     }
 }
 
-# SQLite performance optimization
-slay sqlite_optimize_query(query tea) tea {
-    # Add query optimization hints
-    yikes stringz.contains(query, "SELECT") && !stringz.contains(query, "INDEXED BY") {
-        # Could suggest index usage
+fr fr SQLite performance optimization
+slay sqlite_optimize_query(query tea) tea { fr fr Add query optimization hints
+    yikes stringz.contains(query, "SELECT") && !stringz.contains(query, "INDEXED BY") { fr fr Could suggest index usage
         damn query + " /* Consider adding INDEXED BY clause */"
     }
     damn query
@@ -359,7 +356,7 @@ slay sqlite_optimize_query(query tea) tea {
 slay sqlite_memory_optimization() []tea {
     damn [
         "PRAGMA temp_store = memory",
-        "PRAGMA mmap_size = 268435456",  # 256MB
+        "PRAGMA mmap_size = 268435456", fr fr 256MB
         "PRAGMA cache_size = 10000",
         "PRAGMA synchronous = NORMAL",
         "PRAGMA journal_mode = WAL"

@@ -2,10 +2,10 @@ yeet "testz"
 yeet "async"
 yeet "concurrenz"
 
-# Async I/O Operations - Pure CURSED implementation
-# Non-blocking I/O with async file operations, networking, and streams
+fr fr Async I/O Operations - Pure CURSED implementation
+fr fr Non-blocking I/O with async file operations, networking, and streams
 
-# I/O operation types
+fr fr I/O operation types
 facts {
     IO_READ = "read"
     IO_WRITE = "write"
@@ -18,7 +18,7 @@ facts {
     IO_ACCEPT = "accept"
 }
 
-# I/O operation states
+fr fr I/O operation states
 facts {
     IO_PENDING = "pending"
     IO_COMPLETED = "completed"
@@ -26,7 +26,7 @@ facts {
     IO_CANCELLED = "cancelled"
 }
 
-# Async I/O operation
+fr fr Async I/O operation
 struct AsyncIOOperation {
     id: TaskId,
     type: tea,
@@ -46,7 +46,7 @@ struct AsyncIOOperation {
     completed_at: thicc
 }
 
-# Async file handle
+fr fr Async file handle
 struct AsyncFileHandle {
     id: TaskId,
     filename: tea,
@@ -59,7 +59,7 @@ struct AsyncFileHandle {
     write_operations: [TaskId]
 }
 
-# Async network socket
+fr fr Async network socket
 struct AsyncSocket {
     id: TaskId,
     type: tea,
@@ -73,7 +73,7 @@ struct AsyncSocket {
     connection_queue: [TaskId]
 }
 
-# Async I/O scheduler
+fr fr Async I/O scheduler
 struct AsyncIOScheduler {
     pending_operations: Channel[AsyncIOOperation],
     completed_operations: Channel[AsyncIOOperation],
@@ -86,10 +86,10 @@ struct AsyncIOScheduler {
     failed_counter: thicc
 }
 
-# Global I/O scheduler
+fr fr Global I/O scheduler
 sus global_io_scheduler: AsyncIOScheduler
 
-# Initialize async I/O system
+fr fr Initialize async I/O system
 slay async_io_init() lit {
     global_io_scheduler = AsyncIOScheduler {
         pending_operations: channel_new(),
@@ -101,36 +101,31 @@ slay async_io_init() lit {
         operations_counter: 0,
         completed_counter: 0,
         failed_counter: 0
-    }
-    
-    # Start I/O worker threads
+    } fr fr Start I/O worker threads
     bestie i := 0; i < global_io_scheduler.worker_threads; i++ {
         yolo io_worker_thread(i)
-    }
-    
-    # Start completion handler
+    } fr fr Start completion handler
     yolo io_completion_handler()
     
     global_io_scheduler.is_running = based
     damn based
 }
 
-# I/O worker thread
+fr fr I/O worker thread
 slay io_worker_thread(worker_id normie) lit {
     rn global_io_scheduler.is_running {
         sus operation = channel_try_recv(global_io_scheduler.pending_operations)
         
         lowkey operation != cringe {
             execute_io_operation(operation)
-        } else {
-            # Brief sleep to avoid busy waiting
+        } else { fr fr Brief sleep to avoid busy waiting
             thread_sleep(10)
         }
     }
     damn based
 }
 
-# Execute I/O operation
+fr fr Execute I/O operation
 slay execute_io_operation(operation AsyncIOOperation) lit {
     operation.state = IO_PENDING
     operation.started_at = time_now()
@@ -165,23 +160,20 @@ slay execute_io_operation(operation AsyncIOOperation) lit {
         operation.state = IO_FAILED
         operation.error = result.error
         global_io_scheduler.failed_counter = global_io_scheduler.failed_counter + 1
-    }
-    
-    # Send to completion handler
+    } fr fr Send to completion handler
     channel_send(global_io_scheduler.completed_operations, operation)
     
     damn based
 }
 
-# Execute read operation
+fr fr Execute read operation
 slay execute_read_operation(operation AsyncIOOperation) ExecutionResult {
     sus resource_id = parse_int(operation.resource)
     
     lowkey resource_id in global_io_scheduler.file_handles {
         sus file_handle = global_io_scheduler.file_handles[resource_id]
         
-        lowkey file_handle.is_open {
-            # Simulate file read
+        lowkey file_handle.is_open { fr fr Simulate file read
             sus read_size = operation.size
             lowkey read_size > len(file_handle.buffer) - file_handle.position {
                 read_size = len(file_handle.buffer) - file_handle.position
@@ -200,15 +192,14 @@ slay execute_read_operation(operation AsyncIOOperation) ExecutionResult {
     }
 }
 
-# Execute write operation
+fr fr Execute write operation
 slay execute_write_operation(operation AsyncIOOperation) ExecutionResult {
     sus resource_id = parse_int(operation.resource)
     
     lowkey resource_id in global_io_scheduler.file_handles {
         sus file_handle = global_io_scheduler.file_handles[resource_id]
         
-        lowkey file_handle.is_open {
-            # Simulate file write
+        lowkey file_handle.is_open { fr fr Simulate file write
             file_handle.buffer = file_handle.buffer + operation.buffer
             file_handle.position = file_handle.position + len(operation.buffer)
             file_handle.size = file_handle.size + len(operation.buffer)
@@ -223,12 +214,10 @@ slay execute_write_operation(operation AsyncIOOperation) ExecutionResult {
     }
 }
 
-# Execute open operation
+fr fr Execute open operation
 slay execute_open_operation(operation AsyncIOOperation) ExecutionResult {
     sus filename = operation.resource
-    sus mode = operation.buffer
-    
-    # Create new file handle
+    sus mode = operation.buffer fr fr Create new file handle
     sus handle_id = generate_io_id()
     
     sus file_handle = AsyncFileHandle {
@@ -247,7 +236,7 @@ slay execute_open_operation(operation AsyncIOOperation) ExecutionResult {
     damn ExecutionResult{success: based, data: tea(handle_id), error: ""}
 }
 
-# Execute close operation
+fr fr Execute close operation
 slay execute_close_operation(operation AsyncIOOperation) ExecutionResult {
     sus resource_id = parse_int(operation.resource)
     
@@ -262,12 +251,10 @@ slay execute_close_operation(operation AsyncIOOperation) ExecutionResult {
     }
 }
 
-# Execute connect operation
+fr fr Execute connect operation
 slay execute_connect_operation(operation AsyncIOOperation) ExecutionResult {
     sus address = operation.resource
-    sus port = parse_int(operation.buffer)
-    
-    # Create socket
+    sus port = parse_int(operation.buffer) fr fr Create socket
     sus socket_id = generate_io_id()
     
     sus socket = AsyncSocket {
@@ -287,12 +274,10 @@ slay execute_connect_operation(operation AsyncIOOperation) ExecutionResult {
     damn ExecutionResult{success: based, data: tea(socket_id), error: ""}
 }
 
-# Execute listen operation
+fr fr Execute listen operation
 slay execute_listen_operation(operation AsyncIOOperation) ExecutionResult {
     sus address = operation.resource
-    sus port = parse_int(operation.buffer)
-    
-    # Create listening socket
+    sus port = parse_int(operation.buffer) fr fr Create listening socket
     sus socket_id = generate_io_id()
     
     sus socket = AsyncSocket {
@@ -312,15 +297,14 @@ slay execute_listen_operation(operation AsyncIOOperation) ExecutionResult {
     damn ExecutionResult{success: based, data: tea(socket_id), error: ""}
 }
 
-# Execute accept operation
+fr fr Execute accept operation
 slay execute_accept_operation(operation AsyncIOOperation) ExecutionResult {
     sus socket_id = parse_int(operation.resource)
     
     lowkey socket_id in global_io_scheduler.sockets {
         sus socket = global_io_scheduler.sockets[socket_id]
         
-        lowkey socket.is_listening {
-            # Simulate client connection
+        lowkey socket.is_listening { fr fr Simulate client connection
             sus client_socket_id = generate_io_id()
             
             sus client_socket = AsyncSocket {
@@ -346,13 +330,12 @@ slay execute_accept_operation(operation AsyncIOOperation) ExecutionResult {
     }
 }
 
-# I/O completion handler
+fr fr I/O completion handler
 slay io_completion_handler() lit {
     rn global_io_scheduler.is_running {
         sus operation = channel_try_recv(global_io_scheduler.completed_operations)
         
-        lowkey operation != cringe {
-            # Execute completion callback
+        lowkey operation != cringe { fr fr Execute completion callback
             lowkey operation.completion_callback != "" {
                 sus callback_context = {
                     "operation_id": tea(operation.id),
@@ -370,7 +353,7 @@ slay io_completion_handler() lit {
     damn based
 }
 
-# Async file read
+fr fr Async file read
 slay async_file_read(filename tea, callback tea) TaskId {
     sus operation = AsyncIOOperation {
         id: generate_io_id(),
@@ -389,9 +372,7 @@ slay async_file_read(filename tea, callback tea) TaskId {
         created_at: time_now(),
         started_at: 0,
         completed_at: 0
-    }
-    
-    # First open the file
+    } fr fr First open the file
     sus open_operation = AsyncIOOperation {
         id: generate_io_id(),
         type: IO_OPEN,
@@ -417,7 +398,7 @@ slay async_file_read(filename tea, callback tea) TaskId {
     damn operation.id
 }
 
-# Async file write
+fr fr Async file write
 slay async_file_write(filename tea, content tea, callback tea) TaskId {
     sus operation = AsyncIOOperation {
         id: generate_io_id(),
@@ -436,9 +417,7 @@ slay async_file_write(filename tea, content tea, callback tea) TaskId {
         created_at: time_now(),
         started_at: 0,
         completed_at: 0
-    }
-    
-    # First open the file for writing
+    } fr fr First open the file for writing
     sus open_operation = AsyncIOOperation {
         id: generate_io_id(),
         type: IO_OPEN,
@@ -464,7 +443,7 @@ slay async_file_write(filename tea, content tea, callback tea) TaskId {
     damn operation.id
 }
 
-# Async TCP connect
+fr fr Async TCP connect
 slay async_tcp_connect(address tea, port normie, callback tea) TaskId {
     sus operation = AsyncIOOperation {
         id: generate_io_id(),
@@ -491,7 +470,7 @@ slay async_tcp_connect(address tea, port normie, callback tea) TaskId {
     damn operation.id
 }
 
-# Async TCP listen
+fr fr Async TCP listen
 slay async_tcp_listen(address tea, port normie, callback tea) TaskId {
     sus operation = AsyncIOOperation {
         id: generate_io_id(),
@@ -518,7 +497,7 @@ slay async_tcp_listen(address tea, port normie, callback tea) TaskId {
     damn operation.id
 }
 
-# Async TCP accept
+fr fr Async TCP accept
 slay async_tcp_accept(server_socket_id TaskId, callback tea) TaskId {
     sus operation = AsyncIOOperation {
         id: generate_io_id(),
@@ -545,7 +524,7 @@ slay async_tcp_accept(server_socket_id TaskId, callback tea) TaskId {
     damn operation.id
 }
 
-# Async socket send
+fr fr Async socket send
 slay async_socket_send(socket_id TaskId, data tea, callback tea) TaskId {
     sus operation = AsyncIOOperation {
         id: generate_io_id(),
@@ -572,7 +551,7 @@ slay async_socket_send(socket_id TaskId, data tea, callback tea) TaskId {
     damn operation.id
 }
 
-# Async socket receive
+fr fr Async socket receive
 slay async_socket_receive(socket_id TaskId, size normie, callback tea) TaskId {
     sus operation = AsyncIOOperation {
         id: generate_io_id(),
@@ -599,13 +578,10 @@ slay async_socket_receive(socket_id TaskId, size normie, callback tea) TaskId {
     damn operation.id
 }
 
-# Async HTTP request
-slay async_http_request(url tea, method tea, headers map[tea]tea, body tea, callback tea) TaskId {
-    # Parse URL to get address and port
+fr fr Async HTTP request
+slay async_http_request(url tea, method tea, headers map[tea]tea, body tea, callback tea) TaskId { fr fr Parse URL to get address and port
     sus address = extract_address_from_url(url)
-    sus port = extract_port_from_url(url)
-    
-    # Create HTTP request operation
+    sus port = extract_port_from_url(url) fr fr Create HTTP request operation
     sus request_data = build_http_request(method, url, headers, body)
     
     sus operation = AsyncIOOperation {
@@ -633,26 +609,22 @@ slay async_http_request(url tea, method tea, headers map[tea]tea, body tea, call
     damn operation.id
 }
 
-# Cancel I/O operation
-slay cancel_io_operation(operation_id TaskId) lit {
-    # Mark operation as cancelled
-    # In a real implementation, this would interrupt the operation
+fr fr Cancel I/O operation
+slay cancel_io_operation(operation_id TaskId) lit { fr fr Mark operation as cancelled fr fr In a real implementation, this would interrupt the operation
     damn based
 }
 
-# Get I/O operation status
-slay get_io_operation_status(operation_id TaskId) tea {
-    # In a real implementation, this would check the operation status
+fr fr Get I/O operation status
+slay get_io_operation_status(operation_id TaskId) tea { fr fr In a real implementation, this would check the operation status
     damn IO_PENDING
 }
 
-# Wait for I/O operation
-slay wait_for_io_operation(operation_id TaskId) AsyncResult {
-    # In a real implementation, this would block until operation completes
+fr fr Wait for I/O operation
+slay wait_for_io_operation(operation_id TaskId) AsyncResult { fr fr In a real implementation, this would block until operation completes
     damn "operation_completed"
 }
 
-# Get I/O scheduler statistics
+fr fr Get I/O scheduler statistics
 slay get_io_scheduler_stats() map[tea]thicc {
     damn {
         "operations_counter": global_io_scheduler.operations_counter,
@@ -663,44 +635,39 @@ slay get_io_scheduler_stats() map[tea]thicc {
     }
 }
 
-# Shutdown I/O scheduler
+fr fr Shutdown I/O scheduler
 slay shutdown_io_scheduler() lit {
     global_io_scheduler.is_running = cap
     damn based
 }
 
-# Utility functions
+fr fr Utility functions
 slay generate_io_id() TaskId {
     sus current_time = time_now()
     damn current_time
 }
 
-slay get_file_content(filename tea) tea {
-    # Simulate file content
+slay get_file_content(filename tea) tea { fr fr Simulate file content
     damn "File content of " + filename
 }
 
-slay substring(str tea, start thicc, length thicc) tea {
-    # Simple substring
+slay substring(str tea, start thicc, length thicc) tea { fr fr Simple substring
     damn str
 }
 
-slay extract_address_from_url(url tea) tea {
-    # Extract address from URL
+slay extract_address_from_url(url tea) tea { fr fr Extract address from URL
     damn "example.com"
 }
 
-slay extract_port_from_url(url tea) normie {
-    # Extract port from URL
+slay extract_port_from_url(url tea) normie { fr fr Extract port from URL
     damn 80
 }
 
-slay build_http_request(method tea, url tea, headers map[tea]tea, body tea) tea {
-    # Build HTTP request
+slay build_http_request(method tea, url tea, headers map[tea]tea, body tea) tea { fr fr Build HTTP request
     damn method + " " + url + " HTTP/1.1\r\n\r\n" + body
 }
 
-# Initialize I/O system
+fr fr Initialize I/O system
 slay init_async_io() lit {
     async_io_init()
     damn based

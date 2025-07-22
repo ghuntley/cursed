@@ -1,47 +1,47 @@
-# WASM Mood - WebAssembly Support Test Suite  
+fr fr WASM Mood - WebAssembly Support Test Suite  
 yeet "testz"
 yeet "wasm_mood"
 
 test_start("WASM Mood WebAssembly Support Tests")
 
-# Test WASM runtime initialization
+fr fr Test WASM runtime initialization
 test_start("WASM Runtime Initialization")
 sus init_result lit = wasm_init_runtime()
 assert_true(init_result)
 vibez.spill("✅ WASM runtime initialization: PASS")
 
-# Test WASM compilation from source
+fr fr Test WASM compilation from source
 test_start("WASM Compilation from Source")
 sus test_source tea = "slay main() normie { damn 42 }"
 sus module normie = wasm_compile_from_source(test_source, WASM_OPT_NONE)
 assert_true(module > 0)
 vibez.spill("✅ WASM compilation from source: PASS")
 
-# Test WASM module validation
+fr fr Test WASM module validation
 test_start("WASM Module Validation")
 sus validation_result lit = wasm_validate_module(module)
 assert_true(validation_result)
 vibez.spill("✅ WASM module validation: PASS")
 
-# Test WASM runtime creation
+fr fr Test WASM runtime creation
 test_start("WASM Runtime Creation")
 sus runtime normie = wasm_create_runtime()
 assert_true(runtime > 0)
 vibez.spill("✅ WASM runtime creation: PASS")
 
-# Test WASM module loading
+fr fr Test WASM module loading
 test_start("WASM Module Loading")
 sus instance normie = wasm_load_module(runtime, module)
 assert_true(instance > 0)
 vibez.spill("✅ WASM module loading: PASS")
 
-# Test WASM function calls
+fr fr Test WASM function calls
 test_start("WASM Function Calls")
 sus result normie = wasm_call_function(instance, "main", 0)
 assert_eq_int(result, 42)
 vibez.spill("✅ WASM function calls: PASS")
 
-# Test WASM memory management
+fr fr Test WASM memory management
 test_start("WASM Memory Management")
 sus memory normie = wasm_alloc_memory(4096)
 assert_true(memory > 0)
@@ -56,7 +56,7 @@ sus free_result lit = wasm_free_memory(memory)
 assert_true(free_result)
 vibez.spill("✅ WASM memory management: PASS")
 
-# Test WASM import/export functionality
+fr fr Test WASM import/export functionality
 test_start("WASM Import/Export")
 sus import_result lit = wasm_add_import(module, "env", "log")
 assert_true(import_result)
@@ -71,7 +71,7 @@ sus export_count normie = wasm_get_export_count(module)
 assert_true(export_count >= 1)
 vibez.spill("✅ WASM import/export: PASS")
 
-# Test WASM optimization levels
+fr fr Test WASM optimization levels
 test_start("WASM Optimization Levels")
 sus opt_none normie = wasm_compile_from_source(test_source, WASM_OPT_NONE)
 assert_true(opt_none > 0)
@@ -86,7 +86,7 @@ sus opt_balanced normie = wasm_compile_from_source(test_source, WASM_OPT_BALANCE
 assert_true(opt_balanced > 0)
 vibez.spill("✅ WASM optimization levels: PASS")
 
-# Test WASM JavaScript wrapper generation
+fr fr Test WASM JavaScript wrapper generation
 test_start("WASM JavaScript Wrapper Generation")
 sus browser_wrapper tea = wasm_generate_js_wrapper(module, "browser")
 assert_true(browser_wrapper != "")
@@ -100,13 +100,13 @@ sus generic_wrapper tea = wasm_generate_js_wrapper(module, "generic")
 assert_true(generic_wrapper != "")
 vibez.spill("✅ WASM JavaScript wrapper generation: PASS")
 
-# Test WASI integration
+fr fr Test WASI integration
 test_start("WASI Integration")
 sus wasi_result lit = wasm_enable_wasi(module)
 assert_true(wasi_result)
 vibez.spill("✅ WASI integration: PASS")
 
-# Test WASM performance monitoring
+fr fr Test WASM performance monitoring
 test_start("WASM Performance Monitoring")
 sus exec_time normie = wasm_get_execution_time(instance)
 assert_true(exec_time >= 0)
@@ -115,10 +115,10 @@ sus memory_usage normie = wasm_get_memory_usage(instance)
 assert_true(memory_usage >= 0)
 vibez.spill("✅ WASM performance monitoring: PASS")
 
-# Test WASM error handling
+fr fr Test WASM error handling
 test_start("WASM Error Handling")
 sus invalid_module normie = wasm_compile_from_source("", WASM_OPT_NONE)
-# Note: simplified module returns 0 for invalid cases, so this might pass
+fr fr Note: simplified module returns 0 for invalid cases, so this might pass
 
 sus error_msg tea = wasm_get_last_error()
 assert_true(error_msg != "")
@@ -127,7 +127,7 @@ sus clear_result lit = wasm_clear_error()
 assert_true(clear_result)
 vibez.spill("✅ WASM error handling: PASS")
 
-# Test WASM module introspection
+fr fr Test WASM module introspection
 test_start("WASM Module Introspection")
 sus module_size normie = wasm_get_module_size(module)
 assert_true(module_size > 0)
@@ -136,7 +136,7 @@ sus function_count normie = wasm_get_function_count(module)
 assert_true(function_count > 0)
 vibez.spill("✅ WASM module introspection: PASS")
 
-# Test WASM format conversion
+fr fr Test WASM format conversion
 test_start("WASM Format Conversion")
 sus wat_text tea = wasm_format_bytes_to_wat(0x42)
 assert_true(wat_text != "")
@@ -146,7 +146,7 @@ sus bytecode normie = wasm_format_wat_to_bytes("(module)")
 assert_true(bytecode > 0)
 vibez.spill("✅ WASM format conversion: PASS")
 
-# Test WASM naming validation
+fr fr Test WASM naming validation
 test_start("WASM Naming Validation")
 sus valid_name lit = wasm_is_valid_name("main")
 assert_true(valid_name)
@@ -155,7 +155,7 @@ sus invalid_name lit = wasm_is_valid_name("")
 assert_false(invalid_name)
 vibez.spill("✅ WASM naming validation: PASS")
 
-# Test WASM constants
+fr fr Test WASM constants
 test_start("WASM Constants")
 assert_eq_int(WASM_OPT_NONE, 0)
 assert_eq_int(WASM_OPT_SIZE, 1)

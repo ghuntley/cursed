@@ -1,7 +1,7 @@
-# Working Core Module Test
-# Tests essential core functions for self-hosting
+fr fr Working Core Module Test
+fr fr Tests essential core functions for self-hosting
 
-# Built-in test framework
+fr fr Built-in test framework
 sus test_count normie = 0
 sus test_passed normie = 0
 sus test_failed normie = 0
@@ -62,7 +62,7 @@ slay print_test_summary() {
     vibez.spill("❌ Some tests failed")
 }
 
-# Core Functions for Testing (inline definitions)
+fr fr Core Functions for Testing (inline definitions)
 slay core_max(a normie, b normie) normie {
     bestie a > b {
         damn a
@@ -138,20 +138,20 @@ slay core_result_unwrap_or(result (lit, normie, normie), default_value normie) n
     damn default_value
 }
 
-# Test Core Mathematical Functions
+fr fr Test Core Mathematical Functions
 test_start("Core Mathematical Functions")
 assert_eq_int(core_max(5, 3), 5)
 assert_eq_int(core_min(5, 3), 3)
 assert_eq_int(core_abs(-5), 5)
 assert_eq_int(core_abs(5), 5)
 
-# Test Core Type Conversion
+fr fr Test Core Type Conversion
 test_start("Core Type Conversion")
 assert_eq_string(core_string_from_int(42), "42")
 assert_eq_string(core_string_from_int(0), "0")
 assert_eq_string(core_string_from_int(100), "100")
 
-# Test Core Option Type
+fr fr Test Core Option Type
 test_start("Core Option Type")
 sus some_val (lit, normie) = core_option_some(42)
 sus none_val (lit, normie) = core_option_none()
@@ -160,7 +160,7 @@ assert_false(core_option_is_some(none_val))
 assert_eq_int(core_option_unwrap_or(some_val, 999), 42)
 assert_eq_int(core_option_unwrap_or(none_val, 999), 999)
 
-# Test Core Result Type
+fr fr Test Core Result Type
 test_start("Core Result Type")
 sus ok_val (lit, normie, normie) = core_result_ok(123)
 sus err_val (lit, normie, normie) = core_result_err(404)

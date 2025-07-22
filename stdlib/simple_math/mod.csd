@@ -1,5 +1,5 @@
-# Simple Math Module - Pure CURSED implementation
-# No dependencies on other modules
+fr fr Simple Math Module - Pure CURSED implementation
+fr fr No dependencies on other modules
 
 slay add(a normie, b normie) normie {
     damn a + b

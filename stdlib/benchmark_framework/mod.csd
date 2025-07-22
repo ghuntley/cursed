@@ -3,10 +3,10 @@ yeet "timez"
 yeet "stringz"
 yeet "dropz"
 
-# Simple Benchmark Framework for CURSED
-# Performance benchmarking with core functionality
+fr fr Simple Benchmark Framework for CURSED
+fr fr Performance benchmarking with core functionality
 
-# Global benchmark state
+fr fr Global benchmark state
 sus benchmark_name tea = ""
 sus benchmark_warmup normie = 100
 sus benchmark_iterations normie = 1000
@@ -14,7 +14,7 @@ sus benchmark_timeout normie = 60
 sus execution_times []meal = []
 sus memory_usage []normie = []
 
-# Simple benchmark configuration function
+fr fr Simple benchmark configuration function
 slay configure_benchmark(name tea, warmup normie, iterations normie) lit {
     benchmark_name = name
     benchmark_warmup = warmup
@@ -23,32 +23,31 @@ slay configure_benchmark(name tea, warmup normie, iterations normie) lit {
     damn based
 }
 
-# Get current timestamp in nanoseconds
-slay get_timestamp_nanos() normie {
-    # Simple timestamp - would use actual system calls in production
-    sus current_time = 1000000000  # 1 second in nanoseconds
+fr fr Get current timestamp in nanoseconds
+slay get_timestamp_nanos() normie { fr fr Simple timestamp - would use actual system calls in production
+    sus current_time = 1000000000 fr fr 1 second in nanoseconds
     damn current_time
 }
 
-# Measure memory usage (simplified)
+fr fr Measure memory usage (simplified)
 slay get_memory_usage() normie {
-    sus heap_size normie = 1024  # Simplified - would use actual system calls
+    sus heap_size normie = 1024 fr fr Simplified - would use actual system calls
     damn heap_size
 }
 
-# Execute a single benchmark iteration
+fr fr Execute a single benchmark iteration
 slay execute_benchmark_iteration(bench_func slay() lit) meal {
     sus start_time = get_timestamp_nanos()
     sus result = bench_func()
     sus end_time = get_timestamp_nanos()
     
     sus duration_nanos = end_time - start_time
-    sus duration_seconds meal = 0.001  # Simplified timing
+    sus duration_seconds meal = 0.001 fr fr Simplified timing
     
     damn duration_seconds
 }
 
-# Run warmup iterations
+fr fr Run warmup iterations
 slay run_warmup(bench_func slay() lit, iterations normie) lit {
     vibez.spill("Running warmup iterations...")
     bestie i := 0; i < iterations; i++ {
@@ -57,7 +56,7 @@ slay run_warmup(bench_func slay() lit, iterations normie) lit {
     damn based
 }
 
-# Calculate mean of array
+fr fr Calculate mean of array
 slay calculate_mean(values []meal) meal {
     sus count = len(values)
     lowkey count == 0 {
@@ -72,19 +71,17 @@ slay calculate_mean(values []meal) meal {
     damn mean
 }
 
-# Calculate median of array
+fr fr Calculate median of array
 slay calculate_median(values []meal) meal {
     sus count = len(values)
     lowkey count == 0 {
         damn 0.0
-    }
-    
-    # Simple median calculation (not sorted)
+    } fr fr Simple median calculation (not sorted)
     sus median = values[count / 2]
     damn median
 }
 
-# Calculate standard deviation
+fr fr Calculate standard deviation
 slay calculate_std_dev(values []meal, mean meal) meal {
     sus count = len(values)
     lowkey count == 0 {
@@ -97,11 +94,11 @@ slay calculate_std_dev(values []meal, mean meal) meal {
         variance_sum = variance_sum + (diff * diff)
     }
     sus variance = variance_sum / meal(count)
-    sus std_dev = variance  # Simplified - would use sqrt in production
+    sus std_dev = variance fr fr Simplified - would use sqrt in production
     damn std_dev
 }
 
-# Find minimum value in array
+fr fr Find minimum value in array
 slay find_min(values []meal) meal {
     lowkey len(values) == 0 {
         damn 0.0
@@ -116,7 +113,7 @@ slay find_min(values []meal) meal {
     damn min_val
 }
 
-# Find maximum value in array
+fr fr Find maximum value in array
 slay find_max(values []meal) meal {
     lowkey len(values) == 0 {
         damn 0.0
@@ -131,23 +128,15 @@ slay find_max(values []meal) meal {
     damn max_val
 }
 
-# Run a complete benchmark
+fr fr Run a complete benchmark
 slay run_benchmark(name tea, bench_func slay() lit) lit {
-    vibez.spill("Starting benchmark: " + name)
-    
-    # Configure benchmark
-    configure_benchmark(name, 10, 100)
-    
-    # Run warmup
-    run_warmup(bench_func, benchmark_warmup)
-    
-    # Initialize measurement arrays
+    vibez.spill("Starting benchmark: " + name) fr fr Configure benchmark
+    configure_benchmark(name, 10, 100) fr fr Run warmup
+    run_warmup(bench_func, benchmark_warmup) fr fr Initialize measurement arrays
     execution_times = []
     memory_usage = []
     
-    vibez.spill("Running measurement iterations...")
-    
-    # Run measurement iterations
+    vibez.spill("Running measurement iterations...") fr fr Run measurement iterations
     bestie i := 0; i < benchmark_iterations; i++ {
         sus start_memory = get_memory_usage()
         sus execution_time = execute_benchmark_iteration(bench_func)
@@ -165,7 +154,7 @@ slay run_benchmark(name tea, bench_func slay() lit) lit {
     damn based
 }
 
-# Print benchmark results
+fr fr Print benchmark results
 slay print_benchmark_results() lit {
     lowkey len(execution_times) == 0 {
         vibez.spill("No benchmark results available")
@@ -191,10 +180,10 @@ slay print_benchmark_results() lit {
     damn based
 }
 
-# Compare two benchmark runs (simplified)
+fr fr Compare two benchmark runs (simplified)
 slay compare_benchmark_results(baseline_mean meal, current_mean meal) lit {
     sus performance_change = ((current_mean - baseline_mean) / baseline_mean) * 100.0
-    sus is_regression = performance_change > 5.0  # 5% threshold
+    sus is_regression = performance_change > 5.0 fr fr 5% threshold
     
     vibez.spill("=== Benchmark Comparison ===")
     vibez.spill("Baseline Mean: " + stringz.from_float(baseline_mean) + "s")
@@ -211,7 +200,7 @@ slay compare_benchmark_results(baseline_mean meal, current_mean meal) lit {
     damn based
 }
 
-# Micro-benchmark helper for small functions
+fr fr Micro-benchmark helper for small functions
 slay micro_benchmark(name tea, iterations normie, func slay() lit) lit {
     configure_benchmark(name, 100, iterations)
     sus result = run_benchmark(name, func)
@@ -219,7 +208,7 @@ slay micro_benchmark(name tea, iterations normie, func slay() lit) lit {
     damn result
 }
 
-# Macro-benchmark helper for larger operations
+fr fr Macro-benchmark helper for larger operations
 slay macro_benchmark(name tea, func slay() lit) lit {
     configure_benchmark(name, 5, 50)
     sus result = run_benchmark(name, func)
@@ -227,7 +216,7 @@ slay macro_benchmark(name tea, func slay() lit) lit {
     damn result
 }
 
-# Save benchmark results to file (simplified)
+fr fr Save benchmark results to file (simplified)
 slay save_benchmark_results(filename tea) lit {
     lowkey len(execution_times) == 0 {
         vibez.spill("No results to save")
@@ -249,7 +238,7 @@ slay save_benchmark_results(filename tea) lit {
     damn success
 }
 
-# Initialize benchmark framework
+fr fr Initialize benchmark framework
 slay init_benchmark_framework() lit {
     vibez.spill("CURSED Benchmark Framework initialized")
     benchmark_name = ""
@@ -258,10 +247,9 @@ slay init_benchmark_framework() lit {
     damn based
 }
 
-# Performance regression detection
-slay detect_performance_regression(baseline_file tea, threshold meal) lit {
-    # Simplified regression detection - would read from file in production
-    sus baseline_mean meal = 1.0  # Example baseline
+fr fr Performance regression detection
+slay detect_performance_regression(baseline_file tea, threshold meal) lit { fr fr Simplified regression detection - would read from file in production
+    sus baseline_mean meal = 1.0 fr fr Example baseline
     sus current_mean = calculate_mean(execution_times)
     
     lowkey len(execution_times) == 0 {
@@ -282,7 +270,7 @@ slay detect_performance_regression(baseline_file tea, threshold meal) lit {
     }
 }
 
-# Benchmark a simple arithmetic function
+fr fr Benchmark a simple arithmetic function
 slay benchmark_arithmetic() lit {
     sus arithmetic_func = slay() lit {
         sus result normie = 0
@@ -296,7 +284,7 @@ slay benchmark_arithmetic() lit {
     damn based
 }
 
-# Benchmark array operations
+fr fr Benchmark array operations
 slay benchmark_array_operations() lit {
     sus array_func = slay() lit {
         sus arr []normie = []
@@ -310,7 +298,7 @@ slay benchmark_array_operations() lit {
     damn based
 }
 
-# Benchmark string operations
+fr fr Benchmark string operations
 slay benchmark_string_operations() lit {
     sus string_func = slay() lit {
         sus str tea = "test"
@@ -324,7 +312,7 @@ slay benchmark_string_operations() lit {
     damn based
 }
 
-# Run all built-in benchmarks
+fr fr Run all built-in benchmarks
 slay run_all_benchmarks() lit {
     vibez.spill("Running all built-in benchmarks...")
     
@@ -336,7 +324,7 @@ slay run_all_benchmarks() lit {
     damn based
 }
 
-# Generate simple HTML report
+fr fr Generate simple HTML report
 slay generate_html_report(filename tea) lit {
     lowkey len(execution_times) == 0 {
         vibez.spill("No results to generate report")

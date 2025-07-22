@@ -1,7 +1,7 @@
 yeet "stringz"
 yeet "collections"
 
-# MySQL specific functionality
+fr fr MySQL specific functionality
 be_like MySQLConfig = {
     host tea
     port normie
@@ -13,7 +13,7 @@ be_like MySQLConfig = {
     max_allowed_packet normie
 }
 
-# MySQL connection management
+fr fr MySQL connection management
 slay mysql_create_config(
     host tea,
     port normie,
@@ -49,7 +49,7 @@ slay mysql_connection_string(config MySQLConfig) tea {
     damn conn_string
 }
 
-# MySQL specific data types
+fr fr MySQL specific data types
 slay mysql_format_value(value tea, data_type tea) tea {
     ready data_type {
         "int" -> {
@@ -96,7 +96,7 @@ slay mysql_escape_string(value tea) tea {
     damn escaped
 }
 
-# MySQL specific queries
+fr fr MySQL specific queries
 slay mysql_create_table(table_name tea, columns []tea, engine tea) tea {
     sus query tea = stringz.format("CREATE TABLE IF NOT EXISTS {} (", table_name)
     query = query + stringz.join(columns, ", ")
@@ -138,7 +138,7 @@ slay mysql_upsert_query(table_name tea, columns []tea, update_columns []tea) tea
     damn query
 }
 
-# MySQL JSON operations (5.7+)
+fr fr MySQL JSON operations (5.7+)
 slay mysql_json_extract(column tea, path tea) tea {
     damn stringz.format("JSON_EXTRACT({}, '${}'), column, path)
 }
@@ -159,7 +159,7 @@ slay mysql_json_search(column tea, search_string tea) tea {
     damn stringz.format("JSON_SEARCH({}, 'one', '{}')", column, search_string)
 }
 
-# MySQL full-text search
+fr fr MySQL full-text search
 slay mysql_fulltext_search(columns []tea, search_terms tea, mode tea) tea {
     sus column_list tea = stringz.join(columns, ", ")
     
@@ -182,7 +182,7 @@ slay mysql_fulltext_search(columns []tea, search_terms tea, mode tea) tea {
     }
 }
 
-# MySQL window functions (8.0+)
+fr fr MySQL window functions (8.0+)
 slay mysql_row_number(partition_by []tea, order_by []tea) tea {
     sus query tea = "ROW_NUMBER() OVER ("
     
@@ -219,7 +219,7 @@ slay mysql_rank(partition_by []tea, order_by []tea) tea {
     damn query
 }
 
-# MySQL specific storage engines
+fr fr MySQL specific storage engines
 slay mysql_create_innodb_table(table_name tea, columns []tea, options tea) tea {
     sus query tea = mysql_create_table(table_name, columns, "InnoDB")
     yikes options != "" {
@@ -236,7 +236,7 @@ slay mysql_create_memory_table(table_name tea, columns []tea) tea {
     damn mysql_create_table(table_name, columns, "MEMORY")
 }
 
-# MySQL partitioning
+fr fr MySQL partitioning
 slay mysql_partition_by_range(column tea, partitions []tea) tea {
     sus partition_def tea = "PARTITION BY RANGE (" + column + ") ("
     sus partition_list []tea = []
@@ -253,7 +253,7 @@ slay mysql_partition_by_hash(column tea, partition_count normie) tea {
     damn stringz.format("PARTITION BY HASH({}) PARTITIONS {}", column, partition_count)
 }
 
-# MySQL replication
+fr fr MySQL replication
 slay mysql_show_slave_status() tea {
     damn "SHOW SLAVE STATUS"
 }
@@ -269,7 +269,7 @@ slay mysql_change_master(master_host tea, master_user tea, master_password tea, 
     )
 }
 
-# MySQL connection pooling
+fr fr MySQL connection pooling
 be_like MySQLPool = {
     config MySQLConfig
     min_connections normie
@@ -289,7 +289,7 @@ slay mysql_create_pool(config MySQLConfig, min_conn normie, max_conn normie) MyS
     damn pool
 }
 
-# MySQL specific error handling
+fr fr MySQL specific error handling
 slay mysql_parse_error_code(error_code normie) tea {
     ready error_code {
         1062 -> damn "DUPLICATE_ENTRY"
@@ -305,7 +305,7 @@ slay mysql_parse_error_code(error_code normie) tea {
     }
 }
 
-# MySQL optimization hints
+fr fr MySQL optimization hints
 slay mysql_use_index(table_name tea, index_name tea) tea {
     damn stringz.format("{} USE INDEX ({})", table_name, index_name)
 }

@@ -1,9 +1,9 @@
 yeet "stringz"
 
-# Simple test of basic string functions
+fr fr Simple test of basic string functions
 vibez.spill("Testing stringz module...")
 
-# Test basic function calls
+fr fr Test basic function calls
 sus result1 lit = Contains("hello world", "world")
 vibez.spill("Contains test:")
 vibez.spill(result1)

@@ -2,10 +2,10 @@ yeet "testz"
 yeet "async"
 yeet "atomic_drip"
 
-# Future Implementation - Pure CURSED
-# Complete future/promise system with combinators and async/await patterns
+fr fr Future Implementation - Pure CURSED
+fr fr Complete future/promise system with combinators and async/await patterns
 
-# Future state enumeration
+fr fr Future state enumeration
 facts {
     FUTURE_PENDING = "pending"
     FUTURE_RESOLVED = "resolved"
@@ -13,7 +13,7 @@ facts {
     FUTURE_CANCELLED = "cancelled"
 }
 
-# Future implementation
+fr fr Future implementation
 struct Future {
     id: TaskId,
     state: tea,
@@ -30,7 +30,7 @@ struct Future {
     child_futures: [TaskId]
 }
 
-# Future callback types
+fr fr Future callback types
 struct FutureCallback {
     id: TaskId,
     function_name: tea,
@@ -49,7 +49,7 @@ struct FutureCancellationCallback {
     context: map[tea]tea
 }
 
-# Future registry
+fr fr Future registry
 struct FutureRegistry {
     futures: map[TaskId]Future,
     next_id: TaskId,
@@ -58,7 +58,7 @@ struct FutureRegistry {
     cancelled_futures: [TaskId]
 }
 
-# Future combinator results
+fr fr Future combinator results
 struct CombinatorResult {
     type: tea,
     futures: [TaskId],
@@ -67,10 +67,10 @@ struct CombinatorResult {
     is_completed: lit
 }
 
-# Global future registry
+fr fr Global future registry
 sus global_future_registry: FutureRegistry
 
-# Initialize future system
+fr fr Initialize future system
 slay future_system_init() lit {
     global_future_registry = FutureRegistry {
         futures: {},
@@ -82,7 +82,7 @@ slay future_system_init() lit {
     damn based
 }
 
-# Create new future
+fr fr Create new future
 slay create_future() Future {
     sus future_id = global_future_registry.next_id
     global_future_registry.next_id = global_future_registry.next_id + 1
@@ -107,7 +107,7 @@ slay create_future() Future {
     damn future
 }
 
-# Resolve future
+fr fr Resolve future
 slay resolve_future(future_id TaskId, value AsyncResult) lit {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -115,23 +115,17 @@ slay resolve_future(future_id TaskId, value AsyncResult) lit {
         lowkey future.state == FUTURE_PENDING {
             future.state = FUTURE_RESOLVED
             future.value = value
-            future.resolved_at = time_now()
-            
-            # Add to resolved list
+            future.resolved_at = time_now() fr fr Add to resolved list
             global_future_registry.resolved_futures = 
-                append(global_future_registry.resolved_futures, future_id)
-            
-            # Execute callbacks
-            execute_future_callbacks(future)
-            
-            # Store updated future
+                append(global_future_registry.resolved_futures, future_id) fr fr Execute callbacks
+            execute_future_callbacks(future) fr fr Store updated future
             global_future_registry.futures[future_id] = future
         }
     }
     damn based
 }
 
-# Reject future
+fr fr Reject future
 slay reject_future(future_id TaskId, error tea) lit {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -139,23 +133,17 @@ slay reject_future(future_id TaskId, error tea) lit {
         lowkey future.state == FUTURE_PENDING {
             future.state = FUTURE_REJECTED
             future.error = error
-            future.resolved_at = time_now()
-            
-            # Add to rejected list
+            future.resolved_at = time_now() fr fr Add to rejected list
             global_future_registry.rejected_futures = 
-                append(global_future_registry.rejected_futures, future_id)
-            
-            # Execute error callbacks
-            execute_future_error_callbacks(future)
-            
-            # Store updated future
+                append(global_future_registry.rejected_futures, future_id) fr fr Execute error callbacks
+            execute_future_error_callbacks(future) fr fr Store updated future
             global_future_registry.futures[future_id] = future
         }
     }
     damn based
 }
 
-# Cancel future
+fr fr Cancel future
 slay cancel_future(future_id TaskId, reason tea) lit {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -164,71 +152,51 @@ slay cancel_future(future_id TaskId, reason tea) lit {
             future.state = FUTURE_CANCELLED
             future.error = reason
             future.is_cancelled = based
-            future.resolved_at = time_now()
-            
-            # Add to cancelled list
+            future.resolved_at = time_now() fr fr Add to cancelled list
             global_future_registry.cancelled_futures = 
-                append(global_future_registry.cancelled_futures, future_id)
-            
-            # Execute cancellation callbacks
-            execute_future_cancellation_callbacks(future)
-            
-            # Cancel child futures
-            cancel_child_futures(future)
-            
-            # Store updated future
+                append(global_future_registry.cancelled_futures, future_id) fr fr Execute cancellation callbacks
+            execute_future_cancellation_callbacks(future) fr fr Cancel child futures
+            cancel_child_futures(future) fr fr Store updated future
             global_future_registry.futures[future_id] = future
         }
     }
     damn based
 }
 
-# Execute future callbacks
+fr fr Execute future callbacks
 slay execute_future_callbacks(future Future) lit {
     bestie i := 0; i < len(future.callbacks); i++ {
-        sus callback = future.callbacks[i]
-        
-        # Create context with future value
+        sus callback = future.callbacks[i] fr fr Create context with future value
         callback.context["future_value"] = future.value
-        callback.context["future_id"] = tea(future.id)
-        
-        # Execute callback
+        callback.context["future_id"] = tea(future.id) fr fr Execute callback
         execute_callback_function(callback.function_name, callback.context)
     }
     damn based
 }
 
-# Execute future error callbacks
+fr fr Execute future error callbacks
 slay execute_future_error_callbacks(future Future) lit {
     bestie i := 0; i < len(future.error_callbacks); i++ {
-        sus callback = future.error_callbacks[i]
-        
-        # Create context with error
+        sus callback = future.error_callbacks[i] fr fr Create context with error
         callback.context["error"] = future.error
-        callback.context["future_id"] = tea(future.id)
-        
-        # Execute callback
+        callback.context["future_id"] = tea(future.id) fr fr Execute callback
         execute_callback_function(callback.function_name, callback.context)
     }
     damn based
 }
 
-# Execute future cancellation callbacks
+fr fr Execute future cancellation callbacks
 slay execute_future_cancellation_callbacks(future Future) lit {
     bestie i := 0; i < len(future.cancellation_callbacks); i++ {
-        sus callback = future.cancellation_callbacks[i]
-        
-        # Create context with cancellation reason
+        sus callback = future.cancellation_callbacks[i] fr fr Create context with cancellation reason
         callback.context["reason"] = future.error
-        callback.context["future_id"] = tea(future.id)
-        
-        # Execute callback
+        callback.context["future_id"] = tea(future.id) fr fr Execute callback
         execute_callback_function(callback.function_name, callback.context)
     }
     damn based
 }
 
-# Cancel child futures
+fr fr Cancel child futures
 slay cancel_child_futures(future Future) lit {
     bestie i := 0; i < len(future.child_futures); i++ {
         sus child_id = future.child_futures[i]
@@ -237,7 +205,7 @@ slay cancel_child_futures(future Future) lit {
     damn based
 }
 
-# Execute callback function
+fr fr Execute callback function
 slay execute_callback_function(function_name tea, context map[tea]tea) lit {
     lowkey function_name == "future_then" {
         handle_future_then(context)
@@ -251,16 +219,12 @@ slay execute_callback_function(function_name tea, context map[tea]tea) lit {
     damn based
 }
 
-# Handle future then
+fr fr Handle future then
 slay handle_future_then(context map[tea]tea) lit {
     sus future_id = parse_int(context["future_id"])
     sus value = context["future_value"]
-    sus next_function = context["next_function"]
-    
-    # Create new future for chaining
-    sus next_future = create_future()
-    
-    # Execute next function
+    sus next_function = context["next_function"] fr fr Create new future for chaining
+    sus next_future = create_future() fr fr Execute next function
     sus result = execute_function(next_function, context)
     
     lowkey result.success {
@@ -272,43 +236,35 @@ slay handle_future_then(context map[tea]tea) lit {
     damn based
 }
 
-# Handle future catch
+fr fr Handle future catch
 slay handle_future_catch(context map[tea]tea) lit {
     sus error = context["error"]
-    sus error_handler = context["error_handler"]
-    
-    # Execute error handler
+    sus error_handler = context["error_handler"] fr fr Execute error handler
     sus result = execute_function(error_handler, context)
     
     damn based
 }
 
-# Handle future finally
+fr fr Handle future finally
 slay handle_future_finally(context map[tea]tea) lit {
-    sus finally_handler = context["finally_handler"]
-    
-    # Execute finally handler
+    sus finally_handler = context["finally_handler"] fr fr Execute finally handler
     execute_function(finally_handler, context)
     
     damn based
 }
 
-# Handle future timeout
+fr fr Handle future timeout
 slay handle_future_timeout(context map[tea]tea) lit {
     sus future_id = parse_int(context["future_id"])
-    sus timeout_duration = parse_int(context["timeout_duration"])
-    
-    # Set up timeout
+    sus timeout_duration = parse_int(context["timeout_duration"]) fr fr Set up timeout
     yolo timeout_watcher(future_id, timeout_duration)
     
     damn based
 }
 
-# Timeout watcher
+fr fr Timeout watcher
 slay timeout_watcher(future_id TaskId, timeout_duration thicc) lit {
-    async_sleep(timeout_duration)
-    
-    # Check if future is still pending
+    async_sleep(timeout_duration) fr fr Check if future is still pending
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
         
@@ -320,7 +276,7 @@ slay timeout_watcher(future_id TaskId, timeout_duration thicc) lit {
     damn based
 }
 
-# Add callback to future
+fr fr Add callback to future
 slay add_future_callback(future_id TaskId, callback FutureCallback) lit {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -330,7 +286,7 @@ slay add_future_callback(future_id TaskId, callback FutureCallback) lit {
     damn based
 }
 
-# Add error callback to future
+fr fr Add error callback to future
 slay add_future_error_callback(future_id TaskId, callback FutureErrorCallback) lit {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -340,11 +296,9 @@ slay add_future_error_callback(future_id TaskId, callback FutureErrorCallback) l
     damn based
 }
 
-# Future.then implementation
+fr fr Future.then implementation
 slay future_then(future_id TaskId, then_function tea) Future {
-    sus new_future = create_future()
-    
-    # Set up parent-child relationship
+    sus new_future = create_future() fr fr Set up parent-child relationship
     lowkey future_id in global_future_registry.futures {
         sus parent = global_future_registry.futures[future_id]
         parent.child_futures = append(parent.child_futures, new_future.id)
@@ -352,9 +306,7 @@ slay future_then(future_id TaskId, then_function tea) Future {
         
         new_future.parent_future = future_id
         global_future_registry.futures[new_future.id] = new_future
-    }
-    
-    # Add callback
+    } fr fr Add callback
     sus callback = FutureCallback {
         id: new_future.id,
         function_name: "future_then",
@@ -366,11 +318,9 @@ slay future_then(future_id TaskId, then_function tea) Future {
     damn new_future
 }
 
-# Future.catch implementation
+fr fr Future.catch implementation
 slay future_catch(future_id TaskId, catch_function tea) Future {
-    sus new_future = create_future()
-    
-    # Set up parent-child relationship
+    sus new_future = create_future() fr fr Set up parent-child relationship
     lowkey future_id in global_future_registry.futures {
         sus parent = global_future_registry.futures[future_id]
         parent.child_futures = append(parent.child_futures, new_future.id)
@@ -378,9 +328,7 @@ slay future_catch(future_id TaskId, catch_function tea) Future {
         
         new_future.parent_future = future_id
         global_future_registry.futures[new_future.id] = new_future
-    }
-    
-    # Add error callback
+    } fr fr Add error callback
     sus callback = FutureErrorCallback {
         id: new_future.id,
         function_name: "future_catch",
@@ -392,11 +340,9 @@ slay future_catch(future_id TaskId, catch_function tea) Future {
     damn new_future
 }
 
-# Future.finally implementation
+fr fr Future.finally implementation
 slay future_finally(future_id TaskId, finally_function tea) Future {
-    sus new_future = create_future()
-    
-    # Add both success and error callbacks
+    sus new_future = create_future() fr fr Add both success and error callbacks
     sus success_callback = FutureCallback {
         id: new_future.id,
         function_name: "future_finally",
@@ -415,22 +361,20 @@ slay future_finally(future_id TaskId, finally_function tea) Future {
     damn new_future
 }
 
-# Future.all implementation
+fr fr Future.all implementation
 slay future_all(future_ids [TaskId]) Future {
     sus all_future = create_future()
     
     lowkey len(future_ids) == 0 {
         resolve_future(all_future.id, "[]")
         damn all_future
-    }
-    
-    # Start monitoring all futures
+    } fr fr Start monitoring all futures
     yolo future_all_monitor(all_future.id, future_ids)
     
     damn all_future
 }
 
-# Future.all monitor
+fr fr Future.all monitor
 slay future_all_monitor(all_future_id TaskId, future_ids [TaskId]) lit {
     sus completed_count = 0
     sus results = []
@@ -452,9 +396,7 @@ slay future_all_monitor(all_future_id TaskId, future_ids [TaskId]) lit {
                     ghosted
                 }
             }
-        }
-        
-        # Brief sleep to avoid busy waiting
+        } fr fr Brief sleep to avoid busy waiting
         thread_sleep(1)
     }
     
@@ -466,17 +408,15 @@ slay future_all_monitor(all_future_id TaskId, future_ids [TaskId]) lit {
     damn based
 }
 
-# Future.race implementation
+fr fr Future.race implementation
 slay future_race(future_ids [TaskId]) Future {
-    sus race_future = create_future()
-    
-    # Start monitoring race
+    sus race_future = create_future() fr fr Start monitoring race
     yolo future_race_monitor(race_future.id, future_ids)
     
     damn race_future
 }
 
-# Future.race monitor
+fr fr Future.race monitor
 slay future_race_monitor(race_future_id TaskId, future_ids [TaskId]) lit {
     sus completed = cap
     
@@ -497,16 +437,14 @@ slay future_race_monitor(race_future_id TaskId, future_ids [TaskId]) lit {
                     ghosted
                 }
             }
-        }
-        
-        # Brief sleep to avoid busy waiting
+        } fr fr Brief sleep to avoid busy waiting
         thread_sleep(1)
     }
     
     damn based
 }
 
-# Await future (blocking)
+fr fr Await future (blocking)
 slay await_future_blocking(future_id TaskId) AsyncResult {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -528,7 +466,7 @@ slay await_future_blocking(future_id TaskId) AsyncResult {
     damn "FUTURE_NOT_FOUND"
 }
 
-# Check if future is resolved
+fr fr Check if future is resolved
 slay is_future_resolved(future_id TaskId) lit {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -537,7 +475,7 @@ slay is_future_resolved(future_id TaskId) lit {
     damn cap
 }
 
-# Check if future is rejected
+fr fr Check if future is rejected
 slay is_future_rejected(future_id TaskId) lit {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -546,7 +484,7 @@ slay is_future_rejected(future_id TaskId) lit {
     damn cap
 }
 
-# Check if future is cancelled
+fr fr Check if future is cancelled
 slay is_future_cancelled(future_id TaskId) lit {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -555,7 +493,7 @@ slay is_future_cancelled(future_id TaskId) lit {
     damn cap
 }
 
-# Get future value
+fr fr Get future value
 slay get_future_value(future_id TaskId) AsyncResult {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -571,7 +509,7 @@ slay get_future_value(future_id TaskId) AsyncResult {
     damn "NOT_FOUND"
 }
 
-# Get future error
+fr fr Get future error
 slay get_future_error(future_id TaskId) tea {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
@@ -580,34 +518,32 @@ slay get_future_error(future_id TaskId) tea {
     damn ""
 }
 
-# Set future timeout
+fr fr Set future timeout
 slay set_future_timeout(future_id TaskId, timeout_ms thicc) lit {
     lowkey future_id in global_future_registry.futures {
         sus future = global_future_registry.futures[future_id]
         future.timeout_duration = timeout_ms
-        global_future_registry.futures[future_id] = future
-        
-        # Start timeout watcher
+        global_future_registry.futures[future_id] = future fr fr Start timeout watcher
         yolo timeout_watcher(future_id, timeout_ms)
     }
     damn based
 }
 
-# Create resolved future
+fr fr Create resolved future
 slay create_resolved_future(value AsyncResult) Future {
     sus future = create_future()
     resolve_future(future.id, value)
     damn future
 }
 
-# Create rejected future
+fr fr Create rejected future
 slay create_rejected_future(error tea) Future {
     sus future = create_future()
     reject_future(future.id, error)
     damn future
 }
 
-# Get future registry stats
+fr fr Get future registry stats
 slay get_future_registry_stats() map[tea]normie {
     damn {
         "total_futures": len(global_future_registry.futures),
@@ -621,10 +557,10 @@ slay get_future_registry_stats() map[tea]normie {
     }
 }
 
-# Cleanup completed futures
+fr fr Cleanup completed futures
 slay cleanup_completed_futures() lit {
     sus current_time = time_now()
-    sus cleanup_threshold = current_time - 300000  # 5 minutes
+    sus cleanup_threshold = current_time - 300000 fr fr 5 minutes
     
     sus to_remove = []
     
@@ -632,9 +568,7 @@ slay cleanup_completed_futures() lit {
         lowkey future.state != FUTURE_PENDING && future.resolved_at < cleanup_threshold {
             to_remove = append(to_remove, future_id)
         }
-    }
-    
-    # Remove old futures
+    } fr fr Remove old futures
     bestie i := 0; i < len(to_remove); i++ {
         sus future_id = to_remove[i]
         delete(global_future_registry.futures, future_id)
@@ -643,7 +577,7 @@ slay cleanup_completed_futures() lit {
     damn based
 }
 
-# Initialize future system
+fr fr Initialize future system
 slay init_future_system() lit {
     future_system_init()
     damn based

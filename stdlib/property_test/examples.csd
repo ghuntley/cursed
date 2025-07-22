@@ -1,12 +1,12 @@
 yeet "testz"
 yeet "property_test"
 
-# Property-Based Testing Examples
-# Comprehensive demonstrations of the property testing framework
+fr fr Property-Based Testing Examples
+fr fr Comprehensive demonstrations of the property testing framework
 
-# ===== EXAMPLE 1: MATHEMATICAL PROPERTIES =====
+fr fr ===== EXAMPLE 1: MATHEMATICAL PROPERTIES =====
 
-# Test that addition is commutative
+fr fr Test that addition is commutative
 slay example_addition_commutative() {
     test_start("Addition Commutative Property Example")
     
@@ -23,7 +23,7 @@ slay example_addition_commutative() {
     )
 }
 
-# Test that multiplication is associative
+fr fr Test that multiplication is associative
 slay example_multiplication_associative() {
     test_start("Multiplication Associative Property Example")
     
@@ -41,18 +41,14 @@ slay example_multiplication_associative() {
     )
 }
 
-# Test identity properties
+fr fr Test identity properties
 slay example_identity_properties() {
-    test_start("Identity Properties Example")
-    
-    # Additive identity
+    test_start("Identity Properties Example") fr fr Additive identity
     forall(
         slay() { damn gen_int(-1000, 1000) },
         slay(x normie) { damn x + 0 == x && 0 + x == x },
         "Zero is additive identity"
-    )
-    
-    # Multiplicative identity
+    ) fr fr Multiplicative identity
     forall(
         slay() { damn gen_int(-1000, 1000) },
         slay(x normie) { damn x * 1 == x && 1 * x == x },
@@ -60,13 +56,11 @@ slay example_identity_properties() {
     )
 }
 
-# ===== EXAMPLE 2: STRING OPERATIONS =====
+fr fr ===== EXAMPLE 2: STRING OPERATIONS =====
 
-# Test string concatenation properties
+fr fr Test string concatenation properties
 slay example_string_concatenation() {
-    test_start("String Concatenation Properties Example")
-    
-    # Length property
+    test_start("String Concatenation Properties Example") fr fr Length property
     forall(
         slay() {
             damn [gen_string(20), gen_string(20)]
@@ -78,9 +72,7 @@ slay example_string_concatenation() {
             damn len(concat) == len(s1) + len(s2)
         },
         "Concatenation length: len(s1 + s2) == len(s1) + len(s2)"
-    )
-    
-    # Associativity
+    ) fr fr Associativity
     forall(
         slay() {
             damn [gen_string(10), gen_string(10), gen_string(10)]
@@ -92,9 +84,7 @@ slay example_string_concatenation() {
             damn (a + b) + c == a + (b + c)
         },
         "String concatenation is associative"
-    )
-    
-    # Empty string identity
+    ) fr fr Empty string identity
     forall(
         slay() { damn gen_string(15) },
         slay(s tea) { damn s + "" == s && "" + s == s },
@@ -102,23 +92,19 @@ slay example_string_concatenation() {
     )
 }
 
-# Test string reversal
+fr fr Test string reversal
 slay example_string_reversal() {
     test_start("String Reversal Properties Example")
     
-    slay reverse_string(s tea) tea {
-        # Simple character-by-character reversal
+    slay reverse_string(s tea) tea { fr fr Simple character-by-character reversal
         sus result tea = ""
         sus i normie = len(s) - 1
-        bestie i >= 0 {
-            # In full implementation, would use proper string indexing
+        bestie i >= 0 { fr fr In full implementation, would use proper string indexing
             result = result + substring(s, i, i + 1)
             i = i - 1
         }
         damn result
-    }
-    
-    # Double reversal is identity
+    } fr fr Double reversal is identity
     forall(
         slay() { damn gen_string(15) },
         slay(s tea) {
@@ -127,9 +113,7 @@ slay example_string_reversal() {
             damn s == double_reversed
         },
         "Double string reversal is identity"
-    )
-    
-    # Reversal preserves length
+    ) fr fr Reversal preserves length
     forall(
         slay() { damn gen_string(20) },
         slay(s tea) {
@@ -140,9 +124,9 @@ slay example_string_reversal() {
     )
 }
 
-# ===== EXAMPLE 3: LIST OPERATIONS =====
+fr fr ===== EXAMPLE 3: LIST OPERATIONS =====
 
-# Test list sorting properties
+fr fr Test list sorting properties
 slay example_list_sorting() {
     test_start("List Sorting Properties Example")
     
@@ -157,8 +141,7 @@ slay example_list_sorting() {
         damn based
     }
     
-    slay sort_list(list []) [] {
-        # Simple bubble sort implementation
+    slay sort_list(list []) [] { fr fr Simple bubble sort implementation
         sus result [] = list
         sus length normie = size(result)
         sus i normie = 0
@@ -175,9 +158,7 @@ slay example_list_sorting() {
             i = i + 1
         }
         damn result
-    }
-    
-    # Sorting produces sorted list
+    } fr fr Sorting produces sorted list
     forall(
         slay() { damn gen_list_int(10) },
         slay(list []) {
@@ -185,9 +166,7 @@ slay example_list_sorting() {
             damn is_sorted(sorted)
         },
         "Sorting produces a sorted list"
-    )
-    
-    # Sorting preserves length
+    ) fr fr Sorting preserves length
     forall(
         slay() { damn gen_list_int(15) },
         slay(list []) {
@@ -195,9 +174,7 @@ slay example_list_sorting() {
             damn size(list) == size(sorted)
         },
         "Sorting preserves list length"
-    )
-    
-    # Sorting is idempotent
+    ) fr fr Sorting is idempotent
     forall(
         slay() { damn gen_list_int(8) },
         slay(list []) {
@@ -209,7 +186,7 @@ slay example_list_sorting() {
     )
 }
 
-# Test list reversal
+fr fr Test list reversal
 slay example_list_reversal() {
     test_start("List Reversal Properties Example")
     
@@ -221,9 +198,7 @@ slay example_list_reversal() {
             i = i - 1
         }
         damn result
-    }
-    
-    # Double reversal is identity
+    } fr fr Double reversal is identity
     forall(
         slay() { damn gen_list_int(10) },
         slay(list []) {
@@ -232,9 +207,7 @@ slay example_list_reversal() {
             damn lists_equal(list, reversed2)
         },
         "Double list reversal is identity"
-    )
-    
-    # Reversal preserves length
+    ) fr fr Reversal preserves length
     forall(
         slay() { damn gen_list_int(12) },
         slay(list []) {
@@ -245,9 +218,9 @@ slay example_list_reversal() {
     )
 }
 
-# ===== EXAMPLE 4: CUSTOM DATA TYPES =====
+fr fr ===== EXAMPLE 4: CUSTOM DATA TYPES =====
 
-# Test coordinate system operations
+fr fr Test coordinate system operations
 slay example_coordinate_operations() {
     test_start("Coordinate Operations Example")
     
@@ -265,9 +238,7 @@ slay example_coordinate_operations() {
         sus x normie = coord[0]
         sus y normie = coord[1]
         damn [normie(drip(x) * factor), normie(drip(y) * factor)]
-    }
-    
-    # Distance from origin is always non-negative
+    } fr fr Distance from origin is always non-negative
     forall(
         gen_coordinate,
         slay(coord []) {
@@ -275,9 +246,7 @@ slay example_coordinate_operations() {
             damn distance >= 0.0
         },
         "Distance from origin is non-negative"
-    )
-    
-    # Scaling preserves origin
+    ) fr fr Scaling preserves origin
     forall(
         slay() { damn [0, 0] },
         slay(origin []) {
@@ -288,9 +257,9 @@ slay example_coordinate_operations() {
     )
 }
 
-# ===== EXAMPLE 5: ERROR HANDLING PROPERTIES =====
+fr fr ===== EXAMPLE 5: ERROR HANDLING PROPERTIES =====
 
-# Test division properties with error handling
+fr fr Test division properties with error handling
 slay example_division_properties() {
     test_start("Division Properties Example")
     
@@ -299,15 +268,13 @@ slay example_division_properties() {
             damn ["error", "division by zero"]
         }
         damn ["ok", a / b]
-    }
-    
-    # Division by non-zero always succeeds
+    } fr fr Division by non-zero always succeeds
     forall(
         slay() {
             sus a normie = gen_int(-100, 100)
             sus b normie = gen_int(-100, 100)
             vibes b == 0 {
-                b = 1  # Ensure non-zero
+                b = 1 fr fr Ensure non-zero
             }
             damn [a, b]
         },
@@ -316,9 +283,7 @@ slay example_division_properties() {
             damn result[0] == "ok"
         },
         "Division by non-zero always succeeds"
-    )
-    
-    # Division by zero always fails
+    ) fr fr Division by zero always fails
     forall(
         slay() { damn gen_int(-100, 100) },
         slay(a normie) {
@@ -329,9 +294,9 @@ slay example_division_properties() {
     )
 }
 
-# ===== EXAMPLE 6: STATEFUL PROPERTIES =====
+fr fr ===== EXAMPLE 6: STATEFUL PROPERTIES =====
 
-# Test stack operations
+fr fr Test stack operations
 slay example_stack_properties() {
     test_start("Stack Properties Example")
     
@@ -354,9 +319,7 @@ slay example_stack_properties() {
     
     slay stack_size(stack []) normie {
         damn size(stack)
-    }
-    
-    # Push then pop gives original stack
+    } fr fr Push then pop gives original stack
     forall(
         slay() {
             damn [gen_list_int(5), gen_int(-50, 50)]
@@ -368,7 +331,7 @@ slay example_stack_properties() {
             sus pop_result [] = pop_stack(after_push)
             
             vibes pop_result[0] == "error" {
-                damn cap  # Should not happen for valid stack
+                damn cap fr fr Should not happen for valid stack
             }
             
             sus popped_item normie = pop_result[1]
@@ -377,9 +340,7 @@ slay example_stack_properties() {
             damn item == popped_item && lists_equal(original_stack, final_stack)
         },
         "Push then pop restores original stack"
-    )
-    
-    # Stack size increases after push
+    ) fr fr Stack size increases after push
     forall(
         slay() {
             damn [gen_list_int(8), gen_int(-30, 30)]
@@ -396,9 +357,9 @@ slay example_stack_properties() {
     )
 }
 
-# ===== EXAMPLE 7: GENERATOR COMPOSITION =====
+fr fr ===== EXAMPLE 7: GENERATOR COMPOSITION =====
 
-# Test complex data generation
+fr fr Test complex data generation
 slay example_complex_generators() {
     test_start("Complex Generator Composition Example")
     
@@ -414,15 +375,13 @@ slay example_complex_generators() {
         sus employee_count normie = gen_positive_int()
         sus employees [] = []
         sus i normie = 0
-        sus max_employees normie = min(employee_count, 5)  # Limit for testing
+        sus max_employees normie = min(employee_count, 5) fr fr Limit for testing
         bestie i < max_employees {
             employees = employees + [gen_person()]
             i = i + 1
         }
         damn [name, employees]
-    }
-    
-    # Person age is always valid
+    } fr fr Person age is always valid
     forall(
         gen_person,
         slay(person []) {
@@ -430,22 +389,20 @@ slay example_complex_generators() {
             damn age >= 0 && age <= 120
         },
         "Person age is within valid range"
-    )
-    
-    # Company has at least one employee (after generation)
+    ) fr fr Company has at least one employee (after generation)
     forall(
         gen_company,
         slay(company []) {
             sus employees [] = company[1]
-            damn size(employees) >= 0  # Can be empty for testing
+            damn size(employees) >= 0 fr fr Can be empty for testing
         },
         "Company employee list is valid"
     )
 }
 
-# ===== EXAMPLE 8: PERFORMANCE PROPERTIES =====
+fr fr ===== EXAMPLE 8: PERFORMANCE PROPERTIES =====
 
-# Test algorithmic complexity properties
+fr fr Test algorithmic complexity properties
 slay example_performance_properties() {
     test_start("Performance Properties Example")
     
@@ -453,14 +410,12 @@ slay example_performance_properties() {
         sus i normie = 0
         bestie i < size(list) {
             vibes list[i] == target {
-                damn i  # Return index
+                damn i fr fr Return index
             }
             i = i + 1
         }
-        damn -1  # Not found
-    }
-    
-    # Linear search time is bounded by list size
+        damn -1 fr fr Not found
+    } fr fr Linear search time is bounded by list size
     forall(
         slay() {
             sus list [] = gen_list_int(20)
@@ -469,21 +424,17 @@ slay example_performance_properties() {
         },
         slay(data []) {
             sus list [] = data[0]
-            sus target normie = data[1]
-            
-            # In real implementation, would measure actual time
+            sus target normie = data[1] fr fr In real implementation, would measure actual time
             sus start_operations normie = 0
             sus result normie = linear_search(list, target)
-            sus end_operations normie = size(list)  # Upper bound
-            
-            # Performance property: operations <= list size
+            sus end_operations normie = size(list) fr fr Upper bound fr fr Performance property: operations <= list size
             damn end_operations <= size(list)
         },
         "Linear search complexity is O(n)"
     )
 }
 
-# ===== UTILITY FUNCTIONS =====
+fr fr ===== UTILITY FUNCTIONS =====
 
 slay lists_equal(list1 [], list2 []) lit {
     vibes size(list1) != size(list2) {
@@ -506,8 +457,7 @@ slay min(a normie, b normie) normie {
     damn b
 }
 
-slay sqrt(x drip) drip {
-    # Simple Newton's method approximation
+slay sqrt(x drip) drip { fr fr Simple Newton's method approximation
     vibes x < 0.0 {
         damn 0.0
     }
@@ -517,21 +467,18 @@ slay sqrt(x drip) drip {
     
     sus guess drip = x / 2.0
     sus i normie = 0
-    bestie i < 10 {  # 10 iterations
+    bestie i < 10 { fr fr 10 iterations
         guess = (guess + x / guess) / 2.0
         i = i + 1
     }
     damn guess
 }
 
-# ===== MAIN EXECUTION =====
+fr fr ===== MAIN EXECUTION =====
 
-slay run_all_examples() {
-    # Set configuration
-    set_test_count(50)  # Reduce for examples
-    set_seed(12345)
-    
-    # Run all examples
+slay run_all_examples() { fr fr Set configuration
+    set_test_count(50) fr fr Reduce for examples
+    set_seed(12345) fr fr Run all examples
     example_addition_commutative()
     example_multiplication_associative()
     example_identity_properties()
@@ -548,5 +495,5 @@ slay run_all_examples() {
     print_test_summary()
 }
 
-# Run examples when this file is executed
+fr fr Run examples when this file is executed
 run_all_examples()

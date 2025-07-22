@@ -1,8 +1,8 @@
 yeet "json"
 
-# ==========================================
-# Simple JSON Test (No external dependencies)
-# ==========================================
+fr fr ==========================================
+fr fr Simple JSON Test (No external dependencies)
+fr fr ==========================================
 
 sus test_count normie = 0
 sus test_passed normie = 0
@@ -61,14 +61,12 @@ slay print_test_summary() {
     }
 }
 
-# ==========================================
-# JSON Test Functions
-# ==========================================
+fr fr ==========================================
+fr fr JSON Test Functions
+fr fr ==========================================
 
 slay test_json_parse_string() {
-    test_start("JSON Parse String Values")
-    
-    # Test parsing quoted strings
+    test_start("JSON Parse String Values") fr fr Test parsing quoted strings
     sus str_result tea = json.parse_value("\"hello world\"")
     assert_eq_string(str_result, "hello world")
     
@@ -80,9 +78,7 @@ slay test_json_parse_string() {
 }
 
 slay test_json_parse_numbers() {
-    test_start("JSON Parse Number Values")
-    
-    # Test parsing numbers
+    test_start("JSON Parse Number Values") fr fr Test parsing numbers
     sus int_result tea = json.parse_value("42")
     assert_eq_string(int_result, "42")
     
@@ -94,9 +90,7 @@ slay test_json_parse_numbers() {
 }
 
 slay test_json_parse_literals() {
-    test_start("JSON Parse Literal Values")
-    
-    # Test parsing booleans and null
+    test_start("JSON Parse Literal Values") fr fr Test parsing booleans and null
     sus true_result tea = json.parse_value("true")
     assert_eq_string(true_result, "true")
     
@@ -108,24 +102,18 @@ slay test_json_parse_literals() {
 }
 
 slay test_json_validation() {
-    test_start("JSON Validation")
-    
-    # Test valid JSON
+    test_start("JSON Validation") fr fr Test valid JSON
     assert_true(json.validate("\"hello\""))
     assert_true(json.validate("42"))
     assert_true(json.validate("true"))
     assert_true(json.validate("false"))
-    assert_true(json.validate("null"))
-    
-    # Test invalid JSON
+    assert_true(json.validate("null")) fr fr Test invalid JSON
     assert_false(json.validate("invalid"))
     assert_false(json.validate(""))
 }
 
 slay test_json_stringify() {
-    test_start("JSON Stringify")
-    
-    # Test stringifying values
+    test_start("JSON Stringify") fr fr Test stringifying values
     sus str_json tea = json.stringify("hello")
     assert_eq_string(str_json, "\"hello\"")
     
@@ -137,16 +125,12 @@ slay test_json_stringify() {
 }
 
 slay test_json_utilities() {
-    test_start("JSON String Utilities")
-    
-    # Test is_numeric
+    test_start("JSON String Utilities") fr fr Test is_numeric
     assert_true(json.is_numeric("42"))
     assert_true(json.is_numeric("3.14"))
     assert_true(json.is_numeric("-42"))
     assert_false(json.is_numeric("abc"))
-    assert_false(json.is_numeric(""))
-    
-    # Test string utilities
+    assert_false(json.is_numeric("")) fr fr Test string utilities
     sus trimmed tea = json.string_trim("  hello  ")
     assert_eq_string(trimmed, "hello")
     
@@ -158,15 +142,11 @@ slay test_json_utilities() {
 }
 
 slay test_json_round_trip() {
-    test_start("JSON Round-Trip Processing")
-    
-    # Test string round-trip
+    test_start("JSON Round-Trip Processing") fr fr Test string round-trip
     sus original tea = "hello"
     sus stringified tea = json.stringify(original)
     sus parsed tea = json.parse_value(stringified)
-    assert_eq_string(parsed, original)
-    
-    # Test number round-trip
+    assert_eq_string(parsed, original) fr fr Test number round-trip
     sus num_original tea = "42"
     sus num_stringified tea = json.stringify(num_original)
     sus num_parsed tea = json.parse_value(num_stringified)
@@ -188,5 +168,5 @@ slay run_all_json_tests() {
     print_test_summary()
 }
 
-# Auto-run tests
+fr fr Auto-run tests
 run_all_json_tests()

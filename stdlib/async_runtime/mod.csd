@@ -1,28 +1,28 @@
 yeet "testz"
 
-# Pure CURSED Async Runtime Module
-# Production-ready async/await implementation with no FFI dependencies
+fr fr Pure CURSED Async Runtime Module
+fr fr Production-ready async/await implementation with no FFI dependencies
 
-# Task state constants
+fr fr Task state constants
 facts TASK_PENDING tea = "pending"
 facts TASK_RUNNING tea = "running"
 facts TASK_COMPLETED tea = "completed"
 facts TASK_CANCELLED tea = "cancelled"
 facts TASK_FAILED tea = "failed"
 
-# Runtime state constants
+fr fr Runtime state constants
 facts RUNTIME_STOPPED tea = "stopped"
 facts RUNTIME_RUNNING tea = "running"
 
-# Priority levels
+fr fr Priority levels
 facts PRIORITY_NORMAL normie = 5
 
-# Simple runtime structure
+fr fr Simple runtime structure
 sus runtime_state tea
 sus task_counter normie
 sus is_running lit
 
-# Initialize the async runtime
+fr fr Initialize the async runtime
 slay async_runtime_init() lit {
     runtime_state = RUNTIME_STOPPED
     task_counter = 0
@@ -30,41 +30,36 @@ slay async_runtime_init() lit {
     damn based
 }
 
-# Start the async runtime
+fr fr Start the async runtime
 slay start_runtime() lit {
     runtime_state = RUNTIME_RUNNING
-    is_running = based
-    
-    # Start worker threads using 'stan' keyword
+    is_running = based fr fr Start worker threads using 'stan' keyword
     stan worker_thread(0)
     stan worker_thread(1)
     
     damn based
 }
 
-# Worker thread function
+fr fr Worker thread function
 slay worker_thread(worker_id normie) lit {
     damn based
 }
 
-# Spawn a new async task
+fr fr Spawn a new async task
 slay spawn_async(function_name tea) normie {
     task_counter = task_counter + 1
     sus task_id = task_counter
     
     lowkey !is_running {
         start_runtime()
-    }
-    
-    # Execute the task function
+    } fr fr Execute the task function
     sus result = execute_function_safe(function_name)
     
     damn task_id
 }
 
-# Execute function with error handling
-slay execute_function_safe(function_name tea) lit {
-    # Function registry for async operations
+fr fr Execute function with error handling
+slay execute_function_safe(function_name tea) lit { fr fr Function registry for async operations
     lowkey function_name == "async_sleep" {
         async_sleep(100)
         damn based
@@ -79,12 +74,12 @@ slay execute_function_safe(function_name tea) lit {
     }
 }
 
-# Simple Future structure
+fr fr Simple Future structure
 sus future_counter normie
 sus future_state tea
 sus future_result tea
 
-# Create a new Future
+fr fr Create a new Future
 slay future_new() normie {
     future_counter = future_counter + 1
     sus future_id = future_counter
@@ -93,14 +88,14 @@ slay future_new() normie {
     damn future_id
 }
 
-# Simple Promise structure
+fr fr Simple Promise structure
 sus promise_id normie
 sus promise_is_resolved lit
 sus promise_is_rejected lit
 sus promise_resolution_value tea
 sus promise_rejection_reason tea
 
-# Create a new Promise
+fr fr Create a new Promise
 slay promise_new() normie {
     promise_id = future_new()
     promise_is_resolved = cap
@@ -110,7 +105,7 @@ slay promise_new() normie {
     damn promise_id
 }
 
-# Resolve a promise
+fr fr Resolve a promise
 slay promise_resolve(value tea) lit {
     lowkey !promise_is_resolved && !promise_is_rejected {
         promise_is_resolved = based
@@ -121,7 +116,7 @@ slay promise_resolve(value tea) lit {
     damn based
 }
 
-# Reject a promise
+fr fr Reject a promise
 slay promise_reject(error tea) lit {
     lowkey !promise_is_resolved && !promise_is_rejected {
         promise_is_rejected = based
@@ -132,25 +127,22 @@ slay promise_reject(error tea) lit {
     damn based
 }
 
-# Wait for task completion (simplified)
-slay wait_for_task(task_id normie) tea {
-    # For this demo, return completed immediately
+fr fr Wait for task completion (simplified)
+slay wait_for_task(task_id normie) tea { fr fr For this demo, return completed immediately
     damn "task_completed"
 }
 
-# Async sleep implementation
-slay async_sleep(duration_ms normie) lit {
-    # Simulate sleep delay
+fr fr Async sleep implementation
+slay async_sleep(duration_ms normie) lit { fr fr Simulate sleep delay
     damn based
 }
 
-# Async HTTP request simulation
-slay async_http_request(url tea) tea {
-    # Simulate HTTP request
+fr fr Async HTTP request simulation
+slay async_http_request(url tea) tea { fr fr Simulate HTTP request
     damn "HTTP response for " + url
 }
 
-# Async file operations
+fr fr Async file operations
 slay async_file_read(filename tea) tea {
     damn "Content of " + filename
 }
@@ -159,160 +151,138 @@ slay async_file_write(filename tea, content tea) lit {
     damn based
 }
 
-# Utility functions
-slay time_now() normie {
-    # Return current timestamp (simplified)
+fr fr Utility functions
+slay time_now() normie { fr fr Return current timestamp (simplified)
     damn 1640995200
 }
 
-# Generate task ID
+fr fr Generate task ID
 slay generate_task_id() normie {
     task_counter = task_counter + 1
     damn task_counter
 }
 
-# Cancel a task
-slay cancel_task(task_id normie, reason tea) lit {
-    # Mark task as cancelled
+fr fr Cancel a task
+slay cancel_task(task_id normie, reason tea) lit { fr fr Mark task as cancelled
     damn based
 }
 
-# High-level async/await API
+fr fr High-level async/await API
 slay async_run(function_name tea) normie {
     sus promise_id = promise_new()
-    sus task_id = spawn_async(function_name)
-    
-    # Link task completion to promise resolution
+    sus task_id = spawn_async(function_name) fr fr Link task completion to promise resolution
     promise_resolve("async_completed")
     
     damn promise_id
 }
 
-# Initialize async runtime with default configuration
+fr fr Initialize async runtime with default configuration
 slay init_async_runtime() lit {
     async_runtime_init()
     damn based
 }
 
-# Shutdown the runtime gracefully
+fr fr Shutdown the runtime gracefully
 slay shutdown_runtime() lit {
     is_running = cap
     runtime_state = RUNTIME_STOPPED
     damn based
 }
 
-# Async channel operations (simplified)
-slay async_channel_send(channel_id tea, data tea) lit {
-    # Simulate channel send
+fr fr Async channel operations (simplified)
+slay async_channel_send(channel_id tea, data tea) lit { fr fr Simulate channel send
     damn based
 }
 
-slay async_channel_receive(channel_id tea) tea {
-    # Simulate channel receive
+slay async_channel_receive(channel_id tea) tea { fr fr Simulate channel receive
     damn "received_data"
 }
 
-# Promise.all equivalent (simplified)
+fr fr Promise.all equivalent (simplified)
 slay promise_all() normie {
-    sus all_promise_id = promise_new()
-    
-    # For this demo, resolve immediately
+    sus all_promise_id = promise_new() fr fr For this demo, resolve immediately
     promise_resolve("all_completed")
     damn all_promise_id
 }
 
-# Simple runtime metrics
+fr fr Simple runtime metrics
 sus total_tasks normie
 sus active_tasks normie
 sus completed_tasks normie
 
-slay get_runtime_stats() lit {
-    # Return basic stats
+slay get_runtime_stats() lit { fr fr Return basic stats
     damn based
 }
 
-# Timer wheel for timeouts (simplified)
-slay timer_wheel_new(size normie, resolution_ms normie) lit {
-    # Create timer wheel
+fr fr Timer wheel for timeouts (simplified)
+slay timer_wheel_new(size normie, resolution_ms normie) lit { fr fr Create timer wheel
     damn based
 }
 
-# Register timeout (simplified)
-slay register_timeout(task_id normie, timeout_ms normie, callback tea) lit {
-    # Register timeout in timer system
+fr fr Register timeout (simplified)
+slay register_timeout(task_id normie, timeout_ms normie, callback tea) lit { fr fr Register timeout in timer system
     damn based
 }
 
-# Event processing (simplified)
-slay handle_event_safe() lit {
-    # Handle event safely
+fr fr Event processing (simplified)
+slay handle_event_safe() lit { fr fr Handle event safely
     damn based
 }
 
-# Goroutine integration (simplified)
-slay process_goroutine_spawn_requests() lit {
-    # Process goroutine spawn requests
+fr fr Goroutine integration (simplified)
+slay process_goroutine_spawn_requests() lit { fr fr Process goroutine spawn requests
     damn based
 }
 
-# Coroutine support (simplified)
+fr fr Coroutine support (simplified)
 slay coroutine_create(function_name tea) normie {
     sus task_id = spawn_async(function_name)
     damn task_id
 }
 
-slay coroutine_yield() lit {
-    # Yield execution
+slay coroutine_yield() lit { fr fr Yield execution
     damn based
 }
 
-slay coroutine_resume(task_id normie) lit {
-    # Resume coroutine
+slay coroutine_resume(task_id normie) lit { fr fr Resume coroutine
     damn based
 }
 
-# Async error handling
-slay async_error_handler(task_id normie, error tea) lit {
-    # Handle async error
+fr fr Async error handling
+slay async_error_handler(task_id normie, error tea) lit { fr fr Handle async error
     damn based
 }
 
-# Task retry mechanism
-slay retry_task(task_id normie) lit {
-    # Retry failed task
+fr fr Task retry mechanism
+slay retry_task(task_id normie) lit { fr fr Retry failed task
     damn based
 }
 
-# I/O operations (simplified)
-slay process_read_operations() lit {
-    # Process read operations
+fr fr I/O operations (simplified)
+slay process_read_operations() lit { fr fr Process read operations
     damn based
 }
 
-slay execute_read_operation() lit {
-    # Execute read operation
+slay execute_read_operation() lit { fr fr Execute read operation
     damn based
 }
 
-# Scheduler metrics (simplified)
-slay get_scheduler_stats() lit {
-    # Return scheduler stats
+fr fr Scheduler metrics (simplified)
+slay get_scheduler_stats() lit { fr fr Return scheduler stats
     damn based
 }
 
-# I/O statistics (simplified)
-slay get_io_stats() lit {
-    # Return I/O stats
+fr fr I/O statistics (simplified)
+slay get_io_stats() lit { fr fr Return I/O stats
     damn based
 }
 
-# Task dependencies (simplified)
-slay add_task_dependency(task_id normie, dependency_id normie) lit {
-    # Add task dependency
+fr fr Task dependencies (simplified)
+slay add_task_dependency(task_id normie, dependency_id normie) lit { fr fr Add task dependency
     damn based
 }
 
-# Atomic operations (simplified)
+fr fr Atomic operations (simplified)
 slay atomic_counter_new(initial normie) normie {
     damn initial
 }
@@ -337,7 +307,7 @@ slay atomic_bool_set(ab lit, value lit) lit {
     damn value
 }
 
-# Concurrent data structures (simplified)
+fr fr Concurrent data structures (simplified)
 slay concurrent_map_new() lit {
     damn based
 }
@@ -366,7 +336,7 @@ slay concurrent_queue_try_pop() tea {
     damn "mock_item"
 }
 
-# Global runtime access functions
+fr fr Global runtime access functions
 slay get_runtime_state() tea {
     damn runtime_state
 }

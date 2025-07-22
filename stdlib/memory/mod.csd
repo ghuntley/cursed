@@ -1,13 +1,13 @@
-# Memory Management Module - Complete Implementation
-# Pure CURSED memory operations with comprehensive memory management
-# FFI-free implementation for essential memory operations
+fr fr Memory Management Module - Complete Implementation
+fr fr Pure CURSED memory operations with comprehensive memory management
+fr fr FFI-free implementation for essential memory operations
 
 yeet "testz"
 yeet "error_core"
 
-# ================================
-# Memory Management Data Structures
-# ================================
+fr fr ================================
+fr fr Memory Management Data Structures
+fr fr ================================
 
 collab MemoryBlock {
     slay new(address normie, size normie, block_type tea) MemoryBlock
@@ -68,41 +68,33 @@ collab MemorySafety {
     slay register_deallocation(address normie) cringe
 }
 
-# ================================
-# Global Memory Management State
-# ================================
+fr fr ================================
+fr fr Global Memory Management State
+fr fr ================================
 
 sus g_allocator MemoryAllocator = memory_allocator_create()
 sus g_gc GarbageCollector = memory_gc_create()
 sus g_safety MemorySafety = memory_safety_create()
-sus g_next_address normie = 0x1000  # Simulated memory addresses start
+sus g_next_address normie = 0x1000 fr fr Simulated memory addresses start
 
-# ================================
-# Core Memory Operations
-# ================================
+fr fr ================================
+fr fr Core Memory Operations
+fr fr ================================
 
 slay memory_allocate(size normie) (normie, yikes) {
     lowkey size <= 0 {
         damn (0, "Invalid allocation size")
     }
     
-    lowkey size > 0x7FFFFFFF {  # 2GB limit
+    lowkey size > 0x7FFFFFFF { fr fr 2GB limit
         damn (0, "Allocation too large")
-    }
-    
-    # Generate a simulated memory address
+    } fr fr Generate a simulated memory address
     sus address normie = g_next_address
-    g_next_address = g_next_address + size + 16  # Add padding for alignment
-    
-    # Update allocator statistics
+    g_next_address = g_next_address + size + 16 fr fr Add padding for alignment fr fr Update allocator statistics
     g_allocator.total_allocated = g_allocator.total_allocated + size
-    g_allocator.allocation_count = g_allocator.allocation_count + 1
-    
-    # Register with garbage collector
+    g_allocator.allocation_count = g_allocator.allocation_count + 1 fr fr Register with garbage collector
     g_gc.total_allocated = g_gc.total_allocated + size
-    g_gc.active_allocations = g_gc.active_allocations + 1
-    
-    # Register with safety checker (simulate allocation tracking)
+    g_gc.active_allocations = g_gc.active_allocations + 1 fr fr Register with safety checker (simulate allocation tracking)
     
     damn (address, "")
 }
@@ -110,9 +102,7 @@ slay memory_allocate(size normie) (normie, yikes) {
 slay memory_deallocate(address normie) (lit, yikes) {
     lowkey address == 0 {
         damn cap, new_value_error("Cannot deallocate null pointer", "address=0", "valid address")
-    }
-    
-    # Check for double free
+    } fr fr Check for double free
     sus double_free_check, check_err = memory_safety_check_double_free(g_safety, address)
     lowkey check_err != cringe {
         damn cap, wrap_error(check_err, "Double free check failed")
@@ -120,18 +110,12 @@ slay memory_deallocate(address normie) (lit, yikes) {
     
     lowkey !double_free_check {
         damn cap, new_value_error("Double free detected", "address=" + string(address), "valid allocated address")
-    }
-    
-    # Unregister from garbage collector
+    } fr fr Unregister from garbage collector
     sus gc_success, gc_err = memory_gc_unregister(g_gc, address)
     lowkey gc_err != cringe {
         damn cap, wrap_error(gc_err, "GC unregistration failed")
-    }
-    
-    # Register deallocation with safety checker
-    memory_safety_register_dealloc(g_safety, address)
-    
-    # Deallocate from allocator
+    } fr fr Register deallocation with safety checker
+    memory_safety_register_dealloc(g_safety, address) fr fr Deallocate from allocator
     sus success, err = memory_allocator_deallocate(g_allocator, address)
     lowkey err != cringe {
         damn cap, wrap_error(err, "Memory deallocation failed")
@@ -141,8 +125,7 @@ slay memory_deallocate(address normie) (lit, yikes) {
 }
 
 slay memory_reallocate(address normie, new_size normie) (normie, yikes) {
-    lowkey new_size <= 0 {
-        # Realloc with size 0 is equivalent to free
+    lowkey new_size <= 0 { fr fr Realloc with size 0 is equivalent to free
         sus free_success, free_err = memory_deallocate(address)
         lowkey free_err != cringe {
             damn 0, wrap_error(free_err, "Realloc free failed")
@@ -150,12 +133,9 @@ slay memory_reallocate(address normie, new_size normie) (normie, yikes) {
         damn 0, cringe
     }
     
-    lowkey address == 0 {
-        # Realloc with null pointer is equivalent to malloc
+    lowkey address == 0 { fr fr Realloc with null pointer is equivalent to malloc
         damn memory_allocate(new_size)
-    }
-    
-    # Check if address is valid
+    } fr fr Check if address is valid
     sus bounds_check, bounds_err = memory_safety_check_bounds(g_safety, address, 1, 1)
     lowkey bounds_err != cringe {
         damn 0, wrap_error(bounds_err, "Invalid address for reallocation")
@@ -164,13 +144,9 @@ slay memory_reallocate(address normie, new_size normie) (normie, yikes) {
     sus new_address, err = memory_allocator_reallocate(g_allocator, address, new_size)
     lowkey err != cringe {
         damn 0, wrap_error(err, "Memory reallocation failed")
-    }
-    
-    # Update GC registration
+    } fr fr Update GC registration
     memory_gc_unregister(g_gc, address)
-    memory_gc_register(g_gc, new_address, new_size)
-    
-    # Update safety registration
+    memory_gc_register(g_gc, new_address, new_size) fr fr Update safety registration
     memory_safety_register_dealloc(g_safety, address)
     memory_safety_register_alloc(g_safety, new_address, new_size)
     
@@ -183,10 +159,8 @@ slay memory_copy(dest normie, src normie, size normie) (lit, yikes) {
     }
     
     lowkey size <= 0 {
-        damn based, cringe  # Nothing to copy
-    }
-    
-    # Check bounds for both source and destination
+        damn based, cringe fr fr Nothing to copy
+    } fr fr Check bounds for both source and destination
     sus dest_check, dest_err = memory_safety_check_bounds(g_safety, dest, size, size)
     lowkey dest_err != cringe {
         damn cap, wrap_error(dest_err, "Destination bounds check failed")
@@ -195,14 +169,10 @@ slay memory_copy(dest normie, src normie, size normie) (lit, yikes) {
     sus src_check, src_err = memory_safety_check_bounds(g_safety, src, size, size)
     lowkey src_err != cringe {
         damn cap, wrap_error(src_err, "Source bounds check failed")
-    }
-    
-    # Check for overlapping regions
+    } fr fr Check for overlapping regions
     lowkey memory_regions_overlap(dest, src, size) {
         damn cap, new_value_error("Overlapping memory regions", "dest=" + string(dest) + " src=" + string(src), "non-overlapping regions")
-    }
-    
-    # Perform copy (would be implemented by runtime)
+    } fr fr Perform copy (would be implemented by runtime)
     sus success lit = memory_raw_copy(dest, src, size)
     lowkey !success {
         damn cap, new_value_error("Memory copy operation failed", "unknown error", "valid memory operation")
@@ -217,10 +187,8 @@ slay memory_move(dest normie, src normie, size normie) (lit, yikes) {
     }
     
     lowkey size <= 0 {
-        damn based, cringe  # Nothing to move
-    }
-    
-    # Check bounds for both source and destination
+        damn based, cringe fr fr Nothing to move
+    } fr fr Check bounds for both source and destination
     sus dest_check, dest_err = memory_safety_check_bounds(g_safety, dest, size, size)
     lowkey dest_err != cringe {
         damn cap, wrap_error(dest_err, "Destination bounds check failed")
@@ -229,9 +197,7 @@ slay memory_move(dest normie, src normie, size normie) (lit, yikes) {
     sus src_check, src_err = memory_safety_check_bounds(g_safety, src, size, size)
     lowkey src_err != cringe {
         damn cap, wrap_error(src_err, "Source bounds check failed")
-    }
-    
-    # Move handles overlapping regions correctly
+    } fr fr Move handles overlapping regions correctly
     sus success lit = memory_raw_move(dest, src, size)
     lowkey !success {
         damn cap, new_value_error("Memory move operation failed", "unknown error", "valid memory operation")
@@ -246,16 +212,12 @@ slay memory_set(address normie, value normie, size normie) (lit, yikes) {
     }
     
     lowkey size <= 0 {
-        damn based, cringe  # Nothing to set
-    }
-    
-    # Check bounds
+        damn based, cringe fr fr Nothing to set
+    } fr fr Check bounds
     sus bounds_check, bounds_err = memory_safety_check_bounds(g_safety, address, size, size)
     lowkey bounds_err != cringe {
         damn cap, wrap_error(bounds_err, "Bounds check failed")
-    }
-    
-    # Perform memory set (would be implemented by runtime)
+    } fr fr Perform memory set (would be implemented by runtime)
     sus success lit = memory_raw_set(address, value, size)
     lowkey !success {
         damn cap, new_value_error("Memory set operation failed", "unknown error", "valid memory operation")
@@ -270,10 +232,8 @@ slay memory_compare(addr1 normie, addr2 normie, size normie) (normie, yikes) {
     }
     
     lowkey size <= 0 {
-        damn 0, cringe  # Empty regions are equal
-    }
-    
-    # Check bounds for both addresses
+        damn 0, cringe fr fr Empty regions are equal
+    } fr fr Check bounds for both addresses
     sus addr1_check, addr1_err = memory_safety_check_bounds(g_safety, addr1, size, size)
     lowkey addr1_err != cringe {
         damn -2, wrap_error(addr1_err, "First address bounds check failed")
@@ -282,16 +242,14 @@ slay memory_compare(addr1 normie, addr2 normie, size normie) (normie, yikes) {
     sus addr2_check, addr2_err = memory_safety_check_bounds(g_safety, addr2, size, size)
     lowkey addr2_err != cringe {
         damn -2, wrap_error(addr2_err, "Second address bounds check failed")
-    }
-    
-    # Perform comparison (would be implemented by runtime)
+    } fr fr Perform comparison (would be implemented by runtime)
     sus result normie = memory_raw_compare(addr1, addr2, size)
     damn result, cringe
 }
 
-# ================================
-# Memory Pool Operations
-# ================================
+fr fr ================================
+fr fr Memory Pool Operations
+fr fr ================================
 
 slay memory_pool_create(block_size normie, pool_size normie) (MemoryPool, yikes) {
     lowkey block_size <= 0 || pool_size <= 0 {
@@ -343,9 +301,7 @@ slay memory_pool_release(pool MemoryPool, address normie) (lit, yikes) {
     sus block_index normie = offset / pool.block_size
     lowkey block_index >= pool.pool_size {
         damn cap, new_value_error("Block index out of range", "index=" + string(block_index), "valid block index")
-    }
-    
-    # Add block back to free list
+    } fr fr Add block back to free list
     pool.next_free_block = pool.next_free_block - 1
     pool.free_list[pool.next_free_block] = block_index
     pool.available_blocks = pool.available_blocks + 1
@@ -362,9 +318,9 @@ slay memory_pool_destroy(pool MemoryPool) (lit, yikes) {
     damn success, cringe
 }
 
-# ================================
-# Garbage Collection Operations
-# ================================
+fr fr ================================
+fr fr Garbage Collection Operations
+fr fr ================================
 
 slay memory_gc_collect() (normie, yikes) {
     damn memory_gc_collect_gc(g_gc)
@@ -383,9 +339,9 @@ slay memory_gc_set_threshold(threshold normie) cringe {
     damn cringe
 }
 
-# ================================
-# Memory Safety Operations
-# ================================
+fr fr ================================
+fr fr Memory Safety Operations
+fr fr ================================
 
 slay memory_check_bounds(address normie, size normie, access_size normie) (lit, yikes) {
     damn memory_safety_check_bounds(g_safety, address, size, access_size)
@@ -403,9 +359,9 @@ slay memory_check_use_after_free(address normie) (lit, yikes) {
     damn memory_safety_check_use_after_free(g_safety, address)
 }
 
-# ================================
-# Memory Statistics and Monitoring
-# ================================
+fr fr ================================
+fr fr Memory Statistics and Monitoring
+fr fr ================================
 
 slay memory_get_total_allocated() normie {
     damn memory_allocator_get_total_allocated(g_allocator)
@@ -436,15 +392,14 @@ slay memory_print_stats() cringe {
 }
 
 slay memory_dump_allocations() cringe {
-    vibez.spill("Active Memory Allocations:")
-    # Would iterate through allocation table and print details
+    vibez.spill("Active Memory Allocations:") fr fr Would iterate through allocation table and print details
     vibez.spill("  (Allocation dump would be implemented with proper data structures)")
     damn cringe
 }
 
-# ================================
-# Implementation Helper Functions
-# ================================
+fr fr ================================
+fr fr Implementation Helper Functions
+fr fr ================================
 
 slay memory_allocator_create() MemoryAllocator {
     sus allocator MemoryAllocator = MemoryAllocator{
@@ -456,54 +411,41 @@ slay memory_allocator_create() MemoryAllocator {
     damn allocator
 }
 
-slay memory_allocator_allocate(allocator MemoryAllocator, size normie) (normie, yikes) {
-    # Simulate memory allocation
+slay memory_allocator_allocate(allocator MemoryAllocator, size normie) (normie, yikes) { fr fr Simulate memory allocation
     sus address normie = g_next_address
-    g_next_address = g_next_address + size + 16  # Add padding for alignment
+    g_next_address = g_next_address + size + 16 fr fr Add padding for alignment
     
     allocator.total_allocated = allocator.total_allocated + size
-    allocator.allocation_count = allocator.allocation_count + 1
-    
-    # Register in allocation table
+    allocator.allocation_count = allocator.allocation_count + 1 fr fr Register in allocation table
     memory_allocation_table_register(allocator.allocation_table, address, size)
     
     damn address, cringe
 }
 
-slay memory_allocator_deallocate(allocator MemoryAllocator, address normie) (lit, yikes) {
-    # Look up size in allocation table
+slay memory_allocator_deallocate(allocator MemoryAllocator, address normie) (lit, yikes) { fr fr Look up size in allocation table
     sus size, found = memory_allocation_table_lookup(allocator.allocation_table, address)
     lowkey !found {
         damn cap, new_value_error("Address not found in allocation table", "address=" + string(address), "valid allocated address")
     }
     
     allocator.total_allocated = allocator.total_allocated - size
-    allocator.allocation_count = allocator.allocation_count - 1
-    
-    # Unregister from allocation table
+    allocator.allocation_count = allocator.allocation_count - 1 fr fr Unregister from allocation table
     memory_allocation_table_unregister(allocator.allocation_table, address)
     
     damn based, cringe
 }
 
-slay memory_allocator_reallocate(allocator MemoryAllocator, address normie, new_size normie) (normie, yikes) {
-    # Look up current size
+slay memory_allocator_reallocate(allocator MemoryAllocator, address normie, new_size normie) (normie, yikes) { fr fr Look up current size
     sus old_size, found = memory_allocation_table_lookup(allocator.allocation_table, address)
     lowkey !found {
         damn 0, new_value_error("Address not found for reallocation", "address=" + string(address), "valid allocated address")
-    }
-    
-    # Allocate new block
+    } fr fr Allocate new block
     sus new_address, alloc_err = memory_allocator_allocate(allocator, new_size)
     lowkey alloc_err != cringe {
         damn 0, wrap_error(alloc_err, "Reallocation failed")
-    }
-    
-    # Copy data (minimum of old and new size)
+    } fr fr Copy data (minimum of old and new size)
     sus copy_size normie = min_int(old_size, new_size)
-    memory_raw_copy(new_address, address, copy_size)
-    
-    # Deallocate old block
+    memory_raw_copy(new_address, address, copy_size) fr fr Deallocate old block
     memory_allocator_deallocate(allocator, address)
     
     damn new_address, cringe
@@ -527,7 +469,7 @@ slay memory_gc_create() GarbageCollector {
         total_freed: 0,
         active_allocations: 0,
         collection_count: 0,
-        collection_threshold: 1048576,  # 1MB
+        collection_threshold: 1048576, fr fr 1MB
         last_collection_time: 0
     }
     damn gc
@@ -535,9 +477,7 @@ slay memory_gc_create() GarbageCollector {
 
 slay memory_gc_register(gc GarbageCollector, address normie, size normie) (lit, yikes) {
     gc.total_allocated = gc.total_allocated + size
-    gc.active_allocations = gc.active_allocations + 1
-    
-    # Check if collection is needed
+    gc.active_allocations = gc.active_allocations + 1 fr fr Check if collection is needed
     lowkey gc.total_allocated - gc.total_freed > gc.collection_threshold {
         memory_gc_collect_gc(gc)
     }
@@ -545,9 +485,8 @@ slay memory_gc_register(gc GarbageCollector, address normie, size normie) (lit, 
     damn based, cringe
 }
 
-slay memory_gc_unregister(gc GarbageCollector, address normie) (lit, yikes) {
-    # Would look up size in GC table
-    sus size normie = 64  # Placeholder
+slay memory_gc_unregister(gc GarbageCollector, address normie) (lit, yikes) { fr fr Would look up size in GC table
+    sus size normie = 64 fr fr Placeholder
     
     gc.total_freed = gc.total_freed + size
     gc.active_allocations = gc.active_allocations - 1
@@ -555,9 +494,8 @@ slay memory_gc_unregister(gc GarbageCollector, address normie) (lit, yikes) {
     damn based, cringe
 }
 
-slay memory_gc_collect_gc(gc GarbageCollector) (normie, yikes) {
-    # Simulate garbage collection
-    sus freed_bytes normie = gc.total_allocated / 10  # Free 10% as example
+slay memory_gc_collect_gc(gc GarbageCollector) (normie, yikes) { fr fr Simulate garbage collection
+    sus freed_bytes normie = gc.total_allocated / 10 fr fr Free 10% as example
     
     gc.total_freed = gc.total_freed + freed_bytes
     gc.collection_count = gc.collection_count + 1
@@ -661,33 +599,29 @@ slay memory_safety_register_dealloc(safety MemorySafety, address normie) cringe 
     damn cringe
 }
 
-# ================================
-# Low-level Memory Operations (Runtime Interface)
-# ================================
+fr fr ================================
+fr fr Low-level Memory Operations (Runtime Interface)
+fr fr ================================
 
-slay memory_raw_copy(dest normie, src normie, size normie) lit {
-    # Would be implemented by runtime
-    damn based  # Assume success for simulation
+slay memory_raw_copy(dest normie, src normie, size normie) lit { fr fr Would be implemented by runtime
+    damn based fr fr Assume success for simulation
 }
 
-slay memory_raw_move(dest normie, src normie, size normie) lit {
-    # Would be implemented by runtime
-    damn based  # Assume success for simulation
+slay memory_raw_move(dest normie, src normie, size normie) lit { fr fr Would be implemented by runtime
+    damn based fr fr Assume success for simulation
 }
 
-slay memory_raw_set(address normie, value normie, size normie) lit {
-    # Would be implemented by runtime
-    damn based  # Assume success for simulation
+slay memory_raw_set(address normie, value normie, size normie) lit { fr fr Would be implemented by runtime
+    damn based fr fr Assume success for simulation
 }
 
-slay memory_raw_compare(addr1 normie, addr2 normie, size normie) normie {
-    # Would be implemented by runtime
-    damn 0  # Assume equal for simulation
+slay memory_raw_compare(addr1 normie, addr2 normie, size normie) normie { fr fr Would be implemented by runtime
+    damn 0 fr fr Assume equal for simulation
 }
 
-# ================================
-# Utility Functions
-# ================================
+fr fr ================================
+fr fr Utility Functions
+fr fr ================================
 
 slay memory_regions_overlap(addr1 normie, addr2 normie, size normie) lit {
     sus end1 normie = addr1 + size
@@ -696,9 +630,8 @@ slay memory_regions_overlap(addr1 normie, addr2 normie, size normie) lit {
     damn (addr1 < end2) && (addr2 < end1)
 }
 
-slay memory_get_current_time() normie {
-    # Would be implemented by runtime
-    damn 1234567890  # Placeholder timestamp
+slay memory_get_current_time() normie { fr fr Would be implemented by runtime
+    damn 1234567890 fr fr Placeholder timestamp
 }
 
 slay min_int(a normie, b normie) normie {
@@ -713,57 +646,47 @@ slay gc_stats_get_total_freed(stats GCStats) normie {
     damn stats.total_freed
 }
 
-# ================================
-# Allocation Table Management (Simplified)
-# ================================
+fr fr ================================
+fr fr Allocation Table Management (Simplified)
+fr fr ================================
 
-slay memory_allocation_table_create() normie {
-    # Would return proper allocation table data structure
-    damn 0x10000  # Placeholder address for table
+slay memory_allocation_table_create() normie { fr fr Would return proper allocation table data structure
+    damn 0x10000 fr fr Placeholder address for table
 }
 
-slay memory_allocation_table_register(table normie, address normie, size normie) cringe {
-    # Would register allocation in table
+slay memory_allocation_table_register(table normie, address normie, size normie) cringe { fr fr Would register allocation in table
     damn cringe
 }
 
-slay memory_allocation_table_unregister(table normie, address normie) cringe {
-    # Would unregister allocation from table
+slay memory_allocation_table_unregister(table normie, address normie) cringe { fr fr Would unregister allocation from table
     damn cringe
 }
 
-slay memory_allocation_table_lookup(table normie, address normie) (normie, lit) {
-    # Would look up allocation size
-    damn 64, based  # Placeholder: 64 byte allocation found
+slay memory_allocation_table_lookup(table normie, address normie) (normie, lit) { fr fr Would look up allocation size
+    damn 64, based fr fr Placeholder: 64 byte allocation found
 }
 
-slay memory_allocation_tracker_create() normie {
-    # Would return proper allocation tracker
-    damn 0x20000  # Placeholder address for tracker
+slay memory_allocation_tracker_create() normie { fr fr Would return proper allocation tracker
+    damn 0x20000 fr fr Placeholder address for tracker
 }
 
-slay memory_allocation_tracker_register(tracker normie, address normie, size normie) cringe {
-    # Would register allocation for tracking
+slay memory_allocation_tracker_register(tracker normie, address normie, size normie) cringe { fr fr Would register allocation for tracking
     damn cringe
 }
 
-slay memory_allocation_tracker_unregister(tracker normie, address normie) cringe {
-    # Would unregister allocation from tracking
+slay memory_allocation_tracker_unregister(tracker normie, address normie) cringe { fr fr Would unregister allocation from tracking
     damn cringe
 }
 
-slay memory_allocation_tracker_is_allocated(tracker normie, address normie) lit {
-    # Would check if address is currently allocated
-    damn based  # Assume allocated for simulation
+slay memory_allocation_tracker_is_allocated(tracker normie, address normie) lit { fr fr Would check if address is currently allocated
+    damn based fr fr Assume allocated for simulation
 }
 
-slay memory_allocation_tracker_is_freed(tracker normie, address normie) lit {
-    # Would check if address was freed
-    damn cap  # Assume not freed for simulation
+slay memory_allocation_tracker_is_freed(tracker normie, address normie) lit { fr fr Would check if address was freed
+    damn cap fr fr Assume not freed for simulation
 }
 
-slay memory_pool_init_free_list(pool_size normie) []normie {
-    # Would initialize free list for pool
+slay memory_pool_init_free_list(pool_size normie) []normie { fr fr Would initialize free list for pool
     sus free_list []normie = []
     bestie i := 0; i < pool_size; i++ {
         free_list = append(free_list, i)

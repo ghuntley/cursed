@@ -1,85 +1,77 @@
-# YeetIO (io package)
-# Pure CURSED implementation of I/O operations with Gen Z twist
+fr fr YeetIO (io package)
+fr fr Pure CURSED implementation of I/O operations with Gen Z twist
 
-# Error constants
+fr fr Error constants
 sus ErrYoinkBruh tea = "no more to yoink, bruh"
 
-# Yeeter interface (equivalent to io.Writer)
-# Yeets (writes) data to a destination
+fr fr Yeeter interface (equivalent to io.Writer)
+fr fr Yeets (writes) data to a destination
 collab Yeeter {
     Yeet(p []byte) (n normie, err tea)
 }
 
-# Yoink interface (equivalent to io.Reader)  
-# Yoinks (reads) data from a source
+fr fr Yoink interface (equivalent to io.Reader)  
+fr fr Yoinks (reads) data from a source
 collab Yoink {
     Yoink(p []byte) (n normie, err tea)
 }
 
-# YoinkYeeter interface (equivalent to io.ReadWriter)
-# Combines Yoink and Yeeter interfaces
+fr fr YoinkYeeter interface (equivalent to io.ReadWriter)
+fr fr Combines Yoink and Yeeter interfaces
 collab YoinkYeeter {
     Yoink(p []byte) (n normie, err tea)
     Yeet(p []byte) (n normie, err tea)
 }
 
-# StringYeeter - A simple string-based writer implementation
+fr fr StringYeeter - A simple string-based writer implementation
 struct StringYeeter {
     data tea
 }
 
-# Create a new StringYeeter
+fr fr Create a new StringYeeter
 slay new_string_yeeter() StringYeeter {
     damn StringYeeter{data: ""}
 }
 
-# Implement Yeeter interface for StringYeeter
-slay (sy *StringYeeter) Yeet(p []byte) (n normie, err tea) {
-    # Convert bytes to string and append
+fr fr Implement Yeeter interface for StringYeeter
+slay (sy *StringYeeter) Yeet(p []byte) (n normie, err tea) { fr fr Convert bytes to string and append
     sus str_data tea = string(p)
     sy.data = sy.data + str_data
     damn len(p), ""
 }
 
-# Get the accumulated data from StringYeeter
+fr fr Get the accumulated data from StringYeeter
 slay (sy *StringYeeter) get_data() tea {
     damn sy.data
 }
 
-# ByteYoink - A simple byte slice reader implementation
+fr fr ByteYoink - A simple byte slice reader implementation
 struct ByteYoink {
     data []byte
     pos normie
 }
 
-# Create a new ByteYoink from string
+fr fr Create a new ByteYoink from string
 slay new_byte_yoink(content tea) ByteYoink {
     damn ByteYoink{data: []byte(content), pos: 0}
 }
 
-# Implement Yoink interface for ByteYoink
-slay (by *ByteYoink) Yoink(p []byte) (n normie, err tea) {
-    # Check if we've reached the end
+fr fr Implement Yoink interface for ByteYoink
+slay (by *ByteYoink) Yoink(p []byte) (n normie, err tea) { fr fr Check if we've reached the end
     if by.pos >= len(by.data) {
         damn 0, ErrYoinkBruh
-    }
-    
-    # Calculate how much we can read
+    } fr fr Calculate how much we can read
     sus available normie = len(by.data) - by.pos
     sus to_read normie = len(p)
     
     if available < to_read {
         to_read = available
-    }
-    
-    # Copy data
+    } fr fr Copy data
     bestie i := 0; i < to_read; i++ {
         p[i] = by.data[by.pos + i]
     }
     
-    by.pos = by.pos + to_read
-    
-    # Return EOF if we've reached the end
+    by.pos = by.pos + to_read fr fr Return EOF if we've reached the end
     if by.pos >= len(by.data) {
         damn to_read, ErrYoinkBruh
     }
@@ -87,35 +79,29 @@ slay (by *ByteYoink) Yoink(p []byte) (n normie, err tea) {
     damn to_read, ""
 }
 
-# LimitedYoink - A reader that stops after n bytes
+fr fr LimitedYoink - A reader that stops after n bytes
 struct LimitedYoink {
     reader Yoink
     limit thicc
     remaining thicc
 }
 
-# Create a LimitedYoink
+fr fr Create a LimitedYoink
 slay LimitedYoink(r Yoink, n thicc) LimitedYoink {
     damn LimitedYoink{reader: r, limit: n, remaining: n}
 }
 
-# Implement Yoink interface for LimitedYoink
+fr fr Implement Yoink interface for LimitedYoink
 slay (lr *LimitedYoink) Yoink(p []byte) (n normie, err tea) {
     if lr.remaining <= 0 {
         damn 0, ErrYoinkBruh
-    }
-    
-    # Limit the read size
+    } fr fr Limit the read size
     sus max_read normie = len(p)
     if thicc(max_read) > lr.remaining {
         max_read = normie(lr.remaining)
-    }
-    
-    # Create a smaller buffer if needed
+    } fr fr Create a smaller buffer if needed
     sus limited_buf []byte = make([]byte, max_read)
-    sus read_count normie, read_err tea = lr.reader.Yoink(limited_buf)
-    
-    # Copy the data
+    sus read_count normie, read_err tea = lr.reader.Yoink(limited_buf) fr fr Copy the data
     bestie i := 0; i < read_count; i++ {
         p[i] = limited_buf[i]
     }
@@ -129,9 +115,9 @@ slay (lr *LimitedYoink) Yoink(p []byte) (n normie, err tea) {
     damn read_count, read_err
 }
 
-# YeetAll - Copies all data from a Yoink to a Yeeter (like io.Copy)
+fr fr YeetAll - Copies all data from a Yoink to a Yeeter (like io.Copy)
 slay YeetAll(dst Yeeter, src Yoink) (written thicc, err tea) {
-    sus buf []byte = make([]byte, 1024)  # 1KB buffer
+    sus buf []byte = make([]byte, 1024) fr fr 1KB buffer
     sus total_written thicc = 0
     
     bestie {
@@ -158,15 +144,15 @@ slay YeetAll(dst Yeeter, src Yoink) (written thicc, err tea) {
     damn total_written, ""
 }
 
-# Utility functions for common operations
+fr fr Utility functions for common operations
 
-# YeetString - Write a string to a Yeeter
+fr fr YeetString - Write a string to a Yeeter
 slay YeetString(dst Yeeter, content tea) (n normie, err tea) {
     sus data []byte = []byte(content)
     damn dst.Yeet(data)
 }
 
-# YoinkAll - Read all data from a Yoink until EOF
+fr fr YoinkAll - Read all data from a Yoink until EOF
 slay YoinkAll(src Yoink) (content tea, err tea) {
     sus result tea = ""
     sus buf []byte = make([]byte, 1024)
@@ -190,27 +176,27 @@ slay YoinkAll(src Yoink) (content tea, err tea) {
     damn result, ""
 }
 
-# YeetLine - Write a line with newline
+fr fr YeetLine - Write a line with newline
 slay YeetLine(dst Yeeter, content tea) (n normie, err tea) {
     damn YeetString(dst, content + "\n")
 }
 
-# IsEOF - Check if error is EOF
+fr fr IsEOF - Check if error is EOF
 slay IsEOF(err tea) lit {
     damn err == ErrYoinkBruh
 }
 
-# MultiYeeter - Write to multiple Yeeters at once
+fr fr MultiYeeter - Write to multiple Yeeters at once
 struct MultiYeeter {
     yeeters []Yeeter
 }
 
-# Create a new MultiYeeter
+fr fr Create a new MultiYeeter
 slay new_multi_yeeter(yeeters ...Yeeter) MultiYeeter {
     damn MultiYeeter{yeeters: yeeters}
 }
 
-# Implement Yeeter interface for MultiYeeter
+fr fr Implement Yeeter interface for MultiYeeter
 slay (my *MultiYeeter) Yeet(p []byte) (n normie, err tea) {
     bestie _, yeeter := range my.yeeters {
         sus written normie, write_err tea = yeeter.Yeet(p)
@@ -223,7 +209,7 @@ slay (my *MultiYeeter) Yeet(p []byte) (n normie, err tea) {
     damn len(p), ""
 }
 
-# BufferedYoink - Buffer reads for better performance
+fr fr BufferedYoink - Buffer reads for better performance
 struct BufferedYoink {
     reader Yoink
     buffer []byte
@@ -231,7 +217,7 @@ struct BufferedYoink {
     size normie
 }
 
-# Create a new BufferedYoink
+fr fr Create a new BufferedYoink
 slay new_buffered_yoink(reader Yoink, buffer_size normie) BufferedYoink {
     damn BufferedYoink{
         reader: reader,
@@ -241,13 +227,12 @@ slay new_buffered_yoink(reader Yoink, buffer_size normie) BufferedYoink {
     }
 }
 
-# Implement Yoink interface for BufferedYoink
+fr fr Implement Yoink interface for BufferedYoink
 slay (br *BufferedYoink) Yoink(p []byte) (n normie, err tea) {
     sus read_count normie = 0
     sus max_read normie = len(p)
     
-    bestie read_count < max_read {
-        # If buffer is empty, refill it
+    bestie read_count < max_read { fr fr If buffer is empty, refill it
         if br.pos >= br.size {
             sus new_size normie, read_err tea = br.reader.Yoink(br.buffer)
             br.size = new_size
@@ -263,9 +248,7 @@ slay (br *BufferedYoink) Yoink(p []byte) (n normie, err tea) {
                 }
                 damn read_count, ""
             }
-        }
-        
-        # Copy from buffer
+        } fr fr Copy from buffer
         sus available normie = br.size - br.pos
         sus to_copy normie = max_read - read_count
         

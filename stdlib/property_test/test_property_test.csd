@@ -1,9 +1,9 @@
 yeet "testz"
 yeet "property_test"
 
-# Comprehensive test suite for property-based testing framework
+fr fr Comprehensive test suite for property-based testing framework
 
-# ===== GENERATOR TESTS =====
+fr fr ===== GENERATOR TESTS =====
 
 test_start("Integer generator produces values in range")
 set_seed(42)
@@ -62,7 +62,7 @@ bestie l < 20 {
 }
 assert_true(list_test_passed)
 
-# ===== SHRINKING TESTS =====
+fr fr ===== SHRINKING TESTS =====
 
 test_start("Integer shrinking includes zero and smaller values")
 sus shrunk_42 [] = shrink_int(42)
@@ -94,10 +94,10 @@ bestie n < size(shrunk_hello) {
 }
 assert_true(contains_empty)
 
-# ===== PROPERTY COMBINATOR TESTS =====
+fr fr ===== PROPERTY COMBINATOR TESTS =====
 
 test_start("Idempotent property works correctly")
-# Test with a simple idempotent function
+fr fr Test with a simple idempotent function
 slay abs_function(x normie) normie {
     vibes x < 0 {
         damn -x
@@ -123,7 +123,7 @@ bestie p < 10 {
 }
 assert_true(idempotent_passed)
 
-# ===== MATHEMATICAL PROPERTY TESTS =====
+fr fr ===== MATHEMATICAL PROPERTY TESTS =====
 
 test_start("Addition is commutative property")
 slay add_function(a normie, b normie) normie {
@@ -152,7 +152,7 @@ bestie q < 10 {
 }
 assert_true(commutative_passed)
 
-# ===== STRING PROPERTY TESTS =====
+fr fr ===== STRING PROPERTY TESTS =====
 
 test_start("String concatenation length property")
 slay test_string_concat_length(s1 tea, s2 tea) lit {
@@ -174,11 +174,10 @@ bestie r < 10 {
 }
 assert_true(concat_length_passed)
 
-# ===== LIST PROPERTY TESTS =====
+fr fr ===== LIST PROPERTY TESTS =====
 
 test_start("List reverse is its own inverse")
-slay reverse_list(list []) [] {
-    # Simple reverse implementation
+slay reverse_list(list []) [] { fr fr Simple reverse implementation
     sus result [] = []
     sus i normie = size(list) - 1
     bestie i >= 0 {
@@ -190,9 +189,7 @@ slay reverse_list(list []) [] {
 
 slay test_reverse_inverse(list []) lit {
     sus reversed [] = reverse_list(list)
-    sus double_reversed [] = reverse_list(reversed)
-    
-    # Check if original equals double reversed
+    sus double_reversed [] = reverse_list(reversed) fr fr Check if original equals double reversed
     vibes size(list) != size(double_reversed) {
         damn cap
     }
@@ -220,28 +217,25 @@ bestie t < 10 {
 }
 assert_true(reverse_passed)
 
-# ===== GENERATOR COMPOSITION TESTS =====
+fr fr ===== GENERATOR COMPOSITION TESTS =====
 
 test_start("Email generator produces valid format")
 set_seed(505)
 sus email_format_passed lit = based
 sus u normie = 0
 bestie u < 10 {
-    sus email tea = gen_email()
-    # Simple validation: must contain @ and .
+    sus email tea = gen_email() fr fr Simple validation: must contain @ and .
     sus has_at lit = cap
     sus has_dot lit = cap
     sus v normie = 0
-    bestie v < len(email) {
-        # Would use proper string indexing in full implementation
+    bestie v < len(email) { fr fr Would use proper string indexing in full implementation
         v = v + 1
-    }
-    # For demo purposes, assume emails are well-formed
+    } fr fr For demo purposes, assume emails are well-formed
     u = u + 1
 }
 assert_true(email_format_passed)
 
-# ===== STATISTICAL DISTRIBUTION TESTS =====
+fr fr ===== STATISTICAL DISTRIBUTION TESTS =====
 
 test_start("Boolean generator has roughly 50/50 distribution")
 slay always_true(x lit) lit {
@@ -252,13 +246,13 @@ set_seed(606)
 sus distribution_test lit = prop_distribution_test(gen_boolean, always_true, 1.0)
 assert_true(distribution_test)
 
-# ===== CONFIGURATION TESTS =====
+fr fr ===== CONFIGURATION TESTS =====
 
 test_start("Set test count changes behavior")
 sus original_count normie = property_test_count
 set_test_count(10)
 assert_eq_int(property_test_count, 10)
-set_test_count(original_count)  # Restore
+set_test_count(original_count) fr fr Restore
 
 test_start("Set seed affects randomness")
 set_seed(777)
@@ -267,7 +261,7 @@ set_seed(777)
 sus second_value normie = gen_int(1, 1000)
 assert_eq_int(first_value, second_value)
 
-# ===== EDGE CASE TESTS =====
+fr fr ===== EDGE CASE TESTS =====
 
 test_start("Empty generators handle edge cases")
 sus empty_string tea = gen_string(0)
@@ -283,7 +277,7 @@ assert_eq_int(min_int, 5)
 sus max_range normie = gen_int(-10, -10)
 assert_eq_int(max_range, -10)
 
-# ===== COMPLEX PROPERTY TESTS =====
+fr fr ===== COMPLEX PROPERTY TESTS =====
 
 test_start("Sort preserves list length")
 slay test_sort_preserves_length(list []) lit {
@@ -304,25 +298,25 @@ bestie w < 5 {
 }
 assert_true(sort_length_passed)
 
-# ===== PERFORMANCE TESTS =====
+fr fr ===== PERFORMANCE TESTS =====
 
 test_start("Generator performance is reasonable")
 set_seed(909)
-sus start_time normie = 0  # Would use proper timing in full implementation
+sus start_time normie = 0 fr fr Would use proper timing in full implementation
 sus x normie = 0
 bestie x < 1000 {
     sus generated_value normie = gen_int(1, 100)
     x = x + 1
 }
-sus end_time normie = 1    # Would measure actual time
+sus end_time normie = 1 fr fr Would measure actual time
 assert_true(end_time >= start_time)
 
-# ===== INTEGRATION TESTS =====
+fr fr ===== INTEGRATION TESTS =====
 
 test_start("Property test integrates with testz framework")
-# This test verifies the integration works by running a simple property
+fr fr This test verifies the integration works by running a simple property
 slay simple_property(x normie) lit {
-    damn x == x  # Trivially true
+    damn x == x fr fr Trivially true
 }
 
 slay simple_generator() normie {
@@ -332,22 +326,22 @@ slay simple_generator() normie {
 sus integration_result lit = run_property_test(simple_property, simple_generator, "identity property")
 assert_true(integration_result)
 
-# ===== FAILURE CASE TESTS =====
+fr fr ===== FAILURE CASE TESTS =====
 
 test_start("Property correctly detects failures")
 slay failing_property(x normie) lit {
-    damn x > 1000000  # Should fail for most generated values
+    damn x > 1000000 fr fr Should fail for most generated values
 }
 
 slay small_int_generator() normie {
     damn gen_int(1, 100)
 }
 
-set_test_count(10)  # Reduce test count for failure test
+set_test_count(10) fr fr Reduce test count for failure test
 sus failure_result lit = run_property_test(failing_property, small_int_generator, "failing property")
-assert_false(failure_result)  # Should fail
+assert_false(failure_result) fr fr Should fail
 
-# Reset test count
+fr fr Reset test count
 set_test_count(100)
 
 print_test_summary()

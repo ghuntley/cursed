@@ -1,9 +1,9 @@
 yeet "testz"
 yeet "command_line"
 
-# Simplified command_line module test suite
+fr fr Simplified command_line module test suite
 
-# Test basic command specification creation
+fr fr Test basic command specification creation
 test_start("Command specification creation")
 
 sus spec := command_line.create_command_spec("myapp", "Test application", "[FILES...]")
@@ -13,7 +13,7 @@ assert_eq_string(spec.usage, "[FILES...]")
 
 print_test_summary()
 
-# Test help generation
+fr fr Test help generation
 test_start("Help generation")
 
 sus help_text := command_line.generate_help(spec)
@@ -21,14 +21,14 @@ assert_true(command_line.starts_with(help_text, "Usage: myapp"))
 
 print_test_summary()
 
-# Test utility functions
+fr fr Test utility functions
 test_start("Utility functions")
 
-# Test string utilities
+fr fr Test string utilities
 assert_true(command_line.starts_with("hello world", "hello"))
 assert_false(command_line.starts_with("hello", "hello world"))
 
-# Test flag detection
+fr fr Test flag detection
 assert_true(command_line.is_flag("--verbose"))
 assert_true(command_line.is_flag("-h"))
 assert_false(command_line.is_flag("filename"))
@@ -37,7 +37,7 @@ assert_false(command_line.is_long_flag("-v"))
 
 print_test_summary()
 
-# Test argument parsing
+fr fr Test argument parsing
 test_start("Argument parsing")
 
 sus arg := command_line.parse_single_arg("--verbose")
@@ -50,18 +50,18 @@ assert_eq_string(pos_arg.name, "filename.txt")
 
 print_test_summary()
 
-# Test help detection
+fr fr Test help detection
 test_start("Help detection")
 
 sus result := command_line.simple_parse("--help", "", "")
 assert_true(command_line.help_requested())
 
 sus no_help := command_line.simple_parse("file.txt", "--verbose", "")
-# Note: help_requested might still be true from previous test
+fr fr Note: help_requested might still be true from previous test
 
 print_test_summary()
 
-# Test help generation and display
+fr fr Test help generation and display
 test_start("Help display")
 
 sus display_spec := command_line.create_command_spec("awesome", "An awesome tool", "INPUT [OUTPUT]")
@@ -70,7 +70,7 @@ assert_true(command_line.starts_with(help_output, "Usage: awesome"))
 
 print_test_summary()
 
-# Test flag name extraction
+fr fr Test flag name extraction
 test_start("Flag name extraction")
 
 assert_eq_string(command_line.extract_flag_name("--verbose"), "verbose")
@@ -79,23 +79,23 @@ assert_eq_string(command_line.extract_flag_name("normal"), "")
 
 print_test_summary()
 
-# Test quick parsing
+fr fr Test quick parsing
 test_start("Quick parsing")
 
 sus quick_result := command_line.quick_parse("--help")
 assert_true(quick_result.help_requested)
 
 sus normal_result := command_line.quick_parse("file.txt")
-# Test that it doesn't crash
+fr fr Test that it doesn't crash
 
 print_test_summary()
 
-# Test error handling
+fr fr Test error handling
 test_start("Error handling")
 
-# Test that error message starts empty
+fr fr Test that error message starts empty
 sus initial_error := command_line.get_error()
-# Error might be empty or contain previous errors
+fr fr Error might be empty or contain previous errors
 
 print_test_summary()
 

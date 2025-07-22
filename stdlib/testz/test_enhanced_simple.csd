@@ -1,11 +1,11 @@
-# CURSED Testing Framework v3.0 - Enhanced Simple Tests
-# Comprehensive test suite for the enhanced simple testing framework
+fr fr CURSED Testing Framework v3.0 - Enhanced Simple Tests
+fr fr Comprehensive test suite for the enhanced simple testing framework
 
 yeet "testz"
 
-# ================================
-# Test Suite: Basic Functionality
-# ================================
+fr fr ================================
+fr fr Test Suite: Basic Functionality
+fr fr ================================
 
 slay test_basic_functionality() {
     suite_start("Basic Functionality")
@@ -60,17 +60,15 @@ slay test_basic_functionality() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Performance Testing
-# ================================
+fr fr ================================
+fr fr Test Suite: Performance Testing
+fr fr ================================
 
 slay test_performance_features() {
     suite_start("Performance Testing")
     
     test_start("basic_benchmarking")
-    sus start_time normie = benchmark_start()
-    
-    # Simulate work
+    sus start_time normie = benchmark_start() fr fr Simulate work
     sus result normie = 0
     bestie i := 0; i < 1000; i++ {
         result = result + i
@@ -79,22 +77,20 @@ slay test_performance_features() {
     sus duration normie = benchmark_end(start_time)
     assert_gt_int(duration, 0)
     assert_eq_int(result, 499500)
-    test_end()
-    
-    # Test benchmark function
+    test_end() fr fr Test benchmark function
     benchmark_function("mathematical_operations", 5)
     
     test_start("performance_regression_testing")
-    check_performance_regression("fast_function", 50, 100, 100)   # Should pass
-    check_performance_regression("slow_function", 200, 100, 50)   # Should fail
+    check_performance_regression("fast_function", 50, 100, 100) fr fr Should pass
+    check_performance_regression("slow_function", 200, 100, 50) fr fr Should fail
     test_end()
     
     suite_end()
 }
 
-# ================================
-# Test Suite: Property-Based Testing
-# ================================
+fr fr ================================
+fr fr Test Suite: Property-Based Testing
+fr fr ================================
 
 slay test_property_based_testing() {
     suite_start("Property-Based Testing")
@@ -106,9 +102,9 @@ slay test_property_based_testing() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Mock System
-# ================================
+fr fr ================================
+fr fr Test Suite: Mock System
+fr fr ================================
 
 slay test_mock_system() {
     suite_start("Mock System")
@@ -138,9 +134,9 @@ slay test_mock_system() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Test Discovery
-# ================================
+fr fr ================================
+fr fr Test Suite: Test Discovery
+fr fr ================================
 
 slay test_discovery_and_execution() {
     suite_start("Test Discovery")
@@ -155,9 +151,9 @@ slay test_discovery_and_execution() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Output Formats
-# ================================
+fr fr ================================
+fr fr Test Suite: Output Formats
+fr fr ================================
 
 slay test_output_formats() {
     suite_start("Output Formats")
@@ -184,9 +180,9 @@ slay test_output_formats() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Coverage Analysis
-# ================================
+fr fr ================================
+fr fr Test Suite: Coverage Analysis
+fr fr ================================
 
 slay test_coverage_analysis() {
     suite_start("Coverage Analysis")
@@ -199,9 +195,9 @@ slay test_coverage_analysis() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Parallel Execution
-# ================================
+fr fr ================================
+fr fr Test Suite: Parallel Execution
+fr fr ================================
 
 slay test_parallel_execution() {
     suite_start("Parallel Execution")
@@ -214,9 +210,9 @@ slay test_parallel_execution() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Configuration
-# ================================
+fr fr ================================
+fr fr Test Suite: Configuration
+fr fr ================================
 
 slay test_configuration() {
     suite_start("Configuration")
@@ -244,9 +240,9 @@ slay test_configuration() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Edge Cases
-# ================================
+fr fr ================================
+fr fr Test Suite: Edge Cases
+fr fr ================================
 
 slay test_edge_cases() {
     suite_start("Edge Cases")
@@ -278,9 +274,9 @@ slay test_edge_cases() {
     suite_end()
 }
 
-# ================================
-# Test Suite: State Management
-# ================================
+fr fr ================================
+fr fr Test Suite: State Management
+fr fr ================================
 
 slay test_state_management() {
     suite_start("State Management")
@@ -305,9 +301,9 @@ slay test_state_management() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Skip Testing
-# ================================
+fr fr ================================
+fr fr Test Suite: Skip Testing
+fr fr ================================
 
 slay test_skipping_functionality() {
     suite_start("Skip Testing")
@@ -321,28 +317,22 @@ slay test_skipping_functionality() {
     suite_end()
 }
 
-# ================================
-# Main Test Runner
-# ================================
+fr fr ================================
+fr fr Main Test Runner
+fr fr ================================
 
 slay main() {
     vibez.spill("🚀 Starting CURSED Testing Framework v3.0 Enhanced Simple Tests")
     vibez.spill("💪 Testing all the enhanced features!")
-    vibez.spill("")
-    
-    # Configure the framework
+    vibez.spill("") fr fr Configure the framework
     enable_verbose()
     enable_coverage()
     enable_parallel()
     enable_json_output()
     enable_xml_output()
     enable_html_output()
-    enable_tap_output()
-    
-    # Reset state for clean test run
-    reset_test_state()
-    
-    # Run all test suites
+    enable_tap_output() fr fr Reset state for clean test run
+    reset_test_state() fr fr Run all test suites
     test_basic_functionality()
     test_performance_features()
     test_property_based_testing()
@@ -354,17 +344,13 @@ slay main() {
     test_configuration()
     test_edge_cases()
     test_state_management()
-    test_skipping_functionality()
-    
-    # Generate comprehensive final report
+    test_skipping_functionality() fr fr Generate comprehensive final report
     print_test_summary()
     
     vibez.spill("")
     vibez.spill("🎯 CURSED Testing Framework v3.0 Enhanced Simple Tests Complete!")
     vibez.spill("🔥 All enhanced features have been thoroughly tested!")
-    vibez.spill("")
-    
-    # Return appropriate exit code
+    vibez.spill("") fr fr Return appropriate exit code
     lowkey all_tests_passed() {
         vibez.spill("✅ All tests passed - Enhanced simple framework is ready for production!")
         damn 0

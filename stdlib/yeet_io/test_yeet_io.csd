@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "yeet_io"
 
-# Test StringYeeter functionality
+fr fr Test StringYeeter functionality
 test_start("StringYeeter basic functionality")
 sus sy StringYeeter = new_string_yeeter()
 sus data []byte = []byte("hello world")
@@ -11,7 +11,7 @@ assert_eq_string(err, "")
 assert_eq_string(sy.get_data(), "hello world")
 test_end()
 
-# Test StringYeeter multiple writes
+fr fr Test StringYeeter multiple writes
 test_start("StringYeeter multiple writes")
 sus sy2 StringYeeter = new_string_yeeter()
 sus data1 []byte = []byte("hello ")
@@ -25,7 +25,7 @@ assert_eq_string(err2, "")
 assert_eq_string(sy2.get_data(), "hello world")
 test_end()
 
-# Test ByteYoink functionality
+fr fr Test ByteYoink functionality
 test_start("ByteYoink basic functionality")
 sus by ByteYoink = new_byte_yoink("hello world")
 sus read_buf []byte = make([]byte, 5)
@@ -35,7 +35,7 @@ assert_eq_string(err, "")
 assert_eq_string(string(read_buf), "hello")
 test_end()
 
-# Test ByteYoink EOF
+fr fr Test ByteYoink EOF
 test_start("ByteYoink EOF handling")
 sus by2 ByteYoink = new_byte_yoink("hi")
 sus read_buf2 []byte = make([]byte, 10)
@@ -45,7 +45,7 @@ assert_eq_string(err, ErrYoinkBruh)
 assert_eq_string(string(read_buf2[:n]), "hi")
 test_end()
 
-# Test ByteYoink multiple reads
+fr fr Test ByteYoink multiple reads
 test_start("ByteYoink multiple reads")
 sus by3 ByteYoink = new_byte_yoink("hello world")
 sus buf1 []byte = make([]byte, 5)
@@ -60,7 +60,7 @@ assert_eq_string(string(buf1), "hello")
 assert_eq_string(string(buf2[:n2]), " world")
 test_end()
 
-# Test LimitedYoink functionality
+fr fr Test LimitedYoink functionality
 test_start("LimitedYoink basic functionality")
 sus source ByteYoink = new_byte_yoink("hello world")
 sus limited LimitedYoink = LimitedYoink(source, 5)
@@ -71,7 +71,7 @@ assert_eq_string(err, ErrYoinkBruh)
 assert_eq_string(string(buf[:n]), "hello")
 test_end()
 
-# Test LimitedYoink multiple reads
+fr fr Test LimitedYoink multiple reads
 test_start("LimitedYoink multiple reads")
 sus source2 ByteYoink = new_byte_yoink("hello world")
 sus limited2 LimitedYoink = LimitedYoink(source2, 8)
@@ -87,7 +87,7 @@ assert_eq_string(string(buf1), "hello")
 assert_eq_string(string(buf2[:n2]), " wo")
 test_end()
 
-# Test YeetAll functionality
+fr fr Test YeetAll functionality
 test_start("YeetAll basic functionality")
 sus source3 ByteYoink = new_byte_yoink("copy this data")
 sus dest StringYeeter = new_string_yeeter()
@@ -97,7 +97,7 @@ assert_eq_string(err, "")
 assert_eq_string(dest.get_data(), "copy this data")
 test_end()
 
-# Test YeetString functionality
+fr fr Test YeetString functionality
 test_start("YeetString functionality")
 sus dest2 StringYeeter = new_string_yeeter()
 sus n normie, err tea = YeetString(dest2, "test string")
@@ -106,7 +106,7 @@ assert_eq_string(err, "")
 assert_eq_string(dest2.get_data(), "test string")
 test_end()
 
-# Test YoinkAll functionality
+fr fr Test YoinkAll functionality
 test_start("YoinkAll functionality")
 sus source4 ByteYoink = new_byte_yoink("read all this")
 sus content tea, err tea = YoinkAll(source4)
@@ -114,7 +114,7 @@ assert_eq_string(err, "")
 assert_eq_string(content, "read all this")
 test_end()
 
-# Test YeetLine functionality
+fr fr Test YeetLine functionality
 test_start("YeetLine functionality")
 sus dest3 StringYeeter = new_string_yeeter()
 sus n normie, err tea = YeetLine(dest3, "test line")
@@ -123,14 +123,14 @@ assert_eq_string(err, "")
 assert_eq_string(dest3.get_data(), "test line\n")
 test_end()
 
-# Test IsEOF functionality
+fr fr Test IsEOF functionality
 test_start("IsEOF functionality")
 assert_true(IsEOF(ErrYoinkBruh))
 assert_false(IsEOF("some other error"))
 assert_false(IsEOF(""))
 test_end()
 
-# Test MultiYeeter functionality
+fr fr Test MultiYeeter functionality
 test_start("MultiYeeter functionality")
 sus dest1 StringYeeter = new_string_yeeter()
 sus dest2 StringYeeter = new_string_yeeter()
@@ -143,7 +143,7 @@ assert_eq_string(dest1.get_data(), "broadcast")
 assert_eq_string(dest2.get_data(), "broadcast")
 test_end()
 
-# Test BufferedYoink functionality
+fr fr Test BufferedYoink functionality
 test_start("BufferedYoink functionality")
 sus source5 ByteYoink = new_byte_yoink("buffered read test")
 sus buffered BufferedYoink = new_buffered_yoink(source5, 8)
@@ -154,7 +154,7 @@ assert_eq_string(err, "")
 assert_eq_string(string(buf), "buffered r")
 test_end()
 
-# Test BufferedYoink multiple reads
+fr fr Test BufferedYoink multiple reads
 test_start("BufferedYoink multiple reads")
 sus source6 ByteYoink = new_byte_yoink("test buffer reads")
 sus buffered2 BufferedYoink = new_buffered_yoink(source6, 8)
@@ -175,7 +175,7 @@ assert_eq_string(string(buf2), "buffe")
 assert_eq_string(string(buf3[:n3]), "r reads")
 test_end()
 
-# Test error handling edge cases
+fr fr Test error handling edge cases
 test_start("Error handling edge cases")
 sus empty_source ByteYoink = new_byte_yoink("")
 sus empty_buf []byte = make([]byte, 10)
@@ -184,7 +184,7 @@ assert_eq_int(n, 0)
 assert_eq_string(err, ErrYoinkBruh)
 test_end()
 
-# Test zero-limit LimitedYoink
+fr fr Test zero-limit LimitedYoink
 test_start("Zero-limit LimitedYoink")
 sus source7 ByteYoink = new_byte_yoink("some data")
 sus zero_limited LimitedYoink = LimitedYoink(source7, 0)
@@ -194,9 +194,9 @@ assert_eq_int(n, 0)
 assert_eq_string(err, ErrYoinkBruh)
 test_end()
 
-# Test interface compliance
+fr fr Test interface compliance
 test_start("Interface compliance verification")
-# This test verifies that our implementations properly implement the interfaces
+fr fr This test verifies that our implementations properly implement the interfaces
 sus yeeter_impl Yeeter = new_string_yeeter()
 sus yoink_impl Yoink = new_byte_yoink("test")
 sus data []byte = []byte("interface test")

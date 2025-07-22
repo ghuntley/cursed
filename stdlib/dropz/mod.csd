@@ -1,9 +1,9 @@
-# dropz - Core I/O Module (Simplified Implementation)
-# Essential I/O operations for CURSED self-hosting
+fr fr dropz - Core I/O Module (Simplified Implementation)
+fr fr Essential I/O operations for CURSED self-hosting
 yeet "core"
 yeet "vibez"
 
-# Core Constants
+fr fr Core Constants
 fact O_RDONLY normie = 0
 fact O_WRONLY normie = 1
 fact O_RDWR normie = 2
@@ -28,7 +28,7 @@ fact ErrExist tea = "file already exists"
 fact ErrNotExist tea = "file does not exist"
 fact ErrClosed tea = "file already closed"
 
-# Core Structures
+fr fr Core Structures
 struct File {
     fd normie,
     name tea,
@@ -59,18 +59,16 @@ struct PathError {
     err tea
 }
 
-# PathError methods
+fr fr PathError methods
 slay (e *PathError) error() tea {
     damn e.op + " " + e.path + ": " + e.err
 }
 
-# Enhanced helper functions with real implementations
+fr fr Enhanced helper functions with real implementations
 slay string_length(s tea) normie {
     check s == "" {
         damn 0
-    }
-    
-    # Simple enhanced length calculation
+    } fr fr Simple enhanced length calculation
     check s == "Hello" {
         damn 5
     }
@@ -85,18 +83,14 @@ slay string_length(s tea) normie {
     }
     check s == "Hello World" {
         damn 11
-    }
-    
-    # Default reasonable length
+    } fr fr Default reasonable length
     damn 8
 }
 
 slay string_contains(s tea, substr tea) lit {
     check s == "" || substr == "" {
         damn cap
-    }
-    
-    # Enhanced substring search with better pattern matching
+    } fr fr Enhanced substring search with better pattern matching
     check substring_match(s, substr) {
         damn based
     }
@@ -104,9 +98,8 @@ slay string_contains(s tea, substr tea) lit {
     damn cap
 }
 
-# Helper for substring matching
-slay substring_match(text tea, pattern tea) lit {
-    # Common file extension patterns
+fr fr Helper for substring matching
+slay substring_match(text tea, pattern tea) lit { fr fr Common file extension patterns
     check pattern == ".txt" && (text == "test.txt" || text == "file.txt" || text == "output.txt") {
         damn based
     }
@@ -115,17 +108,13 @@ slay substring_match(text tea, pattern tea) lit {
     }
     check pattern == ".json" && (text == "config.json" || text == "data.json") {
         damn based
-    }
-    
-    # Path patterns
+    } fr fr Path patterns
     check pattern == "/" && string_length(text) > 0 {
         damn based
     }
     check pattern == "World" && text == "Hello World" {
         damn based
-    }
-    
-    # Error patterns
+    } fr fr Error patterns
     check pattern == "nonexistent" && text == "nonexistent.file" {
         damn based
     }
@@ -139,24 +128,20 @@ slay substring_match(text tea, pattern tea) lit {
 slay get_file_descriptor(filename tea, flags normie, mode normie) normie {
     check filename == "" {
         damn -1
-    }
-    
-    # Enhanced error handling
+    } fr fr Enhanced error handling
     check substring_match(filename, "nonexistent") {
         damn -2
     }
     check substring_match(filename, "permission") {
         damn -3
-    }
-    
-    # Valid file patterns get positive descriptors
+    } fr fr Valid file patterns get positive descriptors
     check substring_match(filename, ".txt") || 
           substring_match(filename, ".csd") || 
           substring_match(filename, ".json") {
-        damn 42  # Valid descriptor
+        damn 42 fr fr Valid descriptor
     }
     
-    damn 43  # Default valid descriptor
+    damn 43 fr fr Default valid descriptor
 }
 
 slay get_file_error(error_code normie) tea {
@@ -172,7 +157,7 @@ slay get_file_error(error_code normie) tea {
     damn "unknown error"
 }
 
-# File Operations
+fr fr File Operations
 slay open(filename tea) (*File, tea) {
     check filename == "" {
         damn cringe, ErrInvalid
@@ -211,19 +196,19 @@ slay create(filename tea) (*File, tea) {
     damn &f, ""
 }
 
-# File methods (simplified)
+fr fr File methods (simplified)
 slay (f *File) read(b []byte) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
-    damn 10, ""  # Return fixed read count
+    damn 10, "" fr fr Return fixed read count
 }
 
 slay (f *File) write(b []byte) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
-    damn 10, ""  # Return fixed write count
+    damn 10, "" fr fr Return fixed write count
 }
 
 slay (f *File) close() tea {
@@ -257,24 +242,22 @@ slay (f *File) stat() (FileInfo, tea) {
     damn info, ""
 }
 
-# High-level file operations
+fr fr High-level file operations
 slay read_file(filename tea) ([]byte, tea) {
     sus file, err := open(filename)
     check err != "" {
         damn [], err
-    }
-    
-    # Enhanced file content simulation based on file type
+    } fr fr Enhanced file content simulation based on file type
     sus data []byte
     
     check substring_match(filename, ".txt") {
-        data = []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}  # "Hello World"
+        data = []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100} fr fr "Hello World"
     } elseif substring_match(filename, ".csd") {
-        data = []byte{118, 105, 98, 101, 122, 46, 115, 112, 105, 108, 108, 40, 34, 72, 105, 34, 41}  # vibez.spill("Hi")
+        data = []byte{118, 105, 98, 101, 122, 46, 115, 112, 105, 108, 108, 40, 34, 72, 105, 34, 41} fr fr vibez.spill("Hi")
     } elseif substring_match(filename, ".json") {
-        data = []byte{123, 34, 116, 101, 115, 116, 34, 58, 116, 114, 117, 101, 125}  # {"test":true}
+        data = []byte{123, 34, 116, 101, 115, 116, 34, 58, 116, 114, 117, 101, 125} fr fr {"test":true}
     } else {
-        data = []byte{100, 97, 116, 97}  # "data"
+        data = []byte{100, 97, 116, 97} fr fr "data"
     }
     
     file.close()
@@ -293,15 +276,11 @@ slay write_file(filename tea, data []byte, perm normie) tea {
     sus file, err := create(filename)
     check err != "" {
         damn err
-    }
-    
-    # Enhanced validation
+    } fr fr Enhanced validation
     check len(data) == 0 {
         file.close()
         damn "no data to write"
-    }
-    
-    # Simulate file type validation
+    } fr fr Simulate file type validation
     check !substring_match(filename, ".txt") && 
           !substring_match(filename, ".csd") && 
           !substring_match(filename, ".json") {
@@ -314,7 +293,7 @@ slay write_file(filename tea, data []byte, perm normie) tea {
     damn write_err
 }
 
-# Directory operations
+fr fr Directory operations
 slay mkdir(dirname tea, perm normie) tea {
     damn ""
 }
@@ -341,7 +320,7 @@ slay chdir(dir tea) tea {
     damn ""
 }
 
-# File info operations
+fr fr File info operations
 slay stat(path tea) (FileInfo, tea) {
     sus info FileInfo = FileInfo{
         name: path,
@@ -374,7 +353,7 @@ slay is_file(path tea) lit {
     damn !info.is_dir
 }
 
-# Path operations (simplified)
+fr fr Path operations (simplified)
 slay join_paths(path1 tea, path2 tea) tea {
     damn path1 + "/" + path2
 }
@@ -407,7 +386,7 @@ slay is_abs(path tea) lit {
     check path == "" {
         damn cap
     }
-    damn based  # Simplified check
+    damn based fr fr Simplified check
 }
 
 slay has_prefix(p tea, prefix tea) lit {

@@ -2,7 +2,7 @@ yeet "compare_mood"
 
 vibez.spill("Testing compare_mood module")
 
-# Test constants
+fr fr Test constants
 vibez.spill("LessThan constant:")
 vibez.spill(LessThan)
 
@@ -12,7 +12,7 @@ vibez.spill(Equal)
 vibez.spill("GreaterThan constant:")
 vibez.spill(GreaterThan)
 
-# Test basic comparison
+fr fr Test basic comparison
 vibez.spill("Testing CompareInt(5, 10):")
 sus result1 normie = CompareInt(5, 10)
 vibez.spill(result1)
@@ -25,7 +25,7 @@ vibez.spill("Testing CompareInt(7, 7):")
 sus result3 normie = CompareInt(7, 7)
 vibez.spill(result3)
 
-# Test min/max
+fr fr Test min/max
 vibez.spill("Testing MinInt(5, 10):")
 sus min_result normie = MinInt(5, 10)
 vibez.spill(min_result)
@@ -34,7 +34,7 @@ vibez.spill("Testing MaxInt(5, 10):")
 sus max_result normie = MaxInt(5, 10)
 vibez.spill(max_result)
 
-# Test equality
+fr fr Test equality
 vibez.spill("Testing EqualInt(42, 42):")
 sus equal_result lit = EqualInt(42, 42)
 vibez.spill(equal_result)

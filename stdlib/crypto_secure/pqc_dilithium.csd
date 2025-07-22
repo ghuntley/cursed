@@ -7,14 +7,14 @@ fr fr NIST Standardized Algorithm
 fr fr ========================================
 
 fr fr Dilithium-3 (NIST Security Level 3) Parameters
-sus dilithium_n normie = 256             # Ring dimension
-sus dilithium_k normie = 6               # Module rank (public key)
-sus dilithium_l normie = 5               # Module rank (secret key)
-sus dilithium_q normie = 8380417         # Modulus
-sus dilithium_d normie = 13              # Dropped bits
-sus dilithium_tau normie = 49            # Commitment weight
-sus dilithium_gamma1 normie = 524288     # Challenge space
-sus dilithium_gamma2 normie = 261888     # Low-order rounding
+sus dilithium_n normie = 256 fr fr Ring dimension
+sus dilithium_k normie = 6 fr fr Module rank (public key)
+sus dilithium_l normie = 5 fr fr Module rank (secret key)
+sus dilithium_q normie = 8380417 fr fr Modulus
+sus dilithium_d normie = 13 fr fr Dropped bits
+sus dilithium_tau normie = 49 fr fr Commitment weight
+sus dilithium_gamma1 normie = 524288 fr fr Challenge space
+sus dilithium_gamma2 normie = 261888 fr fr Low-order rounding
 
 fr fr Dilithium polynomial storage
 sus dilithium_poly_a [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -48,7 +48,7 @@ slay dilithium_freeze(a normie) normie {
 
 fr fr Montgomery reduction for Dilithium
 slay dilithium_montgomery_reduce(a thicc) normie {
-    sus qinv normie = 58728449    # q^(-1) mod 2^32
+    sus qinv normie = 58728449 fr fr q^(-1) mod 2^32
     sus t normie = (a * qinv) & ((1 << 32) - 1)
     t = (a - t * dilithium_q) >> 32
     damn t
@@ -86,10 +86,8 @@ slay dilithium_ntt_inverse(poly [normie]) {
             }
         }
         len = len >> 1
-    }
-    
-    # Multiply by n^(-1) mod q
-    sus ninv normie = 8347681  # 256^(-1) mod q
+    } fr fr Multiply by n^(-1) mod q
+    sus ninv normie = 8347681 fr fr 256^(-1) mod q
     bestie i := 0; i < 256; i++ {
         poly[i] = dilithium_fqmul(poly[i], ninv)
     }
@@ -131,13 +129,10 @@ slay dilithium_sample_uniform(poly [normie], seed normie, nonce normie) {
 }
 
 fr fr Challenge polynomial generation
-slay dilithium_sample_challenge(challenge [normie], seed [normie]) {
-    # Initialize challenge polynomial to zero
+slay dilithium_sample_challenge(challenge [normie], seed [normie]) { fr fr Initialize challenge polynomial to zero
     bestie i := 0; i < 256; i++ {
         challenge[i] = 0
-    }
-    
-    # Generate tau non-zero coefficients
+    } fr fr Generate tau non-zero coefficients
     sus pos_count normie = 0
     sus neg_count normie = 0
     sus rng_state normie = seed[0] ^ seed[1] ^ seed[2] ^ seed[3]
@@ -151,7 +146,7 @@ slay dilithium_sample_challenge(challenge [normie], seed [normie]) {
                 challenge[position] = 1
                 pos_count = pos_count + 1
             } nah vibes neg_count < dilithium_tau / 2 {
-                challenge[position] = dilithium_q - 1  # -1 mod q
+                challenge[position] = dilithium_q - 1 fr fr -1 mod q
                 neg_count = neg_count + 1
             }
         }
@@ -181,42 +176,31 @@ slay dilithium_decompose(a normie) [normie] {
 
 fr fr Key generation
 slay dilithium_keygen(public_key [normie], secret_key [normie]) {
-    sus seed normie = 0x87654321  # In practice, use secure random
-    
-    # Generate matrix A
+    sus seed normie = 0x87654321 fr fr In practice, use secure random fr fr Generate matrix A
     sus matrix_a [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    dilithium_sample_uniform(matrix_a, seed, 0)
-    
-    # Generate secret vectors s1, s2
+    dilithium_sample_uniform(matrix_a, seed, 0) fr fr Generate secret vectors s1, s2
     sus secret_s1 [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    sus secret_s2 [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    
-    # Sample from error distribution (simplified)
+    sus secret_s2 [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] fr fr Sample from error distribution (simplified)
     bestie i := 0; i < 256; i++ {
-        sus noise1 normie = ((seed * (i + 1)) % 5) - 2  # Small noise
+        sus noise1 normie = ((seed * (i + 1)) % 5) - 2 fr fr Small noise
         sus noise2 normie = ((seed * (i + 2)) % 5) - 2
         secret_s1[i] = noise1
         secret_s2[i] = noise2
-    }
-    
-    # Compute t = A * s1 + s2
+    } fr fr Compute t = A * s1 + s2
     sus temp [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     dilithium_poly_pointwise_montgomery(temp, matrix_a, secret_s1)
-    dilithium_poly_add(temp, temp, secret_s2)
-    
-    # Extract high bits for public key
+    dilithium_poly_add(temp, temp, secret_s2) fr fr Extract high bits for public key
     bestie i := 0; i < 256; i++ {
         sus round_result [normie] = dilithium_power2round(temp[i])
-        public_key[i] = round_result[0]  # t1
-        secret_key[i] = secret_s1[i]     # s1
-        secret_key[256 + i] = secret_s2[i]  # s2
-        secret_key[512 + i] = round_result[1]  # t0
+        public_key[i] = round_result[0] fr fr t1
+        secret_key[i] = secret_s1[i] fr fr s1
+        secret_key[256 + i] = secret_s2[i] fr fr s2
+        secret_key[512 + i] = round_result[1] fr fr t0
     }
 }
 
 fr fr Signature generation
-slay dilithium_sign(signature [normie], message [normie], secret_key [normie]) {
-    # Extract secret key components
+slay dilithium_sign(signature [normie], message [normie], secret_key [normie]) { fr fr Extract secret key components
     sus s1 [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     sus s2 [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     sus t0 [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -225,39 +209,26 @@ slay dilithium_sign(signature [normie], message [normie], secret_key [normie]) {
         s1[i] = secret_key[i]
         s2[i] = secret_key[256 + i]
         t0[i] = secret_key[512 + i]
-    }
-    
-    # Generate random y (commitment)
+    } fr fr Generate random y (commitment)
     sus y [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     sus commitment_seed normie = message[0] ^ 0xdeadbeef
-    dilithium_sample_uniform(y, commitment_seed, 1)
-    
-    # Compute w = A * y
-    sus w [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    # Simplified matrix multiplication
+    dilithium_sample_uniform(y, commitment_seed, 1) fr fr Compute w = A * y
+    sus w [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] fr fr Simplified matrix multiplication
     bestie i := 0; i < 256; i++ {
         w[i] = (commitment_seed * y[i]) % dilithium_q
-    }
-    
-    # Extract high bits w1
+    } fr fr Extract high bits w1
     sus w1 [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     bestie i := 0; i < 256; i++ {
         sus decomp_result [normie] = dilithium_decompose(w[i])
         w1[i] = decomp_result[0]
-    }
-    
-    # Generate challenge c from message and w1
+    } fr fr Generate challenge c from message and w1
     sus challenge [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     sus challenge_seed [normie] = [message[0], w1[0], w1[1], w1[2]]
-    dilithium_sample_challenge(challenge, challenge_seed)
-    
-    # Compute z = y + c * s1
+    dilithium_sample_challenge(challenge, challenge_seed) fr fr Compute z = y + c * s1
     sus z [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     sus cs1 [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     dilithium_poly_pointwise_montgomery(cs1, challenge, s1)
-    dilithium_poly_add(z, y, cs1)
-    
-    # Store signature (c, z)
+    dilithium_poly_add(z, y, cs1) fr fr Store signature (c, z)
     bestie i := 0; i < 256; i++ {
         signature[i] = challenge[i]
         signature[256 + i] = z[i]
@@ -265,17 +236,14 @@ slay dilithium_sign(signature [normie], message [normie], secret_key [normie]) {
 }
 
 fr fr Signature verification
-slay dilithium_verify(signature [normie], message [normie], public_key [normie]) lit {
-    # Extract signature components
+slay dilithium_verify(signature [normie], message [normie], public_key [normie]) lit { fr fr Extract signature components
     sus challenge [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     sus z [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
     bestie i := 0; i < 256; i++ {
         challenge[i] = signature[i]
         z[i] = signature[256 + i]
-    }
-    
-    # Check z norm (simplified)
+    } fr fr Check z norm (simplified)
     sus z_norm normie = 0
     bestie i := 0; i < 256; i++ {
         sus abs_z normie = z[i]
@@ -285,41 +253,31 @@ slay dilithium_verify(signature [normie], message [normie], public_key [normie])
         z_norm = z_norm + abs_z
     }
     
-    vibes z_norm > dilithium_gamma1 - 100 {  # Simplified bound check
-        damn cap  # Signature invalid
-    }
-    
-    # Compute w' = A * z - c * t * 2^d
+    vibes z_norm > dilithium_gamma1 - 100 { fr fr Simplified bound check
+        damn cap fr fr Signature invalid
+    } fr fr Compute w' = A * z - c * t * 2^d
     sus w_prime [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    sus ct [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    
-    # Simplified verification computation
+    sus ct [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] fr fr Simplified verification computation
     bestie i := 0; i < 256; i++ {
-        sus az normie = (0x12345678 * z[i]) % dilithium_q  # Simplified A*z
+        sus az normie = (0x12345678 * z[i]) % dilithium_q fr fr Simplified A*z
         sus ct_term normie = (challenge[i] * public_key[i] * (1 << dilithium_d)) % dilithium_q
         w_prime[i] = dilithium_freeze(az - ct_term)
-    }
-    
-    # Extract high bits and compare with reconstructed challenge
+    } fr fr Extract high bits and compare with reconstructed challenge
     sus w1_prime [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     bestie i := 0; i < 256; i++ {
         sus decomp_result [normie] = dilithium_decompose(w_prime[i])
         w1_prime[i] = decomp_result[0]
-    }
-    
-    # Generate challenge from message and w1'
+    } fr fr Generate challenge from message and w1'
     sus challenge_prime [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     sus challenge_seed [normie] = [message[0], w1_prime[0], w1_prime[1], w1_prime[2]]
-    dilithium_sample_challenge(challenge_prime, challenge_seed)
-    
-    # Compare challenges
+    dilithium_sample_challenge(challenge_prime, challenge_seed) fr fr Compare challenges
     bestie i := 0; i < 256; i++ {
         vibes challenge[i] != challenge_prime[i] {
-            damn cap  # Verification failed
+            damn cap fr fr Verification failed
         }
     }
     
-    damn based  # Verification succeeded
+    damn based fr fr Verification succeeded
 }
 
 fr fr High-level API functions
@@ -329,9 +287,7 @@ slay pqc_dilithium_generate_keypair() [normie] {
                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
-    dilithium_keygen(public_key, secret_key)
-    
-    # Return concatenated keys
+    dilithium_keygen(public_key, secret_key) fr fr Return concatenated keys
     sus result [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

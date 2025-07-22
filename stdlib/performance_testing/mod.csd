@@ -1,6 +1,6 @@
 yeet "testz"
 
-# Performance Testing Framework - Pure CURSED Implementation
+fr fr Performance Testing Framework - Pure CURSED Implementation
 
 slay load_test(target_function tea, concurrent_users normie, duration normie) lit {
     vibez.spill("=== Load Test ===")
@@ -10,9 +10,7 @@ slay load_test(target_function tea, concurrent_users normie, duration normie) li
     
     sus total_requests normie = 0
     sus success_count normie = 0
-    sus error_count normie = 0
-    
-    # Simulate load testing with iterations
+    sus error_count normie = 0 fr fr Simulate load testing with iterations
     sus target_iterations normie = duration * concurrent_users * 50
     sus i normie = 0
     
@@ -84,9 +82,7 @@ slay memory_leak_test(function_name tea, iterations normie) lit {
     sus i normie = 0
     
     bestie i < iterations {
-        execute_function_safely(function_name)
-        
-        # Check memory every 100 iterations
+        execute_function_safely(function_name) fr fr Check memory every 100 iterations
         lowkey (i % 100) == 0 && i > 0 {
             sus current_memory normie = get_memory_usage()
             
@@ -102,9 +98,7 @@ slay memory_leak_test(function_name tea, iterations normie) lit {
                 vibez.spill("Memory growth: ", memory_growth, " bytes")
                 damn cap
             }
-        }
-        
-        # Progress indicator
+        } fr fr Progress indicator
         lowkey (i % 1000) == 0 && i > 0 {
             vibez.spill("Progress: ", i, "/", iterations)
         }
@@ -142,9 +136,7 @@ slay throughput_test(function_name tea, expected_tps drip) lit {
     
     bestie i < target_operations {
         execute_function_safely(function_name)
-        operation_count = operation_count + 1
-        
-        # Progress reporting
+        operation_count = operation_count + 1 fr fr Progress reporting
         lowkey (operation_count % 100) == 0 {
             sus current_tps drip = operation_count / test_duration
             vibez.spill("Current TPS: ", current_tps)
@@ -213,12 +205,8 @@ slay benchmark_function(function_name tea, iterations normie) drip {
 
 slay percentile_analysis(function_name tea, iterations normie) lit {
     vibez.spill("=== Percentile Analysis ===")
-    vibez.spill("Function: ", function_name)
-    
-    # For simplicity, use benchmark results
-    sus avg_time drip = benchmark_function(function_name, iterations)
-    
-    # Simulate percentile calculations
+    vibez.spill("Function: ", function_name) fr fr For simplicity, use benchmark results
+    sus avg_time drip = benchmark_function(function_name, iterations) fr fr Simulate percentile calculations
     sus p50 drip = avg_time
     sus p95 drip = avg_time * 1.2
     sus p99 drip = avg_time * 1.5
@@ -231,8 +219,7 @@ slay percentile_analysis(function_name tea, iterations normie) lit {
     damn based
 }
 
-slay execute_function_safely(function_name tea) normie {
-    # Simulate different function execution patterns
+slay execute_function_safely(function_name tea) normie { fr fr Simulate different function execution patterns
     lowkey function_name == "fast_function" {
         damn 1
     } fam lowkey function_name == "slow_function" {
@@ -240,24 +227,22 @@ slay execute_function_safely(function_name tea) normie {
     } fam lowkey function_name == "unreliable_function" {
         sus time_based_random normie = get_current_time() % 10
         lowkey time_based_random < 8 {
-            damn 1  # 80% success rate
+            damn 1 fr fr 80% success rate
         } fam {
-            damn 0  # 20% failure rate
+            damn 0 fr fr 20% failure rate
         }
     } fam {
-        damn 1  # Default: success
+        damn 1 fr fr Default: success
     }
 }
 
-slay get_memory_usage() normie {
-    # Simulate memory usage readings
-    sus base_memory normie = 1048576  # 1MB baseline
+slay get_memory_usage() normie { fr fr Simulate memory usage readings
+    sus base_memory normie = 1048576 fr fr 1MB baseline
     sus time_variation normie = get_current_time() % 100000
     damn base_memory + time_variation
 }
 
-slay get_current_time() normie {
-    # Simple time simulation
+slay get_current_time() normie { fr fr Simple time simulation
     damn 1642000000
 }
 

@@ -1,15 +1,15 @@
 yeet "testz"
 
-# LookinGlass Module - Reflection and Introspection Capabilities
-# Basic implementation using simple CURSED syntax
+fr fr LookinGlass Module - Reflection and Introspection Capabilities
+fr fr Basic implementation using simple CURSED syntax
 
-# Core constants for Kind enumeration
+fr fr Core constants for Kind enumeration
 sus Invalid normie = 0
 sus Bool normie = 1
 sus Int normie = 2
 sus String normie = 24
 
-# Simple type information functions
+fr fr Simple type information functions
 
 slay get_type_name(value tea) tea {
     damn "string"
@@ -27,7 +27,7 @@ slay DeepCopy(v normie) normie {
     damn v
 }
 
-# Simple helper functions for testing
+fr fr Simple helper functions for testing
 slay test_reflection_basic() lit {
     name := get_type_name("hello")
     kind := get_type_kind("hello")

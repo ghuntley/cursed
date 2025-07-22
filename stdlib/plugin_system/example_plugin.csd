@@ -1,9 +1,9 @@
 yeet "plugin_system"
 
-# Example Plugin Implementation
-# This demonstrates how to create a plugin for the CURSED plugin system
+fr fr Example Plugin Implementation
+fr fr This demonstrates how to create a plugin for the CURSED plugin system
 
-# Plugin metadata
+fr fr Plugin metadata
 fam LoggerPluginMetadata {
     name tea
     version tea
@@ -16,7 +16,7 @@ fam LoggerPluginMetadata {
     is_initialized lit
 }
 
-# Plugin configuration
+fr fr Plugin configuration
 fam LoggerConfig {
     log_level normie
     log_file tea
@@ -30,41 +30,30 @@ fam LoggerConfig {
     compression_enabled lit
 }
 
-# Plugin state
+fr fr Plugin state
 sus g_logger_plugin LoggerPluginMetadata
 sus g_logger_config LoggerConfig
 
-# Log levels
+fr fr Log levels
 sus LOG_LEVEL_DEBUG normie = 0
 sus LOG_LEVEL_INFO normie = 1
 sus LOG_LEVEL_WARN normie = 2
 sus LOG_LEVEL_ERROR normie = 3
 sus LOG_LEVEL_FATAL normie = 4
 
-# Plugin entry point (called by plugin system)
-slay plugin_main() lit {
-    # Initialize plugin metadata
+fr fr Plugin entry point (called by plugin system)
+slay plugin_main() lit { fr fr Initialize plugin metadata
     g_logger_plugin.name = "logger_plugin"
     g_logger_plugin.version = "1.0.0"
     g_logger_plugin.description = "Advanced logging plugin with multiple outputs"
     g_logger_plugin.author = "CURSED Team"
     g_logger_plugin.hook_count = 0
     g_logger_plugin.config_count = 0
-    g_logger_plugin.is_initialized = cap
-    
-    # Initialize configuration with defaults
-    logger_init_config()
-    
-    # Register plugin hooks
-    logger_register_hooks()
-    
-    # Register event listeners
-    logger_register_events()
-    
-    # Load configuration
-    logger_load_config()
-    
-    # Initialize logging subsystem
+    g_logger_plugin.is_initialized = cap fr fr Initialize configuration with defaults
+    logger_init_config() fr fr Register plugin hooks
+    logger_register_hooks() fr fr Register event listeners
+    logger_register_events() fr fr Load configuration
+    logger_load_config() fr fr Initialize logging subsystem
     logger_init_logging()
     
     g_logger_plugin.is_initialized = based
@@ -73,34 +62,26 @@ slay plugin_main() lit {
     damn based
 }
 
-# Plugin cleanup (called by plugin system)
+fr fr Plugin cleanup (called by plugin system)
 slay plugin_cleanup() lit {
     nah (!g_logger_plugin.is_initialized) {
         damn based
-    }
-    
-    # Flush any buffered logs
-    logger_flush_buffers()
-    
-    # Close log files
-    logger_close_files()
-    
-    # Unregister hooks and events
+    } fr fr Flush any buffered logs
+    logger_flush_buffers() fr fr Close log files
+    logger_close_files() fr fr Unregister hooks and events
     logger_unregister_hooks()
-    logger_unregister_events()
-    
-    # Reset state
+    logger_unregister_events() fr fr Reset state
     g_logger_plugin.is_initialized = cap
     
     vibez.spill("Logger plugin cleaned up successfully")
     damn based
 }
 
-# Initialize default configuration
+fr fr Initialize default configuration
 slay logger_init_config() lit {
     g_logger_config.log_level = LOG_LEVEL_INFO
     g_logger_config.log_file = "/var/log/cursed/application.log"
-    g_logger_config.max_file_size = 10485760  # 10MB
+    g_logger_config.max_file_size = 10485760 fr fr 10MB
     g_logger_config.rotate_files = based
     g_logger_config.timestamp_format = "ISO8601"
     g_logger_config.enable_console = based
@@ -112,9 +93,8 @@ slay logger_init_config() lit {
     damn based
 }
 
-# Register plugin hooks
-slay logger_register_hooks() lit {
-    # Register hooks for different application events
+fr fr Register plugin hooks
+slay logger_register_hooks() lit { fr fr Register hooks for different application events
     plugin_register_hook("logger_plugin", "before_request", "logger_before_request", PLUGIN_PRIORITY_HIGH)
     plugin_register_hook("logger_plugin", "after_request", "logger_after_request", PLUGIN_PRIORITY_HIGH)
     plugin_register_hook("logger_plugin", "on_error", "logger_on_error", PLUGIN_PRIORITY_CRITICAL)
@@ -137,7 +117,7 @@ slay logger_register_hooks() lit {
     damn based
 }
 
-# Register event listeners
+fr fr Register event listeners
 slay logger_register_events() lit {
     plugin_register_event_listener("logger_plugin", PLUGIN_EVENT_LOAD, "logger_on_plugin_loaded")
     plugin_register_event_listener("logger_plugin", PLUGIN_EVENT_UNLOAD, "logger_on_plugin_unloaded")
@@ -147,10 +127,8 @@ slay logger_register_events() lit {
     damn based
 }
 
-# Load configuration from file
-slay logger_load_config() lit {
-    # In a real implementation, this would load from a configuration file
-    # For now, we'll use the plugin configuration API
+fr fr Load configuration from file
+slay logger_load_config() lit { fr fr In a real implementation, this would load from a configuration file fr fr For now, we'll use the plugin configuration API
     
     sus log_level_str := plugin_get_config("logger_plugin", "log_level")
     nah (log_level_str == "DEBUG") {
@@ -168,9 +146,7 @@ slay logger_load_config() lit {
     sus log_file := plugin_get_config("logger_plugin", "log_file")
     nah (log_file != "default_value") {
         g_logger_config.log_file = log_file
-    }
-    
-    # Store configuration keys for management
+    } fr fr Store configuration keys for management
     g_logger_plugin.config_keys[0] = "log_level"
     g_logger_plugin.config_keys[1] = "log_file"
     g_logger_plugin.config_keys[2] = "max_file_size"
@@ -186,25 +162,20 @@ slay logger_load_config() lit {
     damn based
 }
 
-# Initialize logging subsystem
-slay logger_init_logging() lit {
-    # Initialize log file
+fr fr Initialize logging subsystem
+slay logger_init_logging() lit { fr fr Initialize log file
     nah (g_logger_config.enable_file) {
         logger_create_log_file()
-    }
-    
-    # Initialize console output
+    } fr fr Initialize console output
     nah (g_logger_config.enable_console) {
         logger_init_console()
-    }
-    
-    # Initialize buffer
+    } fr fr Initialize buffer
     logger_init_buffer()
     
     damn based
 }
 
-# Hook implementations
+fr fr Hook implementations
 slay logger_before_request(context tea) lit {
     logger_write_log(LOG_LEVEL_INFO, "REQUEST_START", context)
     damn based
@@ -252,7 +223,7 @@ slay logger_performance_metric(context tea) lit {
     damn based
 }
 
-# Event listeners
+fr fr Event listeners
 slay logger_on_plugin_loaded(event_data tea) lit {
     logger_write_log(LOG_LEVEL_INFO, "PLUGIN_LOADED", event_data)
     damn based
@@ -273,22 +244,15 @@ slay logger_on_plugin_updated(event_data tea) lit {
     damn based
 }
 
-# Logging implementation
-slay logger_write_log(level normie, category tea, message tea) lit {
-    # Check if we should log this level
+fr fr Logging implementation
+slay logger_write_log(level normie, category tea, message tea) lit { fr fr Check if we should log this level
     nah (level < g_logger_config.log_level) {
         damn based
-    }
-    
-    # Format log message
-    sus formatted_message := logger_format_message(level, category, message)
-    
-    # Write to console if enabled
+    } fr fr Format log message
+    sus formatted_message := logger_format_message(level, category, message) fr fr Write to console if enabled
     nah (g_logger_config.enable_console) {
         logger_write_console(formatted_message)
-    }
-    
-    # Write to file if enabled
+    } fr fr Write to file if enabled
     nah (g_logger_config.enable_file) {
         logger_write_file(formatted_message)
     }
@@ -296,22 +260,15 @@ slay logger_write_log(level normie, category tea, message tea) lit {
     damn based
 }
 
-slay logger_format_message(level normie, category tea, message tea) tea {
-    # Get timestamp
-    sus timestamp := logger_get_timestamp()
-    
-    # Get level string
-    sus level_str := logger_get_level_string(level)
-    
-    # Format: [TIMESTAMP] [LEVEL] [CATEGORY] MESSAGE
+slay logger_format_message(level normie, category tea, message tea) tea { fr fr Get timestamp
+    sus timestamp := logger_get_timestamp() fr fr Get level string
+    sus level_str := logger_get_level_string(level) fr fr Format: [TIMESTAMP] [LEVEL] [CATEGORY] MESSAGE
     sus formatted := "[" + timestamp + "] [" + level_str + "] [" + category + "] " + message
     
     damn formatted
 }
 
-slay logger_get_timestamp() tea {
-    # In a real implementation, this would get the current timestamp
-    # For now, return a placeholder
+slay logger_get_timestamp() tea { fr fr In a real implementation, this would get the current timestamp fr fr For now, return a placeholder
     damn "2025-01-11T10:30:45.123Z"
 }
 
@@ -335,50 +292,41 @@ slay logger_write_console(message tea) lit {
     damn based
 }
 
-slay logger_write_file(message tea) lit {
-    # In a real implementation, this would write to a file
-    # For now, we'll simulate file writing
+slay logger_write_file(message tea) lit { fr fr In a real implementation, this would write to a file fr fr For now, we'll simulate file writing
     damn based
 }
 
-slay logger_create_log_file() lit {
-    # In a real implementation, this would create the log file
+slay logger_create_log_file() lit { fr fr In a real implementation, this would create the log file
     damn based
 }
 
-slay logger_init_console() lit {
-    # In a real implementation, this would initialize console output
+slay logger_init_console() lit { fr fr In a real implementation, this would initialize console output
     damn based
 }
 
-slay logger_init_buffer() lit {
-    # In a real implementation, this would initialize the log buffer
+slay logger_init_buffer() lit { fr fr In a real implementation, this would initialize the log buffer
     damn based
 }
 
-slay logger_flush_buffers() lit {
-    # In a real implementation, this would flush log buffers
+slay logger_flush_buffers() lit { fr fr In a real implementation, this would flush log buffers
     damn based
 }
 
-slay logger_close_files() lit {
-    # In a real implementation, this would close log files
+slay logger_close_files() lit { fr fr In a real implementation, this would close log files
     damn based
 }
 
-slay logger_unregister_hooks() lit {
-    # Remove all hooks for this plugin
+slay logger_unregister_hooks() lit { fr fr Remove all hooks for this plugin
     plugin_remove_hooks("logger_plugin")
     damn based
 }
 
-slay logger_unregister_events() lit {
-    # Remove all event listeners for this plugin
+slay logger_unregister_events() lit { fr fr Remove all event listeners for this plugin
     plugin_remove_listeners("logger_plugin")
     damn based
 }
 
-# Plugin API functions (called by external code)
+fr fr Plugin API functions (called by external code)
 slay logger_set_log_level(level normie) lit {
     g_logger_config.log_level = level
     plugin_set_config("logger_plugin", "log_level", logger_get_level_string(level))
@@ -387,8 +335,7 @@ slay logger_set_log_level(level normie) lit {
 
 slay logger_set_log_file(file_path tea) lit {
     g_logger_config.log_file = file_path
-    plugin_set_config("logger_plugin", "log_file", file_path)
-    # Reinitialize file logging
+    plugin_set_config("logger_plugin", "log_file", file_path) fr fr Reinitialize file logging
     logger_create_log_file()
     damn based
 }
@@ -405,67 +352,51 @@ slay logger_enable_file(enable lit) lit {
     damn based
 }
 
-slay logger_get_stats() normie {
-    # In a real implementation, this would return logging statistics
+slay logger_get_stats() normie { fr fr In a real implementation, this would return logging statistics
     damn 0
 }
 
-slay logger_rotate_log_files() lit {
-    # In a real implementation, this would rotate log files
+slay logger_rotate_log_files() lit { fr fr In a real implementation, this would rotate log files
     damn based
 }
 
-# Plugin health check
-slay logger_health_check() lit {
-    # Check if plugin is initialized
+fr fr Plugin health check
+slay logger_health_check() lit { fr fr Check if plugin is initialized
     nah (!g_logger_plugin.is_initialized) {
         damn cap
-    }
-    
-    # Check configuration
+    } fr fr Check configuration
     nah (g_logger_config.log_level < 0 || g_logger_config.log_level > 4) {
         damn cap
-    }
-    
-    # Check if we can write logs
-    nah (g_logger_config.enable_file) {
-        # In a real implementation, check if log file is writable
+    } fr fr Check if we can write logs
+    nah (g_logger_config.enable_file) { fr fr In a real implementation, check if log file is writable
     }
     
     damn based
 }
 
-# Plugin information
+fr fr Plugin information
 slay logger_get_plugin_info() LoggerPluginMetadata {
     damn g_logger_plugin
 }
 
-# Plugin configuration export
+fr fr Plugin configuration export
 slay logger_export_config() LoggerConfig {
     damn g_logger_config
 }
 
-# Manual plugin testing
+fr fr Manual plugin testing
 slay logger_test_plugin() lit {
-    vibez.spill("Testing logger plugin functionality...")
-    
-    # Test different log levels
+    vibez.spill("Testing logger plugin functionality...") fr fr Test different log levels
     logger_write_log(LOG_LEVEL_DEBUG, "TEST", "Debug message")
     logger_write_log(LOG_LEVEL_INFO, "TEST", "Info message")
     logger_write_log(LOG_LEVEL_WARN, "TEST", "Warning message")
     logger_write_log(LOG_LEVEL_ERROR, "TEST", "Error message")
-    logger_write_log(LOG_LEVEL_FATAL, "TEST", "Fatal message")
-    
-    # Test hook simulation
+    logger_write_log(LOG_LEVEL_FATAL, "TEST", "Fatal message") fr fr Test hook simulation
     logger_before_request("GET /api/users")
     logger_after_request("GET /api/users - 200 OK")
-    logger_on_error("Database connection failed")
-    
-    # Test configuration
+    logger_on_error("Database connection failed") fr fr Test configuration
     logger_set_log_level(LOG_LEVEL_DEBUG)
-    logger_set_log_file("/tmp/test.log")
-    
-    # Test health check
+    logger_set_log_file("/tmp/test.log") fr fr Test health check
     sus health := logger_health_check()
     vibez.spill("Plugin health: " + health)
     

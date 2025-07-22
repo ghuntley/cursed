@@ -1,11 +1,11 @@
 yeet "testz"
 yeet "timez"
 
-# CURSED Error Management Module
-# Comprehensive error handling and logging with structured types, 
-# error wrapping/unwrapping, stack traces, logging levels, and recovery patterns
+fr fr CURSED Error Management Module
+fr fr Comprehensive error handling and logging with structured types, 
+fr fr error wrapping/unwrapping, stack traces, logging levels, and recovery patterns
 
-# Error severity levels
+fr fr Error severity levels
 be_like error_severity smol {
     info = 0
     warning = 1  
@@ -14,7 +14,7 @@ be_like error_severity smol {
     fatal = 4
 }
 
-# Error categories for classification
+fr fr Error categories for classification
 be_like error_category smol {
     memory_yikes = 0
     io_yikes = 1
@@ -26,7 +26,7 @@ be_like error_category smol {
     performance_yikes = 7
 }
 
-# Logging levels
+fr fr Logging levels
 be_like log_level smol {
     debug = 0
     info = 1
@@ -35,7 +35,7 @@ be_like log_level smol {
     fatal = 4
 }
 
-# Structured error type
+fr fr Structured error type
 be_like managed_error squad {
     message tea
     code normie
@@ -48,7 +48,7 @@ be_like managed_error squad {
     context yikes.tea
 }
 
-# Logger configuration
+fr fr Logger configuration
 be_like logger_config squad {
     level log_level
     output_format tea
@@ -57,14 +57,14 @@ be_like logger_config squad {
     include_goroutine_id lit
 }
 
-# Circuit breaker state for error recovery
+fr fr Circuit breaker state for error recovery
 be_like circuit_state smol {
     closed = 0
     open = 1
     half_open = 2
 }
 
-# Circuit breaker for error recovery patterns
+fr fr Circuit breaker for error recovery patterns
 be_like circuit_breaker squad {
     failure_count normie
     failure_threshold normie
@@ -74,7 +74,7 @@ be_like circuit_breaker squad {
     name tea
 }
 
-# Global logger instance
+fr fr Global logger instance
 sus global_logger logger_config = logger_config{
     level: log_level.info,
     output_format: "json",
@@ -83,7 +83,7 @@ sus global_logger logger_config = logger_config{
     include_goroutine_id: based
 }
 
-# Error statistics tracking
+fr fr Error statistics tracking
 be_like error_stats squad {
     total_errors normie
     errors_by_category yikes.normie
@@ -100,7 +100,7 @@ sus global_error_stats error_stats = error_stats{
     last_reset_time: timez.now_rfc3339()
 }
 
-# Create a new managed error
+fr fr Create a new managed error
 slay new_error(message tea, code normie) @managed_error {
     damn @managed_error{
         message: message,
@@ -115,7 +115,7 @@ slay new_error(message tea, code normie) @managed_error {
     }
 }
 
-# Create error with full context
+fr fr Create error with full context
 slay new_error_full(message tea, code normie, category error_category, severity error_severity, details tea) @managed_error {
     damn @managed_error{
         message: message,
@@ -130,7 +130,7 @@ slay new_error_full(message tea, code normie, category error_category, severity 
     }
 }
 
-# Wrap an existing error with additional context
+fr fr Wrap an existing error with additional context
 slay wrap_error(err @managed_error, context tea) @managed_error {
     vibe_check err == cringe {
         damn cringe
@@ -149,7 +149,7 @@ slay wrap_error(err @managed_error, context tea) @managed_error {
     }
 }
 
-# Unwrap error to get root cause
+fr fr Unwrap error to get root cause
 slay unwrap_error(err @managed_error) @managed_error {
     vibe_check err == cringe {
         damn cringe
@@ -162,14 +162,14 @@ slay unwrap_error(err @managed_error) @managed_error {
     damn current
 }
 
-# Add context to error
+fr fr Add context to error
 slay (err @managed_error) add_context(key tea, value tea) {
     vibe_check err != cringe {
         err.context[key] = value
     }
 }
 
-# Get error context
+fr fr Get error context
 slay (err @managed_error) get_context(key tea) tea {
     vibe_check err == cringe {
         damn ""
@@ -181,9 +181,8 @@ slay (err @managed_error) get_context(key tea) tea {
     damn ""
 }
 
-# Capture stack trace (simplified implementation)
-slay capture_stack_trace() []tea {
-    # In a real implementation, this would capture actual stack frames
+fr fr Capture stack trace (simplified implementation)
+slay capture_stack_trace() []tea { fr fr In a real implementation, this would capture actual stack frames
     sus trace []tea = []tea{
         "error_management.capture_stack_trace()",
         "error_management.new_error()",
@@ -192,7 +191,7 @@ slay capture_stack_trace() []tea {
     damn trace
 }
 
-# Format error for display
+fr fr Format error for display
 slay format_error(err @managed_error) tea {
     vibe_check err == cringe {
         damn "no error"
@@ -212,7 +211,7 @@ slay format_error(err @managed_error) tea {
     damn formatted
 }
 
-# Convert severity to string
+fr fr Convert severity to string
 slay severity_to_string(severity error_severity) tea {
     vibe_check severity {
         mood error_severity.info:
@@ -230,7 +229,7 @@ slay severity_to_string(severity error_severity) tea {
     }
 }
 
-# Convert category to string
+fr fr Convert category to string
 slay category_to_string(category error_category) tea {
     vibe_check category {
         mood error_category.memory_yikes:
@@ -254,23 +253,19 @@ slay category_to_string(category error_category) tea {
     }
 }
 
-# Update error statistics
+fr fr Update error statistics
 slay update_error_stats(err @managed_error) {
     vibe_check err == cringe {
         damn
     }
     
-    global_error_stats.total_errors++
-    
-    # Update category counts
+    global_error_stats.total_errors++ fr fr Update category counts
     sus category_key tea = string(err.category)
     vibe_check count, exists := global_error_stats.errors_by_category[category_key]; exists {
         global_error_stats.errors_by_category[category_key] = count + 1
     } basic {
         global_error_stats.errors_by_category[category_key] = 1
-    }
-    
-    # Update severity counts
+    } fr fr Update severity counts
     sus severity_key tea = string(err.severity)
     vibe_check count, exists := global_error_stats.errors_by_severity[severity_key]; exists {
         global_error_stats.errors_by_severity[severity_key] = count + 1
@@ -279,15 +274,15 @@ slay update_error_stats(err @managed_error) {
     }
 }
 
-# Configure logger
+fr fr Configure logger
 slay configure_logger(config logger_config) {
     global_logger = config
 }
 
-# Log message at specified level
+fr fr Log message at specified level
 slay log_at_level(level log_level, message tea, context yikes.tea) {
     vibe_check level < global_logger.level {
-        damn  # Don't log below configured level
+        damn fr fr Don't log below configured level
     }
     
     sus log_entry yikes.tea = yikes.tea{
@@ -297,20 +292,16 @@ slay log_at_level(level log_level, message tea, context yikes.tea) {
     }
     
     vibe_check global_logger.include_goroutine_id {
-        log_entry["goroutine_id"] = "1"  # Simplified
-    }
-    
-    # Add context
+        log_entry["goroutine_id"] = "1" fr fr Simplified
+    } fr fr Add context
     bestie key, value := mood context {
         log_entry[key] = value
-    }
-    
-    # Format and output
+    } fr fr Format and output
     sus formatted tea = format_log_entry(log_entry)
     vibez.spill(formatted)
 }
 
-# Log error with full context
+fr fr Log error with full context
 slay log_error(err @managed_error, additional_context yikes.tea) {
     vibe_check err == cringe {
         damn
@@ -324,15 +315,11 @@ slay log_error(err @managed_error, additional_context yikes.tea) {
     }
     
     vibe_check global_logger.include_stack_trace && len(err.stack_trace) > 0 {
-        context["stack_trace"] = err.stack_trace[0]  # First frame
-    }
-    
-    # Add error context
+        context["stack_trace"] = err.stack_trace[0] fr fr First frame
+    } fr fr Add error context
     bestie key, value := mood err.context {
         context["ctx_" + key] = value
-    }
-    
-    # Add additional context
+    } fr fr Add additional context
     bestie key, value := mood additional_context {
         context[key] = value
     }
@@ -341,7 +328,7 @@ slay log_error(err @managed_error, additional_context yikes.tea) {
     update_error_stats(err)
 }
 
-# Convenience logging functions
+fr fr Convenience logging functions
 slay log_debug(message tea, context yikes.tea) {
     log_at_level(log_level.debug, message, context)
 }
@@ -358,7 +345,7 @@ slay log_fatal(message tea, context yikes.tea) {
     log_at_level(log_level.fatal, message, context)
 }
 
-# Convert log level to string
+fr fr Convert log level to string
 slay level_to_string(level log_level) tea {
     vibe_check level {
         mood log_level.debug:
@@ -376,7 +363,7 @@ slay level_to_string(level log_level) tea {
     }
 }
 
-# Format log entry based on configuration
+fr fr Format log entry based on configuration
 slay format_log_entry(entry yikes.tea) tea {
     vibe_check global_logger.output_format == "json" {
         damn format_log_json(entry)
@@ -385,7 +372,7 @@ slay format_log_entry(entry yikes.tea) tea {
     }
 }
 
-# Format log entry as JSON (simplified)
+fr fr Format log entry as JSON (simplified)
 slay format_log_json(entry yikes.tea) tea {
     sus result tea = "{"
     sus first lit = based
@@ -402,7 +389,7 @@ slay format_log_json(entry yikes.tea) tea {
     damn result
 }
 
-# Format log entry as text
+fr fr Format log entry as text
 slay format_log_text(entry yikes.tea) tea {
     sus timestamp tea = entry["timestamp"]
     sus level tea = entry["level"]
@@ -419,7 +406,7 @@ slay format_log_text(entry yikes.tea) tea {
     damn result
 }
 
-# Create new circuit breaker
+fr fr Create new circuit breaker
 slay new_circuit_breaker(name tea, failure_threshold normie, timeout_seconds normie) @circuit_breaker {
     damn @circuit_breaker{
         name: name,
@@ -431,20 +418,17 @@ slay new_circuit_breaker(name tea, failure_threshold normie, timeout_seconds nor
     }
 }
 
-# Execute operation with circuit breaker protection
+fr fr Execute operation with circuit breaker protection
 slay (cb @circuit_breaker) execute(operation slay() @managed_error) @managed_error {
     vibe_check cb.state {
-        mood circuit_state.open:
-            # Check if we should transition to half-open
+        mood circuit_state.open: fr fr Check if we should transition to half-open
             vibe_check cb.should_attempt_reset() {
                 cb.state = circuit_state.half_open
             } basic {
                 damn new_error("Circuit breaker is open", 503)
             }
-        mood circuit_state.half_open:
-            # Allow one test call
-        basic:
-            # closed state - normal operation
+        mood circuit_state.half_open: fr fr Allow one test call
+        basic: fr fr closed state - normal operation
     }
     
     sus err @managed_error = operation()
@@ -457,7 +441,7 @@ slay (cb @circuit_breaker) execute(operation slay() @managed_error) @managed_err
     damn cringe
 }
 
-# Handle circuit breaker failure
+fr fr Handle circuit breaker failure
 slay (cb @circuit_breaker) on_failure() {
     cb.failure_count++
     cb.last_failure_time = timez.now_rfc3339()
@@ -471,30 +455,28 @@ slay (cb @circuit_breaker) on_failure() {
     }
 }
 
-# Handle circuit breaker success
+fr fr Handle circuit breaker success
 slay (cb @circuit_breaker) on_success() {
     cb.failure_count = 0
     cb.state = circuit_state.closed
 }
 
-# Check if circuit breaker should attempt reset
+fr fr Check if circuit breaker should attempt reset
 slay (cb @circuit_breaker) should_attempt_reset() lit {
     vibe_check cb.last_failure_time == "" {
         damn based
-    }
-    
-    # Simplified time comparison - in real implementation would parse timestamps
-    damn based  # For demo purposes, always allow reset attempts
+    } fr fr Simplified time comparison - in real implementation would parse timestamps
+    damn based fr fr For demo purposes, always allow reset attempts
 }
 
-# Retry operation with exponential backoff
+fr fr Retry operation with exponential backoff
 slay retry_with_backoff(operation slay() @managed_error, max_attempts normie) @managed_error {
     sus attempt normie = 0
     
     bestie attempt < max_attempts {
         sus err @managed_error = operation()
         vibe_check err == cringe {
-            damn cringe  # Success
+            damn cringe fr fr Success
         }
         
         attempt++
@@ -504,8 +486,7 @@ slay retry_with_backoff(operation slay() @managed_error, max_attempts normie) @m
             "error": err.message
         })
         
-        vibe_check attempt < max_attempts {
-            # Exponential backoff delay (simplified)
+        vibe_check attempt < max_attempts { fr fr Exponential backoff delay (simplified)
             sus delay_ms normie = attempt * attempt * 100
             vibez.spill("Waiting " + string(delay_ms) + "ms before retry...")
         }
@@ -514,12 +495,12 @@ slay retry_with_backoff(operation slay() @managed_error, max_attempts normie) @m
     damn new_error("Operation failed after " + string(max_attempts) + " attempts", 500)
 }
 
-# Get current error statistics
+fr fr Get current error statistics
 slay get_error_stats() error_stats {
     damn global_error_stats
 }
 
-# Reset error statistics
+fr fr Reset error statistics
 slay reset_error_stats() {
     global_error_stats = error_stats{
         total_errors: 0,
@@ -530,19 +511,17 @@ slay reset_error_stats() {
     }
 }
 
-# Check if error is temporary/retryable
+fr fr Check if error is temporary/retryable
 slay is_temporary_error(err @managed_error) lit {
     vibe_check err == cringe {
         damn cap
-    }
-    
-    # Consider network and IO errors as potentially temporary
+    } fr fr Consider network and IO errors as potentially temporary
     damn err.category == error_category.network_yikes || 
          err.category == error_category.io_yikes ||
          (err.code >= 500 && err.code < 600)
 }
 
-# Check if error is critical
+fr fr Check if error is critical
 slay is_critical_error(err @managed_error) lit {
     vibe_check err == cringe {
         damn cap
@@ -552,7 +531,7 @@ slay is_critical_error(err @managed_error) lit {
          err.severity == error_severity.fatal
 }
 
-# Safe operation execution with panic recovery
+fr fr Safe operation execution with panic recovery
 slay safe_execute(operation slay() @managed_error) @managed_error {
     sus result @managed_error = cringe
     
@@ -576,7 +555,7 @@ slay safe_execute(operation slay() @managed_error) @managed_error {
     damn result
 }
 
-# Error aggregation for multiple operations
+fr fr Error aggregation for multiple operations
 slay aggregate_errors(errors []@managed_error) @managed_error {
     vibe_check len(errors) == 0 {
         damn cringe

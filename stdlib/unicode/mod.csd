@@ -1,6 +1,6 @@
 yeet "testz"
 
-# Basic Unicode Character Classification Functions
+fr fr Basic Unicode Character Classification Functions
 
 slay is_unicode_letter(codepoint normie) lit {
     lowkey codepoint >= 0x41 && codepoint <= 0x5A {

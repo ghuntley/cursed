@@ -1,43 +1,38 @@
 yeet "core"
 
-# plugin_system - Pure CURSED Plugin Management Module
-# Implements dynamic plugin loading, discovery, lifecycle management without FFI
+fr fr plugin_system - Pure CURSED Plugin Management Module
+fr fr Implements dynamic plugin loading, discovery, lifecycle management without FFI
 
-# Core Plugin Types
-be_like Plug = normie           # Plugin handle ID
-be_like PlugStatus = normie     # Plugin status (loaded, unloaded, error)
-be_like PlugCapability = tea    # Plugin capability string
+fr fr Core Plugin Types
+be_like Plug = normie fr fr Plugin handle ID
+be_like PlugStatus = normie fr fr Plugin status (loaded, unloaded, error)
+be_like PlugCapability = tea fr fr Plugin capability string
 
-# Plugin Status Constants
+fr fr Plugin Status Constants
 facts PLUG_STATUS_UNLOADED normie = 0
 facts PLUG_STATUS_LOADED normie = 1
 facts PLUG_STATUS_ERROR normie = 2
 facts PLUG_STATUS_SANDBOXED normie = 3
 
-# Plugin Registry Structure (simulated with maps)
+fr fr Plugin Registry Structure (simulated with maps)
 sus plugin_registry_counter normie = 0
-sus plugin_name_map [100]tea                # Plugin ID -> Name mapping
-sus plugin_path_map [100]tea                # Plugin ID -> Path mapping
-sus plugin_status_map [100]normie           # Plugin ID -> Status mapping
-sus plugin_capability_map [100]tea          # Plugin ID -> Capabilities (comma-separated)
-sus plugin_version_map [100]tea             # Plugin ID -> Version mapping
-sus plugin_author_map [100]tea              # Plugin ID -> Author mapping
-sus plugin_description_map [100]tea         # Plugin ID -> Description mapping
+sus plugin_name_map [100]tea fr fr Plugin ID -> Name mapping
+sus plugin_path_map [100]tea fr fr Plugin ID -> Path mapping
+sus plugin_status_map [100]normie fr fr Plugin ID -> Status mapping
+sus plugin_capability_map [100]tea fr fr Plugin ID -> Capabilities (comma-separated)
+sus plugin_version_map [100]tea fr fr Plugin ID -> Version mapping
+sus plugin_author_map [100]tea fr fr Plugin ID -> Author mapping
+sus plugin_description_map [100]tea fr fr Plugin ID -> Description mapping
 
-# Plugin Discovery
-slay discover_plugins(directory tea) normie {
-    # Simulate discovering plugins in directory
-    # Returns number of plugins found
-    damn 3  # Mock: found 3 plugins
+fr fr Plugin Discovery
+slay discover_plugins(directory tea) normie { fr fr Simulate discovering plugins in directory fr fr Returns number of plugins found
+    damn 3 fr fr Mock: found 3 plugins
 }
 
-# Plugin Loading
-slay load_plugin(path tea) Plug {
-    # Simulate loading a plugin from path
+fr fr Plugin Loading
+slay load_plugin(path tea) Plug { fr fr Simulate loading a plugin from path
     plugin_registry_counter = plugin_registry_counter + 1
-    sus plugin_id normie = plugin_registry_counter
-    
-    # Store plugin metadata (simplified simulation)
+    sus plugin_id normie = plugin_registry_counter fr fr Store plugin metadata (simplified simulation)
     plugin_name_map[plugin_id] = "demo_plugin"
     plugin_path_map[plugin_id] = path
     plugin_status_map[plugin_id] = PLUG_STATUS_LOADED
@@ -49,20 +44,16 @@ slay load_plugin(path tea) Plug {
     damn Plug(plugin_id)
 }
 
-# Load plugin with options
+fr fr Load plugin with options
 slay load_plugin_with_options(path tea, verify_signature lit, sandbox lit) Plug {
-    sus plugin_id := load_plugin(path)
-    
-    # Apply additional options
+    sus plugin_id := load_plugin(path) fr fr Apply additional options
     if sandbox {
         plugin_status_map[plugin_id] = PLUG_STATUS_SANDBOXED
-    }
-    
-    # In real implementation, would verify signature if requested
+    } fr fr In real implementation, would verify signature if requested
     damn plugin_id
 }
 
-# Plugin Unloading
+fr fr Plugin Unloading
 slay unload_plugin(plugin Plug) lit {
     sus plugin_id normie = normie(plugin)
     
@@ -71,10 +62,10 @@ slay unload_plugin(plugin Plug) lit {
         damn based
     }
     
-    damn cap  # Plugin not found or invalid
+    damn cap fr fr Plugin not found or invalid
 }
 
-# Plugin Information
+fr fr Plugin Information
 slay get_plugin_name(plugin Plug) tea {
     sus plugin_id normie = normie(plugin)
     if plugin_id > 0 && plugin_id <= plugin_registry_counter {
@@ -123,7 +114,7 @@ slay get_plugin_description(plugin Plug) tea {
     damn ""
 }
 
-# Plugin Capabilities
+fr fr Plugin Capabilities
 slay get_plugin_capabilities(plugin Plug) tea {
     sus plugin_id normie = normie(plugin)
     if plugin_id > 0 && plugin_id <= plugin_registry_counter {
@@ -133,12 +124,11 @@ slay get_plugin_capabilities(plugin Plug) tea {
 }
 
 slay has_capability(plugin Plug, capability tea) lit {
-    sus capabilities := get_plugin_capabilities(plugin)
-    # Simplified capability check (would use proper string matching)
+    sus capabilities := get_plugin_capabilities(plugin) fr fr Simplified capability check (would use proper string matching)
     damn len(capabilities) > 0
 }
 
-# Plugin Registry Management
+fr fr Plugin Registry Management
 slay register_plugin(name tea, plugin Plug) lit {
     sus plugin_id normie = normie(plugin)
     if plugin_id > 0 && plugin_id <= plugin_registry_counter {
@@ -148,14 +138,13 @@ slay register_plugin(name tea, plugin Plug) lit {
     damn cap
 }
 
-slay find_plugin_by_name(name tea) Plug {
-    # Search for plugin by name
+slay find_plugin_by_name(name tea) Plug { fr fr Search for plugin by name
     bestie i := 1; i <= plugin_registry_counter; i++ {
         if plugin_name_map[i] == name {
             damn Plug(i)
         }
     }
-    damn Plug(0)  # Not found
+    damn Plug(0) fr fr Not found
 }
 
 slay list_loaded_plugins() normie {
@@ -168,40 +157,34 @@ slay list_loaded_plugins() normie {
     damn count
 }
 
-# Plugin Security
-slay verify_plugin_signature(path tea, public_key tea) lit {
-    # Simulate signature verification
-    # In real implementation, would use cryptographic verification
-    damn based  # Mock: always valid for demo
+fr fr Plugin Security
+slay verify_plugin_signature(path tea, public_key tea) lit { fr fr Simulate signature verification fr fr In real implementation, would use cryptographic verification
+    damn based fr fr Mock: always valid for demo
 }
 
-slay generate_plugin_manifest(name tea, version tea, author tea, description tea) tea {
-    # Generate plugin manifest in JSON-like format
+slay generate_plugin_manifest(name tea, version tea, author tea, description tea) tea { fr fr Generate plugin manifest in JSON-like format
     damn "{\"name\":\"" + name + "\",\"version\":\"" + version + "\",\"author\":\"" + author + "\",\"description\":\"" + description + "\"}"
 }
 
-# Plugin Sandboxing
-slay create_sandbox() normie {
-    # Return sandbox ID (simplified implementation)
+fr fr Plugin Sandboxing
+slay create_sandbox() normie { fr fr Return sandbox ID (simplified implementation)
     damn 1
 }
 
 slay execute_in_sandbox(sandbox_id normie, plugin Plug, function_name tea) lit {
     sus plugin_id normie = normie(plugin)
-    if plugin_id > 0 && plugin_id <= plugin_registry_counter {
-        # Simulate sandboxed execution
+    if plugin_id > 0 && plugin_id <= plugin_registry_counter { fr fr Simulate sandboxed execution
         plugin_status_map[plugin_id] = PLUG_STATUS_SANDBOXED
         damn based
     }
     damn cap
 }
 
-# Plugin Lifecycle
+fr fr Plugin Lifecycle
 slay initialize_plugin(plugin Plug) lit {
     sus plugin_id normie = normie(plugin)
     if plugin_id > 0 && plugin_id <= plugin_registry_counter {
-        if plugin_status_map[plugin_id] == PLUG_STATUS_LOADED {
-            # Plugin already initialized
+        if plugin_status_map[plugin_id] == PLUG_STATUS_LOADED { fr fr Plugin already initialized
             damn based
         }
     }
@@ -217,7 +200,7 @@ slay cleanup_plugin(plugin Plug) lit {
     damn cap
 }
 
-# Plugin Hot Reloading
+fr fr Plugin Hot Reloading
 slay reload_plugin(plugin Plug) lit {
     sus old_path := get_plugin_path(plugin)
     sus unload_success := unload_plugin(plugin)
@@ -230,26 +213,22 @@ slay reload_plugin(plugin Plug) lit {
     damn cap
 }
 
-# Plugin Manager Functions
-slay create_plugin_manager(plugin_dir tea, auto_load lit) normie {
-    # Return manager ID (simplified implementation)
+fr fr Plugin Manager Functions
+slay create_plugin_manager(plugin_dir tea, auto_load lit) normie { fr fr Return manager ID (simplified implementation)
     damn 1
 }
 
-slay start_plugin_manager(manager_id normie) lit {
-    # Simulate starting plugin manager
+slay start_plugin_manager(manager_id normie) lit { fr fr Simulate starting plugin manager
     damn based
 }
 
-slay stop_plugin_manager(manager_id normie) lit {
-    # Simulate stopping plugin manager
+slay stop_plugin_manager(manager_id normie) lit { fr fr Simulate stopping plugin manager
     damn based
 }
 
-# Plugin Installation
-slay install_plugin_from_url(url tea, destination tea) lit {
-    # Simulate downloading and installing plugin
-    damn based  # Mock: always successful
+fr fr Plugin Installation
+slay install_plugin_from_url(url tea, destination tea) lit { fr fr Simulate downloading and installing plugin
+    damn based fr fr Mock: always successful
 }
 
 slay uninstall_plugin(name tea) lit {
@@ -260,19 +239,16 @@ slay uninstall_plugin(name tea) lit {
     damn cap
 }
 
-# Plugin Validation
-slay validate_plugin(path tea) lit {
-    # Simulate plugin validation
-    # In real implementation, would check manifest, dependencies, etc.
-    damn based  # Mock: always valid
+fr fr Plugin Validation
+slay validate_plugin(path tea) lit { fr fr Simulate plugin validation fr fr In real implementation, would check manifest, dependencies, etc.
+    damn based fr fr Mock: always valid
 }
 
-slay is_plugin_compatible(plugin Plug, api_version tea) lit {
-    # Check if plugin is compatible with host API version
-    damn based  # Mock: always compatible
+slay is_plugin_compatible(plugin Plug, api_version tea) lit { fr fr Check if plugin is compatible with host API version
+    damn based fr fr Mock: always compatible
 }
 
-# Plugin Extension Points
+fr fr Plugin Extension Points
 sus extension_point_counter normie = 0
 sus extension_point_names [50]tea
 sus extension_point_plugin_counts [50]normie
@@ -293,14 +269,13 @@ slay register_extension(point_id normie, plugin Plug) lit {
 }
 
 slay call_extension_point(point_id normie, data tea) tea {
-    if point_id > 0 && point_id <= extension_point_counter {
-        # Simulate calling all registered extensions
+    if point_id > 0 && point_id <= extension_point_counter { fr fr Simulate calling all registered extensions
         damn "processed_" + data
     }
     damn data
 }
 
-# Plugin Statistics
+fr fr Plugin Statistics
 slay get_total_plugins() normie {
     damn plugin_registry_counter
 }
@@ -309,18 +284,16 @@ slay get_loaded_plugin_count() normie {
     damn list_loaded_plugins()
 }
 
-slay get_plugin_memory_usage(plugin Plug) normie {
-    # Simulate memory usage calculation
-    damn 1024  # Mock: 1KB per plugin
+slay get_plugin_memory_usage(plugin Plug) normie { fr fr Simulate memory usage calculation
+    damn 1024 fr fr Mock: 1KB per plugin
 }
 
-# Utility Functions
+fr fr Utility Functions
 slay is_valid_plugin(plugin Plug) lit {
     sus plugin_id normie = normie(plugin)
     damn plugin_id > 0 && plugin_id <= plugin_registry_counter
 }
 
 slay reset_plugin_registry() {
-    plugin_registry_counter = 0
-    # In real implementation, would clear all arrays
+    plugin_registry_counter = 0 fr fr In real implementation, would clear all arrays
 }

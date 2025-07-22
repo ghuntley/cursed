@@ -1,17 +1,17 @@
 yeet "database_drivers"
 
-# Simple Database Driver Registry Tests
-# Tests the pure CURSED database driver implementation
+fr fr Simple Database Driver Registry Tests
+fr fr Tests the pure CURSED database driver implementation
 
 vibez.spill("🧪 Starting Database Driver Registry Tests")
 
-# Test 1: Create registry
+fr fr Test 1: Create registry
 vibez.spill("Test 1: Creating registry...")
 registry := create_driver_registry()
 initial_count := driver_count(&registry)
 vibez.spill("✅ Registry created, initial driver count:", initial_count)
 
-# Test 2: Register driver
+fr fr Test 2: Register driver
 vibez.spill("Test 2: Registering PostgreSQL driver...")
 success := register_driver(&registry, "postgresql", "14.0.0", based, based)
 if success {
@@ -21,12 +21,12 @@ if success {
     vibez.spill("❌ Driver registration failed")
 }
 
-# Test 3: List drivers
+fr fr Test 3: List drivers
 vibez.spill("Test 3: Listing drivers...")
 drivers := list_drivers(&registry)
 vibez.spill("✅ Driver list has", len(drivers), "entries")
 
-# Test 4: Get driver info
+fr fr Test 4: Get driver info
 vibez.spill("Test 4: Getting driver info...")
 postgres_driver := get_driver(&registry, "postgresql")
 if postgres_driver.name == "postgresql" {
@@ -37,7 +37,7 @@ if postgres_driver.name == "postgresql" {
     vibez.spill("❌ Driver not found")
 }
 
-# Test 5: Create connection
+fr fr Test 5: Create connection
 vibez.spill("Test 5: Creating database connection...")
 connection := create_connection(&registry, "postgresql")
 if connection.is_open {
@@ -47,7 +47,7 @@ if connection.is_open {
     vibez.spill("❌ Connection creation failed")
 }
 
-# Test 6: Execute query
+fr fr Test 6: Execute query
 vibez.spill("Test 6: Executing query...")
 result := execute_query(&registry, connection.connection_id, "SELECT version()")
 if result.success {
@@ -58,7 +58,7 @@ if result.success {
     vibez.spill("❌ Query execution failed:", result.error_message)
 }
 
-# Test 7: Begin transaction
+fr fr Test 7: Begin transaction
 vibez.spill("Test 7: Starting transaction...")
 tx := begin_transaction(&registry, connection.connection_id)
 if tx.is_active {
@@ -67,7 +67,7 @@ if tx.is_active {
     vibez.spill("❌ Transaction start failed")
 }
 
-# Test 8: Commit transaction
+fr fr Test 8: Commit transaction
 vibez.spill("Test 8: Committing transaction...")
 commit_success := commit_transaction(&registry, connection.connection_id)
 if commit_success {
@@ -76,7 +76,7 @@ if commit_success {
     vibez.spill("❌ Transaction commit failed")
 }
 
-# Test 9: Close connection
+fr fr Test 9: Close connection
 vibez.spill("Test 9: Closing connection...")
 close_success := close_connection(&registry, connection.connection_id)
 if close_success {
@@ -85,15 +85,13 @@ if close_success {
     vibez.spill("❌ Connection close failed")
 }
 
-# Test 10: Initialize default drivers
+fr fr Test 10: Initialize default drivers
 vibez.spill("Test 10: Initializing default drivers...")
-clear_drivers(&registry)  # Start fresh
+clear_drivers(&registry) fr fr Start fresh
 init_success := init_default_drivers(&registry)
 if init_success {
     final_count := driver_count(&registry)
-    vibez.spill("✅ Default drivers initialized, total count:", final_count)
-    
-    # List all default drivers
+    vibez.spill("✅ Default drivers initialized, total count:", final_count) fr fr List all default drivers
     all_drivers := list_drivers(&registry)
     vibez.spill("   Available drivers:")
     bestie i := 0; i < len(all_drivers); i++ {
@@ -104,7 +102,7 @@ if init_success {
     vibez.spill("❌ Default driver initialization failed")
 }
 
-# Test 11: Multiple connections
+fr fr Test 11: Multiple connections
 vibez.spill("Test 11: Testing multiple connections...")
 pg_conn := create_connection(&registry, "postgresql")
 mysql_conn := create_connection(&registry, "mysql")
@@ -119,11 +117,11 @@ if pg_conn.is_open && mysql_conn.is_open && sqlite_conn.is_open {
     vibez.spill("❌ Multiple connection creation failed")
 }
 
-# Test 12: Registry statistics
+fr fr Test 12: Registry statistics
 vibez.spill("Test 12: Registry statistics...")
 get_registry_stats(&registry)
 
-# Test 13: Validation
+fr fr Test 13: Validation
 vibez.spill("Test 13: Driver validation...")
 postgres_valid := validate_driver_config(&registry, "postgresql")
 invalid_valid := validate_driver_config(&registry, "nonexistent")

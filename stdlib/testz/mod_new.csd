@@ -1,14 +1,14 @@
-# CURSED Testing Framework (testz v2.0) - FIXED TYPE CONVERSION ISSUES
-# Addresses String("") to type Lit conversion errors by simplifying type operations
+fr fr CURSED Testing Framework (testz v2.0) - FIXED TYPE CONVERSION ISSUES
+fr fr Addresses String("") to type Lit conversion errors by simplifying type operations
 
-# Global test state variables
+fr fr Global test state variables
 sus current_test_name tea = ""
 sus total_tests normie = 0
 sus passed_tests normie = 0
 sus failed_tests normie = 0
 sus current_test_passed lit = based
 
-# Start a new test case - simplified to avoid type conversion issues
+fr fr Start a new test case - simplified to avoid type conversion issues
 slay test_start(name tea) {
     current_test_name = name
     total_tests = total_tests + 1
@@ -16,7 +16,7 @@ slay test_start(name tea) {
     vibez.spill("Test: " + name)
 }
 
-# Assert integer equality - avoid problematic type conversions
+fr fr Assert integer equality - avoid problematic type conversions
 slay assert_eq_int(actual normie, expected normie) {
     if actual == expected {
         vibez.spill("PASS: int equality")
@@ -26,7 +26,7 @@ slay assert_eq_int(actual normie, expected normie) {
     }
 }
 
-# Assert string equality - simplified to prevent String-to-Lit conversion
+fr fr Assert string equality - simplified to prevent String-to-Lit conversion
 slay assert_eq_string(actual tea, expected tea) {
     if actual == expected {
         vibez.spill("PASS: string equality")
@@ -36,7 +36,7 @@ slay assert_eq_string(actual tea, expected tea) {
     }
 }
 
-# Assert boolean true - explicit boolean type handling
+fr fr Assert boolean true - explicit boolean type handling
 slay assert_true(condition lit) {
     if condition == based {
         vibez.spill("PASS: assert_true")
@@ -46,7 +46,7 @@ slay assert_true(condition lit) {
     }
 }
 
-# Assert boolean false - explicit boolean type handling
+fr fr Assert boolean false - explicit boolean type handling
 slay assert_false(condition lit) {
     if condition == cap {
         vibez.spill("PASS: assert_false")
@@ -56,7 +56,7 @@ slay assert_false(condition lit) {
     }
 }
 
-# Test end function
+fr fr Test end function
 slay test_end() {
     if current_test_passed == based {
         passed_tests = passed_tests + 1
@@ -67,7 +67,7 @@ slay test_end() {
     }
 }
 
-# Print test summary - avoid complex string+int operations that cause type errors
+fr fr Print test summary - avoid complex string+int operations that cause type errors
 slay print_test_summary() {
     vibez.spill("=== Test Summary ===")
     vibez.spill("Total: " + total_tests)
@@ -82,7 +82,7 @@ slay print_test_summary() {
     vibez.spill("==================")
 }
 
-# Helper functions
+fr fr Helper functions
 slay all_tests_passed() lit {
     damn failed_tests == 0
 }

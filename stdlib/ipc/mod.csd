@@ -1,10 +1,10 @@
-# IPC - Pure CURSED Inter-Process Communication Module
-# Comprehensive IPC mechanisms without FFI dependencies
-# Provides named pipes, message queues, shared memory, semaphores, and Unix sockets
+fr fr IPC - Pure CURSED Inter-Process Communication Module
+fr fr Comprehensive IPC mechanisms without FFI dependencies
+fr fr Provides named pipes, message queues, shared memory, semaphores, and Unix sockets
 
 yeet "signal_boost"
 
-# Global IPC state
+fr fr Global IPC state
 sus ipc_registry map = {}
 sus ipc_processes map = {}
 sus message_queues map = {}
@@ -15,38 +15,38 @@ sus unix_sockets map = {}
 sus ipc_statistics map = {}
 sus ipc_config map = {}
 
-# IPC constants
+fr fr IPC constants
 sus IPC_TYPE_PIPE tea = "named_pipe"
 sus IPC_TYPE_QUEUE tea = "message_queue"  
 sus IPC_TYPE_SHAREDMEM tea = "shared_memory"
 sus IPC_TYPE_SEMAPHORE tea = "semaphore"
 sus IPC_TYPE_SOCKET tea = "unix_socket"
 
-# Message priorities
+fr fr Message priorities
 sus MSG_PRIORITY_LOW normie = 1
 sus MSG_PRIORITY_NORMAL normie = 5
 sus MSG_PRIORITY_HIGH normie = 10
 sus MSG_PRIORITY_URGENT normie = 15
 
-# IPC permissions
+fr fr IPC permissions
 sus IPC_PERM_READ normie = 4
 sus IPC_PERM_WRITE normie = 2
 sus IPC_PERM_EXECUTE normie = 1
 
-# ==============================================================================
-# IPC CONFIGURATION AND INITIALIZATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr IPC CONFIGURATION AND INITIALIZATION
+fr fr ==============================================================================
 
-# Initialize IPC subsystem
+fr fr Initialize IPC subsystem
 slay init_ipc() lit {
     ipc_config = {
-        "max_message_size": 65536,      # 64KB
-        "max_queue_size": 1000,         # 1000 messages
-        "default_permissions": 6,       # rw-rw-rw- (converted from octal 0o666)
-        "pipe_buffer_size": 8192,       # 8KB
-        "timeout_ms": 5000,             # 5 seconds
-        "max_shared_memory": 1048576,   # 1MB
-        "max_semaphore_value": 32767    # POSIX SEM_VALUE_MAX
+        "max_message_size": 65536, fr fr 64KB
+        "max_queue_size": 1000, fr fr 1000 messages
+        "default_permissions": 6, fr fr rw-rw-rw- (converted from octal 0o666)
+        "pipe_buffer_size": 8192, fr fr 8KB
+        "timeout_ms": 5000, fr fr 5 seconds
+        "max_shared_memory": 1048576, fr fr 1MB
+        "max_semaphore_value": 32767 fr fr POSIX SEM_VALUE_MAX
     }
     
     ipc_statistics = {
@@ -59,9 +59,7 @@ slay init_ipc() lit {
         "messages_received": 0,
         "ipc_errors": 0,
         "active_connections": 0
-    }
-    
-    # Initialize signal boost for cleanup
+    } fr fr Initialize signal boost for cleanup
     signal_boost.init_signal_boost()
     signal_boost.register_signal_handler(signal_boost.SIGTERM, signal_boost.HANDLER_CUSTOM, "cleanup_ipc")
     signal_boost.register_signal_handler(signal_boost.SIGINT, signal_boost.HANDLER_CUSTOM, "cleanup_ipc")
@@ -70,7 +68,7 @@ slay init_ipc() lit {
     damn based
 }
 
-# Configure IPC settings
+fr fr Configure IPC settings
 slay configure_ipc(config map) lit {
     sus keys [tea] = config.keys()
     sus i normie = 0
@@ -86,19 +84,19 @@ slay configure_ipc(config map) lit {
     damn based
 }
 
-# Get IPC configuration
+fr fr Get IPC configuration
 slay get_ipc_config() map {
     damn ipc_config
 }
 
-# ==============================================================================
-# NAMED PIPES IMPLEMENTATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr NAMED PIPES IMPLEMENTATION
+fr fr ==============================================================================
 
-# Create named pipe
+fr fr Create named pipe
 slay create_named_pipe(name tea, buffer_size normie) lit {
     if named_pipes.has_key(name) {
-        damn cap  # Pipe already exists
+        damn cap fr fr Pipe already exists
     }
     
     sus pipe_data map = {
@@ -125,10 +123,10 @@ slay create_named_pipe(name tea, buffer_size normie) lit {
     damn based
 }
 
-# Open named pipe for reading
+fr fr Open named pipe for reading
 slay open_pipe_reader(name tea, reader_id tea) lit {
     if !named_pipes.has_key(name) {
-        damn cap  # Pipe doesn't exist
+        damn cap fr fr Pipe doesn't exist
     }
     
     sus pipe_data map = named_pipes.get(name)
@@ -140,10 +138,10 @@ slay open_pipe_reader(name tea, reader_id tea) lit {
     damn based
 }
 
-# Open named pipe for writing
+fr fr Open named pipe for writing
 slay open_pipe_writer(name tea, writer_id tea) lit {
     if !named_pipes.has_key(name) {
-        damn cap  # Pipe doesn't exist
+        damn cap fr fr Pipe doesn't exist
     }
     
     sus pipe_data map = named_pipes.get(name)
@@ -155,10 +153,10 @@ slay open_pipe_writer(name tea, writer_id tea) lit {
     damn based
 }
 
-# Write to named pipe
+fr fr Write to named pipe
 slay write_to_pipe(name tea, data tea) lit {
     if !named_pipes.has_key(name) {
-        damn cap  # Pipe doesn't exist
+        damn cap fr fr Pipe doesn't exist
     }
     
     sus pipe_data map = named_pipes.get(name)
@@ -166,7 +164,7 @@ slay write_to_pipe(name tea, data tea) lit {
     sus buffer_size normie = pipe_data.get("buffer_size")
     
     if buffer.length() >= buffer_size {
-        damn cap  # Buffer full
+        damn cap fr fr Buffer full
     }
     
     buffer.push(data)
@@ -183,17 +181,17 @@ slay write_to_pipe(name tea, data tea) lit {
     damn based
 }
 
-# Read from named pipe
+fr fr Read from named pipe
 slay read_from_pipe(name tea) tea {
     if !named_pipes.has_key(name) {
-        damn ""  # Pipe doesn't exist
+        damn "" fr fr Pipe doesn't exist
     }
     
     sus pipe_data map = named_pipes.get(name)
     sus buffer [tea] = pipe_data.get("buffer")
     
     if buffer.length() == 0 {
-        damn ""  # No data available
+        damn "" fr fr No data available
     }
     
     sus data tea = buffer[0]
@@ -211,14 +209,14 @@ slay read_from_pipe(name tea) tea {
     damn data
 }
 
-# ==============================================================================
-# MESSAGE QUEUES IMPLEMENTATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr MESSAGE QUEUES IMPLEMENTATION
+fr fr ==============================================================================
 
-# Create message queue
+fr fr Create message queue
 slay create_message_queue(name tea, max_size normie) lit {
     if message_queues.has_key(name) {
-        damn cap  # Queue already exists
+        damn cap fr fr Queue already exists
     }
     
     sus queue_data map = {
@@ -244,10 +242,10 @@ slay create_message_queue(name tea, max_size normie) lit {
     damn based
 }
 
-# Send message to queue
+fr fr Send message to queue
 slay send_message(queue_name tea, message tea, priority normie) lit {
     if !message_queues.has_key(queue_name) {
-        damn cap  # Queue doesn't exist
+        damn cap fr fr Queue doesn't exist
     }
     
     sus queue_data map = message_queues.get(queue_name)
@@ -255,7 +253,7 @@ slay send_message(queue_name tea, message tea, priority normie) lit {
     sus max_size normie = queue_data.get("max_size")
     
     if messages.length() >= max_size {
-        damn cap  # Queue full
+        damn cap fr fr Queue full
     }
     
     sus msg_data map = {
@@ -264,9 +262,7 @@ slay send_message(queue_name tea, message tea, priority normie) lit {
         "timestamp": get_current_timestamp(),
         "sender": "unknown",
         "id": generate_message_id()
-    }
-    
-    # Insert message based on priority (higher priority first)
+    } fr fr Insert message based on priority (higher priority first)
     insert_message_by_priority(messages, msg_data)
     queue_data.set("messages", messages)
     
@@ -281,17 +277,17 @@ slay send_message(queue_name tea, message tea, priority normie) lit {
     damn based
 }
 
-# Receive message from queue
+fr fr Receive message from queue
 slay receive_message(queue_name tea) map {
     if !message_queues.has_key(queue_name) {
-        damn {}  # Queue doesn't exist
+        damn {} fr fr Queue doesn't exist
     }
     
     sus queue_data map = message_queues.get(queue_name)
     sus messages [map] = queue_data.get("messages")
     
     if messages.length() == 0 {
-        damn {}  # No messages available
+        damn {} fr fr No messages available
     }
     
     sus message map = messages[0]
@@ -309,7 +305,7 @@ slay receive_message(queue_name tea) map {
     damn message
 }
 
-# Insert message by priority (insertion sort)
+fr fr Insert message by priority (insertion sort)
 slay insert_message_by_priority(messages [map], new_message map) {
     sus new_priority normie = new_message.get("priority")
     sus inserted lit = cap
@@ -329,19 +325,19 @@ slay insert_message_by_priority(messages [map], new_message map) {
     }
 }
 
-# ==============================================================================
-# SHARED MEMORY IMPLEMENTATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr SHARED MEMORY IMPLEMENTATION
+fr fr ==============================================================================
 
-# Create shared memory segment
+fr fr Create shared memory segment
 slay create_shared_memory(name tea, size normie) lit {
     if shared_memory_segments.has_key(name) {
-        damn cap  # Segment already exists
+        damn cap fr fr Segment already exists
     }
     
     sus max_memory normie = ipc_config.get("max_shared_memory")
     if size > max_memory {
-        damn cap  # Size too large
+        damn cap fr fr Size too large
     }
     
     sus segment_data map = {
@@ -366,10 +362,10 @@ slay create_shared_memory(name tea, size normie) lit {
     damn based
 }
 
-# Attach to shared memory segment
+fr fr Attach to shared memory segment
 slay attach_shared_memory(name tea, process_id tea) lit {
     if !shared_memory_segments.has_key(name) {
-        damn cap  # Segment doesn't exist
+        damn cap fr fr Segment doesn't exist
     }
     
     sus segment_data map = shared_memory_segments.get(name)
@@ -381,10 +377,10 @@ slay attach_shared_memory(name tea, process_id tea) lit {
     damn based
 }
 
-# Write to shared memory
+fr fr Write to shared memory
 slay write_shared_memory(name tea, key tea, value tea) lit {
     if !shared_memory_segments.has_key(name) {
-        damn cap  # Segment doesn't exist
+        damn cap fr fr Segment doesn't exist
     }
     
     sus segment_data map = shared_memory_segments.get(name)
@@ -399,17 +395,17 @@ slay write_shared_memory(name tea, key tea, value tea) lit {
     damn based
 }
 
-# Read from shared memory
+fr fr Read from shared memory
 slay read_shared_memory(name tea, key tea) tea {
     if !shared_memory_segments.has_key(name) {
-        damn ""  # Segment doesn't exist
+        damn "" fr fr Segment doesn't exist
     }
     
     sus segment_data map = shared_memory_segments.get(name)
     sus data map = segment_data.get("data")
     
     if !data.has_key(key) {
-        damn ""  # Key doesn't exist
+        damn "" fr fr Key doesn't exist
     }
     
     sus access_count normie = segment_data.get("access_count")
@@ -419,19 +415,19 @@ slay read_shared_memory(name tea, key tea) tea {
     damn data.get(key)
 }
 
-# ==============================================================================
-# SEMAPHORE IMPLEMENTATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr SEMAPHORE IMPLEMENTATION
+fr fr ==============================================================================
 
-# Create semaphore
+fr fr Create semaphore
 slay create_semaphore(name tea, initial_value normie) lit {
     if semaphore_registry.has_key(name) {
-        damn cap  # Semaphore already exists
+        damn cap fr fr Semaphore already exists
     }
     
     sus max_value normie = ipc_config.get("max_semaphore_value")
     if initial_value > max_value {
-        damn cap  # Value too large
+        damn cap fr fr Value too large
     }
     
     sus semaphore_data map = {
@@ -456,10 +452,10 @@ slay create_semaphore(name tea, initial_value normie) lit {
     damn based
 }
 
-# Wait on semaphore (P operation)
+fr fr Wait on semaphore (P operation)
 slay semaphore_wait(name tea, process_id tea) lit {
     if !semaphore_registry.has_key(name) {
-        damn cap  # Semaphore doesn't exist
+        damn cap fr fr Semaphore doesn't exist
     }
     
     sus semaphore_data map = semaphore_registry.get(name)
@@ -471,20 +467,19 @@ slay semaphore_wait(name tea, process_id tea) lit {
         semaphore_data.set("wait_count", wait_count + 1)
         semaphore_registry.set(name, semaphore_data)
         damn based
-    } else {
-        # Add to waiting queue
+    } else { fr fr Add to waiting queue
         sus waiting [tea] = semaphore_data.get("waiting_processes")
         waiting.push(process_id)
         semaphore_data.set("waiting_processes", waiting)
         semaphore_registry.set(name, semaphore_data)
-        damn cap  # Process would block
+        damn cap fr fr Process would block
     }
 }
 
-# Signal semaphore (V operation)
+fr fr Signal semaphore (V operation)
 slay semaphore_signal(name tea) lit {
     if !semaphore_registry.has_key(name) {
-        damn cap  # Semaphore doesn't exist
+        damn cap fr fr Semaphore doesn't exist
     }
     
     sus semaphore_data map = semaphore_registry.get(name)
@@ -494,9 +489,7 @@ slay semaphore_signal(name tea) lit {
     if value < max_value {
         semaphore_data.set("value", value + 1)
         sus signal_count normie = semaphore_data.get("signal_count")
-        semaphore_data.set("signal_count", signal_count + 1)
-        
-        # Wake up waiting process if any
+        semaphore_data.set("signal_count", signal_count + 1) fr fr Wake up waiting process if any
         sus waiting [tea] = semaphore_data.get("waiting_processes")
         if waiting.length() > 0 {
             sus woken_process tea = waiting[0]
@@ -509,17 +502,17 @@ slay semaphore_signal(name tea) lit {
         damn based
     }
     
-    damn cap  # Semaphore at max value
+    damn cap fr fr Semaphore at max value
 }
 
-# ==============================================================================
-# UNIX SOCKET SIMULATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr UNIX SOCKET SIMULATION
+fr fr ==============================================================================
 
-# Create Unix socket
+fr fr Create Unix socket
 slay create_unix_socket(name tea, socket_type tea) lit {
     if unix_sockets.has_key(name) {
-        damn cap  # Socket already exists
+        damn cap fr fr Socket already exists
     }
     
     sus socket_data map = {
@@ -545,10 +538,10 @@ slay create_unix_socket(name tea, socket_type tea) lit {
     damn based
 }
 
-# Listen on Unix socket
+fr fr Listen on Unix socket
 slay listen_unix_socket(name tea, server_process tea) lit {
     if !unix_sockets.has_key(name) {
-        damn cap  # Socket doesn't exist
+        damn cap fr fr Socket doesn't exist
     }
     
     sus socket_data map = unix_sockets.get(name)
@@ -560,15 +553,15 @@ slay listen_unix_socket(name tea, server_process tea) lit {
     damn based
 }
 
-# Connect to Unix socket
+fr fr Connect to Unix socket
 slay connect_unix_socket(name tea, client_process tea) lit {
     if !unix_sockets.has_key(name) {
-        damn cap  # Socket doesn't exist
+        damn cap fr fr Socket doesn't exist
     }
     
     sus socket_data map = unix_sockets.get(name)
     if !socket_data.get("is_listening") {
-        damn cap  # Socket not listening
+        damn cap fr fr Socket not listening
     }
     
     sus connections [tea] = socket_data.get("connections")
@@ -583,23 +576,23 @@ slay connect_unix_socket(name tea, client_process tea) lit {
     damn based
 }
 
-# ==============================================================================
-# UTILITY FUNCTIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr UTILITY FUNCTIONS
+fr fr ==============================================================================
 
-# Get current timestamp (simulated)
+fr fr Get current timestamp (simulated)
 slay get_current_timestamp() normie {
-    damn 1704067200  # Simulated timestamp
+    damn 1704067200 fr fr Simulated timestamp
 }
 
-# Generate unique message ID
+fr fr Generate unique message ID
 slay generate_message_id() tea {
     sus timestamp normie = get_current_timestamp()
     sus random normie = timestamp % 10000
     damn "msg_" + core.tea(timestamp) + "_" + core.tea(random)
 }
 
-# Get IPC resource info
+fr fr Get IPC resource info
 slay get_ipc_resource_info(resource_name tea) map {
     if ipc_registry.has_key(resource_name) {
         damn ipc_registry.get(resource_name)
@@ -607,21 +600,21 @@ slay get_ipc_resource_info(resource_name tea) map {
     damn {}
 }
 
-# List all IPC resources
+fr fr List all IPC resources
 slay list_ipc_resources() [tea] {
     damn ipc_registry.keys()
 }
 
-# Get IPC statistics
+fr fr Get IPC statistics
 slay get_ipc_statistics() map {
     damn ipc_statistics
 }
 
-# ==============================================================================
-# CLEANUP FUNCTIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr CLEANUP FUNCTIONS
+fr fr ==============================================================================
 
-# Cleanup specific resource type
+fr fr Cleanup specific resource type
 slay cleanup_resource_type(resource_type tea) lit {
     sus keys [tea] = ipc_registry.keys()
     sus i normie = 0
@@ -640,7 +633,7 @@ slay cleanup_resource_type(resource_type tea) lit {
     damn based
 }
 
-# Cleanup all IPC resources
+fr fr Cleanup all IPC resources
 slay cleanup_ipc() lit {
     vibez.spill("Cleaning up IPC resources...")
     
@@ -648,28 +641,24 @@ slay cleanup_ipc() lit {
     cleanup_resource_type("queue")
     cleanup_resource_type("shm")
     cleanup_resource_type("sem")
-    cleanup_resource_type("socket")
-    
-    # Clear registries
+    cleanup_resource_type("socket") fr fr Clear registries
     named_pipes = {}
     message_queues = {}
     shared_memory_segments = {}
     semaphore_registry = {}
     unix_sockets = {}
-    ipc_processes = {}
-    
-    # Reset statistics
+    ipc_processes = {} fr fr Reset statistics
     ipc_statistics.set("active_connections", 0)
     
     vibez.spill("IPC cleanup completed")
     damn based
 }
 
-# ==============================================================================
-# PROCESS MANAGEMENT
-# ==============================================================================
+fr fr ==============================================================================
+fr fr PROCESS MANAGEMENT
+fr fr ==============================================================================
 
-# Register process for IPC
+fr fr Register process for IPC
 slay register_process(process_id tea, process_name tea) lit {
     sus process_data map = {
         "id": process_id,
@@ -684,7 +673,7 @@ slay register_process(process_id tea, process_name tea) lit {
     damn based
 }
 
-# Unregister process from IPC
+fr fr Unregister process from IPC
 slay unregister_process(process_id tea) lit {
     if ipc_processes.has_key(process_id) {
         sus process_data map = ipc_processes.get(process_id)
@@ -696,7 +685,7 @@ slay unregister_process(process_id tea) lit {
     damn cap
 }
 
-# Get process info
+fr fr Get process info
 slay get_process_info(process_id tea) map {
     if ipc_processes.has_key(process_id) {
         damn ipc_processes.get(process_id)
@@ -704,7 +693,7 @@ slay get_process_info(process_id tea) map {
     damn {}
 }
 
-# List active processes
+fr fr List active processes
 slay list_active_processes() [tea] {
     sus active_processes [tea] = []
     sus keys [tea] = ipc_processes.keys()
@@ -722,11 +711,11 @@ slay list_active_processes() [tea] {
     damn active_processes
 }
 
-# ==============================================================================
-# DEBUGGING AND DIAGNOSTICS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr DEBUGGING AND DIAGNOSTICS
+fr fr ==============================================================================
 
-# Dump IPC state
+fr fr Dump IPC state
 slay dump_ipc_state() {
     vibez.spill("=== IPC System State ===")
     vibez.spill("Named Pipes: " + core.tea(named_pipes.size()))
@@ -748,11 +737,9 @@ slay dump_ipc_state() {
     }
 }
 
-# Test IPC connectivity
+fr fr Test IPC connectivity
 slay test_ipc_connectivity() lit {
-    vibez.spill("Testing IPC connectivity...")
-    
-    # Test pipe creation and communication
+    vibez.spill("Testing IPC connectivity...") fr fr Test pipe creation and communication
     if create_named_pipe("test_pipe", 1024) {
         write_to_pipe("test_pipe", "test_message")
         sus received tea = read_from_pipe("test_pipe")
@@ -762,9 +749,7 @@ slay test_ipc_connectivity() lit {
             vibez.spill("✗ Named pipe test failed")
             damn cap
         }
-    }
-    
-    # Test message queue
+    } fr fr Test message queue
     if create_message_queue("test_queue", 10) {
         send_message("test_queue", "test_msg", MSG_PRIORITY_NORMAL)
         sus msg map = receive_message("test_queue")
@@ -774,9 +759,7 @@ slay test_ipc_connectivity() lit {
             vibez.spill("✗ Message queue test failed")
             damn cap
         }
-    }
-    
-    # Test shared memory
+    } fr fr Test shared memory
     if create_shared_memory("test_shm", 1024) {
         write_shared_memory("test_shm", "test_key", "test_value")
         sus value tea = read_shared_memory("test_shm", "test_key")
@@ -786,9 +769,7 @@ slay test_ipc_connectivity() lit {
             vibez.spill("✗ Shared memory test failed")
             damn cap
         }
-    }
-    
-    # Test semaphore
+    } fr fr Test semaphore
     if create_semaphore("test_sem", 1) {
         if semaphore_wait("test_sem", "test_process") {
             semaphore_signal("test_sem")
@@ -803,12 +784,12 @@ slay test_ipc_connectivity() lit {
     damn based
 }
 
-# Get module information
+fr fr Get module information
 slay get_module_info() tea {
     damn "ipc v1.0 - Pure CURSED inter-process communication system"
 }
 
-# Reset IPC system for testing
+fr fr Reset IPC system for testing
 slay reset_ipc() {
     cleanup_ipc()
     init_ipc()

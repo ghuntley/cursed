@@ -1,12 +1,12 @@
-# Test Suite for exec_vibez - Pure CURSED Process Execution Module
-# Comprehensive testing of process execution and management functionality
+fr fr Test Suite for exec_vibez - Pure CURSED Process Execution Module
+fr fr Comprehensive testing of process execution and management functionality
 
 yeet "testz"
 yeet "exec_vibez"
 
-# ==============================================================================
-# INITIALIZATION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr INITIALIZATION TESTS
+fr fr ==============================================================================
 
 test_start("exec_vibez initialization")
 assert_true(exec_vibez.init_exec_vibez())
@@ -18,20 +18,20 @@ assert_true(config.has_key("shell_command"))
 
 print_test_summary()
 
-# ==============================================================================
-# COMMAND CREATION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr COMMAND CREATION TESTS
+fr fr ==============================================================================
 
 test_start("command creation")
 
-# Test basic command creation
+fr fr Test basic command creation
 sus cmd1 map = exec_vibez.create_command("echo", ["hello", "world"])
 assert_true(cmd1.has_key("id"))
 assert_eq_string(cmd1.get("program"), "echo")
 assert_eq_int(cmd1.get("args").length(), 2)
 assert_eq_string(cmd1.get("state"), "created")
 
-# Test command configuration
+fr fr Test command configuration
 assert_true(exec_vibez.set_working_dir(cmd1, "/tmp"))
 assert_eq_string(cmd1.get("working_dir"), "/tmp")
 
@@ -53,32 +53,32 @@ assert_eq_string(cmd1.get("exec_mode"), "synchronous")
 
 print_test_summary()
 
-# ==============================================================================
-# COMMAND EXECUTION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr COMMAND EXECUTION TESTS
+fr fr ==============================================================================
 
 test_start("synchronous command execution")
 
-# Test echo command
+fr fr Test echo command
 sus echo_cmd map = exec_vibez.create_command("echo", ["hello", "world"])
 sus result1 map = exec_vibez.execute_command(echo_cmd)
 assert_eq_int(result1.get("exit_code"), 0)
 assert_eq_string(result1.get("stdout"), "hello world")
 assert_eq_string(result1.get("state"), "finished")
 
-# Test pwd command
+fr fr Test pwd command
 sus pwd_cmd map = exec_vibez.create_command("pwd", [])
 sus result2 map = exec_vibez.execute_command(pwd_cmd)
 assert_eq_int(result2.get("exit_code"), 0)
 assert_eq_string(result2.get("stdout"), "/current/directory")
 
-# Test ls command
+fr fr Test ls command
 sus ls_cmd map = exec_vibez.create_command("ls", [])
 sus result3 map = exec_vibez.execute_command(ls_cmd)
 assert_eq_int(result3.get("exit_code"), 0)
 assert_true(result3.get("stdout").contains("file1.txt"))
 
-# Test false command (failure case)
+fr fr Test false command (failure case)
 sus false_cmd map = exec_vibez.create_command("false", [])
 sus result4 map = exec_vibez.execute_command(false_cmd)
 assert_eq_int(result4.get("exit_code"), 1)
@@ -86,40 +86,40 @@ assert_eq_string(result4.get("state"), "failed")
 
 print_test_summary()
 
-# ==============================================================================
-# ASYNCHRONOUS EXECUTION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr ASYNCHRONOUS EXECUTION TESTS
+fr fr ==============================================================================
 
 test_start("asynchronous command execution")
 
-# Test async execution
+fr fr Test async execution
 sus async_cmd map = exec_vibez.create_command("echo", ["async", "test"])
 sus process_id tea = exec_vibez.execute_async(async_cmd)
 assert_true(process_id.length() > 0)
 assert_true(process_id.starts_with("proc_"))
 
-# Test process listing
+fr fr Test process listing
 sus running_procs [tea] = exec_vibez.list_running_processes()
 assert_true(running_procs.length() >= 1)
 
-# Test waiting for completion
+fr fr Test waiting for completion
 sus async_result map = exec_vibez.wait_for_process(process_id)
 assert_eq_int(async_result.get("exit_code"), 0)
 assert_eq_string(async_result.get("stdout"), "async test")
 
-# Verify process is no longer running
+fr fr Verify process is no longer running
 sus running_after [tea] = exec_vibez.list_running_processes()
-# Process should be cleaned up after wait_for_process
+fr fr Process should be cleaned up after wait_for_process
 
 print_test_summary()
 
-# ==============================================================================
-# PROCESS MANAGEMENT TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr PROCESS MANAGEMENT TESTS
+fr fr ==============================================================================
 
 test_start("process management")
 
-# Test process registration and info
+fr fr Test process registration and info
 sus test_cmd map = exec_vibez.create_command("sleep", ["2"])
 sus proc_id tea = exec_vibez.execute_async(test_cmd)
 
@@ -127,25 +127,25 @@ sus proc_info map = exec_vibez.get_process_info(proc_id)
 assert_true(proc_info.has_key("id"))
 assert_eq_string(proc_info.get("id"), proc_id)
 
-# Test process killing
+fr fr Test process killing
 assert_true(exec_vibez.kill_process(proc_id))
 
-# Test process lists
+fr fr Test process lists
 sus all_procs [tea] = exec_vibez.list_all_processes()
-assert_true(all_procs.length() >= 0)  # May be empty after cleanup
+assert_true(all_procs.length() >= 0) fr fr May be empty after cleanup
 
 print_test_summary()
 
-# ==============================================================================
-# PROCESS GROUP TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr PROCESS GROUP TESTS
+fr fr ==============================================================================
 
 test_start("process groups")
 
-# Test group creation
+fr fr Test group creation
 assert_true(exec_vibez.create_process_group("test_group"))
 
-# Test adding processes to group
+fr fr Test adding processes to group
 sus group_cmd1 map = exec_vibez.create_command("echo", ["group1"])
 sus group_proc1 tea = exec_vibez.execute_async(group_cmd1)
 assert_true(exec_vibez.add_to_group("test_group", group_proc1))
@@ -154,97 +154,97 @@ sus group_cmd2 map = exec_vibez.create_command("echo", ["group2"])
 sus group_proc2 tea = exec_vibez.execute_async(group_cmd2)
 assert_true(exec_vibez.add_to_group("test_group", group_proc2))
 
-# Test group termination
+fr fr Test group termination
 assert_true(exec_vibez.kill_process_group("test_group"))
 
 print_test_summary()
 
-# ==============================================================================
-# OUTPUT STREAMING TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr OUTPUT STREAMING TESTS
+fr fr ==============================================================================
 
 test_start("output streaming")
 
-# Test output streamer creation
+fr fr Test output streamer creation
 sus stream_cmd map = exec_vibez.create_command("echo", ["stream", "test"])
 sus stream_proc tea = exec_vibez.execute_async(stream_cmd)
 
 assert_true(exec_vibez.create_output_streamer(stream_proc, "stdout"))
 assert_true(exec_vibez.create_output_streamer(stream_proc, "stderr"))
 
-# Test output capture
+fr fr Test output capture
 assert_true(exec_vibez.capture_stream_output(stream_proc, "stdout", "test output\n"))
 sus captured tea = exec_vibez.get_captured_output(stream_proc, "stdout")
 assert_eq_string(captured, "test output\n")
 
-# Cleanup
+fr fr Cleanup
 exec_vibez.kill_process(stream_proc)
 
 print_test_summary()
 
-# ==============================================================================
-# TIMEOUT MANAGEMENT TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr TIMEOUT MANAGEMENT TESTS
+fr fr ==============================================================================
 
 test_start("timeout management")
 
-# Test timeout setting
+fr fr Test timeout setting
 sus timeout_cmd map = exec_vibez.create_command("sleep", ["10"])
-exec_vibez.set_timeout(timeout_cmd, 1000)  # 1 second timeout
+exec_vibez.set_timeout(timeout_cmd, 1000) fr fr 1 second timeout
 sus timeout_result map = exec_vibez.execute_command(timeout_cmd)
-assert_eq_int(timeout_result.get("exit_code"), 124)  # EXIT_TIMEOUT
+assert_eq_int(timeout_result.get("exit_code"), 124) fr fr EXIT_TIMEOUT
 assert_eq_string(timeout_result.get("state"), "timeout")
 
-# Test timeout checking
+fr fr Test timeout checking
 sus timeout_proc tea = exec_vibez.execute_async(exec_vibez.create_command("sleep", ["5"]))
 assert_true(exec_vibez.set_process_timeout(timeout_proc, 500))
 
 sus timed_out [tea] = exec_vibez.check_timeouts()
-# Note: In simulation, this may not catch timeouts immediately
+fr fr Note: In simulation, this may not catch timeouts immediately
 
-# Cleanup
+fr fr Cleanup
 exec_vibez.kill_process(timeout_proc)
 
 print_test_summary()
 
-# ==============================================================================
-# HIGH-LEVEL CONVENIENCE FUNCTION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr HIGH-LEVEL CONVENIENCE FUNCTION TESTS
+fr fr ==============================================================================
 
 test_start("convenience functions")
 
-# Test simple run_command
+fr fr Test simple run_command
 sus simple_result map = exec_vibez.run_command("echo", ["simple", "test"])
 assert_eq_int(simple_result.get("exit_code"), 0)
 assert_eq_string(simple_result.get("stdout"), "simple test")
 
-# Test run_with_output
+fr fr Test run_with_output
 sus output_result map = exec_vibez.run_with_output("ls", [])
 assert_eq_int(output_result.get("exit_code"), 0)
 assert_true(output_result.get("stdout").length() > 0)
 
-# Test run_with_timeout
+fr fr Test run_with_timeout
 sus timeout_result map = exec_vibez.run_with_timeout("echo", ["timeout", "test"], 5000)
 assert_eq_int(timeout_result.get("exit_code"), 0)
 
-# Test run_background
+fr fr Test run_background
 sus bg_proc tea = exec_vibez.run_background("echo", ["background"])
 assert_true(bg_proc.length() > 0)
 exec_vibez.wait_for_process(bg_proc)
 
-# Test run_shell
+fr fr Test run_shell
 sus shell_result map = exec_vibez.run_shell("echo shell command")
 assert_eq_int(shell_result.get("exit_code"), 0)
 
 print_test_summary()
 
-# ==============================================================================
-# CONFIGURATION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr CONFIGURATION TESTS
+fr fr ==============================================================================
 
 test_start("configuration management")
 
-# Test configuration update
+fr fr Test configuration update
 sus new_config map = {
     "default_timeout_ms": 60000,
     "max_concurrent_processes": 50
@@ -257,65 +257,65 @@ assert_eq_int(updated_config.get("max_concurrent_processes"), 50)
 
 print_test_summary()
 
-# ==============================================================================
-# STATISTICS AND MONITORING TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr STATISTICS AND MONITORING TESTS
+fr fr ==============================================================================
 
 test_start("statistics and monitoring")
 
-# Execute some commands to generate statistics
+fr fr Execute some commands to generate statistics
 exec_vibez.run_command("echo", ["stats", "test"])
 exec_vibez.run_command("pwd", [])
 exec_vibez.run_command("whoami", [])
 
-# Test statistics
+fr fr Test statistics
 sus stats map = exec_vibez.get_exec_statistics()
 assert_true(stats.has_key("commands_executed"))
 assert_true(stats.get("commands_executed") >= 3)
 assert_true(stats.has_key("processes_completed"))
 assert_true(stats.has_key("avg_execution_time"))
 
-# Test command history
+fr fr Test command history
 sus history [map] = exec_vibez.get_command_history()
 assert_true(history.length() >= 3)
 
-# Test recent commands
+fr fr Test recent commands
 sus recent [map] = exec_vibez.get_recent_commands(2)
 assert_true(recent.length() <= 2)
 
 print_test_summary()
 
-# ==============================================================================
-# ERROR HANDLING TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr ERROR HANDLING TESTS
+fr fr ==============================================================================
 
 test_start("error handling")
 
-# Test invalid command execution
+fr fr Test invalid command execution
 sus invalid_cmd map = exec_vibez.create_command("nonexistent_command", [])
 sus invalid_result map = exec_vibez.execute_command(invalid_cmd)
-assert_eq_int(invalid_result.get("exit_code"), 0)  # Simulated success
+assert_eq_int(invalid_result.get("exit_code"), 0) fr fr Simulated success
 
-# Test invalid process operations
+fr fr Test invalid process operations
 assert_false(exec_vibez.kill_process("invalid_process_id"))
 assert_false(exec_vibez.add_to_group("nonexistent_group", "some_process"))
 
-# Test invalid timeout
+fr fr Test invalid timeout
 sus bad_timeout_cmd map = exec_vibez.create_command("echo", ["test"])
 assert_false(exec_vibez.set_exec_mode(bad_timeout_cmd, "invalid_mode"))
 
 print_test_summary()
 
-# ==============================================================================
-# STATE MANAGEMENT TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr STATE MANAGEMENT TESTS
+fr fr ==============================================================================
 
 test_start("state management")
 
-# Test state dumping
+fr fr Test state dumping
 exec_vibez.dump_exec_state()
 
-# Test state reset
+fr fr Test state reset
 exec_vibez.reset_exec()
 
 sus reset_stats map = exec_vibez.get_exec_statistics()
@@ -327,9 +327,9 @@ assert_eq_int(reset_history.length(), 0)
 
 print_test_summary()
 
-# ==============================================================================
-# MODULE INFO TEST
-# ==============================================================================
+fr fr ==============================================================================
+fr fr MODULE INFO TEST
+fr fr ==============================================================================
 
 test_start("module information")
 
@@ -339,47 +339,47 @@ assert_true(module_info.contains("v1.0"))
 
 print_test_summary()
 
-# ==============================================================================
-# INTEGRATION TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr INTEGRATION TESTS
+fr fr ==============================================================================
 
 test_start("integration with signal_boost and ipc")
 
-# Verify signal_boost integration
-# (signal handlers are registered during init)
+fr fr Verify signal_boost integration
+fr fr (signal handlers are registered during init)
 assert_true(has_signal_handler(SIGTERM))
 assert_true(has_signal_handler(SIGINT))
 
-# Test cleanup signal handling
-notify(SIGTERM)  # Should trigger cleanup
+fr fr Test cleanup signal handling
+notify(SIGTERM) fr fr Should trigger cleanup
 
-# Verify IPC integration capability
-# (IPC is initialized during exec_vibez init)
+fr fr Verify IPC integration capability
+fr fr (IPC is initialized during exec_vibez init)
 assert_true(get_ipc_config().has_key("max_message_size"))
 
 print_test_summary()
 
-# ==============================================================================
-# COMPREHENSIVE WORKFLOW TEST
-# ==============================================================================
+fr fr ==============================================================================
+fr fr COMPREHENSIVE WORKFLOW TEST
+fr fr ==============================================================================
 
 test_start("comprehensive workflow")
 
-# Reinitialize for clean test
+fr fr Reinitialize for clean test
 exec_vibez.init_exec_vibez()
 
-# Create and configure a complex command
+fr fr Create and configure a complex command
 sus workflow_cmd map = exec_vibez.create_command("cat", ["/etc/passwd"])
 exec_vibez.set_working_dir(workflow_cmd, "/tmp")
 exec_vibez.add_env_var(workflow_cmd, "LANG", "C")
 exec_vibez.set_timeout(workflow_cmd, 10000)
 
-# Execute synchronously
+fr fr Execute synchronously
 sus workflow_result map = exec_vibez.execute_command(workflow_result)
 assert_eq_int(workflow_result.get("exit_code"), 0)
 assert_true(workflow_result.get("stdout").contains("Contents of /etc/passwd"))
 
-# Create process group and add multiple processes
+fr fr Create process group and add multiple processes
 assert_true(exec_vibez.create_process_group("workflow_group"))
 
 sus proc1 tea = exec_vibez.run_background("echo", ["proc1"])
@@ -388,26 +388,26 @@ sus proc2 tea = exec_vibez.run_background("echo", ["proc2"])
 assert_true(exec_vibez.add_to_group("workflow_group", proc1))
 assert_true(exec_vibez.add_to_group("workflow_group", proc2))
 
-# Wait for processes and verify results
+fr fr Wait for processes and verify results
 sus result1 map = exec_vibez.wait_for_process(proc1)
 sus result2 map = exec_vibez.wait_for_process(proc2)
 
 assert_eq_string(result1.get("stdout"), "proc1")
 assert_eq_string(result2.get("stdout"), "proc2")
 
-# Verify final statistics
+fr fr Verify final statistics
 sus final_stats map = exec_vibez.get_exec_statistics()
 assert_true(final_stats.get("commands_executed") >= 3)
 
 print_test_summary()
 
-# ==============================================================================
-# PERFORMANCE AND STRESS TESTS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr PERFORMANCE AND STRESS TESTS
+fr fr ==============================================================================
 
 test_start("performance and stress")
 
-# Test multiple concurrent processes
+fr fr Test multiple concurrent processes
 sus stress_procs [tea] = []
 sus i normie = 0
 
@@ -418,7 +418,7 @@ while i < 5 {
     i = i + 1
 }
 
-# Wait for all processes
+fr fr Wait for all processes
 i = 0
 while i < stress_procs.length() {
     sus stress_result map = exec_vibez.wait_for_process(stress_procs[i])
@@ -426,7 +426,7 @@ while i < stress_procs.length() {
     i = i + 1
 }
 
-# Test command history with many commands
+fr fr Test command history with many commands
 i = 0
 while i < 10 {
     exec_vibez.run_command("echo", ["history_test_" + core.tea(i)])

@@ -1,9 +1,9 @@
-# Enhanced Testz Framework Usage Examples
-# Demonstrates all features of the testing framework
+fr fr Enhanced Testz Framework Usage Examples
+fr fr Demonstrates all features of the testing framework
 
 yeet "testz"
 
-# Example 1: Basic Testing Pattern
+fr fr Example 1: Basic Testing Pattern
 slay example_basic_testing() {
     vibez.spill("📖 Example 1: Basic Testing Pattern")
     
@@ -27,7 +27,7 @@ slay example_basic_testing() {
     test_suite_end("Basic Testing")
 }
 
-# Example 2: Complex Data Testing
+fr fr Example 2: Complex Data Testing
 slay example_complex_data() {
     vibez.spill("📖 Example 2: Complex Data Testing")
     
@@ -62,7 +62,7 @@ slay example_complex_data() {
     test_suite_end("Complex Data Structures")
 }
 
-# Example 3: Edge Cases and Boundary Testing
+fr fr Example 3: Edge Cases and Boundary Testing
 slay example_edge_cases() {
     vibez.spill("📖 Example 3: Edge Cases and Boundary Testing")
     
@@ -97,7 +97,7 @@ slay example_edge_cases() {
     test_suite_end("Edge Cases")
 }
 
-# Example 4: Performance and Scale Testing
+fr fr Example 4: Performance and Scale Testing
 slay example_performance_testing() {
     vibez.spill("📖 Example 4: Performance and Scale Testing")
     
@@ -112,9 +112,7 @@ slay example_performance_testing() {
         assert_gte(total, 0)
         assert_eq_int(i, i)
         i = i + 1
-    }
-    
-    # Expected sum: 0+1+2+...+99 = 99*100/2 = 4950
+    } fr fr Expected sum: 0+1+2+...+99 = 99*100/2 = 4950
     assert_eq_int(total, 4950)
     test_end()
     
@@ -130,27 +128,21 @@ slay example_performance_testing() {
     test_suite_end("Performance Testing")
 }
 
-# Example 5: Error Handling and Recovery
+fr fr Example 5: Error Handling and Recovery
 slay example_error_handling() {
     vibez.spill("📖 Example 5: Error Handling and Recovery")
     
     test_suite_start("Error Handling")
     
-    test_start("mixed success and failure")
-    # These will pass
+    test_start("mixed success and failure") fr fr These will pass
     assert_eq_int(1, 1)
-    assert_true(based)
-    
-    # This will intentionally fail to demonstrate error handling
-    assert_eq_int(5, 10)  # FAIL: Expected 10, got 5
-    
-    # These should still execute after the failure
+    assert_true(based) fr fr This will intentionally fail to demonstrate error handling
+    assert_eq_int(5, 10) fr fr FAIL: Expected 10, got 5 fr fr These should still execute after the failure
     assert_eq_string("recovery", "recovery")
     assert_false(cap)
     test_end()
     
-    test_start("recovery validation")
-    # Verify the framework continues working after failures
+    test_start("recovery validation") fr fr Verify the framework continues working after failures
     assert_eq_int(42, 42)
     assert_not_eq(1, 2)
     test_end()
@@ -158,7 +150,7 @@ slay example_error_handling() {
     test_suite_end("Error Handling")
 }
 
-# Example 6: State Management
+fr fr Example 6: State Management
 slay example_state_management() {
     vibez.spill("📖 Example 6: State Management")
     
@@ -167,13 +159,9 @@ slay example_state_management() {
     test_start("state tracking")
     sus initial_pass normie = get_pass_count()
     sus initial_fail normie = get_fail_count()
-    sus initial_total normie = get_total_count()
-    
-    # Run some assertions
+    sus initial_total normie = get_total_count() fr fr Run some assertions
     assert_true(based)
-    assert_eq_int(10, 10)
-    
-    # Verify state changed
+    assert_eq_int(10, 10) fr fr Verify state changed
     assert_gt(get_pass_count(), initial_pass)
     test_end()
     
@@ -185,7 +173,7 @@ slay example_state_management() {
     test_suite_end("State Management")
 }
 
-# Example 7: Boolean Logic Testing
+fr fr Example 7: Boolean Logic Testing
 slay example_boolean_logic() {
     vibez.spill("📖 Example 7: Boolean Logic Testing")
     
@@ -214,49 +202,39 @@ slay example_boolean_logic() {
     test_suite_end("Boolean Logic")
 }
 
-# Example 8: Comprehensive Module Testing Pattern
+fr fr Example 8: Comprehensive Module Testing Pattern
 slay example_module_testing_pattern() {
-    vibez.spill("📖 Example 8: Module Testing Pattern")
-    
-    # This demonstrates how to test a stdlib module
+    vibez.spill("📖 Example 8: Module Testing Pattern") fr fr This demonstrates how to test a stdlib module
     test_suite_start("Module Testing Pattern")
     
-    test_start("module initialization")
-    # Test that module components are available
-    assert_true(based)  # Placeholder for module check
+    test_start("module initialization") fr fr Test that module components are available
+    assert_true(based) fr fr Placeholder for module check
     test_end()
     
-    test_start("core functionality")
-    # Test main module functions
-    sus result normie = 42  # Placeholder for module function call
+    test_start("core functionality") fr fr Test main module functions
+    sus result normie = 42 fr fr Placeholder for module function call
     assert_eq_int(result, 42)
     assert_gt(result, 0)
     test_end()
     
-    test_start("edge case handling")
-    # Test module edge cases
-    assert_eq_int(0, 0)  # Placeholder for edge case test
+    test_start("edge case handling") fr fr Test module edge cases
+    assert_eq_int(0, 0) fr fr Placeholder for edge case test
     test_end()
     
-    test_start("error conditions")
-    # Test module error handling
-    assert_true(based)  # Placeholder for error condition test
+    test_start("error conditions") fr fr Test module error handling
+    assert_true(based) fr fr Placeholder for error condition test
     test_end()
     
     test_suite_end("Module Testing Pattern")
 }
 
-# Main execution function
+fr fr Main execution function
 slay run_all_examples() {
     vibez.spill("🎯 TESTZ FRAMEWORK EXAMPLES")
     vibez.spill("Demonstrating comprehensive testing capabilities")
     vibez.spill("=" * 60)
-    vibez.spill("")
-    
-    # Reset state for clean example run
-    reset_test_state()
-    
-    # Run all examples
+    vibez.spill("") fr fr Reset state for clean example run
+    reset_test_state() fr fr Run all examples
     example_basic_testing()
     vibez.spill("")
     
@@ -279,13 +257,9 @@ slay run_all_examples() {
     vibez.spill("")
     
     example_module_testing_pattern()
-    vibez.spill("")
-    
-    # Generate final comprehensive report
+    vibez.spill("") fr fr Generate final comprehensive report
     vibez.spill("🎉 ALL EXAMPLES COMPLETED")
-    print_detailed_report()
-    
-    # Example summary
+    print_detailed_report() fr fr Example summary
     vibez.spill("📋 Example Features Demonstrated:")
     vibez.spill("✅ Basic assertion patterns")
     vibez.spill("✅ Complex data validation")
@@ -299,5 +273,5 @@ slay run_all_examples() {
     vibez.spill("🚀 Framework ready for stdlib development!")
 }
 
-# Execute all examples
+fr fr Execute all examples
 run_all_examples()

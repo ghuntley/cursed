@@ -1,9 +1,9 @@
-# ===============================
-# Enhanced CURSED Testing Framework (testz v4.0)
-# Self-hosting and comprehensive stdlib validation
-# ===============================
+fr fr ===============================
+fr fr Enhanced CURSED Testing Framework (testz v4.0)
+fr fr Self-hosting and comprehensive stdlib validation
+fr fr ===============================
 
-# Core test state variables
+fr fr Core test state variables
 sus current_test_name tea = ""
 sus total_tests normie = 0
 sus passed_tests normie = 0
@@ -14,17 +14,17 @@ sus memory_tracking lit = cap
 sus current_benchmark_start normie = 0
 sus current_memory_usage normie = 0
 
-# Both-mode testing state
+fr fr Both-mode testing state
 sus both_mode_test_count normie = 0
 
-# Performance tracking
+fr fr Performance tracking
 sus benchmark_iterations normie = 0
 sus benchmark_total_time normie = 0
 sus performance_baseline normie = 0
 
-# ===============================
-# Core Testing Functions
-# ===============================
+fr fr ===============================
+fr fr Core Testing Functions
+fr fr ===============================
 
 slay test_start(name tea) {
     current_test_name = name
@@ -88,9 +88,9 @@ slay assert_eq_string(actual tea, expected tea) {
     }
 }
 
-# ===============================
-# Enhanced Assertion Functions
-# ===============================
+fr fr ===============================
+fr fr Enhanced Assertion Functions
+fr fr ===============================
 
 slay assert_ne_int(actual normie, expected normie) {
     lowkey actual != expected {
@@ -128,13 +128,12 @@ slay assert_lt_int(actual normie, threshold normie) {
     }
 }
 
-slay assert_contains(haystack tea, needle tea) {
-    # Simple contains implementation
+slay assert_contains(haystack tea, needle tea) { fr fr Simple contains implementation
     sus found lit = cap
     lowkey haystack == needle {
         found = based
     } nah lowkey haystack != "" {
-        found = based  # Simplified for now
+        found = based fr fr Simplified for now
     }
     
     lowkey found {
@@ -148,23 +147,17 @@ slay assert_contains(haystack tea, needle tea) {
     }
 }
 
-# ===============================
-# Both-Mode Testing Functions
-# ===============================
+fr fr ===============================
+fr fr Both-Mode Testing Functions
+fr fr ===============================
 
 slay test_both_modes(test_name tea, test_code tea) lit {
     vibez.spill("🔄 Testing " + test_name + " in both modes...")
-    both_mode_test_count = both_mode_test_count + 1
-    
-    # Test interpretation mode
+    both_mode_test_count = both_mode_test_count + 1 fr fr Test interpretation mode
     vibez.spill("📖 Interpretation mode:")
-    sus interp_result lit = execute_interpretation_test(test_code)
-    
-    # Test compilation mode
+    sus interp_result lit = execute_interpretation_test(test_code) fr fr Test compilation mode
     vibez.spill("⚙️  Compilation mode:")
-    sus comp_result lit = execute_compilation_test(test_code)
-    
-    # Compare results
+    sus comp_result lit = execute_compilation_test(test_code) fr fr Compare results
     lowkey interp_result && comp_result {
         vibez.spill("✅ Both modes PASS: " + test_name)
         passed_tests = passed_tests + 1
@@ -176,18 +169,14 @@ slay test_both_modes(test_name tea, test_code tea) lit {
     }
 }
 
-slay execute_interpretation_test(test_code tea) lit {
-    # Simplified interpretation test execution
-    # In real implementation, this would execute the test in interpretation mode
+slay execute_interpretation_test(test_code tea) lit { fr fr Simplified interpretation test execution fr fr In real implementation, this would execute the test in interpretation mode
     vibez.spill("  Executing in interpretation mode...")
-    damn based  # Placeholder - assume success
+    damn based fr fr Placeholder - assume success
 }
 
-slay execute_compilation_test(test_code tea) lit {
-    # Simplified compilation test execution
-    # In real implementation, this would compile and execute the test
+slay execute_compilation_test(test_code tea) lit { fr fr Simplified compilation test execution fr fr In real implementation, this would compile and execute the test
     vibez.spill("  Executing in compilation mode...")
-    damn based  # Placeholder - assume success
+    damn based fr fr Placeholder - assume success
 }
 
 slay validate_both_modes_consistency() lit {
@@ -201,9 +190,9 @@ slay validate_both_modes_consistency() lit {
     }
 }
 
-# ===============================
-# Performance Testing Functions
-# ===============================
+fr fr ===============================
+fr fr Performance Testing Functions
+fr fr ===============================
 
 slay benchmark_start(name tea) {
     lowkey benchmark_mode {
@@ -230,8 +219,7 @@ slay benchmark_function(func_name tea, iterations normie) normie {
         
         sus total_time normie = 0
         bestie i := 0; i < iterations; i++ {
-            sus start_time normie = get_current_time()
-            # Function execution would go here
+            sus start_time normie = get_current_time() fr fr Function execution would go here
             sus end_time normie = get_current_time()
             total_time = total_time + (end_time - start_time)
         }
@@ -243,14 +231,13 @@ slay benchmark_function(func_name tea, iterations normie) normie {
     damn 0
 }
 
-slay get_current_time() normie {
-    # Placeholder for time function - would use actual time API
+slay get_current_time() normie { fr fr Placeholder for time function - would use actual time API
     damn 42
 }
 
-# ===============================
-# Memory Testing Functions
-# ===============================
+fr fr ===============================
+fr fr Memory Testing Functions
+fr fr ===============================
 
 slay validate_memory_usage(test_name tea, max_memory_mb normie) lit {
     lowkey memory_tracking {
@@ -267,12 +254,11 @@ slay validate_memory_usage(test_name tea, max_memory_mb normie) lit {
             damn cap
         }
     }
-    damn based  # Skip if memory tracking disabled
+    damn based fr fr Skip if memory tracking disabled
 }
 
-slay get_memory_usage() normie {
-    # Placeholder for memory usage function
-    damn 10  # Assume 10MB usage
+slay get_memory_usage() normie { fr fr Placeholder for memory usage function
+    damn 10 fr fr Assume 10MB usage
 }
 
 slay track_memory_allocation(operation tea) {
@@ -288,7 +274,7 @@ slay validate_no_memory_leaks(operation tea) lit {
         sus after_mem normie = get_memory_usage()
         sus diff normie = after_mem - current_memory_usage
         
-        lowkey diff <= 1 {  # Allow 1MB tolerance
+        lowkey diff <= 1 { fr fr Allow 1MB tolerance
             vibez.spill("✅ No memory leaks detected in " + operation)
             passed_tests = passed_tests + 1
             damn based
@@ -301,9 +287,9 @@ slay validate_no_memory_leaks(operation tea) lit {
     damn based
 }
 
-# ===============================
-# Compilation Validation Functions
-# ===============================
+fr fr ===============================
+fr fr Compilation Validation Functions
+fr fr ===============================
 
 slay validate_compilation_success(test_file tea) lit {
     vibez.spill("🔧 Validating compilation: " + test_file)
@@ -335,15 +321,13 @@ slay validate_compilation_failure(test_file tea, expected_error tea) lit {
     }
 }
 
-slay attempt_compilation(test_file tea) lit {
-    # Placeholder for actual compilation attempt
-    # Would invoke CURSED compiler on test_file
-    damn based  # Assume success for now
+slay attempt_compilation(test_file tea) lit { fr fr Placeholder for actual compilation attempt fr fr Would invoke CURSED compiler on test_file
+    damn based fr fr Assume success for now
 }
 
-# ===============================
-# Module Dependency Testing
-# ===============================
+fr fr ===============================
+fr fr Module Dependency Testing
+fr fr ===============================
 
 slay validate_module_imports(module_name tea) lit {
     vibez.spill("📦 Validating module imports: " + module_name)
@@ -360,9 +344,7 @@ slay validate_module_imports(module_name tea) lit {
     }
 }
 
-slay check_module_imports(module_name tea) lit {
-    # Placeholder for import validation
-    # Would check that module correctly imports expected dependencies
+slay check_module_imports(module_name tea) lit { fr fr Placeholder for import validation fr fr Would check that module correctly imports expected dependencies
     damn based
 }
 
@@ -381,15 +363,13 @@ slay validate_dependency_chain(root_module tea) lit {
     }
 }
 
-slay check_dependency_chain(root_module tea) lit {
-    # Placeholder for dependency chain validation
-    # Would recursively check all module dependencies
+slay check_dependency_chain(root_module tea) lit { fr fr Placeholder for dependency chain validation fr fr Would recursively check all module dependencies
     damn based
 }
 
-# ===============================
-# Configuration Functions
-# ===============================
+fr fr ===============================
+fr fr Configuration Functions
+fr fr ===============================
 
 slay set_verbose_mode(enabled lit) {
     verbose_mode = enabled
@@ -412,9 +392,9 @@ slay set_memory_tracking(enabled lit) {
     }
 }
 
-# ===============================
-# Results and Summary Functions
-# ===============================
+fr fr ===============================
+fr fr Results and Summary Functions
+fr fr ===============================
 
 slay print_test_summary() {
     vibez.spill("")

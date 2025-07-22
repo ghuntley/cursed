@@ -1,7 +1,7 @@
-# Simple Core Module Test
+fr fr Simple Core Module Test
 yeet "core"
 
-# Simple test framework
+fr fr Simple test framework
 sus test_count normie = 0
 sus test_passed normie = 0
 sus test_failed normie = 0
@@ -67,7 +67,7 @@ slay print_test_summary() {
     }
 }
 
-# Test type conversions
+fr fr Test type conversions
 test_start("Type Conversions")
 assert_eq_int(int_from_bool(based), 1)
 assert_eq_int(int_from_bool(cap), 0)
@@ -76,7 +76,7 @@ assert_eq_string(string_from_int(0), "0")
 assert_true(lit_from_int(1))
 assert_false(lit_from_int(0))
 
-# Test Option type
+fr fr Test Option type
 test_start("Option Type")
 sus some_val (lit, normie) = option_some(42)
 sus none_val (lit, normie) = option_none()
@@ -85,7 +85,7 @@ assert_false(option_is_some(none_val))
 assert_eq_int(option_unwrap(some_val), 42)
 assert_eq_int(option_unwrap_or(none_val, 100), 100)
 
-# Test Result type
+fr fr Test Result type
 test_start("Result Type")
 sus ok_val (lit, normie, normie) = result_ok(123)
 sus err_val (lit, normie, normie) = result_err(404)
@@ -94,7 +94,7 @@ assert_false(result_is_ok(err_val))
 assert_eq_int(result_unwrap(ok_val), 123)
 assert_eq_int(result_unwrap_or(err_val, 999), 999)
 
-# Test math utilities
+fr fr Test math utilities
 test_start("Math Utilities")
 assert_eq_int(max(5, 3), 5)
 assert_eq_int(min(5, 3), 3)
@@ -102,7 +102,7 @@ assert_eq_int(abs(-5), 5)
 assert_eq_int(pow(2, 3), 8)
 assert_eq_int(sqrt(16), 4)
 
-# Test string utilities
+fr fr Test string utilities
 test_start("String Utilities")
 assert_eq_int(string_len("hello"), 5)
 assert_eq_string(string_concat("hello", "world"), "helloworld")
@@ -111,7 +111,7 @@ assert_true(string_starts_with("hello world", "hello"))
 assert_true(string_ends_with("hello world", "world"))
 assert_eq_string(string_trim("  hello  "), "hello")
 
-# Test boolean utilities
+fr fr Test boolean utilities
 test_start("Boolean Utilities")
 assert_true(not(cap))
 assert_false(not(based))
@@ -120,7 +120,7 @@ assert_false(and(based, cap))
 assert_true(or(based, cap))
 assert_false(or(cap, cap))
 
-# Test compiler utilities
+fr fr Test compiler utilities
 test_start("Compiler Utilities")
 assert_eq_int(token_type_identifier(), 1)
 assert_eq_int(error_code_syntax(), 1000)

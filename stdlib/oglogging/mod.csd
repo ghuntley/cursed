@@ -1,4 +1,4 @@
-# Basic logging functions only
+fr fr Basic logging functions only
 
 slay Spill(message tea) {
     vibez.spill("LOG: " + message)
@@ -24,7 +24,7 @@ slay Fatal(message tea) {
     vibez.spill("[FATAL] " + message)
 }
 
-# Constants
+fr fr Constants
 sus DEBUG normie = 0
 sus INFO normie = 1
 sus WARN normie = 2

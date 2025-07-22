@@ -1,13 +1,13 @@
-# Unicode String Integration Module - Complete Implementation
-# Pure CURSED Unicode operations with comprehensive string handling
-# FFI-free implementation with full Unicode support
+fr fr Unicode String Integration Module - Complete Implementation
+fr fr Pure CURSED Unicode operations with comprehensive string handling
+fr fr FFI-free implementation with full Unicode support
 
 yeet "testz"
 yeet "error_core"
 
-# ================================
-# Unicode String Data Structures
-# ================================
+fr fr ================================
+fr fr Unicode String Data Structures
+fr fr ================================
 
 collab UnicodeString {
     slay new(raw_bytes []normie) UnicodeString
@@ -54,74 +54,54 @@ collab UnicodeIterator {
     slay remaining() normie
 }
 
-# ================================
-# Unicode Character Classification
-# ================================
+fr fr ================================
+fr fr Unicode Character Classification
+fr fr ================================
 
-slay unicode_is_letter(codepoint normie) lit {
-    # Basic Latin letters
+slay unicode_is_letter(codepoint normie) lit { fr fr Basic Latin letters
     lowkey (codepoint >= 0x41 && codepoint <= 0x5A) || (codepoint >= 0x61 && codepoint <= 0x7A) {
         damn based
-    }
-    
-    # Extended Latin
+    } fr fr Extended Latin
     lowkey (codepoint >= 0xC0 && codepoint <= 0xFF) {
         damn based
-    }
-    
-    # Greek
+    } fr fr Greek
     lowkey (codepoint >= 0x0370 && codepoint <= 0x03FF) {
         damn based
-    }
-    
-    # Cyrillic
+    } fr fr Cyrillic
     lowkey (codepoint >= 0x0400 && codepoint <= 0x04FF) {
         damn based
-    }
-    
-    # Arabic
+    } fr fr Arabic
     lowkey (codepoint >= 0x0600 && codepoint <= 0x06FF) {
         damn based
-    }
-    
-    # Hebrew
+    } fr fr Hebrew
     lowkey (codepoint >= 0x0590 && codepoint <= 0x05FF) {
         damn based
-    }
-    
-    # Chinese/Japanese/Korean (basic ranges)
+    } fr fr Chinese/Japanese/Korean (basic ranges)
     lowkey (codepoint >= 0x4E00 && codepoint <= 0x9FFF) {
-        damn based  # CJK Unified Ideographs
+        damn based fr fr CJK Unified Ideographs
     }
     
     lowkey (codepoint >= 0x3040 && codepoint <= 0x309F) {
-        damn based  # Hiragana
+        damn based fr fr Hiragana
     }
     
     lowkey (codepoint >= 0x30A0 && codepoint <= 0x30FF) {
-        damn based  # Katakana
+        damn based fr fr Katakana
     }
     
     damn cap
 }
 
-slay unicode_is_digit(codepoint normie) lit {
-    # ASCII digits
+slay unicode_is_digit(codepoint normie) lit { fr fr ASCII digits
     lowkey (codepoint >= 0x30 && codepoint <= 0x39) {
         damn based
-    }
-    
-    # Arabic-Indic digits
+    } fr fr Arabic-Indic digits
     lowkey (codepoint >= 0x0660 && codepoint <= 0x0669) {
         damn based
-    }
-    
-    # Eastern Arabic-Indic digits
+    } fr fr Eastern Arabic-Indic digits
     lowkey (codepoint >= 0x06F0 && codepoint <= 0x06F9) {
         damn based
-    }
-    
-    # Devanagari digits
+    } fr fr Devanagari digits
     lowkey (codepoint >= 0x0966 && codepoint <= 0x096F) {
         damn based
     }
@@ -130,56 +110,53 @@ slay unicode_is_digit(codepoint normie) lit {
 }
 
 slay unicode_is_whitespace(codepoint normie) lit {
-    lowkey codepoint == 0x20 {   # Space
+    lowkey codepoint == 0x20 { fr fr Space
         damn based
     }
-    lowkey codepoint == 0x09 {   # Tab
+    lowkey codepoint == 0x09 { fr fr Tab
         damn based
     }
-    lowkey codepoint == 0x0A {   # Line Feed
+    lowkey codepoint == 0x0A { fr fr Line Feed
         damn based
     }
-    lowkey codepoint == 0x0D {   # Carriage Return
+    lowkey codepoint == 0x0D { fr fr Carriage Return
         damn based
     }
-    lowkey codepoint == 0x0B {   # Vertical Tab
+    lowkey codepoint == 0x0B { fr fr Vertical Tab
         damn based
     }
-    lowkey codepoint == 0x0C {   # Form Feed
+    lowkey codepoint == 0x0C { fr fr Form Feed
         damn based
     }
-    lowkey codepoint == 0x00A0 { # Non-breaking Space
+    lowkey codepoint == 0x00A0 { fr fr Non-breaking Space
         damn based
     }
-    lowkey codepoint == 0x1680 { # Ogham Space Mark
+    lowkey codepoint == 0x1680 { fr fr Ogham Space Mark
         damn based
     }
-    lowkey (codepoint >= 0x2000 && codepoint <= 0x200A) { # En Quad to Hair Space
+    lowkey (codepoint >= 0x2000 && codepoint <= 0x200A) { fr fr En Quad to Hair Space
         damn based
     }
-    lowkey codepoint == 0x202F { # Narrow No-Break Space
+    lowkey codepoint == 0x202F { fr fr Narrow No-Break Space
         damn based
     }
-    lowkey codepoint == 0x205F { # Medium Mathematical Space
+    lowkey codepoint == 0x205F { fr fr Medium Mathematical Space
         damn based
     }
-    lowkey codepoint == 0x3000 { # Ideographic Space
+    lowkey codepoint == 0x3000 { fr fr Ideographic Space
         damn based
     }
     
     damn cap
 }
 
-slay unicode_is_punctuation(codepoint normie) lit {
-    # ASCII punctuation
+slay unicode_is_punctuation(codepoint normie) lit { fr fr ASCII punctuation
     lowkey (codepoint >= 0x21 && codepoint <= 0x2F) || 
            (codepoint >= 0x3A && codepoint <= 0x40) ||
            (codepoint >= 0x5B && codepoint <= 0x60) ||
            (codepoint >= 0x7B && codepoint <= 0x7E) {
         damn based
-    }
-    
-    # General punctuation block
+    } fr fr General punctuation block
     lowkey (codepoint >= 0x2000 && codepoint <= 0x206F) {
         damn based
     }
@@ -187,23 +164,16 @@ slay unicode_is_punctuation(codepoint normie) lit {
     damn cap
 }
 
-slay unicode_is_symbol(codepoint normie) lit {
-    # Currency symbols
+slay unicode_is_symbol(codepoint normie) lit { fr fr Currency symbols
     lowkey (codepoint >= 0x20A0 && codepoint <= 0x20CF) {
         damn based
-    }
-    
-    # Mathematical symbols
+    } fr fr Mathematical symbols
     lowkey (codepoint >= 0x2200 && codepoint <= 0x22FF) {
         damn based
-    }
-    
-    # Miscellaneous symbols
+    } fr fr Miscellaneous symbols
     lowkey (codepoint >= 0x2600 && codepoint <= 0x26FF) {
         damn based
-    }
-    
-    # ASCII symbols
+    } fr fr ASCII symbols
     lowkey codepoint == 0x24 || codepoint == 0x2B || codepoint == 0x3C ||
            codepoint == 0x3D || codepoint == 0x3E || codepoint == 0x5E ||
            codepoint == 0x60 || codepoint == 0x7C || codepoint == 0x7E {
@@ -213,13 +183,10 @@ slay unicode_is_symbol(codepoint normie) lit {
     damn cap
 }
 
-slay unicode_is_mark(codepoint normie) lit {
-    # Combining diacritical marks
+slay unicode_is_mark(codepoint normie) lit { fr fr Combining diacritical marks
     lowkey (codepoint >= 0x0300 && codepoint <= 0x036F) {
         damn based
-    }
-    
-    # Combining marks for symbols
+    } fr fr Combining marks for symbols
     lowkey (codepoint >= 0x20D0 && codepoint <= 0x20FF) {
         damn based
     }
@@ -227,18 +194,13 @@ slay unicode_is_mark(codepoint normie) lit {
     damn cap
 }
 
-slay unicode_is_number(codepoint normie) lit {
-    # Decimal numbers
+slay unicode_is_number(codepoint normie) lit { fr fr Decimal numbers
     lowkey unicode_is_digit(codepoint) {
         damn based
-    }
-    
-    # Letter numbers (like Roman numerals)
+    } fr fr Letter numbers (like Roman numerals)
     lowkey (codepoint >= 0x2160 && codepoint <= 0x217F) {
         damn based
-    }
-    
-    # Other numbers
+    } fr fr Other numbers
     lowkey (codepoint >= 0x2070 && codepoint <= 0x209F) {
         damn based
     }
@@ -249,14 +211,10 @@ slay unicode_is_number(codepoint normie) lit {
 slay unicode_is_separator(codepoint normie) lit {
     lowkey unicode_is_whitespace(codepoint) {
         damn based
-    }
-    
-    # Line separator
+    } fr fr Line separator
     lowkey codepoint == 0x2028 {
         damn based
-    }
-    
-    # Paragraph separator
+    } fr fr Paragraph separator
     lowkey codepoint == 0x2029 {
         damn based
     }
@@ -264,31 +222,24 @@ slay unicode_is_separator(codepoint normie) lit {
     damn cap
 }
 
-# ================================
-# Case Conversion Functions
-# ================================
+fr fr ================================
+fr fr Case Conversion Functions
+fr fr ================================
 
-slay unicode_to_upper(codepoint normie) normie {
-    # Basic Latin lowercase to uppercase
+slay unicode_to_upper(codepoint normie) normie { fr fr Basic Latin lowercase to uppercase
     lowkey (codepoint >= 0x61 && codepoint <= 0x7A) {
         damn codepoint - 0x20
-    }
-    
-    # Extended Latin lowercase to uppercase (basic cases)
+    } fr fr Extended Latin lowercase to uppercase (basic cases)
     lowkey (codepoint >= 0xE0 && codepoint <= 0xF6) {
         damn codepoint - 0x20
     }
     
     lowkey (codepoint >= 0xF8 && codepoint <= 0xFE) {
         damn codepoint - 0x20
-    }
-    
-    # Greek lowercase to uppercase
+    } fr fr Greek lowercase to uppercase
     lowkey (codepoint >= 0x03B1 && codepoint <= 0x03C9) {
         damn codepoint - 0x20
-    }
-    
-    # Cyrillic lowercase to uppercase
+    } fr fr Cyrillic lowercase to uppercase
     lowkey (codepoint >= 0x0430 && codepoint <= 0x044F) {
         damn codepoint - 0x20
     }
@@ -296,27 +247,20 @@ slay unicode_to_upper(codepoint normie) normie {
     damn codepoint
 }
 
-slay unicode_to_lower(codepoint normie) normie {
-    # Basic Latin uppercase to lowercase
+slay unicode_to_lower(codepoint normie) normie { fr fr Basic Latin uppercase to lowercase
     lowkey (codepoint >= 0x41 && codepoint <= 0x5A) {
         damn codepoint + 0x20
-    }
-    
-    # Extended Latin uppercase to lowercase (basic cases)
+    } fr fr Extended Latin uppercase to lowercase (basic cases)
     lowkey (codepoint >= 0xC0 && codepoint <= 0xD6) {
         damn codepoint + 0x20
     }
     
     lowkey (codepoint >= 0xD8 && codepoint <= 0xDE) {
         damn codepoint + 0x20
-    }
-    
-    # Greek uppercase to lowercase
+    } fr fr Greek uppercase to lowercase
     lowkey (codepoint >= 0x0391 && codepoint <= 0x03A9) {
         damn codepoint + 0x20
-    }
-    
-    # Cyrillic uppercase to lowercase
+    } fr fr Cyrillic uppercase to lowercase
     lowkey (codepoint >= 0x0410 && codepoint <= 0x042F) {
         damn codepoint + 0x20
     }
@@ -324,34 +268,29 @@ slay unicode_to_lower(codepoint normie) normie {
     damn codepoint
 }
 
-slay unicode_to_title(codepoint normie) normie {
-    # For most characters, title case is the same as uppercase
+slay unicode_to_title(codepoint normie) normie { fr fr For most characters, title case is the same as uppercase
     damn unicode_to_upper(codepoint)
 }
 
-# ================================
-# UTF-8 Encoding/Decoding
-# ================================
+fr fr ================================
+fr fr UTF-8 Encoding/Decoding
+fr fr ================================
 
 slay utf8_encode_codepoint(codepoint normie) []normie {
     sus result []normie = []
     
-    lowkey codepoint <= 0x7F {
-        # 1-byte sequence
+    lowkey codepoint <= 0x7F { fr fr 1-byte sequence
         result = [codepoint]
-    } elseif codepoint <= 0x7FF {
-        # 2-byte sequence
+    } elseif codepoint <= 0x7FF { fr fr 2-byte sequence
         sus byte1 normie = 0xC0 | (codepoint >> 6)
         sus byte2 normie = 0x80 | (codepoint & 0x3F)
         result = [byte1, byte2]
-    } elseif codepoint <= 0xFFFF {
-        # 3-byte sequence
+    } elseif codepoint <= 0xFFFF { fr fr 3-byte sequence
         sus byte1 normie = 0xE0 | (codepoint >> 12)
         sus byte2 normie = 0x80 | ((codepoint >> 6) & 0x3F)
         sus byte3 normie = 0x80 | (codepoint & 0x3F)
         result = [byte1, byte2, byte3]
-    } elseif codepoint <= 0x10FFFF {
-        # 4-byte sequence
+    } elseif codepoint <= 0x10FFFF { fr fr 4-byte sequence
         sus byte1 normie = 0xF0 | (codepoint >> 18)
         sus byte2 normie = 0x80 | ((codepoint >> 12) & 0x3F)
         sus byte3 normie = 0x80 | ((codepoint >> 6) & 0x3F)
@@ -367,14 +306,10 @@ slay utf8_decode_codepoint(bytes []normie, offset normie) (normie, normie, yikes
         damn 0, 0, new_value_error("UTF-8 decode: offset out of bounds", "offset=" + string(offset), "valid offset")
     }
     
-    sus first_byte normie = bytes[offset]
-    
-    # 1-byte sequence (ASCII)
+    sus first_byte normie = bytes[offset] fr fr 1-byte sequence (ASCII)
     lowkey first_byte <= 0x7F {
         damn first_byte, 1, cringe
-    }
-    
-    # 2-byte sequence
+    } fr fr 2-byte sequence
     lowkey (first_byte & 0xE0) == 0xC0 {
         lowkey offset + 1 >= len(bytes) {
             damn 0, 0, new_value_error("UTF-8 decode: incomplete 2-byte sequence", "truncated", "complete sequence")
@@ -387,9 +322,7 @@ slay utf8_decode_codepoint(bytes []normie, offset normie) (normie, normie, yikes
         
         sus codepoint normie = ((first_byte & 0x1F) << 6) | (second_byte & 0x3F)
         damn codepoint, 2, cringe
-    }
-    
-    # 3-byte sequence
+    } fr fr 3-byte sequence
     lowkey (first_byte & 0xF0) == 0xE0 {
         lowkey offset + 2 >= len(bytes) {
             damn 0, 0, new_value_error("UTF-8 decode: incomplete 3-byte sequence", "truncated", "complete sequence")
@@ -404,9 +337,7 @@ slay utf8_decode_codepoint(bytes []normie, offset normie) (normie, normie, yikes
         
         sus codepoint normie = ((first_byte & 0x0F) << 12) | ((second_byte & 0x3F) << 6) | (third_byte & 0x3F)
         damn codepoint, 3, cringe
-    }
-    
-    # 4-byte sequence
+    } fr fr 4-byte sequence
     lowkey (first_byte & 0xF8) == 0xF0 {
         lowkey offset + 3 >= len(bytes) {
             damn 0, 0, new_value_error("UTF-8 decode: incomplete 4-byte sequence", "truncated", "complete sequence")
@@ -440,7 +371,7 @@ slay utf8_sequence_length(first_byte normie) normie {
     lowkey (first_byte & 0xF8) == 0xF0 {
         damn 4
     }
-    damn 0  # Invalid
+    damn 0 fr fr Invalid
 }
 
 slay utf8_validate_sequence(bytes []normie, offset normie, length normie) lit {
@@ -463,9 +394,9 @@ slay utf8_validate_sequence(bytes []normie, offset normie, length normie) lit {
     damn based
 }
 
-# ================================
-# String Operations Implementation
-# ================================
+fr fr ================================
+fr fr String Operations Implementation
+fr fr ================================
 
 slay unicode_string_create(utf8_bytes []normie) (UnicodeString, yikes) {
     lowkey !utf8_validate_string(utf8_bytes) {
@@ -482,18 +413,14 @@ slay unicode_string_create(utf8_bytes []normie) (UnicodeString, yikes) {
 }
 
 slay unicode_string_from_codepoints(codepoints []normie) (UnicodeString, yikes) {
-    sus total_bytes normie = 0
-    
-    # Calculate total byte length needed
+    sus total_bytes normie = 0 fr fr Calculate total byte length needed
     bestie i := 0; i < len(codepoints); i++ {
         sus encoded []normie = utf8_encode_codepoint(codepoints[i])
         total_bytes = total_bytes + len(encoded)
     }
     
     sus result_bytes []normie = make_byte_array(total_bytes)
-    sus pos normie = 0
-    
-    # Encode all codepoints
+    sus pos normie = 0 fr fr Encode all codepoints
     bestie i := 0; i < len(codepoints); i++ {
         sus encoded []normie = utf8_encode_codepoint(codepoints[i])
         bestie j := 0; j < len(encoded); j++ {
@@ -568,8 +495,7 @@ slay unicode_string_index_of(str UnicodeString, substring UnicodeString) normie 
     }
     
     bestie i := 0; i <= len(str.bytes) - len(substring.bytes); i++ {
-        lowkey array_equals(str.bytes, i, substring.bytes, 0, len(substring.bytes)) {
-            # Convert byte offset to character offset
+        lowkey array_equals(str.bytes, i, substring.bytes, 0, len(substring.bytes)) { fr fr Convert byte offset to character offset
             damn unicode_string_byte_to_char_offset(str, i)
         }
     }
@@ -662,9 +588,7 @@ slay unicode_string_trim_right(str UnicodeString) (UnicodeString, yikes) {
 }
 
 slay unicode_string_reverse(str UnicodeString) (UnicodeString, yikes) {
-    sus codepoints []normie = unicode_string_to_codepoints(str)
-    
-    # Reverse the codepoint array
+    sus codepoints []normie = unicode_string_to_codepoints(str) fr fr Reverse the codepoint array
     bestie i := 0; i < len(codepoints) / 2; i++ {
         sus temp normie = codepoints[i]
         codepoints[i] = codepoints[len(codepoints) - 1 - i]
@@ -700,9 +624,9 @@ slay unicode_string_equals(str1 UnicodeString, str2 UnicodeString) lit {
     damn unicode_string_compare(str1, str2) == 0
 }
 
-# ================================
-# Helper Functions
-# ================================
+fr fr ================================
+fr fr Helper Functions
+fr fr ================================
 
 slay utf8_validate_string(bytes []normie) lit {
     sus offset normie = 0
@@ -786,12 +710,11 @@ slay unicode_string_byte_to_char_offset(str UnicodeString, byte_offset normie) n
     damn char_index
 }
 
-# ================================
-# Array Helper Functions
-# ================================
+fr fr ================================
+fr fr Array Helper Functions
+fr fr ================================
 
-slay make_byte_array(size normie) []normie {
-    # Would be implemented by runtime
+slay make_byte_array(size normie) []normie { fr fr Would be implemented by runtime
     sus arr []normie = []
     bestie i := 0; i < size; i++ {
         arr = append(arr, 0)
@@ -799,8 +722,7 @@ slay make_byte_array(size normie) []normie {
     damn arr
 }
 
-slay make_int_array(size normie) []normie {
-    # Would be implemented by runtime
+slay make_int_array(size normie) []normie { fr fr Would be implemented by runtime
     sus arr []normie = []
     bestie i := 0; i < size; i++ {
         arr = append(arr, 0)
@@ -832,42 +754,42 @@ slay min_int(a normie, b normie) normie {
     lowkey a < b { damn a } else { damn b }
 }
 
-# ================================
-# Unicode Properties
-# ================================
+fr fr ================================
+fr fr Unicode Properties
+fr fr ================================
 
 slay unicode_get_general_category(codepoint normie) tea {
     lowkey unicode_is_letter(codepoint) {
         lowkey (codepoint >= 0x41 && codepoint <= 0x5A) {
-            damn "Lu"  # Letter, uppercase
+            damn "Lu" fr fr Letter, uppercase
         }
         lowkey (codepoint >= 0x61 && codepoint <= 0x7A) {
-            damn "Ll"  # Letter, lowercase
+            damn "Ll" fr fr Letter, lowercase
         }
-        damn "Lo"  # Letter, other
+        damn "Lo" fr fr Letter, other
     }
     
     lowkey unicode_is_digit(codepoint) {
-        damn "Nd"  # Number, decimal digit
+        damn "Nd" fr fr Number, decimal digit
     }
     
     lowkey unicode_is_punctuation(codepoint) {
-        damn "Po"  # Punctuation, other
+        damn "Po" fr fr Punctuation, other
     }
     
     lowkey unicode_is_symbol(codepoint) {
-        damn "So"  # Symbol, other
+        damn "So" fr fr Symbol, other
     }
     
     lowkey unicode_is_mark(codepoint) {
-        damn "Mn"  # Mark, nonspacing
+        damn "Mn" fr fr Mark, nonspacing
     }
     
     lowkey unicode_is_separator(codepoint) {
-        damn "Zs"  # Separator, space
+        damn "Zs" fr fr Separator, space
     }
     
-    damn "Cn"  # Other, not assigned
+    damn "Cn" fr fr Other, not assigned
 }
 
 slay unicode_get_script(codepoint normie) tea {

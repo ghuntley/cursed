@@ -1,6 +1,6 @@
-# Channel Core - Pure CURSED Channel System  
-# Go-style channels for goroutine communication without FFI dependencies
-# Replaces src/runtime/channels/ with pure CURSED implementation
+fr fr Channel Core - Pure CURSED Channel System  
+fr fr Go-style channels for goroutine communication without FFI dependencies
+fr fr Replaces src/runtime/channels/ with pure CURSED implementation
 
 yeet "runtime_core"
 yeet "goroutine_core"
@@ -8,17 +8,17 @@ yeet "memory_core"
 yeet "error_drip"
 yeet "testz"
 
-# Channel types
+fr fr Channel types
 sus CHANNEL_UNBUFFERED normie = 0
 sus CHANNEL_BUFFERED normie = 1
 sus CHANNEL_CLOSED normie = 2
 
-# Channel operations
+fr fr Channel operations
 sus CHAN_OP_SEND normie = 1
 sus CHAN_OP_RECEIVE normie = 2
 sus CHAN_OP_SELECT normie = 3
 
-# Channel representation
+fr fr Channel representation
 vibe Channel = smash {
     id normie,
     channel_type normie,
@@ -28,14 +28,14 @@ vibe Channel = smash {
     buffer_head normie,
     buffer_tail normie,
     is_closed lit,
-    send_waiters []normie,     # Waiting goroutines for send
-    recv_waiters []normie,     # Waiting goroutines for receive
+    send_waiters []normie, fr fr Waiting goroutines for send
+    recv_waiters []normie, fr fr Waiting goroutines for receive
     created_at normie,
     total_sends normie,
     total_receives normie
 }
 
-# Channel operation result
+fr fr Channel operation result
 vibe ChannelResult = smash {
     success lit,
     value tea,
@@ -43,7 +43,7 @@ vibe ChannelResult = smash {
     would_block lit
 }
 
-# Select case for select statements
+fr fr Select case for select statements
 vibe SelectCase = smash {
     channel_id normie,
     operation normie,
@@ -51,21 +51,21 @@ vibe SelectCase = smash {
     case_index normie
 }
 
-# Global channel registry
+fr fr Global channel registry
 sus global_channels map[normie]Channel = {}
 sus next_channel_id normie = 1
 sus channel_stats map[tea]normie = {}
 
-# Channel configuration
+fr fr Channel configuration
 sus MAX_CHANNELS normie = 10000
 sus MAX_BUFFER_SIZE normie = 1000000
 sus DEFAULT_SELECT_TIMEOUT normie = 5000
 
-# ==============================================================================
-# CHANNEL CREATION AND MANAGEMENT
-# ==============================================================================
+fr fr ==============================================================================
+fr fr CHANNEL CREATION AND MANAGEMENT
+fr fr ==============================================================================
 
-# Initialize channel system
+fr fr Initialize channel system
 slay init_channel_system() lit {
     global_channels = {}
     next_channel_id = 1
@@ -81,7 +81,7 @@ slay init_channel_system() lit {
     damn based
 }
 
-# Create a new channel
+fr fr Create a new channel
 slay make_channel(buffer_size normie, element_type tea) normie {
     lowkey next_channel_id >= MAX_CHANNELS {
         vibez.spill("ERROR: Maximum channel limit reached")
@@ -123,7 +123,7 @@ slay make_channel(buffer_size normie, element_type tea) normie {
     damn channel_id
 }
 
-# Close a channel
+fr fr Close a channel
 slay close_channel(channel_id normie) lit {
     lowkey !channel_exists(channel_id) {
         damn cap
@@ -131,14 +131,12 @@ slay close_channel(channel_id normie) lit {
     
     sus channel Channel = global_channels[channel_id]
     lowkey channel.is_closed {
-        damn cap  # Already closed
+        damn cap fr fr Already closed
     }
     
     channel.is_closed = based
     channel.channel_type = CHANNEL_CLOSED
-    global_channels[channel_id] = channel
-    
-    # Wake up all waiting goroutines
+    global_channels[channel_id] = channel fr fr Wake up all waiting goroutines
     wake_all_waiters(channel_id)
     
     channel_stats["total_closed"] = channel_stats["total_closed"] + 1
@@ -147,12 +145,12 @@ slay close_channel(channel_id normie) lit {
     damn based
 }
 
-# Check if channel exists
+fr fr Check if channel exists
 slay channel_exists(channel_id normie) lit {
     damn global_channels[channel_id].id == channel_id
 }
 
-# Get channel info
+fr fr Get channel info
 slay get_channel_info(channel_id normie) Channel {
     lowkey channel_exists(channel_id) {
         damn global_channels[channel_id]
@@ -162,11 +160,11 @@ slay get_channel_info(channel_id normie) Channel {
     damn empty
 }
 
-# ==============================================================================
-# CHANNEL SEND OPERATIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr CHANNEL SEND OPERATIONS
+fr fr ==============================================================================
 
-# Send value to channel (blocking)
+fr fr Send value to channel (blocking)
 slay channel_send(channel_id normie, value tea) ChannelResult {
     sus result ChannelResult
     result.success = cap
@@ -192,16 +190,13 @@ slay channel_send(channel_id normie, value tea) ChannelResult {
     damn result
 }
 
-# Send to unbuffered channel
+fr fr Send to unbuffered channel
 slay send_unbuffered(channel_id normie, value tea) ChannelResult {
     sus result ChannelResult
     result.success = cap
     
-    sus channel Channel = global_channels[channel_id]
-    
-    # Check if there's a waiting receiver
-    lowkey len(channel.recv_waiters) > 0 {
-        # Direct transfer to waiting receiver
+    sus channel Channel = global_channels[channel_id] fr fr Check if there's a waiting receiver
+    lowkey len(channel.recv_waiters) > 0 { fr fr Direct transfer to waiting receiver
         sus receiver_id normie = channel.recv_waiters[0]
         channel.recv_waiters = channel.recv_waiters[1:]
         channel.total_sends = channel.total_sends + 1
@@ -209,16 +204,12 @@ slay send_unbuffered(channel_id normie, value tea) ChannelResult {
         global_channels[channel_id] = channel
         
         result.success = based
-        result.value = value
-        
-        # Notify receiver (simplified)
+        result.value = value fr fr Notify receiver (simplified)
         notify_goroutine(receiver_id, value)
         
         channel_stats["total_sends"] = channel_stats["total_sends"] + 1
         damn result
-    }
-    
-    # No receiver waiting, add to send waiters
+    } fr fr No receiver waiting, add to send waiters
     sus current_goroutine normie = current_goroutine_id()
     channel.send_waiters = append(channel.send_waiters, current_goroutine)
     global_channels[channel_id] = channel
@@ -227,24 +218,19 @@ slay send_unbuffered(channel_id normie, value tea) ChannelResult {
     damn result
 }
 
-# Send to buffered channel
+fr fr Send to buffered channel
 slay send_buffered(channel_id normie, value tea) ChannelResult {
     sus result ChannelResult
     result.success = cap
     
-    sus channel Channel = global_channels[channel_id]
-    
-    # Check if buffer has space
-    lowkey len(channel.buffer) < channel.buffer_size {
-        # Add to buffer
+    sus channel Channel = global_channels[channel_id] fr fr Check if buffer has space
+    lowkey len(channel.buffer) < channel.buffer_size { fr fr Add to buffer
         channel.buffer = append(channel.buffer, value)
         channel.total_sends = channel.total_sends + 1
         global_channels[channel_id] = channel
         
         result.success = based
-        channel_stats["total_sends"] = channel_stats["total_sends"] + 1
-        
-        # Wake up waiting receivers
+        channel_stats["total_sends"] = channel_stats["total_sends"] + 1 fr fr Wake up waiting receivers
         lowkey len(channel.recv_waiters) > 0 {
             sus receiver_id normie = channel.recv_waiters[0]
             channel.recv_waiters = channel.recv_waiters[1:]
@@ -253,18 +239,16 @@ slay send_buffered(channel_id normie, value tea) ChannelResult {
         }
         
         damn result
-    }
-    
-    # Buffer full, would block
+    } fr fr Buffer full, would block
     result.would_block = based
     damn result
 }
 
-# ==============================================================================
-# CHANNEL RECEIVE OPERATIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr CHANNEL RECEIVE OPERATIONS
+fr fr ==============================================================================
 
-# Receive value from channel (blocking)
+fr fr Receive value from channel (blocking)
 slay channel_receive(channel_id normie) ChannelResult {
     sus result ChannelResult
     result.success = cap
@@ -289,32 +273,25 @@ slay channel_receive(channel_id normie) ChannelResult {
     damn result
 }
 
-# Receive from unbuffered channel
+fr fr Receive from unbuffered channel
 slay receive_unbuffered(channel_id normie) ChannelResult {
     sus result ChannelResult
     result.success = cap
     
-    sus channel Channel = global_channels[channel_id]
-    
-    # Check if there's a waiting sender
-    lowkey len(channel.send_waiters) > 0 {
-        # Direct transfer from waiting sender
+    sus channel Channel = global_channels[channel_id] fr fr Check if there's a waiting sender
+    lowkey len(channel.send_waiters) > 0 { fr fr Direct transfer from waiting sender
         sus sender_id normie = channel.send_waiters[0]
         channel.send_waiters = channel.send_waiters[1:]
         channel.total_receives = channel.total_receives + 1
         global_channels[channel_id] = channel
         
         result.success = based
-        result.value = "transferred_value"  # Simplified
-        
-        # Notify sender (simplified)
+        result.value = "transferred_value" fr fr Simplified fr fr Notify sender (simplified)
         notify_goroutine(sender_id, "")
         
         channel_stats["total_receives"] = channel_stats["total_receives"] + 1
         damn result
-    }
-    
-    # No sender waiting, add to receive waiters
+    } fr fr No sender waiting, add to receive waiters
     sus current_goroutine normie = current_goroutine_id()
     channel.recv_waiters = append(channel.recv_waiters, current_goroutine)
     global_channels[channel_id] = channel
@@ -323,25 +300,20 @@ slay receive_unbuffered(channel_id normie) ChannelResult {
     damn result
 }
 
-# Receive from buffered channel
+fr fr Receive from buffered channel
 slay receive_buffered(channel_id normie) ChannelResult {
     sus result ChannelResult
     result.success = cap
     
-    sus channel Channel = global_channels[channel_id]
-    
-    # Check if buffer has data
-    lowkey len(channel.buffer) > 0 {
-        # Get from buffer
+    sus channel Channel = global_channels[channel_id] fr fr Check if buffer has data
+    lowkey len(channel.buffer) > 0 { fr fr Get from buffer
         result.value = channel.buffer[0]
         channel.buffer = channel.buffer[1:]
         channel.total_receives = channel.total_receives + 1
         global_channels[channel_id] = channel
         
         result.success = based
-        channel_stats["total_receives"] = channel_stats["total_receives"] + 1
-        
-        # Wake up waiting senders if buffer has space
+        channel_stats["total_receives"] = channel_stats["total_receives"] + 1 fr fr Wake up waiting senders if buffer has space
         lowkey len(channel.buffer) < channel.buffer_size && len(channel.send_waiters) > 0 {
             sus sender_id normie = channel.send_waiters[0]
             channel.send_waiters = channel.send_waiters[1:]
@@ -350,77 +322,62 @@ slay receive_buffered(channel_id normie) ChannelResult {
         }
         
         damn result
-    }
-    
-    # Buffer empty
+    } fr fr Buffer empty
     lowkey channel.is_closed {
         result.channel_closed = based
         damn result
-    }
-    
-    # Would block
+    } fr fr Would block
     result.would_block = based
     damn result
 }
 
-# ==============================================================================
-# SELECT STATEMENT IMPLEMENTATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr SELECT STATEMENT IMPLEMENTATION
+fr fr ==============================================================================
 
-# Execute select statement with multiple cases
-slay channel_select(cases []SelectCase, default_case lit) normie {
-    # Check for immediately available operations
+fr fr Execute select statement with multiple cases
+slay channel_select(cases []SelectCase, default_case lit) normie { fr fr Check for immediately available operations
     bestie i, select_case := range cases {
         sus channel_id normie = select_case.channel_id
         lowkey !channel_exists(channel_id) {
-            simp  # Skip invalid channels
+            simp fr fr Skip invalid channels
         }
         
         lowkey select_case.operation == CHAN_OP_SEND {
             sus send_result ChannelResult = channel_send(channel_id, select_case.send_value)
             lowkey send_result.success {
-                damn i  # Return case index
+                damn i fr fr Return case index
             }
         } yikes lowkey select_case.operation == CHAN_OP_RECEIVE {
             sus recv_result ChannelResult = channel_receive(channel_id)
             lowkey recv_result.success {
-                damn i  # Return case index
+                damn i fr fr Return case index
             }
         }
-    }
-    
-    # No immediately available operations
+    } fr fr No immediately available operations
     lowkey default_case {
-        damn -1  # Default case
-    }
-    
-    # Would block - in real implementation, would wait
-    damn -2  # No case ready, would block
+        damn -1 fr fr Default case
+    } fr fr Would block - in real implementation, would wait
+    damn -2 fr fr No case ready, would block
 }
 
-# ==============================================================================
-# HELPER FUNCTIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr HELPER FUNCTIONS
+fr fr ==============================================================================
 
-# Wake all waiting goroutines on a channel
+fr fr Wake all waiting goroutines on a channel
 slay wake_all_waiters(channel_id normie) lit {
     lowkey !channel_exists(channel_id) {
         damn cap
     }
     
-    sus channel Channel = global_channels[channel_id]
-    
-    # Wake send waiters
+    sus channel Channel = global_channels[channel_id] fr fr Wake send waiters
     bestie _, goroutine_id := range channel.send_waiters {
         notify_goroutine(goroutine_id, "channel_closed")
-    }
-    
-    # Wake receive waiters
+    } fr fr Wake receive waiters
     bestie _, goroutine_id := range channel.recv_waiters {
         notify_goroutine(goroutine_id, "channel_closed")
-    }
-    
-    # Clear waiter lists
+    } fr fr Clear waiter lists
     channel.send_waiters = []
     channel.recv_waiters = []
     global_channels[channel_id] = channel
@@ -428,25 +385,19 @@ slay wake_all_waiters(channel_id normie) lit {
     damn based
 }
 
-# Notify a goroutine (simplified)
-slay notify_goroutine(goroutine_id normie, message tea) lit {
-    # In real implementation, would wake the goroutine
-    # For now, just mark as runnable if it exists
+fr fr Notify a goroutine (simplified)
+slay notify_goroutine(goroutine_id normie, message tea) lit { fr fr In real implementation, would wake the goroutine fr fr For now, just mark as runnable if it exists
     lowkey goroutine_exists(goroutine_id) {
         schedule_goroutine(goroutine_id)
     }
     damn based
 }
 
-# Get channel statistics
+fr fr Get channel statistics
 slay get_channel_stats() map[tea]normie {
-    sus stats map[tea]normie = channel_stats
-    
-    # Add current state
+    sus stats map[tea]normie = channel_stats fr fr Add current state
     stats["current_channels"] = len(global_channels)
-    stats["next_id"] = next_channel_id
-    
-    # Count by type
+    stats["next_id"] = next_channel_id fr fr Count by type
     sus unbuffered_count normie = 0
     sus buffered_count normie = 0
     sus closed_count normie = 0
@@ -472,7 +423,7 @@ slay get_channel_stats() map[tea]normie {
     damn stats
 }
 
-# Channel system health check
+fr fr Channel system health check
 slay channel_health_check() lit {
     sus stats map[tea]normie = get_channel_stats()
     
@@ -487,7 +438,7 @@ slay channel_health_check() lit {
     damn based
 }
 
-# Reset channel system (for testing)
+fr fr Reset channel system (for testing)
 slay reset_channel_system() lit {
     global_channels = {}
     next_channel_id = 1
@@ -499,7 +450,7 @@ slay reset_channel_system() lit {
     damn based
 }
 
-# Helper to get current time
+fr fr Helper to get current time
 slay get_current_time() normie {
     damn channel_stats["total_created"] * 1000
 }

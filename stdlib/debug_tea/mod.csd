@@ -1,9 +1,9 @@
 yeet "testz"
 
-# Debug Tea - Pure CURSED Debug Utilities Module
-# Comprehensive debug utilities for development and testing
+fr fr Debug Tea - Pure CURSED Debug Utilities Module
+fr fr Comprehensive debug utilities for development and testing
 
-# Debug levels
+fr fr Debug levels
 sus DEBUG_LEVEL_NONE normie = 0
 sus DEBUG_LEVEL_ERROR normie = 1
 sus DEBUG_LEVEL_WARN normie = 2
@@ -11,11 +11,11 @@ sus DEBUG_LEVEL_INFO normie = 3
 sus DEBUG_LEVEL_DEBUG normie = 4
 sus DEBUG_LEVEL_TRACE normie = 5
 
-# Global debug state
+fr fr Global debug state
 sus debug_enabled lit = based
 sus debug_level normie = DEBUG_LEVEL_INFO
 
-# Debug utility functions
+fr fr Debug utility functions
 slay enable_debug() {
     debug_enabled = based
 }
@@ -36,7 +36,7 @@ slay get_debug_level() normie {
     damn debug_level
 }
 
-# Debug output with levels
+fr fr Debug output with levels
 slay debug_print(message tea, level normie) {
     lowkey debug_enabled && level <= debug_level {
         vibez.spill("[DEBUG] " + message)
@@ -59,7 +59,7 @@ slay debug_trace(message tea) {
     debug_print("[TRACE] " + message, DEBUG_LEVEL_TRACE)
 }
 
-# Variable inspection functions
+fr fr Variable inspection functions
 slay inspect_var(name tea, value tea) {
     lowkey debug_enabled {
         vibez.spill("VAR: " + name + " = " + value)
@@ -88,7 +88,7 @@ slay inspect_float(name tea, value meal) {
     }
 }
 
-# Debug assertions
+fr fr Debug assertions
 slay debug_assert(condition lit, message tea) {
     lowkey debug_enabled && !condition {
         vibez.spill("ASSERTION FAILED: " + message)
@@ -120,7 +120,7 @@ slay debug_assert_false(condition lit, message tea) {
     debug_assert(!condition, message)
 }
 
-# Stack trace utilities
+fr fr Stack trace utilities
 slay debug_print_stack_trace() {
     lowkey debug_enabled {
         vibez.spill("STACK TRACE:")
@@ -142,7 +142,7 @@ slay debug_print_return_stack(function_name tea) {
     }
 }
 
-# Debug benchmarking
+fr fr Debug benchmarking
 slay debug_start_timer(name tea) {
     lowkey debug_enabled {
         vibez.spill("TIMER START: " + name)
@@ -155,7 +155,7 @@ slay debug_end_timer(name tea) {
     }
 }
 
-# Debug memory inspection
+fr fr Debug memory inspection
 slay debug_print_memory_usage() {
     lowkey debug_enabled {
         vibez.spill("MEMORY: Current usage information")
@@ -164,7 +164,7 @@ slay debug_print_memory_usage() {
     }
 }
 
-# Debug validation helpers
+fr fr Debug validation helpers
 slay debug_validate_not_nil(value tea, name tea) {
     lowkey debug_enabled {
         lowkey value == "" {
@@ -191,7 +191,7 @@ slay debug_validate_positive_int(value normie, name tea) {
     }
 }
 
-# Debug configuration
+fr fr Debug configuration
 slay debug_print_config() {
     lowkey debug_enabled {
         vibez.spill("DEBUG CONFIG:")
@@ -201,21 +201,21 @@ slay debug_print_config() {
     }
 }
 
-# Debug utility for hex inspection
+fr fr Debug utility for hex inspection
 slay debug_print_hex(value normie, name tea) {
     lowkey debug_enabled {
         vibez.spill("HEX: " + name + " = 0x" + value)
     }
 }
 
-# Debug utility for binary inspection
+fr fr Debug utility for binary inspection
 slay debug_print_binary(value normie, name tea) {
     lowkey debug_enabled {
         vibez.spill("BIN: " + name + " = " + value + "b")
     }
 }
 
-# Debug breakpoint simulation
+fr fr Debug breakpoint simulation
 slay debug_breakpoint(message tea) {
     lowkey debug_enabled {
         vibez.spill("BREAKPOINT: " + message)
@@ -223,14 +223,14 @@ slay debug_breakpoint(message tea) {
     }
 }
 
-# Debug function for test isolation
+fr fr Debug function for test isolation
 slay debug_test_section(section_name tea) {
     lowkey debug_enabled {
         vibez.spill("=== TEST SECTION: " + section_name + " ===")
     }
 }
 
-# Debug summary function
+fr fr Debug summary function
 slay debug_print_summary() {
     lowkey debug_enabled {
         vibez.spill("=== DEBUG SUMMARY ===")

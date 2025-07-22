@@ -1,12 +1,12 @@
-# Minimal test to isolate the parsing issue
+fr fr Minimal test to isolate the parsing issue
 
-# Simple test struct
+fr fr Simple test struct
 be_like SimpleTest squad {
     name tea
     value normie
 }
 
-# Simple function
+fr fr Simple function
 slay test_function() SimpleTest {
     sus result SimpleTest
     result.name = "test"

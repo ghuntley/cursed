@@ -3,10 +3,10 @@ yeet "stringz"
 yeet "json"
 yeet "dropz"
 
-# Configuration and Package Management Module
-# Pure CURSED implementation for enterprise-grade configuration handling
+fr fr Configuration and Package Management Module
+fr fr Pure CURSED implementation for enterprise-grade configuration handling
 
-# Package Dependency Structure
+fr fr Package Dependency Structure
 be_like PackageDep = struct {
     name tea,
     version tea,
@@ -14,7 +14,7 @@ be_like PackageDep = struct {
     dependencies []tea
 }
 
-# Configuration Structure  
+fr fr Configuration Structure  
 be_like Config = struct {
     package_name tea,
     version tea,
@@ -26,14 +26,14 @@ be_like Config = struct {
     metadata map[tea]tea
 }
 
-# Version Comparison Result
+fr fr Version Comparison Result
 be_like VersionCompare = enum {
     OLDER,
     EQUAL,
     NEWER
 }
 
-# Package Manager State
+fr fr Package Manager State
 be_like PackageManager = struct {
     config Config,
     cache_dir tea,
@@ -41,7 +41,7 @@ be_like PackageManager = struct {
     installed_packages []PackageDep
 }
 
-# Core Configuration Functions
+fr fr Core Configuration Functions
 slay parse_json_config(config_data tea) Config {
     sus parsed_config Config
     parsed_config.package_name = "default_package"
@@ -82,9 +82,7 @@ slay parse_toml_config(config_data tea) Config {
 }
 
 slay load_config_file(file_path tea) Config {
-    sus config_content tea = "default config content"
-    
-    # Determine format by file extension
+    sus config_content tea = "default config content" fr fr Determine format by file extension
     if stringz.ends_with(file_path, ".json") {
         damn parse_json_config(config_content)
     } else if stringz.ends_with(file_path, ".yaml") || stringz.ends_with(file_path, ".yml") {
@@ -96,7 +94,7 @@ slay load_config_file(file_path tea) Config {
     }
 }
 
-# Version Management Functions
+fr fr Version Management Functions
 slay compare_versions(version1 tea, version2 tea) VersionCompare {
     if version1 == version2 {
         damn VersionCompare.EQUAL
@@ -112,8 +110,7 @@ slay is_compatible_version(required tea, available tea) lit {
     damn comparison == VersionCompare.EQUAL || comparison == VersionCompare.OLDER
 }
 
-slay get_latest_version(package_name tea) tea {
-    # Simulate version lookup from registry
+slay get_latest_version(package_name tea) tea { fr fr Simulate version lookup from registry
     if package_name == "cursed" {
         damn "27.0.0"
     } else if package_name == "stdlib" {
@@ -123,21 +120,18 @@ slay get_latest_version(package_name tea) tea {
     }
 }
 
-slay validate_semver(version tea) lit {
-    # Basic semantic version validation (major.minor.patch)
+slay validate_semver(version tea) lit { fr fr Basic semantic version validation (major.minor.patch)
     sus parts []tea = stringz.split(version, ".")
     damn len(parts) == 3
 }
 
-# Dependency Resolution Functions
-slay resolve_dependency(dep PackageDep) lit {
-    # Simulate dependency resolution
+fr fr Dependency Resolution Functions
+slay resolve_dependency(dep PackageDep) lit { fr fr Simulate dependency resolution
     sus latest_version tea = get_latest_version(dep.name)
     damn is_compatible_version(dep.version, latest_version)
 }
 
-slay resolve_dependencies(deps []PackageDep) lit {
-    # Resolve all dependencies recursively
+slay resolve_dependencies(deps []PackageDep) lit { fr fr Resolve all dependencies recursively
     bestie i := 0; i < len(deps); i++ {
         if !resolve_dependency(deps[i]) {
             damn cap
@@ -146,13 +140,11 @@ slay resolve_dependencies(deps []PackageDep) lit {
     damn based
 }
 
-slay check_circular_dependencies(deps []PackageDep) lit {
-    # Simplified circular dependency check
-    # In real implementation, would use graph algorithms
+slay check_circular_dependencies(deps []PackageDep) lit { fr fr Simplified circular dependency check fr fr In real implementation, would use graph algorithms
     bestie i := 0; i < len(deps); i++ {
         bestie j := i + 1; j < len(deps); j++ {
             if deps[i].name == deps[j].name {
-                damn cap  # Found duplicate/circular dependency
+                damn cap fr fr Found duplicate/circular dependency
             }
         }
     }
@@ -160,9 +152,7 @@ slay check_circular_dependencies(deps []PackageDep) lit {
 }
 
 slay build_dependency_tree(config Config) []PackageDep {
-    sus resolved_deps []PackageDep = []
-    
-    # Add direct dependencies
+    sus resolved_deps []PackageDep = [] fr fr Add direct dependencies
     bestie i := 0; i < len(config.dependencies); i++ {
         resolved_deps = append(resolved_deps, config.dependencies[i])
     }
@@ -170,7 +160,7 @@ slay build_dependency_tree(config Config) []PackageDep {
     damn resolved_deps
 }
 
-# Package Management Functions
+fr fr Package Management Functions
 slay create_package_manager(config_path tea) PackageManager {
     sus manager PackageManager
     manager.config = load_config_file(config_path)
@@ -185,16 +175,12 @@ slay install_package(manager *PackageManager, package_name tea, version tea) lit
     new_dep.name = package_name
     new_dep.version = version
     new_dep.source = "registry"
-    new_dep.dependencies = []
-    
-    # Check if already installed
+    new_dep.dependencies = [] fr fr Check if already installed
     bestie i := 0; i < len(manager.installed_packages); i++ {
         if manager.installed_packages[i].name == package_name {
-            damn cap  # Already installed
+            damn cap fr fr Already installed
         }
-    }
-    
-    # Add to installed packages
+    } fr fr Add to installed packages
     manager.installed_packages = append(manager.installed_packages, new_dep)
     damn based
 }
@@ -221,7 +207,7 @@ slay update_package(manager *PackageManager, package_name tea) lit {
             damn based
         }
     }
-    damn cap  # Package not found
+    damn cap fr fr Package not found
 }
 
 slay list_installed_packages(manager PackageManager) []tea {
@@ -235,9 +221,8 @@ slay list_installed_packages(manager PackageManager) []tea {
     damn package_list
 }
 
-# Build Automation Functions
-slay run_build_script(script tea) lit {
-    # Simulate build script execution
+fr fr Build Automation Functions
+slay run_build_script(script tea) lit { fr fr Simulate build script execution
     if stringz.contains(script, "build") {
         damn based
     } else {
@@ -245,8 +230,7 @@ slay run_build_script(script tea) lit {
     }
 }
 
-slay run_test_command(command tea) lit {
-    # Simulate test command execution
+slay run_test_command(command tea) lit { fr fr Simulate test command execution
     if stringz.contains(command, "test") {
         damn based
     } else {
@@ -254,15 +238,12 @@ slay run_test_command(command tea) lit {
     }
 }
 
-slay execute_build_pipeline(config Config) lit {
-    # Execute all build scripts
+slay execute_build_pipeline(config Config) lit { fr fr Execute all build scripts
     bestie i := 0; i < len(config.build_scripts); i++ {
         if !run_build_script(config.build_scripts[i]) {
             damn cap
         }
-    }
-    
-    # Execute all test commands
+    } fr fr Execute all test commands
     bestie i := 0; i < len(config.test_commands); i++ {
         if !run_test_command(config.test_commands[i]) {
             damn cap
@@ -272,19 +253,14 @@ slay execute_build_pipeline(config Config) lit {
     damn based
 }
 
-# Configuration Validation Functions
-slay validate_config(config Config) lit {
-    # Validate package name
+fr fr Configuration Validation Functions
+slay validate_config(config Config) lit { fr fr Validate package name
     if len(config.package_name) == 0 {
         damn cap
-    }
-    
-    # Validate version
+    } fr fr Validate version
     if !validate_semver(config.version) {
         damn cap
-    }
-    
-    # Validate dependencies
+    } fr fr Validate dependencies
     if !check_circular_dependencies(config.dependencies) {
         damn cap
     }
@@ -292,18 +268,13 @@ slay validate_config(config Config) lit {
     damn based
 }
 
-slay validate_package_manager(manager PackageManager) lit {
-    # Validate configuration
+slay validate_package_manager(manager PackageManager) lit { fr fr Validate configuration
     if !validate_config(manager.config) {
         damn cap
-    }
-    
-    # Validate cache directory
+    } fr fr Validate cache directory
     if len(manager.cache_dir) == 0 {
         damn cap
-    }
-    
-    # Validate registry URL
+    } fr fr Validate registry URL
     if len(manager.registry_url) == 0 {
         damn cap
     }
@@ -311,7 +282,7 @@ slay validate_package_manager(manager PackageManager) lit {
     damn based
 }
 
-# Utility Functions
+fr fr Utility Functions
 slay generate_lock_file(manager PackageManager) tea {
     sus lock_content tea = "# Package Lock File\n"
     lock_content = lock_content + "version: " + manager.config.version + "\n"
@@ -326,8 +297,7 @@ slay generate_lock_file(manager PackageManager) tea {
     damn lock_content
 }
 
-slay clean_cache(manager *PackageManager) lit {
-    # Simulate cache cleanup
+slay clean_cache(manager *PackageManager) lit { fr fr Simulate cache cleanup
     damn based
 }
 
@@ -340,7 +310,7 @@ slay get_package_info(package_name tea) PackageDep {
     damn info
 }
 
-# Registry Functions
+fr fr Registry Functions
 slay search_packages(query tea) []tea {
     sus results []tea = []
     
@@ -357,12 +327,9 @@ slay search_packages(query tea) []tea {
     damn results
 }
 
-slay publish_package(manager PackageManager) lit {
-    # Validate before publishing
+slay publish_package(manager PackageManager) lit { fr fr Validate before publishing
     if !validate_config(manager.config) {
         damn cap
-    }
-    
-    # Simulate package publishing
+    } fr fr Simulate package publishing
     damn based
 }

@@ -1,11 +1,11 @@
 yeet "testz"
 yeet "io_enhanced"
 
-# Comprehensive test suite for io_enhanced module
-# Enhanced I/O operations with error handling
+fr fr Comprehensive test suite for io_enhanced module
+fr fr Enhanced I/O operations with error handling
 
 test_start("test_file_operations_basic")
-# Test basic file operations
+fr fr Test basic file operations
 sus file, err := open_file("test.txt", "w")
 assert_eq_string(err, cringe)
 assert_eq_string(file.path, "test.txt")
@@ -22,7 +22,7 @@ assert_eq_string(file.is_open, cap)
 print_test_summary()
 
 test_start("test_file_read_operations")
-# Test file reading operations
+fr fr Test file reading operations
 sus file, err := open_file("test.txt", "r")
 assert_eq_string(err, cringe)
 assert_eq_string(file.mode, "r")
@@ -36,7 +36,7 @@ assert_eq_string(closeErr, cringe)
 print_test_summary()
 
 test_start("test_file_error_conditions")
-# Test file error conditions
+fr fr Test file error conditions
 sus file, err := open_file("", "r")
 assert_true(err != cringe)
 assert_eq_string(err.message, "Cannot open file with empty path")
@@ -51,7 +51,7 @@ assert_eq_string(err.message, "File not found")
 print_test_summary()
 
 test_start("test_file_exists_and_info")
-# Test file existence and info functions
+fr fr Test file existence and info functions
 assert_true(file_exists("test.txt"))
 assert_true(!file_exists("nonexistent.txt"))
 assert_true(!file_exists(""))
@@ -68,18 +68,18 @@ assert_eq_string(info.is_directory, cap)
 print_test_summary()
 
 test_start("test_file_lines_operations")
-# Test file line operations
+fr fr Test file line operations
 sus lines := []tea{"Line 1", "Line 2", "Line 3"}
 sus writeErr := write_file_lines("lines.txt", lines)
 assert_eq_string(writeErr, cringe)
 
 sus readLines, readErr := read_file_lines("lines.txt")
 assert_eq_string(readErr, cringe)
-assert_eq_int(len(readLines), 1)  # Simplified implementation returns single line
+assert_eq_int(len(readLines), 1) fr fr Simplified implementation returns single line
 print_test_summary()
 
 test_start("test_file_copy_operations")
-# Test file copy operations
+fr fr Test file copy operations
 sus copyErr := copy_file("test.txt", "copy.txt")
 assert_eq_string(copyErr, cringe)
 
@@ -91,7 +91,7 @@ assert_eq_string(copyErr2.message, "Cannot copy file to itself")
 print_test_summary()
 
 test_start("test_file_move_operations")
-# Test file move operations
+fr fr Test file move operations
 sus moveErr := move_file("copy.txt", "moved.txt")
 assert_eq_string(moveErr, cringe)
 
@@ -100,7 +100,7 @@ assert_true(!file_exists("copy.txt"))
 print_test_summary()
 
 test_start("test_file_delete_operations")
-# Test file delete operations
+fr fr Test file delete operations
 sus deleteErr := delete_file("moved.txt")
 assert_eq_string(deleteErr, cringe)
 
@@ -116,7 +116,7 @@ assert_eq_string(deleteErr3.message, "File does not exist")
 print_test_summary()
 
 test_start("test_directory_operations")
-# Test directory operations
+fr fr Test directory operations
 sus createErr := create_directory("test_dir")
 assert_eq_string(createErr, cringe)
 
@@ -124,7 +124,7 @@ assert_true(directory_exists("test_dir"))
 
 sus entries, listErr := list_directory("test_dir")
 assert_eq_string(listErr, cringe)
-assert_eq_int(len(entries), 0)  # Empty directory
+assert_eq_int(len(entries), 0) fr fr Empty directory
 
 sus removeErr := remove_directory("test_dir")
 assert_eq_string(removeErr, cringe)
@@ -133,7 +133,7 @@ assert_true(!directory_exists("test_dir"))
 print_test_summary()
 
 test_start("test_directory_error_conditions")
-# Test directory error conditions
+fr fr Test directory error conditions
 sus createErr := create_directory("")
 assert_true(createErr != cringe)
 assert_eq_string(createErr.message, "Cannot create directory with empty path")
@@ -148,7 +148,7 @@ assert_eq_string(listErr.message, "Directory does not exist")
 print_test_summary()
 
 test_start("test_permission_checks")
-# Test permission checking functions
+fr fr Test permission checking functions
 assert_true(can_write_to_directory("/tmp"))
 assert_true(!can_write_to_directory("/protected"))
 
@@ -163,7 +163,7 @@ assert_true(!can_read_directory("private_dir"))
 print_test_summary()
 
 test_start("test_stream_operations")
-# Test stream operations
+fr fr Test stream operations
 sus stream, streamErr := open_stream("test.txt", "r", 1024)
 assert_eq_string(streamErr, cringe)
 assert_eq_string(stream.handle.path, "test.txt")
@@ -180,7 +180,7 @@ assert_eq_string(closeErr, cringe)
 print_test_summary()
 
 test_start("test_stream_error_conditions")
-# Test stream error conditions
+fr fr Test stream error conditions
 sus stream, streamErr := open_stream("test.txt", "r", 0)
 assert_true(streamErr != cringe)
 assert_eq_string(streamErr.message, "Invalid buffer size")
@@ -195,7 +195,7 @@ assert_eq_string(chunkErr.message, "Stream already at EOF")
 print_test_summary()
 
 test_start("test_retry_operations")
-# Test retry operations
+fr fr Test retry operations
 sus content, retryErr := read_file_with_retry("test.txt", 3)
 assert_eq_string(retryErr, cringe)
 assert_true(len(content) > 0)
@@ -205,7 +205,7 @@ assert_true(retryErr2 != cringe)
 print_test_summary()
 
 test_start("test_circuit_breaker")
-# Test circuit breaker operations
+fr fr Test circuit breaker operations
 sus content, cbErr := read_file_with_circuit_breaker("test.txt")
 assert_eq_string(cbErr, cringe)
 assert_true(len(content) > 0)
@@ -215,19 +215,19 @@ assert_true(cbErr2 != cringe)
 print_test_summary()
 
 test_start("test_batch_operations")
-# Test batch operations
+fr fr Test batch operations
 sus paths := []tea{"file1.txt", "file2.txt", "file3.txt"}
 sus errors := batch_file_operation(paths, slay(path tea) yikes {
     damn delete_file(path)
 })
-assert_eq_int(len(errors), 3)  # All files don't exist
+assert_eq_int(len(errors), 3) fr fr All files don't exist
 
 sus deleteErr := delete_multiple_files(paths)
 assert_true(deleteErr != cringe)
 print_test_summary()
 
 test_start("test_simulation_functions")
-# Test simulation functions
+fr fr Test simulation functions
 sus content := simulate_file_read("test.txt")
 assert_eq_string(content, "File content for test.txt")
 
@@ -248,7 +248,7 @@ assert_true(simulate_is_directory("directory"))
 print_test_summary()
 
 test_start("test_utility_functions")
-# Test utility functions
+fr fr Test utility functions
 sus dir := get_directory("test/file.txt")
 assert_eq_string(dir, "/tmp")
 
@@ -265,9 +265,9 @@ sus chunk2 := simulate_read_chunk("error.txt", 0, 100)
 assert_eq_string(chunk2, "ERROR")
 print_test_summary()
 
-# Integration tests
+fr fr Integration tests
 test_start("integration_tests")
-# Test complete file workflow
+fr fr Test complete file workflow
 sus file, err := open_file("integration.txt", "w")
 assert_eq_string(err, cringe)
 
@@ -293,9 +293,9 @@ assert_eq_string(deleteErr, cringe)
 assert_true(!file_exists("integration.txt"))
 print_test_summary()
 
-# Performance benchmarks
+fr fr Performance benchmarks
 test_start("performance_benchmarks")
-# Test performance of file operations
+fr fr Test performance of file operations
 bestie i := 0; i < 100; i++ {
     sus filename := "perf_" + tea([]byte{byte(48 + i % 10)}) + ".txt"
     sus file, err := open_file(filename, "w")
@@ -306,7 +306,7 @@ bestie i := 0; i < 100; i++ {
     }
 }
 
-# Test batch operations performance
+fr fr Test batch operations performance
 sus paths := []tea{}
 bestie i := 0; i < 50; i++ {
     sus filename := "batch_" + tea([]byte{byte(48 + i % 10)}) + ".txt"
@@ -319,24 +319,24 @@ sus errors := batch_file_operation(paths, slay(path tea) yikes {
 assert_eq_int(len(errors), 50)
 print_test_summary()
 
-# Edge case testing
+fr fr Edge case testing
 test_start("edge_cases")
-# Test edge cases and error conditions
+fr fr Test edge cases and error conditions
 sus file, err := open_file("edge.txt", "w")
 assert_eq_string(err, cringe)
 
-# Test large content write
+fr fr Test large content write
 sus largeContent := ""
 bestie i := 0; i < 100000; i++ {
     largeContent = largeContent + "x"
 }
 
 sus writeErr := write_file(file, largeContent)
-assert_true(writeErr != cringe)  # Should fail due to size limit
+assert_true(writeErr != cringe) fr fr Should fail due to size limit
 
 close_file(file)
 
-# Test closed file operations
+fr fr Test closed file operations
 sus writeErr2 := write_file(file, "test")
 assert_true(writeErr2 != cringe)
 assert_eq_string(writeErr2.message, "Cannot write to closed file")
@@ -345,7 +345,7 @@ sus readErr := read_file(file)
 assert_true(readErr != cringe)
 assert_eq_string(readErr.message, "Cannot read from closed file")
 
-# Test invalid modes
+fr fr Test invalid modes
 sus file2, err2 := open_file("test.txt", "r")
 assert_eq_string(err2, cringe)
 
@@ -355,18 +355,18 @@ assert_eq_string(writeErr3.message, "File not open for writing")
 
 close_file(file2)
 
-# Test directory edge cases
+fr fr Test directory edge cases
 assert_true(directory_exists("existing_dir"))
 assert_true(!directory_exists("nonexistent_dir"))
 
 assert_true(is_directory_empty("empty_dir"))
 assert_true(!is_directory_empty("nonempty_dir"))
 
-# Test stream edge cases
+fr fr Test stream edge cases
 sus stream, streamErr := open_stream("test.txt", "r", 10)
 assert_eq_string(streamErr, cringe)
 
-# Read until EOF
+fr fr Read until EOF
 sus chunk, chunkErr := read_stream_chunk(stream)
 assert_eq_string(chunkErr, cringe)
 if len(chunk) < stream.buffer_size {

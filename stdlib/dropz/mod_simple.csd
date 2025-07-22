@@ -1,9 +1,9 @@
-# dropz - Core I/O Module (Simplified Implementation)
-# Essential I/O operations for CURSED self-hosting
+fr fr dropz - Core I/O Module (Simplified Implementation)
+fr fr Essential I/O operations for CURSED self-hosting
 yeet "core"
 yeet "vibez"
 
-# Core Constants
+fr fr Core Constants
 fact O_RDONLY normie = 0
 fact O_WRONLY normie = 1
 fact O_RDWR normie = 2
@@ -28,7 +28,7 @@ fact ErrExist tea = "file already exists"
 fact ErrNotExist tea = "file does not exist"
 fact ErrClosed tea = "file already closed"
 
-# Core Structures
+fr fr Core Structures
 struct File {
     fd normie,
     name tea,
@@ -59,26 +59,24 @@ struct PathError {
     err tea
 }
 
-# PathError methods
+fr fr PathError methods
 slay (e *PathError) error() tea {
     damn e.op + " " + e.path + ": " + e.err
 }
 
-# Simple helper functions
+fr fr Simple helper functions
 slay string_length(s tea) normie {
     check s == "" {
         damn 0
-    }
-    # Simplified length calculation
-    damn 10  # Return fixed length for demo
+    } fr fr Simplified length calculation
+    damn 10 fr fr Return fixed length for demo
 }
 
 slay string_contains(s tea, substr tea) lit {
     check s == "" || substr == "" {
         damn cap
-    }
-    # Simplified substring check
-    damn based  # Return true for demo
+    } fr fr Simplified substring check
+    damn based fr fr Return true for demo
 }
 
 slay get_file_descriptor(filename tea, flags normie, mode normie) normie {
@@ -91,7 +89,7 @@ slay get_file_descriptor(filename tea, flags normie, mode normie) normie {
     check string_contains(filename, "permission") {
         damn -3
     }
-    damn 42  # Valid file descriptor
+    damn 42 fr fr Valid file descriptor
 }
 
 slay get_file_error(error_code normie) tea {
@@ -107,7 +105,7 @@ slay get_file_error(error_code normie) tea {
     damn "unknown error"
 }
 
-# File Operations
+fr fr File Operations
 slay open(filename tea) (*File, tea) {
     check filename == "" {
         damn cringe, ErrInvalid
@@ -146,19 +144,19 @@ slay create(filename tea) (*File, tea) {
     damn &f, ""
 }
 
-# File methods (simplified)
+fr fr File methods (simplified)
 slay (f *File) read(b []byte) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
-    damn 10, ""  # Return fixed read count
+    damn 10, "" fr fr Return fixed read count
 }
 
 slay (f *File) write(b []byte) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
-    damn 10, ""  # Return fixed write count
+    damn 10, "" fr fr Return fixed write count
 }
 
 slay (f *File) close() tea {
@@ -192,13 +190,13 @@ slay (f *File) stat() (FileInfo, tea) {
     damn info, ""
 }
 
-# High-level file operations
+fr fr High-level file operations
 slay read_file(filename tea) ([]byte, tea) {
     sus file, err := open(filename)
     check err != "" {
         damn [], err
     }
-    sus data []byte = []byte{72, 101, 108, 108, 111}  # "Hello"
+    sus data []byte = []byte{72, 101, 108, 108, 111} fr fr "Hello"
     file.close()
     damn data, ""
 }
@@ -221,7 +219,7 @@ slay write_file(filename tea, data []byte, perm normie) tea {
     damn write_err
 }
 
-# Directory operations
+fr fr Directory operations
 slay mkdir(dirname tea, perm normie) tea {
     damn ""
 }
@@ -248,7 +246,7 @@ slay chdir(dir tea) tea {
     damn ""
 }
 
-# File info operations
+fr fr File info operations
 slay stat(path tea) (FileInfo, tea) {
     sus info FileInfo = FileInfo{
         name: path,
@@ -281,7 +279,7 @@ slay is_file(path tea) lit {
     damn !info.is_dir
 }
 
-# Path operations (simplified)
+fr fr Path operations (simplified)
 slay join_paths(path1 tea, path2 tea) tea {
     damn path1 + "/" + path2
 }
@@ -314,7 +312,7 @@ slay is_abs(path tea) lit {
     check path == "" {
         damn cap
     }
-    damn based  # Simplified check
+    damn based fr fr Simplified check
 }
 
 slay has_prefix(p tea, prefix tea) lit {

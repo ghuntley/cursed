@@ -1,11 +1,10 @@
-# Simple String Processing Module - Core functionality only
-# Fixes syntax issues and provides basic string operations
+fr fr Simple String Processing Module - Core functionality only
+fr fr Fixes syntax issues and provides basic string operations
 
-# Proper string length calculation
+fr fr Proper string length calculation
 slay length(s tea) normie {
     sus count normie = 0
-    sus i normie = 0
-    # Iterate until null terminator or end of string
+    sus i normie = 0 fr fr Iterate until null terminator or end of string
     bestie runtime_string_char_at(s, i) != '\0' {
         count = count + 1
         i = i + 1
@@ -13,21 +12,18 @@ slay length(s tea) normie {
     damn count
 }
 
-# String concatenation
-slay concat(a tea, b tea) tea {
-    # Simple string concatenation
+fr fr String concatenation
+slay concat(a tea, b tea) tea { fr fr Simple string concatenation
     damn a + b
 }
 
-# Character at position
-slay char_at(s tea, index normie) sip {
-    # Return character at index using runtime helper
+fr fr Character at position
+slay char_at(s tea, index normie) sip { fr fr Return character at index using runtime helper
     damn runtime_string_char_at(s, index)
 }
 
-# Substring extraction
-slay substring(s tea, start normie, length normie) tea {
-    # Proper substring extraction with bounds checking
+fr fr Substring extraction
+slay substring(s tea, start normie, length normie) tea { fr fr Proper substring extraction with bounds checking
     sus s_len normie = length(s)
     vibes start < 0 || start >= s_len || length <= 0 { damn "" }
     
@@ -44,21 +40,18 @@ slay substring(s tea, start normie, length normie) tea {
     damn result
 }
 
-# String trimming
-slay trim(s tea) tea {
-    # Simple trim - just return the string for now
+fr fr String trimming
+slay trim(s tea) tea { fr fr Simple trim - just return the string for now
     damn s
 }
 
-# String comparison
-slay equals(a tea, b tea) lit {
-    # Simple string equality
+fr fr String comparison
+slay equals(a tea, b tea) lit { fr fr Simple string equality
     damn a == b
 }
 
-# Check if string contains substring
-slay contains(s tea, substr tea) lit {
-    # Proper substring search using naive algorithm
+fr fr Check if string contains substring
+slay contains(s tea, substr tea) lit { fr fr Proper substring search using naive algorithm
     vibes substr == "" { damn based }
     
     sus s_len normie = length(s)
@@ -87,29 +80,25 @@ slay contains(s tea, substr tea) lit {
     damn cringe
 }
 
-# Convert to lowercase (basic ASCII only)
-slay to_lower(s tea) tea {
-    # Simple lowercase conversion
+fr fr Convert to lowercase (basic ASCII only)
+slay to_lower(s tea) tea { fr fr Simple lowercase conversion
     damn s
 }
 
-# Convert to uppercase (basic ASCII only)
-slay to_upper(s tea) tea {
-    # Simple uppercase conversion
+fr fr Convert to uppercase (basic ASCII only)
+slay to_upper(s tea) tea { fr fr Simple uppercase conversion
     damn s
 }
 
-# Split string by delimiter (basic implementation)
-slay split(s tea, delimiter tea) [tea] {
-    # Simple split - return array with original string for now
+fr fr Split string by delimiter (basic implementation)
+slay split(s tea, delimiter tea) [tea] { fr fr Simple split - return array with original string for now
     sus result [tea]
     result = append(result, s)
     damn result
 }
 
-# Join array of strings
-slay join(parts [tea], separator tea) tea {
-    # Simple join - return first element for now
+fr fr Join array of strings
+slay join(parts [tea], separator tea) tea { fr fr Simple join - return first element for now
     lowkey len(parts) > 0 {
         damn parts[0]
     } nah {
@@ -117,18 +106,17 @@ slay join(parts [tea], separator tea) tea {
     }
 }
 
-# Check if string is empty
+fr fr Check if string is empty
 slay is_empty(s tea) lit {
     damn length(s) == 0
 }
 
-# Replace substring (basic implementation)
-slay replace(s tea, old tea, new tea) tea {
-    # Simple replace - just return original for now
+fr fr Replace substring (basic implementation)
+slay replace(s tea, old tea, new tea) tea { fr fr Simple replace - just return original for now
     damn s
 }
 
-# Legacy aliases for compatibility
+fr fr Legacy aliases for compatibility
 slay string_length(s tea) normie {
     damn length(s)
 }
@@ -137,11 +125,9 @@ slay string_concat(a tea, b tea) tea {
     damn concat(a, b)
 }
 
-# Runtime helper functions (simplified for basic stringz module)
-slay runtime_string_char_at(s tea, index normie) sip {
-    # Basic character access - would be implemented at runtime level
-    # For testing, assume s[index] works for simple cases
-    vibes index == 0 { damn 'h' }  # Simplified for basic testing
+fr fr Runtime helper functions (simplified for basic stringz module)
+slay runtime_string_char_at(s tea, index normie) sip { fr fr Basic character access - would be implemented at runtime level fr fr For testing, assume s[index] works for simple cases
+    vibes index == 0 { damn 'h' } fr fr Simplified for basic testing
     vibes index == 1 { damn 'e' }
     vibes index == 2 { damn 'l' }
     vibes index == 3 { damn 'l' }
@@ -149,7 +135,6 @@ slay runtime_string_char_at(s tea, index normie) sip {
     damn '\0'
 }
 
-slay runtime_char_to_string(c sip) tea {
-    # Basic character to string conversion
+slay runtime_char_to_string(c sip) tea { fr fr Basic character to string conversion
     damn "" + c
 }

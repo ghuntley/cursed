@@ -1,9 +1,9 @@
-# Comprehensive testz Testing Framework Validation
-# This validates the enhanced testing framework with all new features
+fr fr Comprehensive testz Testing Framework Validation
+fr fr This validates the enhanced testing framework with all new features
 
 yeet "testz"
 
-# Test basic assertion functions
+fr fr Test basic assertion functions
 slay test_basic_assertions() lit {
     suite_start("Basic Assertions")
     
@@ -29,7 +29,7 @@ slay test_basic_assertions() lit {
     damn based
 }
 
-# Test advanced assertion functions
+fr fr Test advanced assertion functions
 slay test_advanced_assertions() lit {
     suite_start("Advanced Assertions")
     
@@ -52,14 +52,14 @@ slay test_advanced_assertions() lit {
     test_end()
     
     test_start("string contains assertions")
-    assert_contains_string("hello", "hello")  # Simple equality for now
+    assert_contains_string("hello", "hello") fr fr Simple equality for now
     test_end()
     
     suite_end()
     damn based
 }
 
-# Test suite management functions
+fr fr Test suite management functions
 slay test_suite_management() lit {
     suite_start("Suite Management")
     
@@ -71,9 +71,7 @@ slay test_suite_management() lit {
     test_start("test counters")
     sus total normie = get_total_count()
     sus pass normie = get_pass_count()
-    sus fail normie = get_fail_count()
-    
-    # These should be positive numbers
+    sus fail normie = get_fail_count() fr fr These should be positive numbers
     assert_greater_than(total, 0)
     assert_greater_than(pass, 0)
     test_end()
@@ -82,7 +80,7 @@ slay test_suite_management() lit {
     damn based
 }
 
-# Test configuration functions
+fr fr Test configuration functions
 slay test_configuration() lit {
     suite_start("Configuration")
     
@@ -105,7 +103,7 @@ slay test_configuration() lit {
     damn based
 }
 
-# Test benchmarking functions
+fr fr Test benchmarking functions
 slay test_benchmarking() lit {
     suite_start("Benchmarking")
     
@@ -127,7 +125,7 @@ slay test_benchmarking() lit {
     damn based
 }
 
-# Test data generation functions
+fr fr Test data generation functions
 slay test_data_generation() lit {
     suite_start("Data Generation")
     
@@ -146,7 +144,7 @@ slay test_data_generation() lit {
     damn based
 }
 
-# Test error handling functions
+fr fr Test error handling functions
 slay test_error_handling() lit {
     suite_start("Error Handling")
     
@@ -162,24 +160,20 @@ slay test_error_handling() lit {
     damn based
 }
 
-# Test state management and isolation
+fr fr Test state management and isolation
 slay test_state_management() lit {
     suite_start("State Management")
     
     test_start("state reset functionality")
-    sus initial_count normie = get_total_count()
-    
-    # Reset and verify clean state
-    reset_suite_state()
-    
-    # Note: We can't fully test reset_test_state() as it would break our current test
+    sus initial_count normie = get_total_count() fr fr Reset and verify clean state
+    reset_suite_state() fr fr Note: We can't fully test reset_test_state() as it would break our current test
     test_end()
     
     suite_end()
     damn based
 }
 
-# Test comprehensive reporting
+fr fr Test comprehensive reporting
 slay test_reporting() lit {
     suite_start("Reporting")
     
@@ -191,16 +185,12 @@ slay test_reporting() lit {
     damn based
 }
 
-# Main test runner with comprehensive validation
+fr fr Main test runner with comprehensive validation
 slay main() lit {
     vibez.spill("🧪 Starting COMPREHENSIVE testz framework validation...")
     vibez.spill("🚀 Testing all enhanced features and advanced primitives")
-    vibez.spill("")
-    
-    # Enable verbose mode for demonstration
-    set_verbose_mode(based)
-    
-    # Run all test suites
+    vibez.spill("") fr fr Enable verbose mode for demonstration
+    set_verbose_mode(based) fr fr Run all test suites
     test_basic_assertions()
     test_advanced_assertions()
     test_suite_management()
@@ -209,9 +199,7 @@ slay main() lit {
     test_data_generation()
     test_error_handling()
     test_state_management()
-    test_reporting()
-    
-    # Final comprehensive report
+    test_reporting() fr fr Final comprehensive report
     vibez.spill("🎯 FINAL VALIDATION COMPLETE!")
     vibez.spill("═════════════════════════════════")
     print_detailed_report()
@@ -224,5 +212,5 @@ slay main() lit {
     damn based
 }
 
-# Execute main test runner
+fr fr Execute main test runner
 main()

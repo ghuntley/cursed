@@ -1,11 +1,11 @@
 yeet "testz"
 yeet "user_check"
 
-# Comprehensive test suite for user_check module
-# User and group management functionality
+fr fr Comprehensive test suite for user_check module
+fr fr User and group management functionality
 
 test_start("test_current_user")
-# Test current user retrieval
+fr fr Test current user retrieval
 sus user, err := Current()
 assert_eq_string(err, "")
 assert_eq_string(user.Uid, "1000")
@@ -16,7 +16,7 @@ assert_eq_string(user.HomeDir, "/home/user")
 print_test_summary()
 
 test_start("test_user_lookup")
-# Test user lookup by username
+fr fr Test user lookup by username
 sus rootUser, err := Lookup("root")
 assert_eq_string(err, "")
 assert_eq_string(rootUser.Uid, "0")
@@ -46,7 +46,7 @@ assert_eq_string(err5, ErrUserNotFound)
 print_test_summary()
 
 test_start("test_user_lookup_by_id")
-# Test user lookup by UID
+fr fr Test user lookup by UID
 sus rootUser, err := LookupId("0")
 assert_eq_string(err, "")
 assert_eq_string(rootUser.Username, "root")
@@ -67,7 +67,7 @@ assert_eq_string(err4, ErrUserNotFound)
 print_test_summary()
 
 test_start("test_group_lookup")
-# Test group lookup by name
+fr fr Test group lookup by name
 sus rootGroup, err := LookupGroup("root")
 assert_eq_string(err, "")
 assert_eq_string(rootGroup.Gid, "0")
@@ -99,7 +99,7 @@ assert_eq_string(err6, ErrGroupNotFound)
 print_test_summary()
 
 test_start("test_group_lookup_by_id")
-# Test group lookup by GID
+fr fr Test group lookup by GID
 sus rootGroup, err := LookupGroupId("0")
 assert_eq_string(err, "")
 assert_eq_string(rootGroup.Name, "root")
@@ -124,11 +124,11 @@ assert_eq_string(err5, ErrGroupNotFound)
 print_test_summary()
 
 test_start("test_user_methods")
-# Test user methods
+fr fr Test user methods
 sus user, err := Lookup("user")
 assert_eq_string(err, "")
 
-# Test GroupIds method
+fr fr Test GroupIds method
 sus groupIds, err2 := user.GroupIds()
 assert_eq_string(err2, "")
 assert_eq_int(len(groupIds), 3)
@@ -136,12 +136,12 @@ assert_eq_string(groupIds[0], user.Gid)
 assert_eq_string(groupIds[1], "1000")
 assert_eq_string(groupIds[2], "1001")
 
-# Test Groups method
+fr fr Test Groups method
 sus groups, err3 := user.Groups()
 assert_eq_string(err3, "")
 assert_true(len(groups) > 0)
 
-# Test IsInGroup method
+fr fr Test IsInGroup method
 sus inGroup, err4 := user.IsInGroup("users")
 assert_eq_string(err4, "")
 assert_eq_string(inGroup, based)
@@ -150,30 +150,30 @@ sus notInGroup, err5 := user.IsInGroup("nonexistent")
 assert_eq_string(err5, "")
 assert_eq_string(notInGroup, cap)
 
-# Test IsRoot method
+fr fr Test IsRoot method
 assert_eq_string(user.IsRoot(), cap)
 
-# Test IsSystem method
+fr fr Test IsSystem method
 assert_eq_string(user.IsSystem(), cap)
 
-# Test effective IDs
+fr fr Test effective IDs
 assert_eq_string(user.EffectiveUid(), user.Uid)
 assert_eq_string(user.EffectiveGid(), user.Gid)
 print_test_summary()
 
 test_start("test_root_user_methods")
-# Test root user methods
+fr fr Test root user methods
 sus rootUser, err := Lookup("root")
 assert_eq_string(err, "")
 
 assert_eq_string(rootUser.IsRoot(), based)
-assert_eq_string(rootUser.IsSystem(), cap)  # Root is not considered system user
+assert_eq_string(rootUser.IsSystem(), cap) fr fr Root is not considered system user
 assert_eq_string(rootUser.EffectiveUid(), "0")
 assert_eq_string(rootUser.EffectiveGid(), "0")
 print_test_summary()
 
 test_start("test_system_user_methods")
-# Test system user methods
+fr fr Test system user methods
 sus daemonUser, err := Lookup("daemon")
 assert_eq_string(err, "")
 
@@ -188,16 +188,16 @@ assert_eq_string(binUser.IsSystem(), based)
 print_test_summary()
 
 test_start("test_group_methods")
-# Test group methods
+fr fr Test group methods
 sus usersGroup, err := LookupGroup("users")
 assert_eq_string(err, "")
 
-# Test Members method
+fr fr Test Members method
 sus members, err2 := usersGroup.Members()
 assert_eq_string(err2, "")
 assert_true(len(members) >= 0)
 
-# Test HasMember method
+fr fr Test HasMember method
 sus hasMember, err3 := usersGroup.HasMember("user")
 assert_eq_string(err3, "")
 assert_eq_string(hasMember, based)
@@ -208,7 +208,7 @@ assert_eq_string(notMember, cap)
 print_test_summary()
 
 test_start("test_user_existence")
-# Test user existence checks
+fr fr Test user existence checks
 assert_eq_string(UserExists("root"), based)
 assert_eq_string(UserExists("user"), based)
 assert_eq_string(UserExists("daemon"), based)
@@ -217,7 +217,7 @@ assert_eq_string(UserExists("nonexistent"), cap)
 print_test_summary()
 
 test_start("test_group_existence")
-# Test group existence checks
+fr fr Test group existence checks
 assert_eq_string(GroupExists("root"), based)
 assert_eq_string(GroupExists("wheel"), based)
 assert_eq_string(GroupExists("users"), based)
@@ -227,7 +227,7 @@ assert_eq_string(GroupExists("nonexistent"), cap)
 print_test_summary()
 
 test_start("test_get_all_users")
-# Test getting all users
+fr fr Test getting all users
 sus users, err := GetAllUsers()
 assert_eq_string(err, "")
 assert_eq_int(len(users), 4)
@@ -237,7 +237,7 @@ bestie i := 0; i < len(users); i++ {
     usernames = append(usernames, users[i].Username)
 }
 
-# Check that all expected users are present
+fr fr Check that all expected users are present
 assert_true(contains(usernames, "root"))
 assert_true(contains(usernames, "user"))
 assert_true(contains(usernames, "daemon"))
@@ -245,7 +245,7 @@ assert_true(contains(usernames, "bin"))
 print_test_summary()
 
 test_start("test_get_all_groups")
-# Test getting all groups
+fr fr Test getting all groups
 sus groups, err := GetAllGroups()
 assert_eq_string(err, "")
 assert_eq_int(len(groups), 5)
@@ -255,7 +255,7 @@ bestie i := 0; i < len(groups); i++ {
     groupNames = append(groupNames, groups[i].Name)
 }
 
-# Check that all expected groups are present
+fr fr Check that all expected groups are present
 assert_true(contains(groupNames, "root"))
 assert_true(contains(groupNames, "wheel"))
 assert_true(contains(groupNames, "users"))
@@ -264,7 +264,7 @@ assert_true(contains(groupNames, "staff"))
 print_test_summary()
 
 test_start("test_current_user_functions")
-# Test current user functions
+fr fr Test current user functions
 sus groups, err := CurrentUserGroups()
 assert_eq_string(err, "")
 assert_true(len(groups) > 0)
@@ -284,7 +284,7 @@ assert_eq_string(IsCurrentUserSystem(), cap)
 print_test_summary()
 
 test_start("test_user_home_directory")
-# Test user home directory functions
+fr fr Test user home directory functions
 sus homeDir, err := GetUserHomeDir("root")
 assert_eq_string(err, "")
 assert_eq_string(homeDir, "/root")
@@ -303,7 +303,7 @@ assert_eq_string(err4, ErrUserNotFound)
 print_test_summary()
 
 test_start("test_user_creation")
-# Test user creation
+fr fr Test user creation
 sus newUser, err := CreateUser("testuser", "Test User", "/home/testuser")
 assert_eq_string(err, "")
 assert_eq_string(newUser.Username, "testuser")
@@ -314,14 +314,14 @@ assert_eq_string(newUser.Gid, "2000")
 
 assert_eq_string(UserExists("testuser"), based)
 
-# Test duplicate user creation
+fr fr Test duplicate user creation
 sus duplicate, err2 := CreateUser("testuser", "Duplicate", "/home/dup")
 assert_eq_string(duplicate, cap)
 assert_eq_string(err2, "user already exists")
 print_test_summary()
 
 test_start("test_group_creation")
-# Test group creation
+fr fr Test group creation
 sus newGroup, err := CreateGroup("testgroup")
 assert_eq_string(err, "")
 assert_eq_string(newGroup.Name, "testgroup")
@@ -329,55 +329,55 @@ assert_eq_string(newGroup.Gid, "2000")
 
 assert_eq_string(GroupExists("testgroup"), based)
 
-# Test duplicate group creation
+fr fr Test duplicate group creation
 sus duplicate, err2 := CreateGroup("testgroup")
 assert_eq_string(duplicate, cap)
 assert_eq_string(err2, "group already exists")
 print_test_summary()
 
 test_start("test_user_deletion")
-# Test user deletion
+fr fr Test user deletion
 sus err := DeleteUser("testuser")
 assert_eq_string(err, "")
 
 assert_eq_string(UserExists("testuser"), cap)
 
-# Test deleting nonexistent user
+fr fr Test deleting nonexistent user
 sus err2 := DeleteUser("nonexistent")
 assert_eq_string(err2, ErrUserNotFound)
 print_test_summary()
 
 test_start("test_group_deletion")
-# Test group deletion
+fr fr Test group deletion
 sus err := DeleteGroup("testgroup")
 assert_eq_string(err, "")
 
 assert_eq_string(GroupExists("testgroup"), cap)
 
-# Test deleting nonexistent group
+fr fr Test deleting nonexistent group
 sus err2 := DeleteGroup("nonexistent")
 assert_eq_string(err2, ErrGroupNotFound)
 print_test_summary()
 
 test_start("test_group_membership")
-# Test group membership operations
+fr fr Test group membership operations
 sus err := AddUserToGroup("user", "wheel")
 assert_eq_string(err, "")
 
 sus err2 := RemoveUserFromGroup("user", "wheel")
 assert_eq_string(err2, "")
 
-# Test with nonexistent user
+fr fr Test with nonexistent user
 sus err3 := AddUserToGroup("nonexistent", "wheel")
 assert_eq_string(err3, ErrUserNotFound)
 
-# Test with nonexistent group
+fr fr Test with nonexistent group
 sus err4 := AddUserToGroup("user", "nonexistent")
 assert_eq_string(err4, ErrGroupNotFound)
 print_test_summary()
 
 test_start("test_search_functions")
-# Test search functions
+fr fr Test search functions
 sus users, err := SearchUsers("user")
 assert_eq_string(err, "")
 assert_true(len(users) > 0)
@@ -396,7 +396,7 @@ assert_true(len(groups2) > 0)
 print_test_summary()
 
 test_start("test_validation_functions")
-# Test validation functions
+fr fr Test validation functions
 sus err := ValidateUsername("validuser")
 assert_eq_string(err, "")
 
@@ -423,7 +423,7 @@ assert_eq_string(err8, "invalid character in group name")
 print_test_summary()
 
 test_start("test_cache_functions")
-# Test cache functions
+fr fr Test cache functions
 sus userCount, groupCount := GetCacheStats()
 assert_true(userCount >= 0)
 assert_true(groupCount >= 0)
@@ -434,7 +434,7 @@ sus userCount2, groupCount2 := GetCacheStats()
 assert_eq_int(userCount2, 0)
 assert_eq_int(groupCount2, 0)
 
-# Repopulate cache
+fr fr Repopulate cache
 sus user, err := Lookup("user")
 assert_eq_string(err, "")
 
@@ -444,7 +444,7 @@ assert_eq_int(groupCount3, 0)
 print_test_summary()
 
 test_start("test_id_validation")
-# Test ID validation functions
+fr fr Test ID validation functions
 assert_eq_string(IsValidUid("1000"), based)
 assert_eq_string(IsValidUid("0"), based)
 assert_eq_string(IsValidUid("123"), based)
@@ -459,7 +459,7 @@ assert_eq_string(IsValidGid("abc"), cap)
 print_test_summary()
 
 test_start("test_system_info")
-# Test system info function
+fr fr Test system info function
 sus info := GetSystemInfo()
 assert_eq_string(info["os"], "linux")
 assert_eq_string(info["arch"], "x86_64")
@@ -469,9 +469,9 @@ assert_eq_string(info["max_uid"], "65534")
 assert_eq_string(info["max_gid"], "65534")
 print_test_summary()
 
-# Integration tests
+fr fr Integration tests
 test_start("integration_tests")
-# Test complete user management workflow
+fr fr Test complete user management workflow
 sus user, err := CreateUser("integration_user", "Integration Test User", "/home/integration")
 assert_eq_string(err, "")
 
@@ -502,9 +502,9 @@ assert_eq_string(UserExists("integration_user"), cap)
 assert_eq_string(GroupExists("integration_group"), cap)
 print_test_summary()
 
-# Performance benchmarks
+fr fr Performance benchmarks
 test_start("performance_benchmarks")
-# Test performance of user operations
+fr fr Test performance of user operations
 bestie i := 0; i < 100; i++ {
     sus user, err := Lookup("user")
     assert_eq_string(err, "")
@@ -527,10 +527,10 @@ bestie i := 0; i < 50; i++ {
 }
 print_test_summary()
 
-# Edge case testing
+fr fr Edge case testing
 test_start("edge_cases")
-# Test edge cases and error conditions
-# Test very long usernames
+fr fr Test edge cases and error conditions
+fr fr Test very long usernames
 sus longUsername := ""
 bestie i := 0; i < 50; i++ {
     longUsername = longUsername + "a"
@@ -538,32 +538,32 @@ bestie i := 0; i < 50; i++ {
 sus err := ValidateUsername(longUsername)
 assert_eq_string(err, "username too long")
 
-# Test empty cache operations
+fr fr Test empty cache operations
 ClearCache()
 sus userCount, groupCount := GetCacheStats()
 assert_eq_int(userCount, 0)
 assert_eq_int(groupCount, 0)
 
-# Test user lookup after cache clear
+fr fr Test user lookup after cache clear
 sus user, err2 := Lookup("user")
 assert_eq_string(err2, "")
 assert_eq_string(user.Username, "user")
 
-# Test group member operations on empty group
+fr fr Test group member operations on empty group
 sus emptyGroup, err3 := LookupGroup("wheel")
 assert_eq_string(err3, "")
 sus members, err4 := emptyGroup.Members()
 assert_eq_string(err4, "")
 assert_eq_int(len(members), 0)
 
-# Test user group operations
+fr fr Test user group operations
 sus testUser, err5 := Lookup("user")
 assert_eq_string(err5, "")
 sus groups, err6 := testUser.Groups()
 assert_eq_string(err6, "")
 assert_true(len(groups) > 0)
 
-# Test invalid ID lookups
+fr fr Test invalid ID lookups
 sus invalidUser, err7 := LookupId("invalid")
 assert_eq_string(invalidUser, cap)
 assert_eq_string(err7, ErrUserNotFound)
@@ -573,7 +573,7 @@ assert_eq_string(invalidGroup, cap)
 assert_eq_string(err8, ErrGroupNotFound)
 print_test_summary()
 
-# Helper function for testing array contains
+fr fr Helper function for testing array contains
 slay contains(arr []tea, item tea) lit {
     bestie i := 0; i < len(arr); i++ {
         if arr[i] == item {
