@@ -13,7 +13,7 @@ path = "src/main.rs"
 [features]
 default = ["std", "crypto-rustcrypto"]
 std = []
-networking = ["mio"]
+# networking feature disabled for WASM compatibility
 ffi = ["libc"]
 wasm = ["wasm-bindgen", "js-sys", "web-sys"]
 crypto-ring = ["ring"]
@@ -43,10 +43,8 @@ chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.4"
 colored = "2.0"
 futures = "0.3"
-reqwest = { version = "0.11", features = ["json", "multipart"] }
-tar = "0.4"
-zip = "0.6"
-inkwell = { version = "0.4", features = ["llvm17-0"] }
+# Move reqwest to target-specific sections for WASM compatibility
+# Move archive and LLVM dependencies to target-specific sections for WASM compatibility
 gimli = "0.28"
 object = "0.32"
 sysinfo = "0.30"
@@ -65,7 +63,7 @@ dirs = "5.0"
 env_logger = "0.10"
 fastrand = "2.0"
 tower-lsp = "0.20"
-flate2 = "1.0"
+# Move flate2 to target-specific sections for WASM compatibility
 crossbeam = "0.8"
 crossbeam-utils = "0.8"
 crossbeam-epoch = "0.9"
@@ -98,21 +96,41 @@ x25519-dalek = "2.0"
 p256 = "0.13"
 rsa = "0.9"
 tiny-keccak = { version = "2.0", features = ["sha3", "keccak"] }
-getrandom = { version = "0.2", features = ["js"] }
+getrandom = { version = "0.2", features = ["js"], default-features = false }
 rand_chacha = "0.3"
 
 # Additional dependencies
 rustyline = "14.0"
 walkdir = "2.0"
-ring = "0.17"
 
-# Platform-specific dependencies for native targets
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Windows-specific dependencies
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winbase", "winnt", "memoryapi", "processthreadsapi", "sysinfoapi", "winuser"] }
+# Native compression libraries for non-WASM targets
+flate2 = "1.0"
+
+# Unix-like systems (Linux, macOS) - not Windows, not WASM
+[target.'cfg(all(unix, not(target_arch = "wasm32")))'.dependencies]
 libc = "0.2"
-llvm-sys = "181"
 tokio = { version = "1.0", features = ["full"] }
-mio = { version = "0.8", optional = true }
-# Native targets can use ring for crypto
+# mio removed - incompatible with WASM and not essential
+# Native compression libraries for non-WASM targets
+flate2 = "1.0"
+
+# LLVM support for native targets only (not WASM)
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+llvm-sys = "181"
+inkwell = { version = "0.4", features = ["llvm17-0"] }
+tar = "0.4"
+zip = "0.6"
+reqwest = { version = "0.11", features = ["json", "multipart"] }
+
+# Native targets (not WASM) can use ring for crypto, but exclude macOS cross-compilation due to SDK issues
+[target.'cfg(all(not(target_arch = "wasm32"), not(all(target_os = "macos", not(target_env = "")))))'.dependencies]
+ring = { version = "0.17", optional = true }
+
+# macOS native builds only (when building on actual macOS)
+[target.'cfg(all(target_os = "macos", target_env = ""))'.dependencies]
 ring = { version = "0.17", optional = true }
 
 # WASM-specific dependencies
@@ -126,7 +144,13 @@ web-sys = { version = "0.3", features = [
   "Worker",
 ], optional = true }
 wasi = "0.11"
-# WASM-compatible tokio without net features
+# WASM-compatible tokio without net/process features
 tokio = { version = "1.0", default-features = false, features = ["rt", "macros", "time"] }
+# WASM-compatible getrandom with js feature
+getrandom = { version = "0.2", features = ["js"], default-features = false }
+# Exclude native-only dependencies for WASM
+flate2 = { version = "1.0", default-features = false, features = ["rust_backend"] }
+# Replace zstd with a pure Rust implementation for WASM
+zstd = { version = "0.13", default-features = false, features = ["zstdmt"] }
 
 # Move crypto dependencies to main dependencies section

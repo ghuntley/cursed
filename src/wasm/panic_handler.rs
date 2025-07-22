@@ -25,8 +25,8 @@ fn console_error(msg: &str) {
     eprintln!("{}", msg);
 }
 
-/// WASM-compatible panic handler
-#[cfg(target_arch = "wasm32")]
+/// WASM-compatible panic handler - only for no_std environments
+#[cfg(all(target_arch = "wasm32", not(feature = "std")))]
 #[panic_handler]
 fn panic_handler(info: &PanicInfo) -> ! {
     let msg = if let Some(s) = info.payload().downcast_ref::<&str>() {

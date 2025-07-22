@@ -999,11 +999,11 @@ impl X86_64WindowsPal {
 
     #[cfg(all(target_os = "windows", not(target_arch = "wasm32")))]
     fn get_physical_core_count() -> usize {
-        #[cfg(feature = "winapi")]
-        {
-            use winapi::um::sysinfoapi::GetLogicalProcessorInformation;
-            use winapi::um::winnt::SYSTEM_LOGICAL_PROCESSOR_INFORMATION;
-            use winapi::um::winnt::RelationProcessorCore;
+        #[cfg(windows)]
+{
+use winapi::um::sysinfoapi::GetLogicalProcessorInformation;
+use winapi::um::winnt::SYSTEM_LOGICAL_PROCESSOR_INFORMATION;
+use winapi::um::winnt::RelationProcessorCore;
         
             unsafe {
                 let mut buffer_size = 0;
@@ -1029,7 +1029,7 @@ impl X86_64WindowsPal {
             }
         }
         
-        #[cfg(not(feature = "winapi"))]
+        #[cfg(not(windows))]
         {
             thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
         }
@@ -1041,7 +1041,7 @@ impl X86_64WindowsPal {
     }
 
     fn check_large_page_privilege() -> bool {
-        #[cfg(all(target_os = "windows", feature = "winapi"))]
+        #[cfg(windows)]
         {
             // Check if the process has "Lock pages in memory" privilege
             use winapi::um::processthreadsapi::GetCurrentProcess;
@@ -1051,7 +1051,7 @@ impl X86_64WindowsPal {
             // This is a simplified check - full implementation would query token privileges
             true // Assume available for now
         }
-        #[cfg(not(all(target_os = "windows", feature = "winapi")))]
+        #[cfg(not(windows))]
         {
             false
         }
@@ -1313,7 +1313,7 @@ impl X86_64MemoryManager {
                         self.allocate_standard(size, self.page_size)
                     }
                 },
-                #[cfg(all(target_os = "windows", feature = "winapi"))]
+                #[cfg(windows)]
                 OperatingSystem::Windows => {
                     use winapi::um::memoryapi::VirtualAlloc;
                     use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, MEM_LARGE_PAGES, PAGE_READWRITE};
@@ -1387,7 +1387,7 @@ impl X86_64MemoryManager {
         unsafe {
             match self.os {
                 OperatingSystem::Windows => {
-                    #[cfg(all(target_os = "windows", feature = "winapi"))]
+                    #[cfg(windows)]
                     {
                         use winapi::um::memoryapi::VirtualAlloc;
                         use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE};
@@ -1409,7 +1409,7 @@ impl X86_64MemoryManager {
                             Err(MemoryPlatformError::AllocationFailed("VirtualAlloc failed".to_string()))
                         }
                     }
-                    #[cfg(not(all(target_os = "windows", feature = "winapi")))]
+                    #[cfg(not(windows))]
                     {
                         // Cross-compilation fallback using standard allocation
                         let layout = std::alloc::Layout::from_size_align(size, alignment)
@@ -1453,7 +1453,7 @@ impl X86_64MemoryManager {
         unsafe {
             match self.os {
                 OperatingSystem::Windows => {
-                    #[cfg(all(target_os = "windows", feature = "winapi"))]
+                    #[cfg(windows)]
                     {
                         use winapi::um::memoryapi::VirtualAlloc;
                         use winapi::um::winnt::{MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE};
@@ -1471,7 +1471,7 @@ impl X86_64MemoryManager {
                             Err(MemoryPlatformError::AllocationFailed("VirtualAlloc failed".to_string()))
                         }
                     }
-                    #[cfg(not(all(target_os = "windows", feature = "winapi")))]
+                    #[cfg(not(windows))]
                     {
                         // Cross-compilation fallback using standard allocation
                         let layout = std::alloc::Layout::from_size_align(size, 8)

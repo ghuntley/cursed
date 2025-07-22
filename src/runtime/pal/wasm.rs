@@ -11,8 +11,41 @@
 //! - Performance monitoring adapted for WASM constraints
 
 use super::{PlatformAbstraction, PlatformError, Architecture, OperatingSystem};
+// Conditional imports based on target architecture
+#[cfg(target_arch = "wasm32")]
 use crate::runtime::memory::{MemoryManager, PlatformError as MemoryPlatformError};
+#[cfg(target_arch = "wasm32")]
 use crate::runtime::goroutine::{Scheduler, PlatformError as GoroutinePlatformError};
+
+// Mock imports for non-WASM targets (for compilation testing)
+#[cfg(not(target_arch = "wasm32"))]
+pub trait MemoryManager: Send + Sync {
+    fn allocate(&self, size: usize) -> Result<*mut u8, MemoryPlatformError>;
+    fn deallocate(&self, ptr: *mut u8, size: usize) -> Result<(), MemoryPlatformError>;
+    fn page_size(&self) -> usize;
+    fn memory_usage(&self) -> usize;
+    fn is_valid_memory(&self, ptr: *const u8, size: usize) -> bool;
+    fn memory_barrier(&self);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub trait Scheduler: Send + Sync {
+    fn spawn_goroutine(&self, task: Box<dyn FnOnce() + Send>) -> Result<(), GoroutinePlatformError>;
+    fn yield_now(&self) -> Result<(), GoroutinePlatformError>;
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug)]
+pub enum MemoryPlatformError {
+    AllocationFailed(String),
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug)]
+pub enum GoroutinePlatformError {
+    SpawnFailed(String),
+    YieldFailed(String),
+}
 use std::sync::{Arc, Mutex, atomic::{AtomicUsize, AtomicBool, Ordering}};
 use std::collections::VecDeque;
 
