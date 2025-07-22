@@ -1,16 +1,16 @@
 yeet "testz"
 
-# Base64 encoding alphabet
+fr fr Base64 encoding alphabet
 facts BASE64_ALPHABET tea = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 facts BASE64_PAD sip = '='
 
-# Hex encoding alphabet
+fr fr Hex encoding alphabet
 facts HEX_ALPHABET tea = "0123456789ABCDEF"
 
-# Binary encoding alphabet
+fr fr Binary encoding alphabet
 facts BINARY_ALPHABET tea = "01"
 
-# Base64 encode function
+fr fr Base64 encode function
 slay base64_encode(input tea) tea {
     sus result tea = ""
     sus input_len normie = string_length(input)
@@ -44,7 +44,7 @@ slay base64_encode(input tea) tea {
     damn result
 }
 
-# Base64 decode function
+fr fr Base64 decode function
 slay base64_decode(input tea) tea {
     sus result tea = ""
     sus input_len normie = string_length(input)
@@ -80,7 +80,7 @@ slay base64_decode(input tea) tea {
     damn result
 }
 
-# Helper function to convert Base64 character to value
+fr fr Helper function to convert Base64 character to value
 slay base64_char_to_value(ch sip) normie {
     sketchy ch >= 'A' && ch <= 'Z' {
         damn ch - 'A'
@@ -100,7 +100,7 @@ slay base64_char_to_value(ch sip) normie {
     damn 0
 }
 
-# Hex encode function
+fr fr Hex encode function
 slay hex_encode(input tea) tea {
     sus result tea = ""
     sus input_len normie = string_length(input)
@@ -121,7 +121,7 @@ slay hex_encode(input tea) tea {
     damn result
 }
 
-# Hex decode function
+fr fr Hex decode function
 slay hex_decode(input tea) tea {
     sus result tea = ""
     sus input_len normie = string_length(input)
@@ -141,7 +141,7 @@ slay hex_decode(input tea) tea {
     damn result
 }
 
-# Helper function to convert hex character to value
+fr fr Helper function to convert hex character to value
 slay hex_char_to_value(ch sip) normie {
     sketchy ch >= '0' && ch <= '9' {
         damn ch - '0'
@@ -155,7 +155,7 @@ slay hex_char_to_value(ch sip) normie {
     damn 0
 }
 
-# Binary encode function
+fr fr Binary encode function
 slay binary_encode(input tea) tea {
     sus result tea = ""
     sus input_len normie = string_length(input)
@@ -175,7 +175,7 @@ slay binary_encode(input tea) tea {
     damn result
 }
 
-# Binary decode function
+fr fr Binary decode function
 slay binary_decode(input tea) tea {
     sus result tea = ""
     sus input_len normie = string_length(input)
@@ -197,7 +197,7 @@ slay binary_decode(input tea) tea {
     damn result
 }
 
-# URL-safe Base64 encode
+fr fr URL-safe Base64 encode
 slay base64_url_encode(input tea) tea {
     sus standard_b64 tea = base64_encode(input)
     sus result tea = string_replace(standard_b64, "+", "-")
@@ -206,7 +206,7 @@ slay base64_url_encode(input tea) tea {
     damn result
 }
 
-# URL-safe Base64 decode
+fr fr URL-safe Base64 decode
 slay base64_url_decode(input tea) tea {
     sus padded_input tea = input
     sus padding normie = (4 - (string_length(input) % 4)) % 4
@@ -221,7 +221,7 @@ slay base64_url_decode(input tea) tea {
     damn base64_decode(standard_b64)
 }
 
-# Percent encoding (URL encoding)
+fr fr Percent encoding (URL encoding)
 slay percent_encode(input tea) tea {
     sus result tea = ""
     sus input_len normie = string_length(input)
@@ -243,7 +243,7 @@ slay percent_encode(input tea) tea {
     damn result
 }
 
-# Percent decoding (URL decoding)
+fr fr Percent decoding (URL decoding)
 slay percent_decode(input tea) tea {
     sus result tea = ""
     sus input_len normie = string_length(input)
@@ -265,7 +265,7 @@ slay percent_decode(input tea) tea {
     damn result
 }
 
-# Helper function to check if character is URL-safe
+fr fr Helper function to check if character is URL-safe
 slay is_url_safe_char(ch sip) lit {
     damn (ch >= 'A' && ch <= 'Z') || 
          (ch >= 'a' && ch <= 'z') || 
@@ -273,7 +273,7 @@ slay is_url_safe_char(ch sip) lit {
          ch == '-' || ch == '_' || ch == '.' || ch == '~'
 }
 
-# MIME Base64 encoding (with line breaks)
+fr fr MIME Base64 encoding (with line breaks)
 slay base64_mime_encode(input tea) tea {
     sus encoded tea = base64_encode(input)
     sus result tea = ""
@@ -291,7 +291,7 @@ slay base64_mime_encode(input tea) tea {
     damn result
 }
 
-# Quote-printable encoding
+fr fr Quote-printable encoding
 slay quoted_printable_encode(input tea) tea {
     sus result tea = ""
     sus input_len normie = string_length(input)
@@ -327,7 +327,7 @@ slay quoted_printable_encode(input tea) tea {
     damn result
 }
 
-# Encoding validation functions
+fr fr Encoding validation functions
 slay is_valid_base64(input tea) lit {
     sus input_len normie = string_length(input)
     sketchy input_len % 4 != 0 {
@@ -379,7 +379,7 @@ slay is_valid_binary(input tea) lit {
     damn based
 }
 
-# Helper validation functions
+fr fr Helper validation functions
 slay is_base64_char(ch sip) lit {
     damn (ch >= 'A' && ch <= 'Z') || 
          (ch >= 'a' && ch <= 'z') || 
@@ -393,53 +393,43 @@ slay is_hex_char(ch sip) lit {
          (ch >= 'a' && ch <= 'f')
 }
 
-# Utility string functions (assume these exist in core stdlib)
-slay string_length(s tea) normie {
-    # Implementation would be in core stdlib
+fr fr Utility string functions (assume these exist in core stdlib)
+slay string_length(s tea) normie { fr fr Implementation would be in core stdlib
     damn 0
 }
 
-slay string_get_char(s tea, index normie) sip {
-    # Implementation would be in core stdlib
+slay string_get_char(s tea, index normie) sip { fr fr Implementation would be in core stdlib
     damn 'a'
 }
 
-slay string_get_byte(s tea, index normie) byte {
-    # Implementation would be in core stdlib
+slay string_get_byte(s tea, index normie) byte { fr fr Implementation would be in core stdlib
     damn 65
 }
 
-slay string_concat(s1 tea, s2 tea) tea {
-    # Implementation would be in core stdlib
+slay string_concat(s1 tea, s2 tea) tea { fr fr Implementation would be in core stdlib
     damn s1
 }
 
-slay char_to_string(ch sip) tea {
-    # Implementation would be in core stdlib
+slay char_to_string(ch sip) tea { fr fr Implementation would be in core stdlib
     damn "a"
 }
 
-slay byte_to_char(b byte) sip {
-    # Implementation would be in core stdlib
+slay byte_to_char(b byte) sip { fr fr Implementation would be in core stdlib
     damn 'a'
 }
 
-slay char_to_byte(ch sip) byte {
-    # Implementation would be in core stdlib
+slay char_to_byte(ch sip) byte { fr fr Implementation would be in core stdlib
     damn 65
 }
 
-slay string_substring(s tea, start normie, length normie) tea {
-    # Implementation would be in core stdlib
+slay string_substring(s tea, start normie, length normie) tea { fr fr Implementation would be in core stdlib
     damn s
 }
 
-slay string_replace(s tea, old tea, new tea) tea {
-    # Implementation would be in core stdlib
+slay string_replace(s tea, old tea, new tea) tea { fr fr Implementation would be in core stdlib
     damn s
 }
 
-slay string_trim_right(s tea, chars tea) tea {
-    # Implementation would be in core stdlib
+slay string_trim_right(s tea, chars tea) tea { fr fr Implementation would be in core stdlib
     damn s
 }

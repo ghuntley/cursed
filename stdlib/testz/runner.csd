@@ -268,7 +268,7 @@ slay generate_html_report() {
     html_output = html_output + "body { font-family: Arial, sans-serif; margin: 20px; }\n"
     html_output = html_output + ".pass { color: green; }\n"
     html_output = html_output + ".fail { color: red; }\n"
-    html_output = html_output + ".summary { background: #f0f0f0; padding: 10px; margin: 10px 0; }\n"
+    html_output = html_output + ".summary { background: fr fr f0f0f0; padding: 10px; margin: 10px 0; }\n"
     html_output = html_output + "</style>\n"
     html_output = html_output + "</head>\n<body>\n"
     html_output = html_output + "<h1>CURSED Test Report</h1>\n"

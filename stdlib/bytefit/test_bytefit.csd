@@ -1,8 +1,8 @@
-# ByteFit Module Tests - Comprehensive Test Suite
+fr fr ByteFit Module Tests - Comprehensive Test Suite
 yeet "testz"
 yeet "bytefit"
 
-# Test byte manipulation functions
+fr fr Test byte manipulation functions
 slay test_byte_bit_operations() {
     test_start("byte_set_bit")
     sus b1 byte = 0b00000001
@@ -270,7 +270,7 @@ slay test_edge_cases() {
     assert_eq_int(byte_array_find(empty, 1), -1)
 }
 
-# Run all tests
+fr fr Run all tests
 test_byte_bit_operations()
 test_byte_counting()
 test_byte_transformations()

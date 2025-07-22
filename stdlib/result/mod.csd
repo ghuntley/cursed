@@ -1,11 +1,11 @@
-# Result type module - Error handling with Ok/Err values
-# Critical for self-hosting and robust error handling
+fr fr Result type module - Error handling with Ok/Err values
+fr fr Critical for self-hosting and robust error handling
 
 yeet "testz"
 
-# Result type definition (using enum-like pattern)
-# Result<T, E> can be Ok(T) or Err(E)
-# Implemented as a tuple with discriminant pattern
+fr fr Result type definition (using enum-like pattern)
+fr fr Result<T, E> can be Ok(T) or Err(E)
+fr fr Implemented as a tuple with discriminant pattern
 
 slay ok_int(value normie) (lit, normie, tea) {
     damn (based, value, "")
@@ -31,7 +31,7 @@ slay err_bool(error tea) (lit, lit, tea) {
     damn (cap, cap, error)
 }
 
-# Result utility functions
+fr fr Result utility functions
 slay is_ok_int(result (lit, normie, tea)) lit {
     damn result.0
 }
@@ -56,7 +56,7 @@ slay is_err_bool(result (lit, lit, tea)) lit {
     damn !result.0
 }
 
-# Unwrapping functions (with panic on Err)
+fr fr Unwrapping functions (with panic on Err)
 slay unwrap_int(result (lit, normie, tea)) normie {
     bestie result.0 {
         damn result.1
@@ -81,7 +81,7 @@ slay unwrap_bool(result (lit, lit, tea)) lit {
     damn cap
 }
 
-# Unwrap error values (with panic on Ok)
+fr fr Unwrap error values (with panic on Ok)
 slay unwrap_err_int(result (lit, normie, tea)) tea {
     bestie !result.0 {
         damn result.2
@@ -106,7 +106,7 @@ slay unwrap_err_bool(result (lit, lit, tea)) tea {
     damn ""
 }
 
-# Unwrap with default values
+fr fr Unwrap with default values
 slay unwrap_or_int(result (lit, normie, tea), default normie) normie {
     bestie result.0 {
         damn result.1
@@ -128,7 +128,7 @@ slay unwrap_or_bool(result (lit, lit, tea), default lit) lit {
     damn default
 }
 
-# Unwrap with error handling function
+fr fr Unwrap with error handling function
 slay unwrap_or_else_int(result (lit, normie, tea), f func(tea) normie) normie {
     bestie result.0 {
         damn result.1
@@ -150,7 +150,7 @@ slay unwrap_or_else_bool(result (lit, lit, tea), f func(tea) lit) lit {
     damn f(result.2)
 }
 
-# Map function for transforming Ok values
+fr fr Map function for transforming Ok values
 slay map_int_to_string(result (lit, normie, tea)) (lit, tea, tea) {
     bestie result.0 {
         damn ok_string(core.tea(result.1))
@@ -165,7 +165,7 @@ slay map_string_to_int_len(result (lit, tea, tea)) (lit, normie, tea) {
     damn err_int(result.2)
 }
 
-# Map error function for transforming Err values
+fr fr Map error function for transforming Err values
 slay map_err_int(result (lit, normie, tea), f func(tea) tea) (lit, normie, tea) {
     bestie result.0 {
         damn result
@@ -180,7 +180,7 @@ slay map_err_string(result (lit, tea, tea), f func(tea) tea) (lit, tea, tea) {
     damn err_string(f(result.2))
 }
 
-# And/Or operations for Result chaining
+fr fr And/Or operations for Result chaining
 slay and_then_int(result (lit, normie, tea), f func(normie) (lit, normie, tea)) (lit, normie, tea) {
     bestie result.0 {
         damn f(result.1)
@@ -209,7 +209,7 @@ slay or_else_string(result (lit, tea, tea), f func(tea) (lit, tea, tea)) (lit, t
     damn f(result.2)
 }
 
-# Utility functions for working with Result types
+fr fr Utility functions for working with Result types
 slay result_equals_int(res1 (lit, normie, tea), res2 (lit, normie, tea)) lit {
     bestie res1.0 && res2.0 {
         damn res1.1 == res2.1
@@ -230,7 +230,7 @@ slay result_equals_string(res1 (lit, tea, tea), res2 (lit, tea, tea)) lit {
     damn cap
 }
 
-# Convert Result to string for debugging
+fr fr Convert Result to string for debugging
 slay result_to_string_int(result (lit, normie, tea)) tea {
     bestie result.0 {
         damn "Ok(" + core.tea(result.1) + ")"
@@ -255,7 +255,7 @@ slay result_to_string_bool(result (lit, lit, tea)) tea {
     damn "Err(" + result.2 + ")"
 }
 
-# Common error handling patterns
+fr fr Common error handling patterns
 slay safe_divide(a normie, b normie) (lit, normie, tea) {
     bestie b == 0 {
         damn err_int("division by zero")
@@ -270,8 +270,7 @@ slay safe_string_index(s tea, index normie) (lit, tea, tea) {
     damn ok_string(stringz.char_at(s, index))
 }
 
-slay safe_int_parse(s tea) (lit, normie, tea) {
-    # Simplified integer parsing - production version would be more robust
+slay safe_int_parse(s tea) (lit, normie, tea) { fr fr Simplified integer parsing - production version would be more robust
     bestie s == "0" {
         damn ok_int(0)
     }

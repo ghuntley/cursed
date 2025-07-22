@@ -18,15 +18,15 @@ assert_false(Contains("hello", "hello world"))
 assert_true(Contains("test", ""))
 
 test_start("ContainsAny function")
-assert_true(ContainsAny("hello", "aeiou"))  # Contains vowels
-assert_false(ContainsAny("bcdfg", "aeiou")) # No vowels
-assert_false(ContainsAny("hello", ""))      # Empty chars
+assert_true(ContainsAny("hello", "aeiou")) fr fr Contains vowels
+assert_false(ContainsAny("bcdfg", "aeiou")) fr fr No vowels
+assert_false(ContainsAny("hello", "")) fr fr Empty chars
 
 test_start("Count function")
 assert_eq_int(Count("hello world", "l"), 3)
 assert_eq_int(Count("hello world", "o"), 2)
 assert_eq_int(Count("hello world", "xyz"), 0)
-assert_eq_int(Count("aaa", "aa"), 1)       # Non-overlapping
+assert_eq_int(Count("aaa", "aa"), 1) fr fr Non-overlapping
 
 test_start("HasPrefix function")
 assert_true(HasPrefix("hello world", "hello"))
@@ -229,7 +229,7 @@ fr fr Comprehensive Integration Tests
 fr fr ================================
 
 test_start("Complex string processing")
-# Test a complete text processing pipeline
+fr fr Test a complete text processing pipeline
 sus text tea = "  Hello, Beautiful World!  "
 sus trimmed tea = Trim(text)
 sus lower tea = ToLower(trimmed)

@@ -1,8 +1,8 @@
 yeet "testz"
 yeet "async"
 
-# Comprehensive test suite for async module
-# Tests all async functionality including tasks, futures, promises, and I/O
+fr fr Comprehensive test suite for async module
+fr fr Tests all async functionality including tasks, futures, promises, and I/O
 
 test_start("Async Runtime Initialization Test")
 assert_true(init_async_runtime())
@@ -116,7 +116,7 @@ sus promise_a = promise_new()
 sus promise_b = promise_new()
 sus promise_c = promise_new()
 
-# Resolve promises
+fr fr Resolve promises
 promise_resolve(promise_a, "result_a")
 promise_resolve(promise_b, "result_b") 
 promise_resolve(promise_c, "result_c")
@@ -131,7 +131,7 @@ sus promise_x = promise_new()
 sus promise_y = promise_new()
 sus promise_z = promise_new()
 
-# Resolve first promise
+fr fr Resolve first promise
 promise_resolve(promise_x, "winner")
 
 sus race_promises = [promise_x, promise_y, promise_z]
@@ -158,7 +158,7 @@ assert_true(async_error_handler(task_id13, "test_error"))
 print_test_summary()
 
 test_start("Event Loop Integration Test")
-# Test event loop processing
+fr fr Test event loop processing
 sus event_context = {"event_type": "test_event", "data": "test_data"}
 sus event_task = spawn_async("async_sleep", event_context)
 assert_true(event_task > 0)
@@ -171,7 +171,7 @@ assert_true(set_task_timeout(timeout_task, 100))
 print_test_summary()
 
 test_start("Load Balancer Test")
-# Test load balancing by spawning multiple tasks
+fr fr Test load balancing by spawning multiple tasks
 sus tasks = []
 bestie i := 0; i < 5; i++ {
     sus ctx = {"duration": "10"}
@@ -190,7 +190,7 @@ assert_eq_string(io_result, "write_completed")
 print_test_summary()
 
 test_start("Complex Async Workflow Test")
-# Test complex async workflow with dependencies
+fr fr Test complex async workflow with dependencies
 sus step1_context = {"duration": "10"}
 sus step2_context = {"duration": "15"}
 sus step3_context = {"duration": "20"}
@@ -199,7 +199,7 @@ sus step1_task = spawn_async("async_sleep", step1_context)
 sus step2_task = spawn_async("async_sleep", step2_context)
 sus step3_task = spawn_async("async_sleep", step3_context)
 
-# Create dependencies: step3 depends on step2, step2 depends on step1
+fr fr Create dependencies: step3 depends on step2, step2 depends on step1
 assert_true(add_task_dependency(step2_task, step1_task))
 assert_true(add_task_dependency(step3_task, step2_task))
 

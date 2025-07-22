@@ -1,9 +1,9 @@
 yeet "testz"
 
-# MySQL Database Driver - Pure CURSED Implementation
-# Production-ready MySQL driver with connection management, transactions, and prepared statements
+fr fr MySQL Database Driver - Pure CURSED Implementation
+fr fr Production-ready MySQL driver with connection management, transactions, and prepared statements
 
-# MySQL connection configuration
+fr fr MySQL connection configuration
 slay MySQLConfig() {
     host: tea
     port: normie
@@ -21,7 +21,7 @@ slay MySQLConfig() {
     compress: lit
 }
 
-# MySQL connection structure
+fr fr MySQL connection structure
 slay MySQLConnection() {
     config: MySQLConfig
     connection_id: normie
@@ -41,7 +41,7 @@ slay MySQLConnection() {
     autocommit: lit
 }
 
-# MySQL statement structure
+fr fr MySQL statement structure
 slay MySQLStatement() {
     connection_id: normie
     statement_id: normie
@@ -56,7 +56,7 @@ slay MySQLStatement() {
     warning_count: normie
 }
 
-# MySQL transaction structure
+fr fr MySQL transaction structure
 slay MySQLTransaction() {
     connection_id: normie
     transaction_id: normie
@@ -69,7 +69,7 @@ slay MySQLTransaction() {
     xa_transaction_id: tea
 }
 
-# MySQL query result
+fr fr MySQL query result
 slay MySQLResult() {
     success: lit
     rows_affected: normie
@@ -85,7 +85,7 @@ slay MySQLResult() {
     server_info: tea
 }
 
-# MySQL connection pool
+fr fr MySQL connection pool
 slay MySQLPool() {
     config: MySQLConfig
     connections: [MySQLConnection]
@@ -99,7 +99,7 @@ slay MySQLPool() {
     connection_timeout: normie
 }
 
-# Default MySQL configuration
+fr fr Default MySQL configuration
 slay create_mysql_config() MySQLConfig {
     config := MySQLConfig{
         host: "localhost",
@@ -120,7 +120,7 @@ slay create_mysql_config() MySQLConfig {
     damn config
 }
 
-# Create MySQL connection
+fr fr Create MySQL connection
 slay create_mysql_connection(config: MySQLConfig) MySQLConnection {
     connection := MySQLConnection{
         config: config,
@@ -143,19 +143,19 @@ slay create_mysql_connection(config: MySQLConfig) MySQLConnection {
     damn connection
 }
 
-# Generate unique MySQL connection ID
+fr fr Generate unique MySQL connection ID
 slay generate_mysql_connection_id() normie {
     static_id := 4000
     static_id++
     damn static_id
 }
 
-# Get current timestamp for MySQL
+fr fr Get current timestamp for MySQL
 slay current_mysql_timestamp() tea {
     damn "2025-01-12 12:00:00"
 }
 
-# Connect to MySQL database
+fr fr Connect to MySQL database
 slay connect_mysql(connection: *MySQLConnection) lit {
     if connection.is_connected {
         vibez.spill("⚠️  Already connected to MySQL")
@@ -168,9 +168,7 @@ slay connect_mysql(connection: *MySQLConnection) lit {
     vibez.spill("   Database:", connection.config.database)
     vibez.spill("   Username:", connection.config.username)
     vibez.spill("   Charset:", connection.config.charset)
-    vibez.spill("   SSL Mode:", connection.config.ssl_mode)
-    
-    # Simulate connection process
+    vibez.spill("   SSL Mode:", connection.config.ssl_mode) fr fr Simulate connection process
     connection.is_connected = based
     connection.server_version = "8.0.35-MySQL"
     connection.protocol_version = 10
@@ -188,7 +186,7 @@ slay connect_mysql(connection: *MySQLConnection) lit {
     damn based
 }
 
-# Disconnect from MySQL
+fr fr Disconnect from MySQL
 slay disconnect_mysql(connection: *MySQLConnection) lit {
     if connection.is_connected == cap {
         vibez.spill("⚠️  Already disconnected from MySQL")
@@ -202,7 +200,7 @@ slay disconnect_mysql(connection: *MySQLConnection) lit {
     damn based
 }
 
-# Execute MySQL query
+fr fr Execute MySQL query
 slay execute_mysql_query(connection: *MySQLConnection, query: tea) MySQLResult {
     if connection.is_connected == cap {
         error_result := MySQLResult{
@@ -222,13 +220,9 @@ slay execute_mysql_query(connection: *MySQLConnection, query: tea) MySQLResult {
         damn error_result
     }
     
-    vibez.spill("🔍 Executing MySQL query:", query)
-    
-    # Update connection statistics
+    vibez.spill("🔍 Executing MySQL query:", query) fr fr Update connection statistics
     connection.query_count++
-    connection.last_activity = current_mysql_timestamp()
-    
-    # Simulate query execution based on query type
+    connection.last_activity = current_mysql_timestamp() fr fr Simulate query execution based on query type
     if mysql_starts_with(query, "SELECT") {
         result := MySQLResult{
             success: based,
@@ -302,8 +296,7 @@ slay execute_mysql_query(connection: *MySQLConnection, query: tea) MySQLResult {
         }
         vibez.spill("✅ Deleted", result.rows_affected, "row(s)")
         damn result
-    } else {
-        # Generic DDL or other commands
+    } else { fr fr Generic DDL or other commands
         result := MySQLResult{
             success: based,
             rows_affected: 0,
@@ -323,32 +316,28 @@ slay execute_mysql_query(connection: *MySQLConnection, query: tea) MySQLResult {
     }
 }
 
-# Helper function to check if MySQL query starts with prefix
+fr fr Helper function to check if MySQL query starts with prefix
 slay mysql_starts_with(s: tea, prefix: tea) lit {
     if len(s) < len(prefix) {
         damn cap
-    }
-    
-    # Simple prefix check (simplified for demo)
+    } fr fr Simple prefix check (simplified for demo)
     prefix_upper := mysql_to_upper(prefix)
     s_upper := mysql_to_upper(s)
     
     damn mysql_contains(s_upper, prefix_upper)
 }
 
-# Simple string case conversion for MySQL
-slay mysql_to_upper(s: tea) tea {
-    # Simplified uppercase conversion
+fr fr Simple string case conversion for MySQL
+slay mysql_to_upper(s: tea) tea { fr fr Simplified uppercase conversion
     damn s
 }
 
-# Simple string contains check for MySQL
-slay mysql_contains(s: tea, substr: tea) lit {
-    # Simplified contains check
+fr fr Simple string contains check for MySQL
+slay mysql_contains(s: tea, substr: tea) lit { fr fr Simplified contains check
     damn len(s) > 0 && len(substr) > 0
 }
 
-# Prepare MySQL statement
+fr fr Prepare MySQL statement
 slay prepare_mysql_statement(connection: *MySQLConnection, query: tea) MySQLStatement {
     if connection.is_connected == cap {
         empty_stmt := MySQLStatement{
@@ -367,12 +356,8 @@ slay prepare_mysql_statement(connection: *MySQLConnection, query: tea) MySQLStat
         damn empty_stmt
     }
     
-    vibez.spill("📝 Preparing MySQL statement:", query)
-    
-    # Generate statement ID
-    statement_id := generate_mysql_statement_id()
-    
-    # Count parameters in query (simplified - count ? placeholders)
+    vibez.spill("📝 Preparing MySQL statement:", query) fr fr Generate statement ID
+    statement_id := generate_mysql_statement_id() fr fr Count parameters in query (simplified - count ? placeholders)
     parameter_count := count_mysql_parameters(query)
     
     stmt := MySQLStatement{
@@ -395,26 +380,24 @@ slay prepare_mysql_statement(connection: *MySQLConnection, query: tea) MySQLStat
     damn stmt
 }
 
-# Generate unique MySQL statement ID
+fr fr Generate unique MySQL statement ID
 slay generate_mysql_statement_id() normie {
     static_stmt_id := 5000
     static_stmt_id++
     damn static_stmt_id
 }
 
-# Count parameters in MySQL query
-slay count_mysql_parameters(query: tea) normie {
-    # Simplified parameter counting for ? placeholders
+fr fr Count parameters in MySQL query
+slay count_mysql_parameters(query: tea) normie { fr fr Simplified parameter counting for ? placeholders
     damn 3
 }
 
-# Detect MySQL parameter types
-slay detect_mysql_parameter_types(query: tea) [tea] {
-    # Simplified type detection
+fr fr Detect MySQL parameter types
+slay detect_mysql_parameter_types(query: tea) [tea] { fr fr Simplified type detection
     damn ["varchar", "int", "datetime"]
 }
 
-# Create empty parameter array for MySQL
+fr fr Create empty parameter array for MySQL
 slay make_mysql_empty_parameters(count: normie) [tea] {
     params := []tea{}
     bestie i := 0; i < count; i++ {
@@ -423,7 +406,7 @@ slay make_mysql_empty_parameters(count: normie) [tea] {
     damn params
 }
 
-# Detect MySQL result columns
+fr fr Detect MySQL result columns
 slay detect_mysql_result_columns(query: tea) [tea] {
     if mysql_starts_with(query, "SELECT") {
         damn ["id", "name", "email", "created_at"]
@@ -431,7 +414,7 @@ slay detect_mysql_result_columns(query: tea) [tea] {
     damn []tea{}
 }
 
-# Detect MySQL column types
+fr fr Detect MySQL column types
 slay detect_mysql_column_types(query: tea) [tea] {
     if mysql_starts_with(query, "SELECT") {
         damn ["int", "varchar(255)", "varchar(255)", "datetime"]
@@ -439,7 +422,7 @@ slay detect_mysql_column_types(query: tea) [tea] {
     damn []tea{}
 }
 
-# Bind parameter to MySQL prepared statement
+fr fr Bind parameter to MySQL prepared statement
 slay bind_mysql_parameter(stmt: *MySQLStatement, index: normie, value: tea) lit {
     if stmt.is_prepared == cap {
         vibez.spill("❌ Statement not prepared")
@@ -456,7 +439,7 @@ slay bind_mysql_parameter(stmt: *MySQLStatement, index: normie, value: tea) lit 
     damn based
 }
 
-# Execute MySQL prepared statement
+fr fr Execute MySQL prepared statement
 slay execute_mysql_prepared_statement(stmt: *MySQLStatement) MySQLResult {
     if stmt.is_prepared == cap {
         error_result := MySQLResult{
@@ -478,9 +461,7 @@ slay execute_mysql_prepared_statement(stmt: *MySQLStatement) MySQLResult {
     
     vibez.spill("⚡ Executing MySQL prepared statement:", stmt.statement_id)
     vibez.spill("   Query:", stmt.query)
-    vibez.spill("   Parameters:", stmt.bound_parameters)
-    
-    # Simulate execution
+    vibez.spill("   Parameters:", stmt.bound_parameters) fr fr Simulate execution
     stmt.last_execution_time = 35
     
     result := MySQLResult{
@@ -504,7 +485,7 @@ slay execute_mysql_prepared_statement(stmt: *MySQLStatement) MySQLResult {
     damn result
 }
 
-# Begin MySQL transaction
+fr fr Begin MySQL transaction
 slay begin_mysql_transaction(connection: *MySQLConnection, isolation_level: tea) MySQLTransaction {
     if connection.is_connected == cap {
         empty_tx := MySQLTransaction{
@@ -524,9 +505,7 @@ slay begin_mysql_transaction(connection: *MySQLConnection, isolation_level: tea)
     vibez.spill("🔄 Beginning MySQL transaction")
     vibez.spill("   Isolation Level:", isolation_level)
     
-    transaction_id := generate_mysql_transaction_id()
-    
-    # Disable autocommit for transaction
+    transaction_id := generate_mysql_transaction_id() fr fr Disable autocommit for transaction
     connection.autocommit = cap
     
     tx := MySQLTransaction{
@@ -546,14 +525,14 @@ slay begin_mysql_transaction(connection: *MySQLConnection, isolation_level: tea)
     damn tx
 }
 
-# Generate unique MySQL transaction ID
+fr fr Generate unique MySQL transaction ID
 slay generate_mysql_transaction_id() normie {
     static_tx_id := 6000
     static_tx_id++
     damn static_tx_id
 }
 
-# Commit MySQL transaction
+fr fr Commit MySQL transaction
 slay commit_mysql_transaction(connection: *MySQLConnection, tx: *MySQLTransaction) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")
@@ -569,14 +548,14 @@ slay commit_mysql_transaction(connection: *MySQLConnection, tx: *MySQLTransactio
     vibez.spill("   Operations:", tx.operations_count)
     
     tx.is_active = cap
-    connection.autocommit = based  # Re-enable autocommit
+    connection.autocommit = based fr fr Re-enable autocommit
     
     vibez.spill("✅ Transaction committed successfully")
     vibez.spill("   Autocommit re-enabled")
     damn based
 }
 
-# Rollback MySQL transaction
+fr fr Rollback MySQL transaction
 slay rollback_mysql_transaction(connection: *MySQLConnection, tx: *MySQLTransaction) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")
@@ -592,14 +571,14 @@ slay rollback_mysql_transaction(connection: *MySQLConnection, tx: *MySQLTransact
     vibez.spill("   Operations to rollback:", tx.operations_count)
     
     tx.is_active = cap
-    connection.autocommit = based  # Re-enable autocommit
+    connection.autocommit = based fr fr Re-enable autocommit
     
     vibez.spill("✅ Transaction rolled back successfully")
     vibez.spill("   Autocommit re-enabled")
     damn based
 }
 
-# Set MySQL autocommit mode
+fr fr Set MySQL autocommit mode
 slay set_mysql_autocommit(connection: *MySQLConnection, enable: lit) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")
@@ -617,7 +596,7 @@ slay set_mysql_autocommit(connection: *MySQLConnection, enable: lit) lit {
     damn based
 }
 
-# Create MySQL connection pool
+fr fr Create MySQL connection pool
 slay create_mysql_pool(config: MySQLConfig, max_connections: normie) MySQLPool {
     pool := MySQLPool{
         config: config,
@@ -638,7 +617,7 @@ slay create_mysql_pool(config: MySQLConfig, max_connections: normie) MySQLPool {
     damn pool
 }
 
-# Get connection from MySQL pool
+fr fr Get connection from MySQL pool
 slay get_mysql_pool_connection(pool: *MySQLPool) MySQLConnection {
     if pool.current_connections >= pool.max_connections {
         vibez.spill("❌ MySQL connection pool exhausted")
@@ -661,9 +640,7 @@ slay get_mysql_pool_connection(pool: *MySQLPool) MySQLConnection {
             autocommit: based
         }
         damn empty_conn
-    }
-    
-    # Check for available connections
+    } fr fr Check for available connections
     if len(pool.available_connections) > 0 {
         conn_id := pool.available_connections[0]
         pool.available_connections = pool.available_connections[1:]
@@ -674,9 +651,7 @@ slay get_mysql_pool_connection(pool: *MySQLPool) MySQLConnection {
                 damn pool.connections[i]
             }
         }
-    }
-    
-    # Create new connection
+    } fr fr Create new connection
     connection := create_mysql_connection(pool.config)
     connect_mysql(&connection)
     
@@ -687,21 +662,19 @@ slay get_mysql_pool_connection(pool: *MySQLPool) MySQLConnection {
     damn connection
 }
 
-# Return MySQL connection to pool
+fr fr Return MySQL connection to pool
 slay return_mysql_pool_connection(pool: *MySQLPool, connection_id: normie) lit {
     if connection_id <= 0 {
         vibez.spill("❌ Invalid connection ID")
         damn cap
-    }
-    
-    # Add to available connections
+    } fr fr Add to available connections
     pool.available_connections = append(pool.available_connections, connection_id)
     
     vibez.spill("↩️  Returned MySQL connection to pool:", connection_id)
     damn based
 }
 
-# Get MySQL pool statistics
+fr fr Get MySQL pool statistics
 slay get_mysql_pool_stats(pool: *MySQLPool) {
     vibez.spill("📊 MySQL Pool Statistics:")
     vibez.spill("   Max connections:", pool.max_connections)
@@ -714,14 +687,12 @@ slay get_mysql_pool_stats(pool: *MySQLPool) {
     vibez.spill("   Connection timeout:", pool.connection_timeout, "seconds")
 }
 
-# MySQL connection health check
+fr fr MySQL connection health check
 slay health_check_mysql(connection: *MySQLConnection) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ MySQL connection health check failed: Not connected")
         damn cap
-    }
-    
-    # Simulate health check query
+    } fr fr Simulate health check query
     result := execute_mysql_query(connection, "SELECT 1")
     
     if result.success {
@@ -733,7 +704,7 @@ slay health_check_mysql(connection: *MySQLConnection) lit {
     }
 }
 
-# Get MySQL server info
+fr fr Get MySQL server info
 slay get_mysql_server_info(connection: *MySQLConnection) {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")
@@ -755,7 +726,7 @@ slay get_mysql_server_info(connection: *MySQLConnection) {
     vibez.spill("   Warnings:", connection.warnings)
 }
 
-# Show MySQL processlist
+fr fr Show MySQL processlist
 slay show_mysql_processlist(connection: *MySQLConnection) MySQLResult {
     if connection.is_connected == cap {
         error_result := MySQLResult{

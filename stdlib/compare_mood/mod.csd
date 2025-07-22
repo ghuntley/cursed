@@ -1,12 +1,12 @@
-# CURSED compare_mood stdlib module
-# Pure CURSED implementation of comparison utilities
+fr fr CURSED compare_mood stdlib module
+fr fr Pure CURSED implementation of comparison utilities
 
-# Comparison result constants
+fr fr Comparison result constants
 sus LessThan normie = -1
 sus Equal normie = 0
 sus GreaterThan normie = 1
 
-# Basic integer comparison
+fr fr Basic integer comparison
 slay CompareInt(a normie, b normie) normie {
     if a < b {
         damn LessThan
@@ -17,9 +17,8 @@ slay CompareInt(a normie, b normie) normie {
     damn Equal
 }
 
-# String comparison
-slay CompareString(a tea, b tea) normie {
-    # Simple lexicographical comparison
+fr fr String comparison
+slay CompareString(a tea, b tea) normie { fr fr Simple lexicographical comparison
     if a < b {
         damn LessThan
     }
@@ -29,7 +28,7 @@ slay CompareString(a tea, b tea) normie {
     damn Equal
 }
 
-# Float comparison
+fr fr Float comparison
 slay CompareFloat(a meal, b meal) normie {
     if a < b {
         damn LessThan
@@ -40,7 +39,7 @@ slay CompareFloat(a meal, b meal) normie {
     damn Equal
 }
 
-# Boolean comparison (cap < based)
+fr fr Boolean comparison (cap < based)
 slay CompareBool(a lit, b lit) normie {
     if a == b {
         damn Equal
@@ -51,87 +50,87 @@ slay CompareBool(a lit, b lit) normie {
     damn GreaterThan
 }
 
-# Equality check for integers
+fr fr Equality check for integers
 slay EqualInt(a normie, b normie) lit {
     damn a == b
 }
 
-# Equality check for strings
+fr fr Equality check for strings
 slay EqualString(a tea, b tea) lit {
     damn a == b
 }
 
-# Equality check for floats
+fr fr Equality check for floats
 slay EqualFloat(a meal, b meal) lit {
     damn a == b
 }
 
-# Equality check for booleans
+fr fr Equality check for booleans
 slay EqualBool(a lit, b lit) lit {
     damn a == b
 }
 
-# Less than check for integers
+fr fr Less than check for integers
 slay LessInt(a normie, b normie) lit {
     damn a < b
 }
 
-# Less than check for strings
+fr fr Less than check for strings
 slay LessString(a tea, b tea) lit {
     damn a < b
 }
 
-# Less than check for floats
+fr fr Less than check for floats
 slay LessFloat(a meal, b meal) lit {
     damn a < b
 }
 
-# Greater than check for integers
+fr fr Greater than check for integers
 slay GreaterInt(a normie, b normie) lit {
     damn a > b
 }
 
-# Greater than check for strings
+fr fr Greater than check for strings
 slay GreaterString(a tea, b tea) lit {
     damn a > b
 }
 
-# Greater than check for floats
+fr fr Greater than check for floats
 slay GreaterFloat(a meal, b meal) lit {
     damn a > b
 }
 
-# Less than or equal check for integers
+fr fr Less than or equal check for integers
 slay LessEqualInt(a normie, b normie) lit {
     damn a <= b
 }
 
-# Less than or equal check for strings
+fr fr Less than or equal check for strings
 slay LessEqualString(a tea, b tea) lit {
     damn a <= b
 }
 
-# Less than or equal check for floats
+fr fr Less than or equal check for floats
 slay LessEqualFloat(a meal, b meal) lit {
     damn a <= b
 }
 
-# Greater than or equal check for integers
+fr fr Greater than or equal check for integers
 slay GreaterEqualInt(a normie, b normie) lit {
     damn a >= b
 }
 
-# Greater than or equal check for strings
+fr fr Greater than or equal check for strings
 slay GreaterEqualString(a tea, b tea) lit {
     damn a >= b
 }
 
-# Greater than or equal check for floats
+fr fr Greater than or equal check for floats
 slay GreaterEqualFloat(a meal, b meal) lit {
     damn a >= b
 }
 
-# Three-way comparison helper
+fr fr Three-way comparison helper
 slay ThreeWay(less_condition lit, greater_condition lit) normie {
     if less_condition {
         damn LessThan
@@ -142,7 +141,7 @@ slay ThreeWay(less_condition lit, greater_condition lit) normie {
     damn Equal
 }
 
-# Min function for integers
+fr fr Min function for integers
 slay MinInt(a normie, b normie) normie {
     if a < b {
         damn a
@@ -150,7 +149,7 @@ slay MinInt(a normie, b normie) normie {
     damn b
 }
 
-# Max function for integers
+fr fr Max function for integers
 slay MaxInt(a normie, b normie) normie {
     if a > b {
         damn a
@@ -158,7 +157,7 @@ slay MaxInt(a normie, b normie) normie {
     damn b
 }
 
-# Min function for floats
+fr fr Min function for floats
 slay MinFloat(a meal, b meal) meal {
     if a < b {
         damn a
@@ -166,7 +165,7 @@ slay MinFloat(a meal, b meal) meal {
     damn b
 }
 
-# Max function for floats
+fr fr Max function for floats
 slay MaxFloat(a meal, b meal) meal {
     if a > b {
         damn a
@@ -174,7 +173,7 @@ slay MaxFloat(a meal, b meal) meal {
     damn b
 }
 
-# Min function for strings
+fr fr Min function for strings
 slay MinString(a tea, b tea) tea {
     if a < b {
         damn a
@@ -182,7 +181,7 @@ slay MinString(a tea, b tea) tea {
     damn b
 }
 
-# Max function for strings
+fr fr Max function for strings
 slay MaxString(a tea, b tea) tea {
     if a > b {
         damn a
@@ -190,7 +189,7 @@ slay MaxString(a tea, b tea) tea {
     damn b
 }
 
-# Clamp function for integers
+fr fr Clamp function for integers
 slay ClampInt(value normie, min normie, max normie) normie {
     if value < min {
         damn min
@@ -201,7 +200,7 @@ slay ClampInt(value normie, min normie, max normie) normie {
     damn value
 }
 
-# Clamp function for floats
+fr fr Clamp function for floats
 slay ClampFloat(value meal, min meal, max meal) meal {
     if value < min {
         damn min
@@ -212,7 +211,7 @@ slay ClampFloat(value meal, min meal, max meal) meal {
     damn value
 }
 
-# Sign function for integers
+fr fr Sign function for integers
 slay SignInt(value normie) normie {
     if value < 0 {
         damn -1
@@ -223,7 +222,7 @@ slay SignInt(value normie) normie {
     damn 0
 }
 
-# Sign function for floats
+fr fr Sign function for floats
 slay SignFloat(value meal) normie {
     if value < 0.0 {
         damn -1
@@ -234,7 +233,7 @@ slay SignFloat(value meal) normie {
     damn 0
 }
 
-# Absolute value for integers
+fr fr Absolute value for integers
 slay AbsInt(value normie) normie {
     if value < 0 {
         damn -value
@@ -242,7 +241,7 @@ slay AbsInt(value normie) normie {
     damn value
 }
 
-# Absolute value for floats
+fr fr Absolute value for floats
 slay AbsFloat(value meal) meal {
     if value < 0.0 {
         damn -value
@@ -250,32 +249,32 @@ slay AbsFloat(value meal) meal {
     damn value
 }
 
-# Distance between two integers
+fr fr Distance between two integers
 slay DistanceInt(a normie, b normie) normie {
     damn AbsInt(a - b)
 }
 
-# Distance between two floats
+fr fr Distance between two floats
 slay DistanceFloat(a meal, b meal) meal {
     damn AbsFloat(a - b)
 }
 
-# Check if value is between two bounds (inclusive)
+fr fr Check if value is between two bounds (inclusive)
 slay BetweenInt(value normie, min normie, max normie) lit {
     damn value >= min && value <= max
 }
 
-# Check if value is between two bounds (inclusive)
+fr fr Check if value is between two bounds (inclusive)
 slay BetweenFloat(value meal, min meal, max meal) lit {
     damn value >= min && value <= max
 }
 
-# Check if value is between two bounds (exclusive)
+fr fr Check if value is between two bounds (exclusive)
 slay BetweenExclusiveInt(value normie, min normie, max normie) lit {
     damn value > min && value < max
 }
 
-# Check if value is between two bounds (exclusive)
+fr fr Check if value is between two bounds (exclusive)
 slay BetweenExclusiveFloat(value meal, min meal, max meal) lit {
     damn value > min && value < max
 }

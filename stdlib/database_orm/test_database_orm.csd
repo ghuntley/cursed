@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "database_orm"
 
-# === DATABASE ORM TESTS ===
+fr fr === DATABASE ORM TESTS ===
 
 slay test_create_entity_metadata() lit {
     test_start("Create entity metadata")
@@ -45,7 +45,7 @@ slay test_get_entity_attribute() lit {
     entity = set_entity_attribute(entity, "name", "John Doe")
     
     sus name tea = get_entity_attribute(entity, "name")
-    assert_eq_string(name, "extracted_value")  # Simplified implementation
+    assert_eq_string(name, "extracted_value") fr fr Simplified implementation
     
     damn based
 }
@@ -489,25 +489,15 @@ slay test_complex_query_building() lit {
 }
 
 slay test_full_orm_operations() lit {
-    test_start("Full ORM operations")
-    
-    # Create entity and repository
+    test_start("Full ORM operations") fr fr Create entity and repository
     sus user tea = create_user_entity("Jane Smith", "jane@example.com")
-    sus repository tea = create_repository("User")
-    
-    # Save entity
+    sus repository tea = create_repository("User") fr fr Save entity
     user = save_entity(repository, user)
-    assert_true(user.contains("saved=true"))
-    
-    # Find entity
+    assert_true(user.contains("saved=true")) fr fr Find entity
     sus found tea = find_by_id(repository, "123")
-    assert_true(found.contains("entity:id=123"))
-    
-    # Load relationship
+    assert_true(found.contains("entity:id=123")) fr fr Load relationship
     sus with_profile tea = load_relationship(user, "profile")
-    assert_true(with_profile.contains("loaded:profile"))
-    
-    # Validate entity
+    assert_true(with_profile.contains("loaded:profile")) fr fr Validate entity
     sus valid lit = validate_entity(user)
     assert_eq_lit(valid, based)
     
@@ -515,29 +505,19 @@ slay test_full_orm_operations() lit {
 }
 
 slay test_advanced_features() lit {
-    test_start("Advanced ORM features")
-    
-    # Test batch operations
+    test_start("Advanced ORM features") fr fr Test batch operations
     sus repository tea = create_repository("User")
     sus batch_result lit = batch_save_entities(repository, "entities")
-    assert_eq_lit(batch_result, based)
-    
-    # Test join query
+    assert_eq_lit(batch_result, based) fr fr Test join query
     sus join_query tea = create_join_query("users", "profiles", "users.id = profiles.user_id")
     assert_true(join_query.contains("SELECT * FROM users"))
     assert_true(join_query.contains("JOIN profiles"))
-    assert_true(join_query.contains("ON users.id = profiles.user_id"))
-    
-    # Test validation with rules
+    assert_true(join_query.contains("ON users.id = profiles.user_id")) fr fr Test validation with rules
     sus entity tea = create_entity("users", "id")
     sus valid lit = validate_with_rules(entity, "required:name,email")
-    assert_eq_lit(valid, based)
-    
-    # Test query caching
+    assert_eq_lit(valid, based) fr fr Test query caching
     sus cached lit = cache_query_result("SELECT * FROM users", "results")
-    assert_eq_lit(cached, based)
-    
-    # Test performance logging
+    assert_eq_lit(cached, based) fr fr Test performance logging
     sus perf_log tea = log_query_performance("SELECT * FROM users", 150)
     assert_true(perf_log.contains("[PERF]"))
     assert_true(perf_log.contains("150ms"))
@@ -545,7 +525,7 @@ slay test_advanced_features() lit {
     damn based
 }
 
-# === ADVANCED FIELD IMPLEMENTATION TESTS ===
+fr fr === ADVANCED FIELD IMPLEMENTATION TESTS ===
 
 slay test_field_mapping() lit {
     test_start("Field mapping")
@@ -592,7 +572,7 @@ slay test_validation_rules() lit {
     damn based
 }
 
-# === ENHANCED MIGRATION SYSTEM TESTS ===
+fr fr === ENHANCED MIGRATION SYSTEM TESTS ===
 
 slay test_migration_with_sql() lit {
     test_start("Migration with SQL")
@@ -635,7 +615,7 @@ slay test_schema_diff_migration() lit {
     damn based
 }
 
-# === ENHANCED QUERY BUILDER TESTS ===
+fr fr === ENHANCED QUERY BUILDER TESTS ===
 
 slay test_subquery() lit {
     test_start("Subquery")
@@ -708,7 +688,7 @@ slay test_window_functions() lit {
     damn based
 }
 
-# === ADVANCED RELATIONSHIP MANAGEMENT TESTS ===
+fr fr === ADVANCED RELATIONSHIP MANAGEMENT TESTS ===
 
 slay test_relationship_definitions() lit {
     test_start("Relationship definitions")
@@ -750,7 +730,7 @@ slay test_cascade_delete() lit {
     damn based
 }
 
-# === ENHANCED SCHEMA MANAGEMENT TESTS ===
+fr fr === ENHANCED SCHEMA MANAGEMENT TESTS ===
 
 slay test_index_management() lit {
     test_start("Index management")
@@ -803,7 +783,7 @@ slay test_schema_versioning() lit {
     damn based
 }
 
-# === ADVANCED CRUD OPERATIONS TESTS ===
+fr fr === ADVANCED CRUD OPERATIONS TESTS ===
 
 slay test_bulk_operations() lit {
     test_start("Bulk operations")
@@ -857,7 +837,7 @@ slay test_count_and_pagination() lit {
     damn based
 }
 
-# === ENTERPRISE FEATURES TESTS ===
+fr fr === ENTERPRISE FEATURES TESTS ===
 
 slay test_multi_tenancy() lit {
     test_start("Multi-tenancy")
@@ -901,127 +881,85 @@ slay test_row_level_security() lit {
     sus builder tea = create_query_builder("users")
     sus admin_query tea = apply_row_level_security(builder, "admin", "user_123")
     sus user_query tea = apply_row_level_security(builder, "user", "user_123")
-    sus guest_query tea = apply_row_level_security(builder, "guest", "user_123")
-    
-    # Admin should see original query
+    sus guest_query tea = apply_row_level_security(builder, "guest", "user_123") fr fr Admin should see original query
     assert_true(admin_query.contains("SELECT * FROM users"))
-    assert_false(admin_query.contains("WHERE user_id ="))
-    
-    # User should have user_id filter
-    assert_true(user_query.contains("WHERE user_id = 'user_123'"))
-    
-    # Guest should have no access
+    assert_false(admin_query.contains("WHERE user_id =")) fr fr User should have user_id filter
+    assert_true(user_query.contains("WHERE user_id = 'user_123'")) fr fr Guest should have no access
     assert_true(guest_query.contains("WHERE 1 = '0'"))
     
     damn based
 }
 
-# === RUN ALL TESTS ===
+fr fr === RUN ALL TESTS ===
 
 slay run_all_database_orm_tests() lit {
-    vibez.spill("=== Running Database ORM Tests ===")
-    
-    # Core functionality tests
+    vibez.spill("=== Running Database ORM Tests ===") fr fr Core functionality tests
     test_create_entity_metadata()
     test_create_entity()
     test_set_entity_attribute()
-    test_get_entity_attribute()
-    
-    # Query builder tests
+    test_get_entity_attribute() fr fr Query builder tests
     test_create_query_builder()
     test_where_condition()
     test_order_by()
     test_limit_results()
-    test_build_query()
-    
-    # Schema management tests
+    test_build_query() fr fr Schema management tests
     test_create_table_schema()
     test_add_column_to_schema()
-    test_generate_create_table_sql()
-    
-    # Connection pool tests
+    test_generate_create_table_sql() fr fr Connection pool tests
     test_create_connection_pool()
     test_get_connection()
-    test_return_connection()
-    
-    # Transaction tests
+    test_return_connection() fr fr Transaction tests
     test_begin_transaction()
     test_commit_transaction()
-    test_rollback_transaction()
-    
-    # Repository tests
+    test_rollback_transaction() fr fr Repository tests
     test_create_repository()
     test_find_by_id()
     test_find_all()
     test_save_entity()
-    test_delete_entity()
-    
-    # SQL generation tests
+    test_delete_entity() fr fr SQL generation tests
     test_build_insert_query()
     test_build_update_query()
-    test_build_delete_query()
-    
-    # Migration tests
+    test_build_delete_query() fr fr Migration tests
     test_create_migration()
     test_apply_migration()
-    test_rollback_migration()
-    
-    # Validation and relationships
+    test_rollback_migration() fr fr Validation and relationships
     test_validate_entity()
-    test_load_relationship()
-    
-    # Utility tests
+    test_load_relationship() fr fr Utility tests
     test_escape_sql_value()
     test_generate_uuid()
     test_get_current_timestamp()
     test_format_sql_for_logging()
-    test_calculate_checksum()
-    
-    # High-level operation tests
+    test_calculate_checksum() fr fr High-level operation tests
     test_create_user_entity()
     test_query_users_by_status()
     test_create_users_table_schema()
     test_user_management_workflow()
     test_complex_query_building()
     test_full_orm_operations()
-    test_advanced_features()
-    
-    # Advanced field implementation tests
+    test_advanced_features() fr fr Advanced field implementation tests
     test_field_mapping()
     test_field_type_conversion()
-    test_validation_rules()
-    
-    # Enhanced migration system tests
+    test_validation_rules() fr fr Enhanced migration system tests
     test_migration_with_sql()
     test_migration_history()
-    test_schema_diff_migration()
-    
-    # Enhanced query builder tests
+    test_schema_diff_migration() fr fr Enhanced query builder tests
     test_subquery()
     test_exists_clause()
     test_group_by_having()
     test_union_queries()
     test_cte()
-    test_window_functions()
-    
-    # Advanced relationship management tests
+    test_window_functions() fr fr Advanced relationship management tests
     test_relationship_definitions()
     test_relationship_loading()
-    test_cascade_delete()
-    
-    # Enhanced schema management tests
+    test_cascade_delete() fr fr Enhanced schema management tests
     test_index_management()
     test_constraints()
     test_views()
-    test_schema_versioning()
-    
-    # Advanced CRUD operations tests
+    test_schema_versioning() fr fr Advanced CRUD operations tests
     test_bulk_operations()
     test_upsert_operations()
     test_soft_delete()
-    test_count_and_pagination()
-    
-    # Enterprise features tests
+    test_count_and_pagination() fr fr Enterprise features tests
     test_multi_tenancy()
     test_audit_trail()
     test_encryption()
@@ -1032,5 +970,5 @@ slay run_all_database_orm_tests() lit {
     damn based
 }
 
-# Run all tests
+fr fr Run all tests
 run_all_database_orm_tests()

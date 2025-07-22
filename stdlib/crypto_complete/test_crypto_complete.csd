@@ -1,10 +1,10 @@
 yeet "testz"
 yeet "crypto_complete"
 
-# Comprehensive Cryptography Module Tests
-# Production-grade security testing suite
+fr fr Comprehensive Cryptography Module Tests
+fr fr Production-grade security testing suite
 
-# === SHA-256 HASH FUNCTION TESTS ===
+fr fr === SHA-256 HASH FUNCTION TESTS ===
 
 test_start("SHA-256 Empty String")
 sus empty_hash tea = sha256_hash("")
@@ -28,7 +28,7 @@ sus long_hash tea = sha256_hash(long_message)
 sus expected_long tea = "cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1"
 assert_eq_string(long_hash, expected_long)
 
-# === SHA-512 HASH FUNCTION TESTS ===
+fr fr === SHA-512 HASH FUNCTION TESTS ===
 
 test_start("SHA-512 Empty String")
 sus sha512_empty tea = sha512_hash("")
@@ -49,7 +49,7 @@ sus million_hash tea = sha512_hash(million_a)
 sus expected_million tea = "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973ebde0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b"
 assert_eq_string(million_hash, expected_million)
 
-# === AES ENCRYPTION/DECRYPTION TESTS ===
+fr fr === AES ENCRYPTION/DECRYPTION TESTS ===
 
 test_start("AES-256 Basic Encryption/Decryption")
 sus plaintext tea = "Hello, World! This is a test message for AES encryption."
@@ -81,7 +81,7 @@ sus cipher1 tea = aes_encrypt(message, key1)
 sus cipher2 tea = aes_encrypt(message, key2)
 assert_true(cipher1 != cipher2)
 
-# === RSA DIGITAL SIGNATURE TESTS ===
+fr fr === RSA DIGITAL SIGNATURE TESTS ===
 
 test_start("RSA Key Generation")
 sus (public_key, private_key) = rsa_generate_keypair()
@@ -109,7 +109,7 @@ sus wrong_signature tea = "invalid_signature_data"
 sus wrong_verification lit = rsa_verify(test_message, wrong_signature, public_key)
 assert_true(!wrong_verification)
 
-# === SECURE RANDOM NUMBER GENERATION TESTS ===
+fr fr === SECURE RANDOM NUMBER GENERATION TESTS ===
 
 test_start("Secure Random Bytes Generation")
 sus random_bytes_10 tea = secure_random_bytes(10)
@@ -141,13 +141,13 @@ bestie i := 0; i < 1000; i++ {
     sus random_digit normie = secure_random_int(0, 9)
     random_counts[random_digit]++
 }
-# Check that all digits appear (basic distribution test)
+fr fr Check that all digits appear (basic distribution test)
 bestie i := 0; i < 10; i++ {
     damn random_counts[i] > 0 ? based : cap
 }
 assert_true(distribution_test)
 
-# === CRYPTOGRAPHIC UTILITIES TESTS ===
+fr fr === CRYPTOGRAPHIC UTILITIES TESTS ===
 
 test_start("Constant Time Compare - Equal Strings")
 sus string1 tea = "cryptographic_secret"
@@ -182,7 +182,7 @@ sus hmac_key tea = "secret_authentication_key"
 sus hmac_message tea = "Message to authenticate"
 sus mac1 tea = hmac_sha256(hmac_key, hmac_message)
 sus mac2 tea = hmac_sha256(hmac_key, hmac_message)
-assert_eq_string(mac1, mac2)  # Same key and message should produce same MAC
+assert_eq_string(mac1, mac2) fr fr Same key and message should produce same MAC
 
 test_start("HMAC-SHA256 Different Messages")
 sus hmac_message1 tea = "Original message"
@@ -191,7 +191,7 @@ sus mac_orig tea = hmac_sha256(hmac_key, hmac_message1)
 sus mac_mod tea = hmac_sha256(hmac_key, hmac_message2)
 assert_true(mac_orig != mac_mod)
 
-# === SECURITY VALIDATION TESTS ===
+fr fr === SECURITY VALIDATION TESTS ===
 
 test_start("Crypto Input Validation")
 sus valid_input tea = "valid_crypto_input_with_good_length"
@@ -221,26 +221,26 @@ sus sensitive_data tea = "very_sensitive_password_data"
 sus wipe_result lit = crypto_secure_wipe(sensitive_data)
 assert_true(wipe_result)
 
-# === INTEGRATION TESTS ===
+fr fr === INTEGRATION TESTS ===
 
 test_start("Full Cryptographic Workflow")
-# Generate random password
+fr fr Generate random password
 sus charset tea = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
 sus random_password tea = secure_random_string(32, charset)
 
-# Derive encryption key from password
+fr fr Derive encryption key from password
 sus salt tea = secure_random_bytes(16)
 sus encryption_key tea = pbkdf2_derive_key(random_password, salt, 10000, 32)
 
-# Encrypt sensitive data
+fr fr Encrypt sensitive data
 sus sensitive_message tea = "This is highly confidential data that must be protected."
 sus encrypted_data tea = aes_encrypt(sensitive_message, encryption_key)
 
-# Generate digital signature
+fr fr Generate digital signature
 sus (sig_public, sig_private) = rsa_generate_keypair()
 sus data_signature tea = rsa_sign(encrypted_data, sig_private)
 
-# Verify signature and decrypt
+fr fr Verify signature and decrypt
 sus signature_valid lit = rsa_verify(encrypted_data, data_signature, sig_public)
 sus decrypted_data tea = aes_decrypt(encrypted_data, encryption_key)
 
@@ -256,7 +256,7 @@ bestie i := 1; i < 10; i++ {
     hash_chain[i] = sha256_hash(hash_chain[i-1])
 }
 
-# Verify chain integrity
+fr fr Verify chain integrity
 sus chain_valid lit = based
 bestie i := 1; i < 10; i++ {
     sus expected_hash tea = sha256_hash(hash_chain[i-1])
@@ -264,7 +264,7 @@ bestie i := 1; i < 10; i++ {
 }
 assert_true(chain_valid)
 
-# === PERFORMANCE AND STRESS TESTS ===
+fr fr === PERFORMANCE AND STRESS TESTS ===
 
 test_start("Large Data Encryption Performance")
 sus large_data tea = ""
@@ -276,7 +276,7 @@ sus start_time normie = get_current_time_ms()
 sus large_encrypted tea = aes_encrypt(large_data, perf_key)
 sus large_decrypted tea = aes_decrypt(large_encrypted, perf_key)
 sus end_time normie = get_current_time_ms()
-sus performance_acceptable lit = (end_time - start_time) < 5000  # 5 seconds max
+sus performance_acceptable lit = (end_time - start_time) < 5000 fr fr 5 seconds max
 assert_true(performance_acceptable)
 assert_eq_string(large_decrypted, large_data)
 
@@ -286,24 +286,24 @@ sus hash_start_time normie = get_current_time_ms()
 bestie i := 0; i < hash_count; i++ {
     sus test_data tea = "Hash performance test data " + int_to_string(i)
     sus computed_hash tea = sha256_hash(test_data)
-    assert_true(string_length(computed_hash) == 64)  # SHA-256 hex length
+    assert_true(string_length(computed_hash) == 64) fr fr SHA-256 hex length
 }
 sus hash_end_time normie = get_current_time_ms()
-sus hash_performance_ok lit = (hash_end_time - hash_start_time) < 10000  # 10 seconds max
+sus hash_performance_ok lit = (hash_end_time - hash_start_time) < 10000 fr fr 10 seconds max
 assert_true(hash_performance_ok)
 
-# === EDGE CASE AND ERROR HANDLING TESTS ===
+fr fr === EDGE CASE AND ERROR HANDLING TESTS ===
 
 test_start("Empty Key Handling")
 sus empty_key tea = ""
 sus test_data tea = "test data"
-# These should handle empty keys gracefully
+fr fr These should handle empty keys gracefully
 sus empty_hmac tea = hmac_sha256(empty_key, test_data)
 assert_true(string_length(empty_hmac) > 0)
 
 test_start("Maximum Input Size Handling")
 sus max_size_data tea = ""
-bestie i := 0; i < 100000; i++ {  # 100KB test
+bestie i := 0; i < 100000; i++ { fr fr 100KB test
     max_size_data += "A"
 }
 sus max_hash tea = sha256_hash(max_size_data)
@@ -312,7 +312,7 @@ assert_true(string_length(max_hash) == 64)
 test_start("Cryptographic Module Initialization")
 assert_true(module_initialized)
 
-# Print comprehensive test summary
+fr fr Print comprehensive test summary
 print_test_summary()
 
 vibez.spill("=== CRYPTOGRAPHY MODULE TEST COMPLETE ===")

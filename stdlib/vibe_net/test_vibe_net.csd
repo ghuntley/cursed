@@ -1,9 +1,9 @@
 yeet "testz"
 yeet "vibe_net"
 
-# Comprehensive test suite for vibe_net networking module
+fr fr Comprehensive test suite for vibe_net networking module
 
-# IP Address Tests
+fr fr IP Address Tests
 test_start("ParseIP IPv4 address")
 sus ip4 IPVibe = ParseIP("192.168.1.1")
 assert_eq_string(ip4.String(), "192.168.1.1")
@@ -45,7 +45,7 @@ test_start("IP address IsGlobalUnicast")
 sus global_ip IPVibe = ParseIP("8.8.8.8")
 assert_true(global_ip.IsGlobalUnicast())
 
-# TCP Address Tests
+fr fr TCP Address Tests
 test_start("ResolveTCPAddr")
 sus tcp_addr TCPAddrVibe = ResolveTCPAddr("tcp", "localhost:8080")
 assert_eq_string(tcp_addr.Network(), "tcp")
@@ -57,14 +57,14 @@ sus tcp_addr2 TCPAddrVibe = ResolveTCPAddr("tcp", "192.168.1.1:9090")
 sus addr_ip IPVibe = tcp_addr2.IP()
 assert_eq_string(addr_ip.String(), "192.168.1.1")
 
-# UDP Address Tests
+fr fr UDP Address Tests
 test_start("ResolveUDPAddr")
 sus udp_addr UDPAddrVibe = ResolveUDPAddr("udp", "localhost:8081")
 assert_eq_string(udp_addr.Network(), "udp")
 assert_eq_string(udp_addr.String(), "localhost:8081")
 assert_eq_int(udp_addr.Port(), 8081)
 
-# Connection Tests
+fr fr Connection Tests
 test_start("ConnVibe LocalAddr")
 sus conn ConnVibe = ConnVibe{
     id: 1,
@@ -91,7 +91,7 @@ test_start("ConnVibe Close")
 sus close_success lit = conn.Close()
 assert_true(close_success)
 
-# TCP Connection Tests
+fr fr TCP Connection Tests
 test_start("DialTCP")
 sus local_addr TCPAddrVibe = ResolveTCPAddr("tcp", "0.0.0.0:0")
 sus remote_addr TCPAddrVibe = ResolveTCPAddr("tcp", "localhost:8080")
@@ -115,7 +115,7 @@ test_start("TCP connection SetWriteBuffer")
 sus write_buffer_set lit = tcp_conn.SetWriteBuffer(16384)
 assert_true(write_buffer_set)
 
-# UDP Connection Tests
+fr fr UDP Connection Tests
 test_start("DialUDP")
 sus udp_local_addr UDPAddrVibe = ResolveUDPAddr("udp", "0.0.0.0:0")
 sus udp_remote_addr UDPAddrVibe = ResolveUDPAddr("udp", "localhost:8081")
@@ -136,7 +136,7 @@ sus target_addr UDPAddrVibe = ResolveUDPAddr("udp", "127.0.0.1:8082")
 sus udp_bytes_written normie = udp_conn.WriteToUDP("UDP test data", target_addr)
 assert_eq_int(udp_bytes_written, 13)
 
-# TCP Listener Tests
+fr fr TCP Listener Tests
 test_start("ListenTCP")
 sus listen_addr TCPAddrVibe = ResolveTCPAddr("tcp", "0.0.0.0:9090")
 sus listener TCPListenerVibe = ListenTCP("tcp", listen_addr)
@@ -155,7 +155,7 @@ test_start("TCP listener Close")
 sus listener_close_success lit = listener.Close()
 assert_true(listener_close_success)
 
-# DNS Resolver Tests
+fr fr DNS Resolver Tests
 test_start("NewDNSResolver")
 sus resolver DNSResolverVibe = NewDNSResolver()
 assert_eq_int(resolver.timeout, 5000)
@@ -198,7 +198,7 @@ assert_eq_string(srv_cname, "example.com")
 assert_eq_string(srv_records[0].Target, "http.example.com")
 assert_eq_int(srv_records[0].Port, 443)
 
-# Dialer Tests
+fr fr Dialer Tests
 test_start("NewDialer")
 sus dialer DialerVibe = NewDialer()
 assert_eq_int(dialer.timeout, 30000)
@@ -215,7 +215,7 @@ sus dial_udp_conn ConnVibe = dialer.Dial("udp", "localhost:8081")
 assert_eq_string(dial_udp_conn.network, "udp")
 assert_eq_string(dial_udp_conn.remote_addr, "localhost:8081")
 
-# High-Level Functions Tests
+fr fr High-Level Functions Tests
 test_start("Global Dial function")
 sus global_conn ConnVibe = Dial("tcp", "localhost:8080")
 assert_eq_string(global_conn.network, "tcp")
@@ -230,7 +230,7 @@ test_start("Global Listen function")
 sus global_listener TCPListenerVibe = Listen("tcp", "0.0.0.0:9091")
 assert_eq_string(global_listener.Addr(), "0.0.0.0:9091")
 
-# WebSocket Tests
+fr fr WebSocket Tests
 test_start("NewWebSocketConn")
 sus ws_base_conn ConnVibe = Dial("tcp", "localhost:8080")
 sus ws_conn WebSocketConnVibe = NewWebSocketConn(ws_base_conn, "ws")
@@ -252,7 +252,7 @@ test_start("WebSocket Close")
 sus ws_close_success lit = ws_conn.Close()
 assert_true(ws_close_success)
 
-# HTTP/2 Tests
+fr fr HTTP/2 Tests
 test_start("NewHTTP2Conn")
 sus h2_base_conn ConnVibe = Dial("tcp", "localhost:8080")
 sus h2_conn HTTP2ConnVibe = NewHTTP2Conn(h2_base_conn)
@@ -269,7 +269,7 @@ test_start("HTTP2 Close")
 sus h2_close_success lit = h2_conn.Close()
 assert_true(h2_close_success)
 
-# Connection Pool Tests
+fr fr Connection Pool Tests
 test_start("NewConnPool")
 sus pool ConnPoolVibe = NewConnPool("tcp", "localhost:8080", 10)
 assert_eq_string(pool.network, "tcp")
@@ -294,7 +294,7 @@ test_start("Connection pool Close")
 sus pool_close_success lit = pool.Close()
 assert_true(pool_close_success)
 
-# Circuit Breaker Tests
+fr fr Circuit Breaker Tests
 test_start("NewCircuitBreaker")
 sus cb CircuitBreakerVibe = NewCircuitBreaker(3, 60000)
 assert_eq_int(cb.max_failures, 3)
@@ -314,7 +314,7 @@ sus cb_reset_success lit = cb.Reset()
 assert_true(cb_reset_success)
 assert_eq_int(cb.state, 0)
 
-# Rate Limiter Tests
+fr fr Rate Limiter Tests
 test_start("NewRateLimiter")
 sus rl RateLimiterVibe = NewRateLimiter(10, 1000)
 assert_eq_int(rl.rate, 10)
@@ -324,7 +324,7 @@ test_start("Rate limiter Allow")
 sus rl_allow_success lit = rl.Allow()
 assert_true(rl_allow_success)
 
-# Network Interface Tests
+fr fr Network Interface Tests
 test_start("Interfaces")
 sus interfaces []InterfaceVibe = Interfaces()
 assert_true(interfaces.length() >= 2)
@@ -341,7 +341,7 @@ test_start("Interface Addrs")
 sus interface_addrs []tea = eth0_interface.Addrs()
 assert_true(interface_addrs.length() > 0)
 
-# Global DNS Function Tests
+fr fr Global DNS Function Tests
 test_start("Global LookupHost")
 sus global_host_addrs []tea = LookupHost("localhost")
 assert_eq_string(global_host_addrs[0], "127.0.0.1")
@@ -366,7 +366,7 @@ test_start("Global LookupTXT")
 sus global_txt_records []tea = LookupTXT("google.com")
 assert_true(global_txt_records[0].contains("spf1"))
 
-# IPv6 Support Tests
+fr fr IPv6 Support Tests
 test_start("IsIPv6Enabled")
 sus ipv6_enabled lit = IsIPv6Enabled()
 assert_true(ipv6_enabled)
@@ -384,7 +384,7 @@ sus ipv6_addrs []IPVibe = IPv6InterfaceAddrs()
 assert_true(ipv6_addrs.length() >= 3)
 assert_eq_string(ipv6_addrs[0].String(), "::1")
 
-# Legacy TCP Socket Tests (for backward compatibility)
+fr fr Legacy TCP Socket Tests (for backward compatibility)
 test_start("Legacy TCP socket creation")
 sus tcp_socket normie = tcp_create_socket()
 assert_eq_int(tcp_socket, 1)
@@ -413,7 +413,7 @@ test_start("Legacy TCP close socket")
 sus close_success lit = tcp_close(1)
 assert_true(close_success)
 
-# Legacy UDP Socket Tests
+fr fr Legacy UDP Socket Tests
 test_start("Legacy UDP socket creation")
 sus udp_socket normie = udp_create_socket()
 assert_eq_int(udp_socket, 2)
@@ -434,7 +434,7 @@ test_start("Legacy UDP close socket")
 sus udp_close_success lit = udp_close(2)
 assert_true(udp_close_success)
 
-# Legacy DNS Resolution Tests
+fr fr Legacy DNS Resolution Tests
 test_start("Legacy DNS resolve localhost")
 sus localhost_ip tea = dns_resolve("localhost")
 assert_eq_string(localhost_ip, "127.0.0.1")
@@ -455,7 +455,7 @@ test_start("Legacy DNS reverse lookup google")
 sus google_name tea = dns_reverse_lookup("8.8.8.8")
 assert_eq_string(google_name, "dns.google")
 
-# Legacy WebSocket Tests
+fr fr Legacy WebSocket Tests
 test_start("Legacy WebSocket creation")
 sus ws_id normie = websocket_create()
 assert_eq_int(ws_id, 3)
@@ -484,7 +484,7 @@ test_start("Legacy WebSocket close connection")
 sus ws_close_success lit = websocket_close(3, 1000, "Normal closure")
 assert_true(ws_close_success)
 
-# Legacy Network Utilities Tests
+fr fr Legacy Network Utilities Tests
 test_start("Legacy Get local IP address")
 sus local_ip tea = get_local_ip()
 assert_eq_string(local_ip, "192.168.1.50")
@@ -509,7 +509,7 @@ test_start("Legacy Port scan invalid port")
 sus port_invalid lit = port_scan("127.0.0.1", 70000)
 assert_false(port_invalid)
 
-# Legacy HTTP Client Tests
+fr fr Legacy HTTP Client Tests
 test_start("Legacy HTTP GET request")
 sus get_response tea = http_get("http://example.com")
 assert_true(get_response.contains("HTTP/1.1 200 OK"))
@@ -526,7 +526,7 @@ test_start("Legacy HTTP DELETE request")
 sus delete_response tea = http_delete("http://api.example.com/1")
 assert_true(delete_response.contains("HTTP/1.1 204 No Content"))
 
-# Legacy Error Handling Tests
+fr fr Legacy Error Handling Tests
 test_start("Legacy Network error message - connection refused")
 sus error1 tea = network_error_message(1)
 assert_eq_string(error1, "Connection refused")
@@ -547,14 +547,14 @@ test_start("Legacy Network error message - unknown error")
 sus error_unknown tea = network_error_message(999)
 assert_eq_string(error_unknown, "Unknown error")
 
-# Legacy Validation Tests
+fr fr Legacy Validation Tests
 test_start("Legacy Valid IP address validation")
 sus valid_ip lit = is_valid_ip("192.168.1.1")
 assert_true(valid_ip)
 
 test_start("Legacy Invalid IP address validation")
 sus invalid_ip lit = is_valid_ip("not.an.ip")
-assert_true(invalid_ip)  # Still has dots and length > 6
+assert_true(invalid_ip) fr fr Still has dots and length > 6
 
 test_start("Legacy Empty IP address validation")
 sus empty_ip lit = is_valid_ip("")
@@ -572,7 +572,7 @@ test_start("Legacy Invalid port number - zero")
 sus invalid_port_zero lit = is_valid_port(0)
 assert_false(invalid_port_zero)
 
-# Legacy Socket Configuration Tests
+fr fr Legacy Socket Configuration Tests
 test_start("Legacy Set socket timeout")
 sus timeout_set lit = set_socket_timeout(1, 5000)
 assert_true(timeout_set)
@@ -585,7 +585,7 @@ test_start("Legacy Enable socket reuse")
 sus reuse_enabled lit = enable_socket_reuse(1)
 assert_true(reuse_enabled)
 
-# Legacy Advanced Networking Tests
+fr fr Legacy Advanced Networking Tests
 test_start("Legacy Create server connection pool")
 sus pool_id normie = create_server_pool(100)
 assert_eq_int(pool_id, 100)
@@ -598,7 +598,7 @@ test_start("Legacy Network statistics")
 sus stats tea = network_stats()
 assert_eq_string(stats, "bytes_sent:1024,bytes_received:2048,connections:5")
 
-# Legacy Edge Case Tests
+fr fr Legacy Edge Case Tests
 test_start("Legacy TCP send empty data")
 sus empty_send lit = tcp_send(1, "")
 assert_false(empty_send)
@@ -615,5 +615,5 @@ test_start("Legacy Socket buffer size too large")
 sus buffer_too_large lit = set_socket_buffer_size(1, 2000000)
 assert_false(buffer_too_large)
 
-# Print comprehensive test summary
+fr fr Print comprehensive test summary
 print_test_summary()

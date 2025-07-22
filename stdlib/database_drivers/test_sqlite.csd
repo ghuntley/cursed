@@ -2,12 +2,12 @@ yeet "testz"
 yeet "database_drivers"
 yeet "sqlite"
 
-# SQLite Database Driver Tests
-# Comprehensive test suite for SQLite driver functionality
+fr fr SQLite Database Driver Tests
+fr fr Comprehensive test suite for SQLite driver functionality
 
 test_start("SQLite driver comprehensive tests")
 
-# Test 1: Configuration creation
+fr fr Test 1: Configuration creation
 test_start("SQLite configuration creation")
 config := create_sqlite_config("test.db")
 assert_eq_string(config.database_path, "test.db")
@@ -26,7 +26,7 @@ assert_true(config.recursive_triggers)
 assert_eq_int(config.busy_timeout, 5000)
 vibez.spill("✅ SQLite configuration created successfully")
 
-# Test 2: Connection creation
+fr fr Test 2: Connection creation
 test_start("SQLite connection creation")
 connection := create_sqlite_connection(config)
 assert_eq_string(connection.config.database_path, "test.db")
@@ -42,7 +42,7 @@ assert_eq_int(connection.total_changes, 0)
 assert_eq_int(connection.query_count, 0)
 vibez.spill("✅ SQLite connection created successfully")
 
-# Test 3: Database connection
+fr fr Test 3: Database connection
 test_start("SQLite database connection")
 connect_result := connect_sqlite(&connection)
 assert_true(connect_result)
@@ -55,7 +55,7 @@ assert_eq_string(connection.pragma_settings[2], "synchronous=NORMAL")
 assert_eq_string(connection.pragma_settings[3], "cache_size=2000")
 vibez.spill("✅ SQLite database connection established")
 
-# Test 4: Query execution - SELECT
+fr fr Test 4: Query execution - SELECT
 test_start("SQLite SELECT query execution")
 select_result := execute_sqlite_query(&connection, "SELECT * FROM users")
 assert_true(select_result.success)
@@ -75,7 +75,7 @@ assert_eq_string(select_result.error_message, "")
 assert_eq_string(select_result.sql_explain, "SCAN users")
 vibez.spill("✅ SQLite SELECT query executed successfully")
 
-# Test 5: Query execution - INSERT
+fr fr Test 5: Query execution - INSERT
 test_start("SQLite INSERT query execution")
 insert_result := execute_sqlite_query(&connection, "INSERT INTO users (name, email) VALUES ('Test User', 'test@example.com')")
 assert_true(insert_result.success)
@@ -89,7 +89,7 @@ assert_eq_int(insert_result.changes, 1)
 assert_eq_string(insert_result.sql_explain, "INSERT INTO users")
 vibez.spill("✅ SQLite INSERT query executed successfully")
 
-# Test 6: Query execution - UPDATE
+fr fr Test 6: Query execution - UPDATE
 test_start("SQLite UPDATE query execution")
 update_result := execute_sqlite_query(&connection, "UPDATE users SET name = 'Updated User' WHERE id = 1")
 assert_true(update_result.success)
@@ -101,7 +101,7 @@ assert_eq_int(update_result.changes, 2)
 assert_eq_string(update_result.sql_explain, "UPDATE users USING INDEX")
 vibez.spill("✅ SQLite UPDATE query executed successfully")
 
-# Test 7: Query execution - DELETE
+fr fr Test 7: Query execution - DELETE
 test_start("SQLite DELETE query execution")
 delete_result := execute_sqlite_query(&connection, "DELETE FROM users WHERE id = 1")
 assert_true(delete_result.success)
@@ -113,7 +113,7 @@ assert_eq_int(delete_result.changes, 1)
 assert_eq_string(delete_result.sql_explain, "DELETE FROM users")
 vibez.spill("✅ SQLite DELETE query executed successfully")
 
-# Test 8: Query execution - CREATE TABLE
+fr fr Test 8: Query execution - CREATE TABLE
 test_start("SQLite CREATE TABLE query execution")
 create_result := execute_sqlite_query(&connection, "CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT)")
 assert_true(create_result.success)
@@ -124,7 +124,7 @@ assert_eq_int(create_result.execution_time, 20)
 assert_eq_string(create_result.sql_explain, "CREATE TABLE")
 vibez.spill("✅ SQLite CREATE TABLE query executed successfully")
 
-# Test 9: Query execution - PRAGMA
+fr fr Test 9: Query execution - PRAGMA
 test_start("SQLite PRAGMA query execution")
 pragma_result := execute_sqlite_query(&connection, "PRAGMA journal_mode")
 assert_true(pragma_result.success)
@@ -138,7 +138,7 @@ assert_eq_string(pragma_result.error_message, "")
 assert_eq_string(pragma_result.sql_explain, "PRAGMA query")
 vibez.spill("✅ SQLite PRAGMA query executed successfully")
 
-# Test 10: Prepared statement creation
+fr fr Test 10: Prepared statement creation
 test_start("SQLite prepared statement creation")
 stmt := prepare_sqlite_statement(&connection, "SELECT * FROM users WHERE id = ? AND name = :name")
 assert_true(stmt.is_prepared)
@@ -152,7 +152,7 @@ assert_eq_int(len(stmt.bound_parameters), 2)
 assert_true(stmt.is_readonly)
 vibez.spill("✅ SQLite prepared statement created successfully")
 
-# Test 11: Parameter binding by index
+fr fr Test 11: Parameter binding by index
 test_start("SQLite parameter binding by index")
 bind_result1 := bind_sqlite_parameter(&stmt, 0, "1")
 bind_result2 := bind_sqlite_parameter(&stmt, 1, "John Doe")
@@ -162,14 +162,14 @@ assert_eq_string(stmt.bound_parameters[0], "1")
 assert_eq_string(stmt.bound_parameters[1], "John Doe")
 vibez.spill("✅ SQLite parameters bound by index successfully")
 
-# Test 12: Parameter binding by name
+fr fr Test 12: Parameter binding by name
 test_start("SQLite parameter binding by name")
 bind_named_result := bind_sqlite_named_parameter(&stmt, ":name", "Alice")
 assert_true(bind_named_result)
 assert_eq_string(stmt.bound_parameters[0], "Alice")
 vibez.spill("✅ SQLite parameters bound by name successfully")
 
-# Test 13: Prepared statement execution
+fr fr Test 13: Prepared statement execution
 test_start("SQLite prepared statement execution")
 exec_result := execute_sqlite_prepared_statement(&stmt)
 assert_true(exec_result.success)
@@ -184,7 +184,7 @@ assert_eq_int(exec_result.changes, 1)
 assert_eq_string(exec_result.sql_explain, "SEARCH users USING INDEX")
 vibez.spill("✅ SQLite prepared statement executed successfully")
 
-# Test 14: Transaction management
+fr fr Test 14: Transaction management
 test_start("SQLite transaction management")
 tx := begin_sqlite_transaction(&connection, "IMMEDIATE")
 assert_true(tx.is_active)
@@ -196,7 +196,7 @@ assert_true(connection.in_transaction)
 assert_false(connection.auto_commit)
 vibez.spill("✅ SQLite transaction started successfully")
 
-# Test 15: Transaction commit
+fr fr Test 15: Transaction commit
 test_start("SQLite transaction commit")
 commit_result := commit_sqlite_transaction(&connection, &tx)
 assert_true(commit_result)
@@ -205,7 +205,7 @@ assert_false(connection.in_transaction)
 assert_true(connection.auto_commit)
 vibez.spill("✅ SQLite transaction committed successfully")
 
-# Test 16: Transaction rollback
+fr fr Test 16: Transaction rollback
 test_start("SQLite transaction rollback")
 tx2 := begin_sqlite_transaction(&connection, "EXCLUSIVE")
 assert_true(tx2.is_active)
@@ -217,7 +217,7 @@ assert_false(connection.in_transaction)
 assert_true(connection.auto_commit)
 vibez.spill("✅ SQLite transaction rolled back successfully")
 
-# Test 17: Savepoint management
+fr fr Test 17: Savepoint management
 test_start("SQLite savepoint management")
 tx3 := begin_sqlite_transaction(&connection, "DEFERRED")
 assert_true(tx3.is_active)
@@ -233,7 +233,7 @@ assert_eq_int(tx3.nested_level, 0)
 commit_sqlite_transaction(&connection, &tx3)
 vibez.spill("✅ SQLite savepoint management successful")
 
-# Test 18: Savepoint release
+fr fr Test 18: Savepoint release
 test_start("SQLite savepoint release")
 tx4 := begin_sqlite_transaction(&connection, "IMMEDIATE")
 create_sqlite_savepoint(&tx4, "sp2")
@@ -247,7 +247,7 @@ assert_eq_int(tx4.nested_level, 1)
 commit_sqlite_transaction(&connection, &tx4)
 vibez.spill("✅ SQLite savepoint release successful")
 
-# Test 19: PRAGMA execution
+fr fr Test 19: PRAGMA execution
 test_start("SQLite PRAGMA execution")
 pragma_exec_result := execute_sqlite_pragma(&connection, "foreign_keys", "ON")
 assert_true(pragma_exec_result.success)
@@ -255,18 +255,18 @@ assert_eq_int(len(connection.pragma_settings), 5)
 assert_eq_string(connection.pragma_settings[4], "foreign_keys=ON")
 vibez.spill("✅ SQLite PRAGMA execution successful")
 
-# Test 20: Database info
+fr fr Test 20: Database info
 test_start("SQLite database info")
 get_sqlite_database_info(&connection)
 vibez.spill("✅ SQLite database info retrieved")
 
-# Test 21: Health check
+fr fr Test 21: Health check
 test_start("SQLite health check")
 health_result := health_check_sqlite(&connection)
 assert_true(health_result)
 vibez.spill("✅ SQLite health check passed")
 
-# Test 22: Database vacuum
+fr fr Test 22: Database vacuum
 test_start("SQLite database vacuum")
 vacuum_result := vacuum_sqlite_database(&connection)
 assert_true(vacuum_result.success)
@@ -274,7 +274,7 @@ assert_eq_int(vacuum_result.error_code, 0)
 assert_eq_string(vacuum_result.error_message, "")
 vibez.spill("✅ SQLite database vacuum successful")
 
-# Test 23: Database analyze
+fr fr Test 23: Database analyze
 test_start("SQLite database analyze")
 analyze_result := analyze_sqlite_database(&connection)
 assert_true(analyze_result.success)
@@ -282,7 +282,7 @@ assert_eq_int(analyze_result.error_code, 0)
 assert_eq_string(analyze_result.error_message, "")
 vibez.spill("✅ SQLite database analyze successful")
 
-# Test 24: Table info
+fr fr Test 24: Table info
 test_start("SQLite table info")
 table_info_result := get_sqlite_table_info(&connection, "users")
 assert_true(table_info_result.success)
@@ -290,14 +290,14 @@ assert_eq_int(table_info_result.error_code, 0)
 assert_eq_string(table_info_result.error_message, "")
 vibez.spill("✅ SQLite table info retrieved")
 
-# Test 25: Connection disconnection
+fr fr Test 25: Connection disconnection
 test_start("SQLite connection disconnection")
 disconnect_result := disconnect_sqlite(&connection)
 assert_true(disconnect_result)
 assert_false(connection.is_connected)
 vibez.spill("✅ SQLite connection disconnected successfully")
 
-# Test 26: Error handling - disconnected connection
+fr fr Test 26: Error handling - disconnected connection
 test_start("SQLite error handling - disconnected connection")
 error_result := execute_sqlite_query(&connection, "SELECT 1")
 assert_false(error_result.success)
@@ -305,7 +305,7 @@ assert_eq_int(error_result.error_code, 21)
 assert_eq_string(error_result.error_message, "Library routine called out of sequence")
 vibez.spill("✅ SQLite error handling working correctly")
 
-# Test 27: Parameter binding error handling
+fr fr Test 27: Parameter binding error handling
 test_start("SQLite parameter binding error handling")
 stmt_error := prepare_sqlite_statement(&connection, "SELECT 1")
 assert_false(stmt_error.is_prepared)
@@ -315,7 +315,7 @@ bind_named_error := bind_sqlite_named_parameter(&stmt_error, ":test", "value")
 assert_false(bind_named_error)
 vibez.spill("✅ SQLite parameter binding error handling working")
 
-# Test 28: Invalid parameter index
+fr fr Test 28: Invalid parameter index
 test_start("SQLite invalid parameter index")
 reconnect_sqlite(&connection)
 stmt_valid := prepare_sqlite_statement(&connection, "SELECT * FROM users WHERE id = ?")
@@ -323,14 +323,14 @@ bind_invalid := bind_sqlite_parameter(&stmt_valid, 5, "test")
 assert_false(bind_invalid)
 vibez.spill("✅ SQLite invalid parameter index handled correctly")
 
-# Test 29: Invalid named parameter
+fr fr Test 29: Invalid named parameter
 test_start("SQLite invalid named parameter")
 stmt_named := prepare_sqlite_statement(&connection, "SELECT * FROM users WHERE name = :name")
 bind_invalid_named := bind_sqlite_named_parameter(&stmt_named, ":invalid", "test")
 assert_false(bind_invalid_named)
 vibez.spill("✅ SQLite invalid named parameter handled correctly")
 
-# Test 30: Configuration validation
+fr fr Test 30: Configuration validation
 test_start("SQLite configuration validation")
 custom_config := SQLiteConfig{
     database_path: "custom.db",
@@ -365,7 +365,7 @@ assert_false(custom_connection.config.recursive_triggers)
 assert_eq_int(custom_connection.config.busy_timeout, 10000)
 vibez.spill("✅ SQLite configuration validation successful")
 
-# Test 31: Multiple database connections
+fr fr Test 31: Multiple database connections
 test_start("SQLite multiple database connections")
 config2 := create_sqlite_config("test2.db")
 config2.journal_mode = "DELETE"
@@ -380,7 +380,7 @@ assert_eq_string(connection2.config.synchronous, "FULL")
 disconnect_sqlite(&connection2)
 vibez.spill("✅ SQLite multiple database connections working correctly")
 
-# Test 32: Connection statistics tracking
+fr fr Test 32: Connection statistics tracking
 test_start("SQLite connection statistics tracking")
 reconnect_sqlite(&connection)
 initial_query_count := connection.query_count
@@ -392,7 +392,7 @@ assert_eq_int(connection.query_count, initial_query_count + 3)
 assert_eq_int(connection.total_changes, initial_total_changes + 3)
 vibez.spill("✅ SQLite connection statistics tracking working")
 
-# Test 33: Read-only query detection
+fr fr Test 33: Read-only query detection
 test_start("SQLite read-only query detection")
 readonly_stmt := prepare_sqlite_statement(&connection, "SELECT * FROM users")
 readwrite_stmt := prepare_sqlite_statement(&connection, "INSERT INTO users (name) VALUES ('Test')")
@@ -400,7 +400,7 @@ assert_true(readonly_stmt.is_readonly)
 assert_false(readwrite_stmt.is_readonly)
 vibez.spill("✅ SQLite read-only query detection working")
 
-# Test 34: Step count tracking
+fr fr Test 34: Step count tracking
 test_start("SQLite step count tracking")
 step_stmt := prepare_sqlite_statement(&connection, "SELECT * FROM users WHERE id = ?")
 bind_sqlite_parameter(&step_stmt, 0, "1")
@@ -409,17 +409,17 @@ execute_sqlite_prepared_statement(&step_stmt)
 assert_eq_int(step_stmt.step_count, initial_step_count + 1)
 vibez.spill("✅ SQLite step count tracking working")
 
-# Test 35: Nested transaction handling
+fr fr Test 35: Nested transaction handling
 test_start("SQLite nested transaction handling")
 tx_outer := begin_sqlite_transaction(&connection, "IMMEDIATE")
 assert_true(tx_outer.is_active)
-# Try to begin another transaction (should fail)
+fr fr Try to begin another transaction (should fail)
 tx_inner := begin_sqlite_transaction(&connection, "DEFERRED")
 assert_false(tx_inner.is_active)
 commit_sqlite_transaction(&connection, &tx_outer)
 vibez.spill("✅ SQLite nested transaction handling working")
 
-# Helper function for reconnection
+fr fr Helper function for reconnection
 slay reconnect_sqlite(connection: *SQLiteConnection) {
     if connection.is_connected == cap {
         connect_sqlite(connection)

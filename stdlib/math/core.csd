@@ -59,8 +59,7 @@ slay sign(x meal) meal {
 // ================================
 
 slay pow(base meal, exponent meal) meal {
-    // Newton-Raphson method for fractional exponents
-    # Special cases
+    // Newton-Raphson method for fractional exponents fr fr Special cases
     bestie (base == 0.0) {
         damn 0.0;
     }
@@ -75,33 +74,27 @@ slay pow(base meal, exponent meal) meal {
     
     bestie (exponent == 1.0) {
         damn base;
-    }
-    
-    # Handle negative bases with integer exponents
+    } fr fr Handle negative bases with integer exponents
     bestie (base < 0.0) {
         sus int_exp normie = exponent.(normie);
         bestie (int_exp.(meal) == exponent) {
             sus result meal = pow(abs(base), exponent);
             damn (int_exp % 2 == 0) ? result : -result;
         } else {
-            damn 0.0 / 0.0; # NaN for negative base with fractional exponent
+            damn 0.0 / 0.0; fr fr NaN for negative base with fractional exponent
         }
-    }
-    
-    # Use exp(ln(base) * exponent) for positive bases
+    } fr fr Use exp(ln(base) * exponent) for positive bases
     damn exp(ln(base) * exponent);
 }
 
 slay sqrt(x meal) meal {
     bestie (x < 0.0) {
-        damn 0.0 / 0.0; # NaN
+        damn 0.0 / 0.0; fr fr NaN
     }
     
     bestie (x == 0.0) {
         damn 0.0;
-    }
-    
-    # Newton-Raphson method for square root
+    } fr fr Newton-Raphson method for square root
     sus guess meal = x / 2.0;
     sus prev meal = 0.0;
     sus epsilon meal = 1e-15;
@@ -124,9 +117,7 @@ slay cbrt(x meal) meal {
     }
     
     sus sign_factor meal = x < 0.0 ? -1.0 : 1.0;
-    sus abs_x meal = abs(x);
-    
-    # Newton-Raphson method for cube root
+    sus abs_x meal = abs(x); fr fr Newton-Raphson method for cube root
     sus guess meal = abs_x / 3.0;
     sus prev meal = 0.0;
     sus epsilon meal = 1e-15;
@@ -149,21 +140,17 @@ slay cbrt(x meal) meal {
 
 slay ln(x meal) meal {
     bestie (x <= 0.0) {
-        damn 0.0 / 0.0; # NaN
+        damn 0.0 / 0.0; fr fr NaN
     }
     
     bestie (x == 1.0) {
         damn 0.0;
-    }
-    
-    # Handle values close to 1 using Taylor series
+    } fr fr Handle values close to 1 using Taylor series
     bestie (x > 0.5 && x < 1.5) {
         sus u meal = x - 1.0;
         sus result meal = u;
         sus term meal = u;
-        sus n normie = 2;
-        
-        # Taylor series: ln(1+u) = u - u²/2 + u³/3 - u⁴/4 + ...
+        sus n normie = 2; fr fr Taylor series: ln(1+u) = u - u²/2 + u³/3 - u⁴/4 + ...
         while (abs(term) > 1e-15 && n < 100) {
             term *= -u;
             result += term / n.(meal);
@@ -171,13 +158,9 @@ slay ln(x meal) meal {
         }
         
         damn result;
-    }
-    
-    # For other values, use argument reduction
+    } fr fr For other values, use argument reduction
     sus exp_adjust normie = 0;
-    sus reduced_x meal = x;
-    
-    # Scale to [0.5, 1.5) range
+    sus reduced_x meal = x; fr fr Scale to [0.5, 1.5) range
     while (reduced_x >= 1.5) {
         reduced_x /= E();
         exp_adjust++;
@@ -213,14 +196,12 @@ slay exp(x meal) meal {
     }
     
     bestie (x > 700.0) {
-        damn 1.0 / 0.0; # Infinity
+        damn 1.0 / 0.0; fr fr Infinity
     }
     
     bestie (x < -700.0) {
         damn 0.0;
-    }
-    
-    # Taylor series: e^x = 1 + x + x²/2! + x³/3! + ...
+    } fr fr Taylor series: e^x = 1 + x + x²/2! + x³/3! + ...
     sus result meal = 1.0;
     sus term meal = 1.0;
     sus n normie = 1;
@@ -242,17 +223,14 @@ slay exp2(x meal) meal {
 // Pure CURSED Trigonometric Functions
 // ================================
 
-slay sin(x meal) meal {
-    # Normalize to [-π, π]
+slay sin(x meal) meal { fr fr Normalize to [-π, π]
     sus normalized meal = x;
     while (normalized > PI()) {
         normalized -= 2.0 * PI();
     }
     while (normalized < -PI()) {
         normalized += 2.0 * PI();
-    }
-    
-    # Taylor series: sin(x) = x - x³/3! + x⁵/5! - x⁷/7! + ...
+    } fr fr Taylor series: sin(x) = x - x³/3! + x⁵/5! - x⁷/7! + ...
     sus result meal = 0.0;
     sus term meal = normalized;
     sus x_squared meal = normalized * normalized;
@@ -267,17 +245,14 @@ slay sin(x meal) meal {
     damn result;
 }
 
-slay cos(x meal) meal {
-    # Normalize to [-π, π]
+slay cos(x meal) meal { fr fr Normalize to [-π, π]
     sus normalized meal = x;
     while (normalized > PI()) {
         normalized -= 2.0 * PI();
     }
     while (normalized < -PI()) {
         normalized += 2.0 * PI();
-    }
-    
-    # Taylor series: cos(x) = 1 - x²/2! + x⁴/4! - x⁶/6! + ...
+    } fr fr Taylor series: cos(x) = 1 - x²/2! + x⁴/4! - x⁶/6! + ...
     sus result meal = 1.0;
     sus term meal = 1.0;
     sus x_squared meal = normalized * normalized;
@@ -295,7 +270,7 @@ slay cos(x meal) meal {
 slay tan(x meal) meal {
     sus cos_x meal = cos(x);
     bestie (abs(cos_x) < 1e-15) {
-        damn 1.0 / 0.0; # Infinity
+        damn 1.0 / 0.0; fr fr Infinity
     }
     damn sin(x) / cos_x;
 }
@@ -315,9 +290,7 @@ slay atan(x meal) meal {
     
     bestie (x < -1.0) {
         damn -PI() / 2.0 - atan(1.0 / x);
-    }
-    
-    # Taylor series for |x| <= 1: atan(x) = x - x³/3 + x⁵/5 - x⁷/7 + ...
+    } fr fr Taylor series for |x| <= 1: atan(x) = x - x³/3 + x⁵/5 - x⁷/7 + ...
     sus result meal = 0.0;
     sus term meal = x;
     sus x_squared meal = x * x;
@@ -334,7 +307,7 @@ slay atan(x meal) meal {
 
 slay asin(x meal) meal {
     bestie (x < -1.0 || x > 1.0) {
-        damn 0.0 / 0.0; # NaN
+        damn 0.0 / 0.0; fr fr NaN
     }
     
     bestie (x == 0.0) {
@@ -347,16 +320,14 @@ slay asin(x meal) meal {
     
     bestie (x == -1.0) {
         damn -PI() / 2.0;
-    }
-    
-    # Use identity: asin(x) = atan(x / sqrt(1 - x²))
+    } fr fr Use identity: asin(x) = atan(x / sqrt(1 - x²))
     sus denominator meal = sqrt(1.0 - x * x);
     damn atan(x / denominator);
 }
 
 slay acos(x meal) meal {
     bestie (x < -1.0 || x > 1.0) {
-        damn 0.0 / 0.0; # NaN
+        damn 0.0 / 0.0; fr fr NaN
     }
     
     damn PI() / 2.0 - asin(x);
@@ -381,7 +352,7 @@ slay atan2(y meal, x meal) meal {
         } else if (y < 0.0) {
             damn -PI() / 2.0;
         } else {
-            damn 0.0 / 0.0; # NaN
+            damn 0.0 / 0.0; fr fr NaN
         }
     }
     
@@ -560,15 +531,14 @@ slay fibonacci(n normie) normie {
 // Pure CURSED Random Number Generator
 // ================================
 
-# Global random state
+fr fr Global random state
 sus global_random_state normie = 1;
 
 slay seed_random(seed normie) {
     global_random_state = seed;
 }
 
-slay random() meal {
-    # Linear congruential generator
+slay random() meal { fr fr Linear congruential generator
     global_random_state = (global_random_state * 1103515245 + 12345) % 2147483647;
     damn global_random_state.(meal) / 2147483647.0;
 }
@@ -618,19 +588,14 @@ slay median(values [meal]) meal {
     sus len normie = values.len;
     bestie (len == 0) {
         damn 0.0;
-    }
-    
-    # Create sorted copy
-    sus sorted [meal] = values;
-    
-    # Pure CURSED bubble sort implementation
+    } fr fr Create sorted copy
+    sus sorted [meal] = values; fr fr Pure CURSED bubble sort implementation
     bestie (len > 1) {
         sus i normie = 0
         bestie (i < len - 1) {
             sus j normie = 0
             bestie (j < len - i - 1) {
-                lowkey (sorted[j] > sorted[j + 1]) {
-                    # Swap elements
+                lowkey (sorted[j] > sorted[j + 1]) { fr fr Swap elements
                     sus temp meal = sorted[j]
                     sorted[j] = sorted[j + 1]
                     sorted[j + 1] = temp

@@ -1,12 +1,12 @@
 yeet "testz"
 yeet "concurrency"
 
-# Concurrency Module Comprehensive Test Suite
-# Testing all concurrency primitives and patterns
+fr fr Concurrency Module Comprehensive Test Suite
+fr fr Testing all concurrency primitives and patterns
 
 test_start("Thread Management Tests")
 
-# Test thread creation and management
+fr fr Test thread creation and management
 assert_eq_int(concurrency_thread_create("test_function"), 1)
 assert_eq_int(concurrency_thread_create(""), -1)
 assert_true(concurrency_thread_start(1))
@@ -16,7 +16,7 @@ assert_false(concurrency_thread_join(-1))
 assert_true(concurrency_thread_detach(1))
 assert_false(concurrency_thread_detach(-1))
 
-# Test thread state and priority
+fr fr Test thread state and priority
 assert_eq_int(concurrency_thread_get_state(1), THREAD_STATE_READY)
 assert_eq_int(concurrency_thread_get_state(-1), -1)
 assert_true(concurrency_thread_set_priority(1, 5))
@@ -26,7 +26,7 @@ assert_false(concurrency_thread_set_priority(1, 11))
 assert_eq_int(concurrency_thread_get_priority(1), 5)
 assert_eq_int(concurrency_thread_get_priority(-1), -1)
 
-# Test thread utilities
+fr fr Test thread utilities
 assert_true(concurrency_thread_yield())
 assert_true(concurrency_thread_sleep(100))
 assert_false(concurrency_thread_sleep(-1))
@@ -36,7 +36,7 @@ print_test_summary()
 
 test_start("Mutex Operations Tests")
 
-# Test mutex creation and operations
+fr fr Test mutex creation and operations
 assert_eq_int(concurrency_mutex_create(), 1)
 assert_true(concurrency_mutex_lock(1))
 assert_false(concurrency_mutex_lock(-1))
@@ -53,7 +53,7 @@ print_test_summary()
 
 test_start("Semaphore Operations Tests")
 
-# Test semaphore creation and operations
+fr fr Test semaphore creation and operations
 assert_eq_int(concurrency_semaphore_create(5), 1)
 assert_eq_int(concurrency_semaphore_create(-1), -1)
 assert_true(concurrency_semaphore_wait(1))
@@ -71,7 +71,7 @@ print_test_summary()
 
 test_start("Condition Variable Tests")
 
-# Test condition variable operations
+fr fr Test condition variable operations
 assert_eq_int(concurrency_condition_create(), 1)
 assert_true(concurrency_condition_wait(1, 1))
 assert_false(concurrency_condition_wait(-1, 1))
@@ -91,7 +91,7 @@ print_test_summary()
 
 test_start("Read-Write Lock Tests")
 
-# Test read-write lock operations
+fr fr Test read-write lock operations
 assert_eq_int(concurrency_rwlock_create(), 1)
 assert_true(concurrency_rwlock_read_lock(1))
 assert_false(concurrency_rwlock_read_lock(-1))
@@ -112,7 +112,7 @@ print_test_summary()
 
 test_start("Barrier Operations Tests")
 
-# Test barrier operations
+fr fr Test barrier operations
 assert_eq_int(concurrency_barrier_create(3), 1)
 assert_eq_int(concurrency_barrier_create(0), -1)
 assert_eq_int(concurrency_barrier_create(-1), -1)
@@ -125,7 +125,7 @@ print_test_summary()
 
 test_start("Atomic Operations Tests")
 
-# Test atomic operations
+fr fr Test atomic operations
 assert_eq_int(concurrency_atomic_create(42), 1)
 assert_eq_int(concurrency_atomic_load(1), 42)
 assert_eq_int(concurrency_atomic_load(-1), -1)
@@ -146,7 +146,7 @@ print_test_summary()
 
 test_start("Worker Pool Tests")
 
-# Test worker pool operations
+fr fr Test worker pool operations
 assert_eq_int(concurrency_pool_create(4), 1)
 assert_eq_int(concurrency_pool_create(0), -1)
 assert_eq_int(concurrency_pool_create(-1), -1)
@@ -169,7 +169,7 @@ print_test_summary()
 
 test_start("Channel Operations Tests")
 
-# Test channel operations
+fr fr Test channel operations
 assert_eq_int(concurrency_channel_create(10), 1)
 assert_eq_int(concurrency_channel_create(-1), -1)
 assert_true(concurrency_channel_send(1, "test_message"))
@@ -193,7 +193,7 @@ print_test_summary()
 
 test_start("Future/Promise Tests")
 
-# Test future/promise operations
+fr fr Test future/promise operations
 assert_eq_int(concurrency_future_create(), 1)
 assert_true(concurrency_future_set_value(1, "test_value"))
 assert_false(concurrency_future_set_value(-1, "test_value"))
@@ -213,7 +213,7 @@ print_test_summary()
 
 test_start("Thread Utilities Tests")
 
-# Test thread utility functions
+fr fr Test thread utility functions
 assert_eq_int(concurrency_get_cpu_count(), 4)
 assert_eq_int(concurrency_get_thread_count(), 8)
 assert_true(concurrency_is_main_thread())
@@ -228,7 +228,7 @@ print_test_summary()
 
 test_start("Performance Monitoring Tests")
 
-# Test performance monitoring
+fr fr Test performance monitoring
 assert_eq_int(concurrency_get_context_switches(), 100)
 assert_eq_int(concurrency_get_lock_contention(), 5)
 assert_eq_int(concurrency_get_deadlock_count(), 0)
@@ -238,26 +238,26 @@ print_test_summary()
 
 test_start("Concurrency Constants Tests")
 
-# Test thread state constants
+fr fr Test thread state constants
 assert_eq_int(THREAD_STATE_READY, 0)
 assert_eq_int(THREAD_STATE_RUNNING, 1)
 assert_eq_int(THREAD_STATE_BLOCKED, 2)
 assert_eq_int(THREAD_STATE_TERMINATED, 3)
 
-# Test mutex constants
+fr fr Test mutex constants
 assert_eq_int(MUTEX_UNLOCKED, 0)
 assert_eq_int(MUTEX_LOCKED, 1)
 
-# Test semaphore constants
+fr fr Test semaphore constants
 assert_eq_int(SEMAPHORE_AVAILABLE, 0)
 assert_eq_int(SEMAPHORE_BLOCKED, 1)
 
-# Test channel constants
+fr fr Test channel constants
 assert_eq_int(CHANNEL_BUFFERED, 1)
 assert_eq_int(CHANNEL_UNBUFFERED, 2)
 assert_eq_int(CHANNEL_CLOSED, 3)
 
-# Test worker pool constants
+fr fr Test worker pool constants
 assert_eq_int(POOL_ACTIVE, 1)
 assert_eq_int(POOL_SHUTTING_DOWN, 2)
 assert_eq_int(POOL_SHUTDOWN, 3)

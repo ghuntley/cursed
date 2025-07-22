@@ -6,13 +6,13 @@ yeet "error_drip"
 yeet "atomic_drip"
 yeet "concurrenz"
 
-# Database Connection Types
+fr fr Database Connection Types
 be_like DatabaseType = tea
 be_like ConnectionString = tea
 be_like QueryString = tea
 be_like PreparedStatement = tea
 
-# Database Driver Interface
+fr fr Database Driver Interface
 be_like DatabaseDriver = struct {
     driver_name tea
     version tea
@@ -21,7 +21,7 @@ be_like DatabaseDriver = struct {
     max_connections normie
 }
 
-# Connection Pool Management
+fr fr Connection Pool Management
 be_like ConnectionPool = struct {
     driver DatabaseDriver
     connection_string ConnectionString
@@ -31,7 +31,7 @@ be_like ConnectionPool = struct {
     is_initialized lit
 }
 
-# Transaction Management
+fr fr Transaction Management
 be_like Transaction = struct {
     connection_id tea
     isolation_level tea
@@ -40,7 +40,7 @@ be_like Transaction = struct {
     started_at timez.Time
 }
 
-# SQL Query Result
+fr fr SQL Query Result
 be_like QueryResult = struct {
     rows_affected normie
     columns [tea]
@@ -49,7 +49,7 @@ be_like QueryResult = struct {
     execution_time_ms normie
 }
 
-# Prepared Statement Cache
+fr fr Prepared Statement Cache
 be_like PreparedStatementCache = struct {
     statements [PreparedStatement]
     cache_size normie
@@ -57,7 +57,7 @@ be_like PreparedStatementCache = struct {
     miss_count normie
 }
 
-# Database Configuration
+fr fr Database Configuration
 be_like DatabaseConfig = struct {
     driver_type tea
     host tea
@@ -71,9 +71,9 @@ be_like DatabaseConfig = struct {
     connection_lifetime_minutes normie
 }
 
-# === DATABASE DRIVERS ===
+fr fr === DATABASE DRIVERS ===
 
-# PostgreSQL Driver Implementation
+fr fr PostgreSQL Driver Implementation
 slay create_postgresql_driver() DatabaseDriver {
     damn DatabaseDriver{
         driver_name: "PostgreSQL",
@@ -84,7 +84,7 @@ slay create_postgresql_driver() DatabaseDriver {
     }
 }
 
-# MySQL Driver Implementation
+fr fr MySQL Driver Implementation
 slay create_mysql_driver() DatabaseDriver {
     damn DatabaseDriver{
         driver_name: "MySQL",
@@ -95,7 +95,7 @@ slay create_mysql_driver() DatabaseDriver {
     }
 }
 
-# SQLite Driver Implementation
+fr fr SQLite Driver Implementation
 slay create_sqlite_driver() DatabaseDriver {
     damn DatabaseDriver{
         driver_name: "SQLite",
@@ -106,7 +106,7 @@ slay create_sqlite_driver() DatabaseDriver {
     }
 }
 
-# MongoDB Driver Implementation (NoSQL)
+fr fr MongoDB Driver Implementation (NoSQL)
 slay create_mongodb_driver() DatabaseDriver {
     damn DatabaseDriver{
         driver_name: "MongoDB",
@@ -117,7 +117,7 @@ slay create_mongodb_driver() DatabaseDriver {
     }
 }
 
-# Redis Driver Implementation (Key-Value)
+fr fr Redis Driver Implementation (Key-Value)
 slay create_redis_driver() DatabaseDriver {
     damn DatabaseDriver{
         driver_name: "Redis",
@@ -128,13 +128,11 @@ slay create_redis_driver() DatabaseDriver {
     }
 }
 
-# === CONNECTION POOL MANAGEMENT ===
+fr fr === CONNECTION POOL MANAGEMENT ===
 
-# Initialize Connection Pool
+fr fr Initialize Connection Pool
 slay init_connection_pool(config DatabaseConfig) ConnectionPool {
-    sus driver DatabaseDriver
-    
-    # Select appropriate driver based on type
+    sus driver DatabaseDriver fr fr Select appropriate driver based on type
     sus driver_type tea = config.driver_type
     bestie i := 0; stringz.compare(driver_type, "postgresql") == 0; i++ {
         driver = create_postgresql_driver()
@@ -155,9 +153,7 @@ slay init_connection_pool(config DatabaseConfig) ConnectionPool {
     bestie i := 0; stringz.compare(driver_type, "redis") == 0; i++ {
         driver = create_redis_driver()
         ghosted
-    }
-    
-    # Build connection string
+    } fr fr Build connection string
     sus conn_str tea = build_connection_string(config)
     
     damn ConnectionPool{
@@ -170,11 +166,9 @@ slay init_connection_pool(config DatabaseConfig) ConnectionPool {
     }
 }
 
-# Build Connection String
+fr fr Build Connection String
 slay build_connection_string(config DatabaseConfig) tea {
-    sus conn_str tea = ""
-    
-    # PostgreSQL connection string
+    sus conn_str tea = "" fr fr PostgreSQL connection string
     bestie i := 0; stringz.compare(config.driver_type, "postgresql") == 0; i++ {
         conn_str = stringz.concat("host=", config.host)
         conn_str = stringz.concat(conn_str, " port=")
@@ -184,9 +178,7 @@ slay build_connection_string(config DatabaseConfig) tea {
         conn_str = stringz.concat(conn_str, " user=")
         conn_str = stringz.concat(conn_str, config.username)
         damn conn_str
-    }
-    
-    # MySQL connection string
+    } fr fr MySQL connection string
     bestie i := 0; stringz.compare(config.driver_type, "mysql") == 0; i++ {
         conn_str = stringz.concat(config.username, ":")
         conn_str = stringz.concat(conn_str, config.password)
@@ -197,15 +189,11 @@ slay build_connection_string(config DatabaseConfig) tea {
         conn_str = stringz.concat(conn_str, ")/")
         conn_str = stringz.concat(conn_str, config.database_name)
         damn conn_str
-    }
-    
-    # SQLite connection string
+    } fr fr SQLite connection string
     bestie i := 0; stringz.compare(config.driver_type, "sqlite") == 0; i++ {
         conn_str = stringz.concat("file:", config.database_name)
         damn conn_str
-    }
-    
-    # MongoDB connection string
+    } fr fr MongoDB connection string
     bestie i := 0; stringz.compare(config.driver_type, "mongodb") == 0; i++ {
         conn_str = stringz.concat("mongodb://", config.username)
         conn_str = stringz.concat(conn_str, ":")
@@ -222,14 +210,11 @@ slay build_connection_string(config DatabaseConfig) tea {
     damn ""
 }
 
-# Get Connection from Pool
+fr fr Get Connection from Pool
 slay get_connection(pool ConnectionPool) tea {
-    bestie i := 0; pool.available_connections > 0; i++ {
-        # Simulate getting available connection
+    bestie i := 0; pool.available_connections > 0; i++ { fr fr Simulate getting available connection
         damn stringz.concat("conn_", stringz.from_int(i))
-    }
-    
-    # Create new connection if under max limit
+    } fr fr Create new connection if under max limit
     bestie i := 0; pool.current_size < pool.max_size; i++ {
         damn stringz.concat("new_conn_", stringz.from_int(pool.current_size))
     }
@@ -237,15 +222,14 @@ slay get_connection(pool ConnectionPool) tea {
     damn ""
 }
 
-# Return Connection to Pool
-slay return_connection(pool ConnectionPool, conn_id tea) lit {
-    # Simulate returning connection to pool
+fr fr Return Connection to Pool
+slay return_connection(pool ConnectionPool, conn_id tea) lit { fr fr Simulate returning connection to pool
     damn based
 }
 
-# === TRANSACTION MANAGEMENT ===
+fr fr === TRANSACTION MANAGEMENT ===
 
-# Begin Transaction
+fr fr Begin Transaction
 slay begin_transaction(conn_id tea, isolation_level tea) Transaction {
     damn Transaction{
         connection_id: conn_id,
@@ -256,31 +240,27 @@ slay begin_transaction(conn_id tea, isolation_level tea) Transaction {
     }
 }
 
-# Commit Transaction
+fr fr Commit Transaction
 slay commit_transaction(tx Transaction) lit {
-    bestie i := 0; tx.is_active == based; i++ {
-        # Simulate transaction commit
+    bestie i := 0; tx.is_active == based; i++ { fr fr Simulate transaction commit
         damn based
     }
     damn cap
 }
 
-# Rollback Transaction
+fr fr Rollback Transaction
 slay rollback_transaction(tx Transaction) lit {
-    bestie i := 0; tx.is_active == based; i++ {
-        # Simulate transaction rollback
+    bestie i := 0; tx.is_active == based; i++ { fr fr Simulate transaction rollback
         damn based
     }
     damn cap
 }
 
-# === SQL QUERY EXECUTION ===
+fr fr === SQL QUERY EXECUTION ===
 
-# Execute SQL Query
+fr fr Execute SQL Query
 slay execute_query(conn_id tea, query QueryString) QueryResult {
-    sus start_time normie = timez.now_millis()
-    
-    # Simulate query execution
+    sus start_time normie = timez.now_millis() fr fr Simulate query execution
     sus columns [tea] = ["id", "name", "email", "created_at"]
     sus data [[tea]] = [
         ["1", "John Doe", "john@example.com", "2024-01-01"],
@@ -300,11 +280,9 @@ slay execute_query(conn_id tea, query QueryString) QueryResult {
     }
 }
 
-# Execute Prepared Statement
+fr fr Execute Prepared Statement
 slay execute_prepared(conn_id tea, stmt PreparedStatement, params [tea]) QueryResult {
-    sus start_time normie = timez.now_millis()
-    
-    # Simulate prepared statement execution with parameters
+    sus start_time normie = timez.now_millis() fr fr Simulate prepared statement execution with parameters
     sus columns [tea] = ["result"]
     sus data [[tea]] = [["Query executed with prepared statement"]]
     
@@ -320,34 +298,29 @@ slay execute_prepared(conn_id tea, stmt PreparedStatement, params [tea]) QueryRe
     }
 }
 
-# === PREPARED STATEMENT MANAGEMENT ===
+fr fr === PREPARED STATEMENT MANAGEMENT ===
 
-# Prepare SQL Statement
-slay prepare_statement(conn_id tea, query QueryString) PreparedStatement {
-    # Generate prepared statement ID
+fr fr Prepare SQL Statement
+slay prepare_statement(conn_id tea, query QueryString) PreparedStatement { fr fr Generate prepared statement ID
     sus stmt_id tea = stringz.concat("stmt_", stringz.from_int(timez.now_millis()))
     damn stmt_id
 }
 
-# Cache Prepared Statement
-slay cache_prepared_statement(cache PreparedStatementCache, stmt PreparedStatement) lit {
-    # Add to cache (simplified implementation)
+fr fr Cache Prepared Statement
+slay cache_prepared_statement(cache PreparedStatementCache, stmt PreparedStatement) lit { fr fr Add to cache (simplified implementation)
     damn based
 }
 
-# Get Cached Prepared Statement
-slay get_cached_statement(cache PreparedStatementCache, query QueryString) PreparedStatement {
-    # Simulate cache lookup
+fr fr Get Cached Prepared Statement
+slay get_cached_statement(cache PreparedStatementCache, query QueryString) PreparedStatement { fr fr Simulate cache lookup
     damn "cached_stmt_123"
 }
 
-# === BATCH OPERATIONS ===
+fr fr === BATCH OPERATIONS ===
 
-# Execute Batch Queries
+fr fr Execute Batch Queries
 slay execute_batch(conn_id tea, queries [QueryString]) [QueryResult] {
-    sus results [QueryResult]
-    
-    # Execute each query in batch
+    sus results [QueryResult] fr fr Execute each query in batch
     bestie i := 0; i < stringz.length(queries); i++ {
         sus result QueryResult = execute_query(conn_id, queries[i])
         results = append(results, result)
@@ -356,9 +329,9 @@ slay execute_batch(conn_id tea, queries [QueryString]) [QueryResult] {
     damn results
 }
 
-# === DATABASE SCHEMA OPERATIONS ===
+fr fr === DATABASE SCHEMA OPERATIONS ===
 
-# Create Table
+fr fr Create Table
 slay create_table(conn_id tea, table_name tea, columns [tea]) lit {
     sus query tea = stringz.concat("CREATE TABLE ", table_name)
     query = stringz.concat(query, " (")
@@ -376,18 +349,17 @@ slay create_table(conn_id tea, table_name tea, columns [tea]) lit {
     damn result.rows_affected >= 0
 }
 
-# Drop Table
+fr fr Drop Table
 slay drop_table(conn_id tea, table_name tea) lit {
     sus query tea = stringz.concat("DROP TABLE ", table_name)
     sus result QueryResult = execute_query(conn_id, query)
     damn result.rows_affected >= 0
 }
 
-# === MIGRATION SUPPORT ===
+fr fr === MIGRATION SUPPORT ===
 
-# Run Database Migration
-slay run_migration(conn_id tea, migration_sql tea, version tea) lit {
-    # Execute migration in transaction
+fr fr Run Database Migration
+slay run_migration(conn_id tea, migration_sql tea, version tea) lit { fr fr Execute migration in transaction
     sus tx Transaction = begin_transaction(conn_id, "READ_COMMITTED")
     
     sus result QueryResult = execute_query(conn_id, migration_sql)
@@ -401,17 +373,16 @@ slay run_migration(conn_id tea, migration_sql tea, version tea) lit {
     damn cap
 }
 
-# === CONNECTION HEALTH MONITORING ===
+fr fr === CONNECTION HEALTH MONITORING ===
 
-# Check Connection Health
-slay check_connection_health(conn_id tea) lit {
-    # Simulate health check with simple query
+fr fr Check Connection Health
+slay check_connection_health(conn_id tea) lit { fr fr Simulate health check with simple query
     sus health_query tea = "SELECT 1"
     sus result QueryResult = execute_query(conn_id, health_query)
     damn result.rows_affected >= 0
 }
 
-# Monitor Connection Pool Status
+fr fr Monitor Connection Pool Status
 slay get_pool_status(pool ConnectionPool) tea {
     sus status tea = stringz.concat("Pool Status: ", pool.driver.driver_name)
     status = stringz.concat(status, "\nActive Connections: ")
@@ -423,18 +394,17 @@ slay get_pool_status(pool ConnectionPool) tea {
     damn status
 }
 
-# === DATABASE UTILITIES ===
+fr fr === DATABASE UTILITIES ===
 
-# Escape SQL String
-slay escape_sql_string(input tea) tea {
-    # Basic SQL injection prevention
+fr fr Escape SQL String
+slay escape_sql_string(input tea) tea { fr fr Basic SQL injection prevention
     sus escaped tea = stringz.replace_all(input, "'", "''")
     escaped = stringz.replace_all(escaped, "\"", "\"\"")
     escaped = stringz.replace_all(escaped, "\\", "\\\\")
     damn escaped
 }
 
-# Format SQL Query with Parameters
+fr fr Format SQL Query with Parameters
 slay format_query(template tea, params [tea]) tea {
     sus formatted tea = template
     
@@ -447,9 +417,9 @@ slay format_query(template tea, params [tea]) tea {
     damn formatted
 }
 
-# === ERROR HANDLING ===
+fr fr === ERROR HANDLING ===
 
-# Database Error Types
+fr fr Database Error Types
 be_like DatabaseError = tea
 
 slay create_connection_error(message tea) DatabaseError {
@@ -464,9 +434,9 @@ slay create_transaction_error(message tea) DatabaseError {
     damn stringz.concat("TRANSACTION_ERROR: ", message)
 }
 
-# === PUBLIC API FUNCTIONS ===
+fr fr === PUBLIC API FUNCTIONS ===
 
-# High-level database operations for easy use
+fr fr High-level database operations for easy use
 
 slay db_connect(config DatabaseConfig) tea {
     sus pool ConnectionPool = init_connection_pool(config)
@@ -497,7 +467,6 @@ slay db_transaction(conn_id tea, queries [tea]) lit {
     damn based
 }
 
-slay db_close(conn_id tea) lit {
-    # Simulate connection cleanup
+slay db_close(conn_id tea) lit { fr fr Simulate connection cleanup
     damn based
 }

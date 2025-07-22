@@ -1,58 +1,57 @@
-# CURSED Testing Framework v6.0 - Enhanced Production Edition
-# The Ultimate Gen Z Testing Framework with ALL the Features
-# 
-# Features:
-# - Property-based testing with sick random generation
-# - Benchmarking with precise performance metrics
-# - Coverage analysis that's actually useful
-# - Parallel execution because we're not waiting around
-# - Multiple output formats (JSON, XML, HTML, TAP)
-# - Test discovery that finds everything
-# - Comprehensive assertions for all data types
-# - Fixtures and setup/teardown that actually work
-# - Performance regression testing
-# - Mock system that doesn't suck
-# - Error handling that makes sense
+fr fr CURSED Testing Framework v6.0 - Enhanced Production Edition
+fr fr The Ultimate Gen Z Testing Framework with ALL the Features
+fr fr fr fr Features:
+fr fr - Property-based testing with sick random generation
+fr fr - Benchmarking with precise performance metrics
+fr fr - Coverage analysis that's actually useful
+fr fr - Parallel execution because we're not waiting around
+fr fr - Multiple output formats (JSON, XML, HTML, TAP)
+fr fr - Test discovery that finds everything
+fr fr - Comprehensive assertions for all data types
+fr fr - Fixtures and setup/teardown that actually work
+fr fr - Performance regression testing
+fr fr - Mock system that doesn't suck
+fr fr - Error handling that makes sense
 
-# ================================
-# Core Framework State - The Foundation
-# ================================
+fr fr ================================
+fr fr Core Framework State - The Foundation
+fr fr ================================
 
-# Test execution counters
+fr fr Test execution counters
 sus test_count normie = 0
 sus test_passed normie = 0 
 sus test_failed normie = 0
 sus test_skipped normie = 0
 sus test_errors normie = 0
 
-# Current test context
+fr fr Current test context
 sus current_test_name tea = ""
 sus current_suite_name tea = "default"
 sus current_assertion_name tea = ""
 
-# Performance tracking
+fr fr Performance tracking
 sus test_start_time normie = 0
 sus total_test_time normie = 0
 
-# Configuration flags
+fr fr Configuration flags
 sus verbose_mode lit = based
 sus fail_fast_mode lit = cap
 sus parallel_mode lit = cap
 sus coverage_mode lit = cap
 
-# Output format flags
+fr fr Output format flags
 sus json_output lit = cap
 sus xml_output lit = cap
 sus html_output lit = cap
 sus tap_output lit = cap
 
-# Test filtering
+fr fr Test filtering
 sus test_pattern tea = "*"
 sus test_directory tea = "tests/"
 
-# ================================
-# Basic Test Lifecycle Functions
-# ================================
+fr fr ================================
+fr fr Basic Test Lifecycle Functions
+fr fr ================================
 
 slay test_start(name tea) {
     current_test_name = name
@@ -89,9 +88,9 @@ slay suite_end() {
     vibez.spill("")
 }
 
-# ================================
-# Basic Assertion Functions - The Essentials
-# ================================
+fr fr ================================
+fr fr Basic Assertion Functions - The Essentials
+fr fr ================================
 
 slay assert_eq_int(actual normie, expected normie) {
     current_assertion_name = "assert_eq_int"
@@ -199,9 +198,9 @@ slay assert_eq_float(actual meal, expected meal) {
     }
 }
 
-# ================================
-# Advanced Assertion Functions - The Power Tools
-# ================================
+fr fr ================================
+fr fr Advanced Assertion Functions - The Power Tools
+fr fr ================================
 
 slay assert_ne_int(actual normie, expected normie) {
     current_assertion_name = "assert_ne_int"
@@ -283,14 +282,12 @@ slay assert_in_range(actual normie, min normie, max normie) {
     }
 }
 
-# ================================
-# String Assertion Functions - For Text Validation
-# ================================
+fr fr ================================
+fr fr String Assertion Functions - For Text Validation
+fr fr ================================
 
 slay assert_string_contains(haystack tea, needle tea) {
-    current_assertion_name = "assert_string_contains"
-    
-    # Basic string contains check
+    current_assertion_name = "assert_string_contains" fr fr Basic string contains check
     sus found lit = cap
     sus haystack_len normie = haystack.length
     sus needle_len normie = needle.length
@@ -409,9 +406,9 @@ slay assert_string_ends_with(text tea, suffix tea) {
     }
 }
 
-# ================================
-# Performance Testing Functions - The Speed Demons
-# ================================
+fr fr ================================
+fr fr Performance Testing Functions - The Speed Demons
+fr fr ================================
 
 slay benchmark_start() normie {
     damn get_current_time()
@@ -437,10 +434,7 @@ slay benchmark_function(name tea, iterations normie) {
     
     sus i normie = 0
     periodt i < iterations {
-        sus start_time normie = benchmark_start()
-        
-        # Function execution would go here
-        # For now, just simulate some work
+        sus start_time normie = benchmark_start() fr fr Function execution would go here fr fr For now, just simulate some work
         sus work normie = 0
         sus j normie = 0
         periodt j < 100 {
@@ -473,9 +467,9 @@ slay benchmark_function(name tea, iterations normie) {
     test_end()
 }
 
-# ================================
-# Property-Based Testing Functions - The Random Chaos
-# ================================
+fr fr ================================
+fr fr Property-Based Testing Functions - The Random Chaos
+fr fr ================================
 
 slay property_test_int(name tea, min_val normie, max_val normie, iterations normie) {
     test_start("property_" + name)
@@ -484,10 +478,7 @@ slay property_test_int(name tea, min_val normie, max_val normie, iterations norm
     
     sus i normie = 0
     periodt i < iterations {
-        sus random_val normie = random_int_range(min_val, max_val)
-        
-        # Property check would go here
-        # For now, just check that the value is in range
+        sus random_val normie = random_int_range(min_val, max_val) fr fr Property check would go here fr fr For now, just check that the value is in range
         lowkey random_val < min_val || random_val > max_val {
             property_failures = property_failures + 1
             vibez.spill("  ❌ Property violation: " + tea(random_val) + " not in [" + tea(min_val) + ", " + tea(max_val) + "]")
@@ -514,10 +505,7 @@ slay property_test_string(name tea, min_length normie, max_length normie, iterat
     
     sus i normie = 0
     periodt i < iterations {
-        sus random_str tea = random_string(min_length, max_length)
-        
-        # Property check would go here
-        # For now, just check that the string length is in range
+        sus random_str tea = random_string(min_length, max_length) fr fr Property check would go here fr fr For now, just check that the string length is in range
         lowkey random_str.length < min_length || random_str.length > max_length {
             property_failures = property_failures + 1
             vibez.spill("  ❌ Property violation: string length " + tea(random_str.length) + " not in [" + tea(min_length) + ", " + tea(max_length) + "]")
@@ -537,33 +525,30 @@ slay property_test_string(name tea, min_length normie, max_length normie, iterat
     test_end()
 }
 
-# ================================
-# Mock System Functions - The Fake It Till You Make It
-# ================================
+fr fr ================================
+fr fr Mock System Functions - The Fake It Till You Make It
+fr fr ================================
 
 slay create_mock(name tea) normie {
     vibez.spill("  🎭 Created mock: " + name)
-    damn 1  # Mock ID
+    damn 1 fr fr Mock ID
 }
 
 slay mock_return(mock_id normie, return_value tea) {
     vibez.spill("  🎭 Mock " + tea(mock_id) + " will return: " + return_value)
 }
 
-slay mock_verify_called(mock_id normie, expected_calls normie) {
-    # For now, just assume it was called the expected number of times
+slay mock_verify_called(mock_id normie, expected_calls normie) { fr fr For now, just assume it was called the expected number of times
     assert_eq_int(expected_calls, expected_calls)
     vibez.spill("  🎭 Mock " + tea(mock_id) + " was called " + tea(expected_calls) + " times")
 }
 
-# ================================
-# Test Discovery Functions - The Seekers
-# ================================
+fr fr ================================
+fr fr Test Discovery Functions - The Seekers
+fr fr ================================
 
 slay discover_test_files(directory tea) normie {
-    vibez.spill("  🔍 Discovering tests in: " + directory)
-    
-    # For now, just simulate finding some test files
+    vibez.spill("  🔍 Discovering tests in: " + directory) fr fr For now, just simulate finding some test files
     sus test_files_found normie = 3
     vibez.spill("  📁 Found " + tea(test_files_found) + " test files")
     
@@ -573,15 +558,11 @@ slay discover_test_files(directory tea) normie {
 slay run_test_suite(directory tea) {
     suite_start("Discovered Tests from " + directory)
     
-    sus files_found normie = discover_test_files(directory)
-    
-    # Simulate running discovered tests
+    sus files_found normie = discover_test_files(directory) fr fr Simulate running discovered tests
     sus i normie = 0
     periodt i < files_found {
-        test_start("discovered_test_" + tea(i))
-        
-        # Simulate test execution
-        assert_eq_int(1, 1)  # This would be the actual test
+        test_start("discovered_test_" + tea(i)) fr fr Simulate test execution
+        assert_eq_int(1, 1) fr fr This would be the actual test
         
         test_end()
         i = i + 1
@@ -590,9 +571,9 @@ slay run_test_suite(directory tea) {
     suite_end()
 }
 
-# ================================
-# Configuration Functions - The Control Center
-# ================================
+fr fr ================================
+fr fr Configuration Functions - The Control Center
+fr fr ================================
 
 slay enable_verbose() {
     verbose_mode = based
@@ -644,9 +625,9 @@ slay set_test_directory(directory tea) {
     vibez.spill("  📁 Test directory set to: " + directory)
 }
 
-# ================================
-# Output Format Functions - The Reporters
-# ================================
+fr fr ================================
+fr fr Output Format Functions - The Reporters
+fr fr ================================
 
 slay enable_json_output() {
     json_output = based
@@ -722,17 +703,17 @@ slay generate_tap_report() {
         vibez.spill("  📊 TAP Report:")
         vibez.spill("  TAP version 13")
         vibez.spill("  1.." + tea(test_count))
-        vibez.spill("  # Suite: " + current_suite_name)
-        vibez.spill("  # Framework: CURSED Testing Framework v6.0")
-        vibez.spill("  # Passed: " + tea(test_passed))
-        vibez.spill("  # Failed: " + tea(test_failed))
-        vibez.spill("  # Skipped: " + tea(test_skipped))
+        vibez.spill(" fr fr Suite: " + current_suite_name)
+        vibez.spill(" fr fr Framework: CURSED Testing Framework v6.0")
+        vibez.spill(" fr fr Passed: " + tea(test_passed))
+        vibez.spill(" fr fr Failed: " + tea(test_failed))
+        vibez.spill(" fr fr Skipped: " + tea(test_skipped))
     }
 }
 
-# ================================
-# Coverage Analysis Functions - The Code Inspectors
-# ================================
+fr fr ================================
+fr fr Coverage Analysis Functions - The Code Inspectors
+fr fr ================================
 
 slay analyze_coverage() {
     lowkey coverage_mode {
@@ -754,9 +735,9 @@ slay report_coverage_gaps() {
     }
 }
 
-# ================================
-# Performance Regression Testing - The Speed Police
-# ================================
+fr fr ================================
+fr fr Performance Regression Testing - The Speed Police
+fr fr ================================
 
 slay check_performance_regression(test_name tea, current_time normie, baseline_time normie, threshold normie) {
     test_start("performance_regression_" + test_name)
@@ -782,29 +763,26 @@ slay check_performance_regression(test_name tea, current_time normie, baseline_t
     test_end()
 }
 
-# ================================
-# Test Fixtures and Setup/Teardown - The Prep Squad
-# ================================
+fr fr ================================
+fr fr Test Fixtures and Setup/Teardown - The Prep Squad
+fr fr ================================
 
 slay setup_test_fixture(fixture_name tea) {
-    vibez.spill("  🔧 Setting up fixture: " + fixture_name)
-    # Fixture setup code would go here
+    vibez.spill("  🔧 Setting up fixture: " + fixture_name) fr fr Fixture setup code would go here
 }
 
 slay teardown_test_fixture(fixture_name tea) {
-    vibez.spill("  🔧 Tearing down fixture: " + fixture_name)
-    # Fixture teardown code would go here
+    vibez.spill("  🔧 Tearing down fixture: " + fixture_name) fr fr Fixture teardown code would go here
 }
 
 slay with_fixture(fixture_name tea) {
-    setup_test_fixture(fixture_name)
-    # Test execution would happen here
+    setup_test_fixture(fixture_name) fr fr Test execution would happen here
     teardown_test_fixture(fixture_name)
 }
 
-# ================================
-# Parallel Test Execution - The Multitaskers
-# ================================
+fr fr ================================
+fr fr Parallel Test Execution - The Multitaskers
+fr fr ================================
 
 slay run_tests_in_parallel(test_names [tea]) {
     lowkey parallel_mode {
@@ -812,10 +790,9 @@ slay run_tests_in_parallel(test_names [tea]) {
         
         sus i normie = 0
         periodt i < test_names.length {
-            vibez.spill("  🧪 Parallel test: " + test_names[i])
-            # In real implementation, this would spawn goroutines
+            vibez.spill("  🧪 Parallel test: " + test_names[i]) fr fr In real implementation, this would spawn goroutines
             test_start(test_names[i])
-            assert_eq_int(1, 1)  # Placeholder test
+            assert_eq_int(1, 1) fr fr Placeholder test
             test_end()
             i = i + 1
         }
@@ -824,35 +801,32 @@ slay run_tests_in_parallel(test_names [tea]) {
         sus i normie = 0
         periodt i < test_names.length {
             test_start(test_names[i])
-            assert_eq_int(1, 1)  # Placeholder test
+            assert_eq_int(1, 1) fr fr Placeholder test
             test_end()
             i = i + 1
         }
     }
 }
 
-# ================================
-# Utility Functions - The Helpers
-# ================================
+fr fr ================================
+fr fr Utility Functions - The Helpers
+fr fr ================================
 
-slay get_current_time() normie {
-    # Simplified time function - would need actual implementation
+slay get_current_time() normie { fr fr Simplified time function - would need actual implementation
     damn 1000
 }
 
-slay random_int_range(min_val normie, max_val normie) normie {
-    # Simplified random function - would need actual implementation
+slay random_int_range(min_val normie, max_val normie) normie { fr fr Simplified random function - would need actual implementation
     damn min_val + (max_val - min_val) / 2
 }
 
-slay random_string(min_length normie, max_length normie) tea {
-    # Simplified random string function - would need actual implementation
+slay random_string(min_length normie, max_length normie) tea { fr fr Simplified random string function - would need actual implementation
     damn "random_string"
 }
 
-# ================================
-# Test Summary and Reporting - The Final Boss
-# ================================
+fr fr ================================
+fr fr Test Summary and Reporting - The Final Boss
+fr fr ================================
 
 slay print_test_summary() {
     vibez.spill("")
@@ -870,20 +844,14 @@ slay print_test_summary() {
     vibez.spill("  Failed:         " + tea(test_failed) + " (" + tea((test_failed * 100) / test_count) + "%)")
     vibez.spill("  Skipped:        " + tea(test_skipped) + " (" + tea((test_skipped * 100) / test_count) + "%)")
     vibez.spill("  Errors:         " + tea(test_errors) + " (" + tea((test_errors * 100) / test_count) + "%)")
-    vibez.spill("")
-    
-    # Performance metrics
+    vibez.spill("") fr fr Performance metrics
     lowkey test_count > 0 {
         sus avg_time normie = total_test_time / test_count
         vibez.spill("⚡ Performance Metrics:")
         vibez.spill("  Average Test Time: " + tea(avg_time) + "ms")
         vibez.spill("  Tests per Second: " + tea(1000 / avg_time))
-    }
-    
-    # Coverage report
-    analyze_coverage()
-    
-    # Generate all enabled report formats
+    } fr fr Coverage report
+    analyze_coverage() fr fr Generate all enabled report formats
     generate_json_report()
     generate_xml_report()
     generate_html_report()
@@ -895,9 +863,7 @@ slay print_test_summary() {
         vibez.spill("🔥 Your code is absolutely fire! 🔥")
     } highkey {
         vibez.spill("❌ SOME TESTS FAILED")
-        vibez.spill("😤 Time to fix that code!")
-        
-        # Performance regression warning
+        vibez.spill("😤 Time to fix that code!") fr fr Performance regression warning
         lowkey test_failed > (test_count / 10) {
             vibez.spill("⚠️  High failure rate detected - consider reviewing test strategy")
         }
@@ -906,9 +872,9 @@ slay print_test_summary() {
     vibez.spill("════════════════════════════════════════════════════════════════")
 }
 
-# ================================
-# State Management Functions - The Cleaners
-# ================================
+fr fr ================================
+fr fr State Management Functions - The Cleaners
+fr fr ================================
 
 slay reset_test_state() {
     test_count = 0
@@ -941,17 +907,15 @@ slay all_tests_passed() lit {
     damn test_failed == 0 && test_errors == 0
 }
 
-# ================================
-# Advanced Test Patterns - The Pro Moves
-# ================================
+fr fr ================================
+fr fr Advanced Test Patterns - The Pro Moves
+fr fr ================================
 
 slay test_with_timeout(test_name tea, timeout_ms normie) {
     test_start(test_name)
     
-    sus start_time normie = get_current_time()
-    
-    # Test execution would go here
-    assert_eq_int(1, 1)  # Placeholder
+    sus start_time normie = get_current_time() fr fr Test execution would go here
+    assert_eq_int(1, 1) fr fr Placeholder
     
     sus end_time normie = get_current_time()
     sus duration normie = end_time - start_time
@@ -972,15 +936,12 @@ slay test_with_retry(test_name tea, max_retries normie) {
     sus test_passed_flag lit = cap
     
     periodt retry_count <= max_retries && !test_passed_flag {
-        test_start(test_name + "_retry_" + tea(retry_count))
-        
-        # Test execution would go here
-        # For now, simulate a flaky test that passes on retry
+        test_start(test_name + "_retry_" + tea(retry_count)) fr fr Test execution would go here fr fr For now, simulate a flaky test that passes on retry
         lowkey retry_count > 0 {
             assert_eq_int(1, 1)
             test_passed_flag = based
         } highkey {
-            assert_eq_int(1, 0)  # Intentionally fail first time
+            assert_eq_int(1, 0) fr fr Intentionally fail first time
         }
         
         test_end()
@@ -999,9 +960,7 @@ slay test_matrix(test_name tea, test_data [tea]) {
     
     sus i normie = 0
     periodt i < test_data.length {
-        test_start(test_name + "_matrix_" + tea(i))
-        
-        # Test execution with different data
+        test_start(test_name + "_matrix_" + tea(i)) fr fr Test execution with different data
         vibez.spill("    Testing with data: " + test_data[i])
         assert_eq_string(test_data[i], test_data[i])
         
@@ -1010,9 +969,9 @@ slay test_matrix(test_name tea, test_data [tea]) {
     }
 }
 
-# ================================
-# Integration with Build Systems - The Connectors
-# ================================
+fr fr ================================
+fr fr Integration with Build Systems - The Connectors
+fr fr ================================
 
 slay export_junit_xml() {
     vibez.spill("  📤 Exporting JUnit XML format")
@@ -1032,12 +991,12 @@ slay export_ci_metadata() {
     vibez.spill("  CURSED_PASS_RATE=" + tea((test_passed * 100) / test_count))
 }
 
-# ================================
-# Final Export Statement
-# ================================
+fr fr ================================
+fr fr Final Export Statement
+fr fr ================================
 
-# Note: CURSED module system would export all these functions
-# For now, they're all globally available when this module is imported
+fr fr Note: CURSED module system would export all these functions
+fr fr For now, they're all globally available when this module is imported
 
 vibez.spill("🚀 CURSED Testing Framework v6.0 - Enhanced Production Edition loaded!")
 vibez.spill("💪 Ready to test everything with maximum power!")

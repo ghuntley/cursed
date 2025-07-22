@@ -788,7 +788,7 @@ slay ToSocialText(s tea, addHashtags lit) tea {
         sus words := Fields(s)
         bestie _, word := range words {
             if len(word) > 4 {
-                result += " #" + Title(word)
+                result += " fr fr " + Title(word)
             }
         }
     }

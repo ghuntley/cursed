@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "memory_profiler"
 
-# Comprehensive test suite for memory_profiler module
+fr fr Comprehensive test suite for memory_profiler module
 
 test_start("init_memory_profiler")
 sus init_result lit = init_memory_profiler()
@@ -41,7 +41,7 @@ assert_true(len(trace) > 0)
 test_start("detect_leaks")
 sus leak_report tea = detect_leaks()
 assert_true(len(leak_report) > 0)
-# Should contain information about unfreed allocations
+fr fr Should contain information about unfreed allocations
 
 test_start("analyze_allocation_patterns")
 sus pattern_report tea = analyze_allocation_patterns()
@@ -83,23 +83,23 @@ assert_true(reset_result)
 assert_eq_int(global_allocation_count, 0)
 assert_eq_int(global_gc_count, 0)
 
-# Test allocation tracking with profiler inactive
+fr fr Test allocation tracking with profiler inactive
 test_start("track_allocation_inactive")
 sus inactive_result lit = track_allocation("ptr_004", 128, "test")
 assert_false(inactive_result)
 
-# Test edge cases
+fr fr Test edge cases
 test_start("track_deallocation_not_found")
 sus not_found_result lit = track_deallocation("nonexistent_ptr")
 assert_false(not_found_result)
 
 test_start("allocation_limit_test")
-# Test allocation tracking limit
+fr fr Test allocation tracking limit
 start_profiling()
 bestie i := 0; i < 1005; i++ {
     track_allocation("ptr_" + stringz.from_int(i), 64, "test")
 }
-# Should handle overflow gracefully
-assert_eq_int(global_allocation_count, 1000)  # Should cap at limit
+fr fr Should handle overflow gracefully
+assert_eq_int(global_allocation_count, 1000) fr fr Should cap at limit
 
 print_test_summary()

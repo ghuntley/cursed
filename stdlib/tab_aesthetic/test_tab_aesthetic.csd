@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "tab_aesthetic"
 
-# Tab Aesthetic Module Tests
+fr fr Tab Aesthetic Module Tests
 
 test_start("tab_writer_new creates default writer")
 sus writer TabWriter = tab_writer_new()
@@ -65,8 +65,8 @@ sus row2 []tea = []tea{"John", "25"}
 assert_true(tab_writer_add_row(&writer, row1))
 assert_true(tab_writer_add_row(&writer, row2))
 assert_eq_int(len(writer.widths), 2)
-assert_eq_int(writer.widths[0], 4)  # "Name" length
-assert_eq_int(writer.widths[1], 3)  # "Age" length
+assert_eq_int(writer.widths[0], 4) fr fr "Name" length
+assert_eq_int(writer.widths[1], 3) fr fr "Age" length
 
 test_start("tab_writer_add_row updates column widths correctly")
 sus writer TabWriter = tab_writer_new()
@@ -74,8 +74,8 @@ sus row1 []tea = []tea{"A", "BB"}
 sus row2 []tea = []tea{"CCC", "D"}
 assert_true(tab_writer_add_row(&writer, row1))
 assert_true(tab_writer_add_row(&writer, row2))
-assert_eq_int(writer.widths[0], 3)  # Max of "A" and "CCC"
-assert_eq_int(writer.widths[1], 2)  # Max of "BB" and "D"
+assert_eq_int(writer.widths[0], 3) fr fr Max of "A" and "CCC"
+assert_eq_int(writer.widths[1], 2) fr fr Max of "BB" and "D"
 
 test_start("tab_writer_clear resets writer")
 sus writer TabWriter = tab_writer_new()
@@ -92,7 +92,7 @@ sus row2 []tea = []tea{"John", "25"}
 tab_writer_add_row(&writer, row1)
 tab_writer_add_row(&writer, row2)
 sus result tea = tab_writer_flush(&writer)
-# Should contain formatted table with proper spacing
+fr fr Should contain formatted table with proper spacing
 assert_true(len(result) > 0)
 
 test_start("tab_aesthetic_format_table creates aligned table")
@@ -156,7 +156,7 @@ sus rows [][]tea = [][]tea{
 }
 sus result tea = tab_aesthetic_markdown_table(headers, rows)
 assert_true(len(result) > 0)
-# Should contain markdown table borders
+fr fr Should contain markdown table borders
 assert_true(stringz.contains(result, "|"))
 
 test_start("tab_writer handles different alignments")
@@ -209,7 +209,7 @@ sus result tea = tab_writer_flush(&writer)
 assert_true(len(result) > 0)
 
 test_start("tab_aesthetic module comprehensive test")
-# Test complex table with multiple formatting options
+fr fr Test complex table with multiple formatting options
 sus complex_data [][]tea = [][]tea{
     []tea{"Language", "Type", "Year", "Popular"},
     []tea{"CURSED", "Compiled", "2024", "Growing"},
@@ -226,13 +226,13 @@ assert_true(len(left_aligned) > 0)
 assert_true(len(right_aligned) > 0)
 assert_true(len(center_aligned) > 0)
 
-# Test key-value formatting
+fr fr Test key-value formatting
 sus config_keys []tea = []tea{"Compiler", "Version", "Target", "Optimization"}
 sus config_values []tea = []tea{"CURSED", "1.0.0", "x86_64", "Enabled"}
 sus config_table tea = tab_aesthetic_key_value_table(config_keys, config_values)
 assert_true(len(config_table) > 0)
 
-# Test markdown table generation
+fr fr Test markdown table generation
 sus feature_headers []tea = []tea{"Module", "Status", "Tests", "Coverage"}
 sus feature_rows [][]tea = [][]tea{
     []tea{"Parser", "Complete", "125", "98%"},

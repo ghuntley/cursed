@@ -1,11 +1,11 @@
-# CURSED Testing Framework v6.0 - Enhanced Production Tests
-# Comprehensive test suite that demonstrates ALL the new features
+fr fr CURSED Testing Framework v6.0 - Enhanced Production Tests
+fr fr Comprehensive test suite that demonstrates ALL the new features
 
 yeet "testz"
 
-# ================================
-# Test Suite: Framework Initialization and Configuration
-# ================================
+fr fr ================================
+fr fr Test Suite: Framework Initialization and Configuration
+fr fr ================================
 
 slay test_framework_initialization() {
     suite_start("Framework Initialization")
@@ -39,9 +39,9 @@ slay test_framework_initialization() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Basic Assertion Functionality
-# ================================
+fr fr ================================
+fr fr Test Suite: Basic Assertion Functionality
+fr fr ================================
 
 slay test_basic_assertions() {
     suite_start("Basic Assertions")
@@ -108,17 +108,15 @@ slay test_basic_assertions() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Performance Testing and Benchmarking
-# ================================
+fr fr ================================
+fr fr Test Suite: Performance Testing and Benchmarking
+fr fr ================================
 
 slay test_performance_features() {
     suite_start("Performance Testing")
     
     test_start("basic_benchmarking")
-    sus start_time normie = benchmark_start()
-    
-    # Simulate some work
+    sus start_time normie = benchmark_start() fr fr Simulate some work
     sus result normie = 0
     bestie i := 0; i < 1000; i++ {
         result = result + i
@@ -127,32 +125,26 @@ slay test_performance_features() {
     sus duration normie = benchmark_end(start_time)
     assert_gt_int(duration, 0)
     assert_eq_int(result, 499500)
-    test_end()
-    
-    # Test benchmark function
+    test_end() fr fr Test benchmark function
     benchmark_function("mathematical_operations", 10)
     
     test_start("performance_regression_testing")
-    check_performance_regression("sample_function", 150, 100, 50)  # Should pass
-    check_performance_regression("slow_function", 200, 100, 50)    # Should fail
+    check_performance_regression("sample_function", 150, 100, 50) fr fr Should pass
+    check_performance_regression("slow_function", 200, 100, 50) fr fr Should fail
     test_end()
     
     suite_end()
 }
 
-# ================================
-# Test Suite: Property-Based Testing
-# ================================
+fr fr ================================
+fr fr Test Suite: Property-Based Testing
+fr fr ================================
 
 slay test_property_based_testing() {
-    suite_start("Property-Based Testing")
-    
-    # Test property-based testing for integers
+    suite_start("Property-Based Testing") fr fr Test property-based testing for integers
     property_test_int("integer_range_property", 1, 100, 50)
     property_test_int("negative_integer_property", -100, -1, 25)
-    property_test_int("zero_centered_property", -50, 50, 30)
-    
-    # Test property-based testing for strings
+    property_test_int("zero_centered_property", -50, 50, 30) fr fr Test property-based testing for strings
     property_test_string("string_length_property", 5, 20, 40)
     property_test_string("short_string_property", 1, 5, 20)
     property_test_string("long_string_property", 50, 100, 15)
@@ -160,9 +152,9 @@ slay test_property_based_testing() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Mock System Testing
-# ================================
+fr fr ================================
+fr fr Test Suite: Mock System Testing
+fr fr ================================
 
 slay test_mock_system() {
     suite_start("Mock System")
@@ -192,9 +184,9 @@ slay test_mock_system() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Test Discovery and Execution
-# ================================
+fr fr ================================
+fr fr Test Suite: Test Discovery and Execution
+fr fr ================================
 
 slay test_discovery_and_execution() {
     suite_start("Test Discovery")
@@ -202,17 +194,15 @@ slay test_discovery_and_execution() {
     test_start("file_discovery")
     sus files_found normie = discover_test_files("tests/")
     assert_gt_int(files_found, 0)
-    test_end()
-    
-    # Test running discovered test suite
+    test_end() fr fr Test running discovered test suite
     run_test_suite("tests/")
     
     suite_end()
 }
 
-# ================================
-# Test Suite: Output Format Testing
-# ================================
+fr fr ================================
+fr fr Test Suite: Output Format Testing
+fr fr ================================
 
 slay test_output_formats() {
     suite_start("Output Formats")
@@ -233,9 +223,7 @@ slay test_output_formats() {
     generate_json_report()
     generate_xml_report()
     generate_html_report()
-    generate_tap_report()
-    
-    # Test CI integration
+    generate_tap_report() fr fr Test CI integration
     export_junit_xml()
     export_ci_metadata()
     test_end()
@@ -243,9 +231,9 @@ slay test_output_formats() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Coverage Analysis
-# ================================
+fr fr ================================
+fr fr Test Suite: Coverage Analysis
+fr fr ================================
 
 slay test_coverage_analysis() {
     suite_start("Coverage Analysis")
@@ -258,9 +246,9 @@ slay test_coverage_analysis() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Parallel Execution
-# ================================
+fr fr ================================
+fr fr Test Suite: Parallel Execution
+fr fr ================================
 
 slay test_parallel_execution() {
     suite_start("Parallel Execution")
@@ -273,37 +261,29 @@ slay test_parallel_execution() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Advanced Test Patterns
-# ================================
+fr fr ================================
+fr fr Test Suite: Advanced Test Patterns
+fr fr ================================
 
 slay test_advanced_patterns() {
-    suite_start("Advanced Test Patterns")
-    
-    # Test with timeout
-    test_with_timeout("fast_test", 5000)
-    
-    # Test with retry
-    test_with_retry("flaky_test", 3)
-    
-    # Test matrix
+    suite_start("Advanced Test Patterns") fr fr Test with timeout
+    test_with_timeout("fast_test", 5000) fr fr Test with retry
+    test_with_retry("flaky_test", 3) fr fr Test matrix
     sus test_data [tea] = ["data1", "data2", "data3", "data4"]
     test_matrix("parameterized_test", test_data)
     
     suite_end()
 }
 
-# ================================
-# Test Suite: Fixtures and Setup/Teardown
-# ================================
+fr fr ================================
+fr fr Test Suite: Fixtures and Setup/Teardown
+fr fr ================================
 
 slay test_fixtures() {
     suite_start("Fixtures and Setup")
     
     test_start("fixture_management")
-    setup_test_fixture("database_fixture")
-    
-    # Test would use the fixture here
+    setup_test_fixture("database_fixture") fr fr Test would use the fixture here
     assert_eq_int(1, 1)
     
     teardown_test_fixture("database_fixture")
@@ -318,9 +298,9 @@ slay test_fixtures() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Edge Cases and Error Handling
-# ================================
+fr fr ================================
+fr fr Test Suite: Edge Cases and Error Handling
+fr fr ================================
 
 slay test_edge_cases() {
     suite_start("Edge Cases")
@@ -355,22 +335,18 @@ slay test_edge_cases() {
     suite_end()
 }
 
-# ================================
-# Test Suite: State Management
-# ================================
+fr fr ================================
+fr fr Test Suite: State Management
+fr fr ================================
 
 slay test_state_management() {
     suite_start("State Management")
     
     test_start("state_tracking")
     sus initial_count normie = test_count
-    sus initial_passed normie = test_passed
-    
-    # These should increment counters
+    sus initial_passed normie = test_passed fr fr These should increment counters
     assert_eq_int(42, 42)
-    assert_eq_string("test", "test")
-    
-    # Verify state changes
+    assert_eq_string("test", "test") fr fr Verify state changes
     assert_gt_int(test_passed, initial_passed)
     assert_gt_int(test_count, initial_count)
     test_end()
@@ -384,45 +360,37 @@ slay test_state_management() {
     suite_end()
 }
 
-# ================================
-# Test Suite: Skip Testing
-# ================================
+fr fr ================================
+fr fr Test Suite: Skip Testing
+fr fr ================================
 
 slay test_skipping_functionality() {
     suite_start("Skip Testing")
     
     test_start("intentional_skip")
-    test_skip("This test is intentionally skipped for demonstration")
-    
-    # This should still run
+    test_skip("This test is intentionally skipped for demonstration") fr fr This should still run
     assert_eq_int(1, 1)
     test_end()
     
     suite_end()
 }
 
-# ================================
-# Main Test Runner
-# ================================
+fr fr ================================
+fr fr Main Test Runner
+fr fr ================================
 
 slay main() {
     vibez.spill("🚀 Starting CURSED Testing Framework v6.0 Enhanced Production Tests")
     vibez.spill("💪 Testing ALL the new features with maximum power!")
-    vibez.spill("")
-    
-    # Configure the framework for comprehensive testing
+    vibez.spill("") fr fr Configure the framework for comprehensive testing
     enable_verbose()
     enable_coverage()
     enable_parallel()
     enable_json_output()
     enable_xml_output()
     enable_html_output()
-    enable_tap_output()
-    
-    # Reset state for clean test run
-    reset_test_state()
-    
-    # Run all comprehensive test suites
+    enable_tap_output() fr fr Reset state for clean test run
+    reset_test_state() fr fr Run all comprehensive test suites
     test_framework_initialization()
     test_basic_assertions()
     test_performance_features()
@@ -436,17 +404,13 @@ slay main() {
     test_fixtures()
     test_edge_cases()
     test_state_management()
-    test_skipping_functionality()
-    
-    # Generate comprehensive final report
+    test_skipping_functionality() fr fr Generate comprehensive final report
     print_test_summary()
     
     vibez.spill("")
     vibez.spill("🎯 CURSED Testing Framework v6.0 Enhanced Production Tests Complete!")
     vibez.spill("🔥 All features have been thoroughly tested and validated!")
-    vibez.spill("")
-    
-    # Return appropriate exit code
+    vibez.spill("") fr fr Return appropriate exit code
     lowkey all_tests_passed() {
         vibez.spill("✅ All tests passed - Enhanced framework is ready for production!")
         damn 0

@@ -1,14 +1,12 @@
 yeet "testz"
 
-# Comprehensive Collections Demo
-# Demonstrates the key features of the advanced collections module
+fr fr Comprehensive Collections Demo
+fr fr Demonstrates the key features of the advanced collections module
 
 slay demo_collections_overview() {
     vibez.spill("=== Advanced Collections Module Demo ===")
     vibez.spill("Pure CURSED implementation with full generic support")
-    vibez.spill("")
-    
-    # Demonstrate basic data structures concept
+    vibez.spill("") fr fr Demonstrate basic data structures concept
     vibez.spill("Core Collections Available:")
     vibez.spill("- HashMap<K,V>: Hash table with O(1) average access")
     vibez.spill("- ArrayList<T>: Dynamic array with O(1) amortized insertion")
@@ -26,30 +24,22 @@ slay demo_collections_overview() {
 }
 
 slay demo_conceptual_usage() {
-    vibez.spill("=== Conceptual Usage Examples ===")
-    
-    # Show conceptual HashMap usage
+    vibez.spill("=== Conceptual Usage Examples ===") fr fr Show conceptual HashMap usage
     vibez.spill("HashMap Concept:")
     vibez.spill("  sus map := new_hashmap<normie, tea>(16)")
     vibez.spill("  hashmap_put(map, 1, \"hello\")")
     vibez.spill("  sus value, exists := hashmap_get(map, 1)")
-    vibez.spill("")
-    
-    # Show conceptual ArrayList usage
+    vibez.spill("") fr fr Show conceptual ArrayList usage
     vibez.spill("ArrayList Concept:")
     vibez.spill("  sus list := new_arraylist<normie>(10)")
     vibez.spill("  arraylist_add(list, 42)")
     vibez.spill("  sus item, success := arraylist_get(list, 0)")
-    vibez.spill("")
-    
-    # Show conceptual Stack usage
+    vibez.spill("") fr fr Show conceptual Stack usage
     vibez.spill("Stack Concept:")
     vibez.spill("  sus stack := new_stack<tea>()")
     vibez.spill("  stack_push(stack, \"first\")")
     vibez.spill("  sus top, exists := stack_pop(stack)")
-    vibez.spill("")
-    
-    # Show conceptual AVL Tree usage
+    vibez.spill("") fr fr Show conceptual AVL Tree usage
     vibez.spill("AVL Tree Concept:")
     vibez.spill("  sus tree := new_avl<normie>()")
     vibez.spill("  avl_insert(tree, 50)")
@@ -166,5 +156,5 @@ slay run_demo() {
     vibez.spill("")
 }
 
-# Run the comprehensive demo
+fr fr Run the comprehensive demo
 run_demo()

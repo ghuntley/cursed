@@ -1,12 +1,12 @@
-# Enhanced Math Module - Complete Implementation
-# Pure CURSED mathematical functions with comprehensive error handling
-# FFI-free implementation for essential mathematical operations
+fr fr Enhanced Math Module - Complete Implementation
+fr fr Pure CURSED mathematical functions with comprehensive error handling
+fr fr FFI-free implementation for essential mathematical operations
 
 yeet "error_core"
 
-# ================================
-# Mathematical Constants
-# ================================
+fr fr ================================
+fr fr Mathematical Constants
+fr fr ================================
 
 slay math_pi() meal {
     damn 3.141592653589793
@@ -40,9 +40,9 @@ slay math_ln_10() meal {
     damn 2.302585092994046
 }
 
-# ================================
-# Basic Operations
-# ================================
+fr fr ================================
+fr fr Basic Operations
+fr fr ================================
 
 slay math_abs(x meal) meal {
     lowkey x < 0.0 {
@@ -86,20 +86,18 @@ slay math_clamp_int(x normie, min_val normie, max_val normie) normie {
     else { damn x }
 }
 
-# ================================
-# Power and Root Functions
-# ================================
+fr fr ================================
+fr fr Power and Root Functions
+fr fr ================================
 
 slay math_sqrt(x meal) meal {
     lowkey x < 0.0 {
-        damn 0.0  # Error case
+        damn 0.0 fr fr Error case
     }
     
     lowkey x == 0.0 {
         damn 0.0
-    }
-    
-    # Newton's method for square root
+    } fr fr Newton's method for square root
     sus guess meal = x / 2.0
     bestie i := 0; i < 15; i++ {
         sus new_guess meal = (guess + x / guess) / 2.0
@@ -121,9 +119,7 @@ slay math_cbrt(x meal) meal {
     lowkey x < 0.0 {
         sign = -1.0
         x = -x
-    }
-    
-    # Newton's method for cube root
+    } fr fr Newton's method for cube root
     sus guess meal = x / 3.0
     bestie i := 0; i < 15; i++ {
         sus x_squared meal = guess * guess
@@ -147,14 +143,12 @@ slay math_pow(base meal, exponent meal) meal {
     }
     
     lowkey base == 0.0 {
-        lowkey exponent > 0.0 { damn 0.0 } else { damn 1.0 }  # 0^negative is undefined, return 1
+        lowkey exponent > 0.0 { damn 0.0 } else { damn 1.0 } fr fr 0^negative is undefined, return 1
     }
     
     lowkey exponent < 0.0 {
         damn 1.0 / math_pow(base, -exponent)
-    }
-    
-    # For positive integer exponents, use binary exponentiation
+    } fr fr For positive integer exponents, use binary exponentiation
     sus result meal = 1.0
     sus current_base meal = base
     sus exp normie = normie(exponent)
@@ -180,7 +174,7 @@ slay math_pow_int(base normie, exponent normie) normie {
     }
     
     lowkey exponent < 0 {
-        damn 0  # Integer division for negative exponents
+        damn 0 fr fr Integer division for negative exponents
     }
     
     sus result normie = 1
@@ -198,9 +192,9 @@ slay math_pow_int(base normie, exponent normie) normie {
     damn result
 }
 
-# ================================
-# Exponential and Logarithmic Functions
-# ================================
+fr fr ================================
+fr fr Exponential and Logarithmic Functions
+fr fr ================================
 
 slay math_exp(x meal) meal {
     lowkey x == 0.0 {
@@ -208,14 +202,12 @@ slay math_exp(x meal) meal {
     }
     
     lowkey x > 700.0 {
-        damn 1000000000000.0  # Large number to represent overflow
+        damn 1000000000000.0 fr fr Large number to represent overflow
     }
     
     lowkey x < -700.0 {
         damn 0.0
-    }
-    
-    # Taylor series for e^x: 1 + x + x^2/2! + x^3/3! + ...
+    } fr fr Taylor series for e^x: 1 + x + x^2/2! + x^3/3! + ...
     sus result meal = 1.0
     sus term meal = 1.0
     sus factorial meal = 1.0
@@ -235,15 +227,12 @@ slay math_exp(x meal) meal {
 
 slay math_ln(x meal) meal {
     lowkey x <= 0.0 {
-        damn 0.0  # Error case
+        damn 0.0 fr fr Error case
     }
     
     lowkey x == 1.0 {
         damn 0.0
-    }
-    
-    # Use Newton's method: ln(x) = 2 * (x-1)/(x+1) + 2/3 * ((x-1)/(x+1))^3 + ...
-    # This is a simplified implementation
+    } fr fr Use Newton's method: ln(x) = 2 * (x-1)/(x+1) + 2/3 * ((x-1)/(x+1))^3 + ... fr fr This is a simplified implementation
     sus y meal = (x - 1.0) / (x + 1.0)
     sus y_squared meal = y * y
     sus result meal = 0.0
@@ -263,7 +252,7 @@ slay math_ln(x meal) meal {
 
 slay math_log10(x meal) meal {
     lowkey x <= 0.0 {
-        damn 0.0  # Error case
+        damn 0.0 fr fr Error case
     }
     
     damn math_ln(x) / math_ln_10()
@@ -271,7 +260,7 @@ slay math_log10(x meal) meal {
 
 slay math_log2(x meal) meal {
     lowkey x <= 0.0 {
-        damn 0.0  # Error case
+        damn 0.0 fr fr Error case
     }
     
     damn math_ln(x) / math_ln_2()
@@ -279,26 +268,23 @@ slay math_log2(x meal) meal {
 
 slay math_log(x meal, base meal) meal {
     lowkey x <= 0.0 || base <= 0.0 || base == 1.0 {
-        damn 0.0  # Error case
+        damn 0.0 fr fr Error case
     }
     
     damn math_ln(x) / math_ln(base)
 }
 
-# ================================
-# Trigonometric Functions
-# ================================
+fr fr ================================
+fr fr Trigonometric Functions
+fr fr ================================
 
-slay math_sin(x meal) meal {
-    # Normalize angle to [-π, π]
+slay math_sin(x meal) meal { fr fr Normalize angle to [-π, π]
     bestie x > math_pi() {
         x = x - 2.0 * math_pi()
     }
     bestie x < -math_pi() {
         x = x + 2.0 * math_pi()
-    }
-    
-    # Taylor series: sin(x) = x - x^3/3! + x^5/5! - x^7/7! + ...
+    } fr fr Taylor series: sin(x) = x - x^3/3! + x^5/5! - x^7/7! + ...
     sus result meal = x
     sus term meal = x
     sus x_squared meal = x * x
@@ -319,15 +305,14 @@ slay math_sin(x meal) meal {
     damn result
 }
 
-slay math_cos(x meal) meal {
-    # cos(x) = sin(x + π/2)
+slay math_cos(x meal) meal { fr fr cos(x) = sin(x + π/2)
     damn math_sin(x + math_pi() / 2.0)
 }
 
 slay math_tan(x meal) meal {
     sus cos_val meal = math_cos(x)
     lowkey math_abs(cos_val) < 0.0000001 {
-        damn 1000000.0  # Large number to represent infinity
+        damn 1000000.0 fr fr Large number to represent infinity
     }
     
     damn math_sin(x) / cos_val
@@ -335,15 +320,12 @@ slay math_tan(x meal) meal {
 
 slay math_asin(x meal) meal {
     lowkey x < -1.0 || x > 1.0 {
-        damn 0.0  # Error case
+        damn 0.0 fr fr Error case
     }
     
     lowkey x == 0.0 { damn 0.0 }
     lowkey x == 1.0 { damn math_pi() / 2.0 }
-    lowkey x == -1.0 { damn -math_pi() / 2.0 }
-    
-    # Use Newton's method approximation
-    # This is a simplified implementation
+    lowkey x == -1.0 { damn -math_pi() / 2.0 } fr fr Use Newton's method approximation fr fr This is a simplified implementation
     damn x + math_pow(x, 3.0) / 6.0 + 3.0 * math_pow(x, 5.0) / 40.0
 }
 
@@ -352,9 +334,7 @@ slay math_acos(x meal) meal {
 }
 
 slay math_atan(x meal) meal {
-    lowkey x == 0.0 { damn 0.0 }
-    
-    # Use Taylor series for small values
+    lowkey x == 0.0 { damn 0.0 } fr fr Use Taylor series for small values
     lowkey math_abs(x) <= 1.0 {
         sus result meal = x
         sus term meal = x
@@ -375,9 +355,7 @@ slay math_atan(x meal) meal {
         }
         
         damn result
-    }
-    
-    # For large values: atan(x) = π/2 - atan(1/x)
+    } fr fr For large values: atan(x) = π/2 - atan(1/x)
     lowkey x > 0.0 {
         damn math_pi() / 2.0 - math_atan(1.0 / x)
     } else {
@@ -409,26 +387,23 @@ slay math_atan2(y meal, x meal) meal {
     damn -math_pi() / 2.0
 }
 
-# ================================
-# Hyperbolic Functions
-# ================================
+fr fr ================================
+fr fr Hyperbolic Functions
+fr fr ================================
 
-slay math_sinh(x meal) meal {
-    # sinh(x) = (e^x - e^(-x)) / 2
+slay math_sinh(x meal) meal { fr fr sinh(x) = (e^x - e^(-x)) / 2
     sus exp_x meal = math_exp(x)
     sus exp_neg_x meal = math_exp(-x)
     damn (exp_x - exp_neg_x) / 2.0
 }
 
-slay math_cosh(x meal) meal {
-    # cosh(x) = (e^x + e^(-x)) / 2
+slay math_cosh(x meal) meal { fr fr cosh(x) = (e^x + e^(-x)) / 2
     sus exp_x meal = math_exp(x)
     sus exp_neg_x meal = math_exp(-x)
     damn (exp_x + exp_neg_x) / 2.0
 }
 
-slay math_tanh(x meal) meal {
-    # tanh(x) = sinh(x) / cosh(x)
+slay math_tanh(x meal) meal { fr fr tanh(x) = sinh(x) / cosh(x)
     sus sinh_val meal = math_sinh(x)
     sus cosh_val meal = math_cosh(x)
     
@@ -439,9 +414,9 @@ slay math_tanh(x meal) meal {
     damn sinh_val / cosh_val
 }
 
-# ================================
-# Rounding and Comparison Functions
-# ================================
+fr fr ================================
+fr fr Rounding and Comparison Functions
+fr fr ================================
 
 slay math_floor(x meal) meal {
     sus int_part normie = normie(x)
@@ -475,7 +450,7 @@ slay math_trunc(x meal) meal {
 
 slay math_fmod(x meal, y meal) meal {
     lowkey y == 0.0 {
-        damn 0.0  # Error case
+        damn 0.0 fr fr Error case
     }
     
     sus quotient normie = normie(x / y)
@@ -484,7 +459,7 @@ slay math_fmod(x meal, y meal) meal {
 
 slay math_remainder(x meal, y meal) meal {
     lowkey y == 0.0 {
-        damn 0.0  # Error case
+        damn 0.0 fr fr Error case
     }
     
     sus quotient meal = x / y
@@ -492,13 +467,13 @@ slay math_remainder(x meal, y meal) meal {
     damn x - y * meal(rounded_quotient)
 }
 
-# ================================
-# Advanced Mathematical Functions
-# ================================
+fr fr ================================
+fr fr Advanced Mathematical Functions
+fr fr ================================
 
 slay math_factorial(n normie) normie {
     lowkey n < 0 {
-        damn 0  # Error case
+        damn 0 fr fr Error case
     }
     
     lowkey n <= 1 {
@@ -515,7 +490,7 @@ slay math_factorial(n normie) normie {
 
 slay math_factorial_meal(n normie) meal {
     lowkey n < 0 {
-        damn 0.0  # Error case
+        damn 0.0 fr fr Error case
     }
     
     lowkey n <= 1 {
@@ -573,9 +548,9 @@ slay math_fibonacci(n normie) normie {
     damn b
 }
 
-# ================================
-# Statistical Functions
-# ================================
+fr fr ================================
+fr fr Statistical Functions
+fr fr ================================
 
 slay math_sum(values []meal) meal {
     sus total meal = 0.0
@@ -616,9 +591,7 @@ slay math_stddev(values []meal) meal {
 slay math_median(values []meal) meal {
     lowkey len(values) == 0 {
         damn 0.0
-    }
-    
-    # Simple median (would need sorting in real implementation)
+    } fr fr Simple median (would need sorting in real implementation)
     sus mid normie = len(values) / 2
     lowkey (len(values) % 2) == 1 {
         damn values[mid]
@@ -627,9 +600,9 @@ slay math_median(values []meal) meal {
     }
 }
 
-# ================================
-# Utility Functions
-# ================================
+fr fr ================================
+fr fr Utility Functions
+fr fr ================================
 
 slay math_sign(x meal) meal {
     lowkey x > 0.0 { damn 1.0 }
@@ -651,13 +624,11 @@ slay math_rad_to_deg(radians meal) meal {
     damn radians * 180.0 / math_pi()
 }
 
-slay math_is_nan(x meal) lit {
-    # Simple NaN check (would be more sophisticated in real implementation)
+slay math_is_nan(x meal) lit { fr fr Simple NaN check (would be more sophisticated in real implementation)
     damn x != x
 }
 
-slay math_is_infinite(x meal) lit {
-    # Simple infinity check
+slay math_is_infinite(x meal) lit { fr fr Simple infinity check
     damn math_abs(x) > 1000000000000.0
 }
 
@@ -674,9 +645,9 @@ slay math_smoothstep(edge0 meal, edge1 meal, x meal) meal {
     damn t * t * (3.0 - 2.0 * t)
 }
 
-# ================================
-# Number Theory Functions
-# ================================
+fr fr ================================
+fr fr Number Theory Functions
+fr fr ================================
 
 slay math_is_prime(n normie) lit {
     lowkey n <= 1 {
@@ -715,15 +686,11 @@ slay math_next_prime(n normie) normie {
 
 slay math_prime_factors(n normie) []normie {
     sus factors []normie = []
-    sus num normie = n
-    
-    # Check for factor 2
+    sus num normie = n fr fr Check for factor 2
     bestie (num % 2) == 0 {
         factors = append(factors, 2)
         num = num / 2
-    }
-    
-    # Check for odd factors
+    } fr fr Check for odd factors
     sus i normie = 3
     bestie i * i <= num {
         bestie (num % i) == 0 {
@@ -732,9 +699,7 @@ slay math_prime_factors(n normie) []normie {
         } else {
             i = i + 2
         }
-    }
-    
-    # If num is still > 2, it's a prime factor
+    } fr fr If num is still > 2, it's a prime factor
     lowkey num > 2 {
         factors = append(factors, num)
     }

@@ -1,10 +1,18 @@
-# Minimal test without module import
-sus test_count normie = 0
-
-slay simple_test() {
-    test_count = test_count + 1
-    vibez.spill("Test " + tea(test_count) + " passed")
+slay test_start(name tea) lit {
+    vibez.spill("Starting test: ", name)
+    damn based
 }
 
-simple_test()
-vibez.spill("Minimal test complete")
+slay assert_true(condition lit) lit {
+    lowkey condition == based {
+        vibez.spill("PASS")
+    } highkey {
+        vibez.spill("FAIL")
+    }
+    damn based
+}
+
+slay print_test_summary() lit {
+    vibez.spill("Test summary")
+    damn based
+}

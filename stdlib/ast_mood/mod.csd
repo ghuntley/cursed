@@ -1,8 +1,8 @@
-# Advanced AST Manipulation Module for CURSED Compiler Infrastructure
-# Pure CURSED implementation for compiler passes and code analysis tools
+fr fr Advanced AST Manipulation Module for CURSED Compiler Infrastructure
+fr fr Pure CURSED implementation for compiler passes and code analysis tools
 yeet "testz"
 
-# AST Node Type Constants
+fr fr AST Node Type Constants
 sus AST_UNKNOWN normie = 0
 sus AST_PROGRAM normie = 1
 sus AST_FUNCTION normie = 2
@@ -30,17 +30,15 @@ sus AST_MATCH normie = 23
 sus AST_PATTERN normie = 24
 sus AST_TYPE normie = 25
 
-# Global node counter for unique IDs
+fr fr Global node counter for unique IDs
 sus global_node_counter normie = 1000
 
-#===================================
-# Core AST Node Creation Functions
-#===================================
+fr fr ===================================
+fr fr Core AST Node Creation Functions
+fr fr ===================================
 
 slay create_ast_node(node_type normie, name tea, value tea, line normie, column normie) normie {
-    global_node_counter = global_node_counter + 1
-    # Encode all information into a single integer
-    # Format: type(8 bits) + line(12 bits) + column(12 bits) + id
+    global_node_counter = global_node_counter + 1 fr fr Encode all information into a single integer fr fr Format: type(8 bits) + line(12 bits) + column(12 bits) + id
     sus encoded_info normie = (node_type * 1000000) + (line * 1000) + column + global_node_counter
     damn encoded_info
 }
@@ -133,9 +131,9 @@ slay create_type_node(type_name tea, line normie, column normie) normie {
     damn create_ast_node(AST_TYPE, type_name, "", line, column)
 }
 
-#===================================
-# Node Property Extraction Functions
-#===================================
+fr fr ===================================
+fr fr Node Property Extraction Functions
+fr fr ===================================
 
 slay ast_node_type(node normie) normie {
     damn node / 1000000
@@ -155,9 +153,9 @@ slay ast_node_id(node normie) normie {
     damn node % 100
 }
 
-#===================================
-# Node Type Checking Functions
-#===================================
+fr fr ===================================
+fr fr Node Type Checking Functions
+fr fr ===================================
 
 slay is_program_node(node normie) lit {
     damn ast_node_type(node) == AST_PROGRAM
@@ -217,15 +215,12 @@ slay is_statement_node(node normie) lit {
     damn cap
 }
 
-#===================================
-# AST Traversal Utilities
-#===================================
+fr fr ===================================
+fr fr AST Traversal Utilities
+fr fr ===================================
 
-slay traverse_ast_preorder(node normie, depth normie) normie {
-    # Simulate tree traversal by counting nodes at depth
-    sus count normie = 1
-    
-    # If this is a complex node, simulate children
+slay traverse_ast_preorder(node normie, depth normie) normie { fr fr Simulate tree traversal by counting nodes at depth
+    sus count normie = 1 fr fr If this is a complex node, simulate children
     sus node_type normie = ast_node_type(node)
     lowkey node_type == AST_PROGRAM {
         count = count + traverse_ast_preorder(create_variable_node("child", 1, 1), depth + 1)
@@ -241,9 +236,7 @@ slay traverse_ast_preorder(node normie, depth normie) normie {
 }
 
 slay traverse_ast_postorder(node normie, depth normie) normie {
-    sus count normie = 0
-    
-    # Process children first in postorder
+    sus count normie = 0 fr fr Process children first in postorder
     sus node_type normie = ast_node_type(node)
     lowkey node_type == AST_PROGRAM {
         count = count + traverse_ast_postorder(create_variable_node("child", 1, 1), depth + 1)
@@ -253,9 +246,7 @@ slay traverse_ast_postorder(node normie, depth normie) normie {
     }
     lowkey node_type == AST_BLOCK {
         count = count + traverse_ast_postorder(create_variable_node("child", 1, 1), depth + 1)
-    }
-    
-    # Then process current node
+    } fr fr Then process current node
     count = count + 1
     damn count
 }
@@ -265,17 +256,13 @@ slay count_ast_nodes(root normie) normie {
 }
 
 slay get_ast_depth(node normie, current_depth normie) normie {
-    sus node_type normie = ast_node_type(node)
-    
-    # Base case - leaf nodes
+    sus node_type normie = ast_node_type(node) fr fr Base case - leaf nodes
     lowkey node_type == AST_LITERAL {
         damn current_depth
     }
     lowkey node_type == AST_IDENTIFIER {
         damn current_depth
-    }
-    
-    # Recursive case - internal nodes
+    } fr fr Recursive case - internal nodes
     sus max_child_depth normie = current_depth + 1
     lowkey node_type == AST_PROGRAM {
         sus child_depth normie = get_ast_depth(create_block_node(1, 1), current_depth + 1)
@@ -293,19 +280,15 @@ slay get_ast_depth(node normie, current_depth normie) normie {
     damn max_child_depth
 }
 
-#===================================
-# AST Analysis Functions
-#===================================
+fr fr ===================================
+fr fr AST Analysis Functions
+fr fr ===================================
 
 slay find_nodes_by_type(root normie, target_type normie, found_count normie) normie {
-    sus count normie = found_count
-    
-    # Check current node
+    sus count normie = found_count fr fr Check current node
     lowkey ast_node_type(root) == target_type {
         count = count + 1
-    }
-    
-    # Recursively check children (simulated)
+    } fr fr Recursively check children (simulated)
     sus node_type normie = ast_node_type(root)
     lowkey node_type == AST_PROGRAM {
         count = find_nodes_by_type(create_variable_node("child", 1, 1), target_type, count)
@@ -349,9 +332,9 @@ slay get_expression_count(root normie) normie {
     damn expr_count + literal_count + binary_count
 }
 
-#===================================
-# Pattern Matching Functions
-#===================================
+fr fr ===================================
+fr fr Pattern Matching Functions
+fr fr ===================================
 
 slay match_function_pattern(node normie) lit {
     damn ast_node_type(node) == AST_FUNCTION
@@ -366,14 +349,10 @@ slay match_literal_pattern(node normie) lit {
 }
 
 slay match_ast_pattern(node normie, pattern_type normie) lit {
-    sus node_type normie = ast_node_type(node)
-    
-    # Direct type match
+    sus node_type normie = ast_node_type(node) fr fr Direct type match
     lowkey node_type == pattern_type {
         damn based
-    }
-    
-    # Category matches
+    } fr fr Category matches
     lowkey pattern_type == AST_EXPRESSION {
         damn is_expression_node(node)
     }
@@ -385,9 +364,9 @@ slay match_ast_pattern(node normie, pattern_type normie) lit {
     damn cap
 }
 
-#===================================
-# AST Transformation Operations
-#===================================
+fr fr ===================================
+fr fr AST Transformation Operations
+fr fr ===================================
 
 slay transform_ast_node(node normie, new_type normie) normie {
     sus line normie = ast_node_line(node)
@@ -409,9 +388,9 @@ slay replace_node_type(node normie, old_type normie, new_type normie) normie {
     damn node
 }
 
-#===================================
-# Pretty Printing and Debug Utilities
-#===================================
+fr fr ===================================
+fr fr Pretty Printing and Debug Utilities
+fr fr ===================================
 
 slay ast_node_type_string(node_type normie) tea {
     lowkey node_type == AST_UNKNOWN { damn "UNKNOWN" }
@@ -470,16 +449,14 @@ slay print_node_details(node normie) tea {
     damn type_str + " at line " + line + ", column " + column
 }
 
-#===================================
-# AST Validation and Integrity
-#===================================
+fr fr ===================================
+fr fr AST Validation and Integrity
+fr fr ===================================
 
 slay validate_ast_node(node normie) lit {
     sus node_type normie = ast_node_type(node)
     sus line normie = ast_node_line(node)
-    sus column normie = ast_node_column(node)
-    
-    # Basic validation checks
+    sus column normie = ast_node_column(node) fr fr Basic validation checks
     lowkey node_type < 0 || node_type > AST_TYPE {
         damn cap
     }
@@ -491,21 +468,16 @@ slay validate_ast_node(node normie) lit {
     damn based
 }
 
-slay validate_ast_tree(root normie) lit {
-    # Validate root node
+slay validate_ast_tree(root normie) lit { fr fr Validate root node
     lowkey !validate_ast_node(root) {
         damn cap
-    }
-    
-    # Validate tree structure
+    } fr fr Validate tree structure
     sus node_type normie = ast_node_type(root)
-    lowkey node_type == AST_PROGRAM {
-        # Program nodes should be valid
+    lowkey node_type == AST_PROGRAM { fr fr Program nodes should be valid
         damn based
     }
     
-    lowkey node_type == AST_FUNCTION {
-        # Function nodes should have reasonable structure
+    lowkey node_type == AST_FUNCTION { fr fr Function nodes should have reasonable structure
         damn based
     }
     
@@ -513,25 +485,21 @@ slay validate_ast_tree(root normie) lit {
 }
 
 slay check_node_consistency(node normie) lit {
-    sus node_type normie = ast_node_type(node)
-    
-    # Type-specific validation
-    lowkey node_type == AST_BINARY_OP {
-        # Binary operations should have valid structure
+    sus node_type normie = ast_node_type(node) fr fr Type-specific validation
+    lowkey node_type == AST_BINARY_OP { fr fr Binary operations should have valid structure
         damn based
     }
     
-    lowkey node_type == AST_FUNCTION {
-        # Functions should have valid names and bodies
+    lowkey node_type == AST_FUNCTION { fr fr Functions should have valid names and bodies
         damn based
     }
     
     damn based
 }
 
-#===================================
-# AST Builder Utilities
-#===================================
+fr fr ===================================
+fr fr AST Builder Utilities
+fr fr ===================================
 
 slay build_simple_program() normie {
     sus program normie = create_program_node(1, 1)
@@ -558,23 +526,19 @@ slay build_function_call(func_name tea, arg_count normie) normie {
     damn call_node
 }
 
-#===================================
-# Serialization/Deserialization
-#===================================
+fr fr ===================================
+fr fr Serialization/Deserialization
+fr fr ===================================
 
 slay serialize_ast_node(node normie) tea {
     sus node_type normie = ast_node_type(node)
     sus line normie = ast_node_line(node)
     sus column normie = ast_node_column(node)
-    sus id normie = ast_node_id(node)
-    
-    # Simple serialization format: type:line:column:id
+    sus id normie = ast_node_id(node) fr fr Simple serialization format: type:line:column:id
     damn node_type + ":" + line + ":" + column + ":" + id
 }
 
-slay deserialize_ast_node(serialized tea) normie {
-    # Parse serialized format and reconstruct node
-    # This is a simplified version that creates a basic node
+slay deserialize_ast_node(serialized tea) normie { fr fr Parse serialized format and reconstruct node fr fr This is a simplified version that creates a basic node
     damn create_program_node(1, 1)
 }
 
@@ -586,14 +550,13 @@ slay export_ast_to_json(root normie) tea {
     damn "{\"type\":\"" + type_str + "\",\"line\":" + line + ",\"column\":" + column + "}"
 }
 
-slay import_ast_from_json(json_str tea) normie {
-    # Simplified JSON parsing - create a basic node
+slay import_ast_from_json(json_str tea) normie { fr fr Simplified JSON parsing - create a basic node
     damn create_program_node(1, 1)
 }
 
-#===================================
-# Module Information and Status
-#===================================
+fr fr ===================================
+fr fr Module Information and Status
+fr fr ===================================
 
 slay ast_mood_version() tea {
     damn "1.0.0"
@@ -604,7 +567,7 @@ slay ast_mood_status() tea {
 }
 
 slay get_supported_node_types() normie {
-    damn 26  # Total number of AST node types supported
+    damn 26 fr fr Total number of AST node types supported
 }
 
 slay is_ast_mood_ready() lit {
@@ -615,19 +578,17 @@ slay print_ast_mood_info() tea {
     damn "ast_mood v1.0.0 - Advanced AST manipulation utilities for CURSED compiler infrastructure"
 }
 
-#===================================
-# Advanced AST Operations
-#===================================
+fr fr ===================================
+fr fr Advanced AST Operations
+fr fr ===================================
 
-slay optimize_ast_structure(root normie) normie {
-    # Apply basic optimizations to AST structure
+slay optimize_ast_structure(root normie) normie { fr fr Apply basic optimizations to AST structure
     sus optimized normie = clone_ast_node(root)
     damn optimized
 }
 
-slay compress_ast_representation(root normie) normie {
-    # Compress AST for memory efficiency
-    damn root  # Return as-is for now
+slay compress_ast_representation(root normie) normie { fr fr Compress AST for memory efficiency
+    damn root fr fr Return as-is for now
 }
 
 slay ast_metrics_analysis(root normie) tea {
@@ -642,14 +603,14 @@ slay ast_metrics_analysis(root normie) tea {
          expressions + " expressions"
 }
 
-# AST manipulation module is now complete and production-ready
-# Supports all major compiler infrastructure operations:
-# - Node creation and modification
-# - Tree traversal (preorder, postorder)
-# - AST transformation operations
-# - Pretty printing and debugging
-# - AST validation and integrity checking
-# - Serialization/deserialization
-# - Comprehensive pattern matching
-# - Builder utilities for common patterns
-# - Advanced metrics and analysis
+fr fr AST manipulation module is now complete and production-ready
+fr fr Supports all major compiler infrastructure operations:
+fr fr - Node creation and modification
+fr fr - Tree traversal (preorder, postorder)
+fr fr - AST transformation operations
+fr fr - Pretty printing and debugging
+fr fr - AST validation and integrity checking
+fr fr - Serialization/deserialization
+fr fr - Comprehensive pattern matching
+fr fr - Builder utilities for common patterns
+fr fr - Advanced metrics and analysis

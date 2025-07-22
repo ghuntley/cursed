@@ -1,6 +1,6 @@
 yeet "testz"
 
-# Contract Testing Framework - Pure CURSED Implementation
+fr fr Contract Testing Framework - Pure CURSED Implementation
 
 slay contract_test(service_name tea, contract_spec tea) lit {
     vibez.spill("Running contract test for service: " + service_name)

@@ -1,9 +1,9 @@
 yeet "testz"
 yeet "property_test"
 
-# Simple test suite for property-based testing framework
+fr fr Simple test suite for property-based testing framework
 
-# Test basic generator functionality
+fr fr Test basic generator functionality
 test_start("Random number generator produces values in range")
 set_seed(42)
 sus test_passed lit = based
@@ -18,31 +18,31 @@ bestie i < 10 {
 }
 assert_true(test_passed)
 
-# Test boolean generator
+fr fr Test boolean generator
 test_start("Boolean generator works")
 set_seed(123)
 sus bool_val lit = gen_boolean()
 assert_true(bool_val == based || bool_val == cap)
 
-# Test positive integer generator
+fr fr Test positive integer generator
 test_start("Positive integer generator produces positive values")
 set_seed(456)
 sus pos_val normie = gen_positive_int()
 assert_true(pos_val > 0)
 
-# Test string generator
+fr fr Test string generator
 test_start("String generator produces strings")
 set_seed(789)
 sus str_val tea = gen_small_string()
 assert_true(str_val != "")
 
-# Test simple property
+fr fr Test simple property
 test_start("Simple property test works")
 set_seed(101)
 sus simple_result lit = run_simple_property_test("numbers equal themselves")
 assert_true(simple_result)
 
-# Test mathematical properties
+fr fr Test mathematical properties
 set_seed(202)
 sus comm_result lit = test_addition_commutative()
 assert_true(comm_result)
@@ -51,7 +51,7 @@ set_seed(303)
 sus identity_result lit = test_identity_property()
 assert_true(identity_result)
 
-# Test configuration
+fr fr Test configuration
 test_start("Configuration works")
 sus original_count normie = property_test_count
 set_test_count(5)

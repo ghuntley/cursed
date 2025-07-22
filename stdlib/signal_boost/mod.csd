@@ -1,71 +1,65 @@
 yeet "testz"
 yeet "core"
 
-# signal_boost - Unix Signal Handling Module 📡
-# Gen Z signal handling that's absolutely fire 🔥
+fr fr signal_boost - Unix Signal Handling Module 📡
+fr fr Gen Z signal handling that's absolutely fire 🔥
 
-# Standard Unix Signal Constants - these are straight facts fr
-facts SIGTERM normie = 15     # Terminate process (graceful)
-facts SIGINT normie = 2       # Interrupt from keyboard (Ctrl+C)
-facts SIGKILL normie = 9      # Kill process (cannot be caught)
-facts SIGUSR1 normie = 10     # User-defined signal 1
-facts SIGUSR2 normie = 12     # User-defined signal 2
-facts SIGCHLD normie = 17     # Child process terminated
-facts SIGPIPE normie = 13     # Broken pipe
-facts SIGALRM normie = 14     # Timer signal
-facts SIGHUP normie = 1       # Hangup detected
-facts SIGQUIT normie = 3      # Quit from keyboard
-facts SIGABRT normie = 6      # Abort signal
-facts SIGFPE normie = 8       # Floating point exception
-facts SIGSEGV normie = 11     # Segmentation violation
-facts SIGCONT normie = 18     # Continue if stopped
-facts SIGSTOP normie = 19     # Stop process (cannot be caught)
-facts SIGTSTP normie = 20     # Terminal stop signal
+fr fr Standard Unix Signal Constants - these are straight facts fr
+facts SIGTERM normie = 15 fr fr Terminate process (graceful)
+facts SIGINT normie = 2 fr fr Interrupt from keyboard (Ctrl+C)
+facts SIGKILL normie = 9 fr fr Kill process (cannot be caught)
+facts SIGUSR1 normie = 10 fr fr User-defined signal 1
+facts SIGUSR2 normie = 12 fr fr User-defined signal 2
+facts SIGCHLD normie = 17 fr fr Child process terminated
+facts SIGPIPE normie = 13 fr fr Broken pipe
+facts SIGALRM normie = 14 fr fr Timer signal
+facts SIGHUP normie = 1 fr fr Hangup detected
+facts SIGQUIT normie = 3 fr fr Quit from keyboard
+facts SIGABRT normie = 6 fr fr Abort signal
+facts SIGFPE normie = 8 fr fr Floating point exception
+facts SIGSEGV normie = 11 fr fr Segmentation violation
+facts SIGCONT normie = 18 fr fr Continue if stopped
+facts SIGSTOP normie = 19 fr fr Stop process (cannot be caught)
+facts SIGTSTP normie = 20 fr fr Terminal stop signal
 
-# Real-time signal range - for when you need that premium signal experience
+fr fr Real-time signal range - for when you need that premium signal experience
 facts SIGRTMIN normie = 34
 facts SIGRTMAX normie = 64
 
-# Signal handler function type - this is how we catch those signals
+fr fr Signal handler function type - this is how we catch those signals
 be_like SignalHandler = slay(signal normie) lit
 
-# Signal mask for blocking signals - privacy mode activated
+fr fr Signal mask for blocking signals - privacy mode activated
 be_like SignalMask = {
     signals [64]lit
 }
 
-# Signal registration result - success vibes only
+fr fr Signal registration result - success vibes only
 be_like SignalResult = {
     success lit
     error_msg tea
 }
 
-# Signal pending status - see what signals are waiting in the DMs
+fr fr Signal pending status - see what signals are waiting in the DMs
 be_like PendingSignals = {
     count normie
     signals [64]normie
 }
 
-# Register signal handler - slide into those signal DMs 💬
-slay signal_register_handler(signal normie, handler tea) SignalResult {
-    # Validate signal number - we don't mess with invalid signals
+fr fr Register signal handler - slide into those signal DMs 💬
+slay signal_register_handler(signal normie, handler tea) SignalResult { fr fr Validate signal number - we don't mess with invalid signals
     lowkey signal < 1 || signal > 64 {
         damn SignalResult{success: cap, error_msg: "Invalid signal number - that's not it chief"}
-    }
-    
-    # SIGKILL and SIGSTOP cannot be caught - they're just built different
+    } fr fr SIGKILL and SIGSTOP cannot be caught - they're just built different
     lowkey signal == SIGKILL || signal == SIGSTOP {
         damn SignalResult{success: cap, error_msg: "Cannot catch SIGKILL or SIGSTOP - they're unstoppable"}
-    }
-    
-    # Register the handler - time to catch those signals
+    } fr fr Register the handler - time to catch those signals
     vibez.spill("Signal handler registered for signal: " + signal)
     damn SignalResult{success: based, error_msg: ""}
 }
 
-# Send signal to process - sliding into another process's notifications 📨
-slay signal_send_process(pid normie, signal normie) lit {
-    # Validate inputs - we keep it real
+fr fr Send signal to process - sliding into another process's notifications 📨
+slay signal_send_process(pid normie, signal normie) lit { fr fr Validate inputs - we keep it real
     lowkey pid <= 0 || signal < 1 || signal > 64 {
         damn cap
     }
@@ -74,9 +68,8 @@ slay signal_send_process(pid normie, signal normie) lit {
     damn based
 }
 
-# Send signal to process group - group chat notification blast 📢
-slay signal_send_group(pgid normie, signal normie) lit {
-    # Validate process group ID
+fr fr Send signal to process group - group chat notification blast 📢
+slay signal_send_group(pgid normie, signal normie) lit { fr fr Validate process group ID
     lowkey pgid <= 0 || signal < 1 || signal > 64 {
         damn cap
     }
@@ -85,11 +78,9 @@ slay signal_send_group(pgid normie, signal normie) lit {
     damn based
 }
 
-# Block signals - do not disturb mode activated 🔕
+fr fr Block signals - do not disturb mode activated 🔕
 slay signal_block_mask(mask SignalMask) lit {
-    sus blocked_count normie = 0
-    
-    # Count blocked signals for logging
+    sus blocked_count normie = 0 fr fr Count blocked signals for logging
     bestie i := 0; i < 64; i++ {
         lowkey mask.signals[i] {
             blocked_count++
@@ -100,11 +91,9 @@ slay signal_block_mask(mask SignalMask) lit {
     damn based
 }
 
-# Unblock signals - back online and ready for notifications 📳
+fr fr Unblock signals - back online and ready for notifications 📳
 slay signal_unblock_mask(mask SignalMask) lit {
-    sus unblocked_count normie = 0
-    
-    # Count unblocked signals
+    sus unblocked_count normie = 0 fr fr Count unblocked signals
     bestie i := 0; i < 64; i++ {
         lowkey mask.signals[i] {
             unblocked_count++
@@ -115,12 +104,9 @@ slay signal_unblock_mask(mask SignalMask) lit {
     damn based
 }
 
-# Check pending signals - see what's in your signal inbox 📬
+fr fr Check pending signals - see what's in your signal inbox 📬
 slay signal_check_pending() PendingSignals {
-    sus pending PendingSignals = PendingSignals{count: 0, signals: [64]normie{}}
-    
-    # Simulate checking for pending signals
-    # In a real implementation, this would check the kernel signal queue
+    sus pending PendingSignals = PendingSignals{count: 0, signals: [64]normie{}} fr fr Simulate checking for pending signals fr fr In a real implementation, this would check the kernel signal queue
     pending.count = 2
     pending.signals[0] = SIGTERM
     pending.signals[1] = SIGUSR1
@@ -129,23 +115,19 @@ slay signal_check_pending() PendingSignals {
     damn pending
 }
 
-# Wait for specific signal - just chillin' until that signal arrives ⏰
-slay signal_wait_for(signal normie, timeout normie) lit {
-    # Validate signal
+fr fr Wait for specific signal - just chillin' until that signal arrives ⏰
+slay signal_wait_for(signal normie, timeout normie) lit { fr fr Validate signal
     lowkey signal < 1 || signal > 64 {
         damn cap
     }
     
-    vibez.spill("Waiting for signal " + signal + " with timeout " + timeout + "ms")
-    # In real implementation, this would use sigwait() or similar
+    vibez.spill("Waiting for signal " + signal + " with timeout " + timeout + "ms") fr fr In real implementation, this would use sigwait() or similar
     damn based
 }
 
-# Create signal mask - customize your signal privacy settings 🛡️
+fr fr Create signal mask - customize your signal privacy settings 🛡️
 slay signal_create_mask() SignalMask {
-    sus mask SignalMask = SignalMask{signals: [64]lit{}}
-    
-    # Initialize all signals as unblocked by default
+    sus mask SignalMask = SignalMask{signals: [64]lit{}} fr fr Initialize all signals as unblocked by default
     bestie i := 0; i < 64; i++ {
         mask.signals[i] = cap
     }
@@ -153,7 +135,7 @@ slay signal_create_mask() SignalMask {
     damn mask
 }
 
-# Add signal to mask - add to your block list 🚫
+fr fr Add signal to mask - add to your block list 🚫
 slay signal_mask_add(mask *SignalMask, signal normie) lit {
     lowkey signal < 1 || signal > 64 {
         damn cap
@@ -164,7 +146,7 @@ slay signal_mask_add(mask *SignalMask, signal normie) lit {
     damn based
 }
 
-# Remove signal from mask - unblock that signal 🟢
+fr fr Remove signal from mask - unblock that signal 🟢
 slay signal_mask_remove(mask *SignalMask, signal normie) lit {
     lowkey signal < 1 || signal > 64 {
         damn cap
@@ -175,7 +157,7 @@ slay signal_mask_remove(mask *SignalMask, signal normie) lit {
     damn based
 }
 
-# Check if signal is in mask - is this signal blocked? 🤔
+fr fr Check if signal is in mask - is this signal blocked? 🤔
 slay signal_mask_contains(mask SignalMask, signal normie) lit {
     lowkey signal < 1 || signal > 64 {
         damn cap
@@ -184,7 +166,7 @@ slay signal_mask_contains(mask SignalMask, signal normie) lit {
     damn mask.signals[signal-1]
 }
 
-# Get signal name - translate numbers to human readable vibes 📖
+fr fr Get signal name - translate numbers to human readable vibes 📖
 slay signal_get_name(signal normie) tea {
     lowkey signal == SIGTERM {
         damn "SIGTERM"
@@ -225,32 +207,27 @@ slay signal_get_name(signal normie) tea {
     }
 }
 
-# Signal safety check - make sure your signal handling is secure 🔒
-slay signal_is_safe_handler(signal normie) lit {
-    # Some signals are not safe to handle in custom handlers
+fr fr Signal safety check - make sure your signal handling is secure 🔒
+slay signal_is_safe_handler(signal normie) lit { fr fr Some signals are not safe to handle in custom handlers
     lowkey signal == SIGKILL || signal == SIGSTOP {
-        damn cap  # These cannot be caught anyway
+        damn cap fr fr These cannot be caught anyway
     }
     
     lowkey signal == SIGSEGV || signal == SIGFPE {
-        damn cap  # These are usually programming errors, not safe to catch
+        damn cap fr fr These are usually programming errors, not safe to catch
     }
     
-    damn based  # Most other signals are safe to handle
+    damn based fr fr Most other signals are safe to handle
 }
 
-# Emergency signal setup - panic button configuration 🚨
+fr fr Emergency signal setup - panic button configuration 🚨
 slay signal_setup_emergency_exit() lit {
-    vibez.spill("Setting up emergency exit signals...")
-    
-    # Register SIGINT for graceful shutdown
+    vibez.spill("Setting up emergency exit signals...") fr fr Register SIGINT for graceful shutdown
     sus result SignalResult = signal_register_handler(SIGINT, "graceful_exit")
     lowkey !result.success {
         vibez.spill("Failed to register SIGINT handler: " + result.error_msg)
         damn cap
-    }
-    
-    # Register SIGTERM for graceful shutdown
+    } fr fr Register SIGTERM for graceful shutdown
     result = signal_register_handler(SIGTERM, "graceful_exit")
     lowkey !result.success {
         vibez.spill("Failed to register SIGTERM handler: " + result.error_msg)
@@ -261,7 +238,7 @@ slay signal_setup_emergency_exit() lit {
     damn based
 }
 
-# Signal handling best practices info - educational content 📚
+fr fr Signal handling best practices info - educational content 📚
 slay signal_get_best_practices() tea {
     damn "Signal Handling Best Practices:\n" +
          "1. Keep signal handlers simple and async-safe\n" +
@@ -275,7 +252,7 @@ slay signal_get_best_practices() tea {
          "Remember: Signal handling is tricky - stay safe out there!"
 }
 
-# Module info - flex about this module 💪
+fr fr Module info - flex about this module 💪
 slay signal_boost_info() tea {
     damn "signal_boost v1.0 - Unix Signal Handling That's Actually Fire 🔥\n" +
          "Features: Signal registration, masking, pending checks, real-time signals\n" +

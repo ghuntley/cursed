@@ -2,10 +2,10 @@ yeet "testz"
 yeet "stringz"
 yeet "vibez"
 
-# Path Manipulation Module - Pure CURSED Implementation
-# Cross-platform path operations for Stage 2 self-hosting
+fr fr Path Manipulation Module - Pure CURSED Implementation
+fr fr Cross-platform path operations for Stage 2 self-hosting
 
-# Path Constants
+fr fr Path Constants
 facts {
     PATH_SEPARATOR_UNIX = "/"
     PATH_SEPARATOR_WIN = "\\"
@@ -21,7 +21,7 @@ facts {
     PATH_HOME_SHORTCUT = "~"
 }
 
-# Path Type Structure
+fr fr Path Type Structure
 be_like PathInfo = struct {
     original tea
     absolute tea
@@ -36,7 +36,7 @@ be_like PathInfo = struct {
     permissions normie
 }
 
-# Path Manager Structure
+fr fr Path Manager Structure
 be_like PathManager = struct {
     current_dir tea
     home_dir tea
@@ -49,10 +49,10 @@ be_like PathManager = struct {
     initialized lit
 }
 
-# Global Path Manager
+fr fr Global Path Manager
 sus global_path_manager PathManager
 
-# Module Initialization
+fr fr Module Initialization
 slay init_path_manager() {
     lowkey global_path_manager.initialized == cap {
         global_path_manager = PathManager{
@@ -65,24 +65,20 @@ slay init_path_manager() {
             case_sensitive: based,
             path_cache: map[tea]PathInfo{},
             initialized: based,
-        }
-        
-        # Detect platform
+        } fr fr Detect platform
         detect_platform()
     }
 }
 
-# Platform Detection
-slay detect_platform() {
-    # Simple platform detection based on environment
-    # In real implementation, would check system calls
+fr fr Platform Detection
+slay detect_platform() { fr fr Simple platform detection based on environment fr fr In real implementation, would check system calls
     global_path_manager.platform = "unix"
     global_path_manager.separator = PATH_SEPARATOR_UNIX
     global_path_manager.list_separator = PATH_LIST_SEPARATOR_UNIX
     global_path_manager.case_sensitive = based
 }
 
-# Core Path Functions
+fr fr Core Path Functions
 slay join(components []tea) tea {
     init_path_manager()
     
@@ -97,19 +93,13 @@ slay join(components []tea) tea {
     result := components[0]
     
     bestie i := 1; i < len(components); i++ {
-        component := components[i]
-        
-        # Skip empty components
+        component := components[i] fr fr Skip empty components
         lowkey stringz.length(component) == 0 {
             simp
-        }
-        
-        # Add separator if needed
+        } fr fr Add separator if needed
         lowkey !stringz.has_suffix(result, global_path_manager.separator) {
             result = result + global_path_manager.separator
-        }
-        
-        # Remove leading separator from component
+        } fr fr Remove leading separator from component
         lowkey stringz.has_prefix(component, global_path_manager.separator) {
             component = stringz.substring(component, 1, stringz.length(component))
         }
@@ -125,12 +115,8 @@ slay split(path tea) []tea {
     
     lowkey stringz.length(path) == 0 {
         damn []tea{}
-    }
-    
-    # Split by separator
-    components := stringz.split(path, global_path_manager.separator)
-    
-    # Remove empty components except for root
+    } fr fr Split by separator
+    components := stringz.split(path, global_path_manager.separator) fr fr Remove empty components except for root
     result := []tea{}
     bestie i, component := range components {
         lowkey stringz.length(component) > 0 || i == 0 {
@@ -146,12 +132,8 @@ slay basename(path tea) tea {
     
     lowkey stringz.length(path) == 0 {
         damn ""
-    }
-    
-    # Remove trailing separators
-    cleaned := stringz.trim_suffix(path, global_path_manager.separator)
-    
-    # Find last separator
+    } fr fr Remove trailing separators
+    cleaned := stringz.trim_suffix(path, global_path_manager.separator) fr fr Find last separator
     last_sep := stringz.last_index(cleaned, global_path_manager.separator)
     
     lowkey last_sep == -1 {
@@ -166,12 +148,8 @@ slay dirname(path tea) tea {
     
     lowkey stringz.length(path) == 0 {
         damn PATH_CURRENT_DIR
-    }
-    
-    # Remove trailing separators
-    cleaned := stringz.trim_suffix(path, global_path_manager.separator)
-    
-    # Find last separator
+    } fr fr Remove trailing separators
+    cleaned := stringz.trim_suffix(path, global_path_manager.separator) fr fr Find last separator
     last_sep := stringz.last_index(cleaned, global_path_manager.separator)
     
     lowkey last_sep == -1 {
@@ -192,9 +170,7 @@ slay ext(path tea) tea {
     
     lowkey stringz.length(base) == 0 {
         damn ""
-    }
-    
-    # Find last dot
+    } fr fr Find last dot
     last_dot := stringz.last_index(base, ".")
     
     lowkey last_dot == -1 || last_dot == 0 {
@@ -217,7 +193,7 @@ slay stem(path tea) tea {
     damn stringz.substring(base, 0, stringz.length(base) - stringz.length(extension))
 }
 
-# Path State Functions
+fr fr Path State Functions
 slay is_absolute(path tea) lit {
     init_path_manager()
     
@@ -225,14 +201,11 @@ slay is_absolute(path tea) lit {
         damn cap
     }
     
-    lowkey global_path_manager.platform == "windows" {
-        # Windows: C:\ or \\ (UNC paths)
+    lowkey global_path_manager.platform == "windows" { fr fr Windows: C:\ or \\ (UNC paths)
         damn (stringz.length(path) >= 3 && 
               stringz.substring(path, 1, 3) == ":\\") ||
              stringz.has_prefix(path, "\\\\")
-    }
-    
-    # Unix-like: starts with /
+    } fr fr Unix-like: starts with /
     damn stringz.has_prefix(path, global_path_manager.separator)
 }
 
@@ -263,15 +236,13 @@ slay is_parent_dir(path tea) lit {
     damn cleaned == PATH_PARENT_DIR
 }
 
-# Path Transformation Functions
+fr fr Path Transformation Functions
 slay abs(path tea) tea {
     init_path_manager()
     
     lowkey is_absolute(path) {
         damn clean(path)
-    }
-    
-    # Make absolute by joining with current directory
+    } fr fr Make absolute by joining with current directory
     damn clean(join([]tea{global_path_manager.current_dir, path}))
 }
 
@@ -282,9 +253,7 @@ slay rel(base tea, target tea) tea {
     target_abs := abs(target)
     
     base_components := split(base_abs)
-    target_components := split(target_abs)
-    
-    # Find common prefix
+    target_components := split(target_abs) fr fr Find common prefix
     common_len := 0
     min_len := len(base_components)
     lowkey len(target_components) < min_len {
@@ -297,17 +266,11 @@ slay rel(base tea, target tea) tea {
         } highkey {
             ghosted
         }
-    }
-    
-    # Build relative path
-    rel_components := []tea{}
-    
-    # Add .. for each remaining base component
+    } fr fr Build relative path
+    rel_components := []tea{} fr fr Add .. for each remaining base component
     bestie i := common_len; i < len(base_components); i++ {
         rel_components = append(rel_components, PATH_PARENT_DIR)
-    }
-    
-    # Add remaining target components
+    } fr fr Add remaining target components
     bestie i := common_len; i < len(target_components); i++ {
         rel_components = append(rel_components, target_components[i])
     }
@@ -330,13 +293,11 @@ slay clean(path tea) tea {
     clean_components := []tea{}
     
     bestie _, component := range components {
-        lowkey component == PATH_CURRENT_DIR {
-            # Skip current directory references
+        lowkey component == PATH_CURRENT_DIR { fr fr Skip current directory references
             simp
         }
         
-        lowkey component == PATH_PARENT_DIR {
-            # Handle parent directory references
+        lowkey component == PATH_PARENT_DIR { fr fr Handle parent directory references
             lowkey len(clean_components) > 0 && 
                   clean_components[len(clean_components)-1] != PATH_PARENT_DIR {
                 clean_components = clean_components[:len(clean_components)-1]
@@ -350,9 +311,7 @@ slay clean(path tea) tea {
     
     lowkey len(clean_components) == 0 {
         damn PATH_CURRENT_DIR
-    }
-    
-    # Preserve leading separator for absolute paths
+    } fr fr Preserve leading separator for absolute paths
     result := join(clean_components)
     lowkey is_absolute(path) && !stringz.has_prefix(result, global_path_manager.separator) {
         result = global_path_manager.separator + result
@@ -361,7 +320,7 @@ slay clean(path tea) tea {
     damn result
 }
 
-# Path Expansion Functions
+fr fr Path Expansion Functions
 slay expand_home(path tea) tea {
     init_path_manager()
     
@@ -380,13 +339,8 @@ slay expand_home(path tea) tea {
 }
 
 slay expand_env(path tea) tea {
-    init_path_manager()
-    
-    # Simple environment variable expansion
-    # In real implementation, would use env module
-    result := path
-    
-    # Replace common environment variables
+    init_path_manager() fr fr Simple environment variable expansion fr fr In real implementation, would use env module
+    result := path fr fr Replace common environment variables
     env_vars := map[tea]tea{
         "HOME": global_path_manager.home_dir,
         "TMP": global_path_manager.temp_dir,
@@ -394,12 +348,9 @@ slay expand_env(path tea) tea {
         "PWD": global_path_manager.current_dir,
     }
     
-    bestie key, value := range env_vars {
-        # Replace ${VAR} pattern
+    bestie key, value := range env_vars { fr fr Replace ${VAR} pattern
         brace_pattern := "${" + key + "}"
-        result = stringz.replace_all(result, brace_pattern, value)
-        
-        # Replace $VAR pattern
+        result = stringz.replace_all(result, brace_pattern, value) fr fr Replace $VAR pattern
         dollar_pattern := "$" + key
         result = stringz.replace_all(result, dollar_pattern, value)
     }
@@ -415,7 +366,7 @@ slay expand_all(path tea) tea {
     damn clean(expanded)
 }
 
-# Path Validation Functions
+fr fr Path Validation Functions
 slay validate(path tea) lit {
     init_path_manager()
     
@@ -425,17 +376,13 @@ slay validate(path tea) lit {
     
     lowkey stringz.length(path) > PATH_MAX_LENGTH {
         damn cap
-    }
-    
-    # Check for invalid characters
+    } fr fr Check for invalid characters
     invalid_chars := []tea{"\\000", "\\001", "\\002", "\\003", "\\004", "\\005", "\\006", "\\007"}
     bestie _, invalid_char := range invalid_chars {
         lowkey stringz.contains(path, invalid_char) {
             damn cap
         }
-    }
-    
-    # Check component lengths
+    } fr fr Check component lengths
     components := split(path)
     bestie _, component := range components {
         lowkey stringz.length(component) > PATH_COMPONENT_MAX {
@@ -455,17 +402,13 @@ slay is_valid_filename(filename tea) lit {
     
     lowkey stringz.length(filename) > PATH_COMPONENT_MAX {
         damn cap
-    }
-    
-    # Check for invalid filename characters
+    } fr fr Check for invalid filename characters
     invalid_chars := []tea{"/", "\\", ":", "*", "?", "\"", "<", ">", "|"}
     bestie _, invalid_char := range invalid_chars {
         lowkey stringz.contains(filename, invalid_char) {
             damn cap
         }
-    }
-    
-    # Check for reserved names (Windows)
+    } fr fr Check for reserved names (Windows)
     reserved_names := []tea{"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}
     upper_filename := stringz.to_upper(filename)
     bestie _, reserved := range reserved_names {
@@ -477,20 +420,16 @@ slay is_valid_filename(filename tea) lit {
     damn based
 }
 
-# Path Matching Functions
+fr fr Path Matching Functions
 slay match(pattern tea, path tea) lit {
-    init_path_manager()
-    
-    # Simple glob pattern matching
+    init_path_manager() fr fr Simple glob pattern matching
     lowkey stringz.contains(pattern, "*") {
         parts := stringz.split(pattern, "*")
         lowkey len(parts) == 2 {
             damn stringz.has_prefix(path, parts[0]) && 
                  stringz.has_suffix(path, parts[1])
         }
-    }
-    
-    # Case sensitivity handling
+    } fr fr Case sensitivity handling
     lowkey !global_path_manager.case_sensitive {
         damn stringz.to_lower(pattern) == stringz.to_lower(path)
     }
@@ -518,18 +457,14 @@ slay has_extension(path tea, extensions []tea) lit {
     damn cap
 }
 
-# Path Information Functions
+fr fr Path Information Functions
 slay info(path tea) PathInfo {
-    init_path_manager()
-    
-    # Check cache first
+    init_path_manager() fr fr Check cache first
     lowkey cached_info, exists := global_path_manager.path_cache[path] {
         lowkey exists {
             damn cached_info
         }
-    }
-    
-    # Create new path info
+    } fr fr Create new path info
     path_info := PathInfo{
         original: path,
         absolute: abs(path),
@@ -542,27 +477,20 @@ slay info(path tea) PathInfo {
         is_directory: is_likely_directory(path),
         exists: path_exists(path),
         permissions: get_permissions(path),
-    }
-    
-    # Cache the result
+    } fr fr Cache the result
     global_path_manager.path_cache[path] = path_info
     
     damn path_info
 }
 
 slay is_likely_directory(path tea) lit {
-    init_path_manager()
-    
-    # Simple heuristic: ends with separator or has no extension
+    init_path_manager() fr fr Simple heuristic: ends with separator or has no extension
     damn stringz.has_suffix(path, global_path_manager.separator) ||
          stringz.length(ext(path)) == 0
 }
 
 slay path_exists(path tea) lit {
-    init_path_manager()
-    
-    # Simulate path existence check
-    # In real implementation, would check filesystem
+    init_path_manager() fr fr Simulate path existence check fr fr In real implementation, would check filesystem
     common_paths := []tea{
         "/home/user",
         "/tmp",
@@ -586,18 +514,15 @@ slay path_exists(path tea) lit {
 }
 
 slay get_permissions(path tea) normie {
-    init_path_manager()
-    
-    # Simulate permission check
-    # In real implementation, would check filesystem permissions
+    init_path_manager() fr fr Simulate permission check fr fr In real implementation, would check filesystem permissions
     lowkey path_exists(path) {
-        damn 0o755  # rwxr-xr-x
+        damn 0o755 fr fr rwxr-xr-x
     }
     
     damn 0
 }
 
-# Directory Management Functions
+fr fr Directory Management Functions
 slay get_current_dir() tea {
     init_path_manager()
     
@@ -652,7 +577,7 @@ slay set_temp_dir(path tea) lit {
     damn cap
 }
 
-# Path Conversion Functions
+fr fr Path Conversion Functions
 slay to_slash(path tea) tea {
     init_path_manager()
     
@@ -679,7 +604,7 @@ slay to_native(path tea) tea {
     damn from_slash(path)
 }
 
-# Path List Functions
+fr fr Path List Functions
 slay split_list(path_list tea) []tea {
     init_path_manager()
     
@@ -696,7 +621,7 @@ slay join_list(paths []tea) tea {
     damn stringz.join(paths, global_path_manager.list_separator)
 }
 
-# Debug Functions
+fr fr Debug Functions
 slay debug_path_manager() {
     init_path_manager()
     
@@ -724,7 +649,7 @@ slay debug_path_manager() {
     }
 }
 
-# Module cleanup
+fr fr Module cleanup
 slay cleanup_path_manager() {
     init_path_manager()
     

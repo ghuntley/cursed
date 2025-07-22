@@ -1,11 +1,11 @@
 yeet "testz"
 
-# ========================================
-# CURSED Web Framework - web_vibez Module
-# Production-Grade HTTP Client/Server Implementation
-# ========================================
+fr fr ========================================
+fr fr CURSED Web Framework - web_vibez Module
+fr fr Production-Grade HTTP Client/Server Implementation
+fr fr ========================================
 
-# HTTP Status Code Mapping (Extended)
+fr fr HTTP Status Code Mapping (Extended)
 slay status_code_text(code normie) tea {
     lowkey code == 200 {
         damn "OK"
@@ -52,27 +52,21 @@ slay status_code_text(code normie) tea {
     }
 }
 
-# HTTP Headers Parser (Enhanced)
+fr fr HTTP Headers Parser (Enhanced)
 slay parse_headers(headers tea) lit {
     lowkey headers == "" {
         damn cap
-    }
-    
-    # Check for basic header format
+    } fr fr Check for basic header format
     lowkey !headers.contains(":") {
         damn cap
-    }
-    
-    # Additional validation for common headers
+    } fr fr Additional validation for common headers
     lowkey headers.contains("Content-Type") || headers.contains("Accept") || headers.contains("Authorization") {
         damn based
-    }
-    
-    # Basic validation passed
+    } fr fr Basic validation passed
     damn based
 }
 
-# Advanced Header Parser with Multiple Headers
+fr fr Advanced Header Parser with Multiple Headers
 slay parse_multi_headers(headers tea) normie {
     lowkey headers == "" {
         damn 0
@@ -91,7 +85,7 @@ slay parse_multi_headers(headers tea) normie {
     damn count
 }
 
-# HTTP Cookie Parser
+fr fr HTTP Cookie Parser
 slay parse_cookies(cookie_header tea) normie {
     lowkey cookie_header == "" {
         damn 0
@@ -110,23 +104,17 @@ slay parse_cookies(cookie_header tea) normie {
     damn count
 }
 
-# HTTP GET Request Implementation (Enhanced)
+fr fr HTTP GET Request Implementation (Enhanced)
 slay http_get(url tea) tea {
     lowkey url == "" {
         damn "Error: Empty URL"
-    }
-    
-    # Validate URL format
+    } fr fr Validate URL format
     lowkey !url.starts_with("http://") && !url.starts_with("https://") {
         damn "Error: Invalid URL protocol"
-    }
-    
-    # Check for valid domain
+    } fr fr Check for valid domain
     lowkey url.length() < 10 {
         damn "Error: URL too short"
-    }
-    
-    # Enhanced GET request with realistic headers
+    } fr fr Enhanced GET request with realistic headers
     sus response tea = "HTTP/1.1 200 OK\r\n"
     response = response + "Content-Type: text/html; charset=utf-8\r\n"
     response = response + "Content-Length: 27\r\n"
@@ -139,7 +127,7 @@ slay http_get(url tea) tea {
     damn response
 }
 
-# HTTP POST Request Implementation (Enhanced)
+fr fr HTTP POST Request Implementation (Enhanced)
 slay http_post(url tea, data tea) tea {
     lowkey url == "" {
         damn "Error: Empty URL"
@@ -147,9 +135,7 @@ slay http_post(url tea, data tea) tea {
     
     lowkey !url.starts_with("http://") && !url.starts_with("https://") {
         damn "Error: Invalid URL protocol"
-    }
-    
-    # Enhanced POST request with proper headers
+    } fr fr Enhanced POST request with proper headers
     sus response tea = "HTTP/1.1 201 Created\r\n"
     response = response + "Content-Type: application/json\r\n"
     response = response + "Content-Length: " + data.length().to_string() + "\r\n"
@@ -162,7 +148,7 @@ slay http_post(url tea, data tea) tea {
     damn response
 }
 
-# HTTP PUT Request Implementation
+fr fr HTTP PUT Request Implementation
 slay http_put(url tea, data tea) tea {
     lowkey url == "" {
         damn "Error: Empty URL"
@@ -182,7 +168,7 @@ slay http_put(url tea, data tea) tea {
     damn response
 }
 
-# HTTP DELETE Request Implementation
+fr fr HTTP DELETE Request Implementation
 slay http_delete(url tea) tea {
     lowkey url == "" {
         damn "Error: Empty URL"
@@ -200,7 +186,7 @@ slay http_delete(url tea) tea {
     damn response
 }
 
-# HTTP PATCH Request Implementation
+fr fr HTTP PATCH Request Implementation
 slay http_patch(url tea, data tea) tea {
     lowkey url == "" {
         damn "Error: Empty URL"
@@ -220,7 +206,7 @@ slay http_patch(url tea, data tea) tea {
     damn response
 }
 
-# Advanced HTTP Client with Headers
+fr fr Advanced HTTP Client with Headers
 slay http_request(method tea, url tea, data tea, headers tea) tea {
     lowkey !validate_method(method) {
         damn "Error: Invalid HTTP method"
@@ -232,9 +218,7 @@ slay http_request(method tea, url tea, data tea, headers tea) tea {
     
     lowkey !url.starts_with("http://") && !url.starts_with("https://") {
         damn "Error: Invalid URL protocol"
-    }
-    
-    # Route to appropriate method
+    } fr fr Route to appropriate method
     lowkey method == "GET" {
         damn http_get(url)
     } elif method == "POST" {
@@ -250,22 +234,22 @@ slay http_request(method tea, url tea, data tea, headers tea) tea {
     }
 }
 
-# HTTP Server Configuration (Enhanced)
+fr fr HTTP Server Configuration (Enhanced)
 be_like ServerConfig = normie
 
 slay create_server(port normie) ServerConfig {
     lowkey port < 1 || port > 65535 {
-        damn 8080  # Default port
+        damn 8080 fr fr Default port
     }
     damn port
 }
 
-# Advanced Server with Multiple Route Support
+fr fr Advanced Server with Multiple Route Support
 be_like Route = tea
 be_like Router = normie
 
 slay create_router() Router {
-    damn 0  # Router ID
+    damn 0 fr fr Router ID
 }
 
 slay add_route(router Router, path tea, method tea, handler tea) lit {
@@ -275,29 +259,22 @@ slay add_route(router Router, path tea, method tea, handler tea) lit {
     
     lowkey path == "" {
         damn cap
-    }
-    
-    # Route added successfully
+    } fr fr Route added successfully
     damn based
 }
 
-# Route Matching System
+fr fr Route Matching System
 slay match_route(path tea, pattern tea) lit {
     lowkey path == pattern {
         damn based
-    }
-    
-    # Check for wildcard patterns
+    } fr fr Check for wildcard patterns
     lowkey pattern.ends_with("*") {
         sus prefix := pattern.replace("*", "")
         lowkey path.starts_with(prefix) {
             damn based
         }
-    }
-    
-    # Check for parameter patterns
-    lowkey pattern.contains("{") && pattern.contains("}") {
-        # Simple parameter matching
+    } fr fr Check for parameter patterns
+    lowkey pattern.contains("{") && pattern.contains("}") { fr fr Simple parameter matching
         sus pattern_parts := pattern.split("/")
         sus path_parts := path.split("/")
         
@@ -309,13 +286,11 @@ slay match_route(path tea, pattern tea) lit {
     damn cap
 }
 
-# URL Path Parser (Enhanced)
+fr fr URL Path Parser (Enhanced)
 slay parse_url_path(url tea) tea {
     lowkey url == "" {
         damn "/"
-    }
-    
-    # Extract path from URL
+    } fr fr Extract path from URL
     lowkey url.contains("://") {
         sus protocol_split := url.split("://")
         lowkey protocol_split.length() > 1 {
@@ -327,9 +302,7 @@ slay parse_url_path(url tea) tea {
                 }
             }
         }
-    }
-    
-    # If no protocol, treat as path
+    } fr fr If no protocol, treat as path
     lowkey url.starts_with("/") {
         damn url
     }
@@ -337,7 +310,7 @@ slay parse_url_path(url tea) tea {
     damn "/"
 }
 
-# Query Parameter Parser (Enhanced)
+fr fr Query Parameter Parser (Enhanced)
 slay parse_query_params(url tea) tea {
     lowkey !url.contains("?") {
         damn ""
@@ -351,7 +324,7 @@ slay parse_query_params(url tea) tea {
     damn ""
 }
 
-# Parse Individual Query Parameter
+fr fr Parse Individual Query Parameter
 slay get_query_param(url tea, param_name tea) tea {
     sus params := parse_query_params(url)
     lowkey params == "" {
@@ -372,7 +345,7 @@ slay get_query_param(url tea, param_name tea) tea {
     damn ""
 }
 
-# HTTP Method Validation (Enhanced)
+fr fr HTTP Method Validation (Enhanced)
 slay validate_method(method tea) lit {
     lowkey method == "GET" || method == "POST" || method == "PUT" || method == "DELETE" || method == "PATCH" || method == "HEAD" || method == "OPTIONS" {
         damn based
@@ -380,7 +353,7 @@ slay validate_method(method tea) lit {
     damn cap
 }
 
-# Content Type Detection (Enhanced)
+fr fr Content Type Detection (Enhanced)
 slay detect_content_type(data tea) tea {
     lowkey data.starts_with("{") && data.ends_with("}") {
         damn "application/json"
@@ -401,7 +374,7 @@ slay detect_content_type(data tea) tea {
     }
 }
 
-# MIME Type Registry
+fr fr MIME Type Registry
 slay get_mime_type(extension tea) tea {
     lowkey extension == "html" || extension == "htm" {
         damn "text/html"
@@ -432,7 +405,7 @@ slay get_mime_type(extension tea) tea {
     }
 }
 
-# HTTP Response Builder (Enhanced)
+fr fr HTTP Response Builder (Enhanced)
 slay build_response(status normie, body tea) tea {
     sus response tea = "HTTP/1.1 " + status.to_string() + " " + status_code_text(status) + "\r\n"
     response = response + "Content-Type: " + detect_content_type(body) + "\r\n"
@@ -445,15 +418,13 @@ slay build_response(status normie, body tea) tea {
     damn response
 }
 
-# HTTP Response Builder with Custom Headers
+fr fr HTTP Response Builder with Custom Headers
 slay build_response_with_headers(status normie, body tea, headers tea) tea {
     sus response tea = "HTTP/1.1 " + status.to_string() + " " + status_code_text(status) + "\r\n"
     response = response + "Content-Type: " + detect_content_type(body) + "\r\n"
     response = response + "Content-Length: " + body.length().to_string() + "\r\n"
     response = response + "Server: CURSED-WebVibez/1.0\r\n"
-    response = response + "Date: " + get_current_date() + "\r\n"
-    
-    # Add custom headers
+    response = response + "Date: " + get_current_date() + "\r\n" fr fr Add custom headers
     lowkey headers != "" {
         response = response + headers
         lowkey !headers.ends_with("\r\n") {
@@ -467,12 +438,12 @@ slay build_response_with_headers(status normie, body tea, headers tea) tea {
     damn response
 }
 
-# Get Current Date for HTTP Headers
+fr fr Get Current Date for HTTP Headers
 slay get_current_date() tea {
     damn "Wed, 15 Jul 2025 12:00:00 GMT"
 }
 
-# JSON Response Builder
+fr fr JSON Response Builder
 slay build_json_response(status normie, data tea) tea {
     sus json_body tea = "{\"data\": \"" + data + "\"}"
     sus response tea = "HTTP/1.1 " + status.to_string() + " " + status_code_text(status) + "\r\n"
@@ -485,7 +456,7 @@ slay build_json_response(status normie, data tea) tea {
     damn response
 }
 
-# Request Validation (Enhanced)
+fr fr Request Validation (Enhanced)
 slay validate_request(method tea, url tea) lit {
     lowkey !validate_method(method) {
         damn cap
@@ -493,17 +464,15 @@ slay validate_request(method tea, url tea) lit {
     
     lowkey url == "" {
         damn cap
-    }
-    
-    # Additional URL validation
+    } fr fr Additional URL validation
     lowkey url.length() > 2000 {
-        damn cap  # URL too long
+        damn cap fr fr URL too long
     }
     
     damn based
 }
 
-# HTTP Error Response Builder (Enhanced)
+fr fr HTTP Error Response Builder (Enhanced)
 slay build_error_response(status normie, message tea) tea {
     sus error_body tea = "{\"error\": \"" + message + "\", \"status\": " + status.to_string() + "}"
     sus response tea = "HTTP/1.1 " + status.to_string() + " " + status_code_text(status) + "\r\n"
@@ -516,19 +485,19 @@ slay build_error_response(status normie, message tea) tea {
     damn response
 }
 
-# Request Logging (Enhanced)
+fr fr Request Logging (Enhanced)
 slay log_request(method tea, url tea, status normie) {
     sus timestamp tea = get_current_date()
     vibez.spill("[" + timestamp + "] " + method + " " + url + " - " + status.to_string() + " " + status_code_text(status))
 }
 
-# Request Logging with Details
+fr fr Request Logging with Details
 slay log_request_detailed(method tea, url tea, status normie, user_agent tea, ip tea) {
     sus timestamp tea = get_current_date()
     vibez.spill("[" + timestamp + "] " + ip + " \"" + method + " " + url + "\" " + status.to_string() + " \"" + user_agent + "\"")
 }
 
-# Middleware System
+fr fr Middleware System
 be_like Middleware = lit
 
 slay create_middleware(name tea) Middleware {
@@ -545,13 +514,11 @@ slay apply_middleware(middleware Middleware, request tea) tea {
     damn request
 }
 
-# CORS Support
+fr fr CORS Support
 slay add_cors_headers(response tea) tea {
     sus cors_headers tea = "Access-Control-Allow-Origin: *\r\n"
     cors_headers = cors_headers + "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS\r\n"
-    cors_headers = cors_headers + "Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
-    
-    # Insert CORS headers before the final \r\n\r\n
+    cors_headers = cors_headers + "Access-Control-Allow-Headers: Content-Type, Authorization\r\n" fr fr Insert CORS headers before the final \r\n\r\n
     sus body_start := response.index_of("\r\n\r\n")
     lowkey body_start > 0 {
         sus headers_part := response.substring(0, body_start)
@@ -562,25 +529,24 @@ slay add_cors_headers(response tea) tea {
     damn response
 }
 
-# Request Rate Limiting
+fr fr Request Rate Limiting
 be_like RateLimit = normie
 
 slay create_rate_limit(requests_per_minute normie) RateLimit {
     lowkey requests_per_minute > 0 {
         damn requests_per_minute
     }
-    damn 60  # Default rate limit
+    damn 60 fr fr Default rate limit
 }
 
-slay check_rate_limit(rate_limit RateLimit, client_ip tea) lit {
-    # Simple rate limit check (production would need persistence)
+slay check_rate_limit(rate_limit RateLimit, client_ip tea) lit { fr fr Simple rate limit check (production would need persistence)
     lowkey client_ip != "" {
-        damn based  # Allow request
+        damn based fr fr Allow request
     }
     damn cap
 }
 
-# URL Encoding/Decoding
+fr fr URL Encoding/Decoding
 slay url_encode(input tea) tea {
     sus encoded tea = input.replace(" ", "%20")
     encoded = encoded.replace("&", "%26")
@@ -599,7 +565,7 @@ slay url_decode(input tea) tea {
     damn decoded
 }
 
-# Session Management
+fr fr Session Management
 be_like Session = tea
 
 slay create_session(user_id tea) Session {
@@ -616,14 +582,12 @@ slay validate_session(session Session) lit {
     damn cap
 }
 
-# Security Headers
+fr fr Security Headers
 slay add_security_headers(response tea) tea {
     sus security_headers tea = "X-Content-Type-Options: nosniff\r\n"
     security_headers = security_headers + "X-Frame-Options: DENY\r\n"
     security_headers = security_headers + "X-XSS-Protection: 1; mode=block\r\n"
-    security_headers = security_headers + "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n"
-    
-    # Insert security headers before the final \r\n\r\n
+    security_headers = security_headers + "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n" fr fr Insert security headers before the final \r\n\r\n
     sus body_start := response.index_of("\r\n\r\n")
     lowkey body_start > 0 {
         sus headers_part := response.substring(0, body_start)
@@ -634,10 +598,9 @@ slay add_security_headers(response tea) tea {
     damn response
 }
 
-# HTTP Compression Support
+fr fr HTTP Compression Support
 slay compress_response(response tea, compression_type tea) tea {
-    lowkey compression_type == "gzip" {
-        # Add gzip header
+    lowkey compression_type == "gzip" { fr fr Add gzip header
         sus compressed_header tea = "Content-Encoding: gzip\r\n"
         sus body_start := response.index_of("\r\n\r\n")
         lowkey body_start > 0 {
@@ -649,7 +612,7 @@ slay compress_response(response tea, compression_type tea) tea {
     damn response
 }
 
-# HTTP Cache Control
+fr fr HTTP Cache Control
 slay add_cache_headers(response tea, max_age normie) tea {
     sus cache_header tea = "Cache-Control: max-age=" + max_age.to_string() + "\r\n"
     sus body_start := response.index_of("\r\n\r\n")
@@ -661,15 +624,12 @@ slay add_cache_headers(response tea, max_age normie) tea {
     damn response
 }
 
-# Static File Serving
-slay serve_static_file(file_path tea) tea {
-    # Extract file extension
+fr fr Static File Serving
+slay serve_static_file(file_path tea) tea { fr fr Extract file extension
     sus ext_index := file_path.last_index_of(".")
     lowkey ext_index > 0 {
         sus extension := file_path.substring(ext_index + 1)
-        sus content_type := get_mime_type(extension)
-        
-        # Simulate file content
+        sus content_type := get_mime_type(extension) fr fr Simulate file content
         sus content tea = "<h1>Static file: " + file_path + "</h1>"
         
         sus response tea = "HTTP/1.1 200 OK\r\n"
@@ -686,7 +646,7 @@ slay serve_static_file(file_path tea) tea {
     damn build_error_response(404, "File not found")
 }
 
-# WebSocket Support (Basic)
+fr fr WebSocket Support (Basic)
 slay handle_websocket_upgrade(request tea) tea {
     lowkey request.contains("Upgrade: websocket") {
         sus response tea = "HTTP/1.1 101 Switching Protocols\r\n"
@@ -699,39 +659,35 @@ slay handle_websocket_upgrade(request tea) tea {
     damn build_error_response(400, "Invalid WebSocket request")
 }
 
-# HTTP/2 Support Indicator
+fr fr HTTP/2 Support Indicator
 slay supports_http2() lit {
-    damn based  # CURSED WebVibez supports HTTP/2
+    damn based fr fr CURSED WebVibez supports HTTP/2
 }
 
-# Health Check Endpoint
+fr fr Health Check Endpoint
 slay health_check() tea {
     sus health_data tea = "{\"status\": \"healthy\", \"timestamp\": \"" + get_current_date() + "\", \"version\": \"1.0\"}"
     damn build_json_response(200, health_data)
 }
 
-# Metrics Endpoint
+fr fr Metrics Endpoint
 slay metrics_endpoint() tea {
     sus metrics tea = "{\"requests_total\": 100, \"response_time_avg\": 25.5, \"errors_total\": 2}"
     damn build_json_response(200, metrics)
 }
 
-# Production-Ready Request Handler
-slay handle_production_request(method tea, path tea, body tea, headers tea) tea {
-    # Validate request
+fr fr Production-Ready Request Handler
+slay handle_production_request(method tea, path tea, body tea, headers tea) tea { fr fr Validate request
     lowkey !validate_request(method, path) {
         damn build_error_response(400, "Invalid request")
-    }
-    
-    # Handle different routes
+    } fr fr Handle different routes
     lowkey path == "/" {
         damn build_response(200, "<h1>Welcome to CURSED WebVibez!</h1>")
     } elif path == "/health" {
         damn health_check()
     } elif path == "/metrics" {
         damn metrics_endpoint()
-    } elif path.starts_with("/api/") {
-        # API routes
+    } elif path.starts_with("/api/") { fr fr API routes
         lowkey method == "GET" {
             damn build_json_response(200, "API GET response")
         } elif method == "POST" {

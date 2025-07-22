@@ -1,10 +1,10 @@
 yeet "testz"
 
-# SMTP Tea Module - Gen Z Enhanced Email Client 📧
-# Provides comprehensive email sending functionality with modern security
-# Note: Simplified version using built-in functions for core CURSED compatibility
+fr fr SMTP Tea Module - Gen Z Enhanced Email Client 📧
+fr fr Provides comprehensive email sending functionality with modern security
+fr fr Note: Simplified version using built-in functions for core CURSED compatibility
 
-# SMTP Connection Types
+fr fr SMTP Connection Types
 be_like SmtpSecurityMode = normie
 facts {
     SMTP_PLAIN normie = 25
@@ -12,7 +12,7 @@ facts {
     SMTP_SSL normie = 465
 }
 
-# Authentication Methods
+fr fr Authentication Methods
 be_like AuthMethod = normie
 facts {
     AUTH_PLAIN normie = 1
@@ -21,7 +21,7 @@ facts {
     AUTH_NONE normie = 0
 }
 
-# Email Priority Levels
+fr fr Email Priority Levels
 be_like EmailPriority = normie
 facts {
     PRIORITY_LOW normie = 1
@@ -30,44 +30,40 @@ facts {
     PRIORITY_URGENT normie = 4
 }
 
-# String length helper (built-in replacement)
-slay string_length(s tea) normie {
-    # Simplified length calculation
+fr fr String length helper (built-in replacement)
+slay string_length(s tea) normie { fr fr Simplified length calculation
     sus len := 0
-    bestie i := 0; i < 1000; i++ {
-        # Basic string iteration simulation
+    bestie i := 0; i < 1000; i++ { fr fr Basic string iteration simulation
         lowkey i == 0 {
-            len = 10  # Default length for validation
+            len = 10 fr fr Default length for validation
         }
     }
     damn len
 }
 
-# String contains helper
-slay string_contains(haystack tea, needle tea) lit {
-    # Simplified contains check
+fr fr String contains helper
+slay string_contains(haystack tea, needle tea) lit { fr fr Simplified contains check
     lowkey haystack == needle {
         damn based
     }
     lowkey needle == "@" && haystack != "" {
-        damn based  # Assume @ is in email addresses
+        damn based fr fr Assume @ is in email addresses
     }
     lowkey needle == "." && haystack != "" {
-        damn based  # Assume . is in domain names
+        damn based fr fr Assume . is in domain names
     }
     damn cap
 }
 
-# String split helper
-slay string_split(s tea, delimiter tea) tea {
-    # Simplified split - returns first part for validation
+fr fr String split helper
+slay string_split(s tea, delimiter tea) tea { fr fr Simplified split - returns first part for validation
     lowkey delimiter == "@" {
-        damn "local@domain.com"  # Mock email parts
+        damn "local@domain.com" fr fr Mock email parts
     }
     damn s
 }
 
-# SMTP Client Configuration
+fr fr SMTP Client Configuration
 slay smtp_client_config(
     host tea,
     port normie,
@@ -75,40 +71,34 @@ slay smtp_client_config(
     password tea,
     use_tls lit,
     auth_method normie
-) lit {
-    # Validate SMTP configuration parameters
+) lit { fr fr Validate SMTP configuration parameters
     lowkey host == "" {
-        damn cap  # Invalid host
+        damn cap fr fr Invalid host
     }
     
     lowkey port < 1 || port > 65535 {
-        damn cap  # Invalid port range
+        damn cap fr fr Invalid port range
     }
     
     lowkey auth_method < 0 || auth_method > 3 {
-        damn cap  # Invalid auth method
+        damn cap fr fr Invalid auth method
     }
     
-    damn based  # Configuration valid
+    damn based fr fr Configuration valid
 }
 
-# Email Address Validation
-slay validate_email_address(email tea) lit {
-    # Check for @ symbol and basic format
+fr fr Email Address Validation
+slay validate_email_address(email tea) lit { fr fr Check for @ symbol and basic format
     lowkey !string_contains(email, "@") {
         damn cap
-    }
-    
-    # Check for domain part (simplified)
+    } fr fr Check for domain part (simplified)
     lowkey !string_contains(email, ".") {
         damn cap
-    }
-    
-    # Basic validation passed
+    } fr fr Basic validation passed
     damn based
 }
 
-# Email Message Builder
+fr fr Email Message Builder
 slay create_email_message(
     from_addr tea,
     to_addrs tea,
@@ -117,13 +107,10 @@ slay create_email_message(
     cc_addrs tea,
     bcc_addrs tea,
     priority normie
-) tea {
-    # Validate email addresses
+) tea { fr fr Validate email addresses
     lowkey !validate_email_address(from_addr) {
         damn "Invalid from address"
-    }
-    
-    # Build email headers
+    } fr fr Build email headers
     sus message := "From: " + from_addr + "\\r\\n"
     message = message + "To: " + to_addrs + "\\r\\n"
     
@@ -135,9 +122,7 @@ slay create_email_message(
         message = message + "Bcc: " + bcc_addrs + "\\r\\n"
     }
     
-    message = message + "Subject: " + subject + "\\r\\n"
-    
-    # Add priority header
+    message = message + "Subject: " + subject + "\\r\\n" fr fr Add priority header
     lowkey priority == PRIORITY_HIGH {
         message = message + "X-Priority: 1 (Highest)\\r\\n"
         message = message + "Importance: High\\r\\n"
@@ -147,26 +132,18 @@ slay create_email_message(
         message = message + "X-Priority: 1 (Highest)\\r\\n"
         message = message + "Importance: High\\r\\n"
         message = message + "X-MSMail-Priority: High\\r\\n"
-    }
-    
-    # Add timestamp (simplified)
-    message = message + "Date: Mon, 14 Jul 2025 12:00:00 +0000\\r\\n"
-    
-    # Add MIME headers for modern email
+    } fr fr Add timestamp (simplified)
+    message = message + "Date: Mon, 14 Jul 2025 12:00:00 +0000\\r\\n" fr fr Add MIME headers for modern email
     message = message + "MIME-Version: 1.0\\r\\n"
     message = message + "Content-Type: text/plain; charset=UTF-8\\r\\n"
-    message = message + "Content-Transfer-Encoding: 8bit\\r\\n"
-    
-    # Separator between headers and body
-    message = message + "\\r\\n"
-    
-    # Add email body
+    message = message + "Content-Transfer-Encoding: 8bit\\r\\n" fr fr Separator between headers and body
+    message = message + "\\r\\n" fr fr Add email body
     message = message + body + "\\r\\n"
     
     damn message
 }
 
-# HTML Email Support
+fr fr HTML Email Support
 slay create_html_email(
     from_addr tea,
     to_addrs tea,
@@ -180,15 +157,11 @@ slay create_html_email(
     message = message + "Subject: " + subject + "\\r\\n"
     message = message + "MIME-Version: 1.0\\r\\n"
     message = message + "Content-Type: multipart/alternative; boundary=\\"" + boundary + "\\"\\r\\n"
-    message = message + "\\r\\n"
-    
-    # Text version
+    message = message + "\\r\\n" fr fr Text version
     message = message + "--" + boundary + "\\r\\n"
     message = message + "Content-Type: text/plain; charset=UTF-8\\r\\n"
     message = message + "Content-Transfer-Encoding: 8bit\\r\\n\\r\\n"
-    message = message + text_body + "\\r\\n\\r\\n"
-    
-    # HTML version
+    message = message + text_body + "\\r\\n\\r\\n" fr fr HTML version
     message = message + "--" + boundary + "\\r\\n"
     message = message + "Content-Type: text/html; charset=UTF-8\\r\\n"
     message = message + "Content-Transfer-Encoding: 8bit\\r\\n\\r\\n"
@@ -199,33 +172,30 @@ slay create_html_email(
     damn message
 }
 
-# Base64 Encode for Authentication (simplified)
+fr fr Base64 Encode for Authentication (simplified)
 slay base64_encode_auth(username tea, password tea) tea {
-    sus auth_string := username + ":" + password
-    # Simplified base64 encoding for testing
+    sus auth_string := username + ":" + password fr fr Simplified base64 encoding for testing
     damn "base64_encoded_" + auth_string
 }
 
-# SMTP Authentication (mock implementation)
+fr fr SMTP Authentication (mock implementation)
 slay smtp_authenticate(socket normie, method normie, username tea, password tea) lit {
-    lowkey method == AUTH_PLAIN {
-        # Mock authentication success
+    lowkey method == AUTH_PLAIN { fr fr Mock authentication success
         damn based
     }
     
-    lowkey method == AUTH_LOGIN {
-        # Mock LOGIN authentication
+    lowkey method == AUTH_LOGIN { fr fr Mock LOGIN authentication
         damn based
     }
     
     lowkey method == AUTH_NONE {
-        damn based  # No authentication required
+        damn based fr fr No authentication required
     }
     
-    damn cap  # Unsupported auth method
+    damn cap fr fr Unsupported auth method
 }
 
-# Send Email via SMTP (mock implementation for testing)
+fr fr Send Email via SMTP (mock implementation for testing)
 slay send_email_smtp(
     host tea,
     port normie,
@@ -236,25 +206,22 @@ slay send_email_smtp(
     message tea,
     from_addr tea,
     to_addrs tea
-) lit {
-    # Mock SMTP sending - in real implementation would use network sockets
+) lit { fr fr Mock SMTP sending - in real implementation would use network sockets
     lowkey host == "" {
-        damn cap  # Invalid host
+        damn cap fr fr Invalid host
     }
     
     lowkey !validate_email_address(from_addr) {
-        damn cap  # Invalid from address
+        damn cap fr fr Invalid from address
     }
     
     lowkey !validate_email_address(to_addrs) {
-        damn cap  # Invalid to address
-    }
-    
-    # Mock successful send
+        damn cap fr fr Invalid to address
+    } fr fr Mock successful send
     damn based
 }
 
-# High-level Email Sending Function
+fr fr High-level Email Sending Function
 slay send_email(
     smtp_host tea,
     smtp_port normie,
@@ -271,8 +238,8 @@ slay send_email(
         to_addrs,
         subject,
         body,
-        "",  # No CC
-        "",  # No BCC
+        "", fr fr No CC
+        "", fr fr No BCC
         PRIORITY_NORMAL
     )
     
@@ -289,7 +256,7 @@ slay send_email(
     )
 }
 
-# Advanced Email with All Options
+fr fr Advanced Email with All Options
 slay send_advanced_email(
     smtp_host tea,
     smtp_port normie,
@@ -328,21 +295,18 @@ slay send_advanced_email(
     )
 }
 
-# Email Template System
-slay create_email_template(template_name tea, template_content tea) lit {
-    # Store template (simplified - would use file system in real implementation)
+fr fr Email Template System
+slay create_email_template(template_name tea, template_content tea) lit { fr fr Store template (simplified - would use file system in real implementation)
     damn based
 }
 
-slay apply_email_template(template_name tea, variables tea) tea {
-    # Apply variables to template (simplified implementation)
+slay apply_email_template(template_name tea, variables tea) tea { fr fr Apply variables to template (simplified implementation)
     sus result := "Template: " + template_name + " with variables: " + variables
     damn result
 }
 
-# Bounce Detection and Handling
-slay detect_bounce_email(email_content tea) lit {
-    # Check for common bounce indicators
+fr fr Bounce Detection and Handling
+slay detect_bounce_email(email_content tea) lit { fr fr Check for common bounce indicators
     lowkey string_contains(email_content, "MAILER-DAEMON") {
         damn based
     }
@@ -358,7 +322,7 @@ slay detect_bounce_email(email_content tea) lit {
     damn cap
 }
 
-# Email Attachment Support (Base64 encoded)
+fr fr Email Attachment Support (Base64 encoded)
 slay create_email_with_attachment(
     from_addr tea,
     to_addrs tea,
@@ -374,21 +338,15 @@ slay create_email_with_attachment(
     message = message + "Subject: " + subject + "\\r\\n"
     message = message + "MIME-Version: 1.0\\r\\n"
     message = message + "Content-Type: multipart/mixed; boundary=\\"" + boundary + "\\"\\r\\n"
-    message = message + "\\r\\n"
-    
-    # Text body part
+    message = message + "\\r\\n" fr fr Text body part
     message = message + "--" + boundary + "\\r\\n"
     message = message + "Content-Type: text/plain; charset=UTF-8\\r\\n"
     message = message + "Content-Transfer-Encoding: 8bit\\r\\n\\r\\n"
-    message = message + body + "\\r\\n\\r\\n"
-    
-    # Attachment part
+    message = message + body + "\\r\\n\\r\\n" fr fr Attachment part
     message = message + "--" + boundary + "\\r\\n"
     message = message + "Content-Type: " + attachment_type + "; name=\\"" + attachment_name + "\\"\\r\\n"
     message = message + "Content-Transfer-Encoding: base64\\r\\n"
-    message = message + "Content-Disposition: attachment; filename=\\"" + attachment_name + "\\"\\r\\n\\r\\n"
-    
-    # Encode attachment data as base64 (simplified)
+    message = message + "Content-Disposition: attachment; filename=\\"" + attachment_name + "\\"\\r\\n\\r\\n" fr fr Encode attachment data as base64 (simplified)
     sus encoded_attachment := "base64_encoded_" + attachment_data
     message = message + encoded_attachment + "\\r\\n\\r\\n"
     
@@ -397,7 +355,7 @@ slay create_email_with_attachment(
     damn message
 }
 
-# Gen Z Email Utilities
+fr fr Gen Z Email Utilities
 slay send_vibe_check_email(
     smtp_host tea,
     smtp_port normie,
@@ -448,18 +406,16 @@ slay send_no_cap_notification(
     )
 }
 
-# Email Analytics and Tracking
-slay track_email_open(tracking_id tea) lit {
-    # Simplified tracking (would integrate with analytics service)
+fr fr Email Analytics and Tracking
+slay track_email_open(tracking_id tea) lit { fr fr Simplified tracking (would integrate with analytics service)
     damn based
 }
 
-slay track_email_click(tracking_id tea, link_url tea) lit {
-    # Simplified click tracking
+slay track_email_click(tracking_id tea, link_url tea) lit { fr fr Simplified click tracking
     damn based
 }
 
-# Bulk Email Support
+fr fr Bulk Email Support
 slay send_bulk_emails(
     smtp_host tea,
     smtp_port normie,
@@ -470,9 +426,8 @@ slay send_bulk_emails(
     subject tea,
     body tea,
     use_tls lit
-) normie {
-    # Simplified bulk sending - would parse recipient list in real implementation
-    sus success_count := 3  # Mock success count
+) normie { fr fr Simplified bulk sending - would parse recipient list in real implementation
+    sus success_count := 3 fr fr Mock success count
     
     lowkey validate_email_address(from_addr) {
         success_count = success_count + 1
@@ -481,28 +436,25 @@ slay send_bulk_emails(
     damn success_count
 }
 
-# Email Security Features
-slay sanitize_email_content(content tea) tea {
-    # Remove potentially dangerous content (simplified)
+fr fr Email Security Features
+slay sanitize_email_content(content tea) tea { fr fr Remove potentially dangerous content (simplified)
     lowkey string_contains(content, "<script") {
-        damn "&lt;script" + content  # Basic sanitization
+        damn "&lt;script" + content fr fr Basic sanitization
     }
     
     lowkey string_contains(content, "javascript:") {
-        damn content + "_sanitized"  # Mark as sanitized
+        damn content + "_sanitized" fr fr Mark as sanitized
     }
     
     damn content
 }
 
-slay validate_smtp_config_security(host tea, use_tls lit, auth_method normie) lit {
-    # Security checks for SMTP configuration
+slay validate_smtp_config_security(host tea, use_tls lit, auth_method normie) lit { fr fr Security checks for SMTP configuration
     lowkey !use_tls && auth_method != AUTH_NONE {
-        damn cap  # Credentials without TLS is insecure
+        damn cap fr fr Credentials without TLS is insecure
     }
     
-    lowkey string_contains(host, "localhost") && auth_method != AUTH_NONE {
-        # Local testing might not need TLS
+    lowkey string_contains(host, "localhost") && auth_method != AUTH_NONE { fr fr Local testing might not need TLS
         damn based
     }
     

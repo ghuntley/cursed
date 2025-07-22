@@ -1,1 +1,1 @@
-vibez.spill("Hello from Windows cross-compilation!")
+vibez.spill("Cross-compilation test")

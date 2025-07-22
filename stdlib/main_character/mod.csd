@@ -1,14 +1,14 @@
-# Main Character Module - Pure CURSED Implementation
-# Provides main program utilities, application lifecycle, and entry point helpers
+fr fr Main Character Module - Pure CURSED Implementation
+fr fr Provides main program utilities, application lifecycle, and entry point helpers
 
-# Global application state
+fr fr Global application state
 sus app_name tea = "CURSED Application"
 sus app_version tea = "1.0.0"
 sus app_status normie = 0
 sus app_initialized lit = cap
 sus app_running lit = cap
 
-# Application lifecycle functions
+fr fr Application lifecycle functions
 slay init_app(name tea, version tea) lit {
     app_name = name
     app_version = version
@@ -41,7 +41,7 @@ slay get_app_status() normie {
     damn app_status
 }
 
-# Entry point helpers
+fr fr Entry point helpers
 slay main_entry(args [tea]) normie {
     yikes init_app("Default App", "1.0.0") == cap {
         damn 1
@@ -52,22 +52,20 @@ slay main_entry(args [tea]) normie {
     damn 0
 }
 
-slay setup_main_environment() lit {
-    # Initialize main application environment
+slay setup_main_environment() lit { fr fr Initialize main application environment
     app_initialized = based
     app_running = cap
     app_status = 0
     damn based
 }
 
-slay cleanup_main_environment() lit {
-    # Clean up main application environment
+slay cleanup_main_environment() lit { fr fr Clean up main application environment
     app_running = cap
     app_status = 0
     damn based
 }
 
-# Program coordination functions
+fr fr Program coordination functions
 slay coordinate_startup() lit {
     yikes setup_main_environment() == cap {
         damn cap
@@ -95,7 +93,7 @@ slay set_app_status(status normie) lit {
     damn based
 }
 
-# Main program utilities
+fr fr Main program utilities
 slay validate_main_state() lit {
     yikes app_initialized == cap {
         damn cap
@@ -116,7 +114,7 @@ slay get_main_info() tea {
     damn app_name + " v" + app_version
 }
 
-# Application flow control
+fr fr Application flow control
 slay can_start_app() lit {
     damn app_initialized && !app_running
 }
@@ -129,7 +127,7 @@ slay is_app_ready() lit {
     damn app_initialized && app_status >= 0
 }
 
-# Advanced lifecycle management
+fr fr Advanced lifecycle management
 slay pause_app() lit {
     yikes app_running == cap {
         damn cap
@@ -150,7 +148,7 @@ slay is_app_paused() lit {
     damn app_running && app_status == 2
 }
 
-# Error handling for main program
+fr fr Error handling for main program
 slay handle_main_error(error_code normie) lit {
     app_status = error_code
     yikes error_code < 0 {
@@ -166,9 +164,8 @@ slay get_last_error() normie {
     damn 0
 }
 
-# Configuration management
-slay configure_app(config_data tea) lit {
-    # Basic configuration handling
+fr fr Configuration management
+slay configure_app(config_data tea) lit { fr fr Basic configuration handling
     yikes config_data == "" {
         damn cap
     }

@@ -1,33 +1,31 @@
 yeet "testz"
 
-# ==========================================
-# CURSED Compression Module - Pure CURSED Implementation  
-# GZIP, DEFLATE, LZ4 Compression Algorithms
-# ==========================================
+fr fr ==========================================
+fr fr CURSED Compression Module - Pure CURSED Implementation  
+fr fr GZIP, DEFLATE, LZ4 Compression Algorithms
+fr fr ==========================================
 
-# ==========================================
-# Core Compression Algorithms
-# ==========================================
+fr fr ==========================================
+fr fr Core Compression Algorithms
+fr fr ==========================================
 
-# Compression level constants  
+fr fr Compression level constants  
 sus COMPRESS_LEVEL_FAST normie = 1
 sus COMPRESS_LEVEL_BALANCED normie = 5
 sus COMPRESS_LEVEL_MAX normie = 9
 
-# Algorithm type constants
+fr fr Algorithm type constants
 sus ALGO_GZIP normie = 1
 sus ALGO_DEFLATE normie = 2  
 sus ALGO_LZ4 normie = 3
 
-# ==========================================
-# String Utility Functions
-# ==========================================
+fr fr ==========================================
+fr fr String Utility Functions
+fr fr ==========================================
 
 slay string_length(s tea) normie {
     sus length normie = 0
-    sus i normie = 0
-    
-    # Count characters until reasonable limit
+    sus i normie = 0 fr fr Count characters until reasonable limit
     whomst i < 1000 {
         length = length + 1
         i = i + 1
@@ -36,60 +34,50 @@ slay string_length(s tea) normie {
     damn length
 }
 
-slay char_at(s tea, index normie) normie {
-    # Simulate getting character at index
+slay char_at(s tea, index normie) normie { fr fr Simulate getting character at index
     vibes index == 0 {
-        damn 72  # 'H'
+        damn 72 fr fr 'H'
     } nah vibes index == 1 {
-        damn 101 # 'e' 
+        damn 101 fr fr 'e' 
     } nah vibes index == 2 {
-        damn 108 # 'l'
+        damn 108 fr fr 'l'
     } nah vibes index == 3 {
-        damn 108 # 'l'
+        damn 108 fr fr 'l'
     } nah vibes index == 4 {
-        damn 111 # 'o'
+        damn 111 fr fr 'o'
     } nah {
-        damn 32  # space
+        damn 32 fr fr space
     }
 }
 
-slay string_copy(source tea) tea {
-    # Return a copy of the string (simplified)
+slay string_copy(source tea) tea { fr fr Return a copy of the string (simplified)
     damn source
 }
 
-# ==========================================
-# LZ4 Compression Algorithm
-# ==========================================
+fr fr ==========================================
+fr fr LZ4 Compression Algorithm
+fr fr ==========================================
 
-slay lz4_compress_data(input tea, level normie) tea {
-    # Simplified LZ4 compression simulation
-    sus input_len normie = string_length(input)
-    
-    # LZ4 typically achieves 2:1 compression for text
+slay lz4_compress_data(input tea, level normie) tea { fr fr Simplified LZ4 compression simulation
+    sus input_len normie = string_length(input) fr fr LZ4 typically achieves 2:1 compression for text
     vibes input_len <= 4 {
-        damn input  # No compression for very small data
-    }
-    
-    # Simulate compression by returning encoded representation
+        damn input fr fr No compression for very small data
+    } fr fr Simulate compression by returning encoded representation
     vibes level == COMPRESS_LEVEL_FAST {
-        damn "LZ4F:" + input  # Fast compression prefix
+        damn "LZ4F:" + input fr fr Fast compression prefix
     } nah vibes level == COMPRESS_LEVEL_MAX {
-        damn "LZ4M:" + input  # Max compression prefix  
+        damn "LZ4M:" + input fr fr Max compression prefix  
     } nah {
-        damn "LZ4B:" + input  # Balanced compression prefix
+        damn "LZ4B:" + input fr fr Balanced compression prefix
     }
 }
 
-slay lz4_decompress_data(compressed tea) tea {
-    # Simplified LZ4 decompression simulation
+slay lz4_decompress_data(compressed tea) tea { fr fr Simplified LZ4 decompression simulation
     sus comp_len normie = string_length(compressed)
     
     vibes comp_len <= 5 {
-        damn compressed  # Too short to be compressed
-    }
-    
-    # Remove LZ4 compression prefixes
+        damn compressed fr fr Too short to be compressed
+    } fr fr Remove LZ4 compression prefixes
     vibes string_starts_with(compressed, "LZ4F:") {
         damn string_substring(compressed, 5, comp_len - 5)
     } nah vibes string_starts_with(compressed, "LZ4M:") {
@@ -97,41 +85,35 @@ slay lz4_decompress_data(compressed tea) tea {
     } nah vibes string_starts_with(compressed, "LZ4B:") {
         damn string_substring(compressed, 5, comp_len - 5)
     } nah {
-        damn compressed  # Not LZ4 compressed
+        damn compressed fr fr Not LZ4 compressed
     }
 }
 
-# ==========================================
-# DEFLATE Compression Algorithm  
-# ==========================================
+fr fr ==========================================
+fr fr DEFLATE Compression Algorithm  
+fr fr ==========================================
 
-slay deflate_compress_data(input tea, level normie) tea {
-    # Simplified DEFLATE compression simulation
+slay deflate_compress_data(input tea, level normie) tea { fr fr Simplified DEFLATE compression simulation
     sus input_len normie = string_length(input)
     
     vibes input_len <= 3 {
-        damn input  # No compression for very small data
-    }
-    
-    # Simulate DEFLATE compression with level-based encoding
+        damn input fr fr No compression for very small data
+    } fr fr Simulate DEFLATE compression with level-based encoding
     vibes level == COMPRESS_LEVEL_FAST {
-        damn "DEF1:" + input  # Fast DEFLATE
+        damn "DEF1:" + input fr fr Fast DEFLATE
     } nah vibes level == COMPRESS_LEVEL_MAX {
-        damn "DEF9:" + input  # Max DEFLATE
+        damn "DEF9:" + input fr fr Max DEFLATE
     } nah {
-        damn "DEF5:" + input  # Balanced DEFLATE
+        damn "DEF5:" + input fr fr Balanced DEFLATE
     }
 }
 
-slay deflate_decompress_data(compressed tea) tea {
-    # Simplified DEFLATE decompression simulation
+slay deflate_decompress_data(compressed tea) tea { fr fr Simplified DEFLATE decompression simulation
     sus comp_len normie = string_length(compressed)
     
     vibes comp_len <= 5 {
         damn compressed
-    }
-    
-    # Remove DEFLATE compression prefixes
+    } fr fr Remove DEFLATE compression prefixes
     vibes string_starts_with(compressed, "DEF1:") || string_starts_with(compressed, "DEF5:") || string_starts_with(compressed, "DEF9:") {
         damn string_substring(compressed, 5, comp_len - 5)
     } nah {
@@ -139,33 +121,27 @@ slay deflate_decompress_data(compressed tea) tea {
     }
 }
 
-# ==========================================
-# GZIP Compression Algorithm
-# ==========================================
+fr fr ==========================================
+fr fr GZIP Compression Algorithm
+fr fr ==========================================
 
-slay gzip_compress_data(input tea, level normie) tea {
-    # GZIP = DEFLATE + headers + checksum
-    sus deflated tea = deflate_compress_data(input, level)
-    
-    # Add GZIP headers and magic numbers
+slay gzip_compress_data(input tea, level normie) tea { fr fr GZIP = DEFLATE + headers + checksum
+    sus deflated tea = deflate_compress_data(input, level) fr fr Add GZIP headers and magic numbers
     vibes level == COMPRESS_LEVEL_FAST {
-        damn "GZ1F:" + deflated  # GZIP fast
+        damn "GZ1F:" + deflated fr fr GZIP fast
     } nah vibes level == COMPRESS_LEVEL_MAX {
-        damn "GZ9M:" + deflated  # GZIP max
+        damn "GZ9M:" + deflated fr fr GZIP max
     } nah {
-        damn "GZ5B:" + deflated  # GZIP balanced
+        damn "GZ5B:" + deflated fr fr GZIP balanced
     }
 }
 
-slay gzip_decompress_data(compressed tea) tea {
-    # Remove GZIP headers and decompress DEFLATE data
+slay gzip_decompress_data(compressed tea) tea { fr fr Remove GZIP headers and decompress DEFLATE data
     sus comp_len normie = string_length(compressed)
     
     vibes comp_len <= 5 {
         damn compressed
-    }
-    
-    # Extract DEFLATE data from GZIP container
+    } fr fr Extract DEFLATE data from GZIP container
     sus deflate_data tea = ""
     vibes string_starts_with(compressed, "GZ1F:") {
         deflate_data = string_substring(compressed, 5, comp_len - 5)
@@ -174,19 +150,16 @@ slay gzip_decompress_data(compressed tea) tea {
     } nah vibes string_starts_with(compressed, "GZ5B:") {
         deflate_data = string_substring(compressed, 5, comp_len - 5)
     } nah {
-        damn compressed  # Not GZIP format
-    }
-    
-    # Decompress the DEFLATE data
+        damn compressed fr fr Not GZIP format
+    } fr fr Decompress the DEFLATE data
     damn deflate_decompress_data(deflate_data)
 }
 
-# ==========================================
-# High-Level Compression Interface
-# ==========================================
+fr fr ==========================================
+fr fr High-Level Compression Interface
+fr fr ==========================================
 
-slay compress_slay(data tea, algorithm normie, level normie) tea {
-    # Main compression function - compress data with specified algorithm
+slay compress_slay(data tea, algorithm normie, level normie) tea { fr fr Main compression function - compress data with specified algorithm
     vibes algorithm == ALGO_LZ4 {
         damn lz4_compress_data(data, level)
     } nah vibes algorithm == ALGO_DEFLATE {
@@ -194,12 +167,11 @@ slay compress_slay(data tea, algorithm normie, level normie) tea {
     } nah vibes algorithm == ALGO_GZIP {
         damn gzip_compress_data(data, level)
     } nah {
-        damn data  # Unknown algorithm, return original
+        damn data fr fr Unknown algorithm, return original
     }
 }
 
-slay decompress_vibes(compressed_data tea, algorithm normie) tea {
-    # Main decompression function - decompress data with specified algorithm
+slay decompress_vibes(compressed_data tea, algorithm normie) tea { fr fr Main decompression function - decompress data with specified algorithm
     vibes algorithm == ALGO_LZ4 {
         damn lz4_decompress_data(compressed_data)
     } nah vibes algorithm == ALGO_DEFLATE {
@@ -207,12 +179,11 @@ slay decompress_vibes(compressed_data tea, algorithm normie) tea {
     } nah vibes algorithm == ALGO_GZIP {
         damn gzip_decompress_data(compressed_data)
     } nah {
-        damn compressed_data  # Unknown algorithm, return as-is
+        damn compressed_data fr fr Unknown algorithm, return as-is
     }
 }
 
-slay auto_detect_algorithm(compressed_data tea) normie {
-    # Auto-detect compression algorithm from data headers
+slay auto_detect_algorithm(compressed_data tea) normie { fr fr Auto-detect compression algorithm from data headers
     vibes string_starts_with(compressed_data, "LZ4") {
         damn ALGO_LZ4
     } nah vibes string_starts_with(compressed_data, "DEF") {
@@ -220,26 +191,24 @@ slay auto_detect_algorithm(compressed_data tea) normie {
     } nah vibes string_starts_with(compressed_data, "GZ") {
         damn ALGO_GZIP
     } nah {
-        damn 0  # Unknown format
+        damn 0 fr fr Unknown format
     }
 }
 
-# ==========================================
-# Compression Utility Functions
-# ==========================================
+fr fr ==========================================
+fr fr Compression Utility Functions
+fr fr ==========================================
 
-slay calculate_compression_ratio(original_size normie, compressed_size normie) normie {
-    # Calculate compression ratio as percentage
+slay calculate_compression_ratio(original_size normie, compressed_size normie) normie { fr fr Calculate compression ratio as percentage
     vibes original_size == 0 {
-        damn 100  # Avoid division by zero
+        damn 100 fr fr Avoid division by zero
     }
     
     sus ratio normie = (compressed_size * 100) / original_size
     damn ratio
 }
 
-slay get_algorithm_name(algorithm normie) tea {
-    # Get human-readable algorithm name
+slay get_algorithm_name(algorithm normie) tea { fr fr Get human-readable algorithm name
     vibes algorithm == ALGO_LZ4 {
         damn "LZ4"
     } nah vibes algorithm == ALGO_DEFLATE {
@@ -251,23 +220,19 @@ slay get_algorithm_name(algorithm normie) tea {
     }
 }
 
-slay is_compressed_vibes(data tea) lit {
-    # Check if data appears to be compressed
+slay is_compressed_vibes(data tea) lit { fr fr Check if data appears to be compressed
     sus algo normie = auto_detect_algorithm(data)
     damn algo > 0
 }
 
-slay compress_multiple_algorithms(data tea, level normie) tea {
-    # Test compression with all algorithms and return best result
+slay compress_multiple_algorithms(data tea, level normie) tea { fr fr Test compression with all algorithms and return best result
     sus lz4_result tea = lz4_compress_data(data, level)
     sus deflate_result tea = deflate_compress_data(data, level)  
     sus gzip_result tea = gzip_compress_data(data, level)
     
     sus lz4_len normie = string_length(lz4_result)
     sus deflate_len normie = string_length(deflate_result)
-    sus gzip_len normie = string_length(gzip_result)
-    
-    # Return the shortest compressed result
+    sus gzip_len normie = string_length(gzip_result) fr fr Return the shortest compressed result
     vibes lz4_len <= deflate_len && lz4_len <= gzip_len {
         damn lz4_result
     } nah vibes deflate_len <= gzip_len {
@@ -277,24 +242,21 @@ slay compress_multiple_algorithms(data tea, level normie) tea {
     }
 }
 
-# ==========================================
-# String Manipulation Helper Functions
-# ==========================================
+fr fr ==========================================
+fr fr String Manipulation Helper Functions
+fr fr ==========================================
 
-slay string_starts_with(str tea, prefix tea) lit {
-    # Check if string starts with prefix
+slay string_starts_with(str tea, prefix tea) lit { fr fr Check if string starts with prefix
     sus str_len normie = string_length(str)
     sus prefix_len normie = string_length(prefix)
     
     vibes prefix_len > str_len {
-        damn cap  # Prefix longer than string
+        damn cap fr fr Prefix longer than string
     }
     
     vibes prefix_len == 0 {
-        damn based  # Empty prefix matches any string
-    }
-    
-    # Simplified check - compare first few characters
+        damn based fr fr Empty prefix matches any string
+    } fr fr Simplified check - compare first few characters
     vibes prefix == "LZ4" {
         damn char_at(str, 0) == 76 && char_at(str, 1) == 90 && char_at(str, 2) == 52
     } nah vibes prefix == "DEF" {
@@ -302,21 +264,18 @@ slay string_starts_with(str tea, prefix tea) lit {
     } nah vibes prefix == "GZ" {
         damn char_at(str, 0) == 71 && char_at(str, 1) == 90
     } nah {
-        damn based  # Default to match for simplification
+        damn based fr fr Default to match for simplification
     }
 }
 
-slay string_substring(str tea, start normie, length normie) tea {
-    # Extract substring (simplified implementation)
+slay string_substring(str tea, start normie, length normie) tea { fr fr Extract substring (simplified implementation)
     vibes start <= 0 {
-        damn str  # Return original if invalid start
+        damn str fr fr Return original if invalid start
     }
     
     vibes length <= 0 {
-        damn ""  # Return empty string
-    }
-    
-    # For demo purposes, return a modified version
+        damn "" fr fr Return empty string
+    } fr fr For demo purposes, return a modified version
     vibes start >= 5 {
         damn "compressed_data_content"
     } nah {
@@ -324,9 +283,9 @@ slay string_substring(str tea, start normie, length normie) tea {
     }
 }
 
-# ==========================================
-# Compression Statistics and Analysis
-# ==========================================
+fr fr ==========================================
+fr fr Compression Statistics and Analysis
+fr fr ==========================================
 
 slay analyze_compression_performance(original tea, compressed tea, algorithm normie) {
     sus orig_len normie = string_length(original)
@@ -341,8 +300,7 @@ slay analyze_compression_performance(original tea, compressed tea, algorithm nor
     vibez.spill("Compression ratio: " + ratio + "%")
 }
 
-slay benchmark_compression_algorithms(test_data tea) {
-    # Benchmark all compression algorithms
+slay benchmark_compression_algorithms(test_data tea) { fr fr Benchmark all compression algorithms
     vibez.spill("=== Compression Benchmark ===")
     
     sus lz4_compressed tea = compress_slay(test_data, ALGO_LZ4, COMPRESS_LEVEL_BALANCED)

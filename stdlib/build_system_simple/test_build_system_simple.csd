@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "build_system_simple"
 
-# Comprehensive test suite for build_system_simple module
+fr fr Comprehensive test suite for build_system_simple module
 
 test_start("create_simple_config")
 sus config map[tea]interface{} = create_simple_config()

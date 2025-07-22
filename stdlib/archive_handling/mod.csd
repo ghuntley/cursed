@@ -1,20 +1,20 @@
-# Archive Handling Module - Pure CURSED Implementation
-# Handles TAR and ZIP archive operations without FFI
+fr fr Archive Handling Module - Pure CURSED Implementation
+fr fr Handles TAR and ZIP archive operations without FFI
 
-# Archive Structure
+fr fr Archive Structure
 sus archive_type tea = ""
 sus archive_filename tea = ""
 sus archive_files tea = ""
 sus archive_loaded lit = cap
 sus archive_compression_level normie = 6
 
-# Archive Format Constants
+fr fr Archive Format Constants
 sus FORMAT_TAR tea = "tar"
 sus FORMAT_ZIP tea = "zip"
 sus FORMAT_GZIP tea = "gzip"
 sus FORMAT_BZIP2 tea = "bzip2"
 
-# Archive Creation Functions
+fr fr Archive Creation Functions
 slay archive_create(filename tea, format tea) lit {
     vibez.spill("Creating archive: " + filename + " format: " + format)
     
@@ -33,9 +33,7 @@ slay archive_create(filename tea, format tea) lit {
 }
 
 slay archive_open(filename tea) lit {
-    vibez.spill("Opening archive: " + filename)
-    
-    # Determine format from filename
+    vibez.spill("Opening archive: " + filename) fr fr Determine format from filename
     bestie filename.contains(".tar") {
         archive_type = FORMAT_TAR
     } else bestie filename.contains(".zip") {
@@ -84,15 +82,13 @@ slay archive_get_filename() tea {
     damn archive_filename
 }
 
-# File Management Functions
+fr fr File Management Functions
 slay archive_add_file(filepath tea, archive_path tea) lit {
     bestie !archive_loaded {
         damn cap
     }
     
-    vibez.spill("Adding file: " + filepath + " as: " + archive_path)
-    
-    # Simulate file addition
+    vibez.spill("Adding file: " + filepath + " as: " + archive_path) fr fr Simulate file addition
     bestie archive_files == "" {
         archive_files = archive_path + ":1024"
     } else {
@@ -107,9 +103,7 @@ slay archive_add_directory(dirpath tea, archive_path tea) lit {
         damn cap
     }
     
-    vibez.spill("Adding directory: " + dirpath + " as: " + archive_path)
-    
-    # Simulate directory addition
+    vibez.spill("Adding directory: " + dirpath + " as: " + archive_path) fr fr Simulate directory addition
     archive_add_file(dirpath + "/file1.txt", archive_path + "/file1.txt")
     archive_add_file(dirpath + "/file2.txt", archive_path + "/file2.txt")
     
@@ -121,9 +115,7 @@ slay archive_remove_file(archive_path tea) lit {
         damn cap
     }
     
-    vibez.spill("Removing file: " + archive_path)
-    
-    # Simulate file removal
+    vibez.spill("Removing file: " + archive_path) fr fr Simulate file removal
     bestie archive_files.contains(archive_path) {
         vibez.spill("File removed from archive")
         damn based
@@ -152,22 +144,18 @@ slay archive_extract_all(output_directory tea) lit {
         damn cap
     }
     
-    vibez.spill("Extracting all files to: " + output_directory)
-    
-    # Simulate extraction of all files
+    vibez.spill("Extracting all files to: " + output_directory) fr fr Simulate extraction of all files
     vibez.spill("All files extracted successfully")
     damn based
 }
 
-# Archive Information Functions
+fr fr Archive Information Functions
 slay archive_list_files() tea {
     bestie !archive_loaded {
         damn ""
     }
     
-    vibez.spill("Listing archive contents")
-    
-    # Return file list
+    vibez.spill("Listing archive contents") fr fr Return file list
     damn archive_files
 }
 
@@ -177,11 +165,9 @@ slay archive_get_file_count() normie {
     }
     
     sus count normie = 0
-    sus files tea = archive_files
-    
-    # Count files (simplified)
+    sus files tea = archive_files fr fr Count files (simplified)
     bestie files.contains("|") {
-        count = 3  # Simulate count
+        count = 3 fr fr Simulate count
     } else bestie files != "" {
         count = 1
     }
@@ -197,7 +183,7 @@ slay archive_get_file_size(archive_path tea) normie {
     vibez.spill("Getting file size: " + archive_path)
     
     bestie archive_files.contains(archive_path) {
-        damn 1024  # Simulate file size
+        damn 1024 fr fr Simulate file size
     }
     
     damn 0
@@ -209,11 +195,9 @@ slay archive_get_total_size() normie {
     }
     
     sus total_size normie = 0
-    sus files tea = archive_files
-    
-    # Calculate total size (simplified)
+    sus files tea = archive_files fr fr Calculate total size (simplified)
     bestie files.contains("|") {
-        total_size = 3584  # Simulate total size
+        total_size = 3584 fr fr Simulate total size
     } else bestie files != "" {
         total_size = 1024
     }
@@ -229,7 +213,7 @@ slay archive_file_exists(archive_path tea) lit {
     damn archive_files.contains(archive_path)
 }
 
-# Compression Settings Functions
+fr fr Compression Settings Functions
 slay archive_set_compression_level(level normie) lit {
     bestie level < 0 || level > 9 {
         vibez.spill("Invalid compression level: " + level)
@@ -255,15 +239,13 @@ slay archive_disable_compression() lit {
     damn based
 }
 
-# Archive Validation Functions
+fr fr Archive Validation Functions
 slay archive_validate() lit {
     bestie !archive_loaded {
         damn cap
     }
     
-    vibez.spill("Validating archive integrity")
-    
-    # Simulate validation
+    vibez.spill("Validating archive integrity") fr fr Simulate validation
     bestie archive_type == FORMAT_TAR || archive_type == FORMAT_ZIP {
         vibez.spill("Archive validation passed")
         damn based
@@ -278,9 +260,7 @@ slay archive_repair() lit {
         damn cap
     }
     
-    vibez.spill("Attempting archive repair")
-    
-    # Simulate repair
+    vibez.spill("Attempting archive repair") fr fr Simulate repair
     vibez.spill("Archive repair completed")
     damn based
 }
@@ -290,14 +270,12 @@ slay archive_test_integrity() lit {
         damn cap
     }
     
-    vibez.spill("Testing archive integrity")
-    
-    # Simulate integrity test
+    vibez.spill("Testing archive integrity") fr fr Simulate integrity test
     vibez.spill("Archive integrity test passed")
     damn based
 }
 
-# Archive Metadata Functions
+fr fr Archive Metadata Functions
 slay archive_set_comment(comment tea) lit {
     bestie !archive_loaded {
         damn cap
@@ -333,7 +311,7 @@ slay archive_get_metadata(key tea) tea {
     damn "metadata_value_" + key
 }
 
-# Password Protection Functions
+fr fr Password Protection Functions
 slay archive_set_password(password tea) lit {
     bestie !archive_loaded {
         damn cap
@@ -355,13 +333,11 @@ slay archive_remove_password() lit {
 slay archive_is_password_protected() lit {
     bestie !archive_loaded {
         damn cap
-    }
-    
-    # Simulate password check
+    } fr fr Simulate password check
     damn cap
 }
 
-# Archive Conversion Functions
+fr fr Archive Conversion Functions
 slay archive_convert_format(new_format tea) lit {
     bestie !archive_loaded {
         damn cap
@@ -391,7 +367,7 @@ slay archive_merge(part_files tea) lit {
     damn based
 }
 
-# Archive Statistics Functions
+fr fr Archive Statistics Functions
 slay archive_get_stats() tea {
     bestie !archive_loaded {
         damn ""
@@ -404,9 +380,7 @@ slay archive_get_stats() tea {
 slay archive_get_compression_ratio() meal {
     bestie !archive_loaded {
         damn 0.0
-    }
-    
-    # Simulate compression ratio calculation
+    } fr fr Simulate compression ratio calculation
     damn 0.65
 }
 
@@ -418,13 +392,11 @@ slay archive_get_creation_time() tea {
     damn "2025-01-07T12:00:00Z"
 }
 
-# Batch Archive Operations
+fr fr Batch Archive Operations
 slay archive_batch_create(file_list tea, archive_name tea, format tea) lit {
     vibez.spill("Creating batch archive: " + archive_name + " format: " + format)
     
-    archive_create(archive_name, format)
-    
-    # Simulate batch file addition
+    archive_create(archive_name, format) fr fr Simulate batch file addition
     bestie file_list.contains(",") {
         vibez.spill("Added multiple files to archive")
     } else {
@@ -437,9 +409,7 @@ slay archive_batch_create(file_list tea, archive_name tea, format tea) lit {
 slay archive_batch_extract(archive_list tea, output_dir tea) normie {
     vibez.spill("Extracting batch archives to: " + output_dir)
     
-    sus extracted_count normie = 0
-    
-    # Simulate batch extraction
+    sus extracted_count normie = 0 fr fr Simulate batch extraction
     bestie archive_list.contains(",") {
         extracted_count = 3
     } else {
@@ -450,11 +420,9 @@ slay archive_batch_extract(archive_list tea, output_dir tea) normie {
     damn extracted_count
 }
 
-# Advanced Archive Functions
+fr fr Advanced Archive Functions
 slay archive_create_incremental(base_archive tea, changes tea) lit {
-    vibez.spill("Creating incremental archive based on: " + base_archive)
-    
-    # Simulate incremental archive creation
+    vibez.spill("Creating incremental archive based on: " + base_archive) fr fr Simulate incremental archive creation
     vibez.spill("Incremental archive created with changes: " + changes)
     damn based
 }
@@ -464,9 +432,7 @@ slay archive_verify_signature() lit {
         damn cap
     }
     
-    vibez.spill("Verifying archive signature")
-    
-    # Simulate signature verification
+    vibez.spill("Verifying archive signature") fr fr Simulate signature verification
     vibez.spill("Archive signature verified")
     damn based
 }
@@ -485,9 +451,7 @@ slay archive_search_files(pattern tea) tea {
         damn ""
     }
     
-    vibez.spill("Searching files with pattern: " + pattern)
-    
-    # Simulate file search
+    vibez.spill("Searching files with pattern: " + pattern) fr fr Simulate file search
     damn "file1.txt,file2.txt"
 }
 

@@ -1,6 +1,6 @@
 yeet "testz"
 
-# Database connection types
+fr fr Database connection types
 be_like DatabaseType = normie
 facts {
     DB_POSTGRES normie = 1
@@ -8,7 +8,7 @@ facts {
     DB_SQLITE normie = 3
 }
 
-# Connection configuration structure
+fr fr Connection configuration structure
 be_like DatabaseConfig = {
     db_type DatabaseType
     host tea
@@ -21,7 +21,7 @@ be_like DatabaseConfig = {
     timeout normie
 }
 
-# Connection pool management
+fr fr Connection pool management
 be_like ConnectionPool = {
     config DatabaseConfig
     active_connections []tea
@@ -30,7 +30,7 @@ be_like ConnectionPool = {
     current_connections normie
 }
 
-# Transaction context
+fr fr Transaction context
 be_like Transaction = {
     connection_id tea
     transaction_id tea
@@ -38,7 +38,7 @@ be_like Transaction = {
     isolation_level tea
 }
 
-# Query result structure
+fr fr Query result structure
 be_like QueryResult = {
     rows [][]tea
     columns []tea
@@ -48,7 +48,7 @@ be_like QueryResult = {
     success lit
 }
 
-# Prepared statement
+fr fr Prepared statement
 be_like PreparedStatement = {
     statement_id tea
     sql_query tea
@@ -56,7 +56,7 @@ be_like PreparedStatement = {
     connection_id tea
 }
 
-# Connection factory function
+fr fr Connection factory function
 slay create_database_config(
     db_type DatabaseType,
     host tea,
@@ -79,7 +79,7 @@ slay create_database_config(
     damn config
 }
 
-# PostgreSQL connection management
+fr fr PostgreSQL connection management
 slay connect_postgres(config DatabaseConfig) tea {
     sus conn_string tea = stringz.format(
         "postgresql://{}:{}@{}:{}/{}",
@@ -88,16 +88,14 @@ slay connect_postgres(config DatabaseConfig) tea {
         config.host,
         config.port,
         config.database
-    )
-    
-    # Simulate connection establishment
+    ) fr fr Simulate connection establishment
     sus connection_id tea = stringz.format("pg_conn_{}", math.random_int(10000))
     vibez.spill(stringz.format("Connecting to PostgreSQL: {}", conn_string))
     
     damn connection_id
 }
 
-# MySQL connection management
+fr fr MySQL connection management
 slay connect_mysql(config DatabaseConfig) tea {
     sus conn_string tea = stringz.format(
         "mysql://{}:{}@{}:{}/{}",
@@ -114,7 +112,7 @@ slay connect_mysql(config DatabaseConfig) tea {
     damn connection_id
 }
 
-# SQLite connection management
+fr fr SQLite connection management
 slay connect_sqlite(database_path tea) tea {
     sus connection_id tea = stringz.format("sqlite_conn_{}", math.random_int(10000))
     vibez.spill(stringz.format("Connecting to SQLite: {}", database_path))
@@ -122,7 +120,7 @@ slay connect_sqlite(database_path tea) tea {
     damn connection_id
 }
 
-# Universal connection function
+fr fr Universal connection function
 slay connect_database(config DatabaseConfig) tea {
     ready config.db_type {
         DB_POSTGRES -> {
@@ -140,7 +138,7 @@ slay connect_database(config DatabaseConfig) tea {
     }
 }
 
-# Connection pool management
+fr fr Connection pool management
 slay create_connection_pool(config DatabaseConfig) ConnectionPool {
     sus pool ConnectionPool = {
         config: config,
@@ -169,7 +167,7 @@ slay return_connection_to_pool(pool ConnectionPool, connection_id tea) lit {
     damn based
 }
 
-# SQL Query execution
+fr fr SQL Query execution
 slay execute_query(connection_id tea, query tea, params []tea) QueryResult {
     sus result QueryResult = {
         rows: [],
@@ -180,14 +178,10 @@ slay execute_query(connection_id tea, query tea, params []tea) QueryResult {
         success: based
     }
     
-    vibez.spill(stringz.format("Executing query on {}: {}", connection_id, query))
-    
-    # Simulate parameter binding
+    vibez.spill(stringz.format("Executing query on {}: {}", connection_id, query)) fr fr Simulate parameter binding
     bestie i := 0; i < params.length; i++ {
         vibez.spill(stringz.format("Parameter {}: {}", i, params[i]))
-    }
-    
-    # Simulate query execution
+    } fr fr Simulate query execution
     ready {
         stringz.contains(query, "SELECT") -> {
             result.columns = ["id", "name", "email"]
@@ -215,7 +209,7 @@ slay execute_query(connection_id tea, query tea, params []tea) QueryResult {
     damn result
 }
 
-# Prepared statement management
+fr fr Prepared statement management
 slay prepare_statement(connection_id tea, sql_query tea) PreparedStatement {
     sus stmt PreparedStatement = {
         statement_id: stringz.format("stmt_{}", math.random_int(10000)),
@@ -246,7 +240,7 @@ slay execute_prepared_statement(stmt PreparedStatement, params []tea) QueryResul
     damn execute_query(stmt.connection_id, stmt.sql_query, params)
 }
 
-# Transaction management
+fr fr Transaction management
 slay begin_transaction(connection_id tea) Transaction {
     sus tx Transaction = {
         connection_id: connection_id,
@@ -279,7 +273,7 @@ slay rollback_transaction(tx Transaction) lit {
     damn based
 }
 
-# Query builder functionality
+fr fr Query builder functionality
 be_like QueryBuilder = {
     table_name tea
     select_fields []tea
@@ -367,7 +361,7 @@ slay build_select_query(builder QueryBuilder) tea {
     damn query
 }
 
-# Migration system
+fr fr Migration system
 be_like Migration = {
     version tea
     up_sql tea
@@ -401,7 +395,7 @@ slay rollback_migration(connection_id tea, migration Migration) lit {
     damn result.success
 }
 
-# Utility functions
+fr fr Utility functions
 slay count_parameters(sql_query tea) normie {
     sus count normie = 0
     sus i normie = 0
@@ -416,8 +410,7 @@ slay count_parameters(sql_query tea) normie {
     damn count
 }
 
-slay escape_string(value tea) tea {
-    # Basic SQL injection prevention
+slay escape_string(value tea) tea { fr fr Basic SQL injection prevention
     sus escaped tea = stringz.replace(value, "'", "''")
     escaped = stringz.replace(escaped, "\\", "\\\\")
     damn "'" + escaped + "'"
@@ -428,7 +421,7 @@ slay close_connection(connection_id tea) lit {
     damn based
 }
 
-# ORM-style record management
+fr fr ORM-style record management
 be_like Record = {
     table_name tea
     fields map[tea]tea
@@ -457,8 +450,7 @@ slay get_field(record Record, field tea) tea {
 }
 
 slay save_record(connection_id tea, record Record) lit {
-    yikes record.is_new {
-        # INSERT operation
+    yikes record.is_new { fr fr INSERT operation
         sus fields []tea = []
         sus values []tea = []
         
@@ -480,8 +472,7 @@ slay save_record(connection_id tea, record Record) lit {
             record.is_dirty = cap
         }
         damn result.success
-    } shook {
-        # UPDATE operation - would need primary key handling
+    } shook { fr fr UPDATE operation - would need primary key handling
         vibez.spill("UPDATE operation would be implemented with WHERE clause")
         damn based
     }

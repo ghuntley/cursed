@@ -2,10 +2,10 @@ yeet "testz"
 yeet "core"
 yeet "atomic_drip"
 
-# Advanced Concurrency Module - Pure CURSED Implementation
-# Provides channels, goroutines, mutexes, wait groups, and synchronization primitives
+fr fr Advanced Concurrency Module - Pure CURSED Implementation
+fr fr Provides channels, goroutines, mutexes, wait groups, and synchronization primitives
 
-# Channel operations and management
+fr fr Channel operations and management
 slay channel_create(capacity normie) tea {
     sus ch_id tea = core.uuid_generate()
     atomic_drip.store(ch_id + "_capacity", capacity)
@@ -20,11 +20,11 @@ slay channel_send(ch_id tea, value tea) lit {
     sus is_closed normie = atomic_drip.load(ch_id + "_closed")
     
     when is_closed == 1 {
-        damn cap  # Channel is closed
+        damn cap fr fr Channel is closed
     }
     
     when capacity > 0 lowkey current_size >= capacity {
-        damn cap  # Channel is full (buffered)
+        damn cap fr fr Channel is full (buffered)
     }
     
     atomic_drip.store(ch_id + "_data_" + current_size, value)
@@ -37,11 +37,11 @@ slay channel_receive(ch_id tea) tea {
     sus is_closed normie = atomic_drip.load(ch_id + "_closed")
     
     when current_size == 0 lowkey is_closed == 1 {
-        damn ""  # Channel is empty and closed
+        damn "" fr fr Channel is empty and closed
     }
     
     when current_size == 0 {
-        damn ""  # Channel is empty (would block)
+        damn "" fr fr Channel is empty (would block)
     }
     
     sus value tea = atomic_drip.load(ch_id + "_data_0")
@@ -54,7 +54,7 @@ slay channel_close(ch_id tea) lit {
     damn based
 }
 
-# Mutex implementation with atomic operations
+fr fr Mutex implementation with atomic operations
 slay mutex_create() tea {
     sus mutex_id tea = core.uuid_generate()
     atomic_drip.store(mutex_id + "_locked", 0)
@@ -68,8 +68,7 @@ slay mutex_lock(mutex_id tea, goroutine_id tea) lit {
         when locked == 0 {
             atomic_drip.store(mutex_id + "_owner", goroutine_id)
             damn based
-        }
-        # Yield to other goroutines while waiting
+        } fr fr Yield to other goroutines while waiting
         core.yield_scheduler()
     }
 }
@@ -77,7 +76,7 @@ slay mutex_lock(mutex_id tea, goroutine_id tea) lit {
 slay mutex_unlock(mutex_id tea, goroutine_id tea) lit {
     sus owner tea = atomic_drip.load(mutex_id + "_owner")
     when owner != goroutine_id {
-        damn cap  # Not the owner
+        damn cap fr fr Not the owner
     }
     
     atomic_drip.store(mutex_id + "_owner", "")
@@ -94,7 +93,7 @@ slay mutex_try_lock(mutex_id tea, goroutine_id tea) lit {
     damn cap
 }
 
-# Wait Group implementation for goroutine synchronization
+fr fr Wait Group implementation for goroutine synchronization
 slay waitgroup_create() tea {
     sus wg_id tea = core.uuid_generate()
     atomic_drip.store(wg_id + "_counter", 0)
@@ -121,7 +120,7 @@ slay waitgroup_wait(wg_id tea) lit {
     }
 }
 
-# Condition Variable implementation
+fr fr Condition Variable implementation
 slay condition_create() tea {
     sus cond_id tea = core.uuid_generate()
     atomic_drip.store(cond_id + "_waiting", 0)
@@ -157,7 +156,7 @@ slay condition_broadcast(cond_id tea) lit {
     damn based
 }
 
-# Semaphore implementation for resource limiting
+fr fr Semaphore implementation for resource limiting
 slay semaphore_create(permits normie) tea {
     sus sem_id tea = core.uuid_generate()
     atomic_drip.store(sem_id + "_permits", permits)
@@ -199,7 +198,7 @@ slay semaphore_try_acquire(sem_id tea) lit {
     damn cap
 }
 
-# Read-Write Lock implementation
+fr fr Read-Write Lock implementation
 slay rwlock_create() tea {
     sus rwlock_id tea = core.uuid_generate()
     atomic_drip.store(rwlock_id + "_readers", 0)
@@ -249,7 +248,7 @@ slay rwlock_write_unlock(rwlock_id tea) lit {
     damn based
 }
 
-# Barrier implementation for synchronizing multiple goroutines
+fr fr Barrier implementation for synchronizing multiple goroutines
 slay barrier_create(count normie) tea {
     sus barrier_id tea = core.uuid_generate()
     atomic_drip.store(barrier_id + "_total", count)
@@ -279,7 +278,7 @@ slay barrier_wait(barrier_id tea) lit {
     }
 }
 
-# Goroutine pool for managing worker threads
+fr fr Goroutine pool for managing worker threads
 slay goroutine_pool_create(size normie) tea {
     sus pool_id tea = core.uuid_generate()
     atomic_drip.store(pool_id + "_size", size)
@@ -293,16 +292,13 @@ slay goroutine_pool_submit(pool_id tea, task_fn tea, task_data tea) lit {
     sus size normie = atomic_drip.load(pool_id + "_size")
     
     when active < size {
-        atomic_drip.increment(pool_id + "_active")
-        # Execute task in new goroutine
-        stan {
-            # Execute task function with data
+        atomic_drip.increment(pool_id + "_active") fr fr Execute task in new goroutine
+        stan { fr fr Execute task function with data
             core.execute_function(task_fn, task_data)
             atomic_drip.decrement(pool_id + "_active")
         }
         damn based
-    } ghetto {
-        # Queue task for later execution
+    } ghetto { fr fr Queue task for later execution
         sus queue_size normie = atomic_drip.load(pool_id + "_queue_size")
         atomic_drip.store(pool_id + "_queue_" + queue_size, task_fn + "|" + task_data)
         atomic_drip.increment(pool_id + "_queue_size")
@@ -310,7 +306,7 @@ slay goroutine_pool_submit(pool_id tea, task_fn tea, task_data tea) lit {
     }
 }
 
-# Advanced select operation for multiple channels
+fr fr Advanced select operation for multiple channels
 slay select_operation(channels [tea], operations [tea]) tea {
     sus ready_index normie = -1
     sus i normie = 0
@@ -340,7 +336,7 @@ slay select_operation(channels [tea], operations [tea]) tea {
         damn ready_index
     }
     
-    damn -1  # No channels ready
+    damn -1 fr fr No channels ready
 }
 
 slay channel_can_send(ch_id tea) lit {
@@ -353,7 +349,7 @@ slay channel_can_send(ch_id tea) lit {
     }
     
     when capacity == 0 {
-        damn based  # Unbuffered channel
+        damn based fr fr Unbuffered channel
     }
     
     damn current_size < capacity
@@ -364,7 +360,7 @@ slay channel_can_receive(ch_id tea) lit {
     damn current_size > 0
 }
 
-# Performance monitoring for concurrent operations
+fr fr Performance monitoring for concurrent operations
 slay concurrency_metrics() tea {
     sus metrics tea = "{"
     metrics = metrics + "\"active_goroutines\":" + core.active_goroutines_count()
@@ -375,11 +371,11 @@ slay concurrency_metrics() tea {
     damn metrics
 }
 
-# Deadlock detection utilities
+fr fr Deadlock detection utilities
 slay deadlock_detector_create() tea {
     sus detector_id tea = core.uuid_generate()
     atomic_drip.store(detector_id + "_enabled", 1)
-    atomic_drip.store(detector_id + "_timeout", 5000)  # 5 second timeout
+    atomic_drip.store(detector_id + "_timeout", 5000) fr fr 5 second timeout
     damn detector_id
 }
 
@@ -387,9 +383,7 @@ slay deadlock_check(detector_id tea, resource_graph tea) lit {
     sus enabled normie = atomic_drip.load(detector_id + "_enabled")
     when enabled == 0 {
         damn cap
-    }
-    
-    # Simple cycle detection in resource dependency graph
+    } fr fr Simple cycle detection in resource dependency graph
     sus has_cycle lit = core.detect_cycle(resource_graph)
     damn has_cycle
 }

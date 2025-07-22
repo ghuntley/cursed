@@ -3,15 +3,15 @@ yeet "parser"
 
 test_start("parser module basic test")
 
-# Test tokenization
+fr fr Test tokenization
 sus tokens := tokenize("sus x := 42")
 assert_eq_int(len(tokens), 5)
 
-# Test keyword recognition
+fr fr Test keyword recognition
 assert_true(is_keyword("sus"))
 assert_false(is_keyword("notakeyword"))
 
-# Test character classification
+fr fr Test character classification
 assert_true(is_operator('+'))
 assert_false(is_operator('a'))
 assert_true(is_delimiter('('))

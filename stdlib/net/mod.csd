@@ -1,13 +1,13 @@
-# CURSED Pure Networking Module v2.0
-# Complete FFI-free implementation of TCP/UDP sockets, HTTP client, DNS resolution, and WebSocket support
-# Zero external dependencies - fully self-contained networking capabilities
+fr fr CURSED Pure Networking Module v2.0
+fr fr Complete FFI-free implementation of TCP/UDP sockets, HTTP client, DNS resolution, and WebSocket support
+fr fr Zero external dependencies - fully self-contained networking capabilities
 
 yeet "testz"
 
-# Network address types
+fr fr Network address types
 be_like IPAddr squad {
     address tea
-    version normie  # 4 for IPv4, 6 for IPv6
+    version normie fr fr 4 for IPv4, 6 for IPv6
 }
 
 be_like TCPAddr squad {
@@ -20,7 +20,7 @@ be_like UDPAddr squad {
     port normie
 }
 
-# Socket types
+fr fr Socket types
 be_like TCPSocket squad {
     handle normie
     local_addr TCPAddr
@@ -40,7 +40,7 @@ be_like TCPListener squad {
     is_listening lit
 }
 
-# HTTP client types
+fr fr HTTP client types
 be_like HTTPResponse squad {
     status_code normie
     headers tea
@@ -54,7 +54,7 @@ be_like HTTPRequest squad {
     body tea
 }
 
-# DNS resolution types
+fr fr DNS resolution types
 be_like DNSRecord squad {
     name tea
     record_type tea
@@ -62,16 +62,16 @@ be_like DNSRecord squad {
     ttl normie
 }
 
-# WebSocket types
+fr fr WebSocket types
 be_like WebSocket squad {
     socket TCPSocket
     is_connected lit
     frame_buffer tea
 }
 
-# Core networking functions
+fr fr Core networking functions
 
-# TCP Socket operations
+fr fr TCP Socket operations
 slay tcp_socket_create() TCPSocket {
     sus socket TCPSocket
     socket.handle = net_tcp_create()
@@ -130,7 +130,7 @@ slay tcp_socket_close(socket *TCPSocket) lit {
     damn cap
 }
 
-# TCP Listener operations
+fr fr TCP Listener operations
 slay tcp_listener_create() TCPListener {
     sus listener TCPListener
     listener.handle = net_tcp_create()
@@ -184,7 +184,7 @@ slay tcp_listener_close(listener *TCPListener) lit {
     damn cap
 }
 
-# UDP Socket operations
+fr fr UDP Socket operations
 slay udp_socket_create() UDPSocket {
     sus socket UDPSocket
     socket.handle = net_udp_create()
@@ -224,12 +224,10 @@ slay udp_socket_close(socket *UDPSocket) lit {
     damn cap
 }
 
-# IP address utilities
+fr fr IP address utilities
 slay parse_ip(address tea) IPAddr {
     sus ip IPAddr
-    ip.address = address
-    
-    # Simple IPv4 vs IPv6 detection
+    ip.address = address fr fr Simple IPv4 vs IPv6 detection
     if string_contains(address, ":") {
         ip.version = 6
     } else {
@@ -251,7 +249,7 @@ slay ip_to_string(ip IPAddr) tea {
     damn ip.address
 }
 
-# DNS resolution
+fr fr DNS resolution
 slay resolve_hostname(hostname tea) []tea {
     sus addresses []tea
     sus result tea = net_resolve_hostname(hostname)
@@ -289,7 +287,7 @@ slay lookup_txt(domain tea) []tea {
     damn txt_records
 }
 
-# HTTP Client functionality
+fr fr HTTP Client functionality
 slay http_request_create(method tea, url tea) HTTPRequest {
     sus request HTTPRequest
     request.method = method
@@ -346,19 +344,16 @@ slay http_post_json(url tea, json_body tea) HTTPResponse {
     damn http_send_request(request)
 }
 
-# HTTP response parsing
+fr fr HTTP response parsing
 slay parse_http_response(response_text tea) HTTPResponse {
     sus response HTTPResponse
     sus lines []tea = string_split(response_text, "\r\n")
     
-    if len(lines) > 0 {
-        # Parse status line
+    if len(lines) > 0 { fr fr Parse status line
         sus status_line []tea = string_split(lines[0], " ")
         if len(status_line) > 1 {
             response.status_code = string_to_int(status_line[1])
-        }
-        
-        # Find headers/body separator
+        } fr fr Find headers/body separator
         sus header_end normie = -1
         bestie i := 1; i < len(lines); i++ {
             if lines[i] == "" {
@@ -367,15 +362,12 @@ slay parse_http_response(response_text tea) HTTPResponse {
             }
         }
         
-        if header_end != -1 {
-            # Extract headers
+        if header_end != -1 { fr fr Extract headers
             sus header_lines []tea
             bestie i := 1; i < header_end; i++ {
                 header_lines = append(header_lines, lines[i])
             }
-            response.headers = string_join(header_lines, "\r\n")
-            
-            # Extract body
+            response.headers = string_join(header_lines, "\r\n") fr fr Extract body
             if header_end + 1 < len(lines) {
                 sus body_lines []tea
                 bestie i := header_end + 1; i < len(lines); i++ {
@@ -389,23 +381,16 @@ slay parse_http_response(response_text tea) HTTPResponse {
     damn response
 }
 
-# WebSocket implementation
+fr fr WebSocket implementation
 slay websocket_connect(url tea) WebSocket {
-    sus ws WebSocket
-    
-    # Extract host and port from URL
+    sus ws WebSocket fr fr Extract host and port from URL
     sus host tea = extract_host_from_url(url)
-    sus port normie = extract_port_from_url(url)
-    
-    # Create TCP socket
+    sus port normie = extract_port_from_url(url) fr fr Create TCP socket
     ws.socket = tcp_socket_create()
     
-    if tcp_socket_connect(&ws.socket, host, port) {
-        # Send WebSocket handshake
+    if tcp_socket_connect(&ws.socket, host, port) { fr fr Send WebSocket handshake
         sus handshake tea = create_websocket_handshake(url)
-        tcp_socket_send(&ws.socket, handshake)
-        
-        # Receive handshake response
+        tcp_socket_send(&ws.socket, handshake) fr fr Receive handshake response
         sus response tea = tcp_socket_recv(&ws.socket, 4096)
         
         if validate_websocket_handshake(response) {
@@ -451,8 +436,7 @@ slay websocket_recv(ws *WebSocket) tea {
 }
 
 slay websocket_close(ws *WebSocket) lit {
-    if ws.is_connected {
-        # Send close frame
+    if ws.is_connected { fr fr Send close frame
         sus close_frame tea = create_websocket_close_frame()
         tcp_socket_send(&ws.socket, close_frame)
         
@@ -463,7 +447,7 @@ slay websocket_close(ws *WebSocket) lit {
     damn cap
 }
 
-# WebSocket helper functions
+fr fr WebSocket helper functions
 slay create_websocket_handshake(url tea) tea {
     sus handshake tea = "GET " + url + " HTTP/1.1\r\n"
     handshake = handshake + "Host: " + extract_host_from_url(url) + "\r\n"
@@ -480,7 +464,7 @@ slay validate_websocket_handshake(response tea) lit {
 }
 
 slay create_websocket_text_frame(message tea) tea {
-    sus frame_header tea = "\x81"  # Text frame, final
+    sus frame_header tea = "\x81" fr fr Text frame, final
     sus payload_length normie = string_length(message)
     
     if payload_length < 126 {
@@ -495,7 +479,7 @@ slay create_websocket_text_frame(message tea) tea {
 }
 
 slay create_websocket_binary_frame(data tea) tea {
-    sus frame_header tea = "\x82"  # Binary frame, final
+    sus frame_header tea = "\x82" fr fr Binary frame, final
     sus payload_length normie = string_length(data)
     
     if payload_length < 126 {
@@ -510,7 +494,7 @@ slay create_websocket_binary_frame(data tea) tea {
 }
 
 slay create_websocket_close_frame() tea {
-    damn "\x88\x00"  # Close frame, no payload
+    damn "\x88\x00" fr fr Close frame, no payload
 }
 
 slay parse_websocket_frame(frame tea) tea {
@@ -526,8 +510,7 @@ slay parse_websocket_frame(frame tea) tea {
         payload_start = 4
         payload_length = char_to_int(frame[2]) * 256 + char_to_int(frame[3])
     } else if payload_length == 127 {
-        payload_start = 10
-        # For simplicity, assume small payloads
+        payload_start = 10 fr fr For simplicity, assume small payloads
         payload_length = char_to_int(frame[9])
     }
     
@@ -538,7 +521,7 @@ slay parse_websocket_frame(frame tea) tea {
     damn ""
 }
 
-# URL parsing utilities
+fr fr URL parsing utilities
 slay extract_host_from_url(url tea) tea {
     sus parts []tea = string_split(url, "/")
     if len(parts) > 2 {
@@ -557,9 +540,7 @@ slay extract_port_from_url(url tea) normie {
         if len(host_parts) > 1 {
             damn string_to_int(host_parts[1])
         }
-    }
-    
-    # Default ports
+    } fr fr Default ports
     if string_starts_with(url, "https://") || string_starts_with(url, "wss://") {
         damn 443
     } else if string_starts_with(url, "http://") || string_starts_with(url, "ws://") {
@@ -569,12 +550,11 @@ slay extract_port_from_url(url tea) normie {
     damn 80
 }
 
-# TLS/SSL wrapper functions
+fr fr TLS/SSL wrapper functions
 slay create_tls_socket(hostname tea, port normie) TCPSocket {
     sus socket TCPSocket = tcp_socket_create()
     
-    if tcp_socket_connect(&socket, hostname, port) {
-        # Initialize TLS handshake
+    if tcp_socket_connect(&socket, hostname, port) { fr fr Initialize TLS handshake
         sus success lit = net_tls_init(socket.handle, hostname)
         if success == cap {
             tcp_socket_close(&socket)
@@ -593,7 +573,7 @@ slay tls_socket_recv(socket *TCPSocket, max_size normie) tea {
     damn net_tls_recv(socket.handle, max_size)
 }
 
-# Network utilities
+fr fr Network utilities
 slay is_port_available(port normie) lit {
     sus socket TCPSocket = tcp_socket_create()
     sus result lit = tcp_socket_bind(&socket, "127.0.0.1", port)
@@ -620,7 +600,7 @@ slay network_scan(start_ip tea, end_ip tea, port normie) []tea {
     damn active_hosts
 }
 
-# Helper functions for remote address
+fr fr Helper functions for remote address
 slay get_remote_addr(socket_handle normie) TCPAddr {
     sus addr TCPAddr
     sus address_string tea = net_get_remote_addr(socket_handle)
@@ -636,7 +616,7 @@ slay get_remote_addr(socket_handle normie) TCPAddr {
     damn addr
 }
 
-# String utility functions (if not available in string module)
+fr fr String utility functions (if not available in string module)
 slay string_contains(text tea, substring tea) lit {
     damn string_index_of(text, substring) != -1
 }
@@ -766,17 +746,15 @@ slay string_length(text tea) normie {
     damn len(text)
 }
 
-slay append(slice []tea, element tea) []tea {
-    # This would need to be implemented by the runtime
+slay append(slice []tea, element tea) []tea { fr fr This would need to be implemented by the runtime
     damn slice
 }
 
-slay len(slice []tea) normie {
-    # This would need to be implemented by the runtime
+slay len(slice []tea) normie { fr fr This would need to be implemented by the runtime
     damn 0
 }
 
-# Pure CURSED network implementation functions
+fr fr Pure CURSED network implementation functions
 sus next_socket_handle normie = 1000
 sus socket_connections [10]squad{handle: normie, address: tea, port: normie, connected: lit}
 sus socket_count normie = 0
@@ -795,28 +773,28 @@ slay net_tcp_connect(handle normie, address tea, port normie) normie {
                 socket_connections[socket_count] = squad{handle: handle, address: address, port: port, connected: based}
                 socket_count = socket_count + 1
             }
-            damn 0  # Success
+            damn 0 fr fr Success
         }
     }
-    damn -1  # Error
+    damn -1 fr fr Error
 }
 
 slay net_tcp_bind(handle normie, address tea, port normie) normie {
     fr fr Simulate TCP bind
     vibes address == "0.0.0.0" || address == "127.0.0.1" {
         vibes port > 1024 && port < 65535 {
-            damn 0  # Success
+            damn 0 fr fr Success
         }
     }
-    damn -1  # Error
+    damn -1 fr fr Error
 }
 
 slay net_tcp_listen(handle normie, backlog normie) normie {
     fr fr Simulate TCP listen
     vibes backlog > 0 && backlog < 128 {
-        damn 0  # Success
+        damn 0 fr fr Success
     }
-    damn -1  # Error
+    damn -1 fr fr Error
 }
 
 slay net_tcp_accept(handle normie) normie {
@@ -828,9 +806,9 @@ slay net_tcp_send(handle normie, data tea) normie {
     fr fr Simulate TCP send
     sus data_len normie = string_length(data)
     vibes data_len > 0 {
-        damn data_len  # Return bytes sent
+        damn data_len fr fr Return bytes sent
     }
-    damn -1  # Error
+    damn -1 fr fr Error
 }
 
 slay net_tcp_recv(handle normie, max_size normie) tea {
@@ -861,19 +839,19 @@ slay net_udp_bind(handle normie, address tea, port normie) normie {
     fr fr Simulate UDP bind
     vibes address == "0.0.0.0" || address == "127.0.0.1" {
         vibes port > 1024 && port < 65535 {
-            damn 0  # Success
+            damn 0 fr fr Success
         }
     }
-    damn -1  # Error
+    damn -1 fr fr Error
 }
 
 slay net_udp_send_to(handle normie, data tea, address tea, port normie) normie {
     fr fr Simulate UDP send
     sus data_len normie = string_length(data)
     vibes data_len > 0 {
-        damn data_len  # Return bytes sent
+        damn data_len fr fr Return bytes sent
     }
-    damn -1  # Error
+    damn -1 fr fr Error
 }
 
 slay net_udp_recv_from(handle normie, max_size normie) tea {
@@ -904,7 +882,7 @@ slay net_resolve_hostname(hostname tea) tea {
     } nah vibes hostname == "github.com" {
         damn "140.82.112.3"
     } nah {
-        damn "192.168.1.1"  # Default
+        damn "192.168.1.1" fr fr Default
     }
 }
 
@@ -967,9 +945,9 @@ slay net_http_send(method tea, url tea, headers tea, body tea) tea {
 slay net_tls_init(handle normie, hostname tea) lit {
     fr fr Simulate TLS handshake
     vibes hostname == "localhost" || hostname == "127.0.0.1" {
-        damn cap  # TLS not supported for localhost
+        damn cap fr fr TLS not supported for localhost
     } nah {
-        damn based  # TLS handshake success
+        damn based fr fr TLS handshake success
     }
 }
 
@@ -977,9 +955,9 @@ slay net_tls_send(handle normie, data tea) normie {
     fr fr Simulate TLS send
     sus data_len normie = string_length(data)
     vibes data_len > 0 {
-        damn data_len  # Return bytes sent
+        damn data_len fr fr Return bytes sent
     }
-    damn -1  # Error
+    damn -1 fr fr Error
 }
 
 slay net_tls_recv(handle normie, max_size normie) tea {
@@ -998,11 +976,11 @@ slay net_get_local_ip() tea {
 slay net_ping(hostname tea) lit {
     fr fr Simulate ping
     vibes hostname == "localhost" || hostname == "127.0.0.1" {
-        damn based  # Localhost always responds
+        damn based fr fr Localhost always responds
     } nah vibes hostname == "google.com" || hostname == "8.8.8.8" {
-        damn based  # Public DNS responds
+        damn based fr fr Public DNS responds
     } nah {
-        damn cap  # Host unreachable
+        damn cap fr fr Host unreachable
     }
 }
 
@@ -1015,7 +993,7 @@ slay net_network_scan(start_ip tea, end_ip tea, port normie) tea {
             damn "192.168.1.1"
         }
     } nah {
-        damn ""  # No hosts found
+        damn "" fr fr No hosts found
     }
 }
 
@@ -1026,5 +1004,5 @@ slay net_get_remote_addr(handle normie) tea {
             damn socket_connections[i].address + ":" + tea(socket_connections[i].port)
         }
     }
-    damn "127.0.0.1:80"  # Default
+    damn "127.0.0.1:80" fr fr Default
 }

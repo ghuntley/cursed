@@ -1,13 +1,13 @@
-# Goroutine Core - Pure CURSED Goroutine System
-# Cooperative concurrency with work-stealing scheduler
-# Replaces src/runtime/goroutine.rs with zero FFI dependencies
+fr fr Goroutine Core - Pure CURSED Goroutine System
+fr fr Cooperative concurrency with work-stealing scheduler
+fr fr Replaces src/runtime/goroutine.rs with zero FFI dependencies
 
 yeet "runtime_core"
 yeet "memory_drip"
 yeet "error_drip"
 yeet "testz"
 
-# Goroutine states
+fr fr Goroutine states
 sus GOROUTINE_CREATED normie = 0
 sus GOROUTINE_RUNNABLE normie = 1
 sus GOROUTINE_RUNNING normie = 2
@@ -15,7 +15,7 @@ sus GOROUTINE_BLOCKED normie = 3
 sus GOROUTINE_DONE normie = 4
 sus GOROUTINE_PANIC normie = 5
 
-# Goroutine representation
+fr fr Goroutine representation
 vibe Goroutine = smash {
     id normie,
     state normie,
@@ -28,7 +28,7 @@ vibe Goroutine = smash {
     priority normie
 }
 
-# Work-stealing scheduler
+fr fr Work-stealing scheduler
 vibe Scheduler = smash {
     goroutines map[normie]Goroutine,
     runnable_queue []normie,
@@ -39,20 +39,20 @@ vibe Scheduler = smash {
     panic_count normie
 }
 
-# Global scheduler instance
+fr fr Global scheduler instance
 sus global_scheduler Scheduler
 
-# Scheduler configuration
+fr fr Scheduler configuration
 sus MAX_GOROUTINES normie = 10000
 sus DEFAULT_STACK_SIZE normie = 8192
 sus DEFAULT_WORKER_COUNT normie = 4
-sus SCHEDULER_QUANTUM normie = 100  # Cooperative yield frequency
+sus SCHEDULER_QUANTUM normie = 100 fr fr Cooperative yield frequency
 
-# ==============================================================================
-# GOROUTINE SCHEDULER INITIALIZATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr GOROUTINE SCHEDULER INITIALIZATION
+fr fr ==============================================================================
 
-# Initialize the goroutine scheduler
+fr fr Initialize the goroutine scheduler
 slay init_goroutine_scheduler() lit {
     global_scheduler.goroutines = {}
     global_scheduler.runnable_queue = []
@@ -66,7 +66,7 @@ slay init_goroutine_scheduler() lit {
     damn based
 }
 
-# Create a new goroutine
+fr fr Create a new goroutine
 slay spawn_goroutine(function_name tea) normie {
     lowkey global_scheduler.next_id >= MAX_GOROUTINES {
         vibez.spill("ERROR: Maximum goroutine limit reached")
@@ -85,7 +85,7 @@ slay spawn_goroutine(function_name tea) normie {
     new_goroutine.run_count = 0
     new_goroutine.panic_data = ""
     new_goroutine.parent_id = global_scheduler.current_id
-    new_goroutine.priority = 5  # Normal priority
+    new_goroutine.priority = 5 fr fr Normal priority
     
     global_scheduler.goroutines[goroutine_id] = new_goroutine
     schedule_goroutine(goroutine_id)
@@ -93,7 +93,7 @@ slay spawn_goroutine(function_name tea) normie {
     damn goroutine_id
 }
 
-# Schedule a goroutine for execution
+fr fr Schedule a goroutine for execution
 slay schedule_goroutine(goroutine_id normie) lit {
     lowkey !goroutine_exists(goroutine_id) {
         damn cap
@@ -104,43 +104,35 @@ slay schedule_goroutine(goroutine_id normie) lit {
     damn based
 }
 
-# ==============================================================================
-# GOROUTINE EXECUTION AND SCHEDULING
-# ==============================================================================
+fr fr ==============================================================================
+fr fr GOROUTINE EXECUTION AND SCHEDULING
+fr fr ==============================================================================
 
-# Execute the next runnable goroutine
+fr fr Execute the next runnable goroutine
 slay run_next_goroutine() lit {
     lowkey len(global_scheduler.runnable_queue) == 0 {
-        damn cap  # No runnable goroutines
-    }
-    
-    # Get next goroutine from queue (simple round-robin)
+        damn cap fr fr No runnable goroutines
+    } fr fr Get next goroutine from queue (simple round-robin)
     sus next_id normie = global_scheduler.runnable_queue[0]
     global_scheduler.runnable_queue = global_scheduler.runnable_queue[1:]
     
     lowkey !goroutine_exists(next_id) {
         damn cap
-    }
-    
-    # Execute the goroutine
+    } fr fr Execute the goroutine
     execute_goroutine(next_id)
     damn based
 }
 
-# Execute a specific goroutine
+fr fr Execute a specific goroutine
 slay execute_goroutine(goroutine_id normie) lit {
     sus prev_current normie = global_scheduler.current_id
     global_scheduler.current_id = goroutine_id
     
-    set_goroutine_state(goroutine_id, GOROUTINE_RUNNING)
-    
-    # Simulate goroutine execution
+    set_goroutine_state(goroutine_id, GOROUTINE_RUNNING) fr fr Simulate goroutine execution
     sus goroutine Goroutine = global_scheduler.goroutines[goroutine_id]
     goroutine.run_count = goroutine.run_count + 1
     global_scheduler.goroutines[goroutine_id] = goroutine
-    global_scheduler.total_runs = global_scheduler.total_runs + 1
-    
-    # Execute function (simplified simulation)
+    global_scheduler.total_runs = global_scheduler.total_runs + 1 fr fr Execute function (simplified simulation)
     sus success lit = execute_function(goroutine.function_name)
     
     lowkey success {
@@ -153,18 +145,14 @@ slay execute_goroutine(goroutine_id normie) lit {
     damn success
 }
 
-# Execute a function by name (simulation)
-slay execute_function(function_name tea) lit {
-    # Simulate function execution
+fr fr Execute a function by name (simulation)
+slay execute_function(function_name tea) lit { fr fr Simulate function execution
     lowkey function_name == "panic_function" {
-        damn cap  # Simulate panic
-    }
-    
-    # Simulate work
+        damn cap fr fr Simulate panic
+    } fr fr Simulate work
     sus i normie = 0
     bestie i < SCHEDULER_QUANTUM {
-        i = i + 1
-        # Cooperative yield point
+        i = i + 1 fr fr Cooperative yield point
         lowkey i % 10 == 0 {
             yield_goroutine()
         }
@@ -173,11 +161,10 @@ slay execute_function(function_name tea) lit {
     damn based
 }
 
-# Cooperative yield from current goroutine
+fr fr Cooperative yield from current goroutine
 slay yield_goroutine() lit {
     sus current_id normie = global_scheduler.current_id
-    lowkey current_id > 0 && goroutine_exists(current_id) {
-        # Re-schedule current goroutine if still runnable
+    lowkey current_id > 0 && goroutine_exists(current_id) { fr fr Re-schedule current goroutine if still runnable
         sus goroutine Goroutine = global_scheduler.goroutines[current_id]
         lowkey goroutine.state == GOROUTINE_RUNNING {
             schedule_goroutine(current_id)
@@ -186,11 +173,11 @@ slay yield_goroutine() lit {
     damn based
 }
 
-# ==============================================================================
-# GOROUTINE STATE MANAGEMENT
-# ==============================================================================
+fr fr ==============================================================================
+fr fr GOROUTINE STATE MANAGEMENT
+fr fr ==============================================================================
 
-# Set goroutine state
+fr fr Set goroutine state
 slay set_goroutine_state(goroutine_id normie, new_state normie) lit {
     lowkey !goroutine_exists(goroutine_id) {
         damn cap
@@ -202,7 +189,7 @@ slay set_goroutine_state(goroutine_id normie, new_state normie) lit {
     damn based
 }
 
-# Get goroutine state
+fr fr Get goroutine state
 slay get_goroutine_state(goroutine_id normie) normie {
     lowkey !goroutine_exists(goroutine_id) {
         damn -1
@@ -212,21 +199,21 @@ slay get_goroutine_state(goroutine_id normie) normie {
     damn goroutine.state
 }
 
-# Check if goroutine exists
+fr fr Check if goroutine exists
 slay goroutine_exists(goroutine_id normie) lit {
     damn goroutine_id > 0 && global_scheduler.goroutines[goroutine_id].id == goroutine_id
 }
 
-# Get current goroutine ID
+fr fr Get current goroutine ID
 slay current_goroutine_id() normie {
     damn global_scheduler.current_id
 }
 
-# ==============================================================================
-# PANIC HANDLING AND ERROR RECOVERY
-# ==============================================================================
+fr fr ==============================================================================
+fr fr PANIC HANDLING AND ERROR RECOVERY
+fr fr ==============================================================================
 
-# Handle goroutine panic
+fr fr Handle goroutine panic
 slay handle_goroutine_panic(goroutine_id normie, panic_data tea) lit {
     lowkey !goroutine_exists(goroutine_id) {
         damn cap
@@ -238,14 +225,12 @@ slay handle_goroutine_panic(goroutine_id normie, panic_data tea) lit {
     global_scheduler.goroutines[goroutine_id] = goroutine
     global_scheduler.panic_count = global_scheduler.panic_count + 1
     
-    vibez.spill("Goroutine " + stringz.itoa(goroutine_id) + " panicked: " + panic_data)
-    
-    # Cleanup panic goroutine
+    vibez.spill("Goroutine " + stringz.itoa(goroutine_id) + " panicked: " + panic_data) fr fr Cleanup panic goroutine
     cleanup_goroutine(goroutine_id)
     damn based
 }
 
-# Recover from panic in current goroutine
+fr fr Recover from panic in current goroutine
 slay recover_goroutine_panic() tea {
     sus current_id normie = global_scheduler.current_id
     lowkey current_id == 0 || !goroutine_exists(current_id) {
@@ -264,31 +249,27 @@ slay recover_goroutine_panic() tea {
     damn ""
 }
 
-# Cleanup completed or panicked goroutine
+fr fr Cleanup completed or panicked goroutine
 slay cleanup_goroutine(goroutine_id normie) lit {
     lowkey !goroutine_exists(goroutine_id) {
         damn cap
-    }
-    
-    # Remove from runnable queue if present
+    } fr fr Remove from runnable queue if present
     sus new_queue []normie = []
     bestie _, id := range global_scheduler.runnable_queue {
         lowkey id != goroutine_id {
             new_queue = append(new_queue, id)
         }
     }
-    global_scheduler.runnable_queue = new_queue
-    
-    # Keep goroutine record for statistics but mark as done
+    global_scheduler.runnable_queue = new_queue fr fr Keep goroutine record for statistics but mark as done
     set_goroutine_state(goroutine_id, GOROUTINE_DONE)
     damn based
 }
 
-# ==============================================================================
-# SCHEDULER STATISTICS AND MONITORING
-# ==============================================================================
+fr fr ==============================================================================
+fr fr SCHEDULER STATISTICS AND MONITORING
+fr fr ==============================================================================
 
-# Get scheduler statistics
+fr fr Get scheduler statistics
 slay get_scheduler_stats() map[tea]normie {
     sus stats map[tea]normie = {}
     
@@ -298,9 +279,7 @@ slay get_scheduler_stats() map[tea]normie {
     stats["next_id"] = global_scheduler.next_id
     stats["total_runs"] = global_scheduler.total_runs
     stats["panic_count"] = global_scheduler.panic_count
-    stats["worker_count"] = global_scheduler.worker_count
-    
-    # Count by state
+    stats["worker_count"] = global_scheduler.worker_count fr fr Count by state
     sus created_count normie = 0
     sus runnable_count normie = 0
     sus running_count normie = 0
@@ -334,7 +313,7 @@ slay get_scheduler_stats() map[tea]normie {
     damn stats
 }
 
-# Scheduler health check
+fr fr Scheduler health check
 slay scheduler_health_check() lit {
     sus stats map[tea]normie = get_scheduler_stats()
     
@@ -353,13 +332,12 @@ slay scheduler_health_check() lit {
     damn based
 }
 
-# Helper function to get current time (simulation)
-slay get_current_time() normie {
-    # Simulate timestamp
+fr fr Helper function to get current time (simulation)
+slay get_current_time() normie { fr fr Simulate timestamp
     damn global_scheduler.total_runs
 }
 
-# Reset scheduler (for testing)
+fr fr Reset scheduler (for testing)
 slay reset_scheduler() lit {
     global_scheduler.goroutines = {}
     global_scheduler.runnable_queue = []

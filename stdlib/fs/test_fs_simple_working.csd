@@ -1,18 +1,14 @@
-# CURSED Filesystem Module - Simple Working Test
-# Production-ready filesystem module testing
+fr fr CURSED Filesystem Module - Simple Working Test
+fr fr Production-ready filesystem module testing
 
-# Import the new filesystem module
+fr fr Import the new filesystem module
 yeet "fs"
 
-# Test all major filesystem functions
+fr fr Test all major filesystem functions
 slay test_filesystem_comprehensive() {
     vibez.spill("🚀 Testing CURSED Filesystem Module (Production Version)")
-    vibez.spill("===========================================================")
-    
-    # Test basic file operations
-    vibez.spill("Testing basic file operations...")
-    
-    # Test file writing and reading
+    vibez.spill("===========================================================") fr fr Test basic file operations
+    vibez.spill("Testing basic file operations...") fr fr Test file writing and reading
     sus test_file tea = "test_example.txt"
     sus test_content tea = "Hello, CURSED filesystem!"
     
@@ -30,9 +26,7 @@ slay test_filesystem_comprehensive() {
     
     vibez.spill("✓ Testing get_file_size...")
     sus size thicc = get_file_size(test_file)
-    vibez.spill("  get_file_size result: " + tea(size))
-    
-    # Test directory operations
+    vibez.spill("  get_file_size result: " + tea(size)) fr fr Test directory operations
     vibez.spill("\nTesting directory operations...")
     
     sus test_dir tea = "test_directory"
@@ -46,9 +40,7 @@ slay test_filesystem_comprehensive() {
     
     vibez.spill("✓ Testing is_file...")
     sus is_file_result lit = is_file(test_file)
-    vibez.spill("  is_file result: " + tea(is_file_result))
-    
-    # Test path utilities
+    vibez.spill("  is_file result: " + tea(is_file_result)) fr fr Test path utilities
     vibez.spill("\nTesting path utilities...")
     
     vibez.spill("✓ Testing join_path...")
@@ -61,9 +53,7 @@ slay test_filesystem_comprehensive() {
     
     vibez.spill("✓ Testing get_extension...")
     sus extension tea = get_extension("file.txt")
-    vibez.spill("  get_extension result: '" + extension + "'")
-    
-    # Test file metadata
+    vibez.spill("  get_extension result: '" + extension + "'") fr fr Test file metadata
     vibez.spill("\nTesting file metadata...")
     
     vibez.spill("✓ Testing get_file_info...")
@@ -80,9 +70,7 @@ slay test_filesystem_comprehensive() {
     vibez.spill("  Metadata path: '" + metadata.path + "'")
     vibez.spill("  Metadata size: " + tea(metadata.size))
     vibez.spill("  Is file: " + tea(metadata.is_file))
-    vibez.spill("  Is directory: " + tea(metadata.is_dir))
-    
-    # Test timestamps
+    vibez.spill("  Is directory: " + tea(metadata.is_dir)) fr fr Test timestamps
     vibez.spill("\nTesting timestamps...")
     
     vibez.spill("✓ Testing get_created_time...")
@@ -95,9 +83,7 @@ slay test_filesystem_comprehensive() {
     
     vibez.spill("✓ Testing get_accessed_time...")
     sus accessed_time thicc = get_accessed_time(test_file)
-    vibez.spill("  Accessed time: " + tea(accessed_time))
-    
-    # Test permissions
+    vibez.spill("  Accessed time: " + tea(accessed_time)) fr fr Test permissions
     vibez.spill("\nTesting permissions...")
     
     vibez.spill("✓ Testing get_permissions...")
@@ -114,9 +100,7 @@ slay test_filesystem_comprehensive() {
     
     vibez.spill("✓ Testing is_executable...")
     sus executable lit = is_executable(test_file)
-    vibez.spill("  Is executable: " + tea(executable))
-    
-    # Test file operations
+    vibez.spill("  Is executable: " + tea(executable)) fr fr Test file operations
     vibez.spill("\nTesting file operations...")
     
     vibez.spill("✓ Testing copy_file...")
@@ -129,9 +113,7 @@ slay test_filesystem_comprehensive() {
     
     vibez.spill("✓ Testing append_file...")
     sus append_result lit = append_file(test_file, " - Appended content")
-    vibez.spill("  append_file result: " + tea(append_result))
-    
-    # Test special file operations
+    vibez.spill("  append_file result: " + tea(append_result)) fr fr Test special file operations
     vibez.spill("\nTesting special file operations...")
     
     vibez.spill("✓ Testing is_hidden...")
@@ -144,9 +126,7 @@ slay test_filesystem_comprehensive() {
     
     vibez.spill("✓ Testing is_empty_file...")
     sus empty_file lit = is_empty_file("nonexistent.txt")
-    vibez.spill("  is_empty_file result: " + tea(empty_file))
-    
-    # Test file locking
+    vibez.spill("  is_empty_file result: " + tea(empty_file)) fr fr Test file locking
     vibez.spill("\nTesting file locking...")
     
     vibez.spill("✓ Testing lock_file...")
@@ -159,9 +139,7 @@ slay test_filesystem_comprehensive() {
     
     vibez.spill("✓ Testing unlock_file...")
     sus unlock_result lit = unlock_file(test_file)
-    vibez.spill("  unlock_file result: " + tea(unlock_result))
-    
-    # Test filesystem utilities
+    vibez.spill("  unlock_file result: " + tea(unlock_result)) fr fr Test filesystem utilities
     vibez.spill("\nTesting filesystem utilities...")
     
     vibez.spill("✓ Testing get_filesystem_stats...")
@@ -169,9 +147,7 @@ slay test_filesystem_comprehensive() {
     vibez.spill("  Files: " + tea(stats["files"]))
     vibez.spill("  Directories: " + tea(stats["directories"]))
     vibez.spill("  Metadata entries: " + tea(stats["metadata_entries"]))
-    vibez.spill("  Open handles: " + tea(stats["open_handles"]))
-    
-    # Test error handling
+    vibez.spill("  Open handles: " + tea(stats["open_handles"])) fr fr Test error handling
     vibez.spill("\nTesting error handling...")
     
     vibez.spill("✓ Testing operations on non-existent files...")
@@ -182,9 +158,7 @@ slay test_filesystem_comprehensive() {
     vibez.spill("  file_exists on nonexistent: " + tea(nonexistent_exists))
     
     sus nonexistent_size thicc = get_file_size("nonexistent.txt")
-    vibez.spill("  get_file_size on nonexistent: " + tea(nonexistent_size))
-    
-    # Clean up
+    vibez.spill("  get_file_size on nonexistent: " + tea(nonexistent_size)) fr fr Clean up
     vibez.spill("\nCleaning up...")
     
     vibez.spill("✓ Testing delete_file...")
@@ -208,5 +182,5 @@ slay test_filesystem_comprehensive() {
     vibez.spill("✅ Ready for both interpretation and compilation modes")
 }
 
-# Execute the comprehensive filesystem test
+fr fr Execute the comprehensive filesystem test
 test_filesystem_comprehensive()

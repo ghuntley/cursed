@@ -1,10 +1,10 @@
 yeet "testz"
 yeet "database/mod_simple"
 
-# Test database connection management
+fr fr Test database connection management
 test_start("Database Connection Management")
 
-# Test PostgreSQL configuration
+fr fr Test PostgreSQL configuration
 sus pg_config DatabaseConfig = create_database_config(
     DB_POSTGRES,
     "localhost",
@@ -21,7 +21,7 @@ assert_eq_string(pg_config.database, "testdb")
 
 print_test_summary()
 
-# Test MySQL configuration  
+fr fr Test MySQL configuration  
 test_start("MySQL Configuration")
 
 sus mysql_config DatabaseConfig = create_database_config(
@@ -39,7 +39,7 @@ assert_eq_int(mysql_config.port, 3306)
 
 print_test_summary()
 
-# Test SQLite configuration
+fr fr Test SQLite configuration
 test_start("SQLite Configuration")
 
 sus sqlite_config DatabaseConfig = create_database_config(
@@ -56,40 +56,40 @@ assert_eq_string(sqlite_config.database, "/tmp/test.db")
 
 print_test_summary()
 
-# Test connection establishment
+fr fr Test connection establishment
 test_start("Database Connection Establishment")
 
-# Test PostgreSQL connection
+fr fr Test PostgreSQL connection
 sus pg_conn tea = connect_database(pg_config)
 assert_eq_string(pg_conn, "pg_conn_12345")
 
-# Test MySQL connection
+fr fr Test MySQL connection
 sus mysql_conn tea = connect_database(mysql_config)
 assert_eq_string(mysql_conn, "mysql_conn_67890")
 
-# Test SQLite connection
+fr fr Test SQLite connection
 sus sqlite_conn tea = connect_sqlite("/tmp/test.db")
 assert_eq_string(sqlite_conn, "sqlite_conn_54321")
 
 print_test_summary()
 
-# Test query execution
+fr fr Test query execution
 test_start("SQL Query Execution")
 
 sus test_conn tea = connect_database(pg_config)
 
-# Test SELECT query
+fr fr Test SELECT query
 sus select_result QueryResult = execute_query(test_conn, "SELECT * FROM users")
 assert_true(select_result.success)
 assert_eq_int(select_result.row_count, 1)
 
-# Test INSERT query
+fr fr Test INSERT query
 sus insert_result QueryResult = execute_query(test_conn, "INSERT INTO users (name, email) VALUES ('John', 'john@example.com')")
 assert_true(insert_result.success)
 
 print_test_summary()
 
-# Test connection cleanup
+fr fr Test connection cleanup
 test_start("Connection Cleanup")
 
 sus close_success lit = close_connection(test_conn)

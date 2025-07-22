@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "stringz"
 
-# Test basic string operations that are known to work
+fr fr Test basic string operations that are known to work
 test_start("Basic Contains")
 assert_true(Contains("hello world", "world"))
 assert_false(Contains("hello world", "xyz"))

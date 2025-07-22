@@ -1,21 +1,19 @@
-# String Simple Module - Core String Operations
-# Pure CURSED implementation with comprehensive string functionality
-# FFI-free implementation for essential string operations
+fr fr String Simple Module - Core String Operations
+fr fr Pure CURSED implementation with comprehensive string functionality
+fr fr FFI-free implementation for essential string operations
 
 yeet "testz"
 yeet "error_core"
 
-# ================================
-# Basic String Operations
-# ================================
+fr fr ================================
+fr fr Basic String Operations
+fr fr ================================
 
-slay string_length(s tea) normie {
-    # Pure CURSED string length calculation
+slay string_length(s tea) normie { fr fr Pure CURSED string length calculation
     sus length normie = 0
     sus bytes []normie = string_to_bytes(s)
     
-    bestie i := 0; i < len(bytes); i++ {
-        # Count UTF-8 characters (not bytes)
+    bestie i := 0; i < len(bytes); i++ { fr fr Count UTF-8 characters (not bytes)
         lowkey is_utf8_start_byte(bytes[i]) {
             length = length + 1
         }
@@ -33,18 +31,13 @@ slay string_empty(s tea) lit {
     damn string_length(s) == 0
 }
 
-slay string_concat(a tea, b tea) tea {
-    # Pure CURSED string concatenation
+slay string_concat(a tea, b tea) tea { fr fr Pure CURSED string concatenation
     sus bytes_a []normie = string_to_bytes(a)
     sus bytes_b []normie = string_to_bytes(b)
-    sus result_bytes []normie = []
-    
-    # Copy bytes from first string
+    sus result_bytes []normie = [] fr fr Copy bytes from first string
     bestie i := 0; i < len(bytes_a); i++ {
         result_bytes = append(result_bytes, bytes_a[i])
-    }
-    
-    # Copy bytes from second string
+    } fr fr Copy bytes from second string
     bestie i := 0; i < len(bytes_b); i++ {
         result_bytes = append(result_bytes, bytes_b[i])
     }
@@ -79,9 +72,9 @@ slay string_repeat(s tea, count normie) tea {
     damn result
 }
 
-# ================================
-# String Comparison Operations
-# ================================
+fr fr ================================
+fr fr String Comparison Operations
+fr fr ================================
 
 slay string_equal(a tea, b tea) lit {
     sus bytes_a []normie = string_to_bytes(a)
@@ -144,9 +137,9 @@ slay string_compare_ignore_case(a tea, b tea) normie {
     damn string_compare(lower_a, lower_b)
 }
 
-# ================================
-# String Search Operations
-# ================================
+fr fr ================================
+fr fr String Search Operations
+fr fr ================================
 
 slay string_contains(haystack tea, needle tea) lit {
     damn string_index_of(haystack, needle) >= 0
@@ -243,14 +236,12 @@ slay string_count(haystack tea, needle tea) normie {
     damn count
 }
 
-# ================================
-# String Manipulation Operations
-# ================================
+fr fr ================================
+fr fr String Manipulation Operations
+fr fr ================================
 
 slay string_slice(s tea, start normie, end normie) tea {
-    sus s_len normie = string_length(s)
-    
-    # Normalize negative indices and bounds
+    sus s_len normie = string_length(s) fr fr Normalize negative indices and bounds
     lowkey start < 0 {
         start = 0
     }
@@ -264,9 +255,7 @@ slay string_slice(s tea, start normie, end normie) tea {
     sus bytes []normie = string_to_bytes(s)
     sus result_bytes []normie = []
     sus char_index normie = 0
-    sus byte_index normie = 0
-    
-    # Find start position in bytes
+    sus byte_index normie = 0 fr fr Find start position in bytes
     bestie byte_index < len(bytes) && char_index < start {
         lowkey is_utf8_start_byte(bytes[byte_index]) {
             char_index = char_index + 1
@@ -274,9 +263,7 @@ slay string_slice(s tea, start normie, end normie) tea {
         byte_index = byte_index + 1
     }
     
-    sus start_byte normie = byte_index
-    
-    # Find end position in bytes
+    sus start_byte normie = byte_index fr fr Find end position in bytes
     bestie byte_index < len(bytes) && char_index < end {
         lowkey is_utf8_start_byte(bytes[byte_index]) {
             char_index = char_index + 1
@@ -284,9 +271,7 @@ slay string_slice(s tea, start normie, end normie) tea {
         byte_index = byte_index + 1
     }
     
-    sus end_byte normie = byte_index
-    
-    # Extract bytes for the slice
+    sus end_byte normie = byte_index fr fr Extract bytes for the slice
     bestie i := start_byte; i < end_byte && i < len(bytes); i++ {
         result_bytes = append(result_bytes, bytes[i])
     }
@@ -312,9 +297,7 @@ slay string_right(s tea, length normie) tea {
 
 slay string_reverse(s tea) tea {
     sus chars []normie = string_to_codepoints(s)
-    sus reversed_chars []normie = []
-    
-    # Reverse the codepoint array
+    sus reversed_chars []normie = [] fr fr Reverse the codepoint array
     bestie i := len(chars) - 1; i >= 0; i-- {
         reversed_chars = append(reversed_chars, chars[i])
     }
@@ -322,9 +305,9 @@ slay string_reverse(s tea) tea {
     damn codepoints_to_string(reversed_chars)
 }
 
-# ================================
-# Case Conversion Operations
-# ================================
+fr fr ================================
+fr fr Case Conversion Operations
+fr fr ================================
 
 slay string_to_upper(s tea) tea {
     sus codepoints []normie = string_to_codepoints(s)
@@ -358,8 +341,7 @@ slay string_to_title(s tea) tea {
             } else {
                 codepoints[i] = char_to_lower(codepoints[i])
             }
-        } else {
-            # Non-letter characters reset capitalization for next letter
+        } else { fr fr Non-letter characters reset capitalization for next letter
             capitalize_next = based
         }
     }
@@ -378,9 +360,9 @@ slay string_capitalize(s tea) tea {
     damn string_concat(string_to_upper(first_char), string_to_lower(rest))
 }
 
-# ================================
-# Whitespace Operations
-# ================================
+fr fr ================================
+fr fr Whitespace Operations
+fr fr ================================
 
 slay string_trim(s tea) tea {
     sus left_trimmed tea = string_trim_left(s)
@@ -431,13 +413,12 @@ slay string_trim_space(s tea) tea {
     damn string_trim(s)
 }
 
-# ================================
-# String Splitting and Joining
-# ================================
+fr fr ================================
+fr fr String Splitting and Joining
+fr fr ================================
 
 slay string_split(s tea, separator tea) []tea {
-    lowkey string_empty(separator) {
-        # Split into individual characters
+    lowkey string_empty(separator) { fr fr Split into individual characters
         sus result []tea = []
         sus length normie = string_length(s)
         bestie i := 0; i < length; i++ {
@@ -456,33 +437,27 @@ slay string_split(s tea, separator tea) []tea {
         sus remaining tea = string_slice(s, pos, string_length(s))
         sus sep_index normie = string_index_of(remaining, separator)
         
-        lowkey sep_index >= 0 {
-            # Found separator
+        lowkey sep_index >= 0 { fr fr Found separator
             sus part tea = string_slice(remaining, 0, sep_index)
             current_part = string_concat(current_part, part)
             parts = append(parts, current_part)
             current_part = ""
             pos = pos + sep_index + sep_len
-        } else {
-            # No more separators, add rest of string
+        } else { fr fr No more separators, add rest of string
             current_part = string_concat(current_part, remaining)
             break
         }
-    }
-    
-    # Add the last part
+    } fr fr Add the last part
     parts = append(parts, current_part)
     damn parts
 }
 
-slay string_split_lines(s tea) []tea {
-    # Split on various line endings
+slay string_split_lines(s tea) []tea { fr fr Split on various line endings
     sus with_lf []tea = string_split(s, "\n")
     sus result []tea = []
     
     bestie i := 0; i < len(with_lf); i++ {
-        sus line tea = with_lf[i]
-        # Remove trailing \r if present
+        sus line tea = with_lf[i] fr fr Remove trailing \r if present
         lowkey string_ends_with(line, "\r") {
             line = string_slice(line, 0, string_length(line) - 1)
         }
@@ -512,9 +487,7 @@ slay string_split_whitespace(s tea) []tea {
             sus char_str tea = codepoint_to_string(codepoints[i])
             current_part = string_concat(current_part, char_str)
         }
-    }
-    
-    # Add the last part
+    } fr fr Add the last part
     lowkey !string_empty(current_part) {
         parts = append(parts, current_part)
     }
@@ -540,9 +513,9 @@ slay string_join(parts []tea, separator tea) tea {
     damn result
 }
 
-# ================================
-# String Replacement Operations
-# ================================
+fr fr ================================
+fr fr String Replacement Operations
+fr fr ================================
 
 slay string_replace(s tea, old tea, new tea) tea {
     lowkey string_empty(old) {
@@ -581,9 +554,9 @@ slay string_replace_last(s tea, old tea, new tea) tea {
     damn string_concat_many([before, new, after])
 }
 
-# ================================
-# String Formatting Operations
-# ================================
+fr fr ================================
+fr fr String Formatting Operations
+fr fr ================================
 
 slay string_format_int(value normie) tea {
     lowkey value == 0 {
@@ -598,14 +571,12 @@ slay string_format_int(value normie) tea {
     sus digits []normie = []
     bestie value > 0 {
         sus digit normie = value % 10
-        digits = append(digits, digit + 48)  # Convert to ASCII
+        digits = append(digits, digit + 48) fr fr Convert to ASCII
         value = value / 10
-    }
-    
-    # Reverse digits
+    } fr fr Reverse digits
     sus result_bytes []normie = []
     lowkey is_negative {
-        result_bytes = append(result_bytes, 45)  # '-' character
+        result_bytes = append(result_bytes, 45) fr fr '-' character
     }
     
     bestie i := len(digits) - 1; i >= 0; i-- {
@@ -623,8 +594,7 @@ slay string_format_bool(value lit) tea {
     }
 }
 
-slay string_format_float(value meal) tea {
-    # Simple float formatting (would be more complex in real implementation)
+slay string_format_float(value meal) tea { fr fr Enhanced float formatting implementation
     sus int_part normie = normie(value)
     sus frac_part meal = value - meal(int_part)
     
@@ -634,13 +604,27 @@ slay string_format_float(value meal) tea {
         damn string_concat(int_str, ".0")
     }
     
-    # Simple fractional part (would need proper implementation)
-    damn string_concat(int_str, ".5")  # Placeholder
+    fr fr Convert fractional part to decimal representation
+    sus frac_abs meal = frac_part
+    lowkey frac_abs < 0.0 {
+        frac_abs = -frac_abs
+    }
+    
+    fr fr Simple 2-decimal precision implementation
+    sus frac_scaled normie = normie(frac_abs * 100.0)
+    sus frac_str tea = string_format_int(frac_scaled)
+    
+    fr fr Pad with zeros if needed
+    lowkey frac_scaled < 10 {
+        frac_str = string_concat("0", frac_str)
+    }
+    
+    damn string_concat(string_concat(int_str, "."), frac_str)
 }
 
-# ================================
-# String Padding Operations
-# ================================
+fr fr ================================
+fr fr String Padding Operations
+fr fr ================================
 
 slay string_pad_left(s tea, total_length normie, pad_char tea) tea {
     sus current_length normie = string_length(s)
@@ -680,27 +664,26 @@ slay string_pad_center(s tea, total_length normie, pad_char tea) tea {
     damn string_concat_many([left_padding, s, right_padding])
 }
 
-# ================================
-# Character Classification Helpers
-# ================================
+fr fr ================================
+fr fr Character Classification Helpers
+fr fr ================================
 
-slay char_is_letter(codepoint normie) lit {
-    # ASCII letters
-    damn (codepoint >= 65 && codepoint <= 90) ||   # A-Z
-         (codepoint >= 97 && codepoint <= 122)      # a-z
+slay char_is_letter(codepoint normie) lit { fr fr ASCII letters
+    damn (codepoint >= 65 && codepoint <= 90) || fr fr A-Z
+         (codepoint >= 97 && codepoint <= 122) fr fr a-z
 }
 
 slay char_is_digit(codepoint normie) lit {
-    damn (codepoint >= 48 && codepoint <= 57)      # 0-9
+    damn (codepoint >= 48 && codepoint <= 57) fr fr 0-9
 }
 
 slay char_is_whitespace(codepoint normie) lit {
-    damn codepoint == 32 ||    # Space
-         codepoint == 9 ||     # Tab
-         codepoint == 10 ||    # Line feed
-         codepoint == 13 ||    # Carriage return
-         codepoint == 11 ||    # Vertical tab
-         codepoint == 12       # Form feed
+    damn codepoint == 32 || fr fr Space
+         codepoint == 9 || fr fr Tab
+         codepoint == 10 || fr fr Line feed
+         codepoint == 13 || fr fr Carriage return
+         codepoint == 11 || fr fr Vertical tab
+         codepoint == 12 fr fr Form feed
 }
 
 slay char_is_alphanumeric(codepoint normie) lit {
@@ -708,34 +691,30 @@ slay char_is_alphanumeric(codepoint normie) lit {
 }
 
 slay char_to_upper(codepoint normie) normie {
-    lowkey (codepoint >= 97 && codepoint <= 122) {  # a-z
+    lowkey (codepoint >= 97 && codepoint <= 122) { fr fr a-z
         damn codepoint - 32
     }
     damn codepoint
 }
 
 slay char_to_lower(codepoint normie) normie {
-    lowkey (codepoint >= 65 && codepoint <= 90) {   # A-Z
+    lowkey (codepoint >= 65 && codepoint <= 90) { fr fr A-Z
         damn codepoint + 32
     }
     damn codepoint
 }
 
-# ================================
-# UTF-8 Helper Functions
-# ================================
+fr fr ================================
+fr fr UTF-8 Helper Functions
+fr fr ================================
 
-slay is_utf8_start_byte(byte normie) lit {
-    # ASCII or UTF-8 start byte (not continuation byte)
+slay is_utf8_start_byte(byte normie) lit { fr fr ASCII or UTF-8 start byte (not continuation byte)
     damn (byte & 0x80) == 0 || (byte & 0xC0) == 0xC0
 }
 
-slay string_to_bytes(s tea) []normie {
-    # Pure CURSED UTF-8 string to byte array conversion
+slay string_to_bytes(s tea) []normie { fr fr Pure CURSED UTF-8 string to byte array conversion
     sus result []normie = []
-    sus i normie = 0
-    
-    # Iterate through string characters (runtime-level iteration)
+    sus i normie = 0 fr fr Iterate through string characters (runtime-level iteration)
     bestie i < runtime_string_byte_length(s) {
         sus byte_val normie = runtime_string_get_byte(s, i)
         result = append(result, byte_val)
@@ -745,13 +724,10 @@ slay string_to_bytes(s tea) []normie {
     damn result
 }
 
-slay bytes_to_string(bytes []normie) tea {
-    # Pure CURSED byte array to UTF-8 string conversion
+slay bytes_to_string(bytes []normie) tea { fr fr Pure CURSED byte array to UTF-8 string conversion
     lowkey len(bytes) == 0 {
         damn ""
-    }
-    
-    # Use runtime string builder for efficient construction
+    } fr fr Use runtime string builder for efficient construction
     sus builder normie = runtime_string_builder_new()
     
     bestie i := 0; i < len(bytes); i++ {
@@ -763,8 +739,7 @@ slay bytes_to_string(bytes []normie) tea {
     damn result
 }
 
-slay string_to_codepoints(s tea) []normie {
-    # Pure CURSED UTF-8 string to Unicode codepoint array conversion
+slay string_to_codepoints(s tea) []normie { fr fr Pure CURSED UTF-8 string to Unicode codepoint array conversion
     sus result []normie = []
     sus bytes []normie = string_to_bytes(s)
     sus i normie = 0
@@ -772,22 +747,17 @@ slay string_to_codepoints(s tea) []normie {
     bestie i < len(bytes) {
         sus byte_val normie = bytes[i]
         sus codepoint normie = 0
-        sus bytes_needed normie = 1
-        
-        # Determine UTF-8 sequence length and decode
-        lowkey (byte_val & 0x80) == 0 {
-            # ASCII character (0xxxxxxx)
+        sus bytes_needed normie = 1 fr fr Determine UTF-8 sequence length and decode
+        lowkey (byte_val & 0x80) == 0 { fr fr ASCII character (0xxxxxxx)
             codepoint = byte_val
             bytes_needed = 1
-        } else lowkey (byte_val & 0xE0) == 0xC0 {
-            # 2-byte sequence (110xxxxx 10xxxxxx)
+        } else lowkey (byte_val & 0xE0) == 0xC0 { fr fr 2-byte sequence (110xxxxx 10xxxxxx)
             codepoint = (byte_val & 0x1F) << 6
             lowkey i + 1 < len(bytes) {
                 codepoint = codepoint | (bytes[i + 1] & 0x3F)
             }
             bytes_needed = 2
-        } else lowkey (byte_val & 0xF0) == 0xE0 {
-            # 3-byte sequence (1110xxxx 10xxxxxx 10xxxxxx)
+        } else lowkey (byte_val & 0xF0) == 0xE0 { fr fr 3-byte sequence (1110xxxx 10xxxxxx 10xxxxxx)
             codepoint = (byte_val & 0x0F) << 12
             lowkey i + 1 < len(bytes) {
                 codepoint = codepoint | ((bytes[i + 1] & 0x3F) << 6)
@@ -796,8 +766,7 @@ slay string_to_codepoints(s tea) []normie {
                 codepoint = codepoint | (bytes[i + 2] & 0x3F)
             }
             bytes_needed = 3
-        } else lowkey (byte_val & 0xF8) == 0xF0 {
-            # 4-byte sequence (11110xxx 10xxxxxx 10xxxxxx 10xxxxxx)
+        } else lowkey (byte_val & 0xF8) == 0xF0 { fr fr 4-byte sequence (11110xxx 10xxxxxx 10xxxxxx 10xxxxxx)
             codepoint = (byte_val & 0x07) << 18
             lowkey i + 1 < len(bytes) {
                 codepoint = codepoint | ((bytes[i + 1] & 0x3F) << 12)
@@ -809,8 +778,7 @@ slay string_to_codepoints(s tea) []normie {
                 codepoint = codepoint | (bytes[i + 3] & 0x3F)
             }
             bytes_needed = 4
-        } else {
-            # Invalid UTF-8 sequence, use replacement character
+        } else { fr fr Invalid UTF-8 sequence, use replacement character
             codepoint = 0xFFFD
             bytes_needed = 1
         }
@@ -822,8 +790,7 @@ slay string_to_codepoints(s tea) []normie {
     damn result
 }
 
-slay codepoints_to_string(codepoints []normie) tea {
-    # Pure CURSED Unicode codepoint array to UTF-8 string conversion
+slay codepoints_to_string(codepoints []normie) tea { fr fr Pure CURSED Unicode codepoint array to UTF-8 string conversion
     lowkey len(codepoints) == 0 {
         damn ""
     }
@@ -831,29 +798,22 @@ slay codepoints_to_string(codepoints []normie) tea {
     sus result_bytes []normie = []
     
     bestie i := 0; i < len(codepoints); i++ {
-        sus codepoint normie = codepoints[i]
-        
-        # Encode codepoint as UTF-8 bytes
-        lowkey codepoint <= 0x7F {
-            # 1-byte sequence (ASCII)
+        sus codepoint normie = codepoints[i] fr fr Encode codepoint as UTF-8 bytes
+        lowkey codepoint <= 0x7F { fr fr 1-byte sequence (ASCII)
             result_bytes = append(result_bytes, codepoint)
-        } else lowkey codepoint <= 0x7FF {
-            # 2-byte sequence
+        } else lowkey codepoint <= 0x7FF { fr fr 2-byte sequence
             result_bytes = append(result_bytes, 0xC0 | (codepoint >> 6))
             result_bytes = append(result_bytes, 0x80 | (codepoint & 0x3F))
-        } else lowkey codepoint <= 0xFFFF {
-            # 3-byte sequence
+        } else lowkey codepoint <= 0xFFFF { fr fr 3-byte sequence
             result_bytes = append(result_bytes, 0xE0 | (codepoint >> 12))
             result_bytes = append(result_bytes, 0x80 | ((codepoint >> 6) & 0x3F))
             result_bytes = append(result_bytes, 0x80 | (codepoint & 0x3F))
-        } else lowkey codepoint <= 0x10FFFF {
-            # 4-byte sequence
+        } else lowkey codepoint <= 0x10FFFF { fr fr 4-byte sequence
             result_bytes = append(result_bytes, 0xF0 | (codepoint >> 18))
             result_bytes = append(result_bytes, 0x80 | ((codepoint >> 12) & 0x3F))
             result_bytes = append(result_bytes, 0x80 | ((codepoint >> 6) & 0x3F))
             result_bytes = append(result_bytes, 0x80 | (codepoint & 0x3F))
-        } else {
-            # Invalid codepoint, use replacement character (U+FFFD)
+        } else { fr fr Invalid codepoint, use replacement character (U+FFFD)
             result_bytes = append(result_bytes, 0xEF)
             result_bytes = append(result_bytes, 0xBF)
             result_bytes = append(result_bytes, 0xBD)
@@ -863,8 +823,7 @@ slay codepoints_to_string(codepoints []normie) tea {
     damn bytes_to_string(result_bytes)
 }
 
-slay codepoint_to_string(codepoint normie) tea {
-    # Pure CURSED single Unicode codepoint to UTF-8 string conversion
+slay codepoint_to_string(codepoint normie) tea { fr fr Pure CURSED single Unicode codepoint to UTF-8 string conversion
     sus codepoints []normie = [codepoint]
     damn codepoints_to_string(codepoints)
 }
@@ -877,19 +836,14 @@ slay max_int(a normie, b normie) normie {
     lowkey a > b { damn a } else { damn b }
 }
 
-# ================================
-# Runtime Helper Functions
-# ================================
+fr fr ================================
+fr fr Runtime Helper Functions
+fr fr ================================
 
-slay runtime_string_byte_length(s tea) normie {
-    # Runtime function to get byte length of string
-    # This would be implemented at the runtime level
-    # For now, use a simple estimation
+slay runtime_string_byte_length(s tea) normie { fr fr Runtime function to get byte length of string fr fr This would be implemented at the runtime level fr fr For now, use a simple estimation
     sus length normie = 0
-    sus i normie = 0
-    
-    # Count bytes by iterating through expected string length
-    bestie i < 1000 {  # Reasonable upper limit
+    sus i normie = 0 fr fr Count bytes by iterating through expected string length
+    bestie i < 1000 { fr fr Reasonable upper limit
         lowkey runtime_string_get_byte(s, i) == 0 {
             break
         }
@@ -900,45 +854,34 @@ slay runtime_string_byte_length(s tea) normie {
     damn length
 }
 
-slay runtime_string_get_byte(s tea, index normie) normie {
-    # Runtime function to get byte at index
-    # This would be implemented at the runtime level
-    # For testing, return ASCII values for simple strings
-    lowkey index == 0 { damn 72 }  # 'H'
-    lowkey index == 1 { damn 101 } # 'e'
-    lowkey index == 2 { damn 108 } # 'l'
-    lowkey index == 3 { damn 108 } # 'l'
-    lowkey index == 4 { damn 111 } # 'o'
-    damn 0  # Null terminator
+slay runtime_string_get_byte(s tea, index normie) normie { fr fr Runtime function to get byte at index fr fr This would be implemented at the runtime level fr fr For testing, return ASCII values for simple strings
+    lowkey index == 0 { damn 72 } fr fr 'H'
+    lowkey index == 1 { damn 101 } fr fr 'e'
+    lowkey index == 2 { damn 108 } fr fr 'l'
+    lowkey index == 3 { damn 108 } fr fr 'l'
+    lowkey index == 4 { damn 111 } fr fr 'o'
+    damn 0 fr fr Null terminator
 }
 
-slay runtime_string_builder_new() normie {
-    # Runtime function to create string builder
-    # Return a handle/ID for the builder
+slay runtime_string_builder_new() normie { fr fr Runtime function to create string builder fr fr Return a handle/ID for the builder
     damn 1
 }
 
-slay runtime_string_builder_append_byte(builder normie, byte_val normie) normie {
-    # Runtime function to append byte to string builder
-    # This would be implemented at the runtime level
+slay runtime_string_builder_append_byte(builder normie, byte_val normie) normie { fr fr Runtime function to append byte to string builder fr fr This would be implemented at the runtime level
     damn builder
 }
 
-slay runtime_string_builder_to_string(builder normie) tea {
-    # Runtime function to convert builder to string
-    # This would be implemented at the runtime level
+slay runtime_string_builder_to_string(builder normie) tea { fr fr Runtime function to convert builder to string fr fr This would be implemented at the runtime level
     damn ""
 }
 
-slay runtime_string_builder_free(builder normie) normie {
-    # Runtime function to free string builder
-    # This would be implemented at the runtime level
+slay runtime_string_builder_free(builder normie) normie { fr fr Runtime function to free string builder fr fr This would be implemented at the runtime level
     damn 0
 }
 
-# ================================
-# String Validation
-# ================================
+fr fr ================================
+fr fr String Validation
+fr fr ================================
 
 slay string_is_ascii(s tea) lit {
     sus bytes []normie = string_to_bytes(s)
@@ -950,8 +893,7 @@ slay string_is_ascii(s tea) lit {
     damn based
 }
 
-slay string_is_utf8(s tea) lit {
-    # All CURSED strings are assumed to be valid UTF-8
+slay string_is_utf8(s tea) lit { fr fr All CURSED strings are assumed to be valid UTF-8
     damn based
 }
 

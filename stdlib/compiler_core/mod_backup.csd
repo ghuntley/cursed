@@ -4,11 +4,11 @@ yeet "collections"
 yeet "error_drip"
 yeet "dropz"
 
-# Compiler Core Module - Essential components for self-hosting compiler
-# Provides lexical analysis, parsing, AST manipulation, symbol tables, type system, 
-# code generation, and error reporting infrastructure
+fr fr Compiler Core Module - Essential components for self-hosting compiler
+fr fr Provides lexical analysis, parsing, AST manipulation, symbol tables, type system, 
+fr fr code generation, and error reporting infrastructure
 
-# Token types for lexical analysis
+fr fr Token types for lexical analysis
 facts TokenType {
     IDENTIFIER = 0
     NUMBER = 1
@@ -22,7 +22,7 @@ facts TokenType {
     ILLEGAL = 9
 }
 
-# Token structure
+fr fr Token structure
 vibe Token {
     token_type normie
     value tea
@@ -31,7 +31,7 @@ vibe Token {
     position normie
 }
 
-# AST Node types
+fr fr AST Node types
 facts ASTNodeType {
     PROGRAM = 0
     FUNCTION = 1
@@ -48,7 +48,7 @@ facts ASTNodeType {
     CONTROL_FLOW = 12
 }
 
-# AST Node structure
+fr fr AST Node structure
 vibe ASTNode {
     node_type normie
     value tea
@@ -58,7 +58,7 @@ vibe ASTNode {
     symbol_info SymbolInfo
 }
 
-# Symbol types for symbol table
+fr fr Symbol types for symbol table
 facts SymbolType {
     VARIABLE = 0
     FUNCTION = 1
@@ -70,7 +70,7 @@ facts SymbolType {
     IMPORT = 7
 }
 
-# Symbol information structure
+fr fr Symbol information structure
 vibe SymbolInfo {
     name tea
     symbol_type normie
@@ -82,7 +82,7 @@ vibe SymbolInfo {
     is_exported lit
 }
 
-# Scope structure for symbol table management
+fr fr Scope structure for symbol table management
 vibe Scope {
     scope_id normie
     parent_scope normie
@@ -91,7 +91,7 @@ vibe Scope {
     scope_type tea
 }
 
-# Error types for error reporting
+fr fr Error types for error reporting
 facts ErrorType {
     LEXICAL_ERROR = 0
     SYNTAX_ERROR = 1
@@ -103,7 +103,7 @@ facts ErrorType {
     WARNING = 7
 }
 
-# Compiler error structure
+fr fr Compiler error structure
 vibe CompilerError {
     error_type normie
     message tea
@@ -114,7 +114,7 @@ vibe CompilerError {
     context tea
 }
 
-# Type information structure
+fr fr Type information structure
 vibe TypeInfo {
     type_name tea
     size normie
@@ -128,7 +128,7 @@ vibe TypeInfo {
     return_type tea
 }
 
-# Code generation context
+fr fr Code generation context
 vibe CodegenContext {
     output_format tea
     optimization_level normie
@@ -139,9 +139,9 @@ vibe CodegenContext {
     register_counter normie
 }
 
-# LEXICAL ANALYSIS UTILITIES
+fr fr LEXICAL ANALYSIS UTILITIES
 
-# Create a new token
+fr fr Create a new token
 slay create_token(token_type normie, value tea, line normie, column normie, position normie) Token {
     sus token Token = Token{
         token_type: token_type,
@@ -153,7 +153,7 @@ slay create_token(token_type normie, value tea, line normie, column normie, posi
     damn token
 }
 
-# Tokenize source code
+fr fr Tokenize source code
 slay tokenize(source tea) [Token] {
     sus tokens [Token] = []
     sus line normie = 1
@@ -162,9 +162,7 @@ slay tokenize(source tea) [Token] {
     sus length normie = string.length(source)
     
     bestie position < length {
-        sus ch sip = string.char_at(source, position)
-        
-        # Skip whitespace
+        sus ch sip = string.char_at(source, position) fr fr Skip whitespace
         lowkey string.is_whitespace(ch) {
             lowkey ch == '\n' {
                 line = line + 1
@@ -174,9 +172,7 @@ slay tokenize(source tea) [Token] {
             }
             position = position + 1
             ghosted
-        }
-        
-        # Handle identifiers and keywords
+        } fr fr Handle identifiers and keywords
         lowkey string.is_alpha(ch) {
             sus start normie = position
             sus start_column normie = column
@@ -191,9 +187,7 @@ slay tokenize(source tea) [Token] {
             
             tokens = collections.append(tokens, create_token(token_type, value, line, start_column, start))
             ghosted
-        }
-        
-        # Handle numbers
+        } fr fr Handle numbers
         lowkey string.is_digit(ch) {
             sus start normie = position
             sus start_column normie = column
@@ -206,9 +200,7 @@ slay tokenize(source tea) [Token] {
             sus value tea = string.substring(source, start, position)
             tokens = collections.append(tokens, create_token(TokenType.NUMBER, value, line, start_column, start))
             ghosted
-        }
-        
-        # Handle strings
+        } fr fr Handle strings
         lowkey ch == '"' {
             sus start normie = position
             sus start_column normie = column
@@ -228,18 +220,14 @@ slay tokenize(source tea) [Token] {
             sus value tea = string.substring(source, start + 1, position - 1)
             tokens = collections.append(tokens, create_token(TokenType.STRING, value, line, start_column, start))
             ghosted
-        }
-        
-        # Handle operators and delimiters
+        } fr fr Handle operators and delimiters
         sus operator_token Token = classify_operator(ch, line, column, position)
         lowkey operator_token.token_type != TokenType.ILLEGAL {
             tokens = collections.append(tokens, operator_token)
             position = position + 1
             column = column + 1
             ghosted
-        }
-        
-        # Unknown character
+        } fr fr Unknown character
         tokens = collections.append(tokens, create_token(TokenType.ILLEGAL, string.from_char(ch), line, column, position))
         position = position + 1
         column = column + 1
@@ -249,7 +237,7 @@ slay tokenize(source tea) [Token] {
     damn tokens
 }
 
-# Classify token type (identifier vs keyword)
+fr fr Classify token type (identifier vs keyword)
 slay classify_token(value tea) normie {
     sus keywords [tea] = [
         "sus", "slay", "damn", "yeet", "vibe", "facts", "lowkey", "highkey", 
@@ -268,7 +256,7 @@ slay classify_token(value tea) normie {
     damn TokenType.IDENTIFIER
 }
 
-# Classify operator tokens
+fr fr Classify operator tokens
 slay classify_operator(ch sip, line normie, column normie, position normie) Token {
     sus operators [sip] = ['+', '-', '*', '/', '%', '=', '!', '<', '>', '&', '|', '^', '~', '?', ':']
     sus delimiters [sip] = ['(', ')', '[', ']', '{', '}', ',', ';', '.']
@@ -288,9 +276,9 @@ slay classify_operator(ch sip, line normie, column normie, position normie) Toke
     damn create_token(TokenType.ILLEGAL, string.from_char(ch), line, column, position)
 }
 
-# PARSING INFRASTRUCTURE
+fr fr PARSING INFRASTRUCTURE
 
-# Parser state
+fr fr Parser state
 vibe Parser {
     tokens [Token]
     current_token normie
@@ -299,7 +287,7 @@ vibe Parser {
     symbol_table SymbolTable
 }
 
-# Create new parser
+fr fr Create new parser
 slay create_parser(tokens [Token]) Parser {
     sus parser Parser = Parser{
         tokens: tokens,
@@ -311,7 +299,7 @@ slay create_parser(tokens [Token]) Parser {
     damn parser
 }
 
-# Parse program
+fr fr Parse program
 slay parse_program(parser Parser) ASTNode {
     sus program ASTNode = create_ast_node(ASTNodeType.PROGRAM, "program", [], 0, 0)
     
@@ -325,7 +313,7 @@ slay parse_program(parser Parser) ASTNode {
     damn program
 }
 
-# Parse statement
+fr fr Parse statement
 slay parse_statement(parser Parser) ASTNode {
     sus current_token Token = parser.tokens[parser.current_token]
     
@@ -345,74 +333,52 @@ slay parse_statement(parser Parser) ASTNode {
         lowkey string.equals(current_token.value, "bestie") {
             damn parse_for_statement(parser)
         }
-    }
-    
-    # Default to expression statement
+    } fr fr Default to expression statement
     damn parse_expression_statement(parser)
 }
 
-# Parse variable declaration
+fr fr Parse variable declaration
 slay parse_variable_declaration(parser Parser) ASTNode {
     sus start_token Token = parser.tokens[parser.current_token]
-    parser.current_token = parser.current_token + 1
-    
-    # Get variable name
+    parser.current_token = parser.current_token + 1 fr fr Get variable name
     sus name_token Token = parser.tokens[parser.current_token]
-    parser.current_token = parser.current_token + 1
-    
-    # Get type
+    parser.current_token = parser.current_token + 1 fr fr Get type
     sus type_token Token = parser.tokens[parser.current_token]
-    parser.current_token = parser.current_token + 1
-    
-    # Skip '='
-    parser.current_token = parser.current_token + 1
-    
-    # Parse initial value
+    parser.current_token = parser.current_token + 1 fr fr Skip '='
+    parser.current_token = parser.current_token + 1 fr fr Parse initial value
     sus value_expr ASTNode = parse_expression(parser)
     
-    sus var_decl ASTNode = create_ast_node(ASTNodeType.VARIABLE, name_token.value, [value_expr], start_token.line, start_token.column)
-    
-    # Add to symbol table
+    sus var_decl ASTNode = create_ast_node(ASTNodeType.VARIABLE, name_token.value, [value_expr], start_token.line, start_token.column) fr fr Add to symbol table
     sus symbol SymbolInfo = create_symbol_info(name_token.value, SymbolType.VARIABLE, type_token.value, 0, start_token.line, start_token.column, based, cap)
     add_symbol(parser.symbol_table, symbol)
     
     damn var_decl
 }
 
-# Parse function declaration
+fr fr Parse function declaration
 slay parse_function_declaration(parser Parser) ASTNode {
     sus start_token Token = parser.tokens[parser.current_token]
-    parser.current_token = parser.current_token + 1
-    
-    # Get function name
+    parser.current_token = parser.current_token + 1 fr fr Get function name
     sus name_token Token = parser.tokens[parser.current_token]
-    parser.current_token = parser.current_token + 1
-    
-    # Parse parameters
-    sus params [ASTNode] = parse_parameter_list(parser)
-    
-    # Parse return type
+    parser.current_token = parser.current_token + 1 fr fr Parse parameters
+    sus params [ASTNode] = parse_parameter_list(parser) fr fr Parse return type
     sus return_type_token Token = parser.tokens[parser.current_token]
-    parser.current_token = parser.current_token + 1
-    
-    # Parse function body
+    parser.current_token = parser.current_token + 1 fr fr Parse function body
     sus body ASTNode = parse_block_statement(parser)
     
-    sus func_decl ASTNode = create_ast_node(ASTNodeType.FUNCTION, name_token.value, collections.append(params, body), start_token.line, start_token.column)
-    
-    # Add to symbol table
+    sus func_decl ASTNode = create_ast_node(ASTNodeType.FUNCTION, name_token.value, collections.append(params, body), start_token.line, start_token.column) fr fr Add to symbol table
     sus symbol SymbolInfo = create_symbol_info(name_token.value, SymbolType.FUNCTION, return_type_token.value, 0, start_token.line, start_token.column, cap, based)
     add_symbol(parser.symbol_table, symbol)
     
     damn func_decl
 }
 
-# Parse expression
+fr fr Parse expression
 slay parse_expression(parser Parser) ASTNode {
     damn parse_binary_expression(parser, 0)
 }
 
-# Parse binary expression with precedence
+fr fr Parse binary expression with precedence
 slay parse_binary_expression(parser Parser, min_precedence normie) ASTNode {
     sus left ASTNode = parse_primary_expression(parser)
     
@@ -435,7 +401,7 @@ slay parse_binary_expression(parser Parser, min_precedence normie) ASTNode {
     damn left
 }
 
-# Parse primary expression
+fr fr Parse primary expression
 slay parse_primary_expression(parser Parser) ASTNode {
     sus current_token Token = parser.tokens[parser.current_token]
     parser.current_token = parser.current_token + 1
@@ -455,9 +421,9 @@ slay parse_primary_expression(parser Parser) ASTNode {
     damn create_ast_node(ASTNodeType.ILLEGAL, "illegal", [], current_token.line, current_token.column)
 }
 
-# AST MANIPULATION UTILITIES
+fr fr AST MANIPULATION UTILITIES
 
-# Create new AST node
+fr fr Create new AST node
 slay create_ast_node(node_type normie, value tea, children [ASTNode], line normie, column normie) ASTNode {
     sus node ASTNode = ASTNode{
         node_type: node_type,
@@ -470,7 +436,7 @@ slay create_ast_node(node_type normie, value tea, children [ASTNode], line normi
     damn node
 }
 
-# Traverse AST with visitor pattern
+fr fr Traverse AST with visitor pattern
 slay traverse_ast(node ASTNode, visitor_func slay(ASTNode) lit) {
     visitor_func(node)
     
@@ -479,7 +445,7 @@ slay traverse_ast(node ASTNode, visitor_func slay(ASTNode) lit) {
     }
 }
 
-# Find nodes by type
+fr fr Find nodes by type
 slay find_nodes_by_type(node ASTNode, target_type normie) [ASTNode] {
     sus result [ASTNode] = []
     
@@ -495,7 +461,7 @@ slay find_nodes_by_type(node ASTNode, target_type normie) [ASTNode] {
     damn result
 }
 
-# Transform AST nodes
+fr fr Transform AST nodes
 slay transform_ast(node ASTNode, transformer_func slay(ASTNode) ASTNode) ASTNode {
     sus transformed_children [ASTNode] = []
     
@@ -508,9 +474,9 @@ slay transform_ast(node ASTNode, transformer_func slay(ASTNode) ASTNode) ASTNode
     damn transformer_func(node)
 }
 
-# SYMBOL TABLE MANAGEMENT
+fr fr SYMBOL TABLE MANAGEMENT
 
-# Symbol table structure
+fr fr Symbol table structure
 vibe SymbolTable {
     scopes [Scope]
     current_scope normie
@@ -518,7 +484,7 @@ vibe SymbolTable {
     next_scope_id normie
 }
 
-# Create new symbol table
+fr fr Create new symbol table
 slay create_symbol_table() SymbolTable {
     sus global_scope Scope = create_scope(0, -1, "global")
     sus table SymbolTable = SymbolTable{
@@ -530,7 +496,7 @@ slay create_symbol_table() SymbolTable {
     damn table
 }
 
-# Create new scope
+fr fr Create new scope
 slay create_scope(scope_id normie, parent_scope normie, scope_type tea) Scope {
     sus scope Scope = Scope{
         scope_id: scope_id,
@@ -542,7 +508,7 @@ slay create_scope(scope_id normie, parent_scope normie, scope_type tea) Scope {
     damn scope
 }
 
-# Create symbol info
+fr fr Create symbol info
 slay create_symbol_info(name tea, symbol_type normie, data_type tea, scope normie, line normie, column normie, is_mutable lit, is_exported lit) SymbolInfo {
     sus symbol SymbolInfo = SymbolInfo{
         name: name,
@@ -557,14 +523,14 @@ slay create_symbol_info(name tea, symbol_type normie, data_type tea, scope normi
     damn symbol
 }
 
-# Add symbol to table
+fr fr Add symbol to table
 slay add_symbol(table SymbolTable, symbol SymbolInfo) lit {
     symbol.scope = table.current_scope
     table.scopes[table.current_scope].symbols = collections.append(table.scopes[table.current_scope].symbols, symbol)
     damn based
 }
 
-# Look up symbol
+fr fr Look up symbol
 slay lookup_symbol(table SymbolTable, name tea) SymbolInfo {
     sus current_scope normie = table.current_scope
     
@@ -581,7 +547,7 @@ slay lookup_symbol(table SymbolTable, name tea) SymbolInfo {
     damn create_symbol_info("", 0, "", 0, 0, 0, cap, cap)
 }
 
-# Enter new scope
+fr fr Enter new scope
 slay enter_scope(table SymbolTable, scope_type tea) normie {
     sus new_scope Scope = create_scope(table.next_scope_id, table.current_scope, scope_type)
     table.scopes = collections.append(table.scopes, new_scope)
@@ -591,7 +557,7 @@ slay enter_scope(table SymbolTable, scope_type tea) normie {
     damn table.current_scope
 }
 
-# Exit current scope
+fr fr Exit current scope
 slay exit_scope(table SymbolTable) lit {
     lowkey table.current_scope != table.global_scope {
         table.current_scope = table.scopes[table.current_scope].parent_scope
@@ -600,9 +566,9 @@ slay exit_scope(table SymbolTable) lit {
     damn cap
 }
 
-# TYPE SYSTEM UTILITIES
+fr fr TYPE SYSTEM UTILITIES
 
-# Create type info
+fr fr Create type info
 slay create_type_info(type_name tea, size normie, alignment normie, is_primitive lit) TypeInfo {
     sus type_info TypeInfo = TypeInfo{
         type_name: type_name,
@@ -619,7 +585,7 @@ slay create_type_info(type_name tea, size normie, alignment normie, is_primitive
     damn type_info
 }
 
-# Get type size
+fr fr Get type size
 slay get_type_size(type_name tea) normie {
     lowkey string.equals(type_name, "byte") {
         damn 1
@@ -654,13 +620,11 @@ slay get_type_size(type_name tea) normie {
     damn 8
 }
 
-# Check type compatibility
+fr fr Check type compatibility
 slay types_compatible(type1 tea, type2 tea) lit {
     lowkey string.equals(type1, type2) {
         damn based
-    }
-    
-    # Numeric type compatibility
+    } fr fr Numeric type compatibility
     sus numeric_types [tea] = ["byte", "smol", "mid", "normie", "thicc", "drip", "meal"]
     sus is_numeric1 lit = collections.contains(numeric_types, type1)
     sus is_numeric2 lit = collections.contains(numeric_types, type2)
@@ -672,7 +636,7 @@ slay types_compatible(type1 tea, type2 tea) lit {
     damn cap
 }
 
-# Perform type inference
+fr fr Perform type inference
 slay infer_type(node ASTNode) tea {
     lowkey node.node_type == ASTNodeType.LITERAL {
         lowkey string.contains(node.value, ".") {
@@ -701,9 +665,9 @@ slay infer_type(node ASTNode) tea {
     damn "normie"
 }
 
-# CODE GENERATION HELPERS
+fr fr CODE GENERATION HELPERS
 
-# Create codegen context
+fr fr Create codegen context
 slay create_codegen_context(output_format tea, optimization_level normie, target_arch tea) CodegenContext {
     sus context CodegenContext = CodegenContext{
         output_format: output_format,
@@ -717,21 +681,21 @@ slay create_codegen_context(output_format tea, optimization_level normie, target
     damn context
 }
 
-# Generate unique label
+fr fr Generate unique label
 slay generate_label(context CodegenContext) tea {
     sus label tea = string.concat("L", string.from_int(context.label_counter))
     context.label_counter = context.label_counter + 1
     damn label
 }
 
-# Generate unique register
+fr fr Generate unique register
 slay generate_register(context CodegenContext) tea {
     sus register tea = string.concat("%", string.from_int(context.register_counter))
     context.register_counter = context.register_counter + 1
     damn register
 }
 
-# Generate code for AST node
+fr fr Generate code for AST node
 slay generate_code(node ASTNode, context CodegenContext) tea {
     lowkey node.node_type == ASTNodeType.LITERAL {
         damn node.value
@@ -763,9 +727,9 @@ slay generate_code(node ASTNode, context CodegenContext) tea {
     damn ""
 }
 
-# ERROR REPORTING
+fr fr ERROR REPORTING
 
-# Create compiler error
+fr fr Create compiler error
 slay create_error(error_type normie, message tea, line normie, column normie, file tea, severity normie) CompilerError {
     sus error CompilerError = CompilerError{
         error_type: error_type,
@@ -779,7 +743,7 @@ slay create_error(error_type normie, message tea, line normie, column normie, fi
     damn error
 }
 
-# Format error message
+fr fr Format error message
 slay format_error(error CompilerError) tea {
     sus severity_str tea = ""
     lowkey error.severity == 0 {
@@ -791,15 +755,15 @@ slay format_error(error CompilerError) tea {
     damn string.concat(error.file, ":", string.from_int(error.line), ":", string.from_int(error.column), " ", severity_str, ": ", error.message)
 }
 
-# Report error
+fr fr Report error
 slay report_error(error CompilerError) {
     sus formatted tea = format_error(error)
     vibez.spill(formatted)
 }
 
-# UTILITY FUNCTIONS
+fr fr UTILITY FUNCTIONS
 
-# Get operator precedence
+fr fr Get operator precedence
 slay get_operator_precedence(operator tea) normie {
     lowkey string.equals(operator, "||") {
         damn 1
@@ -822,10 +786,9 @@ slay get_operator_precedence(operator tea) normie {
     damn 0
 }
 
-# Parse helper functions
+fr fr Parse helper functions
 slay parse_parameter_list(parser Parser) [ASTNode] {
-    sus params [ASTNode] = []
-    # Implementation for parameter parsing
+    sus params [ASTNode] = [] fr fr Implementation for parameter parsing
     damn params
 }
 
@@ -849,7 +812,7 @@ slay parse_expression_statement(parser Parser) ASTNode {
     damn create_ast_node(ASTNodeType.EXPRESSION, "expression", [], 0, 0)
 }
 
-# String utility functions
+fr fr String utility functions
 slay string_from_char(ch sip) tea {
     damn string.from_char(ch)
 }
@@ -858,7 +821,7 @@ slay string_from_int(num normie) tea {
     damn string.from_int(num)
 }
 
-# Main compiler core interface
+fr fr Main compiler core interface
 slay compile_source(source tea, output_format tea, optimization_level normie) tea {
     sus tokens [Token] = tokenize(source)
     sus parser Parser = create_parser(tokens)
@@ -869,12 +832,12 @@ slay compile_source(source tea, output_format tea, optimization_level normie) te
     damn output
 }
 
-# Compiler core initialization
+fr fr Compiler core initialization
 slay initialize_compiler() lit {
     damn based
 }
 
-# Compiler core status
+fr fr Compiler core status
 slay compiler_status() tea {
     damn "Compiler core module loaded - ready for self-hosting"
 }

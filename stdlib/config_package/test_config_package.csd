@@ -1,10 +1,10 @@
 yeet "testz"
 yeet "config_package"
 
-# Comprehensive Configuration and Package Management Tests
-# Tests all functionality including config parsing, dependency resolution, version management
+fr fr Comprehensive Configuration and Package Management Tests
+fr fr Tests all functionality including config parsing, dependency resolution, version management
 
-# Test Configuration Parsing
+fr fr Test Configuration Parsing
 test_start("JSON Config Parsing")
 sus json_config Config = parse_json_config("{\"name\": \"test\"}")
 assert_eq_string(json_config.package_name, "default_package")
@@ -41,7 +41,7 @@ sus loaded_toml Config = load_config_file("config.toml")
 assert_eq_string(loaded_toml.package_name, "toml_package")
 assert_eq_string(loaded_toml.version, "3.0.0")
 
-# Test Version Management
+fr fr Test Version Management
 test_start("Version Comparison - Equal")
 sus equal_result VersionCompare = compare_versions("1.0.0", "1.0.0")
 assert_true(equal_result == VersionCompare.EQUAL)
@@ -82,7 +82,7 @@ test_start("Semantic Version Validation - Invalid")
 sus invalid_semver lit = validate_semver("1.2")
 assert_false(invalid_semver)
 
-# Test Dependency Resolution
+fr fr Test Dependency Resolution
 test_start("Single Dependency Resolution")
 sus test_dep PackageDep
 test_dep.name = "cursed"
@@ -123,7 +123,7 @@ circ_dep1.version = "1.0.0"
 circular_deps = append(circular_deps, circ_dep1)
 
 sus circ_dep2 PackageDep
-circ_dep2.name = "package_a"  # Same name - circular
+circ_dep2.name = "package_a" fr fr Same name - circular
 circ_dep2.version = "2.0.0"
 circular_deps = append(circular_deps, circ_dep2)
 
@@ -136,7 +136,7 @@ config_for_tree.dependencies = deps
 sus dep_tree []PackageDep = build_dependency_tree(config_for_tree)
 assert_true(len(dep_tree) == 2)
 
-# Test Package Manager Functions
+fr fr Test Package Manager Functions
 test_start("Package Manager Creation")
 sus manager PackageManager = create_package_manager("test_config.json")
 assert_eq_string(manager.config.package_name, "default_package")
@@ -153,12 +153,12 @@ assert_eq_string(manager.installed_packages[0].version, "1.0.0")
 
 test_start("Package Installation - Duplicate")
 sus duplicate_install lit = install_package(&manager, "test_package", "2.0.0")
-assert_false(duplicate_install)  # Should fail due to duplicate
+assert_false(duplicate_install) fr fr Should fail due to duplicate
 
 test_start("Package Update")
 sus update_success lit = update_package(&manager, "test_package")
 assert_true(update_success)
-assert_eq_string(manager.installed_packages[0].version, "1.0.0")  # Updated to latest
+assert_eq_string(manager.installed_packages[0].version, "1.0.0") fr fr Updated to latest
 
 test_start("Package Uninstallation")
 sus uninstall_success lit = uninstall_package(&manager, "test_package")
@@ -167,7 +167,7 @@ assert_true(len(manager.installed_packages) == 0)
 
 test_start("Package Uninstallation - Not Found")
 sus uninstall_missing lit = uninstall_package(&manager, "missing_package")
-assert_true(uninstall_missing)  # Should succeed (no-op)
+assert_true(uninstall_missing) fr fr Should succeed (no-op)
 
 test_start("List Installed Packages - Empty")
 sus empty_list []tea = list_installed_packages(manager)
@@ -179,7 +179,7 @@ install_package(&manager, "package2", "2.0.0")
 sus package_list []tea = list_installed_packages(manager)
 assert_true(len(package_list) == 2)
 
-# Test Build Automation
+fr fr Test Build Automation
 test_start("Build Script Execution - Success")
 sus build_success lit = run_build_script("make build")
 assert_true(build_success)
@@ -203,7 +203,7 @@ pipeline_config.test_commands = ["make test", "npm test"]
 sus pipeline_success lit = execute_build_pipeline(pipeline_config)
 assert_true(pipeline_success)
 
-# Test Configuration Validation
+fr fr Test Configuration Validation
 test_start("Config Validation - Valid Config")
 sus valid_config Config
 valid_config.package_name = "valid_package"
@@ -233,7 +233,7 @@ sus valid_manager PackageManager = create_package_manager("test.json")
 sus manager_valid lit = validate_package_manager(valid_manager)
 assert_true(manager_valid)
 
-# Test Utility Functions
+fr fr Test Utility Functions
 test_start("Lock File Generation")
 sus lock_manager PackageManager = create_package_manager("test.json")
 install_package(&lock_manager, "dep1", "1.0.0")
@@ -251,7 +251,7 @@ assert_eq_string(package_info.name, "cursed")
 assert_eq_string(package_info.version, "27.0.0")
 assert_eq_string(package_info.source, "registry")
 
-# Test Registry Functions
+fr fr Test Registry Functions
 test_start("Package Search - cursed")
 sus cursed_search []tea = search_packages("cursed")
 assert_true(len(cursed_search) == 2)
@@ -269,31 +269,31 @@ sus publish_manager PackageManager = create_package_manager("test.json")
 sus publish_success lit = publish_package(publish_manager)
 assert_true(publish_success)
 
-# Integration Tests
+fr fr Integration Tests
 test_start("Complete Package Workflow")
 sus workflow_manager PackageManager = create_package_manager("workflow.json")
 
-# Install packages
+fr fr Install packages
 assert_true(install_package(&workflow_manager, "dependency1", "1.0.0"))
 assert_true(install_package(&workflow_manager, "dependency2", "2.0.0"))
 
-# Validate installation
+fr fr Validate installation
 sus installed_list []tea = list_installed_packages(workflow_manager)
 assert_true(len(installed_list) == 2)
 
-# Update packages
+fr fr Update packages
 assert_true(update_package(&workflow_manager, "dependency1"))
 
-# Generate lock file
+fr fr Generate lock file
 sus workflow_lock tea = generate_lock_file(workflow_manager)
 assert_true(len(workflow_lock) > 0)
 
-# Clean up
+fr fr Clean up
 assert_true(uninstall_package(&workflow_manager, "dependency1"))
 assert_true(uninstall_package(&workflow_manager, "dependency2"))
 
 test_start("Configuration Format Detection")
-# Test different config file extensions
+fr fr Test different config file extensions
 sus json_detected Config = load_config_file("test.json")
 assert_eq_string(json_detected.package_name, "default_package")
 

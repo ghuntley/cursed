@@ -2,15 +2,15 @@ yeet "dropz"
 
 vibez.spill("=== dropz Core I/O Module Tests ===")
 
-# Initialize dropz
+fr fr Initialize dropz
 sus init_result tea = dropz.init_dropz()
 vibez.spill("✅ dropz initialization: " + init_result)
 
-# Test constants
+fr fr Test constants
 vibez.spill("✅ O_RDONLY = " + dropz.O_RDONLY)
 vibez.spill("✅ EOF = " + dropz.EOF)
 
-# Test file operations
+fr fr Test file operations
 sus (content, err) = dropz.read_text_file("main.csd")
 bestie err == "" {
     vibez.spill("✅ read_text_file: SUCCESS")
@@ -18,7 +18,7 @@ bestie err == "" {
     vibez.spill("❌ read_text_file: " + err)
 }
 
-# Test write file
+fr fr Test write file
 sus write_err tea = dropz.write_text_file("test_output.csd", "Test content", dropz.MODE_REGULAR)
 bestie write_err == "" {
     vibez.spill("✅ write_text_file: SUCCESS")
@@ -26,7 +26,7 @@ bestie write_err == "" {
     vibez.spill("❌ write_text_file: " + write_err)
 }
 
-# Test copy file
+fr fr Test copy file
 sus (copied, copy_err) = dropz.copy_file("main.csd", "main_copy.csd")
 bestie copy_err == "" {
     vibez.spill("✅ copy_file: SUCCESS")
@@ -34,20 +34,16 @@ bestie copy_err == "" {
     vibez.spill("❌ copy_file: " + copy_err)
 }
 
-# Test file handles
+fr fr Test file handles
 sus (file, create_err) = dropz.create("handle_test.csd")
 bestie create_err == "" {
-    vibez.spill("✅ create file: SUCCESS")
-    
-    # Test write to file
+    vibez.spill("✅ create file: SUCCESS") fr fr Test write to file
     sus (written, write_handle_err) = file.write("File handle test")
     bestie write_handle_err == "" {
         vibez.spill("✅ file write: SUCCESS")
     } else {
         vibez.spill("❌ file write: " + write_handle_err)
-    }
-    
-    # Test close
+    } fr fr Test close
     sus close_err tea = file.close()
     bestie close_err == "" {
         vibez.spill("✅ file close: SUCCESS")
@@ -58,7 +54,7 @@ bestie create_err == "" {
     vibez.spill("❌ create file: " + create_err)
 }
 
-# Test byte operations
+fr fr Test byte operations
 sus reader *dropz.ByteReader = dropz.new_byte_reader("Hello, World!")
 bestie reader != cringe {
     vibez.spill("✅ new_byte_reader: SUCCESS")
@@ -90,7 +86,7 @@ bestie writer != cringe {
     vibez.spill("❌ new_byte_writer: FAILED")
 }
 
-# Test directory operations
+fr fr Test directory operations
 sus dir_err tea = dropz.mkdir("test_dir", dropz.MODE_DIR)
 bestie dir_err == "" {
     vibez.spill("✅ mkdir: SUCCESS")
@@ -105,7 +101,7 @@ bestie file_exists {
     vibez.spill("❌ exists check: FAILED")
 }
 
-# Test self-hosting support
+fr fr Test self-hosting support
 sus (source_content, source_err) = dropz.read_source_file("main.csd")
 bestie source_err == "" {
     vibez.spill("✅ read_source_file: SUCCESS")
@@ -120,7 +116,7 @@ bestie output_err == "" {
     vibez.spill("❌ write_compiled_output: " + output_err)
 }
 
-# Test error handling
+fr fr Test error handling
 sus (no_content, no_err) = dropz.read_text_file("nonexistent.csd")
 bestie no_err == dropz.ErrNotExist {
     vibez.spill("✅ error handling: SUCCESS")

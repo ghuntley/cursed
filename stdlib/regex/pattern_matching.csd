@@ -1,9 +1,9 @@
 yeet "testz"
 
-# Complete Regex Pattern Matching Implementation - Pure CURSED
-# Advanced pattern matching with full regex support
+fr fr Complete Regex Pattern Matching Implementation - Pure CURSED
+fr fr Advanced pattern matching with full regex support
 
-# Character class definitions
+fr fr Character class definitions
 facts CHAR_CLASS_DIGIT tea = "\\d"
 facts CHAR_CLASS_WORD tea = "\\w"
 facts CHAR_CLASS_SPACE tea = "\\s"
@@ -11,18 +11,18 @@ facts CHAR_CLASS_NOT_DIGIT tea = "\\D"
 facts CHAR_CLASS_NOT_WORD tea = "\\W"
 facts CHAR_CLASS_NOT_SPACE tea = "\\S"
 
-# Anchor definitions
+fr fr Anchor definitions
 facts ANCHOR_START tea = "^"
 facts ANCHOR_END tea = "$"
 facts ANCHOR_WORD_BOUNDARY tea = "\\b"
 facts ANCHOR_NON_WORD_BOUNDARY tea = "\\B"
 
-# Quantifier definitions
+fr fr Quantifier definitions
 facts QUANTIFIER_ZERO_OR_MORE tea = "*"
 facts QUANTIFIER_ONE_OR_MORE tea = "+"
 facts QUANTIFIER_ZERO_OR_ONE tea = "?"
 
-# Pattern element types
+fr fr Pattern element types
 facts ELEMENT_LITERAL normie = 1
 facts ELEMENT_CHAR_CLASS normie = 2
 facts ELEMENT_QUANTIFIER normie = 3
@@ -30,7 +30,7 @@ facts ELEMENT_GROUP normie = 4
 facts ELEMENT_ANCHOR normie = 5
 facts ELEMENT_ALTERNATION normie = 6
 
-# Pattern element structure
+fr fr Pattern element structure
 be_like PatternElement = struct {
     element_type normie,
     value tea,
@@ -39,7 +39,7 @@ be_like PatternElement = struct {
     group_number normie
 }
 
-# Match state for backtracking
+fr fr Match state for backtracking
 be_like MatchState = struct {
     position normie,
     pattern_index normie,
@@ -47,25 +47,21 @@ be_like MatchState = struct {
     is_valid lit
 }
 
-# Parse regex pattern into elements
+fr fr Parse regex pattern into elements
 slay parse_regex_pattern(pattern tea) [PatternElement] {
     sus elements [PatternElement] = []
     sus i normie = 0
     sus pattern_length normie = string_length(pattern)
     
     bestie i < pattern_length {
-        sus current_char tea = string_char_at(pattern, i)
-        
-        # Handle escape sequences
+        sus current_char tea = string_char_at(pattern, i) fr fr Handle escape sequences
         vibe_check current_char == "\\" && i + 1 < pattern_length {
             sus next_char tea = string_char_at(pattern, i + 1)
             sus element PatternElement = parse_escape_sequence(next_char)
             elements = append(elements, element)
             i = i + 2
             simp
-        }
-        
-        # Handle character classes
+        } fr fr Handle character classes
         vibe_check current_char == "[" {
             sus class_end normie = find_closing_bracket(pattern, i)
             vibe_check class_end > i {
@@ -81,9 +77,7 @@ slay parse_regex_pattern(pattern tea) [PatternElement] {
                 i = class_end + 1
                 simp
             }
-        }
-        
-        # Handle groups
+        } fr fr Handle groups
         vibe_check current_char == "(" {
             sus group_end normie = find_matching_parenthesis(pattern, i)
             vibe_check group_end > i {
@@ -99,14 +93,11 @@ slay parse_regex_pattern(pattern tea) [PatternElement] {
                 i = group_end + 1
                 simp
             }
-        }
-        
-        # Handle quantifiers
+        } fr fr Handle quantifiers
         vibe_check current_char == "*" || current_char == "+" || current_char == "?" {
             vibe_check len(elements) > 0 {
                 sus last_index normie = len(elements) - 1
-                elements[last_index].quantifier = current_char
-                # Check for non-greedy modifier
+                elements[last_index].quantifier = current_char fr fr Check for non-greedy modifier
                 vibe_check i + 1 < pattern_length && string_char_at(pattern, i + 1) == "?" {
                     elements[last_index].is_greedy = cap
                     i++
@@ -114,9 +105,7 @@ slay parse_regex_pattern(pattern tea) [PatternElement] {
             }
             i++
             simp
-        }
-        
-        # Handle anchors
+        } fr fr Handle anchors
         vibe_check current_char == "^" || current_char == "$" {
             sus element PatternElement = PatternElement{
                 element_type: ELEMENT_ANCHOR,
@@ -128,9 +117,7 @@ slay parse_regex_pattern(pattern tea) [PatternElement] {
             elements = append(elements, element)
             i++
             simp
-        }
-        
-        # Handle alternation
+        } fr fr Handle alternation
         vibe_check current_char == "|" {
             sus element PatternElement = PatternElement{
                 element_type: ELEMENT_ALTERNATION,
@@ -142,9 +129,7 @@ slay parse_regex_pattern(pattern tea) [PatternElement] {
             elements = append(elements, element)
             i++
             simp
-        }
-        
-        # Handle literal characters
+        } fr fr Handle literal characters
         sus element PatternElement = PatternElement{
             element_type: ELEMENT_LITERAL,
             value: current_char,
@@ -159,7 +144,7 @@ slay parse_regex_pattern(pattern tea) [PatternElement] {
     damn elements
 }
 
-# Parse escape sequences
+fr fr Parse escape sequences
 slay parse_escape_sequence(escaped_char tea) PatternElement {
     sus element PatternElement = PatternElement{
         element_type: ELEMENT_CHAR_CLASS,
@@ -187,8 +172,7 @@ slay parse_escape_sequence(escaped_char tea) PatternElement {
     } sketchy escaped_char == "B" {
         element.element_type = ELEMENT_ANCHOR
         element.value = ANCHOR_NON_WORD_BOUNDARY
-    } cring {
-        # Literal escaped character
+    } cring { fr fr Literal escaped character
         element.element_type = ELEMENT_LITERAL
         element.value = escaped_char
     }
@@ -196,11 +180,9 @@ slay parse_escape_sequence(escaped_char tea) PatternElement {
     damn element
 }
 
-# Execute regex match using backtracking algorithm
+fr fr Execute regex match using backtracking algorithm
 slay execute_regex_match(text tea, elements [PatternElement]) (lit, normie, normie) {
-    sus text_length normie = string_length(text)
-    
-    # Try matching at each position in the text
+    sus text_length normie = string_length(text) fr fr Try matching at each position in the text
     bestie start_pos := 0; start_pos <= text_length; start_pos++ {
         sus match_result, match_end = try_match_at_position(text, elements, start_pos)
         vibe_check match_result {
@@ -211,7 +193,7 @@ slay execute_regex_match(text tea, elements [PatternElement]) (lit, normie, norm
     damn cap, 0, 0
 }
 
-# Try to match pattern at specific position
+fr fr Try to match pattern at specific position
 slay try_match_at_position(text tea, elements [PatternElement], start_pos normie) (lit, normie) {
     sus state MatchState = MatchState{
         position: start_pos,
@@ -228,16 +210,13 @@ slay try_match_at_position(text tea, elements [PatternElement], start_pos normie
     damn cap, start_pos
 }
 
-# Recursive matching with backtracking
-slay match_recursive(text tea, elements [PatternElement], state MatchState) MatchState {
-    # Base case: end of pattern
+fr fr Recursive matching with backtracking
+slay match_recursive(text tea, elements [PatternElement], state MatchState) MatchState { fr fr Base case: end of pattern
     vibe_check state.pattern_index >= len(elements) {
         damn state
     }
     
-    sus current_element PatternElement = elements[state.pattern_index]
-    
-    # Handle different element types
+    sus current_element PatternElement = elements[state.pattern_index] fr fr Handle different element types
     sketchy current_element.element_type == ELEMENT_LITERAL {
         damn match_literal(text, elements, state, current_element)
     } sketchy current_element.element_type == ELEMENT_CHAR_CLASS {
@@ -248,18 +227,15 @@ slay match_recursive(text tea, elements [PatternElement], state MatchState) Matc
         damn match_group(text, elements, state, current_element)
     } sketchy current_element.element_type == ELEMENT_ALTERNATION {
         damn match_alternation(text, elements, state, current_element)
-    } cring {
-        # Invalid element type
+    } cring { fr fr Invalid element type
         state.is_valid = cap
         damn state
     }
 }
 
-# Match literal character
+fr fr Match literal character
 slay match_literal(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState {
-    sus text_length normie = string_length(text)
-    
-    # Handle quantifiers
+    sus text_length normie = string_length(text) fr fr Handle quantifiers
     vibe_check element.quantifier == "*" {
         damn match_with_quantifier(text, elements, state, element, 0, -1)
     }
@@ -268,9 +244,7 @@ slay match_literal(text tea, elements [PatternElement], state MatchState, elemen
     }
     vibe_check element.quantifier == "?" {
         damn match_with_quantifier(text, elements, state, element, 0, 1)
-    }
-    
-    # Simple literal match
+    } fr fr Simple literal match
     vibe_check state.position >= text_length {
         state.is_valid = cap
         damn state
@@ -280,15 +254,13 @@ slay match_literal(text tea, elements [PatternElement], state MatchState, elemen
     vibe_check current_char != element.value {
         state.is_valid = cap
         damn state
-    }
-    
-    # Match successful, advance
+    } fr fr Match successful, advance
     state.position++
     state.pattern_index++
     damn match_recursive(text, elements, state)
 }
 
-# Match character class
+fr fr Match character class
 slay match_char_class(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState {
     sus text_length normie = string_length(text)
     
@@ -303,9 +275,7 @@ slay match_char_class(text tea, elements [PatternElement], state MatchState, ele
     vibe_check !matches {
         state.is_valid = cap
         damn state
-    }
-    
-    # Handle quantifiers
+    } fr fr Handle quantifiers
     vibe_check element.quantifier == "*" {
         damn match_with_quantifier(text, elements, state, element, 0, -1)
     }
@@ -314,15 +284,13 @@ slay match_char_class(text tea, elements [PatternElement], state MatchState, ele
     }
     vibe_check element.quantifier == "?" {
         damn match_with_quantifier(text, elements, state, element, 0, 1)
-    }
-    
-    # Simple character class match
+    } fr fr Simple character class match
     state.position++
     state.pattern_index++
     damn match_recursive(text, elements, state)
 }
 
-# Check if character matches character class
+fr fr Check if character matches character class
 slay matches_char_class(char tea, class_def tea) lit {
     sketchy class_def == CHAR_CLASS_DIGIT {
         damn is_digit(char)
@@ -336,19 +304,16 @@ slay matches_char_class(char tea, class_def tea) lit {
         damn !is_word_char(char)
     } sketchy class_def == CHAR_CLASS_NOT_SPACE {
         damn !is_whitespace(char)
-    } cring {
-        # Custom character class
+    } cring { fr fr Custom character class
         damn matches_custom_char_class(char, class_def)
     }
 }
 
-# Match with quantifier (*, +, ?, {n,m})
+fr fr Match with quantifier (*, +, ?, {n,m})
 slay match_with_quantifier(text tea, elements [PatternElement], state MatchState, 
                           element PatternElement, min_matches normie, max_matches normie) MatchState {
     sus match_count normie = 0
-    sus current_state MatchState = state
-    
-    # First, try to match minimum required times
+    sus current_state MatchState = state fr fr First, try to match minimum required times
     bestie match_count < min_matches {
         sus single_match lit = try_single_match(text, current_state, element)
         vibe_check !single_match {
@@ -357,9 +322,7 @@ slay match_with_quantifier(text tea, elements [PatternElement], state MatchState
         }
         current_state.position++
         match_count++
-    }
-    
-    # Then, try greedy or non-greedy matching
+    } fr fr Then, try greedy or non-greedy matching
     vibe_check element.is_greedy {
         damn match_greedy(text, elements, current_state, element, match_count, max_matches)
     } yolo {
@@ -367,13 +330,11 @@ slay match_with_quantifier(text tea, elements [PatternElement], state MatchState
     }
 }
 
-# Greedy quantifier matching
+fr fr Greedy quantifier matching
 slay match_greedy(text tea, elements [PatternElement], state MatchState, 
                  element PatternElement, current_matches normie, max_matches normie) MatchState {
     sus match_count normie = current_matches
-    sus current_state MatchState = state
-    
-    # Match as many as possible
+    sus current_state MatchState = state fr fr Match as many as possible
     bestie (max_matches == -1 || match_count < max_matches) {
         sus single_match lit = try_single_match(text, current_state, element)
         vibe_check !single_match {
@@ -381,18 +342,14 @@ slay match_greedy(text tea, elements [PatternElement], state MatchState,
         }
         current_state.position++
         match_count++
-    }
-    
-    # Try to continue with rest of pattern, backtracking if necessary
+    } fr fr Try to continue with rest of pattern, backtracking if necessary
     bestie match_count >= current_matches {
         sus test_state MatchState = current_state
         test_state.pattern_index++
         sus result MatchState = match_recursive(text, elements, test_state)
         vibe_check result.is_valid {
             damn result
-        }
-        
-        # Backtrack by reducing match count
+        } fr fr Backtrack by reducing match count
         vibe_check match_count > current_matches {
             match_count--
             current_state.position--
@@ -405,22 +362,18 @@ slay match_greedy(text tea, elements [PatternElement], state MatchState,
     damn current_state
 }
 
-# Non-greedy quantifier matching
+fr fr Non-greedy quantifier matching
 slay match_non_greedy(text tea, elements [PatternElement], state MatchState, 
                      element PatternElement, current_matches normie, max_matches normie) MatchState {
     sus match_count normie = current_matches
-    sus current_state MatchState = state
-    
-    # Try continuing with minimal matches first
+    sus current_state MatchState = state fr fr Try continuing with minimal matches first
     bestie (max_matches == -1 || match_count <= max_matches) {
         sus test_state MatchState = current_state
         test_state.pattern_index++
         sus result MatchState = match_recursive(text, elements, test_state)
         vibe_check result.is_valid {
             damn result
-        }
-        
-        # If that fails, try matching one more time
+        } fr fr If that fails, try matching one more time
         sus single_match lit = try_single_match(text, current_state, element)
         vibe_check !single_match {
             break
@@ -433,7 +386,7 @@ slay match_non_greedy(text tea, elements [PatternElement], state MatchState,
     damn current_state
 }
 
-# Try to match a single instance of an element
+fr fr Try to match a single instance of an element
 slay try_single_match(text tea, state MatchState, element PatternElement) lit {
     sus text_length normie = string_length(text)
     
@@ -452,7 +405,7 @@ slay try_single_match(text tea, state MatchState, element PatternElement) lit {
     }
 }
 
-# Match anchor elements
+fr fr Match anchor elements
 slay match_anchor(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState {
     sus text_length normie = string_length(text)
     sus matches lit = cap
@@ -470,22 +423,15 @@ slay match_anchor(text tea, elements [PatternElement], state MatchState, element
     vibe_check !matches {
         state.is_valid = cap
         damn state
-    }
-    
-    # Anchor doesn't consume characters, just advance pattern
+    } fr fr Anchor doesn't consume characters, just advance pattern
     state.pattern_index++
     damn match_recursive(text, elements, state)
 }
 
-# Match group (simplified - just match the group content)
-slay match_group(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState {
-    # Parse group content as sub-pattern
-    sus group_elements [PatternElement] = parse_regex_pattern(element.value)
-    
-    # Save start position for capture
-    sus group_start normie = state.position
-    
-    # Match group content
+fr fr Match group (simplified - just match the group content)
+slay match_group(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState { fr fr Parse group content as sub-pattern
+    sus group_elements [PatternElement] = parse_regex_pattern(element.value) fr fr Save start position for capture
+    sus group_start normie = state.position fr fr Match group content
     sus group_state MatchState = MatchState{
         position: state.position,
         pattern_index: 0,
@@ -497,9 +443,7 @@ slay match_group(text tea, elements [PatternElement], state MatchState, element 
     vibe_check !result.is_valid {
         state.is_valid = cap
         damn state
-    }
-    
-    # Capture group content
+    } fr fr Capture group content
     sus captured_text tea = substring(text, group_start, result.position)
     state.captured_groups = append(state.captured_groups, captured_text)
     state.position = result.position
@@ -508,39 +452,36 @@ slay match_group(text tea, elements [PatternElement], state MatchState, element 
     damn match_recursive(text, elements, state)
 }
 
-# Match alternation (A|B)
-slay match_alternation(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState {
-    # This is simplified - real implementation would need to handle alternation scope
+fr fr Match alternation (A|B)
+slay match_alternation(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState { fr fr This is simplified - real implementation would need to handle alternation scope
     state.pattern_index++
     damn match_recursive(text, elements, state)
 }
 
-# Character classification functions
+fr fr Character classification functions
 slay is_digit(char tea) lit {
     sus char_code normie = char_to_code(char)
-    damn char_code >= 48 && char_code <= 57  # '0' to '9'
+    damn char_code >= 48 && char_code <= 57 fr fr '0' to '9'
 }
 
 slay is_word_char(char tea) lit {
     sus char_code normie = char_to_code(char)
-    damn (char_code >= 65 && char_code <= 90) ||    # 'A' to 'Z'
-         (char_code >= 97 && char_code <= 122) ||   # 'a' to 'z'
-         (char_code >= 48 && char_code <= 57) ||    # '0' to '9'
-         char_code == 95                            # '_'
+    damn (char_code >= 65 && char_code <= 90) || fr fr 'A' to 'Z'
+         (char_code >= 97 && char_code <= 122) || fr fr 'a' to 'z'
+         (char_code >= 48 && char_code <= 57) || fr fr '0' to '9'
+         char_code == 95 fr fr '_'
 }
 
 slay is_whitespace(char tea) lit {
     sus char_code normie = char_to_code(char)
-    damn char_code == 32 ||   # space
-         char_code == 9 ||    # tab
-         char_code == 10 ||   # newline
-         char_code == 13      # carriage return
+    damn char_code == 32 || fr fr space
+         char_code == 9 || fr fr tab
+         char_code == 10 || fr fr newline
+         char_code == 13 fr fr carriage return
 }
 
 slay is_word_boundary(text tea, position normie) lit {
-    sus text_length normie = string_length(text)
-    
-    # At beginning or end of string
+    sus text_length normie = string_length(text) fr fr At beginning or end of string
     vibe_check position == 0 || position == text_length {
         damn based
     }
@@ -549,15 +490,12 @@ slay is_word_boundary(text tea, position normie) lit {
     sus curr_char tea = string_char_at(text, position)
     
     sus prev_is_word lit = is_word_char(prev_char)
-    sus curr_is_word lit = is_word_char(curr_char)
-    
-    # Boundary when transitioning between word and non-word
+    sus curr_is_word lit = is_word_char(curr_char) fr fr Boundary when transitioning between word and non-word
     damn prev_is_word != curr_is_word
 }
 
-# Custom character class matching
-slay matches_custom_char_class(char tea, class_def tea) lit {
-    # Handle negated classes
+fr fr Custom character class matching
+slay matches_custom_char_class(char tea, class_def tea) lit { fr fr Handle negated classes
     vibe_check string_starts_with(class_def, "^") {
         sus positive_class tea = substring(class_def, 1, string_length(class_def))
         damn !matches_positive_char_class(char, positive_class)
@@ -570,8 +508,7 @@ slay matches_positive_char_class(char tea, class_def tea) lit {
     sus i normie = 0
     sus class_length normie = string_length(class_def)
     
-    bestie i < class_length {
-        # Handle character ranges like 'a-z'
+    bestie i < class_length { fr fr Handle character ranges like 'a-z'
         vibe_check i + 2 < class_length && string_char_at(class_def, i + 1) == "-" {
             sus range_start tea = string_char_at(class_def, i)
             sus range_end tea = string_char_at(class_def, i + 2)
@@ -580,9 +517,7 @@ slay matches_positive_char_class(char tea, class_def tea) lit {
             }
             i = i + 3
             simp
-        }
-        
-        # Single character match
+        } fr fr Single character match
         vibe_check char == string_char_at(class_def, i) {
             damn based
         }
@@ -600,7 +535,7 @@ slay char_in_range(char tea, start_char tea, end_char tea) lit {
     damn char_code >= start_code && char_code <= end_code
 }
 
-# Utility functions
+fr fr Utility functions
 slay find_closing_bracket(text tea, start_pos normie) normie {
     sus i normie = start_pos + 1
     sus text_length normie = string_length(text)
@@ -612,7 +547,7 @@ slay find_closing_bracket(text tea, start_pos normie) normie {
         i++
     }
     
-    damn -1  # Not found
+    damn -1 fr fr Not found
 }
 
 slay find_matching_parenthesis(text tea, start_pos normie) normie {
@@ -634,7 +569,7 @@ slay find_matching_parenthesis(text tea, start_pos normie) normie {
         i++
     }
     
-    damn -1  # Not found
+    damn -1 fr fr Not found
 }
 
 slay count_groups_before(elements [PatternElement]) normie {
@@ -647,28 +582,22 @@ slay count_groups_before(elements [PatternElement]) normie {
     damn count
 }
 
-slay substring(text tea, start normie, end normie) tea {
-    # This would be implemented as a built-in function
-    # For now, return placeholder
+slay substring(text tea, start normie, end normie) tea { fr fr This would be implemented as a built-in function fr fr For now, return placeholder
     damn "substring"
 }
 
-slay string_length(text tea) normie {
-    # This would be implemented as a built-in function
+slay string_length(text tea) normie { fr fr This would be implemented as a built-in function
     damn 10
 }
 
-slay string_char_at(text tea, index normie) tea {
-    # This would be implemented as a built-in function
+slay string_char_at(text tea, index normie) tea { fr fr This would be implemented as a built-in function
     damn "a"
 }
 
-slay char_to_code(char tea) normie {
-    # This would be implemented as a built-in function
-    damn 97  # 'a'
+slay char_to_code(char tea) normie { fr fr This would be implemented as a built-in function
+    damn 97 fr fr 'a'
 }
 
-slay string_starts_with(text tea, prefix tea) lit {
-    # This would be implemented as a built-in function
+slay string_starts_with(text tea, prefix tea) lit { fr fr This would be implemented as a built-in function
     damn based
 }

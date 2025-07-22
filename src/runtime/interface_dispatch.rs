@@ -463,7 +463,7 @@ impl InterfaceDispatchRegistry {
                         "i8*" | "tea" => {
                             let func: extern "C" fn(*const std::ffi::c_void) -> *const i8 = std::mem::transmute(func_ptr);
                             let result = func(c_args[0]);
-                            let c_str = std::ffi::CStr::from_ptr(result);
+                            let c_str = std::ffi::CStr::from_ptr(result as *const std::ffi::c_char);
                             Ok(Value::String(c_str.to_string_lossy().to_string()))
                         },
                         "i1" | "lit" => {
@@ -501,7 +501,7 @@ impl InterfaceDispatchRegistry {
                         "i8*" | "tea" => {
                             let func: extern "C" fn(*const std::ffi::c_void, *const std::ffi::c_void) -> *const i8 = std::mem::transmute(func_ptr);
                             let result = func(c_args[0], c_args[1]);
-                            let c_str = std::ffi::CStr::from_ptr(result);
+                            let c_str = std::ffi::CStr::from_ptr(result as *const std::ffi::c_char);
                             Ok(Value::String(c_str.to_string_lossy().to_string()))
                         },
                         "i1" | "lit" => {

@@ -2,10 +2,10 @@ yeet "testz"
 yeet "stringz"
 yeet "vibez"
 
-# Process Management Module - Pure CURSED Implementation
-# Complete process spawning, management, and IPC system
+fr fr Process Management Module - Pure CURSED Implementation
+fr fr Complete process spawning, management, and IPC system
 
-# Process State Constants
+fr fr Process State Constants
 facts {
     PROCESS_RUNNING = 1
     PROCESS_STOPPED = 2
@@ -24,7 +24,7 @@ facts {
     EXIT_FAILURE = 1
 }
 
-# Process Information Structure
+fr fr Process Information Structure
 be_like ProcessInfo = struct {
     pid normie
     ppid normie
@@ -39,7 +39,7 @@ be_like ProcessInfo = struct {
     working_dir tea
 }
 
-# Process Handle Structure
+fr fr Process Handle Structure
 be_like ProcessHandle = struct {
     pid normie
     name tea
@@ -50,14 +50,14 @@ be_like ProcessHandle = struct {
     running lit
 }
 
-# Signal Handler Structure
+fr fr Signal Handler Structure
 be_like SignalHandler = struct {
     signal normie
     handler slay()
     enabled lit
 }
 
-# IPC Message Structure
+fr fr IPC Message Structure
 be_like IpcMessage = struct {
     sender normie
     receiver normie
@@ -66,7 +66,7 @@ be_like IpcMessage = struct {
     timestamp normie
 }
 
-# Process Manager Structure
+fr fr Process Manager Structure
 be_like ProcessManager = struct {
     processes map[normie]ProcessInfo
     signal_handlers map[normie]SignalHandler
@@ -77,10 +77,10 @@ be_like ProcessManager = struct {
     running lit
 }
 
-# Global Process Manager
+fr fr Global Process Manager
 sus global_process_manager ProcessManager
 
-# Module Initialization
+fr fr Module Initialization
 slay init_process_manager() {
     global_process_manager = ProcessManager{
         processes: map[normie]ProcessInfo{},
@@ -90,37 +90,31 @@ slay init_process_manager() {
         environment: map[tea]tea{},
         current_dir: "/home/user",
         running: based,
-    }
-    
-    # Initialize default environment
+    } fr fr Initialize default environment
     global_process_manager.environment["HOME"] = "/home/user"
     global_process_manager.environment["USER"] = "user"
     global_process_manager.environment["PATH"] = "/usr/bin:/bin"
     global_process_manager.environment["SHELL"] = "/bin/bash"
     global_process_manager.environment["CURSED_HOME"] = "/home/user/.cursed"
-    global_process_manager.environment["CURSED_VERSION"] = "v21.0.0"
-    
-    # Register default signal handlers
+    global_process_manager.environment["CURSED_VERSION"] = "v21.0.0" fr fr Register default signal handlers
     register_signal_handler(SIGNAL_TERM, default_term_handler)
     register_signal_handler(SIGNAL_INT, default_int_handler)
     register_signal_handler(SIGNAL_HUP, default_hup_handler)
 }
 
-# Process Spawning Functions
+fr fr Process Spawning Functions
 slay spawn_process(command tea, args []tea) ProcessHandle {
     init_process_manager()
     
     pid := global_process_manager.next_pid
-    global_process_manager.next_pid++
-    
-    # Create process info
+    global_process_manager.next_pid++ fr fr Create process info
     process_info := ProcessInfo{
         pid: pid,
         ppid: get_current_pid(),
         name: command,
         state: PROCESS_RUNNING,
         start_time: get_current_time(),
-        memory_usage: 1024,  # Simulated memory usage
+        memory_usage: 1024, fr fr Simulated memory usage
         cpu_usage: 0.0,
         exit_code: 0,
         command: append([]tea{command}, args...),
@@ -128,9 +122,7 @@ slay spawn_process(command tea, args []tea) ProcessHandle {
         working_dir: global_process_manager.current_dir,
     }
     
-    global_process_manager.processes[pid] = process_info
-    
-    # Create process handle
+    global_process_manager.processes[pid] = process_info fr fr Create process handle
     handle := ProcessHandle{
         pid: pid,
         name: command,
@@ -139,24 +131,18 @@ slay spawn_process(command tea, args []tea) ProcessHandle {
         stdout_buffer: "",
         stderr_buffer: "",
         running: based,
-    }
-    
-    # Simulate process execution
+    } fr fr Simulate process execution
     execute_process(handle, command, args)
     
     damn handle
 }
 
 slay spawn_with_env(command tea, args []tea, env map[tea]tea) ProcessHandle {
-    init_process_manager()
-    
-    # Temporarily set environment
+    init_process_manager() fr fr Temporarily set environment
     old_env := global_process_manager.environment
     global_process_manager.environment = env
     
-    handle := spawn_process(command, args)
-    
-    # Restore environment
+    handle := spawn_process(command, args) fr fr Restore environment
     global_process_manager.environment = old_env
     
     damn handle
@@ -165,19 +151,15 @@ slay spawn_with_env(command tea, args []tea, env map[tea]tea) ProcessHandle {
 slay spawn_async(command tea, args []tea) ProcessHandle {
     init_process_manager()
     
-    handle := spawn_process(command, args)
-    
-    # Mark as asynchronous (non-blocking)
+    handle := spawn_process(command, args) fr fr Mark as asynchronous (non-blocking)
     handle.running = based
     
     damn handle
 }
 
-# Process Management Functions
+fr fr Process Management Functions
 slay wait_for_process(handle ProcessHandle) normie {
-    init_process_manager()
-    
-    # Simulate waiting for process completion
+    init_process_manager() fr fr Simulate waiting for process completion
     bestie handle.running {
         if process_info, exists := global_process_manager.processes[handle.pid]; exists {
             if process_info.state == PROCESS_TERMINATED {
@@ -185,9 +167,7 @@ slay wait_for_process(handle ProcessHandle) normie {
                 handle.exit_code = process_info.exit_code
                 ghosted
             }
-        }
-        
-        # Simulate process completion after some time
+        } fr fr Simulate process completion after some time
         if handle.pid % 2 == 0 {
             terminate_process(handle.pid, EXIT_SUCCESS)
         }
@@ -212,8 +192,7 @@ slay kill_process(pid normie) lit {
 slay send_signal(pid normie, signal normie) lit {
     init_process_manager()
     
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        # Handle different signals
+    if process_info, exists := global_process_manager.processes[pid]; exists { fr fr Handle different signals
         if signal == SIGNAL_TERM {
             process_info.state = PROCESS_TERMINATED
             process_info.exit_code = SIGNAL_TERM
@@ -226,9 +205,7 @@ slay send_signal(pid normie, signal normie) lit {
             process_info.state = PROCESS_RUNNING
         }
         
-        global_process_manager.processes[pid] = process_info
-        
-        # Call signal handler if registered
+        global_process_manager.processes[pid] = process_info fr fr Call signal handler if registered
         if handler, exists := global_process_manager.signal_handlers[signal]; exists {
             if handler.enabled {
                 handler.handler()
@@ -254,15 +231,13 @@ slay terminate_process(pid normie, exit_code normie) lit {
     damn cap
 }
 
-# Process Information Functions
+fr fr Process Information Functions
 slay get_process_info(pid normie) ProcessInfo {
     init_process_manager()
     
     if process_info, exists := global_process_manager.processes[pid]; exists {
         damn process_info
-    }
-    
-    # Return empty process info if not found
+    } fr fr Return empty process info if not found
     damn ProcessInfo{}
 }
 
@@ -279,12 +254,12 @@ slay list_processes() []ProcessInfo {
 
 slay get_current_pid() normie {
     init_process_manager()
-    damn 1000  # Simulated current process PID
+    damn 1000 fr fr Simulated current process PID
 }
 
 slay get_parent_pid() normie {
     init_process_manager()
-    damn 999   # Simulated parent process PID
+    damn 999 fr fr Simulated parent process PID
 }
 
 slay process_exists(pid normie) lit {
@@ -304,10 +279,10 @@ slay get_process_state(pid normie) normie {
         damn process_info.state
     }
     
-    damn -1  # Process not found
+    damn -1 fr fr Process not found
 }
 
-# Signal Handling Functions
+fr fr Signal Handling Functions
 slay register_signal_handler(signal normie, handler slay()) lit {
     init_process_manager()
     
@@ -352,7 +327,7 @@ slay disable_signal_handler(signal normie) lit {
     damn cap
 }
 
-# Default Signal Handlers
+fr fr Default Signal Handlers
 slay default_term_handler() {
     vibez.spill("Received SIGTERM - terminating gracefully")
     exit_with_code(EXIT_SUCCESS)
@@ -364,11 +339,10 @@ slay default_int_handler() {
 }
 
 slay default_hup_handler() {
-    vibez.spill("Received SIGHUP - hangup signal")
-    # Reload configuration or restart process
+    vibez.spill("Received SIGHUP - hangup signal") fr fr Reload configuration or restart process
 }
 
-# Environment Variable Management
+fr fr Environment Variable Management
 slay get_env(key tea) tea {
     init_process_manager()
     
@@ -406,7 +380,7 @@ slay clear_env() lit {
     damn based
 }
 
-# Working Directory Management
+fr fr Working Directory Management
 slay get_cwd() tea {
     init_process_manager()
     
@@ -421,9 +395,7 @@ slay set_cwd(path tea) lit {
 }
 
 slay change_dir(path tea) lit {
-    init_process_manager()
-    
-    # Validate path (in real implementation)
+    init_process_manager() fr fr Validate path (in real implementation)
     if stringz.has_prefix(path, "/") || stringz.has_prefix(path, "./") || stringz.has_prefix(path, "../") {
         global_process_manager.current_dir = path
         damn based
@@ -432,7 +404,7 @@ slay change_dir(path tea) lit {
     damn cap
 }
 
-# Process Communication (IPC)
+fr fr Process Communication (IPC)
 slay send_ipc_message(receiver_pid normie, message_type tea, data tea) lit {
     init_process_manager()
     
@@ -455,17 +427,14 @@ slay receive_ipc_message(sender_pid normie) IpcMessage {
     
     bestie i := 0; i < len(global_process_manager.ipc_messages); i++ {
         message := global_process_manager.ipc_messages[i]
-        if message.receiver == current_pid && (sender_pid == 0 || message.sender == sender_pid) {
-            # Remove message from queue
+        if message.receiver == current_pid && (sender_pid == 0 || message.sender == sender_pid) { fr fr Remove message from queue
             global_process_manager.ipc_messages = append(
                 global_process_manager.ipc_messages[:i],
                 global_process_manager.ipc_messages[i+1:]...
             )
             damn message
         }
-    }
-    
-    # Return empty message if none found
+    } fr fr Return empty message if none found
     damn IpcMessage{}
 }
 
@@ -490,7 +459,7 @@ slay clear_ipc_messages() lit {
     damn based
 }
 
-# Process Monitoring Functions
+fr fr Process Monitoring Functions
 slay get_process_memory(pid normie) normie {
     init_process_manager()
     
@@ -524,10 +493,9 @@ slay get_process_uptime(pid normie) normie {
 slay monitor_process(pid normie) ProcessInfo {
     init_process_manager()
     
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        # Update monitoring data
-        process_info.memory_usage = process_info.memory_usage + 10  # Simulate memory growth
-        process_info.cpu_usage = process_info.cpu_usage + 0.1      # Simulate CPU usage
+    if process_info, exists := global_process_manager.processes[pid]; exists { fr fr Update monitoring data
+        process_info.memory_usage = process_info.memory_usage + 10 fr fr Simulate memory growth
+        process_info.cpu_usage = process_info.cpu_usage + 0.1 fr fr Simulate CPU usage
         
         global_process_manager.processes[pid] = process_info
         damn process_info
@@ -536,7 +504,7 @@ slay monitor_process(pid normie) ProcessInfo {
     damn ProcessInfo{}
 }
 
-# Exit Code Handling
+fr fr Exit Code Handling
 slay exit() {
     init_process_manager()
     
@@ -561,7 +529,7 @@ slay get_exit_code(pid normie) normie {
     damn -1
 }
 
-# Helper Functions
+fr fr Helper Functions
 slay copy_environment() map[tea]tea {
     init_process_manager()
     
@@ -573,21 +541,17 @@ slay copy_environment() map[tea]tea {
     damn env_copy
 }
 
-slay get_current_time() normie {
-    # Simulate getting current timestamp
-    damn 1642681200  # Fixed timestamp for testing
+slay get_current_time() normie { fr fr Simulate getting current timestamp
+    damn 1642681200 fr fr Fixed timestamp for testing
 }
 
 slay execute_process(handle ProcessHandle, command tea, args []tea) {
-    init_process_manager()
-    
-    # Simulate process execution based on command
+    init_process_manager() fr fr Simulate process execution based on command
     if command == "echo" {
         if len(args) > 0 {
             handle.stdout_buffer = args[0]
         }
-    } else if command == "sleep" {
-        # Simulate sleep command
+    } else if command == "sleep" { fr fr Simulate sleep command
         handle.stdout_buffer = "Sleeping..."
     } else if command == "ls" {
         handle.stdout_buffer = "file1.txt file2.txt directory/"
@@ -600,7 +564,7 @@ slay execute_process(handle ProcessHandle, command tea, args []tea) {
     }
 }
 
-# System Information Functions
+fr fr System Information Functions
 slay get_system_info() map[tea]tea {
     init_process_manager()
     
@@ -618,7 +582,7 @@ slay get_system_info() map[tea]tea {
     damn system_info
 }
 
-# Debug and Utility Functions
+fr fr Debug and Utility Functions
 slay debug_process_manager() {
     init_process_manager()
     
@@ -651,18 +615,14 @@ slay debug_process_manager() {
     }
 }
 
-# Process cleanup on shutdown
+fr fr Process cleanup on shutdown
 slay cleanup_process_manager() {
-    init_process_manager()
-    
-    # Send termination signals to all running processes
+    init_process_manager() fr fr Send termination signals to all running processes
     bestie pid, process_info := range global_process_manager.processes {
         if process_info.state == PROCESS_RUNNING {
             send_signal(pid, SIGNAL_TERM)
         }
-    }
-    
-    # Clear all data structures
+    } fr fr Clear all data structures
     global_process_manager.processes = map[normie]ProcessInfo{}
     global_process_manager.signal_handlers = map[normie]SignalHandler{}
     global_process_manager.ipc_messages = []IpcMessage{}

@@ -10,18 +10,18 @@ fr fr ================================
 fr fr Cryptographically Secure RNG
 fr fr ================================
 
-# ChaCha20-based CSPRNG state
+fr fr ChaCha20-based CSPRNG state
 sus chacha20_state [normie] = [
-    0x61707865, 0x3320646e, 0x79622d32, 0x6b206574,  # Constants
-    0x00000000, 0x00000000, 0x00000000, 0x00000000,  # Key part 1
-    0x00000000, 0x00000000, 0x00000000, 0x00000000,  # Key part 2
-    0x00000001, 0x00000000, 0x00000000, 0x00000000   # Counter + nonce
+    0x61707865, 0x3320646e, 0x79622d32, 0x6b206574, fr fr Constants
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, fr fr Key part 1
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, fr fr Key part 2
+    0x00000001, 0x00000000, 0x00000000, 0x00000000 fr fr Counter + nonce
 ]
 
 sus entropy_pool [normie] = [0, 0, 0, 0, 0, 0, 0, 0]
 sus entropy_index normie = 0
 
-# ChaCha20 quarter round
+fr fr ChaCha20 quarter round
 slay chacha20_qr(state [normie], a normie, b normie, c normie, d normie) {
     state[a] = state[a] + state[b]
     state[d] = state[d] ^ state[a]
@@ -40,39 +40,30 @@ slay chacha20_qr(state [normie], a normie, b normie, c normie, d normie) {
     state[b] = (state[b] << 7) | (state[b] >> 25)
 }
 
-# ChaCha20 block function
-slay chacha20_block() {
-    # 20 rounds (10 double rounds)
-    bestie round := 0; round < 10; round++ {
-        # Column rounds
+fr fr ChaCha20 block function
+slay chacha20_block() { fr fr 20 rounds (10 double rounds)
+    bestie round := 0; round < 10; round++ { fr fr Column rounds
         chacha20_qr(chacha20_state, 0, 4, 8, 12)
         chacha20_qr(chacha20_state, 1, 5, 9, 13)
         chacha20_qr(chacha20_state, 2, 6, 10, 14)
-        chacha20_qr(chacha20_state, 3, 7, 11, 15)
-        
-        # Diagonal rounds  
+        chacha20_qr(chacha20_state, 3, 7, 11, 15) fr fr Diagonal rounds  
         chacha20_qr(chacha20_state, 0, 5, 10, 15)
         chacha20_qr(chacha20_state, 1, 6, 11, 12)
         chacha20_qr(chacha20_state, 2, 7, 8, 13)
         chacha20_qr(chacha20_state, 3, 4, 9, 14)
-    }
-    
-    # Increment counter
+    } fr fr Increment counter
     chacha20_state[12] = chacha20_state[12] + 1
     vibes chacha20_state[12] == 0 {
         chacha20_state[13] = chacha20_state[13] + 1
     }
 }
 
-# Secure random initialization
-slay crypto_secure_init(seed1 normie, seed2 normie, seed3 normie) {
-    # Set key from seeds
+fr fr Secure random initialization
+slay crypto_secure_init(seed1 normie, seed2 normie, seed3 normie) { fr fr Set key from seeds
     chacha20_state[4] = seed1 ^ 0xdeadbeef
     chacha20_state[5] = seed2 ^ 0xcafebabe
     chacha20_state[6] = seed3 ^ 0xfeedface
-    chacha20_state[7] = seed1 + seed2 + seed3
-    
-    # Mix entropy pool
+    chacha20_state[7] = seed1 + seed2 + seed3 fr fr Mix entropy pool
     entropy_pool[0] = seed1
     entropy_pool[1] = seed2
     entropy_pool[2] = seed3
@@ -80,15 +71,12 @@ slay crypto_secure_init(seed1 normie, seed2 normie, seed3 normie) {
     entropy_pool[4] = seed2 ^ seed3
     entropy_pool[5] = seed1 ^ seed3
     entropy_pool[6] = seed1 + seed2
-    entropy_pool[7] = seed2 + seed3
-    
-    # Generate initial entropy
+    entropy_pool[7] = seed2 + seed3 fr fr Generate initial entropy
     chacha20_block()
 }
 
-# Secure random u32
-slay crypto_secure_random_u32() normie {
-    # Generate fresh entropy if needed
+fr fr Secure random u32
+slay crypto_secure_random_u32() normie { fr fr Generate fresh entropy if needed
     vibes entropy_index >= 8 {
         chacha20_block()
         bestie i := 0; i < 8; i++ {
@@ -106,7 +94,7 @@ fr fr ================================
 fr fr SHA-3 (Keccak) Implementation
 fr fr ================================
 
-# Keccak state array (25 64-bit words, but simplified to 32-bit)
+fr fr Keccak state array (25 64-bit words, but simplified to 32-bit)
 sus keccak_state [normie] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -114,23 +102,22 @@ sus keccak_state [normie] = [
     0, 0, 0
 ]
 
-# Round constants for Keccak
+fr fr Round constants for Keccak
 sus keccak_rc [normie] = [
     0x01, 0x82, 0x8a, 0x00, 0x8b, 0x01, 0x81, 0x09,
     0x8a, 0x88, 0x09, 0x03, 0x8b, 0x8b, 0x89, 0x03,
     0x8b, 0x02, 0x80, 0x80, 0x81, 0x80, 0x08, 0x00
 ]
 
-# Keccak rotation offsets
+fr fr Keccak rotation offsets
 sus keccak_rot [normie] = [
     1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56,
     8, 25, 43, 62, 18, 39, 61, 20, 44
 ]
 
-# Keccak permutation function (simplified)
+fr fr Keccak permutation function (simplified)
 slay keccak_f() {
-    bestie round := 0; round < 24; round++ {
-        # Theta step (simplified)
+    bestie round := 0; round < 24; round++ { fr fr Theta step (simplified)
         sus c [normie] = [0, 0, 0, 0, 0]
         bestie x := 0; x < 5; x++ {
             c[x] = keccak_state[x] ^ keccak_state[x + 5] ^ keccak_state[x + 10] ^ keccak_state[x + 15] ^ keccak_state[x + 20]
@@ -141,18 +128,14 @@ slay keccak_f() {
             bestie y := 0; y < 5; y++ {
                 keccak_state[x + y * 5] = keccak_state[x + y * 5] ^ d
             }
-        }
-        
-        # Rho and Pi steps (simplified)
+        } fr fr Rho and Pi steps (simplified)
         sus current normie = keccak_state[1]
         bestie t := 0; t < 24; t++ {
             sus next_pos normie = ((t + 1) * (t + 2) / 2) % 25
             sus temp normie = keccak_state[next_pos]
             keccak_state[next_pos] = (current << keccak_rot[t]) | (current >> (32 - keccak_rot[t]))
             current = temp
-        }
-        
-        # Chi step (simplified)
+        } fr fr Chi step (simplified)
         bestie y := 0; y < 5; y++ {
             sus temp [normie] = [0, 0, 0, 0, 0]
             bestie x := 0; x < 5; x++ {
@@ -161,45 +144,32 @@ slay keccak_f() {
             bestie x := 0; x < 5; x++ {
                 keccac_state[x + y * 5] = temp[x]
             }
-        }
-        
-        # Iota step
+        } fr fr Iota step
         keccac_state[0] = keccac_state[0] ^ keccac_rc[round]
     }
 }
 
-# SHA-3 256 hash function
-slay crypto_sha3_256(data tea) tea {
-    # Initialize state
+fr fr SHA-3 256 hash function
+slay crypto_sha3_256(data tea) tea { fr fr Initialize state
     bestie i := 0; i < 49; i++ {
         keccac_state[i] = 0
-    }
-    
-    # Process input (simplified absorption)
+    } fr fr Process input (simplified absorption)
     sus data_len normie = crypto_strlen(data)
     bestie i := 0; i < data_len; i++ {
         sus byte_val normie = crypto_char_at(data, i)
-        sus word_index normie = (i / 4) % 17  # 136 bytes / 8 = 17 words
+        sus word_index normie = (i / 4) % 17 fr fr 136 bytes / 8 = 17 words
         sus byte_offset normie = (i % 4) * 8
-        keccac_state[word_index] = keccac_state[word_index] ^ (byte_val << byte_offset)
-        
-        # Process block when full
+        keccac_state[word_index] = keccac_state[word_index] ^ (byte_val << byte_offset) fr fr Process block when full
         vibes (i + 1) % 136 == 0 {
             keccac_f()
         }
-    }
-    
-    # Padding (simplified)
+    } fr fr Padding (simplified)
     sus last_block_pos normie = data_len % 136
     sus word_index normie = (last_block_pos / 4) % 17
     sus byte_offset normie = (last_block_pos % 4) * 8
     keccac_state[word_index] = keccac_state[word_index] ^ (0x06 << byte_offset)
-    keccac_state[16] = keccac_state[16] ^ 0x80000000  # Final bit
-    
-    # Final permutation
-    keccac_f()
-    
-    # Extract 32 bytes (256 bits)
+    keccac_state[16] = keccac_state[16] ^ 0x80000000 fr fr Final bit fr fr Final permutation
+    keccac_f() fr fr Extract 32 bytes (256 bits)
     sus result tea = ""
     bestie i := 0; i < 8; i++ {
         result = result + crypto_u32_to_hex(keccac_state[i])
@@ -212,7 +182,7 @@ fr fr ================================
 fr fr AES-GCM Implementation
 fr fr ================================
 
-# AES S-box
+fr fr AES S-box
 sus aes_sbox [normie] = [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5,
     0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -248,7 +218,7 @@ sus aes_sbox [normie] = [
     0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 ]
 
-# GF(2^128) multiplication for GHASH
+fr fr GF(2^128) multiplication for GHASH
 slay gf128_mul(a [normie], b [normie]) [normie] {
     sus result [normie] = [0, 0, 0, 0]
     sus v [normie] = [b[0], b[1], b[2], b[3]]
@@ -260,17 +230,13 @@ slay gf128_mul(a [normie], b [normie]) [normie] {
                 result[1] = result[1] ^ v[1]
                 result[2] = result[2] ^ v[2]
                 result[3] = result[3] ^ v[3]
-            }
-            
-            # Shift v right by 1 bit
+            } fr fr Shift v right by 1 bit
             sus carry normie = 0
             bestie k := 0; k < 4; k++ {
                 sus new_carry normie = v[k] & 1
                 v[k] = (v[k] >> 1) | (carry << 31)
                 carry = new_carry
-            }
-            
-            # If carry, XOR with reduction polynomial
+            } fr fr If carry, XOR with reduction polynomial
             vibes carry {
                 v[0] = v[0] ^ 0xe1000000
             }
@@ -280,34 +246,26 @@ slay gf128_mul(a [normie], b [normie]) [normie] {
     damn result
 }
 
-# AES-GCM encryption
-slay crypto_aes_gcm_encrypt(plaintext tea, key tea) tea {
-    # Generate random IV (96 bits)
+fr fr AES-GCM encryption
+slay crypto_aes_gcm_encrypt(plaintext tea, key tea) tea { fr fr Generate random IV (96 bits)
     sus iv [normie] = [
         crypto_secure_random_u32(),
         crypto_secure_random_u32(),
         crypto_secure_random_u32()
-    ]
-    
-    # Simplified AES key schedule (using key hash)
+    ] fr fr Simplified AES key schedule (using key hash)
     sus key_hash normie = 0
     sus key_len normie = crypto_strlen(key)
     bestie i := 0; i < key_len; i++ {
         key_hash = key_hash ^ crypto_char_at(key, i)
         key_hash = (key_hash << 5) + (key_hash >> 27) + 0x9e3779b9
-    }
-    
-    # Encrypt using CTR mode (simplified)
+    } fr fr Encrypt using CTR mode (simplified)
     sus data_len normie = crypto_strlen(plaintext)
     sus ciphertext tea = ""
     sus counter normie = 1
     
-    bestie i := 0; i < data_len; i++ {
-        # Generate keystream byte
+    bestie i := 0; i < data_len; i++ { fr fr Generate keystream byte
         sus keystream_input normie = iv[0] ^ iv[1] ^ iv[2] ^ counter ^ key_hash
-        sus keystream_byte normie = aes_sbox[keystream_input & 0xff]
-        
-        # XOR with plaintext
+        sus keystream_byte normie = aes_sbox[keystream_input & 0xff] fr fr XOR with plaintext
         sus plaintext_byte normie = crypto_char_at(plaintext, i)
         sus ciphertext_byte normie = plaintext_byte ^ keystream_byte
         
@@ -316,49 +274,36 @@ slay crypto_aes_gcm_encrypt(plaintext tea, key tea) tea {
         vibes (i + 1) % 16 == 0 {
             counter = counter + 1
         }
-    }
-    
-    # Compute simplified GHASH tag
+    } fr fr Compute simplified GHASH tag
     sus tag normie = key_hash ^ iv[0] ^ iv[1] ^ iv[2]
     bestie i := 0; i < data_len; i++ {
         tag = tag ^ crypto_char_at(ciphertext, i)
         tag = (tag << 1) ^ (tag >> 31)
-    }
-    
-    # Combine IV + ciphertext + tag
+    } fr fr Combine IV + ciphertext + tag
     sus result tea = crypto_u32_to_hex(iv[0]) + crypto_u32_to_hex(iv[1]) + crypto_u32_to_hex(iv[2]) +
                      crypto_bytes_to_hex(ciphertext) + crypto_u32_to_hex(tag)
     
     damn result
 }
 
-# AES-GCM decryption
-slay crypto_aes_gcm_decrypt(encrypted tea, key tea) tea {
-    # Extract IV (first 24 hex chars = 12 bytes)
+fr fr AES-GCM decryption
+slay crypto_aes_gcm_decrypt(encrypted tea, key tea) tea { fr fr Extract IV (first 24 hex chars = 12 bytes)
     sus iv [normie] = [
         crypto_hex_to_u32(crypto_substr(encrypted, 0, 8)),
         crypto_hex_to_u32(crypto_substr(encrypted, 8, 8)),
         crypto_hex_to_u32(crypto_substr(encrypted, 16, 8))
-    ]
-    
-    # Extract tag (last 8 hex chars = 4 bytes)
+    ] fr fr Extract tag (last 8 hex chars = 4 bytes)
     sus encrypted_len normie = crypto_strlen(encrypted)
     sus tag_hex tea = crypto_substr(encrypted, encrypted_len - 8, 8)
-    sus expected_tag normie = crypto_hex_to_u32(tag_hex)
-    
-    # Extract ciphertext (middle part)
+    sus expected_tag normie = crypto_hex_to_u32(tag_hex) fr fr Extract ciphertext (middle part)
     sus ciphertext_hex tea = crypto_substr(encrypted, 24, encrypted_len - 32)
-    sus ciphertext tea = crypto_hex_to_bytes(ciphertext_hex)
-    
-    # Compute key hash (same as encryption)
+    sus ciphertext tea = crypto_hex_to_bytes(ciphertext_hex) fr fr Compute key hash (same as encryption)
     sus key_hash normie = 0
     sus key_len normie = crypto_strlen(key)
     bestie i := 0; i < key_len; i++ {
         key_hash = key_hash ^ crypto_char_at(key, i)
         key_hash = (key_hash << 5) + (key_hash >> 27) + 0x9e3779b9
-    }
-    
-    # Verify tag
+    } fr fr Verify tag
     sus computed_tag normie = key_hash ^ iv[0] ^ iv[1] ^ iv[2]
     sus ciphertext_len normie = crypto_strlen(ciphertext)
     bestie i := 0; i < ciphertext_len; i++ {
@@ -368,18 +313,13 @@ slay crypto_aes_gcm_decrypt(encrypted tea, key tea) tea {
     
     vibes computed_tag != expected_tag {
         damn "AUTHENTICATION_FAILED"
-    }
-    
-    # Decrypt using CTR mode
+    } fr fr Decrypt using CTR mode
     sus plaintext tea = ""
     sus counter normie = 1
     
-    bestie i := 0; i < ciphertext_len; i++ {
-        # Generate keystream byte
+    bestie i := 0; i < ciphertext_len; i++ { fr fr Generate keystream byte
         sus keystream_input normie = iv[0] ^ iv[1] ^ iv[2] ^ counter ^ key_hash
-        sus keystream_byte normie = aes_sbox[keystream_input & 0xff]
-        
-        # XOR with ciphertext
+        sus keystream_byte normie = aes_sbox[keystream_input & 0xff] fr fr XOR with ciphertext
         sus ciphertext_byte normie = crypto_char_at(ciphertext, i)
         sus plaintext_byte normie = ciphertext_byte ^ keystream_byte
         
@@ -413,9 +353,7 @@ slay crypto_secure_random_int(min normie, max normie) normie {
     }
     
     sus range normie = max - min + 1
-    sus random_val normie = crypto_secure_random_u32()
-    
-    # Avoid modulo bias with rejection sampling
+    sus random_val normie = crypto_secure_random_u32() fr fr Avoid modulo bias with rejection sampling
     sus limit normie = 0xffffffff - (0xffffffff % range)
     whomst random_val >= limit {
         random_val = crypto_secure_random_u32()
@@ -441,21 +379,17 @@ fr fr ================================
 fr fr Utility Functions
 fr fr ================================
 
-slay crypto_strlen(s tea) normie {
-    # In real implementation, would use actual string length
-    # For demo, assume reasonable length
-    damn 32  # Default length for testing
+slay crypto_strlen(s tea) normie { fr fr In real implementation, would use actual string length fr fr For demo, assume reasonable length
+    damn 32 fr fr Default length for testing
 }
 
-slay crypto_char_at(s tea, index normie) normie {
-    # In real implementation, would access actual string
-    # For demo, return simulated values
-    vibes index == 0 { damn 72 }   # 'H'
-    vibes index == 1 { damn 101 }  # 'e'
-    vibes index == 2 { damn 108 }  # 'l'
-    vibes index == 3 { damn 108 }  # 'l'
-    vibes index == 4 { damn 111 }  # 'o'
-    damn 65 + (index % 26)  # A-Z cycle
+slay crypto_char_at(s tea, index normie) normie { fr fr In real implementation, would access actual string fr fr For demo, return simulated values
+    vibes index == 0 { damn 72 } fr fr 'H'
+    vibes index == 1 { damn 101 } fr fr 'e'
+    vibes index == 2 { damn 108 } fr fr 'l'
+    vibes index == 3 { damn 108 } fr fr 'l'
+    vibes index == 4 { damn 111 } fr fr 'o'
+    damn 65 + (index % 26) fr fr A-Z cycle
 }
 
 slay crypto_byte_to_char(byte normie) tea {
@@ -463,7 +397,7 @@ slay crypto_byte_to_char(byte normie) tea {
     vibes byte == 101 { damn "e" }
     vibes byte == 108 { damn "l" }
     vibes byte == 111 { damn "o" }
-    damn "X"  # Default
+    damn "X" fr fr Default
 }
 
 slay crypto_u32_to_hex(value normie) tea {
@@ -478,8 +412,7 @@ slay crypto_u32_to_hex(value normie) tea {
     damn result
 }
 
-slay crypto_hex_to_u32(hex tea) normie {
-    # Simplified hex to u32 conversion
+slay crypto_hex_to_u32(hex tea) normie { fr fr Simplified hex to u32 conversion
     sus result normie = 0
     sus hex_len normie = crypto_strlen(hex)
     
@@ -487,11 +420,11 @@ slay crypto_hex_to_u32(hex tea) normie {
         sus char_val normie = crypto_char_at(hex, i)
         sus digit normie = 0
         
-        vibes char_val >= 48 && char_val <= 57 {  # 0-9
+        vibes char_val >= 48 && char_val <= 57 { fr fr 0-9
             digit = char_val - 48
-        } nah vibes char_val >= 97 && char_val <= 102 {  # a-f
+        } nah vibes char_val >= 97 && char_val <= 102 { fr fr a-f
             digit = char_val - 97 + 10
-        } nah vibes char_val >= 65 && char_val <= 70 {  # A-F
+        } nah vibes char_val >= 65 && char_val <= 70 { fr fr A-F
             digit = char_val - 65 + 10
         }
         
@@ -501,8 +434,7 @@ slay crypto_hex_to_u32(hex tea) normie {
     damn result
 }
 
-slay crypto_substr(s tea, start normie, length normie) tea {
-    # Simplified substring extraction
+slay crypto_substr(s tea, start normie, length normie) tea { fr fr Simplified substring extraction
     sus result tea = ""
     bestie i := start; i < start + length; i++ {
         result = result + crypto_byte_to_char(crypto_char_at(s, i))
@@ -539,7 +471,7 @@ fr fr ================================
 fr fr Module Initialization
 fr fr ================================
 
-# Initialize with high-entropy seed (in production, would use system entropy)
+fr fr Initialize with high-entropy seed (in production, would use system entropy)
 crypto_secure_init(0x12345678, 0x9abcdef0, 0xfedcba98)
 
 vibez.spill("🔐 CURSED Production Crypto Library v8.0 Loaded")

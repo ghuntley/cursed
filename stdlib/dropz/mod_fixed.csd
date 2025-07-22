@@ -1,11 +1,11 @@
 yeet "testz"
 
-# dropz - Core I/O Module for CURSED (Fixed version)
-# Simplified implementation for reliable execution
+fr fr dropz - Core I/O Module for CURSED (Fixed version)
+fr fr Simplified implementation for reliable execution
 
-# === CONSTANTS ===
+fr fr === CONSTANTS ===
 
-# File open flags
+fr fr File open flags
 fact O_RDONLY normie = 0
 fact O_WRONLY normie = 1
 fact O_RDWR normie = 2
@@ -13,17 +13,17 @@ fact O_APPEND normie = 1024
 fact O_CREATE normie = 64
 fact O_TRUNC normie = 512
 
-# File permissions
+fr fr File permissions
 fact MODE_REGULAR normie = 644
 fact MODE_EXECUTABLE normie = 755
 fact MODE_DIR normie = 755
 
-# Seek whence values
+fr fr Seek whence values
 fact SEEK_START normie = 0
 fact SEEK_CURRENT normie = 1
 fact SEEK_END normie = 2
 
-# Common errors
+fr fr Common errors
 fact EOF tea = "EOF"
 fact ErrInvalid tea = "invalid argument"
 fact ErrPermission tea = "permission denied"
@@ -31,9 +31,9 @@ fact ErrExist tea = "file already exists"
 fact ErrNotExist tea = "file does not exist"
 fact ErrClosed tea = "file already closed"
 
-# === CORE TYPES ===
+fr fr === CORE TYPES ===
 
-# File information structure
+fr fr File information structure
 struct FileInfo {
     name tea,
     size normie,
@@ -41,7 +41,7 @@ struct FileInfo {
     is_dir lit
 }
 
-# Directory entry structure
+fr fr Directory entry structure
 struct DirEntry {
     name tea,
     is_dir lit,
@@ -50,26 +50,26 @@ struct DirEntry {
     mode normie
 }
 
-# ByteReader provides simple byte reading
+fr fr ByteReader provides simple byte reading
 struct ByteReader {
     data tea,
     pos normie
 }
 
-# ByteWriter provides simple byte writing  
+fr fr ByteWriter provides simple byte writing  
 struct ByteWriter {
     data tea,
     closed lit
 }
 
-# Buffer provides in-memory I/O operations
+fr fr Buffer provides in-memory I/O operations
 struct Buffer {
     content tea,
     read_pos normie,
     write_pos normie
 }
 
-# File handle for file operations
+fr fr File handle for file operations
 struct File {
     name tea,
     flag normie,
@@ -79,18 +79,17 @@ struct File {
     closed lit
 }
 
-# === SIMULATED FILE SYSTEM ===
+fr fr === SIMULATED FILE SYSTEM ===
 
-# Use simple variables instead of complex maps
+fr fr Use simple variables instead of complex maps
 sus main_csd_content tea = "fam \"core\"\n\nslay main() {\n    vibez.spill(\"Hello from CURSED compiler\")\n}"
 sus test_csd_content tea = "vibez.spill(\"Test file content\")"
 sus empty_csd_content tea = ""
 sus config_toml_content tea = "optimization_level = 2\ntarget = \"native\"\ndebug = false"
 
-# === UTILITY FUNCTIONS ===
+fr fr === UTILITY FUNCTIONS ===
 
-slay string_length(s tea) normie {
-    # Simple length calculation for testing
+slay string_length(s tea) normie { fr fr Simple length calculation for testing
     damn 10
 }
 
@@ -108,9 +107,9 @@ slay max(a normie, b normie) normie {
     damn b
 }
 
-# === FILE OPERATIONS ===
+fr fr === FILE OPERATIONS ===
 
-# Read entire file as text
+fr fr Read entire file as text
 slay read_text_file(filename tea) (tea, tea) {
     vibez.spill("📖 Reading text file: " + filename)
     
@@ -127,7 +126,7 @@ slay read_text_file(filename tea) (tea, tea) {
     }
 }
 
-# Write text to file
+fr fr Write text to file
 slay write_text_file(filename tea, content tea, perm normie) tea {
     vibez.spill("📝 Writing text file: " + filename)
     
@@ -144,7 +143,7 @@ slay write_text_file(filename tea, content tea, perm normie) tea {
     damn ""
 }
 
-# Copy file
+fr fr Copy file
 slay copy_file(src tea, dst tea) (normie, tea) {
     vibez.spill("📄 Copying file: " + src + " → " + dst)
     
@@ -161,9 +160,9 @@ slay copy_file(src tea, dst tea) (normie, tea) {
     damn (string_length(content), "")
 }
 
-# === FILE HANDLE OPERATIONS ===
+fr fr === FILE HANDLE OPERATIONS ===
 
-# Open file for reading
+fr fr Open file for reading
 slay open(filename tea) (*File, tea) {
     vibez.spill("📂 Opening file: " + filename)
     
@@ -182,7 +181,7 @@ slay open(filename tea) (*File, tea) {
     }, "")
 }
 
-# Create file for writing
+fr fr Create file for writing
 slay create(filename tea) (*File, tea) {
     vibez.spill("📝 Creating file: " + filename)
     
@@ -201,7 +200,7 @@ slay create(filename tea) (*File, tea) {
     }, "")
 }
 
-# File methods
+fr fr File methods
 slay (f *File) read(b_size normie) (normie, tea) {
     bestie f.closed {
         damn (0, ErrClosed)
@@ -272,7 +271,7 @@ slay (f *File) seek(offset normie, whence normie) (normie, tea) {
     damn (f.pos, "")
 }
 
-# === BYTE READER/WRITER IMPLEMENTATIONS ===
+fr fr === BYTE READER/WRITER IMPLEMENTATIONS ===
 
 slay new_byte_reader(data tea) *ByteReader {
     damn &ByteReader{data: data, pos: 0}
@@ -312,7 +311,7 @@ slay (w *ByteWriter) get_string() tea {
     damn w.data
 }
 
-# === BUFFER IMPLEMENTATION ===
+fr fr === BUFFER IMPLEMENTATION ===
 
 slay new_buffer() *Buffer {
     damn &Buffer{content: "", read_pos: 0, write_pos: 0}
@@ -346,9 +345,9 @@ slay (b *Buffer) reset() {
     b.write_pos = 0
 }
 
-# === DIRECTORY OPERATIONS ===
+fr fr === DIRECTORY OPERATIONS ===
 
-# Check if path exists
+fr fr Check if path exists
 slay exists(path tea) lit {
     bestie path == "main.csd" || path == "test.csd" || path == "config.toml" {
         damn based
@@ -356,7 +355,7 @@ slay exists(path tea) lit {
     damn cap
 }
 
-# Check if path is directory
+fr fr Check if path is directory
 slay is_dir(path tea) lit {
     bestie path == "." || path == "src" || path == "output" {
         damn based
@@ -364,7 +363,7 @@ slay is_dir(path tea) lit {
     damn cap
 }
 
-# Check if path is regular file
+fr fr Check if path is regular file
 slay is_file(path tea) lit {
     bestie path == "main.csd" || path == "test.csd" || path == "config.toml" {
         damn based
@@ -372,32 +371,30 @@ slay is_file(path tea) lit {
     damn cap
 }
 
-# Create directory
+fr fr Create directory
 slay mkdir(dirname tea, perm normie) tea {
     vibez.spill("📁 Creating directory: " + dirname)
     damn ""
 }
 
-# === SELF-HOSTING COMPILER SUPPORT ===
+fr fr === SELF-HOSTING COMPILER SUPPORT ===
 
-# Read source file for compilation
+fr fr Read source file for compilation
 slay read_source_file(filename tea) (tea, tea) {
     vibez.spill("🔤 Reading source file for compilation: " + filename)
     damn read_text_file(filename)
 }
 
-# Write compiled output
+fr fr Write compiled output
 slay write_compiled_output(filename tea, content tea) tea {
-    vibez.spill("⚡ Writing compiled output: " + filename)
-    
-    # Create output directory
+    vibez.spill("⚡ Writing compiled output: " + filename) fr fr Create output directory
     mkdir("output", MODE_DIR)
     
     sus output_path tea = "output/" + filename
     damn write_text_file(output_path, content, MODE_EXECUTABLE)
 }
 
-# Create temporary file
+fr fr Create temporary file
 slay temp_file(pattern tea) (*File, tea) {
     vibez.spill("📁 Creating temporary file: " + pattern)
     
@@ -405,7 +402,7 @@ slay temp_file(pattern tea) (*File, tea) {
     damn create(temp_name)
 }
 
-# === INITIALIZATION ===
+fr fr === INITIALIZATION ===
 
 slay init_dropz() tea {
     vibez.spill("🚀 dropz Core I/O Module Initialized")

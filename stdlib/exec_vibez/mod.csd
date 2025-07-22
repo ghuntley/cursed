@@ -1,8 +1,8 @@
-# exec_vibez - Pure CURSED Process Execution Module
-# Enhanced external command execution and process management
-# Zero FFI dependencies - completely self-contained
+fr fr exec_vibez - Pure CURSED Process Execution Module
+fr fr Enhanced external command execution and process management
+fr fr Zero FFI dependencies - completely self-contained
 
-# Global process execution state
+fr fr Global process execution state
 sus process_registry map = {}
 sus running_processes map = {}
 sus process_groups map = {}
@@ -13,7 +13,7 @@ sus process_environments map = {}
 sus output_streamers map = {}
 sus timeout_manager map = {}
 
-# Process state constants
+fr fr Process state constants
 sus PROCESS_STATE_CREATED tea = "created"
 sus PROCESS_STATE_RUNNING tea = "running"  
 sus PROCESS_STATE_FINISHED tea = "finished"
@@ -21,43 +21,43 @@ sus PROCESS_STATE_FAILED tea = "failed"
 sus PROCESS_STATE_KILLED tea = "killed"
 sus PROCESS_STATE_TIMEOUT tea = "timeout"
 
-# Exit code constants
+fr fr Exit code constants
 sus EXIT_SUCCESS normie = 0
 sus EXIT_FAILURE normie = 1
 sus EXIT_TIMEOUT normie = 124
 sus EXIT_KILLED normie = 137
 
-# Command execution modes
+fr fr Command execution modes
 sus EXEC_MODE_SYNC tea = "synchronous"
 sus EXEC_MODE_ASYNC tea = "asynchronous" 
 sus EXEC_MODE_DETACHED tea = "detached"
 
-# Stream types
+fr fr Stream types
 sus STREAM_STDOUT tea = "stdout"
 sus STREAM_STDERR tea = "stderr"
 sus STREAM_STDIN tea = "stdin"
 
-# Signal constants for process management
+fr fr Signal constants for process management
 sus SIGTERM normie = 15
 sus SIGINT normie = 2
 sus SIGCHLD normie = 17
 
-# ==============================================================================
-# INITIALIZATION AND CONFIGURATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr INITIALIZATION AND CONFIGURATION
+fr fr ==============================================================================
 
-# Initialize exec_vibez module
+fr fr Initialize exec_vibez module
 slay init_exec_vibez() lit {
     exec_config = {
-        "default_timeout_ms": 30000,        # 30 seconds
+        "default_timeout_ms": 30000, fr fr 30 seconds
         "max_concurrent_processes": 100,
         "max_command_history": 1000,
         "default_working_dir": "/tmp",
         "capture_output": based,
         "shell_command": "/bin/sh",
         "shell_flag": "-c",
-        "max_output_buffer": 1048576,       # 1MB
-        "process_cleanup_interval": 5000    # 5 seconds
+        "max_output_buffer": 1048576, fr fr 1MB
+        "process_cleanup_interval": 5000 fr fr 5 seconds
     }
     
     exec_statistics = {
@@ -75,7 +75,7 @@ slay init_exec_vibez() lit {
     damn based
 }
 
-# Configure exec_vibez settings
+fr fr Configure exec_vibez settings
 slay configure_exec(config map) lit {
     sus keys [tea] = config.keys()
     sus i normie = 0
@@ -91,16 +91,16 @@ slay configure_exec(config map) lit {
     damn based
 }
 
-# Get exec configuration
+fr fr Get exec configuration
 slay get_exec_config() map {
     damn exec_config
 }
 
-# ==============================================================================
-# COMMAND CREATION AND EXECUTION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr COMMAND CREATION AND EXECUTION
+fr fr ==============================================================================
 
-# Create a command object
+fr fr Create a command object
 slay create_command(program tea, args [tea]) map {
     sus command_id tea = generate_command_id()
     sus command_data map = {
@@ -121,19 +121,19 @@ slay create_command(program tea, args [tea]) map {
     damn command_data
 }
 
-# Set command working directory
+fr fr Set command working directory
 slay set_working_dir(command map, dir tea) lit {
     command.set("working_dir", dir)
     damn based
 }
 
-# Set command environment variables
+fr fr Set command environment variables
 slay set_environment(command map, env map) lit {
     command.set("environment", env)
     damn based
 }
 
-# Add environment variable
+fr fr Add environment variable
 slay add_env_var(command map, key tea, value tea) lit {
     sus env map = command.get("environment")
     env.set(key, value)
@@ -141,19 +141,19 @@ slay add_env_var(command map, key tea, value tea) lit {
     damn based
 }
 
-# Set command input data
+fr fr Set command input data
 slay set_stdin(command map, input tea) lit {
     command.set("stdin_data", input)
     damn based
 }
 
-# Set command timeout
+fr fr Set command timeout
 slay set_timeout(command map, timeout_ms normie) lit {
     command.set("timeout_ms", timeout_ms)
     damn based
 }
 
-# Set execution mode
+fr fr Set execution mode
 slay set_exec_mode(command map, mode tea) lit {
     if mode == EXEC_MODE_SYNC || mode == EXEC_MODE_ASYNC || mode == EXEC_MODE_DETACHED {
         command.set("exec_mode", mode)
@@ -162,82 +162,56 @@ slay set_exec_mode(command map, mode tea) lit {
     damn cap
 }
 
-# ==============================================================================
-# COMMAND EXECUTION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr COMMAND EXECUTION
+fr fr ==============================================================================
 
-# Execute command synchronously
+fr fr Execute command synchronously
 slay execute_command(command map) map {
     sus process_id tea = generate_process_id()
-    sus execution_start normie = get_current_timestamp()
-    
-    # Update command state
+    sus execution_start normie = get_current_timestamp() fr fr Update command state
     command.set("state", PROCESS_STATE_RUNNING)
     command.set("process_id", process_id)
-    command.set("start_time", execution_start)
-    
-    # Register process
-    register_process(process_id, command)
-    
-    # Simulate command execution
-    sus result map = simulate_command_execution(command)
-    
-    # Update statistics
-    update_execution_statistics(result)
-    
-    # Add to command history
-    add_to_command_history(command, result)
-    
-    # Cleanup process
+    command.set("start_time", execution_start) fr fr Register process
+    register_process(process_id, command) fr fr Simulate command execution
+    sus result map = simulate_command_execution(command) fr fr Update statistics
+    update_execution_statistics(result) fr fr Add to command history
+    add_to_command_history(command, result) fr fr Cleanup process
     unregister_process(process_id)
     
     damn result
 }
 
-# Execute command asynchronously
+fr fr Execute command asynchronously
 slay execute_async(command map) tea {
-    sus process_id tea = generate_process_id()
-    
-    # Update command state
+    sus process_id tea = generate_process_id() fr fr Update command state
     command.set("state", PROCESS_STATE_RUNNING)
     command.set("process_id", process_id)
     command.set("start_time", get_current_timestamp())
-    command.set("exec_mode", EXEC_MODE_ASYNC)
-    
-    # Register process
-    register_process(process_id, command)
-    
-    # Store for async monitoring
-    running_processes.set(process_id, command)
-    
-    # Simulate async start
+    command.set("exec_mode", EXEC_MODE_ASYNC) fr fr Register process
+    register_process(process_id, command) fr fr Store for async monitoring
+    running_processes.set(process_id, command) fr fr Simulate async start
     vibez.spill("Started async process: " + process_id)
     
     damn process_id
 }
 
-# Wait for async process completion
+fr fr Wait for async process completion
 slay wait_for_process(process_id tea) map {
     if !running_processes.has_key(process_id) {
         damn { "error": "Process not found", "exit_code": EXIT_FAILURE }
     }
     
-    sus command map = running_processes.get(process_id)
-    
-    # Simulate waiting for completion
-    sus result map = simulate_command_execution(command)
-    
-    # Cleanup
+    sus command map = running_processes.get(process_id) fr fr Simulate waiting for completion
+    sus result map = simulate_command_execution(command) fr fr Cleanup
     running_processes.remove(process_id)
-    unregister_process(process_id)
-    
-    # Update statistics
+    unregister_process(process_id) fr fr Update statistics
     update_execution_statistics(result)
     
     damn result
 }
 
-# Kill a running process
+fr fr Kill a running process
 slay kill_process(process_id tea) lit {
     if !running_processes.has_key(process_id) {
         damn cap
@@ -245,21 +219,15 @@ slay kill_process(process_id tea) lit {
     
     sus command map = running_processes.get(process_id)
     command.set("state", PROCESS_STATE_KILLED)
-    command.set("end_time", get_current_timestamp())
-    
-    # Create kill result
+    command.set("end_time", get_current_timestamp()) fr fr Create kill result
     sus result map = {
         "exit_code": EXIT_KILLED,
         "stdout": "",
         "stderr": "Process killed",
         "execution_time_ms": get_current_timestamp() - command.get("start_time"),
         "state": PROCESS_STATE_KILLED
-    }
-    
-    # Update statistics
-    update_execution_statistics(result)
-    
-    # Cleanup
+    } fr fr Update statistics
+    update_execution_statistics(result) fr fr Cleanup
     running_processes.remove(process_id)
     unregister_process(process_id)
     
@@ -267,21 +235,17 @@ slay kill_process(process_id tea) lit {
     damn based
 }
 
-# ==============================================================================
-# COMMAND SIMULATION (Pure CURSED Implementation)
-# ==============================================================================
+fr fr ==============================================================================
+fr fr COMMAND SIMULATION (Pure CURSED Implementation)
+fr fr ==============================================================================
 
-# Simulate command execution without FFI
+fr fr Simulate command execution without FFI
 slay simulate_command_execution(command map) map {
     sus program tea = command.get("program")
     sus args [tea] = command.get("args")
     sus timeout_ms normie = command.get("timeout_ms")
-    sus start_time normie = get_current_timestamp()
-    
-    # Simulate execution time
-    sus execution_time normie = simulate_execution_time(program, args)
-    
-    # Check timeout
+    sus start_time normie = get_current_timestamp() fr fr Simulate execution time
+    sus execution_time normie = simulate_execution_time(program, args) fr fr Check timeout
     if execution_time > timeout_ms {
         command.set("state", PROCESS_STATE_TIMEOUT)
         damn {
@@ -291,24 +255,18 @@ slay simulate_command_execution(command map) map {
             "execution_time_ms": timeout_ms,
             "state": PROCESS_STATE_TIMEOUT
         }
-    }
-    
-    # Simulate command output based on program
+    } fr fr Simulate command output based on program
     sus output_result map = simulate_command_output(program, args)
     sus exit_code normie = output_result.get("exit_code")
     sus stdout tea = output_result.get("stdout")
-    sus stderr tea = output_result.get("stderr")
-    
-    # Determine final state
+    sus stderr tea = output_result.get("stderr") fr fr Determine final state
     sus final_state tea = PROCESS_STATE_FINISHED
     if exit_code != EXIT_SUCCESS {
         final_state = PROCESS_STATE_FAILED
     }
     
     command.set("state", final_state)
-    command.set("end_time", get_current_timestamp())
-    
-    # Create execution result
+    command.set("end_time", get_current_timestamp()) fr fr Create execution result
     sus result map = {
         "exit_code": exit_code,
         "stdout": stdout,
@@ -321,29 +279,28 @@ slay simulate_command_execution(command map) map {
     damn result
 }
 
-# Simulate execution time based on command
-slay simulate_execution_time(program tea, args [tea]) normie {
-    # Simulate different execution times for different commands
+fr fr Simulate execution time based on command
+slay simulate_execution_time(program tea, args [tea]) normie { fr fr Simulate different execution times for different commands
     if program == "echo" {
-        damn 50  # 50ms for echo
+        damn 50 fr fr 50ms for echo
     } else if program == "ls" {
-        damn 100  # 100ms for ls
+        damn 100 fr fr 100ms for ls
     } else if program == "grep" {
-        damn 200  # 200ms for grep
+        damn 200 fr fr 200ms for grep
     } else if program == "find" {
-        damn 500  # 500ms for find
+        damn 500 fr fr 500ms for find
     } else if program == "sleep" {
         if args.length() > 0 {
             sus sleep_time tea = args[0]
-            damn core.normie(sleep_time) * 1000  # Convert seconds to ms
+            damn core.normie(sleep_time) * 1000 fr fr Convert seconds to ms
         }
-        damn 1000  # Default 1 second
+        damn 1000 fr fr Default 1 second
     } else {
-        damn 300  # Default 300ms for unknown commands
+        damn 300 fr fr Default 300ms for unknown commands
     }
 }
 
-# Simulate command output
+fr fr Simulate command output
 slay simulate_command_output(program tea, args [tea]) map {
     if program == "echo" {
         sus output tea = ""
@@ -412,9 +369,7 @@ slay simulate_command_output(program tea, args [tea]) map {
     
     if program == "true" {
         damn { "exit_code": EXIT_SUCCESS, "stdout": "", "stderr": "" }
-    }
-    
-    # Default simulation for unknown commands
+    } fr fr Default simulation for unknown commands
     damn { 
         "exit_code": EXIT_SUCCESS, 
         "stdout": "Simulated output for " + program, 
@@ -422,11 +377,11 @@ slay simulate_command_output(program tea, args [tea]) map {
     }
 }
 
-# ==============================================================================
-# PROCESS MANAGEMENT
-# ==============================================================================
+fr fr ==============================================================================
+fr fr PROCESS MANAGEMENT
+fr fr ==============================================================================
 
-# Register process
+fr fr Register process
 slay register_process(process_id tea, command map) lit {
     sus process_data map = {
         "id": process_id,
@@ -448,7 +403,7 @@ slay register_process(process_id tea, command map) lit {
     damn based
 }
 
-# Unregister process
+fr fr Unregister process
 slay unregister_process(process_id tea) lit {
     if process_registry.has_key(process_id) {
         process_registry.remove(process_id)
@@ -463,7 +418,7 @@ slay unregister_process(process_id tea) lit {
     damn cap
 }
 
-# Get process info
+fr fr Get process info
 slay get_process_info(process_id tea) map {
     if process_registry.has_key(process_id) {
         damn process_registry.get(process_id)
@@ -471,24 +426,24 @@ slay get_process_info(process_id tea) map {
     damn {}
 }
 
-# List running processes
+fr fr List running processes
 slay list_running_processes() [tea] {
     damn running_processes.keys()
 }
 
-# List all registered processes
+fr fr List all registered processes
 slay list_all_processes() [tea] {
     damn process_registry.keys()
 }
 
-# ==============================================================================
-# PROCESS GROUPS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr PROCESS GROUPS
+fr fr ==============================================================================
 
-# Create process group
+fr fr Create process group
 slay create_process_group(group_name tea) lit {
     if process_groups.has_key(group_name) {
-        damn cap  # Group already exists
+        damn cap fr fr Group already exists
     }
     
     sus group_data map = {
@@ -504,18 +459,16 @@ slay create_process_group(group_name tea) lit {
     damn based
 }
 
-# Add process to group
+fr fr Add process to group
 slay add_to_group(group_name tea, process_id tea) lit {
     if !process_groups.has_key(group_name) {
-        damn cap  # Group doesn't exist
+        damn cap fr fr Group doesn't exist
     }
     
     sus group_data map = process_groups.get(group_name)
     sus processes [tea] = group_data.get("processes")
     processes.push(process_id)
-    group_data.set("processes", processes)
-    
-    # Set leader if first process
+    group_data.set("processes", processes) fr fr Set leader if first process
     if processes.length() == 1 {
         group_data.set("leader_process", process_id)
     }
@@ -524,7 +477,7 @@ slay add_to_group(group_name tea, process_id tea) lit {
     damn based
 }
 
-# Kill process group
+fr fr Kill process group
 slay kill_process_group(group_name tea) lit {
     if !process_groups.has_key(group_name) {
         damn cap
@@ -547,11 +500,11 @@ slay kill_process_group(group_name tea) lit {
     damn based
 }
 
-# ==============================================================================
-# OUTPUT STREAMING AND CAPTURE
-# ==============================================================================
+fr fr ==============================================================================
+fr fr OUTPUT STREAMING AND CAPTURE
+fr fr ==============================================================================
 
-# Create output streamer
+fr fr Create output streamer
 slay create_output_streamer(process_id tea, stream_type tea) lit {
     sus streamer_data map = {
         "process_id": process_id,
@@ -567,7 +520,7 @@ slay create_output_streamer(process_id tea, stream_type tea) lit {
     damn based
 }
 
-# Capture stream output
+fr fr Capture stream output
 slay capture_stream_output(process_id tea, stream_type tea, data tea) lit {
     sus streamer_key tea = process_id + "_" + stream_type
     
@@ -579,8 +532,7 @@ slay capture_stream_output(process_id tea, stream_type tea, data tea) lit {
     sus buffer [tea] = streamer_data.get("buffer")
     sus max_size normie = streamer_data.get("max_buffer_size")
     
-    if streamer_data.get("bytes_captured") + data.length() > max_size {
-        # Buffer overflow - truncate
+    if streamer_data.get("bytes_captured") + data.length() > max_size { fr fr Buffer overflow - truncate
         vibez.spill("Output buffer overflow for process " + process_id)
         damn cap
     }
@@ -595,7 +547,7 @@ slay capture_stream_output(process_id tea, stream_type tea, data tea) lit {
     damn based
 }
 
-# Get captured output
+fr fr Get captured output
 slay get_captured_output(process_id tea, stream_type tea) tea {
     sus streamer_key tea = process_id + "_" + stream_type
     
@@ -616,30 +568,30 @@ slay get_captured_output(process_id tea, stream_type tea) tea {
     damn output
 }
 
-# ==============================================================================
-# UTILITY FUNCTIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr UTILITY FUNCTIONS
+fr fr ==============================================================================
 
-# Generate unique command ID
+fr fr Generate unique command ID
 slay generate_command_id() tea {
     sus timestamp normie = get_current_timestamp()
     sus random normie = timestamp % 10000
     damn "cmd_" + core.tea(timestamp) + "_" + core.tea(random)
 }
 
-# Generate unique process ID
+fr fr Generate unique process ID
 slay generate_process_id() tea {
     sus timestamp normie = get_current_timestamp()
     sus random normie = (timestamp * 31) % 100000
     damn "proc_" + core.tea(timestamp) + "_" + core.tea(random)
 }
 
-# Get current timestamp (simulated)
+fr fr Get current timestamp (simulated)
 slay get_current_timestamp() normie {
-    damn 1704067200  # Simulated timestamp
+    damn 1704067200 fr fr Simulated timestamp
 }
 
-# Add command to history
+fr fr Add command to history
 slay add_to_command_history(command map, result map) {
     sus history_entry map = {
         "command": command,
@@ -647,16 +599,14 @@ slay add_to_command_history(command map, result map) {
         "executed_at": get_current_timestamp()
     }
     
-    command_history.push(history_entry)
-    
-    # Limit history size
+    command_history.push(history_entry) fr fr Limit history size
     sus max_history normie = exec_config.get("max_command_history")
     if command_history.length() > max_history {
         command_history.remove(0)
     }
 }
 
-# Update execution statistics
+fr fr Update execution statistics
 slay update_execution_statistics(result map) {
     sus executed normie = exec_statistics.get("commands_executed")
     exec_statistics.set("commands_executed", executed + 1)
@@ -671,9 +621,7 @@ slay update_execution_statistics(result map) {
     } else if state == PROCESS_STATE_TIMEOUT {
         sus timeout normie = exec_statistics.get("processes_timeout")
         exec_statistics.set("processes_timeout", timeout + 1)
-    }
-    
-    # Update timing statistics
+    } fr fr Update timing statistics
     sus exec_time normie = result.get("execution_time_ms")
     sus total_time normie = exec_statistics.get("total_execution_time")
     exec_statistics.set("total_execution_time", total_time + exec_time)
@@ -685,17 +633,17 @@ slay update_execution_statistics(result map) {
     }
 }
 
-# ==============================================================================
-# HIGH-LEVEL CONVENIENCE FUNCTIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr HIGH-LEVEL CONVENIENCE FUNCTIONS
+fr fr ==============================================================================
 
-# Simple command execution
+fr fr Simple command execution
 slay run_command(program tea, args [tea]) map {
     sus command map = create_command(program, args)
     damn execute_command(command)
 }
 
-# Run command with output capture
+fr fr Run command with output capture
 slay run_with_output(program tea, args [tea]) map {
     sus command map = create_command(program, args)
     command.set("capture_stdout", based)
@@ -703,20 +651,20 @@ slay run_with_output(program tea, args [tea]) map {
     damn execute_command(command)
 }
 
-# Run command with timeout
+fr fr Run command with timeout
 slay run_with_timeout(program tea, args [tea], timeout_ms normie) map {
     sus command map = create_command(program, args)
     set_timeout(command, timeout_ms)
     damn execute_command(command)
 }
 
-# Run command in background
+fr fr Run command in background
 slay run_background(program tea, args [tea]) tea {
     sus command map = create_command(program, args)
     damn execute_async(command)
 }
 
-# Run shell command
+fr fr Run shell command
 slay run_shell(command_str tea) map {
     sus shell tea = exec_config.get("shell_command")
     sus flag tea = exec_config.get("shell_flag")
@@ -724,21 +672,21 @@ slay run_shell(command_str tea) map {
     damn run_command(shell, args)
 }
 
-# ==============================================================================
-# STATISTICS AND MONITORING
-# ==============================================================================
+fr fr ==============================================================================
+fr fr STATISTICS AND MONITORING
+fr fr ==============================================================================
 
-# Get execution statistics
+fr fr Get execution statistics
 slay get_exec_statistics() map {
     damn exec_statistics
 }
 
-# Get command history
+fr fr Get command history
 slay get_command_history() [map] {
     damn command_history
 }
 
-# Get recent commands
+fr fr Get recent commands
 slay get_recent_commands(count normie) [map] {
     sus recent [map] = []
     sus start normie = 0
@@ -757,7 +705,7 @@ slay get_recent_commands(count normie) [map] {
     damn recent
 }
 
-# Dump execution state
+fr fr Dump execution state
 slay dump_exec_state() {
     vibez.spill("=== Exec Vibez State ===")
     vibez.spill("Running processes: " + core.tea(running_processes.size()))
@@ -780,7 +728,7 @@ slay dump_exec_state() {
     }
 }
 
-# Reset exec_vibez state
+fr fr Reset exec_vibez state
 slay reset_exec() {
     process_registry = {}
     running_processes = {}
@@ -788,9 +736,7 @@ slay reset_exec() {
     command_history = []
     process_environments = {}
     output_streamers = {}
-    timeout_manager = {}
-    
-    # Reset statistics
+    timeout_manager = {} fr fr Reset statistics
     exec_statistics = {
         "commands_executed": 0,
         "processes_created": 0,
@@ -805,7 +751,7 @@ slay reset_exec() {
     vibez.spill("exec_vibez state reset")
 }
 
-# Get module information
+fr fr Get module information
 slay get_module_info() tea {
     damn "exec_vibez v1.0 - Pure CURSED process execution and management system"
 }

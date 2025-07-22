@@ -1,17 +1,17 @@
 yeet "dropz"
 
-# Compression levels for squish_core module
+fr fr Compression levels for squish_core module
 facts SQUISH_FAST = 1
 facts SQUISH_BALANCED = 5
 facts SQUISH_MAX = 9
 
-# Compression algorithms
+fr fr Compression algorithms
 facts ALGO_GZIP = "gzip"
 facts ALGO_DEFLATE = "deflate"
 facts ALGO_BROTLI = "brotli"
 facts ALGO_ZSTANDARD = "zstd"
 
-# Compression result structure helper
+fr fr Compression result structure helper
 slay squish_result_new(data tea, ratio drip, checksum tea) tea {
     damn data + "|" + ratio + "|" + checksum
 }
@@ -31,9 +31,9 @@ slay squish_result_checksum(result tea) tea {
     damn parts[2]
 }
 
-# Core compression functions
+fr fr Core compression functions
 slay squish_compress_gzip(data tea, level normie) tea {
-    sus compressed_size := data.length() * 0.7  # Simulate 30% compression
+    sus compressed_size := data.length() * 0.7 fr fr Simulate 30% compression
     sus ratio := data.length().(drip) / compressed_size
     sus checksum := squish_calculate_crc32(data)
     sus compressed := "GZIP:" + data + ":COMPRESSED"
@@ -46,7 +46,7 @@ slay squish_decompress_gzip(compressed tea) tea {
 }
 
 slay squish_compress_deflate(data tea, level normie) tea {
-    sus compressed_size := data.length() * 0.65  # Better compression than gzip
+    sus compressed_size := data.length() * 0.65 fr fr Better compression than gzip
     sus ratio := data.length().(drip) / compressed_size
     sus checksum := squish_calculate_crc32(data)
     sus compressed := "DEFLATE:" + data + ":COMPRESSED"
@@ -59,7 +59,7 @@ slay squish_decompress_deflate(compressed tea) tea {
 }
 
 slay squish_compress_brotli(data tea, level normie) tea {
-    sus compressed_size := data.length() * 0.6  # Even better compression
+    sus compressed_size := data.length() * 0.6 fr fr Even better compression
     sus ratio := data.length().(drip) / compressed_size
     sus checksum := squish_calculate_crc32(data)
     sus compressed := "BROTLI:" + data + ":COMPRESSED"
@@ -72,7 +72,7 @@ slay squish_decompress_brotli(compressed tea) tea {
 }
 
 slay squish_compress_zstandard(data tea, level normie) tea {
-    sus compressed_size := data.length() * 0.55  # Best compression
+    sus compressed_size := data.length() * 0.55 fr fr Best compression
     sus ratio := data.length().(drip) / compressed_size
     sus checksum := squish_calculate_crc32(data)
     sus compressed := "ZSTD:" + data + ":COMPRESSED"
@@ -84,7 +84,7 @@ slay squish_decompress_zstandard(compressed tea) tea {
     damn clean_data
 }
 
-# Universal compression function
+fr fr Universal compression function
 slay squish_compress(data tea, algorithm tea, level normie) tea {
     lowkey algorithm == ALGO_GZIP {
         damn squish_compress_gzip(data, level)
@@ -95,11 +95,11 @@ slay squish_compress(data tea, algorithm tea, level normie) tea {
     } lowkey algorithm == ALGO_ZSTANDARD {
         damn squish_compress_zstandard(data, level)
     } else {
-        damn squish_compress_gzip(data, level)  # Default to gzip
+        damn squish_compress_gzip(data, level) fr fr Default to gzip
     }
 }
 
-# Universal decompression function
+fr fr Universal decompression function
 slay squish_decompress(compressed tea, algorithm tea) tea {
     lowkey algorithm == ALGO_GZIP {
         damn squish_decompress_gzip(compressed)
@@ -110,11 +110,11 @@ slay squish_decompress(compressed tea, algorithm tea) tea {
     } lowkey algorithm == ALGO_ZSTANDARD {
         damn squish_decompress_zstandard(compressed)
     } else {
-        damn squish_decompress_gzip(compressed)  # Default to gzip
+        damn squish_decompress_gzip(compressed) fr fr Default to gzip
     }
 }
 
-# Stream compression for large data
+fr fr Stream compression for large data
 slay squish_stream_compress(data tea, chunk_size normie, algorithm tea, level normie) tea {
     sus result := ""
     sus pos := 0
@@ -141,7 +141,7 @@ slay squish_stream_decompress(compressed tea, algorithm tea) tea {
     damn result
 }
 
-# Integrity checking functions
+fr fr Integrity checking functions
 slay squish_calculate_crc32(data tea) tea {
     sus hash := 0
     bestie i := 0; i < data.length(); i++ {
@@ -164,7 +164,7 @@ slay squish_calculate_checksum(data tea) tea {
     damn "CHECKSUM:" + sum.(tea)
 }
 
-# Binary data handling
+fr fr Binary data handling
 slay squish_compress_binary(data tea, algorithm tea, level normie) tea {
     sus encoded := squish_encode_binary(data)
     sus compressed := squish_compress(encoded, algorithm, level)
@@ -185,7 +185,7 @@ slay squish_decode_binary(encoded tea) tea {
     damn encoded.replace("BINARY:", "").replace(":ENCODED", "")
 }
 
-# Performance and metrics functions
+fr fr Performance and metrics functions
 slay squish_get_compression_ratio(original_size normie, compressed_size normie) drip {
     damn original_size.(drip) / compressed_size.(drip)
 }
@@ -205,20 +205,20 @@ slay squish_estimate_size(data tea, algorithm tea, level normie) normie {
 }
 
 slay squish_benchmark_algorithm(data tea, algorithm tea, level normie) tea {
-    sus start_time := 1000  # Simulated timestamp
+    sus start_time := 1000 fr fr Simulated timestamp
     sus compressed := squish_compress(data, algorithm, level)
-    sus end_time := 1100    # Simulated timestamp
+    sus end_time := 1100 fr fr Simulated timestamp
     sus compression_time := end_time - start_time
     sus ratio := squish_result_ratio(compressed)
     damn "Algorithm: " + algorithm + ", Time: " + compression_time.(tea) + "ms, Ratio: " + ratio.(tea)
 }
 
-# Archive functionality
+fr fr Archive functionality
 slay squish_create_archive(files tea, algorithm tea, level normie) tea {
     sus archive := "ARCHIVE:"
     sus file_list := files.split(",")
     bestie i := 0; i < file_list.length(); i++ {
-        sus file_data := "FILE_DATA_" + file_list[i]  # Simulated file content
+        sus file_data := "FILE_DATA_" + file_list[i] fr fr Simulated file content
         sus compressed := squish_compress(file_data, algorithm, level)
         archive = archive + file_list[i] + ":" + compressed + "||"
     }
@@ -241,24 +241,23 @@ slay squish_extract_archive(archive tea, algorithm tea) tea {
     damn result
 }
 
-# Memory-efficient operations
+fr fr Memory-efficient operations
 slay squish_compress_in_chunks(data tea, algorithm tea, level normie) tea {
-    sus chunk_size := 1024  # Process in 1KB chunks
+    sus chunk_size := 1024 fr fr Process in 1KB chunks
     damn squish_stream_compress(data, chunk_size, algorithm, level)
 }
 
-slay squish_get_memory_usage(data_size normie, algorithm tea) normie {
-    # Simulated memory usage calculation
+slay squish_get_memory_usage(data_size normie, algorithm tea) normie { fr fr Simulated memory usage calculation
     lowkey algorithm == ALGO_BROTLI {
-        damn data_size * 3  # Brotli uses more memory
+        damn data_size * 3 fr fr Brotli uses more memory
     } lowkey algorithm == ALGO_ZSTANDARD {
-        damn data_size * 2  # ZSTD moderate memory usage
+        damn data_size * 2 fr fr ZSTD moderate memory usage
     } else {
-        damn data_size * 1  # GZIP/DEFLATE minimal memory
+        damn data_size * 1 fr fr GZIP/DEFLATE minimal memory
     }
 }
 
-# Gen Z enhanced APIs
+fr fr Gen Z enhanced APIs
 slay squish_compress_no_cap(data tea, algorithm tea) tea {
     damn squish_compress(data, algorithm, SQUISH_MAX)
 }
@@ -269,7 +268,7 @@ slay squish_compress_lowkey_fast(data tea, algorithm tea) tea {
 
 slay squish_is_compressed_fire(original tea, compressed tea) lit {
     sus ratio := squish_result_ratio(compressed)
-    damn ratio > 1.5  # Good compression if ratio > 1.5
+    damn ratio > 1.5 fr fr Good compression if ratio > 1.5
 }
 
 slay squish_compress_and_flex(data tea, algorithm tea, level normie) tea {

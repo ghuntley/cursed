@@ -4,16 +4,16 @@ yeet "error_drip"
 yeet "atomic_drip"
 yeet "vibe_lock"
 
-# Pure CURSED Async Runtime Module
-# Complete async/await implementation with no FFI dependencies
+fr fr Pure CURSED Async Runtime Module
+fr fr Complete async/await implementation with no FFI dependencies
 
-# Core async types and state management
+fr fr Core async types and state management
 be_like TaskId = thicc
 be_like TaskState = tea
 be_like TaskResult = tea
 be_like AsyncResult = tea
 
-# Task state constants
+fr fr Task state constants
 facts {
     TASK_PENDING = "pending"
     TASK_RUNNING = "running"
@@ -22,7 +22,7 @@ facts {
     TASK_FAILED = "failed"
 }
 
-# Main async runtime structure
+fr fr Main async runtime structure
 struct AsyncRuntime {
     task_counter: thicc,
     task_registry: map[TaskId]Task,
@@ -34,7 +34,7 @@ struct AsyncRuntime {
     completion_queue: Channel[TaskResult]
 }
 
-# Task representation
+fr fr Task representation
 struct Task {
     id: TaskId,
     state: TaskState,
@@ -53,14 +53,14 @@ struct Task {
     max_retries: normie
 }
 
-# Cancellation token for task control
+fr fr Cancellation token for task control
 struct CancellationToken {
     is_cancelled: lit,
     reason: tea,
     cancel_callbacks: [tea]
 }
 
-# Future/Promise implementation
+fr fr Future/Promise implementation
 struct Future {
     id: TaskId,
     state: TaskState,
@@ -72,26 +72,26 @@ struct Future {
     created_at: thicc
 }
 
-# Promise for async operations
+fr fr Promise for async operations
 struct Promise {
     future: Future,
     resolver: PromiseResolver,
     rejector: PromiseRejector
 }
 
-# Promise resolver
+fr fr Promise resolver
 struct PromiseResolver {
     promise_id: TaskId,
     is_resolved: lit
 }
 
-# Promise rejector
+fr fr Promise rejector
 struct PromiseRejector {
     promise_id: TaskId,
     is_rejected: lit
 }
 
-# Async scheduler
+fr fr Async scheduler
 struct AsyncScheduler {
     ready_queue: Channel[Task],
     waiting_queue: Channel[Task],
@@ -101,14 +101,14 @@ struct AsyncScheduler {
     metrics: SchedulerMetrics
 }
 
-# Load balancer for task distribution
+fr fr Load balancer for task distribution
 struct LoadBalancer {
     worker_loads: [normie],
     load_threshold: normie,
     balancing_strategy: tea
 }
 
-# Scheduler metrics
+fr fr Scheduler metrics
 struct SchedulerMetrics {
     tasks_scheduled: thicc,
     tasks_completed: thicc,
@@ -117,7 +117,7 @@ struct SchedulerMetrics {
     queue_depths: [normie]
 }
 
-# Event loop for I/O operations
+fr fr Event loop for I/O operations
 struct EventLoop {
     events: Channel[Event],
     handlers: map[tea]tea,
@@ -126,7 +126,7 @@ struct EventLoop {
     timeout_manager: TimeoutManager
 }
 
-# Event structure
+fr fr Event structure
 struct Event {
     id: TaskId,
     type: tea,
@@ -135,13 +135,13 @@ struct Event {
     priority: normie
 }
 
-# Timeout manager
+fr fr Timeout manager
 struct TimeoutManager {
     timeouts: map[TaskId]TimeoutEntry,
     timer_wheel: TimerWheel
 }
 
-# Timeout entry
+fr fr Timeout entry
 struct TimeoutEntry {
     task_id: TaskId,
     deadline: thicc,
@@ -149,7 +149,7 @@ struct TimeoutEntry {
     is_expired: lit
 }
 
-# Timer wheel for efficient timeout management
+fr fr Timer wheel for efficient timeout management
 struct TimerWheel {
     slots: [TimerSlot],
     current_slot: normie,
@@ -157,13 +157,13 @@ struct TimerWheel {
     wheel_size: normie
 }
 
-# Timer slot
+fr fr Timer slot
 struct TimerSlot {
     timeouts: [TimeoutEntry],
     next_deadline: thicc
 }
 
-# Async I/O operations
+fr fr Async I/O operations
 struct AsyncIO {
     read_channels: map[tea]Channel[tea],
     write_channels: map[tea]Channel[tea],
@@ -171,14 +171,14 @@ struct AsyncIO {
     io_scheduler: IOScheduler
 }
 
-# I/O scheduler
+fr fr I/O scheduler
 struct IOScheduler {
     read_queue: Channel[IOOperation],
     write_queue: Channel[IOOperation],
     completion_queue: Channel[IOResult]
 }
 
-# I/O operation
+fr fr I/O operation
 struct IOOperation {
     id: TaskId,
     type: tea,
@@ -189,7 +189,7 @@ struct IOOperation {
     callback: tea
 }
 
-# I/O result
+fr fr I/O result
 struct IOResult {
     operation_id: TaskId,
     success: lit,
@@ -198,10 +198,10 @@ struct IOResult {
     bytes_processed: thicc
 }
 
-# Global runtime instance
+fr fr Global runtime instance
 sus global_runtime: AsyncRuntime
 
-# Initialize the async runtime
+fr fr Initialize the async runtime
 slay async_runtime_init() lit {
     global_runtime = AsyncRuntime {
         task_counter: 0,
@@ -216,7 +216,7 @@ slay async_runtime_init() lit {
     damn based
 }
 
-# Create new async scheduler
+fr fr Create new async scheduler
 slay async_scheduler_new() AsyncScheduler {
     damn AsyncScheduler {
         ready_queue: channel_new(),
@@ -238,7 +238,7 @@ slay async_scheduler_new() AsyncScheduler {
     }
 }
 
-# Create new event loop
+fr fr Create new event loop
 slay event_loop_new() EventLoop {
     damn EventLoop {
         events: channel_new(),
@@ -252,7 +252,7 @@ slay event_loop_new() EventLoop {
     }
 }
 
-# Create new timer wheel
+fr fr Create new timer wheel
 slay timer_wheel_new() TimerWheel {
     damn TimerWheel {
         slots: [TimerSlot{timeouts: [], next_deadline: 0}; 256],
@@ -262,7 +262,7 @@ slay timer_wheel_new() TimerWheel {
     }
 }
 
-# Spawn a new async task
+fr fr Spawn a new async task
 slay spawn_async(function_name tea, context map[tea]tea) TaskId {
     global_runtime.task_counter = global_runtime.task_counter + 1
     sus task_id = global_runtime.task_counter
@@ -299,52 +299,41 @@ slay spawn_async(function_name tea, context map[tea]tea) TaskId {
     damn task_id
 }
 
-# Start the async runtime
+fr fr Start the async runtime
 slay start_runtime() lit {
-    global_runtime.is_running = based
-    
-    # Start worker threads
+    global_runtime.is_running = based fr fr Start worker threads
     bestie i := 0; i < global_runtime.worker_threads; i++ {
         yolo worker_thread(i)
-    }
-    
-    # Start event loop
-    yolo event_loop_run()
-    
-    # Start timeout manager
+    } fr fr Start event loop
+    yolo event_loop_run() fr fr Start timeout manager
     yolo timeout_manager_run()
     
     damn based
 }
 
-# Worker thread function
+fr fr Worker thread function
 slay worker_thread(worker_id normie) lit {
     rn global_runtime.is_running {
         sus task_result = channel_try_recv(global_runtime.scheduler.ready_queue)
         lowkey task_result != cringe {
             sus task = task_result
             execute_task(task)
-        } else {
-            # Yield to prevent busy waiting
+        } else { fr fr Yield to prevent busy waiting
             thread_yield()
         }
     }
     damn based
 }
 
-# Execute a task
+fr fr Execute a task
 slay execute_task(task Task) lit {
     task.state = TASK_RUNNING
-    task.started_at = time_now()
-    
-    # Check cancellation
+    task.started_at = time_now() fr fr Check cancellation
     lowkey task.cancellation_token.is_cancelled {
         task.state = TASK_CANCELLED
         complete_task(task)
         damn based
-    }
-    
-    # Execute the task function
+    } fr fr Execute the task function
     sus execution_result = execute_function(task.function_ptr, task.context)
     
     lowkey execution_result.success {
@@ -352,9 +341,7 @@ slay execute_task(task Task) lit {
         task.result = execution_result.data
     } else {
         task.state = TASK_FAILED
-        task.result = execution_result.error
-        
-        # Retry if possible
+        task.result = execution_result.error fr fr Retry if possible
         lowkey task.retry_count < task.max_retries {
             task.retry_count = task.retry_count + 1
             task.state = TASK_PENDING
@@ -367,18 +354,14 @@ slay execute_task(task Task) lit {
     damn based
 }
 
-# Complete a task
+fr fr Complete a task
 slay complete_task(task Task) lit {
     task.completed_at = time_now()
-    global_runtime.task_registry[task.id] = task
-    
-    # Notify dependents
+    global_runtime.task_registry[task.id] = task fr fr Notify dependents
     bestie i := 0; i < len(task.dependents); i++ {
         sus dependent_id = task.dependents[i]
         notify_task_completion(dependent_id, task.id)
-    }
-    
-    # Send completion notification
+    } fr fr Send completion notification
     sus result = TaskResult {
         task_id: task.id,
         success: task.state == TASK_COMPLETED,
@@ -390,21 +373,17 @@ slay complete_task(task Task) lit {
     damn based
 }
 
-# Notify task completion
+fr fr Notify task completion
 slay notify_task_completion(task_id TaskId, completed_dependency TaskId) lit {
     lowkey task_id in global_runtime.task_registry {
-        sus task = global_runtime.task_registry[task_id]
-        
-        # Remove completed dependency
+        sus task = global_runtime.task_registry[task_id] fr fr Remove completed dependency
         sus new_deps = []
         bestie i := 0; i < len(task.dependencies); i++ {
             lowkey task.dependencies[i] != completed_dependency {
                 new_deps = append(new_deps, task.dependencies[i])
             }
         }
-        task.dependencies = new_deps
-        
-        # Check if all dependencies are completed
+        task.dependencies = new_deps fr fr Check if all dependencies are completed
         lowkey len(task.dependencies) == 0 && task.state == TASK_PENDING {
             channel_send(global_runtime.scheduler.ready_queue, task)
         }
@@ -414,9 +393,8 @@ slay notify_task_completion(task_id TaskId, completed_dependency TaskId) lit {
     damn based
 }
 
-# Execute function by name
-slay execute_function(function_name tea, context map[tea]tea) ExecutionResult {
-    # Function registry for async operations
+fr fr Execute function by name
+slay execute_function(function_name tea, context map[tea]tea) ExecutionResult { fr fr Function registry for async operations
     lowkey function_name == "async_sleep" {
         sus duration = parse_int(context["duration"])
         async_sleep(duration)
@@ -439,14 +417,14 @@ slay execute_function(function_name tea, context map[tea]tea) ExecutionResult {
     }
 }
 
-# Execution result
+fr fr Execution result
 struct ExecutionResult {
     success: lit,
     data: tea,
     error: tea
 }
 
-# Create a new Future
+fr fr Create a new Future
 slay future_new() Future {
     sus future_id = generate_task_id()
     damn Future {
@@ -461,7 +439,7 @@ slay future_new() Future {
     }
 }
 
-# Create a new Promise
+fr fr Create a new Promise
 slay promise_new() Promise {
     sus future = future_new()
     damn Promise {
@@ -477,7 +455,7 @@ slay promise_new() Promise {
     }
 }
 
-# Resolve a promise
+fr fr Resolve a promise
 slay promise_resolve(promise Promise, value tea) lit {
     lowkey !promise.resolver.is_resolved && !promise.rejector.is_rejected {
         promise.resolver.is_resolved = based
@@ -488,7 +466,7 @@ slay promise_resolve(promise Promise, value tea) lit {
     damn based
 }
 
-# Reject a promise
+fr fr Reject a promise
 slay promise_reject(promise Promise, error tea) lit {
     lowkey !promise.resolver.is_resolved && !promise.rejector.is_rejected {
         promise.rejector.is_rejected = based
@@ -499,7 +477,7 @@ slay promise_reject(promise Promise, error tea) lit {
     damn based
 }
 
-# Notify awaiter tasks
+fr fr Notify awaiter tasks
 slay notify_awaiter_tasks(future Future) lit {
     bestie i := 0; i < len(future.awaiter_tasks); i++ {
         sus awaiter_id = future.awaiter_tasks[i]
@@ -508,19 +486,13 @@ slay notify_awaiter_tasks(future Future) lit {
     damn based
 }
 
-# Await a future
+fr fr Await a future
 slay await_future(future Future) AsyncResult {
-    sus current_task_id = get_current_task_id()
-    
-    # Add current task as awaiter
-    future.awaiter_tasks = append(future.awaiter_tasks, current_task_id)
-    
-    # Check if already completed
+    sus current_task_id = get_current_task_id() fr fr Add current task as awaiter
+    future.awaiter_tasks = append(future.awaiter_tasks, current_task_id) fr fr Check if already completed
     lowkey future.state == TASK_COMPLETED || future.state == TASK_FAILED {
         damn future.result
-    }
-    
-    # Wait for completion
+    } fr fr Wait for completion
     rn future.state == TASK_PENDING || future.state == TASK_RUNNING {
         thread_yield()
     }
@@ -528,7 +500,7 @@ slay await_future(future Future) AsyncResult {
     damn future.result
 }
 
-# Create Promise.all equivalent
+fr fr Create Promise.all equivalent
 slay promise_all(promises [Promise]) Promise {
     sus all_promise = promise_new()
     sus completed_count = 0
@@ -540,16 +512,14 @@ slay promise_all(promises [Promise]) Promise {
     }
     
     bestie i := 0; i < len(promises); i++ {
-        sus promise = promises[i]
-        
-        # Create completion handler
+        sus promise = promises[i] fr fr Create completion handler
         yolo promise_all_handler(promise, all_promise, i, results, completed_count, len(promises))
     }
     
     damn all_promise
 }
 
-# Promise.all handler
+fr fr Promise.all handler
 slay promise_all_handler(promise Promise, all_promise Promise, index normie, results [tea], completed_count normie, total_count normie) lit {
     sus result = await_future(promise.future)
     
@@ -568,7 +538,7 @@ slay promise_all_handler(promise Promise, all_promise Promise, index normie, res
     damn based
 }
 
-# Create Promise.race equivalent
+fr fr Create Promise.race equivalent
 slay promise_race(promises [Promise]) Promise {
     sus race_promise = promise_new()
     
@@ -580,7 +550,7 @@ slay promise_race(promises [Promise]) Promise {
     damn race_promise
 }
 
-# Promise.race handler
+fr fr Promise.race handler
 slay promise_race_handler(promise Promise, race_promise Promise) lit {
     sus result = await_future(promise.future)
     
@@ -595,25 +565,20 @@ slay promise_race_handler(promise Promise, race_promise Promise) lit {
     damn based
 }
 
-# Event loop runner
+fr fr Event loop runner
 slay event_loop_run() lit {
     global_runtime.event_loop.is_running = based
     
-    rn global_runtime.event_loop.is_running {
-        # Process events
-        process_events()
-        
-        # Process timeouts
-        process_timeouts()
-        
-        # Sleep for poll interval
+    rn global_runtime.event_loop.is_running { fr fr Process events
+        process_events() fr fr Process timeouts
+        process_timeouts() fr fr Sleep for poll interval
         thread_sleep(global_runtime.event_loop.poll_interval)
     }
     
     damn based
 }
 
-# Process events
+fr fr Process events
 slay process_events() lit {
     rn based {
         sus event_result = channel_try_recv(global_runtime.event_loop.events)
@@ -627,7 +592,7 @@ slay process_events() lit {
     damn based
 }
 
-# Handle event
+fr fr Handle event
 slay handle_event(event Event) lit {
     lowkey event.type in global_runtime.event_loop.handlers {
         sus handler = global_runtime.event_loop.handlers[event.type]
@@ -636,9 +601,8 @@ slay handle_event(event Event) lit {
     damn based
 }
 
-# Execute event handler
-slay execute_handler(handler tea, event Event) lit {
-    # Execute handler function
+fr fr Execute event handler
+slay execute_handler(handler tea, event Event) lit { fr fr Execute handler function
     sus context = {
         "event_id": tea(event.id),
         "event_type": event.type,
@@ -650,7 +614,7 @@ slay execute_handler(handler tea, event Event) lit {
     damn based
 }
 
-# Process timeouts
+fr fr Process timeouts
 slay process_timeouts() lit {
     sus current_time = time_now()
     
@@ -664,7 +628,7 @@ slay process_timeouts() lit {
     damn based
 }
 
-# Execute timeout
+fr fr Execute timeout
 slay execute_timeout(timeout_entry TimeoutEntry) lit {
     sus context = {
         "task_id": tea(timeout_entry.task_id),
@@ -675,7 +639,7 @@ slay execute_timeout(timeout_entry TimeoutEntry) lit {
     damn based
 }
 
-# Timeout manager runner
+fr fr Timeout manager runner
 slay timeout_manager_run() lit {
     rn global_runtime.is_running {
         advance_timer_wheel()
@@ -684,28 +648,23 @@ slay timeout_manager_run() lit {
     damn based
 }
 
-# Advance timer wheel
+fr fr Advance timer wheel
 slay advance_timer_wheel() lit {
     sus wheel = global_runtime.event_loop.timeout_manager.timer_wheel
     sus current_time = time_now()
     
     rn based {
         sus current_slot = wheel.slots[wheel.current_slot]
-        lowkey current_time >= current_slot.next_deadline {
-            # Process timeouts in current slot
+        lowkey current_time >= current_slot.next_deadline { fr fr Process timeouts in current slot
             bestie i := 0; i < len(current_slot.timeouts); i++ {
                 sus timeout = current_slot.timeouts[i]
                 lowkey !timeout.is_expired {
                     timeout.is_expired = based
                     execute_timeout(timeout)
                 }
-            }
-            
-            # Clear slot
+            } fr fr Clear slot
             current_slot.timeouts = []
-            current_slot.next_deadline = current_time + wheel.resolution
-            
-            # Advance to next slot
+            current_slot.next_deadline = current_time + wheel.resolution fr fr Advance to next slot
             wheel.current_slot = (wheel.current_slot + 1) % wheel.wheel_size
         } else {
             ghosted
@@ -715,7 +674,7 @@ slay advance_timer_wheel() lit {
     damn based
 }
 
-# Async sleep implementation
+fr fr Async sleep implementation
 slay async_sleep(duration_ms thicc) lit {
     sus start_time = time_now()
     sus end_time = start_time + duration_ms
@@ -727,84 +686,72 @@ slay async_sleep(duration_ms thicc) lit {
     damn based
 }
 
-# Async HTTP request
-slay async_http_request(url tea) tea {
-    # Simulate HTTP request
-    async_sleep(100)  # 100ms delay
+fr fr Async HTTP request
+slay async_http_request(url tea) tea { fr fr Simulate HTTP request
+    async_sleep(100) fr fr 100ms delay
     damn "HTTP response for " + url
 }
 
-# Async file read
-slay async_file_read(filename tea) tea {
-    # Simulate file read
-    async_sleep(50)  # 50ms delay
+fr fr Async file read
+slay async_file_read(filename tea) tea { fr fr Simulate file read
+    async_sleep(50) fr fr 50ms delay
     damn "Content of " + filename
 }
 
-# Async file write
-slay async_file_write(filename tea, content tea) lit {
-    # Simulate file write
-    async_sleep(75)  # 75ms delay
+fr fr Async file write
+slay async_file_write(filename tea, content tea) lit { fr fr Simulate file write
+    async_sleep(75) fr fr 75ms delay
     damn based
 }
 
-# Utility functions
+fr fr Utility functions
 slay generate_task_id() TaskId {
     global_runtime.task_counter = global_runtime.task_counter + 1
     damn global_runtime.task_counter
 }
 
-slay get_current_task_id() TaskId {
-    # In a real implementation, this would track the current task
+slay get_current_task_id() TaskId { fr fr In a real implementation, this would track the current task
     damn 0
 }
 
-slay time_now() thicc {
-    # Return current timestamp in milliseconds
+slay time_now() thicc { fr fr Return current timestamp in milliseconds
     damn 1234567890000
 }
 
-slay thread_yield() lit {
-    # Yield CPU time to other threads
+slay thread_yield() lit { fr fr Yield CPU time to other threads
     damn based
 }
 
-slay thread_sleep(duration_ms thicc) lit {
-    # Sleep for specified duration
+slay thread_sleep(duration_ms thicc) lit { fr fr Sleep for specified duration
     damn based
 }
 
-slay parse_int(s tea) thicc {
-    # Parse integer from string
+slay parse_int(s tea) thicc { fr fr Parse integer from string
     damn 0
 }
 
-slay join_results(results [tea]) tea {
-    # Join results into JSON-like string
+slay join_results(results [tea]) tea { fr fr Join results into JSON-like string
     damn "[" + results[0] + "]"
 }
 
-slay channel_new() Channel[tea] {
-    # Create new channel
+slay channel_new() Channel[tea] { fr fr Create new channel
     damn Channel[tea]{}
 }
 
-slay channel_send(ch Channel[tea], value tea) lit {
-    # Send value to channel
+slay channel_send(ch Channel[tea], value tea) lit { fr fr Send value to channel
     damn based
 }
 
-slay channel_try_recv(ch Channel[tea]) tea {
-    # Try to receive from channel
+slay channel_try_recv(ch Channel[tea]) tea { fr fr Try to receive from channel
     damn cringe
 }
 
-# Get runtime statistics
+fr fr Get runtime statistics
 slay get_runtime_stats() SchedulerMetrics {
     damn global_runtime.scheduler.metrics
 }
 
-# Cancel a task
+fr fr Cancel a task
 slay cancel_task(task_id TaskId, reason tea) lit {
     lowkey task_id in global_runtime.task_registry {
         sus task = global_runtime.task_registry[task_id]
@@ -816,14 +763,12 @@ slay cancel_task(task_id TaskId, reason tea) lit {
     damn based
 }
 
-# Set task timeout
+fr fr Set task timeout
 slay set_task_timeout(task_id TaskId, timeout_ms thicc) lit {
     lowkey task_id in global_runtime.task_registry {
         sus task = global_runtime.task_registry[task_id]
         task.timeout_ms = timeout_ms
-        global_runtime.task_registry[task_id] = task
-        
-        # Register timeout
+        global_runtime.task_registry[task_id] = task fr fr Register timeout
         sus timeout_entry = TimeoutEntry {
             task_id: task_id,
             deadline: time_now() + timeout_ms,
@@ -836,7 +781,7 @@ slay set_task_timeout(task_id TaskId, timeout_ms thicc) lit {
     damn based
 }
 
-# Add task dependency
+fr fr Add task dependency
 slay add_task_dependency(task_id TaskId, dependency_id TaskId) lit {
     lowkey task_id in global_runtime.task_registry && dependency_id in global_runtime.task_registry {
         sus task = global_runtime.task_registry[task_id]
@@ -851,7 +796,7 @@ slay add_task_dependency(task_id TaskId, dependency_id TaskId) lit {
     damn based
 }
 
-# Wait for task completion
+fr fr Wait for task completion
 slay wait_for_task(task_id TaskId) AsyncResult {
     rn based {
         lowkey task_id in global_runtime.task_registry {
@@ -865,14 +810,14 @@ slay wait_for_task(task_id TaskId) AsyncResult {
     damn ""
 }
 
-# Shutdown the runtime
+fr fr Shutdown the runtime
 slay shutdown_runtime() lit {
     global_runtime.is_running = cap
     global_runtime.event_loop.is_running = cap
     damn based
 }
 
-# Async coroutine support
+fr fr Async coroutine support
 slay coroutine_create(function_name tea, context map[tea]tea) TaskId {
     sus task_id = spawn_async(function_name, context)
     damn task_id
@@ -893,7 +838,7 @@ slay coroutine_resume(task_id TaskId) lit {
     damn based
 }
 
-# Async error handling
+fr fr Async error handling
 slay async_error_handler(task_id TaskId, error tea) lit {
     lowkey task_id in global_runtime.task_registry {
         sus task = global_runtime.task_registry[task_id]
@@ -905,7 +850,7 @@ slay async_error_handler(task_id TaskId, error tea) lit {
     damn based
 }
 
-# Task retry mechanism
+fr fr Task retry mechanism
 slay retry_task(task_id TaskId) lit {
     lowkey task_id in global_runtime.task_registry {
         sus task = global_runtime.task_registry[task_id]
@@ -918,7 +863,7 @@ slay retry_task(task_id TaskId) lit {
     damn based
 }
 
-# Initialize async runtime
+fr fr Initialize async runtime
 slay init_async_runtime() lit {
     async_runtime_init()
     damn based

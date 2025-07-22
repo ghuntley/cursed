@@ -1,11 +1,11 @@
 yeet "testz"
 yeet "asn1_mood"
 
-# Comprehensive ASN.1 Module Test Suite
-# Tests all ASN.1 encoding/decoding functionality
-# Uses testz v2.0 testing framework
+fr fr Comprehensive ASN.1 Module Test Suite
+fr fr Tests all ASN.1 encoding/decoding functionality
+fr fr Uses testz v2.0 testing framework
 
-# Test ASN.1 tag creation
+fr fr Test ASN.1 tag creation
 slay test_asn1_tag_creation() {
     test_start("ASN.1 Tag Creation")
     
@@ -20,7 +20,7 @@ slay test_asn1_tag_creation() {
     assert_eq_int(seq_tag.tag_number, ASN1_SEQUENCE)
 }
 
-# Test ASN.1 integer object creation
+fr fr Test ASN.1 integer object creation
 slay test_asn1_integer_creation() {
     test_start("ASN.1 Integer Object Creation")
     
@@ -35,7 +35,7 @@ slay test_asn1_integer_creation() {
     assert_true(zero_obj.length > 0)
 }
 
-# Test ASN.1 string object creation
+fr fr Test ASN.1 string object creation
 slay test_asn1_string_creation() {
     test_start("ASN.1 String Object Creation")
     
@@ -50,7 +50,7 @@ slay test_asn1_string_creation() {
     assert_eq_int(empty_obj.length, 0)
 }
 
-# Test ASN.1 sequence creation
+fr fr Test ASN.1 sequence creation
 slay test_asn1_sequence_creation() {
     test_start("ASN.1 Sequence Creation")
     
@@ -61,7 +61,7 @@ slay test_asn1_sequence_creation() {
     assert_eq_int(seq_obj.length, 0)
 }
 
-# Test ASN.1 set creation
+fr fr Test ASN.1 set creation
 slay test_asn1_set_creation() {
     test_start("ASN.1 Set Creation")
     
@@ -72,7 +72,7 @@ slay test_asn1_set_creation() {
     assert_eq_int(set_obj.length, 0)
 }
 
-# Test ASN.1 OID creation
+fr fr Test ASN.1 OID creation
 slay test_asn1_oid_creation() {
     test_start("ASN.1 OID Creation")
     
@@ -87,7 +87,7 @@ slay test_asn1_oid_creation() {
     assert_true(simple_oid.length > 0)
 }
 
-# Test ASN.1 time creation
+fr fr Test ASN.1 time creation
 slay test_asn1_time_creation() {
     test_start("ASN.1 Time Creation")
     
@@ -98,7 +98,7 @@ slay test_asn1_time_creation() {
     assert_eq_string(time_obj.data, "20231207120000Z")
 }
 
-# Test ASN.1 bit string creation
+fr fr Test ASN.1 bit string creation
 slay test_asn1_bitstring_creation() {
     test_start("ASN.1 Bit String Creation")
     
@@ -109,7 +109,7 @@ slay test_asn1_bitstring_creation() {
     assert_eq_string(bits_obj.data, "10110100")
 }
 
-# Test ASN.1 DER encoding
+fr fr Test ASN.1 DER encoding
 slay test_asn1_der_encoding() {
     test_start("ASN.1 DER Encoding")
     
@@ -122,7 +122,7 @@ slay test_asn1_der_encoding() {
     assert_true(string_length(encoded_str) > 0)
 }
 
-# Test ASN.1 BER encoding
+fr fr Test ASN.1 BER encoding
 slay test_asn1_ber_encoding() {
     test_start("ASN.1 BER Encoding")
     
@@ -135,7 +135,7 @@ slay test_asn1_ber_encoding() {
     assert_true(string_length(encoded_seq) > 0)
 }
 
-# Test generic ASN.1 encoding
+fr fr Test generic ASN.1 encoding
 slay test_asn1_generic_encoding() {
     test_start("ASN.1 Generic Encoding")
     
@@ -148,52 +148,40 @@ slay test_asn1_generic_encoding() {
     assert_true(string_length(encoded_str) > 0)
 }
 
-# Test ASN.1 DER parsing
+fr fr Test ASN.1 DER parsing
 slay test_asn1_der_parsing() {
-    test_start("ASN.1 DER Parsing")
-    
-    # Create and encode an object
+    test_start("ASN.1 DER Parsing") fr fr Create and encode an object
     sus original ASN1Object = asn1_int_new(42)
-    sus encoded tea = asn1_encode_der(original)
-    
-    # Parse the encoded data
+    sus encoded tea = asn1_encode_der(original) fr fr Parse the encoded data
     sus parsed ASN1Object = asn1_parse_der(encoded)
     assert_eq_int(parsed.tag.class, ASN1_UNIVERSAL)
     assert_eq_int(parsed.tag.tag_number, ASN1_INTEGER)
     assert_false(parsed.tag.constructed)
 }
 
-# Test ASN.1 BER parsing
+fr fr Test ASN.1 BER parsing
 slay test_asn1_ber_parsing() {
-    test_start("ASN.1 BER Parsing")
-    
-    # Create and encode an object
+    test_start("ASN.1 BER Parsing") fr fr Create and encode an object
     sus original ASN1Object = asn1_string_new("test")
-    sus encoded tea = asn1_encode_ber(original)
-    
-    # Parse the encoded data
+    sus encoded tea = asn1_encode_ber(original) fr fr Parse the encoded data
     sus parsed ASN1Object = asn1_parse_ber(encoded)
     assert_eq_int(parsed.tag.class, ASN1_UNIVERSAL)
     assert_eq_int(parsed.tag.tag_number, ASN1_OCTET_STRING)
     assert_false(parsed.tag.constructed)
 }
 
-# Test generic ASN.1 decoding
+fr fr Test generic ASN.1 decoding
 slay test_asn1_generic_decoding() {
-    test_start("ASN.1 Generic Decoding")
-    
-    # Create and encode an object
+    test_start("ASN.1 Generic Decoding") fr fr Create and encode an object
     sus original ASN1Object = asn1_sequence_new()
-    sus encoded tea = asn1_encode(original)
-    
-    # Decode the encoded data
+    sus encoded tea = asn1_encode(original) fr fr Decode the encoded data
     sus decoded ASN1Object = asn1_decode(encoded)
     assert_eq_int(decoded.tag.class, ASN1_UNIVERSAL)
     assert_eq_int(decoded.tag.tag_number, ASN1_SEQUENCE)
     assert_true(decoded.tag.constructed)
 }
 
-# Test ASN.1 tag constants
+fr fr Test ASN.1 tag constants
 slay test_asn1_tag_constants() {
     test_start("ASN.1 Tag Constants")
     
@@ -211,41 +199,29 @@ slay test_asn1_tag_constants() {
     assert_eq_int(ASN1_BIT_STRING, 3)
 }
 
-# Test ASN.1 length encoding
+fr fr Test ASN.1 length encoding
 slay test_asn1_length_encoding() {
-    test_start("ASN.1 Length Encoding")
-    
-    # Test short length encoding (< 128)
+    test_start("ASN.1 Length Encoding") fr fr Test short length encoding (< 128)
     sus short_len tea = encode_length(42)
-    assert_true(string_length(short_len) == 1)
-    
-    # Test long length encoding (>= 128)
+    assert_true(string_length(short_len) == 1) fr fr Test long length encoding (>= 128)
     sus long_len tea = encode_length(256)
-    assert_true(string_length(long_len) > 1)
-    
-    # Test zero length
+    assert_true(string_length(long_len) > 1) fr fr Test zero length
     sus zero_len tea = encode_length(0)
     assert_true(string_length(zero_len) == 1)
 }
 
-# Test ASN.1 integer encoding
+fr fr Test ASN.1 integer encoding
 slay test_asn1_integer_encoding() {
-    test_start("ASN.1 Integer Encoding")
-    
-    # Test positive integer
+    test_start("ASN.1 Integer Encoding") fr fr Test positive integer
     sus pos_int tea = encode_integer(42)
-    assert_true(string_length(pos_int) > 0)
-    
-    # Test zero
+    assert_true(string_length(pos_int) > 0) fr fr Test zero
     sus zero_int tea = encode_integer(0)
-    assert_true(string_length(zero_int) > 0)
-    
-    # Test negative integer
+    assert_true(string_length(zero_int) > 0) fr fr Test negative integer
     sus neg_int tea = encode_integer(-42)
     assert_true(string_length(neg_int) > 0)
 }
 
-# Test ASN.1 OID encoding
+fr fr Test ASN.1 OID encoding
 slay test_asn1_oid_encoding() {
     test_start("ASN.1 OID Encoding")
     
@@ -259,59 +235,43 @@ slay test_asn1_oid_encoding() {
     assert_true(string_length(complex_oid) > 0)
 }
 
-# Test ASN.1 comprehensive encoding/decoding
+fr fr Test ASN.1 comprehensive encoding/decoding
 slay test_asn1_comprehensive() {
-    test_start("ASN.1 Comprehensive Test")
-    
-    # Test multiple object types
+    test_start("ASN.1 Comprehensive Test") fr fr Test multiple object types
     sus int_obj ASN1Object = asn1_int_new(42)
     sus str_obj ASN1Object = asn1_string_new("hello")
     sus seq_obj ASN1Object = asn1_sequence_new()
-    sus oid_obj ASN1Object = asn1_oid_new("1.2.3")
-    
-    # Encode all objects
+    sus oid_obj ASN1Object = asn1_oid_new("1.2.3") fr fr Encode all objects
     sus encoded_int tea = asn1_encode(int_obj)
     sus encoded_str tea = asn1_encode(str_obj)
     sus encoded_seq tea = asn1_encode(seq_obj)
-    sus encoded_oid tea = asn1_encode(oid_obj)
-    
-    # Verify all encodings are non-empty
+    sus encoded_oid tea = asn1_encode(oid_obj) fr fr Verify all encodings are non-empty
     assert_true(string_length(encoded_int) > 0)
     assert_true(string_length(encoded_str) > 0)
     assert_true(string_length(encoded_seq) > 0)
-    assert_true(string_length(encoded_oid) > 0)
-    
-    # Decode all objects
+    assert_true(string_length(encoded_oid) > 0) fr fr Decode all objects
     sus decoded_int ASN1Object = asn1_decode(encoded_int)
     sus decoded_str ASN1Object = asn1_decode(encoded_str)
     sus decoded_seq ASN1Object = asn1_decode(encoded_seq)
-    sus decoded_oid ASN1Object = asn1_decode(encoded_oid)
-    
-    # Verify tag types match
+    sus decoded_oid ASN1Object = asn1_decode(encoded_oid) fr fr Verify tag types match
     assert_eq_int(decoded_int.tag.tag_number, ASN1_INTEGER)
     assert_eq_int(decoded_str.tag.tag_number, ASN1_OCTET_STRING)
     assert_eq_int(decoded_seq.tag.tag_number, ASN1_SEQUENCE)
     assert_eq_int(decoded_oid.tag.tag_number, ASN1_OBJECT_IDENTIFIER)
 }
 
-# Test ASN.1 error handling
+fr fr Test ASN.1 error handling
 slay test_asn1_error_handling() {
-    test_start("ASN.1 Error Handling")
-    
-    # Test empty OID
+    test_start("ASN.1 Error Handling") fr fr Test empty OID
     sus empty_oid ASN1Object = asn1_oid_new("")
-    assert_eq_int(empty_oid.tag.tag_number, ASN1_OBJECT_IDENTIFIER)
-    
-    # Test single component OID (should fail gracefully)
+    assert_eq_int(empty_oid.tag.tag_number, ASN1_OBJECT_IDENTIFIER) fr fr Test single component OID (should fail gracefully)
     sus single_oid ASN1Object = asn1_oid_new("1")
-    assert_eq_int(single_oid.tag.tag_number, ASN1_OBJECT_IDENTIFIER)
-    
-    # Test empty string
+    assert_eq_int(single_oid.tag.tag_number, ASN1_OBJECT_IDENTIFIER) fr fr Test empty string
     sus empty_str ASN1Object = asn1_string_new("")
     assert_eq_int(empty_str.length, 0)
 }
 
-# Run all ASN.1 tests
+fr fr Run all ASN.1 tests
 slay run_asn1_tests() {
     vibez.spill("Running ASN.1 Module Tests...")
     
@@ -339,5 +299,5 @@ slay run_asn1_tests() {
     print_test_summary()
 }
 
-# Main test execution
+fr fr Main test execution
 run_asn1_tests()

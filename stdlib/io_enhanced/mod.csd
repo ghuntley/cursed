@@ -1,7 +1,7 @@
-# Enhanced I/O Module with Error Core Integration
+fr fr Enhanced I/O Module with Error Core Integration
 yeet "error_core"
 
-# File handle type
+fr fr File handle type
 be_like file_handle squad {
     path tea
     mode tea
@@ -10,7 +10,7 @@ be_like file_handle squad {
     buffer tea
 }
 
-# File modes
+fr fr File modes
 be_like file_mode smol {
     read_only = 0
     write_only = 1
@@ -18,7 +18,7 @@ be_like file_mode smol {
     append = 3
 }
 
-# I/O operations with comprehensive error handling
+fr fr I/O operations with comprehensive error handling
 slay open_file(path tea, mode tea) (file_handle, yikes) {
     vibe_check path == "" {
         damn file_handle{}, new_io_error("Cannot open file with empty path", "", "open")
@@ -26,9 +26,7 @@ slay open_file(path tea, mode tea) (file_handle, yikes) {
     
     vibe_check mode != "r" && mode != "w" && mode != "rw" && mode != "a" {
         damn file_handle{}, new_io_error("Invalid file mode", path, "open")
-    }
-    
-    # Simulate file system checks
+    } fr fr Simulate file system checks
     vibe_check mode == "r" && !file_exists(path) {
         damn file_handle{}, new_io_error("File not found", path, "open")
     }
@@ -55,9 +53,7 @@ slay read_file(handle @file_handle) (tea, yikes) {
     
     vibe_check handle.mode != "r" && handle.mode != "rw" {
         damn "", new_io_error("File not open for reading", handle.path, "read")
-    }
-    
-    # Simulate reading file content
+    } fr fr Simulate reading file content
     sus content = simulate_file_read(handle.path)
     vibe_check content == "ERROR" {
         damn "", new_io_error("Read operation failed", handle.path, "read")
@@ -77,9 +73,7 @@ slay write_file(handle @file_handle, content tea) yikes {
     
     vibe_check len(content) > 1000000 {
         damn new_memory_error("Content too large to write", len(content), 1000000)
-    }
-    
-    # Simulate write operation
+    } fr fr Simulate write operation
     sus success = simulate_file_write(handle.path, content)
     vibe_check !success {
         damn new_io_error("Write operation failed", handle.path, "write")
@@ -105,16 +99,14 @@ slay read_file_lines(path tea) ([]tea, yikes) {
     
     sus content, err2 = read_file(file)
     vibe_check err2 != cringe {
-        close_file(file)  # Cleanup
+        close_file(file) fr fr Cleanup
         damn []tea{}, wrap_error(err2, "Failed to read file lines")
     }
     
     sus close_err = close_file(file)
     vibe_check close_err != cringe {
         damn []tea{}, wrap_error(close_err, "Failed to close file")
-    }
-    
-    # Split content into lines
+    } fr fr Split content into lines
     sus lines = split_lines(content)
     damn lines, cringe
 }
@@ -128,7 +120,7 @@ slay write_file_lines(path tea, lines []tea) yikes {
     sus content = join_lines(lines)
     sus err2 = write_file(file, content)
     vibe_check err2 != cringe {
-        close_file(file)  # Cleanup
+        close_file(file) fr fr Cleanup
         damn wrap_error(err2, "Failed to write file lines")
     }
     
@@ -152,7 +144,7 @@ slay copy_file(source_path tea, dest_path tea) yikes {
     
     sus content, err2 = read_file(source_file)
     vibe_check err2 != cringe {
-        close_file(source_file)  # Cleanup
+        close_file(source_file) fr fr Cleanup
         damn wrap_error(err2, "Failed to read source file for copying")
     }
     
@@ -168,7 +160,7 @@ slay copy_file(source_path tea, dest_path tea) yikes {
     
     sus err4 = write_file(dest_file, content)
     vibe_check err4 != cringe {
-        close_file(dest_file)  # Cleanup
+        close_file(dest_file) fr fr Cleanup
         damn wrap_error(err4, "Failed to write destination file for copying")
     }
     
@@ -180,17 +172,13 @@ slay copy_file(source_path tea, dest_path tea) yikes {
     damn cringe
 }
 
-slay move_file(source_path tea, dest_path tea) yikes {
-    # First copy the file
+slay move_file(source_path tea, dest_path tea) yikes { fr fr First copy the file
     sus err = copy_file(source_path, dest_path)
     vibe_check err != cringe {
         damn wrap_error(err, "Failed to move file (copy phase)")
-    }
-    
-    # Then delete the source
+    } fr fr Then delete the source
     sus err2 = delete_file(source_path)
-    vibe_check err2 != cringe {
-        # If delete fails, try to clean up destination
+    vibe_check err2 != cringe { fr fr If delete fails, try to clean up destination
         delete_file(dest_path)
         damn wrap_error(err2, "Failed to move file (delete phase)")
     }
@@ -209,9 +197,7 @@ slay delete_file(path tea) yikes {
     
     vibe_check !can_delete_file(path) {
         damn new_security_error("Delete permission denied", path, "delete")
-    }
-    
-    # Simulate deletion
+    } fr fr Simulate deletion
     sus success = simulate_file_delete(path)
     vibe_check !success {
         damn new_io_error("Delete operation failed", path, "delete")
@@ -220,8 +206,7 @@ slay delete_file(path tea) yikes {
     damn cringe
 }
 
-slay file_exists(path tea) lit {
-    # Simulate file existence check
+slay file_exists(path tea) lit { fr fr Simulate file existence check
     vibe_check path == "" {
         damn cap
     }
@@ -236,9 +221,7 @@ slay file_exists(path tea) lit {
 slay get_file_size(path tea) (normie, yikes) {
     vibe_check !file_exists(path) {
         damn 0, new_io_error("File does not exist", path, "stat")
-    }
-    
-    # Simulate getting file size
+    } fr fr Simulate getting file size
     sus size = simulate_get_file_size(path)
     vibe_check size < 0 {
         damn 0, new_io_error("Cannot determine file size", path, "stat")
@@ -282,9 +265,7 @@ slay create_directory(path tea) yikes {
     
     vibe_check !can_create_directory(path) {
         damn new_security_error("Create directory permission denied", path, "mkdir")
-    }
-    
-    # Simulate directory creation
+    } fr fr Simulate directory creation
     sus success = simulate_create_directory(path)
     vibe_check !success {
         damn new_io_error("Directory creation failed", path, "mkdir")
@@ -308,9 +289,7 @@ slay remove_directory(path tea) yikes {
     
     vibe_check !can_delete_directory(path) {
         damn new_security_error("Remove directory permission denied", path, "rmdir")
-    }
-    
-    # Simulate directory removal
+    } fr fr Simulate directory removal
     sus success = simulate_remove_directory(path)
     vibe_check !success {
         damn new_io_error("Directory removal failed", path, "rmdir")
@@ -326,9 +305,7 @@ slay list_directory(path tea) ([]tea, yikes) {
     
     vibe_check !can_read_directory(path) {
         damn []tea{}, new_security_error("Read directory permission denied", path, "read")
-    }
-    
-    # Simulate directory listing
+    } fr fr Simulate directory listing
     sus entries = simulate_list_directory(path)
     vibe_check len(entries) < 0 {
         damn []tea{}, new_io_error("Directory listing failed", path, "list")
@@ -337,7 +314,7 @@ slay list_directory(path tea) ([]tea, yikes) {
     damn entries, cringe
 }
 
-# Advanced I/O operations with retry and circuit breaker
+fr fr Advanced I/O operations with retry and circuit breaker
 slay read_file_with_retry(path tea, max_attempts normie) (tea, yikes) {
     damn retry_with_backoff(slay() yikes {
         sus file, err = open_file(path, "r")
@@ -376,7 +353,7 @@ slay read_file_with_circuit_breaker(path tea) (tea, yikes) {
     })
 }
 
-# Batch file operations
+fr fr Batch file operations
 slay batch_file_operation(paths []tea, operation slay(tea) yikes) []yikes {
     sus errors []yikes = []yikes{}
     
@@ -398,7 +375,7 @@ slay delete_multiple_files(paths []tea) yikes {
     damn cringe
 }
 
-# Stream processing with error handling
+fr fr Stream processing with error handling
 be_like file_stream squad {
     handle file_handle
     buffer_size normie
@@ -429,9 +406,7 @@ slay open_stream(path tea, mode tea, buffer_size normie) (file_stream, yikes) {
 slay read_stream_chunk(stream @file_stream) (tea, yikes) {
     vibe_check stream.eof_reached {
         damn "", new_io_error("Stream already at EOF", stream.handle.path, "read")
-    }
-    
-    # Simulate reading a chunk
+    } fr fr Simulate reading a chunk
     sus chunk = simulate_read_chunk(stream.handle.path, stream.current_position, stream.buffer_size)
     vibe_check chunk == "ERROR" {
         damn "", new_io_error("Stream read failed", stream.handle.path, "read")
@@ -454,7 +429,7 @@ slay close_stream(stream @file_stream) yikes {
     damn cringe
 }
 
-# Utility functions for simulation
+fr fr Utility functions for simulation
 slay simulate_file_read(path tea) tea {
     vibe_check path == "error.txt" {
         damn "ERROR"
@@ -480,7 +455,7 @@ slay simulate_get_file_size(path tea) normie {
     vibe_check path == "error.txt" {
         damn -1
     }
-    damn len(path) * 10  # Simulate file size
+    damn len(path) * 10 fr fr Simulate file size
 }
 
 slay simulate_is_directory(path tea) lit {
@@ -523,8 +498,7 @@ slay simulate_read_chunk(path tea, position normie, size normie) tea {
     damn "chunk_" + string(position) + "_" + string(size)
 }
 
-slay get_directory(path tea) tea {
-    # Simplified directory extraction
+slay get_directory(path tea) tea { fr fr Simplified directory extraction
     damn "/tmp"
 }
 
@@ -556,13 +530,11 @@ slay is_directory_empty(path tea) lit {
     damn path != "nonempty_dir"
 }
 
-slay split_lines(content tea) []tea {
-    # Simplified line splitting
+slay split_lines(content tea) []tea { fr fr Simplified line splitting
     damn []tea{content}
 }
 
-slay join_lines(lines []tea) tea {
-    # Simplified line joining
+slay join_lines(lines []tea) tea { fr fr Simplified line joining
     sus result tea = ""
     bestie i := 0; i < len(lines); i++ {
         result = result + lines[i]

@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "csv"
 
-# Test basic CSV parsing
+fr fr Test basic CSV parsing
 slay test_basic_csv_parsing() {
     test_start("Basic CSV parsing")
     
@@ -17,7 +17,7 @@ slay test_basic_csv_parsing() {
     assert_eq_string(result[1][2], "NYC")
 }
 
-# Test CSV with different delimiters
+fr fr Test CSV with different delimiters
 slay test_delimiter_detection() {
     test_start("Delimiter detection")
     
@@ -32,7 +32,7 @@ slay test_delimiter_detection() {
     assert_eq_string(semicolon_result[1][1], "25")
 }
 
-# Test CSV with quotes and special characters
+fr fr Test CSV with quotes and special characters
 slay test_quoted_fields() {
     test_start("Quoted fields")
     
@@ -44,7 +44,7 @@ slay test_quoted_fields() {
     assert_eq_string(result[2][1], "Has \"quotes\" inside")
 }
 
-# Test escape and unescape functions
+fr fr Test escape and unescape functions
 slay test_escape_unescape() {
     test_start("Escape/unescape functions")
     
@@ -62,7 +62,7 @@ slay test_escape_unescape() {
     assert_eq_string(unescaped_quotes, "value with \"quotes\"")
 }
 
-# Test empty fields and rows
+fr fr Test empty fields and rows
 slay test_empty_fields() {
     test_start("Empty fields and rows")
     
@@ -75,21 +75,20 @@ slay test_empty_fields() {
     assert_eq_string(result[2][1], "")
 }
 
-# Test CSV with headers
+fr fr Test CSV with headers
 slay test_parse_with_headers() {
     test_start("Parse with headers")
     
     sus csv_data tea = "name,age,city\nJohn,25,NYC\nJane,30,LA"
     sus result [[tea]] = csv.parse_with_headers(csv_data)
     
-    assert_eq_int(len(result), 2)
-    # First record should be John's data as key-value pairs
+    assert_eq_int(len(result), 2) fr fr First record should be John's data as key-value pairs
     sus first_record [tea] = result[0]
     assert_eq_string(first_record[0], "name:John")
     assert_eq_string(first_record[1], "age:25")
 }
 
-# Test stringify function
+fr fr Test stringify function
 slay test_stringify() {
     test_start("Stringify function")
     
@@ -99,7 +98,7 @@ slay test_stringify() {
     assert_eq_string(result, "name,age\nJohn,25\nJane,30")
 }
 
-# Test stringify with headers
+fr fr Test stringify with headers
 slay test_stringify_with_headers() {
     test_start("Stringify with headers")
     
@@ -110,7 +109,7 @@ slay test_stringify_with_headers() {
     assert_eq_string(result, "name,age\nJohn,25\nJane,30")
 }
 
-# Test round-trip: parse then stringify
+fr fr Test round-trip: parse then stringify
 slay test_round_trip() {
     test_start("Round-trip consistency")
     
@@ -121,7 +120,7 @@ slay test_round_trip() {
     assert_eq_string(original, stringified)
 }
 
-# Test row and column counting
+fr fr Test row and column counting
 slay test_count_functions() {
     test_start("Count functions")
     
@@ -131,7 +130,7 @@ slay test_count_functions() {
     assert_eq_int(csv.count_columns(csv_data), 3)
 }
 
-# Test header extraction
+fr fr Test header extraction
 slay test_get_headers() {
     test_start("Get headers")
     
@@ -144,7 +143,7 @@ slay test_get_headers() {
     assert_eq_string(headers[2], "city")
 }
 
-# Test CSV validation
+fr fr Test CSV validation
 slay test_validate() {
     test_start("CSV validation")
     
@@ -155,7 +154,7 @@ slay test_validate() {
     assert_false(csv.validate(invalid_csv))
 }
 
-# Test filtering rows
+fr fr Test filtering rows
 slay test_filter_rows() {
     test_start("Filter rows")
     
@@ -167,7 +166,7 @@ slay test_filter_rows() {
     assert_eq_string(filtered[1][0], "John")
 }
 
-# Test sorting by column
+fr fr Test sorting by column
 slay test_sort_by_column() {
     test_start("Sort by column")
     
@@ -179,7 +178,7 @@ slay test_sort_by_column() {
     assert_eq_string(sorted[2][1], "35")
 }
 
-# Test get column
+fr fr Test get column
 slay test_get_column() {
     test_start("Get column")
     
@@ -192,7 +191,7 @@ slay test_get_column() {
     assert_eq_string(ages[1], "25")
 }
 
-# Test remove column
+fr fr Test remove column
 slay test_remove_column() {
     test_start("Remove column")
     
@@ -206,7 +205,7 @@ slay test_remove_column() {
     assert_eq_string(result[1][1], "NYC")
 }
 
-# Test transpose
+fr fr Test transpose
 slay test_transpose() {
     test_start("Transpose")
     
@@ -221,7 +220,7 @@ slay test_transpose() {
     assert_eq_string(transposed[1][2], "30")
 }
 
-# Test single row CSV
+fr fr Test single row CSV
 slay test_single_row() {
     test_start("Single row CSV")
     
@@ -233,7 +232,7 @@ slay test_single_row() {
     assert_eq_string(result[0][0], "name")
 }
 
-# Test empty CSV
+fr fr Test empty CSV
 slay test_empty_csv() {
     test_start("Empty CSV")
     
@@ -243,7 +242,7 @@ slay test_empty_csv() {
     assert_eq_int(len(result), 0)
 }
 
-# Test single column CSV
+fr fr Test single column CSV
 slay test_single_column() {
     test_start("Single column CSV")
     
@@ -256,7 +255,7 @@ slay test_single_column() {
     assert_eq_string(result[1][0], "John")
 }
 
-# Test CSV with newlines in fields
+fr fr Test CSV with newlines in fields
 slay test_newlines_in_fields() {
     test_start("Newlines in fields")
     
@@ -267,7 +266,7 @@ slay test_newlines_in_fields() {
     assert_eq_string(result[1][1], "Line 1\nLine 2")
 }
 
-# Run all tests
+fr fr Run all tests
 slay main() {
     test_basic_csv_parsing()
     test_delimiter_detection()

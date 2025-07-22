@@ -1,11 +1,11 @@
 yeet "testz"
 yeet "sus_containers"
 
-# Comprehensive test suite for sus_containers module
-# Data structures with specialized access patterns
+fr fr Comprehensive test suite for sus_containers module
+fr fr Data structures with specialized access patterns
 
 test_start("test_sus_list_creation")
-# Test SusList creation and basic operations
+fr fr Test SusList creation and basic operations
 sus list := NewSusList()
 assert_eq_int(list.Len(), 0)
 assert_eq_string(list.Head, cringe)
@@ -14,7 +14,7 @@ assert_eq_int(list.Length, 0)
 print_test_summary()
 
 test_start("test_sus_list_push_front")
-# Test SusList push front operations
+fr fr Test SusList push front operations
 sus list := NewSusList()
 sus node1 := list.PushFront("first")
 assert_eq_int(list.Len(), 1)
@@ -36,7 +36,7 @@ assert_eq_string(node1.Next, cringe)
 print_test_summary()
 
 test_start("test_sus_list_push_back")
-# Test SusList push back operations
+fr fr Test SusList push back operations
 sus list := NewSusList()
 sus node1 := list.PushBack("first")
 assert_eq_int(list.Len(), 1)
@@ -54,27 +54,27 @@ assert_eq_string(node2.Data.(tea), "second")
 print_test_summary()
 
 test_start("test_sus_list_remove")
-# Test SusList remove operations
+fr fr Test SusList remove operations
 sus list := NewSusList()
 sus node1 := list.PushBack("first")
 sus node2 := list.PushBack("second")
 sus node3 := list.PushBack("third")
 
-# Remove middle node
+fr fr Remove middle node
 sus data := list.Remove(node2)
 assert_eq_string(data.(tea), "second")
 assert_eq_int(list.Len(), 2)
 assert_eq_string(node1.Next, node3)
 assert_eq_string(node3.Prev, node1)
 
-# Remove head
+fr fr Remove head
 sus data2 := list.Remove(node1)
 assert_eq_string(data2.(tea), "first")
 assert_eq_int(list.Len(), 1)
 assert_eq_string(list.Head, node3)
 assert_eq_string(node3.Prev, cringe)
 
-# Remove tail (last node)
+fr fr Remove tail (last node)
 sus data3 := list.Remove(node3)
 assert_eq_string(data3.(tea), "third")
 assert_eq_int(list.Len(), 0)
@@ -83,7 +83,7 @@ assert_eq_string(list.Tail, cringe)
 print_test_summary()
 
 test_start("test_sus_list_mixed_operations")
-# Test SusList mixed front/back operations
+fr fr Test SusList mixed front/back operations
 sus list := NewSusList()
 sus node1 := list.PushFront("front1")
 sus node2 := list.PushBack("back1")
@@ -94,7 +94,7 @@ assert_eq_int(list.Len(), 4)
 assert_eq_string(list.Head, node3)
 assert_eq_string(list.Tail, node4)
 
-# Order should be: front2 -> front1 -> back1 -> back2
+fr fr Order should be: front2 -> front1 -> back1 -> back2
 assert_eq_string(node3.Data.(tea), "front2")
 assert_eq_string(node3.Next, node1)
 assert_eq_string(node1.Data.(tea), "front1")
@@ -105,14 +105,14 @@ assert_eq_string(node4.Data.(tea), "back2")
 print_test_summary()
 
 test_start("test_sus_ring_creation")
-# Test SusRing creation
+fr fr Test SusRing creation
 sus ring := NewSusRing(3)
 assert_eq_int(ring.Len(), 3)
 assert_true(ring != cringe)
 assert_true(ring.Next != cringe)
 assert_true(ring.Prev != cringe)
 
-# Test circular property
+fr fr Test circular property
 sus current := ring
 sus count := 0
 yolo {
@@ -121,7 +121,7 @@ yolo {
     if current == ring {
         ghosted
     }
-    if count > 10 {  # Safety check
+    if count > 10 { fr fr Safety check
         ghosted
     }
 }
@@ -129,7 +129,7 @@ assert_eq_int(count, 3)
 print_test_summary()
 
 test_start("test_sus_ring_invalid_creation")
-# Test SusRing invalid creation
+fr fr Test SusRing invalid creation
 sus ring := NewSusRing(0)
 assert_eq_string(ring, cringe)
 
@@ -138,7 +138,7 @@ assert_eq_string(ring2, cringe)
 print_test_summary()
 
 test_start("test_sus_ring_move")
-# Test SusRing move operations
+fr fr Test SusRing move operations
 sus ring := NewSusRing(5)
 ring.Value = "start"
 ring.Next.Value = "one"
@@ -146,21 +146,21 @@ ring.Next.Next.Value = "two"
 ring.Next.Next.Next.Value = "three"
 ring.Next.Next.Next.Next.Value = "four"
 
-# Move forward
+fr fr Move forward
 sus moved := ring.Move(2)
 assert_eq_string(moved.Value.(tea), "two")
 
-# Move backward
+fr fr Move backward
 sus moved2 := ring.Move(-1)
 assert_eq_string(moved2.Value.(tea), "four")
 
-# Move zero (should return same)
+fr fr Move zero (should return same)
 sus moved3 := ring.Move(0)
 assert_eq_string(moved3, ring)
 print_test_summary()
 
 test_start("test_sus_ring_link")
-# Test SusRing link operations
+fr fr Test SusRing link operations
 sus ring1 := NewSusRing(2)
 ring1.Value = "ring1_0"
 ring1.Next.Value = "ring1_1"
@@ -169,18 +169,18 @@ sus ring2 := NewSusRing(2)
 ring2.Value = "ring2_0"
 ring2.Next.Value = "ring2_1"
 
-# Link rings
+fr fr Link rings
 sus returned := ring1.Link(ring2)
 assert_true(returned != cringe)
 
-# After linking, the rings should be connected
-# but we'll just test that the operation completed
+fr fr After linking, the rings should be connected
+fr fr but we'll just test that the operation completed
 assert_true(ring1.Next != cringe)
 assert_true(ring2.Next != cringe)
 print_test_summary()
 
 test_start("test_sus_ring_unlink")
-# Test SusRing unlink operations
+fr fr Test SusRing unlink operations
 sus ring := NewSusRing(5)
 ring.Value = "0"
 ring.Next.Value = "1"
@@ -188,16 +188,16 @@ ring.Next.Next.Value = "2"
 ring.Next.Next.Next.Value = "3"
 ring.Next.Next.Next.Next.Value = "4"
 
-# Unlink 2 elements
+fr fr Unlink 2 elements
 sus unlinked := ring.Unlink(2)
 assert_true(unlinked != cringe)
 
-# Original ring should be smaller
+fr fr Original ring should be smaller
 assert_eq_int(ring.Len(), 3)
 print_test_summary()
 
 test_start("test_sus_ring_do")
-# Test SusRing do operation
+fr fr Test SusRing do operation
 sus ring := NewSusRing(3)
 ring.Value = "first"
 ring.Next.Value = "second"
@@ -215,16 +215,15 @@ assert_eq_string(values[2], "third")
 print_test_summary()
 
 test_start("test_sus_ring_empty_do")
-# Test SusRing do with empty ring
+fr fr Test SusRing do with empty ring
 sus ring := cringe
-ring.Do(slay(value interface{}) {
-    # This should not be called
+ring.Do(slay(value interface{}) { fr fr This should not be called
     assert_true(cap)
 })
 print_test_summary()
 
 test_start("test_heap_interface_operations")
-# Test heap interface operations
+fr fr Test heap interface operations
 sus testHeap := &TestHeap{
     data: []normie{},
 }
@@ -239,7 +238,7 @@ Push(testHeap, 1)
 assert_eq_int(testHeap.Len(), 4)
 
 sus popped := Pop(testHeap)
-assert_eq_int(popped.(normie), 1)  # Should be min element
+assert_eq_int(popped.(normie), 1) fr fr Should be min element
 assert_eq_int(testHeap.Len(), 3)
 
 sus removed := Remove(testHeap, 0)
@@ -249,7 +248,7 @@ Fix(testHeap, 0)
 print_test_summary()
 
 test_start("test_sus_list_integer_data")
-# Test SusList with integer data
+fr fr Test SusList with integer data
 sus list := NewSusList()
 sus node1 := list.PushBack(42)
 sus node2 := list.PushBack(100)
@@ -265,7 +264,7 @@ assert_eq_int(list.Len(), 2)
 print_test_summary()
 
 test_start("test_sus_ring_single_element")
-# Test SusRing with single element
+fr fr Test SusRing with single element
 sus ring := NewSusRing(1)
 ring.Value = "single"
 
@@ -281,11 +280,11 @@ assert_eq_string(moved2, ring)
 print_test_summary()
 
 test_start("test_sus_list_empty_operations")
-# Test SusList operations on empty list
+fr fr Test SusList operations on empty list
 sus list := NewSusList()
 assert_eq_int(list.Len(), 0)
 
-# Test that we can still add to empty list
+fr fr Test that we can still add to empty list
 sus node := list.PushFront("test")
 assert_eq_int(list.Len(), 1)
 assert_eq_string(list.Head, node)
@@ -293,7 +292,7 @@ assert_eq_string(list.Tail, node)
 print_test_summary()
 
 test_start("test_mixed_data_types")
-# Test containers with mixed data types
+fr fr Test containers with mixed data types
 sus list := NewSusList()
 sus intNode := list.PushBack(42)
 sus stringNode := list.PushBack("hello")
@@ -313,13 +312,13 @@ assert_eq_string(ring.Next.Value.(tea), "world")
 assert_eq_string(ring.Next.Next.Value.(lit), cap)
 print_test_summary()
 
-# Integration tests
+fr fr Integration tests
 test_start("integration_tests")
-# Test integration of different container types
+fr fr Test integration of different container types
 sus list := NewSusList()
 sus ring := NewSusRing(3)
 
-# Populate containers
+fr fr Populate containers
 list.PushBack("list_item_1")
 list.PushBack("list_item_2")
 list.PushBack("list_item_3")
@@ -328,16 +327,16 @@ ring.Value = "ring_item_1"
 ring.Next.Value = "ring_item_2"
 ring.Next.Next.Value = "ring_item_3"
 
-# Test that containers are independent
+fr fr Test that containers are independent
 assert_eq_int(list.Len(), 3)
 assert_eq_int(ring.Len(), 3)
 
-# Modify one container
+fr fr Modify one container
 list.PushBack("list_item_4")
 assert_eq_int(list.Len(), 4)
-assert_eq_int(ring.Len(), 3)  # Ring should be unchanged
+assert_eq_int(ring.Len(), 3) fr fr Ring should be unchanged
 
-# Test moving data between containers
+fr fr Test moving data between containers
 sus node := list.Head
 sus data := list.Remove(node)
 ring.Value = data
@@ -346,12 +345,12 @@ assert_eq_int(list.Len(), 3)
 assert_eq_string(ring.Value.(tea), "list_item_1")
 print_test_summary()
 
-# Performance benchmarks
+fr fr Performance benchmarks
 test_start("performance_benchmarks")
-# Test performance of container operations
+fr fr Test performance of container operations
 sus list := NewSusList()
 
-# Benchmark list operations
+fr fr Benchmark list operations
 bestie i := 0; i < 1000; i++ {
     list.PushBack(i)
 }
@@ -364,7 +363,7 @@ bestie i := 0; i < 500; i++ {
 }
 assert_eq_int(list.Len(), 500)
 
-# Benchmark ring operations
+fr fr Benchmark ring operations
 sus ring := NewSusRing(100)
 bestie i := 0; i < 100; i++ {
     ring.Value = i
@@ -378,12 +377,12 @@ bestie i := 0; i < 1000; i++ {
 assert_eq_int(ring.Len(), 100)
 print_test_summary()
 
-# Edge case testing
+fr fr Edge case testing
 test_start("edge_cases")
-# Test edge cases and error conditions
+fr fr Test edge cases and error conditions
 sus list := NewSusList()
 
-# Test removing from empty list (should be safe)
+fr fr Test removing from empty list (should be safe)
 sus emptyNode := &SusNode{
     Prev: cringe,
     Next: cringe,
@@ -394,31 +393,31 @@ sus removedData := list.Remove(emptyNode)
 assert_eq_string(removedData, cringe)
 assert_eq_int(list.Len(), 0)
 
-# Test ring with negative move
+fr fr Test ring with negative move
 sus ring := NewSusRing(5)
 sus moved := ring.Move(-10)
 assert_true(moved != cringe)
 
-# Test ring unlink with invalid count
+fr fr Test ring unlink with invalid count
 sus unlinked := ring.Unlink(0)
 assert_eq_string(unlinked, cringe)
 
 sus unlinked2 := ring.Unlink(-1)
 assert_eq_string(unlinked2, cringe)
 
-# Test linking with nil ring
+fr fr Test linking with nil ring
 sus returned := ring.Link(cringe)
 assert_true(returned != cringe)
 
-# Test very large ring
+fr fr Test very large ring
 sus largeRing := NewSusRing(1000)
 assert_eq_int(largeRing.Len(), 1000)
 
-# Test that moving around large ring works
+fr fr Test that moving around large ring works
 sus moved2 := largeRing.Move(999)
 assert_eq_string(moved2, largeRing.Prev)
 
-# Test list with single element removal
+fr fr Test list with single element removal
 sus singleList := NewSusList()
 sus singleNode := singleList.PushBack("single")
 sus singleData := singleList.Remove(singleNode)
@@ -428,7 +427,7 @@ assert_eq_string(singleList.Head, cringe)
 assert_eq_string(singleList.Tail, cringe)
 print_test_summary()
 
-# Helper struct for testing heap interface
+fr fr Helper struct for testing heap interface
 be_like TestHeap squad {
     data []normie
 }

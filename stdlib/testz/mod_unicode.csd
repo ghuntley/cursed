@@ -1,6 +1,6 @@
-# Simplified Enhanced CURSED Testing Framework (testz v4.0)
+fr fr Simplified Enhanced CURSED Testing Framework (testz v4.0)
 
-# Core test state variables
+fr fr Core test state variables
 sus current_test_name tea = ""
 sus total_tests normie = 0
 sus passed_tests normie = 0
@@ -10,7 +10,7 @@ sus benchmark_mode lit = cap
 sus memory_tracking lit = cap
 sus both_mode_test_count normie = 0
 
-# Core Testing Functions
+fr fr Core Testing Functions
 slay test_start(name tea) {
     current_test_name = name
     total_tests = total_tests + 1
@@ -73,7 +73,7 @@ slay assert_eq_string(actual tea, expected tea) {
     }
 }
 
-# Enhanced Assertion Functions
+fr fr Enhanced Assertion Functions
 slay assert_ne_int(actual normie, expected normie) {
     lowkey actual != expected {
         passed_tests = passed_tests + 1
@@ -110,20 +110,14 @@ slay assert_lt_int(actual normie, threshold normie) {
     }
 }
 
-# Both-Mode Testing Functions
+fr fr Both-Mode Testing Functions
 slay test_both_modes(test_name tea, test_code tea) lit {
     vibez.spill("🔄 Testing " + test_name + " in both modes...")
-    both_mode_test_count = both_mode_test_count + 1
-    
-    # Test interpretation mode
+    both_mode_test_count = both_mode_test_count + 1 fr fr Test interpretation mode
     vibez.spill("📖 Interpretation mode:")
-    sus interp_result lit = execute_interpretation_test(test_code)
-    
-    # Test compilation mode
+    sus interp_result lit = execute_interpretation_test(test_code) fr fr Test compilation mode
     vibez.spill("⚙️  Compilation mode:")
-    sus comp_result lit = execute_compilation_test(test_code)
-    
-    # Compare results
+    sus comp_result lit = execute_compilation_test(test_code) fr fr Compare results
     lowkey interp_result && comp_result {
         vibez.spill("✅ Both modes PASS: " + test_name)
         passed_tests = passed_tests + 1
@@ -145,7 +139,7 @@ slay execute_compilation_test(test_code tea) lit {
     damn based
 }
 
-# Memory Testing Functions
+fr fr Memory Testing Functions
 slay validate_memory_usage(test_name tea, max_memory_mb normie) lit {
     lowkey memory_tracking {
         vibez.spill("💾 Memory validation: " + test_name)
@@ -169,7 +163,7 @@ slay validate_no_memory_leaks(operation tea) lit {
     damn based
 }
 
-# Compilation Validation Functions
+fr fr Compilation Validation Functions
 slay validate_compilation_success(test_file tea) lit {
     vibez.spill("🔧 Validating compilation: " + test_file)
     passed_tests = passed_tests + 1
@@ -182,7 +176,7 @@ slay validate_module_imports(module_name tea) lit {
     damn based
 }
 
-# Performance Testing Functions
+fr fr Performance Testing Functions
 slay benchmark_start(name tea) {
     lowkey benchmark_mode {
         vibez.spill("⏱️  Benchmark: " + name)
@@ -197,7 +191,7 @@ slay benchmark_end(name tea) normie {
     damn 0
 }
 
-# Configuration Functions
+fr fr Configuration Functions
 slay set_verbose_mode(enabled lit) {
     verbose_mode = enabled
     lowkey enabled {
@@ -219,7 +213,7 @@ slay set_memory_tracking(enabled lit) {
     }
 }
 
-# Results Functions
+fr fr Results Functions
 slay get_test_results() normie {
     damn total_tests
 }

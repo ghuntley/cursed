@@ -1,21 +1,21 @@
 yeet "glowup_http"
 
-# Example WebSocket implementation using glowup_http framework
+fr fr Example WebSocket implementation using glowup_http framework
 
-# Initialize the framework
+fr fr Initialize the framework
 glowup_http_main()
 
 vibez.spill("WebSocket Examples")
 vibez.spill("=================")
 
-# Test WebSocket handshake
+fr fr Test WebSocket handshake
 vibez.spill("Testing WebSocket handshake...")
 sus client_key tea = "dGhlIHNhbXBsZSBub25jZQ=="
 sus accept_key tea = websocket_handshake(client_key)
 vibez.spill("Client Key: " + client_key)
 vibez.spill("Accept Key: " + accept_key)
 
-# Test WebSocket frame creation
+fr fr Test WebSocket frame creation
 vibez.spill("Testing WebSocket frame creation...")
 sus text_frame WebSocketFrame = websocket_create_frame(1, "Hello WebSocket!")
 sus binary_frame WebSocketFrame = websocket_create_frame(2, "Binary data here")
@@ -31,7 +31,7 @@ vibez.spill("Binary Frame - Opcode: " + http_int_to_string(binary_frame.opcode))
 vibez.spill("Ping Frame - Opcode: " + http_int_to_string(ping_frame.opcode))
 vibez.spill("Pong Frame - Opcode: " + http_int_to_string(pong_frame.opcode))
 
-# Test WebSocket message sending
+fr fr Test WebSocket message sending
 vibez.spill("Testing WebSocket message sending...")
 websocket_send_text("Hello from CURSED WebSocket!")
 websocket_send_text("This is a test message")
@@ -40,12 +40,12 @@ websocket_send_text("{\"type\": \"message\", \"content\": \"JSON over WebSocket\
 websocket_send_binary("Binary message content")
 websocket_send_binary("Another binary message")
 
-# Test WebSocket control frames
+fr fr Test WebSocket control frames
 vibez.spill("Testing WebSocket control frames...")
 websocket_ping()
 websocket_pong()
 
-# Simulate WebSocket conversation
+fr fr Simulate WebSocket conversation
 vibez.spill("Simulating WebSocket conversation...")
 sus messages tea = "Welcome to the chat!"
 websocket_send_text(messages)
@@ -59,7 +59,7 @@ websocket_send_text(system_message)
 sus json_message tea = "{\"type\": \"notification\", \"message\": \"New user online\"}"
 websocket_send_text(json_message)
 
-# Test different WebSocket opcodes
+fr fr Test different WebSocket opcodes
 vibez.spill("Testing different WebSocket opcodes...")
 sus continuation_frame WebSocketFrame = websocket_create_frame(0, "Continuation frame")
 sus text_msg_frame WebSocketFrame = websocket_create_frame(1, "Text message frame")
@@ -75,7 +75,7 @@ vibez.spill("Close Frame (8): " + close_frame.payload)
 vibez.spill("Ping Control Frame (9): " + ping_ctrl_frame.payload)
 vibez.spill("Pong Control Frame (10): " + pong_ctrl_frame.payload)
 
-# Test WebSocket with different payload sizes
+fr fr Test WebSocket with different payload sizes
 vibez.spill("Testing WebSocket with different payload sizes...")
 sus small_payload tea = "Small"
 sus medium_payload tea = "This is a medium sized WebSocket message payload"
@@ -85,7 +85,7 @@ websocket_send_text(small_payload)
 websocket_send_text(medium_payload)
 websocket_send_text(large_payload)
 
-# Test WebSocket heartbeat mechanism
+fr fr Test WebSocket heartbeat mechanism
 vibez.spill("Testing WebSocket heartbeat mechanism...")
 bestie i := 0; i < 5; i++ {
     websocket_ping()
@@ -94,16 +94,16 @@ bestie i := 0; i < 5; i++ {
     vibez.spill("Heartbeat pong " + http_int_to_string(i + 1))
 }
 
-# Test WebSocket error handling
+fr fr Test WebSocket error handling
 vibez.spill("Testing WebSocket error handling...")
 sus error_frame WebSocketFrame = websocket_create_frame(8, "Connection closed due to error")
 vibez.spill("Error frame created with opcode: " + http_int_to_string(error_frame.opcode))
 
-# Test WebSocket constants
+fr fr Test WebSocket constants
 vibez.spill("Testing WebSocket constants...")
 vibez.spill("WebSocket Magic String: " + WEBSOCKET_MAGIC)
 
-# Simulate WebSocket server responses
+fr fr Simulate WebSocket server responses
 vibez.spill("Simulating WebSocket server responses...")
 sus server_welcome tea = "Welcome to the WebSocket server!"
 sus server_info tea = "Server: glowup_http WebSocket implementation"
@@ -113,7 +113,7 @@ websocket_send_text(server_welcome)
 websocket_send_text(server_info)
 websocket_send_text(server_stats)
 
-# Test WebSocket client simulation
+fr fr Test WebSocket client simulation
 vibez.spill("Simulating WebSocket client messages...")
 sus client_hello tea = "Hello server!"
 sus client_data tea = "{\"action\": \"getData\", \"params\": {\"limit\": 10}}"

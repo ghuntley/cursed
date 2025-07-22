@@ -1,6 +1,6 @@
 vibez.spill("Testing simple regex_vibez functionality...")
 
-# Test basic string operations
+fr fr Test basic string operations
 sus text tea = "hello world"
 sus pattern tea = "hello"
 
@@ -8,7 +8,7 @@ vibez.spill("Basic pattern matching test")
 vibez.spill("Pattern: hello")
 vibez.spill("Text: hello world")
 
-# Test string concatenation
+fr fr Test string concatenation
 sus result tea = "Pattern " + "found"
 vibez.spill(result)
 

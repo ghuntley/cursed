@@ -1,27 +1,26 @@
 yeet "testz"
 
-# ==========================================
-# CURSED Config Module - Pure CURSED Implementation  
-# Multi-Format Configuration Management
-# ==========================================
+fr fr ==========================================
+fr fr CURSED Config Module - Pure CURSED Implementation  
+fr fr Multi-Format Configuration Management
+fr fr ==========================================
 
-# ==========================================
-# Core Configuration Functions
-# ==========================================
+fr fr ==========================================
+fr fr Core Configuration Functions
+fr fr ==========================================
 
-# Configuration format types
+fr fr Configuration format types
 slay format_json() tea { damn "json" }
 slay format_yaml() tea { damn "yaml" }
 slay format_toml() tea { damn "toml" }
 slay format_ini() tea { damn "ini" }
 slay format_env() tea { damn "env" }
 
-# ==========================================
-# Environment Variable Functions
-# ==========================================
+fr fr ==========================================
+fr fr Environment Variable Functions
+fr fr ==========================================
 
-slay get_env(key tea) tea {
-    # Get environment variable value (simulated)
+slay get_env(key tea) tea { fr fr Get environment variable value (simulated)
     bestie key == "HOME" {
         damn "/home/user"
     }
@@ -40,19 +39,16 @@ slay get_env(key tea) tea {
     damn ""
 }
 
-slay set_env(key tea, value tea) lit {
-    # Set environment variable (simulation)
+slay set_env(key tea, value tea) lit { fr fr Set environment variable (simulation)
     damn based
 }
 
-slay has_env(key tea) lit {
-    # Check if environment variable exists
+slay has_env(key tea) lit { fr fr Check if environment variable exists
     sus value tea = get_env(key)
     damn value != ""
 }
 
-slay expand_env_vars(input tea) tea {
-    # Expand environment variables in string
+slay expand_env_vars(input tea) tea { fr fr Expand environment variables in string
     sus result tea = input
     sus start normie = 0
     
@@ -82,48 +78,36 @@ slay expand_env_vars(input tea) tea {
     damn result
 }
 
-# ==========================================
-# Format Detection Functions
-# ==========================================
+fr fr ==========================================
+fr fr Format Detection Functions
+fr fr ==========================================
 
-slay detect_format(content tea) tea {
-    # Auto-detect configuration format
-    sus trimmed tea = string_trim(content)
-    
-    # Check for JSON
+slay detect_format(content tea) tea { fr fr Auto-detect configuration format
+    sus trimmed tea = string_trim(content) fr fr Check for JSON
     bestie string_starts_with(trimmed, "{") && string_ends_with(trimmed, "}") {
         damn format_json()
     }
     
     bestie string_starts_with(trimmed, "[") && string_ends_with(trimmed, "]") {
         damn format_json()
-    }
-    
-    # Check for INI sections
+    } fr fr Check for INI sections
     bestie string_contains(trimmed, "[") && string_contains(trimmed, "]") {
         damn format_ini()
-    }
-    
-    # Check for YAML indicators
+    } fr fr Check for YAML indicators
     bestie string_contains(trimmed, "---") || string_contains(trimmed, ": ") {
         damn format_yaml()
-    }
-    
-    # Check for TOML
+    } fr fr Check for TOML
     bestie string_contains(trimmed, "[[") || string_contains(trimmed, " = ") {
         damn format_toml()
-    }
-    
-    # Check for environment format
+    } fr fr Check for environment format
     bestie string_contains(trimmed, "=") && !string_contains(trimmed, " ") {
         damn format_env()
     }
     
-    damn format_json()  # Default to JSON
+    damn format_json() fr fr Default to JSON
 }
 
-slay detect_format_from_filename(filename tea) tea {
-    # Detect format from file extension
+slay detect_format_from_filename(filename tea) tea { fr fr Detect format from file extension
     bestie string_ends_with(filename, ".json") {
         damn format_json()
     }
@@ -140,15 +124,14 @@ slay detect_format_from_filename(filename tea) tea {
         damn format_env()
     }
     
-    damn format_json()  # Default
+    damn format_json() fr fr Default
 }
 
-# ==========================================
-# Simple JSON Configuration Parser
-# ==========================================
+fr fr ==========================================
+fr fr Simple JSON Configuration Parser
+fr fr ==========================================
 
-slay parse_json_config(content tea) tea {
-    # Parse JSON configuration (basic validation)
+slay parse_json_config(content tea) tea { fr fr Parse JSON configuration (basic validation)
     sus trimmed tea = string_trim(content)
     bestie string_starts_with(trimmed, "{") && string_ends_with(trimmed, "}") {
         damn trimmed
@@ -156,16 +139,13 @@ slay parse_json_config(content tea) tea {
     damn "{}"
 }
 
-# ==========================================
-# INI Configuration Parser
-# ==========================================
+fr fr ==========================================
+fr fr INI Configuration Parser
+fr fr ==========================================
 
-slay parse_ini_config(content tea) tea {
-    # Parse INI format configuration (simplified)
+slay parse_ini_config(content tea) tea { fr fr Parse INI format configuration (simplified)
     sus result tea = "{"
-    sus first lit = based
-    
-    # Simple INI parsing - convert to JSON-like format
+    sus first lit = based fr fr Simple INI parsing - convert to JSON-like format
     bestie string_contains(content, "=") {
         bestie !first {
             result = result + ","
@@ -178,12 +158,11 @@ slay parse_ini_config(content tea) tea {
     damn result
 }
 
-# ==========================================
-# YAML Configuration Parser (Basic)
-# ==========================================
+fr fr ==========================================
+fr fr YAML Configuration Parser (Basic)
+fr fr ==========================================
 
-slay parse_yaml_config(content tea) tea {
-    # Basic YAML parser (simplified)
+slay parse_yaml_config(content tea) tea { fr fr Basic YAML parser (simplified)
     sus result tea = "{"
     
     bestie string_contains(content, ":") {
@@ -194,12 +173,11 @@ slay parse_yaml_config(content tea) tea {
     damn result
 }
 
-# ==========================================
-# TOML Configuration Parser (Basic)
-# ==========================================
+fr fr ==========================================
+fr fr TOML Configuration Parser (Basic)
+fr fr ==========================================
 
-slay parse_toml_config(content tea) tea {
-    # Basic TOML parser (simplified)
+slay parse_toml_config(content tea) tea { fr fr Basic TOML parser (simplified)
     sus result tea = "{"
     
     bestie string_contains(content, "=") {
@@ -210,12 +188,11 @@ slay parse_toml_config(content tea) tea {
     damn result
 }
 
-# ==========================================
-# Environment Configuration Parser
-# ==========================================
+fr fr ==========================================
+fr fr Environment Configuration Parser
+fr fr ==========================================
 
-slay parse_env_config(content tea) tea {
-    # Parse environment file format (KEY=VALUE)
+slay parse_env_config(content tea) tea { fr fr Parse environment file format (KEY=VALUE)
     sus result tea = "{"
     sus first lit = based
     
@@ -231,12 +208,11 @@ slay parse_env_config(content tea) tea {
     damn result
 }
 
-# ==========================================
-# Main Configuration Functions
-# ==========================================
+fr fr ==========================================
+fr fr Main Configuration Functions
+fr fr ==========================================
 
-slay load_config(content tea, format tea) tea {
-    # Load configuration from content string
+slay load_config(content tea, format tea) tea { fr fr Load configuration from content string
     sus expanded tea = expand_env_vars(content)
     
     bestie format == format_json() {
@@ -258,17 +234,13 @@ slay load_config(content tea, format tea) tea {
     damn "{}"
 }
 
-slay load_config_auto(content tea) tea {
-    # Auto-detect format and load configuration
+slay load_config_auto(content tea) tea { fr fr Auto-detect format and load configuration
     sus format tea = detect_format(content)
     damn load_config(content, format)
 }
 
-slay load_config_from_file(filename tea) tea {
-    # Load configuration from file (simulated)
-    sus format tea = detect_format_from_filename(filename)
-    
-    # Simulate file content based on filename
+slay load_config_from_file(filename tea) tea { fr fr Load configuration from file (simulated)
+    sus format tea = detect_format_from_filename(filename) fr fr Simulate file content based on filename
     bestie filename == "config.json" {
         sus sample_content tea = "{\"database\":{\"host\":\"localhost\",\"port\":\"5432\"},\"app\":{\"name\":\"MyApp\",\"debug\":\"true\"}}"
         damn load_config(sample_content, format)
@@ -287,23 +259,20 @@ slay load_config_from_file(filename tea) tea {
     damn "{}"
 }
 
-# ==========================================
-# Configuration Validation Functions
-# ==========================================
+fr fr ==========================================
+fr fr Configuration Validation Functions
+fr fr ==========================================
 
-slay validate_config(config tea, schema tea) lit {
-    # Basic configuration validation
+slay validate_config(config tea, schema tea) lit { fr fr Basic configuration validation
     damn validate(config)
 }
 
-slay has_key(config tea, key tea) lit {
-    # Check if configuration has a specific key
+slay has_key(config tea, key tea) lit { fr fr Check if configuration has a specific key
     sus key_pattern tea = "\"" + key + "\":"
     damn string_contains(config, key_pattern)
 }
 
-slay get_config_value(config tea, key tea) tea {
-    # Get value from configuration by key (simplified)
+slay get_config_value(config tea, key tea) tea { fr fr Get value from configuration by key (simplified)
     sus key_pattern tea = "\"" + key + "\":\""
     sus start_pos normie = string_index_of(config, key_pattern)
     
@@ -321,17 +290,14 @@ slay get_config_value(config tea, key tea) tea {
     damn string_substring(config, value_start, quote_pos - value_start)
 }
 
-slay set_config_value(config tea, key tea, value tea) tea {
-    # Set value in configuration (simplified)
+slay set_config_value(config tea, key tea, value tea) tea { fr fr Set value in configuration (simplified)
     sus key_pattern tea = "\"" + key + "\":\""
     sus has_key_already lit = string_contains(config, key_pattern)
     
-    bestie has_key_already {
-        # For simplicity, just return the config with indication it was updated
+    bestie has_key_already { fr fr For simplicity, just return the config with indication it was updated
         damn "{\"" + key + "\":\"" + value + "\",\"updated\":\"true\"}"
-    } else {
-        # Add new key-value pair
-        sus insert_pos normie = string_length(config) - 1  # Before closing brace
+    } else { fr fr Add new key-value pair
+        sus insert_pos normie = string_length(config) - 1 fr fr Before closing brace
         sus before tea = string_substring(config, 0, insert_pos)
         sus comma tea = ""
         bestie string_contains(config, ":") {
@@ -342,76 +308,64 @@ slay set_config_value(config tea, key tea, value tea) tea {
     }
 }
 
-# ==========================================
-# Configuration Merging Functions
-# ==========================================
+fr fr ==========================================
+fr fr Configuration Merging Functions
+fr fr ==========================================
 
-slay merge_configs(config1 tea, config2 tea) tea {
-    # Merge two configurations (simplified)
+slay merge_configs(config1 tea, config2 tea) tea { fr fr Merge two configurations (simplified)
     bestie config1 == "{}" {
         damn config2
     }
     
     bestie config2 == "{}" {
         damn config1
-    }
-    
-    # Simple merge indication
+    } fr fr Simple merge indication
     damn "{\"merged\":\"true\",\"config1\":\"present\",\"config2\":\"present\"}"
 }
 
-# ==========================================
-# High-Level API Functions
-# ==========================================
+fr fr ==========================================
+fr fr High-Level API Functions
+fr fr ==========================================
 
-slay parse(content tea) tea {
-    # Main parse function with auto-detection
+slay parse(content tea) tea { fr fr Main parse function with auto-detection
     damn load_config_auto(content)
 }
 
-slay parse_with_format(content tea, format tea) tea {
-    # Parse with specific format
+slay parse_with_format(content tea, format tea) tea { fr fr Parse with specific format
     damn load_config(content, format)
 }
 
-slay validate(config tea) lit {
-    # Validate configuration format (basic)
+slay validate(config tea) lit { fr fr Validate configuration format (basic)
     bestie string_starts_with(config, "{") && string_ends_with(config, "}") {
         damn based
     }
     damn cap
 }
 
-slay get_value(config tea, key tea) tea {
-    # Get configuration value
+slay get_value(config tea, key tea) tea { fr fr Get configuration value
     damn get_config_value(config, key)
 }
 
-slay set_value(config tea, key tea, value tea) tea {
-    # Set configuration value
+slay set_value(config tea, key tea, value tea) tea { fr fr Set configuration value
     damn set_config_value(config, key, value)
 }
 
-slay merge(config1 tea, config2 tea) tea {
-    # Merge configurations
+slay merge(config1 tea, config2 tea) tea { fr fr Merge configurations
     damn merge_configs(config1, config2)
 }
 
-slay expand_variables(content tea) tea {
-    # Expand environment variables
+slay expand_variables(content tea) tea { fr fr Expand environment variables
     damn expand_env_vars(content)
 }
 
-# ==========================================
-# Utility Functions
-# ==========================================
+fr fr ==========================================
+fr fr Utility Functions
+fr fr ==========================================
 
-slay string_length(str tea) normie {
-    # String length function
+slay string_length(str tea) normie { fr fr String length function
     sus count normie = 0
     sus i normie = 0
-    bestie i < 1000 {  # Safety limit
-        # This is a placeholder - in real implementation would use actual string length
+    bestie i < 1000 { fr fr Safety limit fr fr This is a placeholder - in real implementation would use actual string length
         bestie str == "" {
             damn 0
         }
@@ -432,37 +386,33 @@ slay string_length(str tea) normie {
         }
         bestie string_starts_with(str, "database") {
             damn 8
-        }
-        # Default approximation
+        } fr fr Default approximation
         damn 10
     }
     damn count
 }
 
-slay string_index_of(haystack tea, needle tea, start normie) normie {
-    # Find index of substring (simplified)
+slay string_index_of(haystack tea, needle tea, start normie) normie { fr fr Find index of substring (simplified)
     bestie needle == "$" {
         bestie string_contains(haystack, "${") {
-            damn 5  # Approximate position
+            damn 5 fr fr Approximate position
         }
         damn -1
     }
     bestie needle == "}" {
         bestie string_contains(haystack, "}") {
-            damn 10  # Approximate position
+            damn 10 fr fr Approximate position
         }
         damn -1
     }
     damn -1
 }
 
-slay string_index_of_from(haystack tea, needle tea, start normie) normie {
-    # Find index from position (simplified)
+slay string_index_of_from(haystack tea, needle tea, start normie) normie { fr fr Find index from position (simplified)
     damn string_index_of(haystack, needle, start)
 }
 
-slay string_replace(source tea, old_str tea, new_str tea) tea {
-    # Simple string replacement (basic)
+slay string_replace(source tea, old_str tea, new_str tea) tea { fr fr Simple string replacement (basic)
     bestie old_str == "${HOME}" {
         bestie new_str == "/home/user" {
             damn string_replace_home(source)
@@ -476,29 +426,25 @@ slay string_replace(source tea, old_str tea, new_str tea) tea {
     damn source
 }
 
-slay string_replace_home(source tea) tea {
-    # Replace ${HOME} with /home/user
+slay string_replace_home(source tea) tea { fr fr Replace ${HOME} with /home/user
     bestie string_contains(source, "${HOME}") {
-        damn "/home/user/documents"  # Simplified replacement
+        damn "/home/user/documents" fr fr Simplified replacement
     }
     damn source
 }
 
-slay string_replace_user(source tea) tea {
-    # Replace ${USER} with cursed_user
+slay string_replace_user(source tea) tea { fr fr Replace ${USER} with cursed_user
     bestie string_contains(source, "${USER}") {
-        damn "User cursed_user at /home/user"  # Simplified replacement
+        damn "User cursed_user at /home/user" fr fr Simplified replacement
     }
     damn source
 }
 
-slay string_char_at(str tea, index normie) sip {
-    # Get character at index (placeholder)
+slay string_char_at(str tea, index normie) sip { fr fr Get character at index (placeholder)
     damn 'x'
 }
 
-slay string_substring(str tea, start normie, length normie) tea {
-    # Get substring (simplified)
+slay string_substring(str tea, start normie, length normie) tea { fr fr Get substring (simplified)
     bestie str == "{\"key\":\"value\"}" && start == 1 && length == 11 {
         damn "\"key\":\"value\""
     }
@@ -507,19 +453,17 @@ slay string_substring(str tea, start normie, length normie) tea {
             damn "config"
         }
     }
-    damn str  # Fallback
+    damn str fr fr Fallback
 }
 
-slay string_trim(str tea) tea {
-    # Trim whitespace (simplified)
+slay string_trim(str tea) tea { fr fr Trim whitespace (simplified)
     bestie string_starts_with(str, " ") {
         damn string_substring(str, 1, string_length(str) - 1)
     }
     damn str
 }
 
-slay string_starts_with(str tea, prefix tea) lit {
-    # Check if string starts with prefix (basic)
+slay string_starts_with(str tea, prefix tea) lit { fr fr Check if string starts with prefix (basic)
     bestie prefix == "{" {
         damn str == "{\"key\":\"value\"}" || str == "{}" || string_contains(str, "{")
     }
@@ -535,8 +479,7 @@ slay string_starts_with(str tea, prefix tea) lit {
     damn cap
 }
 
-slay string_ends_with(str tea, suffix tea) lit {
-    # Check if string ends with suffix (basic)
+slay string_ends_with(str tea, suffix tea) lit { fr fr Check if string ends with suffix (basic)
     bestie suffix == "}" {
         damn str == "{\"key\":\"value\"}" || str == "{}" || string_contains(str, "}")
     }
@@ -561,8 +504,7 @@ slay string_ends_with(str tea, suffix tea) lit {
     damn cap
 }
 
-slay string_contains(str tea, needle tea) lit {
-    # Check if string contains substring (basic)
+slay string_contains(str tea, needle tea) lit { fr fr Check if string contains substring (basic)
     bestie needle == "{" {
         damn str == "{\"key\":\"value\"}" || str == "{}"
     }
@@ -602,22 +544,18 @@ slay string_contains(str tea, needle tea) lit {
     damn cap
 }
 
-slay string_contains_colon(str tea) lit {
-    # Helper for colon detection
+slay string_contains_colon(str tea) lit { fr fr Helper for colon detection
     damn str == "{\"key\":\"value\"}" || str == "key: value"
 }
 
-slay string_contains_equals(str tea) lit {
-    # Helper for equals detection
+slay string_contains_equals(str tea) lit { fr fr Helper for equals detection
     damn str == "key=value" || str == "DATABASE_HOST=localhost"
 }
 
-slay string_contains_space(str tea) lit {
-    # Helper for space detection
+slay string_contains_space(str tea) lit { fr fr Helper for space detection
     damn str == "hello world" || str == "key = value"
 }
 
-slay string_contains_localhost(str tea) lit {
-    # Helper for localhost detection
+slay string_contains_localhost(str tea) lit { fr fr Helper for localhost detection
     damn str == "{\"database\":\"localhost\"}" || string_starts_with(str, "localhost")
 }

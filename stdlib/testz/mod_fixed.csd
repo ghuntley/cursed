@@ -1,7 +1,7 @@
-# Enhanced CURSED Testing Framework (testz)
-# Comprehensive testing utilities for stdlib development with advanced primitives
+fr fr Enhanced CURSED Testing Framework (testz)
+fr fr Comprehensive testing utilities for stdlib development with advanced primitives
 
-# Global test state
+fr fr Global test state
 sus test_count normie = 0
 sus pass_count normie = 0
 sus fail_count normie = 0
@@ -13,7 +13,7 @@ sus teardown_function tea = ""
 sus benchmark_start_time normie = 0
 sus benchmark_iterations_count normie = 1
 
-# Core Test Management Functions
+fr fr Core Test Management Functions
 
 slay test_start(name tea) lit {
     current_test_name = name
@@ -34,7 +34,7 @@ slay test_end() lit {
     damn based
 }
 
-# Enhanced Assertion Functions
+fr fr Enhanced Assertion Functions
 
 slay assert_eq_int(actual normie, expected normie) lit {
     lowkey actual == expected {
@@ -92,7 +92,7 @@ slay assert_false(condition lit) lit {
     damn based
 }
 
-# Test Configuration Functions
+fr fr Test Configuration Functions
 
 slay set_verbose_mode(enabled lit) lit {
     verbose_mode = enabled
@@ -104,7 +104,7 @@ slay set_verbose_mode(enabled lit) lit {
     damn based
 }
 
-# State Accessors
+fr fr State Accessors
 slay get_pass_count() normie {
     damn pass_count
 }
@@ -117,7 +117,7 @@ slay get_total_count() normie {
     damn test_count
 }
 
-# Enhanced Test Reporting
+fr fr Enhanced Test Reporting
 slay print_test_summary() lit {
     sus total_assertions normie = pass_count + fail_count
     sus success_rate normie = 0
@@ -145,7 +145,7 @@ slay print_test_summary() lit {
     damn based
 }
 
-# Reset functions for test isolation
+fr fr Reset functions for test isolation
 slay reset_test_state() lit {
     test_count = 0
     pass_count = 0
@@ -156,7 +156,7 @@ slay reset_test_state() lit {
     damn based
 }
 
-# Suite Management Functions
+fr fr Suite Management Functions
 slay suite_start(name tea) lit {
     current_suite_name = name
     lowkey verbose_mode {
@@ -181,7 +181,7 @@ slay reset_suite_state() lit {
     damn based
 }
 
-# Advanced Assertion Functions
+fr fr Advanced Assertion Functions
 slay assert_not_eq_int(actual normie, expected normie) lit {
     lowkey actual != expected {
         pass_count = pass_count + 1
@@ -238,8 +238,7 @@ slay assert_in_range(value normie, min_val normie, max_val normie) lit {
     damn based
 }
 
-slay assert_contains_string(haystack tea, needle tea) lit {
-    # Simple equality check for now - can be enhanced later
+slay assert_contains_string(haystack tea, needle tea) lit { fr fr Simple equality check for now - can be enhanced later
     lowkey haystack == needle {
         pass_count = pass_count + 1
         lowkey verbose_mode {
@@ -253,7 +252,7 @@ slay assert_contains_string(haystack tea, needle tea) lit {
     damn based
 }
 
-# Configuration Functions
+fr fr Configuration Functions
 slay is_verbose() lit {
     damn verbose_mode
 }
@@ -274,9 +273,8 @@ slay set_teardown_function(func_name tea) lit {
     damn based
 }
 
-# Benchmarking Functions
-slay benchmark_start() lit {
-    # Simple timestamp placeholder - would use actual timing in full implementation
+fr fr Benchmarking Functions
+slay benchmark_start() lit { fr fr Simple timestamp placeholder - would use actual timing in full implementation
     benchmark_start_time = 1
     lowkey verbose_mode {
         vibez.spill("⏱️ Benchmark started")
@@ -284,9 +282,8 @@ slay benchmark_start() lit {
     damn based
 }
 
-slay benchmark_end() normie {
-    # Simple elapsed time placeholder - would calculate actual time in full implementation
-    sus elapsed normie = 42  # Placeholder milliseconds
+slay benchmark_end() normie { fr fr Simple elapsed time placeholder - would calculate actual time in full implementation
+    sus elapsed normie = 42 fr fr Placeholder milliseconds
     lowkey verbose_mode {
         vibez.spill("⏱️ Benchmark ended: ", elapsed, "ms")
     }
@@ -311,7 +308,7 @@ slay benchmark_test(name tea, iterations normie) lit {
     damn based
 }
 
-# Data Generation Functions
+fr fr Data Generation Functions
 slay generate_test_data(size normie) tea {
     damn "test_data_placeholder"
 }
@@ -328,7 +325,7 @@ slay cleanup_temp_data(data tea) lit {
     damn based
 }
 
-# Error Handling Functions
+fr fr Error Handling Functions
 slay expect_error(message tea) lit {
     lowkey verbose_mode {
         vibez.spill("⚠️ Expecting error: ", message)
@@ -345,7 +342,7 @@ slay assert_throws(condition tea) lit {
     damn based
 }
 
-# Enhanced Reporting Functions
+fr fr Enhanced Reporting Functions
 slay print_detailed_report() lit {
     sus total_assertions normie = pass_count + fail_count
     sus success_rate normie = 0

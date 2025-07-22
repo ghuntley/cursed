@@ -1,13 +1,13 @@
-# CURSED Testing Framework (testz v2.0) - Simple Version
+fr fr CURSED Testing Framework (testz v2.0) - Simple Version
 
-# Global test state variables
+fr fr Global test state variables
 sus current_test_name tea = ""
 sus total_tests normie = 0
 sus passed_tests normie = 0
 sus failed_tests normie = 0
 sus current_test_passed lit = based
 
-# Start a new test case
+fr fr Start a new test case
 slay test_start(name tea) {
     current_test_name = name
     total_tests = total_tests + 1
@@ -15,18 +15,18 @@ slay test_start(name tea) {
     vibez.spill("Test: " + name)
 }
 
-# Test pass helper
+fr fr Test pass helper
 slay test_pass(message tea) {
     vibez.spill("PASS: " + message)
 }
 
-# Test fail helper
+fr fr Test fail helper
 slay test_fail(message tea) {
     vibez.spill("FAIL: " + message)
     current_test_passed = cap
 }
 
-# Boolean assertions
+fr fr Boolean assertions
 slay assert_true(condition lit) {
     lowkey condition == based {
         test_pass("assert_true: condition is based")
@@ -43,7 +43,7 @@ slay assert_false(condition lit) {
     }
 }
 
-# Print test summary
+fr fr Print test summary
 slay print_test_summary() {
     vibez.spill("")
     vibez.spill("=== Test Summary ===")

@@ -1,9 +1,9 @@
-# Enhanced Testz Framework Meta-Tests
-# Comprehensive testing of the testing framework itself
+fr fr Enhanced Testz Framework Meta-Tests
+fr fr Comprehensive testing of the testing framework itself
 
 yeet "testz"
 
-# Test Suite: Basic Assertion Functions
+fr fr Test Suite: Basic Assertion Functions
 slay test_basic_assertions() {
     test_suite_start("Basic Assertions")
     
@@ -29,7 +29,7 @@ slay test_basic_assertions() {
     test_suite_end("Basic Assertions")
 }
 
-# Test Suite: Comparison Assertions
+fr fr Test Suite: Comparison Assertions
 slay test_comparison_assertions() {
     test_suite_start("Comparison Assertions")
     
@@ -71,7 +71,7 @@ slay test_comparison_assertions() {
     test_suite_end("Comparison Assertions")
 }
 
-# Test Suite: String and Null Assertions
+fr fr Test Suite: String and Null Assertions
 slay test_string_null_assertions() {
     test_suite_start("String and Null Assertions")
     
@@ -91,27 +91,21 @@ slay test_string_null_assertions() {
     test_suite_end("String and Null Assertions")
 }
 
-# Test Suite: State Management
+fr fr Test Suite: State Management
 slay test_state_management() {
     test_suite_start("State Management")
     
-    test_start("state reset functionality")
-    # Reset and verify clean state
-    reset_test_state()
-    # Note: After reset, counters are 0, but we're still in this test
+    test_start("state reset functionality") fr fr Reset and verify clean state
+    reset_test_state() fr fr Note: After reset, counters are 0, but we're still in this test
     test_end()
     
     test_start("state tracking accuracy")
     sus initial_pass normie = get_pass_count()
     sus initial_fail normie = get_fail_count()
-    sus initial_total normie = get_total_count()
-    
-    # Run some assertions
+    sus initial_total normie = get_total_count() fr fr Run some assertions
     assert_true(based)
     assert_eq_int(5, 5)
-    assert_false(cap)
-    
-    # Verify state incremented correctly
+    assert_false(cap) fr fr Verify state incremented correctly
     assert_eq_int(get_pass_count(), initial_pass + 3)
     assert_eq_int(get_fail_count(), initial_fail)
     test_end()
@@ -124,7 +118,7 @@ slay test_state_management() {
     test_suite_end("State Management")
 }
 
-# Test Suite: Edge Cases and Boundary Values
+fr fr Test Suite: Edge Cases and Boundary Values
 slay test_edge_cases() {
     test_suite_start("Edge Cases and Boundary Values")
     
@@ -132,8 +126,8 @@ slay test_edge_cases() {
     assert_eq_int(0, 0)
     assert_eq_int(1, 1)
     assert_eq_int(-1, -1)
-    assert_eq_int(2147483647, 2147483647)  # Max int32
-    assert_eq_int(-2147483648, -2147483648) # Min int32
+    assert_eq_int(2147483647, 2147483647) fr fr Max int32
+    assert_eq_int(-2147483648, -2147483648) fr fr Min int32
     test_end()
     
     test_start("string boundary values")
@@ -153,7 +147,7 @@ slay test_edge_cases() {
     test_suite_end("Edge Cases and Boundary Values")
 }
 
-# Test Suite: Complex Expressions
+fr fr Test Suite: Complex Expressions
 slay test_complex_expressions() {
     test_suite_start("Complex Expressions")
     
@@ -189,7 +183,7 @@ slay test_complex_expressions() {
     test_suite_end("Complex Expressions")
 }
 
-# Test Suite: Performance and Scale
+fr fr Test Suite: Performance and Scale
 slay test_performance_scale() {
     test_suite_start("Performance and Scale")
     
@@ -226,32 +220,29 @@ slay test_performance_scale() {
     test_suite_end("Performance and Scale")
 }
 
-# Test Suite: Error Handling and Negative Cases
+fr fr Test Suite: Error Handling and Negative Cases
 slay test_error_handling() {
     test_suite_start("Error Handling")
     
-    test_start("intentional failures for reporting")
-    # Note: These will intentionally fail to test failure reporting
-    assert_eq_int(5, 10)  # Should fail
-    assert_true(cap)      # Should fail
-    assert_eq_string("hello", "world")  # Should fail
+    test_start("intentional failures for reporting") fr fr Note: These will intentionally fail to test failure reporting
+    assert_eq_int(5, 10) fr fr Should fail
+    assert_true(cap) fr fr Should fail
+    assert_eq_string("hello", "world") fr fr Should fail
     test_end()
     
-    test_start("recovery after failures")
-    # Test that the framework continues after failures
-    assert_true(based)    # Should pass
-    assert_eq_int(1, 1)   # Should pass
+    test_start("recovery after failures") fr fr Test that the framework continues after failures
+    assert_true(based) fr fr Should pass
+    assert_eq_int(1, 1) fr fr Should pass
     test_end()
     
     test_suite_end("Error Handling")
 }
 
-# Test Suite: Reporting and Output
+fr fr Test Suite: Reporting and Output
 slay test_reporting() {
     test_suite_start("Reporting and Output")
     
-    test_start("basic reporting functions")
-    # Test that reporting functions don't crash
+    test_start("basic reporting functions") fr fr Test that reporting functions don't crash
     sus pass_count normie = get_pass_count()
     sus fail_count normie = get_fail_count()
     sus total_count normie = get_total_count()
@@ -264,16 +255,12 @@ slay test_reporting() {
     test_suite_end("Reporting and Output")
 }
 
-# Main test execution function
+fr fr Main test execution function
 slay run_all_meta_tests() {
     vibez.spill("🔬 TESTZ FRAMEWORK META-TESTING")
     vibez.spill("Testing the testing framework itself...")
-    vibez.spill("")
-    
-    # Initialize clean state for meta-testing
-    reset_test_state()
-    
-    # Run all test suites
+    vibez.spill("") fr fr Initialize clean state for meta-testing
+    reset_test_state() fr fr Run all test suites
     test_basic_assertions()
     test_comparison_assertions()
     test_string_null_assertions()
@@ -282,13 +269,9 @@ slay run_all_meta_tests() {
     test_complex_expressions()
     test_performance_scale()
     test_error_handling()
-    test_reporting()
-    
-    # Generate comprehensive report
+    test_reporting() fr fr Generate comprehensive report
     vibez.spill("🎯 META-TESTING COMPLETE")
-    print_detailed_report()
-    
-    # Summary of meta-testing results
+    print_detailed_report() fr fr Summary of meta-testing results
     vibez.spill("📋 Meta-Testing Summary:")
     vibez.spill("✅ All assertion functions tested")
     vibez.spill("✅ State management verified")
@@ -298,5 +281,5 @@ slay run_all_meta_tests() {
     vibez.spill("")
 }
 
-# Execute meta-tests
+fr fr Execute meta-tests
 run_all_meta_tests()

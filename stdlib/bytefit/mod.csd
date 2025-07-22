@@ -1,7 +1,7 @@
-# ByteFit - Pure CURSED Byte Manipulation Library
-# Provides comprehensive byte manipulation, array operations, and bit utilities
+fr fr ByteFit - Pure CURSED Byte Manipulation Library
+fr fr Provides comprehensive byte manipulation, array operations, and bit utilities
 
-# Byte manipulation functions
+fr fr Byte manipulation functions
 slay byte_set_bit(b byte, pos normie) byte {
     sus mask byte = 1 << pos
     damn b | mask
@@ -60,7 +60,7 @@ slay byte_swap_nibbles(b byte) byte {
     damn ((b & 0x0F) << 4) | ((b & 0xF0) >> 4)
 }
 
-# Byte array operations
+fr fr Byte array operations
 slay byte_array_create(size normie) [byte] {
     sus arr [byte]
     bestie i := 0; i < size; i++ {
@@ -165,7 +165,7 @@ slay byte_array_or(arr1 [byte], arr2 [byte]) [byte] {
     damn result
 }
 
-# Byte encoding/decoding
+fr fr Byte encoding/decoding
 slay byte_to_hex(b byte) tea {
     sus hex_chars tea = "0123456789ABCDEF"
     sus high normie = (b >> 4) & 0x0F
@@ -237,7 +237,7 @@ slay binary_to_byte(binary tea) byte {
     damn result
 }
 
-# Bit manipulation utilities
+fr fr Bit manipulation utilities
 slay get_bit_pattern(b byte, start normie, length normie) byte {
     sus mask byte = (1 << length) - 1
     damn (b >> start) & mask
@@ -278,7 +278,7 @@ slay byte_crc8(arr [byte]) byte {
     damn crc
 }
 
-# Utility functions
+fr fr Utility functions
 slay byte_is_ascii(b byte) lit {
     damn b <= 127
 }

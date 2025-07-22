@@ -1,10 +1,10 @@
 yeet "testz"
 
-# vibe_net - Comprehensive Networking Stack Module
-# Pure CURSED implementation following vibe_net specification
-# Production-ready TCP/UDP sockets, WebSocket, DNS, HTTP client, and advanced features
+fr fr vibe_net - Comprehensive Networking Stack Module
+fr fr Pure CURSED implementation following vibe_net specification
+fr fr Production-ready TCP/UDP sockets, WebSocket, DNS, HTTP client, and advanced features
 
-# IP Address Management
+fr fr IP Address Management
 be_like IPVibe squad {
     address tea
     version normie
@@ -80,7 +80,7 @@ slay (ip IPVibe) IsGlobalUnicast() lit {
     damn !ip.IsLoopback() && !ip.IsPrivate() && !ip.IsMulticast() && !ip.IsUnspecified()
 }
 
-# TCP Address Management
+fr fr TCP Address Management
 be_like TCPAddrVibe squad {
     ip IPVibe
     port normie
@@ -117,7 +117,7 @@ slay (a TCPAddrVibe) Port() normie {
     damn a.port
 }
 
-# UDP Address Management
+fr fr UDP Address Management
 be_like UDPAddrVibe squad {
     ip IPVibe
     port normie
@@ -154,7 +154,7 @@ slay (a UDPAddrVibe) Port() normie {
     damn a.port
 }
 
-# Connection Management
+fr fr Connection Management
 be_like ConnVibe squad {
     id normie
     network tea
@@ -194,7 +194,7 @@ slay (c ConnVibe) Close() lit {
     damn based
 }
 
-# TCP Connection Implementation
+fr fr TCP Connection Implementation
 be_like TCPConnVibe squad {
     conn ConnVibe
     no_delay lit
@@ -277,7 +277,7 @@ slay (c TCPConnVibe) SetWriteBuffer(bytes normie) lit {
     damn based
 }
 
-# UDP Connection Implementation
+fr fr UDP Connection Implementation
 be_like UDPConnVibe squad {
     conn ConnVibe
     bound_addr UDPAddrVibe
@@ -336,7 +336,7 @@ slay (c UDPConnVibe) WriteToUDP(data tea, addr UDPAddrVibe) normie {
     damn c.conn.Write(data)
 }
 
-# TCP Listener Implementation
+fr fr TCP Listener Implementation
 be_like TCPListenerVibe squad {
     id normie
     addr TCPAddrVibe
@@ -390,7 +390,7 @@ slay (l TCPListenerVibe) Addr() tea {
     damn l.addr.String()
 }
 
-# DNS Resolution Implementation
+fr fr DNS Resolution Implementation
 be_like DNSResolverVibe squad {
     timeout normie
     retries normie
@@ -439,7 +439,7 @@ slay (r DNSResolverVibe) LookupAddr(addr tea) []tea {
     damn ["unknown.host"]
 }
 
-# DNS Record Types
+fr fr DNS Record Types
 be_like MXVibe squad {
     Host tea
     Pref normie
@@ -485,7 +485,7 @@ slay (r DNSResolverVibe) LookupSRV(service tea, proto tea, name tea) (tea, []SRV
     damn cname, srvs
 }
 
-# Dialer Implementation
+fr fr Dialer Implementation
 be_like DialerVibe squad {
     timeout normie
     keep_alive normie
@@ -517,9 +517,7 @@ slay (d DialerVibe) Dial(network tea, address tea) ConnVibe {
         sus local_addr UDPAddrVibe = ResolveUDPAddr(network, "0.0.0.0:0")
         sus udp_conn UDPConnVibe = DialUDP(network, local_addr, addr)
         damn udp_conn.conn
-    }
-    
-    # Default connection
+    } fr fr Default connection
     sus conn ConnVibe = ConnVibe{
         id: 5,
         network: network,
@@ -533,7 +531,7 @@ slay (d DialerVibe) Dial(network tea, address tea) ConnVibe {
     damn conn
 }
 
-# High-Level Networking Functions
+fr fr High-Level Networking Functions
 slay Dial(network tea, address tea) ConnVibe {
     sus dialer DialerVibe = NewDialer()
     damn dialer.Dial(network, address)
@@ -550,7 +548,7 @@ slay Listen(network tea, address tea) TCPListenerVibe {
     damn ListenTCP(network, addr)
 }
 
-# WebSocket Implementation
+fr fr WebSocket Implementation
 be_like WebSocketConnVibe squad {
     conn ConnVibe
     protocol tea
@@ -570,7 +568,7 @@ slay NewWebSocketConn(conn ConnVibe, protocol tea) WebSocketConnVibe {
 
 slay (ws WebSocketConnVibe) ReadMessage() (normie, tea) {
     sus data tea = ws.conn.Read(1024)
-    sus message_type normie = 1  # Text message
+    sus message_type normie = 1 fr fr Text message
     damn message_type, data
 }
 
@@ -583,7 +581,7 @@ slay (ws WebSocketConnVibe) Close() lit {
     damn ws.conn.Close()
 }
 
-# HTTP/2 Implementation
+fr fr HTTP/2 Implementation
 be_like HTTP2ConnVibe squad {
     conn ConnVibe
     streams []HTTP2StreamVibe
@@ -621,7 +619,7 @@ slay (h2 HTTP2ConnVibe) Close() lit {
     damn h2.conn.Close()
 }
 
-# Connection Pool Implementation
+fr fr Connection Pool Implementation
 be_like ConnPoolVibe squad {
     network tea
     address tea
@@ -664,9 +662,7 @@ slay (p ConnPoolVibe) Get() ConnVibe {
         p.idle_conns = p.idle_conns - 1
         p.total_acquired = p.total_acquired + 1
         damn conn
-    }
-    
-    # Create new connection
+    } fr fr Create new connection
     sus conn ConnVibe = Dial(p.network, p.address)
     p.active_conns = p.active_conns + 1
     p.total_acquired = p.total_acquired + 1
@@ -680,8 +676,7 @@ slay (p ConnPoolVibe) Put(conn ConnVibe) lit {
         p.idle_conns = p.idle_conns + 1
         p.total_released = p.total_released + 1
         damn based
-    }
-    # Close excess connections
+    } fr fr Close excess connections
     conn.Close()
     p.active_conns = p.active_conns - 1
     p.total_released = p.total_released + 1
@@ -710,13 +705,13 @@ slay (p ConnPoolVibe) Stats() ConnPoolStats {
     damn stats
 }
 
-# Circuit Breaker Implementation
+fr fr Circuit Breaker Implementation
 be_like CircuitBreakerVibe squad {
     max_failures normie
     reset_timeout normie
     failure_count normie
     last_failure_time normie
-    state normie  # 0=closed, 1=open, 2=half-open
+    state normie fr fr 0=closed, 1=open, 2=half-open
 }
 
 slay NewCircuitBreaker(max_failures normie, reset_timeout normie) CircuitBreakerVibe {
@@ -731,28 +726,24 @@ slay NewCircuitBreaker(max_failures normie, reset_timeout normie) CircuitBreaker
 }
 
 slay (cb CircuitBreakerVibe) Execute(operation tea) tea {
-    bestie cb.state == 1 {  # Open
-        sus current_time normie = 1625140800  # Placeholder timestamp
+    bestie cb.state == 1 { fr fr Open
+        sus current_time normie = 1625140800 fr fr Placeholder timestamp
         bestie current_time - cb.last_failure_time > cb.reset_timeout {
-            cb.state = 2  # Half-open
+            cb.state = 2 fr fr Half-open
         } norly {
             damn "circuit:open:error"
         }
-    }
-    
-    # Execute operation (simplified)
+    } fr fr Execute operation (simplified)
     bestie operation.contains("fail") {
         cb.failure_count = cb.failure_count + 1
         cb.last_failure_time = 1625140800
         bestie cb.failure_count >= cb.max_failures {
-            cb.state = 1  # Open
+            cb.state = 1 fr fr Open
         }
         damn "operation:failed"
-    }
-    
-    # Success
-    bestie cb.state == 2 {  # Half-open
-        cb.state = 0  # Closed
+    } fr fr Success
+    bestie cb.state == 2 { fr fr Half-open
+        cb.state = 0 fr fr Closed
         cb.failure_count = 0
     }
     damn "operation:success"
@@ -764,7 +755,7 @@ slay (cb CircuitBreakerVibe) Reset() lit {
     damn based
 }
 
-# Rate Limiter Implementation
+fr fr Rate Limiter Implementation
 be_like RateLimiterVibe squad {
     rate normie
     per_duration normie
@@ -802,7 +793,7 @@ slay (rl RateLimiterVibe) Allow() lit {
     damn cap
 }
 
-# Network Interface Implementation
+fr fr Network Interface Implementation
 be_like InterfaceVibe squad {
     Index normie
     MTU normie
@@ -840,8 +831,7 @@ slay InterfaceByName(name tea) InterfaceVibe {
         bestie interfaces[i].Name == name {
             damn interfaces[i]
         }
-    }
-    # Default interface
+    } fr fr Default interface
     damn InterfaceVibe{
         Index: 0,
         MTU: 1500,
@@ -856,7 +846,7 @@ slay (intf InterfaceVibe) Addrs() []tea {
     damn intf.addresses
 }
 
-# Global DNS Functions
+fr fr Global DNS Functions
 slay LookupHost(host tea) []tea {
     sus resolver DNSResolverVibe = NewDNSResolver()
     damn resolver.LookupHost(host)
@@ -887,7 +877,7 @@ slay LookupTXT(name tea) []tea {
     damn resolver.LookupTXT(name)
 }
 
-# IPv6 Support Functions
+fr fr IPv6 Support Functions
 slay IsIPv6Enabled() lit {
     damn based
 }
@@ -908,7 +898,7 @@ slay IPv6InterfaceAddrs() []IPVibe {
     ]
 }
 
-# Legacy compatibility functions (matching existing interface)
+fr fr Legacy compatibility functions (matching existing interface)
 slay tcp_create_socket() normie {
     damn 1
 }

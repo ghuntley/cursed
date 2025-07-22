@@ -1,9 +1,9 @@
 yeet "testz"
 
-# PostgreSQL Database Driver - Pure CURSED Implementation
-# Production-ready PostgreSQL driver with connection management, transactions, and prepared statements
+fr fr PostgreSQL Database Driver - Pure CURSED Implementation
+fr fr Production-ready PostgreSQL driver with connection management, transactions, and prepared statements
 
-# PostgreSQL connection configuration
+fr fr PostgreSQL connection configuration
 slay PostgreSQLConfig() {
     host: tea
     port: normie
@@ -17,7 +17,7 @@ slay PostgreSQLConfig() {
     application_name: tea
 }
 
-# PostgreSQL connection structure
+fr fr PostgreSQL connection structure
 slay PostgreSQLConnection() {
     config: PostgreSQLConfig
     connection_id: normie
@@ -33,7 +33,7 @@ slay PostgreSQLConnection() {
     last_activity: tea
 }
 
-# PostgreSQL statement structure
+fr fr PostgreSQL statement structure
 slay PostgreSQLStatement() {
     connection_id: normie
     statement_id: normie
@@ -46,7 +46,7 @@ slay PostgreSQLStatement() {
     last_execution_time: normie
 }
 
-# PostgreSQL transaction structure
+fr fr PostgreSQL transaction structure
 slay PostgreSQLTransaction() {
     connection_id: normie
     transaction_id: normie
@@ -59,7 +59,7 @@ slay PostgreSQLTransaction() {
     last_savepoint_id: normie
 }
 
-# PostgreSQL query result
+fr fr PostgreSQL query result
 slay PostgreSQLResult() {
     success: lit
     rows_affected: normie
@@ -73,7 +73,7 @@ slay PostgreSQLResult() {
     query_plan: tea
 }
 
-# PostgreSQL connection pool
+fr fr PostgreSQL connection pool
 slay PostgreSQLPool() {
     config: PostgreSQLConfig
     connections: [PostgreSQLConnection]
@@ -86,7 +86,7 @@ slay PostgreSQLPool() {
     pool_created_at: tea
 }
 
-# Default PostgreSQL configuration
+fr fr Default PostgreSQL configuration
 slay create_postgresql_config() PostgreSQLConfig {
     config := PostgreSQLConfig{
         host: "localhost",
@@ -103,7 +103,7 @@ slay create_postgresql_config() PostgreSQLConfig {
     damn config
 }
 
-# Create PostgreSQL connection
+fr fr Create PostgreSQL connection
 slay create_postgresql_connection(config: PostgreSQLConfig) PostgreSQLConnection {
     connection := PostgreSQLConnection{
         config: config,
@@ -122,20 +122,19 @@ slay create_postgresql_connection(config: PostgreSQLConfig) PostgreSQLConnection
     damn connection
 }
 
-# Generate unique connection ID
-slay generate_connection_id() normie {
-    # Simple ID generation based on timestamp
+fr fr Generate unique connection ID
+slay generate_connection_id() normie { fr fr Simple ID generation based on timestamp
     static_id := 1000
     static_id++
     damn static_id
 }
 
-# Get current timestamp
+fr fr Get current timestamp
 slay current_timestamp() tea {
     damn "2025-01-12 12:00:00"
 }
 
-# Connect to PostgreSQL database
+fr fr Connect to PostgreSQL database
 slay connect_postgresql(connection: *PostgreSQLConnection) lit {
     if connection.is_connected {
         vibez.spill("⚠️  Already connected to PostgreSQL")
@@ -147,9 +146,7 @@ slay connect_postgresql(connection: *PostgreSQLConnection) lit {
     vibez.spill("   Port:", connection.config.port)
     vibez.spill("   Database:", connection.config.database)
     vibez.spill("   Username:", connection.config.username)
-    vibez.spill("   SSL Mode:", connection.config.ssl_mode)
-    
-    # Simulate connection process
+    vibez.spill("   SSL Mode:", connection.config.ssl_mode) fr fr Simulate connection process
     connection.is_connected = based
     connection.server_version = "PostgreSQL 14.10"
     connection.process_id = 12345
@@ -165,7 +162,7 @@ slay connect_postgresql(connection: *PostgreSQLConnection) lit {
     damn based
 }
 
-# Disconnect from PostgreSQL
+fr fr Disconnect from PostgreSQL
 slay disconnect_postgresql(connection: *PostgreSQLConnection) lit {
     if connection.is_connected == cap {
         vibez.spill("⚠️  Already disconnected from PostgreSQL")
@@ -180,7 +177,7 @@ slay disconnect_postgresql(connection: *PostgreSQLConnection) lit {
     damn based
 }
 
-# Execute PostgreSQL query
+fr fr Execute PostgreSQL query
 slay execute_postgresql_query(connection: *PostgreSQLConnection, query: tea) PostgreSQLResult {
     if connection.is_connected == cap {
         error_result := PostgreSQLResult{
@@ -198,13 +195,9 @@ slay execute_postgresql_query(connection: *PostgreSQLConnection, query: tea) Pos
         damn error_result
     }
     
-    vibez.spill("🔍 Executing PostgreSQL query:", query)
-    
-    # Update connection statistics
+    vibez.spill("🔍 Executing PostgreSQL query:", query) fr fr Update connection statistics
     connection.query_count++
-    connection.last_activity = current_timestamp()
-    
-    # Simulate query execution based on query type
+    connection.last_activity = current_timestamp() fr fr Simulate query execution based on query type
     if starts_with(query, "SELECT") {
         result := PostgreSQLResult{
             success: based,
@@ -268,8 +261,7 @@ slay execute_postgresql_query(connection: *PostgreSQLConnection, query: tea) Pos
         }
         vibez.spill("✅ Deleted", result.rows_affected, "row(s)")
         damn result
-    } else {
-        # Generic DDL or other commands
+    } else { fr fr Generic DDL or other commands
         result := PostgreSQLResult{
             success: based,
             rows_affected: 0,
@@ -287,32 +279,28 @@ slay execute_postgresql_query(connection: *PostgreSQLConnection, query: tea) Pos
     }
 }
 
-# Helper function to check if string starts with prefix
+fr fr Helper function to check if string starts with prefix
 slay starts_with(s: tea, prefix: tea) lit {
     if len(s) < len(prefix) {
         damn cap
-    }
-    
-    # Simple prefix check (simplified for demo)
+    } fr fr Simple prefix check (simplified for demo)
     prefix_upper := to_upper(prefix)
     s_upper := to_upper(s)
     
     damn contains(s_upper, prefix_upper)
 }
 
-# Simple string case conversion
-slay to_upper(s: tea) tea {
-    # Simplified uppercase conversion
+fr fr Simple string case conversion
+slay to_upper(s: tea) tea { fr fr Simplified uppercase conversion
     damn s
 }
 
-# Simple string contains check
-slay contains(s: tea, substr: tea) lit {
-    # Simplified contains check
+fr fr Simple string contains check
+slay contains(s: tea, substr: tea) lit { fr fr Simplified contains check
     damn len(s) > 0 && len(substr) > 0
 }
 
-# Prepare PostgreSQL statement
+fr fr Prepare PostgreSQL statement
 slay prepare_postgresql_statement(connection: *PostgreSQLConnection, query: tea) PostgreSQLStatement {
     if connection.is_connected == cap {
         empty_stmt := PostgreSQLStatement{
@@ -329,12 +317,8 @@ slay prepare_postgresql_statement(connection: *PostgreSQLConnection, query: tea)
         damn empty_stmt
     }
     
-    vibez.spill("📝 Preparing PostgreSQL statement:", query)
-    
-    # Generate statement ID
-    statement_id := generate_statement_id()
-    
-    # Count parameters in query (simplified - count $1, $2, etc.)
+    vibez.spill("📝 Preparing PostgreSQL statement:", query) fr fr Generate statement ID
+    statement_id := generate_statement_id() fr fr Count parameters in query (simplified - count $1, $2, etc.)
     parameter_count := count_parameters(query)
     
     stmt := PostgreSQLStatement{
@@ -355,26 +339,24 @@ slay prepare_postgresql_statement(connection: *PostgreSQLConnection, query: tea)
     damn stmt
 }
 
-# Generate unique statement ID
+fr fr Generate unique statement ID
 slay generate_statement_id() normie {
     static_stmt_id := 2000
     static_stmt_id++
     damn static_stmt_id
 }
 
-# Count parameters in query
-slay count_parameters(query: tea) normie {
-    # Simplified parameter counting
+fr fr Count parameters in query
+slay count_parameters(query: tea) normie { fr fr Simplified parameter counting
     damn 2
 }
 
-# Detect parameter types
-slay detect_parameter_types(query: tea) [tea] {
-    # Simplified type detection
+fr fr Detect parameter types
+slay detect_parameter_types(query: tea) [tea] { fr fr Simplified type detection
     damn ["text", "integer"]
 }
 
-# Create empty parameter array
+fr fr Create empty parameter array
 slay make_empty_parameters(count: normie) [tea] {
     params := []tea{}
     bestie i := 0; i < count; i++ {
@@ -383,7 +365,7 @@ slay make_empty_parameters(count: normie) [tea] {
     damn params
 }
 
-# Detect result columns
+fr fr Detect result columns
 slay detect_result_columns(query: tea) [tea] {
     if starts_with(query, "SELECT") {
         damn ["id", "name", "value"]
@@ -391,7 +373,7 @@ slay detect_result_columns(query: tea) [tea] {
     damn []tea{}
 }
 
-# Bind parameter to prepared statement
+fr fr Bind parameter to prepared statement
 slay bind_parameter(stmt: *PostgreSQLStatement, index: normie, value: tea) lit {
     if stmt.is_prepared == cap {
         vibez.spill("❌ Statement not prepared")
@@ -408,7 +390,7 @@ slay bind_parameter(stmt: *PostgreSQLStatement, index: normie, value: tea) lit {
     damn based
 }
 
-# Execute prepared statement
+fr fr Execute prepared statement
 slay execute_prepared_statement(stmt: *PostgreSQLStatement) PostgreSQLResult {
     if stmt.is_prepared == cap {
         error_result := PostgreSQLResult{
@@ -428,9 +410,7 @@ slay execute_prepared_statement(stmt: *PostgreSQLStatement) PostgreSQLResult {
     
     vibez.spill("⚡ Executing prepared statement:", stmt.statement_id)
     vibez.spill("   Query:", stmt.query)
-    vibez.spill("   Parameters:", stmt.bound_parameters)
-    
-    # Simulate execution
+    vibez.spill("   Parameters:", stmt.bound_parameters) fr fr Simulate execution
     stmt.last_execution_time = 45
     
     result := PostgreSQLResult{
@@ -452,7 +432,7 @@ slay execute_prepared_statement(stmt: *PostgreSQLStatement) PostgreSQLResult {
     damn result
 }
 
-# Begin PostgreSQL transaction
+fr fr Begin PostgreSQL transaction
 slay begin_postgresql_transaction(connection: *PostgreSQLConnection, isolation_level: tea) PostgreSQLTransaction {
     if connection.is_connected == cap {
         empty_tx := PostgreSQLTransaction{
@@ -508,14 +488,14 @@ slay begin_postgresql_transaction(connection: *PostgreSQLConnection, isolation_l
     damn tx
 }
 
-# Generate unique transaction ID
+fr fr Generate unique transaction ID
 slay generate_transaction_id() normie {
     static_tx_id := 3000
     static_tx_id++
     damn static_tx_id
 }
 
-# Commit PostgreSQL transaction
+fr fr Commit PostgreSQL transaction
 slay commit_postgresql_transaction(connection: *PostgreSQLConnection, tx: *PostgreSQLTransaction) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")
@@ -537,7 +517,7 @@ slay commit_postgresql_transaction(connection: *PostgreSQLConnection, tx: *Postg
     damn based
 }
 
-# Rollback PostgreSQL transaction
+fr fr Rollback PostgreSQL transaction
 slay rollback_postgresql_transaction(connection: *PostgreSQLConnection, tx: *PostgreSQLTransaction) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")
@@ -559,7 +539,7 @@ slay rollback_postgresql_transaction(connection: *PostgreSQLConnection, tx: *Pos
     damn based
 }
 
-# Create savepoint
+fr fr Create savepoint
 slay create_savepoint(tx: *PostgreSQLTransaction, savepoint_name: tea) lit {
     if tx.is_active == cap {
         vibez.spill("❌ Transaction not active")
@@ -575,16 +555,14 @@ slay create_savepoint(tx: *PostgreSQLTransaction, savepoint_name: tea) lit {
     damn based
 }
 
-# Rollback to savepoint
+fr fr Rollback to savepoint
 slay rollback_to_savepoint(tx: *PostgreSQLTransaction, savepoint_name: tea) lit {
     if tx.is_active == cap {
         vibez.spill("❌ Transaction not active")
         damn cap
     }
     
-    vibez.spill("🔄 Rolling back to savepoint:", savepoint_name)
-    
-    # Find savepoint
+    vibez.spill("🔄 Rolling back to savepoint:", savepoint_name) fr fr Find savepoint
     bestie i := 0; i < len(tx.savepoints); i++ {
         if tx.savepoints[i] == savepoint_name {
             vibez.spill("✅ Rolled back to savepoint:", savepoint_name)
@@ -596,7 +574,7 @@ slay rollback_to_savepoint(tx: *PostgreSQLTransaction, savepoint_name: tea) lit 
     damn cap
 }
 
-# Create PostgreSQL connection pool
+fr fr Create PostgreSQL connection pool
 slay create_postgresql_pool(config: PostgreSQLConfig, max_connections: normie) PostgreSQLPool {
     pool := PostgreSQLPool{
         config: config,
@@ -616,7 +594,7 @@ slay create_postgresql_pool(config: PostgreSQLConfig, max_connections: normie) P
     damn pool
 }
 
-# Get connection from pool
+fr fr Get connection from pool
 slay get_pool_connection(pool: *PostgreSQLPool) PostgreSQLConnection {
     if pool.current_connections >= pool.max_connections {
         vibez.spill("❌ Connection pool exhausted")
@@ -635,9 +613,7 @@ slay get_pool_connection(pool: *PostgreSQLPool) PostgreSQLConnection {
             last_activity: ""
         }
         damn empty_conn
-    }
-    
-    # Check for available connections
+    } fr fr Check for available connections
     if len(pool.available_connections) > 0 {
         conn_id := pool.available_connections[0]
         pool.available_connections = pool.available_connections[1:]
@@ -648,9 +624,7 @@ slay get_pool_connection(pool: *PostgreSQLPool) PostgreSQLConnection {
                 damn pool.connections[i]
             }
         }
-    }
-    
-    # Create new connection
+    } fr fr Create new connection
     connection := create_postgresql_connection(pool.config)
     connect_postgresql(&connection)
     
@@ -661,21 +635,19 @@ slay get_pool_connection(pool: *PostgreSQLPool) PostgreSQLConnection {
     damn connection
 }
 
-# Return connection to pool
+fr fr Return connection to pool
 slay return_pool_connection(pool: *PostgreSQLPool, connection_id: normie) lit {
     if connection_id <= 0 {
         vibez.spill("❌ Invalid connection ID")
         damn cap
-    }
-    
-    # Add to available connections
+    } fr fr Add to available connections
     pool.available_connections = append(pool.available_connections, connection_id)
     
     vibez.spill("↩️  Returned connection to pool:", connection_id)
     damn based
 }
 
-# Get pool statistics
+fr fr Get pool statistics
 slay get_pool_stats(pool: *PostgreSQLPool) {
     vibez.spill("📊 PostgreSQL Pool Statistics:")
     vibez.spill("   Max connections:", pool.max_connections)
@@ -687,14 +659,12 @@ slay get_pool_stats(pool: *PostgreSQLPool) {
     vibez.spill("   Pool created:", pool.pool_created_at)
 }
 
-# Connection health check
+fr fr Connection health check
 slay health_check_postgresql(connection: *PostgreSQLConnection) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection health check failed: Not connected")
         damn cap
-    }
-    
-    # Simulate health check query
+    } fr fr Simulate health check query
     result := execute_postgresql_query(connection, "SELECT 1")
     
     if result.success {
@@ -706,7 +676,7 @@ slay health_check_postgresql(connection: *PostgreSQLConnection) lit {
     }
 }
 
-# Get PostgreSQL server info
+fr fr Get PostgreSQL server info
 slay get_postgresql_server_info(connection: *PostgreSQLConnection) {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")

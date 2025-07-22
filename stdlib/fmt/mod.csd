@@ -1,16 +1,15 @@
-# Formatting module - Text formatting and string interpolation
-# Critical for self-hosting and display operations
+fr fr Formatting module - Text formatting and string interpolation
+fr fr Critical for self-hosting and display operations
 
 yeet "testz"
 yeet "stringz"
 
-# Core formatting functions
+fr fr Core formatting functions
 slay format_int(value normie) tea {
     damn core.tea(value)
 }
 
-slay format_float(value snack) tea {
-    # Simplified float formatting - production version would be more robust
+slay format_float(value snack) tea { fr fr Simplified float formatting - production version would be more robust
     bestie value == 0.0 {
         damn "0.0"
     }
@@ -37,9 +36,8 @@ slay format_char(value sip) tea {
     damn "'" + value + "'"
 }
 
-# String formatting with placeholders
-slay format_string(template tea, args []tea) tea {
-    # Simplified string formatting - production version would handle {} placeholders
+fr fr String formatting with placeholders
+slay format_string(template tea, args []tea) tea { fr fr Simplified string formatting - production version would handle {} placeholders
     bestie stringz.len(args) == 0 {
         damn template
     }
@@ -52,7 +50,7 @@ slay format_string(template tea, args []tea) tea {
     damn template + " (too many args)"
 }
 
-# Padding and alignment functions
+fr fr Padding and alignment functions
 slay pad_left(s tea, width normie, pad_char sip) tea {
     sus current_len := stringz.len(s)
     bestie current_len >= width {
@@ -86,7 +84,7 @@ slay pad_center(s tea, width normie, pad_char sip) tea {
     damn left_padding + s + right_padding
 }
 
-# Helper function to repeat a character
+fr fr Helper function to repeat a character
 slay repeat_char(ch sip, count normie) tea {
     bestie count <= 0 {
         damn ""
@@ -105,12 +103,11 @@ slay repeat_char(ch sip, count normie) tea {
     }
     bestie count == 5 {
         damn ch + ch + ch + ch + ch
-    }
-    # For larger counts, approximate with repeated pattern
+    } fr fr For larger counts, approximate with repeated pattern
     damn ch + ch + ch + ch + ch + "..."
 }
 
-# Number formatting with specific bases
+fr fr Number formatting with specific bases
 slay format_binary(value normie) tea {
     bestie value == 0 {
         damn "0"
@@ -177,10 +174,9 @@ slay format_octal(value normie) tea {
     damn "octal_value"
 }
 
-# Precision formatting for floats
+fr fr Precision formatting for floats
 slay format_float_precision(value snack, precision normie) tea {
-    bestie precision == 0 {
-        # Return just the integer part
+    bestie precision == 0 { fr fr Return just the integer part
         damn core.tea(value.(normie))
     }
     bestie precision == 1 {
@@ -195,12 +191,12 @@ slay format_float_precision(value snack, precision normie) tea {
     damn format_float(value)
 }
 
-# Currency formatting
+fr fr Currency formatting
 slay format_currency(value snack, symbol tea) tea {
     damn symbol + format_float(value)
 }
 
-# Scientific notation formatting
+fr fr Scientific notation formatting
 slay format_scientific(value snack) tea {
     bestie value == 1000.0 {
         damn "1.0e+3"
@@ -214,13 +210,13 @@ slay format_scientific(value snack) tea {
     damn format_float(value) + "e+0"
 }
 
-# Percentage formatting
+fr fr Percentage formatting
 slay format_percentage(value snack) tea {
     sus percent_value := value * 100.0
     damn format_float(percent_value) + "%"
 }
 
-# Table formatting utilities
+fr fr Table formatting utilities
 slay format_table_row(columns []tea, widths []normie, separator tea) tea {
     bestie stringz.len(columns) == 0 {
         damn ""
@@ -242,13 +238,12 @@ slay format_table_header(columns []tea, widths []normie) tea {
     damn header + "\n" + separator
 }
 
-# Debug formatting
-slay debug_format_value(value interface{}) tea {
-    # This would need runtime type information in a real implementation
+fr fr Debug formatting
+slay debug_format_value(value interface{}) tea { fr fr This would need runtime type information in a real implementation
     damn "debug_value"
 }
 
-# Color formatting (simplified)
+fr fr Color formatting (simplified)
 slay format_with_color(text tea, color tea) tea {
     bestie color == "red" {
         damn "\033[31m" + text + "\033[0m"
@@ -265,7 +260,7 @@ slay format_with_color(text tea, color tea) tea {
     damn text
 }
 
-# Bold and italic formatting
+fr fr Bold and italic formatting
 slay format_bold(text tea) tea {
     damn "\033[1m" + text + "\033[0m"
 }
@@ -278,7 +273,7 @@ slay format_underline(text tea) tea {
     damn "\033[4m" + text + "\033[0m"
 }
 
-# Common formatting patterns
+fr fr Common formatting patterns
 slay format_error(message tea) tea {
     damn format_with_color("ERROR: " + message, "red")
 }
@@ -295,9 +290,8 @@ slay format_info(message tea) tea {
     damn format_with_color("INFO: " + message, "blue")
 }
 
-# Printf-style formatting (simplified)
-slay sprintf(format_str tea, args []interface{}) tea {
-    # Simplified sprintf implementation
+fr fr Printf-style formatting (simplified)
+slay sprintf(format_str tea, args []interface{}) tea { fr fr Simplified sprintf implementation
     bestie stringz.len(args) == 0 {
         damn format_str
     }
@@ -307,14 +301,12 @@ slay sprintf(format_str tea, args []interface{}) tea {
     damn format_str + " (multiple args)"
 }
 
-# Utility functions
-slay is_printable(ch sip) lit {
-    # Simplified printable character check
+fr fr Utility functions
+slay is_printable(ch sip) lit { fr fr Simplified printable character check
     damn ch != '\n' && ch != '\t' && ch != '\r'
 }
 
-slay escape_string(s tea) tea {
-    # Simplified string escaping
+slay escape_string(s tea) tea { fr fr Simplified string escaping
     sus result := stringz.replace(s, "\\", "\\\\")
     result = stringz.replace(result, "\"", "\\\"")
     result = stringz.replace(result, "\n", "\\n")
@@ -322,8 +314,7 @@ slay escape_string(s tea) tea {
     damn result
 }
 
-slay unescape_string(s tea) tea {
-    # Simplified string unescaping
+slay unescape_string(s tea) tea { fr fr Simplified string unescaping
     sus result := stringz.replace(s, "\\\\", "\\")
     result = stringz.replace(result, "\\\"", "\"")
     result = stringz.replace(result, "\\n", "\n")

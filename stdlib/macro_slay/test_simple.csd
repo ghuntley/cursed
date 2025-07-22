@@ -3,12 +3,12 @@ yeet "macro_slay"
 
 test_start("Basic macro_slay functionality test")
 
-# Test basic constants
+fr fr Test basic constants
 assert_true(MACRO_FUNCTION == 1)
 assert_true(MACRO_EXPRESSION == 2)
 assert_true(EXPAND_IMMEDIATE == 10)
 
-# Test module status
+fr fr Test module status
 sus version tea = macro_slay_version()
 assert_true(version == "1.0.0")
 

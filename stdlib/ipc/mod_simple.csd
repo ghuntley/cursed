@@ -1,21 +1,21 @@
-# IPC - Simplified Pure CURSED Inter-Process Communication Module
-# Basic implementation without complex map operations for initial testing
+fr fr IPC - Simplified Pure CURSED Inter-Process Communication Module
+fr fr Basic implementation without complex map operations for initial testing
 
-# Global simple state
+fr fr Global simple state
 sus initialized lit = cap
 sus pipe_count normie = 0
 sus queue_count normie = 0
 
-# Constants
+fr fr Constants
 sus IPC_TYPE_PIPE tea = "named_pipe"
 sus IPC_TYPE_QUEUE tea = "message_queue"
 sus MSG_PRIORITY_NORMAL normie = 5
 
-# ==============================================================================
-# INITIALIZATION
-# ==============================================================================
+fr fr ==============================================================================
+fr fr INITIALIZATION
+fr fr ==============================================================================
 
-# Initialize IPC subsystem
+fr fr Initialize IPC subsystem
 slay init_ipc() lit {
     initialized = based
     pipe_count = 0
@@ -24,11 +24,11 @@ slay init_ipc() lit {
     damn based
 }
 
-# ==============================================================================
-# NAMED PIPES - SIMPLIFIED
-# ==============================================================================
+fr fr ==============================================================================
+fr fr NAMED PIPES - SIMPLIFIED
+fr fr ==============================================================================
 
-# Create named pipe (simplified - just increment counter)
+fr fr Create named pipe (simplified - just increment counter)
 slay create_named_pipe(name tea, buffer_size normie) lit {
     if !initialized {
         damn cap
@@ -39,7 +39,7 @@ slay create_named_pipe(name tea, buffer_size normie) lit {
     damn based
 }
 
-# Write to named pipe (simplified)
+fr fr Write to named pipe (simplified)
 slay write_to_pipe(name tea, data tea) lit {
     if !initialized {
         damn cap
@@ -49,21 +49,21 @@ slay write_to_pipe(name tea, data tea) lit {
     damn based
 }
 
-# Read from named pipe (simplified - echo back the last written data)
+fr fr Read from named pipe (simplified - echo back the last written data)
 slay read_from_pipe(name tea) tea {
     if !initialized {
         damn ""
     }
     
     vibez.spill("Reading from pipe: " + name)
-    damn "echo_data"  # Simplified - return fixed data
+    damn "echo_data" fr fr Simplified - return fixed data
 }
 
-# ==============================================================================
-# MESSAGE QUEUES - SIMPLIFIED
-# ==============================================================================
+fr fr ==============================================================================
+fr fr MESSAGE QUEUES - SIMPLIFIED
+fr fr ==============================================================================
 
-# Create message queue (simplified)
+fr fr Create message queue (simplified)
 slay create_message_queue(name tea, max_size normie) lit {
     if !initialized {
         damn cap
@@ -74,7 +74,7 @@ slay create_message_queue(name tea, max_size normie) lit {
     damn based
 }
 
-# Send message (simplified)
+fr fr Send message (simplified)
 slay send_message(queue_name tea, message tea, priority normie) lit {
     if !initialized {
         damn cap
@@ -84,7 +84,7 @@ slay send_message(queue_name tea, message tea, priority normie) lit {
     damn based
 }
 
-# Receive message (simplified - return empty map)
+fr fr Receive message (simplified - return empty map)
 slay receive_message(queue_name tea) map {
     if !initialized {
         damn {}
@@ -98,31 +98,27 @@ slay receive_message(queue_name tea) map {
     damn simple_msg
 }
 
-# ==============================================================================
-# UTILITY FUNCTIONS
-# ==============================================================================
+fr fr ==============================================================================
+fr fr UTILITY FUNCTIONS
+fr fr ==============================================================================
 
-# Get module info
+fr fr Get module info
 slay get_module_info() tea {
     damn "ipc_simple v1.0 - Simplified CURSED IPC system"
 }
 
-# Test connectivity (simplified)
+fr fr Test connectivity (simplified)
 slay test_ipc_connectivity() lit {
     if !initialized {
         damn cap
     }
     
-    vibez.spill("Testing IPC connectivity...")
-    
-    # Test pipe
+    vibez.spill("Testing IPC connectivity...") fr fr Test pipe
     if create_named_pipe("test_pipe", 1024) {
         write_to_pipe("test_pipe", "test_data")
         sus data tea = read_from_pipe("test_pipe")
         vibez.spill("Pipe test result: " + data)
-    }
-    
-    # Test queue
+    } fr fr Test queue
     if create_message_queue("test_queue", 10) {
         send_message("test_queue", "test_msg", MSG_PRIORITY_NORMAL)
         sus msg map = receive_message("test_queue")
@@ -133,7 +129,7 @@ slay test_ipc_connectivity() lit {
     damn based
 }
 
-# Cleanup (simplified)
+fr fr Cleanup (simplified)
 slay cleanup_ipc() lit {
     initialized = cap
     pipe_count = 0
@@ -142,7 +138,7 @@ slay cleanup_ipc() lit {
     damn based
 }
 
-# Reset (simplified)
+fr fr Reset (simplified)
 slay reset_ipc() {
     cleanup_ipc()
     init_ipc()

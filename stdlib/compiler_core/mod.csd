@@ -1,19 +1,19 @@
-# Pure CURSED Compiler Core Module
-# Essential compiler infrastructure for self-hosting
+fr fr Pure CURSED Compiler Core Module
+fr fr Essential compiler infrastructure for self-hosting
 
 yeet "testz"
 yeet "runtime_core"
 
-# Token types for lexical analysis
+fr fr Token types for lexical analysis
 be_like TokenType = tea
 
-# AST node types
+fr fr AST node types
 be_like ASTNodeType = tea
 
-# Compiler phases
+fr fr Compiler phases
 be_like CompilerPhase = tea
 
-# Lexer state
+fr fr Lexer state
 collab LexerState {
     slay new(source tea) LexerState
     slay tokenize() [TokenType]
@@ -22,7 +22,7 @@ collab LexerState {
     slay current_position() normie
 }
 
-# Parser state  
+fr fr Parser state  
 collab ParserState {
     slay new(tokens [TokenType]) ParserState
     slay parse_program() ASTNodeType
@@ -31,7 +31,7 @@ collab ParserState {
     slay current_token() TokenType
 }
 
-# Type checker
+fr fr Type checker
 collab TypeChecker {
     slay new() TypeChecker
     slay check_program(ast ASTNodeType) lit
@@ -40,7 +40,7 @@ collab TypeChecker {
     slay resolve_type(type_name tea) tea
 }
 
-# Code generator
+fr fr Code generator
 collab CodeGenerator {
     slay new() CodeGenerator
     slay generate_llvm(ast ASTNodeType) tea
@@ -48,7 +48,7 @@ collab CodeGenerator {
     slay optimize_code(code tea) tea
 }
 
-# Main compiler interface
+fr fr Main compiler interface
 slay compiler_create_lexer(source tea) LexerState {
     damn lexer_new(source)
 }
@@ -65,7 +65,7 @@ slay compiler_create_code_generator() CodeGenerator {
     damn code_generator_new()
 }
 
-# Lexer implementation
+fr fr Lexer implementation
 slay lexer_new(source tea) LexerState {
     sus state LexerState = LexerState {
         source: source,
@@ -84,11 +84,9 @@ slay lexer_tokenize(lexer LexerState) [TokenType] {
     bestie position < string_length(source) {
         sus char tea = char_at_string(source, position)
         
-        lowkey char == " " || char == "\t" || char == "\n" {
-            # Skip whitespace
+        lowkey char == " " || char == "\t" || char == "\n" { fr fr Skip whitespace
             position = position + 1
-        } elseif char == "s" {
-            # Check for 'sus' keyword
+        } elseif char == "s" { fr fr Check for 'sus' keyword
             sus token tea = lexer_read_identifier(source, position)
             lowkey token == "sus" {
                 tokens = append_token(tokens, "KEYWORD_SUS")
@@ -97,8 +95,7 @@ slay lexer_tokenize(lexer LexerState) [TokenType] {
                 tokens = append_token(tokens, "IDENTIFIER")
                 position = position + identifier_length(token)
             }
-        } elseif char == "d" {
-            # Check for 'damn' keyword
+        } elseif char == "d" { fr fr Check for 'damn' keyword
             sus token tea = lexer_read_identifier(source, position)
             lowkey token == "damn" {
                 tokens = append_token(tokens, "KEYWORD_DAMN")
@@ -114,7 +111,7 @@ slay lexer_tokenize(lexer LexerState) [TokenType] {
         } elseif char == "\"" {
             sus string_val tea = lexer_read_string(source, position)
             tokens = append_token(tokens, "STRING")
-            position = position + identifier_length(string_val) + 2  # +2 for quotes
+            position = position + identifier_length(string_val) + 2 fr fr +2 for quotes
         } elseif char == "=" {
             tokens = append_token(tokens, "ASSIGN")
             position = position + 1
@@ -130,8 +127,7 @@ slay lexer_tokenize(lexer LexerState) [TokenType] {
         } elseif char == "}" {
             tokens = append_token(tokens, "RBRACE")
             position = position + 1
-        } else {
-            # Unknown character
+        } else { fr fr Unknown character
             position = position + 1
         }
     }
@@ -140,18 +136,15 @@ slay lexer_tokenize(lexer LexerState) [TokenType] {
     damn tokens
 }
 
-# Helper functions for lexer
-slay char_at_string(source tea, index normie) tea {
-    # Simplified character access
+fr fr Helper functions for lexer
+slay char_at_string(source tea, index normie) tea { fr fr Simplified character access
     lowkey index == 0 { damn "s" }
     elseif index == 1 { damn "u" }
     elseif index == 2 { damn "s" }
     elseif index == 3 { damn " " }
-    elseif index < string_length(str) {
-        # In a real implementation, this would access the actual character
-        # For now, return a common character based on position
+    elseif index < string_length(str) { fr fr In a real implementation, this would access the actual character fr fr For now, return a common character based on position
         sus char_index normie = index % 26
-        damn string_from_ascii(97 + char_index)  # 'a' + offset
+        damn string_from_ascii(97 + char_index) fr fr 'a' + offset
     }
     else { damn "" }
 }
@@ -161,18 +154,15 @@ slay is_digit(char tea) lit {
          char == "5" || char == "6" || char == "7" || char == "8" || char == "9"
 }
 
-slay lexer_read_identifier(source tea, start_pos normie) tea {
-    # Simplified identifier reading
+slay lexer_read_identifier(source tea, start_pos normie) tea { fr fr Simplified identifier reading
     damn "identifier"
 }
 
-slay lexer_read_number(source tea, start_pos normie) tea {
-    # Simplified number reading
+slay lexer_read_number(source tea, start_pos normie) tea { fr fr Simplified number reading
     damn "42"
 }
 
-slay lexer_read_string(source tea, start_pos normie) tea {
-    # Simplified string reading
+slay lexer_read_string(source tea, start_pos normie) tea { fr fr Simplified string reading
     damn "string_literal"
 }
 
@@ -180,12 +170,11 @@ slay identifier_length(token tea) normie {
     damn string_length(token)
 }
 
-slay append_token(tokens [TokenType], token tea) [TokenType] {
-    # Simplified token appending
-    damn tokens  # Would actually append token
+slay append_token(tokens [TokenType], token tea) [TokenType] { fr fr Simplified token appending
+    damn tokens fr fr Would actually append token
 }
 
-# Parser implementation
+fr fr Parser implementation
 slay parser_new(tokens [TokenType]) ParserState {
     sus state ParserState = ParserState {
         tokens: tokens,
@@ -219,8 +208,7 @@ slay parser_parse_statement(parser ParserState) ASTNodeType {
     }
 }
 
-slay parser_parse_variable_declaration(parser ParserState) ASTNodeType {
-    # Parse: sus name type = value
+slay parser_parse_variable_declaration(parser ParserState) ASTNodeType { fr fr Parse: sus name type = value
     sus name tea = array_get(parser.tokens, parser.position + 1)
     sus type_name tea = array_get(parser.tokens, parser.position + 2)
     sus value ASTNodeType = parser_parse_expression(parser)
@@ -252,7 +240,7 @@ slay parser_parse_expression(parser ParserState) ASTNodeType {
     }
 }
 
-# AST node creation functions
+fr fr AST node creation functions
 slay ast_create_program() ASTNodeType {
     damn "program"
 }
@@ -289,9 +277,8 @@ slay ast_add_statement(program ASTNodeType, stmt ASTNodeType) ASTNodeType {
     damn program + ";" + stmt
 }
 
-# Array helper functions
-slay array_length(arr [TokenType]) normie {
-    # Count elements in token array
+fr fr Array helper functions
+slay array_length(arr [TokenType]) normie { fr fr Count elements in token array
     sus count normie = 0
     bestie _, token := iterate arr {
         count = count + 1
@@ -299,8 +286,7 @@ slay array_length(arr [TokenType]) normie {
     damn count
 }
 
-slay array_get(arr [TokenType], index normie) tea {
-    # Get token at specific index
+slay array_get(arr [TokenType], index normie) tea { fr fr Get token at specific index
     sus current_index normie = 0
     bestie _, token := iterate arr {
         lowkey current_index == index {
@@ -308,10 +294,10 @@ slay array_get(arr [TokenType], index normie) tea {
         }
         current_index = current_index + 1
     }
-    damn ""  # Index out of bounds
+    damn "" fr fr Index out of bounds
 }
 
-# Type checker implementation
+fr fr Type checker implementation
 slay type_checker_new() TypeChecker {
     sus checker TypeChecker = TypeChecker {
         types: {},
@@ -320,13 +306,11 @@ slay type_checker_new() TypeChecker {
     damn checker
 }
 
-slay type_checker_check_program(checker TypeChecker, ast ASTNodeType) lit {
-    # Simplified type checking
+slay type_checker_check_program(checker TypeChecker, ast ASTNodeType) lit { fr fr Simplified type checking
     damn based
 }
 
-slay type_checker_check_expression(checker TypeChecker, expr ASTNodeType) tea {
-    # Return inferred type
+slay type_checker_check_expression(checker TypeChecker, expr ASTNodeType) tea { fr fr Return inferred type
     damn "normie"
 }
 
@@ -338,7 +322,7 @@ slay type_checker_resolve_type(checker TypeChecker, type_name tea) tea {
     else { damn "unknown" }
 }
 
-# Code generator implementation
+fr fr Code generator implementation
 slay code_generator_new() CodeGenerator {
     sus generator CodeGenerator = CodeGenerator {
         output: "",
@@ -355,8 +339,7 @@ slay code_generator_generate_llvm(generator CodeGenerator, ast ASTNodeType) tea 
     damn llvm_code
 }
 
-slay code_generator_generate_native(generator CodeGenerator, ast ASTNodeType) tea {
-    # Generate cross-platform native assembly
+slay code_generator_generate_native(generator CodeGenerator, ast ASTNodeType) tea { fr fr Generate cross-platform native assembly
     damn generate_platform_assembly("exit")
 }
 
@@ -390,9 +373,9 @@ slay generate_arm64_assembly(instructions tea) tea {
     sus native_code tea = ".section .text\n"
     native_code = native_code + ".globl _start\n"
     native_code = native_code + "_start:\n"
-    native_code = native_code + "  mov x8, #93\n"    # exit syscall
-    native_code = native_code + "  mov x0, #0\n"     # exit status
-    native_code = native_code + "  svc #0\n"         # supervisor call
+    native_code = native_code + "  mov x8, fr fr 93\n" fr fr exit syscall
+    native_code = native_code + "  mov x0, fr fr 0\n" fr fr exit status
+    native_code = native_code + "  svc fr fr 0\n" fr fr supervisor call
     damn native_code
 }
 
@@ -406,8 +389,7 @@ slay generate_wasm32_assembly(instructions tea) tea {
     damn wasm_code
 }
 
-slay generate_generic_assembly(instructions tea) tea {
-    # Fallback to portable C code generation
+slay generate_generic_assembly(instructions tea) tea { fr fr Fallback to portable C code generation
     sus c_code tea = "#include <stdlib.h>\n"
     c_code = c_code + "int main() {\n"
     c_code = c_code + "  exit(0);\n"
@@ -416,51 +398,38 @@ slay generate_generic_assembly(instructions tea) tea {
 }
 
 slay get_target_architecture() tea {
-    yeet "vibecheck"
-    
-    # In real implementation, this would detect target from build flags
-    # For now, return current architecture
+    yeet "vibecheck" fr fr In real implementation, this would detect target from build flags fr fr For now, return current architecture
     sus arch tea = get_current_architecture()
     damn arch
 }
 
-slay get_current_architecture() tea {
-    # This would be implemented in the runtime to detect current platform
-    # For demo purposes, assume x86_64
+slay get_current_architecture() tea { fr fr This would be implemented in the runtime to detect current platform fr fr For demo purposes, assume x86_64
     damn "x86_64"
 }
 
-slay code_generator_optimize_code(generator CodeGenerator, code tea) tea {
-    # Apply optimizations
+slay code_generator_optimize_code(generator CodeGenerator, code tea) tea { fr fr Apply optimizations
     damn code + "# Optimized"
 }
 
-# Main compiler pipeline
-slay compile_source(source tea) tea {
-    # Lexical analysis
+fr fr Main compiler pipeline
+slay compile_source(source tea) tea { fr fr Lexical analysis
     sus lexer LexerState = compiler_create_lexer(source)
-    sus tokens [TokenType] = lexer_tokenize(lexer)
-    
-    # Parsing
+    sus tokens [TokenType] = lexer_tokenize(lexer) fr fr Parsing
     sus parser ParserState = compiler_create_parser(tokens)
-    sus ast ASTNodeType = parser_parse_program(parser)
-    
-    # Type checking
+    sus ast ASTNodeType = parser_parse_program(parser) fr fr Type checking
     sus type_checker TypeChecker = compiler_create_type_checker()
     sus type_check_success lit = type_checker_check_program(type_checker, ast)
     
     lowkey !type_check_success {
         damn "Type checking failed"
-    }
-    
-    # Code generation
+    } fr fr Code generation
     sus code_generator CodeGenerator = compiler_create_code_generator()
     sus llvm_code tea = code_generator_generate_llvm(code_generator, ast)
     
     damn llvm_code
 }
 
-# Error handling for compiler
+fr fr Error handling for compiler
 slay compiler_create_error(message tea, phase tea) tea {
     damn phase + " error: " + message
 }
@@ -470,10 +439,8 @@ slay compiler_handle_error(error tea) lit {
     damn cap
 }
 
-# Helper function to convert ASCII code to string
-slay string_from_ascii(ascii_code normie) tea {
-    # Convert ASCII code to single character string
-    # Simplified implementation for common characters
+fr fr Helper function to convert ASCII code to string
+slay string_from_ascii(ascii_code normie) tea { fr fr Convert ASCII code to single character string fr fr Simplified implementation for common characters
     lowkey ascii_code == 97 { damn "a" }
     elseif ascii_code == 98 { damn "b" }
     elseif ascii_code == 99 { damn "c" }

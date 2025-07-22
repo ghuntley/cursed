@@ -6,7 +6,7 @@ yeet "stringz"
 
 test_start("Build System Comprehensive Tests")
 
-# Test build configuration creation
+fr fr Test build configuration creation
 slay test_create_build_config() {
     sus config map[tea]interface{} = build_system.create_build_config()
     
@@ -20,9 +20,8 @@ slay test_create_build_config() {
     vibez.spill("✅ create_build_config test passed")
 }
 
-# Test configuration parsing
-slay test_parse_build_config() {
-    # Create a test configuration file
+fr fr Test configuration parsing
+slay test_parse_build_config() { fr fr Create a test configuration file
     sus test_config tea = `{
         "name": "test_project",
         "version": "2.0.0",
@@ -33,12 +32,8 @@ slay test_parse_build_config() {
             "http_client": "2.1.0"
         },
         "optimization_level": "3"
-    }`
-    
-    # Write test config to file
-    fs.write_file("test_config.toml", test_config)
-    
-    # Parse the configuration
+    }` fr fr Write test config to file
+    fs.write_file("test_config.toml", test_config) fr fr Parse the configuration
     sus parsed_config map[tea]interface{} = build_system.parse_build_config("test_config.toml")
     
     assert_eq_string(parsed_config["name"].(tea), "test_project")
@@ -47,15 +42,13 @@ slay test_parse_build_config() {
     
     sus dependencies map[tea]tea = parsed_config["dependencies"].(map[tea]tea)
     assert_eq_string(dependencies["json_parser"], "1.0.0")
-    assert_eq_string(dependencies["http_client"], "2.1.0")
-    
-    # Cleanup
+    assert_eq_string(dependencies["http_client"], "2.1.0") fr fr Cleanup
     fs.remove_file("test_config.toml")
     
     vibez.spill("✅ parse_build_config test passed")
 }
 
-# Test configuration merging
+fr fr Test configuration merging
 slay test_merge_configs() {
     sus default_config map[tea]interface{} = build_system.create_build_config()
     
@@ -64,23 +57,17 @@ slay test_merge_configs() {
     user_config["optimization_level"] = "1"
     user_config["custom_field"] = "custom_value"
     
-    sus merged map[tea]interface{} = build_system.merge_configs(default_config, user_config)
-    
-    # Check that user values override defaults
+    sus merged map[tea]interface{} = build_system.merge_configs(default_config, user_config) fr fr Check that user values override defaults
     assert_eq_string(merged["name"].(tea), "custom_project")
-    assert_eq_string(merged["optimization_level"].(tea), "1")
-    
-    # Check that defaults are preserved
+    assert_eq_string(merged["optimization_level"].(tea), "1") fr fr Check that defaults are preserved
     assert_eq_string(merged["version"].(tea), "1.0.0")
-    assert_eq_string(merged["output_dir"].(tea), "build")
-    
-    # Check that custom fields are added
+    assert_eq_string(merged["output_dir"].(tea), "build") fr fr Check that custom fields are added
     assert_eq_string(merged["custom_field"].(tea), "custom_value")
     
     vibez.spill("✅ merge_configs test passed")
 }
 
-# Test dependency resolution
+fr fr Test dependency resolution
 slay test_resolve_dependencies() {
     sus config map[tea]interface{} = build_system.create_build_config()
     
@@ -89,33 +76,28 @@ slay test_resolve_dependencies() {
     dependencies["stringz"] = "1.0.0"
     config["dependencies"] = dependencies
     
-    sus resolved []tea = build_system.resolve_dependencies(config)
-    
-    # Should find stdlib modules
-    assert_true(len(resolved) >= 0) # At least some dependencies should resolve
+    sus resolved []tea = build_system.resolve_dependencies(config) fr fr Should find stdlib modules
+    assert_true(len(resolved) >= 0) fr fr At least some dependencies should resolve
     
     vibez.spill("✅ resolve_dependencies test passed")
 }
 
-# Test target file finding
-slay test_find_target_file() {
-    # Create test directory structure
+fr fr Test target file finding
+slay test_find_target_file() { fr fr Create test directory structure
     fs.make_dir_all("test_src")
     fs.write_file("test_src/main.csd", "vibez.spill(\"test\")")
     
     sus source_dirs []tea = []tea{"test_src"}
     sus target_file tea = build_system.find_target_file("main", source_dirs)
     
-    assert_eq_string(target_file, "test_src/main.csd")
-    
-    # Cleanup
+    assert_eq_string(target_file, "test_src/main.csd") fr fr Cleanup
     fs.remove_file("test_src/main.csd")
     fs.remove_dir("test_src")
     
     vibez.spill("✅ find_target_file test passed")
 }
 
-# Test build mode determination
+fr fr Test build mode determination
 slay test_determine_build_mode() {
     sus config1 map[tea]interface{} = build_system.create_build_config()
     sus mode1 tea = build_system.determine_build_mode(config1)
@@ -129,7 +111,7 @@ slay test_determine_build_mode() {
     vibez.spill("✅ determine_build_mode test passed")
 }
 
-# Test build command construction
+fr fr Test build command construction
 slay test_construct_build_command() {
     sus target_file tea = "src/main.csd"
     sus build_mode tea = "native"
@@ -149,9 +131,8 @@ slay test_construct_build_command() {
     vibez.spill("✅ construct_build_command test passed")
 }
 
-# Test test file finding
-slay test_find_test_files() {
-    # Create test files
+fr fr Test test file finding
+slay test_find_test_files() { fr fr Create test files
     fs.make_dir_all("test_dir")
     fs.write_file("test_dir/test_math.csd", "# Math tests")
     fs.write_file("test_dir/string_test.csd", "# String tests")
@@ -162,9 +143,7 @@ slay test_find_test_files() {
     
     sus test_files []tea = build_system.find_test_files(patterns, source_dirs)
     
-    assert_true(len(test_files) >= 2) # Should find at least the two test files
-    
-    # Cleanup
+    assert_true(len(test_files) >= 2) fr fr Should find at least the two test files fr fr Cleanup
     fs.remove_file("test_dir/test_math.csd")
     fs.remove_file("test_dir/string_test.csd")
     fs.remove_file("test_dir/main.csd")
@@ -173,32 +152,26 @@ slay test_find_test_files() {
     vibez.spill("✅ find_test_files test passed")
 }
 
-# Test package listing
+fr fr Test package listing
 slay test_list_packages() {
-    sus packages []tea = build_system.list_packages()
-    
-    # Should return a list (might be empty)
+    sus packages []tea = build_system.list_packages() fr fr Should return a list (might be empty)
     assert_true(len(packages) >= 0)
     
     vibez.spill("✅ list_packages test passed")
 }
 
-# Test cache functionality
+fr fr Test cache functionality
 slay test_build_cache() {
     sus target tea = "test_target"
-    sus dependencies []tea = []tea{}
-    
-    # Initially no cache should exist
+    sus dependencies []tea = []tea{} fr fr Initially no cache should exist
     sus has_cache lit = build_system.check_build_cache(target, dependencies)
-    assert_false(has_cache)
-    
-    # Update cache
+    assert_false(has_cache) fr fr Update cache
     build_system.update_build_cache(target)
     
     vibez.spill("✅ build_cache test passed")
 }
 
-# Test comprehensive build configuration
+fr fr Test comprehensive build configuration
 slay test_comprehensive_build_config() {
     sus comprehensive_config tea = `{
         "name": "comprehensive_project",
@@ -221,12 +194,8 @@ slay test_comprehensive_build_config() {
         "parallel_builds": true,
         "cache_enabled": true,
         "build_mode": "native"
-    }`
-    
-    # Write comprehensive config
-    fs.write_file("comprehensive_config.toml", comprehensive_config)
-    
-    # Parse and validate
+    }` fr fr Write comprehensive config
+    fs.write_file("comprehensive_config.toml", comprehensive_config) fr fr Parse and validate
     sus parsed map[tea]interface{} = build_system.parse_build_config("comprehensive_config.toml")
     
     assert_eq_string(parsed["name"].(tea), "comprehensive_project")
@@ -239,34 +208,26 @@ slay test_comprehensive_build_config() {
     assert_true(len(targets) == 3)
     
     sus dependencies map[tea]tea = parsed["dependencies"].(map[tea]tea)
-    assert_eq_string(dependencies["crypto"], "1.5.0")
-    
-    # Cleanup
+    assert_eq_string(dependencies["crypto"], "1.5.0") fr fr Cleanup
     fs.remove_file("comprehensive_config.toml")
     
     vibez.spill("✅ comprehensive_build_config test passed")
 }
 
-# Test error handling in configuration parsing
-slay test_config_error_handling() {
-    # Test with non-existent file
+fr fr Test error handling in configuration parsing
+slay test_config_error_handling() { fr fr Test with non-existent file
     sus config1 map[tea]interface{} = build_system.parse_build_config("non_existent.toml")
-    assert_eq_string(config1["name"].(tea), "") # Should return default config
-    
-    # Test with invalid JSON
+    assert_eq_string(config1["name"].(tea), "") fr fr Should return default config fr fr Test with invalid JSON
     fs.write_file("invalid_config.toml", "{ invalid json content")
     sus config2 map[tea]interface{} = build_system.parse_build_config("invalid_config.toml")
-    assert_eq_string(config2["name"].(tea), "") # Should return default config
-    
-    # Cleanup
+    assert_eq_string(config2["name"].(tea), "") fr fr Should return default config fr fr Cleanup
     fs.remove_file("invalid_config.toml")
     
     vibez.spill("✅ config_error_handling test passed")
 }
 
-# Test build system integration
-slay test_build_system_integration() {
-    # Create a minimal project structure
+fr fr Test build system integration
+slay test_build_system_integration() { fr fr Create a minimal project structure
     fs.make_dir_all("integration_test")
     fs.write_file("integration_test/main.csd", "vibez.spill(\"Integration test works!\")")
     
@@ -278,18 +239,12 @@ slay test_build_system_integration() {
         "output_dir": "integration_build"
     }`
     
-    fs.write_file("integration_test_config.toml", minimal_config)
-    
-    # Test that configuration parses correctly
+    fs.write_file("integration_test_config.toml", minimal_config) fr fr Test that configuration parses correctly
     sus config map[tea]interface{} = build_system.parse_build_config("integration_test_config.toml")
-    assert_eq_string(config["name"].(tea), "integration_test")
-    
-    # Test that target file can be found
+    assert_eq_string(config["name"].(tea), "integration_test") fr fr Test that target file can be found
     sus source_dirs []tea = config["source_dirs"].([]tea)
     sus target_file tea = build_system.find_target_file("main", source_dirs)
-    assert_eq_string(target_file, "integration_test/main.csd")
-    
-    # Cleanup
+    assert_eq_string(target_file, "integration_test/main.csd") fr fr Cleanup
     fs.remove_file("integration_test/main.csd")
     fs.remove_dir("integration_test")
     fs.remove_file("integration_test_config.toml")
@@ -297,7 +252,7 @@ slay test_build_system_integration() {
     vibez.spill("✅ build_system_integration test passed")
 }
 
-# Main test runner
+fr fr Main test runner
 slay main() {
     test_create_build_config()
     test_parse_build_config()

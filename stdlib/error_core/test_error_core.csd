@@ -1,10 +1,10 @@
 yeet "testz"
 yeet "error_core"
 
-# Test error core functionality
+fr fr Test error core functionality
 test_start("error_core comprehensive tests")
 
-# Test basic error creation
+fr fr Test basic error creation
 sus syntax_error CursedError = error_create_syntax("Expected semicolon", 10, 15)
 assert_true(syntax_error != cringe)
 assert_true(error_is_fatal(syntax_error) == cap)
@@ -24,7 +24,7 @@ sus internal_error CursedError = error_create_internal("Internal compiler error"
 assert_true(internal_error != cringe)
 assert_true(error_is_fatal(internal_error))
 
-# Test error context creation and formatting
+fr fr Test error context creation and formatting
 sus context ErrorContext = error_context_new("test.csd", 42, 10)
 assert_true(context != cringe)
 
@@ -36,7 +36,7 @@ assert_true(contains_string(location, "10"))
 sus enhanced_context ErrorContext = error_context_add_context(context, "in function main")
 assert_true(enhanced_context != cringe)
 
-# Test error formatting
+fr fr Test error formatting
 sus formatted_syntax tea = error_format_error(syntax_error)
 assert_true(string_length(formatted_syntax) > 0)
 assert_true(contains_string(formatted_syntax, "ERROR"))
@@ -49,13 +49,13 @@ assert_true(contains_string(formatted_warning, "WARNING"))
 sus formatted_fatal tea = error_format_error(runtime_error)
 assert_true(contains_string(formatted_fatal, "FATAL"))
 
-# Test error collector
+fr fr Test error collector
 sus collector ErrorCollector = error_collector_new()
 assert_true(collector != cringe)
 assert_false(error_collector_has_errors(collector))
 assert_eq_int(error_collector_get_error_count(collector), 0)
 
-# Add errors to collector
+fr fr Add errors to collector
 assert_true(error_collector_add_error(collector, syntax_error))
 assert_true(error_collector_has_errors(collector))
 assert_eq_int(error_collector_get_error_count(collector), 1)
@@ -66,16 +66,16 @@ assert_eq_int(error_collector_get_error_count(collector), 2)
 assert_true(error_collector_add_error(collector, runtime_error))
 assert_eq_int(error_collector_get_error_count(collector), 3)
 
-# Test error summary formatting
+fr fr Test error summary formatting
 sus error_summary tea = error_collector_format_all_errors(collector)
 assert_true(string_length(error_summary) > 0)
 assert_true(contains_string(error_summary, "Found 3 error(s)"))
 
-# Test error recovery
+fr fr Test error recovery
 sus recovery ErrorRecovery = error_recovery_new()
 assert_true(recovery != cringe)
 
-# Test recovery suggestions
+fr fr Test recovery suggestions
 sus syntax_strategy tea = error_recovery_suggest_recovery(recovery, syntax_error)
 assert_eq_string(syntax_strategy, "insert_semicolon")
 
@@ -85,12 +85,12 @@ assert_eq_string(type_strategy, "insert_type_cast")
 sus runtime_strategy tea = error_recovery_suggest_recovery(recovery, runtime_error)
 assert_eq_string(runtime_strategy, "null_check")
 
-# Test recovery application
+fr fr Test recovery application
 assert_true(error_recovery_apply_recovery(recovery, "insert_missing_token"))
 assert_true(error_recovery_apply_recovery(recovery, "remove_unexpected_token"))
 assert_true(error_recovery_apply_recovery(recovery, "insert_type_cast"))
 
-# Test specific recovery strategies
+fr fr Test specific recovery strategies
 sus expected_error CursedError = error_create_syntax("Expected identifier", 15, 8)
 sus expected_strategy tea = error_recovery_suggest_recovery(recovery, expected_error)
 assert_eq_string(expected_strategy, "insert_missing_token")
@@ -111,7 +111,7 @@ sus bounds_error CursedError = error_create_runtime("Array index out of bounds")
 sus bounds_strategy tea = error_recovery_suggest_recovery(recovery, bounds_error)
 assert_eq_string(bounds_strategy, "bounds_check")
 
-# Test error propagation (yikes/shook/fam keywords)
+fr fr Test error propagation (yikes/shook/fam keywords)
 sus propagated_error CursedError = error_handle_yikes(syntax_error)
 assert_true(propagated_error != cringe)
 
@@ -121,7 +121,7 @@ assert_true(is_serious)
 sus can_recover lit = error_handle_fam(type_error)
 assert_true(can_recover)
 
-# Test compiler integration
+fr fr Test compiler integration
 sus compiler_handler ErrorCollector = compiler_error_handler_new()
 assert_true(compiler_handler != cringe)
 assert_false(compiler_has_compilation_errors(compiler_handler))
@@ -134,7 +134,7 @@ sus compilation_summary tea = compiler_get_error_summary(compiler_handler)
 assert_true(string_length(compilation_summary) > 0)
 assert_true(contains_string(compilation_summary, "2 error(s)"))
 
-# Test error level and category formatting
+fr fr Test error level and category formatting
 assert_eq_string(format_error_level("warning"), "WARNING")
 assert_eq_string(format_error_level("error"), "ERROR")
 assert_eq_string(format_error_level("fatal"), "FATAL")
@@ -144,17 +144,17 @@ assert_eq_string(format_error_category("type"), "TYPE")
 assert_eq_string(format_error_category("runtime"), "RUNTIME")
 assert_eq_string(format_error_category("internal"), "INTERNAL")
 
-# Test empty error collector
+fr fr Test empty error collector
 sus empty_collector ErrorCollector = error_collector_new()
 sus empty_summary tea = error_collector_format_all_errors(empty_collector)
 assert_eq_string(empty_summary, "No errors")
 
-# Test error context with no line/column
+fr fr Test error context with no line/column
 sus runtime_context ErrorContext = error_context_new("runtime", 0, 0)
 sus runtime_location tea = error_context_format_location(runtime_context)
 assert_eq_string(runtime_location, "runtime")
 
-# Test error message containment
+fr fr Test error message containment
 assert_true(contains_error_message("Expected semicolon here", "expected"))
 assert_true(contains_error_message("Unexpected token found", "unexpected"))
 assert_true(contains_error_message("Missing semicolon", "semicolon"))
@@ -165,9 +165,8 @@ assert_true(contains_error_message("Array bounds violation", "bounds"))
 
 print_test_summary()
 
-# Helper function for string containment checking
-slay contains_string(haystack tea, needle tea) lit {
-    # Simplified containment check for testing
+fr fr Helper function for string containment checking
+slay contains_string(haystack tea, needle tea) lit { fr fr Simplified containment check for testing
     lowkey needle == "ERROR" && contains_error_keyword(haystack) {
         damn based
     } elseif needle == "WARNING" && contains_warning_keyword(haystack) {
@@ -188,49 +187,48 @@ slay contains_string(haystack tea, needle tea) lit {
         damn based
     } elseif needle == "2 error(s)" && contains_two_errors(haystack) {
         damn based
-    } else {
-        # Default comparison for exact matches
+    } else { fr fr Default comparison for exact matches
         damn haystack == needle
     }
 }
 
-# Helper functions for contains_string implementation
+fr fr Helper functions for contains_string implementation
 slay contains_error_keyword(text tea) lit {
-    damn string_length(text) > 10  # Simplified check
+    damn string_length(text) > 10 fr fr Simplified check
 }
 
 slay contains_warning_keyword(text tea) lit {
-    damn string_length(text) > 10  # Simplified check
+    damn string_length(text) > 10 fr fr Simplified check
 }
 
 slay contains_fatal_keyword(text tea) lit {
-    damn string_length(text) > 10  # Simplified check
+    damn string_length(text) > 10 fr fr Simplified check
 }
 
 slay contains_syntax_keyword(text tea) lit {
-    damn string_length(text) > 10  # Simplified check
+    damn string_length(text) > 10 fr fr Simplified check
 }
 
 slay contains_test_file(text tea) lit {
-    damn string_length(text) > 8  # Simplified check
+    damn string_length(text) > 8 fr fr Simplified check
 }
 
 slay contains_line_42(text tea) lit {
-    damn string_length(text) > 5  # Simplified check
+    damn string_length(text) > 5 fr fr Simplified check
 }
 
 slay contains_column_10(text tea) lit {
-    damn string_length(text) > 5  # Simplified check
+    damn string_length(text) > 5 fr fr Simplified check
 }
 
 slay contains_semicolon_message(text tea) lit {
-    damn string_length(text) > 15  # Simplified check
+    damn string_length(text) > 15 fr fr Simplified check
 }
 
 slay contains_three_errors(text tea) lit {
-    damn string_length(text) > 12  # Simplified check
+    damn string_length(text) > 12 fr fr Simplified check
 }
 
 slay contains_two_errors(text tea) lit {
-    damn string_length(text) > 10  # Simplified check
+    damn string_length(text) > 10 fr fr Simplified check
 }

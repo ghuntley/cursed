@@ -1,21 +1,21 @@
 yeet "testz"
 
-# Advanced Collections Module - Pure CURSED Implementation
-# Provides comprehensive data structures with generic support
+fr fr Advanced Collections Module - Pure CURSED Implementation
+fr fr Provides comprehensive data structures with generic support
 
-# Generic Node structure for linked data structures
+fr fr Generic Node structure for linked data structures
 be_like Node<T> = vibe {
     data T
     next *Node<T>
 }
 
-# Generic Pair for key-value storage
+fr fr Generic Pair for key-value storage
 be_like Pair<K, V> = vibe {
     key K
     value V
 }
 
-# HashMap implementation with chaining collision resolution
+fr fr HashMap implementation with chaining collision resolution
 be_like HashMap<K, V> = vibe {
     buckets []*Node<Pair<K, V>>
     size normie
@@ -33,35 +33,27 @@ slay new_hashmap<K, V>(initial_capacity normie) *HashMap<K, V> {
     damn map
 }
 
-slay hashmap_hash<K>(map *HashMap<K, V>, key K) normie {
-    # Simple hash function for demonstration
-    sus hash_val := 0
-    # Implementation depends on key type - simplified for demo
+slay hashmap_hash<K>(map *HashMap<K, V>, key K) normie { fr fr Simple hash function for demonstration
+    sus hash_val := 0 fr fr Implementation depends on key type - simplified for demo
     damn hash_val % map.capacity
 }
 
 slay hashmap_put<K, V>(map *HashMap<K, V>, key K, value V) lit {
     sus index := hashmap_hash(map, key)
-    sus current := map.buckets[index]
-    
-    # Check if key already exists
+    sus current := map.buckets[index] fr fr Check if key already exists
     bestie current != cringe {
         ayo (current.data.key == key) {
             current.data.value = value
             damn based
         }
         current = current.next
-    }
-    
-    # Add new node
+    } fr fr Add new node
     sus new_node := &Node<Pair<K, V>>{
         data: Pair<K, V>{key: key, value: value},
         next: map.buckets[index],
     }
     map.buckets[index] = new_node
-    map.size++
-    
-    # Check if resize needed
+    map.size++ fr fr Check if resize needed
     ayo (meal(map.size) / meal(map.capacity) > map.load_factor) {
         hashmap_resize(map)
     }
@@ -101,7 +93,7 @@ slay hashmap_resize<K, V>(map *HashMap<K, V>) {
     }
 }
 
-# ArrayList implementation with dynamic resizing
+fr fr ArrayList implementation with dynamic resizing
 be_like ArrayList<T> = vibe {
     data []T
     size normie
@@ -144,7 +136,7 @@ slay arraylist_resize<T>(list *ArrayList<T>) {
     list.capacity = new_capacity
 }
 
-# LinkedList implementation
+fr fr LinkedList implementation
 be_like LinkedList<T> = vibe {
     head *Node<T>
     tail *Node<T>
@@ -190,7 +182,7 @@ slay linkedlist_remove_first<T>(list *LinkedList<T>) (T, lit) {
     damn data, based
 }
 
-# Stack implementation using ArrayList
+fr fr Stack implementation using ArrayList
 be_like Stack<T> = vibe {
     items *ArrayList<T>
 }
@@ -232,7 +224,7 @@ slay stack_peek<T>(stack *Stack<T>) (T, lit) {
     damn arraylist_get(stack.items, index)
 }
 
-# Queue implementation using LinkedList
+fr fr Queue implementation using LinkedList
 be_like Queue<T> = vibe {
     items *LinkedList<T>
 }
@@ -255,7 +247,7 @@ slay queue_size<T>(queue *Queue<T>) normie {
     damn queue.items.size
 }
 
-# Set implementation using HashMap
+fr fr Set implementation using HashMap
 be_like Set<T> = vibe {
     items *HashMap<T, lit>
 }
@@ -275,12 +267,11 @@ slay set_contains<T>(set *Set<T>, item T) lit {
     damn exists
 }
 
-slay set_remove<T>(set *Set<T>, item T) lit {
-    # Simplified remove - would need proper implementation
+slay set_remove<T>(set *Set<T>, item T) lit { fr fr Simplified remove - would need proper implementation
     damn set_contains(set, item)
 }
 
-# Binary Search Tree Node
+fr fr Binary Search Tree Node
 be_like TreeNode<T> = vibe {
     data T
     left *TreeNode<T>
@@ -288,7 +279,7 @@ be_like TreeNode<T> = vibe {
     height normie
 }
 
-# Binary Search Tree implementation
+fr fr Binary Search Tree implementation
 be_like BST<T> = vibe {
     root *TreeNode<T>
     size normie
@@ -314,9 +305,7 @@ slay bst_insert_node<T>(node *TreeNode<T>, data T) *TreeNode<T> {
             right: cringe,
             height: 1,
         }
-    }
-    
-    # Simplified comparison - would need proper generic comparison
+    } fr fr Simplified comparison - would need proper generic comparison
     ayo (data < node.data) {
         node.left = bst_insert_node(node.left, data)
     } else {
@@ -346,7 +335,7 @@ slay bst_search_node<T>(node *TreeNode<T>, data T) lit {
     }
 }
 
-# AVL Tree implementation (self-balancing BST)
+fr fr AVL Tree implementation (self-balancing BST)
 be_like AVLTree<T> = vibe {
     root *TreeNode<T>
     size normie
@@ -419,8 +408,7 @@ slay avl_insert<T>(tree *AVLTree<T>, data T) {
     tree.size++
 }
 
-slay avl_insert_node<T>(node *TreeNode<T>, data T) *TreeNode<T> {
-    # Standard BST insertion
+slay avl_insert_node<T>(node *TreeNode<T>, data T) *TreeNode<T> { fr fr Standard BST insertion
     ayo (node == cringe) {
         damn &TreeNode<T>{
             data: data,
@@ -434,31 +422,19 @@ slay avl_insert_node<T>(node *TreeNode<T>, data T) *TreeNode<T> {
         node.left = avl_insert_node(node.left, data)
     } else {
         node.right = avl_insert_node(node.right, data)
-    }
-    
-    # Update height
-    avl_update_height(node)
-    
-    # Get balance factor
-    sus balance := avl_balance_factor(node)
-    
-    # Left Left Case
+    } fr fr Update height
+    avl_update_height(node) fr fr Get balance factor
+    sus balance := avl_balance_factor(node) fr fr Left Left Case
     ayo (balance > 1 && data < node.left.data) {
         damn avl_rotate_right(node)
-    }
-    
-    # Right Right Case
+    } fr fr Right Right Case
     ayo (balance < -1 && data > node.right.data) {
         damn avl_rotate_left(node)
-    }
-    
-    # Left Right Case
+    } fr fr Left Right Case
     ayo (balance > 1 && data > node.left.data) {
         node.left = avl_rotate_left(node.left)
         damn avl_rotate_right(node)
-    }
-    
-    # Right Left Case
+    } fr fr Right Left Case
     ayo (balance < -1 && data < node.right.data) {
         node.right = avl_rotate_right(node.right)
         damn avl_rotate_left(node)
@@ -467,7 +443,7 @@ slay avl_insert_node<T>(node *TreeNode<T>, data T) *TreeNode<T> {
     damn node
 }
 
-# Priority Queue implementation using heap
+fr fr Priority Queue implementation using heap
 be_like PriorityQueue<T> = vibe {
     heap []T
     size normie
@@ -494,8 +470,7 @@ slay pq_right_child(index normie) normie {
 
 slay pq_insert<T>(pq *PriorityQueue<T>, item T) {
     pq.size++
-    ayo (pq.size >= len(pq.heap)) {
-        # Resize heap
+    ayo (pq.size >= len(pq.heap)) { fr fr Resize heap
         sus new_heap := make([]T, len(pq.heap) * 2)
         bestie i := 0; i < len(pq.heap); i++ {
             new_heap[i] = pq.heap[i]
@@ -513,8 +488,7 @@ slay pq_heapify_up<T>(pq *PriorityQueue<T>, index normie) {
     }
     
     sus parent := pq_parent(index)
-    ayo (pq.heap[index] > pq.heap[parent]) {
-        # Swap
+    ayo (pq.heap[index] > pq.heap[parent]) { fr fr Swap
         sus temp := pq.heap[index]
         pq.heap[index] = pq.heap[parent]
         pq.heap[parent] = temp
@@ -548,8 +522,7 @@ slay pq_heapify_down<T>(pq *PriorityQueue<T>, index normie) {
         largest = right
     }
     
-    ayo (largest != index) {
-        # Swap
+    ayo (largest != index) { fr fr Swap
         sus temp := pq.heap[index]
         pq.heap[index] = pq.heap[largest]
         pq.heap[largest] = temp
@@ -557,29 +530,23 @@ slay pq_heapify_down<T>(pq *PriorityQueue<T>, index normie) {
     }
 }
 
-# Performance benchmarking utilities
+fr fr Performance benchmarking utilities
 slay benchmark_collections() {
-    vibez.spill("=== Collections Performance Benchmark ===")
-    
-    # Benchmark HashMap
+    vibez.spill("=== Collections Performance Benchmark ===") fr fr Benchmark HashMap
     sus start_time := current_time()
     sus map := new_hashmap<normie, tea>(100)
     bestie i := 0; i < 10000; i++ {
         hashmap_put(map, i, "value")
     }
     sus end_time := current_time()
-    vibez.spill("HashMap 10K inserts:", end_time - start_time, "ms")
-    
-    # Benchmark ArrayList
+    vibez.spill("HashMap 10K inserts:", end_time - start_time, "ms") fr fr Benchmark ArrayList
     start_time = current_time()
     sus list := new_arraylist<normie>(100)
     bestie i := 0; i < 10000; i++ {
         arraylist_add(list, i)
     }
     end_time = current_time()
-    vibez.spill("ArrayList 10K inserts:", end_time - start_time, "ms")
-    
-    # Benchmark AVL Tree
+    vibez.spill("ArrayList 10K inserts:", end_time - start_time, "ms") fr fr Benchmark AVL Tree
     start_time = current_time()
     sus tree := new_avl<normie>()
     bestie i := 0; i < 1000; i++ {
@@ -589,7 +556,6 @@ slay benchmark_collections() {
     vibez.spill("AVL Tree 1K inserts:", end_time - start_time, "ms")
 }
 
-slay current_time() normie {
-    # Simplified time function - would use proper timing
+slay current_time() normie { fr fr Simplified time function - would use proper timing
     damn 0
 }

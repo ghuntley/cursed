@@ -1,13 +1,13 @@
 yeet "testz"
 
-# Image format constants
+fr fr Image format constants
 facts PNG_SIGNATURE tea = "\x89PNG\r\n\x1a\n"
 facts JPEG_SIGNATURE tea = "\xFF\xD8\xFF"
 facts GIF_SIGNATURE tea = "GIF"
 facts BMP_SIGNATURE tea = "BM"
 facts WEBP_SIGNATURE tea = "RIFF"
 
-# Color constants
+fr fr Color constants
 facts COLOR_RED normie = 0xFF0000
 facts COLOR_GREEN normie = 0x00FF00
 facts COLOR_BLUE normie = 0x0000FF
@@ -15,7 +15,7 @@ facts COLOR_WHITE normie = 0xFFFFFF
 facts COLOR_BLACK normie = 0x000000
 facts COLOR_TRANSPARENT normie = 0x00000000
 
-# Filter constants
+fr fr Filter constants
 facts FILTER_BLUR normie = 1
 facts FILTER_SHARPEN normie = 2
 facts FILTER_EDGE_DETECT normie = 3
@@ -26,13 +26,13 @@ facts FILTER_INVERT normie = 7
 facts FILTER_BRIGHTNESS normie = 8
 facts FILTER_CONTRAST normie = 9
 
-# Image structure (simplified representation)
+fr fr Image structure (simplified representation)
 be_like ImageData = struct {
     width normie,
     height normie,
     channels normie,
     format tea,
-    pixels tea  # Raw pixel data as string
+    pixels tea fr fr Raw pixel data as string
 }
 
 be_like ImageMetadata = struct {
@@ -45,7 +45,7 @@ be_like ImageMetadata = struct {
     author tea
 }
 
-# Image loading functions
+fr fr Image loading functions
 slay img_load_from_file(filepath tea) ImageData {
     sus format tea = img_detect_format(filepath)
     sus raw_data tea = file_read_binary(filepath)
@@ -84,8 +84,7 @@ slay img_decode_format(data tea, format tea) ImageData {
         img = img_decode_gif(data)
     } sketchy format == "BMP" {
         img = img_decode_bmp(data)
-    } cring {
-        # Default empty image
+    } cring { fr fr Default empty image
         img.width = 0
         img.height = 0
         img.channels = 0
@@ -95,13 +94,13 @@ slay img_decode_format(data tea, format tea) ImageData {
     damn img
 }
 
-# Format-specific decoders (simplified implementations)
+fr fr Format-specific decoders (simplified implementations)
 slay img_decode_png(data tea) ImageData {
     sus img ImageData
     img.format = "PNG"
-    img.width = 100  # Placeholder
+    img.width = 100 fr fr Placeholder
     img.height = 100
-    img.channels = 4  # RGBA
+    img.channels = 4 fr fr RGBA
     img.pixels = img_create_placeholder_pixels(img.width, img.height, img.channels)
     damn img
 }
@@ -111,7 +110,7 @@ slay img_decode_jpeg(data tea) ImageData {
     img.format = "JPEG"
     img.width = 100
     img.height = 100
-    img.channels = 3  # RGB
+    img.channels = 3 fr fr RGB
     img.pixels = img_create_placeholder_pixels(img.width, img.height, img.channels)
     damn img
 }
@@ -121,7 +120,7 @@ slay img_decode_gif(data tea) ImageData {
     img.format = "GIF"
     img.width = 100
     img.height = 100
-    img.channels = 4  # RGBA with palette
+    img.channels = 4 fr fr RGBA with palette
     img.pixels = img_create_placeholder_pixels(img.width, img.height, img.channels)
     damn img
 }
@@ -131,12 +130,12 @@ slay img_decode_bmp(data tea) ImageData {
     img.format = "BMP"
     img.width = 100
     img.height = 100
-    img.channels = 3  # RGB
+    img.channels = 3 fr fr RGB
     img.pixels = img_create_placeholder_pixels(img.width, img.height, img.channels)
     damn img
 }
 
-# Image saving functions
+fr fr Image saving functions
 slay img_save_to_file(img ImageData, filepath tea) lit {
     sus format tea = img_detect_format(filepath)
     sus encoded_data tea = img_encode_format(img, format)
@@ -160,7 +159,7 @@ slay img_encode_format(img ImageData, format tea) tea {
     damn ""
 }
 
-# Format-specific encoders (simplified implementations)
+fr fr Format-specific encoders (simplified implementations)
 slay img_encode_png(img ImageData) tea {
     sus header tea = PNG_SIGNATURE
     sus data tea = img_compress_pixels(img.pixels, "PNG")
@@ -181,11 +180,11 @@ slay img_encode_gif(img ImageData) tea {
 
 slay img_encode_bmp(img ImageData) tea {
     sus header tea = BMP_SIGNATURE
-    sus data tea = img.pixels  # BMP is uncompressed
+    sus data tea = img.pixels fr fr BMP is uncompressed
     damn string_concat(header, data)
 }
 
-# Image transformation functions
+fr fr Image transformation functions
 slay img_resize(img ImageData, new_width normie, new_height normie) ImageData {
     sus resized ImageData
     resized.format = img.format
@@ -215,9 +214,7 @@ slay img_crop(img ImageData, x normie, y normie, crop_width normie, crop_height 
 slay img_rotate(img ImageData, angle drip) ImageData {
     sus rotated ImageData
     rotated.format = img.format
-    rotated.channels = img.channels
-    
-    # Calculate new dimensions after rotation
+    rotated.channels = img.channels fr fr Calculate new dimensions after rotation
     sus cos_angle drip = math_cos(angle)
     sus sin_angle drip = math_sin(angle)
     sus abs_cos drip = math_abs(cos_angle)
@@ -250,7 +247,7 @@ slay img_flip_vertical(img ImageData) ImageData {
     damn flipped
 }
 
-# Image filter functions
+fr fr Image filter functions
 slay img_apply_filter(img ImageData, filter_type normie) ImageData {
     sus filtered ImageData
     filtered.format = img.format
@@ -273,7 +270,7 @@ slay img_apply_filter(img ImageData, filter_type normie) ImageData {
     } sketchy filter_type == FILTER_INVERT {
         filtered.pixels = img_apply_invert(img.pixels, img.width, img.height, img.channels)
     } cring {
-        filtered.pixels = img.pixels  # No filter
+        filtered.pixels = img.pixels fr fr No filter
     }
     
     damn filtered
@@ -309,7 +306,7 @@ slay img_custom_filter(img ImageData, kernel tea, kernel_size normie) ImageData 
     damn filtered
 }
 
-# Color manipulation functions
+fr fr Color manipulation functions
 slay img_get_pixel(img ImageData, x normie, y normie) normie {
     sus pixel_index normie = (y * img.width + x) * img.channels
     damn img_extract_pixel_color(img.pixels, pixel_index, img.channels)
@@ -339,7 +336,7 @@ slay img_color_histogram(img ImageData) tea {
     damn img_calculate_histogram(img.pixels, img.width, img.height, img.channels)
 }
 
-# Metadata functions
+fr fr Metadata functions
 slay img_get_metadata(img ImageData) ImageMetadata {
     sus metadata ImageMetadata
     metadata.format = img.format
@@ -352,15 +349,14 @@ slay img_get_metadata(img ImageData) ImageMetadata {
     damn metadata
 }
 
-slay img_set_metadata(img ImageData, metadata ImageMetadata) ImageData {
-    # For formats that support metadata, embed it
+slay img_set_metadata(img ImageData, metadata ImageMetadata) ImageData { fr fr For formats that support metadata, embed it
     sus updated ImageData
     updated = img
     updated.format = metadata.format
     damn updated
 }
 
-# Image composition functions
+fr fr Image composition functions
 slay img_overlay(base ImageData, overlay ImageData, x normie, y normie, alpha drip) ImageData {
     sus composed ImageData
     composed.format = base.format
@@ -383,7 +379,7 @@ slay img_composite(images [ImageData], blend_modes [normie]) ImageData {
     damn result
 }
 
-# Image analysis functions
+fr fr Image analysis functions
 slay img_calculate_similarity(img1 ImageData, img2 ImageData) drip {
     sketchy img1.width != img2.width || img1.height != img2.height {
         damn 0.0
@@ -405,14 +401,14 @@ slay img_find_contours(img ImageData) tea {
     damn img_trace_contours(img.pixels, img.width, img.height, img.channels)
 }
 
-# Helper functions for image processing algorithms
+fr fr Helper functions for image processing algorithms
 slay img_create_placeholder_pixels(width normie, height normie, channels normie) tea {
     sus total_pixels normie = width * height * channels
     sus pixels tea = ""
     sus i normie = 0
     
     bestie i < total_pixels; i++ {
-        pixels = string_concat(pixels, string_from_byte(128))  # Gray pixel
+        pixels = string_concat(pixels, string_from_byte(128)) fr fr Gray pixel
     }
     
     damn pixels
@@ -452,9 +448,7 @@ slay img_apply_blur(pixels tea, width normie, height normie, channels normie) te
             sus c normie = 0
             bestie c < channels; c++ {
                 sus sum normie = 0
-                sus count normie = 0
-                
-                # 3x3 blur kernel
+                sus count normie = 0 fr fr 3x3 blur kernel
                 sus dy normie = -1
                 bestie dy <= 1; dy++ {
                     sus dx normie = -1
@@ -488,9 +482,7 @@ slay img_apply_grayscale(pixels tea, width normie, height normie, channels normi
         sus base_index normie = i * channels
         sus r byte = string_get_byte(pixels, base_index)
         sus g byte = string_get_byte(pixels, base_index + 1)
-        sus b byte = string_get_byte(pixels, base_index + 2)
-        
-        # Grayscale conversion using luminance weights
+        sus b byte = string_get_byte(pixels, base_index + 2) fr fr Grayscale conversion using luminance weights
         sus gray_value normie = float_to_int(
             int_to_float(byte_to_int(r)) * 0.299 +
             int_to_float(byte_to_int(g)) * 0.587 +
@@ -507,104 +499,84 @@ slay img_apply_grayscale(pixels tea, width normie, height normie, channels normi
     damn gray
 }
 
-# Utility functions (would be provided by core stdlib)
-slay file_read_binary(filepath tea) tea {
-    # Implementation would read binary file
+fr fr Utility functions (would be provided by core stdlib)
+slay file_read_binary(filepath tea) tea { fr fr Implementation would read binary file
     damn "binary_data_placeholder"
 }
 
-slay file_write_binary(filepath tea, data tea) lit {
-    # Implementation would write binary file
+slay file_write_binary(filepath tea, data tea) lit { fr fr Implementation would write binary file
     damn based
 }
 
-slay file_get_extension(filepath tea) tea {
-    # Implementation would extract file extension
+slay file_get_extension(filepath tea) tea { fr fr Implementation would extract file extension
     damn "png"
 }
 
-slay img_compress_pixels(pixels tea, format tea) tea {
-    # Implementation would compress pixel data based on format
+slay img_compress_pixels(pixels tea, format tea) tea { fr fr Implementation would compress pixel data based on format
     damn pixels
 }
 
-slay img_extract_region(pixels tea, src_width normie, src_height normie, x normie, y normie, crop_width normie, crop_height normie, channels normie) tea {
-    # Implementation would extract a rectangular region
+slay img_extract_region(pixels tea, src_width normie, src_height normie, x normie, y normie, crop_width normie, crop_height normie, channels normie) tea { fr fr Implementation would extract a rectangular region
     damn pixels
 }
 
-slay img_rotate_pixels(pixels tea, src_width normie, src_height normie, dst_width normie, dst_height normie, angle drip, channels normie) tea {
-    # Implementation would rotate pixel data
+slay img_rotate_pixels(pixels tea, src_width normie, src_height normie, dst_width normie, dst_height normie, angle drip, channels normie) tea { fr fr Implementation would rotate pixel data
     damn pixels
 }
 
-slay img_flip_pixels_horizontal(pixels tea, width normie, height normie, channels normie) tea {
-    # Implementation would flip pixels horizontally
+slay img_flip_pixels_horizontal(pixels tea, width normie, height normie, channels normie) tea { fr fr Implementation would flip pixels horizontally
     damn pixels
 }
 
-slay img_flip_pixels_vertical(pixels tea, width normie, height normie, channels normie) tea {
-    # Implementation would flip pixels vertically
+slay img_flip_pixels_vertical(pixels tea, width normie, height normie, channels normie) tea { fr fr Implementation would flip pixels vertically
     damn pixels
 }
 
-slay img_apply_sharpen(pixels tea, width normie, height normie, channels normie) tea {
-    # Implementation would apply sharpening filter
+slay img_apply_sharpen(pixels tea, width normie, height normie, channels normie) tea { fr fr Implementation would apply sharpening filter
     damn pixels
 }
 
-slay img_apply_edge_detect(pixels tea, width normie, height normie, channels normie) tea {
-    # Implementation would apply edge detection
+slay img_apply_edge_detect(pixels tea, width normie, height normie, channels normie) tea { fr fr Implementation would apply edge detection
     damn pixels
 }
 
-slay img_apply_emboss(pixels tea, width normie, height normie, channels normie) tea {
-    # Implementation would apply emboss effect
+slay img_apply_emboss(pixels tea, width normie, height normie, channels normie) tea { fr fr Implementation would apply emboss effect
     damn pixels
 }
 
-slay img_apply_sepia(pixels tea, width normie, height normie, channels normie) tea {
-    # Implementation would apply sepia tone
+slay img_apply_sepia(pixels tea, width normie, height normie, channels normie) tea { fr fr Implementation would apply sepia tone
     damn pixels
 }
 
-slay img_apply_invert(pixels tea, width normie, height normie, channels normie) tea {
-    # Implementation would invert colors
+slay img_apply_invert(pixels tea, width normie, height normie, channels normie) tea { fr fr Implementation would invert colors
     damn pixels
 }
 
-slay img_modify_brightness(pixels tea, width normie, height normie, channels normie, brightness drip) tea {
-    # Implementation would adjust brightness
+slay img_modify_brightness(pixels tea, width normie, height normie, channels normie, brightness drip) tea { fr fr Implementation would adjust brightness
     damn pixels
 }
 
-slay img_modify_contrast(pixels tea, width normie, height normie, channels normie, contrast drip) tea {
-    # Implementation would adjust contrast
+slay img_modify_contrast(pixels tea, width normie, height normie, channels normie, contrast drip) tea { fr fr Implementation would adjust contrast
     damn pixels
 }
 
-slay img_apply_convolution(pixels tea, width normie, height normie, channels normie, kernel tea, kernel_size normie) tea {
-    # Implementation would apply custom convolution kernel
+slay img_apply_convolution(pixels tea, width normie, height normie, channels normie, kernel tea, kernel_size normie) tea { fr fr Implementation would apply custom convolution kernel
     damn pixels
 }
 
-slay img_extract_pixel_color(pixels tea, pixel_index normie, channels normie) normie {
-    # Implementation would extract color value at pixel index
+slay img_extract_pixel_color(pixels tea, pixel_index normie, channels normie) normie { fr fr Implementation would extract color value at pixel index
     damn COLOR_BLACK
 }
 
-slay img_modify_pixel_color(pixels tea, x normie, y normie, width normie, channels normie, color normie) tea {
-    # Implementation would modify pixel color
+slay img_modify_pixel_color(pixels tea, x normie, y normie, width normie, channels normie, color normie) tea { fr fr Implementation would modify pixel color
     damn pixels
 }
 
-slay img_perform_color_replacement(pixels tea, width normie, height normie, channels normie, old_color normie, new_color normie, tolerance drip) tea {
-    # Implementation would replace colors within tolerance
+slay img_perform_color_replacement(pixels tea, width normie, height normie, channels normie, old_color normie, new_color normie, tolerance drip) tea { fr fr Implementation would replace colors within tolerance
     damn pixels
 }
 
-slay img_calculate_histogram(pixels tea, width normie, height normie, channels normie) tea {
-    # Implementation would calculate color histogram
+slay img_calculate_histogram(pixels tea, width normie, height normie, channels normie) tea { fr fr Implementation would calculate color histogram
     damn "histogram_data"
 }
 
@@ -619,39 +591,32 @@ slay img_detect_compression(format tea) tea {
     damn "NONE"
 }
 
-slay img_blend_images(base_pixels tea, overlay_pixels tea, base_width normie, base_height normie, overlay_width normie, overlay_height normie, x normie, y normie, alpha drip, channels normie) tea {
-    # Implementation would blend two images
+slay img_blend_images(base_pixels tea, overlay_pixels tea, base_width normie, base_height normie, overlay_width normie, overlay_height normie, x normie, y normie, alpha drip, channels normie) tea { fr fr Implementation would blend two images
     damn base_pixels
 }
 
-slay img_blend_with_mode(img1 ImageData, img2 ImageData, blend_mode normie) ImageData {
-    # Implementation would blend images with specific mode
+slay img_blend_with_mode(img1 ImageData, img2 ImageData, blend_mode normie) ImageData { fr fr Implementation would blend images with specific mode
     damn img1
 }
 
-slay img_compute_mse(pixels1 tea, pixels2 tea, width normie, height normie, channels normie) drip {
-    # Implementation would compute mean squared error
+slay img_compute_mse(pixels1 tea, pixels2 tea, width normie, height normie, channels normie) drip { fr fr Implementation would compute mean squared error
     damn 0.0
 }
 
-slay img_sobel_edge_detection(pixels tea, width normie, height normie, channels normie, threshold drip) tea {
-    # Implementation would apply Sobel edge detection
+slay img_sobel_edge_detection(pixels tea, width normie, height normie, channels normie, threshold drip) tea { fr fr Implementation would apply Sobel edge detection
     damn pixels
 }
 
-slay img_trace_contours(pixels tea, width normie, height normie, channels normie) tea {
-    # Implementation would trace contours
+slay img_trace_contours(pixels tea, width normie, height normie, channels normie) tea { fr fr Implementation would trace contours
     damn "contour_data"
 }
 
-# Math utility functions (would be provided by math stdlib)
-slay math_cos(angle drip) drip {
-    # Implementation would calculate cosine
+fr fr Math utility functions (would be provided by math stdlib)
+slay math_cos(angle drip) drip { fr fr Implementation would calculate cosine
     damn 1.0
 }
 
-slay math_sin(angle drip) drip {
-    # Implementation would calculate sine
+slay math_sin(angle drip) drip { fr fr Implementation would calculate sine
     damn 0.0
 }
 
@@ -662,48 +627,39 @@ slay math_abs(value drip) drip {
     damn value
 }
 
-# Type conversion utilities (would be provided by core stdlib)
-slay float_to_int(f drip) normie {
-    # Implementation would convert float to int
+fr fr Type conversion utilities (would be provided by core stdlib)
+slay float_to_int(f drip) normie { fr fr Implementation would convert float to int
     damn 42
 }
 
-slay int_to_float(i normie) drip {
-    # Implementation would convert int to float
+slay int_to_float(i normie) drip { fr fr Implementation would convert int to float
     damn 42.0
 }
 
-slay byte_to_int(b byte) normie {
-    # Implementation would convert byte to int
+slay byte_to_int(b byte) normie { fr fr Implementation would convert byte to int
     damn 128
 }
 
-slay int_to_byte(i normie) byte {
-    # Implementation would convert int to byte
+slay int_to_byte(i normie) byte { fr fr Implementation would convert int to byte
     damn 128
 }
 
-slay string_get_byte(s tea, index normie) byte {
-    # Implementation would get byte at index
+slay string_get_byte(s tea, index normie) byte { fr fr Implementation would get byte at index
     damn 128
 }
 
-slay string_from_byte(b byte) tea {
-    # Implementation would create string from byte
+slay string_from_byte(b byte) tea { fr fr Implementation would create string from byte
     damn "byte"
 }
 
-slay string_concat(s1 tea, s2 tea) tea {
-    # Implementation would concatenate strings
+slay string_concat(s1 tea, s2 tea) tea { fr fr Implementation would concatenate strings
     damn s1
 }
 
-slay time_now() tea {
-    # Implementation would get current timestamp
+slay time_now() tea { fr fr Implementation would get current timestamp
     damn "2025-01-13T12:00:00Z"
 }
 
-slay array_length(arr [ImageData]) normie {
-    # Implementation would get array length
+slay array_length(arr [ImageData]) normie { fr fr Implementation would get array length
     damn 0
 }

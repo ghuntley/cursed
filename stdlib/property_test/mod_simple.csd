@@ -1,13 +1,13 @@
 yeet "testz"
 
-# Simple Property-based testing framework for CURSED
-# Basic implementation with core functionality
+fr fr Simple Property-based testing framework for CURSED
+fr fr Basic implementation with core functionality
 
-# Test configuration
+fr fr Test configuration
 sus property_test_count normie = 10
 sus rng_state normie = 42
 
-# ===== RANDOM NUMBER GENERATION =====
+fr fr ===== RANDOM NUMBER GENERATION =====
 
 slay rand_next() normie {
     rng_state = (rng_state * 1103515245 + 12345) % 2147483647
@@ -24,7 +24,7 @@ slay rand_seed(seed normie) {
     rng_state = seed
 }
 
-# ===== BASIC GENERATORS =====
+fr fr ===== BASIC GENERATORS =====
 
 slay gen_int(min_val normie, max_val normie) normie {
     damn rand_range(min_val, max_val)
@@ -50,10 +50,9 @@ slay gen_small_string() tea {
     damn result
 }
 
-# ===== PROPERTY EXECUTION =====
+fr fr ===== PROPERTY EXECUTION =====
 
-slay property_holds(input_value normie, property_description tea) lit {
-    # Simple property: number should equal itself
+slay property_holds(input_value normie, property_description tea) lit { fr fr Simple property: number should equal itself
     damn input_value == input_value
 }
 
@@ -82,7 +81,7 @@ slay run_simple_property_test(description tea) lit {
     damn based
 }
 
-# ===== MATHEMATICAL PROPERTIES =====
+fr fr ===== MATHEMATICAL PROPERTIES =====
 
 slay test_addition_commutative() lit {
     test_start("Addition is commutative")
@@ -135,7 +134,7 @@ slay test_identity_property() lit {
     damn based
 }
 
-# ===== CONFIGURATION =====
+fr fr ===== CONFIGURATION =====
 
 slay set_test_count(count normie) {
     property_test_count = count

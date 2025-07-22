@@ -2,12 +2,12 @@ yeet "testz"
 yeet "web"
 yeet "json"
 
-# Comprehensive Web Framework Test Suite
-# Tests HTTP/1.1, HTTP/2, WebSocket, authentication, and performance features
+fr fr Comprehensive Web Framework Test Suite
+fr fr Tests HTTP/1.1, HTTP/2, WebSocket, authentication, and performance features
 
 test_start("Web Framework Comprehensive Test Suite")
 
-# Test HTTP Server Creation
+fr fr Test HTTP Server Creation
 test_start("HTTP Server Creation")
 sus server_port normie = 8080
 sus server_id tea = create_server(server_port)
@@ -19,7 +19,7 @@ assert_eq_int(http2_server_id, 2)
 sus hybrid_server_id normie = web_server_create_hybrid(8081, based, based)
 assert_eq_int(hybrid_server_id, 3)
 
-# Test server with invalid port
+fr fr Test server with invalid port
 sus invalid_server tea = create_server(-1)
 assert_eq_string(invalid_server, "")
 
@@ -28,7 +28,7 @@ assert_eq_int(invalid_http2, -1)
 
 vibez.spill("✅ HTTP Server Creation tests passed")
 
-# Test Enhanced Routing System
+fr fr Test Enhanced Routing System
 test_start("Enhanced Routing System")
 sus route_success lit = add_route(server_id, "/api/users", handle_users)
 assert_true(route_success)
@@ -42,13 +42,13 @@ assert_true(pattern_success)
 sus group_id normie = web_route_group_create(1, "/api/v1", "auth_middleware")
 assert_eq_int(group_id, 1)
 
-# Test invalid routing
+fr fr Test invalid routing
 sus invalid_route lit = add_route("", "/test", handle_test)
 assert_false(invalid_route)
 
 vibez.spill("✅ Enhanced Routing System tests passed")
 
-# Test HTTP Client with Connection Pooling
+fr fr Test HTTP Client with Connection Pooling
 test_start("HTTP Client with Connection Pooling")
 sus client_id normie = http_client_create()
 assert_eq_int(client_id, 1)
@@ -69,14 +69,14 @@ assert_true(string_contains(put_response, "\"status\": 200"))
 sus delete_response tea = http_delete("https://api.example.com/users/123")
 assert_true(string_contains(delete_response, "\"status\": 204"))
 
-# Test async requests
+fr fr Test async requests
 sus async_request_id normie = http_request_async(client_id, HTTP_GET, "https://api.example.com/data", "{}", "")
 assert_eq_int(async_request_id, 1)
 
 sus async_response tea = http_request_wait(async_request_id)
 assert_true(string_contains(async_response, "async response"))
 
-# Test invalid client operations
+fr fr Test invalid client operations
 sus invalid_client normie = http_client_create_with_pool(-1, 30)
 assert_eq_int(invalid_client, -1)
 
@@ -85,7 +85,7 @@ assert_eq_string(empty_get, "")
 
 vibez.spill("✅ HTTP Client with Connection Pooling tests passed")
 
-# Test HTTP/2 Client Support
+fr fr Test HTTP/2 Client Support
 test_start("HTTP/2 Client Support")
 sus http2_client_id normie = http2_client_create(based)
 assert_eq_int(http2_client_id, 1)
@@ -99,7 +99,7 @@ assert_true(send_success)
 sus stream_data tea = http2_stream_receive_data(stream_id)
 assert_eq_string(stream_data, "stream_data")
 
-# Test invalid HTTP/2 operations
+fr fr Test invalid HTTP/2 operations
 sus invalid_stream normie = http2_stream_create(-1, "https://example.com", "{}")
 assert_eq_int(invalid_stream, -1)
 
@@ -108,7 +108,7 @@ assert_false(invalid_send)
 
 vibez.spill("✅ HTTP/2 Client Support tests passed")
 
-# Test Enhanced WebSocket Support
+fr fr Test Enhanced WebSocket Support
 test_start("Enhanced WebSocket Support")
 sus ws_server tea = websocket_server_create(9001, "/websocket")
 assert_eq_string(ws_server, "ws_server_9001")
@@ -119,7 +119,7 @@ assert_eq_string(ws_connection, "ws_client_12345")
 sus ws_upgrade_connection tea = websocket_upgrade("GET /websocket HTTP/1.1")
 assert_eq_string(ws_upgrade_connection, "ws_connection_001")
 
-# Test WebSocket messaging
+fr fr Test WebSocket messaging
 sus text_send_success lit = websocket_send_text(ws_connection, "Hello WebSocket!")
 assert_true(text_send_success)
 
@@ -138,9 +138,9 @@ assert_true(string_contains(frame_data, "\"type\": \"text\""))
 assert_true(string_contains(frame_data, "\"payload\": \"Hello WebSocket!\""))
 
 sus connection_state smol = websocket_get_state(ws_connection)
-assert_eq_int(connection_state, 1)  # 1 = open
+assert_eq_int(connection_state, 1) fr fr 1 = open
 
-# Test WebSocket room management
+fr fr Test WebSocket room management
 sus room_id tea = websocket_room_create("chat_room")
 assert_eq_string(room_id, "room_chat_room")
 
@@ -153,11 +153,11 @@ assert_true(broadcast_success)
 sus leave_success lit = websocket_room_leave(ws_connection, room_id)
 assert_true(leave_success)
 
-# Test WebSocket connection close
+fr fr Test WebSocket connection close
 sus close_success lit = websocket_close_connection(ws_connection, 1000, "Normal closure")
 assert_true(close_success)
 
-# Test invalid WebSocket operations
+fr fr Test invalid WebSocket operations
 sus invalid_ws_server tea = websocket_server_create(-1, "/ws")
 assert_eq_string(invalid_ws_server, "")
 
@@ -169,24 +169,24 @@ assert_eq_int(invalid_state, -1)
 
 vibez.spill("✅ Enhanced WebSocket Support tests passed")
 
-# Test Authentication and Authorization System
+fr fr Test Authentication and Authorization System
 test_start("Authentication and Authorization System")
 
-# Test Basic Authentication
+fr fr Test Basic Authentication
 sus basic_auth tea = auth_basic_create("admin", "password123")
 assert_true(string_contains(basic_auth, "Basic "))
 
 sus basic_auth_empty tea = auth_basic_create("", "password")
 assert_eq_string(basic_auth_empty, "")
 
-# Test Bearer Token Authentication
+fr fr Test Bearer Token Authentication
 sus bearer_token tea = auth_bearer_create("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9")
 assert_eq_string(bearer_token, "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9")
 
 sus bearer_empty tea = auth_bearer_create("")
 assert_eq_string(bearer_empty, "")
 
-# Test JWT Token Creation and Verification
+fr fr Test JWT Token Creation and Verification
 sus jwt_payload tea = "{\"sub\": \"user123\", \"exp\": 1234567890}"
 sus jwt_secret tea = "my_secret_key"
 sus jwt_token tea = auth_jwt_create(jwt_payload, jwt_secret, "HS256")
@@ -199,14 +199,14 @@ assert_true(jwt_verify_success)
 sus jwt_decoded tea = auth_jwt_decode(jwt_token)
 assert_true(string_contains(jwt_decoded, "\"sub\": \"user123\""))
 
-# Test invalid JWT operations
+fr fr Test invalid JWT operations
 sus invalid_jwt tea = auth_jwt_create("", jwt_secret, "HS256")
 assert_eq_string(invalid_jwt, "")
 
 sus invalid_verify lit = auth_jwt_verify("", jwt_secret)
 assert_false(invalid_verify)
 
-# Test Session Management
+fr fr Test Session Management
 sus session_id tea = auth_session_create("user123", 3600)
 assert_true(string_length(session_id) > 0)
 
@@ -216,7 +216,7 @@ assert_true(session_valid)
 sus session_destroy_success lit = auth_session_destroy(session_id)
 assert_true(session_destroy_success)
 
-# Test invalid session operations
+fr fr Test invalid session operations
 sus invalid_session tea = auth_session_create("", 3600)
 assert_eq_string(invalid_session, "")
 
@@ -225,7 +225,7 @@ assert_false(invalid_session_validate)
 
 vibez.spill("✅ Authentication and Authorization System tests passed")
 
-# Test Enhanced Template Engine
+fr fr Test Enhanced Template Engine
 test_start("Enhanced Template Engine")
 sus template_engine_id normie = template_engine_create()
 assert_eq_int(template_engine_id, 1)
@@ -242,7 +242,7 @@ assert_true(string_contains(rendered_html, context_json))
 sus helper_success lit = template_add_helper(template_engine_id, "format_date", "format_date_function")
 assert_true(helper_success)
 
-# Test invalid template operations
+fr fr Test invalid template operations
 sus invalid_compile normie = template_compile(-1, template_content, 1)
 assert_eq_int(invalid_compile, -1)
 
@@ -251,7 +251,7 @@ assert_eq_string(invalid_render, "")
 
 vibez.spill("✅ Enhanced Template Engine tests passed")
 
-# Test Performance Optimizations and Monitoring
+fr fr Test Performance Optimizations and Monitoring
 test_start("Performance Optimizations and Monitoring")
 sus monitor_id normie = web_performance_monitor_create(1)
 assert_eq_int(monitor_id, 1)
@@ -270,10 +270,10 @@ sus cache_set_success lit = web_cache_set(cache_id, "cache_key_1", cache_respons
 assert_true(cache_set_success)
 
 sus cached_data tea = web_cache_get(cache_id, "cache_key_1")
-# Note: Cache might be empty in test, so we just test the function doesn't crash
+fr fr Note: Cache might be empty in test, so we just test the function doesn't crash
 assert_true(string_length(cached_data) >= 0)
 
-# Test invalid performance operations
+fr fr Test invalid performance operations
 sus invalid_monitor normie = web_performance_monitor_create(-1)
 assert_eq_int(invalid_monitor, -1)
 
@@ -282,7 +282,7 @@ assert_eq_int(invalid_cache, -1)
 
 vibez.spill("✅ Performance Optimizations and Monitoring tests passed")
 
-# Test Rate Limiting and Security
+fr fr Test Rate Limiting and Security
 test_start("Rate Limiting and Security")
 sus rate_limiter_id normie = web_rate_limiter_create(100, 10)
 assert_eq_int(rate_limiter_id, 1)
@@ -303,7 +303,7 @@ sus body_schema tea = "{\"type\": \"object\", \"properties\": {\"name\": {\"type
 sus body_validation lit = web_request_validate_body(validator_id, request_body, body_schema)
 assert_true(body_validation)
 
-# Test invalid rate limiting operations
+fr fr Test invalid rate limiting operations
 sus invalid_limiter normie = web_rate_limiter_create(-1, 10)
 assert_eq_int(invalid_limiter, -1)
 
@@ -315,7 +315,7 @@ assert_false(invalid_header_validation)
 
 vibez.spill("✅ Rate Limiting and Security tests passed")
 
-# Test Legacy WebSocket Support (Backward Compatibility)
+fr fr Test Legacy WebSocket Support (Backward Compatibility)
 test_start("Legacy WebSocket Support")
 sus legacy_upgrade_success lit = web_websocket_upgrade(1, 1)
 assert_true(legacy_upgrade_success)
@@ -329,7 +329,7 @@ assert_eq_string(legacy_message, "websocket_message")
 sus legacy_close_success lit = web_websocket_close(1)
 assert_true(legacy_close_success)
 
-# Test invalid legacy operations
+fr fr Test invalid legacy operations
 sus invalid_legacy_upgrade lit = web_websocket_upgrade(-1, 1)
 assert_false(invalid_legacy_upgrade)
 
@@ -338,10 +338,10 @@ assert_false(invalid_legacy_send)
 
 vibez.spill("✅ Legacy WebSocket Support tests passed")
 
-# Test Complex Integration Scenarios
+fr fr Test Complex Integration Scenarios
 test_start("Complex Integration Scenarios")
 
-# Scenario 1: Complete HTTP API with authentication
+fr fr Scenario 1: Complete HTTP API with authentication
 sus api_server tea = create_server(3000)
 sus auth_route lit = add_route_with_method(api_server, HTTP_POST, "/auth/login", handle_login)
 assert_true(auth_route)
@@ -353,7 +353,7 @@ sus user_credentials tea = "{\"username\": \"testuser\", \"password\": \"testpas
 sus login_response tea = http_post("http://localhost:3000/auth/login", user_credentials, "{\"Content-Type\": \"application/json\"}")
 assert_true(string_contains(login_response, "\"status\": 201"))
 
-# Scenario 2: WebSocket chat room with authentication
+fr fr Scenario 2: WebSocket chat room with authentication
 sus chat_server tea = websocket_server_create(3001, "/chat")
 sus chat_connection tea = websocket_client_connect("ws://localhost:3001/chat", "chat", "{\"Authorization\": \"Bearer token123\"}")
 sus chat_room tea = websocket_room_create("general")
@@ -367,7 +367,7 @@ assert_true(send_chat)
 sus broadcast_chat lit = websocket_room_broadcast(chat_room, "Welcome to the chat!")
 assert_true(broadcast_chat)
 
-# Scenario 3: Template rendering with caching
+fr fr Scenario 3: Template rendering with caching
 sus template_engine normie = template_engine_create()
 sus page_template tea = "<html><head><title>{{title}}</title></head><body><h1>{{heading}}</h1><div>{{content}}</div></body></html>"
 sus compiled_template normie = template_compile(template_engine, page_template, 1)
@@ -381,10 +381,10 @@ assert_true(cache_page)
 
 vibez.spill("✅ Complex Integration Scenarios tests passed")
 
-# Performance and Load Testing
+fr fr Performance and Load Testing
 test_start("Performance and Load Testing")
 
-# Simulate multiple concurrent requests
+fr fr Simulate multiple concurrent requests
 sus concurrent_requests normie = 0
 bestie i := 0; i < 100; i++ {
     sus response tea = http_get("https://api.example.com/test")
@@ -393,9 +393,9 @@ bestie i := 0; i < 100; i++ {
     }
 }
 
-assert_true(concurrent_requests >= 90)  # At least 90% success rate
+assert_true(concurrent_requests >= 90) fr fr At least 90% success rate
 
-# Test connection pool efficiency
+fr fr Test connection pool efficiency
 sus pool_client_test normie = http_client_create_with_pool(20, 15)
 sus pool_requests normie = 0
 bestie j := 0; j < 50; j++ {
@@ -405,9 +405,9 @@ bestie j := 0; j < 50; j++ {
     }
 }
 
-assert_true(pool_requests >= 45)  # High success rate with connection pooling
+assert_true(pool_requests >= 45) fr fr High success rate with connection pooling
 
-# Test WebSocket concurrent connections
+fr fr Test WebSocket concurrent connections
 sus ws_connections normie = 0
 bestie k := 0; k < 10; k++ {
     sus ws_conn tea = websocket_client_connect("ws://localhost:9001/test", "test", "{}")
@@ -416,7 +416,7 @@ bestie k := 0; k < 10; k++ {
     }
 }
 
-assert_true(ws_connections >= 8)  # Most WebSocket connections successful
+assert_true(ws_connections >= 8) fr fr Most WebSocket connections successful
 
 vibez.spill("✅ Performance and Load Testing tests passed")
 

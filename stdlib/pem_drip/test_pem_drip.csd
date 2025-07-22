@@ -1,10 +1,10 @@
-# PEM Encoding/Decoding Module Tests
-# Comprehensive test suite for PEM operations
+fr fr PEM Encoding/Decoding Module Tests
+fr fr Comprehensive test suite for PEM operations
 
 yeet "testz"
 yeet "pem_drip"
 
-# Test PEM encode/decode basic functionality
+fr fr Test PEM encode/decode basic functionality
 slay test_pem_encode_decode() {
     test_start("PEM encode/decode basic")
     
@@ -15,7 +15,7 @@ slay test_pem_encode_decode() {
     assert_eq_string(decoded, test_data)
 }
 
-# Test PEM validation
+fr fr Test PEM validation
 slay test_pem_validate() {
     test_start("PEM validation")
     
@@ -26,7 +26,7 @@ slay test_pem_validate() {
     assert_false(pem_validate(invalid_pem))
 }
 
-# Test PEM parsing
+fr fr Test PEM parsing
 slay test_pem_parse() {
     test_start("PEM parsing")
     
@@ -39,7 +39,7 @@ slay test_pem_parse() {
     assert_eq_string(label, "CERTIFICATE")
 }
 
-# Test PEM block creation and extraction
+fr fr Test PEM block creation and extraction
 slay test_pem_block_operations() {
     test_start("PEM block operations")
     
@@ -58,7 +58,7 @@ slay test_pem_block_operations() {
     assert_eq_string(extracted_body, test_body)
 }
 
-# Test PEM encode block
+fr fr Test PEM encode block
 slay test_pem_encode_block() {
     test_start("PEM encode block")
     
@@ -69,19 +69,17 @@ slay test_pem_encode_block() {
     assert_true(starts_with(encoded, "-----BEGIN TEST-----"))
 }
 
-# Test PEM decode block
+fr fr Test PEM decode block
 slay test_pem_decode_block() {
     test_start("PEM decode block")
     
     sus test_data tea = "Test"
     sus test_block tea = pem_block_create("TEST", "", "VGVzdA==")
-    sus decoded tea = pem_decode_block(test_block)
-    
-    # Base64 decode should work
+    sus decoded tea = pem_decode_block(test_block) fr fr Base64 decode should work
     assert_true(len(decoded) > 0)
 }
 
-# Test certificate extraction
+fr fr Test certificate extraction
 slay test_pem_extract_cert() {
     test_start("PEM certificate extraction")
     
@@ -91,7 +89,7 @@ slay test_pem_extract_cert() {
     assert_true(len(cert_data) > 0)
 }
 
-# Test private key extraction
+fr fr Test private key extraction
 slay test_pem_extract_key() {
     test_start("PEM private key extraction")
     
@@ -101,7 +99,7 @@ slay test_pem_extract_key() {
     assert_true(len(key_data) > 0)
 }
 
-# Test public key extraction
+fr fr Test public key extraction
 slay test_pem_extract_pubkey() {
     test_start("PEM public key extraction")
     
@@ -111,7 +109,7 @@ slay test_pem_extract_pubkey() {
     assert_true(len(pubkey_data) > 0)
 }
 
-# Test CSR extraction
+fr fr Test CSR extraction
 slay test_pem_extract_csr() {
     test_start("PEM CSR extraction")
     
@@ -121,7 +119,7 @@ slay test_pem_extract_csr() {
     assert_true(len(csr_data) > 0)
 }
 
-# Test CRL extraction
+fr fr Test CRL extraction
 slay test_pem_extract_crl() {
     test_start("PEM CRL extraction")
     
@@ -131,7 +129,7 @@ slay test_pem_extract_crl() {
     assert_true(len(crl_data) > 0)
 }
 
-# Test base64 encoding/decoding
+fr fr Test base64 encoding/decoding
 slay test_base64_operations() {
     test_start("Base64 operations")
     
@@ -142,7 +140,7 @@ slay test_base64_operations() {
     assert_eq_string(decoded, test_data)
 }
 
-# Test multiple PEM blocks
+fr fr Test multiple PEM blocks
 slay test_multiple_pem_blocks() {
     test_start("Multiple PEM blocks")
     
@@ -158,7 +156,7 @@ slay test_multiple_pem_blocks() {
     assert_true(len(key_data) > 0)
 }
 
-# Test PEM with headers
+fr fr Test PEM with headers
 slay test_pem_with_headers() {
     test_start("PEM with headers")
     
@@ -171,38 +169,30 @@ slay test_pem_with_headers() {
     assert_true(len(headers) > 0)
 }
 
-# Test edge cases
+fr fr Test edge cases
 slay test_edge_cases() {
-    test_start("Edge cases")
-    
-    # Empty data
+    test_start("Edge cases") fr fr Empty data
     sus empty_result tea = pem_decode("")
-    assert_eq_string(empty_result, "")
-    
-    # Invalid PEM
+    assert_eq_string(empty_result, "") fr fr Invalid PEM
     sus invalid_data tea = "Not a PEM block"
-    assert_false(pem_validate(invalid_data))
-    
-    # Empty label
+    assert_false(pem_validate(invalid_data)) fr fr Empty label
     sus empty_label_pem tea = pem_encode("test", "")
     assert_true(pem_validate(empty_label_pem))
 }
 
-# Test PEM line length compliance
+fr fr Test PEM line length compliance
 slay test_pem_line_length() {
     test_start("PEM line length compliance")
     
     sus long_data tea = "This is a very long string that should be wrapped at 64 characters per line when encoded in PEM format according to RFC specifications"
     sus encoded tea = pem_encode(long_data, "TEST")
     
-    assert_true(pem_validate(encoded))
-    
-    # Check that lines are properly wrapped
+    assert_true(pem_validate(encoded)) fr fr Check that lines are properly wrapped
     sus lines tea = split(encoded, "\n")
-    assert_true(len(lines) > 3) # Should have header, body lines, and footer
+    assert_true(len(lines) > 3) fr fr Should have header, body lines, and footer
 }
 
-# Test RFC 7468 compliance
+fr fr Test RFC 7468 compliance
 slay test_rfc_compliance() {
     test_start("RFC 7468 compliance")
     
@@ -216,11 +206,9 @@ slay test_rfc_compliance() {
     assert_eq_string(decoded, test_data)
 }
 
-# Test security considerations
+fr fr Test security considerations
 slay test_security_features() {
-    test_start("Security features")
-    
-    # Test that padding is handled correctly
+    test_start("Security features") fr fr Test that padding is handled correctly
     sus test_data1 tea = "A"
     sus test_data2 tea = "AB"
     sus test_data3 tea = "ABC"
@@ -238,7 +226,7 @@ slay test_security_features() {
     assert_eq_string(decoded3, test_data3)
 }
 
-# Test performance with large data
+fr fr Test performance with large data
 slay test_large_data_performance() {
     test_start("Large data performance")
     
@@ -254,28 +242,20 @@ slay test_large_data_performance() {
     assert_true(pem_validate(encoded))
 }
 
-# Test utility functions
+fr fr Test utility functions
 slay test_utility_functions() {
-    test_start("Utility functions")
-    
-    # Test starts_with
+    test_start("Utility functions") fr fr Test starts_with
     assert_true(starts_with("Hello World", "Hello"))
-    assert_false(starts_with("Hello World", "World"))
-    
-    # Test contains
+    assert_false(starts_with("Hello World", "World")) fr fr Test contains
     assert_true(contains("Hello World", "World"))
-    assert_false(contains("Hello World", "xyz"))
-    
-    # Test trim
+    assert_false(contains("Hello World", "xyz")) fr fr Test trim
     sus trimmed tea = trim("  test  ")
-    assert_eq_string(trimmed, "test")
-    
-    # Test split
+    assert_eq_string(trimmed, "test") fr fr Test split
     sus parts tea = split("a,b,c", ",")
     assert_true(len(parts) > 0)
 }
 
-# Main test runner
+fr fr Main test runner
 slay main() {
     vibez.spill("Running PEM Drip Module Tests...")
     
@@ -303,7 +283,7 @@ slay main() {
     print_test_summary()
 }
 
-# Helper functions for tests
+fr fr Helper functions for tests
 slay starts_with(str tea, prefix tea) lit {
     sis len(str) < len(prefix) {
         damn cap
@@ -338,9 +318,7 @@ slay split(str tea, delimiter tea) tea {
         } else {
             current = current + ch_str
         }
-    }
-    
-    # Add final part
+    } fr fr Add final part
     sis len(current) > 0 {
         sis len(result) == 0 {
             result = current

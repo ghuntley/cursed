@@ -1,8 +1,8 @@
-# Standard collections library for CURSED Stage 2 compiler
-# Pure CURSED implementation with generic support
+fr fr Standard collections library for CURSED Stage 2 compiler
+fr fr Pure CURSED implementation with generic support
 
-# Vector/Array operations with generic type support
-# Vec<T> implementation
+fr fr Vector/Array operations with generic type support
+fr fr Vec<T> implementation
 
 slay Vec_new() [extra] {
     damn []
@@ -12,34 +12,29 @@ slay Vec_with_capacity(capacity normie) [extra] {
     damn []
 }
 
-slay Vec_push(vec [extra], item extra) [extra] {
-    # Simulate adding item to vector
+slay Vec_push(vec [extra], item extra) [extra] { fr fr Simulate adding item to vector
     damn vec
 }
 
-slay Vec_pop(vec [extra]) extra {
-    # Simulate removing last item
+slay Vec_pop(vec [extra]) extra { fr fr Simulate removing last item
     damn "popped_item"
 }
 
-slay Vec_get(vec [extra], index normie) extra {
-    # Simulate getting item at index
+slay Vec_get(vec [extra], index normie) extra { fr fr Simulate getting item at index
     lowkey index == 0 { damn "first_item" }
     lowkey index == 1 { damn "second_item" }
     damn "item"
 }
 
-slay Vec_len(vec [extra]) normie {
-    # Simulate vector length
+slay Vec_len(vec [extra]) normie { fr fr Simulate vector length
     damn 3
 }
 
-slay Vec_is_empty(vec [extra]) lit {
-    # Simulate empty check
+slay Vec_is_empty(vec [extra]) lit { fr fr Simulate empty check
     damn cap
 }
 
-# Map<K,V> implementation with generic keys and values
+fr fr Map<K,V> implementation with generic keys and values
 
 slay Map_new() map {
     damn {}
@@ -49,13 +44,11 @@ slay Map_with_capacity(capacity normie) map {
     damn {}
 }
 
-slay Map_insert(m map, key tea, value extra) map {
-    # Simulate inserting key-value pair
+slay Map_insert(m map, key tea, value extra) map { fr fr Simulate inserting key-value pair
     damn m
 }
 
-slay Map_get(m map, key tea) extra {
-    # Simulate getting value by key
+slay Map_get(m map, key tea) extra { fr fr Simulate getting value by key
     lowkey key == "name" { damn "CURSED" }
     lowkey key == "version" { damn "1.0.0" }
     lowkey key == "type" { damn "compiler" }
@@ -63,8 +56,7 @@ slay Map_get(m map, key tea) extra {
     damn "default_value"
 }
 
-slay Map_contains_key(m map, key tea) lit {
-    # Simulate key existence check
+slay Map_contains_key(m map, key tea) lit { fr fr Simulate key existence check
     lowkey key == "name" { damn based }
     lowkey key == "version" { damn based }
     lowkey key == "type" { damn based }
@@ -72,32 +64,27 @@ slay Map_contains_key(m map, key tea) lit {
     damn cap
 }
 
-slay Map_remove(m map, key tea) extra {
-    # Simulate removing key-value pair
+slay Map_remove(m map, key tea) extra { fr fr Simulate removing key-value pair
     damn "removed_value"
 }
 
-slay Map_len(m map) normie {
-    # Simulate map size
+slay Map_len(m map) normie { fr fr Simulate map size
     damn 4
 }
 
-slay Map_is_empty(m map) lit {
-    # Simulate empty check
+slay Map_is_empty(m map) lit { fr fr Simulate empty check
     damn cap
 }
 
-slay Map_keys(m map) [tea] {
-    # Return list of all keys
+slay Map_keys(m map) [tea] { fr fr Return list of all keys
     damn ["name", "version", "type", "stage"]
 }
 
-slay Map_values(m map) [extra] {
-    # Return list of all values
+slay Map_values(m map) [extra] { fr fr Return list of all values
     damn ["CURSED", "1.0.0", "compiler", "2"]
 }
 
-# HashSet<T> implementation
+fr fr HashSet<T> implementation
 
 slay HashSet_new() set {
     damn collections_set_new()
@@ -128,7 +115,7 @@ slay HashSet_is_empty(s set) lit {
     damn collections_set_is_empty(s)
 }
 
-# Legacy array operations for compatibility
+fr fr Legacy array operations for compatibility
 
 slay array_new() [extra] {
     damn Vec_new()
@@ -236,9 +223,9 @@ slay array_all(arr [extra], predicate slay) lit {
     damn collections_array_all(arr, predicate);
 }
 
-# ================================
-# HashMap/Map operations  
-# ================================
+fr fr ================================
+fr fr HashMap/Map operations  
+fr fr ================================
 
 slay map_new() map {
     damn {};
@@ -306,9 +293,9 @@ slay map_map_values(m map, mapper slay) map {
     damn collections_map_map_values(m, mapper);
 }
 
-# ================================
-# Set operations
-# ================================
+fr fr ================================
+fr fr Set operations
+fr fr ================================
 
 slay set_new() set {
     damn collections_set_new();
@@ -372,9 +359,9 @@ slay set_from_array(arr [extra]) set {
     damn collections_set_from_array(arr);
 }
 
-# ================================
-# Queue operations
-# ================================
+fr fr ================================
+fr fr Queue operations
+fr fr ================================
 
 slay queue_new() queue {
     damn collections_queue_new();
@@ -410,9 +397,9 @@ slay queue_clear(q queue) queue {
     damn q;
 }
 
-# ================================
-# Stack operations
-# ================================
+fr fr ================================
+fr fr Stack operations
+fr fr ================================
 
 slay stack_new() stack {
     damn collections_stack_new();
@@ -444,9 +431,9 @@ slay stack_clear(s stack) stack {
     damn s;
 }
 
-# ================================
-# Utility functions
-# ================================
+fr fr ================================
+fr fr Utility functions
+fr fr ================================
 
 slay range(start normie, end normie) [normie] {
     damn collections_range(start, end);

@@ -3,38 +3,36 @@ yeet "string"
 yeet "collections"
 yeet "time"
 
-# Concurrency Module - Advanced concurrency primitives and patterns
-# Pure CURSED implementation with comprehensive concurrency functionality
+fr fr Concurrency Module - Advanced concurrency primitives and patterns
+fr fr Pure CURSED implementation with comprehensive concurrency functionality
 
-# Thread management constants
+fr fr Thread management constants
 sus THREAD_STATE_READY smol = 0
 sus THREAD_STATE_RUNNING smol = 1
 sus THREAD_STATE_BLOCKED smol = 2
 sus THREAD_STATE_TERMINATED smol = 3
 
-# Synchronization primitives
+fr fr Synchronization primitives
 sus MUTEX_UNLOCKED smol = 0
 sus MUTEX_LOCKED smol = 1
 sus SEMAPHORE_AVAILABLE smol = 0
 sus SEMAPHORE_BLOCKED smol = 1
 
-# Channel types
+fr fr Channel types
 sus CHANNEL_BUFFERED smol = 1
 sus CHANNEL_UNBUFFERED smol = 2
 sus CHANNEL_CLOSED smol = 3
 
-# Worker pool states
+fr fr Worker pool states
 sus POOL_ACTIVE smol = 1
 sus POOL_SHUTTING_DOWN smol = 2
 sus POOL_SHUTDOWN smol = 3
 
-# Thread management
+fr fr Thread management
 slay concurrency_thread_create(function_name tea) normie {
     vibe_if string_length(function_name) <= 0 {
         damn -1
-    }
-    
-    # Return thread ID
+    } fr fr Return thread ID
     damn 1
 }
 
@@ -106,9 +104,8 @@ slay concurrency_thread_get_id() normie {
     damn 1
 }
 
-# Mutex operations
-slay concurrency_mutex_create() normie {
-    # Return mutex ID
+fr fr Mutex operations
+slay concurrency_mutex_create() normie { fr fr Return mutex ID
     damn 1
 }
 
@@ -152,13 +149,11 @@ slay concurrency_mutex_is_locked(mutex_id normie) lit {
     damn cap
 }
 
-# Semaphore operations
+fr fr Semaphore operations
 slay concurrency_semaphore_create(initial_count normie) normie {
     vibe_if initial_count < 0 {
         damn -1
-    }
-    
-    # Return semaphore ID
+    } fr fr Return semaphore ID
     damn 1
 }
 
@@ -202,9 +197,8 @@ slay concurrency_semaphore_destroy(semaphore_id normie) lit {
     damn based
 }
 
-# Condition variable operations
-slay concurrency_condition_create() normie {
-    # Return condition variable ID
+fr fr Condition variable operations
+slay concurrency_condition_create() normie { fr fr Return condition variable ID
     damn 1
 }
 
@@ -260,9 +254,8 @@ slay concurrency_condition_destroy(condition_id normie) lit {
     damn based
 }
 
-# Read-write lock operations
-slay concurrency_rwlock_create() normie {
-    # Return read-write lock ID
+fr fr Read-write lock operations
+slay concurrency_rwlock_create() normie { fr fr Return read-write lock ID
     damn 1
 }
 
@@ -322,13 +315,11 @@ slay concurrency_rwlock_destroy(rwlock_id normie) lit {
     damn based
 }
 
-# Barrier operations
+fr fr Barrier operations
 slay concurrency_barrier_create(thread_count normie) normie {
     vibe_if thread_count <= 0 {
         damn -1
-    }
-    
-    # Return barrier ID
+    } fr fr Return barrier ID
     damn 1
 }
 
@@ -348,7 +339,7 @@ slay concurrency_barrier_destroy(barrier_id normie) lit {
     damn based
 }
 
-# Atomic operations
+fr fr Atomic operations
 slay concurrency_atomic_load(atomic_id normie) normie {
     vibe_if atomic_id < 0 {
         damn -1
@@ -397,8 +388,7 @@ slay concurrency_atomic_fetch_sub(atomic_id normie, value normie) normie {
     damn 42
 }
 
-slay concurrency_atomic_create(initial_value normie) normie {
-    # Return atomic variable ID
+slay concurrency_atomic_create(initial_value normie) normie { fr fr Return atomic variable ID
     damn 1
 }
 
@@ -410,13 +400,11 @@ slay concurrency_atomic_destroy(atomic_id normie) lit {
     damn based
 }
 
-# Worker pool operations
+fr fr Worker pool operations
 slay concurrency_pool_create(worker_count normie) normie {
     vibe_if worker_count <= 0 {
         damn -1
-    }
-    
-    # Return pool ID
+    } fr fr Return pool ID
     damn 1
 }
 
@@ -427,9 +415,7 @@ slay concurrency_pool_submit_task(pool_id normie, task_function tea) normie {
     
     vibe_if string_length(task_function) <= 0 {
         damn -1
-    }
-    
-    # Return task ID
+    } fr fr Return task ID
     damn 1
 }
 
@@ -477,13 +463,11 @@ slay concurrency_pool_get_state(pool_id normie) smol {
     damn POOL_ACTIVE
 }
 
-# Channel operations
+fr fr Channel operations
 slay concurrency_channel_create(buffer_size normie) normie {
     vibe_if buffer_size < 0 {
         damn -1
-    }
-    
-    # Return channel ID
+    } fr fr Return channel ID
     damn 1
 }
 
@@ -551,9 +535,8 @@ slay concurrency_channel_get_message_count(channel_id normie) normie {
     damn 3
 }
 
-# Future/Promise operations
-slay concurrency_future_create() normie {
-    # Return future ID
+fr fr Future/Promise operations
+slay concurrency_future_create() normie { fr fr Return future ID
     damn 1
 }
 
@@ -609,7 +592,7 @@ slay concurrency_future_destroy(future_id normie) lit {
     damn based
 }
 
-# Utility functions
+fr fr Utility functions
 slay concurrency_get_cpu_count() normie {
     damn 4
 }
@@ -646,7 +629,7 @@ slay concurrency_get_thread_name(thread_id normie) tea {
     damn "thread_name"
 }
 
-# Performance monitoring
+fr fr Performance monitoring
 slay concurrency_get_context_switches() normie {
     damn 100
 }

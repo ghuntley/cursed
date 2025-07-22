@@ -1,21 +1,21 @@
-# PEM Encoding/Decoding Module for CURSED
-# RFC 7468 compliant PEM implementation
+fr fr PEM Encoding/Decoding Module for CURSED
+fr fr RFC 7468 compliant PEM implementation
 
-# Base64 encoding table
+fr fr Base64 encoding table
 sus base64_chars tea = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
-# PEM constants
+fr fr PEM constants
 sus pem_begin_marker tea = "-----BEGIN "
 sus pem_end_marker tea = "-----END "
 sus pem_marker_suffix tea = "-----"
 sus pem_line_length normie = 64
 
-# PEM block structure
+fr fr PEM block structure
 slay pem_block_create(label tea, headers tea, body tea) tea {
     damn "PEM_BLOCK:" + label + ":" + headers + ":" + body
 }
 
-# Base64 encoding helper
+fr fr Base64 encoding helper
 slay base64_encode(data tea) tea {
     sus result tea = ""
     sus padding normie = 3 - (len(data) % 3)
@@ -36,9 +36,7 @@ slay base64_encode(data tea) tea {
         result = result + char(base64_chars[(combined >> 12) & 63])
         result = result + char(base64_chars[(combined >> 6) & 63])
         result = result + char(base64_chars[combined & 63])
-    }
-    
-    # Add padding
+    } fr fr Add padding
     bestie i := 0; i < padding; i++ {
         result = result[0:len(result)-1] + "="
     }
@@ -46,12 +44,10 @@ slay base64_encode(data tea) tea {
     damn result
 }
 
-# Base64 decoding helper
+fr fr Base64 decoding helper
 slay base64_decode(data tea) tea {
     sus result tea = ""
-    sus clean_data tea = ""
-    
-    # Remove whitespace and padding
+    sus clean_data tea = "" fr fr Remove whitespace and padding
     bestie i := 0; i < len(data); i++ {
         sus ch sip = data[i]
         sus ch_str tea = char(ch)
@@ -72,9 +68,7 @@ slay base64_decode(data tea) tea {
         sis is_valid {
             clean_data = clean_data + ch_str
         }
-    }
-    
-    # Process 4-character groups
+    } fr fr Process 4-character groups
     bestie i := 0; i < len(clean_data); i = i + 4 {
         sus c1 normie = get_base64_value(clean_data[i])
         sus c2 normie = get_base64_value(clean_data[i+1])
@@ -91,7 +85,7 @@ slay base64_decode(data tea) tea {
     damn result
 }
 
-# Get base64 character value
+fr fr Get base64 character value
 slay get_base64_value(ch sip) normie {
     sus ch_str tea = char(ch)
     bestie i := 0; i < len(base64_chars); i++ {
@@ -107,7 +101,7 @@ slay get_base64_value(ch sip) normie {
     damn 0
 }
 
-# PEM decode function
+fr fr PEM decode function
 slay pem_decode(data tea) tea {
     sus blocks tea = pem_parse(data)
     sus result tea = ""
@@ -121,12 +115,10 @@ slay pem_decode(data tea) tea {
     damn result
 }
 
-# PEM encode function
+fr fr PEM encode function
 slay pem_encode(data tea, label tea) tea {
     sus encoded_data tea = base64_encode(data)
-    sus result tea = pem_begin_marker + label + pem_marker_suffix + "\n"
-    
-    # Add base64 data with proper line wrapping
+    sus result tea = pem_begin_marker + label + pem_marker_suffix + "\n" fr fr Add base64 data with proper line wrapping
     bestie i := 0; i < len(encoded_data); i = i + pem_line_length {
         sus line_end normie = i + pem_line_length
         sis line_end > len(encoded_data) {
@@ -139,7 +131,7 @@ slay pem_encode(data tea, label tea) tea {
     damn result
 }
 
-# PEM parse function
+fr fr PEM parse function
 slay pem_parse(data tea) tea {
     sus blocks tea = ""
     sus lines tea = split(data, "\n")
@@ -181,7 +173,7 @@ slay pem_parse(data tea) tea {
     damn blocks
 }
 
-# PEM encode block function
+fr fr PEM encode block function
 slay pem_encode_block(block tea) tea {
     sus label tea = pem_get_label(block)
     sus headers tea = pem_get_headers(block)
@@ -191,9 +183,7 @@ slay pem_encode_block(block tea) tea {
     
     sis len(headers) > 0 {
         result = result + headers
-    }
-    
-    # Add base64 data with proper line wrapping
+    } fr fr Add base64 data with proper line wrapping
     bestie i := 0; i < len(body); i = i + pem_line_length {
         sus line_end normie = i + pem_line_length
         sis line_end > len(body) {
@@ -206,13 +196,13 @@ slay pem_encode_block(block tea) tea {
     damn result
 }
 
-# PEM decode block function
+fr fr PEM decode block function
 slay pem_decode_block(block tea) tea {
     sus body tea = pem_get_body(block)
     damn base64_decode(body)
 }
 
-# Extract certificate from PEM data
+fr fr Extract certificate from PEM data
 slay pem_extract_cert(data tea) tea {
     sus blocks tea = pem_parse(data)
     sus block_list tea = split(blocks, "|")
@@ -228,7 +218,7 @@ slay pem_extract_cert(data tea) tea {
     damn ""
 }
 
-# Extract private key from PEM data
+fr fr Extract private key from PEM data
 slay pem_extract_key(data tea) tea {
     sus blocks tea = pem_parse(data)
     sus block_list tea = split(blocks, "|")
@@ -244,7 +234,7 @@ slay pem_extract_key(data tea) tea {
     damn ""
 }
 
-# Extract public key from PEM data
+fr fr Extract public key from PEM data
 slay pem_extract_pubkey(data tea) tea {
     sus blocks tea = pem_parse(data)
     sus block_list tea = split(blocks, "|")
@@ -260,7 +250,7 @@ slay pem_extract_pubkey(data tea) tea {
     damn ""
 }
 
-# Extract certificate request from PEM data
+fr fr Extract certificate request from PEM data
 slay pem_extract_csr(data tea) tea {
     sus blocks tea = pem_parse(data)
     sus block_list tea = split(blocks, "|")
@@ -276,7 +266,7 @@ slay pem_extract_csr(data tea) tea {
     damn ""
 }
 
-# Extract certificate revocation list from PEM data
+fr fr Extract certificate revocation list from PEM data
 slay pem_extract_crl(data tea) tea {
     sus blocks tea = pem_parse(data)
     sus block_list tea = split(blocks, "|")
@@ -292,7 +282,7 @@ slay pem_extract_crl(data tea) tea {
     damn ""
 }
 
-# Validate PEM format
+fr fr Validate PEM format
 slay pem_validate(data tea) lit {
     sus lines tea = split(data, "\n")
     sus has_begin lit = cap
@@ -311,7 +301,7 @@ slay pem_validate(data tea) lit {
     damn has_begin && has_end
 }
 
-# Get block label
+fr fr Get block label
 slay pem_get_label(block tea) tea {
     sus parts tea = split(block, ":")
     sis len(parts) >= 2 {
@@ -320,7 +310,7 @@ slay pem_get_label(block tea) tea {
     damn ""
 }
 
-# Get block headers
+fr fr Get block headers
 slay pem_get_headers(block tea) tea {
     sus parts tea = split(block, ":")
     sis len(parts) >= 3 {
@@ -329,7 +319,7 @@ slay pem_get_headers(block tea) tea {
     damn ""
 }
 
-# Get block body
+fr fr Get block body
 slay pem_get_body(block tea) tea {
     sus parts tea = split(block, ":")
     sis len(parts) >= 4 {
@@ -338,7 +328,7 @@ slay pem_get_body(block tea) tea {
     damn ""
 }
 
-# Helper functions
+fr fr Helper functions
 slay starts_with(str tea, prefix tea) lit {
     sis len(str) < len(prefix) {
         damn cap
@@ -357,14 +347,10 @@ slay contains(str tea, substr tea) lit {
 
 slay trim(str tea) tea {
     sus start normie = 0
-    sus end normie = len(str)
-    
-    # Trim leading whitespace
+    sus end normie = len(str) fr fr Trim leading whitespace
     bestie start < len(str) && (str[start] == ' ' || str[start] == '\t' || str[start] == '\n' || str[start] == '\r') {
         start++
-    }
-    
-    # Trim trailing whitespace
+    } fr fr Trim trailing whitespace
     bestie end > start && (str[end-1] == ' ' || str[end-1] == '\t' || str[end-1] == '\n' || str[end-1] == '\r') {
         end--
     }
@@ -390,9 +376,7 @@ slay split(str tea, delimiter tea) tea {
         } else {
             current = current + ch_str
         }
-    }
-    
-    # Add final part
+    } fr fr Add final part
     sis len(current) > 0 {
         sis len(result) == 0 {
             result = current

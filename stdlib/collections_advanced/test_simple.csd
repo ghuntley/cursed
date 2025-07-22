@@ -1,16 +1,12 @@
 yeet "testz"
 
-# Simple test to verify basic collection functionality
+fr fr Simple test to verify basic collection functionality
 slay test_basic_collections() {
-    test_start("Basic Collections Test")
-    
-    # Test simple array-like operations
+    test_start("Basic Collections Test") fr fr Test simple array-like operations
     sus numbers := [1, 2, 3, 4, 5]
     assert_eq_int(numbers[0], 1)
     assert_eq_int(numbers[2], 3)
-    assert_eq_int(numbers[4], 5)
-    
-    # Test basic string operations
+    assert_eq_int(numbers[4], 5) fr fr Test basic string operations
     sus text := "collections"
     assert_eq_string(text, "collections")
     

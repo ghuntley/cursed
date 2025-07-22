@@ -1,31 +1,26 @@
-# CURSED Atomic Operations Performance Benchmark
-# Comprehensive performance testing and validation
+fr fr CURSED Atomic Operations Performance Benchmark
+fr fr Comprehensive performance testing and validation
 
 yeet "testz"
 yeet "atomic_drip"
 
-# Performance benchmark configuration
+fr fr Performance benchmark configuration
 sus BENCHMARK_ITERATIONS normie = 100000
 sus CONTENTION_THREADS normie = 4
 sus CACHE_LINE_SIZE normie = 64
 
-# Benchmark atomic load/store operations
+fr fr Benchmark atomic load/store operations
 slay benchmark_atomic_load_store() {
     test_start("benchmark_atomic_load_store")
     
     sus atomic *AtomicI32 = atomic_i32_new(42)
-    sus iterations normie = BENCHMARK_ITERATIONS
-    
-    # Benchmark atomic loads
+    sus iterations normie = BENCHMARK_ITERATIONS fr fr Benchmark atomic loads
     bestie i := 0; i < iterations; i++ {
-        sus value normie = atomic_load_i32(atomic)
-        # Prevent optimization
+        sus value normie = atomic_load_i32(atomic) fr fr Prevent optimization
         yo value != 42 {
             vibez.spill("Unexpected value:", value)
         }
-    }
-    
-    # Benchmark atomic stores
+    } fr fr Benchmark atomic stores
     bestie i := 0; i < iterations; i++ {
         atomic_store_i32(atomic, i)
     }
@@ -36,23 +31,19 @@ slay benchmark_atomic_load_store() {
     vibez.spill("✅ Load/store benchmark completed")
 }
 
-# Benchmark atomic compare-and-swap operations
+fr fr Benchmark atomic compare-and-swap operations
 slay benchmark_atomic_cas() {
     test_start("benchmark_atomic_cas")
     
     sus atomic *AtomicI32 = atomic_i32_new(0)
-    sus iterations normie = BENCHMARK_ITERATIONS / 10  # CAS is more expensive
-    sus successful_cas normie = 0
-    
-    # Benchmark strong CAS
+    sus iterations normie = BENCHMARK_ITERATIONS / 10 fr fr CAS is more expensive
+    sus successful_cas normie = 0 fr fr Benchmark strong CAS
     bestie i := 0; i < iterations; i++ {
         sus expected normie = atomic_load_i32(atomic)
         yo atomic_cas_i32(atomic, expected, expected + 1) {
             successful_cas++
         }
-    }
-    
-    # Benchmark weak CAS
+    } fr fr Benchmark weak CAS
     sus weak_successful normie = 0
     bestie i := 0; i < iterations; i++ {
         sus expected normie = atomic_load_i32(atomic)
@@ -69,73 +60,58 @@ slay benchmark_atomic_cas() {
     vibez.spill("Weak CAS success rate:", weak_successful * 100 / iterations, "%")
 }
 
-# Benchmark atomic arithmetic operations
+fr fr Benchmark atomic arithmetic operations
 slay benchmark_atomic_arithmetic() {
     test_start("benchmark_atomic_arithmetic")
     
     sus atomic *AtomicI32 = atomic_i32_new(0)
-    sus iterations normie = BENCHMARK_ITERATIONS
-    
-    # Benchmark atomic add
+    sus iterations normie = BENCHMARK_ITERATIONS fr fr Benchmark atomic add
     bestie i := 0; i < iterations / 4; i++ {
         atomic_add_i32(atomic, 1)
-    }
-    
-    # Benchmark atomic subtract
+    } fr fr Benchmark atomic subtract
     bestie i := 0; i < iterations / 4; i++ {
         atomic_sub_i32(atomic, 1)
-    }
-    
-    # Benchmark atomic increment
+    } fr fr Benchmark atomic increment
     bestie i := 0; i < iterations / 4; i++ {
         atomic_increment_i32(atomic)
-    }
-    
-    # Benchmark atomic decrement
+    } fr fr Benchmark atomic decrement
     bestie i := 0; i < iterations / 4; i++ {
         atomic_decrement_i32(atomic)
     }
     
     sus final normie = atomic_load_i32(atomic)
-    assert_eq_int(final, 0)  # Should be back to 0
+    assert_eq_int(final, 0) fr fr Should be back to 0
     
     vibez.spill("✅ Arithmetic benchmark completed")
 }
 
-# Benchmark atomic bitwise operations
+fr fr Benchmark atomic bitwise operations
 slay benchmark_atomic_bitwise() {
     test_start("benchmark_atomic_bitwise")
     
     sus atomic *AtomicI32 = atomic_i32_new(0xFFFFFFFF)
-    sus iterations normie = BENCHMARK_ITERATIONS / 10
-    
-    # Benchmark atomic AND
+    sus iterations normie = BENCHMARK_ITERATIONS / 10 fr fr Benchmark atomic AND
     bestie i := 0; i < iterations; i++ {
-        atomic_and_i32(atomic, 0xFFFFFFFE)  # Clear LSB
-        atomic_or_i32(atomic, 0x00000001)   # Set LSB
+        atomic_and_i32(atomic, 0xFFFFFFFE) fr fr Clear LSB
+        atomic_or_i32(atomic, 0x00000001) fr fr Set LSB
+    } fr fr Benchmark atomic XOR
+    bestie i := 0; i < iterations; i++ {
+        atomic_xor_i32(atomic, 0xAAAAAAAA) fr fr Toggle pattern
     }
     
-    # Benchmark atomic XOR
-    bestie i := 0; i < iterations; i++ {
-        atomic_xor_i32(atomic, 0xAAAAAAAA)  # Toggle pattern
-    }
-    
-    sus final normie = atomic_load_i32(atomic)
-    # Final value depends on whether iterations is even/odd
+    sus final normie = atomic_load_i32(atomic) fr fr Final value depends on whether iterations is even/odd
     assert_true(final == 0x55555555 || final == 0xFFFFFFFF)
     
     vibez.spill("✅ Bitwise benchmark completed")
 }
 
-# Benchmark atomic flag operations
+fr fr Benchmark atomic flag operations
 slay benchmark_atomic_flag() {
     test_start("benchmark_atomic_flag")
     
     sus flag *AtomicFlag = atomic_flag_new()
     sus iterations normie = BENCHMARK_ITERATIONS
-    sus test_and_set_count normie = 0
-    
-    # Benchmark test-and-set operations
+    sus test_and_set_count normie = 0 fr fr Benchmark test-and-set operations
     bestie i := 0; i < iterations; i++ {
         yo atomic_flag_test_and_set(flag) {
             test_and_set_count++
@@ -143,38 +119,30 @@ slay benchmark_atomic_flag() {
         atomic_flag_clear(flag)
     }
     
-    assert_true(test_and_set_count < iterations)  # Some should be already set
+    assert_true(test_and_set_count < iterations) fr fr Some should be already set
     
     vibez.spill("✅ Flag benchmark completed")
     vibez.spill("Test-and-set success rate:", test_and_set_count * 100 / iterations, "%")
 }
 
-# Benchmark memory ordering overhead
+fr fr Benchmark memory ordering overhead
 slay benchmark_memory_ordering() {
     test_start("benchmark_memory_ordering")
     
     sus atomic *AtomicI32 = atomic_i32_new(0)
-    sus iterations normie = BENCHMARK_ITERATIONS
-    
-    # Benchmark relaxed ordering (fastest)
+    sus iterations normie = BENCHMARK_ITERATIONS fr fr Benchmark relaxed ordering (fastest)
     bestie i := 0; i < iterations / 4; i++ {
         atomic_store_i32_ordered(atomic, i, MEMORY_ORDER_RELAXED)
         sus value normie = atomic_load_i32_ordered(atomic, MEMORY_ORDER_RELAXED)
-    }
-    
-    # Benchmark acquire-release ordering
+    } fr fr Benchmark acquire-release ordering
     bestie i := 0; i < iterations / 4; i++ {
         atomic_store_i32_ordered(atomic, i, MEMORY_ORDER_RELEASE)
         sus value normie = atomic_load_i32_ordered(atomic, MEMORY_ORDER_ACQUIRE)
-    }
-    
-    # Benchmark sequential consistency (strongest)
+    } fr fr Benchmark sequential consistency (strongest)
     bestie i := 0; i < iterations / 4; i++ {
-        atomic_store_i32(atomic, i)  # Defaults to SEQ_CST
+        atomic_store_i32(atomic, i) fr fr Defaults to SEQ_CST
         sus value normie = atomic_load_i32(atomic)
-    }
-    
-    # Benchmark memory fences
+    } fr fr Benchmark memory fences
     bestie i := 0; i < iterations / 4; i++ {
         memory_fence()
         compiler_fence()
@@ -183,22 +151,17 @@ slay benchmark_memory_ordering() {
     vibez.spill("✅ Memory ordering benchmark completed")
 }
 
-# Benchmark contention simulation
+fr fr Benchmark contention simulation
 slay benchmark_contention_simulation() {
     test_start("benchmark_contention_simulation")
     
     sus atomic *AtomicI32 = atomic_i32_new(0)
     sus counter *AtomicCounter = atomic_counter_new(0)
-    sus iterations normie = BENCHMARK_ITERATIONS / 100
-    
-    # Simulate high contention scenario
+    sus iterations normie = BENCHMARK_ITERATIONS / 100 fr fr Simulate high contention scenario
     bestie thread := 0; thread < CONTENTION_THREADS; thread++ {
-        bestie i := 0; i < iterations; i++ {
-            # Multiple operations competing for same atomic
+        bestie i := 0; i < iterations; i++ { fr fr Multiple operations competing for same atomic
             atomic_increment_i32(atomic)
-            atomic_counter_increment(counter)
-            
-            # Add some delay to increase contention
+            atomic_counter_increment(counter) fr fr Add some delay to increase contention
             bestie delay := 0; delay < 10; delay++ {
                 compiler_fence()
             }
@@ -215,24 +178,20 @@ slay benchmark_contention_simulation() {
     vibez.spill("✅ Contention simulation benchmark completed")
 }
 
-# Benchmark spinlock performance
+fr fr Benchmark spinlock performance
 slay benchmark_spinlock_performance() {
     test_start("benchmark_spinlock_performance")
     
     sus lock *Spinlock = spinlock_new()
     sus counter normie = 0
-    sus iterations normie = BENCHMARK_ITERATIONS / 100
-    
-    # Benchmark spinlock acquire/release
+    sus iterations normie = BENCHMARK_ITERATIONS / 100 fr fr Benchmark spinlock acquire/release
     bestie i := 0; i < iterations; i++ {
         spinlock_lock(lock)
-        counter++  # Critical section
+        counter++ fr fr Critical section
         spinlock_unlock(lock)
     }
     
-    assert_eq_int(counter, iterations)
-    
-    # Benchmark try_lock operations
+    assert_eq_int(counter, iterations) fr fr Benchmark try_lock operations
     sus try_success_count normie = 0
     bestie i := 0; i < iterations; i++ {
         yo spinlock_try_lock(lock) {
@@ -241,33 +200,29 @@ slay benchmark_spinlock_performance() {
         }
     }
     
-    assert_eq_int(try_success_count, iterations)  # All should succeed when uncontended
+    assert_eq_int(try_success_count, iterations) fr fr All should succeed when uncontended
     
     vibez.spill("✅ Spinlock performance benchmark completed")
 }
 
-# Benchmark read-write spinlock performance
+fr fr Benchmark read-write spinlock performance
 slay benchmark_rw_spinlock_performance() {
     test_start("benchmark_rw_spinlock_performance")
     
     sus rw_lock *RwSpinlock = rw_spinlock_new()
     sus read_count normie = 0
     sus write_count normie = 0
-    sus iterations normie = BENCHMARK_ITERATIONS / 100
-    
-    # Benchmark read operations (should be concurrent)
+    sus iterations normie = BENCHMARK_ITERATIONS / 100 fr fr Benchmark read operations (should be concurrent)
     bestie reader := 0; reader < 3; reader++ {
         bestie i := 0; i < iterations / 3; i++ {
             rw_spinlock_read_lock(rw_lock)
-            read_count++  # Reading shared data
+            read_count++ fr fr Reading shared data
             rw_spinlock_read_unlock(rw_lock)
         }
-    }
-    
-    # Benchmark write operations (should be exclusive)
+    } fr fr Benchmark write operations (should be exclusive)
     bestie i := 0; i < iterations / 3; i++ {
         rw_spinlock_write_lock(rw_lock)
-        write_count++  # Writing shared data
+        write_count++ fr fr Writing shared data
         rw_spinlock_write_unlock(rw_lock)
     }
     
@@ -277,7 +232,7 @@ slay benchmark_rw_spinlock_performance() {
     vibez.spill("✅ Read-write spinlock performance benchmark completed")
 }
 
-# Benchmark atomic pointer operations
+fr fr Benchmark atomic pointer operations
 slay benchmark_atomic_pointer_performance() {
     test_start("benchmark_atomic_pointer_performance")
     
@@ -286,21 +241,17 @@ slay benchmark_atomic_pointer_performance() {
     sus ptr3 *void = 0x3000.(*void)
     
     sus atomic_ptr *AtomicPtr = atomic_ptr_new(ptr1)
-    sus iterations normie = BENCHMARK_ITERATIONS / 10
-    
-    # Benchmark pointer load/store
+    sus iterations normie = BENCHMARK_ITERATIONS / 10 fr fr Benchmark pointer load/store
     bestie i := 0; i < iterations; i++ {
         atomic_ptr_store(atomic_ptr, ptr2)
         sus loaded *void = atomic_ptr_load(atomic_ptr)
         assert_eq_int(loaded.(thicc), ptr2.(thicc))
-    }
-    
-    # Benchmark pointer CAS
+    } fr fr Benchmark pointer CAS
     sus cas_success_count normie = 0
     bestie i := 0; i < iterations; i++ {
         yo atomic_ptr_cas(atomic_ptr, ptr2, ptr3) {
             cas_success_count++
-            atomic_ptr_store(atomic_ptr, ptr2)  # Reset for next iteration
+            atomic_ptr_store(atomic_ptr, ptr2) fr fr Reset for next iteration
         }
     }
     
@@ -309,16 +260,12 @@ slay benchmark_atomic_pointer_performance() {
     vibez.spill("✅ Atomic pointer performance benchmark completed")
 }
 
-# Benchmark cache line effects
+fr fr Benchmark cache line effects
 slay benchmark_cache_line_effects() {
-    test_start("benchmark_cache_line_effects")
-    
-    # Create atomics that might share cache lines
+    test_start("benchmark_cache_line_effects") fr fr Create atomics that might share cache lines
     sus atomic1 *AtomicI32 = atomic_i32_new(0)
     sus atomic2 *AtomicI32 = atomic_i32_new(0)
-    sus iterations normie = BENCHMARK_ITERATIONS / 10
-    
-    # Benchmark operations on potentially shared cache line
+    sus iterations normie = BENCHMARK_ITERATIONS / 10 fr fr Benchmark operations on potentially shared cache line
     bestie i := 0; i < iterations; i++ {
         atomic_increment_i32(atomic1)
         atomic_increment_i32(atomic2)
@@ -333,35 +280,25 @@ slay benchmark_cache_line_effects() {
     vibez.spill("✅ Cache line effects benchmark completed")
 }
 
-# Comprehensive performance comparison
+fr fr Comprehensive performance comparison
 slay benchmark_performance_comparison() {
     test_start("benchmark_performance_comparison")
     
     sus atomic *AtomicI32 = atomic_i32_new(0)
-    sus iterations normie = 10000
-    
-    # Compare different atomic operations performance
-    vibez.spill("Performance comparison (", iterations, " iterations):")
-    
-    # Atomic load
+    sus iterations normie = 10000 fr fr Compare different atomic operations performance
+    vibez.spill("Performance comparison (", iterations, " iterations):") fr fr Atomic load
     bestie i := 0; i < iterations; i++ {
         sus value normie = atomic_load_i32(atomic)
     }
-    vibez.spill("- Atomic load: ✓")
-    
-    # Atomic store
+    vibez.spill("- Atomic load: ✓") fr fr Atomic store
     bestie i := 0; i < iterations; i++ {
         atomic_store_i32(atomic, i)
     }
-    vibez.spill("- Atomic store: ✓")
-    
-    # Atomic increment
+    vibez.spill("- Atomic store: ✓") fr fr Atomic increment
     bestie i := 0; i < iterations; i++ {
         atomic_increment_i32(atomic)
     }
-    vibez.spill("- Atomic increment: ✓")
-    
-    # Atomic CAS
+    vibez.spill("- Atomic increment: ✓") fr fr Atomic CAS
     bestie i := 0; i < iterations; i++ {
         sus expected normie = atomic_load_i32(atomic)
         atomic_cas_i32(atomic, expected, expected + 1)
@@ -371,7 +308,7 @@ slay benchmark_performance_comparison() {
     vibez.spill("✅ Performance comparison completed")
 }
 
-# Main benchmark function
+fr fr Main benchmark function
 slay main() {
     vibez.spill("🚀 Running CURSED Atomic Operations Performance Benchmark")
     vibez.spill("==========================================================")
@@ -379,25 +316,17 @@ slay main() {
     vibez.spill("- Benchmark iterations:", BENCHMARK_ITERATIONS)
     vibez.spill("- Contention threads:", CONTENTION_THREADS)
     vibez.spill("- Cache line size:", CACHE_LINE_SIZE)
-    vibez.spill("==========================================================")
-    
-    # Basic operation benchmarks
+    vibez.spill("==========================================================") fr fr Basic operation benchmarks
     benchmark_atomic_load_store()
     benchmark_atomic_cas()
     benchmark_atomic_arithmetic()
-    benchmark_atomic_bitwise()
-    
-    # Advanced operation benchmarks
+    benchmark_atomic_bitwise() fr fr Advanced operation benchmarks
     benchmark_atomic_flag()
     benchmark_memory_ordering()
-    benchmark_atomic_pointer_performance()
-    
-    # Concurrency and contention benchmarks
+    benchmark_atomic_pointer_performance() fr fr Concurrency and contention benchmarks
     benchmark_contention_simulation()
     benchmark_spinlock_performance()
-    benchmark_rw_spinlock_performance()
-    
-    # System-level benchmarks
+    benchmark_rw_spinlock_performance() fr fr System-level benchmarks
     benchmark_cache_line_effects()
     benchmark_performance_comparison()
     

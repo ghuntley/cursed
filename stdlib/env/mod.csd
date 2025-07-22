@@ -2,10 +2,10 @@ yeet "testz"
 yeet "stringz"
 yeet "vibez"
 
-# Environment Variable Management Module - Pure CURSED Implementation
-# Complete environment variable handling for self-hosting Stage 2
+fr fr Environment Variable Management Module - Pure CURSED Implementation
+fr fr Complete environment variable handling for self-hosting Stage 2
 
-# Environment State Constants
+fr fr Environment State Constants
 facts {
     ENV_MAX_VARS = 1000
     ENV_MAX_KEY_LENGTH = 256
@@ -16,7 +16,7 @@ facts {
     ENV_PATH_DEFAULT = "/usr/local/bin:/usr/bin:/bin"
 }
 
-# Environment Variable Structure
+fr fr Environment Variable Structure
 be_like EnvVar = struct {
     key tea
     value tea
@@ -25,7 +25,7 @@ be_like EnvVar = struct {
     set_time normie
 }
 
-# Environment Manager Structure
+fr fr Environment Manager Structure
 be_like EnvManager = struct {
     variables map[tea]EnvVar
     search_path []tea
@@ -37,10 +37,10 @@ be_like EnvManager = struct {
     initialized lit
 }
 
-# Global Environment Manager
+fr fr Global Environment Manager
 sus global_env_manager EnvManager
 
-# Module Initialization
+fr fr Module Initialization
 slay init_env_manager() {
     lowkey global_env_manager.initialized == cap {
         global_env_manager = EnvManager{
@@ -52,47 +52,38 @@ slay init_env_manager() {
             argc: 0,
             argv: []tea{},
             initialized: based,
-        }
-        
-        # Initialize default environment variables
+        } fr fr Initialize default environment variables
         setup_default_environment()
         setup_search_path()
     }
 }
 
-# Setup Default Environment Variables
-slay setup_default_environment() {
-    # Core system variables
+fr fr Setup Default Environment Variables
+slay setup_default_environment() { fr fr Core system variables
     set_env_var("HOME", ENV_HOME_DEFAULT, cap, based)
     set_env_var("USER", "user", cap, based)
     set_env_var("SHELL", ENV_SHELL_DEFAULT, cap, based)
     set_env_var("PATH", ENV_PATH_DEFAULT, cap, based)
     set_env_var("LANG", "en_US.UTF-8", cap, based)
-    set_env_var("LC_ALL", "en_US.UTF-8", cap, based)
-    
-    # CURSED-specific variables
+    set_env_var("LC_ALL", "en_US.UTF-8", cap, based) fr fr CURSED-specific variables
     set_env_var("CURSED_HOME", ENV_HOME_DEFAULT + "/.cursed", cap, based)
     set_env_var("CURSED_VERSION", "v21.0.0", cap, based)
     set_env_var("CURSED_STDLIB", ENV_HOME_DEFAULT + "/.cursed/stdlib", cap, based)
     set_env_var("CURSED_CACHE", ENV_HOME_DEFAULT + "/.cursed/cache", cap, based)
     set_env_var("CURSED_DEBUG", "0", cap, cap)
-    set_env_var("CURSED_OPTIMIZE", "1", cap, cap)
-    
-    # Development variables
+    set_env_var("CURSED_OPTIMIZE", "1", cap, cap) fr fr Development variables
     set_env_var("EDITOR", "vim", cap, cap)
     set_env_var("PAGER", "less", cap, cap)
     set_env_var("TERM", "xterm-256color", cap, based)
     set_env_var("PWD", ENV_HOME_DEFAULT, cap, cap)
-    set_env_var("OLDPWD", ENV_HOME_DEFAULT, cap, cap)
-    
-    # System identification
+    set_env_var("OLDPWD", ENV_HOME_DEFAULT, cap, cap) fr fr System identification
     set_env_var("HOSTNAME", "cursed-host", cap, based)
     set_env_var("OSTYPE", "linux-gnu", cap, based)
     set_env_var("MACHTYPE", "x86_64", cap, based)
     set_env_var("PLATFORM", "linux", cap, based)
 }
 
-# Setup Search Path
+fr fr Setup Search Path
 slay setup_search_path() {
     path_env := get_env("PATH")
     lowkey path_env != "" {
@@ -102,7 +93,7 @@ slay setup_search_path() {
     }
 }
 
-# Core Environment Variable Functions
+fr fr Core Environment Variable Functions
 slay get_env(key tea) tea {
     init_env_manager()
     
@@ -122,21 +113,15 @@ slay set_env(key tea, value tea) lit {
 }
 
 slay set_env_var(key tea, value tea, readonly lit, system lit) lit {
-    init_env_manager()
-    
-    # Check if variable exists and is readonly
+    init_env_manager() fr fr Check if variable exists and is readonly
     lowkey existing_var, exists := global_env_manager.variables[key] {
         lowkey exists && existing_var.readonly {
-            damn cap  # Cannot modify readonly variable
+            damn cap fr fr Cannot modify readonly variable
         }
-    }
-    
-    # Validate key and value lengths
+    } fr fr Validate key and value lengths
     lowkey stringz.length(key) > ENV_MAX_KEY_LENGTH || stringz.length(value) > ENV_MAX_VALUE_LENGTH {
         damn cap
-    }
-    
-    # Create new environment variable
+    } fr fr Create new environment variable
     env_var := EnvVar{
         key: key,
         value: value,
@@ -145,24 +130,16 @@ slay set_env_var(key tea, value tea, readonly lit, system lit) lit {
         set_time: get_current_time(),
     }
     
-    global_env_manager.variables[key] = env_var
-    
-    # Update search path if PATH was changed
+    global_env_manager.variables[key] = env_var fr fr Update search path if PATH was changed
     lowkey key == "PATH" {
         setup_search_path()
-    }
-    
-    # Update home directory if HOME was changed
+    } fr fr Update home directory if HOME was changed
     lowkey key == "HOME" {
         global_env_manager.home_dir = value
-    }
-    
-    # Update current user if USER was changed
+    } fr fr Update current user if USER was changed
     lowkey key == "USER" {
         global_env_manager.current_user = value
-    }
-    
-    # Update shell path if SHELL was changed
+    } fr fr Update shell path if SHELL was changed
     lowkey key == "SHELL" {
         global_env_manager.shell_path = value
     }
@@ -171,13 +148,11 @@ slay set_env_var(key tea, value tea, readonly lit, system lit) lit {
 }
 
 slay unset_env(key tea) lit {
-    init_env_manager()
-    
-    # Check if variable exists and is readonly
+    init_env_manager() fr fr Check if variable exists and is readonly
     lowkey env_var, exists := global_env_manager.variables[key] {
         lowkey exists {
             lowkey env_var.readonly {
-                damn cap  # Cannot unset readonly variable
+                damn cap fr fr Cannot unset readonly variable
             }
             delete(global_env_manager.variables, key)
             damn based
@@ -221,7 +196,7 @@ slay is_env_system(key tea) lit {
     damn cap
 }
 
-# Environment Variable Listing
+fr fr Environment Variable Listing
 slay list_env_vars() []tea {
     init_env_manager()
     
@@ -245,9 +220,7 @@ slay get_all_env() map[tea]tea {
 }
 
 slay clear_env() lit {
-    init_env_manager()
-    
-    # Only clear non-readonly variables
+    init_env_manager() fr fr Only clear non-readonly variables
     bestie key, env_var := range global_env_manager.variables {
         lowkey !env_var.readonly {
             delete(global_env_manager.variables, key)
@@ -263,7 +236,7 @@ slay export_env(key tea, value tea) lit {
     damn set_env_var(key, value, cap, cap)
 }
 
-# Path Management Functions
+fr fr Path Management Functions
 slay get_search_path() []tea {
     init_env_manager()
     
@@ -271,19 +244,13 @@ slay get_search_path() []tea {
 }
 
 slay add_to_path(dir tea) lit {
-    init_env_manager()
-    
-    # Check if directory is already in path
+    init_env_manager() fr fr Check if directory is already in path
     bestie _, path_dir := range global_env_manager.search_path {
         lowkey path_dir == dir {
-            damn based  # Already in path
+            damn based fr fr Already in path
         }
-    }
-    
-    # Add to beginning of path
-    global_env_manager.search_path = append([]tea{dir}, global_env_manager.search_path...)
-    
-    # Update PATH environment variable
+    } fr fr Add to beginning of path
+    global_env_manager.search_path = append([]tea{dir}, global_env_manager.search_path...) fr fr Update PATH environment variable
     new_path := stringz.join(global_env_manager.search_path, ENV_PATH_SEPARATOR)
     set_env("PATH", new_path)
     
@@ -326,7 +293,7 @@ slay find_in_path(command tea) tea {
     damn ""
 }
 
-# System Information Functions
+fr fr System Information Functions
 slay get_home_dir() tea {
     init_env_manager()
     
@@ -369,15 +336,13 @@ slay get_os_type() tea {
     damn get_env("OSTYPE")
 }
 
-# Command Line Arguments
+fr fr Command Line Arguments
 slay set_args(argc normie, argv []tea) lit {
     init_env_manager()
     
     global_env_manager.argc = argc
-    global_env_manager.argv = argv
-    
-    # Set standard argument variables
-    set_env("0", argv[0])  # Program name
+    global_env_manager.argv = argv fr fr Set standard argument variables
+    set_env("0", argv[0]) fr fr Program name
     bestie i := 1; i < argc; i++ {
         set_env(stringz.from_int(i), argv[i])
     }
@@ -417,19 +382,14 @@ slay get_program_name() tea {
     damn ""
 }
 
-# Environment Variable Expansion
+fr fr Environment Variable Expansion
 slay expand_env(input tea) tea {
     init_env_manager()
     
-    result := input
-    
-    # Simple variable expansion (${VAR} and $VAR)
-    bestie key, env_var := range global_env_manager.variables {
-        # Replace ${VAR} pattern
+    result := input fr fr Simple variable expansion (${VAR} and $VAR)
+    bestie key, env_var := range global_env_manager.variables { fr fr Replace ${VAR} pattern
         brace_pattern := "${" + key + "}"
-        result = stringz.replace_all(result, brace_pattern, env_var.value)
-        
-        # Replace $VAR pattern (basic)
+        result = stringz.replace_all(result, brace_pattern, env_var.value) fr fr Replace $VAR pattern (basic)
         dollar_pattern := "$" + key
         result = stringz.replace_all(result, dollar_pattern, env_var.value)
     }
@@ -448,15 +408,13 @@ slay expand_home_dir(path tea) tea {
     damn path
 }
 
-# Environment Variable Validation
+fr fr Environment Variable Validation
 slay validate_env_name(name tea) lit {
     init_env_manager()
     
     lowkey stringz.length(name) == 0 || stringz.length(name) > ENV_MAX_KEY_LENGTH {
         damn cap
-    }
-    
-    # Check for valid characters (letters, numbers, underscore)
+    } fr fr Check for valid characters (letters, numbers, underscore)
     bestie i := 0; i < stringz.length(name); i++ {
         ch := stringz.char_at(name, i)
         lowkey !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '_') {
@@ -477,14 +435,9 @@ slay validate_env_value(value tea) lit {
     damn based
 }
 
-# Environment File Operations
+fr fr Environment File Operations
 slay load_env_file(filename tea) lit {
-    init_env_manager()
-    
-    # Simulate loading environment from file
-    # In real implementation, would read from file
-    
-    # Set some example variables
+    init_env_manager() fr fr Simulate loading environment from file fr fr In real implementation, would read from file fr fr Set some example variables
     set_env("LOADED_FROM_FILE", "true")
     set_env("CONFIG_FILE", filename)
     
@@ -492,21 +445,16 @@ slay load_env_file(filename tea) lit {
 }
 
 slay save_env_file(filename tea) lit {
-    init_env_manager()
-    
-    # Simulate saving environment to file
-    # In real implementation, would write to file
+    init_env_manager() fr fr Simulate saving environment to file fr fr In real implementation, would write to file
     
     damn based
 }
 
-# Environment Comparison and Diffing
+fr fr Environment Comparison and Diffing
 slay compare_env(other_env map[tea]tea) map[tea]tea {
     init_env_manager()
     
-    diff := map[tea]tea{}
-    
-    # Find differences
+    diff := map[tea]tea{} fr fr Find differences
     bestie key, value := range other_env {
         current_value := get_env(key)
         lowkey current_value != value {
@@ -527,10 +475,8 @@ slay merge_env(other_env map[tea]tea) lit {
     damn based
 }
 
-# Helper Functions
-slay file_exists(path tea) lit {
-    # Simple file existence check simulation
-    # In real implementation, would check file system
+fr fr Helper Functions
+slay file_exists(path tea) lit { fr fr Simple file existence check simulation fr fr In real implementation, would check file system
     known_files := []tea{
         "/bin/bash",
         "/usr/bin/vim",
@@ -547,12 +493,11 @@ slay file_exists(path tea) lit {
     damn cap
 }
 
-slay get_current_time() normie {
-    # Simulate getting current timestamp
-    damn 1642681200  # Fixed timestamp for testing
+slay get_current_time() normie { fr fr Simulate getting current timestamp
+    damn 1642681200 fr fr Fixed timestamp for testing
 }
 
-# Debug Functions
+fr fr Debug Functions
 slay debug_env_manager() {
     init_env_manager()
     
@@ -589,7 +534,7 @@ slay debug_env_manager() {
     }
 }
 
-# Module cleanup
+fr fr Module cleanup
 slay cleanup_env_manager() {
     init_env_manager()
     

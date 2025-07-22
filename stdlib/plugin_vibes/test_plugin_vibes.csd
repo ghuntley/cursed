@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "plugin_vibes"
 
-# Plugin Discovery Tests
+fr fr Plugin Discovery Tests
 test_start("Plugin discovery - empty directory")
 sus empty_plugins := discover_plugins("")
 assert_eq_string(empty_plugins, "")
@@ -10,7 +10,7 @@ test_start("Plugin discovery - valid directory")
 sus plugins := discover_plugins("./test_plugins")
 assert_eq_string(plugins, "auth,logger,cache")
 
-# Plugin Loading Tests
+fr fr Plugin Loading Tests
 test_start("Plugin loading - valid plugin")
 sus loaded := load_plugin("test_auth")
 assert_true(loaded)
@@ -28,7 +28,7 @@ test_start("Plugin unloading - non-existent plugin")
 sus unload_missing := unload_plugin("non_existent")
 assert_false(unload_missing)
 
-# API Registration Tests
+fr fr API Registration Tests
 test_start("API registration - valid registration")
 load_plugin("api_test")
 sus registered := register_plugin_api("api_test", "validate", "validate_func")
@@ -62,7 +62,7 @@ test_start("Call plugin API - non-existent API")
 sus error_result := call_plugin_api("api_test", "non_existent", "{}")
 assert_true(string_contains(error_result, "ERROR"))
 
-# Lifecycle Management Tests
+fr fr Lifecycle Management Tests
 test_start("Get plugin state - loaded plugin")
 load_plugin("state_test")
 sus state := get_plugin_state("state_test")
@@ -87,7 +87,7 @@ register_lifecycle_hook("hook_test", "config_changed", "config_handler")
 sus event_triggered := trigger_lifecycle_event("hook_test", "config_changed", "{\"debug\":true}")
 assert_true(event_triggered)
 
-# Event System Tests
+fr fr Event System Tests
 test_start("Register event handler")
 load_plugin("event_test")
 sus handler_reg := register_event_handler("event_test", "user_login", "login_handler")
@@ -136,7 +136,7 @@ assert_true(cleared)
 sus empty_processed := process_event_queue()
 assert_eq_int(empty_processed, 0)
 
-# Security and Sandboxing Tests
+fr fr Security and Sandboxing Tests
 test_start("Set plugin permission")
 load_plugin("security_test")
 sus perm_set := set_plugin_permission("security_test", "file_read", based)
@@ -155,7 +155,7 @@ test_start("Validate plugin security - basic validation")
 sus security_report := validate_plugin_security("secure_test")
 assert_true(string_contains(security_report, "validated"))
 
-# Basic functionality tests for remaining features
+fr fr Basic functionality tests for remaining features
 test_start("Send message between plugins")
 sus msg_sent := send_message("sender", "receiver", "{\"test\":\"message\"}")
 assert_true(msg_sent)

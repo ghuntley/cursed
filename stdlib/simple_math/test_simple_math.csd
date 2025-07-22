@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "simple_math"
 
-# Comprehensive test suite for simple_math module
+fr fr Comprehensive test suite for simple_math module
 
 test_start("add positive numbers")
 sus result normie = add(5, 3)
@@ -85,19 +85,19 @@ assert_eq_int(result, 5)
 
 test_start("divide by zero")
 result = divide(5, 0)
-assert_eq_int(result, 0)  # Should return 0 as per implementation
+assert_eq_int(result, 0) fr fr Should return 0 as per implementation
 
 test_start("divide with remainder")
 result = divide(10, 3)
-assert_eq_int(result, 3)  # Integer division
+assert_eq_int(result, 3) fr fr Integer division
 
 test_start("complex operations")
-# Test combinations
-sus a normie = add(5, 3)     # 8
-sus b normie = multiply(2, 4) # 8
-sus c normie = subtract(a, b) # 0
-sus d normie = divide(10, 2)  # 5
-sus final_result normie = add(c, d) # 5
+fr fr Test combinations
+sus a normie = add(5, 3) fr fr 8
+sus b normie = multiply(2, 4) fr fr 8
+sus c normie = subtract(a, b) fr fr 0
+sus d normie = divide(10, 2) fr fr 5
+sus final_result normie = add(c, d) fr fr 5
 assert_eq_int(final_result, 5)
 
 test_start("edge case: large number operations")

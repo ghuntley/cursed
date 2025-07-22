@@ -1,7 +1,7 @@
-# CURSED Testing Framework (testz v2.0) - Complete Enterprise Testing Suite
-# Comprehensive assertion library with all critical functions for stdlib testing
+fr fr CURSED Testing Framework (testz v2.0) - Complete Enterprise Testing Suite
+fr fr Comprehensive assertion library with all critical functions for stdlib testing
 
-# Export all test functions for visibility
+fr fr Export all test functions for visibility
 vibes test_start, test_pass, test_fail, test_end
 vibes assert_eq_int, assert_ne_int, assert_gt_int, assert_lt_int, assert_ge_int, assert_le_int
 vibes assert_eq_string, assert_ne_string
@@ -9,14 +9,14 @@ vibes assert_true, assert_false
 vibes assert_eq_float, assert_in_range, assert_nil, assert_not_nil
 vibes print_test_summary, all_tests_passed, get_test_results, get_pass_count, get_total_count, reset_test_state
 
-# Global test state variables
+fr fr Global test state variables
 sus current_test_name tea = ""
 sus total_tests normie = 0
 sus passed_tests normie = 0
 sus failed_tests normie = 0
 sus current_test_passed lit = based
 
-# Start a new test case
+fr fr Start a new test case
 slay test_start(name tea) {
     current_test_name = name
     total_tests = total_tests + 1
@@ -24,18 +24,18 @@ slay test_start(name tea) {
     vibez.spill("Test: " + name)
 }
 
-# Test pass helper
+fr fr Test pass helper
 slay test_pass(message tea) {
     vibez.spill("PASS: " + message)
 }
 
-# Test fail helper
+fr fr Test fail helper
 slay test_fail(message tea) {
     vibez.spill("FAIL: " + message)
     current_test_passed = cap
 }
 
-# Integer assertions
+fr fr Integer assertions
 slay assert_eq_int(actual normie, expected normie) {
     lowkey actual == expected {
         test_pass("int equality: " + tea(actual) + " == " + tea(expected))
@@ -84,7 +84,7 @@ slay assert_le_int(actual normie, expected normie) {
     }
 }
 
-# String assertions
+fr fr String assertions
 slay assert_eq_string(actual tea, expected tea) {
     lowkey actual == expected {
         test_pass("string equality: \"" + actual + "\" == \"" + expected + "\"")
@@ -101,7 +101,7 @@ slay assert_ne_string(actual tea, expected tea) {
     }
 }
 
-# Boolean assertions
+fr fr Boolean assertions
 slay assert_true(condition lit) {
     lowkey condition == based {
         test_pass("assert_true: condition is based")
@@ -118,7 +118,7 @@ slay assert_false(condition lit) {
     }
 }
 
-# Float assertions (with tolerance)
+fr fr Float assertions (with tolerance)
 slay assert_eq_float(actual meal, expected meal) {
     sus diff meal = actual - expected
     lowkey diff < 0.0001 && diff > -0.0001 {
@@ -128,7 +128,7 @@ slay assert_eq_float(actual meal, expected meal) {
     }
 }
 
-# Range assertions
+fr fr Range assertions
 slay assert_in_range(value normie, min_val normie, max_val normie) {
     lowkey value >= min_val && value <= max_val {
         test_pass("in range: " + tea(value) + " in [" + tea(min_val) + ", " + tea(max_val) + "]")
@@ -137,7 +137,7 @@ slay assert_in_range(value normie, min_val normie, max_val normie) {
     }
 }
 
-# Nil assertions
+fr fr Nil assertions
 slay assert_nil(value tea) {
     lowkey value == "" {
         test_pass("assert_nil: value is empty/nil")
@@ -154,7 +154,7 @@ slay assert_not_nil(value tea) {
     }
 }
 
-# Test end function
+fr fr Test end function
 slay test_end() {
     lowkey current_test_passed == based {
         passed_tests = passed_tests + 1
@@ -165,7 +165,7 @@ slay test_end() {
     }
 }
 
-# Print comprehensive test summary
+fr fr Print comprehensive test summary
 slay print_test_summary() {
     vibez.spill("")
     vibez.spill("=== Test Summary ===")
@@ -181,7 +181,7 @@ slay print_test_summary() {
     vibez.spill("==================")
 }
 
-# Helper functions
+fr fr Helper functions
 slay all_tests_passed() lit {
     damn failed_tests == 0
 }

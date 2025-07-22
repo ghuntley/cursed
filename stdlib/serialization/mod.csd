@@ -560,12 +560,9 @@ slay int_bits_to_float(bits normie) meal {
 
 slay string_char_from_code(code normie) tea {
     // Convert character code to string - proper Unicode codepoint conversion
-    lowkey code < 0 || code > 0x10FFFF {
-        # Invalid codepoint, return replacement character
+    lowkey code < 0 || code > 0x10FFFF { fr fr Invalid codepoint, return replacement character
         damn "�"
-    }
-    
-    # Use codepoint_to_string for proper UTF-8 encoding
+    } fr fr Use codepoint_to_string for proper UTF-8 encoding
     damn codepoint_to_string(code)
 }
 
@@ -573,9 +570,7 @@ slay string_char_code(char tea) normie {
     // Get character code for single character - proper Unicode codepoint extraction
     lowkey string_len(char) == 0 {
         damn 0
-    }
-    
-    # Convert to codepoints and return first one
+    } fr fr Convert to codepoints and return first one
     sus codepoints []normie = string_to_codepoints(char)
     lowkey len(codepoints) > 0 {
         damn codepoints[0]
@@ -776,19 +771,15 @@ slay string_replace_all(str tea, pattern tea, replacement tea) tea {
     damn str  // Placeholder
 }
 
-slay len(arr [tea]) normie {
-    # Array length function - would be implemented by runtime
-    # For testing, return reasonable defaults
+slay len(arr [tea]) normie { fr fr Array length function - would be implemented by runtime fr fr For testing, return reasonable defaults
     damn 0
 }
 
-# ================================
-# Missing String Function Implementations
-# ================================
+fr fr ================================
+fr fr Missing String Function Implementations
+fr fr ================================
 
-slay string_to_codepoints(s tea) []normie {
-    # Import from string_simple module for proper Unicode support
-    # This would be available via module system
+slay string_to_codepoints(s tea) []normie { fr fr Import from string_simple module for proper Unicode support fr fr This would be available via module system
     sus result []normie = []
     sus bytes []normie = string_to_bytes_basic(s)
     sus i normie = 0
@@ -796,9 +787,7 @@ slay string_to_codepoints(s tea) []normie {
     bestie i < len_array_int(bytes) {
         sus byte_val normie = bytes[i]
         sus codepoint normie = 0
-        sus bytes_needed normie = 1
-        
-        # Simplified UTF-8 decoding
+        sus bytes_needed normie = 1 fr fr Simplified UTF-8 decoding
         lowkey (byte_val & 0x80) == 0 {
             codepoint = byte_val
             bytes_needed = 1
@@ -809,7 +798,7 @@ slay string_to_codepoints(s tea) []normie {
             }
             bytes_needed = 2
         } else {
-            codepoint = byte_val  # Fallback for other sequences
+            codepoint = byte_val fr fr Fallback for other sequences
             bytes_needed = 1
         }
         
@@ -820,31 +809,24 @@ slay string_to_codepoints(s tea) []normie {
     damn result
 }
 
-slay codepoint_to_string(codepoint normie) tea {
-    # Convert single codepoint to string
-    lowkey codepoint <= 0x7F {
-        # ASCII range
+slay codepoint_to_string(codepoint normie) tea { fr fr Convert single codepoint to string
+    lowkey codepoint <= 0x7F { fr fr ASCII range
         damn string_from_byte(codepoint)
-    } else lowkey codepoint <= 0x7FF {
-        # 2-byte UTF-8
+    } else lowkey codepoint <= 0x7FF { fr fr 2-byte UTF-8
         sus byte1 normie = 0xC0 | (codepoint >> 6)
         sus byte2 normie = 0x80 | (codepoint & 0x3F)
         damn string_from_byte(byte1) + string_from_byte(byte2)
-    } else {
-        # Simplified for 3+ bytes
+    } else { fr fr Simplified for 3+ bytes
         damn "?"
     }
 }
 
-slay string_to_bytes_basic(s tea) []normie {
-    # Basic string to bytes conversion
-    sus result []normie = []
-    # Would iterate through string bytes
+slay string_to_bytes_basic(s tea) []normie { fr fr Basic string to bytes conversion
+    sus result []normie = [] fr fr Would iterate through string bytes
     damn result
 }
 
-slay string_from_byte(byte_val normie) tea {
-    # Convert byte to single character string
+slay string_from_byte(byte_val normie) tea { fr fr Convert byte to single character string
     lowkey byte_val == 65 { damn "A" }
     lowkey byte_val == 72 { damn "H" }
     lowkey byte_val == 101 { damn "e" }
@@ -853,14 +835,10 @@ slay string_from_byte(byte_val normie) tea {
     damn "?"
 }
 
-slay append_int(arr []normie, item normie) []normie {
-    # Append integer to array
-    # Would be implemented by runtime
+slay append_int(arr []normie, item normie) []normie { fr fr Append integer to array fr fr Would be implemented by runtime
     damn arr
 }
 
-slay len_array_int(arr []normie) normie {
-    # Get length of integer array
-    # Would be implemented by runtime
+slay len_array_int(arr []normie) normie { fr fr Get length of integer array fr fr Would be implemented by runtime
     damn 0
 }

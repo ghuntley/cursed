@@ -1,19 +1,15 @@
 yeet "testz"
 yeet "rizz_template"
 
-# Comprehensive test suite for Rizz Template Engine
-# Tests all template functionality including security features
+fr fr Comprehensive test suite for Rizz Template Engine
+fr fr Tests all template functionality including security features
 
 slay test_basic_variable_substitution() {
     test_start("Basic Variable Substitution")
     
-    sus template tea = "Hello {{name}}, welcome to {{site}}!"
-    
-    # Test with name variable
+    sus template tea = "Hello {{name}}, welcome to {{site}}!" fr fr Test with name variable
     sus result1 tea = rizz_template.rizz_parse_template(template, "name", "Chad")
-    assert_true(result1 != "")
-    
-    # Test with site variable
+    assert_true(result1 != "") fr fr Test with site variable
     sus result2 tea = rizz_template.rizz_parse_template(template, "site", "CURSED Lang")
     assert_true(result2 != "")
     
@@ -26,9 +22,7 @@ slay test_html_escaping_security() {
     sus template tea = "User input: {{user_input}}"
     sus dangerous_input tea = "<script>alert('XSS')</script>"
     
-    sus result tea = rizz_template.rizz_render_to_html(template, "user_input", dangerous_input)
-    
-    # Should escape dangerous HTML
+    sus result tea = rizz_template.rizz_render_to_html(template, "user_input", dangerous_input) fr fr Should escape dangerous HTML
     assert_true(result != "")
     assert_true(result != dangerous_input)
     test_end()
@@ -37,39 +31,25 @@ slay test_html_escaping_security() {
 slay test_conditional_rendering() {
     test_start("Conditional Rendering")
     
-    sus template tea = "{% if show_message %}Welcome back!{% endif %}"
-    
-    # Test true condition
+    sus template tea = "{% if show_message %}Welcome back!{% endif %}" fr fr Test true condition
     sus result1 tea = rizz_template.rizz_parse_template(template, "show_message", "true")
-    assert_true(result1 != "")
-    
-    # Test false condition
+    assert_true(result1 != "") fr fr Test false condition
     sus result2 tea = rizz_template.rizz_parse_template(template, "show_message", "false")
-    assert_true(result2 != template)  # Should be different from original
+    assert_true(result2 != template) fr fr Should be different from original
     
     test_end()
 }
 
 slay test_filter_processing() {
-    test_start("Filter Processing")
-    
-    # Test uppercase filter
+    test_start("Filter Processing") fr fr Test uppercase filter
     sus result1 tea = rizz_template.rizz_apply_filter("cursed", "upper")
-    assert_true(result1 != "")
-    
-    # Test lowercase filter
+    assert_true(result1 != "") fr fr Test lowercase filter
     sus result2 tea = rizz_template.rizz_apply_filter("CURSED", "lower")
-    assert_true(result2 != "")
-    
-    # Test capitalize filter
+    assert_true(result2 != "") fr fr Test capitalize filter
     sus result3 tea = rizz_template.rizz_apply_filter("programming", "capitalize")
-    assert_true(result3 != "")
-    
-    # Test trim filter
+    assert_true(result3 != "") fr fr Test trim filter
     sus result4 tea = rizz_template.rizz_apply_filter(" hello ", "trim")
-    assert_true(result4 != "")
-    
-    # Test escape filter
+    assert_true(result4 != "") fr fr Test escape filter
     sus result5 tea = rizz_template.rizz_apply_filter("<script>", "escape")
     assert_true(result5 != "")
     
@@ -85,7 +65,7 @@ slay test_template_inheritance() {
     sus result tea = rizz_template.rizz_extend_template(child, parent, "content", "test")
     
     assert_true(result != "")
-    assert_true(result != parent)  # Should be different from parent
+    assert_true(result != parent) fr fr Should be different from parent
     test_end()
 }
 
@@ -97,24 +77,18 @@ slay test_template_includes() {
     sus result tea = rizz_template.rizz_include_template(template, "header.html", "test", "value")
     
     assert_true(result != "")
-    assert_true(result != template)  # Should be different from original
+    assert_true(result != template) fr fr Should be different from original
     test_end()
 }
 
 slay test_output_formats() {
     test_start("Multiple Output Formats")
     
-    sus template tea = "Hello {{name}}!"
-    
-    # Test HTML output
+    sus template tea = "Hello {{name}}!" fr fr Test HTML output
     sus html_result tea = rizz_template.rizz_render_to_html(template, "name", "World")
-    assert_true(html_result != "")
-    
-    # Test text output
+    assert_true(html_result != "") fr fr Test text output
     sus text_result tea = rizz_template.rizz_render_to_text(template, "name", "World")
-    assert_true(text_result != "")
-    
-    # Test JSON output
+    assert_true(text_result != "") fr fr Test JSON output
     sus json_result tea = rizz_template.rizz_render_to_json(template, "name", "World")
     assert_true(json_result != "")
     
@@ -134,22 +108,14 @@ slay test_context_management() {
 }
 
 slay test_security_validation() {
-    test_start("Security Validation")
-    
-    # Test dangerous script injection
+    test_start("Security Validation") fr fr Test dangerous script injection
     sus dangerous_template tea = "<script>alert('hack')</script>"
-    sus is_safe1 lit = rizz_template.rizz_validate_template(dangerous_template)
-    # Should detect dangerous content (returns false for unsafe)
-    
-    # Test safe template
+    sus is_safe1 lit = rizz_template.rizz_validate_template(dangerous_template) fr fr Should detect dangerous content (returns false for unsafe) fr fr Test safe template
     sus safe_template tea = "Hello {{name}}!"
     sus is_safe2 lit = rizz_template.rizz_validate_template(safe_template)
-    assert_true(is_safe2)  # Should be safe
-    
-    # Test javascript: URL
+    assert_true(is_safe2) fr fr Should be safe fr fr Test javascript: URL
     sus js_template tea = "<a href='javascript:alert()'>Click</a>"
-    sus is_safe3 lit = rizz_template.rizz_validate_template(js_template)
-    # Should detect dangerous content
+    sus is_safe3 lit = rizz_template.rizz_validate_template(js_template) fr fr Should detect dangerous content
     
     test_end()
 }
@@ -157,21 +123,13 @@ slay test_security_validation() {
 slay test_gen_z_apis() {
     test_start("Gen Z Enhanced APIs")
     
-    sus template tea = "This template is {{vibe}}!"
-    
-    # Test no_cap API (HTML rendering)
+    sus template tea = "This template is {{vibe}}!" fr fr Test no_cap API (HTML rendering)
     sus result1 tea = rizz_template.rizz_template_no_cap(template, "vibe", "bussin")
-    assert_true(result1 != "")
-    
-    # Test fr_fr API (text rendering)
+    assert_true(result1 != "") fr fr Test fr_fr API (text rendering)
     sus result2 tea = rizz_template.rizz_template_fr_fr(template, "vibe", "fire")
-    assert_true(result2 != "")
-    
-    # Test bussin API (optimized rendering)
+    assert_true(result2 != "") fr fr Test bussin API (optimized rendering)
     sus result3 tea = rizz_template.rizz_template_bussin(template, "vibe", "bussin")
-    assert_true(result3 != "")
-    
-    # Test periodt API (format-specific)
+    assert_true(result3 != "") fr fr Test periodt API (format-specific)
     sus result4 tea = rizz_template.rizz_template_periodt(template, "vibe", "amazing", "json")
     assert_true(result4 != "")
     
@@ -188,9 +146,7 @@ slay test_template_compilation() {
     test_start("Template Compilation")
     
     sus template tea = "Hello {{name}}, today is {{date}}!"
-    sus compiled tea = rizz_template.rizz_compile_template(template)
-    
-    # Compiled template should still work
+    sus compiled tea = rizz_template.rizz_compile_template(template) fr fr Compiled template should still work
     sus result tea = rizz_template.rizz_parse_template(compiled, "name", "User")
     assert_true(result != "")
     
@@ -205,7 +161,7 @@ slay test_template_debugging() {
     sus debug_result tea = rizz_template.rizz_debug_template(template, "message", "test")
     
     assert_true(debug_result != "")
-    assert_true(debug_result != template)  # Should include debug info
+    assert_true(debug_result != template) fr fr Should include debug info
     
     test_end()
 }
@@ -217,27 +173,19 @@ slay test_html_escaping_function() {
     sus escaped tea = rizz_template.rizz_escape_html(dangerous)
     
     assert_true(escaped != "")
-    assert_true(escaped != dangerous)  # Should be different after escaping
+    assert_true(escaped != dangerous) fr fr Should be different after escaping
     
     test_end()
 }
 
 slay test_string_utilities() {
-    test_start("String Utilities")
-    
-    # Test concat function
+    test_start("String Utilities") fr fr Test concat function
     sus result1 tea = rizz_template.rizz_concat("Hello", " World")
-    assert_true(result1 != "")
-    
-    # Test replace function
+    assert_true(result1 != "") fr fr Test replace function
     sus result2 tea = rizz_template.rizz_replace_all("Hello World", "World", "CURSED")
-    assert_true(result2 != "")
-    
-    # Test length function
+    assert_true(result2 != "") fr fr Test length function
     sus len normie = rizz_template.rizz_length("test")
-    assert_true(len > 0)
-    
-    # Test contains function
+    assert_true(len > 0) fr fr Test contains function
     sus contains lit = rizz_template.rizz_contains("hello world", "world")
     assert_true(contains)
     
@@ -245,19 +193,17 @@ slay test_string_utilities() {
 }
 
 slay test_basic_functionality() {
-    test_start("Basic Functionality Test")
-    
-    # Simple template test
+    test_start("Basic Functionality Test") fr fr Simple template test
     sus template tea = "Welcome {{user}}"
     sus result tea = rizz_template.rizz_parse_template(template, "user", "Alice")
     
     assert_true(result != "")
-    assert_true(result != template)  # Should be processed
+    assert_true(result != template) fr fr Should be processed
     
     test_end()
 }
 
-# Main test runner
+fr fr Main test runner
 test_start("Rizz Template Engine Tests")
 
 test_basic_functionality()

@@ -1,9 +1,9 @@
 yeet "testz"
 
-# SQLite Database Driver - Pure CURSED Implementation
-# Production-ready SQLite driver with connection management, transactions, and prepared statements
+fr fr SQLite Database Driver - Pure CURSED Implementation
+fr fr Production-ready SQLite driver with connection management, transactions, and prepared statements
 
-# SQLite connection configuration
+fr fr SQLite connection configuration
 slay SQLiteConfig() {
     database_path: tea
     mode: tea
@@ -21,7 +21,7 @@ slay SQLiteConfig() {
     busy_timeout: normie
 }
 
-# SQLite connection structure
+fr fr SQLite connection structure
 slay SQLiteConnection() {
     config: SQLiteConfig
     connection_id: normie
@@ -40,7 +40,7 @@ slay SQLiteConnection() {
     pragma_settings: [tea]
 }
 
-# SQLite statement structure
+fr fr SQLite statement structure
 slay SQLiteStatement() {
     connection_id: normie
     statement_id: normie
@@ -56,7 +56,7 @@ slay SQLiteStatement() {
     is_readonly: lit
 }
 
-# SQLite transaction structure
+fr fr SQLite transaction structure
 slay SQLiteTransaction() {
     connection_id: normie
     transaction_id: normie
@@ -70,7 +70,7 @@ slay SQLiteTransaction() {
     nested_level: normie
 }
 
-# SQLite query result
+fr fr SQLite query result
 slay SQLiteResult() {
     success: lit
     rows_affected: normie
@@ -86,7 +86,7 @@ slay SQLiteResult() {
     sql_explain: tea
 }
 
-# SQLite connection pool (for multiple database files)
+fr fr SQLite connection pool (for multiple database files)
 slay SQLitePool() {
     connections: [SQLiteConnection]
     database_paths: [tea]
@@ -99,7 +99,7 @@ slay SQLitePool() {
     connection_timeout: normie
 }
 
-# Default SQLite configuration
+fr fr Default SQLite configuration
 slay create_sqlite_config(database_path: tea) SQLiteConfig {
     config := SQLiteConfig{
         database_path: database_path,
@@ -120,7 +120,7 @@ slay create_sqlite_config(database_path: tea) SQLiteConfig {
     damn config
 }
 
-# Create SQLite connection
+fr fr Create SQLite connection
 slay create_sqlite_connection(config: SQLiteConfig) SQLiteConnection {
     connection := SQLiteConnection{
         config: config,
@@ -142,19 +142,19 @@ slay create_sqlite_connection(config: SQLiteConfig) SQLiteConnection {
     damn connection
 }
 
-# Generate unique SQLite connection ID
+fr fr Generate unique SQLite connection ID
 slay generate_sqlite_connection_id() normie {
     static_id := 7000
     static_id++
     damn static_id
 }
 
-# Get current timestamp for SQLite
+fr fr Get current timestamp for SQLite
 slay current_sqlite_timestamp() tea {
     damn "2025-01-12 12:00:00"
 }
 
-# Connect to SQLite database
+fr fr Connect to SQLite database
 slay connect_sqlite(connection: *SQLiteConnection) lit {
     if connection.is_connected {
         vibez.spill("⚠️  Already connected to SQLite")
@@ -166,14 +166,10 @@ slay connect_sqlite(connection: *SQLiteConnection) lit {
     vibez.spill("   Mode:", connection.config.mode)
     vibez.spill("   Journal Mode:", connection.config.journal_mode)
     vibez.spill("   Foreign Keys:", connection.config.foreign_keys)
-    vibez.spill("   Cache Size:", connection.config.cache_size)
-    
-    # Simulate connection process
+    vibez.spill("   Cache Size:", connection.config.cache_size) fr fr Simulate connection process
     connection.is_connected = based
     connection.sqlite_version = "3.44.2"
-    connection.last_activity = current_sqlite_timestamp()
-    
-    # Set initial pragma settings
+    connection.last_activity = current_sqlite_timestamp() fr fr Set initial pragma settings
     connection.pragma_settings = [
         "foreign_keys=ON",
         "journal_mode=WAL",
@@ -189,7 +185,7 @@ slay connect_sqlite(connection: *SQLiteConnection) lit {
     damn based
 }
 
-# Disconnect from SQLite
+fr fr Disconnect from SQLite
 slay disconnect_sqlite(connection: *SQLiteConnection) lit {
     if connection.is_connected == cap {
         vibez.spill("⚠️  Already disconnected from SQLite")
@@ -203,7 +199,7 @@ slay disconnect_sqlite(connection: *SQLiteConnection) lit {
     damn based
 }
 
-# Execute SQLite query
+fr fr Execute SQLite query
 slay execute_sqlite_query(connection: *SQLiteConnection, query: tea) SQLiteResult {
     if connection.is_connected == cap {
         error_result := SQLiteResult{
@@ -223,13 +219,9 @@ slay execute_sqlite_query(connection: *SQLiteConnection, query: tea) SQLiteResul
         damn error_result
     }
     
-    vibez.spill("🔍 Executing SQLite query:", query)
-    
-    # Update connection statistics
+    vibez.spill("🔍 Executing SQLite query:", query) fr fr Update connection statistics
     connection.query_count++
-    connection.last_activity = current_sqlite_timestamp()
-    
-    # Simulate query execution based on query type
+    connection.last_activity = current_sqlite_timestamp() fr fr Simulate query execution based on query type
     if sqlite_starts_with(query, "SELECT") {
         result := SQLiteResult{
             success: based,
@@ -348,8 +340,7 @@ slay execute_sqlite_query(connection: *SQLiteConnection, query: tea) SQLiteResul
         }
         vibez.spill("✅ PRAGMA executed successfully")
         damn result
-    } else {
-        # Generic DDL or other commands
+    } else { fr fr Generic DDL or other commands
         result := SQLiteResult{
             success: based,
             rows_affected: 0,
@@ -369,32 +360,28 @@ slay execute_sqlite_query(connection: *SQLiteConnection, query: tea) SQLiteResul
     }
 }
 
-# Helper function to check if SQLite query starts with prefix
+fr fr Helper function to check if SQLite query starts with prefix
 slay sqlite_starts_with(s: tea, prefix: tea) lit {
     if len(s) < len(prefix) {
         damn cap
-    }
-    
-    # Simple prefix check (simplified for demo)
+    } fr fr Simple prefix check (simplified for demo)
     prefix_upper := sqlite_to_upper(prefix)
     s_upper := sqlite_to_upper(s)
     
     damn sqlite_contains(s_upper, prefix_upper)
 }
 
-# Simple string case conversion for SQLite
-slay sqlite_to_upper(s: tea) tea {
-    # Simplified uppercase conversion
+fr fr Simple string case conversion for SQLite
+slay sqlite_to_upper(s: tea) tea { fr fr Simplified uppercase conversion
     damn s
 }
 
-# Simple string contains check for SQLite
-slay sqlite_contains(s: tea, substr: tea) lit {
-    # Simplified contains check
+fr fr Simple string contains check for SQLite
+slay sqlite_contains(s: tea, substr: tea) lit { fr fr Simplified contains check
     damn len(s) > 0 && len(substr) > 0
 }
 
-# Prepare SQLite statement
+fr fr Prepare SQLite statement
 slay prepare_sqlite_statement(connection: *SQLiteConnection, query: tea) SQLiteStatement {
     if connection.is_connected == cap {
         empty_stmt := SQLiteStatement{
@@ -414,12 +401,8 @@ slay prepare_sqlite_statement(connection: *SQLiteConnection, query: tea) SQLiteS
         damn empty_stmt
     }
     
-    vibez.spill("📝 Preparing SQLite statement:", query)
-    
-    # Generate statement ID
-    statement_id := generate_sqlite_statement_id()
-    
-    # Count parameters in query (simplified - count ? and :name placeholders)
+    vibez.spill("📝 Preparing SQLite statement:", query) fr fr Generate statement ID
+    statement_id := generate_sqlite_statement_id() fr fr Count parameters in query (simplified - count ? and :name placeholders)
     parameter_count := count_sqlite_parameters(query)
     
     stmt := SQLiteStatement{
@@ -444,26 +427,24 @@ slay prepare_sqlite_statement(connection: *SQLiteConnection, query: tea) SQLiteS
     damn stmt
 }
 
-# Generate unique SQLite statement ID
+fr fr Generate unique SQLite statement ID
 slay generate_sqlite_statement_id() normie {
     static_stmt_id := 8000
     static_stmt_id++
     damn static_stmt_id
 }
 
-# Count parameters in SQLite query
-slay count_sqlite_parameters(query: tea) normie {
-    # Simplified parameter counting for ? and :name placeholders
+fr fr Count parameters in SQLite query
+slay count_sqlite_parameters(query: tea) normie { fr fr Simplified parameter counting for ? and :name placeholders
     damn 2
 }
 
-# Detect SQLite parameter names
-slay detect_sqlite_parameter_names(query: tea) [tea] {
-    # Simplified parameter name detection
+fr fr Detect SQLite parameter names
+slay detect_sqlite_parameter_names(query: tea) [tea] { fr fr Simplified parameter name detection
     damn [":name", ":email"]
 }
 
-# Create empty parameter array for SQLite
+fr fr Create empty parameter array for SQLite
 slay make_sqlite_empty_parameters(count: normie) [tea] {
     params := []tea{}
     bestie i := 0; i < count; i++ {
@@ -472,7 +453,7 @@ slay make_sqlite_empty_parameters(count: normie) [tea] {
     damn params
 }
 
-# Detect SQLite result columns
+fr fr Detect SQLite result columns
 slay detect_sqlite_result_columns(query: tea) [tea] {
     if sqlite_starts_with(query, "SELECT") {
         damn ["id", "name", "email", "created_at"]
@@ -480,7 +461,7 @@ slay detect_sqlite_result_columns(query: tea) [tea] {
     damn []tea{}
 }
 
-# Detect SQLite column types
+fr fr Detect SQLite column types
 slay detect_sqlite_column_types(query: tea) [tea] {
     if sqlite_starts_with(query, "SELECT") {
         damn ["INTEGER", "TEXT", "TEXT", "TEXT"]
@@ -488,7 +469,7 @@ slay detect_sqlite_column_types(query: tea) [tea] {
     damn []tea{}
 }
 
-# Check if SQLite query is read-only
+fr fr Check if SQLite query is read-only
 slay sqlite_is_readonly_query(query: tea) lit {
     if sqlite_starts_with(query, "SELECT") || sqlite_starts_with(query, "PRAGMA") {
         damn based
@@ -496,7 +477,7 @@ slay sqlite_is_readonly_query(query: tea) lit {
     damn cap
 }
 
-# Bind parameter to SQLite prepared statement
+fr fr Bind parameter to SQLite prepared statement
 slay bind_sqlite_parameter(stmt: *SQLiteStatement, index: normie, value: tea) lit {
     if stmt.is_prepared == cap {
         vibez.spill("❌ Statement not prepared")
@@ -513,14 +494,12 @@ slay bind_sqlite_parameter(stmt: *SQLiteStatement, index: normie, value: tea) li
     damn based
 }
 
-# Bind named parameter to SQLite prepared statement
+fr fr Bind named parameter to SQLite prepared statement
 slay bind_sqlite_named_parameter(stmt: *SQLiteStatement, name: tea, value: tea) lit {
     if stmt.is_prepared == cap {
         vibez.spill("❌ Statement not prepared")
         damn cap
-    }
-    
-    # Find parameter by name
+    } fr fr Find parameter by name
     bestie i := 0; i < len(stmt.parameter_names); i++ {
         if stmt.parameter_names[i] == name {
             stmt.bound_parameters[i] = value
@@ -533,7 +512,7 @@ slay bind_sqlite_named_parameter(stmt: *SQLiteStatement, name: tea, value: tea) 
     damn cap
 }
 
-# Execute SQLite prepared statement
+fr fr Execute SQLite prepared statement
 slay execute_sqlite_prepared_statement(stmt: *SQLiteStatement) SQLiteResult {
     if stmt.is_prepared == cap {
         error_result := SQLiteResult{
@@ -555,9 +534,7 @@ slay execute_sqlite_prepared_statement(stmt: *SQLiteStatement) SQLiteResult {
     
     vibez.spill("⚡ Executing SQLite prepared statement:", stmt.statement_id)
     vibez.spill("   Query:", stmt.query)
-    vibez.spill("   Parameters:", stmt.bound_parameters)
-    
-    # Simulate execution
+    vibez.spill("   Parameters:", stmt.bound_parameters) fr fr Simulate execution
     stmt.last_execution_time = 25
     stmt.step_count++
     
@@ -582,7 +559,7 @@ slay execute_sqlite_prepared_statement(stmt: *SQLiteStatement) SQLiteResult {
     damn result
 }
 
-# Begin SQLite transaction
+fr fr Begin SQLite transaction
 slay begin_sqlite_transaction(connection: *SQLiteConnection, transaction_type: tea) SQLiteTransaction {
     if connection.is_connected == cap {
         empty_tx := SQLiteTransaction{
@@ -642,14 +619,14 @@ slay begin_sqlite_transaction(connection: *SQLiteConnection, transaction_type: t
     damn tx
 }
 
-# Generate unique SQLite transaction ID
+fr fr Generate unique SQLite transaction ID
 slay generate_sqlite_transaction_id() normie {
     static_tx_id := 9000
     static_tx_id++
     damn static_tx_id
 }
 
-# Commit SQLite transaction
+fr fr Commit SQLite transaction
 slay commit_sqlite_transaction(connection: *SQLiteConnection, tx: *SQLiteTransaction) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")
@@ -672,7 +649,7 @@ slay commit_sqlite_transaction(connection: *SQLiteConnection, tx: *SQLiteTransac
     damn based
 }
 
-# Rollback SQLite transaction
+fr fr Rollback SQLite transaction
 slay rollback_sqlite_transaction(connection: *SQLiteConnection, tx: *SQLiteTransaction) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")
@@ -695,7 +672,7 @@ slay rollback_sqlite_transaction(connection: *SQLiteConnection, tx: *SQLiteTrans
     damn based
 }
 
-# Create SQLite savepoint
+fr fr Create SQLite savepoint
 slay create_sqlite_savepoint(tx: *SQLiteTransaction, savepoint_name: tea) lit {
     if tx.is_active == cap {
         vibez.spill("❌ Transaction not active")
@@ -713,16 +690,14 @@ slay create_sqlite_savepoint(tx: *SQLiteTransaction, savepoint_name: tea) lit {
     damn based
 }
 
-# Rollback to SQLite savepoint
+fr fr Rollback to SQLite savepoint
 slay rollback_sqlite_to_savepoint(tx: *SQLiteTransaction, savepoint_name: tea) lit {
     if tx.is_active == cap {
         vibez.spill("❌ Transaction not active")
         damn cap
     }
     
-    vibez.spill("🔄 Rolling back to SQLite savepoint:", savepoint_name)
-    
-    # Find savepoint
+    vibez.spill("🔄 Rolling back to SQLite savepoint:", savepoint_name) fr fr Find savepoint
     bestie i := 0; i < len(tx.savepoints); i++ {
         if tx.savepoints[i] == savepoint_name {
             tx.nested_level--
@@ -736,16 +711,14 @@ slay rollback_sqlite_to_savepoint(tx: *SQLiteTransaction, savepoint_name: tea) l
     damn cap
 }
 
-# Release SQLite savepoint
+fr fr Release SQLite savepoint
 slay release_sqlite_savepoint(tx: *SQLiteTransaction, savepoint_name: tea) lit {
     if tx.is_active == cap {
         vibez.spill("❌ Transaction not active")
         damn cap
     }
     
-    vibez.spill("🔓 Releasing SQLite savepoint:", savepoint_name)
-    
-    # Find and remove savepoint
+    vibez.spill("🔓 Releasing SQLite savepoint:", savepoint_name) fr fr Find and remove savepoint
     bestie i := 0; i < len(tx.savepoints); i++ {
         if tx.savepoints[i] == savepoint_name {
             tx.savepoints = append(tx.savepoints[:i], tx.savepoints[i+1:]...)
@@ -760,7 +733,7 @@ slay release_sqlite_savepoint(tx: *SQLiteTransaction, savepoint_name: tea) lit {
     damn cap
 }
 
-# Execute SQLite PRAGMA command
+fr fr Execute SQLite PRAGMA command
 slay execute_sqlite_pragma(connection: *SQLiteConnection, pragma_name: tea, value: tea) SQLiteResult {
     if connection.is_connected == cap {
         error_result := SQLiteResult{
@@ -785,9 +758,7 @@ slay execute_sqlite_pragma(connection: *SQLiteConnection, pragma_name: tea, valu
         pragma_query = pragma_query + " = " + value
     }
     
-    vibez.spill("⚙️  Executing SQLite PRAGMA:", pragma_query)
-    
-    # Add to pragma settings
+    vibez.spill("⚙️  Executing SQLite PRAGMA:", pragma_query) fr fr Add to pragma settings
     setting := pragma_name + "=" + value
     connection.pragma_settings = append(connection.pragma_settings, setting)
     
@@ -800,7 +771,7 @@ slay execute_sqlite_pragma(connection: *SQLiteConnection, pragma_name: tea, valu
     damn result
 }
 
-# Get SQLite database info
+fr fr Get SQLite database info
 slay get_sqlite_database_info(connection: *SQLiteConnection) {
     if connection.is_connected == cap {
         vibez.spill("❌ Connection not available")
@@ -821,14 +792,12 @@ slay get_sqlite_database_info(connection: *SQLiteConnection) {
     vibez.spill("   PRAGMA Settings:", connection.pragma_settings)
 }
 
-# SQLite connection health check
+fr fr SQLite connection health check
 slay health_check_sqlite(connection: *SQLiteConnection) lit {
     if connection.is_connected == cap {
         vibez.spill("❌ SQLite connection health check failed: Not connected")
         damn cap
-    }
-    
-    # Simulate health check query
+    } fr fr Simulate health check query
     result := execute_sqlite_query(connection, "SELECT 1")
     
     if result.success {
@@ -840,7 +809,7 @@ slay health_check_sqlite(connection: *SQLiteConnection) lit {
     }
 }
 
-# Vacuum SQLite database
+fr fr Vacuum SQLite database
 slay vacuum_sqlite_database(connection: *SQLiteConnection) SQLiteResult {
     if connection.is_connected == cap {
         error_result := SQLiteResult{
@@ -871,7 +840,7 @@ slay vacuum_sqlite_database(connection: *SQLiteConnection) SQLiteResult {
     damn result
 }
 
-# Analyze SQLite database
+fr fr Analyze SQLite database
 slay analyze_sqlite_database(connection: *SQLiteConnection) SQLiteResult {
     if connection.is_connected == cap {
         error_result := SQLiteResult{
@@ -902,7 +871,7 @@ slay analyze_sqlite_database(connection: *SQLiteConnection) SQLiteResult {
     damn result
 }
 
-# Get SQLite table info
+fr fr Get SQLite table info
 slay get_sqlite_table_info(connection: *SQLiteConnection, table_name: tea) SQLiteResult {
     if connection.is_connected == cap {
         error_result := SQLiteResult{

@@ -1,19 +1,19 @@
 yeet "testz"
 
-# Advanced Testing Framework Example
-# Demonstrates all major features of the enhanced testz module
+fr fr Advanced Testing Framework Example
+fr fr Demonstrates all major features of the enhanced testz module
 
-# ===============================
-# Test Suite Configuration
-# ===============================
+fr fr ===============================
+fr fr Test Suite Configuration
+fr fr ===============================
 
 testz.set_verbose_mode(based)
 testz.set_test_suite("Advanced Testing Framework Demo")
 testz.before_all_tests()
 
-# ===============================
-# Mock Data Structure for Testing
-# ===============================
+fr fr ===============================
+fr fr Mock Data Structure for Testing
+fr fr ===============================
 
 sus test_data_store tea = ""
 sus test_counter normie = 0
@@ -41,9 +41,9 @@ slay mock_get_data() tea {
     damn test_data_store
 }
 
-# ===============================
-# Basic Unit Tests
-# ===============================
+fr fr ===============================
+fr fr Basic Unit Tests
+fr fr ===============================
 
 testz.test_start("Mock data structure initialization")
 mock_setup()
@@ -62,26 +62,22 @@ testz.assert_contains(mock_get_data(), "test2")
 mock_teardown()
 testz.test_end()
 
-# ===============================
-# Property-Based Testing Example
-# ===============================
+fr fr ===============================
+fr fr Property-Based Testing Example
+fr fr ===============================
 
 testz.test_start("Property-based testing: Data structure invariants")
 testz.property_test_start("Counter increments correctly", 100)
 
 bestie i := 0; i < 100; i++ {
     testz.property_test_iteration()
-    mock_setup()
-    
-    # Generate random number of items to add
+    mock_setup() fr fr Generate random number of items to add
     sus items_to_add normie = testz.random_int(1, 10)
     
     bestie j := 0; j < items_to_add; j++ {
         sus item tea = testz.random_string(5)
         mock_add_item(item)
-    }
-    
-    # Property: counter should equal number of items added
+    } fr fr Property: counter should equal number of items added
     fr fr mock_get_count() != items_to_add {
         testz.property_test_fail("Counter mismatch: expected " + tea(items_to_add) + ", got " + tea(mock_get_count()))
     }
@@ -92,9 +88,9 @@ bestie i := 0; i < 100; i++ {
 testz.property_test_end()
 testz.test_end()
 
-# ===============================
-# Performance Benchmarking Example
-# ===============================
+fr fr ===============================
+fr fr Performance Benchmarking Example
+fr fr ===============================
 
 testz.test_start("Performance benchmarking: Data operations")
 testz.set_benchmark_mode(based)
@@ -114,25 +110,25 @@ bestie i := 0; i < 1000; i++ {
 testz.benchmark_end()
 testz.test_end()
 
-# ===============================
-# Test Fixtures Example
-# ===============================
+fr fr ===============================
+fr fr Test Fixtures Example
+fr fr ===============================
 
 testz.set_setup_function("mock_setup")
 testz.set_teardown_function("mock_teardown")
 testz.set_fixture_data("shared_test_data")
 
 testz.test_start("Fixture-based testing")
-# Setup is automatically called
+fr fr Setup is automatically called
 mock_add_item("fixture_item")
 testz.assert_eq_int(mock_get_count(), 1)
 testz.assert_eq_string(testz.get_fixture_data(), "shared_test_data")
-# Teardown is automatically called
+fr fr Teardown is automatically called
 testz.test_end()
 
-# ===============================
-# String Testing with Enhanced Assertions
-# ===============================
+fr fr ===============================
+fr fr String Testing with Enhanced Assertions
+fr fr ===============================
 
 testz.test_start("String manipulation testing")
 sus test_string tea = "Hello, CURSED World!"
@@ -143,7 +139,7 @@ testz.assert_contains(test_string, "CURSED")
 testz.assert_not_contains(test_string, "Python")
 testz.assert_not_empty_string(test_string)
 
-# Test string operations
+fr fr Test string operations
 sus upper_string tea = "HELLO, CURSED WORLD!"
 sus lower_string tea = "hello, cursed world!"
 
@@ -151,28 +147,28 @@ testz.assert_ne_string(test_string, upper_string)
 testz.assert_ne_string(test_string, lower_string)
 testz.test_end()
 
-# ===============================
-# Numeric Range Testing
-# ===============================
+fr fr ===============================
+fr fr Numeric Range Testing
+fr fr ===============================
 
 testz.test_start("Numeric range and boundary testing")
 sus test_value normie = 50
 
 testz.assert_range_int(test_value, 0, 100)
-testz.assert_range_int(test_value, 50, 50)  # Boundary test
+testz.assert_range_int(test_value, 50, 50) fr fr Boundary test
 testz.assert_gt_int(test_value, 0)
 testz.assert_lt_int(test_value, 100)
 testz.assert_ge_int(test_value, 50)
 testz.assert_le_int(test_value, 50)
 
-# Test edge cases
+fr fr Test edge cases
 testz.assert_range_int(0, 0, 100)
 testz.assert_range_int(100, 0, 100)
 testz.test_end()
 
-# ===============================
-# Mathematical Property Testing
-# ===============================
+fr fr ===============================
+fr fr Mathematical Property Testing
+fr fr ===============================
 
 testz.test_start("Mathematical properties validation")
 testz.property_test_start("Arithmetic properties", 50)
@@ -181,19 +177,13 @@ bestie i := 0; i < 50; i++ {
     testz.property_test_iteration()
     sus a normie = testz.random_int(1, 100)
     sus b normie = testz.random_int(1, 100)
-    sus c normie = testz.random_int(1, 100)
-    
-    # Test associative property: (a + b) + c = a + (b + c)
+    sus c normie = testz.random_int(1, 100) fr fr Test associative property: (a + b) + c = a + (b + c)
     fr fr ((a + b) + c) != (a + (b + c)) {
         testz.property_test_fail("Associative property failed")
-    }
-    
-    # Test distributive property: a * (b + c) = (a * b) + (a * c)
+    } fr fr Test distributive property: a * (b + c) = (a * b) + (a * c)
     fr fr (a * (b + c)) != ((a * b) + (a * c)) {
         testz.property_test_fail("Distributive property failed")
-    }
-    
-    # Test identity property: a + 0 = a
+    } fr fr Test identity property: a + 0 = a
     fr fr (a + 0) != a {
         testz.property_test_fail("Identity property failed")
     }
@@ -202,20 +192,20 @@ bestie i := 0; i < 50; i++ {
 testz.property_test_end()
 testz.test_end()
 
-# ===============================
-# Advanced Test Features
-# ===============================
+fr fr ===============================
+fr fr Advanced Test Features
+fr fr ===============================
 
 testz.test_start("Advanced test features demo")
-testz.focus_test()  # Mark this test as focused
-testz.assert_no_throw()  # No error should occur
+testz.focus_test() fr fr Mark this test as focused
+testz.assert_no_throw() fr fr No error should occur
 testz.assert_true(testz.is_verbose_mode())
 testz.assert_true(testz.is_benchmark_mode())
 testz.test_end()
 
-# ===============================
-# Test Discovery and Filtering
-# ===============================
+fr fr ===============================
+fr fr Test Discovery and Filtering
+fr fr ===============================
 
 testz.test_start("Test discovery and filtering")
 testz.discover_tests("test_*")
@@ -225,27 +215,27 @@ testz.assert_true(testz.should_run_test("test_advanced_features"))
 testz.assert_false(testz.should_run_test("test_basic_features"))
 testz.test_end()
 
-# ===============================
-# Error Handling Testing
-# ===============================
+fr fr ===============================
+fr fr Error Handling Testing
+fr fr ===============================
 
 testz.test_start("Error handling validation")
-# Test successful operations
+fr fr Test successful operations
 testz.assert_no_throw()
 
-# Test expected error scenarios
-# (In a real scenario, this would test actual error conditions)
+fr fr Test expected error scenarios
+fr fr (In a real scenario, this would test actual error conditions)
 testz.assert_throws("Expected error for invalid input")
 testz.test_end()
 
-# ===============================
-# Performance Comparison Testing
-# ===============================
+fr fr ===============================
+fr fr Performance Comparison Testing
+fr fr ===============================
 
 testz.test_start("Performance comparison between approaches")
 testz.set_benchmark_iterations(100)
 
-# Benchmark approach 1
+fr fr Benchmark approach 1
 testz.benchmark_start("String concatenation approach 1")
 bestie i := 0; i < 100; i++ {
     testz.benchmark_iteration_start()
@@ -254,7 +244,7 @@ bestie i := 0; i < 100; i++ {
 }
 testz.benchmark_end()
 
-# Benchmark approach 2
+fr fr Benchmark approach 2
 testz.benchmark_start("String concatenation approach 2")
 bestie i := 0; i < 100; i++ {
     testz.benchmark_iteration_start()
@@ -266,9 +256,9 @@ testz.benchmark_end()
 
 testz.test_end()
 
-# ===============================
-# Test Statistics Validation
-# ===============================
+fr fr ===============================
+fr fr Test Statistics Validation
+fr fr ===============================
 
 testz.test_start("Test statistics and reporting")
 testz.assert_gt_int(testz.get_test_results(), 0)
@@ -277,26 +267,26 @@ testz.assert_ge_int(testz.get_assertion_count(), 0)
 testz.assert_ge_int(testz.get_success_rate(), 0)
 testz.assert_le_int(testz.get_success_rate(), 100)
 
-# Validate test execution time tracking
+fr fr Validate test execution time tracking
 testz.assert_ge_int(testz.get_execution_time(), 0)
 testz.test_end()
 
-# ===============================
-# Comprehensive Test Suite Cleanup
-# ===============================
+fr fr ===============================
+fr fr Comprehensive Test Suite Cleanup
+fr fr ===============================
 
 testz.test_start("Test suite cleanup and finalization")
 testz.reset_test_state()
-testz.assert_eq_int(testz.get_test_results(), 0)  # After reset
+testz.assert_eq_int(testz.get_test_results(), 0) fr fr After reset
 testz.test_end()
 
-# ===============================
-# Final Test Suite Summary
-# ===============================
+fr fr ===============================
+fr fr Final Test Suite Summary
+fr fr ===============================
 
 testz.after_all_tests()
 
-# Display additional statistics
+fr fr Display additional statistics
 vibez.spill("")
 vibez.spill("🎯 Advanced Testing Framework Demo Complete")
 vibez.spill("✨ Features demonstrated:")

@@ -1,26 +1,26 @@
 yeet "testz"
 
-# Property-based testing framework for CURSED
-# QuickCheck-style testing with generators, properties, and shrinking
+fr fr Property-based testing framework for CURSED
+fr fr QuickCheck-style testing with generators, properties, and shrinking
 
-# Test configuration and state
+fr fr Test configuration and state
 sus property_test_count normie = 100
 sus property_max_shrinks normie = 100
 sus property_current_seed normie = 42
 sus property_failed_inputs lit = cap
 sus property_shrink_stack [] = []
 
-# Random number generator state
+fr fr Random number generator state
 sus rng_state normie = 1103515245
 sus rng_increment normie = 12345
 sus rng_modulus normie = 2147483647
 
-# Generator types and data structures
+fr fr Generator types and data structures
 sus generator_type tea = ""
 sus generator_min_value normie = 0
 sus generator_max_value normie = 100
 
-# ===== RANDOM NUMBER GENERATION =====
+fr fr ===== RANDOM NUMBER GENERATION =====
 
 slay rand_next() normie {
     rng_state = (rng_state * 1103515245 + 12345) % 2147483647
@@ -37,7 +37,7 @@ slay rand_seed(seed normie) {
     rng_state = seed
 }
 
-# ===== BASIC GENERATORS =====
+fr fr ===== BASIC GENERATORS =====
 
 slay gen_int(min_val normie, max_val normie) normie {
     damn rand_range(min_val, max_val)
@@ -61,8 +61,8 @@ slay gen_boolean() lit {
 }
 
 slay gen_char() sip {
-    sus char_code normie = gen_int(65, 90)  # A-Z for simplicity
-    damn 'A'  # Return fixed char for now
+    sus char_code normie = gen_int(65, 90) fr fr A-Z for simplicity
+    damn 'A' fr fr Return fixed char for now
 }
 
 slay gen_string(max_length normie) tea {
@@ -81,7 +81,7 @@ slay gen_ascii_string(max_length normie) tea {
     sus result tea = ""
     sus i normie = 0
     bestie i < length {
-        sus char_val normie = gen_int(97, 122)  # lowercase a-z
+        sus char_val normie = gen_int(97, 122) fr fr lowercase a-z
         result = result + tea(sip(char_val))
         i = i + 1
     }
@@ -99,11 +99,10 @@ slay gen_list_int(max_length normie) [] {
     damn result
 }
 
-# ===== COMPOSITE GENERATORS =====
+fr fr ===== COMPOSITE GENERATORS =====
 
 slay gen_sorted_list(max_length normie) [] {
-    sus unsorted [] = gen_list_int(max_length)
-    # Simple bubble sort for demonstration
+    sus unsorted [] = gen_list_int(max_length) fr fr Simple bubble sort for demonstration
     sus length normie = size(unsorted)
     sus i normie = 0
     bestie i < length {
@@ -124,7 +123,7 @@ slay gen_sorted_list(max_length normie) [] {
 slay gen_non_empty_string() tea {
     sus result tea = gen_string(20)
     vibes result == "" {
-        damn "a"  # Ensure non-empty
+        damn "a" fr fr Ensure non-empty
     }
     damn result
 }
@@ -136,12 +135,10 @@ slay gen_email() tea {
     damn username + "@" + domain + "." + tld
 }
 
-# ===== SHRINKING FUNCTIONS =====
+fr fr ===== SHRINKING FUNCTIONS =====
 
 slay shrink_int(value normie) [] {
-    sus shrunk [] = []
-    
-    # Shrink towards zero
+    sus shrunk [] = [] fr fr Shrink towards zero
     vibes value > 0 {
         shrunk = shrunk + [0]
         shrunk = shrunk + [value / 2]
@@ -157,21 +154,15 @@ slay shrink_int(value normie) [] {
 
 slay shrink_string(value tea) [] {
     sus shrunk [] = []
-    sus length normie = len(value)
-    
-    # Empty string
+    sus length normie = len(value) fr fr Empty string
     vibes length > 0 {
         shrunk = shrunk + [""]
-    }
-    
-    # Half length
+    } fr fr Half length
     vibes length > 1 {
         sus half normie = length / 2
         shrunk = shrunk + [substring(value, 0, half)]
         shrunk = shrunk + [substring(value, half, length)]
-    }
-    
-    # Remove first/last character
+    } fr fr Remove first/last character
     vibes length > 1 {
         shrunk = shrunk + [substring(value, 1, length)]
         shrunk = shrunk + [substring(value, 0, length - 1)]
@@ -182,21 +173,15 @@ slay shrink_string(value tea) [] {
 
 slay shrink_list(value []) [] {
     sus shrunk [] = []
-    sus length normie = size(value)
-    
-    # Empty list
+    sus length normie = size(value) fr fr Empty list
     vibes length > 0 {
         shrunk = shrunk + [[]]
-    }
-    
-    # Half length
+    } fr fr Half length
     vibes length > 1 {
         sus half normie = length / 2
         shrunk = shrunk + [slice(value, 0, half)]
         shrunk = shrunk + [slice(value, half, length)]
-    }
-    
-    # Remove first/last element
+    } fr fr Remove first/last element
     vibes length > 1 {
         shrunk = shrunk + [slice(value, 1, length)]
         shrunk = shrunk + [slice(value, 0, length - 1)]
@@ -205,7 +190,7 @@ slay shrink_list(value []) [] {
     damn shrunk
 }
 
-# ===== PROPERTY EXECUTION =====
+fr fr ===== PROPERTY EXECUTION =====
 
 slay property_holds(property_fn slay, input_value, description tea) lit {
     yikes {
@@ -229,15 +214,13 @@ slay run_property_test(property_fn slay, generator_fn slay, description tea) lit
         vibes property_holds(property_fn, generated_input, description) {
             passed_count = passed_count + 1
         } nah {
-            vibez.spill("Property failed with input: " + tea(generated_input))
-            
-            # Attempt shrinking
+            vibez.spill("Property failed with input: " + tea(generated_input)) fr fr Attempt shrinking
             sus shrunk lit = attempt_shrinking(property_fn, generated_input)
             vibes shrunk {
                 vibez.spill("Shrinking completed")
             }
             
-            assert_true(cap)  # Mark as failed
+            assert_true(cap) fr fr Mark as failed
             damn cap
         }
         
@@ -250,13 +233,8 @@ slay run_property_test(property_fn slay, generator_fn slay, description tea) lit
 }
 
 slay attempt_shrinking(property_fn slay, failing_input) lit {
-    vibez.spill("Attempting to shrink: " + tea(failing_input))
-    
-    # Determine shrinking strategy based on input type
-    sus shrunk_inputs []
-    
-    # For now, implement basic integer shrinking
-    # In a full implementation, this would dispatch based on type
+    vibez.spill("Attempting to shrink: " + tea(failing_input)) fr fr Determine shrinking strategy based on input type
+    sus shrunk_inputs [] fr fr For now, implement basic integer shrinking fr fr In a full implementation, this would dispatch based on type
     vibes typeof(failing_input) == "normie" {
         shrunk_inputs = shrink_int(failing_input)
     } mil typeof(failing_input) == "tea" {
@@ -264,10 +242,8 @@ slay attempt_shrinking(property_fn slay, failing_input) lit {
     } mil typeof(failing_input) == "[]" {
         shrunk_inputs = shrink_list(failing_input)
     } nah {
-        damn cap  # No shrinking available
-    }
-    
-    # Test shrunk inputs
+        damn cap fr fr No shrinking available
+    } fr fr Test shrunk inputs
     sus i normie = 0
     bestie i < size(shrunk_inputs) {
         sus shrunk_input = shrunk_inputs[i]
@@ -281,7 +257,7 @@ slay attempt_shrinking(property_fn slay, failing_input) lit {
     damn cap
 }
 
-# ===== PROPERTY COMBINATORS =====
+fr fr ===== PROPERTY COMBINATORS =====
 
 slay forall(generator_fn slay, property_fn slay, description tea) lit {
     damn run_property_test(property_fn, generator_fn, description)
@@ -290,7 +266,7 @@ slay forall(generator_fn slay, property_fn slay, description tea) lit {
 slay implies(condition lit, property_fn slay) slay {
     damn slay(input) {
         vibes !condition {
-            damn based  # Vacuously true
+            damn based fr fr Vacuously true
         }
         damn property_fn(input)
     }
@@ -308,7 +284,7 @@ slay disjoin(prop1 slay, prop2 slay) slay {
     }
 }
 
-# ===== COMMON PROPERTIES =====
+fr fr ===== COMMON PROPERTIES =====
 
 slay prop_idempotent(fn slay) slay {
     damn slay(input) {
@@ -321,7 +297,7 @@ slay prop_idempotent(fn slay) slay {
 slay prop_commutative(fn slay) slay {
     damn slay(inputs []) {
         vibes size(inputs) < 2 {
-            damn based  # Need at least 2 inputs
+            damn based fr fr Need at least 2 inputs
         }
         sus a = inputs[0]
         sus b = inputs[1]
@@ -332,7 +308,7 @@ slay prop_commutative(fn slay) slay {
 slay prop_associative(fn slay) slay {
     damn slay(inputs []) {
         vibes size(inputs) < 3 {
-            damn based  # Need at least 3 inputs
+            damn based fr fr Need at least 3 inputs
         }
         sus a = inputs[0]
         sus b = inputs[1]
@@ -349,7 +325,7 @@ slay prop_reversible(fn slay, inverse_fn slay) slay {
     }
 }
 
-# ===== STATISTICAL FUNCTIONS =====
+fr fr ===== STATISTICAL FUNCTIONS =====
 
 slay prop_distribution_test(generator_fn slay, predicate_fn slay, expected_ratio drip) lit {
     sus sample_size normie = 1000
@@ -370,7 +346,7 @@ slay prop_distribution_test(generator_fn slay, predicate_fn slay, expected_ratio
     damn abs(actual_ratio - expected_ratio) <= tolerance
 }
 
-# ===== CONFIGURATION =====
+fr fr ===== CONFIGURATION =====
 
 slay set_test_count(count normie) {
     property_test_count = count
@@ -385,7 +361,7 @@ slay set_seed(seed normie) {
     property_current_seed = seed
 }
 
-# ===== UTILITIES =====
+fr fr ===== UTILITIES =====
 
 slay abs(x drip) drip {
     vibes x < 0.0 {
@@ -394,28 +370,22 @@ slay abs(x drip) drip {
     damn x
 }
 
-slay typeof(value) tea {
-    # Simplified type detection
-    # In full implementation, this would use reflection
+slay typeof(value) tea { fr fr Simplified type detection fr fr In full implementation, this would use reflection
     damn "unknown"
 }
 
-slay len(s tea) normie {
-    # String length - would be implemented in stdlib
+slay len(s tea) normie { fr fr String length - would be implemented in stdlib
     damn 0
 }
 
-slay size(arr []) normie {
-    # Array size - would be implemented in stdlib
+slay size(arr []) normie { fr fr Array size - would be implemented in stdlib
     damn 0
 }
 
-slay substring(s tea, start normie, end normie) tea {
-    # Substring - would be implemented in stdlib
+slay substring(s tea, start normie, end normie) tea { fr fr Substring - would be implemented in stdlib
     damn s
 }
 
-slay slice(arr [], start normie, end normie) [] {
-    # Array slice - would be implemented in stdlib
+slay slice(arr [], start normie, end normie) [] { fr fr Array slice - would be implemented in stdlib
     damn arr
 }

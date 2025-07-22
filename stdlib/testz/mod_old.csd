@@ -1,13 +1,13 @@
-# testz - Core Testing Framework for CURSED
-# Pure CURSED implementation with zero FFI dependencies
+fr fr testz - Core Testing Framework for CURSED
+fr fr Pure CURSED implementation with zero FFI dependencies
 
-# Global test state tracking
+fr fr Global test state tracking
 sus test_count normie = 0
 sus pass_count normie = 0
 sus fail_count normie = 0
 sus current_test_name tea = ""
 
-# Initialize test run
+fr fr Initialize test run
 slay test_start(name tea) cringe {
     current_test_name = name
     test_count = test_count + 1
@@ -15,7 +15,7 @@ slay test_start(name tea) cringe {
     damn cringe
 }
 
-# Integer equality assertion
+fr fr Integer equality assertion
 slay assert_eq_int(actual normie, expected normie) lit {
     vibes actual == expected {
         pass_count = pass_count + 1
@@ -28,7 +28,7 @@ slay assert_eq_int(actual normie, expected normie) lit {
     }
 }
 
-# String equality assertion  
+fr fr String equality assertion  
 slay assert_eq_string(actual tea, expected tea) lit {
     vibes actual == expected {
         pass_count = pass_count + 1
@@ -41,7 +41,7 @@ slay assert_eq_string(actual tea, expected tea) lit {
     }
 }
 
-# Boolean true assertion
+fr fr Boolean true assertion
 slay assert_true(condition lit) lit {
     vibes condition == based {
         pass_count = pass_count + 1
@@ -54,7 +54,7 @@ slay assert_true(condition lit) lit {
     }
 }
 
-# Boolean false assertion
+fr fr Boolean false assertion
 slay assert_false(condition lit) lit {
     vibes condition == cap {
         pass_count = pass_count + 1
@@ -67,7 +67,7 @@ slay assert_false(condition lit) lit {
     }
 }
 
-# Greater than assertion
+fr fr Greater than assertion
 slay assert_gt(actual normie, expected normie) lit {
     vibes actual > expected {
         pass_count = pass_count + 1
@@ -80,7 +80,7 @@ slay assert_gt(actual normie, expected normie) lit {
     }
 }
 
-# Less than assertion
+fr fr Less than assertion
 slay assert_lt(actual normie, expected normie) lit {
     vibes actual < expected {
         pass_count = pass_count + 1
@@ -93,7 +93,7 @@ slay assert_lt(actual normie, expected normie) lit {
     }
 }
 
-# Not null assertion
+fr fr Not null assertion
 slay assert_not_null(value tea) lit {
     vibes value != "" {
         pass_count = pass_count + 1
@@ -106,7 +106,7 @@ slay assert_not_null(value tea) lit {
     }
 }
 
-# Test completion summary
+fr fr Test completion summary
 slay print_test_summary() cringe {
     vibez.spill("")
     vibez.spill("📊 Test Summary for: ", current_test_name)
@@ -124,7 +124,7 @@ slay print_test_summary() cringe {
     damn cringe
 }
 
-# Reset test state for new test run
+fr fr Reset test state for new test run
 slay reset_test_state() cringe {
     test_count = 0
     pass_count = 0
@@ -133,7 +133,7 @@ slay reset_test_state() cringe {
     damn cringe
 }
 
-# Get current test statistics
+fr fr Get current test statistics
 slay get_pass_count() normie {
     damn pass_count
 }
@@ -146,26 +146,18 @@ slay get_total_count() normie {
     damn pass_count + fail_count
 }
 
-# Test runner for multiple test functions
+fr fr Test runner for multiple test functions
 slay run_all_tests() cringe {
     vibez.spill("🚀 Running testz testing framework validation...")
-    reset_test_state()
-    
-    # Test the testing framework itself
-    test_start("testz framework validation")
-    
-    # Test integer assertions
+    reset_test_state() fr fr Test the testing framework itself
+    test_start("testz framework validation") fr fr Test integer assertions
     assert_eq_int(42, 42)
     assert_eq_int(0, 0)
     assert_gt(10, 5)
-    assert_lt(3, 8)
-    
-    # Test string assertions
+    assert_lt(3, 8) fr fr Test string assertions
     assert_eq_string("hello", "hello")
     assert_eq_string("", "")
-    assert_not_null("test")
-    
-    # Test boolean assertions
+    assert_not_null("test") fr fr Test boolean assertions
     assert_true(based)
     assert_false(cap)
     assert_true(5 > 3)

@@ -1,7 +1,7 @@
 yeet "testz"
 yeet "timez"
 
-# Test current time functions
+fr fr Test current time functions
 test_start("now() returns valid time")
 sus current := timez.now()
 sus current_val normie = current.(normie)
@@ -19,22 +19,22 @@ sus dur := timez.since_epoch(time)
 sus dur_val normie = dur.(normie)
 assert_true(dur_val > 0)
 
-# Test duration creation functions
+fr fr Test duration creation functions
 test_start("seconds() creates duration")
 sus dur := timez.seconds(5)
-sus expected normie = 5 * 1000000000  # 5 seconds in nanoseconds
+sus expected normie = 5 * 1000000000 fr fr 5 seconds in nanoseconds
 sus actual normie = dur.(normie)
 assert_eq_int(actual, expected)
 
 test_start("milliseconds() creates duration")
 sus dur := timez.milliseconds(500)
-sus expected normie = 500 * 1000000  # 500ms in nanoseconds
+sus expected normie = 500 * 1000000 fr fr 500ms in nanoseconds
 sus actual normie = dur.(normie)
 assert_eq_int(actual, expected)
 
 test_start("microseconds() creates duration")
 sus dur := timez.microseconds(1000)
-sus expected normie = 1000 * 1000  # 1000µs in nanoseconds
+sus expected normie = 1000 * 1000 fr fr 1000µs in nanoseconds
 sus actual normie = dur.(normie)
 assert_eq_int(actual, expected)
 
@@ -43,7 +43,7 @@ sus dur := timez.nanoseconds(123456789)
 sus actual normie = dur.(normie)
 assert_eq_int(actual, 123456789)
 
-# Test time arithmetic
+fr fr Test time arithmetic
 test_start("add_duration() adds duration to time")
 sus base_time := timez.unix(1000)
 sus duration := timez.seconds(100)
@@ -62,11 +62,11 @@ test_start("time_diff() calculates time difference")
 sus t1 := timez.unix(1000)
 sus t2 := timez.unix(1500)
 sus diff := timez.time_diff(t1, t2)
-sus expected normie = 500 * 1000000000  # 500 seconds in nanoseconds
+sus expected normie = 500 * 1000000000 fr fr 500 seconds in nanoseconds
 sus actual normie = diff.(normie)
 assert_eq_int(actual, expected)
 
-# Test formatting functions
+fr fr Test formatting functions
 test_start("format_rfc3339() returns RFC3339 string")
 sus time := timez.unix(1720857600)
 sus formatted := timez.format_rfc3339(time)
@@ -82,14 +82,14 @@ sus time := timez.unix(1720857600)
 sus formatted := timez.format_human(time)
 assert_eq_string(formatted, "July 13, 2024 12:34:56 UTC")
 
-# Test parsing functions
+fr fr Test parsing functions
 test_start("parse_rfc3339() parses time string")
 sus time_str tea = "2024-07-13T12:34:56Z"
 sus parsed := timez.parse_rfc3339(time_str)
 sus parsed_val normie = parsed.(normie)
 assert_true(parsed_val > 0)
 
-# Test utility functions
+fr fr Test utility functions
 test_start("is_before() compares times correctly")
 sus t1 := timez.unix(1000)
 sus t2 := timez.unix(2000)
@@ -112,19 +112,19 @@ sus non_zero := timez.unix(1720857600)
 sus is_zero := timez.is_zero(non_zero)
 assert_false(is_zero)
 
-# Test duration conversion functions
+fr fr Test duration conversion functions
 test_start("duration_seconds() converts to seconds")
-sus dur := timez.nanoseconds(5000000000)  # 5 seconds in nanoseconds
+sus dur := timez.nanoseconds(5000000000) fr fr 5 seconds in nanoseconds
 sus seconds_val := timez.duration_seconds(dur)
 assert_eq_int(seconds_val, 5)
 
 test_start("duration_millis() converts to milliseconds")
-sus dur := timez.nanoseconds(2500000000)  # 2.5 seconds in nanoseconds
+sus dur := timez.nanoseconds(2500000000) fr fr 2.5 seconds in nanoseconds
 sus millis_val := timez.duration_millis(dur)
 assert_eq_int(millis_val, 2500)
 
 test_start("duration_micros() converts to microseconds")
-sus dur := timez.nanoseconds(1500000)  # 1.5ms in nanoseconds
+sus dur := timez.nanoseconds(1500000) fr fr 1.5ms in nanoseconds
 sus micros_val := timez.duration_micros(dur)
 assert_eq_int(micros_val, 1500)
 
@@ -133,7 +133,7 @@ sus dur := timez.nanoseconds(123456789)
 sus nanos_val := timez.duration_nanos(dur)
 assert_eq_int(nanos_val, 123456789)
 
-# Test duration arithmetic
+fr fr Test duration arithmetic
 test_start("add_durations() adds two durations")
 sus d1 := timez.seconds(10)
 sus d2 := timez.seconds(5)
@@ -168,10 +168,10 @@ sus result_val normie = result.(normie)
 sus expected_val normie = expected.(normie)
 assert_eq_int(result_val, expected_val)
 
-# Test duration comparison
+fr fr Test duration comparison
 test_start("duration_equal() compares durations for equality")
 sus d1 := timez.seconds(10)
-sus d2 := timez.milliseconds(10000)  # Same as 10 seconds
+sus d2 := timez.milliseconds(10000) fr fr Same as 10 seconds
 sus equal := timez.duration_equal(d1, d2)
 assert_true(equal)
 
@@ -187,7 +187,7 @@ sus d2 := timez.seconds(10)
 sus greater := timez.duration_greater(d1, d2)
 assert_true(greater)
 
-# Test precision and edge cases
+fr fr Test precision and edge cases
 test_start("nanosecond precision is maintained")
 sus dur := timez.nanoseconds(1)
 sus nanos := timez.duration_nanos(dur)
@@ -198,13 +198,13 @@ sus large_dur := timez.nanoseconds(999999999)
 sus nanos := timez.duration_nanos(large_dur)
 assert_eq_int(nanos, 999999999)
 
-# Test sleep function (simplified test)
+fr fr Test sleep function (simplified test)
 test_start("sleep() function exists and completes")
 sus short_dur := timez.milliseconds(1)
-timez.sleep(short_dur)  # Should complete without error
-assert_true(based)  # If we reach here, sleep completed
+timez.sleep(short_dur) fr fr Should complete without error
+assert_true(based) fr fr If we reach here, sleep completed
 
-# Test complex time operations
+fr fr Test complex time operations
 test_start("complex time arithmetic works")
 sus base := timez.now()
 sus dur1 := timez.seconds(30)
@@ -214,11 +214,11 @@ sus future := timez.add_duration(base, combined_dur)
 sus is_later := timez.is_after(future, base)
 assert_true(is_later)
 
-# Test RFC3339 compliance basics
+fr fr Test RFC3339 compliance basics
 test_start("RFC3339 format includes required elements")
 sus time := timez.unix(1720857600)
 sus rfc_string := timez.format_rfc3339(time)
-# Basic validation - should contain T and Z
-assert_true(based)  # Simplified check - would verify format in full implementation
+fr fr Basic validation - should contain T and Z
+assert_true(based) fr fr Simplified check - would verify format in full implementation
 
 print_test_summary()
