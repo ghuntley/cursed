@@ -78,7 +78,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
     /// Set the target triple
     pub fn set_target_triple(&mut self, triple: String) {
         self.target_triple = triple.clone();
-        let target_triple = triple.as_str().try_into().unwrap();
+        let target_triple = TargetTriple::create(&triple);
         self.module.set_triple(&target_triple);
     }
 
@@ -404,7 +404,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
             Statement::Expression(expr) => {
                 self.compile_expression(expr)?;
             }
-            Statement::Variable(var_stmt) => {
+            Statement::Let(var_stmt) => {
                 self.compile_variable_statement(var_stmt)?;
             }
             Statement::Return(ret_stmt) => {
@@ -430,30 +430,31 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
     }
 
     /// Compile a variable statement
-    fn compile_variable_statement(&mut self, var_stmt: &crate::ast::VariableStatement) -> Result<(), CursedError> {
+    fn compile_variable_statement(&mut self, var_stmt: &crate::ast::LetStatement) -> Result<(), CursedError> {
         // Create alloca for the variable
-        let var_type = if let Some(init_expr) = &var_stmt.initializer {
-            // Infer type from initializer
-            let init_value = self.compile_expression(init_expr)?;
-            init_value.get_type()
-        } else if let Some(type_annotation) = &var_stmt.variable_type {
+        let init_value = self.compile_expression(&var_stmt.value)?;
+        let var_type = if let Some(type_annotation) = &var_stmt.var_type {
             self.convert_cursed_type_to_llvm(type_annotation)?
         } else {
-            return Err(CursedError::CompilerError("Cannot determine variable type".to_string()));
+            // Infer type from initializer
+            init_value.get_type()
         };
 
-        let alloca = self.builder.build_alloca(var_type, &var_stmt.name)
+        // Get variable name from target (simplified - assume single identifier)
+        let var_name = match &var_stmt.target {
+            crate::ast::LetTarget::Single(name) => name,
+            _ => return Err(CursedError::CompilerError("Complex let targets not yet supported".to_string())),
+        };
+
+        let alloca = self.builder.build_alloca(var_type, var_name)
             .map_err(|e| CursedError::CompilerError(format!("Failed to create alloca: {}", e)))?;
         
-        // Store initial value if present
-        if let Some(init_expr) = &var_stmt.initializer {
-            let init_value = self.compile_expression(init_expr)?;
-            self.builder.build_store(alloca, init_value)
-                .map_err(|e| CursedError::CompilerError(format!("Failed to store initial value: {}", e)))?;
-        }
+        // Store initial value
+        self.builder.build_store(alloca, init_value)
+            .map_err(|e| CursedError::CompilerError(format!("Failed to store initial value: {}", e)))?;
 
         // Add to expression compiler's variable scope
-        self.expression_compiler.add_variable(var_stmt.name.clone(), alloca);
+        self.expression_compiler.add_variable(var_name.clone(), alloca);
         
         Ok(())
     }
@@ -481,7 +482,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
 
         // Create basic blocks
         let then_block = self.context.append_basic_block(current_function, "if.then");
-        let else_block = if if_stmt.else_body.is_some() {
+        let else_block = if if_stmt.else_branch.is_some() {
             Some(self.context.append_basic_block(current_function, "if.else"))
         } else {
             None
@@ -499,7 +500,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
 
         // Generate then block
         self.builder.position_at_end(then_block);
-        for stmt in &if_stmt.then_body.statements {
+        for stmt in &if_stmt.then_branch {
             self.compile_statement(stmt)?;
         }
         if !self.has_terminator() {
@@ -508,9 +509,9 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
         }
 
         // Generate else block if present
-        if let (Some(else_bb), Some(else_body)) = (else_block, &if_stmt.else_body) {
+        if let (Some(else_bb), Some(else_body)) = (else_block, &if_stmt.else_branch) {
             self.builder.position_at_end(else_bb);
-            for stmt in &else_body.statements {
+            for stmt in else_body {
                 self.compile_statement(stmt)?;
             }
             if !self.has_terminator() {
@@ -548,7 +549,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
 
         // Generate body block
         self.builder.position_at_end(body_block);
-        for stmt in &while_stmt.body.statements {
+        for stmt in &while_stmt.body {
             self.compile_statement(stmt)?;
         }
         if !self.has_terminator() {
@@ -567,11 +568,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
         self.module.print_to_string().to_string()
     }
     
-    /// Set target triple for compilation
-    pub fn set_target_triple(&mut self, triple: &str) {
-        self.target_triple = triple.to_string();
-        self.module.set_triple(&TargetTriple::create(triple));
-    }
+
     
     /// Enable WebAssembly-specific optimizations
     pub fn enable_wasm_optimizations(&mut self) {
@@ -582,13 +579,13 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
     /// Compile AST to WebAssembly-optimized LLVM IR
     pub fn compile_to_wasm_ir(&mut self, program: &Program) -> Result<String, CursedError> {
         // Configure for WebAssembly target
-        self.set_target_triple("wasm32-unknown-unknown");
+        self.set_target_triple("wasm32-unknown-unknown".to_string());
         
         // Add WebAssembly-specific function exports
         self.add_wasm_exports();
         
         // Compile the program
-        self.compile(program)?;
+        self.compile_program(program)?;
         
         // Return the generated IR
         Ok(self.get_ir_string())
@@ -680,7 +677,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
     /// Enhanced WASM IR compilation with debugging support
     pub fn compile_to_wasm_ir_with_debug(&mut self, program: &Program, debug_info: bool) -> Result<String, CursedError> {
         // Configure for WebAssembly target with debug information
-        self.set_target_triple("wasm32-unknown-unknown");
+        self.set_target_triple("wasm32-unknown-unknown".to_string());
         
         // Enable debug information if requested
         if debug_info {
@@ -696,7 +693,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
         }
         
         // Compile the program
-        self.compile(program)?;
+        self.compile_program(program)?;
         
         // Return the generated IR with debug annotations
         let mut ir = self.get_ir_string();
@@ -756,7 +753,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
         let debug_header = format!(
             "; Debug Information for CURSED WebAssembly Module\n\
              ; Generated with debug support enabled\n\
-             !llvm.dbg.cu = !{{!{}}}\n\
+             !llvm.dbg.cu = !{{!0}}\n\
              !llvm.module.flags = !{{{{!1, !2}}}}\n\
              \n\
              !0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: \"CURSED Compiler\", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)\n\

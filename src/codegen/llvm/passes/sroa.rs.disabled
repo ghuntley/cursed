@@ -48,7 +48,7 @@ impl<'ctx> SroaPass<'ctx> {
             for instruction in entry_block.get_instructions() {
                 // Check if instruction is an alloca via opcode
                 if instruction.get_opcode() == InstructionOpcode::Alloca {
-                    let alloca = instruction.as_any_value_enum().into_pointer_value();
+                    let alloca = instruction.as_any_value().into_pointer_value();
                     
                     // Simplified - assume all allocas are candidates for now
                     // Real implementation would check for struct/array types

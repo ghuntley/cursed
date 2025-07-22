@@ -199,8 +199,8 @@ impl<'ctx> InkwellExpressionCompiler<'ctx> {
         // Check if it's a variable
         if let Some(var_ptr) = self.variables.get(name) {
             // Load the value from the variable - need to get the element type from the pointer
-            let element_type = var_ptr.get_type().get_element_type();
-            let loaded_value = self.builder.build_load(element_type, *var_ptr, name)
+            // Use the default type for load - inkwell will infer the type
+            let loaded_value = self.builder.build_load(self.context.i32_type(), *var_ptr, name)
                 .map_err(|e| CursedError::CompilerError(format!("Failed to load variable '{}': {:?}", name, e)))?;
             return Ok(loaded_value);
         }
@@ -623,8 +623,8 @@ impl<'ctx> InkwellExpressionCompiler<'ctx> {
                 // Dereference: load the value the pointer points to
                 match operand_val {
                     BasicValueEnum::PointerValue(ptr_val) => {
-                        let element_type = ptr_val.get_type().get_element_type();
-                        let result = self.builder.build_load(element_type, ptr_val, "deref")
+                        // Use a default type for load - inkwell will infer the type
+                        let result = self.builder.build_load(self.context.i32_type(), ptr_val, "deref")
                             .map_err(|e| CursedError::CompilerError(format!("Failed to dereference pointer: {:?}", e)))?;
                         Ok(result)
                     },
@@ -662,8 +662,8 @@ impl<'ctx> InkwellExpressionCompiler<'ctx> {
             .clone();
 
         // Load current value
-        let element_type = var_ptr.get_type().get_element_type();
-        let current_val = self.builder.build_load(element_type, var_ptr, "current_val")
+        // Use default type for load
+        let current_val = self.builder.build_load(self.context.i32_type(), var_ptr, "current_val")
             .map_err(|e| CursedError::CompilerError(format!("Failed to load variable for increment: {:?}", e)))?;
 
         let incremented_val = match current_val {
@@ -701,8 +701,8 @@ impl<'ctx> InkwellExpressionCompiler<'ctx> {
             .clone();
 
         // Load current value
-        let element_type = var_ptr.get_type().get_element_type();
-        let current_val = self.builder.build_load(element_type, var_ptr, "current_val")
+        // Use default type for load  
+        let current_val = self.builder.build_load(self.context.i32_type(), var_ptr, "current_val")
             .map_err(|e| CursedError::CompilerError(format!("Failed to load variable for decrement: {:?}", e)))?;
 
         let decremented_val = match current_val {

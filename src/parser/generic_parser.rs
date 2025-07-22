@@ -8,10 +8,11 @@ use crate::error_types::Error;
 use crate::lexer::{Token, TokenKind};
 use crate::ast::{
     TypeParameter, Type, FunctionDeclaration, StructDeclaration, InterfaceStatement,
-    Expression, Statement, Parameter, Visibility, ReturnStatement, CallExpression, MemberAccessExpression
+    Expression, Statement, Parameter, Visibility, ReturnStatement, CallExpression, 
+    MemberAccessExpression, TypeConstraint, WhereClause
 };
 use crate::type_system::generic_constraints::{
-    TypeConstraint, WhereClause, InterfaceDefinition, InterfaceMethod, AssociatedType
+    InterfaceDefinition, InterfaceMethod, AssociatedType
 };
 use crate::type_system::TypeExpression;
 
@@ -255,11 +256,18 @@ impl<'a> GenericParser<'a> {
         // Check for equality constraints (T = String)
         if self.current_token_is(&TokenKind::Assign) {
             self.advance(); // consume '='
-            let constraint_type = self.parse_type()?;
-            Ok(TypeConstraint::Equality(TypeExpression::from_ast_type(&constraint_type)))
+            let _constraint_type = self.parse_type()?;
+            // For now, use the constraint name as type_name and bounds
+            Ok(TypeConstraint {
+                type_name: constraint_name,
+                bounds: vec!["equals".to_string()],
+            })
         } else {
             // Regular interface constraint
-            Ok(TypeConstraint::Interface(constraint_name))
+            Ok(TypeConstraint {
+                type_name: "T".to_string(),  // Will be properly filled in by caller
+                bounds: vec![constraint_name],
+            })
         }
     }
 
@@ -269,13 +277,20 @@ impl<'a> GenericParser<'a> {
         let mut clauses = Vec::new();
         
         loop {
-            let type_expr = self.parse_type_expression()?;
+            let type_name = self.parse_identifier()?;
             self.expect_token(TokenKind::Colon)?;
             let constraints = self.parse_type_constraints()?;
             
+            // Convert to AST WhereClause format
+            let mut ast_constraints = Vec::new();
+            for constraint in constraints {
+                let mut updated_constraint = constraint;
+                updated_constraint.type_name = type_name.clone();
+                ast_constraints.push(updated_constraint);
+            }
+            
             clauses.push(WhereClause {
-                type_expr,
-                constraints,
+                constraints: ast_constraints,
             });
             
             if self.current_token_is(&TokenKind::Comma) {

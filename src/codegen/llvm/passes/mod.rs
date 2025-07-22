@@ -10,7 +10,7 @@ pub mod loop_optimization;
 pub mod loop_optimization_old;
 pub mod inlining;
 pub mod inlining_fixed;
-pub mod gvn;
+// pub mod gvn; // Disabled due to LLVM API incompatibility
 
 // Critical optimization passes (minimally implemented)
 pub mod pass_registry;
@@ -19,8 +19,8 @@ pub mod performance_monitoring;
 pub mod enhanced_pass_manager;
 pub mod sccp;
 pub mod licm;
-pub mod sroa;
-pub mod mem2reg;
+// pub mod sroa; // Disabled due to LLVM API incompatibility
+// pub mod mem2reg; // Disabled due to LLVM API incompatibility
 pub mod tail_call;
 pub mod jump_threading;
 
@@ -31,7 +31,7 @@ pub use loop_optimization::{LoopOptimizationPass, LoopInfo};
 pub use loop_optimization_old::LoopOptimizationResult;
 pub use inlining::{InliningPass, InliningHeuristics, CallSiteAnalyzer, InliningResult};
 pub use inlining_fixed::{EnhancedInliningPass, InliningConfig as EnhancedInliningConfig};
-pub use gvn::{GvnPass, GvnResult};
+// pub use gvn::{GvnPass, GvnResult}; // Disabled
 
 // Placeholder exports for other passes
 pub use pass_registry::{PassRegistry, PassRegistration, PassDependency};
@@ -45,8 +45,8 @@ pub use enhanced_pass_manager::{
 // Optimization passes - restored from minimal implementations
 pub use sccp::SccpPass;
 pub use licm::LicmPass;
-pub use sroa::SroaPass;
-pub use mem2reg::Mem2RegPass;
+// pub use sroa::SroaPass; // Disabled
+// pub use mem2reg::Mem2RegPass; // Disabled
 pub use tail_call::TailCallPass;
 pub use jump_threading::JumpThreadingPass;
 

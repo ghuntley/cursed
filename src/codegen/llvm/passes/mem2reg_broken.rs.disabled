@@ -192,7 +192,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
         if let Some(entry_block) = function.get_first_basic_block() {
             for instruction in entry_block.get_instructions() {
                 if instruction.get_opcode() == InstructionOpcode::Alloca {
-                    let alloca = instruction.as_any_value_enum().into_pointer_value();
+                    let alloca = instruction.as_any_value().into_pointer_value();
                     self.allocas.push(alloca);
                 }
             }
@@ -228,7 +228,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     InstructionOpcode::Load => {
                         // Check if this loads from our alloca
                         if let Some(load_ptr) = instruction.get_operand(0) {
-                            if load_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                            if load_ptr.as_any_value() == alloca.as_any_value() {
                                 self.loads_to_replace.push(instruction);
                             }
                         }
@@ -236,7 +236,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     InstructionOpcode::Store => {
                         // Check if this stores to our alloca
                         if let Some(store_ptr) = instruction.get_operand(1) {
-                            if store_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                            if store_ptr.as_any_value() == alloca.as_any_value() {
                                 self.stores_to_remove.push(instruction);
                             }
                         }
@@ -245,7 +245,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                         // Check for any other uses (address-taken)
                         for i in 0..instruction.get_num_operands() {
                             if let Some(operand) = instruction.get_operand(i) {
-                                if operand.as_any_value_enum() == alloca.as_any_value_enum() {
+                                if operand.as_any_value() == alloca.as_any_value() {
                                     // Address taken - not promotable
                                     return Ok(None);
                                 }
@@ -294,11 +294,11 @@ impl<'ctx> Mem2RegPass<'ctx> {
         for other_block in function.get_basic_blocks() {
             if let Some(terminator) = other_block.get_terminator() {
                 match terminator.get_opcode() {
-                    InstructionOpcode::Br | InstructionOpcode::CondBr => {
+                    InstructionOpcode::Br | InstructionOpcode::ConditionalBranch => {
                         // Check if this branches to our block
                         for i in 0..terminator.get_num_operands() {
                             if let Some(operand) = terminator.get_operand(i) {
-                                if let Some(operand_block) = operand.as_any_value_enum().into_basic_block() {
+                                if let Some(operand_block) = operand.as_any_value().into_basic_block() {
                                     if operand_block == *block {
                                         predecessors.push(other_block);
                                         break;
@@ -330,7 +330,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                 for instruction in block.get_instructions() {
                     if instruction.get_opcode() == InstructionOpcode::Store {
                         if let Some(store_ptr) = instruction.get_operand(1) {
-                            if store_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                            if store_ptr.as_any_value() == alloca.as_any_value() {
                                 def_blocks.insert(block);
                                 break;
                             }
@@ -354,7 +354,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     for &df_block in df_blocks {
                         if !has_already.get(alloca).unwrap().contains(&df_block) {
                             // Insert phi node
-                            self.builder.position_at_start(df_block);
+                            self.builder.position_at_end(df_block);
                             let phi = self.builder.build_phi(*alloca_type, "mem2reg_phi")
                                 .map_err(|e| CursedError::runtime_error(&format!("Failed to build phi: {}", e)))?;
                             
@@ -415,9 +415,9 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     // Check if this stores to a promotable alloca
                     if let Some(store_ptr) = instruction.get_operand(1) {
                         for (alloca, _) in &self.promotable_allocas {
-                            if store_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                            if store_ptr.as_any_value() == alloca.as_any_value() {
                                 if let Some(value) = instruction.get_operand(0) {
-                                    let val = value.as_any_value_enum().into_basic_value_enum();
+                                    let val = value.as_any_value().into_basic_value_enum();
                                     stack.get_mut(alloca).unwrap().push(val);
                                     self.definitions.insert((block, *alloca), val);
                                 }
@@ -430,7 +430,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     // Check if this loads from a promotable alloca
                     if let Some(load_ptr) = instruction.get_operand(0) {
                         for (alloca, _) in &self.promotable_allocas {
-                            if load_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                            if load_ptr.as_any_value() == alloca.as_any_value() {
                                 // Replace with current value from stack
                                 if let Some(current_val) = stack.get(alloca).and_then(|s| s.last()) {
                                     // Mark for replacement
@@ -448,10 +448,10 @@ impl<'ctx> Mem2RegPass<'ctx> {
         // Fill phi operands in successor blocks
         if let Some(terminator) = block.get_terminator() {
             match terminator.get_opcode() {
-                InstructionOpcode::Br | InstructionOpcode::CondBr => {
+                InstructionOpcode::Br | InstructionOpcode::ConditionalBranch => {
                     for i in 0..terminator.get_num_operands() {
                         if let Some(operand) = terminator.get_operand(i) {
-                            if let Some(succ_block) = operand.as_any_value_enum().into_basic_block() {
+                            if let Some(succ_block) = operand.as_any_value().into_basic_block() {
                                 for (alloca, _) in &self.promotable_allocas {
                                     if let Some(phi) = self.phi_nodes.get_mut(&(succ_block, *alloca)) {
                                         if let Some(current_val) = stack.get(alloca).and_then(|s| s.last()) {
@@ -493,7 +493,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     InstructionOpcode::Load => {
                         if let Some(load_ptr) = instruction.get_operand(0) {
                             for (alloca, _) in &self.promotable_allocas {
-                                if load_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                                if load_ptr.as_any_value() == alloca.as_any_value() {
                                     // Find the SSA value to replace this load
                                     if let Some(&replacement_val) = self.definitions.get(&(block, *alloca)) {
                                         // Replace all uses of this load with the SSA value
@@ -509,7 +509,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     InstructionOpcode::Store => {
                         if let Some(store_ptr) = instruction.get_operand(1) {
                             for (alloca, _) in &self.promotable_allocas {
-                                if store_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                                if store_ptr.as_any_value() == alloca.as_any_value() {
                                     // Remove the store instruction
                                     unsafe { instruction.delete(); }
                                     break;
