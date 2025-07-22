@@ -26,8 +26,8 @@ pub struct InkwellStatementGenerator<'ctx> {
     /// LLVM IR builder
     builder: Builder<'ctx>,
     
-    /// Expression compiler
-    expression_compiler: InkwellExpressionCompiler<'ctx>,
+    /// Expression compiler (initialized after builder is created)
+    expression_compiler: Option<InkwellExpressionCompiler<'ctx>>,
     
     /// Current function context
     current_function: Option<FunctionValue<'ctx>>,
@@ -58,17 +58,23 @@ impl<'ctx> InkwellStatementGenerator<'ctx> {
     ) -> Self {
         let module = context.create_module(module_name);
         let builder = context.create_builder();
-        let expression_compiler = InkwellExpressionCompiler::new(context, &builder);
         
-        Self {
+        let mut generator = Self {
             context,
             module,
             builder,
-            expression_compiler,
+            expression_compiler: None,
             current_function: None,
             variables: HashMap::new(),
             loop_stack: Vec::new(),
-        }
+        };
+        
+        // Initialize expression compiler after struct is created
+        // This is safe because we're not moving the generator after this
+        let expr_compiler = InkwellExpressionCompiler::new(context, &generator.builder);
+        generator.expression_compiler = Some(expr_compiler);
+        
+        generator
     }
 
     /// Get the LLVM module

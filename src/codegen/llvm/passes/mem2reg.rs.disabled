@@ -141,7 +141,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
         if let Some(entry_block) = function.get_first_basic_block() {
             for instruction in entry_block.get_instructions() {
                 if instruction.get_opcode() == InstructionOpcode::Alloca {
-                    let alloca = instruction.as_any_value_enum().into_pointer_value();
+                    let alloca = instruction.as_any_value().into_pointer_value();
                     self.allocas.push(alloca);
                 }
             }
@@ -183,7 +183,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                         // Check if this instruction uses our alloca in a non-promotable way
                         for i in 0..instruction.get_num_operands() {
                             if let Some(operand) = instruction.get_operand(i) {
-                                if operand.as_any_value_enum() == alloca.as_any_value_enum() {
+                                if operand.as_any_value() == alloca.as_any_value() {
                                     // Address taken - not promotable
                                     return Ok(None);
                                 }
@@ -195,7 +195,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
         }
         
         // Return promotable type
-        Ok(Some(i32_type.as_basic_type_enum()))
+        Ok(Some(i32_type.as_basic_type()))
     }
     
     fn compute_dominance_frontier(&mut self, function: &FunctionValue<'ctx>) -> Result<()> {
@@ -226,24 +226,24 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     InstructionOpcode::Br => {
                         // Unconditional branch
                         if let Some(operand) = terminator.get_operand(0) {
-                            if let Some(target_block) = operand.as_any_value_enum().into_basic_block() {
+                            if let Some(target_block) = operand.as_any_value().into_basic_block() {
                                 if target_block == *block {
                                     predecessors.push(other_block);
                                 }
                             }
                         }
                     },
-                    InstructionOpcode::CondBr => {
+                    InstructionOpcode::ConditionalBranch => {
                         // Conditional branch - check both targets
                         if let Some(operand1) = terminator.get_operand(1) {
-                            if let Some(target_block) = operand1.as_any_value_enum().into_basic_block() {
+                            if let Some(target_block) = operand1.as_any_value().into_basic_block() {
                                 if target_block == *block {
                                     predecessors.push(other_block);
                                 }
                             }
                         }
                         if let Some(operand2) = terminator.get_operand(2) {
-                            if let Some(target_block) = operand2.as_any_value_enum().into_basic_block() {
+                            if let Some(target_block) = operand2.as_any_value().into_basic_block() {
                                 if target_block == *block {
                                     predecessors.push(other_block);
                                 }
@@ -268,7 +268,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                 for instruction in block.get_instructions() {
                     if instruction.get_opcode() == InstructionOpcode::Store {
                         if let Some(store_ptr) = instruction.get_operand(1) {
-                            if store_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                            if store_ptr.as_any_value() == alloca.as_any_value() {
                                 def_blocks.insert(block);
                                 break;
                             }
@@ -282,7 +282,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                 if let Some(df_blocks) = self.dominance_frontier.get(&def_block) {
                     for &df_block in df_blocks {
                         // Insert phi node at start of block
-                        self.builder.position_at_start(df_block);
+                        self.builder.position_at_end(df_block);
                         let phi = self.builder.build_phi(*alloca_type, "mem2reg_phi")
                             .map_err(|e| CursedError::runtime_error(&format!("Failed to build phi: {}", e)))?;
                         
@@ -307,7 +307,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     InstructionOpcode::Load => {
                         if let Some(load_ptr) = instruction.get_operand(0) {
                             for (alloca, _) in &self.promotable_allocas {
-                                if load_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                                if load_ptr.as_any_value() == alloca.as_any_value() {
                                     // Find replacement value (simplified - use zero for now)
                                     let zero_val = self.context.i32_type().const_zero();
                                     load_replacements.insert(instruction, zero_val.as_basic_value_enum());
@@ -320,7 +320,7 @@ impl<'ctx> Mem2RegPass<'ctx> {
                     InstructionOpcode::Store => {
                         if let Some(store_ptr) = instruction.get_operand(1) {
                             for (alloca, _) in &self.promotable_allocas {
-                                if store_ptr.as_any_value_enum() == alloca.as_any_value_enum() {
+                                if store_ptr.as_any_value() == alloca.as_any_value() {
                                     instructions_to_remove.push(instruction);
                                     break;
                                 }

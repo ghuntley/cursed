@@ -7,7 +7,7 @@ use inkwell::{
     passes::PassManager,
     values::FunctionValue,
 };
-use super::{mem2reg::Mem2RegPass, sroa::SroaPass};
+// use super::{mem2reg::Mem2RegPass, sroa::SroaPass}; // Disabled
 use std::collections::HashMap;
 
 /// Optimization pipeline that manages pass execution
@@ -49,6 +49,7 @@ impl<'ctx> OptimizationPipeline<'ctx> {
         }
     }
     
+    /*
     pub fn add_mem2reg_pass(&mut self) {
         let pass = Mem2RegFunctionPass::new(self.context);
         self.function_passes.push(Box::new(pass));
@@ -58,6 +59,7 @@ impl<'ctx> OptimizationPipeline<'ctx> {
         let pass = SroaFunctionPass::new(self.context);
         self.function_passes.push(Box::new(pass));
     }
+    */
     
     pub fn run_on_module(&mut self, module: &Module<'ctx>) -> Result<bool> {
         let mut changed = false;
@@ -92,6 +94,7 @@ impl<'ctx> OptimizationPipeline<'ctx> {
     }
 }
 
+/*
 /// Wrapper for Mem2Reg pass to implement FunctionPass trait
 struct Mem2RegFunctionPass<'ctx> {
     pass: Mem2RegPass<'ctx>,
@@ -114,7 +117,9 @@ impl<'ctx> FunctionPass<'ctx> for Mem2RegFunctionPass<'ctx> {
         self.pass.run_on_function(function)
     }
 }
+*/
 
+/*
 /// Wrapper for SROA pass to implement FunctionPass trait
 struct SroaFunctionPass<'ctx> {
     pass: SroaPass<'ctx>,
@@ -137,6 +142,7 @@ impl<'ctx> FunctionPass<'ctx> for SroaFunctionPass<'ctx> {
         self.pass.run_on_function(function)
     }
 }
+*/
 
 /// Pipeline builder for configuring optimization sequences
 pub struct PipelineBuilder<'ctx> {
@@ -153,13 +159,13 @@ impl<'ctx> PipelineBuilder<'ctx> {
     }
     
     pub fn with_basic_optimizations(mut self) -> Self {
-        self.pipeline.add_mem2reg_pass();
+        // self.pipeline.add_mem2reg_pass(); // Disabled
         self
     }
     
     pub fn with_advanced_optimizations(mut self) -> Self {
-        self.pipeline.add_mem2reg_pass();
-        self.pipeline.add_sroa_pass();
+        // self.pipeline.add_mem2reg_pass(); // Disabled
+        // self.pipeline.add_sroa_pass(); // Disabled
         self
     }
     

@@ -11,7 +11,7 @@ use crate::package_manager::resolver::{
 };
 use std::collections::{HashMap, HashSet, BTreeMap, VecDeque};
 use std::sync::Arc;
-use std::sync::RwLock;
+use tokio::sync::RwLock;
 use parking_lot::RwLock as ParkingLotRwLock;
 use std::hash::{Hash, Hasher};
 

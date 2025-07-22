@@ -217,7 +217,7 @@ impl<'ctx> GvnPass<'ctx> {
         // Check if we've seen this load before
         if let Some(&existing_value) = expressions_in_block.get(&expr) {
             // We can replace this load with the existing value
-            match existing_value.as_any_value_enum() {
+            match existing_value.as_any_value() {
                 inkwell::values::AnyValueEnum::InstructionValue(existing_instruction) => {
                     unsafe {
                         instruction.replace_all_uses_with(&existing_instruction);
@@ -232,7 +232,7 @@ impl<'ctx> GvnPass<'ctx> {
             }
         } else {
             // Record this load
-            let value = instruction.as_any_value_enum().try_into().unwrap();
+            let value = instruction.as_any_value().try_into().unwrap();
             expressions_in_block.insert(expr, value);
             result.loads_numbered += 1;
         }
@@ -253,7 +253,7 @@ impl<'ctx> GvnPass<'ctx> {
             // Check if we've seen this expression before
             if let Some(&existing_value) = expressions_in_block.get(&expr) {
                 // We can replace this instruction with the existing value
-                match existing_value.as_any_value_enum() {
+                match existing_value.as_any_value() {
                     inkwell::values::AnyValueEnum::InstructionValue(existing_instruction) => {
                         unsafe {
                             instruction.replace_all_uses_with(&existing_instruction);
@@ -268,7 +268,7 @@ impl<'ctx> GvnPass<'ctx> {
                 }
             } else {
                 // Record this expression
-                let value = instruction.as_any_value_enum().try_into().unwrap();
+                let value = instruction.as_any_value().try_into().unwrap();
                 expressions_in_block.insert(expr, value);
                 result.expressions_numbered += 1;
             }
@@ -289,7 +289,7 @@ impl<'ctx> GvnPass<'ctx> {
         let expr = self.create_gep_expression(&instruction)?;
         
         if let Some(&existing_value) = expressions_in_block.get(&expr) {
-            match existing_value.as_any_value_enum() {
+            match existing_value.as_any_value() {
                 inkwell::values::AnyValueEnum::InstructionValue(existing_instruction) => {
                     unsafe {
                         instruction.replace_all_uses_with(&existing_instruction);
@@ -303,7 +303,7 @@ impl<'ctx> GvnPass<'ctx> {
                 }
             }
         } else {
-            let value = instruction.as_any_value_enum().try_into().unwrap();
+            let value = instruction.as_any_value().try_into().unwrap();
             expressions_in_block.insert(expr, value);
             result.expressions_numbered += 1;
         }
@@ -427,7 +427,7 @@ impl<'ctx> GvnPass<'ctx> {
     /// Get or create value number for a value
     fn get_or_create_value_number(&mut self, value: &BasicValueEnum<'ctx>) -> u32 {
         // For constants, we can use a special numbering scheme
-        match value.as_any_value_enum() {
+        match value.as_any_value() {
             inkwell::values::AnyValueEnum::IntValue(int_val) if int_val.is_const() => {
                 return self.get_constant_value_number(value);
             }
@@ -438,7 +438,7 @@ impl<'ctx> GvnPass<'ctx> {
         }
         
         // For instructions, create an expression and get its number
-        match value.as_any_value_enum() {
+        match value.as_any_value() {
             inkwell::values::AnyValueEnum::InstructionValue(instruction) => {
                 if let Ok(Some(expr)) = self.create_instruction_expression(&instruction) {
                     return self.get_or_create_expression_number(expr);
@@ -458,7 +458,7 @@ impl<'ctx> GvnPass<'ctx> {
         // For constants, we can use a hash-based approach
         // This is simplified - a real implementation would handle different constant types
         
-        match value.as_any_value_enum() {
+        match value.as_any_value() {
             inkwell::values::AnyValueEnum::IntValue(int_value) => {
                 if let Some(const_val) = int_value.get_zero_extended_constant() {
                     // Use the constant value as the base for numbering
