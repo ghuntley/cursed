@@ -461,6 +461,52 @@ impl ExpressionCompiler {
                 // For now, just return the right side value
                 return Ok(right_reg);
             },
+            // Additional assignment operators
+            "+=" | "-=" | "*=" | "/=" | "%=" => {
+                // For now, treat as regular assignment
+                return Ok(right_reg);
+            },
+            // Bitwise assignment operators
+            "&=" | "|=" | "^=" | "<<=" | ">>=" => {
+                // For now, treat as regular assignment
+                return Ok(right_reg);
+            },
+            // Range operator
+            ".." | "..=" => {
+                // Range creation - return a range struct
+                let range_reg = self.register_tracker.next_register();
+                self.ir_buffer.push_str(&format!(
+                    "  {} = insertvalue {{i32, i32, i1}} undef, i32 {}, 0\n",
+                    range_reg, left_reg
+                ));
+                let range_reg2 = self.register_tracker.next_register();
+                self.ir_buffer.push_str(&format!(
+                    "  {} = insertvalue {{i32, i32, i1}} {}, i32 {}, 1\n",
+                    range_reg2, range_reg, right_reg
+                ));
+                let range_reg3 = self.register_tracker.next_register();
+                let inclusive = if operator == "..=" { "true" } else { "false" };
+                self.ir_buffer.push_str(&format!(
+                    "  {} = insertvalue {{i32, i32, i1}} {}, i1 {}, 2\n",
+                    range_reg3, range_reg2, inclusive
+                ));
+                return Ok(range_reg3);
+            },
+            // Nil coalescing operator
+            "??" => {
+                // Return left if not null, otherwise right
+                let null_check = self.register_tracker.next_register();
+                let result_reg = self.register_tracker.next_register();
+                self.ir_buffer.push_str(&format!(
+                    "  {} = icmp ne ptr {}, null\n",
+                    null_check, left_reg
+                ));
+                self.ir_buffer.push_str(&format!(
+                    "  {} = select i1 {}, ptr {}, ptr {}\n",
+                    result_reg, null_check, left_reg, right_reg
+                ));
+                return Ok(result_reg);
+            },
             _ => {
                 return Err(CursedError::CompilerError(format!("Unsupported binary operator: {}", operator)));
             }

@@ -11,9 +11,12 @@ path = "src/main.rs"
 # This is a standalone package
 
 [features]
-default = ["std", "crypto-rustcrypto"]
+default = ["std", "crypto-rustcrypto", "llvm-backend"]
 std = []
-# networking feature disabled for WASM compatibility
+# WASM-compatible features without LLVM/FFI
+wasm-compatible = ["wasm-bindgen", "js-sys", "web-sys"]
+# Native features requiring FFI/LLVM
+llvm-backend = []
 ffi = ["libc"]
 wasm = ["wasm-bindgen", "js-sys", "web-sys"]
 crypto-ring = ["ring"]

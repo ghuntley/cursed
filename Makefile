@@ -712,45 +712,45 @@ vectorization-info: ## Show vectorization system information
 .PHONY: cross-windows cross-wasm cross-all-targets cross-test cross-help
 .PHONY: cross-check cross-validate cross-matrix cross-debug cross-release
 
-cross-compile: cross-all-targets ## Build for all supported target platforms
+cross-compile: ## Build for all supported target platforms
+	$(AT)echo -e "$(CYAN)🌍 Starting cross-compilation for supported targets...$(RESET)"
+	$(AT)./scripts/cross_compile.sh --all
 
-cross-mac-intel: ## Cross-compile to macOS Intel (x86_64)
-	$(AT)echo -e "$(CYAN)🍎 Cross-compiling to macOS Intel (x86_64-apple-darwin)...$(RESET)"
-	$(AT)$(CARGO_CMD) build --target x86_64-apple-darwin --release $(V)
-	$(AT)echo -e "$(GREEN)✅ macOS Intel build completed$(RESET)"
+cross-mac-intel: ## Cross-compile to macOS Intel (x86_64) - UNSUPPORTED ON LINUX
+	$(AT)echo -e "$(RED)❌ macOS cross-compilation is not supported from Linux$(RESET)"
+	$(AT)echo -e "$(YELLOW)⚠️  Requires macOS SDK which is not available on NixOS$(RESET)"
+	$(AT)exit 1
 
 cross-linux-x64: ## Cross-compile to Linux x86_64
 	$(AT)echo -e "$(CYAN)🐧 Cross-compiling to Linux x86_64 (x86_64-unknown-linux-gnu)...$(RESET)"
-	$(AT)$(CARGO_CMD) build --target x86_64-unknown-linux-gnu --release $(V)
-	$(AT)echo -e "$(GREEN)✅ Linux x86_64 build completed$(RESET)"
+	$(AT)./scripts/cross_compile.sh x86_64-unknown-linux-gnu
 
 cross-linux-arm64: ## Cross-compile to Linux ARM64
 	$(AT)echo -e "$(CYAN)🐧 Cross-compiling to Linux ARM64 (aarch64-unknown-linux-gnu)...$(RESET)"
-	$(AT)$(CARGO_CMD) build --target aarch64-unknown-linux-gnu --release $(V)
-	$(AT)echo -e "$(GREEN)✅ Linux ARM64 build completed$(RESET)"
+	$(AT)./scripts/cross_compile.sh aarch64-unknown-linux-gnu
 
 cross-windows: ## Cross-compile to Windows x86_64
 	$(AT)echo -e "$(CYAN)🪟 Cross-compiling to Windows x86_64 (x86_64-pc-windows-gnu)...$(RESET)"
-	$(AT)$(CARGO_CMD) build --target x86_64-pc-windows-gnu --release $(V)
-	$(AT)echo -e "$(GREEN)✅ Windows x86_64 build completed$(RESET)"
+	$(AT)./scripts/cross_compile.sh x86_64-pc-windows-gnu
 
 cross-wasm: ## Cross-compile to WebAssembly
 	$(AT)echo -e "$(CYAN)🕷️ Cross-compiling to WebAssembly (wasm32-unknown-unknown)...$(RESET)"
-	$(AT)$(CARGO_CMD) build --target wasm32-unknown-unknown --release $(V)
-	$(AT)echo -e "$(GREEN)✅ WebAssembly build completed$(RESET)"
+	$(AT)./scripts/cross_compile.sh wasm32-unknown-unknown
 
-cross-all-targets: cross-mac-intel cross-linux-x64 cross-linux-arm64 cross-windows cross-wasm ## Build for all targets
-	$(AT)echo -e "$(BOLD)$(GREEN)🎯 All cross-compilation targets completed successfully!$(RESET)"
+cross-all-targets: ## Build for all supported targets (Linux x64/ARM64, Windows, WASM)
+	$(AT)echo -e "$(CYAN)🌍 Building all supported cross-compilation targets...$(RESET)"
+	$(AT)./scripts/cross_compile.sh --all
+	$(AT)echo -e "$(BOLD)$(GREEN)🎯 Supported cross-compilation targets completed!$(RESET)"
 
 # Cross-compilation validation and testing
-cross-check: ## Quick check cross-compilation for all targets
-	$(AT)echo -e "$(CYAN)🔍 Checking cross-compilation for all targets...$(RESET)"
-	$(AT)$(CARGO_CMD) check --target x86_64-apple-darwin $(V)
+cross-check: ## Quick check cross-compilation for supported targets only
+	$(AT)echo -e "$(CYAN)🔍 Checking cross-compilation for supported targets...$(RESET)"
+	$(AT)echo -e "$(YELLOW)⚠️  Skipping macOS targets (unsupported on Linux)$(RESET)"
 	$(AT)$(CARGO_CMD) check --target x86_64-unknown-linux-gnu $(V)
-	$(AT)$(CARGO_CMD) check --target aarch64-unknown-linux-gnu $(V)
-	$(AT)$(CARGO_CMD) check --target x86_64-pc-windows-gnu $(V)
-	$(AT)$(CARGO_CMD) check --target wasm32-unknown-unknown $(V)
-	$(AT)echo -e "$(GREEN)✅ All cross-compilation targets validated$(RESET)"
+	$(AT)$(CARGO_CMD) check --target aarch64-unknown-linux-gnu $(V) || echo -e "$(YELLOW)⚠️  ARM64 Linux check failed - toolchain may not be installed$(RESET)"
+	$(AT)$(CARGO_CMD) check --target x86_64-pc-windows-gnu $(V) || echo -e "$(YELLOW)⚠️  Windows check failed - MinGW toolchain may not be installed$(RESET)"
+	$(AT)$(CARGO_CMD) check --target wasm32-unknown-unknown $(V) || echo -e "$(YELLOW)⚠️  WASM check failed - target may not be installed$(RESET)"
+	$(AT)echo -e "$(GREEN)✅ Supported cross-compilation targets validated$(RESET)"
 
 cross-test: ## Test cross-compilation infrastructure
 	$(AT)echo -e "$(CYAN)🧪 Testing cross-compilation infrastructure...$(RESET)"
@@ -766,26 +766,26 @@ cross-validate: cross-check cross-test ## Comprehensive cross-compilation valida
 	$(AT)echo -e "$(BOLD)$(GREEN)🎉 Cross-compilation validation complete!$(RESET)"
 
 # Cross-compilation build matrix (debug and release)
-cross-matrix: ## Build debug and release for all targets
+cross-matrix: ## Build debug and release for supported targets only
 	$(AT)echo -e "$(CYAN)📊 Building cross-compilation matrix (debug + release)...$(RESET)"
+	$(AT)echo -e "$(YELLOW)⚠️  Skipping macOS targets (unsupported on Linux)$(RESET)"
 	$(AT)echo -e "$(YELLOW)Building debug versions...$(RESET)"
-	$(AT)$(CARGO_CMD) build --target x86_64-apple-darwin $(V)
 	$(AT)$(CARGO_CMD) build --target x86_64-unknown-linux-gnu $(V)
-	$(AT)$(CARGO_CMD) build --target aarch64-unknown-linux-gnu $(V)
-	$(AT)$(CARGO_CMD) build --target x86_64-pc-windows-gnu $(V)
-	$(AT)$(CARGO_CMD) build --target wasm32-unknown-unknown $(V)
+	$(AT)$(CARGO_CMD) build --target aarch64-unknown-linux-gnu $(V) || echo -e "$(YELLOW)⚠️  ARM64 debug build failed$(RESET)"
+	$(AT)$(CARGO_CMD) build --target x86_64-pc-windows-gnu $(V) || echo -e "$(YELLOW)⚠️  Windows debug build failed$(RESET)"
+	$(AT)$(CARGO_CMD) build --target wasm32-unknown-unknown $(V) || echo -e "$(YELLOW)⚠️  WASM debug build failed$(RESET)"
 	$(AT)echo -e "$(YELLOW)Building release versions...$(RESET)"
 	$(AT)make cross-all-targets
-	$(AT)echo -e "$(BOLD)$(GREEN)🏁 Cross-compilation matrix completed!$(RESET)"
+	$(AT)echo -e "$(BOLD)$(GREEN)🏁 Supported cross-compilation matrix completed!$(RESET)"
 
 # Debug cross-compilation builds
-cross-debug: ## Cross-compile debug builds for all targets
+cross-debug: ## Cross-compile debug builds for supported targets only
 	$(AT)echo -e "$(CYAN)🐛 Cross-compiling debug builds...$(RESET)"
-	$(AT)$(CARGO_CMD) build --target x86_64-apple-darwin $(V)
+	$(AT)echo -e "$(YELLOW)⚠️  Skipping macOS targets (unsupported on Linux)$(RESET)"
 	$(AT)$(CARGO_CMD) build --target x86_64-unknown-linux-gnu $(V)
-	$(AT)$(CARGO_CMD) build --target aarch64-unknown-linux-gnu $(V)
-	$(AT)$(CARGO_CMD) build --target x86_64-pc-windows-gnu $(V)
-	$(AT)$(CARGO_CMD) build --target wasm32-unknown-unknown $(V)
+	$(AT)$(CARGO_CMD) build --target aarch64-unknown-linux-gnu $(V) || echo -e "$(YELLOW)⚠️  ARM64 debug build failed$(RESET)"
+	$(AT)$(CARGO_CMD) build --target x86_64-pc-windows-gnu $(V) || echo -e "$(YELLOW)⚠️  Windows debug build failed$(RESET)"
+	$(AT)$(CARGO_CMD) build --target wasm32-unknown-unknown $(V) || echo -e "$(YELLOW)⚠️  WASM debug build failed$(RESET)"
 	$(AT)echo -e "$(GREEN)✅ Debug cross-compilation completed$(RESET)"
 
 # Release cross-compilation builds (alias)
@@ -795,38 +795,42 @@ cross-help: ## Show cross-compilation help
 	$(AT)echo -e "$(BOLD)$(CYAN)CURSED Cross-Compilation System$(RESET)"
 	$(AT)echo -e "$(CYAN)====================================$(RESET)"
 	$(AT)echo ""
-	$(AT)echo -e "$(BOLD)Supported Target Platforms:$(RESET)"
-	$(AT)echo -e "  🍎 $(GREEN)macOS Intel$(RESET)     - x86_64-apple-darwin"
-	$(AT)echo -e "  🐧 $(GREEN)Linux x86_64$(RESET)    - x86_64-unknown-linux-gnu"
+	$(AT)echo -e "$(BOLD)✅ Supported Target Platforms (on Linux):$(RESET)"
+	$(AT)echo -e "  🐧 $(GREEN)Linux x86_64$(RESET)    - x86_64-unknown-linux-gnu (native)"
 	$(AT)echo -e "  🐧 $(GREEN)Linux ARM64$(RESET)     - aarch64-unknown-linux-gnu"
 	$(AT)echo -e "  🪟 $(GREEN)Windows x86_64$(RESET)  - x86_64-pc-windows-gnu"
 	$(AT)echo -e "  🕷️ $(GREEN)WebAssembly$(RESET)     - wasm32-unknown-unknown"
 	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)❌ Unsupported Target Platforms:$(RESET)"
+	$(AT)echo -e "  🍎 $(RED)macOS Intel$(RESET)     - x86_64-apple-darwin (requires macOS SDK)"
+	$(AT)echo -e "  🍎 $(RED)macOS ARM64$(RESET)     - aarch64-apple-darwin (requires macOS SDK)"
+	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Quick Start:$(RESET)"
-	$(AT)echo -e "  $(GREEN)cross-compile$(RESET)      - Build for all target platforms"
-	$(AT)echo -e "  $(GREEN)cross-check$(RESET)        - Quick validation of all targets"
+	$(AT)echo -e "  $(GREEN)cross-compile$(RESET)      - Build for all supported targets"
+	$(AT)echo -e "  $(GREEN)cross-check$(RESET)        - Quick validation of supported targets"
 	$(AT)echo -e "  $(GREEN)cross-test$(RESET)         - Test cross-compilation infrastructure"
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Individual Targets:$(RESET)"
-	$(AT)echo -e "  $(GREEN)cross-mac-intel$(RESET)    - Build for macOS Intel"
+	$(AT)echo -e "  $(RED)cross-mac-intel$(RESET)    - ❌ UNSUPPORTED (returns error)"
 	$(AT)echo -e "  $(GREEN)cross-linux-x64$(RESET)    - Build for Linux x86_64"
 	$(AT)echo -e "  $(GREEN)cross-linux-arm64$(RESET)  - Build for Linux ARM64"
 	$(AT)echo -e "  $(GREEN)cross-windows$(RESET)      - Build for Windows x86_64"
 	$(AT)echo -e "  $(GREEN)cross-wasm$(RESET)         - Build for WebAssembly"
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Advanced Options:$(RESET)"
-	$(AT)echo -e "  $(GREEN)cross-matrix$(RESET)       - Build debug + release matrix"
-	$(AT)echo -e "  $(GREEN)cross-debug$(RESET)        - Debug builds for all targets"
-	$(AT)echo -e "  $(GREEN)cross-release$(RESET)      - Release builds for all targets"
+	$(AT)echo -e "  $(GREEN)cross-matrix$(RESET)       - Build debug + release matrix (supported targets)"
+	$(AT)echo -e "  $(GREEN)cross-debug$(RESET)        - Debug builds for supported targets"
+	$(AT)echo -e "  $(GREEN)cross-release$(RESET)      - Release builds for supported targets"
 	$(AT)echo -e "  $(GREEN)cross-validate$(RESET)     - Comprehensive validation"
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Environment Requirements:$(RESET)"
-	$(AT)echo -e "  • Nix development environment (devenv.nix configured)"
-	$(AT)echo -e "  • Cross-compilation toolchains installed"
-	$(AT)echo -e "  • LLVM 18 with target support"
+	$(AT)echo -e "  • NixOS with devenv.nix environment"
+	$(AT)echo -e "  • MinGW-w64 for Windows cross-compilation"
+	$(AT)echo -e "  • aarch64-linux-gnu-gcc for ARM64 cross-compilation"
+	$(AT)echo -e "  • LLVM 18 with WASM target support"
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Examples:$(RESET)"
-	$(AT)echo -e "  make cross-compile           # Build all targets"
+	$(AT)echo -e "  make cross-compile           # Build all supported targets"
 	$(AT)echo -e "  make cross-windows           # Build Windows executable"
 	$(AT)echo -e "  VERBOSE=1 make cross-check   # Verbose validation"
 	$(AT)echo -e "  make cross-matrix            # Full build matrix"

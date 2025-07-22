@@ -3864,18 +3864,18 @@ pub type LlvmModule = String;
 impl LlvmCodeGenerator {
     // Interface code generation methods
     
-    // TODO: Uncomment when AST supports impl statements
-    // fn generate_impl_vtables(&mut self, impl_stmt: &crate::ast::ImplStatement) -> Result<(), CursedError> {
-    //     self.ir_code.push_str(&format!("  ; Implementation vtables for {} -> {}\n", 
-    //         impl_stmt.implementing_type, impl_stmt.interface_name));
-    //     
-    //     // Generate vtable constant for this implementation
-    //     if let Some(interface_def) = self.interface_registry.get(&impl_stmt.interface_name).cloned() {
-    //         self.generate_vtable_constant(&interface_def, &impl_stmt.implementing_type, &impl_stmt.methods)?;
-    //     }
-    //     
-    //     Ok(())
-    // }
+    /// Generate implementation vtables for interface methods
+    fn generate_impl_vtables(&mut self, interface_name: &str, implementing_type: &str, methods: &[String]) -> Result<(), CursedError> {
+        self.ir_code.push_str(&format!("  ; Implementation vtables for {} -> {}\n", 
+            implementing_type, interface_name));
+        
+        // Generate vtable constant for this implementation
+        if let Some(interface_def) = self.interface_registry.get(interface_name).cloned() {
+            self.generate_vtable_constant(&interface_def, implementing_type, methods)?;
+        }
+        
+        Ok(())
+    }
     
     // TODO: Uncomment when AST supports impl statements
     // fn generate_vtable_constant(&mut self, interface_def: &InterfaceDefinition, impl_type: &str, impl_methods: &[crate::ast::MethodStatement]) -> Result<(), CursedError> {
@@ -3911,6 +3911,48 @@ impl LlvmCodeGenerator {
     //     
     //     Ok(())
     // }
+    
+    /// Generate vtable constant for interface implementation  
+    fn generate_vtable_constant(&mut self, interface_def: &InterfaceDefinition, impl_type: &str, impl_methods: &[String]) -> Result<(), CursedError> {
+        let vtable_name = format!("@vtable.{}.{}", interface_def.name, impl_type);
+        
+        // Generate vtable type declaration if not already done
+        let vtable_type = format!("%interface.{}.vtable", interface_def.name);
+        if !self.declared_functions.contains_key(&vtable_type) {
+            self.ir_code.push_str(&format!("{} = type {{ ", vtable_type));
+            for (i, _method) in interface_def.methods.iter().enumerate() {
+                if i > 0 {
+                    self.ir_code.push_str(", ");
+                }
+                self.ir_code.push_str("ptr");
+            }
+            self.ir_code.push_str(" }\n");
+            self.declared_functions.insert(vtable_type.clone(), "vtable_type".to_string());
+        }
+        
+        // Generate vtable global constant
+        self.ir_code.push_str(&format!("{} = global {} {{", vtable_name, vtable_type));
+        
+        // Generate method pointers in the correct order
+        for (i, interface_method) in interface_def.methods.iter().enumerate() {
+            if i > 0 {
+                self.ir_code.push_str(", ");
+            }
+            
+            // Find corresponding implementation method
+            if let Some(impl_method) = impl_methods.iter().find(|m| *m == &interface_method.name) {
+                let method_func_name = format!("{}.{}", impl_type, impl_method);
+                self.ir_code.push_str(&format!("ptr @{}", method_func_name));
+            } else {
+                return Err(CursedError::compiler_error(
+                    &format!("Method '{}' not implemented for type '{}'", interface_method.name, impl_type)
+                ));
+            }
+        }
+        
+        self.ir_code.push_str(" }\n");
+        Ok(())
+    }
     
     fn generate_interface_definition(&mut self, interface_stmt: &InterfaceStatement) -> Result<(), CursedError> {
         self.ir_code.push_str(&format!("  ; Interface definition: {}\n", interface_stmt.name));
@@ -4776,49 +4818,56 @@ impl LlvmCodeGenerator {
             }
             
             MatchPattern::Range { start, end, inclusive } => {
-                // For now, generate a simple comparison for integer ranges only
-                // TODO: Implement proper type-aware range checking
-                match (start, end) {
-                    (Expression::Integer(start_val), Expression::Integer(end_val)) => {
-                        // Simple integer range check
-                        let ge_reg = self.next_register();
-                        let le_reg = self.next_register();
-                        let and_reg = self.next_register();
-                        
-                        // value >= start
-                        self.ir_code.push_str(&format!(
-                            "  {} = icmp sge i32 {}, {}\n",
-                            ge_reg, value_reg, start_val
-                        ));
-                        
-                        // value <= end (or < end+1 for exclusive)
-                        if *inclusive {
-                            self.ir_code.push_str(&format!(
-                                "  {} = icmp sle i32 {}, {}\n",
-                                le_reg, value_reg, end_val
-                            ));
-                        } else {
-                            self.ir_code.push_str(&format!(
-                                "  {} = icmp slt i32 {}, {}\n",
-                                le_reg, value_reg, end_val
-                            ));
-                        }
-                        
-                        // Combine conditions
-                        self.ir_code.push_str(&format!(
-                            "  {} = and i1 {}, {}\n",
-                            and_reg, ge_reg, le_reg
-                        ));
-                        self.ir_code.push_str(&format!(
-                            "  br i1 {}, label %{}, label %{}\n",
-                            and_reg, success_label, fail_label
-                        ));
-                    }
+                // Compile range expressions to registers
+                let start_reg = match start {
+                    Expression::Integer(val) => format!("{}", val),
                     _ => {
-                        // Fallback: just jump to fail for non-integer ranges
-                        self.ir_code.push_str(&format!("  br label %{}\n", fail_label));
+                        let reg = self.compile_expression(start)?;
+                        reg
                     }
+                };
+                
+                let end_reg = match end {
+                    Expression::Integer(val) => format!("{}", val),
+                    _ => {
+                        let reg = self.compile_expression(end)?;
+                        reg
+                    }
+                };
+                
+                // Generate range comparison
+                let ge_reg = self.next_register();
+                let le_reg = self.next_register();
+                let and_reg = self.next_register();
+                
+                // value >= start
+                self.ir_code.push_str(&format!(
+                    "  {} = icmp sge i32 {}, {}\n",
+                    ge_reg, value_reg, start_reg
+                ));
+                
+                // value <= end (or < end for exclusive)
+                if *inclusive {
+                    self.ir_code.push_str(&format!(
+                        "  {} = icmp sle i32 {}, {}\n",
+                        le_reg, value_reg, end_reg
+                    ));
+                } else {
+                    self.ir_code.push_str(&format!(
+                        "  {} = icmp slt i32 {}, {}\n",
+                        le_reg, value_reg, end_reg
+                    ));
                 }
+                
+                // Combine conditions
+                self.ir_code.push_str(&format!(
+                    "  {} = and i1 {}, {}\n",
+                    and_reg, ge_reg, le_reg
+                ));
+                self.ir_code.push_str(&format!(
+                    "  br i1 {}, label %{}, label %{}\n",
+                    and_reg, success_label, fail_label
+                ));
             }
             
             MatchPattern::Tuple(patterns) => {
@@ -5027,16 +5076,142 @@ impl LlvmCodeGenerator {
                             cmp_reg, success_label, fail_label
                         ));
                     }
+                    Expression::String(s) => {
+                        // String literal pattern matching
+                        let str_reg = self.next_register();
+                        let cmp_reg = self.next_register();
+                        
+                        // Create string constant
+                        let str_const_ref = self.string_manager.add_string_constant(s);
+                        self.ir_code.push_str(&format!(
+                            "  {} = call ptr @string_create(ptr {})\n",
+                            str_reg, str_const_ref
+                        ));
+                        
+                        // Compare strings
+                        self.ir_code.push_str(&format!(
+                            "  {} = call i1 @string_equals(ptr {}, ptr {})\n",
+                            cmp_reg, value_reg, str_reg
+                        ));
+                        
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            cmp_reg, success_label, fail_label
+                        ));
+                    }
+                    Expression::Boolean(b) => {
+                        // Boolean literal pattern matching
+                        let bool_val = if *b { 1 } else { 0 };
+                        let cmp_reg = self.next_register();
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp eq i1 {}, {}\n",
+                            cmp_reg, value_reg, bool_val
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            cmp_reg, success_label, fail_label
+                        ));
+                    }
                     _ => {
-                        return Err(CursedError::CodegenError("Unsupported literal pattern".to_string()));
+                        // Compile generic expression and compare
+                        let expr_reg = self.compile_expression(expr)?;
+                        let cmp_reg = self.next_register();
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp eq i32 {}, {}\n",
+                            cmp_reg, value_reg, expr_reg
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            cmp_reg, success_label, fail_label
+                        ));
                     }
                 }
+            }
+            
+            PatternExpression::Wildcard => {
+                // Wildcard pattern always matches - jump to success
+                self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            }
+            
+            PatternExpression::Tuple(tuple_patterns) => {
+                // Handle tuple pattern matching
+                self.generate_tuple_pattern_match(value_reg, tuple_patterns, success_label, fail_label)?;
+            }
+            
+            PatternExpression::Range { start, end, inclusive } => {
+                // Handle range pattern matching
+                self.generate_range_pattern_match(value_reg, start, end, *inclusive, success_label, fail_label)?;
             }
             
             _ => {
                 return Err(CursedError::CodegenError("Unsupported pattern expression".to_string()));
             }
         }
+        
+        Ok(())
+    }
+
+    /// Generate tuple pattern matching
+    fn generate_tuple_pattern_match(&mut self, value_reg: &str, tuple_patterns: &[PatternExpression], success_label: &str, fail_label: &str) -> Result<(), CursedError> {
+        // Generate tuple element extraction and pattern matching
+        for (i, pattern) in tuple_patterns.iter().enumerate() {
+            let element_reg = self.next_register();
+            self.ir_code.push_str(&format!(
+                "  {} = extractvalue {{i32, i32, i32}} {}, {}\n",
+                element_reg, value_reg, i
+            ));
+            
+            let next_label = if i + 1 < tuple_patterns.len() {
+                self.next_label()
+            } else {
+                success_label.to_string()
+            };
+            
+            self.generate_pattern_expression_match(&element_reg, pattern, &next_label, fail_label)?;
+        }
+        Ok(())
+    }
+
+    /// Generate range pattern matching
+    fn generate_range_pattern_match(&mut self, value_reg: &str, start: &Expression, end: &Expression, inclusive: bool, success_label: &str, fail_label: &str) -> Result<(), CursedError> {
+        // Compile range expressions
+        let start_reg = self.compile_expression(start)?;
+        let end_reg = self.compile_expression(end)?;
+        
+        // Generate range comparison
+        let ge_reg = self.next_register();
+        let le_reg = self.next_register();
+        let and_reg = self.next_register();
+        
+        // value >= start
+        self.ir_code.push_str(&format!(
+            "  {} = icmp sge i32 {}, {}\n",
+            ge_reg, value_reg, start_reg
+        ));
+        
+        // value <= end (or < end for exclusive)
+        if inclusive {
+            self.ir_code.push_str(&format!(
+                "  {} = icmp sle i32 {}, {}\n",
+                le_reg, value_reg, end_reg
+            ));
+        } else {
+            self.ir_code.push_str(&format!(
+                "  {} = icmp slt i32 {}, {}\n",
+                le_reg, value_reg, end_reg
+            ));
+        }
+        
+        // Combine conditions
+        self.ir_code.push_str(&format!(
+            "  {} = and i1 {}, {}\n",
+            and_reg, ge_reg, le_reg
+        ));
+        
+        self.ir_code.push_str(&format!(
+            "  br i1 {}, label %{}, label %{}\n",
+            and_reg, success_label, fail_label
+        ));
         
         Ok(())
     }

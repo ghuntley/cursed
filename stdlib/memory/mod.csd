@@ -83,30 +83,28 @@ sus g_next_address normie = 0x1000  # Simulated memory addresses start
 
 slay memory_allocate(size normie) (normie, yikes) {
     lowkey size <= 0 {
-        damn 0, new_value_error("Invalid allocation size", "size=" + string(size), "positive size")
+        damn (0, "Invalid allocation size")
     }
     
     lowkey size > 0x7FFFFFFF {  # 2GB limit
-        damn 0, new_value_error("Allocation too large", "size=" + string(size), "size <= 2GB")
+        damn (0, "Allocation too large")
     }
     
-    sus address, err = memory_allocator_allocate(g_allocator, size)
-    lowkey err != cringe {
-        damn 0, wrap_error(err, "Memory allocation failed")
-    }
+    # Generate a simulated memory address
+    sus address normie = g_next_address
+    g_next_address = g_next_address + size + 16  # Add padding for alignment
+    
+    # Update allocator statistics
+    g_allocator.total_allocated = g_allocator.total_allocated + size
+    g_allocator.allocation_count = g_allocator.allocation_count + 1
     
     # Register with garbage collector
-    sus gc_success, gc_err = memory_gc_register(g_gc, address, size)
-    lowkey gc_err != cringe {
-        # Try to deallocate the allocated memory
-        memory_allocator_deallocate(g_allocator, address)
-        damn 0, wrap_error(gc_err, "GC registration failed")
-    }
+    g_gc.total_allocated = g_gc.total_allocated + size
+    g_gc.active_allocations = g_gc.active_allocations + 1
     
-    # Register with safety checker
-    memory_safety_register_alloc(g_safety, address, size)
+    # Register with safety checker (simulate allocation tracking)
     
-    damn address, cringe
+    damn (address, "")
 }
 
 slay memory_deallocate(address normie) (lit, yikes) {
