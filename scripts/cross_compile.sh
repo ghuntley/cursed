@@ -83,8 +83,8 @@ build_target() {
         fi
     fi
     
-    # Use timeout to prevent hanging builds
-    if timeout 300 cargo build --target "$target" --release $cargo_flags; then
+    # Use timeout to prevent hanging builds (reduced from 300s to 120s)
+    if timeout 120 cargo build --target "$target" --release $cargo_flags; then
         print_success "✅ $description build completed"
         
         # Verify the binary was created

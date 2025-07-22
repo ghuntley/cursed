@@ -395,6 +395,173 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
         }
     }
 
+    /// Compile a single statement
+    pub fn compile_statement(&mut self, statement: &Statement) -> Result<(), CursedError> {
+        match statement {
+            Statement::Function(func_stmt) => {
+                self.compile_function(func_stmt)?;
+            }
+            Statement::Expression(expr) => {
+                self.compile_expression(expr)?;
+            }
+            Statement::Variable(var_stmt) => {
+                self.compile_variable_statement(var_stmt)?;
+            }
+            Statement::Return(ret_stmt) => {
+                self.compile_return_statement(ret_stmt)?;
+            }
+            Statement::If(if_stmt) => {
+                self.compile_if_statement(if_stmt)?;
+            }
+            Statement::While(while_stmt) => {
+                self.compile_while_statement(while_stmt)?;
+            }
+            _ => {
+                // For complex statements, use the statement generator
+                return Err(CursedError::CompilerError(format!("Statement type not yet implemented in inkwell backend: {:?}", statement)));
+            }
+        }
+        Ok(())
+    }
+
+    /// Compile an expression and return its value
+    pub fn compile_expression(&mut self, expression: &Expression) -> Result<BasicValueEnum<'ctx>, CursedError> {
+        self.expression_compiler.compile_expression(expression)
+    }
+
+    /// Compile a variable statement
+    fn compile_variable_statement(&mut self, var_stmt: &crate::ast::VariableStatement) -> Result<(), CursedError> {
+        // Create alloca for the variable
+        let var_type = if let Some(init_expr) = &var_stmt.initializer {
+            // Infer type from initializer
+            let init_value = self.compile_expression(init_expr)?;
+            init_value.get_type()
+        } else if let Some(type_annotation) = &var_stmt.variable_type {
+            self.convert_cursed_type_to_llvm(type_annotation)?
+        } else {
+            return Err(CursedError::CompilerError("Cannot determine variable type".to_string()));
+        };
+
+        let alloca = self.builder.build_alloca(var_type, &var_stmt.name)
+            .map_err(|e| CursedError::CompilerError(format!("Failed to create alloca: {}", e)))?;
+        
+        // Store initial value if present
+        if let Some(init_expr) = &var_stmt.initializer {
+            let init_value = self.compile_expression(init_expr)?;
+            self.builder.build_store(alloca, init_value)
+                .map_err(|e| CursedError::CompilerError(format!("Failed to store initial value: {}", e)))?;
+        }
+
+        // Add to expression compiler's variable scope
+        self.expression_compiler.add_variable(var_stmt.name.clone(), alloca);
+        
+        Ok(())
+    }
+
+    /// Compile a return statement
+    fn compile_return_statement(&mut self, ret_stmt: &crate::ast::ReturnStatement) -> Result<(), CursedError> {
+        if let Some(expr) = &ret_stmt.value {
+            let return_value = self.compile_expression(expr)?;
+            self.builder.build_return(Some(&return_value))
+                .map_err(|e| CursedError::CompilerError(format!("Failed to build return: {}", e)))?;
+        } else {
+            self.builder.build_return(None)
+                .map_err(|e| CursedError::CompilerError(format!("Failed to build void return: {}", e)))?;
+        }
+        Ok(())
+    }
+
+    /// Compile an if statement
+    fn compile_if_statement(&mut self, if_stmt: &crate::ast::IfStatement) -> Result<(), CursedError> {
+        let condition = self.compile_expression(&if_stmt.condition)?;
+        
+        let current_function = self.builder.get_insert_block()
+            .and_then(|bb| bb.get_parent())
+            .ok_or_else(|| CursedError::CompilerError("No current function for if statement".to_string()))?;
+
+        // Create basic blocks
+        let then_block = self.context.append_basic_block(current_function, "if.then");
+        let else_block = if if_stmt.else_body.is_some() {
+            Some(self.context.append_basic_block(current_function, "if.else"))
+        } else {
+            None
+        };
+        let merge_block = self.context.append_basic_block(current_function, "if.end");
+
+        // Build conditional branch
+        if let Some(else_bb) = else_block {
+            self.builder.build_conditional_branch(condition.into_int_value(), then_block, else_bb)
+                .map_err(|e| CursedError::CompilerError(format!("Failed to build conditional branch: {}", e)))?;
+        } else {
+            self.builder.build_conditional_branch(condition.into_int_value(), then_block, merge_block)
+                .map_err(|e| CursedError::CompilerError(format!("Failed to build conditional branch: {}", e)))?;
+        }
+
+        // Generate then block
+        self.builder.position_at_end(then_block);
+        for stmt in &if_stmt.then_body.statements {
+            self.compile_statement(stmt)?;
+        }
+        if !self.has_terminator() {
+            self.builder.build_unconditional_branch(merge_block)
+                .map_err(|e| CursedError::CompilerError(format!("Failed to build branch: {}", e)))?;
+        }
+
+        // Generate else block if present
+        if let (Some(else_bb), Some(else_body)) = (else_block, &if_stmt.else_body) {
+            self.builder.position_at_end(else_bb);
+            for stmt in &else_body.statements {
+                self.compile_statement(stmt)?;
+            }
+            if !self.has_terminator() {
+                self.builder.build_unconditional_branch(merge_block)
+                    .map_err(|e| CursedError::CompilerError(format!("Failed to build branch: {}", e)))?;
+            }
+        }
+
+        // Continue with merge block
+        self.builder.position_at_end(merge_block);
+        
+        Ok(())
+    }
+
+    /// Compile a while statement
+    fn compile_while_statement(&mut self, while_stmt: &crate::ast::WhileStatement) -> Result<(), CursedError> {
+        let current_function = self.builder.get_insert_block()
+            .and_then(|bb| bb.get_parent())
+            .ok_or_else(|| CursedError::CompilerError("No current function for while statement".to_string()))?;
+
+        // Create basic blocks
+        let condition_block = self.context.append_basic_block(current_function, "while.cond");
+        let body_block = self.context.append_basic_block(current_function, "while.body");
+        let exit_block = self.context.append_basic_block(current_function, "while.end");
+
+        // Jump to condition block
+        self.builder.build_unconditional_branch(condition_block)
+            .map_err(|e| CursedError::CompilerError(format!("Failed to build branch: {}", e)))?;
+
+        // Generate condition block
+        self.builder.position_at_end(condition_block);
+        let condition = self.compile_expression(&while_stmt.condition)?;
+        self.builder.build_conditional_branch(condition.into_int_value(), body_block, exit_block)
+            .map_err(|e| CursedError::CompilerError(format!("Failed to build conditional branch: {}", e)))?;
+
+        // Generate body block
+        self.builder.position_at_end(body_block);
+        for stmt in &while_stmt.body.statements {
+            self.compile_statement(stmt)?;
+        }
+        if !self.has_terminator() {
+            self.builder.build_unconditional_branch(condition_block)
+                .map_err(|e| CursedError::CompilerError(format!("Failed to build branch: {}", e)))?;
+        }
+
+        // Continue with exit block
+        self.builder.position_at_end(exit_block);
+        
+        Ok(())
+    }
+
     /// Get the generated LLVM IR as a string
     pub fn get_ir_string(&self) -> String {
         self.module.print_to_string().to_string()
@@ -589,7 +756,7 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
         let debug_header = format!(
             "; Debug Information for CURSED WebAssembly Module\n\
              ; Generated with debug support enabled\n\
-             !llvm.dbg.cu = !{{{0}}}\n\
+             !llvm.dbg.cu = !{{!{}}}\n\
              !llvm.module.flags = !{{{{!1, !2}}}}\n\
              \n\
              !0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: \"CURSED Compiler\", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)\n\

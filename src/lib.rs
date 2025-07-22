@@ -980,6 +980,7 @@ fn compile_ir_with_debug(ir_file: &str, output_file: &str, debug_assembly: &str)
     let obj_file = format!("{}.o", output_file);
     let llc_output = Command::new("llc")
         .arg("-filetype=obj")
+        .arg("-relocation-model=pic")
         .arg("-o")
         .arg(&obj_file)
         .arg(ir_file)
@@ -1772,6 +1773,7 @@ async fn compile_ir_to_wasm_binary(
         .arg(&temp_ir_file)
         .arg("-march=wasm32")
         .arg("-filetype=obj")
+        .arg("-relocation-model=pic")
         .arg(format!("-o={}.o", output_file));
     
     // Add optimization flags
@@ -1976,6 +1978,7 @@ async fn compile_ir_to_wasm(ir: &str, output_file: &str) -> crate::error::Result
     let llc_result = Command::new("llc")
         .arg("-march=wasm32")
         .arg("-filetype=obj")
+        .arg("-relocation-model=pic")
         .arg(&temp_ir_file)
         .arg("-o")
         .arg(&format!("{}.o", output_file))

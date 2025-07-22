@@ -19,6 +19,7 @@ use crate::codegen::llvm::interface_dispatch::{InterfaceDispatchCodegen, Interfa
 use crate::codegen::llvm::interface_type_checking::InterfaceTypeChecker;
 use crate::codegen::llvm::simple_defer_panic::{SimpleDeferPanicSystem, create_simple_defer_panic_system};
 use crate::codegen::llvm::lto_integration::{LlvmLtoIntegration, get_lto_result};
+use crate::codegen::llvm::improved_codegen::{ImprovedLlvmCodeGeneratorWrapper};
 use crate::optimization::link_time_optimization::LTOConfig;
 use crate::type_system::monomorphizer::{Monomorphizer, MonomorphizedInstance, ConcreteAST, ConcreteFunctionDeclaration, ConcreteStructDeclaration, ConcreteMethodDeclaration};
 use std::collections::HashMap;
@@ -215,7 +216,14 @@ impl LlvmCodeGenerator {
     }
     
     pub fn compile(&mut self, source: &str) -> Result<String, CursedError> {
-        // Parse the source code
+        // CRITICAL FIX: Use proper LLVM IR builders instead of string concatenation
+        // Check if we should use the improved (inkwell-based) generator
+        if std::env::var("CURSED_USE_IMPROVED_CODEGEN").unwrap_or_default() == "1" {
+            let mut improved_generator = ImprovedLlvmCodeGeneratorWrapper::new()?;
+            return improved_generator.compile(source);
+        }
+        
+        // Legacy string-based implementation (deprecated)
         let mut parser = crate::parser::new_parser(source)?;
         let program = parser.parse_program()?;
         

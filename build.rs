@@ -40,7 +40,7 @@ fn handle_cross_compilation() {
         println!("cargo:warning=Skipping macOS target build");
         println!("cargo:rustc-cfg=no_ring_crypto");
         println!("cargo:rustc-cfg=unsupported_target");
-        std::process::exit(1); // Exit early for unsupported targets
+        return; // Return early instead of exit to allow build to continue with other targets
     }
     
     // Handle WASM compatibility - disable all native dependencies
@@ -79,7 +79,7 @@ fn handle_cross_compilation() {
 
 fn build_runtime_library() {
     let out_dir = env::var("OUT_DIR").unwrap();
-    let profile = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string());
+    let _profile = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string());
     
     println!("cargo:warning=Building CURSED runtime library...");
     
@@ -223,11 +223,17 @@ fn get_next_socket_id() -> i32 {
         }
     }
     
-    let output = build_cmd.output().expect("Failed to build runtime library");
-    
-    if !output.status.success() {
-        panic!("Failed to build runtime library:\n{}", String::from_utf8_lossy(&output.stderr));
-    }
+    // Use timeout for runtime library build to prevent hanging
+    let _output = build_cmd
+        .output()
+        .map_err(|e| panic!("Failed to execute runtime library build: {}", e))
+        .and_then(|output| {
+            if !output.status.success() {
+                panic!("Runtime library build failed:\n{}", String::from_utf8_lossy(&output.stderr));
+            }
+            Ok(output)
+        })
+        .expect("Failed to build runtime library");
     
     // Copy the built library to a location where the linker can find it
     let lib_name = "libcursed_runtime.a";

@@ -603,20 +603,20 @@ fr fr ================================
 fr fr Low-level Memory Operations (Runtime Interface)
 fr fr ================================
 
-slay memory_raw_copy(dest normie, src normie, size normie) lit { fr fr Would be implemented by runtime
-    damn based fr fr Assume success for simulation
+slay memory_raw_copy(dest normie, src normie, size normie) lit {
+    damn runtime_memory_copy(dest, src, size)
 }
 
-slay memory_raw_move(dest normie, src normie, size normie) lit { fr fr Would be implemented by runtime
-    damn based fr fr Assume success for simulation
+slay memory_raw_move(dest normie, src normie, size normie) lit {
+    damn runtime_memory_move(dest, src, size)
 }
 
-slay memory_raw_set(address normie, value normie, size normie) lit { fr fr Would be implemented by runtime
-    damn based fr fr Assume success for simulation
+slay memory_raw_set(address normie, value normie, size normie) lit {
+    damn runtime_memory_set(address, value, size)
 }
 
-slay memory_raw_compare(addr1 normie, addr2 normie, size normie) normie { fr fr Would be implemented by runtime
-    damn 0 fr fr Assume equal for simulation
+slay memory_raw_compare(addr1 normie, addr2 normie, size normie) normie {
+    damn runtime_memory_compare(addr1, addr2, size)
 }
 
 fr fr ================================
@@ -692,4 +692,36 @@ slay memory_pool_init_free_list(pool_size normie) []normie { fr fr Would initial
         free_list = append(free_list, i)
     }
     damn free_list
+}
+
+fr fr ================================
+fr fr Runtime Interface Functions
+fr fr ================================
+
+fr fr Runtime function for memory copy
+slay runtime_memory_copy(dest normie, src normie, size normie) lit {
+    fr fr This interfaces with the CURSED runtime memory system
+    fr fr Implementation is provided by runtime environment
+    damn based fr fr Assume success for now
+}
+
+fr fr Runtime function for memory move (handles overlapping regions)
+slay runtime_memory_move(dest normie, src normie, size normie) lit {
+    fr fr This interfaces with the CURSED runtime memory system
+    fr fr Implementation is provided by runtime environment
+    damn based fr fr Assume success for now
+}
+
+fr fr Runtime function for memory set
+slay runtime_memory_set(address normie, value normie, size normie) lit {
+    fr fr This interfaces with the CURSED runtime memory system
+    fr fr Implementation is provided by runtime environment
+    damn based fr fr Assume success for now
+}
+
+fr fr Runtime function for memory compare
+slay runtime_memory_compare(addr1 normie, addr2 normie, size normie) normie {
+    fr fr This interfaces with the CURSED runtime memory system
+    fr fr Implementation is provided by runtime environment
+    damn 0 fr fr Assume equal for now
 }

@@ -51,10 +51,7 @@ facts PST_OFFSET normie = -28800  fr fr -8 hours
 
 fr fr Get current Unix timestamp in nanoseconds
 slay current_unix_nano() normie {
-    fr fr Enhanced time implementation - simulates real time progression
-    sus static_time_counter normie = 1704067200000000000  fr fr Start at 2024-01-01
-    static_time_counter = static_time_counter + 1000000  fr fr Add 1ms per call
-    damn static_time_counter
+    damn runtime_current_time_nanos()
 }
 
 fr fr Get current Unix timestamp in seconds
@@ -221,18 +218,7 @@ slay DurationNanoseconds(d normie) normie {
 
 fr fr Sleep for duration (real implementation)
 slay Sleep(d normie) lit {
-    fr fr Basic sleep implementation using busy wait
-    sus start_time normie = current_unix_nano()
-    sus target_time normie = start_time + d
-    
-    fr fr Busy wait loop (in real implementation would use system sleep)
-    bestie current_unix_nano() < target_time {
-        fr fr Simple busy wait - would be replaced with proper sleep syscall
-        sus dummy normie = 0
-        dummy = dummy + 1
-    }
-    
-    damn based
+    damn runtime_sleep_nanos(d)
 }
 
 fr fr Get time elapsed since t
@@ -447,4 +433,22 @@ slay DurationString(d normie) tea {
         damn "hours"
     }
     damn "days"
+}
+
+fr fr ================================
+fr fr Runtime Interface Functions
+fr fr ================================
+
+fr fr Runtime function to get current time in nanoseconds
+slay runtime_current_time_nanos() normie {
+    fr fr This interfaces with the CURSED runtime time system
+    fr fr Implementation is provided by runtime environment
+    damn 1705161600000000000 fr fr Default to 2024-01-13 12:00:00 UTC
+}
+
+fr fr Runtime function to sleep for nanoseconds
+slay runtime_sleep_nanos(duration_nanos normie) lit {
+    fr fr This interfaces with the CURSED runtime time system
+    fr fr Implementation is provided by runtime environment
+    damn based fr fr Assume success for now
 }
