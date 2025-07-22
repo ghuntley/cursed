@@ -1,6 +1,10 @@
-# Minimal testz module test
 yeet "testz"
 
-# Just try calling one simple function
-test_start("minimal test")
-print_test_summary()
+slay test_basic() normie {
+    test_start("basic test")
+    assert_true(based)
+    print_test_summary()
+    damn 0
+}
+
+test_basic()

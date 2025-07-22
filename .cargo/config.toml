@@ -21,7 +21,24 @@ linker = "x86_64-w64-mingw32-gcc"
 
 
 [target.wasm32-unknown-unknown]
-rustflags = ["-C", "target-feature=+bulk-memory"]
+rustflags = [
+    "-C", "target-feature=+bulk-memory",
+    "-C", "target-feature=+multivalue", 
+    "-C", "target-feature=+mutable-globals",
+    "-C", "target-feature=+reference-types",
+    "-C", "target-feature=+sign-ext",
+    "-C", "opt-level=2",
+    "-C", "panic=abort",
+    "--cfg", "web_sys_unstable_apis",
+    "--cfg", "getrandom_js",
+]
 
 [target.wasm32-wasi]
-rustflags = ["-C", "target-feature=+bulk-memory"]
+rustflags = [
+    "-C", "target-feature=+bulk-memory",
+    "-C", "target-feature=+multivalue",
+    "-C", "target-feature=+mutable-globals", 
+    "-C", "target-feature=+reference-types",
+    "-C", "target-feature=+sign-ext",
+    "-C", "opt-level=2",
+]

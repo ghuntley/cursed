@@ -718,14 +718,14 @@ impl MemoryManager for Arm64MemoryManager {
                     ));
                 }
             }
-            #[cfg(all(target_os = "windows", feature = "winapi"))]
+            #[cfg(windows)]
             {
                 // Windows VirtualFree - ARM64 Windows not typically supported but adding for completeness
                 use winapi::um::memoryapi::VirtualFree;
                 use winapi::um::winnt::MEM_RELEASE;
                 VirtualFree(ptr as *mut winapi::ctypes::c_void, 0, MEM_RELEASE);
             }
-            #[cfg(not(all(target_os = "windows", feature = "winapi")))]
+            #[cfg(not(windows))]
             {
                 // Cross-compilation fallback
                 std::alloc::dealloc(ptr, std::alloc::Layout::from_size_align_unchecked(size, 8));
@@ -818,7 +818,7 @@ impl Arm64MemoryManager {
                     }
                 }
             }
-            #[cfg(all(target_os = "windows", feature = "winapi"))]
+            #[cfg(windows)]
             {
                 // Windows VirtualAlloc for ARM64
                 use winapi::um::memoryapi::VirtualAlloc;

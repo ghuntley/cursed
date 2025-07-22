@@ -451,3 +451,28 @@ cargo run --bin cursed stdlib/testz/test_testz.csd # Stdlib testing framework wo
 - **Specification Consistency**: All syntax and CLI conflicts resolved
 - **FFI Elimination**: Pure CURSED implementation verified across stdlib
 - **Version**: v10.0.0-performance-milestone tagged and released
+
+### Latest Session Learnings
+
+#### PIE Compilation Fix
+- **LLVM llc compilation issue**: Add `-relocation-model=pic` flag to llc commands
+- **Location**: Check src/codegen/llvm_backend.rs for LLVM compilation configuration
+- **Usage**: Required for position-independent executables on Linux systems
+
+#### Runtime Implementation Strategy  
+- **Pure CURSED approach**: Implement runtime stubs as CURSED functions, not Rust FFI
+- **Pattern**: Create placeholder functions that return proper types until implementation
+- **Example**: `slay missing_function() normie { damn "placeholder" }`
+- **Testing**: Each runtime function must have corresponding testz test
+
+#### Cross-compilation Status
+- **Current working**: 1/5 targets functional (Linux x86_64 only)
+- **Broken targets**: macOS, Windows, ARM64, WASM (due to PIE/archive issues)
+- **Fix priority**: Address LLVM archive configuration and PIE compilation flags
+- **Test command**: `make cross-compile` to validate all targets
+
+#### Stdlib Testing Best Practices
+- **Individual testing**: Always test modules with `cargo run --bin cursed stdlib/module/test_module.csd`
+- **Common issue**: Missing testz imports - add `yeet "testz"` first line
+- **Validation pattern**: Test both interpretation and compilation modes for each module
+- **Debug tip**: Use minimal test files when stdlib tests fail to isolate issues

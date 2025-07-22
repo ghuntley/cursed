@@ -10,11 +10,49 @@ fn main() {
     println!("cargo:rerun-if-changed=src/execution/runtime_functions.rs");
     println!("cargo:rerun-if-changed=build.rs");
     
+    let target = env::var("TARGET").unwrap_or_else(|_| "unknown".to_string());
+    
+    // Handle cross-compilation issues
+    handle_cross_compilation();
+    
+    // Skip native builds for WASM targets
+    if target.contains("wasm32") {
+        println!("cargo:warning=Skipping native library builds for WASM target");
+        return;
+    }
+    
     // Enable runtime library build
     build_runtime_library();
     
     // Link with system libraries (existing code)
     link_system_libraries();
+}
+
+fn handle_cross_compilation() {
+    let target = env::var("TARGET").unwrap_or_else(|_| "unknown".to_string());
+    
+    // Handle macOS cross-compilation issues with ring
+    if target.contains("apple-darwin") && !cfg!(target_os = "macos") {
+        println!("cargo:warning=Cross-compiling to macOS from non-macOS host - disabling ring crypto");
+        println!("cargo:rustc-cfg=no_ring_crypto");
+    }
+    
+    // Handle WASM compatibility - disable all native dependencies
+    if target.contains("wasm32") {
+        println!("cargo:warning=Building for WASM - using limited dependencies");
+        println!("cargo:rustc-cfg=wasm_target");
+        println!("cargo:rustc-cfg=no_native_libs");
+        println!("cargo:rustc-cfg=no_llvm");
+        println!("cargo:rustc-cfg=no_system_calls");
+        // Skip all native library builds for WASM
+        return;
+    }
+    
+    // Handle Windows cross-compilation
+    if target.contains("windows") {
+        println!("cargo:warning=Building for Windows - enabling winapi features");
+        println!("cargo:rustc-cfg=windows_target");
+    }
 }
 
 fn build_runtime_library() {
