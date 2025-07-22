@@ -1051,9 +1051,9 @@ impl MonomorphisationPipeline {
     }
 
     fn generate_instance_key(&self, request: &InstantiationRequest) -> String {
-        // Generate stable, platform-independent hash for type fingerprint
-        let type_fingerprint = self.generate_type_fingerprint(&request.type_arguments);
-        format!("{}_{}", request.generic_name, type_fingerprint)
+        // Use simple naming for better readability and debugging
+        let type_suffix = self.generate_type_suffix(&request.type_arguments);
+        format!("{}_{}", request.generic_name, type_suffix)
     }
 
     /// Generate a stable type fingerprint for cross-platform builds
