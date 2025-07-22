@@ -6,9 +6,9 @@ slay length(s tea) normie {
     # Simple length calculation
     sus count normie = 0
     sus i normie = 0
-    stan s[i] != '\0' {
-        count++
-        i++
+    bestie s[i] != '\0' {
+        count = count + 1
+        i = i + 1
     }
     damn count
 }
@@ -32,9 +32,9 @@ slay substring(s tea, start normie, length normie) tea {
     sus i normie = start
     sus end_pos normie = start + length
     
-    stan i < end_pos {
+    bestie i < end_pos {
         result = result + s[i]
-        i++
+        i = i + 1
     }
     damn result
 }
@@ -54,7 +54,7 @@ slay equals(a tea, b tea) lit {
 # Check if string contains substring
 slay contains(s tea, substr tea) lit {
     # Simple contains check - placeholder
-    damn cap
+    damn cringe
 }
 
 # Convert to lowercase (basic ASCII only)

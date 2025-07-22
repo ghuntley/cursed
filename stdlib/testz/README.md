@@ -1,147 +1,86 @@
-# CURSED Testing Framework (testz) Documentation
+# CURSED Testing Framework (testz)
 
-The testz framework provides comprehensive testing utilities for CURSED stdlib development and application testing.
+A comprehensive, pure CURSED testing framework designed for stdlib development and general testing needs.
 
-## 🚀 Quick Start
+## Overview
+
+The testz framework provides advanced testing primitives, performance benchmarking, test isolation, and comprehensive reporting capabilities. It's built entirely in CURSED with no external dependencies or FFI usage.
+
+## Quick Start
 
 ```cursed
 yeet "testz"
 
-slay test_example() {
-    test_start("example test")
-    
-    assert_eq_int(2 + 2, 4)
-    assert_true(5 > 3)
-    assert_eq_string("hello", "hello")
-    
-    test_end()
-}
-
-test_example()
+# Basic test example
+test_start("my first test")
+assert_eq_int(2 + 2, 4)
+assert_true(based)
 print_test_summary()
 ```
 
-## 📋 Core Functions
-
-### Test Management
-
-- **`test_start(name tea)`** - Begin a new test with the given name
-- **`test_end()`** - End the current test and record timing
-- **`reset_test_state()`** - Reset all test counters and state
-- **`test_suite_start(suite_name tea)`** - Begin a test suite
-- **`test_suite_end(suite_name tea)`** - End a test suite
+## Core Features
 
 ### Basic Assertions
+- `assert_eq_int(actual, expected)` - Assert integer equality
+- `assert_eq_string(actual, expected)` - Assert string equality  
+- `assert_true(condition)` - Assert boolean true
+- `assert_false(condition)` - Assert boolean false
 
-- **`assert_eq_int(actual normie, expected normie)`** - Assert integer equality
-- **`assert_eq_string(actual tea, expected tea)`** - Assert string equality
-- **`assert_true(condition lit)`** - Assert condition is true
-- **`assert_false(condition lit)`** - Assert condition is false
-- **`assert_not_null(value tea)`** - Assert string is not null/empty
+### Advanced Assertions
+- `assert_not_eq_int(actual, not_expected)` - Assert integer inequality
+- `assert_greater_than(actual, expected)` - Assert greater than comparison
+- `assert_less_than(actual, expected)` - Assert less than comparison
+- `assert_in_range(actual, min, max)` - Assert value within range
+- `assert_contains_string(haystack, needle)` - Assert string contains substring
 
-### Comparison Assertions
+### Test Management
+- `test_start(name)` - Begin a new test
+- `test_end()` - End current test (with cleanup)
+- `suite_start(name)` - Begin a test suite
+- `suite_end()` - End current test suite
 
-- **`assert_gt(actual normie, expected normie)`** - Assert greater than
-- **`assert_lt(actual normie, expected normie)`** - Assert less than
-- **`assert_gte(actual normie, expected normie)`** - Assert greater than or equal
-- **`assert_lte(actual normie, expected normie)`** - Assert less than or equal
-- **`assert_not_eq(actual normie, expected normie)`** - Assert not equal
+### Configuration
+- `set_verbose_mode(enabled)` - Enable/disable verbose output
+- `set_setup_function(func_name)` - Configure setup function
+- `set_teardown_function(func_name)` - Configure teardown function
 
-### State Access
+### Performance Benchmarking
+- `benchmark_start()` - Start timing benchmark
+- `benchmark_end()` - End timing and return elapsed time
+- `benchmark_iterations(count)` - Set benchmark iteration count
+- `benchmark_test(name, iterations)` - Run full benchmark test
 
-- **`get_pass_count() normie`** - Get number of passed assertions
-- **`get_fail_count() normie`** - Get number of failed assertions
-- **`get_total_count() normie`** - Get total number of tests run
-- **`get_current_test_name() tea`** - Get name of current test
+### Error Testing
+- `expect_error(message)` - Expect specific error condition
+- `assert_throws(description)` - Assert that operation throws error
+
+### Test Data Management
+- `generate_test_data(size)` - Generate test data of specified size
+- `create_temp_data(pattern)` - Create temporary test data
+- `cleanup_temp_data(data_id)` - Clean up temporary test data
+
+### State Management
+- `reset_test_state()` - Reset all test counters and state
+- `reset_suite_state()` - Reset suite-specific state
+- `get_pass_count()` - Get number of passed assertions
+- `get_fail_count()` - Get number of failed assertions
+- `get_total_count()` - Get total number of tests run
+- `get_suite_name()` - Get current suite name
+- `is_verbose()` - Check if verbose mode is enabled
 
 ### Reporting
+- `print_test_summary()` - Print comprehensive test report
+- `print_detailed_report()` - Print detailed analysis with configuration
 
-- **`print_test_summary()`** - Print basic test results summary
-- **`print_detailed_report()`** - Print comprehensive test metrics
+## Usage Examples
 
-## 🎨 Features
-
-### ✨ Enhanced Output
-
-The framework provides colored output for better readability:
-
-- 🧪 **Blue** - Test information and progress
-- ✅ **Green** - Passing assertions
-- ❌ **Red** - Failing assertions and errors
-- ⚠️ **Yellow** - Warnings and state changes
-- ⏱️ **Timing** - Performance metrics
-
-### 📊 Performance Metrics
-
-- Individual test timing
-- Total test suite execution time
-- Success rate calculations
-- Assertions per test metrics
-
-### 🔧 Test Fixtures
-
-```cursed
-# Set up function to run before each test
-set_test_setup("my_setup_function")
-
-# Set teardown function to run after each test
-set_test_teardown("my_cleanup_function")
-```
-
-### 📈 Benchmarking
-
-```cursed
-# Benchmark a function with specified iterations
-sus avg_time normie = benchmark_function("my_function", 1000)
-```
-
-## 📖 Usage Examples
-
-### Basic Test Structure
+### Basic Test Suite
 
 ```cursed
 yeet "testz"
 
-slay test_arithmetic() {
-    test_start("basic arithmetic")
-    
-    sus x normie = 10
-    sus y normie = 20
-    
-    assert_eq_int(x + y, 30)
-    assert_gt(y, x)
-    assert_lt(x, y)
-    assert_not_eq(x, y)
-    
-    test_end()
-}
-
-slay test_strings() {
-    test_start("string operations")
-    
-    sus greeting tea = "hello"
-    sus name tea = "world"
-    
-    assert_eq_string(greeting, "hello")
-    assert_not_null(greeting)
-    assert_not_null(name)
-    
-    test_end()
-}
-
-# Run tests
-test_arithmetic()
-test_strings()
-print_test_summary()
-```
-
-### Test Suite Organization
-
-```cursed
-yeet "testz"
-
-slay run_math_tests() {
-    test_suite_start("Mathematics")
+slay test_math_operations() lit {
+    suite_start("Math Operations")
     
     test_start("addition")
     assert_eq_int(2 + 3, 5)
@@ -149,254 +88,206 @@ slay run_math_tests() {
     test_end()
     
     test_start("subtraction")
-    assert_eq_int(10 - 5, 5)
-    assert_eq_int(0 - 5, -5)
+    assert_eq_int(10 - 3, 7)
+    assert_greater_than(5, 2)
     test_end()
     
-    test_suite_end("Mathematics")
+    suite_end()
+    damn based
 }
 
-slay run_string_tests() {
-    test_suite_start("String Operations")
-    
-    test_start("equality")
-    assert_eq_string("test", "test")
-    assert_eq_string("", "")
-    test_end()
-    
-    test_start("validation")
-    assert_not_null("valid")
-    test_end()
-    
-    test_suite_end("String Operations")
-}
-
-# Execute all test suites
-run_math_tests()
-run_string_tests()
-print_detailed_report()
+test_math_operations()
+print_test_summary()
 ```
 
-### Performance Testing
+### Advanced Test with Configuration
 
 ```cursed
 yeet "testz"
 
-slay test_performance() {
-    test_start("performance validation")
+slay test_with_setup() lit {
+    # Configure testing environment
+    set_verbose_mode(based)
+    set_setup_function("initialize_data")
+    set_teardown_function("cleanup_data")
     
-    # Test many iterations
+    suite_start("Advanced Features")
+    
+    test_start("range validation")
+    assert_in_range(50, 0, 100)
+    assert_in_range(25, 20, 30)
+    test_end()
+    
+    test_start("string operations")
+    assert_eq_string("hello", "hello")
+    assert_contains_string("hello world", "hello")
+    test_end()
+    
+    suite_end()
+    print_detailed_report()
+    damn based
+}
+```
+
+### Performance Benchmarking
+
+```cursed
+yeet "testz"
+
+slay test_performance() lit {
+    suite_start("Performance Tests")
+    
+    # Simple benchmark
+    benchmark_test("loop performance", 1000)
+    
+    # Custom benchmark
+    test_start("custom benchmark")
+    benchmark_start()
+    
+    # Your performance-critical code here
     sus i normie = 0
-    bestie i < 1000 {
-        assert_eq_int(i * 2, i + i)
+    lowkey i < 5000 {
+        sus result normie = i * i
         i = i + 1
     }
     
+    sus elapsed normie = benchmark_end()
+    assert_greater_than(elapsed, 0)
     test_end()
+    
+    suite_end()
+    damn based
 }
-
-test_performance()
-print_test_summary()
 ```
 
-### Error Handling
+### Error Testing
 
 ```cursed
 yeet "testz"
 
-slay test_error_recovery() {
-    test_start("error recovery")
+slay test_error_conditions() lit {
+    suite_start("Error Handling")
     
-    # This will fail but test continues
-    assert_eq_int(1, 2)
-    
-    # This will pass
-    assert_eq_int(2, 2)
-    
+    test_start("expected errors")
+    expect_error("division by zero")
+    assert_throws("invalid operation")
     test_end()
-}
-
-test_error_recovery()
-print_test_summary()
-```
-
-## 🎯 Best Practices
-
-### 1. Test Organization
-
-```cursed
-# Group related tests in functions
-slay test_user_management() {
-    test_suite_start("User Management")
     
-    test_create_user()
-    test_update_user()
-    test_delete_user()
-    
-    test_suite_end("User Management")
+    suite_end()
+    damn based
 }
 ```
 
-### 2. Descriptive Test Names
+## Best Practices
+
+### Test Organization
+1. Use descriptive test names
+2. Group related tests into suites
+3. Keep individual tests focused and atomic
+4. Use setup/teardown for common initialization
+
+### Assertion Guidelines
+1. Use the most specific assertion available
+2. Include meaningful test descriptions
+3. Test both positive and negative cases
+4. Use range assertions for approximate values
+
+### Performance Testing
+1. Run benchmarks multiple times for accuracy
+2. Set appropriate iteration counts
+3. Test with realistic data sizes
+4. Compare results across implementations
+
+### Error Testing
+1. Test expected error conditions
+2. Verify error messages when possible
+3. Test edge cases and boundary conditions
+4. Ensure proper cleanup after errors
+
+## Framework Architecture
+
+### Pure CURSED Implementation
+The testz framework is implemented entirely in CURSED with no external dependencies:
+- No Rust FFI calls
+- No external library dependencies
+- Cross-platform compatible
+- Self-contained and portable
+
+### State Management
+The framework maintains several types of state:
+- Global test counters (total, pass, fail)
+- Suite-specific counters and names
+- Configuration settings (verbose mode, setup/teardown)
+- Benchmark timing and iteration settings
+
+### Thread Safety
+While CURSED provides concurrency primitives, the current testz implementation is designed for single-threaded testing. Future versions may include concurrent test execution capabilities.
+
+## Integration with Stdlib Development
+
+The testz framework is specifically designed for CURSED stdlib development:
+
+1. **Module Testing**: Each stdlib module should include a `test_module.csd` file
+2. **Validation Pattern**: Use testz assertions for all validation
+3. **Performance Benchmarks**: Include performance tests for critical functions
+4. **Error Handling**: Test error conditions and edge cases
+
+### Example Stdlib Module Test
 
 ```cursed
-# Good: Descriptive and specific
-test_start("user creation with valid email")
-
-# Bad: Vague and unclear  
-test_start("test1")
-```
-
-### 3. Clear Assertions
-
-```cursed
-# Good: Test specific behavior
-assert_eq_int(user.age, 25)
-assert_eq_string(user.name, "John")
-assert_true(user.is_active)
-
-# Better: Group related assertions in same test
-test_start("user properties after creation")
-assert_eq_string(user.name, "John")
-assert_eq_int(user.age, 25)
-assert_true(user.is_active)
-test_end()
-```
-
-### 4. State Management
-
-```cursed
-# Reset state between test runs
-reset_test_state()
-
-# Use setup/teardown for initialization
-set_test_setup("initialize_test_data")
-set_test_teardown("cleanup_test_data")
-```
-
-### 5. Comprehensive Testing
-
-```cursed
-slay test_edge_cases() {
-    test_start("boundary values")
-    
-    # Test edge cases
-    assert_eq_int(0, 0)
-    assert_eq_int(-1, -1)
-    assert_eq_string("", "")
-    
-    # Test error conditions
-    assert_false(cap)
-    assert_true(based)
-    
-    test_end()
-}
-```
-
-## 🔧 Framework Extension
-
-### Adding Custom Assertions
-
-```cursed
-slay assert_in_range(value normie, min normie, max normie) {
-    lowkey value >= min && value <= max {
-        pass_count = pass_count + 1
-        vibez.spill("✅ PASS: ", value, " in range [", min, ",", max, "]")
-    } highkey {
-        fail_count = fail_count + 1
-        vibez.spill("❌ FAIL: ", value, " not in range [", min, ",", max, "]")
-    }
-}
-```
-
-### Custom Test Utilities
-
-```cursed
-slay create_test_data() tea {
-    damn "test_user_123"
-}
-
-slay cleanup_test_data() {
-    # Cleanup logic here
-}
-```
-
-## 📊 Output Examples
-
-### Successful Test Run
-
-```
-🧪 [TEST 1] Starting: basic arithmetic
-✅ PASS: 30 == 30
-✅ PASS: 20 > 10
-⏱️  Test completed in 2ms
-
-📊 TEST SUMMARY REPORT
-==================================================
-Tests Run:       1
-Assertions Pass: 2
-Assertions Fail: 0
-Success Rate:    100%
-Total Time:      2ms
-🎉 ALL TESTS PASSED!
-==================================================
-```
-
-### Failed Test Run
-
-```
-🧪 [TEST 1] Starting: failing test
-❌ FAIL: Expected 5, got 10
-   Test: failing test
-✅ PASS: true == true
-
-📊 TEST SUMMARY REPORT
-==================================================
-Tests Run:       1
-Assertions Pass: 1
-Assertions Fail: 1
-Success Rate:    50%
-Total Time:      3ms
-💥 SOME TESTS FAILED!
-==================================================
-```
-
-## 🚀 Integration with Stdlib
-
-The testz framework is designed to test all stdlib modules:
-
-```cursed
-# Example: Testing a stdlib module
+# stdlib/mymodule/test_mymodule.csd
 yeet "testz"
-yeet "mathz"
+yeet "mymodule"
 
-slay test_mathz_module() {
-    test_suite_start("Mathematics Module")
+slay test_module_functions() lit {
+    suite_start("MyModule Tests")
     
-    test_start("sqrt function")
-    assert_eq_int(mathz.sqrt(16), 4)
-    assert_eq_int(mathz.sqrt(25), 5)
+    test_start("basic functionality")
+    sus result normie = mymodule.calculate(10, 5)
+    assert_eq_int(result, 15)
     test_end()
     
-    test_start("pow function")
-    assert_eq_int(mathz.pow(2, 3), 8)
-    assert_eq_int(mathz.pow(5, 2), 25)
+    test_start("error conditions")
+    expect_error("invalid input")
+    # Test error conditions here
     test_end()
     
-    test_suite_end("Mathematics Module")
+    suite_end()
+    print_test_summary()
+    damn based
 }
 
-test_mathz_module()
-print_detailed_report()
+test_module_functions()
 ```
 
-## 🎯 Meta-Testing
-
-The framework includes comprehensive meta-tests to verify its own functionality:
+## Development Commands
 
 ```bash
-# Run the framework's self-tests
-cargo run --bin cursed stdlib/testz/test_testz_enhanced.csd
+# Test the testz framework itself
+cargo run --bin cursed stdlib/testz/test_testz.csd
+
+# Test specific functionality
+cargo run --bin cursed stdlib/testz/test_testz.csd --verbose
+
+# Benchmark testz performance
+time cargo run --bin cursed stdlib/testz/test_testz.csd
 ```
 
-This ensures the testing framework itself is reliable and ready for stdlib development.
+## Version History
+
+- **v2.0.0** - Enhanced testing primitives with advanced assertions, benchmarking, and suite management
+- **v1.0.0** - Basic testing framework with core assertions and reporting
+
+## Contributing
+
+When contributing to testz:
+
+1. Maintain pure CURSED implementation (no FFI)
+2. Add comprehensive tests for new features
+3. Update documentation for new functions
+4. Follow established naming conventions
+5. Ensure backward compatibility
+
+## License
+
+Part of the CURSED programming language stdlib - see main project license.

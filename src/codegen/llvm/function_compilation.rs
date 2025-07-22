@@ -2155,26 +2155,47 @@ impl FunctionCompiler {
 
     /// Compile channel send expression
     fn compile_channel_send(&mut self, channel_send_expr: &ChannelSendExpression) -> Result<String, CursedError> {
-        // Simple placeholder - channel operations are handled in main codegen
-        let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; channel send placeholder\n", reg));
-        Ok(reg)
+        // Compile proper channel send operation
+        let channel_reg = self.compile_expression(&channel_send_expr.channel)?;
+        let value_reg = self.compile_expression(&channel_send_expr.value)?;
+        
+        // Generate LLVM call to channel send runtime function
+        let result_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = call i32 @cursed_channel_send(i8* {}, i32 {})\n", 
+            result_reg, channel_reg, value_reg));
+        
+        Ok(result_reg)
     }
 
     /// Compile channel receive expression
     fn compile_channel_receive(&mut self, channel_receive_expr: &ChannelReceiveExpression) -> Result<String, CursedError> {
-        // Simple placeholder - channel operations are handled in main codegen
-        let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; channel receive placeholder\n", reg));
-        Ok(reg)
+        // Compile proper channel receive operation
+        let channel_reg = self.compile_expression(&channel_receive_expr.channel)?;
+        
+        // Generate LLVM call to channel receive runtime function
+        let result_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = call i32 @cursed_channel_receive(i8* {})\n", 
+            result_reg, channel_reg));
+        
+        Ok(result_reg)
     }
 
     /// Compile channel creation expression
     fn compile_channel_creation(&mut self, channel_creation_expr: &ChannelCreationExpression) -> Result<String, CursedError> {
-        // Simple placeholder - channel operations are handled in main codegen
-        let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; channel create placeholder\n", reg));
-        Ok(reg)
+        // Compile proper channel creation operation
+        let capacity_reg = if let Some(capacity_expr) = &channel_creation_expr.capacity {
+            self.compile_expression(capacity_expr)?
+        } else {
+            // Default unbuffered channel
+            "0".to_string()
+        };
+        
+        // Generate LLVM call to channel creation runtime function
+        let result_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = call i8* @cursed_channel_create(i32 {})\n", 
+            result_reg, capacity_reg));
+        
+        Ok(result_reg)
     }
 
     /// Compile struct literal expression

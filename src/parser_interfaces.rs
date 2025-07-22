@@ -199,7 +199,12 @@ impl Parser {
             receiver: None, // Interface methods don't have receivers
             parameters,
             return_type,
-            source_location: None, // TODO: Extract from parser context
+            source_location: self.extract_source_location().map(|loc| crate::error::SourceLocation {
+                file: loc.file.unwrap_or_default(),
+                line: loc.line,
+                column: loc.column,
+                offset: loc.offset,
+            }),
         })
     }
     
@@ -406,4 +411,6 @@ impl Parser {
         
         Ok(())
     }
+
+
 }

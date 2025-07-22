@@ -8,6 +8,7 @@
 
 use crate::error::CursedError;
 use crate::ast::{Program, Statement};
+use crate::pattern_matching::{Pattern, EnumPattern, TypePattern};
 use crate::runtime::channels::simple_channel::SimpleChannel;
 use crate::runtime::{
     initialize_simple_error_runtime, get_simple_error_runtime,
@@ -2253,8 +2254,19 @@ impl CursedExecutionEngine {
                              return Err(CursedError::RuntimeError("make() expects at least 1 argument".to_string()));
                          }
                          
-                         // For now, create an unbuffered channel regardless of first argument
-                         // TODO: Parse channel type from first argument
+                         // Parse channel type from first argument
+                         // Simple channel type parsing without borrowing self
+                          let element_type = match &call_expr.arguments[0] {
+                              crate::ast::Expression::Identifier(type_name) => {
+                                  match type_name.as_str() {
+                                      "dm_normie" | "dm<normie>" => crate::ast::Type::Dm(Box::new(crate::ast::Type::Normie)),
+                                      "dm_tea" | "dm<tea>" => crate::ast::Type::Dm(Box::new(crate::ast::Type::Tea)),
+                                      "dm_lit" | "dm<lit>" => crate::ast::Type::Dm(Box::new(crate::ast::Type::Lit)),
+                                      _ => crate::ast::Type::Dm(Box::new(crate::ast::Type::Normie)), // default
+                                  }
+                              },
+                              _ => crate::ast::Type::Dm(Box::new(crate::ast::Type::Normie)), // default
+                          };
                          let capacity = if call_expr.arguments.len() > 1 {
                              match self.evaluate_expression(&call_expr.arguments[1], context)? {
                                  CursedValue::Integer(cap) => cap as usize,
@@ -2266,7 +2278,7 @@ impl CursedExecutionEngine {
                          
                          // Create a ChannelCreationExpression to reuse existing logic
                          let create_expr = crate::ast::ChannelCreationExpression {
-                             element_type: Box::new(crate::ast::Type::Normie), // Default type for now
+                         element_type: Box::new(element_type),
                              capacity: if capacity > 0 { Some(Box::new(crate::ast::Expression::Literal(crate::ast::Literal::Integer(capacity as i64)))) } else { None },
                          };
                          self.execute_channel_creation(&create_expr, context)
@@ -3767,6 +3779,25 @@ impl CursedExecutionEngine {
                 Ok(false)
             },
             
+            PatternExpression::Type { target_type, variable } => {
+                log::debug!("🔍 Matching type pattern: {:?}", target_type);
+                // Simple type matching implementation
+                let type_matches = match (value, target_type) {
+                    (CursedValue::Integer(_), crate::ast::Type::Normie) => true,
+                    (CursedValue::String(_), crate::ast::Type::Tea) => true,
+                    (CursedValue::Boolean(_), crate::ast::Type::Lit) => true,
+                    _ => false,
+                };
+                
+                if type_matches {
+                    if let Some(var_name) = variable {
+                        context.set_variable(var_name.clone(), value.clone());
+                    }
+                }
+                
+                Ok(type_matches)
+            },
+            
             _ => {
                 log::warn!("🔍 Unimplemented pattern type: {:?}", pattern);
                 Err(CursedError::runtime_error(&format!("Unimplemented pattern type: {:?}", pattern)))
@@ -3969,7 +4000,98 @@ impl ValueManager {
     fn capture_stack_trace(&self, _context: &ExecutionContext) -> String {
         format!("Stack trace: Current execution context with details")
     }
-    
+
+    /// Match enum pattern against a value
+    #[allow(dead_code)]
+    fn match_enum_pattern(&mut self, value: &CursedValue, enum_pat: &EnumPattern, context: &mut ExecutionContext) -> Result<bool, CursedError> {
+        // Placeholder implementation - this function is not currently used
+        let _ = (value, enum_pat, context);
+        Ok(false)
+    }
+
+    /// Match type pattern against a value
+    #[allow(dead_code)]
+    fn match_type_pattern(&mut self, value: &CursedValue, type_pat: &TypePattern, context: &mut ExecutionContext) -> Result<bool, CursedError> {
+        use crate::ast::Type;
+        
+        let matches = match &type_pat.target_type {
+            Type::Normie => matches!(value, CursedValue::Integer(_)),
+            Type::Tea => matches!(value, CursedValue::String(_)),
+            Type::Lit => matches!(value, CursedValue::Boolean(_)),
+            Type::Smol | Type::Mid | Type::Thicc => matches!(value, CursedValue::Integer(_)),
+            Type::Meal | Type::Snack => matches!(value, CursedValue::Float(_)),
+            Type::Sip => matches!(value, CursedValue::Float(_)),
+            Type::Byte => matches!(value, CursedValue::Integer(_)),
+            Type::Rune => matches!(value, CursedValue::Character(_)),
+            Type::Extra => matches!(value, CursedValue::Array(_)),
+            Type::Dm(_) => matches!(value, CursedValue::Channel(_)),
+            Type::Array(_, _) => matches!(value, CursedValue::Array(_)),
+            Type::Tuple(_) => matches!(value, CursedValue::Tuple(_)),
+            Type::Custom(_) => true, // For custom types, assume match for now
+            _ => false,
+        };
+        
+        // If pattern has a binding and it matches, bind the value
+        if matches {
+            if let Some(binding_name) = &type_pat.variable {
+                context.set_variable(binding_name.clone(), value.clone());
+            }
+        }
+        
+        Ok(matches)
+    }
+
+    /// Parse channel type from make() function argument  
+    fn parse_channel_type_from_arg(&self, arg: &crate::ast::Expression) -> Result<crate::ast::Type, CursedError> {
+        use crate::ast::{Expression, Type};
+        
+        match arg {
+            // Handle direct type identifiers like dm<normie>
+            Expression::Identifier(type_name) => {
+                match type_name.as_str() {
+                    "dm_normie" | "dm<normie>" => Ok(Type::Dm(Box::new(Type::Normie))),
+                    "dm_tea" | "dm<tea>" => Ok(Type::Dm(Box::new(Type::Tea))),
+                    "dm_lit" | "dm<lit>" => Ok(Type::Dm(Box::new(Type::Lit))),
+                    "dm_smol" | "dm<smol>" => Ok(Type::Dm(Box::new(Type::Smol))),
+                    "dm_mid" | "dm<mid>" => Ok(Type::Dm(Box::new(Type::Mid))),
+                    "dm_thicc" | "dm<thicc>" => Ok(Type::Dm(Box::new(Type::Thicc))),
+                    "dm_meal" | "dm<meal>" => Ok(Type::Dm(Box::new(Type::Meal))),
+                    "dm_snack" | "dm<snack>" => Ok(Type::Dm(Box::new(Type::Snack))),
+                    _ => {
+                        // Default to normie channel if type cannot be parsed
+                        log::warn!("Unable to parse channel type from '{}', defaulting to dm<normie>", type_name);
+                        Ok(Type::Dm(Box::new(Type::Normie)))
+                    }
+                }
+            },
+            // Generic expressions are not supported in the current AST
+            // Expression::Generic(base_name, type_args) if base_name == "dm" => {
+            //     if !type_args.is_empty() {
+            //         // Extract the first type argument as the channel element type
+            //         let element_type = type_args[0].clone();
+            //         Ok(Type::Dm(Box::new(element_type)))
+            //     } else {
+            //         Ok(Type::Dm(Box::new(Type::Normie)))
+            //     }
+            // },
+            // Handle member access like dm.normie or make.dm_normie
+            Expression::MemberAccess(member_access) => {
+                let type_str = format!("{}_{}", 
+                    match &*member_access.object {
+                        Expression::Identifier(name) => name.clone(),
+                        _ => "dm".to_string(),
+                    },
+                    member_access.property
+                );
+                self.parse_channel_type_from_arg(&Expression::Identifier(type_str))
+            },
+            _ => {
+                // Default to normie channel for unparseable expressions
+                log::warn!("Unable to parse channel type from expression, defaulting to dm<normie>");
+                Ok(Type::Dm(Box::new(Type::Normie)))
+            }
+        }
+    }
 
 
 }

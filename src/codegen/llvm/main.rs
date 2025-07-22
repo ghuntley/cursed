@@ -7,7 +7,7 @@
 //! - Debug information generation
 //! - Profile-guided optimization
 
-use crate::ast::{Program, Statement, Expression, Literal, BinaryOperator, AstVisitor, InterfaceStatement, MethodSignature, PatternSwitchStatement, PatternSwitchCase, PatternExpression};
+use crate::ast::{Program, Statement, Expression, Literal, BinaryOperator, AstVisitor, InterfaceStatement, MethodSignature, PatternSwitchStatement, PatternSwitchCase, PatternExpression, Type, MatchPattern};
 use crate::error::{CursedError, SourceLocation};
 use crate::package_manager::PackageManager;
 use crate::codegen::llvm::package_integration::LlvmPackageConfig;
@@ -3517,14 +3517,17 @@ impl LlvmCodeGenerator {
     /// Get LLVM type string from CURSED type
     fn get_llvm_type(&self, cursed_type: &str) -> String {
         match cursed_type {
-            "int" | "i32" => "i32".to_string(),
-            "i64" | "long" => "i64".to_string(),
-            "f32" | "float" => "float".to_string(),
-            "f64" | "double" => "double".to_string(),
-            "bool" => "i1".to_string(),
-            "string" | "str" => "i8*".to_string(),
+            "int" | "i32" | "normie" | "drip" => "i32".to_string(),
+            "i64" | "long" | "thicc" => "i64".to_string(),
+            "i8" | "smol" | "byte" | "sip" => "i8".to_string(),
+            "i16" | "mid" => "i16".to_string(),
+            "f32" | "float" | "snack" => "float".to_string(),
+            "f64" | "double" | "meal" => "double".to_string(),
+            "bool" | "lit" => "i1".to_string(),
+            "string" | "str" | "tea" => "i8*".to_string(),
+            "char" | "rune" => "i32".to_string(), // Unicode code point
             "void" => "void".to_string(),
-            _ => "i8*".to_string(), // Default to pointer for complex types
+            _ => "i32".to_string(), // Default to i32 instead of pointer for better compatibility
         }
     }
     
@@ -3779,7 +3782,7 @@ impl LlvmCodeGenerator {
     
     /// Visitor-pattern based expression compilation
     /// Uses the AstVisitor trait to generate LLVM IR for a single expression
-    pub fn compile_expression_with_visitor(&mut self, expression: &Expression) -> Result<String, CursedError> {
+    pub fn compile_expression(&mut self, expression: &Expression) -> Result<String, CursedError> {
         self.visit_expression(expression)
     }
 }
@@ -4329,20 +4332,52 @@ impl LlvmCodeGenerator {
         let interface_def = &self.interface_registry[interface_name];
         let vtable_def = &self.vtable_registry[&impl_key];
         
-        // Check that all interface methods are implemented
+        // Check that all interface methods are implemented with correct signatures
         for interface_method in &interface_def.methods {
-            let implemented = vtable_def.methods.iter()
-                .any(|vtable_method| vtable_method.method_name == interface_method.name);
+            let matching_implementation = vtable_def.methods.iter()
+                .find(|vtable_method| vtable_method.method_name == interface_method.name);
             
-            if !implemented {
-                return Err(CursedError::compiler_error(
-                    &format!("Method '{}' from interface '{}' not implemented by type '{}'", 
-                        interface_method.name, interface_name, concrete_type)
-                ));
+            match matching_implementation {
+                None => {
+                    return Err(CursedError::compiler_error(
+                        &format!("Method '{}' from interface '{}' not implemented by type '{}'", 
+                            interface_method.name, interface_name, concrete_type)
+                    ));
+                },
+                Some(vtable_method) => {
+                    // TODO: Check parameter count and types when interface method fields are implemented
+                    // Currently InterfaceMethod doesn't have parameters field
+                    log::debug!("Skipping parameter validation for method {} (interface method fields not implemented)", interface_method.name);
+                    
+                    // TODO: Check return type when interface method fields are implemented
+                    // Currently InterfaceMethod doesn't have return_type field
+                }
             }
         }
         
         Ok(())
+    }
+    
+    /// Check if two types are compatible for interface implementation
+    fn types_compatible(&self, interface_type: &Type, impl_type: &Type) -> bool {
+        // Simple type compatibility check - could be enhanced
+        match (interface_type, impl_type) {
+            (Type::Integer, Type::Integer) => true,
+            (Type::String, Type::String) => true,
+            (Type::Boolean, Type::Boolean) => true,
+            (Type::Float, Type::Float) => true,
+            (Type::Void, Type::Void) => true,
+            (Type::Generic(name1, _), Type::Generic(name2, _)) => name1 == name2,
+            (Type::Array(t1, _), Type::Array(t2, _)) => self.types_compatible(t1, t2),
+            (Type::Function(p1, r1), Type::Function(p2, r2)) => {
+                p1.len() == p2.len() &&
+                p1.iter().zip(p2.iter()).all(|(t1, t2)| self.types_compatible(t1, t2)) &&
+                self.types_compatible(r1, r2)
+            },
+            (Type::Collab(name1), Type::Collab(name2)) => name1 == name2,
+            (Type::Custom(name1), Type::Custom(name2)) => name1 == name2,
+            _ => false,
+        }
     }
     
     pub fn generate_interface_cast(&mut self, obj_ptr: &str, obj_type: &str, interface_name: &str) -> Result<String, CursedError> {
@@ -4625,7 +4660,7 @@ impl LlvmCodeGenerator {
             };
             
             // Generate pattern matching for this case
-            self.generate_pattern_match(&switch_value_reg, &case.pattern, &case_success_label, &case_fail_label)?;
+            self.generate_pattern_expression_match(&switch_value_reg, &case.pattern, &case_success_label, &case_fail_label)?;
             
             // Generate case body
             self.ir_code.push_str(&format!("{}:\n", case_success_label));
@@ -4673,17 +4708,17 @@ impl LlvmCodeGenerator {
     fn generate_pattern_match(
         &mut self,
         value_reg: &str,
-        pattern: &PatternExpression,
+        pattern: &MatchPattern,
         success_label: &str,
         fail_label: &str,
     ) -> Result<(), CursedError> {
         match pattern {
-            PatternExpression::Wildcard => {
+            MatchPattern::Wildcard => {
                 // Wildcard always matches
                 self.ir_code.push_str(&format!("  br label %{}\n", success_label));
             }
             
-            PatternExpression::Variable(var_name) => {
+            MatchPattern::Variable(var_name) => {
                 // Variable pattern always matches and binds the value
                 // Store value in local variable (assume i32 for simplicity)
                 let var_ptr = self.next_register();
@@ -4696,7 +4731,7 @@ impl LlvmCodeGenerator {
                 self.ir_code.push_str(&format!("  br label %{}\n", success_label));
             }
             
-            PatternExpression::Literal(expr) => {
+            MatchPattern::Literal(expr) => {
                 match expr {
                     Expression::Integer(val) => {
                         let cmp_reg = self.next_register();
@@ -4740,7 +4775,7 @@ impl LlvmCodeGenerator {
                 }
             }
             
-            PatternExpression::Range { start, end, inclusive } => {
+            MatchPattern::Range { start, end, inclusive } => {
                 // For now, generate a simple comparison for integer ranges only
                 // TODO: Implement proper type-aware range checking
                 match (start, end) {
@@ -4786,7 +4821,7 @@ impl LlvmCodeGenerator {
                 }
             }
             
-            PatternExpression::Tuple(patterns) => {
+            MatchPattern::Tuple(patterns) => {
                 // Generate tuple destructuring
                 let mut check_labels = Vec::new();
                 for i in 0..patterns.len() {
@@ -4822,7 +4857,7 @@ impl LlvmCodeGenerator {
                 }
             }
             
-            PatternExpression::Or(patterns) => {
+            MatchPattern::Or(patterns) => {
                 // Generate OR pattern - any pattern can match
                 let mut alt_labels = Vec::new();
                 for i in 0..patterns.len() {
@@ -4851,10 +4886,155 @@ impl LlvmCodeGenerator {
                 }
             }
             
+            MatchPattern::Range { start, end, inclusive } => {
+                // Generate range comparison logic
+                let start_reg = self.compile_expression(start)?;
+                let end_reg = self.compile_expression(end)?;
+                
+                if *inclusive {
+                    // value >= start && value <= end
+                    let gte_reg = self.next_register();
+                    let lte_reg = self.next_register();
+                    let and_reg = self.next_register();
+                    
+                    self.ir_code.push_str(&format!(
+                        "  %{} = icmp sge i32 {}, {}\n",
+                        gte_reg, value_reg, start_reg
+                    ));
+                    self.ir_code.push_str(&format!(
+                        "  %{} = icmp sle i32 {}, {}\n",
+                        lte_reg, value_reg, end_reg
+                    ));
+                    self.ir_code.push_str(&format!(
+                        "  %{} = and i1 %{}, %{}\n",
+                        and_reg, gte_reg, lte_reg
+                    ));
+                    self.ir_code.push_str(&format!(
+                        "  br i1 %{}, label %{}, label %{}\n",
+                        and_reg, success_label, fail_label
+                    ));
+                } else {
+                    // value >= start && value < end
+                    let gte_reg = self.next_register();
+                    let lt_reg = self.next_register();
+                    let and_reg = self.next_register();
+                    
+                    self.ir_code.push_str(&format!(
+                        "  %{} = icmp sge i32 {}, {}\n",
+                        gte_reg, value_reg, start_reg
+                    ));
+                    self.ir_code.push_str(&format!(
+                        "  %{} = icmp slt i32 {}, {}\n",
+                        lt_reg, value_reg, end_reg
+                    ));
+                    self.ir_code.push_str(&format!(
+                        "  %{} = and i1 %{}, %{}\n",
+                        and_reg, gte_reg, lt_reg
+                    ));
+                    self.ir_code.push_str(&format!(
+                        "  br i1 %{}, label %{}, label %{}\n",
+                        and_reg, success_label, fail_label
+                    ));
+                }
+            },
+            MatchPattern::Tuple(patterns) => {
+                // Generate tuple pattern matching
+                for (i, pattern) in patterns.iter().enumerate() {
+                    let element_reg = self.next_register();
+                    self.ir_code.push_str(&format!(
+                        "  %{} = getelementptr inbounds {{i32, i32}}, {{i32, i32}}* {}, i32 0, i32 {}\n",
+                        element_reg, value_reg, i
+                    ));
+                    let loaded_element_reg = self.next_register();
+                    self.ir_code.push_str(&format!(
+                        "  %{} = load i32, i32* %{}\n",
+                        loaded_element_reg, element_reg
+                    ));
+                    
+                    // Create labels for element matching
+                    let element_success = format!("tuple_elem_{}_success", i);
+                    let element_fail = if i + 1 < patterns.len() {
+                        format!("tuple_elem_{}_fail", i)
+                    } else {
+                        fail_label.to_string()
+                    };
+                    
+                    self.generate_pattern_match(&format!("%{}", loaded_element_reg), pattern, &element_success, &element_fail)?;
+                    self.ir_code.push_str(&format!("{}:\n", element_success));
+                }
+                self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            },
+            MatchPattern::Or(patterns) => {
+                // Generate OR pattern matching - try each alternative
+                let or_success = format!("or_success_{}", self.next_register());
+                
+                for (i, pattern) in patterns.iter().enumerate() {
+                    let pattern_label = format!("or_pattern_{}", i);
+                    let next_pattern = if i + 1 < patterns.len() {
+                        format!("or_pattern_{}", i + 1)
+                    } else {
+                        fail_label.to_string()
+                    };
+                    
+                    self.ir_code.push_str(&format!("{}:\n", pattern_label));
+                    self.generate_pattern_match(value_reg, pattern, &or_success, &next_pattern)?;
+                }
+                
+                self.ir_code.push_str(&format!("{}:\n", or_success));
+                self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Generate LLVM IR for pattern expression matching (for PatternSwitchStatement)
+    fn generate_pattern_expression_match(
+        &mut self,
+        value_reg: &str,
+        pattern: &PatternExpression,
+        success_label: &str,
+        fail_label: &str,
+    ) -> Result<(), CursedError> {
+        match pattern {
+            PatternExpression::Wildcard => {
+                // Wildcard always matches
+                self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            }
+            
+            PatternExpression::Variable(var_name) => {
+                // Variable pattern always matches and binds the value
+                let var_ptr = self.next_register();
+                self.ir_code.push_str(&format!("  {} = alloca i32\n", var_ptr));
+                self.ir_code.push_str(&format!("  store i32 {}, i32* {}\n", value_reg, var_ptr));
+                
+                // Store variable binding for later use
+                self.variables.insert(var_name.clone(), var_ptr);
+                
+                self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            }
+            
+            PatternExpression::Literal(expr) => {
+                match expr {
+                    Expression::Integer(val) => {
+                        let cmp_reg = self.next_register();
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp eq i32 {}, {}\n",
+                            cmp_reg, value_reg, val
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            cmp_reg, success_label, fail_label
+                        ));
+                    }
+                    _ => {
+                        return Err(CursedError::CodegenError("Unsupported literal pattern".to_string()));
+                    }
+                }
+            }
+            
             _ => {
-                return Err(CursedError::compiler_error(
-                    "Pattern type not yet implemented in LLVM codegen"
-                ));
+                return Err(CursedError::CodegenError("Unsupported pattern expression".to_string()));
             }
         }
         
@@ -5454,6 +5634,135 @@ impl LlvmCodeGenerator {
         // Check if object has method that satisfies interface requirement
         // This is a simplified check - real implementation would check method signatures
         Ok(true) // Default to true for now
+    }
+
+    /// Compile process control operations (basic implementation)
+    pub fn compile_process_control(&mut self, pid_expr: &Expression, operation: &str) -> Result<String, CursedError> {
+        let pid_reg = self.compile_expression(pid_expr)?;
+        let result_reg = self.next_register();
+        
+        match operation {
+            "wait" => {
+                // Generate basic wait syscall
+                self.ir_code.push_str(&format!(
+                    "  %{} = call i32 @wait(i32 {})\n",
+                    result_reg, pid_reg
+                ));
+            },
+            "kill" | "terminate" => {
+                // Generate basic terminate syscall  
+                let signal_code = if operation == "kill" { 9 } else { 15 };
+                self.ir_code.push_str(&format!(
+                    "  %{} = call i32 @kill(i32 {}, i32 {})\n",
+                    result_reg, pid_reg, signal_code
+                ));
+            },
+            _ => {
+                return Err(CursedError::compiler_error(&format!("Process operation '{}' not implemented", operation)));
+            }
+        }
+        
+        Ok(format!("%{}", result_reg))
+    }
+    
+    /// Compile IPC channel creation (basic implementation)
+    pub fn compile_ipc_channel_create(&mut self, channel_type: &str, config: &Expression) -> Result<String, CursedError> {
+        let _config_reg = self.compile_expression(config)?;
+        let result_reg = self.next_register();
+        
+        match channel_type {
+            "pipe" => {
+                self.ir_code.push_str(&format!(
+                    "  %{} = call i32 @pipe(i32* null)\n",
+                    result_reg
+                ));
+            },
+            "socket" => {
+                self.ir_code.push_str(&format!(
+                    "  %{} = call i32 @socket(i32 2, i32 1, i32 0)\n",
+                    result_reg
+                ));
+            },
+            _ => {
+                return Err(CursedError::compiler_error(&format!("IPC channel type '{}' not implemented", channel_type)));
+            }
+        }
+        
+        Ok(format!("%{}", result_reg))
+    }
+    
+    /// Compile IPC send operation (basic implementation)
+    pub fn compile_ipc_send(&mut self, channel_expr: &Expression, data_expr: &Expression) -> Result<String, CursedError> {
+        let channel_reg = self.compile_expression(channel_expr)?;
+        let data_reg = self.compile_expression(data_expr)?;
+        let result_reg = self.next_register();
+        
+        // Basic send syscall
+        self.ir_code.push_str(&format!(
+            "  %{} = call i32 @send(i32 {}, i8* {}, i32 1024, i32 0)\n",
+            result_reg, channel_reg, data_reg
+        ));
+        
+        Ok(format!("%{}", result_reg))
+    }
+    
+    /// Compile IPC receive operation (basic implementation)
+    pub fn compile_ipc_receive(&mut self, channel_expr: &Expression, timeout_expr: Option<&Expression>) -> Result<String, CursedError> {
+        let channel_reg = self.compile_expression(channel_expr)?;
+        let _timeout_reg = if let Some(timeout) = timeout_expr {
+            Some(self.compile_expression(timeout)?)
+        } else {
+            None
+        };
+        let result_reg = self.next_register();
+        
+        // Basic receive syscall
+        self.ir_code.push_str(&format!(
+            "  %{} = call i32 @recv(i32 {}, i8* null, i32 1024, i32 0)\n",
+            result_reg, channel_reg
+        ));
+        
+        Ok(format!("%{}", result_reg))
+    }
+    
+    /// Compile shared memory operations (basic implementation)
+    pub fn compile_shared_memory(&mut self, operation: &str, args: &[&Expression]) -> Result<String, CursedError> {
+        let result_reg = self.next_register();
+        
+        match operation {
+            "create" => {
+                if !args.is_empty() {
+                    let size_reg = self.compile_expression(args[0])?;
+                    self.ir_code.push_str(&format!(
+                        "  %{} = call i8* @mmap(i8* null, i32 {}, i32 3, i32 1, i32 -1, i32 0)\n",
+                        result_reg, size_reg
+                    ));
+                } else {
+                    return Err(CursedError::compiler_error("Shared memory create requires size argument"));
+                }
+            },
+            "destroy" => {
+                if !args.is_empty() {
+                    let ptr_reg = self.compile_expression(args[0])?;
+                    let size_reg = if args.len() > 1 {
+                        self.compile_expression(args[1])?
+                    } else {
+                        "4096".to_string()
+                    };
+                    self.ir_code.push_str(&format!(
+                        "  %{} = call i32 @munmap(i8* {}, i32 {})\n",
+                        result_reg, ptr_reg, size_reg
+                    ));
+                } else {
+                    return Err(CursedError::compiler_error("Shared memory destroy requires pointer argument"));
+                }
+            },
+            _ => {
+                return Err(CursedError::compiler_error(&format!("Shared memory operation '{}' not implemented", operation)));
+            }
+        }
+        
+        Ok(format!("%{}", result_reg))
     }
 
     /// Apply LTO optimization to generated IR

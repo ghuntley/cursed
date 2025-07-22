@@ -11,6 +11,14 @@ use crate::ast::{Expression, Statement, Type};
 use crate::error::CursedError;
 use std::collections::{HashMap, HashSet};
 
+/// Pattern binding information for code generation
+#[derive(Debug, Clone)]
+pub struct PatternBinding {
+    pub name: String,
+    pub pattern_type: Type,
+    pub register: String,
+}
+
 /// Pattern matching AST nodes
 #[derive(Debug, Clone)]
 pub enum Pattern {
@@ -438,6 +446,14 @@ impl<'a> PatternCompiler<'a> {
             
             Pattern::Or(or_pat) => {
                 self.compile_or_pattern(value_reg, or_pat, success_label, fail_label, bindings)?;
+            }
+            
+            Pattern::Enum(enum_pat) => {
+                self.compile_enum_pattern(value_reg, enum_pat, success_label, fail_label, bindings)?;
+            }
+            
+            Pattern::Type(type_pat) => {
+                self.compile_type_pattern(value_reg, type_pat, success_label, fail_label, bindings)?;
             }
             
             _ => {
@@ -913,5 +929,174 @@ mod tests {
             Type::Normie
         );
         assert!(checker.check_exhaustiveness().unwrap());
+    }
+}
+
+impl<'a> PatternCompiler<'a> {
+    fn compile_enum_pattern(
+        &mut self,
+        value_reg: &str,
+        enum_pat: &EnumPattern,
+        success_label: &str,
+        fail_label: &str,
+        bindings: &mut HashMap<String, String>,
+    ) -> Result<(), CursedError> {
+        // Load the variant tag from the enum value
+        let tag_ptr = format!("%{}", *self.register_counter);
+        *self.register_counter += 1;
+        self.ir_code.push_str(&format!(
+            "  {} = getelementptr {{i32, i8*}}, {{i32, i8*}}* {}, i32 0, i32 0\n",
+            tag_ptr, value_reg
+        ));
+        
+        let tag_value = format!("%{}", *self.register_counter);
+        *self.register_counter += 1;
+        self.ir_code.push_str(&format!(
+            "  {} = load i32, i32* {}\n",
+            tag_value, tag_ptr
+        ));
+        
+        // Compare with expected variant index - use enum_name to determine variant index
+        let variant_index = 0; // TODO: lookup actual variant index based on enum_name/variant_name
+        let cmp_result = format!("%{}", *self.register_counter);
+        *self.register_counter += 1;
+        self.ir_code.push_str(&format!(
+            "  {} = icmp eq i32 {}, {}\n",
+            cmp_result, tag_value, variant_index
+        ));
+        
+        // Branch based on comparison
+        let data_check_label = format!("enum_data_check_{}", *self.label_counter);
+        *self.label_counter += 1;
+        self.ir_code.push_str(&format!(
+            "  br i1 {}, label %{}, label %{}\n",
+            cmp_result, data_check_label, fail_label
+        ));
+        
+        // Switch to data check block
+        self.ir_code.push_str(&format!("{}:\n", data_check_label));
+        
+        // If there are nested patterns, extract and match the data
+        if !enum_pat.patterns.is_empty() {
+            let data_ptr = format!("%{}", *self.register_counter);
+            *self.register_counter += 1;
+            self.ir_code.push_str(&format!(
+                "  {} = getelementptr {{i32, i8*}}, {{i32, i8*}}* {}, i32 0, i32 1\n",
+                data_ptr, value_reg
+            ));
+            
+            let data_value = format!("%{}", *self.register_counter);
+            *self.register_counter += 1;
+            self.ir_code.push_str(&format!(
+                "  {} = load i8*, i8** {}\n",
+                data_value, data_ptr
+            ));
+            
+            // Match nested patterns against the data
+            for pattern in &enum_pat.patterns {
+                self.compile_pattern_recursive(&data_value, pattern, success_label, fail_label, bindings)?;
+            }
+        } else {
+            // No nested patterns, just jump to success
+            self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+        }
+        
+        Ok(())
+    }
+
+    fn compile_type_pattern(
+        &mut self,
+        value_reg: &str,
+        type_pat: &TypePattern,
+        success_label: &str,
+        fail_label: &str,
+        bindings: &mut HashMap<String, String>,
+    ) -> Result<(), CursedError> {
+        // For type patterns, we need to check if the value matches the expected type
+        // This is a simplified implementation that assumes runtime type information is available
+        
+        match &type_pat.target_type {
+            Type::Normie => {
+                // Check if value is an integer type
+                let type_check = format!("%{}", *self.register_counter);
+                *self.register_counter += 1;
+                self.ir_code.push_str(&format!(
+                    "  {} = call i1 @is_integer_type(i8* {})\n",
+                    type_check, value_reg
+                ));
+                
+                self.ir_code.push_str(&format!(
+                    "  br i1 {}, label %{}, label %{}\n",
+                    type_check, success_label, fail_label
+                ));
+            }
+            Type::Tea => {
+                // Check if value is a string type
+                let type_check = format!("%{}", *self.register_counter);
+                *self.register_counter += 1;
+                self.ir_code.push_str(&format!(
+                    "  {} = call i1 @is_string_type(i8* {})\n",
+                    type_check, value_reg
+                ));
+                
+                self.ir_code.push_str(&format!(
+                    "  br i1 {}, label %{}, label %{}\n",
+                    type_check, success_label, fail_label
+                ));
+            }
+            Type::Lit => {
+                // Check if value is a boolean type
+                let type_check = format!("%{}", *self.register_counter);
+                *self.register_counter += 1;
+                self.ir_code.push_str(&format!(
+                    "  {} = call i1 @is_boolean_type(i8* {})\n",
+                    type_check, value_reg
+                ));
+                
+                self.ir_code.push_str(&format!(
+                    "  br i1 {}, label %{}, label %{}\n",
+                    type_check, success_label, fail_label
+                ));
+            }
+            _ => {
+                // For other types, use generic type checking
+                let type_check = format!("%{}", *self.register_counter);
+                *self.register_counter += 1;
+                self.ir_code.push_str(&format!(
+                    "  {} = call i1 @check_type_match(i8* {}, i32 {})\n", 
+                    type_check, value_reg, self.get_type_id(&type_pat.target_type)
+                ));
+                
+                self.ir_code.push_str(&format!(
+                    "  br i1 {}, label %{}, label %{}\n",
+                    type_check, success_label, fail_label
+                ));
+            }
+        }
+        
+        // If pattern has a binding, add it
+        if let Some(binding_name) = &type_pat.variable {
+            bindings.insert(binding_name.clone(), value_reg.to_string());
+        }
+        
+        Ok(())
+    }
+
+    fn get_type_id(&self, type_info: &Type) -> u32 {
+        match type_info {
+            Type::Normie => 1,
+            Type::Tea => 2,
+            Type::Lit => 3,
+            Type::Smol => 4,
+            Type::Mid => 5,
+            Type::Thicc => 6,
+            Type::Meal => 7,
+            Type::Snack => 8,
+            Type::Sip => 9,
+            Type::Byte => 10,
+            Type::Rune => 11,
+            Type::Extra => 12,
+            _ => 0, // Unknown type
+        }
     }
 }

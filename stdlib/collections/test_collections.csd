@@ -3,9 +3,9 @@ yeet "collections"
 
 test_start("CURSED Collections Library v2.0 Comprehensive Tests")
 
-fr fr ================================
-fr fr Vector Tests
-fr fr ================================
+# ================================
+# Vector Tests
+# ================================
 
 test_start("Vec_new and Vec_len")
 sus empty_vec [extra] = Vec_new()
@@ -32,9 +32,9 @@ sus reversed [extra] = Vec_reverse(original)
 assert_eq_int(Vec_get(reversed, 0), 3)
 assert_eq_int(Vec_get(reversed, 2), 1)
 
-fr fr ================================
-fr fr HashMap Tests
-fr fr ================================
+# ================================
+# HashMap Tests
+# ================================
 
 test_start("Map_new and Map_len")
 sus empty_map tea = Map_new()
@@ -59,9 +59,9 @@ sus values [tea] = Map_values(multi_map)
 assert_eq_string(keys[0], "name")
 assert_eq_string(values[0], "John")
 
-fr fr ================================
-fr fr LinkedList Tests
-fr fr ================================
+# ================================
+# LinkedList Tests
+# ================================
 
 test_start("List_new and List_len")
 sus empty_list tea = List_new()
@@ -85,9 +85,9 @@ sus back_element tea = List_pop_back(pop_list)
 assert_eq_string(front_element, "first_element")
 assert_eq_string(back_element, "last_element")
 
-fr fr ================================
-fr fr Set Tests
-fr fr ================================
+# ================================
+# Set Tests
+# ================================
 
 test_start("Set_new and Set_len")
 sus empty_set tea = Set_new()
@@ -112,9 +112,9 @@ assert_eq_string(set_array[0], "apple")
 assert_eq_string(set_array[1], "banana")
 assert_eq_string(set_array[2], "cherry")
 
-fr fr ================================
-fr fr Stack Tests
-fr fr ================================
+# ================================
+# Stack Tests
+# ================================
 
 test_start("Stack_new and Stack_is_empty")
 sus empty_stack tea = Stack_new()
@@ -132,9 +132,9 @@ sus pop_stack tea = "stack_two"
 sus popped_item tea = Stack_pop(pop_stack)
 assert_eq_string(popped_item, "top_element")
 
-fr fr ================================
-fr fr Queue Tests
-fr fr ================================
+# ================================
+# Queue Tests
+# ================================
 
 test_start("Queue_new and Queue_is_empty")
 sus empty_queue tea = Queue_new()
@@ -152,9 +152,9 @@ sus dequeue_test tea = "queue_two"
 sus dequeued_item tea = Queue_dequeue(dequeue_test)
 assert_eq_string(dequeued_item, "front_element")
 
-fr fr ================================
-fr fr Sorting Algorithm Tests
-fr fr ================================
+# ================================
+# Sorting Algorithm Tests
+# ================================
 
 test_start("Collections_bubble_sort")
 sus unsorted [normie] = [3, 1, 2]
@@ -171,9 +171,9 @@ assert_eq_int(quick_sorted[1], 2)
 assert_eq_int(quick_sorted[2], 5)
 assert_eq_int(quick_sorted[3], 8)
 
-fr fr ================================
-fr fr Search Algorithm Tests
-fr fr ================================
+# ================================
+# Search Algorithm Tests
+# ================================
 
 test_start("Collections_linear_search")
 sus search_array [normie] = [10, 20, 30, 40]
@@ -184,9 +184,9 @@ test_start("Collections_binary_search")
 sus sorted_array [normie] = [1, 2, 3]
 assert_eq_int(Collections_binary_search(sorted_array, 2), 1)
 
-fr fr ================================
-fr fr Utility Function Tests
-fr fr ================================
+# ================================
+# Utility Function Tests
+# ================================
 
 test_start("Collections_max and Collections_min")
 sus test_numbers [normie] = [1, 3, 2]
@@ -201,9 +201,9 @@ test_start("Collections_average")
 sus avg_array [normie] = [2, 4, 6, 8]
 assert_eq_int(Collections_average(avg_array), 5)  # (2+4+6+8)/4 = 5
 
-fr fr ================================
-fr fr Advanced Data Structure Tests
-fr fr ================================
+# ================================
+# Advanced Data Structure Tests
+# ================================
 
 test_start("Vector with capacity")
 sus cap_vec [extra] = Vec_with_capacity(10)
@@ -227,9 +227,9 @@ assert_eq_int(Vec_get(updated_vec, 1), 99)
 sus cleared_vec [extra] = Vec_clear(complex_vec)
 assert_true(Vec_is_empty(cleared_vec))
 
-fr fr ================================
-fr fr Performance and Edge Cases
-fr fr ================================
+# ================================
+# Performance and Edge Cases
+# ================================
 
 test_start("Large data structure simulation")
 sus large_map tea = Map_with_capacity(1000)

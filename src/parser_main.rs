@@ -176,6 +176,25 @@ impl Parser {
         let _ = self.next_token();
     }
 
+    /// Extract source location from current parser context
+    pub fn extract_source_location(&self) -> Option<SourceLocation> {
+        if let Some(token) = &self.current_token {
+            Some(SourceLocation {
+                line: token.line,
+                column: token.column,
+                offset: 0, // Token position not available in current Token struct
+                file: Some(self.filename.clone().unwrap_or_else(|| "<unknown>".to_string())),
+            })
+        } else {
+            Some(SourceLocation {
+                line: self.current_line,
+                column: self.current_column,
+                offset: 0, // No token position available
+                file: Some(self.filename.clone().unwrap_or_else(|| "<unknown>".to_string())),
+            })
+        }
+    }
+
     fn peek_token(&self) -> Option<&Token> {
         self.current_token.as_ref()
     }
@@ -3124,7 +3143,12 @@ impl Parser {
             receiver: None, // Interface methods don't have receivers
             parameters,
             return_type,
-            source_location: None, // TODO: Extract from parser context
+            source_location: self.extract_source_location().map(|loc| crate::error::SourceLocation {
+                file: loc.file.unwrap_or_default(),
+                line: loc.line,
+                column: loc.column,
+                offset: loc.offset,
+            }),
         })
     }
     

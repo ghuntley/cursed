@@ -169,9 +169,9 @@ slay sqrt_meal(x meal) meal {
     sus diff meal = 1.0
     sus iterations normie = 0
     
-    vibes diff > EPSILON {
+    bestie diff > EPSILON {
         lowkey iterations >= 100 {
-            break
+            ghosted
         }
         prev = guess
         guess = (guess + (x / guess)) / 2.0
@@ -198,9 +198,9 @@ slay ln_meal(x meal) meal {
     sus result meal = y
     sus n normie = 1
     
-    vibes n < 50 {
+    bestie n < 50 {
         lowkey abs_meal(term) <= EPSILON {
-            break
+            ghosted
         }
         term = term * y_squared / (2.0 * n + 1.0)
         result = result + term
@@ -220,9 +220,9 @@ slay exp_meal(x meal) meal {
     sus term meal = 1.0
     sus n normie = 1
     
-    vibes n < 50 {
+    bestie n < 50 {
         lowkey abs_meal(term) <= EPSILON {
-            break
+            ghosted
         }
         term = term * x / n
         result = result + term
@@ -236,10 +236,10 @@ slay exp_meal(x meal) meal {
 slay sin_meal(x meal) meal {
     # Normalize angle to [-2π, 2π]
     sus normalized meal = x
-    vibes normalized > TAU {
+    bestie normalized > TAU {
         normalized = normalized - TAU
     }
-    vibes normalized < -TAU {
+    bestie normalized < -TAU {
         normalized = normalized + TAU
     }
     
@@ -248,9 +248,9 @@ slay sin_meal(x meal) meal {
     sus x_squared meal = normalized * normalized
     sus n normie = 1
     
-    vibes n < 20 {
+    bestie n < 20 {
         lowkey abs_meal(term) <= EPSILON {
-            break
+            ghosted
         }
         term = -term * x_squared / ((2.0 * n) * (2.0 * n + 1.0))
         result = result + term
@@ -289,10 +289,10 @@ slay tan_deg(degrees meal) meal {
 # Angle Normalization
 slay normalize_radians(angle meal) meal {
     sus result meal = angle
-    vibes result > TAU {
+    bestie result > TAU {
         result = result - TAU
     }
-    vibes result < 0.0 {
+    bestie result < 0.0 {
         result = result + TAU
     }
     damn result
@@ -300,10 +300,10 @@ slay normalize_radians(angle meal) meal {
 
 slay normalize_degrees(angle meal) meal {
     sus result meal = angle
-    vibes result > 360.0 {
+    bestie result > 360.0 {
         result = result - 360.0
     }
-    vibes result < 0.0 {
+    bestie result < 0.0 {
         result = result + 360.0
     }
     damn result
@@ -351,7 +351,7 @@ slay gcd(a normie, b normie) normie {
     sus x normie = abs_normie(a)
     sus y normie = abs_normie(b)
     
-    vibes y != 0 {
+    bestie y != 0 {
         sus temp normie = y
         y = x % y
         x = temp
