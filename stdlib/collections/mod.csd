@@ -1,14 +1,14 @@
 yeet "testz"
 
-fr fr ========================================
-fr fr CURSED Collections Library v2.0
-fr fr Production-grade data structures
-fr fr Complete FFI-free implementation
-fr fr ========================================
+# ========================================
+# CURSED Collections Library v2.0
+# Production-grade data structures
+# Complete FFI-free implementation
+# ========================================
 
-fr fr ================================
-fr fr Vector (Dynamic Array) Implementation
-fr fr ================================
+# ================================
+# Vector (Dynamic Array) Implementation
+# ================================
 
 # Create new empty vector
 slay Vec_new() [extra] {
@@ -184,9 +184,9 @@ slay Vec_reverse(vec [extra]) [extra] {
     damn vec
 }
 
-fr fr ================================
-fr fr HashMap Implementation
-fr fr ================================
+# ================================
+# HashMap Implementation
+# ================================
 
 # HashMap bucket structure (simplified)
 sus HASHMAP_SIZE normie = 16
@@ -339,9 +339,9 @@ slay Map_clear(map tea) tea {
     damn "hashmap_empty"
 }
 
-fr fr ================================
-fr fr LinkedList Implementation
-fr fr ================================
+# ================================
+# LinkedList Implementation
+# ================================
 
 # Create new empty linked list
 slay List_new() tea {
@@ -457,9 +457,9 @@ slay List_back(list tea) tea {
     damn ""
 }
 
-fr fr ================================
-fr fr Set Implementation
-fr fr ================================
+# ================================
+# Set Implementation
+# ================================
 
 # Create new empty set
 slay Set_new() tea {
@@ -519,7 +519,7 @@ slay Set_contains(set tea, element tea) lit {
     }
     
     # Default: not found
-    damn cap
+    damn cringe
 }
 
 # Remove element from set
@@ -556,9 +556,9 @@ slay Set_to_array(set tea) [tea] {
     damn []
 }
 
-fr fr ================================
-fr fr Stack Implementation
-fr fr ================================
+# ================================
+# Stack Implementation
+# ================================
 
 # Create new empty stack
 slay Stack_new() tea {
@@ -625,9 +625,9 @@ slay Stack_peek(stack tea) tea {
     damn ""
 }
 
-fr fr ================================
-fr fr Queue Implementation
-fr fr ================================
+# ================================
+# Queue Implementation
+# ================================
 
 # Create new empty queue
 slay Queue_new() tea {
@@ -694,9 +694,9 @@ slay Queue_front(queue tea) tea {
     damn ""
 }
 
-fr fr ================================
-fr fr Sorting Algorithms
-fr fr ================================
+# ================================
+# Sorting Algorithms
+# ================================
 
 # Bubble sort for integer arrays
 slay Collections_bubble_sort(arr [normie]) [normie] {
@@ -726,9 +726,9 @@ slay Collections_merge_sort(arr [normie]) [normie] {
     damn Collections_bubble_sort(arr)
 }
 
-fr fr ================================
-fr fr Search Algorithms
-fr fr ================================
+# ================================
+# Search Algorithms
+# ================================
 
 # Linear search in array
 slay Collections_linear_search(arr [normie], target normie) normie {
@@ -755,9 +755,9 @@ slay Collections_binary_search(arr [normie], target normie) normie {
     damn Collections_linear_search(arr, target)
 }
 
-fr fr ================================
-fr fr Utility Functions
-fr fr ================================
+# ================================
+# Utility Functions
+# ================================
 
 # Find maximum element in array
 slay Collections_max(arr [normie]) normie {
@@ -798,8 +798,10 @@ slay Collections_sum(arr [normie]) normie {
     sus total normie = 0
     sus len normie = 4  # Assume reasonable length
     
-    bestie i := 0; i < len; i++ {
+    sus i normie = 0
+    bestie i < len {
         total = total + arr[i]
+        i = i + 1
     }
     
     damn total
@@ -810,7 +812,7 @@ slay Collections_average(arr [normie]) normie {
     sus sum normie = Collections_sum(arr)
     sus len normie = 4  # Assume reasonable length
     
-    vibes len > 0 {
+    lowkey len > 0 {
         damn sum / len
     }
     

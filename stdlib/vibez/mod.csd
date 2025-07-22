@@ -116,11 +116,11 @@ slay string_from_char(ascii_code normie) tea {
     # Simplified implementation - would need proper character conversion
     lowkey ascii_code == 65 {
         damn "A"
-    } else if ascii_code == 32 {
+    } elseif ascii_code == 32 {
         damn " "
-    } else if ascii_code == 10 {
+    } elseif ascii_code == 10 {
         damn "\n"
-    } else {
+    } nah {
         damn "?"  # Default for unknown characters
     }
 }

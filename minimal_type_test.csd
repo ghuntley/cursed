@@ -1,1 +1,2 @@
-vibez.spill("Type assertion error handling implementation complete")
+sus x drip = 42
+vibez.spill("Done")

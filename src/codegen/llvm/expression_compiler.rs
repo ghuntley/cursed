@@ -214,9 +214,16 @@ impl ExpressionCompiler {
              &crate::ast::Expression::TestResultCheck(_) => {
                  Ok("%testresult_check_placeholder".to_string())
              },
-             &crate::ast::Expression::RangeFor { .. } => {
-                 // RangeFor expressions not yet implemented in LLVM codegen
-                 Err(CursedError::compiler_error("RangeFor expressions not yet implemented in LLVM codegen"))
+             &crate::ast::Expression::RangeFor { ref iterable } => {
+                 // Compile RangeFor expressions for iteration
+                 let iterable_reg = self.compile_expression(iterable)?;
+                 
+                 // Generate runtime call for range iteration
+                 let range_iter_reg = self.next_register();
+                 self.ir_buffer.push_str(&format!("  {} = call i8* @cursed_create_range_iterator(i8* {})\n", 
+                     range_iter_reg, iterable_reg));
+                 
+                 Ok(range_iter_reg)
              },
              Expression::Panic(panic_expr) => {
                  // Compile panic expression - generates runtime panic with message
@@ -1500,8 +1507,128 @@ impl ExpressionCompiler {
                 // Wildcard pattern always matches
                 self.ir_buffer.push_str(&format!("  br label %{}\n", success_label));
             },
-            _ => {
-                return Err(CursedError::TypeError("Complex pattern matching not yet implemented in expression compiler".to_string()));
+            MatchPattern::Range { start, end, inclusive } => {
+                // Generate range checking code
+                let start_reg = self.compile_expression(start)?;
+                let end_reg = self.compile_expression(end)?;
+                let next_register = self.register_tracker.next_register();
+                
+                if *inclusive {
+                    // value >= start && value <= end
+                    let gte_reg = self.register_tracker.next_register();
+                    let lte_reg = self.register_tracker.next_register();
+                    let and_reg = self.register_tracker.next_register();
+                    
+                    self.ir_buffer.push_str(&format!(
+                        "  %{} = icmp sge i32 {}, {}\n",
+                        gte_reg, value_reg, start_reg
+                    ));
+                    self.ir_buffer.push_str(&format!(
+                        "  %{} = icmp sle i32 {}, {}\n",
+                        lte_reg, value_reg, end_reg
+                    ));
+                    self.ir_buffer.push_str(&format!(
+                        "  %{} = and i1 %{}, %{}\n",
+                        and_reg, gte_reg, lte_reg
+                    ));
+                    self.ir_buffer.push_str(&format!(
+                        "  br i1 %{}, label %{}, label %{}\n",
+                        and_reg, success_label, fail_label
+                    ));
+                } else {
+                    // value >= start && value < end
+                    let gte_reg = self.register_tracker.next_register();
+                    let lt_reg = self.register_tracker.next_register();
+                    let and_reg = self.register_tracker.next_register();
+                    
+                    self.ir_buffer.push_str(&format!(
+                        "  %{} = icmp sge i32 {}, {}\n",
+                        gte_reg, value_reg, start_reg
+                    ));
+                    self.ir_buffer.push_str(&format!(
+                        "  %{} = icmp slt i32 {}, {}\n",
+                        lt_reg, value_reg, end_reg
+                    ));
+                    self.ir_buffer.push_str(&format!(
+                        "  %{} = and i1 %{}, %{}\n",
+                        and_reg, gte_reg, lt_reg
+                    ));
+                    self.ir_buffer.push_str(&format!(
+                        "  br i1 %{}, label %{}, label %{}\n",
+                        and_reg, success_label, fail_label
+                    ));
+                }
+            },
+            MatchPattern::Tuple(patterns) => {
+                // Generate tuple destructuring
+                // Assume value_reg is a tuple pointer
+                for (i, pattern) in patterns.iter().enumerate() {
+                    let element_reg = self.register_tracker.next_register();
+                    self.ir_buffer.push_str(&format!(
+                        "  %{} = getelementptr inbounds {{i32, i32}}, {{i32, i32}}* {}, i32 0, i32 {}\n",
+                        element_reg, value_reg, i
+                    ));
+                    let loaded_element_reg = self.register_tracker.next_register();
+                    self.ir_buffer.push_str(&format!(
+                        "  %{} = load i32, i32* %{}\n",
+                        loaded_element_reg, element_reg
+                    ));
+                    
+                    // Recursively match each element
+                    let element_success_label = format!("tuple_element_{}_success", i);
+                    self.ir_buffer.push_str(&format!("{}:\n", element_success_label));
+                    // Simple pattern matching for tuple elements
+                    match pattern {
+                        MatchPattern::Wildcard => {
+                            // Always succeeds
+                        },
+                        MatchPattern::Variable(var_name) => {
+                            // Store the value in a variable
+                            let var_reg = self.register_tracker.next_register();
+                            self.ir_buffer.push_str(&format!("  {} = alloca i32\n", var_reg));
+                            self.ir_buffer.push_str(&format!("  store i32 %{}, i32* {}\n", loaded_element_reg, var_reg));
+                            self.variables.insert(var_name.clone(), var_reg);
+                        },
+                        _ => {
+                            return Err(CursedError::CodegenError("Unsupported pattern in tuple".to_string()));
+                        }
+                    }
+                }
+                self.ir_buffer.push_str(&format!("  br label %{}\n", success_label));
+            },
+            MatchPattern::Or(patterns) => {
+                // Generate OR pattern matching - try each pattern
+                let or_success_label = format!("or_pattern_success_{}", self.register_tracker.next_register());
+                
+                for (i, pattern) in patterns.iter().enumerate() {
+                    let pattern_label = format!("or_pattern_{}", i);
+                    let next_pattern_label = if i + 1 < patterns.len() {
+                        format!("or_pattern_{}", i + 1)
+                    } else {
+                        fail_label.to_string()
+                    };
+                    
+                    self.ir_buffer.push_str(&format!("{}:\n", pattern_label));
+                    // Simple pattern matching for OR patterns
+                    match pattern {
+                        MatchPattern::Wildcard => {
+                            self.ir_buffer.push_str(&format!("  br label %{}\n", or_success_label));
+                        },
+                        MatchPattern::Variable(var_name) => {
+                            let var_reg = self.register_tracker.next_register();
+                            self.ir_buffer.push_str(&format!("  {} = alloca i32\n", var_reg));
+                            self.ir_buffer.push_str(&format!("  store i32 {}, i32* {}\n", value_reg, var_reg));
+                            self.variables.insert(var_name.clone(), var_reg);
+                            self.ir_buffer.push_str(&format!("  br label %{}\n", or_success_label));
+                        },
+                        _ => {
+                            return Err(CursedError::CodegenError("Unsupported pattern in OR".to_string()));
+                        }
+                    }
+                }
+                
+                self.ir_buffer.push_str(&format!("{}:\n", or_success_label));
+                self.ir_buffer.push_str(&format!("  br label %{}\n", success_label));
             }
         }
         
