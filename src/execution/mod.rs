@@ -1053,6 +1053,39 @@ impl CursedExecutionEngine {
                 // Store interface definition in context
                 context.store_interface_definition(interface_stmt.name.clone(), interface_stmt.clone());
                 
+                // Register interface with virtual dispatch system
+                if let Err(e) = crate::runtime::register_virtual_interface(interface_stmt) {
+                    log::warn!("Failed to register interface '{}' with virtual dispatch: {}", interface_stmt.name, e);
+                }
+                
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
+            },
+            Statement::Implementation(impl_stmt) => {
+                // Register interface implementation
+                log::info!("🔧 Registering implementation of interface '{}' for type '{}'", 
+                          impl_stmt.interface_name, impl_stmt.implementing_type);
+                
+                // Create method implementations map
+                let mut method_implementations = std::collections::HashMap::new();
+                for method in &impl_stmt.methods {
+                    // Store method in context as a function
+                    let function_name = format!("{}::{}", impl_stmt.implementing_type, method.name);
+                    context.store_function(function_name.clone(), method.clone());
+                    
+                    // Store function pointer (simplified - using function name hash as pointer)
+                    let function_ptr = self.hash_string(&function_name) as usize;
+                    method_implementations.insert(method.name.clone(), function_ptr);
+                }
+                
+                // Register implementation with virtual dispatch system
+                if let Err(e) = crate::runtime::register_virtual_implementation(
+                    &impl_stmt.interface_name,
+                    &impl_stmt.implementing_type,
+                    method_implementations,
+                ) {
+                    log::warn!("Failed to register implementation: {}", e);
+                }
+                
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::Panic(panic_stmt) => {
@@ -4093,5 +4126,13 @@ impl ValueManager {
         }
     }
 
-
+    /// Hash string to create pseudo-function pointer
+    fn hash_string(&self, s: &str) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        s.hash(&mut hasher);
+        hasher.finish()
+    }
 }

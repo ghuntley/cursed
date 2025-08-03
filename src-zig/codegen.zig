@@ -296,23 +296,7 @@ pub const CodeGen = struct {
         return error.UnknownType;
     }
 
-    // Removed old expression generation code - keeping stub for reference
-                if (self.variables.get(name)) |variable| {
-                    return c.LLVMBuildLoad2(
-                        self.builder,
-                        c.LLVMGetElementType(c.LLVMTypeOf(variable)),
-                        variable,
-                        name.ptr
-                    );
-                }
-                std.debug.print("Undefined variable: {s}\n", .{name});
-                return CodeGenError.UndefinedSymbol;
-            },
-            .Binary => |bin| {
-                const left = try self.generateExpression(bin.left.*);
-                const right = try self.generateExpression(bin.right.*);
-                return try self.generateBinaryOp(left, bin.operator, right);
-            },
+    // Expression generation moved to codegen_clean.zig
             .Call => |call| {
                 return try self.generateCall(call);
             },

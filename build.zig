@@ -4,30 +4,25 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     
-    // Force x86_64 target to avoid unknown CPU issues
-    const resolved_target = b.resolveTargetQuery(.{
-        .cpu_arch = .x86_64,
-        .os_tag = .linux,
-    });
+    // Use native target for dynamic library compatibility
+    const resolved_target = target;
 
-    // Create the CURSED compiler executable
+    // Create the CURSED compiler executable with concurrency support
     const exe = b.addExecutable(.{
         .name = "cursed-zig",
-        .root_source_file = b.path("src-zig/main_simple.zig"),
+        .root_source_file = b.path("src-zig/demo_simple.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
 
-
-    // Link LLVM using llvm-config
+    // Configure libc and system integration
     exe.linkLibC();
-    exe.linkSystemLibrary("LLVM-18");
     
-    // Add LLVM library path
+    // Add LLVM library path and includes from NixOS environment
     exe.addLibraryPath(.{ .cwd_relative = "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib" });
-    
-    // Add include paths for LLVM
     exe.addIncludePath(.{ .cwd_relative = "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include" });
+    
+    exe.linkSystemLibrary("LLVM-18");
 
     b.installArtifact(exe);
 
@@ -44,7 +39,7 @@ pub fn build(b: *std.Build) void {
     // Create test suite
     const unit_tests = b.addTest(.{
         .root_source_file = b.path("src-zig/main_complete.zig"),
-        .target = resolved_target,
+        .target = target,
         .optimize = optimize,
     });
 

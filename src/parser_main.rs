@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, PanicExpression, RecoverExpression, InterfaceStatement, InterfaceComposition, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement, ReturnStatement, BreakStatement, ContinueStatement, MatchExpression, MatchArm, MatchPattern, TypeSwitchExpression, TypeSwitchArm, TypePattern};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, PanicExpression, RecoverExpression, InterfaceStatement, ImplementationStatement, InterfaceComposition, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement, ReturnStatement, BreakStatement, ContinueStatement, MatchExpression, MatchArm, MatchPattern, TypeSwitchExpression, TypeSwitchArm, TypePattern};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 use crate::error_recovery::{ErrorRecoveryManager, SourceLocation, ErrorContext, RecoveryStrategy, ParserState, ParserErrorRecovery};
@@ -284,6 +284,10 @@ impl Parser {
             TokenKind::Collab => {
                 // Parse interface declaration
                 return Ok(Some(Statement::Interface(self.parse_interface_statement()?)));
+            }
+            TokenKind::Impl => {
+                // Parse implementation statement
+                return Ok(Some(Statement::Implementation(self.parse_implementation_statement()?)));
             }
             TokenKind::BeLike => {
                 // Parse type alias declaration
@@ -2681,7 +2685,7 @@ impl Parser {
         
         // Parse struct name
         let name = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Truth => {
+            Some(token) if token.kind == TokenKind::Identifier || token.kind == TokenKind::Truth => {
                 let name = token.lexeme.clone();
                 self.advance_token();
                 name
@@ -2726,7 +2730,7 @@ impl Parser {
     fn parse_struct_field(&mut self) -> Result<StructField> {
         // Parse field name
         let name = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Truth => {
+            Some(token) if token.kind == TokenKind::Identifier || token.kind == TokenKind::Truth => {
                 let name = token.lexeme.clone();
                 self.advance_token();
                 name
@@ -2753,6 +2757,70 @@ impl Parser {
     }
 
 
+
+    /// Parse implementation statement (impl Type for Interface)
+    fn parse_implementation_statement(&mut self) -> Result<ImplementationStatement> {
+        // Consume 'impl' keyword
+        self.next_token()?;
+        
+        // Parse implementing type name
+        let implementing_type = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                name
+            }
+            _ => return Err(Error::Parse("Expected type name after 'impl'".to_string())),
+        };
+        
+        // Expect 'for' keyword
+        if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::For) {
+            return Err(Error::Parse("Expected 'for' keyword after type name in impl".to_string()));
+        }
+        self.next_token()?; // consume 'for'
+        
+        // Parse interface name
+        let interface_name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                name
+            }
+            _ => return Err(Error::Parse("Expected interface name after 'for'".to_string())),
+        };
+        
+        // Expect opening brace
+        if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::LeftBrace) {
+            return Err(Error::Parse("Expected '{' after interface name in impl".to_string()));
+        }
+        self.next_token()?; // consume '{'
+        
+        // Parse method implementations
+        let mut methods = Vec::new();
+        while self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::RightBrace) {
+            if self.current_token.is_none() {
+                return Err(Error::Parse("Unexpected end of input in impl block".to_string()));
+            }
+            
+            // Parse method implementation (function statement)
+            if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Slay) {
+                let method = self.parse_function_statement()?;
+                methods.push(method);
+            } else {
+                return Err(Error::Parse("Expected method implementation in impl block".to_string()));
+            }
+        }
+        
+        // Consume closing brace
+        self.next_token()?;
+        
+        Ok(ImplementationStatement {
+            implementing_type,
+            interface_name,
+            methods,
+            source_location: None,
+        })
+    }
 
     fn parse_interface_composition_list(&mut self) -> Result<Vec<InterfaceComposition>> {
         let mut compositions = Vec::new();

@@ -104,6 +104,7 @@ pub enum Statement {
     Select(SelectStatement),
     Struct(StructStatement),
     Interface(InterfaceStatement),
+    Implementation(ImplementationStatement),
     TypeAlias(TypeAliasStatement),
     Panic(PanicStatement),
     Catch(CatchStatement),
@@ -116,6 +117,15 @@ pub enum Statement {
     // Error handling statements
     Yikes(YikesStatement),
     Fam(FamStatement),
+    // Enhanced error handling statements
+    FamRecovery {
+        try_block: Vec<Statement>,
+        catch_block: Option<Vec<Statement>>,
+        finally_block: Option<Vec<Statement>>,
+    },
+    ErrorHandling {
+        error_expr: Expression,
+    },
     // Constants declaration
     Const(ConstDecl),
 }
@@ -153,6 +163,15 @@ pub enum Expression {
     // Error handling expressions
     Shook(ShookExpression),
     ErrorValue(ErrorValueExpression),
+    // Enhanced error handling expressions
+    YikesError {
+        name: Box<Expression>,
+        message: Box<Expression>,
+        context_expr: Option<Box<Expression>>,
+    },
+    ShookPropagation {
+        source_expr: Box<Expression>,
+    },
     StructuredError {
         message: Box<Expression>,
         code: Option<Box<Expression>>,
@@ -816,6 +835,15 @@ pub struct MethodSignature {
     pub receiver: Option<MethodReceiver>, // Method receiver for concrete implementations
     pub parameters: Vec<Parameter>,
     pub return_type: Option<Type>,
+    pub source_location: Option<crate::error::SourceLocation>,
+}
+
+/// Implementation statement (impl keyword)
+#[derive(Debug, Clone)]
+pub struct ImplementationStatement {
+    pub implementing_type: String,
+    pub interface_name: String,
+    pub methods: Vec<FunctionStatement>,
     pub source_location: Option<crate::error::SourceLocation>,
 }
 

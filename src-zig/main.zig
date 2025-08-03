@@ -5,8 +5,11 @@ const Allocator = std.mem.Allocator;
 
 const lexer = @import("lexer.zig");
 const parser = @import("parser.zig");
-const ast = @import("ast_simple.zig");
-const codegen = @import("codegen_clean.zig");
+const ast = @import("ast.zig");
+const full_ast = @import("ast.zig");
+const complete_compiler = @import("complete_compiler.zig");
+const interpreter = @import("interpreter.zig");
+const simple_interpreter = @import("simple_interpreter.zig");
 const stdlib_integration = @import("stdlib_integration.zig");
 
 pub fn main() !void {
@@ -131,24 +134,26 @@ pub fn main() !void {
         const output_name = try getOutputName(allocator, filename);
         defer allocator.free(output_name);
         
-        var c = codegen.CodeGen.init(allocator);
-        defer c.deinit();
+        var compiler = try complete_compiler.CursedCompiler.init(allocator, filename, output_name);
+        defer compiler.deinit();
 
-        c.generateProgram(program) catch |err| {
-            print("Code generation error: {}\n", .{err});
-            return;
-        };
-
-        c.writeExecutable(output_name) catch |err| {
-            print("Executable generation error: {}\n", .{err});
-            return;
-        };
-
-        print("Generated executable: {s}\n", .{output_name});
+        const stats = try compiler.compileToExecutable(source);
+        
+        print("✅ Generated executable: {s}\n", .{output_name});
+        print("📊 Compilation stats: {} lines, {} tokens, {} instructions\n", .{stats.source_lines, stats.tokens_generated, stats.llvm_instructions});
     } else {
-        // Interpretation mode - basic execution
-        print("Interpretation mode not yet implemented in Zig version\n", .{});
-        print("Use --compile flag to generate native executable\n", .{});
+        // Interpretation mode - execute CURSED program directly
+        print("🚀 Executing CURSED program via interpreter...\n", .{});
+        
+        var simple_interp = simple_interpreter.SimpleInterpreter.init(allocator);
+        defer simple_interp.deinit();
+        
+        simple_interp.execute(tokens.items) catch |err| {
+            print("Interpreter error: {}\n", .{err});
+            return;
+        };
+        
+        print("✅ Program execution completed\n", .{});
     }
 }
 
