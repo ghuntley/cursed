@@ -3,6 +3,7 @@ const print = std.debug.print;
 
 const lexer = @import("lexer.zig");
 const ast = @import("ast_simple.zig");
+const simple_interpreter = @import("simple_interpreter.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -40,12 +41,23 @@ pub fn main() !void {
 
     print("Lexed {} tokens\n", .{tokens.items.len});
     
-    // Print first few tokens for verification
-    for (tokens.items[0..@min(tokens.items.len, 5)]) |token| {
-        print("Token: {any} = '{s}'\n", .{ token.kind, token.lexeme });
-    }
+    // Debug: Print all tokens (disabled for clean output)
+    // for (tokens.items, 0..) |token, idx| {
+    //     print("Token {}: {any} = '{s}'\n", .{ idx, token.kind, token.lexeme });
+    // }
+    
+    // Execute the CURSED program using interpreter
+    print("🚀 Executing CURSED program...\n", .{});
+    
+    var interpreter = simple_interpreter.SimpleInterpreter.init(allocator);
+    defer interpreter.deinit();
+    
+    interpreter.execute(tokens.items) catch |err| {
+        print("Interpreter error: {}\n", .{err});
+        return;
+    };
 
-    print("✅ CURSED Zig compiler working!\n", .{});
+    print("✅ Program execution completed!\n", .{});
 }
 
 test "main tests" {

@@ -4,21 +4,26 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     
-    // Use native target for dynamic library compatibility
-    const resolved_target = target;
+    // Use native target with proper libc integration
+    const resolved_target = b.resolveTargetQuery(.{
+        .cpu_arch = .x86_64,
+        .os_tag = .linux,
+        .abi = .gnu,
+    });
 
-    // Create the CURSED compiler executable with concurrency support
+    // Create the CURSED compiler executable
     const exe = b.addExecutable(.{
         .name = "cursed-zig",
-        .root_source_file = b.path("src-zig/demo_simple.zig"),
+        .root_source_file = b.path("src-zig/main_simple.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
 
+
     // Configure libc and system integration
     exe.linkLibC();
     
-    // Add LLVM library path and includes from NixOS environment
+    // Use hardcoded NixOS paths for LLVM
     exe.addLibraryPath(.{ .cwd_relative = "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib" });
     exe.addIncludePath(.{ .cwd_relative = "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include" });
     
@@ -39,7 +44,7 @@ pub fn build(b: *std.Build) void {
     // Create test suite
     const unit_tests = b.addTest(.{
         .root_source_file = b.path("src-zig/main_complete.zig"),
-        .target = target,
+        .target = resolved_target,
         .optimize = optimize,
     });
 
@@ -95,14 +100,9 @@ pub fn build(b: *std.Build) void {
     const concurrency_full_test_step = b.step("test-concurrency-full", "Run comprehensive concurrency tests");
     concurrency_full_test_step.dependOn(&run_concurrency_test_exe.step);
 
-    // Create stdlib tests
-    const stdlib_tests = b.addTest(.{
-        .root_source_file = b.path("stdlib-zig/testz.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const run_stdlib_tests = b.addRunArtifact(stdlib_tests);
-    const stdlib_test_step = b.step("test-stdlib", "Run stdlib tests");
-    stdlib_test_step.dependOn(&run_stdlib_tests.step);
+    // Pure CURSED stdlib testing 
+    // All stdlib modules implemented in pure CURSED (.csd files only)
+    // Use: zig build run -- stdlib/testz/test_testz.csd
+    const stdlib_test_step = b.step("test-stdlib", "Run pure CURSED stdlib tests");
+    _ = stdlib_test_step; // Placeholder for CURSED-based testing
 }

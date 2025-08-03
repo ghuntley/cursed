@@ -35,6 +35,7 @@ pub mod debug_metadata;
 pub mod enhanced_codegen;
 pub mod error_handling;
 pub mod error_propagation;
+pub mod error_runtime_codegen;
 pub mod complete_defer_panic;
 pub mod defer_cleanup;
 pub mod enhanced_defer;

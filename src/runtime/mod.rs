@@ -16,6 +16,7 @@ pub mod error_handling;
 pub mod enhanced_error_handling;
 pub mod simple_enhanced_error_handling;
 pub mod error_propagation;
+pub mod cursed_error_execution;
 pub mod recovery;
 pub mod debug_manager;  // RE-ENABLED - Advanced debug management
 pub mod debug_runtime;  // RE-ENABLED - Runtime debugging
@@ -31,6 +32,7 @@ pub mod unicode_char;
 pub mod jit_runtime;
 pub mod borrowing;
 pub mod interface_dispatch;
+pub mod interface_virtual_dispatch;
 pub mod type_assertion;
 pub mod type_switch;
 
@@ -128,6 +130,16 @@ pub use interface_dispatch::{
     InterfaceDispatchRegistry, InterfaceVTable, InterfaceValue, InterfaceMethod, VTableEntry,
     initialize_interface_dispatch, get_global_dispatch_registry, register_global_interface,
     register_global_implementation, create_global_interface_value, dispatch_global_method
+};
+
+pub use interface_virtual_dispatch::{
+    InterfaceImplementationRegistry, InterfaceObject, InterfaceDefinition, InterfaceMethodInfo,
+    VirtualMethodEntry, InterfaceDispatchMetrics, ReceiverType,
+    register_global_interface as register_virtual_interface,
+    register_global_implementation as register_virtual_implementation,
+    create_global_interface_object, dispatch_global_method as dispatch_virtual_method,
+    check_global_interface_implementation, get_global_interface_metrics,
+    initialize_interface_dispatch as initialize_virtual_dispatch
 };
 pub use type_assertion::{
     CursedTypeId, CursedTypeInfo, initialize_type_assertion_runtime, cleanup_type_assertion_runtime
