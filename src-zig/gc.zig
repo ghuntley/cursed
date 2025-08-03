@@ -86,6 +86,10 @@ pub const GCStats = struct {
     peak_heap_size: u64,
     /// Number of finalized objects
     finalized_objects: u64,
+    /// Number of heap compactions
+    compact_count: u64,
+    /// Total compaction time in microseconds
+    total_compact_time: u64,
     
     pub fn init() GCStats {
         return std.mem.zeroes(GCStats);
@@ -164,6 +168,14 @@ const WriteBarrier = struct {
     timestamp: u64,
 };
 
+/// Heap segment for compaction
+const HeapSegment = struct {
+    start: *u8,
+    end: *u8,
+    current: *u8,
+    generation: u1, // 0 = young, 1 = old
+};
+
 /// Production Garbage Collector
 pub const GC = struct {
     /// Configuration
@@ -190,6 +202,7 @@ pub const GC = struct {
     /// Root set management
     roots: ArrayList(RootRef),
     stack_roots: ArrayList(*anyopaque),
+    roots_mutex: Mutex,
     
     /// Concurrent collection state
     collection_mutex: Mutex,
@@ -211,6 +224,11 @@ pub const GC = struct {
     /// Weak references
     weak_refs: ArrayList(*WeakRef),
     weak_ref_mutex: Mutex,
+    
+    /// Heap compaction support
+    heap_segments: ArrayList(HeapSegment),
+    forwarding_table: HashMap(*u8, *u8, std.hash_map.DefaultContext(u8), std.hash_map.default_max_load_percentage),
+    pause_mutex: Mutex,
     
     /// Performance monitoring
     last_gc_time: std.time.Instant,
@@ -234,6 +252,7 @@ pub const GC = struct {
             .mark_stack = ArrayList(*ObjectHeader).init(allocator),
             .roots = ArrayList(RootRef).init(allocator),
             .stack_roots = ArrayList(*anyopaque).init(allocator),
+            .roots_mutex = Mutex{},
             .collection_mutex = Mutex{},
             .collection_condition = Condition{},
             .collection_thread = null,
@@ -247,6 +266,9 @@ pub const GC = struct {
             .finalization_thread = null,
             .weak_refs = ArrayList(*WeakRef).init(allocator),
             .weak_ref_mutex = Mutex{},
+            .heap_segments = ArrayList(HeapSegment).init(allocator),
+            .forwarding_table = HashMap(*u8, *u8, std.hash_map.DefaultContext(u8), std.hash_map.default_max_load_percentage).init(allocator),
+            .pause_mutex = Mutex{},
             .last_gc_time = std.time.Instant.now() catch unreachable,
         };
         
@@ -272,6 +294,8 @@ pub const GC = struct {
         self.finalizers.deinit();
         self.finalization_queue.deinit();
         self.weak_refs.deinit();
+        self.heap_segments.deinit();
+        self.forwarding_table.deinit();
         
         self.allocator.destroy(self);
     }
@@ -296,6 +320,24 @@ pub const GC = struct {
         self.heap_used = 0;
         self.young_heap_used = 0;
         self.old_heap_used = 0;
+        
+        // Set up heap segments for compaction
+        const young_segment = HeapSegment{
+            .start = @as(*u8, @ptrCast(self.young_heap_start)),
+            .end = @as(*u8, @ptrCast(self.young_heap_start)) + self.config.young_gen_size,
+            .current = @as(*u8, @ptrCast(self.young_heap_start)),
+            .generation = 0,
+        };
+        
+        const old_segment = HeapSegment{
+            .start = @as(*u8, @ptrCast(self.old_heap_start)),
+            .end = heap_bytes + self.heap_size,
+            .current = @as(*u8, @ptrCast(self.old_heap_start)),
+            .generation = 1,
+        };
+        
+        try self.heap_segments.append(young_segment);
+        try self.heap_segments.append(old_segment);
         
         std.log.info("GC: Initialized heap - Total: {} bytes, Young: {} bytes", .{ 
             self.heap_size, self.config.young_gen_size 
@@ -620,17 +662,8 @@ pub const GC = struct {
     
     /// Conservative stack scanning
     fn scanStack(self: *GC) !void {
-        // This is a simplified version - real implementation would
-        // scan the actual stack memory for potential pointers
-        for (self.stack_roots.items) |ptr| {
-            if (self.isValidHeapPointer(ptr)) {
-                const header = ObjectHeader.fromData(ptr);
-                if (header.color == @intFromEnum(Color.White)) {
-                    header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(header);
-                }
-            }
-        }
+        // Scan registered stack roots for potential heap pointers
+        self.scanStackRoots();
     }
     
     /// Check if pointer is in heap
@@ -798,10 +831,134 @@ pub const GC = struct {
     
     /// Compact heap to reduce fragmentation
     fn compactHeap(self: *GC) !void {
-        _ = self; // Mark as used
-        // This is a simplified compaction - real implementation would
-        // move objects to eliminate fragmentation
-        std.log.debug("GC: Heap compaction not yet implemented", .{});
+        self.pause_mutex.lock();
+        defer self.pause_mutex.unlock();
+        
+        // Perform compaction by moving live objects to eliminate fragmentation
+        var compact_start = std.time.nanoTimestamp();
+        defer {
+            const compact_time = std.time.nanoTimestamp() - compact_start;
+            self.stats.total_compact_time += @intCast(compact_time / 1000); // microseconds
+            self.stats.compact_count += 1;
+        }
+        
+        var moved_objects: u32 = 0;
+        var bytes_moved: usize = 0;
+        
+        // Walk through heap segments and compact each one
+        for (self.heap_segments.items) |*segment| {
+            try self.compactSegment(segment, &moved_objects, &bytes_moved);
+        }
+        
+        // Update pointers in all live objects
+        try self.updateCompactedPointers();
+        
+        std.log.debug("GC: Compacted {} objects, moved {} bytes", .{moved_objects, bytes_moved});
+    }
+    
+    fn compactSegment(self: *GC, segment: *HeapSegment, moved_objects: *u32, bytes_moved: *usize) !void {
+        var scan_ptr = segment.start;
+        var compact_ptr = segment.start;
+        
+        while (scan_ptr < segment.current) {
+            const header = @as(*ObjectHeader, @ptrCast(@alignCast(scan_ptr)));
+            const obj_size = header.size;
+            
+            if (header.color != @intFromEnum(Color.White)) {
+                // Object is live, move it if necessary
+                if (scan_ptr != compact_ptr) {
+                    // Move the object to eliminate fragmentation
+                    const src = @as([*]u8, @ptrCast(scan_ptr));
+                    const dst = @as([*]u8, @ptrCast(compact_ptr));
+                    @memcpy(dst[0..obj_size], src[0..obj_size]);
+                    
+                    // Update the object's location in forwarding table
+                    try self.forwarding_table.put(scan_ptr, compact_ptr);
+                    
+                    moved_objects.* += 1;
+                    bytes_moved.* += obj_size;
+                }
+                compact_ptr += obj_size;
+            }
+            
+            scan_ptr += obj_size;
+        }
+        
+        // Update segment's current pointer
+        segment.current = compact_ptr;
+    }
+    
+    fn updateCompactedPointers(self: *GC) !void {
+        // Update all root pointers
+        self.roots_mutex.lock();
+        defer self.roots_mutex.unlock();
+        
+        for (self.roots.items) |*root| {
+            if (self.forwarding_table.get(root.*)) |new_location| {
+                root.* = new_location;
+            }
+        }
+        
+        // Update internal pointers in moved objects
+        for (self.heap_segments.items) |segment| {
+            var scan_ptr = segment.start;
+            
+            while (scan_ptr < segment.current) {
+                const header = @as(*ObjectHeader, @ptrCast(@alignCast(scan_ptr)));
+                
+                if (header.color != @intFromEnum(Color.White)) {
+                    // Update pointers within this object
+                    self.updateObjectPointers(header);
+                }
+                
+                scan_ptr += header.size;
+            }
+        }
+        
+        // Clear forwarding table
+        self.forwarding_table.clearRetainingCapacity();
+    }
+    
+    fn updateObjectPointers(self: *GC, header: *ObjectHeader) void {
+        const data = header.getData();
+        
+        // Type-specific pointer updating based on type_id
+        switch (header.type_id) {
+            1 => self.updateStringPointers(data), // String type
+            2 => self.updateArrayPointers(data),  // Array type
+            3 => self.updateStructPointers(data), // Struct type
+            else => {}, // Primitive types have no internal pointers
+        }
+    }
+    
+    fn updateStringPointers(self: *GC, data: *anyopaque) void {
+        _ = self;
+        _ = data;
+        // Strings in CURSED are value types, no internal pointers to update
+    }
+    
+    fn updateArrayPointers(self: *GC, data: *anyopaque) void {
+        const array_data = @as(*[]?*anyopaque, @ptrCast(@alignCast(data)));
+        
+        for (array_data.*) |*element| {
+            if (element.*) |ptr| {
+                if (self.forwarding_table.get(@as(*u8, @ptrCast(ptr)))) |new_location| {
+                    element.* = @ptrCast(new_location);
+                }
+            }
+        }
+    }
+    
+    fn updateStructPointers(self: *GC, data: *anyopaque) void {
+        // For struct types, we need to know the field layout
+        // This is simplified - real implementation would use type metadata
+        const struct_data = @as(*[]*anyopaque, @ptrCast(@alignCast(data)));
+        
+        for (struct_data.*) |*field| {
+            if (self.forwarding_table.get(@as(*u8, @ptrCast(field.*)))) |new_location| {
+                field.* = @ptrCast(new_location);
+            }
+        }
     }
     
     /// Update weak references after collection
@@ -828,6 +985,73 @@ pub const GC = struct {
             
             i += 1;
         }
+    }
+    
+    /// Register a stack root for scanning
+    pub fn registerStackRoot(self: *GC, ptr: *anyopaque) !void {
+        self.roots_mutex.lock();
+        defer self.roots_mutex.unlock();
+        
+        try self.stack_roots.append(ptr);
+        std.log.debug("GC: Registered stack root at {*}", .{ptr});
+    }
+    
+    /// Unregister a stack root
+    pub fn unregisterStackRoot(self: *GC, ptr: *anyopaque) !void {
+        self.roots_mutex.lock();
+        defer self.roots_mutex.unlock();
+        
+        for (self.stack_roots.items, 0..) |root, i| {
+            if (root == ptr) {
+                _ = self.stack_roots.swapRemove(i);
+                std.log.debug("GC: Unregistered stack root at {*}", .{ptr});
+                return;
+            }
+        }
+        
+        std.log.warn("GC: Attempted to unregister unknown stack root at {*}", .{ptr});
+    }
+    
+    /// Scan stack roots for live objects
+    fn scanStackRoots(self: *GC) void {
+        self.roots_mutex.lock();
+        defer self.roots_mutex.unlock();
+        
+        for (self.stack_roots.items) |root_ptr| {
+            // Scan a reasonable stack frame size around the root pointer
+            const stack_frame_size = 1024; // 1KB stack frame
+            const start_addr = @as([*]u8, @ptrCast(root_ptr));
+            
+            var scan_ptr = start_addr;
+            const end_ptr = start_addr + stack_frame_size;
+            
+            while (scan_ptr < end_ptr) {
+                // Check if this looks like a pointer to our heap
+                const potential_ptr = @as(*?*anyopaque, @ptrCast(@alignCast(scan_ptr))).*;
+                
+                if (potential_ptr) |ptr| {
+                    if (self.isValidHeapPointer(ptr)) {
+                        const header = ObjectHeader.fromData(ptr);
+                        if (header.color == @intFromEnum(Color.White)) {
+                            // Mark as gray for further scanning
+                            header.color = @intFromEnum(Color.Gray);
+                            self.mark_stack.append(header) catch {};
+                        }
+                    }
+                }
+                
+                scan_ptr += @sizeOf(*anyopaque);
+            }
+        }
+    }
+    
+    /// Check if a pointer is within our heap bounds
+    fn isValidHeapPointer(self: *GC, ptr: *anyopaque) bool {
+        const heap_start = @as([*]u8, @ptrCast(self.heap_start));
+        const heap_end = heap_start + self.heap_size;
+        const check_ptr = @as([*]u8, @ptrCast(ptr));
+        
+        return check_ptr >= heap_start and check_ptr < heap_end;
     }
     
     /// Get current GC statistics

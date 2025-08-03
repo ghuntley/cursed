@@ -26,6 +26,9 @@ const CodeGen = @import("codegen.zig").CodeGen;
 const CodeGenError = @import("codegen.zig").CodeGenError;
 const WorkingCodeGen = @import("working_codegen.zig").WorkingCodeGen;
 const FinalWorkingCodeGen = @import("final_working_codegen.zig").FinalWorkingCodeGen;
+const debug_info = @import("debug_info.zig");
+const DebugInfoGenerator = debug_info.DebugInfoGenerator;
+const SourceLocation = debug_info.SourceLocation;
 
 /// Advanced CURSED Zig Code Generator with advanced language features
 /// Handles structs, interfaces, generics, and advanced memory management
@@ -53,6 +56,12 @@ pub const AdvancedCodeGen = struct {
     // Optimization state
     optimization_passes: ArrayList(OptimizationPass),
     
+    // Debug information generation
+    debug_generator: ?DebugInfoGenerator,
+    debug_enabled: bool,
+    source_file: ?[]const u8,
+    source_locations: HashMap(c.LLVMValueRef, SourceLocation, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage),
+    
     pub fn init(allocator: Allocator) !AdvancedCodeGen {
         var gc_registry = GCTypeRegistry.init(allocator);
         var interface_registry = InterfaceRegistry.init(allocator);
@@ -72,6 +81,10 @@ pub const AdvancedCodeGen = struct {
             .gc_mark_func = null,
             .gc_sweep_func = null,
             .optimization_passes = ArrayList(OptimizationPass).init(allocator),
+            .debug_generator = null,
+            .debug_enabled = false,
+            .source_file = null,
+            .source_locations = HashMap(c.LLVMValueRef, SourceLocation, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage).init(allocator),
         };
     }
 
@@ -85,6 +98,30 @@ pub const AdvancedCodeGen = struct {
         self.typed_allocator.deinit();
         self.interface_registry.deinit();
         self.optimization_passes.deinit();
+        if (self.debug_generator) |*debug_gen| {
+            debug_gen.deinit();
+        }
+        self.source_locations.deinit();
+    }
+
+    /// Enable debug information generation
+    pub fn enableDebugInfo(self: *AdvancedCodeGen, source_file: []const u8) !void {
+        self.debug_enabled = true;
+        self.source_file = source_file;
+        
+        // Initialize debug generator
+        self.debug_generator = try DebugInfoGenerator.init(
+            self.base_codegen.allocator,
+            self.base_codegen.context,
+            self.base_codegen.module
+        );
+        
+        // Create compile unit
+        const directory = std.fs.path.dirname(source_file) orelse ".";
+        const filename = std.fs.path.basename(source_file);
+        try self.debug_generator.?.createCompileUnit(filename, directory);
+        
+        std.debug.print("✅ Debug information enabled for {s}\n", .{source_file});
     }
 
     /// Compile CURSED source code to executable
@@ -339,7 +376,7 @@ pub const AdvancedCodeGen = struct {
         );
         
         // Get interface definition to match methods
-        const interface_info = self.interface_types.get(impl_stmt.interface_name) orelse {
+        _ = self.interface_types.get(impl_stmt.interface_name) orelse {
             return CodeGenError.UndefinedSymbol;
         };
         
@@ -372,6 +409,7 @@ pub const AdvancedCodeGen = struct {
     
     /// Get type ID for a type name (simplified implementation)
     fn getTypeId(self: *AdvancedCodeGen, type_name: []const u8) u32 {
+        _ = self; // Parameter marked as used
         // Simple hash-based type ID generation
         return @as(u32, @truncate(std.hash_map.hashString(type_name)));
     }
@@ -430,9 +468,10 @@ pub const AdvancedCodeGen = struct {
             for (struct_info.methods.items) |struct_method| {
                 if (std.mem.eql(u8, interface_method.name, struct_method.name)) {
                     // Check function signature compatibility
-                    // TODO: Compare parameter types and return types
-                    found = true;
-                    break;
+                    if (try self.compareMethodSignatures(interface_method, struct_method)) {
+                        found = true;
+                        break;
+                    }
                 }
             }
             
@@ -514,9 +553,59 @@ pub const AdvancedCodeGen = struct {
 
     /// Process generic instantiations
     fn processGenericInstantiations(self: *AdvancedCodeGen) CodeGenError!void {
-        // This would be called when generic types are instantiated with concrete types
-        // For now, we'll implement a placeholder
-        _ = self;
+        // Process any pending generic instantiations
+        var instantiation_iterator = self.generic_instances.iterator();
+        while (instantiation_iterator.next()) |entry| {
+            const instance = entry.value_ptr;
+            
+            // Generate LLVM type for this specific instantiation
+            var instantiated_name = ArrayList(u8).init(self.base_codegen.allocator);
+            defer instantiated_name.deinit();
+            
+            try instantiated_name.appendSlice(instance.base_name);
+            for (instance.type_arguments) |type_arg| {
+                try instantiated_name.appendSlice("_");
+                try instantiated_name.appendSlice(type_arg);
+            }
+            
+            // Create specialized version
+            try self.generateSpecializedType(instance.base_name, instance.type_arguments, instantiated_name.items);
+        }
+    }
+
+    /// Generate specialized version of generic type
+    fn generateSpecializedType(self: *AdvancedCodeGen, base_name: []const u8, type_args: [][]const u8, specialized_name: []const u8) CodeGenError!void {
+        _ = type_args; // Parameter marked as used
+        // Find base generic type
+        if (self.struct_types.get(base_name)) |base_struct| {
+            // Create specialized struct type
+            var specialized_field_types = ArrayList(c.LLVMTypeRef).init(self.base_codegen.allocator);
+            defer specialized_field_types.deinit();
+            
+            // Substitute type parameters with concrete types
+            for (base_struct.field_types) |field_type| {
+                // For now, use the field type as-is
+                // In a full implementation, we would do type parameter substitution
+                try specialized_field_types.append(field_type);
+            }
+            
+            // Create the specialized LLVM struct type
+            const specialized_llvm_type = c.LLVMStructCreateNamed(self.base_codegen.context, specialized_name.ptr);
+            c.LLVMStructSetBody(specialized_llvm_type, specialized_field_types.items.ptr, @as(u32, @intCast(specialized_field_types.items.len)), 0);
+            
+            // Store the specialized type
+            const specialized_struct = StructTypeInfo{
+                .name = specialized_name,
+                .field_types = try specialized_field_types.toOwnedSlice(),
+                .field_names = base_struct.field_names,
+                .llvm_type = specialized_llvm_type,
+                .methods = ArrayList(MethodInfo).init(self.base_codegen.allocator),
+                .is_generic = false,
+                .type_parameters = ArrayList(ast.TypeParameter).init(self.base_codegen.allocator),
+            };
+            
+            try self.struct_types.put(specialized_name, specialized_struct);
+        }
     }
 
     /// Generate struct construction
@@ -605,11 +694,22 @@ pub const AdvancedCodeGen = struct {
     }
 
     /// Generate interface method call with dynamic dispatch
-    pub fn generateInterfaceMethodCall(self: *AdvancedCodeGen, interface_ptr: c.LLVMValueRef, _: []const u8, args: []c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+    pub fn generateInterfaceMethodCall(self: *AdvancedCodeGen, interface_ptr: c.LLVMValueRef, method_name: []const u8, args: []c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
         // Extract vtable from interface object
+        // Interface object layout: {vtable_ptr, data_ptr}
+        const interface_struct_type = c.LLVMStructTypeInContext(
+            self.base_codegen.context,
+            &[_]c.LLVMTypeRef{
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // vtable
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0)  // data
+            },
+            2,
+            0
+        );
+        
         const vtable_ptr_ptr = c.LLVMBuildStructGEP2(
             self.base_codegen.builder,
-            c.LLVMStructTypeInContext(self.base_codegen.context, null, 0, 0), // placeholder
+            interface_struct_type,
             interface_ptr,
             0, // vtable is first field
             "vtable_ptr_ptr"
@@ -622,15 +722,45 @@ pub const AdvancedCodeGen = struct {
             "vtable_ptr"
         );
         
-        // Find method index in interface vtable
-        const method_index: u32 = 0;
-        // TODO: Implement proper method lookup in interface
-        // For now, use index 0 as placeholder
+        // Extract data pointer
+        const data_ptr_ptr = c.LLVMBuildStructGEP2(
+            self.base_codegen.builder,
+            interface_struct_type,
+            interface_ptr,
+            1, // data is second field
+            "data_ptr_ptr"
+        );
         
-        // Get method function pointer from vtable
-        const method_ptr_ptr = c.LLVMBuildGEP2(
+        const data_ptr = c.LLVMBuildLoad2(
             self.base_codegen.builder,
             c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0),
+            data_ptr_ptr,
+            "data_ptr"
+        );
+        
+        // Find method index by name
+        var method_index: u32 = 0;
+        var found = false;
+        
+        // Search through all interface types to find method index
+        var interface_iterator = self.interface_types.iterator();
+        while (interface_iterator.next()) |entry| {
+            const interface_info = entry.value_ptr;
+            for (interface_info.methods.items, 0..) |method, i| {
+                if (std.mem.eql(u8, method.name, method_name)) {
+                    method_index = @as(u32, @intCast(i));
+                    found = true;
+                    break;
+                }
+            }
+            if (found) break;
+        }
+        
+        // Get method function pointer from vtable
+        const func_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0);
+        const method_ptr_ptr = c.LLVMBuildGEP2(
+            self.base_codegen.builder,
+            func_ptr_type,
             vtable_ptr,
             &[_]c.LLVMValueRef{c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), method_index, 0)},
             1,
@@ -639,26 +769,44 @@ pub const AdvancedCodeGen = struct {
         
         const method_func = c.LLVMBuildLoad2(
             self.base_codegen.builder,
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0),
+            func_ptr_type,
             method_ptr_ptr,
             "method_func"
         );
         
-        // Create function type (placeholder)
+        // Create function type for the method call
+        // First parameter is always the self pointer (data_ptr)
+        var param_types = ArrayList(c.LLVMTypeRef).init(self.base_codegen.allocator);
+        defer param_types.deinit();
+        
+        try param_types.append(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0)); // self
+        for (args) |arg| {
+            try param_types.append(c.LLVMTypeOf(arg));
+        }
+        
         const func_type = c.LLVMFunctionType(
-            c.LLVMVoidTypeInContext(self.base_codegen.context),
-            null,
-            0,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // return type (generic)
+            param_types.items.ptr,
+            @as(u32, @intCast(param_types.items.len)),
             0
         );
+        
+        // Build argument list including self pointer
+        var call_args = ArrayList(c.LLVMValueRef).init(self.base_codegen.allocator);
+        defer call_args.deinit();
+        
+        try call_args.append(data_ptr); // self pointer
+        for (args) |arg| {
+            try call_args.append(arg);
+        }
         
         // Call the method
         return c.LLVMBuildCall2(
             self.base_codegen.builder,
             func_type,
             method_func,
-            args.ptr,
-            @as(u32, @intCast(args.len)),
+            call_args.items.ptr,
+            @as(u32, @intCast(call_args.items.len)),
             "method_call"
         );
     }
@@ -707,9 +855,16 @@ pub const AdvancedCodeGen = struct {
 
     /// Generate debug information for advanced features
     fn generateDebugInfo(self: *AdvancedCodeGen) CodeGenError!void {
-        // TODO: Implement DWARF debug information generation
-        // For now, just add comments to IR
-        _ = self;
+        if (!self.debug_enabled or self.debug_generator == null) {
+            return; // Debug info disabled
+        }
+        
+        var debug_gen = &self.debug_generator.?;
+        
+        // Finalize all debug information
+        debug_gen.finalize();
+        
+        std.debug.print("✅ DWARF debug information generated successfully\n", .{});
     }
 
     /// Generate optimization report
@@ -721,6 +876,186 @@ pub const AdvancedCodeGen = struct {
         try report_path.appendSlice(".opt_report");
         
         // TODO: Generate detailed optimization report to report_path.items
+    }
+    
+    /// Generate debug info for CURSED function
+    pub fn generateFunctionDebugInfo(self: *AdvancedCodeGen, function: c.LLVMValueRef, name: []const u8, line: u32, param_types: []c.LLVMMetadataRef, return_type: c.LLVMMetadataRef) !c.LLVMMetadataRef {
+        if (!self.debug_enabled or self.debug_generator == null) {
+            return null; // Debug disabled
+        }
+        
+        var debug_gen = &self.debug_generator.?;
+        
+        // Create function type debug info
+        const func_type = try debug_gen.createFunctionType(return_type, param_types);
+        
+        // Create function debug info
+        const di_function = try debug_gen.createFunction(name, name, line, func_type, function);
+        
+        return di_function;
+    }
+    
+    /// Generate debug info for CURSED variable
+    pub fn generateVariableDebugInfo(self: *AdvancedCodeGen, alloca: c.LLVMValueRef, name: []const u8, line: u32, cursed_type: []const u8) !void {
+        if (!self.debug_enabled or self.debug_generator == null) {
+            return; // Debug disabled
+        }
+        
+        var debug_gen = &self.debug_generator.?;
+        
+        // Create debug type for CURSED variable
+        const di_type = try self.getCursedDebugType(cursed_type);
+        
+        // Create local variable debug info
+        try debug_gen.createLocalVariable(name, line, di_type, alloca);
+    }
+    
+    /// Generate debug info for CURSED struct
+    pub fn generateStructDebugInfo(self: *AdvancedCodeGen, struct_name: []const u8, field_names: [][]const u8, field_types: [][]const u8) !c.LLVMMetadataRef {
+        if (!self.debug_enabled or self.debug_generator == null) {
+            return null; // Debug disabled
+        }
+        
+        var debug_gen = &self.debug_generator.?;
+        
+        // Create debug field information
+        var fields = ArrayList(debug_info.StructField).init(self.base_codegen.allocator);
+        defer fields.deinit();
+        
+        for (field_names, field_types) |field_name, field_type| {
+            const di_type = try self.getCursedDebugType(field_type);
+            const size_bits = self.getCursedTypeSize(field_type) * 8;
+            
+            try fields.append(debug_info.StructField{
+                .name = field_name,
+                .di_type = di_type,
+                .size_bits = size_bits,
+                .align_bits = 8, // Default alignment
+            });
+        }
+        
+        const total_size = self.getStructTotalSize(field_types) * 8;
+        return try debug_gen.createStructType(struct_name, total_size, 8, fields.items);
+    }
+    
+    /// Generate debug info for CURSED interface
+    pub fn generateInterfaceDebugInfo(self: *AdvancedCodeGen, interface_name: []const u8, method_names: [][]const u8) !c.LLVMMetadataRef {
+        if (!self.debug_enabled or self.debug_generator == null) {
+            return null; // Debug disabled
+        }
+        
+        var debug_gen = &self.debug_generator.?;
+        
+        // For interfaces, create a structure with function pointers
+        var fields = ArrayList(debug_info.StructField).init(self.base_codegen.allocator);
+        defer fields.deinit();
+        
+        // Add vtable pointer field
+        const ptr_type = try debug_gen.createPointerType(try self.getCursedDebugType("normie"));
+        try fields.append(debug_info.StructField{
+            .name = "vtable_ptr",
+            .di_type = ptr_type,
+            .size_bits = 64,
+            .align_bits = 8,
+        });
+        
+        // Add method function pointers
+        for (method_names) |method_name| {
+            const func_ptr_type = try debug_gen.createPointerType(try self.getCursedDebugType("normie"));
+            try fields.append(debug_info.StructField{
+                .name = method_name,
+                .di_type = func_ptr_type,
+                .size_bits = 64,
+                .align_bits = 8,
+            });
+        }
+        
+        const total_size = (1 + method_names.len) * 64; // vtable + methods
+        return try debug_gen.createStructType(interface_name, total_size, 8, fields.items);
+    }
+    
+    /// Set debug location for instruction
+    pub fn setInstructionDebugLocation(self: *AdvancedCodeGen, instruction: c.LLVMValueRef, line: u32, column: u32) void {
+        if (!self.debug_enabled or self.debug_generator == null) {
+            return; // Debug disabled
+        }
+        
+        var debug_gen = &self.debug_generator.?;
+        debug_gen.setDebugLocation(instruction, line, column);
+        
+        // Track source location for instruction
+        if (self.source_file) |file| {
+            const location = SourceLocation{
+                .line = line,
+                .column = column,
+                .filename = file,
+            };
+            self.source_locations.put(instruction, location) catch {};
+        }
+    }
+    
+    /// Enter new debug scope (for blocks, functions, etc.)
+    pub fn pushDebugScope(self: *AdvancedCodeGen, line: u32, column: u32) !c.LLVMMetadataRef {
+        if (!self.debug_enabled or self.debug_generator == null) {
+            return null; // Debug disabled
+        }
+        
+        var debug_gen = &self.debug_generator.?;
+        const scope = try debug_gen.createLexicalBlock(line, column);
+        try debug_gen.pushScope(scope);
+        return scope;
+    }
+    
+    /// Exit current debug scope
+    pub fn popDebugScope(self: *AdvancedCodeGen) void {
+        if (!self.debug_enabled or self.debug_generator == null) {
+            return; // Debug disabled
+        }
+        
+        var debug_gen = &self.debug_generator.?;
+        debug_gen.popScope();
+    }
+    
+    /// Get debug type for CURSED type
+    fn getCursedDebugType(self: *AdvancedCodeGen, cursed_type: []const u8) !c.LLVMMetadataRef {
+        var debug_gen = &self.debug_generator.?;
+        
+        return switch (std.mem.hash_map.hashString(cursed_type)) {
+            std.mem.hash_map.hashString("normie") => try debug_gen.createBasicType("normie", 32, c.LLVMDWARFTypeEncodingSigned),
+            std.mem.hash_map.hashString("tea") => try debug_gen.createBasicType("tea", 64, c.LLVMDWARFTypeEncodingUTF),
+            std.mem.hash_map.hashString("drip") => try debug_gen.createBasicType("drip", 64, c.LLVMDWARFTypeEncodingSigned),
+            std.mem.hash_map.hashString("lit") => try debug_gen.createBasicType("lit", 1, c.LLVMDWARFTypeEncodingBoolean),
+            std.mem.hash_map.hashString("meal") => try debug_gen.createBasicType("meal", 64, c.LLVMDWARFTypeEncodingFloat),
+            std.mem.hash_map.hashString("smol") => try debug_gen.createBasicType("smol", 8, c.LLVMDWARFTypeEncodingSigned),
+            std.mem.hash_map.hashString("thicc") => try debug_gen.createBasicType("thicc", 64, c.LLVMDWARFTypeEncodingSigned),
+            std.mem.hash_map.hashString("sip") => try debug_gen.createBasicType("sip", 8, c.LLVMDWARFTypeEncodingUnsigned),
+            else => try debug_gen.createBasicType("unknown", 64, c.LLVMDWARFTypeEncodingSigned),
+        };
+    }
+    
+    /// Get size in bytes for CURSED type
+    fn getCursedTypeSize(self: *AdvancedCodeGen, cursed_type: []const u8) u64 {
+        _ = self;
+        return switch (std.mem.hash_map.hashString(cursed_type)) {
+            std.mem.hash_map.hashString("normie") => 4,
+            std.mem.hash_map.hashString("tea") => 8,
+            std.mem.hash_map.hashString("drip") => 8,
+            std.mem.hash_map.hashString("lit") => 1,
+            std.mem.hash_map.hashString("meal") => 8,
+            std.mem.hash_map.hashString("smol") => 1,
+            std.mem.hash_map.hashString("thicc") => 8,
+            std.mem.hash_map.hashString("sip") => 1,
+            else => 8,
+        };
+    }
+    
+    /// Calculate total struct size
+    fn getStructTotalSize(self: *AdvancedCodeGen, field_types: [][]const u8) u64 {
+        var total_size: u64 = 0;
+        for (field_types) |field_type| {
+            total_size += self.getCursedTypeSize(field_type);
+        }
+        return total_size;
     }
 };
 
@@ -776,6 +1111,255 @@ const OptimizationPass = enum {
     LoopOptimization,
     InterfaceDevirtualization,
 };
+
+    // Type comparison and interface method lookup implementation
+    fn compareMethodSignatures(self: *AdvancedCodeGen, interface_method: MethodSignature, struct_method: MethodSignature) CodeGenError!bool {
+        // Compare parameter counts
+        if (interface_method.parameters.items.len != struct_method.parameters.items.len) {
+            return false;
+        }
+        
+        // Compare parameter types
+        for (interface_method.parameters.items, struct_method.parameters.items) |iface_param, struct_param| {
+            if (!try self.typesAreEqual(iface_param.param_type, struct_param.param_type)) {
+                return false;
+            }
+        }
+        
+        // Compare return types
+        if (interface_method.return_type == null and struct_method.return_type != null) {
+            return false;
+        }
+        if (interface_method.return_type != null and struct_method.return_type == null) {
+            return false;
+        }
+        if (interface_method.return_type != null and struct_method.return_type != null) {
+            if (!try self.typesAreEqual(interface_method.return_type.?, struct_method.return_type.?)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    fn typesAreEqual(self: *AdvancedCodeGen, type1: Type, type2: Type) CodeGenError!bool {
+        _ = self; // Parameter used for future extensions
+        
+        // Handle basic type comparisons
+        switch (type1) {
+            .Basic => |basic1| {
+                switch (type2) {
+                    .Basic => |basic2| return basic1 == basic2,
+                    else => return false,
+                }
+            },
+            .Custom => |name1| {
+                switch (type2) {
+                    .Custom => |name2| return std.mem.eql(u8, name1, name2),
+                    else => return false,
+                }
+            },
+            .Array => |array1| {
+                switch (type2) {
+                    .Array => |array2| {
+                        if (array1.size != array2.size) return false;
+                        return try self.typesAreEqual(array1.element_type.*, array2.element_type.*);
+                    },
+                    else => return false,
+                }
+            },
+            .Slice => |slice1| {
+                switch (type2) {
+                    .Slice => |slice2| {
+                        return try self.typesAreEqual(slice1.element_type.*, slice2.element_type.*);
+                    },
+                    else => return false,
+                }
+            },
+            .Map => |map1| {
+                switch (type2) {
+                    .Map => |map2| {
+                        const keys_equal = try self.typesAreEqual(map1.key_type.*, map2.key_type.*);
+                        const values_equal = try self.typesAreEqual(map1.value_type.*, map2.value_type.*);
+                        return keys_equal and values_equal;
+                    },
+                    else => return false,
+                }
+            },
+            .Pointer => |ptr1| {
+                switch (type2) {
+                    .Pointer => |ptr2| {
+                        if (ptr1.is_mutable != ptr2.is_mutable) return false;
+                        return try self.typesAreEqual(ptr1.target_type.*, ptr2.target_type.*);
+                    },
+                    else => return false,
+                }
+            },
+            .Function => |func1| {
+                switch (type2) {
+                    .Function => |func2| {
+                        // Compare parameter counts
+                        if (func1.parameters.items.len != func2.parameters.items.len) return false;
+                        if (func1.is_variadic != func2.is_variadic) return false;
+                        
+                        // Compare parameter types
+                        for (func1.parameters.items, func2.parameters.items) |param1, param2| {
+                            if (!try self.typesAreEqual(param1, param2)) return false;
+                        }
+                        
+                        // Compare return types
+                        if (func1.return_type == null and func2.return_type != null) return false;
+                        if (func1.return_type != null and func2.return_type == null) return false;
+                        if (func1.return_type != null and func2.return_type != null) {
+                            return try self.typesAreEqual(func1.return_type.?.*, func2.return_type.?.*);
+                        }
+                        
+                        return true;
+                    },
+                    else => return false,
+                }
+            },
+            .Interface => |iface1| {
+                switch (type2) {
+                    .Interface => |iface2| return std.mem.eql(u8, iface1.name, iface2.name),
+                    else => return false,
+                }
+            },
+            .Struct => |struct1| {
+                switch (type2) {
+                    .Struct => |struct2| return std.mem.eql(u8, struct1.name, struct2.name),
+                    else => return false,
+                }
+            },
+            .Generic => |gen1| {
+                switch (type2) {
+                    .Generic => |gen2| {
+                        if (!std.mem.eql(u8, gen1.name, gen2.name)) return false;
+                        if (gen1.type_arguments.items.len != gen2.type_arguments.items.len) return false;
+                        
+                        for (gen1.type_arguments.items, gen2.type_arguments.items) |arg1, arg2| {
+                            if (!try self.typesAreEqual(arg1, arg2)) return false;
+                        }
+                        
+                        return true;
+                    },
+                    else => return false,
+                }
+            },
+            .Tuple => |tuple1| {
+                switch (type2) {
+                    .Tuple => |tuple2| {
+                        if (tuple1.elements.items.len != tuple2.elements.items.len) return false;
+                        
+                        for (tuple1.elements.items, tuple2.elements.items) |elem1, elem2| {
+                            if (!try self.typesAreEqual(elem1, elem2)) return false;
+                        }
+                        
+                        return true;
+                    },
+                    else => return false,
+                }
+            },
+            .Channel => |chan1| {
+                switch (type2) {
+                    .Channel => |chan2| {
+                        if (chan1.is_send_only != chan2.is_send_only) return false;
+                        if (chan1.is_receive_only != chan2.is_receive_only) return false;
+                        return try self.typesAreEqual(chan1.element_type.*, chan2.element_type.*);
+                    },
+                    else => return false,
+                }
+            },
+        }
+    }
+    
+    // Enhanced interface method lookup with proper vtable generation
+    fn lookupInterfaceMethod(self: *AdvancedCodeGen, interface_name: []const u8, method_name: []const u8) ?MethodSignature {
+        const interface_info = self.interface_types.get(interface_name) orelse return null;
+        
+        for (interface_info.methods.items) |method| {
+            if (std.mem.eql(u8, method.name, method_name)) {
+                return method;
+            }
+        }
+        
+        return null;
+    }
+    
+    // Struct field access code generation
+    fn generateFieldAccessWithTypeChecking(self: *AdvancedCodeGen, struct_ptr: c.LLVMValueRef, struct_name: []const u8, field_name: []const u8) CodeGenError!c.LLVMValueRef {
+        const struct_info = self.struct_types.get(struct_name) orelse {
+            return CodeGenError.UndefinedSymbol;
+        };
+        
+        // Find field with type checking
+        var field_index: u32 = 0;
+        var field_type: ?Type = null;
+        
+        for (struct_info.field_names, struct_info.field_types.items, 0..) |name, ftype, i| {
+            if (std.mem.eql(u8, name, field_name)) {
+                field_index = @as(u32, @intCast(i));
+                field_type = try self.llvmTypeToType(ftype);
+                break;
+            }
+        }
+        
+        if (field_type == null) {
+            return CodeGenError.UndefinedSymbol;
+        }
+        
+        // Generate GEP instruction for field access
+        const field_ptr = c.LLVMBuildStructGEP2(
+            self.base_codegen.builder,
+            struct_info.llvm_type.?,
+            struct_ptr,
+            field_index,
+            "field_ptr"
+        );
+        
+        // Load field value with proper type
+        const field_value = c.LLVMBuildLoad2(
+            self.base_codegen.builder,
+            struct_info.field_types.items[field_index],
+            field_ptr,
+            "field_value"
+        );
+        
+        return field_value;
+    }
+    
+    // Convert LLVM type back to CURSED Type (utility function)
+    fn llvmTypeToType(self: *AdvancedCodeGen, llvm_type: c.LLVMTypeRef) CodeGenError!Type {
+        _ = self; // Parameter for future extensions
+        
+        const type_kind = c.LLVMGetTypeKind(llvm_type);
+        
+        switch (type_kind) {
+            c.LLVMIntegerTypeKind => {
+                const bit_width = c.LLVMGetIntTypeWidth(llvm_type);
+                switch (bit_width) {
+                    8 => return Type{ .Basic = .Smol },
+                    16 => return Type{ .Basic = .Mid },
+                    32 => return Type{ .Basic = .Normie },
+                    64 => return Type{ .Basic = .Thicc },
+                    else => return Type{ .Basic = .Normie },
+                }
+            },
+            c.LLVMFloatTypeKind => return Type{ .Basic = .Snack },
+            c.LLVMDoubleTypeKind => return Type{ .Basic = .Meal },
+            c.LLVMPointerTypeKind => {
+                // For now, return a generic pointer type
+                const void_type = Type{ .Basic = .Normie };
+                const ptr_type = PointerType{
+                    .target_type = self.base_codegen.allocator.create(Type) catch return CodeGenError.OutOfMemory,
+                    .is_mutable = true,
+                };
+                ptr_type.target_type.* = void_type;
+                return Type{ .Pointer = ptr_type };
+            },
+            else => return Type{ .Basic = .Normie }, // Default fallback
+        }
+    }
 
 test "advanced codegen initialization" {
     const allocator = std.testing.allocator;

@@ -468,9 +468,9 @@ pub const DebugInfoGenerator = struct {
     pub fn createCursedTypes(self: *DebugInfoGenerator) DebugError!CursedDebugTypes {
         return CursedDebugTypes{
             .normie_type = try self.createBasicType("normie", 32, c.LLVMDWARFTypeEncodingSigned),
-            .tea_type = try self.createBasicType("tea", 64, c.LLVMDWARFTypeEncoderingUTF),
+            .tea_type = try self.createBasicType("tea", 64, c.LLVMDWARFTypeEncodingUTF),
             .drip_type = try self.createBasicType("drip", 64, c.LLVMDWARFTypeEncodingSigned),
-            .lit_type = try self.createBasicType("lit", 1, c.LLVMDWARFTypeEncoderingBoolean),
+            .lit_type = try self.createBasicType("lit", 1, c.LLVMDWARFTypeEncodingBoolean),
             .meal_type = try self.createBasicType("meal", 64, c.LLVMDWARFTypeEncodingFloat),
             .smol_type = try self.createBasicType("smol", 8, c.LLVMDWARFTypeEncodingSigned),
             .thicc_type = try self.createBasicType("thicc", 64, c.LLVMDWARFTypeEncodingSigned),
