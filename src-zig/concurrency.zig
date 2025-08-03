@@ -361,7 +361,7 @@ pub const Goroutine = struct {
         self.entry_fn(self.context);
 
         const end_time = std.time.milliTimestamp();
-        self.total_runtime += @intCast(end_time - start_time);
+        self.total_runtime += @as(u32, @intCast(end_time - start_time));
         self.setState(GoroutineState.completed);
     }
 };
@@ -506,7 +506,7 @@ pub const Worker = struct {
         const start_time = std.time.milliTimestamp();
         goroutine.execute();
         const end_time = std.time.milliTimestamp();
-        self.stats.busy_time += @intCast(end_time - start_time);
+        self.stats.busy_time += @as(u32, @intCast(end_time - start_time));
     }
 
     fn stealWork(self: *Worker) ?*Goroutine {

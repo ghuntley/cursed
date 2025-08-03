@@ -62,8 +62,8 @@ fn runBenchmark(
     const end_time = std.time.milliTimestamp();
     const memory_end = getCurrentMemoryUsage();
     
-    const duration = @intCast(u64, end_time - start_time);
-    const ops_per_second = @intToFloat(f64, actual_ops * 1000) / @intToFloat(f64, duration);
+    const duration = @as(u64, @as(u32, @intCast(end_time - start_time)));
+    const ops_per_second = @as(f64, @as(f64, @floatFromInt(actual_ops * 1000))) / @as(f64, @as(f64, @floatFromInt(duration)));
     const memory_used = if (memory_end > memory_start) memory_end - memory_start else 0;
     
     benchmark_results.append(BenchmarkResult{
@@ -72,7 +72,7 @@ fn runBenchmark(
         .duration_ms = duration,
         .ops_per_second = ops_per_second,
         .memory_used_kb = memory_used,
-        .cpu_cores_used = @intCast(u32, std.Thread.getCpuCount() catch 1),
+        .cpu_cores_used = @as(u32, @intCast(std.Thread.getCpuCount() catch 1)),
         .success = true,
     }) catch {};
     
@@ -92,8 +92,8 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    print("🚀 CURSED Concurrency Performance Benchmarks\n");
-    print("=============================================\n\n");
+    print("🚀 CURSED Concurrency Performance Benchmarks\n", .{});
+    print("=============================================\n\n", .{});
 
     benchmark_results = std.ArrayList(BenchmarkResult).init(allocator);
     defer benchmark_results.deinit();
@@ -177,7 +177,7 @@ fn benchmarkGoroutineExecution(target_ops: u64) !u64 {
     
     const taskFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             test_ctx.mutex.lock();
             defer test_ctx.mutex.unlock();
             test_ctx.executed.* += 1;
@@ -223,7 +223,7 @@ fn benchmarkMassiveGoroutineSpawn(target_ops: u64) !u64 {
     
     const taskFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             
             // Small amount of work
             var sum: u64 = 0;
@@ -320,7 +320,7 @@ fn benchmarkBufferedChannelThroughput(target_ops: u64) !u64 {
     
     const senderFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             for (0..test_ctx.target) |i| {
                 if (test_ctx.channel.send(i) catch continue == concurrency.SendResult.sent) {
                     test_ctx.mutex.lock();
@@ -333,7 +333,7 @@ fn benchmarkBufferedChannelThroughput(target_ops: u64) !u64 {
     
     const receiverFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const value = test_ctx.channel.receive() catch break;
                 if (value == null) break;
@@ -397,7 +397,7 @@ fn benchmarkUnbufferedChannelSync(target_ops: u64) !u64 {
     
     const senderFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             for (0..test_ctx.target) |i| {
                 if (test_ctx.channel.send(i) catch continue == concurrency.SendResult.sent) {
                     test_ctx.mutex.lock();
@@ -410,7 +410,7 @@ fn benchmarkUnbufferedChannelSync(target_ops: u64) !u64 {
     
     const receiverFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             for (0..test_ctx.target) |_| {
                 const value = test_ctx.channel.receive() catch break;
                 if (value != null) {
@@ -483,7 +483,7 @@ fn benchmarkWorkStealingEfficiency(target_ops: u64) !u64 {
     
     const taskFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             
             // Variable amount of work to create imbalance
             var sum: u64 = 0;
@@ -542,7 +542,7 @@ fn benchmarkLoadBalancing(target_ops: u64) !u64 {
     
     const taskFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             
             // Simple work
             var sum: u64 = 0;
@@ -597,7 +597,7 @@ fn benchmarkContextSwitching(target_ops: u64) !u64 {
     
     const taskFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             
             // Yield multiple times to force context switches
             for (0..5) |_| {
@@ -668,8 +668,8 @@ fn benchmarkSelectMultiChannel(target_ops: u64) !u64 {
     
     // Fill channels with some data
     for (0..50) |i| {
-        _ = try channel1.send(@intCast(u32, i));
-        _ = try channel2.send(@intCast(u32, i + 100));
+        _ = try channel1.send(@as(u32, @intCast(i)));
+        _ = try channel2.send(@as(u32, @intCast(i + 100)));
     }
     
     for (0..target_ops) |_| {
@@ -738,7 +738,7 @@ fn benchmarkCpuCoreScaling(target_ops: u64) !u64 {
         
         const taskFn = struct {
             fn run(ctx: ?*anyopaque) void {
-                const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+                const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
                 
                 // CPU-intensive work
                 var sum: u64 = 0;
@@ -844,7 +844,7 @@ fn benchmarkChannelFanout(target_ops: u64) !u64 {
     
     const producerFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const prod_ctx = @ptrCast(*ProducerContext, @alignCast(@alignOf(ProducerContext), ctx.?));
+            const prod_ctx = @as(*ProducerContext, @ptrCast(@alignCast(ctx.?)));
             for (0..prod_ctx.count) |i| {
                 _ = prod_ctx.channel.send(i) catch continue;
             }
@@ -865,7 +865,7 @@ fn benchmarkChannelFanout(target_ops: u64) !u64 {
         
         const consumerFn = struct {
             fn run(ctx: ?*anyopaque) void {
-                const cons_ctx = @ptrCast(*ConsumerContext, @alignCast(@alignOf(ConsumerContext), ctx.?));
+                const cons_ctx = @as(*ConsumerContext, @ptrCast(@alignCast(ctx.?)));
                 while (true) {
                     const value = cons_ctx.channel.receive() catch break;
                     if (value == null) break;
@@ -928,7 +928,7 @@ fn benchmarkProducerConsumer(target_ops: u64) !u64 {
     
     const producerFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             for (0..test_ctx.target) |i| {
                 _ = test_ctx.channel.send(i) catch continue;
                 test_ctx.mutex.lock();
@@ -941,7 +941,7 @@ fn benchmarkProducerConsumer(target_ops: u64) !u64 {
     
     const consumerFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const value = test_ctx.channel.receive() catch break;
                 if (value == null) break;
@@ -1015,7 +1015,7 @@ fn benchmarkWorkerPool(target_ops: u64) !u64 {
         
         const workerFn = struct {
             fn run(ctx: ?*anyopaque) void {
-                const worker_ctx = @ptrCast(*WorkerContext, @alignCast(@alignOf(WorkerContext), ctx.?));
+                const worker_ctx = @as(*WorkerContext, @ptrCast(@alignCast(ctx.?)));
                 while (true) {
                     const job = worker_ctx.job_channel.receive() catch break;
                     if (job == null) break;
@@ -1040,7 +1040,7 @@ fn benchmarkWorkerPool(target_ops: u64) !u64 {
     
     const collectorFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const coll_ctx = @ptrCast(*CollectorContext, @alignCast(@alignOf(CollectorContext), ctx.?));
+            const coll_ctx = @as(*CollectorContext, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const result = coll_ctx.result_channel.receive() catch break;
                 if (result == null) break;
@@ -1131,7 +1131,7 @@ fn benchmarkPipelineProcessing(target_ops: u64) !u64 {
     
     const stage1Fn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const stage_ctx = @ptrCast(*Stage1Context, @alignCast(@alignOf(Stage1Context), ctx.?));
+            const stage_ctx = @as(*Stage2Context, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const value = stage_ctx.input.receive() catch break;
                 if (value == null) break;
@@ -1151,7 +1151,7 @@ fn benchmarkPipelineProcessing(target_ops: u64) !u64 {
     
     const stage2Fn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const stage_ctx = @ptrCast(*Stage2Context, @alignCast(@alignOf(Stage2Context), ctx.?));
+            const stage_ctx = @as(*Stage2Context, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const value = stage_ctx.input.receive() catch break;
                 if (value == null) break;
@@ -1173,7 +1173,7 @@ fn benchmarkPipelineProcessing(target_ops: u64) !u64 {
     
     const outputFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const out_ctx = @ptrCast(*OutputContext, @alignCast(@alignOf(OutputContext), ctx.?));
+            const out_ctx = @as(*OutputContext, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const value = out_ctx.input.receive() catch break;
                 if (value == null) break;
@@ -1212,18 +1212,18 @@ fn benchmarkPipelineProcessing(target_ops: u64) !u64 {
 
 // Benchmark summary and analysis
 fn printBenchmarkSummary() void {
-    print("\n📊 CURSED Concurrency Performance Summary\n");
-    print("=========================================\n\n");
+    print("\n📊 CURSED Concurrency Performance Summary\n", .{});
+    print("=========================================\n\n", .{});
     
     var total_ops: u64 = 0;
     var total_time: u64 = 0;
     var successful_benchmarks: u32 = 0;
     var failed_benchmarks: u32 = 0;
     
-    print("Individual Benchmark Results:\n");
-    print("┌─────────────────────────────────┬──────────────┬──────────┬──────────────┬─────────────┐\n");
-    print("│ Benchmark Name                  │ Operations   │ Duration │ Ops/Second   │ Memory (KB) │\n");
-    print("├─────────────────────────────────┼──────────────┼──────────┼──────────────┼─────────────┤\n");
+    print("Individual Benchmark Results:\n", .{});
+    print("┌─────────────────────────────────┬──────────────┬──────────┬──────────────┬─────────────┐\n", .{});
+    print("│ Benchmark Name                  │ Operations   │ Duration │ Ops/Second   │ Memory (KB) │\n", .{});
+    print("├─────────────────────────────────┼──────────────┼──────────┼──────────────┼─────────────┤\n", .{});
     
     for (benchmark_results.items) |result| {
         if (result.success) {
@@ -1241,17 +1241,17 @@ fn printBenchmarkSummary() void {
         }
     }
     
-    print("└─────────────────────────────────┴──────────────┴──────────┴──────────────┴─────────────┘\n\n");
+    print("└─────────────────────────────────┴──────────────┴──────────┴──────────────┴─────────────┘\n\n", .{});
     
     // Performance analysis
-    print("Performance Analysis:\n");
+    print("Performance Analysis:\n", .{});
     print("• Total successful benchmarks: {}\n", .{successful_benchmarks});
     print("• Total failed benchmarks: {}\n", .{failed_benchmarks});
     print("• Total operations performed: {}\n", .{total_ops});
     print("• Total execution time: {}ms\n", .{total_time});
     
     if (total_time > 0) {
-        const overall_throughput = @intToFloat(f64, total_ops * 1000) / @intToFloat(f64, total_time);
+        const overall_throughput = @as(f64, @floatFromInt(total_ops * 1000)) / @as(f64, @floatFromInt(total_time));
         print("• Overall throughput: {d:.0} ops/second\n", .{overall_throughput});
     }
     
@@ -1280,20 +1280,20 @@ fn printBenchmarkSummary() void {
     }
     
     // System information
-    print("\nSystem Information:\n");
+    print("\nSystem Information:\n", .{});
     print("• CPU cores available: {}\n", .{std.Thread.getCpuCount() catch 1});
-    print("• Page size: {} bytes\n", .{std.mem.page_size});
+    print("• Page size: {} bytes\n", .{4096});
     
     // Performance recommendations
-    print("\nPerformance Recommendations:\n");
+    print("\nPerformance Recommendations:\n", .{});
     if (successful_benchmarks > 0) {
-        print("✅ Concurrency system is functional and performing well\n");
-        print("💡 Consider optimizing the slowest operations for better overall performance\n");
-        print("🔧 Monitor memory usage for large-scale deployments\n");
-        print("📈 Work-stealing scheduler shows good load distribution\n");
+        print("✅ Concurrency system is functional and performing well\n", .{});
+        print("💡 Consider optimizing the slowest operations for better overall performance\n", .{});
+        print("🔧 Monitor memory usage for large-scale deployments\n", .{});
+        print("📈 Work-stealing scheduler shows good load distribution\n", .{});
     } else {
-        print("⚠️  Some benchmarks failed - review implementation for stability\n");
+        print("⚠️  Some benchmarks failed - review implementation for stability\n", .{});
     }
     
-    print("\n🎯 Benchmark suite completed successfully!\n");
+    print("\n🎯 Benchmark suite completed successfully!\n", .{});
 }

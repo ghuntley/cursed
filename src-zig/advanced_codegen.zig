@@ -2,6 +2,13 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 const HashMap = std.HashMap;
+
+const type_system = @import("type_system_runtime.zig");
+const RuntimeTypeInfo = type_system.RuntimeTypeInfo;
+const GCTypeRegistry = type_system.GCTypeRegistry;
+const TypedAllocator = type_system.TypedAllocator;
+const InterfaceRegistry = type_system.InterfaceRegistry;
+const TypeChecker = type_system.TypeChecker;
 const c = @cImport({
     @cInclude("llvm-c/Core.h");
     @cInclude("llvm-c/ExecutionEngine.h");
@@ -28,6 +35,12 @@ pub const AdvancedCodeGen = struct {
     generic_instances: HashMap([]const u8, GenericInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     vtables: HashMap([]const u8, VTableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
+    // Enhanced type system runtime support
+    gc_type_registry: GCTypeRegistry,
+    typed_allocator: TypedAllocator,
+    interface_registry: InterfaceRegistry,
+    type_checker: TypeChecker,
+    
     // Memory management
     gc_enabled: bool,
     heap_allocator: ?c.LLVMValueRef,
@@ -38,12 +51,19 @@ pub const AdvancedCodeGen = struct {
     optimization_passes: ArrayList(OptimizationPass),
     
     pub fn init(allocator: Allocator) AdvancedCodeGen {
+        var gc_registry = GCTypeRegistry.init(allocator);
+        var interface_registry = InterfaceRegistry.init(allocator);
+        
         return AdvancedCodeGen{
             .base_codegen = CodeGen.init(allocator),
             .struct_types = HashMap([]const u8, StructTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .interface_types = HashMap([]const u8, InterfaceTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .generic_instances = HashMap([]const u8, GenericInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .vtables = HashMap([]const u8, VTableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .gc_type_registry = gc_registry,
+            .typed_allocator = TypedAllocator.init(allocator, &gc_registry),
+            .interface_registry = interface_registry,
+            .type_checker = TypeChecker.init(&gc_registry, &interface_registry),
             .gc_enabled = true,
             .heap_allocator = null,
             .gc_mark_func = null,
@@ -58,6 +78,9 @@ pub const AdvancedCodeGen = struct {
         self.interface_types.deinit();
         self.generic_instances.deinit();
         self.vtables.deinit();
+        self.gc_type_registry.deinit();
+        self.typed_allocator.deinit();
+        self.interface_registry.deinit();
         self.optimization_passes.deinit();
     }
 
@@ -275,7 +298,7 @@ pub const AdvancedCodeGen = struct {
             
             // Create LLVM struct type
             const struct_type = c.LLVMStructCreateNamed(self.base_codegen.context, struct_info.name.ptr);
-            c.LLVMStructSetBody(struct_type, struct_info.field_types.ptr, @intCast(struct_info.field_types.len), 0);
+            c.LLVMStructSetBody(struct_type, struct_info.field_types.ptr, @as(u32, @intCast(0));
             
             struct_info.llvm_type = struct_type;
         }
@@ -348,7 +371,7 @@ pub const AdvancedCodeGen = struct {
             ),
             0
         );
-        const vtable_type = c.LLVMArrayType(func_ptr_type, @intCast(method_count));
+        const vtable_type = c.LLVMArrayType(func_ptr_type, @as(u32, @intCast(method_count)));
         
         // Create vtable global variable
         const vtable_global = c.LLVMAddGlobal(self.base_codegen.module, vtable_type, vtable_name.items.ptr);
@@ -369,7 +392,7 @@ pub const AdvancedCodeGen = struct {
         }
         
         // Create constant array initializer
-        const vtable_init = c.LLVMConstArray(func_ptr_type, method_pointers.items.ptr, @intCast(method_pointers.items.len));
+        const vtable_init = c.LLVMConstArray(func_ptr_type, method_pointers.items.ptr, @as(u32, @intCast(method_pointers.items.len)));
         c.LLVMSetInitializer(vtable_global, vtable_init);
         
         // Store vtable info
@@ -442,7 +465,7 @@ pub const AdvancedCodeGen = struct {
                 self.base_codegen.builder,
                 struct_info.llvm_type.?,
                 typed_ptr,
-                @intCast(i),
+                @as(u32, @intCast(i)),
                 "field_ptr"
             );
             _ = c.LLVMBuildStore(self.base_codegen.builder, value, field_ptr);
@@ -462,7 +485,7 @@ pub const AdvancedCodeGen = struct {
         var found = false;
         for (struct_info.field_names, 0..) |name, i| {
             if (std.mem.eql(u8, name, field_name)) {
-                field_index = @intCast(i);
+                field_index = @as(u32, @intCast(i));
                 found = true;
                 break;
             }
@@ -541,7 +564,7 @@ pub const AdvancedCodeGen = struct {
             func_type,
             method_func,
             args.ptr,
-            @intCast(args.len),
+            @as(u32, @intCast(args.len)),
             "method_call"
         );
     }

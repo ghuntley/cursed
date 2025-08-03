@@ -1,6 +1,14 @@
-sus x normie = 5
-sus y normie = 10
-sus result normie = x + y
-sus msg tea = "Result is:"
-vibez.spill(msg)
-vibez.spill(result)
+vibe complex_test;
+
+yeet "vibez";
+
+squad Person {
+    name tea,
+    age normie,
+}
+
+slay main() {
+    sus p Person = Person{name: "Alice", age: 25};
+    vibez.spill("Name: " + p.name);
+    vibez.spill("Age: " + p.age);
+}

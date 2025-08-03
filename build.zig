@@ -3,14 +3,21 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    
+    // Force x86_64 target to avoid unknown CPU issues
+    const resolved_target = b.resolveTargetQuery(.{
+        .cpu_arch = .x86_64,
+        .os_tag = .linux,
+    });
 
     // Create the CURSED compiler executable
     const exe = b.addExecutable(.{
         .name = "cursed-zig",
         .root_source_file = b.path("src-zig/main_simple.zig"),
-        .target = target,
+        .target = resolved_target,
         .optimize = optimize,
     });
+
 
     // Link LLVM using llvm-config
     exe.linkLibC();
@@ -36,8 +43,8 @@ pub fn build(b: *std.Build) void {
 
     // Create test suite
     const unit_tests = b.addTest(.{
-        .root_source_file = b.path("src-zig/main_simple.zig"),
-        .target = target,
+        .root_source_file = b.path("src-zig/main_complete.zig"),
+        .target = resolved_target,
         .optimize = optimize,
     });
 
