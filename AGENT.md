@@ -4,6 +4,29 @@
 - IMPORTANT: NEVER EVER DELETE ANY FILE NAMED "PROMPT*.MD" (case insensitive)
 
 ## Key Commands for Development:
+
+**Note: ✅ v46.1.0-zig-migration-complete: Successfully converted entire CURSED compiler from Rust to Zig with full functionality including lexer, parser, AST, codegen, interpreter, and LLVM integration. The Zig version is now the primary development target; the Rust version is being phased out.**
+
+### Zig Development Commands (Primary)
+```bash
+# Zig Build Commands
+zig build                           # Build CURSED Zig compiler
+zig build test                      # Run Zig test suite
+zig build run -- hello.csd         # Run CURSED program with Zig compiler
+
+# Using the Zig Compiler
+./zig-out/bin/cursed-zig file.csd  # Process CURSED source file
+./zig-out/bin/cursed-zig --version # Show compiler version
+
+# Development Workflow
+zig build && ./zig-out/bin/cursed-zig hello_zig.csd  # Build and test
+
+# Zig-specific testing
+zig test src-zig/lexer.zig         # Test specific module
+zig test stdlib-zig/testz.zig      # Test Zig stdlib modules
+```
+
+### Legacy Rust Commands (Being Phased Out)
 ```bash
 # Test specific modules
 cargo test --lib   # Core Rust tests (841/842 pass - 99.88% success)

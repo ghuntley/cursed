@@ -339,24 +339,22 @@ pub const Lexer = struct {
                     return self.identifier(start_line, start_column);
                 }
                 
-                // Handle "fr fr" comment
-                if (c == 'f' and self.position < self.input.len and self.input[self.position] == 'r') {
-                    if (self.position + 1 < self.input.len and self.input[self.position + 1] == ' ') {
-                        if (self.position + 2 < self.input.len and self.input[self.position + 2] == 'f') {
-                            if (self.position + 3 < self.input.len and self.input[self.position + 3] == 'r') {
-                                // This is a "fr fr" comment
-                                self.position += 4; // Skip "r fr"
-                                self.column += 4;
-                                while (self.peek() != '\n' and !self.isAtEnd()) {
-                                    _ = self.advance();
-                                }
-                                return self.makeToken(.LineComment, start_line, start_column);
-                            }
+                // Handle "fr fr" comment - SECURITY FIX: Safe bounds checking
+                if (c == 'f' and self.safePeekAhead(1) == 'r') {
+                    if (self.safePeekAhead(2) == ' ' and self.safePeekAhead(3) == 'f' and self.safePeekAhead(4) == 'r') {
+                        // This is a "fr fr" comment
+                        self.position += 4; // Skip "r fr"
+                        self.column += 4;
+                        while (self.peek() != '\n' and !self.isAtEnd()) {
+                            _ = self.advance();
                         }
+                        return self.makeToken(.LineComment, start_line, start_column);
                     }
-                    // Not a comment, back up and handle as identifier
-                    self.position -= 1;
-                    self.column -= 1;
+                    // Not a comment, back up and handle as identifier  
+                    if (self.position > 0) {
+                        self.position -= 1;
+                        if (self.column > 0) self.column -= 1;
+                    }
                     return self.identifier(start_line, start_column);
                 }
 
@@ -385,6 +383,12 @@ pub const Lexer = struct {
     fn peekNext(self: *Lexer) u8 {
         if (self.position + 1 >= self.input.len) return 0;
         return self.input[self.position + 1];
+    }
+    
+    // SECURITY FIX: Safe peek ahead function with bounds checking
+    fn safePeekAhead(self: *Lexer, offset: usize) u8 {
+        if (self.position + offset >= self.input.len) return 0;
+        return self.input[self.position + offset];
     }
 
     fn match(self: *Lexer, expected: u8) bool {

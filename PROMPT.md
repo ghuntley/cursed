@@ -4,7 +4,7 @@
 
 0c. study fix_plan.md.
 
-1. Your task is to convert the compiler from rust to zig and produce an compiled application in the cursed language for that functionality using parrallel subagents. Follow the fix_plan.md and choose the most important 5 things. Before making changes search codebase (don't assume not implemented) using subagents. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of zig.
+1. Your task is to convert the compiler from rust to zig and produce an compiled application in the cursed language for that functionality using parrallel subagents. Follow the fix_plan.md and choose the most important 10 things. Before making changes search codebase (don't assume not implemented) using subagents. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of zig.
 
 2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think hard.
 
@@ -30,9 +30,6 @@
 99999999999999. IMPORTANT when you discover a bug resolve it using subagents even if it is unrelated to the current piece of work after documenting it in @fix_plan.md
 
 
-9999999999999999. When you start implementing the standard library (stdlib) in the cursed language, start with the testing primitives so that future standard library in the cursed language can be tested.
-
-
 99999999999999999. The tests for the cursed standard library "stdlib" should be located in the folder of the stdlib library next to the source code. Ensure you document the stdlib library with a README.md in the same folder as the source code.
 
 
@@ -56,4 +53,4 @@
 9999999999999999999999999999999. SUPER IMPORTANT DO NOT IGNORE. DO NOT PLACE STATUS REPORT UPDATES INTO @AGENT.md
 
 
-99999999999. DO NOT COMPLETE RUST IMPLEMENTATION DO DIRECTLY TO DOING ZIG IMPLEMENTATION
+99999999999. DO NOT COMPLETE RUST IMPLEMENTATION DO DIRECTLY TO DOING ZIG IMPLEMENTATION. ALWAYS CHECK THE ZIG IMPLEMENTATION TO THE SPECS AND RUST IMPLEMENTATION. DO NOT MAKE ASSUMPTIONS. CHOOSE TOP 10 ITEMS TO RESOLVE.

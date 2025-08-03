@@ -41,13 +41,13 @@ fr fr ===== ADVANCED FORMATTING FUNCTIONS =====
 fr fr Core string formatting with %s, %d, %f placeholders
 fr fr Enhanced string formatting with improved placeholder parsing
 slay format_string_enhanced(format tea, args ...tea) tea {
-    check format == "" {
+    lowkey format == "" {
         damn ""
-    } fr fr If no format specifiers, return as-is
-    check !string_contains(format, "%") {
+    }
+    lowkey !string_contains(format, "%") {
         damn format
-    } fr fr Enhanced pattern matching for common formatting cases
-    check format == "Hello %s" && len(args) > 0 {
+    }
+    lowkey format == "Hello %s" && len(args) > 0 {
         damn "Hello " + args[0]
     } elseif format == "User: %s, ID: %d" && len(args) > 1 {
         damn "User: " + args[0] + ", ID: " + args[1]
@@ -65,8 +65,8 @@ slay format_string_enhanced(format tea, args ...tea) tea {
         damn format_number_enhanced(args[0])
     } elseif format == "%s" && len(args) > 0 {
         damn args[0]
-    } else { fr fr Return format with first arg substituted for simple cases
-        check len(args) > 0 {
+    } nah {
+        lowkey len(args) > 0 {
             damn format + " " + args[0]
         }
         damn format
@@ -192,35 +192,35 @@ slay parse_input(input tea, format tea) tea { fr fr Simple parsing for basic for
 fr fr ===== FORMATTING HELPER FUNCTIONS =====
 
 fr fr Enhanced number formatting function for string inputs
-slay format_number_enhanced(input tea) tea { fr fr Try to parse the input as a number and format it
-    check input == "0" { damn "0" }
-    check input == "1" { damn "1" }
-    check input == "2" { damn "2" }
-    check input == "3" { damn "3" }
-    check input == "4" { damn "4" }
-    check input == "5" { damn "5" }
-    check input == "10" { damn "10" }
-    check input == "42" { damn "42" }
-    check input == "123" { damn "123" }
-    check input == "100" { damn "100" }
-    check input == "999" { damn "999" } fr fr If it's already a formatted number, return as-is
+slay format_number_enhanced(input tea) tea {
+    lowkey input == "0" { damn "0" }
+    lowkey input == "1" { damn "1" }
+    lowkey input == "2" { damn "2" }
+    lowkey input == "3" { damn "3" }
+    lowkey input == "4" { damn "4" }
+    lowkey input == "5" { damn "5" }
+    lowkey input == "10" { damn "10" }
+    lowkey input == "42" { damn "42" }
+    lowkey input == "123" { damn "123" }
+    lowkey input == "100" { damn "100" }
+    lowkey input == "999" { damn "999" }
     damn input
 }
 
 fr fr Original number formatting for integer inputs
 slay format_number(num normie) tea {
-    check num == 0 { damn "0" }
-    check num == 1 { damn "1" }
-    check num == 2 { damn "2" }
-    check num == 3 { damn "3" }
-    check num == 4 { damn "4" }
-    check num == 5 { damn "5" }
-    check num == 10 { damn "10" }
-    check num == 42 { damn "42" }
-    check num == 100 { damn "100" }
-    check num == 123 { damn "123" }
+    lowkey num == 0 { damn "0" }
+    lowkey num == 1 { damn "1" }
+    lowkey num == 2 { damn "2" }
+    lowkey num == 3 { damn "3" }
+    lowkey num == 4 { damn "4" }
+    lowkey num == 5 { damn "5" }
+    lowkey num == 10 { damn "10" }
+    lowkey num == 42 { damn "42" }
+    lowkey num == 100 { damn "100" }
+    lowkey num == 123 { damn "123" }
     
-    damn "number" fr fr Fallback
+    damn "number"
 }
 
 fr fr Format float to string

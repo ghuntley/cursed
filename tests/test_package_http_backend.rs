@@ -61,7 +61,7 @@ mod tests {
             license: Some("MIT".to_string()),
             homepage: Some("https://example.com/test-lib".to_string()),
             repository: Some("https://github.com/example/test-lib".to_string()),
-            download_url: format!("http://localhost:{}/packages/test-lib-1.0.0.tar.gz", port),
+            download_url: format!("https://localhost:{}/packages/test-lib-1.0.0.tar.gz", port),
             checksum: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".to_string(),
             file_size: 1024,
         };

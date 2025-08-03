@@ -3,6 +3,103 @@ const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
 // Forward declarations
+pub const Expression = union(enum) {
+    Identifier: []const u8,
+    Variable: []const u8,
+    Integer: i64,
+    Float: f64,
+    String: []const u8,
+    Boolean: bool,
+    Character: u8,
+    Binary: *BinaryExpression,
+    Call: *CallExpression,
+    MemberAccess: *MemberAccessExpression,
+    Literal: Literal,
+    Unary: *UnaryExpression,
+    Array: ArrayList(Expression),
+    Map: ArrayList(MapEntry),
+    CompositeLiteral: CompositeLiteralExpression,
+    ChannelSend: ChannelSendExpression,
+    ChannelReceive: ChannelReceiveExpression,
+    ChannelCreation: ChannelCreationExpression,
+    StructLiteral: StructLiteralExpression,
+    Lambda: LambdaExpression,
+    Tuple: TupleExpression,
+    TupleAccess: TupleAccessExpression,
+    ArrayAccess: ArrayAccessExpression,
+    SliceAccess: SliceAccessExpression,
+    TypeAssertion: TypeAssertionExpression,
+    Increment: IncrementExpression,
+    Decrement: DecrementExpression,
+    Shook: ShookExpression,
+    ErrorValue: ErrorValueExpression,
+    StructuredError: StructuredErrorExpression,
+    Panic: PanicExpression,
+    Recover: RecoverExpression,
+    TestResult: TestResultExpression,
+    TestResultCheck: TestResultCheckExpression,
+    RangeFor: RangeForExpression,
+    Match: MatchExpression,
+    TypeSwitch: TypeSwitchExpression,
+
+    pub fn deinit(self: *Expression, allocator: Allocator) void {
+        switch (self.*) {
+            .Array => |*arr| {
+                for (arr.items) |*expr| {
+                    expr.deinit(allocator);
+                }
+                arr.deinit();
+            },
+            .Map => |*map| {
+                for (map.items) |*entry| {
+                    entry.key.deinit(allocator);
+                    entry.value.deinit(allocator);
+                }
+                map.deinit();
+            },
+            .Binary => |*bin| {
+                bin.*.deinit(allocator);
+                allocator.destroy(bin.*);
+            },
+            .Call => |*call| {
+                call.*.deinit(allocator);
+                allocator.destroy(call.*);
+            },
+            else => {},
+        }
+    }
+
+    pub fn print(self: Expression, indent: usize) !void {
+        const print_fn = std.debug.print;
+        _ = indent;
+        
+        switch (self) {
+            .Identifier => |id| print_fn("{s}", .{id}),
+            .Variable => |var_name| print_fn("{s}", .{var_name}),
+            .Integer => |int| print_fn("{}", .{int}),
+            .Float => |float| print_fn("{d}", .{float}),
+            .String => |str| print_fn("\"{s}\"", .{str}),
+            .Boolean => |bool_val| print_fn("{}", .{bool_val}),
+            .Character => |char| print_fn("'{c}'", .{char}),
+            .Binary => |bin| {
+                try bin.left.print(0);
+                print_fn(" {s} ", .{bin.operator});
+                try bin.right.print(0);
+            },
+            .Call => |call| {
+                try call.function.print(0);
+                print_fn("(", .{});
+                for (call.arguments.items, 0..) |arg, i| {
+                    if (i > 0) print_fn(", ", .{});
+                    try arg.print(0);
+                }
+                print_fn(")", .{});
+            },
+            else => print_fn("{s}", .{@tagName(self)}),
+        }
+    }
+};
+
 pub const Program = struct {
     statements: ArrayList(Statement),
     imports: ArrayList(ImportStatement),
@@ -308,97 +405,6 @@ pub const Statement = union(enum) {
             else => {
                 print_fn("{s}Statement: {s}\n", .{ spaces[0..indent], @tagName(self) });
             },
-        }
-    }
-};
-
-pub const Expression = union(enum) {
-    Identifier: []const u8,
-    Variable: []const u8,
-    Integer: i64,
-    Float: f64,
-    String: []const u8,
-    Boolean: bool,
-    Character: u8,
-    Binary: BinaryExpression,
-    Call: CallExpression,
-    MemberAccess: MemberAccessExpression,
-    Literal: Literal,
-    Unary: UnaryExpression,
-    Array: ArrayList(Expression),
-    Map: ArrayList(MapEntry),
-    CompositeLiteral: CompositeLiteralExpression,
-    ChannelSend: ChannelSendExpression,
-    ChannelReceive: ChannelReceiveExpression,
-    ChannelCreation: ChannelCreationExpression,
-    StructLiteral: StructLiteralExpression,
-    Lambda: LambdaExpression,
-    Tuple: TupleExpression,
-    TupleAccess: TupleAccessExpression,
-    ArrayAccess: ArrayAccessExpression,
-    SliceAccess: SliceAccessExpression,
-    TypeAssertion: TypeAssertionExpression,
-    Increment: IncrementExpression,
-    Decrement: DecrementExpression,
-    Shook: ShookExpression,
-    ErrorValue: ErrorValueExpression,
-    StructuredError: StructuredErrorExpression,
-    Panic: PanicExpression,
-    Recover: RecoverExpression,
-    TestResult: TestResultExpression,
-    TestResultCheck: TestResultCheckExpression,
-    RangeFor: RangeForExpression,
-    Match: MatchExpression,
-    TypeSwitch: TypeSwitchExpression,
-
-    pub fn deinit(self: *Expression, allocator: Allocator) void {
-        switch (self.*) {
-            .Array => |*arr| {
-                for (arr.items) |*expr| {
-                    expr.deinit(allocator);
-                }
-                arr.deinit();
-            },
-            .Map => |*map| {
-                for (map.items) |*entry| {
-                    entry.key.deinit(allocator);
-                    entry.value.deinit(allocator);
-                }
-                map.deinit();
-            },
-            .Binary => |*bin| bin.deinit(allocator),
-            .Call => |*call| call.deinit(allocator),
-            else => {},
-        }
-    }
-
-    pub fn print(self: Expression, indent: usize) !void {
-        const print_fn = std.debug.print;
-        _ = indent;
-        
-        switch (self) {
-            .Identifier => |id| print_fn("{s}", .{id}),
-            .Variable => |var_name| print_fn("{s}", .{var_name}),
-            .Integer => |int| print_fn("{}", .{int}),
-            .Float => |float| print_fn("{d}", .{float}),
-            .String => |str| print_fn("\"{s}\"", .{str}),
-            .Boolean => |bool_val| print_fn("{}", .{bool_val}),
-            .Character => |char| print_fn("'{c}'", .{char}),
-            .Binary => |bin| {
-                try bin.left.print(0);
-                print_fn(" {s} ", .{bin.operator});
-                try bin.right.print(0);
-            },
-            .Call => |call| {
-                try call.function.print(0);
-                print_fn("(", .{});
-                for (call.arguments.items, 0..) |arg, i| {
-                    if (i > 0) print_fn(", ", .{});
-                    try arg.print(0);
-                }
-                print_fn(")", .{});
-            },
-            else => print_fn("{s}", .{@tagName(self)}),
         }
     }
 };

@@ -329,11 +329,25 @@ slay gc_is_valid_object(gc *GarbageCollector, object *GCObject) lit {
     damn cap
 }
 
-// Mark stack operations
+// Mark stack operations - SECURITY FIX: Prevent stack overflow vulnerability
 slay gc_push_mark_stack(gc *GarbageCollector, object *GCObject) {
     if gc.mark_stack_top >= GC_MARK_STACK_SIZE {
-        vibez.spill("Mark stack overflow!")
-        damn
+        vibez.spill("CRITICAL ERROR: Mark stack overflow prevented - expanding stack")
+        // SECURITY FIX: Expand mark stack instead of allowing overflow
+        sus new_size drip = GC_MARK_STACK_SIZE * 2
+        sus new_stack tea = memory.heap_allocate(new_size * 8) // 8 bytes per pointer
+        
+        // Copy existing stack entries  
+        sus i drip = 0
+        while i < gc.mark_stack_top {
+            new_stack[i] = gc.mark_stack[i]
+            i++
+        }
+        
+        // Replace old stack with expanded one
+        memory.heap_free(gc.mark_stack)
+        gc.mark_stack = new_stack
+        GC_MARK_STACK_SIZE = new_size
     }
     
     gc.mark_stack[gc.mark_stack_top] = object
