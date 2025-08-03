@@ -1,0 +1,258 @@
+CURSED Performance Test Results
+Date: Sun Aug  3 08:03:22 PM UTC 2025
+System: Linux overalls 6.12.39 #1-NixOS SMP PREEMPT_DYNAMIC Thu Jul 17 16:37:24 UTC 2025 x86_64 GNU/Linux
+================================
+=== Fibonacci Recursion (Interpretation) ===
+Interpretation timing:
+"Fibonacci(25):", result
+error(gpa): memory address 0x7f89a5ac0000 leaked: 
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:474:67: 0x112313e in ensureTotalCapacityPrecise (cursed-zig)
+                const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+                                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:450:51: 0x111b38d in ensureTotalCapacity (cursed-zig)
+            return self.ensureTotalCapacityPrecise(better_capacity);
+                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:500:41: 0x11117ec in addOne (cursed-zig)
+            try self.ensureTotalCapacity(newlen);
+                                        ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:261:49: 0x10fefc7 in append (cursed-zig)
+            const new_item_ptr = try self.addOne();
+                                                ^
+/home/ghuntley/code/cursed/src-zig/lexer.zig:221:34: 0x10fee85 in tokenize (cursed-zig)
+                try tokens.append(token);
+                                 ^
+/home/ghuntley/code/cursed/src-zig/main_unified.zig:77:30: 0x1106ab6 in main (cursed-zig)
+    const tokens = l.tokenize() catch |err| {
+                             ^
+
+
+real	0m0.084s
+user	0m0.073s
+sys	0m0.011s
+
+=== Fibonacci Recursion (Compilation) ===
+Compilation timing:
+❌ Error reading file --compile: error.FileNotFound
+
+real	0m0.006s
+user	0m0.001s
+sys	0m0.004s
+ERROR: Compilation failed to produce binary
+
+=== Heavy Computation (Interpretation) ===
+Interpretation timing:
+"Computation result:", total
+error(gpa): memory address 0x7f8726dc0000 leaked: 
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:474:67: 0x112313e in ensureTotalCapacityPrecise (cursed-zig)
+                const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+                                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:450:51: 0x111b38d in ensureTotalCapacity (cursed-zig)
+            return self.ensureTotalCapacityPrecise(better_capacity);
+                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:500:41: 0x11117ec in addOne (cursed-zig)
+            try self.ensureTotalCapacity(newlen);
+                                        ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:261:49: 0x10fefc7 in append (cursed-zig)
+            const new_item_ptr = try self.addOne();
+                                                ^
+/home/ghuntley/code/cursed/src-zig/lexer.zig:221:34: 0x10fee85 in tokenize (cursed-zig)
+                try tokens.append(token);
+                                 ^
+/home/ghuntley/code/cursed/src-zig/main_unified.zig:77:30: 0x1106ab6 in main (cursed-zig)
+    const tokens = l.tokenize() catch |err| {
+                             ^
+
+
+real	0m0.082s
+user	0m0.070s
+sys	0m0.012s
+
+=== Heavy Computation (Compilation) ===
+Compilation timing:
+❌ Error reading file --compile: error.FileNotFound
+
+real	0m0.008s
+user	0m0.004s
+sys	0m0.003s
+ERROR: Compilation failed to produce binary
+
+=== Function Call Overhead (Interpretation) ===
+Interpretation timing:
+"Function call test result:", total
+error(gpa): memory address 0x7f3fb85c0000 leaked: 
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:474:67: 0x112313e in ensureTotalCapacityPrecise (cursed-zig)
+                const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+                                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:450:51: 0x111b38d in ensureTotalCapacity (cursed-zig)
+            return self.ensureTotalCapacityPrecise(better_capacity);
+                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:500:41: 0x11117ec in addOne (cursed-zig)
+            try self.ensureTotalCapacity(newlen);
+                                        ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:261:49: 0x10fefc7 in append (cursed-zig)
+            const new_item_ptr = try self.addOne();
+                                                ^
+/home/ghuntley/code/cursed/src-zig/lexer.zig:221:34: 0x10fee85 in tokenize (cursed-zig)
+                try tokens.append(token);
+                                 ^
+/home/ghuntley/code/cursed/src-zig/main_unified.zig:77:30: 0x1106ab6 in main (cursed-zig)
+    const tokens = l.tokenize() catch |err| {
+                             ^
+
+
+real	0m0.089s
+user	0m0.077s
+sys	0m0.013s
+
+=== Function Call Overhead (Compilation) ===
+Compilation timing:
+❌ Error reading file --compile: error.FileNotFound
+
+real	0m0.005s
+user	0m0.000s
+sys	0m0.005s
+ERROR: Compilation failed to produce binary
+
+=== Struct Access (Interpretation) ===
+Interpretation timing:
+"Struct access test result:", total
+error(gpa): memory address 0x7fc8c4700000 leaked: 
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:474:67: 0x112313e in ensureTotalCapacityPrecise (cursed-zig)
+                const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+                                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:450:51: 0x111b38d in ensureTotalCapacity (cursed-zig)
+            return self.ensureTotalCapacityPrecise(better_capacity);
+                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:500:41: 0x11117ec in addOne (cursed-zig)
+            try self.ensureTotalCapacity(newlen);
+                                        ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:261:49: 0x10fefc7 in append (cursed-zig)
+            const new_item_ptr = try self.addOne();
+                                                ^
+/home/ghuntley/code/cursed/src-zig/lexer.zig:221:34: 0x10fee85 in tokenize (cursed-zig)
+                try tokens.append(token);
+                                 ^
+/home/ghuntley/code/cursed/src-zig/main_unified.zig:77:30: 0x1106ab6 in main (cursed-zig)
+    const tokens = l.tokenize() catch |err| {
+                             ^
+
+
+real	0m0.082s
+user	0m0.067s
+sys	0m0.011s
+
+=== Struct Access (Compilation) ===
+Compilation timing:
+❌ Error reading file --compile: error.FileNotFound
+
+real	0m0.005s
+user	0m0.001s
+sys	0m0.005s
+ERROR: Compilation failed to produce binary
+
+=== Memory Test: memory_stress ===
+Running valgrind memory analysis...
+==667235== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+Running heap usage analysis...
+--------------------------------------------------------------------------------
+Command:            .././zig-out/bin/cursed-zig memory_stress_test.csd
+Massif arguments:   --massif-out-file=massif_memory_stress.out
+ms_print arguments: massif_memory_stress.out
+--------------------------------------------------------------------------------
+
+
+     B
+    1^                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+
+=== Memory Test: fibonacci ===
+Running valgrind memory analysis...
+==667322== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+Running heap usage analysis...
+--------------------------------------------------------------------------------
+Command:            .././zig-out/bin/cursed-zig fibonacci_test.csd
+Massif arguments:   --massif-out-file=massif_fibonacci.out
+ms_print arguments: massif_fibonacci.out
+--------------------------------------------------------------------------------
+
+
+     B
+    1^                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+
+=== Memory Test: computation ===
+Running valgrind memory analysis...
+==667331== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+Running heap usage analysis...
+--------------------------------------------------------------------------------
+Command:            .././zig-out/bin/cursed-zig computation_test.csd
+Massif arguments:   --massif-out-file=massif_computation.out
+ms_print arguments: massif_computation.out
+--------------------------------------------------------------------------------
+
+
+     B
+    1^                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+     |                                                                        
+
+=== Concurrency Stress Test ===
+Running concurrency test...
+Worker", id, "completed
+All workers started
+error(gpa): memory address 0x7ff7f1f80000 leaked: 
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:474:67: 0x112313e in ensureTotalCapacityPrecise (cursed-zig)
+                const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+                                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:450:51: 0x111b38d in ensureTotalCapacity (cursed-zig)
+            return self.ensureTotalCapacityPrecise(better_capacity);
+                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:500:41: 0x11117ec in addOne (cursed-zig)
+            try self.ensureTotalCapacity(newlen);
+                                        ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:261:49: 0x10fefc7 in append (cursed-zig)
+            const new_item_ptr = try self.addOne();
+                                                ^
+/home/ghuntley/code/cursed/src-zig/lexer.zig:221:34: 0x10fee85 in tokenize (cursed-zig)
+                try tokens.append(token);
+                                 ^
+/home/ghuntley/code/cursed/src-zig/main_unified.zig:77:30: 0x1106ab6 in main (cursed-zig)
+    const tokens = l.tokenize() catch |err| {
+                             ^
+
+
+real	0m0.082s
+user	0m0.069s
+sys	0m0.011s
+
+
+=== Performance Comparison Summary ===

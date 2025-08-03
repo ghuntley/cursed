@@ -1,0 +1,35 @@
+==667532== Memcheck, a memory error detector
+==667532== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==667532== Using Valgrind-3.24.0 and LibVEX; rerun with -h for copyright info
+==667532== Command: .././zig-out/bin/cursed-zig memory_test.csd
+==667532== 
+Memory stress test completed
+error(gpa): memory address 0x4b40000 leaked: 
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:474:67: 0x112313e in ensureTotalCapacityPrecise (cursed-zig)
+                const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+                                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:450:51: 0x111b38d in ensureTotalCapacity (cursed-zig)
+            return self.ensureTotalCapacityPrecise(better_capacity);
+                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:500:41: 0x11117ec in addOne (cursed-zig)
+            try self.ensureTotalCapacity(newlen);
+                                        ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:261:49: 0x10fefc7 in append (cursed-zig)
+            const new_item_ptr = try self.addOne();
+                                                ^
+/home/ghuntley/code/cursed/src-zig/lexer.zig:221:34: 0x10fee85 in tokenize (cursed-zig)
+                try tokens.append(token);
+                                 ^
+/home/ghuntley/code/cursed/src-zig/main_unified.zig:77:30: 0x1106ab6 in main (cursed-zig)
+    const tokens = l.tokenize() catch |err| {
+                             ^
+
+==667532== 
+==667532== HEAP SUMMARY:
+==667532==     in use at exit: 0 bytes in 0 blocks
+==667532==   total heap usage: 0 allocs, 0 frees, 0 bytes allocated
+==667532== 
+==667532== All heap blocks were freed -- no leaks are possible
+==667532== 
+==667532== For lists of detected and suppressed errors, rerun with: -s
+==667532== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -7,6 +7,9 @@ const c = @cImport({
     @cInclude("llvm-c/Target.h");
     @cInclude("llvm-c/Analysis.h");
     @cInclude("llvm-c/BitWriter.h");
+    @cInclude("llvm-c/Transforms/PassManagerBuilder.h");
+    @cInclude("llvm-c/Transforms/IPO.h");
+    @cInclude("llvm-c/Transforms/Scalar.h");
 });
 
 const ast = @import("ast_simple.zig");
@@ -35,6 +38,28 @@ pub const InterfaceMethod = struct {
     function_type: c.LLVMTypeRef,
 };
 
+pub const GoroutineInfo = struct {
+    function: c.LLVMValueRef,
+    stack_size: u32,
+    id: u32,
+};
+
+pub const ChannelInfo = struct {
+    element_type: c.LLVMTypeRef,
+    channel_type: c.LLVMTypeRef,
+    buffer_size: u32,
+};
+
+pub const LoopContext = struct {
+    continue_block: c.LLVMBasicBlockRef,
+    break_block: c.LLVMBasicBlockRef,
+};
+
+pub const DeferInfo = struct {
+    cleanup_function: c.LLVMValueRef,
+    cleanup_block: c.LLVMBasicBlockRef,
+};
+
 pub const CodeGen = struct {
     allocator: Allocator,
     context: c.LLVMContextRef,
@@ -47,8 +72,18 @@ pub const CodeGen = struct {
     struct_types: std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     interface_types: std.HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
-    // Current function context
+    // CURSED-specific runtime support
+    goroutines: std.HashMap(u32, GoroutineInfo, std.hash_map.AutoContext, std.hash_map.default_max_load_percentage),
+    channels: std.HashMap([]const u8, ChannelInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    loop_stack: ArrayList(LoopContext),
+    defer_stack: ArrayList(DeferInfo),
+    
+    // Current execution context
     current_function: ?c.LLVMValueRef,
+    goroutine_counter: u32,
+    
+    // Runtime function declarations
+    runtime_functions: std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
 
     pub fn init(allocator: Allocator) CodeGen {
         _ = c.LLVMInitializeNativeTarget();
@@ -68,7 +103,13 @@ pub const CodeGen = struct {
             .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .struct_types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .interface_types = std.HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .goroutines = std.HashMap(u32, GoroutineInfo, std.hash_map.AutoContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .channels = std.HashMap([]const u8, ChannelInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .loop_stack = ArrayList(LoopContext).init(allocator),
+            .defer_stack = ArrayList(DeferInfo).init(allocator),
             .current_function = null,
+            .goroutine_counter = 0,
+            .runtime_functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
     }
 
@@ -83,6 +124,13 @@ pub const CodeGen = struct {
             entry.value_ptr.methods.deinit();
         }
         self.interface_types.deinit();
+        
+        // Clean up CURSED runtime structures
+        self.goroutines.deinit();
+        self.channels.deinit();
+        self.loop_stack.deinit();
+        self.defer_stack.deinit();
+        self.runtime_functions.deinit();
         
         c.LLVMDisposeBuilder(self.builder);
         c.LLVMDisposeModule(self.module);
@@ -199,6 +247,30 @@ pub const CodeGen = struct {
             .Assignment => {
                 const assign_stmt: *ast.AssignmentStatement = @ptrCast(@alignCast(stmt.data));
                 try self.generateAssignment(assign_stmt.*);
+            },
+            .Stan => {
+                const stan_stmt: *ast.StanStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateStan(stan_stmt.*);
+            },
+            .Select => {
+                const select_stmt: *ast.SelectStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateSelect(select_stmt.*);
+            },
+            .Defer => {
+                const defer_stmt: *ast.DeferStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateDefer(defer_stmt.*);
+            },
+            .Bestie => {
+                const bestie_stmt: *ast.BestieStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateBestie(bestie_stmt.*);
+            },
+            .Vibes => {
+                const vibes_stmt: *ast.VibesStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateVibes(vibes_stmt.*);
+            },
+            .Match => {
+                const match_stmt: *ast.MatchStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateMatchStatement(match_stmt.*);
             },
             else => {
                 std.debug.print("Unimplemented statement type in codegen: {}\n", .{stmt.tag});
@@ -381,6 +453,24 @@ pub const CodeGen = struct {
             },
             .Match => |match| {
                 return try self.generateMatch(match);
+            },
+            .ChannelSend => |send| {
+                return try self.generateChannelSend(send);
+            },
+            .ChannelReceive => |recv| {
+                return try self.generateChannelReceive(recv);
+            },
+            .ChannelCreation => |create| {
+                return try self.generateChannelCreation(create);
+            },
+            .InterfaceCall => |interface_call| {
+                return try self.generateInterfaceCall(interface_call);
+            },
+            .Goroutine => |goroutine| {
+                return try self.generateGoroutineExpression(goroutine);
+            },
+            .Range => |range| {
+                return try self.generateRange(range);
             },
             else => {
                 std.debug.print("Unimplemented expression type in codegen: {}\n", .{expr});
@@ -645,21 +735,7 @@ pub const CodeGen = struct {
         }
     }
 
-    fn optimizeModule(self: *CodeGen) CodeGenError!void {
-        // Create pass manager
-        const pass_manager = c.LLVMCreatePassManager();
-        defer c.LLVMDisposePassManager(pass_manager);
-        
-        // Add basic optimization passes
-        c.LLVMAddInstructionCombiningPass(pass_manager);
-        c.LLVMAddReassociatePass(pass_manager);
-        c.LLVMAddGVNPass(pass_manager);
-        c.LLVMAddCFGSimplificationPass(pass_manager);
-        c.LLVMAddPromoteMemoryToRegisterPass(pass_manager);
-        
-        // Run optimization passes
-        _ = c.LLVMRunPassManager(pass_manager, self.module);
-    }
+
 
     pub fn writeExecutable(self: *CodeGen, output_path: []const u8) CodeGenError!void {
         // Write LLVM IR to file for debugging
@@ -1295,6 +1371,722 @@ pub const CodeGen = struct {
                 c.LLVMSetInitializer(vtable_global, vtable_init);
             }
         }
+    }
+
+    // ===== CURSED LANGUAGE FEATURE IMPLEMENTATIONS =====
+
+    /// Generate runtime function declarations for CURSED
+    fn generateRuntimeDeclarations(self: *CodeGen) CodeGenError!void {
+        // Goroutine runtime functions
+        try self.declareRuntimeFunction("cursed_spawn_goroutine", &[_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMFunctionType(c.LLVMVoidTypeInContext(self.context), null, 0, 0), 0), // function pointer
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // context data
+            c.LLVMInt32TypeInContext(self.context), // stack size
+        }, c.LLVMInt32TypeInContext(self.context)); // returns goroutine ID
+
+        // Channel runtime functions
+        try self.declareRuntimeFunction("cursed_channel_create", &[_]c.LLVMTypeRef{
+            c.LLVMInt32TypeInContext(self.context), // element size
+            c.LLVMInt32TypeInContext(self.context), // buffer size
+        }, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)); // returns channel pointer
+
+        try self.declareRuntimeFunction("cursed_channel_send", &[_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // channel
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // data
+        }, c.LLVMInt1TypeInContext(self.context)); // returns success
+
+        try self.declareRuntimeFunction("cursed_channel_receive", &[_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // channel
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // output buffer
+        }, c.LLVMInt1TypeInContext(self.context)); // returns success
+
+        try self.declareRuntimeFunction("cursed_channel_close", &[_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // channel
+        }, c.LLVMVoidTypeInContext(self.context));
+
+        // Select runtime functions
+        try self.declareRuntimeFunction("cursed_select_begin", &[_]c.LLVMTypeRef{
+            c.LLVMInt32TypeInContext(self.context), // number of cases
+        }, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)); // returns select context
+
+        try self.declareRuntimeFunction("cursed_select_add_channel", &[_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // select context
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // channel
+            c.LLVMInt32TypeInContext(self.context), // case index
+        }, c.LLVMVoidTypeInContext(self.context));
+
+        try self.declareRuntimeFunction("cursed_select_wait", &[_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // select context
+        }, c.LLVMInt32TypeInContext(self.context)); // returns ready case index
+
+        // Interface dispatch functions
+        try self.declareRuntimeFunction("cursed_interface_call", &[_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // object
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // vtable
+            c.LLVMInt32TypeInContext(self.context), // method index
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // args
+        }, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)); // returns result
+
+        // Defer/panic functions
+        try self.declareRuntimeFunction("cursed_defer_push", &[_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMFunctionType(c.LLVMVoidTypeInContext(self.context), null, 0, 0), 0), // cleanup function
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // context
+        }, c.LLVMVoidTypeInContext(self.context));
+
+        try self.declareRuntimeFunction("cursed_defer_pop", &[_]c.LLVMTypeRef{}, c.LLVMVoidTypeInContext(self.context));
+
+        try self.declareRuntimeFunction("cursed_panic", &[_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // error message
+        }, c.LLVMVoidTypeInContext(self.context));
+    }
+
+    fn declareRuntimeFunction(self: *CodeGen, name: []const u8, param_types: []const c.LLVMTypeRef, return_type: c.LLVMTypeRef) CodeGenError!void {
+        const func_type = c.LLVMFunctionType(
+            return_type,
+            if (param_types.len > 0) param_types.ptr else null,
+            @as(u32, @intCast(param_types.len)),
+            0
+        );
+        const func = c.LLVMAddFunction(self.module, name.ptr, func_type);
+        try self.runtime_functions.put(name, func);
+    }
+
+    /// Generate stan (goroutine) statement
+    fn generateStan(self: *CodeGen, stan: ast.StanStatement) CodeGenError!void {
+        // Create wrapper function for the goroutine body
+        const goroutine_func_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(self.context),
+            &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)}, // context parameter
+            1,
+            0
+        );
+
+        const goroutine_id = self.goroutine_counter;
+        self.goroutine_counter += 1;
+
+        const func_name = try std.fmt.allocPrint(self.allocator, "goroutine_{d}", .{goroutine_id});
+        const goroutine_func = c.LLVMAddFunction(self.module, func_name.ptr, goroutine_func_type);
+
+        // Create entry block for goroutine
+        const entry_block = c.LLVMAppendBasicBlockInContext(self.context, goroutine_func, "entry");
+        
+        // Save current builder position
+        const saved_function = self.current_function;
+        const saved_block = c.LLVMGetInsertBlock(self.builder);
+        
+        // Generate goroutine body
+        c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
+        self.current_function = goroutine_func;
+        
+        // Generate the goroutine body statements
+        for (stan.body.items) |stmt| {
+            try self.generateStatement(stmt);
+        }
+        
+        // Add return if missing
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+            _ = c.LLVMBuildRetVoid(self.builder);
+        }
+        
+        // Restore builder position
+        self.current_function = saved_function;
+        if (saved_block != null) {
+            c.LLVMPositionBuilderAtEnd(self.builder, saved_block);
+        }
+
+        // Spawn the goroutine
+        const spawn_func = self.runtime_functions.get("cursed_spawn_goroutine").?;
+        const func_ptr = c.LLVMBuildBitCast(
+            self.builder,
+            goroutine_func,
+            c.LLVMPointerType(c.LLVMFunctionType(c.LLVMVoidTypeInContext(self.context), null, 0, 0), 0),
+            "func_ptr"
+        );
+        const null_context = c.LLVMConstNull(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+        const default_stack_size = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 65536, 0); // 64KB
+
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(spawn_func)),
+            spawn_func,
+            &[_]c.LLVMValueRef{ func_ptr, null_context, default_stack_size },
+            3,
+            "spawn_result"
+        );
+
+        // Store goroutine info
+        const goroutine_info = GoroutineInfo{
+            .function = goroutine_func,
+            .stack_size = 65536,
+            .id = goroutine_id,
+        };
+        try self.goroutines.put(goroutine_id, goroutine_info);
+    }
+
+    /// Generate select statement
+    fn generateSelect(self: *CodeGen, select_stmt: ast.SelectStatement) CodeGenError!void {
+        const current_func = self.current_function.?;
+        
+        // Begin select operation
+        const select_begin_func = self.runtime_functions.get("cursed_select_begin").?;
+        const case_count = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @as(u32, @intCast(select_stmt.cases.items.len)), 0);
+        const select_context = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(select_begin_func)),
+            select_begin_func,
+            &[_]c.LLVMValueRef{case_count},
+            1,
+            "select_ctx"
+        );
+
+        // Add channels to select
+        const add_channel_func = self.runtime_functions.get("cursed_select_add_channel").?;
+        for (select_stmt.cases.items, 0..) |case_item, i| {
+            if (case_item.channel) |channel_expr| {
+                const channel_value = try self.generateExpression(channel_expr);
+                const case_index = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @as(u32, @intCast(i)), 0);
+                
+                _ = c.LLVMBuildCall2(
+                    self.builder,
+                    c.LLVMVoidTypeInContext(self.context),
+                    add_channel_func,
+                    &[_]c.LLVMValueRef{ select_context, channel_value, case_index },
+                    3,
+                    ""
+                );
+            }
+        }
+
+        // Wait for a channel to be ready
+        const select_wait_func = self.runtime_functions.get("cursed_select_wait").?;
+        const ready_case = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(select_wait_func)),
+            select_wait_func,
+            &[_]c.LLVMValueRef{select_context},
+            1,
+            "ready_case"
+        );
+
+        // Create blocks for each case and merge
+        var case_blocks = ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        defer case_blocks.deinit();
+
+        const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "select_merge");
+        const default_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "select_default");
+
+        // Create switch instruction
+        const switch_inst = c.LLVMBuildSwitch(self.builder, ready_case, default_block, @as(u32, @intCast(select_stmt.cases.items.len)));
+
+        // Generate case blocks
+        for (select_stmt.cases.items, 0..) |case_item, i| {
+            const case_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "select_case");
+            try case_blocks.append(case_block);
+
+            const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @as(u32, @intCast(i)), 0);
+            c.LLVMAddCase(switch_inst, case_value, case_block);
+
+            c.LLVMPositionBuilderAtEnd(self.builder, case_block);
+            
+            // Generate case body
+            for (case_item.body.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+            
+            if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+                _ = c.LLVMBuildBr(self.builder, merge_block);
+            }
+        }
+
+        // Generate default case if present
+        c.LLVMPositionBuilderAtEnd(self.builder, default_block);
+        if (select_stmt.default_case) |default_case| {
+            for (default_case.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+        }
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+            _ = c.LLVMBuildBr(self.builder, merge_block);
+        }
+
+        // Continue building in merge block
+        c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+    }
+
+    /// Generate defer statement
+    fn generateDefer(self: *CodeGen, defer_stmt: ast.DeferStatement) CodeGenError!void {
+        // Create cleanup function for the deferred code
+        const cleanup_func_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(self.context),
+            &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)},
+            1,
+            0
+        );
+
+        const cleanup_func_name = try std.fmt.allocPrint(self.allocator, "defer_cleanup_{d}", .{self.defer_stack.items.len});
+        const cleanup_func = c.LLVMAddFunction(self.module, cleanup_func_name.ptr, cleanup_func_type);
+
+        // Generate cleanup function body
+        const cleanup_entry = c.LLVMAppendBasicBlockInContext(self.context, cleanup_func, "entry");
+        
+        // Save current context
+        const saved_function = self.current_function;
+        const saved_block = c.LLVMGetInsertBlock(self.builder);
+        
+        // Generate cleanup code
+        c.LLVMPositionBuilderAtEnd(self.builder, cleanup_entry);
+        self.current_function = cleanup_func;
+        
+        try self.generateStatement(defer_stmt.statement);
+        
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+            _ = c.LLVMBuildRetVoid(self.builder);
+        }
+        
+        // Restore context
+        self.current_function = saved_function;
+        if (saved_block != null) {
+            c.LLVMPositionBuilderAtEnd(self.builder, saved_block);
+        }
+
+        // Push cleanup function onto defer stack
+        const defer_push_func = self.runtime_functions.get("cursed_defer_push").?;
+        const func_ptr = c.LLVMBuildBitCast(
+            self.builder,
+            cleanup_func,
+            c.LLVMPointerType(c.LLVMFunctionType(c.LLVMVoidTypeInContext(self.context), null, 0, 0), 0),
+            "cleanup_ptr"
+        );
+        const null_context = c.LLVMConstNull(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMVoidTypeInContext(self.context),
+            defer_push_func,
+            &[_]c.LLVMValueRef{ func_ptr, null_context },
+            2,
+            ""
+        );
+
+        // Store defer info
+        const defer_info = DeferInfo{
+            .cleanup_function = cleanup_func,
+            .cleanup_block = cleanup_entry,
+        };
+        try self.defer_stack.append(defer_info);
+    }
+
+    /// Generate bestie (for) loop statement
+    fn generateBestie(self: *CodeGen, bestie: ast.BestieStatement) CodeGenError!void {
+        const current_func = self.current_function.?;
+
+        // Create loop blocks
+        const condition_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "bestie_cond");
+        const body_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "bestie_body");
+        const exit_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "bestie_exit");
+
+        // Save current loop context
+        const loop_context = LoopContext{
+            .continue_block = condition_block,
+            .break_block = exit_block,
+        };
+        try self.loop_stack.append(loop_context);
+        defer _ = self.loop_stack.pop();
+
+        // Generate initializer if present
+        if (bestie.initializer) |init_stmt| {
+            try self.generateStatement(init_stmt);
+        }
+
+        // Jump to condition
+        _ = c.LLVMBuildBr(self.builder, condition_block);
+
+        // Generate condition block
+        c.LLVMPositionBuilderAtEnd(self.builder, condition_block);
+        if (bestie.condition) |cond| {
+            const condition_value = try self.generateExpression(cond);
+            _ = c.LLVMBuildCondBr(self.builder, condition_value, body_block, exit_block);
+        } else {
+            // Infinite loop
+            _ = c.LLVMBuildBr(self.builder, body_block);
+        }
+
+        // Generate body block
+        c.LLVMPositionBuilderAtEnd(self.builder, body_block);
+        for (bestie.body.items) |stmt| {
+            try self.generateStatement(stmt);
+        }
+
+        // Generate increment if present
+        if (bestie.increment) |inc_stmt| {
+            try self.generateStatement(inc_stmt);
+        }
+
+        // Jump back to condition (if no terminator was added)
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+            _ = c.LLVMBuildBr(self.builder, condition_block);
+        }
+
+        // Continue building in exit block
+        c.LLVMPositionBuilderAtEnd(self.builder, exit_block);
+    }
+
+    /// Generate vibes (break) statement
+    fn generateVibes(self: *CodeGen, _: ast.VibesStatement) CodeGenError!void {
+        if (self.loop_stack.items.len == 0) {
+            return CodeGenError.LLVMError; // No loop to break from
+        }
+
+        const current_loop = self.loop_stack.items[self.loop_stack.items.len - 1];
+        _ = c.LLVMBuildBr(self.builder, current_loop.break_block);
+    }
+
+    /// Generate match statement (pattern matching)
+    fn generateMatchStatement(self: *CodeGen, match_stmt: ast.MatchStatement) CodeGenError!void {
+        const match_expr = try self.generateExpression(match_stmt.expression);
+        _ = try self.generateMatchPattern(match_expr, match_stmt.cases.items);
+    }
+
+    fn generateMatchPattern(self: *CodeGen, value: c.LLVMValueRef, cases: []const ast.MatchCase) CodeGenError!c.LLVMValueRef {
+        const current_func = self.current_function.?;
+        const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "match_merge");
+        const default_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "match_default");
+
+        // Create switch instruction
+        const switch_inst = c.LLVMBuildSwitch(self.builder, value, default_block, @as(u32, @intCast(cases.len)));
+
+        var case_blocks = ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        defer case_blocks.deinit();
+
+        // Generate case blocks
+        for (cases, 0..) |case_item, i| {
+            const case_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "match_case");
+            try case_blocks.append(case_block);
+
+            // Add case to switch (simplified - assumes literal patterns)
+            if (case_item.pattern) |pattern| {
+                switch (pattern) {
+                    .Literal => |literal| {
+                        const case_value = try self.generateExpression(ast.Expression{ .Literal = literal });
+                        c.LLVMAddCase(switch_inst, case_value, case_block);
+                    },
+                    else => {
+                        // For complex patterns, add a sequential check
+                        const case_index = c.LLVMConstInt(c.LLVMTypeOf(value), @as(u64, @intCast(i)), 0);
+                        c.LLVMAddCase(switch_inst, case_index, case_block);
+                    },
+                }
+            }
+
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.builder, case_block);
+            for (case_item.body.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+
+            if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+                _ = c.LLVMBuildBr(self.builder, merge_block);
+            }
+        }
+
+        // Generate default case
+        c.LLVMPositionBuilderAtEnd(self.builder, default_block);
+        _ = c.LLVMBuildBr(self.builder, merge_block);
+
+        // Continue in merge block
+        c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+        return value; // Return original value for now
+    }
+
+    /// Generate channel send expression
+    fn generateChannelSend(self: *CodeGen, send: ast.ChannelSendExpression) CodeGenError!c.LLVMValueRef {
+        const channel_value = try self.generateExpression(send.channel.*);
+        const data_value = try self.generateExpression(send.value.*);
+
+        // Allocate temporary storage for data
+        const data_type = c.LLVMTypeOf(data_value);
+        const data_alloca = c.LLVMBuildAlloca(self.builder, data_type, "send_data");
+        _ = c.LLVMBuildStore(self.builder, data_value, data_alloca);
+
+        // Cast to void pointer
+        const data_ptr = c.LLVMBuildBitCast(
+            self.builder,
+            data_alloca,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            "data_ptr"
+        );
+
+        // Call channel send
+        const send_func = self.runtime_functions.get("cursed_channel_send").?;
+        return c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(send_func)),
+            send_func,
+            &[_]c.LLVMValueRef{ channel_value, data_ptr },
+            2,
+            "send_result"
+        );
+    }
+
+    /// Generate channel receive expression
+    fn generateChannelReceive(self: *CodeGen, recv: ast.ChannelReceiveExpression) CodeGenError!c.LLVMValueRef {
+        const channel_value = try self.generateExpression(recv.channel.*);
+
+        // Determine element type from channel type (simplified)
+        const element_type = c.LLVMInt64TypeInContext(self.context); // Default to i64 for now
+        
+        // Allocate storage for received data
+        const recv_alloca = c.LLVMBuildAlloca(self.builder, element_type, "recv_data");
+        const recv_ptr = c.LLVMBuildBitCast(
+            self.builder,
+            recv_alloca,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            "recv_ptr"
+        );
+
+        // Call channel receive
+        const recv_func = self.runtime_functions.get("cursed_channel_receive").?;
+        const success = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(recv_func)),
+            recv_func,
+            &[_]c.LLVMValueRef{ channel_value, recv_ptr },
+            2,
+            "recv_success"
+        );
+
+        // Load the received value
+        const received_value = c.LLVMBuildLoad2(self.builder, element_type, recv_alloca, "received_value");
+
+        // For now, return the received value (in practice, would return a tuple with success flag)
+        _ = success;
+        return received_value;
+    }
+
+    /// Generate channel creation expression
+    fn generateChannelCreation(self: *CodeGen, create: ast.ChannelCreationExpression) CodeGenError!c.LLVMValueRef {
+        // Get element type
+        const element_type = try self.getLLVMType(create.element_type);
+        const element_size = c.LLVMSizeOf(element_type);
+
+        // Get buffer size (default to 0 for unbuffered)
+        const buffer_size = if (create.buffer_size) |size|
+            try self.generateExpression(size)
+        else
+            c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+
+        // Call channel creation function
+        const create_func = self.runtime_functions.get("cursed_channel_create").?;
+        const channel_ptr = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(create_func)),
+            create_func,
+            &[_]c.LLVMValueRef{ element_size, buffer_size },
+            2,
+            "channel_ptr"
+        );
+
+        // Store channel info
+        const channel_info = ChannelInfo{
+            .element_type = element_type,
+            .channel_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            .buffer_size = 0, // Will be determined at runtime
+        };
+        const channel_name = try std.fmt.allocPrint(self.allocator, "channel_{d}", .{self.channels.count()});
+        try self.channels.put(channel_name, channel_info);
+
+        return channel_ptr;
+    }
+
+    /// Generate interface method call
+    fn generateInterfaceCall(self: *CodeGen, interface_call: ast.InterfaceCallExpression) CodeGenError!c.LLVMValueRef {
+        const object_value = try self.generateExpression(interface_call.object.*);
+
+        // Generate arguments
+        var args = ArrayList(c.LLVMValueRef).init(self.allocator);
+        defer args.deinit();
+
+        for (interface_call.arguments.items) |arg_expr| {
+            const arg = try self.generateExpression(arg_expr);
+            try args.append(arg);
+        }
+
+        // For now, create a simplified interface call
+        // In a full implementation, this would involve vtable lookup
+        const interface_call_func = self.runtime_functions.get("cursed_interface_call").?;
+        
+        // Pack arguments into a buffer (simplified)
+        const args_size = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @as(u32, @intCast(args.items.len * 8)), 0);
+        const malloc_func = self.functions.get("malloc").?;
+        const args_buffer = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(malloc_func)),
+            malloc_func,
+            &[_]c.LLVMValueRef{args_size},
+            1,
+            "args_buffer"
+        );
+
+        // TODO: Pack arguments into buffer
+
+        // Get method index (simplified)
+        const method_index = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0); // First method for now
+
+        // Get vtable (simplified - would be extracted from object)
+        const null_vtable = c.LLVMConstNull(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+
+        return c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(interface_call_func)),
+            interface_call_func,
+            &[_]c.LLVMValueRef{ object_value, null_vtable, method_index, args_buffer },
+            4,
+            "interface_result"
+        );
+    }
+
+    /// Generate goroutine expression (for inline goroutine creation)
+    fn generateGoroutineExpression(self: *CodeGen, goroutine: ast.GoroutineExpression) CodeGenError!c.LLVMValueRef {
+        // Similar to generateStan but returns the goroutine ID
+        const goroutine_func_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(self.context),
+            &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)},
+            1,
+            0
+        );
+
+        const goroutine_id = self.goroutine_counter;
+        self.goroutine_counter += 1;
+
+        const func_name = try std.fmt.allocPrint(self.allocator, "inline_goroutine_{d}", .{goroutine_id});
+        const goroutine_func = c.LLVMAddFunction(self.module, func_name.ptr, goroutine_func_type);
+
+        // Create and generate function body (similar to generateStan)
+        const entry_block = c.LLVMAppendBasicBlockInContext(self.context, goroutine_func, "entry");
+        
+        const saved_function = self.current_function;
+        const saved_block = c.LLVMGetInsertBlock(self.builder);
+        
+        c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
+        self.current_function = goroutine_func;
+        
+        _ = try self.generateExpression(goroutine.body.*);
+        
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+            _ = c.LLVMBuildRetVoid(self.builder);
+        }
+        
+        self.current_function = saved_function;
+        if (saved_block != null) {
+            c.LLVMPositionBuilderAtEnd(self.builder, saved_block);
+        }
+
+        // Spawn and return ID
+        const spawn_func = self.runtime_functions.get("cursed_spawn_goroutine").?;
+        const func_ptr = c.LLVMBuildBitCast(
+            self.builder,
+            goroutine_func,
+            c.LLVMPointerType(c.LLVMFunctionType(c.LLVMVoidTypeInContext(self.context), null, 0, 0), 0),
+            "func_ptr"
+        );
+        const null_context = c.LLVMConstNull(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+        const default_stack_size = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 65536, 0);
+
+        return c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(spawn_func)),
+            spawn_func,
+            &[_]c.LLVMValueRef{ func_ptr, null_context, default_stack_size },
+            3,
+            "goroutine_id"
+        );
+    }
+
+    /// Generate range expression (for iteration)
+    fn generateRange(self: *CodeGen, range: ast.RangeExpression) CodeGenError!c.LLVMValueRef {
+        const start_value = try self.generateExpression(range.start.*);
+        const end_value = try self.generateExpression(range.end.*);
+
+        // Create a simple range iterator structure
+        // For now, return start value (full implementation would create iterator)
+        _ = end_value;
+        return start_value;
+    }
+
+    /// Enhanced optimization passes for CURSED
+    fn optimizeModule(self: *CodeGen) CodeGenError!void {
+        // Create function pass manager
+        const fpm = c.LLVMCreateFunctionPassManagerForModule(self.module);
+        defer c.LLVMDisposeFunctionPassManager(fpm);
+
+        // Add aggressive optimization passes
+        c.LLVMAddInstructionCombiningPass(fpm);
+        c.LLVMAddReassociatePass(fpm);
+        c.LLVMAddGVNPass(fpm);
+        c.LLVMAddCFGSimplificationPass(fpm);
+        c.LLVMAddPromoteMemoryToRegisterPass(fpm);
+        c.LLVMAddTailCallEliminationPass(fpm);
+        c.LLVMAddJumpThreadingPass(fpm);
+        c.LLVMAddCorrelatedValuePropagationPass(fpm);
+        c.LLVMAddDeadStoreEliminationPass(fpm);
+        c.LLVMAddLoopUnrollPass(fpm);
+
+        // Initialize and run passes
+        _ = c.LLVMInitializeFunctionPassManager(fpm);
+
+        // Run passes on all functions
+        var func = c.LLVMGetFirstFunction(self.module);
+        while (func != null) {
+            _ = c.LLVMRunFunctionPassManager(fpm, func);
+            func = c.LLVMGetNextFunction(func);
+        }
+
+        _ = c.LLVMFinalizeFunctionPassManager(fpm);
+
+        // Module-level optimization passes
+        const mpm = c.LLVMCreatePassManager();
+        defer c.LLVMDisposePassManager(mpm);
+
+        c.LLVMAddGlobalOptimizerPass(mpm);
+        c.LLVMAddIPSCCPPass(mpm);
+        c.LLVMAddDeadArgEliminationPass(mpm);
+        c.LLVMAddInstructionCombiningPass(mpm);
+        c.LLVMAddCFGSimplificationPass(mpm);
+        c.LLVMAddPruneEHPass(mpm);
+        c.LLVMAddGlobalDCEPass(mpm);
+        c.LLVMAddConstantMergePass(mpm);
+
+        _ = c.LLVMRunPassManager(mpm, self.module);
+    }
+
+    /// Enhanced program generation with runtime setup
+    pub fn generateProgramAdvanced(self: *CodeGen, program: Program) CodeGenError!void {
+        // Generate runtime function declarations first
+        try self.generateRuntimeDeclarations();
+        
+        // Generate external declarations
+        try self.generateExternalDeclarations();
+        
+        // Generate statements
+        for (program.statements.items) |stmt| {
+            try self.generateStatement(stmt);
+        }
+        
+        // Add main function if it doesn't exist
+        if (self.functions.get("main_character") == null) {
+            try self.generateMainWrapper();
+        }
+        
+        // Verify module
+        var error_msg: [*c]u8 = undefined;
+        if (c.LLVMVerifyModule(self.module, c.LLVMPrintMessageAction, &error_msg) != 0) {
+            std.debug.print("LLVM module verification failed: {s}\n", .{error_msg});
+            c.LLVMDisposeMessage(error_msg);
+            return CodeGenError.LLVMError;
+        }
+        
+        // Run enhanced optimization passes
+        try self.optimizeModule();
     }
 };
 

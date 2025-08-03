@@ -7,10 +7,10 @@ pub fn build(b: *std.Build) void {
     // Use native target for dynamic library compatibility
     const resolved_target = target;
 
-    // Create the CURSED compiler executable with concurrency support
+    // Create the CURSED compiler executable - concurrency minimal (working version)
     const exe = b.addExecutable(.{
-        .name = "cursed-zig",
-        .root_source_file = b.path("src-zig/simple_main.zig"),
+        .name = "cursed-zig", 
+        .root_source_file = b.path("src-zig/main_concurrency_minimal.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -18,17 +18,46 @@ pub fn build(b: *std.Build) void {
     // Configure libc for minimal compiler (no LLVM needed)
     exe.linkLibC();
 
-    // Minimal working compiler target (simple interpreter only)
+    // Alternative implementations for testing and fallback
     const minimal_exe = b.addExecutable(.{
         .name = "cursed-minimal",
-        .root_source_file = b.path("src-zig/minimal_working_compiler.zig"),
+        .root_source_file = b.path("src-zig/minimal_main.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
     minimal_exe.linkLibC();
 
+    const complete_exe = b.addExecutable(.{
+        .name = "cursed-complete",
+        .root_source_file = b.path("src-zig/main_complete.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    complete_exe.linkLibC();
+
+    // Enhanced compiler with improved error reporting and debugging
+    const enhanced_exe = b.addExecutable(.{
+        .name = "cursed-enhanced",
+        .root_source_file = b.path("src-zig/enhanced_main.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    enhanced_exe.linkLibC();
+
+    // Create performance-optimized compiler
+    const optimized_exe = b.addExecutable(.{
+        .name = "cursed-optimized",
+        .root_source_file = b.path("src-zig/simplified_optimized_main.zig"),
+        .target = resolved_target,
+        .optimize = .ReleaseFast, // Always use fastest optimization for performance compiler
+    });
+    optimized_exe.linkLibC();
+
     b.installArtifact(exe);
     b.installArtifact(minimal_exe);
+    b.installArtifact(complete_exe);
+    b.installArtifact(enhanced_exe);
+    b.installArtifact(optimized_exe);
 
     // Create run step
     const run_cmd = b.addRunArtifact(exe);
@@ -42,7 +71,7 @@ pub fn build(b: *std.Build) void {
 
     // Create test suite
     const unit_tests = b.addTest(.{
-        .root_source_file = b.path("src-zig/main_complete.zig"),
+        .root_source_file = b.path("src-zig/main_unified.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -109,4 +138,22 @@ pub fn build(b: *std.Build) void {
     const run_stdlib_tests = b.addRunArtifact(stdlib_tests);
     const stdlib_test_step = b.step("test-stdlib", "Run stdlib tests");
     stdlib_test_step.dependOn(&run_stdlib_tests.step);
+
+    // Create advanced parser tests
+    const parser_tests = b.addTest(.{
+        .root_source_file = b.path("src-zig/parser_test_advanced.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const run_parser_tests = b.addRunArtifact(parser_tests);
+    const parser_test_step = b.step("test-parser", "Run advanced parser tests");
+    parser_test_step.dependOn(&run_parser_tests.step);
+
+    // Create comprehensive test step that runs all tests
+    const all_tests_step = b.step("test-all", "Run all test suites");
+    all_tests_step.dependOn(&run_unit_tests.step);
+    all_tests_step.dependOn(&run_concurrency_tests.step);
+    all_tests_step.dependOn(&run_stdlib_tests.step);
+    all_tests_step.dependOn(&run_parser_tests.step);
 }

@@ -4,6 +4,32 @@ const Allocator = std.mem.Allocator;
 
 const lexer = @import("lexer.zig");
 
+// Simple variable environment for storing values
+const VariableEnvironment = struct {
+    variables: std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    allocator: Allocator,
+    
+    pub fn init(allocator: Allocator) VariableEnvironment {
+        return VariableEnvironment{
+            .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .allocator = allocator,
+        };
+    }
+    
+    pub fn deinit(self: *VariableEnvironment) void {
+        self.variables.deinit();
+    }
+    
+    pub fn set(self: *VariableEnvironment, name: []const u8, value: i64) !void {
+        const name_copy = try self.allocator.dupe(u8, name);
+        try self.variables.put(name_copy, value);
+    }
+    
+    pub fn get(self: *VariableEnvironment, name: []const u8) ?i64 {
+        return self.variables.get(name);
+    }
+};
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -66,6 +92,7 @@ pub fn main() !void {
         print("Lexer error: {}\n", .{err});
         return;
     };
+    defer tokens.deinit(); // CRITICAL FIX: Clean up tokens ArrayList
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -158,9 +185,10 @@ fn compileToC(allocator: Allocator, filename: []const u8, tokens: std.ArrayList(
 }
 
 fn interpretProgram(allocator: Allocator, source: []const u8) !void {
-    _ = allocator;
-    
     print("🚀 Interpreting CURSED program...\n", .{});
+    
+    var env = VariableEnvironment.init(allocator);
+    defer env.deinit();
     
     var lines = std.mem.splitScalar(u8, source, '\n');
     var line_number: u32 = 0;
@@ -174,19 +202,66 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             continue;
         }
         
+        // Handle variable declarations (sus x drip = 5)
+        if (std.mem.startsWith(u8, trimmed, "sus ")) {
+            if (std.mem.indexOf(u8, trimmed, "drip =")) |equals_pos| {
+                const after_sus = trimmed[4..]; // Skip "sus "
+                if (std.mem.indexOf(u8, after_sus, " ")) |first_space| {
+                    const var_name = after_sus[0..first_space];
+                    const after_equals = trimmed[equals_pos + 7..]; // Skip "drip = "
+                    const value_str = std.mem.trim(u8, after_equals, " \t\r\n");
+                    
+                    // Try to parse as integer or evaluate expression
+                    if (parseOrEvaluate(value_str, &env)) |value| {
+                        try env.set(var_name, value);
+                    } else |_| {
+                        print("Error: Could not parse value '{s}'\n", .{value_str});
+                    }
+                }
+            }
+        }
+        // Handle variable assignment (x = 5)
+        else if (std.mem.indexOf(u8, trimmed, " = ")) |equals_pos| {
+            const var_name = trimmed[0..equals_pos];
+            const value_str = std.mem.trim(u8, trimmed[equals_pos + 3..], " \t\r\n");
+            
+            if (parseOrEvaluate(value_str, &env)) |value| {
+                try env.set(var_name, value);
+            } else |_| {
+                print("Error: Could not parse value '{s}'\n", .{value_str});
+            }
+        }
         // Simple interpretation of vibez.spill()
-        if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
+        else if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
             if (std.mem.indexOf(u8, trimmed[start..], "(")) |paren_start| {
                 if (std.mem.lastIndexOf(u8, trimmed, ")")) |paren_end| {
                     const content_start = start + paren_start + 1;
                     const content = trimmed[content_start..paren_end];
                     
-                    // Remove quotes if present
-                    if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
-                        print("{s}\n", .{content[1..content.len - 1]});
-                    } else {
-                        print("{s}\n", .{content});
+                    // Handle comma-separated arguments
+                    var args = std.mem.splitScalar(u8, content, ',');
+                    var first_arg = true;
+                    while (args.next()) |arg| {
+                        const trimmed_arg = std.mem.trim(u8, arg, " \t\r\n");
+                        
+                        if (!first_arg) {
+                            print(" ", .{});
+                        }
+                        
+                        // Remove quotes if present
+                        if (trimmed_arg.len >= 2 and trimmed_arg[0] == '"' and trimmed_arg[trimmed_arg.len - 1] == '"') {
+                            print("{s}", .{trimmed_arg[1..trimmed_arg.len - 1]});
+                        } else if (env.get(trimmed_arg)) |var_value| {
+                            // Variable found - print its value
+                            print("{}", .{var_value});
+                        } else {
+                            // Not a string literal or variable - print as is
+                            print("{s}", .{trimmed_arg});
+                        }
+                        
+                        first_arg = false;
                     }
+                    print("\n", .{});
                 }
             }
         } else {
@@ -225,4 +300,65 @@ fn getOutputName(allocator: Allocator, filename: []const u8) ![]u8 {
         return try allocator.dupe(u8, filename[0..filename.len - 4]);
     }
     return try std.fmt.allocPrint(allocator, "{s}_out", .{filename});
+}
+
+// Simple expression parser and evaluator for arithmetic
+fn parseOrEvaluate(expr: []const u8, env: *VariableEnvironment) !i64 {
+    const trimmed = std.mem.trim(u8, expr, " \t\r\n");
+    
+    // Try to parse as direct integer
+    if (std.fmt.parseInt(i64, trimmed, 10)) |value| {
+        return value;
+    } else |_| {}
+    
+    // Check if it's a variable
+    if (env.get(trimmed)) |value| {
+        return value;
+    }
+    
+    // Try to parse simple arithmetic expressions (x + y, x - y, etc.)
+    if (std.mem.indexOf(u8, trimmed, " + ")) |plus_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..plus_pos], " \t\r\n");
+        const right_str = std.mem.trim(u8, trimmed[plus_pos + 3..], " \t\r\n");
+        
+        const left = try parseOrEvaluate(left_str, env);
+        const right = try parseOrEvaluate(right_str, env);
+        return left + right;
+    }
+    
+    if (std.mem.indexOf(u8, trimmed, " - ")) |minus_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..minus_pos], " \t\r\n");
+        const right_str = std.mem.trim(u8, trimmed[minus_pos + 3..], " \t\r\n");
+        
+        const left = try parseOrEvaluate(left_str, env);
+        const right = try parseOrEvaluate(right_str, env);
+        return left - right;
+    }
+    
+    if (std.mem.indexOf(u8, trimmed, " * ")) |mult_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..mult_pos], " \t\r\n");
+        const right_str = std.mem.trim(u8, trimmed[mult_pos + 3..], " \t\r\n");
+        
+        const left = try parseOrEvaluate(left_str, env);
+        const right = try parseOrEvaluate(right_str, env);
+        return left * right;
+    }
+    
+    if (std.mem.indexOf(u8, trimmed, " / ")) |div_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..div_pos], " \t\r\n");
+        const right_str = std.mem.trim(u8, trimmed[div_pos + 3..], " \t\r\n");
+        
+        const left = try parseOrEvaluate(left_str, env);
+        const right = try parseOrEvaluate(right_str, env);
+        if (right == 0) return error.DivisionByZero;
+        return @divTrunc(left, right);
+    }
+    
+    // Handle parentheses (basic support)
+    if (trimmed.len >= 3 and trimmed[0] == '(' and trimmed[trimmed.len - 1] == ')') {
+        const inner = trimmed[1..trimmed.len - 1];
+        return parseOrEvaluate(inner, env);
+    }
+    
+    return error.ParseError;
 }

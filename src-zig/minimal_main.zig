@@ -155,7 +155,7 @@ fn compileToC(allocator: Allocator, filename: []const u8, source: []const u8, to
     const compile_cmd = try std.fmt.allocPrint(allocator, "gcc -o {s} {s}", .{ output_name, c_filename });
     defer allocator.free(compile_cmd);
     
-    const result = std.process.exec(.{
+    const result = std.process.Child.run(.{
         .allocator = allocator,
         .argv = &[_][]const u8{ "sh", "-c", compile_cmd },
     }) catch |err| {

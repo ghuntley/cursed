@@ -227,7 +227,7 @@ pub const GC = struct {
     
     /// Heap compaction support
     heap_segments: ArrayList(HeapSegment),
-    forwarding_table: HashMap(*u8, *u8, std.hash_map.DefaultContext(u8), std.hash_map.default_max_load_percentage),
+    forwarding_table: HashMap(*u8, *u8, std.hash_map.AutoContext(*u8), std.hash_map.default_max_load_percentage),
     pause_mutex: Mutex,
     
     /// Performance monitoring
@@ -835,7 +835,7 @@ pub const GC = struct {
         defer self.pause_mutex.unlock();
         
         // Perform compaction by moving live objects to eliminate fragmentation
-        var compact_start = std.time.nanoTimestamp();
+        const compact_start = std.time.nanoTimestamp();
         defer {
             const compact_time = std.time.nanoTimestamp() - compact_start;
             self.stats.total_compact_time += @intCast(compact_time / 1000); // microseconds
@@ -1045,14 +1045,7 @@ pub const GC = struct {
         }
     }
     
-    /// Check if a pointer is within our heap bounds
-    fn isValidHeapPointer(self: *GC, ptr: *anyopaque) bool {
-        const heap_start = @as([*]u8, @ptrCast(self.heap_start));
-        const heap_end = heap_start + self.heap_size;
-        const check_ptr = @as([*]u8, @ptrCast(ptr));
-        
-        return check_ptr >= heap_start and check_ptr < heap_end;
-    }
+
     
     /// Get current GC statistics
     pub fn getStats(self: *GC) GCStats {

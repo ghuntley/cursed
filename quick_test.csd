@@ -1,1 +1,1 @@
-sus numbers []normie = [1, 2, 3]
+vibez.spill("Test successful!")
