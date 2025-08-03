@@ -5,9 +5,12 @@ const HashMap = std.HashMap;
 
 const ast = @import("ast_simple.zig");
 const lexer = @import("lexer.zig");
+const error_handling = @import("error_handling.zig");
 const Program = ast.Program;
 const Statement = ast.Statement;
 const Expression = ast.Expression;
+const CursedError = error_handling.CursedError;
+const safeDupeString = error_handling.safeDupeString;
 
 // Forward declaration for struct support
 pub const StructInstance = struct {
@@ -15,9 +18,11 @@ pub const StructInstance = struct {
     fields: HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator, type_name: []const u8) StructInstance {
+    pub fn init(allocator: Allocator, type_name: []const u8) CursedError!StructInstance {
+        const type_name_copy = try safeDupeString(allocator, type_name);
+        
         return StructInstance{
-            .type_name = allocator.dupe(u8, type_name) catch @panic("Out of memory"),
+            .type_name = type_name_copy,
             .fields = HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
@@ -154,7 +159,7 @@ pub const Environment = struct {
 
 // Basic parsing structures for the simple AST interpreter
 pub const ParsedExpression = struct {
-    tag: Expression.ExpressionTag,
+    tag: Expression,
     data: union {
         identifier: []const u8,
         integer: i64,
@@ -179,7 +184,7 @@ pub const CallExpr = struct {
 };
 
 pub const ParsedStatement = struct {
-    tag: Statement.StatementTag,
+    tag: Statement,
     data: union {
         expression: ParsedExpression,
         variable: VarStmt,
@@ -227,9 +232,11 @@ pub const StructType = struct {
     fields: ArrayList(FieldDefinition),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator, name: []const u8) StructType {
+    pub fn init(allocator: Allocator, name: []const u8) CursedError!StructType {
+        const name_copy = try safeDupeString(allocator, name);
+        
         return StructType{
-            .name = allocator.dupe(u8, name) catch @panic("Out of memory"),
+            .name = name_copy,
             .fields = ArrayList(FieldDefinition).init(allocator),
             .allocator = allocator,
         };

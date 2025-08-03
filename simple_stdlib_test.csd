@@ -1,5 +1,5 @@
-yeet "testz"
+fr fr Simple stdlib integration test
+yeet "vibez"
 
-test_start("Simple test")
-assert_true(based)
-print_test_summary()
+vibez.spill("Testing basic stdlib integration!")
+vibez.spill("Hello from CURSED stdlib runtime!")

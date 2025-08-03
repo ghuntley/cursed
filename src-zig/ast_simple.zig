@@ -169,21 +169,30 @@ pub const Parameter = struct {
 
 pub const TypeParameter = struct {
     name: []const u8,
-    constraints: ArrayList(Type),
+    constraints: ArrayList(TypeConstraint),
+    default_type: ?Type,
+    variance: TypeVariance,
 };
 
-pub const Type = enum {
-    Basic,
-    Channel,
-    Array,
-    Slice,
-    Map,
-    Pointer,
-    Function,
-    Interface,
-    Struct,
-    Generic,
-    Tuple,
+pub const TypeVariance = enum {
+    Covariant,     // out T
+    Contravariant, // in T  
+    Invariant,     // T (default)
+};
+
+pub const Type = union(enum) {
+    Basic: BasicType,
+    Channel: ChannelType,
+    Array: ArrayType,
+    Slice: SliceType,
+    Map: MapType,
+    Pointer: PointerType,
+    Function: FunctionType,
+    Interface: InterfaceType,
+    Struct: StructType,
+    Generic: GenericType,
+    Tuple: TupleType,
+    Custom: []const u8,  // For user-defined types
 };
 
 pub const BasicType = enum {
@@ -502,21 +511,25 @@ pub const ChannelType = struct {
 pub const FunctionType = struct {
     parameters: ArrayList(Type),
     return_type: ?*Type,
+    is_variadic: bool,
 };
 
 pub const InterfaceType = struct {
     name: []const u8,
     methods: ArrayList(MethodSignature),
+    type_parameters: ArrayList(TypeParameter),
 };
 
 pub const StructType = struct {
     name: []const u8,
     fields: ArrayList(StructField),
+    type_parameters: ArrayList(TypeParameter),
 };
 
 pub const GenericType = struct {
     name: []const u8,
-    constraints: ArrayList(Type),
+    type_arguments: ArrayList(Type),
+    constraints: ArrayList(TypeConstraint),
 };
 
 pub const TupleType = struct {
@@ -525,6 +538,16 @@ pub const TupleType = struct {
 
 pub const PointerType = struct {
     target_type: *Type,
+    is_mutable: bool,
+};
+
+// Enhanced type constraint system
+pub const TypeConstraint = union(enum) {
+    Interface: []const u8,  // T: Drawable
+    Equality: Type,         // T = String
+    Subtype: Type,          // T <: Number
+    Supertype: Type,        // T >: Integer
+    WhereClause: []const u8, // where T.size() > 0
 };
 
 pub const FieldPattern = struct {

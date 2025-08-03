@@ -25,6 +25,10 @@ pub const GCIntegration = struct {
     llvm_module: c.LLVMModuleRef,
     llvm_builder: c.LLVMBuilderRef,
     
+    // Function metadata storage for root tables
+    function_root_tables: std.HashMap(c.LLVMValueRef, c.LLVMValueRef, std.hash_map.DefaultContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage),
+    allocator: std.mem.Allocator,
+    
     // GC runtime function declarations
     gc_alloc_func: c.LLVMValueRef,
     gc_add_root_func: c.LLVMValueRef,
@@ -36,8 +40,6 @@ pub const GCIntegration = struct {
     // Type cache for efficient lookup
     gc_ptr_type: c.LLVMTypeRef,
     gc_header_type: c.LLVMTypeRef,
-    
-    allocator: std.mem.Allocator,
     
     /// Initialize GC integration with LLVM
     pub fn init(
@@ -53,6 +55,8 @@ pub const GCIntegration = struct {
             .llvm_context = llvm_context,
             .llvm_module = llvm_module,
             .llvm_builder = llvm_builder,
+            .function_root_tables = std.HashMap(c.LLVMValueRef, c.LLVMValueRef, std.hash_map.DefaultContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage).init(allocator),
+            .allocator = allocator,
             .gc_alloc_func = undefined,
             .gc_add_root_func = undefined,
             .gc_remove_root_func = undefined,
@@ -61,7 +65,6 @@ pub const GCIntegration = struct {
             .gc_add_finalizer_func = undefined,
             .gc_ptr_type = undefined,
             .gc_header_type = undefined,
-            .allocator = allocator,
         };
         
         try integration.declareFunctions();
@@ -72,6 +75,7 @@ pub const GCIntegration = struct {
     
     /// Clean up GC integration
     pub fn deinit(self: *GCIntegration) void {
+        self.function_root_tables.deinit();
         self.allocator.destroy(self);
     }
     
@@ -389,9 +393,28 @@ pub const GCIntegration = struct {
         // Position at beginning of entry block
         c.LLVMPositionBuilderAtEnd(self.llvm_builder, entry_block);
         
-        // TODO: Add GC prologue code
-        // - Register stack frame
-        // - Initialize local roots
+        // Generate GC prologue code
+        // Create stack frame registration call
+        const register_frame_fn = self.getOrCreateFunction("cursed_gc_register_frame", c.LLVMVoidType(), &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8Type(), 0)});
+        
+        // Get current stack pointer
+        const stack_ptr = c.LLVMBuildAlloca(self.llvm_builder, c.LLVMInt8Type(), "stack_frame");
+        const stack_ptr_cast = c.LLVMBuildBitCast(self.llvm_builder, stack_ptr, c.LLVMPointerType(c.LLVMInt8Type(), 0), "stack_ptr");
+        
+        // Call frame registration
+        _ = c.LLVMBuildCall2(self.llvm_builder, c.LLVMGetElementType(c.LLVMTypeOf(register_frame_fn)), register_frame_fn, @ptrCast(&stack_ptr_cast), 1, "");
+        
+        // Initialize local root table
+        const root_table_size = 32; // Maximum local roots per function
+        const root_table_type = c.LLVMArrayType(c.LLVMPointerType(c.LLVMInt8Type(), 0), root_table_size);
+        const root_table = c.LLVMBuildAlloca(self.llvm_builder, root_table_type, "local_roots");
+        
+        // Zero-initialize the root table
+        const zero_value = c.LLVMConstNull(root_table_type);
+        _ = c.LLVMBuildStore(self.llvm_builder, zero_value, root_table);
+        
+        // Store root table in function metadata for later use
+        self.storeRootTable(function, root_table);
         
         // Restore builder position
         c.LLVMPositionBuilderAtEnd(self.llvm_builder, current_block);
@@ -399,13 +422,48 @@ pub const GCIntegration = struct {
     
     /// Generate function epilogue for GC
     pub fn generateFunctionEpilogue(self: *GCIntegration, function: c.LLVMValueRef) void {
-        _ = function;
+        // Generate GC epilogue code before all return instructions
+        const exit_block = c.LLVMGetLastBasicBlock(function);
+        c.LLVMPositionBuilderAtEnd(self.llvm_builder, exit_block);
         
-        // TODO: Add GC epilogue code
-        // - Unregister stack frame
-        // - Clean up local roots
+        // Create stack frame unregistration call
+        const unregister_frame_fn = self.getOrCreateFunction("cursed_gc_unregister_frame", c.LLVMVoidType(), &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8Type(), 0)});
         
-        _ = self;
+        // Get the stack frame pointer (stored during prologue)
+        if (self.getRootTable(function)) |root_table| {
+            // Clean up local roots
+            const cleanup_roots_fn = self.getOrCreateFunction("cursed_gc_cleanup_roots", c.LLVMVoidType(), &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMPointerType(c.LLVMInt8Type(), 0), 0)});
+            _ = c.LLVMBuildCall2(self.llvm_builder, c.LLVMGetElementType(c.LLVMTypeOf(cleanup_roots_fn)), cleanup_roots_fn, @ptrCast(&root_table), 1, "");
+        }
+        
+        // Create dummy stack pointer for unregistration (simplified)
+        const stack_ptr = c.LLVMBuildAlloca(self.llvm_builder, c.LLVMInt8Type(), "stack_frame_cleanup");
+        const stack_ptr_cast = c.LLVMBuildBitCast(self.llvm_builder, stack_ptr, c.LLVMPointerType(c.LLVMInt8Type(), 0), "stack_ptr");
+        
+        // Call frame unregistration
+        _ = c.LLVMBuildCall2(self.llvm_builder, c.LLVMGetElementType(c.LLVMTypeOf(unregister_frame_fn)), unregister_frame_fn, @ptrCast(&stack_ptr_cast), 1, "");
+    }
+    
+    /// Store root table for function
+    fn storeRootTable(self: *GCIntegration, function: c.LLVMValueRef, root_table: c.LLVMValueRef) void {
+        self.function_root_tables.put(function, root_table) catch {};
+    }
+    
+    /// Get root table for function
+    fn getRootTable(self: *GCIntegration, function: c.LLVMValueRef) ?c.LLVMValueRef {
+        return self.function_root_tables.get(function);
+    }
+    
+    /// Helper to get or create a function declaration
+    fn getOrCreateFunction(self: *GCIntegration, name: []const u8, return_type: c.LLVMTypeRef, param_types: []const c.LLVMTypeRef) c.LLVMValueRef {
+        const name_cstr = @as([*:0]const u8, @ptrCast(name.ptr));
+        
+        if (c.LLVMGetNamedFunction(self.llvm_module, name_cstr)) |existing| {
+            return existing;
+        }
+        
+        const function_type = c.LLVMFunctionType(return_type, @as([*]c.LLVMTypeRef, @ptrCast(param_types.ptr)), @intCast(param_types.len), 0);
+        return c.LLVMAddFunction(self.llvm_module, name_cstr, function_type);
     }
     
     /// Generate array allocation with GC
@@ -511,12 +569,23 @@ export fn cursed_gc_collect_wrapper() void {
 /// Wrapper for finalizer registration
 export fn cursed_gc_add_finalizer_wrapper(object: *anyopaque, finalizer: *anyopaque) void {
     if (global_gc) |gc| {
-        // This is a simplified finalizer wrapper
-        // Real implementation would properly handle function pointers
-        _ = object;
-        _ = finalizer;
-        _ = gc;
-        // TODO: Implement proper finalizer registration from LLVM
+        // Implement proper finalizer registration from LLVM
+        // Create finalizer function wrapper
+        const finalizer_wrapper_fn = struct {
+            fn call(obj: *anyopaque) void {
+                // Call the actual finalizer function pointer
+                const fn_ptr = @as(?*const fn(*anyopaque) void, @ptrFromInt(@intFromPtr(finalizer)));
+                if (fn_ptr) |f| {
+                    f(obj);
+                }
+            }
+        }.call;
+        
+        // Register the finalizer with the GC
+        const object_header = gc_module.ObjectHeader.fromData(object);
+        gc.registerFinalizer(object_header, finalizer_wrapper_fn) catch |err| {
+            std.log.err("Failed to register finalizer: {}", .{err});
+        };
     }
 }
 
@@ -533,4 +602,28 @@ export fn cursed_gc_print_stats_wrapper() void {
     if (global_gc) |gc| {
         gc.printStats();
     }
+}
+
+/// Stack frame registration for GC root scanning
+export fn cursed_gc_register_frame(stack_ptr: *anyopaque) void {
+    if (global_gc) |gc| {
+        gc.registerStackRoot(stack_ptr) catch |err| {
+            std.log.err("Failed to register stack frame: {}", .{err});
+        };
+    }
+}
+
+/// Stack frame unregistration
+export fn cursed_gc_unregister_frame(stack_ptr: *anyopaque) void {
+    if (global_gc) |gc| {
+        gc.unregisterStackRoot(stack_ptr) catch |err| {
+            std.log.err("Failed to unregister stack frame: {}", .{err});
+        };
+    }
+}
+
+/// Clean up root table
+export fn cursed_gc_cleanup_roots(root_table: **anyopaque) void {
+    // Root cleanup is handled by frame unregistration
+    _ = root_table;
 }

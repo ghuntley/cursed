@@ -4,9 +4,13 @@ const Allocator = std.mem.Allocator;
 const HashMap = std.HashMap;
 
 const ast = @import("ast_simple.zig");
+const error_handling = @import("error_handling.zig");
 const Program = ast.Program;
 const Statement = ast.Statement;
 const Expression = ast.Expression;
+const CursedError = error_handling.CursedError;
+const ErrorContext = error_handling.ErrorContext;
+const safeDupeString = error_handling.safeDupeString;
 
 // Forward declarations for struct and interface support
 pub const StructInstance = struct {
@@ -14,9 +18,13 @@ pub const StructInstance = struct {
     fields: HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator, type_name: []const u8) StructInstance {
+    pub fn init(allocator: Allocator, type_name: []const u8) CursedError!StructInstance {
+        const type_name_copy = safeDupeString(allocator, type_name) catch |err| {
+            return err;
+        };
+        
         return StructInstance{
-            .type_name = allocator.dupe(u8, type_name) catch @panic("Out of memory"),
+            .type_name = type_name_copy,
             .fields = HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
@@ -61,9 +69,13 @@ pub const VTable = struct {
     methods: HashMap([]const u8, *FunctionValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator, interface_name: []const u8) VTable {
+    pub fn init(allocator: Allocator, interface_name: []const u8) CursedError!VTable {
+        const interface_name_copy = safeDupeString(allocator, interface_name) catch |err| {
+            return err;
+        };
+        
         return VTable{
-            .interface_name = allocator.dupe(u8, interface_name) catch @panic("Out of memory"),
+            .interface_name = interface_name_copy,
             .methods = HashMap([]const u8, *FunctionValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
@@ -91,9 +103,13 @@ pub const FunctionValue = struct {
     closure_env: ?*Environment,
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator, name: []const u8, parameters: [][]const u8, body: []ast.Statement, env: ?*Environment) FunctionValue {
+    pub fn init(allocator: Allocator, name: []const u8, parameters: [][]const u8, body: []ast.Statement, env: ?*Environment) CursedError!FunctionValue {
+        const name_copy = safeDupeString(allocator, name) catch |err| {
+            return err;
+        };
+        
         return FunctionValue{
-            .name = allocator.dupe(u8, name) catch @panic("Out of memory"),
+            .name = name_copy,
             .parameters = parameters,
             .body = body,
             .closure_env = env,
@@ -106,20 +122,8 @@ pub const FunctionValue = struct {
     }
 };
 
-pub const InterpreterError = error{
-    UndefinedVariable,
-    UndefinedFunction,
-    TypeMismatch,
-    DivisionByZero,
-    RuntimeError,
-    OutOfMemory,
-    UndefinedStruct,
-    UndefinedInterface,
-    UndefinedField,
-    UndefinedMethod,
-    InvalidStructField,
-    InterfaceNotImplemented,
-};
+// Use the comprehensive error system instead of custom errors
+pub const InterpreterError = CursedError;
 
 pub const ErrorValue = struct {
     message: []const u8,
@@ -128,9 +132,13 @@ pub const ErrorValue = struct {
     stack_trace: ?[][]const u8,
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator, message: []const u8, code: i64) ErrorValue {
+    pub fn init(allocator: Allocator, message: []const u8, code: i64) CursedError!ErrorValue {
+        const message_copy = safeDupeString(allocator, message) catch |err| {
+            return err;
+        };
+        
         return ErrorValue{
-            .message = allocator.dupe(u8, message) catch @panic("Out of memory"),
+            .message = message_copy,
             .code = code,
             .context = null,
             .stack_trace = null,
@@ -572,7 +580,7 @@ pub const Interpreter = struct {
         }
         
         // Create new struct instance
-        var struct_instance = StructInstance.init(self.allocator, struct_lit.struct_name);
+        var struct_instance = try StructInstance.init(self.allocator, struct_lit.struct_name);
         
         // Initialize fields from literal
         for (struct_lit.fields.items) |field_assignment| {
@@ -670,11 +678,11 @@ pub const Interpreter = struct {
         const error_value = if (yikes.value) |value_expr| blk: {
             const initial_value = try self.evaluateExpression(value_expr);
             break :blk switch (initial_value) {
-                .String => |msg| ErrorValue.init(self.allocator, msg, 0),
-                .Integer => |code| ErrorValue.init(self.allocator, "Custom error", code),
-                else => ErrorValue.init(self.allocator, "Unknown error", -1),
+                .String => |msg| try ErrorValue.init(self.allocator, msg, 0),
+                .Integer => |code| try ErrorValue.init(self.allocator, "Custom error", code),
+                else => try ErrorValue.init(self.allocator, "Unknown error", -1),
             };
-        } else ErrorValue.init(self.allocator, "Default error", -1);
+        } else try ErrorValue.init(self.allocator, "Default error", -1);
         
         // Register the error type in environment
         try self.environment.define(yikes.name, Value{ .Error = error_value });
@@ -693,7 +701,7 @@ pub const Interpreter = struct {
                     self.allocator,
                     @errorName(err),
                     @intFromError(err)
-                );
+                ) catch break;
                 break;
             };
         }
@@ -725,7 +733,16 @@ pub const Interpreter = struct {
                 self.allocator,
                 @errorName(err),
                 @intFromError(err)
-            );
+            ) catch {
+                // If we can't create error value, return generic error
+                return Value{ .Error = ErrorValue{
+                    .message = "Unknown error",
+                    .code = -1,
+                    .context = null,
+                    .stack_trace = null,
+                    .allocator = self.allocator,
+                }};
+            };
             return Value{ .Error = error_value };
         };
         

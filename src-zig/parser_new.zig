@@ -85,45 +85,6 @@ pub const Parser = struct {
         };
     }
 
-    fn parseType(self: *Parser) ParserError!Type {
-        var is_array = false;
-        var is_optional = false;
-        
-        // Handle array types: []T
-        if (self.match(.LeftBracket)) {
-            is_array = true;
-            if (!self.match(.RightBracket)) {
-                return ParserError.ExpectedRightBracket;
-            }
-        }
-        
-        // Handle optional types: ?T
-        if (self.match(.Question)) {
-            is_optional = true;
-        }
-        
-        const type_token = self.advance();
-        if (type_token.type != .Identifier) {
-            return ParserError.ExpectedIdentifier;
-        }
-        
-        // Parse basic types
-        if (std.mem.eql(u8, type_token.lexeme, "normie")) {
-            return if (is_array) Type{ .Array = .Normie } else Type{ .Basic = .Normie };
-        } else if (std.mem.eql(u8, type_token.lexeme, "tea")) {
-            return if (is_array) Type{ .Array = .Tea } else Type{ .Basic = .Tea };
-        } else if (std.mem.eql(u8, type_token.lexeme, "lit")) {
-            return if (is_array) Type{ .Array = .Lit } else Type{ .Basic = .Lit };
-        } else if (std.mem.eql(u8, type_token.lexeme, "meal")) {
-            return if (is_array) Type{ .Array = .Meal } else Type{ .Basic = .Meal };
-        } else if (std.mem.eql(u8, type_token.lexeme, "void")) {
-            return Type{ .Basic = .Void };
-        } else {
-            // Custom type
-            return Type{ .Custom = type_token.lexeme };
-        }
-    }
-
     fn parseImportStatement(self: *Parser) ParserError!ast.ImportStatement {
         _ = try self.consume(.Yeet, "Expected 'yeet'");
         
@@ -456,9 +417,8 @@ pub const Parser = struct {
             if (!self.check(.Identifier)) {
                 return ParserError.UnexpectedToken;
             }
-            // TODO: Parse full type
-            const field_type = Type{ .Basic = .Normie };
-            _ = self.advance();
+            // Parse full type
+            const field_type = try self.parseType();
             
             const field = StructField{
                 .name = field_name,
@@ -526,9 +486,8 @@ pub const Parser = struct {
             // Parse optional return type
             var return_type: ?Type = null;
             if (self.check(.Identifier)) {
-                // TODO: Parse full return type
-                return_type = Type{ .Basic = .Normie };
-                _ = self.advance();
+                // Parse full return type
+                return_type = try self.parseType();
             }
             
             const method = MethodSignature{
@@ -760,9 +719,8 @@ pub const Parser = struct {
             return ParserError.UnexpectedToken;
         }
         
-        // TODO: Parse full type
-        const param_type = Type{ .Basic = .Normie };
-        _ = self.advance();
+        // Parse full type
+        const param_type = try self.parseType();
         
         return Parameter{
             .name = name,
@@ -811,6 +769,239 @@ pub const Parser = struct {
         // TODO: Better error reporting
         _ = message;
         return ParserError.UnexpectedToken;
+    }
+
+    // Complete type parsing implementation
+    fn parseType(self: *Parser) ParserError!Type {
+        return try self.parseComplexType();
+    }
+    
+    fn parseComplexType(self: *Parser) ParserError!Type {
+        // Parse primary type first
+        var base_type = try self.parsePrimaryType();
+        
+        // Handle composite types (arrays, slices, channels, etc.)
+        while (true) {
+            if (self.match(.LeftBracket)) {
+                // Array or slice type
+                if (self.check(.RightBracket)) {
+                    // Slice type []T
+                    _ = self.advance(); // consume ']'
+                    const slice_type = SliceType{
+                        .element_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
+                    };
+                    slice_type.element_type.* = base_type;
+                    base_type = Type{ .Slice = slice_type };
+                } else {
+                    // Array type [N]T
+                    // For now, skip size expression parsing
+                    while (!self.check(.RightBracket) and !self.isAtEnd()) {
+                        _ = self.advance();
+                    }
+                    _ = try self.consume(.RightBracket, "Expected ']'");
+                    
+                    const array_type = ArrayType{
+                        .element_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
+                        .size = null, // TODO: Parse size expression
+                    };
+                    array_type.element_type.* = base_type;
+                    base_type = Type{ .Array = array_type };
+                }
+            } else if (self.match(.Asterisk)) {
+                // Pointer type *T
+                const pointer_type = PointerType{
+                    .target_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
+                    .is_mutable = true, // TODO: Parse mutability
+                };
+                pointer_type.target_type.* = base_type;
+                base_type = Type{ .Pointer = pointer_type };
+            } else {
+                break;
+            }
+        }
+        
+        return base_type;
+    }
+    
+    fn parsePrimaryType(self: *Parser) ParserError!Type {
+        const current_token = self.peek();
+        
+        // Parse CURSED basic types
+        switch (current_token.kind) {
+            .Normie => {
+                _ = self.advance();
+                return Type{ .Basic = .Normie };
+            },
+            .Tea => {
+                _ = self.advance();
+                return Type{ .Basic = .Tea };
+            },
+            .Txt => {
+                _ = self.advance();
+                return Type{ .Basic = .Txt };
+            },
+            .Lit => {
+                _ = self.advance();
+                return Type{ .Basic = .Lit };
+            },
+            .Sip => {
+                _ = self.advance();
+                return Type{ .Basic = .Sip };
+            },
+            .Smol => {
+                _ = self.advance();
+                return Type{ .Basic = .Smol };
+            },
+            .Mid => {
+                _ = self.advance();
+                return Type{ .Basic = .Mid };
+            },
+            .Thicc => {
+                _ = self.advance();
+                return Type{ .Basic = .Thicc };
+            },
+            .Snack => {
+                _ = self.advance();
+                return Type{ .Basic = .Snack };
+            },
+            .Meal => {
+                _ = self.advance();
+                return Type{ .Basic = .Meal };
+            },
+            .Byte => {
+                _ = self.advance();
+                return Type{ .Basic = .Byte };
+            },
+            .Rune => {
+                _ = self.advance();
+                return Type{ .Basic = .Rune };
+            },
+            .Extra => {
+                _ = self.advance();
+                return Type{ .Basic = .Extra };
+            },
+            .Identifier => {
+                return try self.parseIdentifierType();
+            },
+            .LeftParen => {
+                return try self.parseTupleOrFunctionType();
+            },
+            .Map => {
+                return try self.parseMapType();
+            },
+            .Dm => {
+                return try self.parseChannelType();
+            },
+            else => {
+                return ParserError.UnexpectedToken;
+            }
+        }
+    }
+    
+    fn parseIdentifierType(self: *Parser) ParserError!Type {
+        const name = self.advance().lexeme;
+        
+        // Check for generic type arguments
+        if (self.match(.LeftAngle)) {
+            // Generic type like Vec<T> or Map<K, V>
+            var type_arguments = ArrayList(Type).init(self.allocator);
+            
+            if (!self.check(.RightAngle)) {
+                while (true) {
+                    const type_arg = try self.parseType();
+                    try type_arguments.append(type_arg);
+                    
+                    if (!self.match(.Comma)) break;
+                }
+            }
+            
+            _ = try self.consume(.RightAngle, "Expected '>' after type arguments");
+            
+            const generic_type = GenericType{
+                .name = name,
+                .type_arguments = type_arguments,
+                .constraints = ArrayList(TypeConstraint).init(self.allocator),
+            };
+            
+            return Type{ .Generic = generic_type };
+        }
+        
+        // Simple custom type
+        return Type{ .Custom = name };
+    }
+    
+    fn parseTupleOrFunctionType(self: *Parser) ParserError!Type {
+        _ = self.advance(); // consume '('
+        
+        var elements = ArrayList(Type).init(self.allocator);
+        
+        if (!self.check(.RightParen)) {
+            while (true) {
+                const element_type = try self.parseType();
+                try elements.append(element_type);
+                
+                if (!self.match(.Comma)) break;
+            }
+        }
+        
+        _ = try self.consume(.RightParen, "Expected ')'");
+        
+        // Check if this is a function type (has -> after)
+        if (self.match(.Arrow)) {
+            // Function type (T1, T2) -> ReturnType
+            const return_type = self.allocator.create(Type) catch return ParserError.OutOfMemory;
+            return_type.* = try self.parseType();
+            
+            const function_type = FunctionType{
+                .parameters = elements,
+                .return_type = return_type,
+                .is_variadic = false,
+            };
+            
+            return Type{ .Function = function_type };
+        }
+        
+        // Tuple type (T1, T2, T3)
+        const tuple_type = TupleType{ .elements = elements };
+        return Type{ .Tuple = tuple_type };
+    }
+    
+    fn parseMapType(self: *Parser) ParserError!Type {
+        _ = self.advance(); // consume 'map'
+        _ = try self.consume(.LeftBracket, "Expected '[' after 'map'");
+        
+        const key_type = self.allocator.create(Type) catch return ParserError.OutOfMemory;
+        key_type.* = try self.parseType();
+        
+        _ = try self.consume(.RightBracket, "Expected ']' after key type");
+        
+        const value_type = self.allocator.create(Type) catch return ParserError.OutOfMemory;
+        value_type.* = try self.parseType();
+        
+        const map_type = MapType{
+            .key_type = key_type,
+            .value_type = value_type,
+        };
+        
+        return Type{ .Map = map_type };
+    }
+    
+    fn parseChannelType(self: *Parser) ParserError!Type {
+        _ = self.advance(); // consume 'dm'
+        _ = try self.consume(.LeftAngle, "Expected '<' after 'dm'");
+        
+        const element_type = self.allocator.create(Type) catch return ParserError.OutOfMemory;
+        element_type.* = try self.parseType();
+        
+        _ = try self.consume(.RightAngle, "Expected '>' after element type");
+        
+        const channel_type = ChannelType{
+            .element_type = element_type,
+            .is_send_only = false,
+            .is_receive_only = false,
+        };
+        
+        return Type{ .Channel = channel_type };
     }
 };
 

@@ -11,6 +11,8 @@ const complete_compiler = @import("complete_compiler.zig");
 const interpreter = @import("interpreter.zig");
 const simple_interpreter = @import("simple_interpreter.zig");
 const stdlib_integration = @import("stdlib_integration.zig");
+const concurrency = @import("concurrency.zig");
+const concurrency_runtime = @import("concurrency_runtime_bridge.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};

@@ -171,13 +171,19 @@ pub const StdlibIntegration = struct {
             print("🔍 Resolving stdlib call: {s}\n", .{full_name});
         }
         
+        // Validate function signature and types
+        if (try self.validateFunctionCall(call)) |validation_error| {
+            print("❌ Type validation failed for {s}: {s}\n", .{ full_name, validation_error });
+            return StdlibIntegrationError.TypeMismatch;
+        }
+        
         // Check function registry
         if (self.function_registry.resolveFunction(full_name)) |_| {
             // Function found in registry
             self.cache_hits += 1;
             
-            // Execute through JIT engine
-            const result = try self.jit_engine.executeFunction(full_name, call.arguments);
+            // Execute through runtime system
+            const result = try self.runtime.callFunction(call.module_name, call.function_name, call.arguments);
             
             // Update performance metrics
             const execution_time = @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
@@ -193,6 +199,44 @@ pub const StdlibIntegration = struct {
             self.cache_misses += 1;
             return self.dynamicResolveFunction(call);
         }
+    }
+    
+    /// Validate function call arguments and return types
+    fn validateFunctionCall(self: *StdlibIntegration, call: StdlibCall) !?[]const u8 {
+        const full_name = try call.fullName(self.allocator);
+        defer self.allocator.free(full_name);
+        
+        // Get function metadata for type checking
+        if (self.function_metadata.get(full_name)) |metadata| {
+            // Check argument count
+            if (call.arguments.len != metadata.parameter_types.len) {
+                return try std.fmt.allocPrint(self.allocator, "Expected {} arguments, got {}", .{ metadata.parameter_types.len, call.arguments.len });
+            }
+            
+            // Check argument types
+            for (call.arguments, 0..) |arg, i| {
+                const expected_type = metadata.parameter_types[i];
+                const actual_type = switch (arg) {
+                    .String => "tea",
+                    .Integer => "normie",
+                    .Float => "meal",
+                    .Boolean => "lit",
+                    else => "unknown",
+                };
+                
+                if (!std.mem.eql(u8, actual_type, expected_type)) {
+                    return try std.fmt.allocPrint(self.allocator, "Argument {} expected type {s}, got {s}", .{ i, expected_type, actual_type });
+                }
+            }
+            
+            return null; // Validation passed
+        }
+        
+        // Create default metadata for unknown functions
+        const metadata = StdlibFunctionMetadata.init(self.allocator, call.module_name, call.function_name);
+        try self.function_metadata.put(try self.allocator.dupe(u8, full_name), metadata);
+        
+        return null; // Allow unknown functions to pass
     }
 
     /// Dynamically load and resolve a stdlib function

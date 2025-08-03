@@ -10,7 +10,7 @@ pub fn build(b: *std.Build) void {
     // Create the CURSED compiler executable with concurrency support
     const exe = b.addExecutable(.{
         .name = "cursed-zig",
-        .root_source_file = b.path("src-zig/simple_error_compiler.zig"),
+        .root_source_file = b.path("src-zig/simple_main.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });

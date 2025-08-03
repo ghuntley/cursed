@@ -156,8 +156,52 @@ pub const CodeGen = struct {
                 const expr: *Expression = @ptrCast(@alignCast(stmt.data));
                 _ = try self.generateExpression(expr.*);
             },
+            .Let => {
+                const let_stmt: *ast.LetStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateLet(let_stmt.*);
+            },
+            .Return => {
+                const ret_stmt: *ast.ReturnStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateReturn(ret_stmt.*);
+            },
+            .If => {
+                const if_stmt: *ast.IfStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateIf(if_stmt.*);
+            },
+            .While => {
+                const while_stmt: *ast.WhileStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateWhile(while_stmt.*);
+            },
+            .Struct => {
+                const struct_stmt: *ast.StructStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateStruct(struct_stmt.*);
+            },
+            .Interface => {
+                const interface_stmt: *ast.InterfaceStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateInterface(interface_stmt.*);
+            },
+            .Implementation => {
+                const impl_stmt: *ast.ImplementationStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateImplementation(impl_stmt.*);
+            },
+            .Yikes => {
+                const yikes_stmt: *ast.YikesStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateYikes(yikes_stmt.*);
+            },
+            .Fam => {
+                const fam_stmt: *ast.FamStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateFam(fam_stmt.*);
+            },
+            .Block => {
+                const block_stmt: *ast.BlockStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateBlock(block_stmt.*);
+            },
+            .Assignment => {
+                const assign_stmt: *ast.AssignmentStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateAssignment(assign_stmt.*);
+            },
             else => {
-                // TODO: Implement other statement types
+                std.debug.print("Unimplemented statement type in codegen: {}\n", .{stmt.tag});
             },
         }
     }
@@ -285,14 +329,18 @@ pub const CodeGen = struct {
                     .BooleanLiteral => |bool_val| {
                         return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
                     },
+                    .CharLiteral => |char| {
+                        return c.LLVMConstInt(c.LLVMInt8TypeInContext(self.context), @as(u8, @intCast(char)), 0);
+                    },
                 }
             },
             .Identifier => |ident| {
                 // Look up variable in symbol table
-                if (self.symbols.get(ident)) |value| {
-                    return value;
+                if (self.variables.get(ident)) |alloca| {
+                    const var_type = c.LLVMGetAllocatedType(alloca);
+                    return c.LLVMBuildLoad2(self.builder, var_type, alloca, ident.ptr);
                 } else {
-                    return error.UndefinedVariable;
+                    return CodeGenError.UndefinedSymbol;
                 }
             },
             .BinaryOp => |binary| {
@@ -305,10 +353,37 @@ pub const CodeGen = struct {
                 return try self.generateUnaryOp(unary.operator, operand);
             },
             .FunctionCall => |call| {
-                return try self.generateFunctionCall(call);
+                return try self.generateCall(call);
+            },
+            .MemberAccess => |member| {
+                return try self.generateMemberAccess(member);
+            },
+            .StructLiteral => |struct_lit| {
+                return try self.generateStructLiteral(struct_lit);
+            },
+            .Tuple => |tuple| {
+                return try self.generateTuple(tuple);
+            },
+            .TupleAccess => |tuple_access| {
+                return try self.generateTupleAccess(tuple_access);
+            },
+            .ArrayLiteral => |array| {
+                return try self.generateArrayLiteral(array);
+            },
+            .IndexAccess => |index| {
+                return try self.generateIndexAccess(index);
+            },
+            .TypeCast => |cast| {
+                return try self.generateTypeCast(cast);
+            },
+            .Shook => |shook| {
+                return try self.generateShook(shook);
+            },
+            .Match => |match| {
+                return try self.generateMatch(match);
             },
             else => {
-                // Default fallback for unimplemented expressions
+                std.debug.print("Unimplemented expression type in codegen: {}\n", .{expr});
                 return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 1);
             },
         }
@@ -908,6 +983,318 @@ pub const CodeGen = struct {
         c.LLVMPositionBuilderAtEnd(self.builder, continue_block);
         
         return result;
+    }
+
+    /// Generate unary operation
+    fn generateUnaryOp(self: *CodeGen, operator: []const u8, operand: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        if (std.mem.eql(u8, operator, "-")) {
+            // Unary minus
+            const operand_type = c.LLVMTypeOf(operand);
+            if (c.LLVMGetTypeKind(operand_type) == c.LLVMIntegerTypeKind) {
+                const zero = c.LLVMConstInt(operand_type, 0, 0);
+                return c.LLVMBuildSub(self.builder, zero, operand, "neg");
+            } else if (c.LLVMGetTypeKind(operand_type) == c.LLVMDoubleTypeKind or c.LLVMGetTypeKind(operand_type) == c.LLVMFloatTypeKind) {
+                return c.LLVMBuildFNeg(self.builder, operand, "fneg");
+            }
+        } else if (std.mem.eql(u8, operator, "!")) {
+            // Logical not
+            return c.LLVMBuildNot(self.builder, operand, "not");
+        } else if (std.mem.eql(u8, operator, "~")) {
+            // Bitwise not
+            return c.LLVMBuildNot(self.builder, operand, "bitnot");
+        } else if (std.mem.eql(u8, operator, "+")) {
+            // Unary plus (no-op)
+            return operand;
+        }
+        
+        std.debug.print("Unsupported unary operator: {s}\n", .{operator});
+        return CodeGenError.LLVMError;
+    }
+
+    /// Generate array literal
+    fn generateArrayLiteral(self: *CodeGen, array: ast.ArrayLiteralExpression) CodeGenError!c.LLVMValueRef {
+        if (array.elements.items.len == 0) {
+            // Empty array
+            const i8_type = c.LLVMInt8TypeInContext(self.context);
+            const array_type = c.LLVMArrayType(i8_type, 0);
+            return c.LLVMGetUndef(array_type);
+        }
+
+        // Generate all elements first to determine array type
+        var element_values = ArrayList(c.LLVMValueRef).init(self.allocator);
+        defer element_values.deinit();
+
+        var element_type: ?c.LLVMTypeRef = null;
+        for (array.elements.items) |element| {
+            const value = try self.generateExpression(element);
+            try element_values.append(value);
+            
+            if (element_type == null) {
+                element_type = c.LLVMTypeOf(value);
+            }
+        }
+
+        // Create array type
+        const array_type = c.LLVMArrayType(element_type.?, @as(u32, @intCast(element_values.items.len)));
+        
+        // Allocate array on heap
+        const array_size = c.LLVMSizeOf(array_type);
+        const malloc_func = self.functions.get("malloc").?;
+        const array_ptr = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(malloc_func)),
+            malloc_func,
+            &[_]c.LLVMValueRef{array_size},
+            1,
+            "array_alloc"
+        );
+
+        // Cast to proper array pointer type
+        const typed_array_ptr = c.LLVMBuildBitCast(
+            self.builder,
+            array_ptr,
+            c.LLVMPointerType(array_type, 0),
+            "array_ptr"
+        );
+
+        // Initialize array elements
+        for (element_values.items, 0..) |value, i| {
+            const element_ptr = c.LLVMBuildGEP2(
+                self.builder,
+                array_type,
+                typed_array_ptr,
+                &[_]c.LLVMValueRef{
+                    c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0),
+                    c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @as(u32, @intCast(i)), 0)
+                },
+                2,
+                "element_ptr"
+            );
+            _ = c.LLVMBuildStore(self.builder, value, element_ptr);
+        }
+
+        return typed_array_ptr;
+    }
+
+    /// Generate array index access
+    fn generateIndexAccess(self: *CodeGen, index: ast.IndexAccessExpression) CodeGenError!c.LLVMValueRef {
+        const array_value = try self.generateExpression(index.object.*);
+        const index_value = try self.generateExpression(index.index.*);
+
+        // Get array type from pointer
+        const array_ptr_type = c.LLVMTypeOf(array_value);
+        const array_type = c.LLVMGetElementType(array_ptr_type);
+        const element_type = c.LLVMGetElementType(array_type);
+
+        // Generate element pointer
+        const element_ptr = c.LLVMBuildGEP2(
+            self.builder,
+            array_type,
+            array_value,
+            &[_]c.LLVMValueRef{
+                c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0),
+                index_value
+            },
+            2,
+            "element_ptr"
+        );
+
+        // Load element value
+        return c.LLVMBuildLoad2(self.builder, element_type, element_ptr, "element_value");
+    }
+
+    /// Generate type cast
+    fn generateTypeCast(self: *CodeGen, cast: ast.TypeCastExpression) CodeGenError!c.LLVMValueRef {
+        const value = try self.generateExpression(cast.expression.*);
+        const target_type = try self.getLLVMType(cast.target_type);
+
+        const source_type = c.LLVMTypeOf(value);
+        const source_kind = c.LLVMGetTypeKind(source_type);
+        const target_kind = c.LLVMGetTypeKind(target_type);
+
+        // Handle various cast combinations
+        if (source_kind == c.LLVMIntegerTypeKind and target_kind == c.LLVMIntegerTypeKind) {
+            // Integer to integer cast
+            const source_width = c.LLVMGetIntTypeWidth(source_type);
+            const target_width = c.LLVMGetIntTypeWidth(target_type);
+            
+            if (source_width < target_width) {
+                return c.LLVMBuildSExt(self.builder, value, target_type, "sext");
+            } else if (source_width > target_width) {
+                return c.LLVMBuildTrunc(self.builder, value, target_type, "trunc");
+            } else {
+                return value; // Same width, no cast needed
+            }
+        } else if (source_kind == c.LLVMIntegerTypeKind and (target_kind == c.LLVMFloatTypeKind or target_kind == c.LLVMDoubleTypeKind)) {
+            // Integer to float cast
+            return c.LLVMBuildSIToFP(self.builder, value, target_type, "itof");
+        } else if ((source_kind == c.LLVMFloatTypeKind or source_kind == c.LLVMDoubleTypeKind) and target_kind == c.LLVMIntegerTypeKind) {
+            // Float to integer cast
+            return c.LLVMBuildFPToSI(self.builder, value, target_type, "ftoi");
+        } else if (source_kind == c.LLVMPointerTypeKind and target_kind == c.LLVMPointerTypeKind) {
+            // Pointer to pointer cast
+            return c.LLVMBuildBitCast(self.builder, value, target_type, "bitcast");
+        } else {
+            // Default bitcast for other types
+            return c.LLVMBuildBitCast(self.builder, value, target_type, "cast");
+        }
+    }
+
+    /// Generate pattern matching expression
+    fn generateMatch(self: *CodeGen, match: ast.MatchExpression) CodeGenError!c.LLVMValueRef {
+        const match_value = try self.generateExpression(match.expression.*);
+        const current_func = self.current_function.?;
+
+        // Create basic blocks for each case and merge
+        var case_blocks = ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        defer case_blocks.deinit();
+
+        var case_values = ArrayList(c.LLVMValueRef).init(self.allocator);
+        defer case_values.deinit();
+
+        const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "match_merge");
+        const match_value_type = c.LLVMTypeOf(match_value);
+
+        // Generate blocks and conditions for each case
+        for (match.cases.items, 0..) |case_item, i| {
+            const case_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "match_case");
+            try case_blocks.append(case_block);
+
+            // Generate condition check
+            if (i == 0) {
+                // First case, generate the switch logic
+                const default_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "match_default");
+                const switch_inst = c.LLVMBuildSwitch(self.builder, match_value, default_block, @as(u32, @intCast(match.cases.items.len)));
+
+                // Add cases to switch
+                for (match.cases.items, 0..) |case_check, j| {
+                    if (case_check.pattern) |pattern| {
+                        switch (pattern) {
+                            .Literal => |literal| {
+                                const case_value = try self.generateExpression(ast.Expression{ .Literal = literal });
+                                c.LLVMAddCase(switch_inst, case_value, case_blocks.items[j]);
+                            },
+                            else => {
+                                // For complex patterns, add to default for now
+                                c.LLVMAddCase(switch_inst, c.LLVMConstInt(match_value_type, @as(u64, @intCast(j)), 0), case_blocks.items[j]);
+                            },
+                        }
+                    }
+                }
+            }
+
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.builder, case_block);
+            const case_result = if (case_item.body) |body|
+                try self.generateExpression(body)
+            else
+                c.LLVMGetUndef(match_value_type);
+
+            try case_values.append(case_result);
+
+            // Branch to merge block
+            _ = c.LLVMBuildBr(self.builder, merge_block);
+        }
+
+        // Create PHI node in merge block to collect results
+        c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+        const phi = c.LLVMBuildPhi(self.builder, match_value_type, "match_result");
+
+        // Add incoming values to PHI
+        for (case_values.items, 0..) |value, i| {
+            c.LLVMAddIncoming(phi, &[_]c.LLVMValueRef{value}, &[_]c.LLVMBasicBlockRef{case_blocks.items[i]}, 1);
+        }
+
+        return phi;
+    }
+
+    /// Generate block statement
+    fn generateBlock(self: *CodeGen, block: ast.BlockStatement) CodeGenError!void {
+        for (block.statements.items) |stmt| {
+            try self.generateStatement(stmt);
+        }
+    }
+
+    /// Generate assignment statement
+    fn generateAssignment(self: *CodeGen, assignment: ast.AssignmentStatement) CodeGenError!void {
+        const value = try self.generateExpression(assignment.value);
+        
+        if (self.variables.get(assignment.target)) |alloca| {
+            _ = c.LLVMBuildStore(self.builder, value, alloca);
+        } else {
+            return CodeGenError.UndefinedSymbol;
+        }
+    }
+
+    /// Generate implementation statement (struct implementing interface)
+    fn generateImplementation(self: *CodeGen, impl: ast.ImplementationStatement) CodeGenError!void {
+        // Store implementation info for vtable generation
+        const struct_type_name = impl.implementing_type;
+        const interface_name = impl.interface_name;
+
+        // Generate methods with mangled names
+        for (impl.methods.items) |method| {
+            var mangled_name = ArrayList(u8).init(self.allocator);
+            defer mangled_name.deinit();
+
+            try mangled_name.appendSlice(struct_type_name);
+            try mangled_name.appendSlice("_");
+            try mangled_name.appendSlice(method.name);
+
+            // Convert method to function statement and generate
+            const func_stmt = ast.FunctionStatement{
+                .name = try mangled_name.toOwnedSlice(),
+                .parameters = method.parameters,
+                .return_type = method.return_type,
+                .body = method.body,
+                .type_parameters = ArrayList(ast.TypeParameter).init(self.allocator),
+                .attributes = ArrayList(ast.Attribute).init(self.allocator),
+            };
+
+            try self.generateFunction(func_stmt);
+        }
+
+        // Register this implementation for interface dispatch
+        const vtable_name = try std.fmt.allocPrint(
+            self.allocator,
+            "vtable_{s}_{s}",
+            .{ struct_type_name, interface_name }
+        );
+
+        // Create and store vtable global
+        if (self.interface_types.get(interface_name)) |interface_info| {
+            const method_count = interface_info.methods.items.len;
+            const func_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+            const vtable_type = c.LLVMArrayType(func_ptr_type, @as(u32, @intCast(method_count)));
+
+            const vtable_global = c.LLVMAddGlobal(self.module, vtable_type, vtable_name.ptr);
+            c.LLVMSetLinkage(vtable_global, c.LLVMInternalLinkage);
+
+            // Initialize vtable with method pointers
+            var method_pointers = ArrayList(c.LLVMValueRef).init(self.allocator);
+            defer method_pointers.deinit();
+
+            for (interface_info.methods.items) |interface_method| {
+                const method_name = try std.fmt.allocPrint(
+                    self.allocator,
+                    "{s}_{s}",
+                    .{ struct_type_name, interface_method.name }
+                );
+                
+                if (self.functions.get(method_name)) |method_func| {
+                    const casted_func = c.LLVMBuildBitCast(self.builder, method_func, func_ptr_type, "method_cast");
+                    try method_pointers.append(casted_func);
+                } else {
+                    // Use null for missing methods
+                    try method_pointers.append(c.LLVMConstNull(func_ptr_type));
+                }
+            }
+
+            if (method_pointers.items.len > 0) {
+                const vtable_init = c.LLVMConstArray(func_ptr_type, method_pointers.items.ptr, @as(u32, @intCast(method_pointers.items.len)));
+                c.LLVMSetInitializer(vtable_global, vtable_init);
+            }
+        }
     }
 };
 

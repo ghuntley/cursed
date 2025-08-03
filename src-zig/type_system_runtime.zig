@@ -5,6 +5,9 @@ const HashMap = std.HashMap;
 
 const ast = @import("ast.zig");
 const interpreter = @import("interpreter.zig");
+const error_handling = @import("error_handling.zig");
+const CursedError = error_handling.CursedError;
+const safeDupeString = error_handling.safeDupeString;
 
 // Enhanced runtime type information
 pub const RuntimeTypeInfo = struct {
@@ -41,10 +44,12 @@ pub const RuntimeTypeInfo = struct {
         vtable_index: ?u32,
     };
 
-    pub fn init(allocator: Allocator, type_id: u32, name: []const u8, kind: TypeKind) RuntimeTypeInfo {
+    pub fn init(allocator: Allocator, type_id: u32, name: []const u8, kind: TypeKind) CursedError!RuntimeTypeInfo {
+        const name_copy = try safeDupeString(allocator, name);
+        
         return RuntimeTypeInfo{
             .type_id = type_id,
-            .type_name = allocator.dupe(u8, name) catch @panic("Out of memory"),
+            .type_name = name_copy,
             .size = 0,
             .alignment = 1,
             .kind = kind,
