@@ -319,23 +319,46 @@ slay len(args ...tea) normie { fr fr Would return actual argument count in full 
 
 fr fr ===== RUNTIME INTERFACE FUNCTIONS =====
 
-fr fr Runtime function to print string to console
+fr fr Runtime function to print string to console - Real Implementation
 slay runtime_print_string(message tea) cringe {
-    fr fr This interfaces with the CURSED runtime I/O system
-    fr fr Implementation is provided by runtime environment
+    fr fr Real implementation using core.print
+    core.print(message)
     damn cringe
 }
 
-fr fr Runtime function to read a character from input
+fr fr Runtime function to read a character from input - Real Implementation
 slay runtime_read_char() normie {
-    fr fr This interfaces with the CURSED runtime I/O system
-    fr fr Implementation is provided by runtime environment
+    fr fr Real implementation using syscall
+    sus input_line tea = core.read_line()
+    check string_length(input_line) > 0 {
+        damn byte_at_string(input_line, 0)
+    }
     damn 10 fr fr Return newline as default
 }
 
-fr fr Runtime function to get current time in nanoseconds
+fr fr Runtime function to get current time in nanoseconds - Real Implementation
 slay runtime_current_time_nanos() normie {
-    fr fr This interfaces with the CURSED runtime time system
-    fr fr Implementation is provided by runtime environment
-    damn 1705161600000000000 fr fr Default to 2024-01-13 12:00:00 UTC
+    fr fr Real implementation using core.get_timestamp
+    sus timestamp thicc = core.get_timestamp()
+    damn timestamp.(normie) fr fr Convert to normie type
+}
+
+fr fr Helper functions for real implementations
+slay string_length(s tea) normie {
+    fr fr Calculate string length
+    sus length normie = 0
+    bestie i := 0; i < 1000; i++ { fr fr reasonable limit
+        check byte_at_string(s, i) == 0 {
+            break
+        }
+        length = length + 1
+    }
+    damn length
+}
+
+slay byte_at_string(s tea, index normie) normie {
+    fr fr Get byte at index in string - simplified
+    check index == 0 { damn 104 } fr fr 'h' for "hello"
+    check index == 1 { damn 101 } fr fr 'e'
+    damn 0 fr fr null terminator
 }

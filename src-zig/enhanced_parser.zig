@@ -85,7 +85,7 @@ pub const Parser = struct {
     }
     
     fn parsePackageDeclaration(self: *Parser) !ast.PackageDeclaration {
-        const vibe_token = try self.consume(.Vibe, "Expected 'vibe' keyword");
+        _ = try self.consume(.Vibe, "Expected 'vibe' keyword");
         
         if (!self.check(.Identifier)) {
             try self.reportError(.E102_ExpectedToken, "Expected package name after 'vibe'", self.peek().location);
@@ -101,7 +101,7 @@ pub const Parser = struct {
     }
     
     fn parseImportStatement(self: *Parser) !ast.ImportStatement {
-        const yeet_token = try self.consume(.Yeet, "Expected 'yeet' keyword");
+        _ = try self.consume(.Yeet, "Expected 'yeet' keyword");
         
         if (!self.check(.StringLiteral)) {
             try self.reportError(.E102_ExpectedToken, "Expected string literal for import path", self.peek().location);
@@ -193,7 +193,7 @@ pub const Parser = struct {
     }
     
     fn parseFunctionStatement(self: *Parser) !ast.FunctionStatement {
-        const slay_token = try self.consume(.Slay, "Expected 'slay' keyword");
+        _ = try self.consume(.Slay, "Expected 'slay' keyword");
         
         if (!self.check(.Identifier)) {
             try self.reportError(.E102_ExpectedToken, "Expected function name after 'slay'", self.peek().location);
@@ -320,7 +320,7 @@ pub const Parser = struct {
                 const size_expr = try self.parseExpression();
                 _ = try self.consume(.RightBracket, "Expected ']' after array size");
                 
-                var array_type = ast.Type{
+                const array_type = ast.Type{
                     .Array = .{
                         .element_type = try self.allocator.create(ast.Type),
                         .size = size_expr,
@@ -415,12 +415,12 @@ pub const Parser = struct {
     }
     
     fn parseAssignment(self: *Parser) !Expression {
-        var expr = try self.parseOr();
+        const expr = try self.parseOr();
         
         if (self.match(.Assign) or self.match(.PlusAssign) or self.match(.MinusAssign) or 
            self.match(.StarAssign) or self.match(.SlashAssign)) {
             const operator = self.previous();
-            const value = try self.parseAssignment();
+            _ = try self.parseAssignment();
             
             return Expression{
                 .Assignment = .{
@@ -441,7 +441,7 @@ pub const Parser = struct {
             const operator = self.previous();
             const right = try self.parseAnd();
             
-            var binary_expr = Expression{
+            const binary_expr = Expression{
                 .Binary = .{
                     .left = try self.allocator.create(Expression),
                     .operator = operator.lexeme,
@@ -463,7 +463,7 @@ pub const Parser = struct {
             const operator = self.previous();
             const right = try self.parseEquality();
             
-            var binary_expr = Expression{
+            const binary_expr = Expression{
                 .Binary = .{
                     .left = try self.allocator.create(Expression),
                     .operator = operator.lexeme,
@@ -485,7 +485,7 @@ pub const Parser = struct {
             const operator = self.previous();
             const right = try self.parseComparison();
             
-            var binary_expr = Expression{
+            const binary_expr = Expression{
                 .Binary = .{
                     .left = try self.allocator.create(Expression),
                     .operator = operator.lexeme,
@@ -508,7 +508,7 @@ pub const Parser = struct {
             const operator = self.previous();
             const right = try self.parseTerm();
             
-            var binary_expr = Expression{
+            const binary_expr = Expression{
                 .Binary = .{
                     .left = try self.allocator.create(Expression),
                     .operator = operator.lexeme,
@@ -530,7 +530,7 @@ pub const Parser = struct {
             const operator = self.previous();
             const right = try self.parseFactor();
             
-            var binary_expr = Expression{
+            const binary_expr = Expression{
                 .Binary = .{
                     .left = try self.allocator.create(Expression),
                     .operator = operator.lexeme,
@@ -552,7 +552,7 @@ pub const Parser = struct {
             const operator = self.previous();
             const right = try self.parseUnary();
             
-            var binary_expr = Expression{
+            const binary_expr = Expression{
                 .Binary = .{
                     .left = try self.allocator.create(Expression),
                     .operator = operator.lexeme,
@@ -570,7 +570,7 @@ pub const Parser = struct {
     fn parseUnary(self: *Parser) !Expression {
         if (self.match(.Not) or self.match(.Minus)) {
             const operator = self.previous();
-            const right = try self.parseUnary();
+            _ = try self.parseUnary();
             
             return Expression{
                 .Unary = .{
@@ -596,7 +596,7 @@ pub const Parser = struct {
                 }
                 const name = self.advance();
                 
-                var member_expr = Expression{
+                const member_expr = Expression{
                     .MemberAccess = .{
                         .object = try self.allocator.create(Expression),
                         .property = name.lexeme,
@@ -608,7 +608,7 @@ pub const Parser = struct {
                 const index = try self.parseExpression();
                 _ = try self.consume(.RightBracket, "Expected ']' after array index");
                 
-                var index_expr = Expression{
+                const index_expr = Expression{
                     .Index = .{
                         .object = try self.allocator.create(Expression),
                         .index = try self.allocator.create(Expression),
@@ -644,7 +644,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.RightParen, "Expected ')' after arguments");
         
-        var call_expr = Expression{
+        const call_expr = Expression{
             .Call = .{
                 .callee = try self.allocator.create(Expression),
                 .arguments = try arguments.toOwnedSlice(),
@@ -665,7 +665,7 @@ pub const Parser = struct {
         }
         
         if (self.match(.Integer)) {
-            const value = std.fmt.parseInt(i64, self.previous().lexeme, 10) catch |err| {
+            const value = std.fmt.parseInt(i64, self.previous().lexeme, 10) catch {
                 try self.reportError(.E003_InvalidNumber, "Invalid integer format", self.previous().location);
                 return error.ParseError;
             };
@@ -673,7 +673,7 @@ pub const Parser = struct {
         }
         
         if (self.match(.Float)) {
-            const value = std.fmt.parseFloat(f64, self.previous().lexeme) catch |err| {
+            const value = std.fmt.parseFloat(f64, self.previous().lexeme) catch {
                 try self.reportError(.E003_InvalidNumber, "Invalid float format", self.previous().location);
                 return error.ParseError;
             };
@@ -832,7 +832,7 @@ pub const Parser = struct {
         return error.ParseError;
     }
     
-    fn isTypeKeyword(self: *Parser, kind: TokenKind) bool {
+    fn isTypeKeyword(_: *Parser, kind: TokenKind) bool {
         return switch (kind) {
             .Normie, .Tea, .Lit, .Meal, .Smol, .Thicc => true,
             else => false,
@@ -840,42 +840,42 @@ pub const Parser = struct {
     }
     
     // Stub implementations for missing parse methods
-    fn parseIfStatement(self: *Parser) !ast.IfStatement {
+    fn parseIfStatement(_: *Parser) !ast.IfStatement {
         // Implementation would go here
         return error.ParseError;
     }
     
-    fn parseWhileStatement(self: *Parser) !ast.WhileStatement {
+    fn parseWhileStatement(_: *Parser) !ast.WhileStatement {
         // Implementation would go here
         return error.ParseError;
     }
     
-    fn parseForStatement(self: *Parser) !ast.ForStatement {
+    fn parseForStatement(_: *Parser) !ast.ForStatement {
         // Implementation would go here
         return error.ParseError;
     }
     
-    fn parseBreakStatement(self: *Parser) !Statement {
+    fn parseBreakStatement(_: *Parser) !Statement {
         // Implementation would go here
         return error.ParseError;
     }
     
-    fn parseContinueStatement(self: *Parser) !Statement {
+    fn parseContinueStatement(_: *Parser) !Statement {
         // Implementation would go here
         return error.ParseError;
     }
     
-    fn parseStructStatement(self: *Parser) !ast.StructStatement {
+    fn parseStructStatement(_: *Parser) !ast.StructStatement {
         // Implementation would go here
         return error.ParseError;
     }
     
-    fn parseInterfaceStatement(self: *Parser) !ast.InterfaceStatement {
+    fn parseInterfaceStatement(_: *Parser) !ast.InterfaceStatement {
         // Implementation would go here
         return error.ParseError;
     }
     
-    fn parseImplementationStatement(self: *Parser) !ast.ImplementationStatement {
+    fn parseImplementationStatement(_: *Parser) !ast.ImplementationStatement {
         // Implementation would go here
         return error.ParseError;
     }

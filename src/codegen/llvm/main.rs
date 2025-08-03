@@ -109,6 +109,7 @@ pub struct LlvmCodeGenerator {
     ir_code: String,
     register_tracker: RegisterTracker,
     label_counter: usize,
+    variable_counter: usize, // Missing field added for variable numbering
     string_manager: StringConstantManager,
     variables: HashMap<String, String>, // variable name -> register mapping
     variable_types: HashMap<String, String>, // variable name -> LLVM type mapping
@@ -171,6 +172,7 @@ impl LlvmCodeGenerator {
             ir_code: String::new(),
             register_tracker: RegisterTracker::new(),
             label_counter: 0,
+            variable_counter: 0, // Initialize variable counter
             string_manager: get_global_string_manager(),
             variables: HashMap::new(),
             variable_types: HashMap::new(),

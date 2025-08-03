@@ -145,7 +145,8 @@ pub enum Expression {
     MemberAccess(MemberAccessExpression),
     Literal(Literal),
     Unary(UnaryExpression),
-    Array(Vec<Expression>),
+    Array(Vec<Expression>), // Legacy array representation
+    ArrayExpression(ArrayExpression), // New structured array expression
     Map(Vec<(Expression, Expression)>),
     CompositeLiteral(CompositeLiteralExpression),
     ChannelSend(ChannelSendExpression),
@@ -232,6 +233,23 @@ pub struct StructFieldAssignment {
     pub field_name: String,
     pub value: Expression,
 }
+
+/// Array expression with structured representation
+#[derive(Debug, Clone)]
+pub struct ArrayExpression {
+    pub elements: Vec<Expression>,
+    pub element_type: Option<Type>,
+}
+
+/// Field initializer for struct literals
+#[derive(Debug, Clone)]
+pub struct FieldInitializer {
+    pub name: String,
+    pub value: Expression,
+}
+
+/// Struct expression (alias for StructLiteralExpression)
+pub type StructExpression = StructLiteralExpression;
 
 /// Lambda expression (anonymous function)
 #[derive(Debug, Clone)]
@@ -490,6 +508,28 @@ impl TypeAssertionExpression {
             target_type,
             is_safe: true,
         }
+    }
+}
+
+impl ArrayExpression {
+    pub fn new(elements: Vec<Expression>) -> Self {
+        Self {
+            elements,
+            element_type: None,
+        }
+    }
+    
+    pub fn with_type(elements: Vec<Expression>, element_type: Type) -> Self {
+        Self {
+            elements,
+            element_type: Some(element_type),
+        }
+    }
+}
+
+impl FieldInitializer {
+    pub fn new(name: String, value: Expression) -> Self {
+        Self { name, value }
     }
 }
 

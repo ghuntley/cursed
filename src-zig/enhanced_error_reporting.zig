@@ -404,7 +404,7 @@ pub const ErrorReporter = struct {
         return try self.allocator.dupe(u8, "");
     }
     
-    fn addSuggestionsForError(self: *ErrorReporter, diagnostic: *DiagnosticMessage) !void {
+    fn addSuggestionsForError(_: *ErrorReporter, diagnostic: *DiagnosticMessage) !void {
         switch (diagnostic.code) {
             .E101_UnexpectedToken => {
                 try diagnostic.addSuggestion(Suggestion.init("Check for missing semicolons, commas, or brackets"));
@@ -676,7 +676,7 @@ pub const Logger = struct {
         self.writer.print(format ++ "\n", args) catch return;
     }
     
-    pub fn error(self: *Logger, comptime format: []const u8, args: anytype) void {
+    pub fn err(self: *Logger, comptime format: []const u8, args: anytype) void {
         self.log(.Error, format, args);
     }
     
