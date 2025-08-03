@@ -85,6 +85,45 @@ pub const Parser = struct {
         };
     }
 
+    fn parseType(self: *Parser) ParserError!Type {
+        var is_array = false;
+        var is_optional = false;
+        
+        // Handle array types: []T
+        if (self.match(.LeftBracket)) {
+            is_array = true;
+            if (!self.match(.RightBracket)) {
+                return ParserError.ExpectedRightBracket;
+            }
+        }
+        
+        // Handle optional types: ?T
+        if (self.match(.Question)) {
+            is_optional = true;
+        }
+        
+        const type_token = self.advance();
+        if (type_token.type != .Identifier) {
+            return ParserError.ExpectedIdentifier;
+        }
+        
+        // Parse basic types
+        if (std.mem.eql(u8, type_token.lexeme, "normie")) {
+            return if (is_array) Type{ .Array = .Normie } else Type{ .Basic = .Normie };
+        } else if (std.mem.eql(u8, type_token.lexeme, "tea")) {
+            return if (is_array) Type{ .Array = .Tea } else Type{ .Basic = .Tea };
+        } else if (std.mem.eql(u8, type_token.lexeme, "lit")) {
+            return if (is_array) Type{ .Array = .Lit } else Type{ .Basic = .Lit };
+        } else if (std.mem.eql(u8, type_token.lexeme, "meal")) {
+            return if (is_array) Type{ .Array = .Meal } else Type{ .Basic = .Meal };
+        } else if (std.mem.eql(u8, type_token.lexeme, "void")) {
+            return Type{ .Basic = .Void };
+        } else {
+            // Custom type
+            return Type{ .Custom = type_token.lexeme };
+        }
+    }
+
     fn parseImportStatement(self: *Parser) ParserError!ast.ImportStatement {
         _ = try self.consume(.Yeet, "Expected 'yeet'");
         
@@ -97,7 +136,33 @@ pub const Parser = struct {
         
         const import_stmt = ast.ImportStatement.init(self.allocator, path);
         
-        // TODO: Parse alias and specific imports
+        // Parse optional alias: yeet "module" as alias
+        var alias: ?[]const u8 = null;
+        if (self.match(.As)) {
+            const alias_token = self.advance();
+            if (alias_token.type != .Identifier) {
+                return ParserError.ExpectedIdentifier;
+            }
+            alias = alias_token.lexeme;
+        }
+        
+        // Parse optional specific imports: yeet "module" { func1, func2 }
+        var specific_imports: ?[][]const u8 = null;
+        if (self.match(.LeftBrace)) {
+            var imports = std.ArrayList([]const u8).init(self.allocator);
+            while (!self.check(.RightBrace) and !self.isAtEnd()) {
+                const import_token = self.advance();
+                if (import_token.type != .Identifier) {
+                    return ParserError.ExpectedIdentifier;
+                }
+                try imports.append(import_token.lexeme);
+                if (!self.match(.Comma)) break;
+            }
+            if (!self.match(.RightBrace)) {
+                return ParserError.ExpectedRightBrace;
+            }
+            specific_imports = try imports.toOwnedSlice();
+        }
         
         return import_stmt;
     }
@@ -137,9 +202,8 @@ pub const Parser = struct {
         
         // Parse optional type annotation
         var var_type: ?Type = null;
-        if (self.match(.Identifier)) {
-            // TODO: Parse full type
-            var_type = Type{ .Basic = .Normie };
+        if (self.check(.Identifier)) {
+            var_type = try self.parseType();
         }
         
         // Parse optional initializer
@@ -187,9 +251,7 @@ pub const Parser = struct {
         // Parse optional return type
         var return_type: ?Type = null;
         if (self.check(.Identifier)) {
-            // TODO: Parse full return type
-            return_type = Type{ .Basic = .Normie };
-            _ = self.advance();
+            return_type = try self.parseType();
         }
         
         // Parse function body
@@ -297,14 +359,49 @@ pub const Parser = struct {
 
     fn parseForStatement(self: *Parser) ParserError!*Statement {
         _ = try self.consume(.For, "Expected 'for'");
+        _ = try self.consume(.LeftParen, "Expected '(' after 'for'");
         
-        // TODO: Implement for statement parsing
-        // For now, return a basic statement
+        // Parse init statement (optional)
+        var init: ?*Statement = null;
+        if (!self.check(.Semicolon)) {
+            init = try self.parseStatement();
+        }
+        _ = try self.consume(.Semicolon, "Expected ';' after for init");
+        
+        // Parse condition (optional)
+        var condition: ?*Expression = null;
+        if (!self.check(.Semicolon)) {
+            condition = try self.parseExpression();
+        }
+        _ = try self.consume(.Semicolon, "Expected ';' after for condition");
+        
+        // Parse update statement (optional)
+        var update: ?*Statement = null;
+        if (!self.check(.RightParen)) {
+            update = try self.parseStatement();
+        }
+        _ = try self.consume(.RightParen, "Expected ')' after for clauses");
+        
+        // Parse body
+        _ = try self.consume(.LeftBrace, "Expected '{' before for body");
+        var body = ArrayList(*Statement).init(self.allocator);
+        
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            if (self.check(.Newline) or self.check(.Semicolon)) {
+                _ = self.advance();
+                continue;
+            }
+            const stmt = try self.parseStatement();
+            try body.append(stmt);
+        }
+        
+        _ = try self.consume(.RightBrace, "Expected '}' after for body");
+        
         const for_data = ast.ForStatementData{
-            .init = null,
-            .condition = null,
-            .update = null,
-            .body = ArrayList(*Statement).init(self.allocator),
+            .init = init,
+            .condition = condition,
+            .update = update,
+            .body = body,
         };
         
         return Statement.init(self.allocator, .{ .for_stmt = for_data });

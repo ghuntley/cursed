@@ -1,1 +1,1 @@
-vibez.spill("Compiler core implementation complete!")
+vibez.spill("hello")

@@ -250,42 +250,14 @@ pub const CodeGen = struct {
         _ = c.LLVMBuildRet(self.builder, zero);
     }
 
-    fn generateExpression(self: *CodeGen, expr: Expression) CodeGenError!c.LLVMValueRef {
-        switch (expr.tag) {
-            .Integer => {
-                const int_val: *i64 = @ptrCast(@alignCast(expr.data));
-                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @bitCast(int_val.*), 1);
-            },
-            .Float => {
-                const float_val: *f64 = @ptrCast(@alignCast(expr.data));
-                return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float_val.*);
-            },
-            .String => {
-                const str_val: *[]const u8 = @ptrCast(@alignCast(expr.data));
-                return c.LLVMBuildGlobalStringPtr(self.builder, @ptrCast(str_val.*), "str");
-            },
-            .Boolean => {
-                const bool_val: *bool = @ptrCast(@alignCast(expr.data));
-                return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val.*) 1 else 0, 0);
-            },
-            else => {
-                std.debug.print("Unsupported expression type: {s}\n", .{@tagName(expr.tag)});
-                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 1);
-            },
-        }
-    }
 
-    fn generateBinaryOp_old(self: *CodeGen, left: c.LLVMValueRef, operator: []const u8, right: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
-        _ = self;
-        _ = left;
-        _ = operator; 
-        _ = right;
+
+    fn generateBinaryOp_old(self: *CodeGen, _: c.LLVMValueRef, _: []const u8, _: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
         // TODO: Implement binary operations
         return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 1);
     }
 
-    fn getLLVMType(self: *CodeGenerator, cursed_type: []const u8) !c.LLVMTypeRef {
-        _ = self;
+    fn getLLVMTypeFromString(self: *CodeGen, cursed_type: []const u8) !c.LLVMTypeRef {
         if (std.mem.eql(u8, cursed_type, "normie")) {
             return c.LLVMInt32TypeInContext(self.context);
         } else if (std.mem.eql(u8, cursed_type, "meal")) {
@@ -296,27 +268,50 @@ pub const CodeGen = struct {
         return error.UnknownType;
     }
 
-    // Expression generation moved to codegen_clean.zig
-            .Call => |call| {
-                return try self.generateCall(call);
+    // Generate expressions based on type
+    fn generateExpression(self: *CodeGen, expr: ast.Expression) CodeGenError!c.LLVMValueRef {
+        switch (expr) {
+            .Literal => |literal| {
+                switch (literal) {
+                    .IntegerLiteral => |int| {
+                        return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @intCast(int), 0);
+                    },
+                    .FloatLiteral => |float| {
+                        return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float);
+                    },
+                    .StringLiteral => |str| {
+                        return c.LLVMBuildGlobalStringPtr(self.builder, str.ptr, "str");
+                    },
+                    .BooleanLiteral => |bool_val| {
+                        return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
+                    },
+                }
             },
-            .MemberAccess => |member| {
-                return try self.generateMemberAccess(member);
+            .Identifier => |ident| {
+                // Look up variable in symbol table
+                if (self.symbols.get(ident)) |value| {
+                    return value;
+                } else {
+                    return error.UndefinedVariable;
+                }
             },
-            .StructLiteral => |struct_lit| {
-                return try self.generateStructLiteral(struct_lit);
+            .BinaryOp => |binary| {
+                const left = try self.generateExpression(binary.left.*);
+                const right = try self.generateExpression(binary.right.*);
+                return try self.generateBinaryOp(left, binary.operator, right);
             },
-            .Tuple => |tuple| {
-                return try self.generateTuple(tuple);
+            .UnaryOp => |unary| {
+                const operand = try self.generateExpression(unary.operand.*);
+                return try self.generateUnaryOp(unary.operator, operand);
             },
-            .TupleAccess => |tuple_access| {
-                return try self.generateTupleAccess(tuple_access);
+            .FunctionCall => |call| {
+                return try self.generateFunctionCall(call);
             },
-            .Shook => |shook| {
-                return try self.generateShook(shook);
+            else => {
+                // Default fallback for unimplemented expressions
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 1);
             },
-        */
-        return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 1);
+        }
     }
 
     fn generateBinaryOp(self: *CodeGen, left: c.LLVMValueRef, operator: []const u8, right: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {

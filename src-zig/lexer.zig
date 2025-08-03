@@ -216,7 +216,8 @@ pub const Lexer = struct {
         
         while (!self.isAtEnd()) {
             const token = try self.nextToken();
-            if (token.kind != .Newline) { // Skip newlines for now
+            // Skip comments and newlines like the Rust version
+            if (token.kind != .Newline and token.kind != .LineComment and token.kind != .BlockComment) {
                 try tokens.append(token);
             }
             if (token.kind == .Eof) break;
@@ -338,26 +339,6 @@ pub const Lexer = struct {
                     self.column -= 1;
                     return self.identifier(start_line, start_column);
                 }
-                
-                // Handle "fr fr" comment - SECURITY FIX: Safe bounds checking
-                if (c == 'f' and self.safePeekAhead(1) == 'r') {
-                    if (self.safePeekAhead(2) == ' ' and self.safePeekAhead(3) == 'f' and self.safePeekAhead(4) == 'r') {
-                        // This is a "fr fr" comment
-                        self.position += 4; // Skip "r fr"
-                        self.column += 4;
-                        while (self.peek() != '\n' and !self.isAtEnd()) {
-                            _ = self.advance();
-                        }
-                        return self.makeToken(.LineComment, start_line, start_column);
-                    }
-                    // Not a comment, back up and handle as identifier  
-                    if (self.position > 0) {
-                        self.position -= 1;
-                        if (self.column > 0) self.column -= 1;
-                    }
-                    return self.identifier(start_line, start_column);
-                }
-
                 return error.UnexpectedCharacter;
             },
         }
@@ -489,6 +470,86 @@ pub const Lexer = struct {
         }
 
         const lexeme = self.input[start..self.position];
+        
+        // Special handling for "fr" - check if it's "fr fr" comment
+        if (std.mem.eql(u8, lexeme, "fr")) {
+            // Look ahead for whitespace + "fr"
+            const saved_pos = self.position;
+            const saved_col = self.column;
+            
+            // Skip whitespace
+            while (!self.isAtEnd() and (self.peek() == ' ' or self.peek() == '\t')) {
+                _ = self.advance();
+            }
+            
+            // Check for second "fr"
+            if (self.position + 2 <= self.input.len and std.mem.eql(u8, self.input[self.position..self.position + 2], "fr")) {
+                // This is "fr fr" comment - consume the rest of the line
+                self.position += 2;
+                self.column += 2;
+                
+                // Skip to end of line
+                while (!self.isAtEnd() and self.peek() != '\n') {
+                    _ = self.advance();
+                }
+                
+                return Token.init(.LineComment, self.input[start..self.position], line, column);
+            } else {
+                // Not a comment, restore position and treat as identifier
+                self.position = saved_pos;
+                self.column = saved_col;
+            }
+        }
+        
+        // Special handling for "no" - check if it's "no cap" block comment start
+        if (std.mem.eql(u8, lexeme, "no")) {
+            const saved_pos = self.position;
+            const saved_col = self.column;
+            
+            // Skip whitespace
+            while (!self.isAtEnd() and (self.peek() == ' ' or self.peek() == '\t')) {
+                _ = self.advance();
+            }
+            
+            // Check for "cap"
+            if (self.position + 3 <= self.input.len and std.mem.eql(u8, self.input[self.position..self.position + 3], "cap")) {
+                // This is "no cap" block comment start
+                self.position += 3;
+                self.column += 3;
+                
+                // Skip until "on god"
+                while (self.position + 6 <= self.input.len) {
+                    if (std.mem.eql(u8, self.input[self.position..self.position + 2], "on")) {
+                        // Check for whitespace + "god"
+                        var temp_pos = self.position + 2;
+                        while (temp_pos < self.input.len and (self.input[temp_pos] == ' ' or self.input[temp_pos] == '\t')) {
+                            temp_pos += 1;
+                        }
+                        if (temp_pos + 3 <= self.input.len and std.mem.eql(u8, self.input[temp_pos..temp_pos + 3], "god")) {
+                            // Found "on god" - consume it and return comment token
+                            self.position = temp_pos + 3;
+                            // Update column/line tracking (simplified)
+                            self.column += @intCast(temp_pos + 3 - self.position);
+                            return Token.init(.BlockComment, self.input[start..self.position], line, column);
+                        }
+                    }
+                    
+                    if (self.peek() == '\n') {
+                        self.line += 1;
+                        self.column = 1;
+                    }
+                    _ = self.advance();
+                }
+                
+                // Unterminated block comment
+                return error.UnterminatedBlockComment;
+            } else {
+                // Not a comment, restore position and treat as identifier
+                self.position = saved_pos;
+                self.column = saved_col;
+            }
+        }
+        
         const kind = getKeywordType(lexeme);
         return Token.init(kind, lexeme, line, column);
     }
@@ -549,6 +610,7 @@ pub const Lexer = struct {
         // Literals
         if (std.mem.eql(u8, text, "based")) return .Based;
         if (std.mem.eql(u8, text, "cap")) return .Cap;
+        if (std.mem.eql(u8, text, "cringe")) return .Cap;  // cringe = false/nil
         if (std.mem.eql(u8, text, "no_cap")) return .NoCap;
         if (std.mem.eql(u8, text, "truth")) return .Truth;
         if (std.mem.eql(u8, text, "lies")) return .Lies;

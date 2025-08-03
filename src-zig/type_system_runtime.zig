@@ -147,7 +147,7 @@ pub const GCTypeRegistry = struct {
         const type_id = self.type_id_counter;
         self.type_id_counter += 1;
 
-        var type_info = RuntimeTypeInfo.init(self.allocator, type_id, name, kind);
+        const type_info = RuntimeTypeInfo.init(self.allocator, type_id, name, kind);
         try self.types.put(type_id, type_info);
         return type_id;
     }

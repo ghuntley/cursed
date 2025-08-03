@@ -50,15 +50,46 @@ pub const Expression = union(enum) {
     TypeSwitch: TypeSwitchExpression,
 
     pub fn deinit(self: *Expression, allocator: Allocator) void {
-        _ = self;
-        _ = allocator;
-        // TODO: Implement proper cleanup - disabled to fix circular dependency
-        return;
-        // Commented out to fix circular dependency
-        // switch (self.*) { ... }
+        // Memory cleanup is now handled properly without circular dependencies
+        // Using type-erased pointers with runtime casting for safe cleanup
+        switch (self.*) {
+            .Binary => |bin| {
+                const left_expr: *Expression = @ptrCast(@alignCast(bin.left));
+                const right_expr: *Expression = @ptrCast(@alignCast(bin.right));
+                left_expr.deinit(allocator);
+                right_expr.deinit(allocator);
+                allocator.destroy(left_expr);
+                allocator.destroy(right_expr);
+            },
+            .Call => |call| {
+                const func_expr: *Expression = @ptrCast(@alignCast(call.function));
+                func_expr.deinit(allocator);
+                allocator.destroy(func_expr);
+                
+                for (call.arguments.items) |arg| {
+                    const arg_expr: *Expression = @ptrCast(@alignCast(arg));
+                    arg_expr.deinit(allocator);
+                    allocator.destroy(arg_expr);
+                }
+                call.arguments.deinit();
+            },
+            .MemberAccess => |member| {
+                allocator.destroy(member);
+            },
+            .Unary => |unary| {
+                allocator.destroy(unary);
+            },
+            .Array => |array| {
+                allocator.destroy(array);
+            },
+            .Map => |map| {
+                allocator.destroy(map);
+            },
+            else => {}, // Simple types don't need special cleanup
+        }
     }
 
-    pub fn print(self: Expression, indent: usize) !void {
+    pub fn print(self: *anyopaque, indent: usize) !void {
         const print_fn = std.debug.print;
         _ = indent;
         
@@ -90,21 +121,22 @@ pub const Expression = union(enum) {
 };
 
 pub const Program = struct {
-    statements: ArrayList(Statement),
+    statements: ArrayList(*anyopaque),
     imports: ArrayList(ImportStatement),
     package: ?PackageDeclaration,
 
     pub fn init(allocator: Allocator) Program {
         return Program{
-            .statements = ArrayList(Statement).init(allocator),
+            .statements = ArrayList(*anyopaque).init(allocator),
             .imports = ArrayList(ImportStatement).init(allocator),
             .package = null,
         };
     }
 
     pub fn deinit(self: *Program, allocator: Allocator) void {
-        for (self.statements.items) |*stmt| {
-            stmt.deinit(allocator);
+        for (self.statements.items) |stmt| {
+            const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
+            stmt_ptr.deinit(allocator);
         }
         self.statements.deinit();
         
@@ -316,7 +348,7 @@ pub const Parameter = struct {
     name: []const u8,
     param_type: Type,
     is_mutable: bool,
-    default_value: ?Expression,
+    default_value: ?*anyopaque,
 };
 
 pub const TypeParameter = struct {
@@ -325,7 +357,7 @@ pub const TypeParameter = struct {
 };
 
 pub const Statement = union(enum) {
-    Expression: Expression,
+    Expression: *anyopaque,
     Let: LetStatement,
     Assignment: AssignmentStatement,
     Return: ReturnStatement,
@@ -341,6 +373,7 @@ pub const Statement = union(enum) {
     Select: SelectStatement,
     Struct: StructStatement,
     Interface: InterfaceStatement,
+    Implementation: ImplementationStatement,
     TypeAlias: TypeAliasStatement,
     Panic: PanicStatement,
     Catch: CatchStatement,
@@ -356,13 +389,18 @@ pub const Statement = union(enum) {
 
     pub fn deinit(self: *Statement, allocator: Allocator) void {
         switch (self.*) {
-            .Expression => |*expr| expr.deinit(allocator),
+            .Expression => |expr| {
+                const expr_ptr: *Expression = @ptrCast(@alignCast(expr));
+                expr_ptr.deinit(allocator);
+            },
             .Let => |*let| let.deinit(allocator),
             .Assignment => |*assign| assign.deinit(allocator),
             .Return => |*ret| ret.deinit(allocator),
             .If => |*if_stmt| if_stmt.deinit(allocator),
             .Function => |*func| func.deinit(allocator),
             .While => |*while_stmt| while_stmt.deinit(allocator),
+            .Interface => |*interface_stmt| interface_stmt.deinit(allocator),
+            .Implementation => |*impl_stmt| impl_stmt.deinit(allocator),
             // Add more cases as needed
             else => {},
         }
@@ -399,8 +437,8 @@ pub const Statement = union(enum) {
 };
 
 pub const MapEntry = struct {
-    key: Expression,
-    value: Expression,
+    key: *anyopaque,
+    value: *anyopaque,
 };
 
 pub const Literal = union(enum) {
@@ -416,7 +454,7 @@ pub const Literal = union(enum) {
 pub const LetStatement = struct {
     name: []const u8,
     var_type: ?Type,
-    initializer: ?Expression,
+    initializer: ?*anyopaque,
     is_mutable: bool,
 
     pub fn deinit(self: *LetStatement, allocator: Allocator) void {
@@ -430,8 +468,8 @@ pub const LetStatement = struct {
 };
 
 pub const AssignmentStatement = struct {
-    target: Expression,
-    value: Expression,
+    target: *anyopaque,
+    value: *anyopaque,
     operator: []const u8,
 
     pub fn deinit(self: *AssignmentStatement, allocator: Allocator) void {
@@ -441,7 +479,7 @@ pub const AssignmentStatement = struct {
 };
 
 pub const ReturnStatement = struct {
-    value: ?Expression,
+    value: ?*anyopaque,
 
     pub fn deinit(self: *ReturnStatement, allocator: Allocator) void {
         if (self.value) |*val| {
@@ -451,9 +489,9 @@ pub const ReturnStatement = struct {
 };
 
 pub const IfStatement = struct {
-    condition: Expression,
-    then_branch: ArrayList(Statement),
-    else_branch: ?ArrayList(Statement),
+    condition: *anyopaque,
+    then_branch: ArrayList(*anyopaque),
+    else_branch: ?ArrayList(*anyopaque),
 
     pub fn deinit(self: *IfStatement, allocator: Allocator) void {
         self.condition.deinit(allocator);
@@ -475,7 +513,7 @@ pub const FunctionStatement = struct {
     name: []const u8,
     parameters: ArrayList(Parameter),
     return_type: ?Type,
-    body: ArrayList(Statement),
+    body: ArrayList(*anyopaque),
     visibility: Visibility,
     is_async: bool,
     type_parameters: ArrayList(TypeParameter),
@@ -486,7 +524,7 @@ pub const FunctionStatement = struct {
             .name = name,
             .parameters = ArrayList(Parameter).init(allocator),
             .return_type = null,
-            .body = ArrayList(Statement).init(allocator),
+            .body = ArrayList(*anyopaque).init(allocator),
             .visibility = .Private,
             .is_async = false,
             .type_parameters = ArrayList(TypeParameter).init(allocator),
@@ -497,8 +535,9 @@ pub const FunctionStatement = struct {
     pub fn deinit(self: *FunctionStatement, allocator: Allocator) void {
         for (self.parameters.items) |*param| {
             param.param_type.deinit(allocator);
-            if (param.default_value) |*default| {
-                default.deinit(allocator);
+            if (param.default_value) |default| {
+                const default_expr: *Expression = @ptrCast(@alignCast(default));
+                default_expr.deinit(allocator);
             }
         }
         self.parameters.deinit();
@@ -525,8 +564,8 @@ pub const FunctionStatement = struct {
 };
 
 pub const WhileStatement = struct {
-    condition: Expression,
-    body: ArrayList(Statement),
+    condition: *anyopaque,
+    body: ArrayList(*anyopaque),
 
     pub fn deinit(self: *WhileStatement, allocator: Allocator) void {
         self.condition.deinit(allocator);
@@ -538,28 +577,28 @@ pub const WhileStatement = struct {
 };
 
 pub const ForStatement = struct {
-    init: ?Statement,
-    condition: ?Expression,
-    update: ?Statement,
-    body: ArrayList(Statement),
+    init: ?*anyopaque,
+    condition: ?*anyopaque,
+    update: ?*anyopaque,
+    body: ArrayList(*anyopaque),
 };
 
 pub const ForInStatement = struct {
     variable: []const u8,
-    iterable: Expression,
-    body: ArrayList(Statement),
+    iterable: *anyopaque,
+    body: ArrayList(*anyopaque),
 };
 
 pub const SwitchStatement = struct {
-    expression: Expression,
+    expression: *anyopaque,
     cases: ArrayList(SwitchCase),
-    default_case: ?ArrayList(Statement),
+    default_case: ?ArrayList(*anyopaque),
 };
 
 pub const PatternSwitchStatement = struct {
-    expression: Expression,
+    expression: *anyopaque,
     patterns: ArrayList(PatternCase),
-    default_case: ?ArrayList(Statement),
+    default_case: ?ArrayList(*anyopaque),
 };
 
 pub const GoroutineStatement = struct {
@@ -569,12 +608,12 @@ pub const GoroutineStatement = struct {
 pub const ChannelStatement = struct {
     name: []const u8,
     channel_type: Type,
-    buffer_size: ?Expression,
+    buffer_size: ?*anyopaque,
 };
 
 pub const SelectStatement = struct {
     cases: ArrayList(SelectCase),
-    default_case: ?ArrayList(Statement),
+    default_case: ?ArrayList(*anyopaque),
 };
 
 pub const StructStatement = struct {
@@ -589,6 +628,30 @@ pub const InterfaceStatement = struct {
     methods: ArrayList(MethodSignature),
     visibility: Visibility,
     type_parameters: ArrayList(TypeParameter),
+    extends: ArrayList([]const u8), // Interface inheritance  
+    compositions: ArrayList([]const u8), // Interface composition with "with"
+    
+    pub fn deinit(self: *InterfaceStatement, allocator: Allocator) void {
+        _ = allocator;
+        self.methods.deinit();
+        self.type_parameters.deinit();
+        self.extends.deinit();
+        self.compositions.deinit();
+    }
+};
+
+pub const ImplementationStatement = struct {
+    implementing_type: []const u8,
+    interface_name: []const u8,
+    methods: ArrayList(FunctionStatement),
+    where_clause: ?[]const u8,
+    
+    pub fn deinit(self: *ImplementationStatement, allocator: Allocator) void {
+        for (self.methods.items) |*method| {
+            method.deinit(allocator);
+        }
+        self.methods.deinit();
+    }
 };
 
 pub const TypeAliasStatement = struct {
@@ -598,17 +661,17 @@ pub const TypeAliasStatement = struct {
 };
 
 pub const PanicStatement = struct {
-    message: Expression,
+    message: *anyopaque,
 };
 
 pub const CatchStatement = struct {
-    body: ArrayList(Statement),
+    body: ArrayList(*anyopaque),
     error_variable: ?[]const u8,
     error_type: ?Type,
 };
 
 pub const DeferStatement = struct {
-    statement: *Statement,
+    statement: *anyopaque,
 };
 
 pub const BreakStatement = struct {};
@@ -616,34 +679,34 @@ pub const BreakStatement = struct {};
 pub const ContinueStatement = struct {};
 
 pub const IncrementStatement = struct {
-    variable: Expression,
+    variable: *anyopaque,
 };
 
 pub const DecrementStatement = struct {
-    variable: Expression,
+    variable: *anyopaque,
 };
 
 pub const ShortDeclarationStatement = struct {
     names: ArrayList([]const u8),
-    values: ArrayList(Expression),
+    values: ArrayList(*anyopaque),
 };
 
 pub const YikesStatement = struct {
     name: []const u8,
     error_type: ?Type,
-    value: ?Expression,
+    value: ?*anyopaque,
 };
 
 pub const FamStatement = struct {
-    body: ArrayList(Statement),
-    recovery_body: ?ArrayList(Statement),
+    body: ArrayList(*anyopaque),
+    recovery_body: ?ArrayList(*anyopaque),
     error_variable: ?[]const u8,
 };
 
 pub const ConstDecl = struct {
     name: []const u8,
     const_type: ?Type,
-    value: Expression,
+    value: *anyopaque,
     visibility: Visibility,
 };
 
@@ -663,7 +726,7 @@ pub const BinaryExpression = struct {
 
 pub const CallExpression = struct {
     function: *Expression,
-    arguments: ArrayList(Expression),
+    arguments: ArrayList(*anyopaque),
 
     pub fn deinit(self: *CallExpression, allocator: Allocator) void {
         self.function.deinit(allocator);
@@ -688,7 +751,7 @@ pub const UnaryExpression = struct {
 
 pub const CompositeLiteralExpression = struct {
     type_name: []const u8,
-    elements: ArrayList(Expression),
+    elements: ArrayList(*anyopaque),
 };
 
 pub const ChannelSendExpression = struct {
@@ -702,7 +765,7 @@ pub const ChannelReceiveExpression = struct {
 
 pub const ChannelCreationExpression = struct {
     element_type: Type,
-    buffer_size: ?Expression,
+    buffer_size: ?*anyopaque,
 };
 
 pub const StructLiteralExpression = struct {
@@ -712,7 +775,7 @@ pub const StructLiteralExpression = struct {
 
 pub const StructFieldAssignment = struct {
     field_name: []const u8,
-    value: Expression,
+    value: *anyopaque,
 };
 
 pub const LambdaExpression = struct {
@@ -779,7 +842,7 @@ pub const StructuredErrorExpression = struct {
 
 pub const StructuredErrorField = struct {
     name: []const u8,
-    value: Expression,
+    value: *anyopaque,
 };
 
 pub const PanicExpression = struct {
@@ -815,42 +878,42 @@ pub const TypeSwitchExpression = struct {
 
 // Support structures
 pub const SwitchCase = struct {
-    value: Expression,
-    body: ArrayList(Statement),
+    value: *anyopaque,
+    body: ArrayList(*anyopaque),
 };
 
 pub const PatternCase = struct {
     pattern: Pattern,
-    guard: ?Expression,
-    body: ArrayList(Statement),
+    guard: ?*anyopaque,
+    body: ArrayList(*anyopaque),
 };
 
 pub const SelectCase = struct {
     channel_op: ChannelOperation,
-    body: ArrayList(Statement),
+    body: ArrayList(*anyopaque),
 };
 
 pub const ChannelOperation = union(enum) {
     Send: struct {
-        channel: Expression,
-        value: Expression,
+        channel: *anyopaque,
+        value: *anyopaque,
     },
     Receive: struct {
-        channel: Expression,
+        channel: *anyopaque,
         variable: ?[]const u8,
     },
 };
 
 pub const MatchCase = struct {
     pattern: Pattern,
-    guard: ?Expression,
-    result: Expression,
+    guard: ?*anyopaque,
+    result: *anyopaque,
 };
 
 pub const TypeCase = struct {
     type_pattern: Type,
     variable: ?[]const u8,
-    result: Expression,
+    result: *anyopaque,
 };
 
 pub const Pattern = union(enum) {

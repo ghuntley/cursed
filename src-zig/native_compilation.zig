@@ -404,7 +404,7 @@ pub const NativeCompiler = struct {
     }
     
     /// Profile-guided optimization compilation
-    pub fn profileGuidedCompile(self: *NativeCompiler, program: ast.Program, output_path: []const u8, profile_data: []const u8) CompilationError!void {
+    pub fn profileGuidedCompile(self: *NativeCompiler, program: ast.Program, output_path: []const u8, _: []const u8) CompilationError!void {
         // First compilation with instrumentation
         const instrumented_path = try std.fmt.allocPrint(self.allocator, "{s}_instrumented", .{output_path});
         defer self.allocator.free(instrumented_path);
@@ -490,8 +490,6 @@ pub const PerformanceBenchmark = struct {
     }
     
     pub fn benchmarkExecution(self: *PerformanceBenchmark, executable_path: []const u8) !u64 {
-        _ = self;
-        
         const start_time = std.time.nanoTimestamp();
         
         var child = std.ChildProcess.init(&[_][]const u8{executable_path}, self.allocator);

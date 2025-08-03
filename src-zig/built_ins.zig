@@ -138,7 +138,7 @@ pub const BuiltInRegistry = struct {
     fn vibesSpill(args: []const Value) anyerror!Value {
         if (args.len != 1) return error.ArgumentCountMismatch;
         
-        const allocator = std.heap.page_allocator; // TODO: Pass proper allocator
+        const allocator = self.allocator;
         const str = try args[0].toString(allocator);
         defer allocator.free(str);
         
@@ -152,7 +152,7 @@ pub const BuiltInRegistry = struct {
         // For now, assume we're making a channel with capacity
         switch (args[0]) {
             .Integer => |capacity| {
-                const allocator = std.heap.page_allocator; // TODO: Pass proper allocator
+                const allocator = self.allocator;
                 const channel = try allocator.create(Channel);
                 channel.* = Channel.init(allocator, @intCast(capacity));
                 return Value{ .Channel = channel };
@@ -164,7 +164,7 @@ pub const BuiltInRegistry = struct {
     fn stringConcat(args: []const Value) anyerror!Value {
         if (args.len != 2) return error.ArgumentCountMismatch;
         
-        const allocator = std.heap.page_allocator; // TODO: Pass proper allocator
+        const allocator = self.allocator;
         
         const str1 = switch (args[0]) {
             .String => |s| s,

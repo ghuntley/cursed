@@ -9,15 +9,47 @@ const Program = ast.Program;
 const Statement = ast.Statement;
 const Expression = ast.Expression;
 
+// Forward declaration for struct support
+pub const StructInstance = struct {
+    type_name: []const u8,
+    fields: HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    allocator: Allocator,
+    
+    pub fn init(allocator: Allocator, type_name: []const u8) StructInstance {
+        return StructInstance{
+            .type_name = allocator.dupe(u8, type_name) catch @panic("Out of memory"),
+            .fields = HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .allocator = allocator,
+        };
+    }
+    
+    pub fn deinit(self: *StructInstance) void {
+        self.allocator.free(self.type_name);
+        self.fields.deinit();
+    }
+    
+    pub fn setField(self: *StructInstance, name: []const u8, value: Value) !void {
+        const field_name = try self.allocator.dupe(u8, name);
+        try self.fields.put(field_name, value);
+    }
+    
+    pub fn getField(self: *StructInstance, name: []const u8) ?Value {
+        return self.fields.get(name);
+    }
+};
+
 pub const InterpreterError = error{
     UndefinedVariable,
     UndefinedFunction,
+    UndefinedStruct,
+    UndefinedField,
     TypeMismatch,
     DivisionByZero,
     RuntimeError,
     OutOfMemory,
     InvalidExpression,
     InvalidStatement,
+    InvalidStructField,
 };
 
 pub const Value = union(enum) {
@@ -26,6 +58,8 @@ pub const Value = union(enum) {
     String: []const u8,
     Boolean: bool,
     Character: u8,
+    Struct: StructInstance,
+    Array: []Value,
     Null,
 
     pub fn toString(self: Value, allocator: Allocator) ![]u8 {
@@ -35,6 +69,8 @@ pub const Value = union(enum) {
             .String => |str| return allocator.dupe(u8, str),
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "lies"),
             .Character => |char| return std.fmt.allocPrint(allocator, "{c}", .{char}),
+            .Struct => |struct_inst| return std.fmt.allocPrint(allocator, "{}{{ ... }}", .{struct_inst.type_name}),
+            .Array => |arr| return std.fmt.allocPrint(allocator, "[{} items]", .{arr.len}),
             .Null => return allocator.dupe(u8, "cap"),
         }
     }
@@ -46,6 +82,8 @@ pub const Value = union(enum) {
             .Float => |float| return float != 0.0,
             .String => |str| return str.len > 0,
             .Character => |char| return char != 0,
+            .Struct => return true, // Structs are always truthy
+            .Array => |arr| return arr.len > 0,
             .Null => return false,
         }
     }
@@ -184,15 +222,49 @@ pub const AssignStmt = struct {
     value: ParsedExpression,
 };
 
+pub const StructType = struct {
+    name: []const u8,
+    fields: ArrayList(FieldDefinition),
+    allocator: Allocator,
+    
+    pub fn init(allocator: Allocator, name: []const u8) StructType {
+        return StructType{
+            .name = allocator.dupe(u8, name) catch @panic("Out of memory"),
+            .fields = ArrayList(FieldDefinition).init(allocator),
+            .allocator = allocator,
+        };
+    }
+    
+    pub fn deinit(self: *StructType) void {
+        self.allocator.free(self.name);
+        self.fields.deinit();
+    }
+    
+    pub fn addField(self: *StructType, name: []const u8, field_type: []const u8) !void {
+        const field = FieldDefinition{
+            .name = try self.allocator.dupe(u8, name),
+            .field_type = try self.allocator.dupe(u8, field_type),
+        };
+        try self.fields.append(field);
+    }
+};
+
+pub const FieldDefinition = struct {
+    name: []const u8,
+    field_type: []const u8,
+};
+
 pub const SimpleInterpreter = struct {
     environment: Environment,
     functions: HashMap([]const u8, FuncStmt, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    struct_types: HashMap([]const u8, StructType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
 
     pub fn init(allocator: Allocator) SimpleInterpreter {
         return SimpleInterpreter{
             .environment = Environment.init(allocator, null),
             .functions = HashMap([]const u8, FuncStmt, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .struct_types = HashMap([]const u8, StructType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
     }
@@ -200,6 +272,7 @@ pub const SimpleInterpreter = struct {
     pub fn deinit(self: *SimpleInterpreter) void {
         self.environment.deinit();
         self.functions.deinit();
+        self.struct_types.deinit();
     }
 
     pub fn execute(self: *SimpleInterpreter, tokens: []const lexer.Token) InterpreterError!void {
@@ -220,6 +293,12 @@ pub const SimpleInterpreter = struct {
             // Handle vibez.spill statements
             if (token.kind == .Identifier and std.mem.eql(u8, token.lexeme, "vibez")) {
                 i = try self.executeVibesSpill(tokens, i);
+                continue;
+            }
+            
+            // Handle struct declarations (squad)
+            if (token.kind == .Squad) {
+                i = try self.executeStructDeclaration(tokens, i);
                 continue;
             }
             
@@ -310,6 +389,71 @@ pub const SimpleInterpreter = struct {
         return i;
     }
     
+    fn executeStructDeclaration(self: *SimpleInterpreter, tokens: []const lexer.Token, start: usize) InterpreterError!usize {
+        var i = start;
+        
+        // Skip "squad"
+        i += 1;
+        
+        // Get struct name
+        if (i >= tokens.len or tokens[i].kind != .Identifier) {
+            return InterpreterError.InvalidStatement;
+        }
+        const struct_name = tokens[i].lexeme;
+        i += 1;
+        
+        // Skip opening brace
+        if (i >= tokens.len or tokens[i].kind != .LeftBrace) {
+            return InterpreterError.InvalidStatement;
+        }
+        i += 1;
+        
+        // Create struct type
+        var struct_type = StructType.init(self.allocator, struct_name);
+        
+        // Parse fields
+        while (i < tokens.len and tokens[i].kind != .RightBrace) {
+            // Skip newlines and spill visibility modifier
+            if (tokens[i].kind == .Newline or tokens[i].kind == .Spill) {
+                i += 1;
+                continue;
+            }
+            
+            // Get field name
+            if (tokens[i].kind == .Identifier) {
+                const field_name = tokens[i].lexeme;
+                i += 1;
+                
+                // Get field type
+                if (i < tokens.len and (tokens[i].kind == .Normie or tokens[i].kind == .Tea or 
+                                      tokens[i].kind == .Lit or tokens[i].kind == .Meal or 
+                                      tokens[i].kind == .Identifier)) {
+                    const field_type = tokens[i].lexeme;
+                    i += 1;
+                    
+                    try struct_type.addField(field_name, field_type);
+                }
+                
+                // Skip optional comma
+                if (i < tokens.len and tokens[i].kind == .Comma) {
+                    i += 1;
+                }
+            } else {
+                i += 1;
+            }
+        }
+        
+        // Skip closing brace
+        if (i < tokens.len and tokens[i].kind == .RightBrace) {
+            i += 1;
+        }
+        
+        // Register struct type
+        try self.struct_types.put(struct_name, struct_type);
+        
+        return i;
+    }
+    
     fn executeFunctionCall(self: *SimpleInterpreter, tokens: []const lexer.Token, start: usize) InterpreterError!usize {
         _ = self;
         _ = tokens;
@@ -349,11 +493,68 @@ pub const SimpleInterpreter = struct {
             .Based => return Value{ .Boolean = true },
             .Lies => return Value{ .Boolean = false },
             .Identifier => {
+                // Check if this is a struct literal (Identifier followed by '{')
+                if (i.* < tokens.len and tokens[i.*].kind == .LeftBrace) {
+                    const struct_name = token.lexeme;
+                    return try self.evaluateStructLiteral(tokens, i, struct_name);
+                }
+                
                 // Look up variable
                 return self.environment.get(token.lexeme) catch Value.Null;
             },
             else => return Value.Null,
         }
+    }
+    
+    fn evaluateStructLiteral(self: *SimpleInterpreter, tokens: []const lexer.Token, i: *usize, struct_name: []const u8) InterpreterError!Value {
+        // Check if struct type exists
+        if (!self.struct_types.contains(struct_name)) {
+            return InterpreterError.UndefinedStruct;
+        }
+        
+        // Skip opening brace
+        i.* += 1;
+        
+        // Create struct instance
+        var struct_instance = StructInstance.init(self.allocator, struct_name);
+        
+        // Parse field assignments
+        while (i.* < tokens.len and tokens[i.*].kind != .RightBrace) {
+            // Skip newlines
+            if (tokens[i.*].kind == .Newline) {
+                i.* += 1;
+                continue;
+            }
+            
+            // Get field name
+            if (tokens[i.*].kind == .Identifier) {
+                const field_name = tokens[i.*].lexeme;
+                i.* += 1;
+                
+                // Skip colon
+                if (i.* < tokens.len and tokens[i.*].kind == .Colon) {
+                    i.* += 1;
+                }
+                
+                // Get field value
+                const field_value = try self.evaluateSimpleExpression(tokens, i);
+                try struct_instance.setField(field_name, field_value);
+                
+                // Skip optional comma
+                if (i.* < tokens.len and tokens[i.*].kind == .Comma) {
+                    i.* += 1;
+                }
+            } else {
+                i.* += 1;
+            }
+        }
+        
+        // Skip closing brace
+        if (i.* < tokens.len and tokens[i.*].kind == .RightBrace) {
+            i.* += 1;
+        }
+        
+        return Value{ .Struct = struct_instance };
     }
 };
 

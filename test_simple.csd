@@ -1,1 +1,1 @@
-vibez.spill("Hello from compiled CURSED!")
+vibez.spill("Hello CURSED from Zig!")
