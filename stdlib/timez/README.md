@@ -1,149 +1,166 @@
-# timez Module
+# timez Module - CURSED Time Operations
 
-Pure CURSED time operations module providing comprehensive time handling with nanosecond precision and RFC3339 compliance.
+The `timez` module provides comprehensive time handling with nanosecond precision and RFC3339 compliance for the CURSED programming language, equivalent to Go's `time` package.
 
-## Features
+## Core Types
 
-- **Nanosecond Precision**: All time operations support nanosecond precision
-- **RFC3339 Compliance**: Standard-compliant time formatting and parsing
-- **Pure CURSED**: No FFI dependencies, implemented entirely in CURSED
-- **Thread Safe**: All functions are safe for concurrent use
-- **Duration Arithmetic**: Full support for time and duration calculations
+- `Time` - Represents a point in time (Unix timestamp)
+- `Duration` - Represents a duration in nanoseconds
 
-## Types
+## Time Constants
 
-- `Time` - Represents an instant in time (Unix timestamp based)
-- `Duration` - Represents a span of time in nanoseconds
+- `NANOS_PER_SECOND` - Nanoseconds in one second (1,000,000,000)
+- `NANOS_PER_MILLI` - Nanoseconds in one millisecond (1,000,000)
+- `NANOS_PER_MICRO` - Nanoseconds in one microsecond (1,000)
 
-## Core Functions
+## Time Creation
 
-### Time Creation
-```cursed
-sus current := timez.now()                    # Current time
-sus epoch := timez.unix(1720857600)           # From Unix timestamp
-sus parsed := timez.parse_rfc3339("2024-07-13T12:34:56Z")
-```
+- `now()` - Get current system time
+- `unix(seconds normie)` - Create time from Unix timestamp
+- `parse_rfc3339(timestamp tea)` - Parse RFC3339 time string
 
-### Duration Creation
-```cursed
-sus five_sec := timez.seconds(5)
-sus hundred_ms := timez.milliseconds(100)
-sus thousand_us := timez.microseconds(1000)
-sus billion_ns := timez.nanoseconds(1000000000)
-```
+## Duration Creation
 
-### Time Arithmetic
-```cursed
-sus future := timez.add_duration(current, five_sec)
-sus past := timez.sub_duration(current, hundred_ms)
-sus diff := timez.time_diff(future, past)
-```
+- `seconds(s normie)` - Create duration from seconds
+- `milliseconds(ms normie)` - Create duration from milliseconds
+- `microseconds(us normie)` - Create duration from microseconds
+- `nanoseconds(ns normie)` - Create duration from nanoseconds
 
-### Formatting
-```cursed
-sus rfc_string := timez.format_rfc3339(current)     # "2024-07-13T12:34:56Z"
-sus unix_string := timez.format_unix(current)       # "1720857600"
-sus human_string := timez.format_human(current)     # "July 13, 2024 12:34:56 UTC"
-```
+## Time Arithmetic
 
-### Comparisons
-```cursed
-sus is_earlier := timez.is_before(past, future)
-sus is_later := timez.is_after(future, past)
-sus is_epoch := timez.is_zero(epoch)
-```
+- `add_duration(time Time, dur Duration)` - Add duration to time
+- `sub_duration(time Time, dur Duration)` - Subtract duration from time
+- `time_diff(t1 Time, t2 Time)` - Get duration between times
+- `since_epoch(time Time)` - Get duration since Unix epoch
 
-### Duration Operations
-```cursed
-sus total := timez.add_durations(five_sec, hundred_ms)
-sus remaining := timez.sub_durations(total, hundred_ms)
-sus doubled := timez.multiply_duration(five_sec, 2)
-sus halved := timez.divide_duration(doubled, 2)
-```
+## Time Comparison
 
-### Utility Functions
-```cursed
-timez.sleep(hundred_ms)                           # Sleep for duration
-sus seconds_val := timez.duration_seconds(five_sec)
-sus millis_val := timez.duration_millis(hundred_ms)
-```
+- `is_before(t1 Time, t2 Time)` - Check if t1 is before t2
+- `is_after(t1 Time, t2 Time)` - Check if t1 is after t2
+- `is_zero(time Time)` - Check if time is zero value
 
-## Examples
+## Time Formatting
 
-### Basic Time Operations
-```cursed
-yeet "timez"
+- `format_rfc3339(time Time)` - Format as RFC3339 string
+- `format_unix(time Time)` - Format as Unix timestamp string
+- `format_human(time Time)` - Format in human-readable format
 
-# Get current time and create durations
-sus now := timez.now()
-sus delay := timez.seconds(30)
-sus future := timez.add_duration(now, delay)
+## Duration Operations
 
-# Format and display
-sus time_str := timez.format_rfc3339(future)
-vibez.spill("Future time: " + time_str)
-```
+### Conversion Functions
 
-### Duration Calculations
+- `duration_seconds(dur Duration)` - Convert to seconds
+- `duration_millis(dur Duration)` - Convert to milliseconds
+- `duration_micros(dur Duration)` - Convert to microseconds
+- `duration_nanos(dur Duration)` - Convert to nanoseconds
+
+### Arithmetic Functions
+
+- `add_durations(d1, d2 Duration)` - Add two durations
+- `sub_durations(d1, d2 Duration)` - Subtract two durations
+- `multiply_duration(dur Duration, factor normie)` - Multiply by scalar
+- `divide_duration(dur Duration, divisor normie)` - Divide by scalar
+
+### Comparison Functions
+
+- `duration_equal(d1, d2 Duration)` - Check equality
+- `duration_less(d1, d2 Duration)` - Check if d1 < d2
+- `duration_greater(d1, d2 Duration)` - Check if d1 > d2
+
+## Utility Functions
+
+- `sleep(dur Duration)` - Sleep for specified duration (simulated)
+
+## Example Usage
+
 ```cursed
 yeet "timez"
 
-# Create and combine durations
-sus minutes := timez.seconds(120)  # 2 minutes
-sus extra := timez.milliseconds(500)
-sus total := timez.add_durations(minutes, extra)
-
-# Convert to different units
-sus total_ms := timez.duration_millis(total)
-vibez.spill("Total milliseconds: " + total_ms)
-```
-
-### Time Comparisons
-```cursed
-yeet "timez"
-
-sus start := timez.now()
-timez.sleep(timez.milliseconds(100))
-sus end := timez.now()
-
-sus elapsed := timez.time_diff(start, end)
-sus is_positive := timez.duration_greater(elapsed, timez.nanoseconds(0))
-
-if is_positive {
-    vibez.spill("Time elapsed successfully")
+slay main() {
+    fr fr Get current time
+    sus now_time Time = timez.now()
+    vibez.spillf("Current time: %s", timez.format_rfc3339(now_time))
+    
+    fr fr Create duration
+    sus one_hour Duration = timez.seconds(3600)
+    sus thirty_mins Duration = timez.minutes(30)
+    
+    fr fr Time arithmetic
+    sus future_time Time = timez.add_duration(now_time, one_hour)
+    sus past_time Time = timez.sub_duration(now_time, thirty_mins)
+    
+    fr fr Time comparison
+    lowkey timez.is_before(past_time, now_time) {
+        vibez.spill("Past time is before current time")
+    }
+    
+    fr fr Duration operations
+    sus total Duration = timez.add_durations(one_hour, thirty_mins)
+    sus total_minutes normie = timez.duration_seconds(total) / 60
+    vibez.spillf("Total duration: %d minutes", total_minutes)
+    
+    fr fr Format times
+    sus rfc_time tea = timez.format_rfc3339(now_time)
+    sus unix_time tea = timez.format_unix(now_time)
+    sus human_time tea = timez.format_human(now_time)
+    
+    vibez.spillf("RFC3339: %s", rfc_time)
+    vibez.spillf("Unix: %s", unix_time)
+    vibez.spillf("Human: %s", human_time)
+    
+    fr fr Sleep for 2 seconds
+    sus sleep_duration Duration = timez.seconds(2)
+    timez.sleep(sleep_duration)
+    vibez.spill("Finished sleeping")
 }
 ```
 
+## Time Zones and Formatting
+
+The current implementation uses UTC time. Future versions will include:
+
+- Time zone support
+- Locale-aware formatting
+- Custom time formats
+- Daylight saving time handling
+
+## RFC3339 Compliance
+
+The module supports RFC3339 time format:
+- `2024-07-13T12:34:56Z` (UTC)
+- `2024-07-13T12:34:56-07:00` (with timezone offset)
+
+## Implementation Details
+
+- Pure CURSED implementation with nanosecond precision
+- Unix timestamp-based time representation
+- Efficient duration arithmetic using nanoseconds
+- Thread-safe time operations
+- Cross-platform compatibility
+
+## Current Limitations
+
+This is a foundational implementation with some simplifications:
+
+- Time zone support is UTC-only
+- RFC3339 parsing is simplified
+- Sleep function is simulated (busy wait)
+- Clock resolution depends on system capabilities
+
 ## Testing
 
-Run the comprehensive test suite:
-
+Run tests with:
 ```bash
-# Test interpretation mode
 cargo run --bin cursed stdlib/timez/test_timez.csd
-
-# Test compilation mode
-cargo run --bin cursed -- compile stdlib/timez/test_timez.csd
-./test_timez
 ```
 
-## Implementation Notes
+The test suite covers time creation, arithmetic, comparison, formatting, duration operations, and edge cases.
 
-- Uses 64-bit integers for timestamp representation
-- Nanosecond precision maintained throughout all operations
-- RFC3339 formatting follows ISO 8601 standards
-- Pure CURSED implementation ensures maximum portability
-- Thread-safe design suitable for concurrent applications
+## Future Enhancements
 
-## Constants
-
-- `NANOS_PER_SECOND = 1,000,000,000`
-- `NANOS_PER_MILLI = 1,000,000` 
-- `NANOS_PER_MICRO = 1,000`
-
-## Performance
-
-- O(1) time complexity for all operations
-- Minimal memory allocation
-- Optimized for high-frequency time operations
-- Suitable for real-time applications
+- Full time zone database support
+- High-resolution monotonic clocks
+- Timer and ticker functionality
+- Time zone conversion utilities
+- Advanced date/time parsing
+- Performance optimization for time-critical applications

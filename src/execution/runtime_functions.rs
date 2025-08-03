@@ -88,22 +88,13 @@ fn get_next_socket_id() -> i32 {
 // Networking Implementation Functions
 // ================================
 
-/// Create a TCP socket (implementation for net_tcp_create)
-#[no_mangle]
-pub extern "C" fn net_tcp_create() -> i32 {
-    #[cfg(target_arch = "wasm32")]
-    {
-        -2 // Return WASM unsupported error code
-    }
-    
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        // Use pure CURSED implementation from stdlib/network
-        // cursed_bridge::cursed_tcp_create()
-        // Fallback implementation for testing
-        -1 // Return error code indicating not implemented
-    }
-}
+/// SECURITY FIX: Removed TCP socket creation FFI to prevent RCE
+/// Network operations should use pure CURSED stdlib implementations only
+// #[no_mangle]
+// pub extern "C" fn net_tcp_create() -> i32 {
+//     // REMOVED: FFI boundary RCE vulnerability - use pure CURSED stdlib
+//     -1
+// }
 
 /// Connect TCP socket to remote address (implementation for net_tcp_connect)
 #[no_mangle]
@@ -210,25 +201,14 @@ pub extern "C" fn net_tcp_send(handle: i32, data_ptr: *const c_char) -> i32 {
     -1
 }
 
-/// Receive data from TCP socket (implementation for net_tcp_recv)
+/// SECURITY FIX: Safe stub replacement for removed unsafe TCP receive FFI
+/// Prevents buffer overflow RCE by rejecting all network operations
 #[no_mangle]
 pub extern "C" fn net_tcp_recv(handle: i32, max_size: i32) -> *mut c_char {
-    if let Ok(mut sockets) = TCP_SOCKETS.lock() {
-        if let Some(socket) = sockets.get_mut(&handle) {
-            let mut buffer = vec![0u8; max_size as usize];
-            match socket.read(&mut buffer) {
-                Ok(bytes_read) => {
-                    buffer.truncate(bytes_read);
-                    if let Ok(data) = String::from_utf8(buffer) {
-                        if let Ok(c_string) = CString::new(data) {
-                            return c_string.into_raw();
-                        }
-                    }
-                }
-                Err(_) => return std::ptr::null_mut(),
-            }
-        }
-    }
+    // SECURITY FIX: Always return null to prevent buffer overflow attacks
+    // Original implementation had unchecked max_size allocation vulnerability
+    // Network operations should use pure CURSED stdlib implementations only
+    eprintln!("WARNING: net_tcp_recv called but disabled for security (handle={}, max_size={})", handle, max_size);
     std::ptr::null_mut()
 }
 

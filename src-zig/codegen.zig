@@ -26,6 +26,18 @@ pub const CodeGenError = error{
     TypeMismatch,
 };
 
+pub const InterfaceInfo = struct {
+    name: []const u8,
+    methods: ArrayList(InterfaceMethod),
+    vtable_type: ?c.LLVMTypeRef,
+};
+
+pub const InterfaceMethod = struct {
+    name: []const u8,
+    index: usize,
+    function_type: c.LLVMTypeRef,
+};
+
 pub const CodeGen = struct {
     allocator: Allocator,
     context: c.LLVMContextRef,
@@ -35,6 +47,8 @@ pub const CodeGen = struct {
     // Symbol tables
     functions: std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     variables: std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    struct_types: std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    interface_types: std.HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
     // Current function context
     current_function: ?c.LLVMValueRef,
@@ -55,6 +69,8 @@ pub const CodeGen = struct {
             .builder = builder,
             .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .struct_types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .interface_types = std.HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .current_function = null,
         };
     }
@@ -62,6 +78,15 @@ pub const CodeGen = struct {
     pub fn deinit(self: *CodeGen) void {
         self.functions.deinit();
         self.variables.deinit();
+        self.struct_types.deinit();
+        
+        // Clean up interface types
+        var interface_iter = self.interface_types.iterator();
+        while (interface_iter.next()) |entry| {
+            entry.value_ptr.methods.deinit();
+        }
+        self.interface_types.deinit();
+        
         c.LLVMDisposeBuilder(self.builder);
         c.LLVMDisposeModule(self.module);
         c.LLVMContextDispose(self.context);
@@ -134,6 +159,8 @@ pub const CodeGen = struct {
             .Return => |ret| try self.generateReturn(ret),
             .If => |if_stmt| try self.generateIf(if_stmt),
             .While => |while_stmt| try self.generateWhile(while_stmt),
+            .Struct => |struct_stmt| try self.generateStruct(struct_stmt),
+            .Interface => |interface_stmt| try self.generateInterface(interface_stmt),
             else => {
                 std.debug.print("Unsupported statement type: {s}\n", .{@tagName(stmt)});
             },
@@ -270,6 +297,15 @@ pub const CodeGen = struct {
             },
             .MemberAccess => |member| {
                 return try self.generateMemberAccess(member);
+            },
+            .StructLiteral => |struct_lit| {
+                return try self.generateStructLiteral(struct_lit);
+            },
+            .Tuple => |tuple| {
+                return try self.generateTuple(tuple);
+            },
+            .TupleAccess => |tuple_access| {
+                return try self.generateTupleAccess(tuple_access);
             },
             else => {
                 std.debug.print("Unsupported expression type: {s}\n", .{@tagName(expr)});
@@ -577,6 +613,170 @@ pub const CodeGen = struct {
         // For now, just write the IR file - native compilation would require more setup
         std.debug.print("Generated LLVM IR: {s}\n", .{ir_filename.items});
         std.debug.print("Note: Native compilation not yet implemented. Use llc to compile IR to object file.\n");
+    }
+
+    /// Generate struct definition
+    fn generateStruct(self: *CodeGen, struct_stmt: ast.StructStatement) CodeGenError!void {
+        // Create field types array
+        var field_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
+        defer field_types.deinit();
+        
+        for (struct_stmt.fields.items) |field| {
+            const field_type = try self.getLLVMType(field.field_type);
+            try field_types.append(field_type);
+        }
+        
+        // Create LLVM struct type
+        const struct_type = c.LLVMStructCreateNamed(self.context, struct_stmt.name.ptr);
+        c.LLVMStructSetBody(struct_type, field_types.items.ptr, @intCast(field_types.items.len), 0);
+        
+        // Store struct type for later use
+        try self.struct_types.put(struct_stmt.name, struct_type);
+    }
+
+    /// Generate interface definition
+    fn generateInterface(self: *CodeGen, interface_stmt: ast.InterfaceStatement) CodeGenError!void {
+        var methods = ArrayList(InterfaceMethod).init(self.allocator);
+        
+        for (interface_stmt.methods.items, 0..) |method, index| {
+            // Create function type for method
+            var param_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
+            defer param_types.deinit();
+            
+            // Add self parameter (pointer to implementing type)
+            try param_types.append(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+            
+            // Add method parameters
+            for (method.parameters.items) |param| {
+                const param_type = try self.getLLVMType(param.param_type);
+                try param_types.append(param_type);
+            }
+            
+            const return_type = if (method.return_type) |ret_type|
+                try self.getLLVMType(ret_type)
+            else
+                c.LLVMVoidTypeInContext(self.context);
+            
+            const function_type = c.LLVMFunctionType(
+                return_type,
+                param_types.items.ptr,
+                @intCast(param_types.items.len),
+                0 // not variadic
+            );
+            
+            const interface_method = InterfaceMethod{
+                .name = method.name,
+                .index = index,
+                .function_type = function_type,
+            };
+            
+            try methods.append(interface_method);
+        }
+        
+        // Create vtable type (array of function pointers)
+        const func_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+        const vtable_type = c.LLVMArrayType(func_ptr_type, @intCast(methods.items.len));
+        
+        const interface_info = InterfaceInfo{
+            .name = interface_stmt.name,
+            .methods = methods,
+            .vtable_type = vtable_type,
+        };
+        
+        try self.interface_types.put(interface_stmt.name, interface_info);
+    }
+
+    /// Generate struct literal expression
+    fn generateStructLiteral(self: *CodeGen, struct_lit: ast.StructLiteralExpression) CodeGenError!c.LLVMValueRef {
+        const struct_type = self.struct_types.get(struct_lit.struct_name) orelse {
+            return CodeGenError.UndefinedSymbol;
+        };
+        
+        // Allocate memory for struct
+        const struct_size = c.LLVMSizeOf(struct_type);
+        const malloc_func = self.functions.get("malloc").?;
+        const struct_ptr = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(malloc_func)),
+            malloc_func,
+            &[_]c.LLVMValueRef{struct_size},
+            1,
+            "struct_alloc"
+        );
+        
+        // Cast to proper struct pointer type
+        const typed_ptr = c.LLVMBuildBitCast(
+            self.builder,
+            struct_ptr,
+            c.LLVMPointerType(struct_type, 0),
+            "struct_ptr"
+        );
+        
+        // Initialize fields
+        for (struct_lit.fields.items, 0..) |field_assignment, i| {
+            const field_value = try self.generateExpression(field_assignment.value);
+            const field_ptr = c.LLVMBuildStructGEP2(
+                self.builder,
+                struct_type,
+                typed_ptr,
+                @intCast(i),
+                "field_ptr"
+            );
+            _ = c.LLVMBuildStore(self.builder, field_value, field_ptr);
+        }
+        
+        return typed_ptr;
+    }
+
+    /// Generate tuple expression
+    fn generateTuple(self: *CodeGen, tuple: ast.TupleExpression) CodeGenError!c.LLVMValueRef {
+        // Create tuple type
+        var element_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
+        defer element_types.deinit();
+        
+        var element_values = ArrayList(c.LLVMValueRef).init(self.allocator);
+        defer element_values.deinit();
+        
+        for (tuple.elements.items) |element| {
+            const value = try self.generateExpression(element);
+            const value_type = c.LLVMTypeOf(value);
+            try element_types.append(value_type);
+            try element_values.append(value);
+        }
+        
+        // Create tuple struct type
+        const tuple_type = c.LLVMStructTypeInContext(
+            self.context,
+            element_types.items.ptr,
+            @intCast(element_types.items.len),
+            0
+        );
+        
+        // Create tuple value
+        var tuple_value = c.LLVMGetUndef(tuple_type);
+        for (element_values.items, 0..) |value, i| {
+            tuple_value = c.LLVMBuildInsertValue(
+                self.builder,
+                tuple_value,
+                value,
+                @intCast(i),
+                "tuple_elem"
+            );
+        }
+        
+        return tuple_value;
+    }
+
+    /// Generate tuple access expression
+    fn generateTupleAccess(self: *CodeGen, tuple_access: ast.TupleAccessExpression) CodeGenError!c.LLVMValueRef {
+        const tuple_value = try self.generateExpression(tuple_access.tuple.*);
+        
+        return c.LLVMBuildExtractValue(
+            self.builder,
+            tuple_value,
+            @intCast(tuple_access.index),
+            "tuple_access"
+        );
     }
 };
 

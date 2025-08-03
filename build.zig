@@ -50,6 +50,49 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
 
+    // Create concurrency test suite
+    const concurrency_tests = b.addTest(.{
+        .root_source_file = b.path("src-zig/concurrency.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const run_concurrency_tests = b.addRunArtifact(concurrency_tests);
+    const concurrency_test_step = b.step("test-concurrency", "Run concurrency tests");
+    concurrency_test_step.dependOn(&run_concurrency_tests.step);
+
+    // Create concurrency benchmark executable
+    const concurrency_benchmark = b.addExecutable(.{
+        .name = "cursed-concurrency-benchmark",
+        .root_source_file = b.path("src-zig/concurrency_benchmark.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    b.installArtifact(concurrency_benchmark);
+
+    const run_benchmark = b.addRunArtifact(concurrency_benchmark);
+    run_benchmark.step.dependOn(b.getInstallStep());
+
+    const benchmark_step = b.step("benchmark", "Run concurrency benchmarks");
+    benchmark_step.dependOn(&run_benchmark.step);
+
+    // Create comprehensive concurrency test executable
+    const concurrency_test_exe = b.addExecutable(.{
+        .name = "cursed-concurrency-test",
+        .root_source_file = b.path("src-zig/concurrency_test.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    b.installArtifact(concurrency_test_exe);
+
+    const run_concurrency_test_exe = b.addRunArtifact(concurrency_test_exe);
+    run_concurrency_test_exe.step.dependOn(b.getInstallStep());
+
+    const concurrency_full_test_step = b.step("test-concurrency-full", "Run comprehensive concurrency tests");
+    concurrency_full_test_step.dependOn(&run_concurrency_test_exe.step);
+
     // Create stdlib tests
     const stdlib_tests = b.addTest(.{
         .root_source_file = b.path("stdlib-zig/testz.zig"),

@@ -15,6 +15,11 @@ const LetStatement = ast.LetStatement;
 const Type = ast.Type;
 const Parameter = ast.Parameter;
 
+// Add missing needed types
+const StructField = ast.StructField;
+const MethodSignature = ast.MethodSignature;
+const TypeParameter = ast.TypeParameter;
+
 pub const ParserError = error{
     UnexpectedToken,
     UnexpectedEof,
@@ -324,9 +329,80 @@ pub const Parser = struct {
     fn parseForStatement(self: *Parser) ParserError!Statement {
         try self.consume(.Bestie, "Expected 'bestie'");
         
-        // TODO: Implement for loop parsing
-        // For now, return a placeholder
-        return ParserError.InvalidSyntax;
+        // Check if this is a range-for loop (bestie var := flex ...)
+        if (self.check(.Identifier)) {
+            // Look ahead to check for range-for pattern
+            if (self.isRangeForLoop()) {
+                return try self.parseRangeForStatement();
+            }
+        }
+        
+        // Check if it's a while-style for loop (no semicolons)
+        if (!self.hasSemicolonsBeforeBrace()) {
+            // While-style for loop: bestie condition { ... }
+            var condition: ?Expression = null;
+            
+            if (!self.check(.LeftBrace)) {
+                condition = try self.parseExpression();
+            }
+            
+            try self.consume(.LeftBrace, "Expected '{'");
+            
+            var body = ArrayList(Statement).init(self.allocator);
+            while (!self.check(.RightBrace) and !self.isAtEnd()) {
+                const stmt = try self.parseStatement();
+                try body.append(stmt);
+            }
+            
+            try self.consume(.RightBrace, "Expected '}'");
+            
+            return Statement{ .For = ast.ForStatement{
+                .init = null,
+                .condition = condition,
+                .update = null,
+                .body = body,
+            }};
+        }
+        
+        // C-style for loop: bestie init; condition; update { ... }
+        
+        // Parse init statement (optional)
+        var init_stmt: ?Statement = null;
+        if (!self.check(.Semicolon)) {
+            init_stmt = try self.parseStatement();
+        }
+        try self.consume(.Semicolon, "Expected ';' after for loop init");
+        
+        // Parse condition (optional)
+        var condition: ?Expression = null;
+        if (!self.check(.Semicolon)) {
+            condition = try self.parseExpression();
+        }
+        try self.consume(.Semicolon, "Expected ';' after for loop condition");
+        
+        // Parse update statement (optional)
+        var update: ?Statement = null;
+        if (!self.check(.LeftBrace)) {
+            update = try self.parseStatement();
+        }
+        
+        // Parse body
+        try self.consume(.LeftBrace, "Expected '{'");
+        
+        var body = ArrayList(Statement).init(self.allocator);
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            const stmt = try self.parseStatement();
+            try body.append(stmt);
+        }
+        
+        try self.consume(.RightBrace, "Expected '}'");
+        
+        return Statement{ .For = ast.ForStatement{
+            .init = init_stmt,
+            .condition = condition,
+            .update = update,
+            .body = body,
+        }};
     }
 
     fn parseDeferStatement(self: *Parser) ParserError!Statement {
@@ -341,15 +417,141 @@ pub const Parser = struct {
     fn parseStructStatement(self: *Parser) ParserError!Statement {
         _ = self.advance(); // consume squad/struct
         
-        // TODO: Implement struct parsing
-        return ParserError.InvalidSyntax;
+        // Parse struct name
+        if (!self.check(.Identifier)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        const name = self.advance().lexeme;
+        
+        // Parse generic type parameters <T, U>
+        var type_parameters = ArrayList(ast.TypeParameter).init(self.allocator);
+        if (self.match(.Less)) {
+            // Parse first type parameter
+            if (!self.check(.Greater)) {
+                if (self.check(.Identifier)) {
+                    const param_name = self.advance().lexeme;
+                    const param = ast.TypeParameter{
+                        .name = param_name,
+                        .constraints = ArrayList(Type).init(self.allocator),
+                    };
+                    try type_parameters.append(param);
+                }
+                
+                // Parse additional type parameters
+                while (self.match(.Comma)) {
+                    if (self.check(.Identifier)) {
+                        const param_name = self.advance().lexeme;
+                        const param = ast.TypeParameter{
+                            .name = param_name,
+                            .constraints = ArrayList(Type).init(self.allocator),
+                        };
+                        try type_parameters.append(param);
+                    }
+                }
+            }
+            
+            if (!self.match(.Greater)) {
+                return ParserError.UnexpectedToken;
+            }
+        }
+        
+        // Expect '{'
+        try self.consume(.LeftBrace, "Expected '{' after struct name");
+        
+        // Parse fields
+        var fields = ArrayList(ast.StructField).init(self.allocator);
+        
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            // Skip newlines
+            if (self.match(.Newline)) {
+                continue;
+            }
+            
+            // Parse field
+            const field = try self.parseStructField();
+            try fields.append(field);
+            
+            // Optional comma
+            _ = self.match(.Comma);
+        }
+        
+        try self.consume(.RightBrace, "Expected '}' after struct fields");
+        
+        return Statement{ .Struct = ast.StructStatement{
+            .name = name,
+            .fields = fields,
+            .visibility = .Public,
+            .type_parameters = type_parameters,
+        }};
     }
 
     fn parseInterfaceStatement(self: *Parser) ParserError!Statement {
         try self.consume(.Collab, "Expected 'collab'");
         
-        // TODO: Implement interface parsing
-        return ParserError.InvalidSyntax;
+        // Parse interface name
+        if (!self.check(.Identifier)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        const name = self.advance().lexeme;
+        
+        // Parse generic type parameters <T, U>
+        var type_parameters = ArrayList(ast.TypeParameter).init(self.allocator);
+        if (self.match(.Less)) {
+            // Parse first type parameter
+            if (!self.check(.Greater)) {
+                if (self.check(.Identifier)) {
+                    const param_name = self.advance().lexeme;
+                    const param = ast.TypeParameter{
+                        .name = param_name,
+                        .constraints = ArrayList(Type).init(self.allocator),
+                    };
+                    try type_parameters.append(param);
+                }
+                
+                // Parse additional type parameters
+                while (self.match(.Comma)) {
+                    if (self.check(.Identifier)) {
+                        const param_name = self.advance().lexeme;
+                        const param = ast.TypeParameter{
+                            .name = param_name,
+                            .constraints = ArrayList(Type).init(self.allocator),
+                        };
+                        try type_parameters.append(param);
+                    }
+                }
+            }
+            
+            if (!self.match(.Greater)) {
+                return ParserError.UnexpectedToken;
+            }
+        }
+        
+        // Expect opening brace
+        try self.consume(.LeftBrace, "Expected '{' after interface name");
+        
+        // Parse method signatures
+        var methods = ArrayList(ast.MethodSignature).init(self.allocator);
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            // Skip newlines
+            if (self.match(.Newline)) {
+                continue;
+            }
+            
+            // Parse method signature
+            const method = try self.parseMethodSignature();
+            try methods.append(method);
+        }
+        
+        try self.consume(.RightBrace, "Expected '}' after interface methods");
+        
+        return Statement{ .Interface = ast.InterfaceStatement{
+            .name = name,
+            .methods = methods,
+            .visibility = .Public,
+            .type_parameters = type_parameters,
+        }};
     }
 
     fn parseExpression(self: *Parser) ParserError!Expression {
@@ -715,6 +917,150 @@ pub const Parser = struct {
         
         std.debug.print("Parser error: {s}\n", .{message});
         return ParserError.UnexpectedToken;
+    }
+
+    // Helper functions for parsing
+    fn parseStructField(self: *Parser) ParserError!ast.StructField {
+        // Parse field name
+        if (!self.check(.Identifier)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        const name = self.advance().lexeme;
+        
+        // Parse field type
+        const field_type = try self.parseType();
+        
+        return ast.StructField{
+            .name = name,
+            .field_type = field_type,
+            .visibility = .Public,
+        };
+    }
+
+    fn parseMethodSignature(self: *Parser) ParserError!ast.MethodSignature {
+        // Expect 'slay' keyword
+        try self.consume(.Slay, "Expected 'slay' keyword for method");
+        
+        // Parse method name
+        if (!self.check(.Identifier)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        const name = self.advance().lexeme;
+        
+        // Parse parameters
+        const parameters = try self.parseParameters();
+        
+        // Parse return type (optional)
+        var return_type: ?Type = null;
+        if (self.check(.Normie) or self.check(.Tea) or self.check(.Lit) or
+            self.check(.Sip) or self.check(.Smol) or self.check(.Mid) or
+            self.check(.Thicc) or self.check(.Snack) or self.check(.Meal) or
+            self.check(.Byte) or self.check(.Rune) or self.check(.Extra) or
+            self.check(.Identifier)) {
+            return_type = try self.parseType();
+        }
+        
+        return ast.MethodSignature{
+            .name = name,
+            .parameters = parameters,
+            .return_type = return_type,
+        };
+    }
+
+    fn isRangeForLoop(self: *Parser) bool {
+        // Simple heuristic: look for := or = followed by flex
+        var pos = self.current + 1;
+        
+        // Skip comma and identifier if present (for multi-variable assignment)
+        if (pos < self.tokens.len and self.tokens[pos].kind == .Comma) {
+            pos += 1;
+            if (pos < self.tokens.len and self.tokens[pos].kind == .Identifier) {
+                pos += 1;
+            }
+        }
+        
+        // Look for := or =
+        if (pos < self.tokens.len and 
+            (self.tokens[pos].kind == .ColonEqual or self.tokens[pos].kind == .Equal)) {
+            pos += 1;
+            // Look for flex
+            if (pos < self.tokens.len and self.tokens[pos].kind == .Flex) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    fn hasSemicolonsBeforeBrace(self: *Parser) bool {
+        var pos = self.current;
+        var semicolon_count: usize = 0;
+        
+        while (pos < self.tokens.len) {
+            const token = self.tokens[pos];
+            if (token.kind == .LeftBrace) {
+                break;
+            }
+            if (token.kind == .Semicolon) {
+                semicolon_count += 1;
+            }
+            if (token.kind == .Eof) {
+                break;
+            }
+            pos += 1;
+        }
+        
+        return semicolon_count > 0;
+    }
+
+    fn parseRangeForStatement(self: *Parser) ParserError!Statement {
+        // Parse variable(s) for range-for loop
+        var variables = ArrayList([]const u8).init(self.allocator);
+        
+        // Parse first variable
+        if (self.check(.Identifier)) {
+            try variables.append(self.advance().lexeme);
+        }
+        
+        // Parse second variable if comma present
+        if (self.match(.Comma)) {
+            if (self.check(.Identifier)) {
+                try variables.append(self.advance().lexeme);
+            }
+        }
+        
+        // Expect := or =
+        if (!self.match(.ColonEqual) and !self.match(.Equal)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        // Expect 'flex'
+        try self.consume(.Flex, "Expected 'flex' in range-for loop");
+        
+        // Parse iterable expression
+        const iterable = try self.parseExpression();
+        
+        // Parse body
+        try self.consume(.LeftBrace, "Expected '{'");
+        
+        var body = ArrayList(Statement).init(self.allocator);
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            const stmt = try self.parseStatement();
+            try body.append(stmt);
+        }
+        
+        try self.consume(.RightBrace, "Expected '}'");
+        
+        // For now, convert to a simplified ForStatement
+        // In a full implementation, you'd want a dedicated ForInStatement
+        return Statement{ .For = ast.ForStatement{
+            .init = null,
+            .condition = iterable,
+            .update = null,
+            .body = body,
+        }};
     }
 };
 
