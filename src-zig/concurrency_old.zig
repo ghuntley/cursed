@@ -361,7 +361,7 @@ pub const Goroutine = struct {
         self.entry_fn(self.context);
 
         const end_time = std.time.milliTimestamp();
-        self.total_runtime += @intCast(u64, end_time - start_time);
+        self.total_runtime += @as(u32, @intCast(end_time - start_time));
         self.setState(GoroutineState.completed);
     }
 };
@@ -506,7 +506,7 @@ pub const Worker = struct {
         const start_time = std.time.milliTimestamp();
         goroutine.execute();
         const end_time = std.time.milliTimestamp();
-        self.stats.busy_time += @intCast(u64, end_time - start_time);
+        self.stats.busy_time += @as(u32, @intCast(end_time - start_time));
     }
 
     fn stealWork(self: *Worker) ?*Goroutine {
@@ -945,7 +945,7 @@ test "goroutine creation and execution" {
     
     const testFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             test_ctx.executed.* = true;
         }
     }.run;

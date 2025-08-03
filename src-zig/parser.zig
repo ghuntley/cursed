@@ -3,7 +3,7 @@ const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
 const lexer = @import("lexer.zig");
-const ast = @import("ast.zig");
+const ast = @import("ast_simple.zig");
 
 const Token = lexer.Token;
 const TokenKind = lexer.TokenKind;
@@ -164,6 +164,15 @@ pub const Parser = struct {
         // Interface declaration (collab)
         if (self.check(.Collab)) {
             return try self.parseInterfaceStatement();
+        }
+        
+        // Error handling statements
+        if (self.check(.Yikes)) {
+            return Statement{ .Yikes = try self.parseYikesStatement() };
+        }
+        
+        if (self.check(.Fam)) {
+            return Statement{ .Fam = try self.parseFamStatement() };
         }
         
         // Expression statement
@@ -723,6 +732,16 @@ pub const Parser = struct {
             }};
         }
         
+        // Handle shook error propagation operator
+        if (self.match(.Shook)) {
+            const wrapped_expr = try self.allocator.create(Expression);
+            wrapped_expr.* = try self.parseUnary();
+            
+            return Expression{ .Shook = ast.ShookExpression{
+                .expression = wrapped_expr,
+            }};
+        }
+        
         return self.parseCall();
     }
 
@@ -1060,6 +1079,95 @@ pub const Parser = struct {
             .condition = iterable,
             .update = null,
             .body = body,
+        }};
+    }
+
+    // CURSED Error Handling System Implementation
+    fn parseYikesStatement(self: *Parser) ParserError!ast.YikesStatement {
+        try self.consume(.Yikes, "Expected 'yikes'");
+        
+        // Parse error name/identifier
+        if (!self.check(.Identifier)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        const name = self.advance().lexeme;
+        var error_type: ?Type = null;
+        var value: ?Expression = null;
+        
+        // Optional error type annotation (yikes MyError tea)
+        if (self.check(.Identifier)) {
+            error_type = try self.parseType();
+        }
+        
+        // Optional error value assignment (yikes MyError = "something went wrong")
+        if (self.match(.Equal)) {
+            value = try self.parseExpression();
+        }
+        
+        return ast.YikesStatement{
+            .name = name,
+            .error_type = error_type,
+            .value = value,
+        };
+    }
+
+    fn parseFamStatement(self: *Parser) ParserError!ast.FamStatement {
+        try self.consume(.Fam, "Expected 'fam'");
+        
+        // Parse main body block
+        try self.consume(.LeftBrace, "Expected '{'");
+        
+        var body = ArrayList(Statement).init(self.allocator);
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            const stmt = try self.parseStatement();
+            try body.append(stmt);
+        }
+        
+        try self.consume(.RightBrace, "Expected '}'");
+        
+        var recovery_body: ?ArrayList(Statement) = null;
+        var error_variable: ?[]const u8 = null;
+        
+        // Optional recovery block (fam { ... } catch(err) { ... })
+        if (self.match(.Catch)) {
+            // Parse error variable in catch block
+            if (self.match(.LeftParen)) {
+                if (self.check(.Identifier)) {
+                    error_variable = self.advance().lexeme;
+                }
+                try self.consume(.RightParen, "Expected ')'");
+            }
+            
+            // Parse recovery body
+            try self.consume(.LeftBrace, "Expected '{'");
+            
+            var recovery = ArrayList(Statement).init(self.allocator);
+            while (!self.check(.RightBrace) and !self.isAtEnd()) {
+                const stmt = try self.parseStatement();
+                try recovery.append(stmt);
+            }
+            
+            try self.consume(.RightBrace, "Expected '}'");
+            recovery_body = recovery;
+        }
+        
+        return ast.FamStatement{
+            .body = body,
+            .recovery_body = recovery_body,
+            .error_variable = error_variable,
+        };
+    }
+
+    fn parseShookExpression(self: *Parser) ParserError!Expression {
+        try self.consume(.Shook, "Expected 'shook'");
+        
+        // Parse the wrapped expression that might fail
+        const wrapped_expr = try self.allocator.create(Expression);
+        wrapped_expr.* = try self.parseUnaryExpression();
+        
+        return Expression{ .Shook = ast.ShookExpression{
+            .expression = wrapped_expr,
         }};
     }
 };

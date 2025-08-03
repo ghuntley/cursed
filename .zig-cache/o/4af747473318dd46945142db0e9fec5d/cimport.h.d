@@ -1,0 +1,29 @@
+cimport.o: \
+  /home/ghuntley/code/cursed/.zig-cache/o/4af747473318dd46945142db0e9fec5d/cimport.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/Core.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/Deprecated.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/ErrorHandling.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/ExternC.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/Types.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/DataTypes.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/include/inttypes.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig//libc/include/generic-musl/inttypes.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig//libc/include/generic-musl/features.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/include/stdint.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig//libc/include/generic-musl/stdint.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig//libc/include/x86_64-linux-musl/bits/alltypes.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig//libc/include/x86_64-linux-musl/bits/stdint.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig//libc/include/generic-musl/sys/types.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig//libc/include/generic-musl/endian.h \
+  /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig//libc/include/generic-musl/sys/select.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/ExecutionEngine.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/Target.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm/Config/llvm-config.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm/Config/Targets.def \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm/Config/AsmPrinters.def \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm/Config/AsmParsers.def \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm/Config/Disassemblers.def \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/TargetMachine.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/Analysis.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/Orc.h \
+  /nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include/llvm-c/Error.h

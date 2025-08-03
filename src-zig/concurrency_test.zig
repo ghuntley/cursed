@@ -30,7 +30,8 @@ const TestResult = struct {
     error_msg: ?[]const u8 = null,
 };
 
-var test_results = std.ArrayList(TestResult).init(std.testing.allocator);
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+var test_results: std.ArrayList(TestResult) = undefined;
 
 fn runTest(comptime name: []const u8, testFn: *const fn () anyerror!void) void {
     const start_time = std.time.milliTimestamp();
@@ -40,7 +41,7 @@ fn runTest(comptime name: []const u8, testFn: *const fn () anyerror!void) void {
         test_results.append(TestResult{
             .passed = false,
             .name = name,
-            .duration_ms = @intCast(u64, end_time - start_time),
+            .duration_ms = @as(u64, @intCast(end_time - start_time)),
             .error_msg = @errorName(err),
         }) catch {};
         print("❌ {s}: FAILED ({s})\n", .{ name, @errorName(err) });
@@ -51,19 +52,18 @@ fn runTest(comptime name: []const u8, testFn: *const fn () anyerror!void) void {
     test_results.append(TestResult{
         .passed = true,
         .name = name,
-        .duration_ms = @intCast(u64, end_time - start_time),
+        .duration_ms = @as(u64, @intCast(end_time - start_time)),
     }) catch {};
     print("✅ {s}: PASSED ({}ms)\n", .{ name, end_time - start_time });
 }
 
 // Comprehensive test suite
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    print("🚀 CURSED Concurrency System Test Suite\n");
-    print("=====================================\n\n");
+    print("🚀 CURSED Concurrency System Test Suite\n", .{});
+    print("=====================================\n\n", .{});
 
     // Initialize test results
     test_results = std.ArrayList(TestResult).init(allocator);
@@ -114,7 +114,7 @@ pub fn main() !void {
 
 // Basic goroutine tests
 fn testBasicGoroutineCreation() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     const config = SchedulerConfig.default();
     
     try concurrency.initializeScheduler(allocator, config);
@@ -132,7 +132,7 @@ fn testBasicGoroutineCreation() !void {
 }
 
 fn testGoroutineExecution() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     const config = SchedulerConfig.default();
     
     try concurrency.initializeScheduler(allocator, config);
@@ -147,7 +147,7 @@ fn testGoroutineExecution() !void {
     
     const testFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             test_ctx.executed.* = true;
         }
     }.run;
@@ -161,7 +161,7 @@ fn testGoroutineExecution() !void {
 }
 
 fn testMultipleGoroutines() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     const config = SchedulerConfig.default();
     
     try concurrency.initializeScheduler(allocator, config);
@@ -180,7 +180,7 @@ fn testMultipleGoroutines() !void {
     
     const testFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             test_ctx.mutex.lock();
             defer test_ctx.mutex.unlock();
             test_ctx.counter.* += 1;
@@ -200,7 +200,7 @@ fn testMultipleGoroutines() !void {
 
 // Channel tests
 fn testBasicChannelOperations() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var channel = try concurrency.makeChannel(i32, allocator, 3);
     defer {
@@ -226,7 +226,7 @@ fn testBasicChannelOperations() !void {
 }
 
 fn testBufferedChannel() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var channel = try concurrency.makeChannel(i32, allocator, 5);
     defer {
@@ -236,7 +236,7 @@ fn testBufferedChannel() !void {
 
     // Fill buffer
     for (0..5) |i| {
-        try testing.expect(try channel.send(@intCast(i32, i)) == concurrency.SendResult.sent);
+        try testing.expect(try channel.send(@as(i32, @intCast(i))) == concurrency.SendResult.sent);
     }
     
     // Buffer should be full
@@ -246,14 +246,14 @@ fn testBufferedChannel() !void {
     // Drain buffer
     for (0..5) |i| {
         const received = try channel.receive();
-        try testing.expect(received.? == @intCast(i32, i));
+        try testing.expect(received.? == @as(i32, @intCast(i)));
     }
     
     try testing.expect(channel.isEmpty());
 }
 
 fn testUnbufferedChannel() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var channel = try concurrency.makeUnbufferedChannel(i32, allocator);
     defer {
@@ -282,7 +282,7 @@ fn testUnbufferedChannel() !void {
     
     const receiverFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             const value = test_ctx.channel.receive() catch return;
             test_ctx.mutex.lock();
             defer test_ctx.mutex.unlock();
@@ -308,7 +308,7 @@ fn testUnbufferedChannel() !void {
 }
 
 fn testChannelClosing() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var channel = try concurrency.makeChannel(i32, allocator, 2);
     defer {
@@ -336,7 +336,7 @@ fn testChannelClosing() !void {
 }
 
 fn testChannelIterator() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var channel = try concurrency.makeChannel(i32, allocator, 5);
     defer {
@@ -346,7 +346,7 @@ fn testChannelIterator() !void {
 
     // Send test data
     for (1..6) |i| {
-        try testing.expect(try channel.send(@intCast(i32, i)) == concurrency.SendResult.sent);
+        try testing.expect(try channel.send(@as(i32, @intCast(i))) == concurrency.SendResult.sent);
     }
     
     channel.close();
@@ -361,13 +361,13 @@ fn testChannelIterator() !void {
     
     try testing.expect(values.items.len == 5);
     for (values.items, 1..) |value, i| {
-        try testing.expect(value == @intCast(i32, i));
+        try testing.expect(value == @as(i32, @intCast(i)));
     }
 }
 
 // Scheduler tests
 fn testSchedulerInitialization() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     const config = SchedulerConfig.default();
     
     try concurrency.initializeScheduler(allocator, config);
@@ -379,7 +379,7 @@ fn testSchedulerInitialization() !void {
 }
 
 fn testWorkDistribution() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     var config = SchedulerConfig.default();
     config.num_workers = 4;
     
@@ -399,7 +399,7 @@ fn testWorkDistribution() !void {
     
     const taskFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             
             // Simulate work
             std.time.sleep(1_000_000); // 1ms
@@ -424,7 +424,7 @@ fn testWorkDistribution() !void {
 }
 
 fn testWorkStealing() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var deque1 = WorkStealingDeque.init(allocator);
     defer deque1.deinit();
@@ -440,13 +440,13 @@ fn testWorkStealing() !void {
     try deque1.pushBottom(&goroutine1);
     try deque1.pushBottom(&goroutine2);
     
-    try testing.expect(deque1.len() == 2);
-    try testing.expect(deque2.isEmpty());
+    try testing.expect(deque1.items.items.len == 2);
+    try testing.expect(deque2.items.items.len == 0);
     
     // Steal from first deque
     const stolen = deque1.steal();
     try testing.expect(stolen != null);
-    try testing.expect(deque1.len() == 1);
+    try testing.expect(deque1.items.items.len == 1);
     
     // Pop from bottom
     const popped = deque1.popBottom();
@@ -455,7 +455,7 @@ fn testWorkStealing() !void {
 }
 
 fn testSchedulerStatistics() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     const config = SchedulerConfig.default();
     
     try concurrency.initializeScheduler(allocator, config);
@@ -484,7 +484,7 @@ fn testSchedulerStatistics() !void {
 
 // Select statement tests
 fn testSelectDefaultCase() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var select_stmt = Select.init(allocator);
     defer select_stmt.deinit();
@@ -496,7 +496,7 @@ fn testSelectDefaultCase() !void {
 }
 
 fn testSelectSendReceive() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var channel = try concurrency.makeChannel(i32, allocator, 1);
     defer {
@@ -516,7 +516,7 @@ fn testSelectSendReceive() !void {
 }
 
 fn testSelectTimeout() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var select_stmt = Select.init(allocator);
     defer select_stmt.deinit();
@@ -532,7 +532,7 @@ fn testSelectTimeout() !void {
 }
 
 fn testSelectMultipleChannels() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var channel1 = try concurrency.makeChannel(i32, allocator, 1);
     defer {
@@ -563,7 +563,7 @@ fn testSelectMultipleChannels() !void {
 
 // Performance tests
 fn testHighGoroutineCount() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     const config = SchedulerConfig.default();
     
     try concurrency.initializeScheduler(allocator, config);
@@ -582,7 +582,7 @@ fn testHighGoroutineCount() !void {
     
     const taskFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             test_ctx.mutex.lock();
             defer test_ctx.mutex.unlock();
             test_ctx.counter.* += 1;
@@ -614,7 +614,7 @@ fn testHighGoroutineCount() !void {
 }
 
 fn testChannelThroughput() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     var channel = try concurrency.makeChannel(u64, allocator, 1000);
     defer {
@@ -645,7 +645,7 @@ fn testChannelThroughput() !void {
     
     const senderFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             for (0..test_ctx.num_messages) |i| {
                 _ = test_ctx.channel.send(i) catch continue;
                 test_ctx.mutex.lock();
@@ -657,7 +657,7 @@ fn testChannelThroughput() !void {
     
     const receiverFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const value = test_ctx.channel.receive() catch break;
                 if (value == null) break;
@@ -691,7 +691,7 @@ fn testChannelThroughput() !void {
     
     const end_time = std.time.milliTimestamp();
     const duration = end_time - start_time;
-    const throughput = @intToFloat(f64, num_messages * 1000) / @intToFloat(f64, duration);
+    const throughput = @as(f64, @floatFromInt(num_messages * 1000)) / @as(f64, @floatFromInt(duration));
     
     print("Channel throughput: {d:.0} messages/second\n", .{throughput});
     try testing.expect(sent_count == num_messages);
@@ -699,7 +699,7 @@ fn testChannelThroughput() !void {
 }
 
 fn testSchedulerPerformance() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     const config = SchedulerConfig.default();
     
     try concurrency.initializeScheduler(allocator, config);
@@ -718,7 +718,7 @@ fn testSchedulerPerformance() !void {
     
     const taskFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             // Minimal work to test scheduler overhead
             test_ctx.mutex.lock();
             test_ctx.completed.* += 1;
@@ -745,7 +745,7 @@ fn testSchedulerPerformance() !void {
     
     const end_time = std.time.milliTimestamp();
     const duration = end_time - start_time;
-    const throughput = @intToFloat(f64, num_tasks * 1000) / @intToFloat(f64, duration);
+    const throughput = @as(f64, @floatFromInt(num_tasks * 1000)) / @as(f64, @floatFromInt(duration));
     
     print("Scheduler performance: {d:.0} tasks/second\n", .{throughput});
     try testing.expect(completed == num_tasks);
@@ -753,7 +753,7 @@ fn testSchedulerPerformance() !void {
 
 // Concurrency pattern tests
 fn testProducerConsumer() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     try concurrency.initializeScheduler(allocator, SchedulerConfig.default());
     defer concurrency.shutdownScheduler(allocator);
@@ -787,9 +787,9 @@ fn testProducerConsumer() !void {
     
     const producerFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             for (0..test_ctx.num_items) |i| {
-                _ = test_ctx.channel.send(@intCast(u32, i)) catch continue;
+                _ = test_ctx.channel.send(@as(u32, @intCast(i))) catch continue;
                 test_ctx.mutex.lock();
                 test_ctx.produced.* += 1;
                 test_ctx.mutex.unlock();
@@ -800,7 +800,7 @@ fn testProducerConsumer() !void {
     
     const consumerFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const test_ctx = @ptrCast(*TestContext, @alignCast(@alignOf(TestContext), ctx.?));
+            const test_ctx = @as(*TestContext, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const value = test_ctx.channel.receive() catch break;
                 if (value == null) break;
@@ -826,7 +826,7 @@ fn testProducerConsumer() !void {
 }
 
 fn testFanInPattern() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     try concurrency.initializeScheduler(allocator, SchedulerConfig.default());
     defer concurrency.shutdownScheduler(allocator);
@@ -860,15 +860,15 @@ fn testFanInPattern() !void {
         const producer_context = try allocator.create(ProducerContext);
         producer_context.* = ProducerContext{
             .channel = output_channel,
-            .start_value = @intCast(u32, i * items_per_producer),
+            .start_value = @as(u32, @intCast(i * items_per_producer)),
             .count = items_per_producer,
         };
         
         const producerFn = struct {
             fn run(ctx: ?*anyopaque) void {
-                const prod_ctx = @ptrCast(*ProducerContext, @alignCast(@alignOf(ProducerContext), ctx.?));
+                const prod_ctx = @as(*ProducerContext, @ptrCast(@alignCast(ctx.?)));
                 for (0..prod_ctx.count) |j| {
-                    _ = prod_ctx.channel.send(prod_ctx.start_value + @intCast(u32, j)) catch continue;
+                    _ = prod_ctx.channel.send(prod_ctx.start_value + @as(u32, @intCast(j))) catch continue;
                 }
             }
         }.run;
@@ -886,7 +886,7 @@ fn testFanInPattern() !void {
     
     const consumerFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const cons_ctx = @ptrCast(*ConsumerContext, @alignCast(@alignOf(ConsumerContext), ctx.?));
+            const cons_ctx = @as(*ConsumerContext, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const value = cons_ctx.channel.receive() catch break;
                 if (value == null) break;
@@ -912,7 +912,7 @@ fn testFanInPattern() !void {
 }
 
 fn testFanOutPattern() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     try concurrency.initializeScheduler(allocator, SchedulerConfig.default());
     defer concurrency.shutdownScheduler(allocator);
@@ -948,9 +948,9 @@ fn testFanOutPattern() !void {
     
     const producerFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const prod_ctx = @ptrCast(*ProducerContext, @alignCast(@alignOf(ProducerContext), ctx.?));
+            const prod_ctx = @as(*ProducerContext, @ptrCast(@alignCast(ctx.?)));
             for (0..prod_ctx.count) |i| {
-                _ = prod_ctx.channel.send(@intCast(u32, i)) catch continue;
+                _ = prod_ctx.channel.send(@as(u32, @intCast(i))) catch continue;
             }
             prod_ctx.channel.close();
         }
@@ -965,12 +965,12 @@ fn testFanOutPattern() !void {
             .channel = input_channel,
             .count = &consumer_counts[i],
             .mutex = &mutex,
-            .id = @intCast(u32, i),
+            .id = @as(u32, @intCast(i)),
         };
         
         const consumerFn = struct {
             fn run(ctx: ?*anyopaque) void {
-                const cons_ctx = @ptrCast(*ConsumerContext, @alignCast(@alignOf(ConsumerContext), ctx.?));
+                const cons_ctx = @as(*ConsumerContext, @ptrCast(@alignCast(ctx.?)));
                 while (true) {
                     const value = cons_ctx.channel.receive() catch break;
                     if (value == null) break;
@@ -1000,7 +1000,7 @@ fn testFanOutPattern() !void {
 }
 
 fn testWorkerPool() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     try concurrency.initializeScheduler(allocator, SchedulerConfig.default());
     defer concurrency.shutdownScheduler(allocator);
@@ -1041,12 +1041,12 @@ fn testWorkerPool() !void {
         worker_context.* = WorkerContext{
             .job_channel = job_channel,
             .result_channel = result_channel,
-            .worker_id = @intCast(u32, i),
+            .worker_id = @as(u32, @intCast(i)),
         };
         
         const workerFn = struct {
             fn run(ctx: ?*anyopaque) void {
-                const worker_ctx = @ptrCast(*WorkerContext, @alignCast(@alignOf(WorkerContext), ctx.?));
+                const worker_ctx = @as(*WorkerContext, @ptrCast(@alignCast(ctx.?)));
                 while (true) {
                     const job = worker_ctx.job_channel.receive() catch break;
                     if (job == null) break;
@@ -1071,7 +1071,7 @@ fn testWorkerPool() !void {
     
     const collectorFn = struct {
         fn run(ctx: ?*anyopaque) void {
-            const coll_ctx = @ptrCast(*CollectorContext, @alignCast(@alignOf(CollectorContext), ctx.?));
+            const coll_ctx = @as(*CollectorContext, @ptrCast(@alignCast(ctx.?)));
             while (true) {
                 const result = coll_ctx.result_channel.receive() catch break;
                 if (result == null) break;
@@ -1090,7 +1090,7 @@ fn testWorkerPool() !void {
     
     // Send jobs
     for (1..num_jobs + 1) |i| {
-        _ = try job_channel.send(@intCast(u32, i));
+        _ = try job_channel.send(@as(u32, @intCast(i)));
     }
     
     job_channel.close();
@@ -1105,7 +1105,7 @@ fn testWorkerPool() !void {
 
 // Memory safety tests
 fn testMemorySafety() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     
     // Test that channels and goroutines properly clean up memory
     for (0..100) |_| {
@@ -1125,7 +1125,7 @@ fn testMemorySafety() !void {
 }
 
 fn testResourceCleanup() !void {
-    const allocator = std.testing.allocator;
+    const allocator = gpa.allocator();
     const config = SchedulerConfig.default();
     
     // Test multiple scheduler initializations and shutdowns
@@ -1154,8 +1154,8 @@ fn testResourceCleanup() !void {
 
 // Test summary printing
 fn printTestSummary() void {
-    print("\n📊 Test Summary\n");
-    print("===============\n");
+    print("\n📊 Test Summary\n", .{});
+    print("===============\n", .{});
     
     var passed: u32 = 0;
     var failed: u32 = 0;
@@ -1174,11 +1174,11 @@ fn printTestSummary() void {
     print("\n✅ Passed: {}\n", .{passed});
     print("❌ Failed: {}\n", .{failed});
     print("⏱️  Total time: {}ms\n", .{total_duration});
-    print("📈 Success rate: {d:.1}%\n", .{@intToFloat(f64, passed) * 100.0 / @intToFloat(f64, passed + failed)});
+    print("📈 Success rate: {d:.1}%\n", .{@as(f64, @floatFromInt(passed)) * 100.0 / @as(f64, @floatFromInt(passed + failed))});
     
     if (failed == 0) {
-        print("\n🎉 All tests passed! CURSED concurrency system is working correctly.\n");
+        print("\n🎉 All tests passed! CURSED concurrency system is working correctly.\n", .{});
     } else {
-        print("\n⚠️  Some tests failed. Please review the implementation.\n");
+        print("\n⚠️  Some tests failed. Please review the implementation.\n", .{});
     }
 }

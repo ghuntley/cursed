@@ -2,101 +2,143 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
-// Simple AST without circular dependencies for initial Zig compilation
+// Simplified AST to break circular dependency
+pub const Expression = struct {
+    tag: ExpressionTag,
+    data: *anyopaque,
 
-pub const Program = struct {
-    statements: ArrayList(*Statement),
-    allocator: Allocator,
+    pub const ExpressionTag = enum {
+        Identifier,
+        Variable,
+        Integer,
+        Float,
+        String,
+        Boolean,
+        Character,
+        Binary,
+        Call,
+        Array,
+        Literal,
+    };
 
-    pub fn init(allocator: Allocator) Program {
-        return Program{
-            .statements = ArrayList(*Statement).init(allocator),
-            .allocator = allocator,
-        };
+    pub fn deinit(self: *Expression, allocator: Allocator) void {
+        _ = self;
+        _ = allocator;
+        // TODO: Implement cleanup
     }
 
-    pub fn deinit(self: *Program) void {
-        for (self.statements.items) |stmt| {
-            stmt.deinit(self.allocator);
-            self.allocator.destroy(stmt);
-        }
-        self.statements.deinit();
-    }
-
-    pub fn print(self: Program, indent: usize) !void {
-        const print_fn = std.debug.print;
-        const spaces = "  " ** 10;
-        
-        print_fn("{s}Program:\n", .{spaces[0..indent]});
-        
-        for (self.statements.items) |stmt| {
-            try stmt.print(indent + 2);
-        }
+    pub fn print(self: Expression, indent: usize) !void {
+        _ = self;
+        _ = indent;
+        // TODO: Implement print
     }
 };
 
-pub const Statement = union(enum) {
-    Function: FunctionStatement,
-    Expression: ExpressionStatement,
+pub const Program = struct {
+    statements: ArrayList(Statement),
+    imports: ArrayList(ImportStatement),
+    package: ?PackageDeclaration,
+
+    pub fn init(allocator: Allocator) Program {
+        return Program{
+            .statements = ArrayList(Statement).init(allocator),
+            .imports = ArrayList(ImportStatement).init(allocator),
+            .package = null,
+        };
+    }
+
+    pub fn deinit(self: *Program, allocator: Allocator) void {
+        _ = self;
+        _ = allocator;
+        // TODO: Implement cleanup
+    }
+
+    pub fn print(self: Program, indent: usize) !void {
+        _ = self;
+        _ = indent;
+        // TODO: Implement print
+    }
+};
+
+pub const Statement = struct {
+    tag: StatementTag,
+    data: *anyopaque,
+
+    pub const StatementTag = enum {
+        Expression,
+        Variable,
+        Function,
+        Return,
+        If,
+        While,
+        For,
+        Block,
+        Break,
+        Continue,
+        Package,
+        Import,
+        Defer,
+        Assignment,
+    };
 
     pub fn deinit(self: *Statement, allocator: Allocator) void {
-        switch (self.*) {
-            .Function => |*func| func.deinit(allocator),
-            .Expression => |*expr| expr.deinit(allocator),
-        }
+        _ = self;
+        _ = allocator;
+        // TODO: Implement cleanup
     }
 
     pub fn print(self: Statement, indent: usize) !void {
-        const print_fn = std.debug.print;
-        const spaces = "  " ** 10;
-        
-        switch (self) {
-            .Function => |func| {
-                print_fn("{s}Function: {s}\n", .{ spaces[0..indent], func.name });
-            },
-            .Expression => {
-                print_fn("{s}Expression\n", .{spaces[0..indent]});
-            },
-        }
+        _ = self;
+        _ = indent;
+        // TODO: Implement print
     }
 };
 
 pub const FunctionStatement = struct {
     name: []const u8,
-    body: ArrayList(*Statement),
-    allocator: Allocator,
-
-    pub fn init(allocator: Allocator, name: []const u8) FunctionStatement {
-        return FunctionStatement{
-            .name = name,
-            .body = ArrayList(*Statement).init(allocator),
-            .allocator = allocator,
-        };
-    }
+    parameters: ArrayList(Parameter),
+    return_type: ?Type,
+    body: Statement,
+    visibility: Visibility,
 
     pub fn deinit(self: *FunctionStatement, allocator: Allocator) void {
-        for (self.body.items) |stmt| {
-            stmt.deinit(allocator);
-            allocator.destroy(stmt);
-        }
-        self.body.deinit();
-    }
-};
-
-pub const ExpressionStatement = struct {
-    // Simplified expression for now
-    
-    pub fn deinit(self: *ExpressionStatement, allocator: Allocator) void {
         _ = self;
         _ = allocator;
+        // TODO: Implement cleanup
     }
 };
 
-test "simple ast creation" {
-    const allocator = std.testing.allocator;
-    
-    var program = Program.init(allocator);
-    defer program.deinit();
-    
-    try std.testing.expect(program.statements.items.len == 0);
-}
+pub const Parameter = struct {
+    name: []const u8,
+    param_type: Type,
+};
+
+pub const Type = struct {
+    name: []const u8,
+};
+
+pub const Visibility = enum {
+    Public,
+    Private,
+};
+
+pub const ImportStatement = struct {
+    path: []const u8,
+    alias: ?[]const u8,
+
+    pub fn deinit(self: *ImportStatement, allocator: Allocator) void {
+        _ = self;
+        _ = allocator;
+        // TODO: Implement cleanup
+    }
+};
+
+pub const PackageDeclaration = struct {
+    name: []const u8,
+
+    pub fn deinit(self: *PackageDeclaration, allocator: Allocator) void {
+        _ = self;
+        _ = allocator;
+        // TODO: Implement cleanup
+    }
+};

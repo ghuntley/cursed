@@ -90,11 +90,11 @@ fn get_next_socket_id() -> i32 {
 
 /// SECURITY FIX: Removed TCP socket creation FFI to prevent RCE
 /// Network operations should use pure CURSED stdlib implementations only
-// #[no_mangle]
-// pub extern "C" fn net_tcp_create() -> i32 {
-//     // REMOVED: FFI boundary RCE vulnerability - use pure CURSED stdlib
-//     -1
-// }
+#[no_mangle]
+pub extern "C" fn net_tcp_create() -> i32 {
+    // REMOVED: FFI boundary RCE vulnerability - use pure CURSED stdlib
+    -1
+}
 
 /// Connect TCP socket to remote address (implementation for net_tcp_connect)
 #[no_mangle]
