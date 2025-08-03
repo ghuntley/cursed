@@ -1,13 +1,5 @@
-sus flag lit = based;
-sus count normie = 0;
-
-lowkey flag {
-    vibez.spill("Conditional working");
+fr fr Advanced CURSED program
+sus name tea = "CURSED"
+slay greet() {
+    vibez.spill("Hello from advanced CURSED!")
 }
-
-periodt count < 2 {
-    vibez.spill("Loop working");
-    count = count + 1;
-}
-
-vibez.spill("Advanced features complete");

@@ -621,11 +621,20 @@ const Interpreter = struct {
         };
     }
 
-    fn printNode(node: ASTNode) !void {
+    fn printNode(self: *EnhancedMinimalCompiler, node: ASTNode) !void {
         switch (node) {
             .StringLiteral => |str| print("{s}", .{str}),
             .NumberLiteral => |num| print("{d}", .{num}),
-            .Identifier => |id| print("{s}", .{id}),
+            .Identifier => |id| {
+                // Look up variable value instead of just printing the name
+                if (self.environment.get(id)) |value| {
+                    const str = try value.toString(self.allocator);
+                    defer self.allocator.free(str);
+                    print("{s}", .{str});
+                } else |_| {
+                    print("{s}", .{id}); // Fallback to identifier name
+                }
+            },
             else => print("(complex expression)", .{}),
         }
     }

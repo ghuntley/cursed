@@ -349,14 +349,25 @@ pub const SimpleInterpreter = struct {
             i += 1;
         }
         
-        // Get the argument
-        if (i < tokens.len) {
+        // Get the arguments (can be multiple, comma-separated)
+        var first_arg = true;
+        while (i < tokens.len and tokens[i].kind != .RightParen) {
+            if (!first_arg) {
+                // Skip comma
+                if (tokens[i].kind == .Comma) {
+                    i += 1;
+                    std.debug.print(" ", .{});
+                }
+            }
+            
             const value = try self.evaluateSimpleExpression(tokens, &i);
             const str = try value.toString(self.allocator);
             defer self.allocator.free(str);
             
-            std.debug.print("{s}\n", .{str});
+            std.debug.print("{s}", .{str});
+            first_arg = false;
         }
+        std.debug.print("\n", .{}); // Add newline at end
         
         // Skip ")"
         if (i < tokens.len and tokens[i].kind == .RightParen) {
@@ -438,7 +449,8 @@ pub const SimpleInterpreter = struct {
                     const field_type = tokens[i].lexeme;
                     i += 1;
                     
-                    try struct_type.addField(field_name, field_type);
+                    var mutable_struct_type = struct_type;
+                    try mutable_struct_type.addField(field_name, field_type);
                 }
                 
                 // Skip optional comma
@@ -507,7 +519,10 @@ pub const SimpleInterpreter = struct {
                 }
                 
                 // Look up variable
-                return self.environment.get(token.lexeme) catch Value.Null;
+                return self.environment.get(token.lexeme) catch {
+                    std.debug.print("Warning: Variable '{s}' not found\n", .{token.lexeme});
+                    return Value.Null;
+                };
             },
             else => return Value.Null,
         }
@@ -545,7 +560,8 @@ pub const SimpleInterpreter = struct {
                 
                 // Get field value
                 const field_value = try self.evaluateSimpleExpression(tokens, i);
-                try struct_instance.setField(field_name, field_value);
+                var mutable_struct_instance = struct_instance;
+                try mutable_struct_instance.setField(field_name, field_value);
                 
                 // Skip optional comma
                 if (i.* < tokens.len and tokens[i.*].kind == .Comma) {

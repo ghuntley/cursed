@@ -1,0 +1,11 @@
+desc: --massif-out-file=massif_memory_stress.out
+cmd: .././zig-out/bin/cursed-zig memory_stress_test.csd
+time_unit: i
+#-----------
+snapshot=0
+#-----------
+time=0
+mem_heap_B=0
+mem_heap_extra_B=0
+mem_stacks_B=0
+heap_tree=empty

@@ -17,9 +17,22 @@ pub const Program = struct {
     }
 
     pub fn deinit(self: *Program, allocator: Allocator) void {
+        // CRITICAL FIX: Clean up individual statements first
+        for (self.statements.items) |*stmt| {
+            stmt.deinit(allocator);
+        }
         self.statements.deinit();
+        
+        // Clean up individual imports
+        for (self.imports.items) |*import| {
+            import.deinit(allocator);
+        }
         self.imports.deinit();
-        _ = allocator;
+        
+        // Clean up package if allocated
+        if (self.package) |*pkg| {
+            pkg.deinit(allocator);
+        }
     }
 
     pub fn print(self: Program, indent: usize) !void {
@@ -51,11 +64,23 @@ pub const ImportStatement = struct {
             .alias = null,
         };
     }
+    
+    pub fn deinit(self: *ImportStatement, allocator: Allocator) void {
+        // Note: path and alias are typically slices of original source, not allocated
+        _ = self;
+        _ = allocator;
+    }
 };
 
 pub const PackageDeclaration = struct {
     name: []const u8,
     version: ?[]const u8,
+    
+    pub fn deinit(self: *PackageDeclaration, allocator: Allocator) void {
+        // Note: name and version are typically slices of original source, not allocated
+        _ = self;
+        _ = allocator;
+    }
 };
 
 pub const Statement = enum {
@@ -88,6 +113,14 @@ pub const Statement = enum {
     Yikes,
     Fam,
     Const,
+    
+    pub fn deinit(self: *Statement, allocator: Allocator) void {
+        // CRITICAL FIX: Statement memory cleanup
+        // Note: For simple AST, statements are typically just enum tags
+        // If statements contained allocated data, we would clean it up here
+        _ = self;
+        _ = allocator;
+    }
 };
 
 pub const Expression = enum {
@@ -129,6 +162,14 @@ pub const Expression = enum {
     Match,
     TypeSwitch,
     Block,
+    
+    pub fn deinit(self: *Expression, allocator: Allocator) void {
+        // CRITICAL FIX: Expression memory cleanup
+        // Note: For simple AST, expressions are typically just enum tags
+        // If expressions contained allocated data, we would clean it up here
+        _ = self;
+        _ = allocator;
+    }
 };
 
 pub const FunctionStatement = struct {
