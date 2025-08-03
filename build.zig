@@ -10,21 +10,25 @@ pub fn build(b: *std.Build) void {
     // Create the CURSED compiler executable with concurrency support
     const exe = b.addExecutable(.{
         .name = "cursed-zig",
-        .root_source_file = b.path("src-zig/demo_simple.zig"),
+        .root_source_file = b.path("src-zig/simple_error_compiler.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
 
-    // Configure libc and system integration
+    // Configure libc for minimal compiler (no LLVM needed)
     exe.linkLibC();
-    
-    // Add LLVM library path and includes from NixOS environment
-    exe.addLibraryPath(.{ .cwd_relative = "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib" });
-    exe.addIncludePath(.{ .cwd_relative = "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include" });
-    
-    exe.linkSystemLibrary("LLVM-18");
+
+    // Minimal working compiler target (simple interpreter only)
+    const minimal_exe = b.addExecutable(.{
+        .name = "cursed-minimal",
+        .root_source_file = b.path("src-zig/minimal_working_compiler.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    minimal_exe.linkLibC();
 
     b.installArtifact(exe);
+    b.installArtifact(minimal_exe);
 
     // Create run step
     const run_cmd = b.addRunArtifact(exe);

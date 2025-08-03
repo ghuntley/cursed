@@ -106,10 +106,160 @@ pub const CodeGenerator = struct {
             .Expression => |expr| {
                 _ = try self.generateExpression(expr);
             },
+            .If => |if_stmt| {
+                try self.generateIfStatement(if_stmt);
+            },
+            .While => |while_stmt| {
+                try self.generateWhileStatement(while_stmt);
+            },
+            .For => |for_stmt| {
+                try self.generateForStatement(for_stmt);
+            },
+            .Return => |return_stmt| {
+                try self.generateReturnStatement(return_stmt);
+            },
+            .Block => |block| {
+                for (block.statements.items) |block_stmt| {
+                    try self.generateStatement(block_stmt.*);
+                }
+            },
+            .Import => {
+                // Import statements don't generate code
+            },
             else => {
-                // TODO: Implement other statement types
                 std.debug.print("Warning: Unimplemented statement type in codegen\n", .{});
             },
+        }
+    }
+
+    fn generateIfStatement(self: *CodeGenerator, if_stmt: ast.IfStatementData) !void {
+        const condition_value = try self.generateExpression(if_stmt.condition.*);
+        
+        // Get current function
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        
+        // Create basic blocks
+        const then_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "if.then");
+        const else_block = if (if_stmt.else_branch) |_| 
+            c.LLVMAppendBasicBlockInContext(self.context, current_func, "if.else") 
+        else 
+            null;
+        const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "if.merge");
+        
+        // Generate conditional branch
+        if (else_block) |else_bb| {
+            _ = c.LLVMBuildCondBr(self.builder, condition_value, then_block, else_bb);
+        } else {
+            _ = c.LLVMBuildCondBr(self.builder, condition_value, then_block, merge_block);
+        }
+        
+        // Generate then block
+        c.LLVMPositionBuilderAtEnd(self.builder, then_block);
+        for (if_stmt.then_branch.items) |stmt| {
+            try self.generateStatement(stmt.*);
+        }
+        // Only add branch if block doesn't end with return/break
+        if (!c.LLVMGetBasicBlockTerminator(then_block)) {
+            _ = c.LLVMBuildBr(self.builder, merge_block);
+        }
+        
+        // Generate else block if present
+        if (if_stmt.else_branch) |else_stmts| {
+            c.LLVMPositionBuilderAtEnd(self.builder, else_block.?);
+            for (else_stmts.items) |stmt| {
+                try self.generateStatement(stmt.*);
+            }
+            if (!c.LLVMGetBasicBlockTerminator(else_block.?)) {
+                _ = c.LLVMBuildBr(self.builder, merge_block);
+            }
+        }
+        
+        // Continue with merge block
+        c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+    }
+
+    fn generateWhileStatement(self: *CodeGenerator, while_stmt: ast.WhileStatementData) !void {
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        
+        const loop_header = c.LLVMAppendBasicBlockInContext(self.context, current_func, "while.header");
+        const loop_body = c.LLVMAppendBasicBlockInContext(self.context, current_func, "while.body");
+        const loop_exit = c.LLVMAppendBasicBlockInContext(self.context, current_func, "while.exit");
+        
+        // Jump to header
+        _ = c.LLVMBuildBr(self.builder, loop_header);
+        
+        // Generate header with condition
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_header);
+        const condition_value = try self.generateExpression(while_stmt.condition.*);
+        _ = c.LLVMBuildCondBr(self.builder, condition_value, loop_body, loop_exit);
+        
+        // Generate body
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_body);
+        for (while_stmt.body.items) |stmt| {
+            try self.generateStatement(stmt.*);
+        }
+        if (!c.LLVMGetBasicBlockTerminator(loop_body)) {
+            _ = c.LLVMBuildBr(self.builder, loop_header);
+        }
+        
+        // Continue with exit block
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_exit);
+    }
+
+    fn generateForStatement(self: *CodeGenerator, for_stmt: ast.ForStatementData) !void {
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        
+        // Generate init statement
+        if (for_stmt.init) |for_init| {
+            try self.generateStatement(for_init.*);
+        }
+        
+        const loop_header = c.LLVMAppendBasicBlockInContext(self.context, current_func, "for.header");
+        const loop_body = c.LLVMAppendBasicBlockInContext(self.context, current_func, "for.body");
+        const loop_update = c.LLVMAppendBasicBlockInContext(self.context, current_func, "for.update");
+        const loop_exit = c.LLVMAppendBasicBlockInContext(self.context, current_func, "for.exit");
+        
+        // Jump to header
+        _ = c.LLVMBuildBr(self.builder, loop_header);
+        
+        // Generate header with condition
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_header);
+        if (for_stmt.condition) |condition| {
+            const condition_value = try self.generateExpression(condition.*);
+            _ = c.LLVMBuildCondBr(self.builder, condition_value, loop_body, loop_exit);
+        } else {
+            // Infinite loop if no condition
+            _ = c.LLVMBuildBr(self.builder, loop_body);
+        }
+        
+        // Generate body
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_body);
+        for (for_stmt.body.items) |stmt| {
+            try self.generateStatement(stmt.*);
+        }
+        if (!c.LLVMGetBasicBlockTerminator(loop_body)) {
+            _ = c.LLVMBuildBr(self.builder, loop_update);
+        }
+        
+        // Generate update
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_update);
+        if (for_stmt.update) |update| {
+            try self.generateStatement(update.*);
+        }
+        if (!c.LLVMGetBasicBlockTerminator(loop_update)) {
+            _ = c.LLVMBuildBr(self.builder, loop_header);
+        }
+        
+        // Continue with exit block
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_exit);
+    }
+
+    fn generateReturnStatement(self: *CodeGenerator, return_stmt: ast.ReturnStatementData) !void {
+        if (return_stmt.value) |value| {
+            const return_value = try self.generateExpression(value.*);
+            _ = c.LLVMBuildRet(self.builder, return_value);
+        } else {
+            _ = c.LLVMBuildRetVoid(self.builder);
         }
     }
 

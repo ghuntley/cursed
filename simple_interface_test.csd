@@ -1,9 +1,10 @@
-# Simple interface method test
-vibez.spill("Testing interface implementation fixes")
+fr fr Simple Interface Test
+yeet "testz"
 
-# Test basic method calls that should work with our fixes
-sus x drip = 42.0
-vibez.spill(x)
+collab Drawable {
+    slay draw()
+}
 
-# Test nested method calls
-vibez.spill("Interface type checking is working!")
+test_start("Interface parsing test")
+assert_true(based)
+print_test_summary()

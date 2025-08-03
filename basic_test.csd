@@ -1,1 +1,1 @@
-vibez.spill("Hello, Enhanced CURSED!")
+vibez.spill("Hello")

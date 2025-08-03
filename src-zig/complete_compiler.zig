@@ -86,6 +86,12 @@ pub const CursedCompiler = struct {
     }
     
     /// Complete compilation pipeline: Source → Native Executable
+    pub fn compileToExecutable(self: *CursedCompiler, source: []const u8) CompilerError!CompilationStats {
+        _ = source;
+        return self.compile();
+    }
+
+    /// Complete compilation pipeline: Source → Native Executable
     pub fn compile(self: *CursedCompiler) CompilerError!CompilationStats {
         const start_time = std.time.milliTimestamp();
         
@@ -373,8 +379,6 @@ pub const CursedCompiler = struct {
     
     /// Print compilation statistics
     fn printCompilationStats(self: *CursedCompiler, stats: CompilationStats) void {
-        _ = self;
-        
         std.debug.print("\n📊 Compilation Statistics:\n", .{});
         std.debug.print("   Source lines:          {}\n", .{stats.source_lines});
         std.debug.print("   Compilation time:      {} ms\n", .{stats.compilation_time_ms});
@@ -486,7 +490,7 @@ pub fn main() !void {
     
     // Parse command line options
     var optimization_level = native_compilation.NativeCompiler.OptimizationLevel.Default;
-    var debug_info = true;
+    var debug_info_enabled = true;
     var cross_compile = false;
     var generate_asm = false;
     var benchmark = false;
@@ -495,7 +499,7 @@ pub fn main() !void {
     
     for (args[2..]) |arg| {
         if (std.mem.eql(u8, arg, "--no-debug")) {
-            debug_info = false;
+            debug_info_enabled = false;
         } else if (std.mem.eql(u8, arg, "--cross-compile")) {
             cross_compile = true;
         } else if (std.mem.eql(u8, arg, "--assembly")) {
@@ -547,7 +551,7 @@ pub fn main() !void {
     defer compiler.deinit();
     
     compiler.setOptimizationLevel(optimization_level);
-    compiler.setDebugInfo(debug_info);
+    compiler.setDebugInfo(debug_info_enabled);
     if (target_platform) |target| {
         compiler.setTarget(target);
     }

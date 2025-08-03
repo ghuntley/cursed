@@ -1,5 +1,17 @@
 /target
 
+# Zig cache and build outputs
+.zig-cache/
+zig-out/
+zig-cache/
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+*.obj
+*.o
+
 # Devenv
 .devenv*
 devenv.local.nix

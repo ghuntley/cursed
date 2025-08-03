@@ -1,0 +1,3 @@
+collab Test {
+    slay method()
+}

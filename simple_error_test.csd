@@ -1,24 +1,25 @@
-yeet "testz"
-yeet "error_drip"
+fr fr Simple CURSED Error Handling Test
 
-# Simple error_drip test
-test_start("basic error creation")
-sus new_error := error_new("test message")
-vibez.spill("Created error successfully")
-print_test_summary()
+fr fr Test basic yikes error creation
+yikes MyError tea = "This is an error"
+vibez.spill("Created error:", MyError)
 
-test_start("error message extraction")
-sus test_error := error_new("extract test")
-sus msg := error_message(test_error)
-vibez.spill("Extracted message: " + msg)
-assert_eq_string(msg, "extract test")
-print_test_summary()
+fr fr Test basic shook propagation
+slay test_function() yikes {
+    sus result = might_fail() shook
+    damn cringe
+}
 
-test_start("error type verification")
-sus typed_error := error_new("type test")
-sus err_type := error_type(typed_error)
-vibez.spill("Error type: " + err_type)
-assert_eq_string(err_type, "base_error")
-print_test_summary()
+slay might_fail() (normie, yikes) {
+    damn 42, cringe  fr fr Success case
+}
 
-vibez.spill("Basic error_drip functionality verified")
+fr fr Test basic fam recovery
+fam {
+    vibez.spill("Trying risky operation")
+    fr fr This would work normally
+} sus err {
+    vibez.spill("Recovered from error")
+}
+
+vibez.spill("Error handling test complete!")

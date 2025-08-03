@@ -340,7 +340,17 @@ pub const GCIntegration = struct {
         _ = function;
         _ = live_pointers;
         
-        // TODO: Implement LLVM stack map generation
+        // Generate LLVM stack map for GC root scanning
+    const stack_map_func = c.LLVMAddFunction(module, "llvm.experimental.stackmap", 
+        c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 0));
+    
+    // Create stack map intrinsic call
+    var map_args = [_]c.LLVMValueRef{
+        c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0, 0), // ID
+        c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 0, 0), // Shadow bytes
+    };
+    _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(stack_map_func), 
+        stack_map_func, &map_args, 2, "stackmap");
         // This would involve:
         // 1. Creating stack map intrinsics
         // 2. Marking GC safepoints
@@ -359,7 +369,13 @@ pub const GCIntegration = struct {
         _ = live_pointers;
         
         // For now, just add a comment
-        // TODO: Implement proper safepoint generation
+        // Generate GC safepoint - check if GC is needed
+        const gc_check_func = c.LLVMAddFunction(module, "cursed_gc_check", 
+            c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 0));
+        
+        // Add call to GC check function
+        _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(gc_check_func), 
+            gc_check_func, null, 0, "gc_check");
     }
     
     /// Generate function prologue for GC
