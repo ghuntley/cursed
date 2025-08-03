@@ -178,15 +178,15 @@ pub enum GcState {
 #[derive(Debug)]
 pub struct RootSet {
     /// Stack roots from all goroutines
-    pub stack_roots: Vec<usize>,
+    pub stack_roots: Arc<RwLock<Vec<usize>>>,
     /// Global variable roots
-    pub global_roots: Vec<usize>,
+    pub global_roots: Arc<RwLock<Vec<usize>>>,
     /// Channel roots
-    pub channel_roots: Vec<usize>,
+    pub channel_roots: Arc<RwLock<Vec<usize>>>,
     /// JIT-compiled code roots
-    pub jit_roots: Vec<usize>,
+    pub jit_roots: Arc<RwLock<Vec<usize>>>,
     /// Async task roots
-    pub async_roots: Vec<usize>,
+    pub async_roots: Arc<RwLock<Vec<usize>>>,
 }
 
 /// Incremental collection state
@@ -287,11 +287,11 @@ impl ProductionGarbageCollector {
             state: RwLock::new(GcState::Idle),
             stats: RwLock::new(ProductionGcStats::default()),
             roots: RwLock::new(RootSet {
-                stack_roots: Vec::new(),
-                global_roots: Vec::new(),
-                channel_roots: Vec::new(),
-                jit_roots: Vec::new(),
-                async_roots: Vec::new(),
+                stack_roots: Arc::new(RwLock::new(Vec::new())),
+                global_roots: Arc::new(RwLock::new(Vec::new())),
+                channel_roots: Arc::new(RwLock::new(Vec::new())),
+                jit_roots: Arc::new(RwLock::new(Vec::new())),
+                async_roots: Arc::new(RwLock::new(Vec::new())),
             }),
             trigger: Arc::new((Mutex::new(false), Condvar::new())),
             incremental_state: RwLock::new(IncrementalState {

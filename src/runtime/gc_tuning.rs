@@ -64,7 +64,7 @@ pub struct TriColorCollector {
     /// White objects (not yet visited)
     white_objects: RwLock<HashMap<usize, ObjectInfo>>,
     /// Gray objects (visited but not processed)
-    gray_objects: RwLock<Vec<usize>>,
+    gray_objects: Arc<RwLock<Vec<usize>>>,
     /// Black objects (fully processed)
     black_objects: RwLock<HashMap<usize, ObjectInfo>>,
     /// Write barrier log
@@ -97,7 +97,7 @@ impl TriColorCollector {
     pub fn new() -> Self {
         Self {
             white_objects: RwLock::new(HashMap::new()),
-            gray_objects: RwLock::new(Vec::new()),
+            gray_objects: Arc::new(RwLock::new(Vec::new())),
             black_objects: RwLock::new(HashMap::new()),
             write_barrier_log: RwLock::new(Vec::new()),
             collection_phase: AtomicUsize::new(0),

@@ -241,18 +241,34 @@ impl ExpressionCompiler {
              },
               Expression::Match(match_expr) => {
               // Match expressions need to be handled by main code generator
-                  return Err(CursedError::TypeError(
-                       "Match expressions should be handled by main code generator".to_string()
-                   ));
-               }
-               &crate::ast::Expression::TypeSwitch(_) => {
-                           // Type switch expressions are handled by the main code generator
-                   return Err(CursedError::TypeError(
-                       "Type switch expressions should be handled by main code generator".to_string()
-                   ));
-               }
+              return Err(CursedError::TypeError(
+              "Match expressions should be handled by main code generator".to_string()
+              ));
+              }
+              &crate::ast::Expression::TypeSwitch(_) => {
+              // Type switch expressions are handled by the main code generator
+              return Err(CursedError::TypeError(
+              "Type switch expressions should be handled by main code generator".to_string()
+              ));
+              }
+                Expression::ArrayExpression(array_expr) => {
+                       // Handle new structured array expressions
+                    self.compile_array_expression(&array_expr.elements)
+                }
+                Expression::YikesError { name, message, context_expr } => {
+                    // Handle error expressions
+                    self.compile_error_expression(name, message, context_expr)
+                }
+                Expression::ShookPropagation { source_expr } => {
+                    // Handle error propagation expressions
+                    self.compile_error_propagation(source_expr)
+                }
+                Expression::StructuredError { message, code, details, fields } => {
+                    // Handle structured error expressions
+                    self.compile_structured_error(message, code, details, fields)
+                }
 
-          }
+           }
     }
 
     /// Compile increment expression (++variable or variable++)
@@ -1693,5 +1709,24 @@ impl ExpressionCompiler {
         } else {
             "i8*".to_string() // Default to string pointer
         }
+    }
+
+    /// Compile error expression (yikes)
+    fn compile_error_expression(&mut self, name: &Expression, message: &Expression, context_expr: &Option<Box<Expression>>) -> Result<String, CursedError> {
+        // TODO: Implement proper error expression compilation
+        let msg_reg = self.compile_expression(message)?;
+        Ok(msg_reg)
+    }
+
+    /// Compile error propagation expression (shook)
+    fn compile_error_propagation(&mut self, source_expr: &Box<Expression>) -> Result<String, CursedError> {
+        // TODO: Implement proper error propagation compilation
+        self.compile_expression(source_expr)
+    }
+
+    /// Compile structured error expression
+    fn compile_structured_error(&mut self, message: &Box<Expression>, code: &Option<Box<Expression>>, details: &Option<Box<Expression>>, fields: &Vec<(String, Expression)>) -> Result<String, CursedError> {
+        // TODO: Implement proper structured error compilation
+        self.compile_expression(message)
     }
 }

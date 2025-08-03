@@ -23,7 +23,7 @@ pub const CompilerOptions = struct {
     emit_debug_info: bool = false,
     optimization_level: u8 = 0,
     
-    pub fn parseArgs(allocator: Allocator, args: [][]const u8) !CompilerOptions {
+    pub fn parseArgs(allocator: Allocator, args: [][:0]u8) !CompilerOptions {
         var options = CompilerOptions{};
         var i: usize = 1; // Skip program name
         
@@ -34,7 +34,7 @@ pub const CompilerOptions = struct {
                 printHelp();
                 std.process.exit(0);
             } else if (std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-v")) {
-                print("CURSED Zig Compiler v1.0.0 (Enhanced Error Reporting)\n");
+                std.debug.print("CURSED Zig Compiler v1.0.0 (Enhanced Error Reporting)\n", .{});
                 std.process.exit(0);
             } else if (std.mem.eql(u8, arg, "--verbose")) {
                 options.verbose = true;
@@ -63,7 +63,7 @@ pub const CompilerOptions = struct {
             } else if (std.mem.startsWith(u8, arg, "--max-errors=")) {
                 const value_str = arg["--max-errors=".len..];
                 options.max_errors = std.fmt.parseInt(usize, value_str, 10) catch {
-                    print("Error: Invalid value for --max-errors: {s}\n", .{value_str});
+                    std.debug.print("Error: Invalid value for --max-errors: {s}\n", .{value_str});
                     std.process.exit(1);
                 };
             } else if (std.mem.startsWith(u8, arg, "-O")) {
@@ -71,7 +71,7 @@ pub const CompilerOptions = struct {
                 if (level_str.len == 1 and level_str[0] >= '0' and level_str[0] <= '3') {
                     options.optimization_level = level_str[0] - '0';
                 } else {
-                    print("Error: Invalid optimization level: {s}. Use -O0, -O1, -O2, or -O3\n", .{level_str});
+                    std.debug.print("Error: Invalid optimization level: {s}. Use -O0, -O1, -O2, or -O3\n", .{level_str});
                     std.process.exit(1);
                 }
             } else if (std.mem.startsWith(u8, arg, "--output=") or std.mem.startsWith(u8, arg, "-o=")) {
@@ -81,7 +81,7 @@ pub const CompilerOptions = struct {
                 i += 1;
                 options.output_file = try allocator.dupe(u8, args[i]);
             } else if (std.mem.startsWith(u8, arg, "-")) {
-                print("Error: Unknown option: {s}\n", .{arg});
+                std.debug.print("Error: Unknown option: {s}\n", .{arg});
                 printHelp();
                 std.process.exit(1);
             } else {
@@ -96,7 +96,7 @@ pub const CompilerOptions = struct {
     }
     
     fn printHelp() void {
-        print(
+        std.debug.print(
             \\CURSED Zig Compiler - Enhanced Error Reporting Edition
             \\
             \\USAGE:
@@ -125,7 +125,7 @@ pub const CompilerOptions = struct {
             \\    cursed-zig --debug --verbose program.csd  # Debug with full information
             \\    cursed-zig --emit-llvm -O2 program.csd    # Emit optimized LLVM IR
             \\
-        );
+        , .{});
     }
 };
 
@@ -152,13 +152,13 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
     
     if (args.len < 2) {
-        print("Error: No input file specified\n");
+        std.debug.print("Error: No input file specified\n", .{});
         CompilerOptions.printHelp();
         std.process.exit(1);
     }
     
     const options = CompilerOptions.parseArgs(allocator, args) catch |err| {
-        print("Error parsing arguments: {}\n", .{err});
+        std.debug.print("Error parsing arguments: {}\n", .{err});
         std.process.exit(1);
     };
     
@@ -304,7 +304,7 @@ fn stripExtension(file_path: []const u8) []const u8 {
 
 // Demonstration and testing function
 fn demonstrateErrorReporting(allocator: Allocator) !void {
-    print("\n=== CURSED Compiler Error Reporting Demonstration ===\n\n");
+    std.debug.print("\n=== CURSED Compiler Error Reporting Demonstration ===\n\n", .{});
     
     // Test cases with various types of errors
     const test_cases = [_]struct {
@@ -334,7 +334,7 @@ fn demonstrateErrorReporting(allocator: Allocator) !void {
     };
     
     for (test_cases) |test_case| {
-        print("--- Test Case: {s} ---\n", .{test_case.name});
+        std.debug.print("--- Test Case: {s} ---\n", .{test_case.name});
         
         var error_reporter = ErrorReporter.init(allocator, 10);
         defer error_reporter.deinit();
@@ -346,17 +346,17 @@ fn demonstrateErrorReporting(allocator: Allocator) !void {
         var lexer = enhanced_lexer.Lexer.init(allocator, test_case.source, "demo.csd", &error_reporter) catch continue;
         defer lexer.deinit();
         
-        const tokens = lexer.tokenize() catch |_| &[_]enhanced_lexer.Token{};
+        const tokens = lexer.tokenize() catch &[_]enhanced_lexer.Token{};
         defer if (tokens.len > 0) allocator.free(tokens);
         
         var parser = enhanced_parser.Parser.init(allocator, tokens, &error_reporter);
         _ = parser.parseProgram() catch {};
         
         try error_reporter.printDiagnostics(std.io.getStdOut().writer());
-        print("\n");
+        std.debug.print("\n", .{});
     }
     
-    print("=== Demonstration Complete ===\n");
+    std.debug.print("=== Demonstration Complete ===\n", .{});
 }
 
 test "enhanced compiler integration" {

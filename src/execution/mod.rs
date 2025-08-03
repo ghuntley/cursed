@@ -1535,6 +1535,38 @@ impl CursedExecutionEngine {
                 // Evaluate type switch expression
                 self.evaluate_type_switch_expression(type_switch, context)
             },
+            Expression::ArrayExpression(array_expr) => {
+                // Handle new structured array expressions - evaluate elements like regular arrays
+                let mut values = Vec::new();
+                for element in &array_expr.elements {
+                    values.push(self.evaluate_expression(element, context)?);
+                }
+                Ok(CursedValue::Array(values))
+            },
+            Expression::YikesError { name, message, context_expr } => {
+                // Handle error expressions
+                let msg_val = self.evaluate_expression(message, context)?;
+                let msg_str = if let CursedValue::String(s) = msg_val {
+                    s
+                } else {
+                    "Error".to_string()
+                };
+                Err(CursedError::RuntimeError(msg_str))
+            },
+            Expression::ShookPropagation { source_expr } => {
+                // Handle error propagation expressions
+                self.evaluate_expression(source_expr, context)
+            },
+            Expression::StructuredError { message, code, details, fields } => {
+                // Handle structured error expressions
+                let msg_val = self.evaluate_expression(message, context)?;
+                let msg_str = if let CursedValue::String(s) = msg_val {
+                    s
+                } else {
+                    "Structured Error".to_string()
+                };
+                Err(CursedError::RuntimeError(msg_str))
+            },
 
         }
     }

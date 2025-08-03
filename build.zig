@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     // Use native target for dynamic library compatibility
     const resolved_target = target;
 
-    // Create the CURSED compiler executable - concurrency minimal (working version)
+    // Create the CURSED compiler executable - use minimal working version
     const exe = b.addExecutable(.{
         .name = "cursed-zig", 
         .root_source_file = b.path("src-zig/main_concurrency_minimal.zig"),
@@ -35,14 +35,14 @@ pub fn build(b: *std.Build) void {
     });
     complete_exe.linkLibC();
 
-    // Enhanced compiler with improved error reporting and debugging
-    const enhanced_exe = b.addExecutable(.{
-        .name = "cursed-enhanced",
-        .root_source_file = b.path("src-zig/enhanced_main.zig"),
-        .target = resolved_target,
-        .optimize = optimize,
-    });
-    enhanced_exe.linkLibC();
+    // Enhanced compiler with improved error reporting and debugging (disabled due to API issues)
+    // const enhanced_exe = b.addExecutable(.{
+    //     .name = "cursed-enhanced",
+    //     .root_source_file = b.path("src-zig/enhanced_main.zig"),
+    //     .target = resolved_target,
+    //     .optimize = optimize,
+    // });
+    // enhanced_exe.linkLibC();
 
     // Create performance-optimized compiler
     const optimized_exe = b.addExecutable(.{
@@ -56,7 +56,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
     b.installArtifact(minimal_exe);
     b.installArtifact(complete_exe);
-    b.installArtifact(enhanced_exe);
+    // b.installArtifact(enhanced_exe);  // Disabled due to API issues
     b.installArtifact(optimized_exe);
 
     // Create run step

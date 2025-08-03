@@ -570,7 +570,7 @@ impl ChannelSync {
 /// Deadlock detection system
 pub struct DeadlockDetector {
     /// Dependency graph: goroutine -> channel dependencies
-    dependencies: RwLock<HashMap<GoroutineId, Vec<usize>>>,
+    dependencies: Arc<RwLock<HashMap<GoroutineId, Vec<usize>>>>,
     /// Channel ownership: channel -> goroutine
     channel_owners: RwLock<HashMap<usize, GoroutineId>>,
     /// Detection enabled flag
@@ -581,7 +581,7 @@ impl DeadlockDetector {
     /// Create a new deadlock detector
     pub fn new() -> Self {
         Self {
-            dependencies: RwLock::new(HashMap::new()),
+            dependencies: Arc::new(RwLock::new(HashMap::new())),
             channel_owners: RwLock::new(HashMap::new()),
             enabled: AtomicBool::new(true),
         }

@@ -416,7 +416,22 @@ impl ImportResolver {
                 Some(module_name.to_string())
             }
             
-            // Direct module name - return as-is if it exists
+            // Known stdlib modules - return as-is
+            "testz" | "testz_simple" | "math" | "io" | "string_simple" | "vibez" | 
+            "clock_bait" | "big_mood" | "error_drip" | "atomic_drip" | "gc" |
+            "concurrenz" | "vibe_net" | "web_vibez" | "tls_vibe" | "fs" |
+            "collections" | "json" | "xml" | "csv" | "serialization" |
+            "cryptz" | "hashz" | "security" | "compression" | "image" |
+            "audio" | "video" | "ml" | "gpu" | "database" | "orm" |
+            "api_design" | "web_framework" | "testing_advanced" | "benchmarks" |
+            "profiling" | "memory" | "platform" | "embedded" | "mobile" |
+            "desktop" | "cli" | "config" | "logging" | "monitoring" |
+            "metrics" | "distributed" | "blockchain" | "game_engine" |
+            "simulation" | "scientific" | "bioinformatics" => {
+                Some(name.to_string())
+            }
+            
+            // Dynamic module name check - return as-is if it exists
             _ => {
                 let module_path = self.config.stdlib_path.join(name);
                 if module_path.exists() || module_path.join("mod.csd").exists() {
