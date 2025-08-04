@@ -63,13 +63,13 @@ pub const BuiltInRegistry = struct {
         }
     };
 
-    pub fn init(allocator: Allocator) BuiltInRegistry {
+    pub fn init(allocator: Allocator) !BuiltInRegistry {
         var registry = BuiltInRegistry{
             .allocator = allocator,
             .functions = std.StringHashMap(BuiltInFunction).init(allocator),
         };
         
-        registry.registerBuiltIns() catch unreachable;
+        try registry.registerBuiltIns();
         return registry;
     }
 

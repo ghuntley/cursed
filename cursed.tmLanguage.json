@@ -1,0 +1,37 @@
+{
+    "name": "CURSED",
+    "scopeName": "source.cursed",
+    "fileTypes": ["csd"],
+    "patterns": [
+        { "include": "#comments" },
+        { "include": "#keywords" },
+        { "include": "#strings" }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.cursed",
+                    "match": "(fr fr|#).*$"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.cursed",
+                    "match": "\\b(sus|slay|damn|vibes|bestie|ready|yeet|stan|collab|squad|flex)\\b"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.cursed",
+                    "begin": "\"",
+                    "end": "\""
+                }
+            ]
+        }
+    }
+}

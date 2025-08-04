@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>data_drip Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>data_drip Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>OpenDB</h3>
+        <p></p>
+        <p><code>slay OpenDB(driverName tea, dataSourceName tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Close</h3>
+        <p></p>
+        <p><code>slay Close(db tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Ping</h3>
+        <p></p>
+        <p><code>slay Ping(db tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>SetMaxOpenConns</h3>
+        <p></p>
+        <p><code>slay SetMaxOpenConns(db tea, maxConns normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>SetMaxIdleConns</h3>
+        <p></p>
+        <p><code>slay SetMaxIdleConns(db tea, maxIdle normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>SetConnMaxLifetime</h3>
+        <p></p>
+        <p><code>slay SetConnMaxLifetime(db tea, duration tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>Query</h3>
+        <p></p>
+        <p><code>slay Query(db tea, query tea, args tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Exec</h3>
+        <p></p>
+        <p><code>slay Exec(db tea, query tea, args tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>QueryRow</h3>
+        <p></p>
+        <p><code>slay QueryRow(db tea, query tea, args tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Begin</h3>
+        <p></p>
+        <p><code>slay Begin(db tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Commit</h3>
+        <p></p>
+        <p><code>slay Commit(tx tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Rollback</h3>
+        <p></p>
+        <p><code>slay Rollback(tx tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Prepare</h3>
+        <p></p>
+        <p><code>slay Prepare(db tea, query tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ExecStmt</h3>
+        <p></p>
+        <p><code>slay ExecStmt(stmt tea, args tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>QueryStmt</h3>
+        <p></p>
+        <p><code>slay QueryStmt(stmt tea, args tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>CloseStmt</h3>
+        <p></p>
+        <p><code>slay CloseStmt(stmt tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NextRow</h3>
+        <p></p>
+        <p><code>slay NextRow(rows tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ScanRow</h3>
+        <p></p>
+        <p><code>slay ScanRow(rows tea, dest tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>CloseRows</h3>
+        <p></p>
+        <p><code>slay CloseRows(rows tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetColumns</h3>
+        <p></p>
+        <p><code>slay GetColumns(rows tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>LastInsertId</h3>
+        <p></p>
+        <p><code>slay LastInsertId(result tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>RowsAffected</h3>
+        <p></p>
+        <p><code>slay RowsAffected(result tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Register</h3>
+        <p></p>
+        <p><code>slay Register(name tea, driver tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewQueryBuilder</h3>
+        <p></p>
+        <p><code>slay NewQueryBuilder() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>SelectFrom</h3>
+        <p></p>
+        <p><code>slay SelectFrom(builder tea, table tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>WhereClause</h3>
+        <p></p>
+        <p><code>slay WhereClause(builder tea, condition tea, value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>OrderBy</h3>
+        <p></p>
+        <p><code>slay OrderBy(builder tea, column tea, direction tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>LimitRows</h3>
+        <p></p>
+        <p><code>slay LimitRows(builder tea, limit normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>PoolStats</h3>
+        <p></p>
+        <p><code>slay PoolStats(db tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>IsConnected</h3>
+        <p></p>
+        <p><code>slay IsConnected(db tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>EscapeString</h3>
+        <p></p>
+        <p><code>slay EscapeString(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ValidateQuery</h3>
+        <p></p>
+        <p><code>slay ValidateQuery(query tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>QueryAsync</h3>
+        <p></p>
+        <p><code>slay QueryAsync(db tea, query tea, args tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetAsyncResult</h3>
+        <p></p>
+        <p><code>slay GetAsyncResult(future tea) tea {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>connectionString</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>fullQuery</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>fullQuery</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>fullQuery</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>stats</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>escaped</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>asyncQuery</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+</body>
+</html>

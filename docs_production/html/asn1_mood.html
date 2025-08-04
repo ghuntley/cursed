@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>asn1_mood Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>asn1_mood Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>asn1_tag_new</h3>
+        <p>Create new ASN.1 tag</p>
+        <p><code>slay asn1_tag_new(class normie, constructed lit, tag_number normie) ASN1Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_int_new</h3>
+        <p>Create ASN.1 integer object</p>
+        <p><code>slay asn1_int_new(value normie) ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_string_new</h3>
+        <p>Create ASN.1 string object</p>
+        <p><code>slay asn1_string_new(value tea) ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_sequence_new</h3>
+        <p>Create ASN.1 sequence object</p>
+        <p><code>slay asn1_sequence_new() ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_set_new</h3>
+        <p>Create ASN.1 set object</p>
+        <p><code>slay asn1_set_new() ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_oid_new</h3>
+        <p>Create ASN.1 object identifier</p>
+        <p><code>slay asn1_oid_new(oid tea) ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_time_new</h3>
+        <p>Create ASN.1 time object</p>
+        <p><code>slay asn1_time_new(time tea) ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_bitstring_new</h3>
+        <p>Create ASN.1 bit string object</p>
+        <p><code>slay asn1_bitstring_new(bits tea) ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>encode_tag</h3>
+        <p>Encode ASN.1 tag to bytes</p>
+        <p><code>slay encode_tag(tag ASN1Tag) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>encode_length</h3>
+        <p>Encode ASN.1 length to bytes</p>
+        <p><code>slay encode_length(length normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>calculate_bytes_needed</h3>
+        <p>Calculate bytes needed for length encoding</p>
+        <p><code>slay calculate_bytes_needed(length normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>encode_integer</h3>
+        <p>Encode integer to ASN.1 format</p>
+        <p><code>slay encode_integer(value normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>encode_oid</h3>
+        <p>Encode OID to ASN.1 format</p>
+        <p><code>slay encode_oid(oid tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_oid_parts</h3>
+        <p>Parse OID string into numeric parts</p>
+        <p><code>slay parse_oid_parts(oid tea, parts [10]normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>encode_oid_component</h3>
+        <p>Encode single OID component</p>
+        <p><code>slay encode_oid_component(component normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_encode_der</h3>
+        <p>Encode ASN.1 object to DER format</p>
+        <p><code>slay asn1_encode_der(obj ASN1Object) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_encode_ber</h3>
+        <p>Encode ASN.1 object to BER format (same as DER for basic implementation)</p>
+        <p><code>slay asn1_encode_ber(obj ASN1Object) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_encode</h3>
+        <p>Generic ASN.1 encode function</p>
+        <p><code>slay asn1_encode(obj ASN1Object) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_parse_der</h3>
+        <p>Parse ASN.1 DER data</p>
+        <p><code>slay asn1_parse_der(data tea) ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_parse_ber</h3>
+        <p>Parse ASN.1 BER data (same as DER for basic implementation)</p>
+        <p><code>slay asn1_parse_ber(data tea) ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>asn1_decode</h3>
+        <p>Generic ASN.1 decode function</p>
+        <p><code>slay asn1_decode(data tea) ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_asn1_object</h3>
+        <p>Parse ASN.1 object from data</p>
+        <p><code>slay parse_asn1_object(data tea, offset normie) ASN1Object {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_tag</h3>
+        <p>Parse ASN.1 tag from data</p>
+        <p><code>slay parse_tag(data tea, offset normie) ASN1Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_length</h3>
+        <p>Parse ASN.1 length from data</p>
+        <p><code>slay parse_length(data tea, offset normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>calculate_length_bytes</h3>
+        <p>Calculate bytes used for length encoding</p>
+        <p><code>slay calculate_length_bytes(length normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>byte_to_string</h3>
+        <p>Helper function to convert byte to string</p>
+        <p><code>slay byte_to_string(byte_val normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_byte_at</h3>
+        <p>Helper function to get byte at string position</p>
+        <p><code>slay string_byte_at(str tea, pos normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_char_at</h3>
+        <p>Helper function to get character at string position</p>
+        <p><code>slay string_char_at(str tea, pos normie) sip {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_length</h3>
+        <p>Helper function to get string length</p>
+        <p><code>slay string_length(str tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_concat</h3>
+        <p>Helper function to concatenate strings</p>
+        <p><code>slay string_concat(str1 tea, str2 tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_substring</h3>
+        <p>Helper function to extract substring</p>
+        <p><code>slay string_substring(str tea, start normie, length normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_from_byte</h3>
+        <p>Helper function to create string from byte</p>
+        <p><code>slay string_from_byte(byte_val normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>twos_complement</h3>
+        <p>Two's complement conversion for negative integers</p>
+        <p><code>slay twos_complement(data tea) tea {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>ASN1_UNIVERSAL</h3>
+        <p>ASN.1 Tag Classes</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_APPLICATION</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_CONTEXT_SPECIFIC</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_PRIVATE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_INTEGER</h3>
+        <p>ASN.1 Universal Tags</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_OCTET_STRING</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_NULL</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_OBJECT_IDENTIFIER</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_SEQUENCE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_SET</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_PRINTABLE_STRING</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_T61_STRING</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_IA5_STRING</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_UTC_TIME</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_GENERALIZED_TIME</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ASN1_BIT_STRING</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag</h3>
+        <p></p>
+        <p>Type: <code>ASN1Tag</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag</h3>
+        <p></p>
+        <p>Type: <code>ASN1Tag</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag</h3>
+        <p></p>
+        <p>Type: <code>ASN1Tag</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag</h3>
+        <p></p>
+        <p>Type: <code>ASN1Tag</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag</h3>
+        <p></p>
+        <p>Type: <code>ASN1Tag</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag</h3>
+        <p></p>
+        <p>Type: <code>ASN1Tag</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag</h3>
+        <p></p>
+        <p>Type: <code>ASN1Tag</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag_byte</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>bytes_needed</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>bytes</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_negative</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>part_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>first_byte</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>first</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte_val</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag_bytes</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>length_bytes</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>offset</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>tag_byte</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>length_byte</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>bytes_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>length</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>bytes</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>length</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>build_system Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>build_system Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>create_build_config</h3>
+        <p>Build configuration structure</p>
+        <p><code>slay create_build_config() map[tea]interface{} {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_build_config</h3>
+        <p>Project configuration parser</p>
+        <p><code>slay parse_build_config(config_path tea) map[tea]interface{} {</code></p>
+    </div>
+    <div class="function">
+        <h3>merge_configs</h3>
+        <p>Configuration merger</p>
+        <p><code>slay merge_configs(default_config map[tea]interface{}, user_config map[tea]interface{}) map[tea]interface{} {</code></p>
+    </div>
+    <div class="function">
+        <h3>resolve_dependencies</h3>
+        <p>Dependency resolver</p>
+        <p><code>slay resolve_dependencies(config map[tea]interface{}) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>resolve_dependency</h3>
+        <p>Individual dependency resolver</p>
+        <p><code>slay resolve_dependency(name tea, version tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>download_package</h3>
+        <p>Package downloader</p>
+        <p><code>slay download_package(name tea, version tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_project</h3>
+        <p>Build orchestration engine</p>
+        <p><code>slay build_project(config_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_targets_sequential</h3>
+        <p>Sequential target building</p>
+        <p><code>slay build_targets_sequential(targets []tea, config map[tea]interface{}, dependencies []tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_targets_parallel</h3>
+        <p>Parallel target building</p>
+        <p><code>slay build_targets_parallel(targets []tea, config map[tea]interface{}, dependencies []tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_target_async</h3>
+        <p>Async target builder</p>
+        <p><code>slay build_target_async(target tea, config map[tea]interface{}, dependencies []tea, result_chan chan lit) {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_single_target</h3>
+        <p>Single target builder</p>
+        <p><code>slay build_single_target(target tea, config map[tea]interface{}, dependencies []tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>find_target_file</h3>
+        <p>Target file finder</p>
+        <p><code>slay find_target_file(target tea, source_dirs []tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>determine_build_mode</h3>
+        <p>Build mode determination</p>
+        <p><code>slay determine_build_mode(config map[tea]interface{}) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>construct_build_command</h3>
+        <p>Build command constructor</p>
+        <p><code>slay construct_build_command(target_file tea, build_mode tea, optimization tea, output_dir tea, dependencies []tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>run_tests</h3>
+        <p>Test runner integration</p>
+        <p><code>slay run_tests(config map[tea]interface{}) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>find_test_files</h3>
+        <p>Test file finder</p>
+        <p><code>slay find_test_files(patterns []tea, source_dirs []tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>run_single_test</h3>
+        <p>Single test runner</p>
+        <p><code>slay run_single_test(test_file tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>clean_project</h3>
+        <p>Clean operation</p>
+        <p><code>slay clean_project(config map[tea]interface{}) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>install_package</h3>
+        <p>Package manager operations</p>
+        <p><code>slay install_package(name tea, version tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>list_packages</h3>
+        <p></p>
+        <p><code>slay list_packages() []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>check_build_cache</h3>
+        <p>Build cache management</p>
+        <p><code>slay check_build_cache(target tea, dependencies []tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>update_build_cache</h3>
+        <p></p>
+        <p><code>slay update_build_cache(target tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>rebuild_project</h3>
+        <p>Rebuild operation</p>
+        <p><code>slay rebuild_project(config_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>watch_project</h3>
+        <p>Watch mode for development</p>
+        <p><code>slay watch_project(config_path tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>check_dir_for_changes</h3>
+        <p></p>
+        <p><code>slay check_dir_for_changes(dir_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_system_main</h3>
+        <p>Main build system entry point</p>
+        <p><code>slay build_system_main(args []tea) normie {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>config_content</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>resolved_path</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>stdlib_path</h3>
+        <p>Check local stdlib first</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>cache_path</h3>
+        <p>Check package cache</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>downloaded_path</h3>
+        <p>Download from repository (placeholder for now)</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>package_dir</h3>
+        <p>Create package directory</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>project_name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>output_dir</h3>
+        <p>Create output directory</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>parallel_builds</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>successful_builds</h3>
+        <p>Wait for all builds to complete</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>success</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>target_file</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>build_mode</h3>
+        <p>Build command construction</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>optimization_level</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>output_dir</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>build_cmd</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>build_result</h3>
+        <p>Execute build</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>target_path</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>main_path</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>mode</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>cmd</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>passed_tests</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>total_tests</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>test_cmd</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>output_dir</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>cache_dir</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>package_dir</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>packages_dir</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>cache_dir</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>cache_file</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>cache_time</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>target_time</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>dep_time</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>cache_dir</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>cache_file</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_time</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>needs_rebuild</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>mod_time</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_time</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>command</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>config_path</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>package_name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>package_version</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+</body>
+</html>

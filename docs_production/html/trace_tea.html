@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>trace_tea Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>trace_tea Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>create_trace_collector</h3>
+        <p></p>
+        <p><code>slay create_trace_collector() TraceCollector {</code></p>
+    </div>
+    <div class="function">
+        <h3>start_span</h3>
+        <p></p>
+        <p><code>slay start_span(collector TraceCollector, operation_name tea) TraceSpan {</code></p>
+    </div>
+    <div class="function">
+        <h3>end_span</h3>
+        <p></p>
+        <p><code>slay end_span(collector TraceCollector, span TraceSpan) TraceCollector {</code></p>
+    </div>
+    <div class="function">
+        <h3>add_event</h3>
+        <p></p>
+        <p><code>slay add_event(span TraceSpan, event_type tea, metadata map[tea]tea) TraceSpan {</code></p>
+    </div>
+    <div class="function">
+        <h3>add_tag</h3>
+        <p></p>
+        <p><code>slay add_tag(span TraceSpan, key tea, value tea) TraceSpan {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_span</h3>
+        <p></p>
+        <p><code>slay get_span(collector TraceCollector, span_id tea) TraceSpan {</code></p>
+    </div>
+    <div class="function">
+        <h3>calculate_metrics</h3>
+        <p></p>
+        <p><code>slay calculate_metrics(collector TraceCollector) PerfMetrics {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_trace_report</h3>
+        <p></p>
+        <p><code>slay generate_trace_report(collector TraceCollector) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>filter_spans</h3>
+        <p></p>
+        <p><code>slay filter_spans(collector TraceCollector, operation_name tea) [TraceSpan] {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_slowest_spans</h3>
+        <p></p>
+        <p><code>slay get_slowest_spans(collector TraceCollector, limit normie) [TraceSpan] {</code></p>
+    </div>
+    <div class="function">
+        <h3>export_traces</h3>
+        <p></p>
+        <p><code>slay export_traces(collector TraceCollector, format tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>export_json</h3>
+        <p></p>
+        <p><code>slay export_json(collector TraceCollector) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>export_csv</h3>
+        <p></p>
+        <p><code>slay export_csv(collector TraceCollector) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>should_sample</h3>
+        <p></p>
+        <p><code>slay should_sample(collector TraceCollector) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>cleanup_traces</h3>
+        <p></p>
+        <p><code>slay cleanup_traces(collector TraceCollector) TraceCollector {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_span_id</h3>
+        <p></p>
+        <p><code>slay generate_span_id() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_event_id</h3>
+        <p></p>
+        <p><code>slay generate_event_id() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_current_time</h3>
+        <p></p>
+        <p><code>slay get_current_time() thicc {</code></p>
+    </div>
+    <div class="function">
+        <h3>string</h3>
+        <p></p>
+        <p><code>slay string(value thicc) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string</h3>
+        <p></p>
+        <p><code>slay string(value normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>delete</h3>
+        <p></p>
+        <p><code>slay delete(map_ref map[tea]TraceSpan, key tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>thicc</h3>
+        <p></p>
+        <p><code>slay thicc(value normie) thicc {</code></p>
+    </div>
+    <div class="function">
+        <h3>trace_function</h3>
+        <p></p>
+        <p><code>slay trace_function(collector TraceCollector, function_name tea, func_body tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>trace_http_request</h3>
+        <p></p>
+        <p><code>slay trace_http_request(collector TraceCollector, method tea, url tea) TraceSpan {</code></p>
+    </div>
+    <div class="function">
+        <h3>trace_database_query</h3>
+        <p></p>
+        <p><code>slay trace_database_query(collector TraceCollector, query tea) TraceSpan {</code></p>
+    </div>
+    <div class="function">
+        <h3>analyze_performance</h3>
+        <p></p>
+        <p><code>slay analyze_performance(collector TraceCollector) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_performance_monitor</h3>
+        <p></p>
+        <p><code>slay create_performance_monitor(collector TraceCollector) tea {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>collector</h3>
+        <p></p>
+        <p>Type: <code>TraceCollector</code></p>
+    </div>
+    <div class="variable">
+        <h3>span_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_time</h3>
+        <p></p>
+        <p>Type: <code>thicc</code></p>
+    </div>
+    <div class="variable">
+        <h3>span</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_time</h3>
+        <p></p>
+        <p>Type: <code>thicc</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_time</h3>
+        <p></p>
+        <p>Type: <code>thicc</code></p>
+    </div>
+    <div class="variable">
+        <h3>event_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>event</h3>
+        <p></p>
+        <p>Type: <code>TraceEvent</code></p>
+    </div>
+    <div class="variable">
+        <h3>empty_span</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>total_requests</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>total_time</h3>
+        <p></p>
+        <p>Type: <code>thicc</code></p>
+    </div>
+    <div class="variable">
+        <h3>min_time</h3>
+        <p></p>
+        <p>Type: <code>thicc</code></p>
+    </div>
+    <div class="variable">
+        <h3>max_time</h3>
+        <p></p>
+        <p>Type: <code>thicc</code></p>
+    </div>
+    <div class="variable">
+        <h3>error_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>success_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>span</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>avg_time</h3>
+        <p></p>
+        <p>Type: <code>thicc</code></p>
+    </div>
+    <div class="variable">
+        <h3>metrics</h3>
+        <p></p>
+        <p>Type: <code>PerfMetrics</code></p>
+    </div>
+    <div class="variable">
+        <h3>metrics</h3>
+        <p></p>
+        <p>Type: <code>PerfMetrics</code></p>
+    </div>
+    <div class="variable">
+        <h3>report</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>span</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>json</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>span</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>csv</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>span</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>sample_decision</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>keep_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>timestamp</h3>
+        <p></p>
+        <p>Type: <code>thicc</code></p>
+    </div>
+    <div class="variable">
+        <h3>timestamp</h3>
+        <p></p>
+        <p>Type: <code>thicc</code></p>
+    </div>
+    <div class="variable">
+        <h3>span</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>operation_name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>span</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>span</h3>
+        <p></p>
+        <p>Type: <code>TraceSpan</code></p>
+    </div>
+    <div class="variable">
+        <h3>metrics</h3>
+        <p></p>
+        <p>Type: <code>PerfMetrics</code></p>
+    </div>
+    <div class="variable">
+        <h3>analysis</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>error_rate</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>metrics</h3>
+        <p></p>
+        <p>Type: <code>PerfMetrics</code></p>
+    </div>
+    <div class="variable">
+        <h3>monitor</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+</body>
+</html>

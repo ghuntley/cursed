@@ -1,0 +1,386 @@
+// CURSED Code Formatter
+// Implements consistent formatting rules for CURSED syntax
+
+const std = @import("std");
+const ArrayList = std.ArrayList;
+const Allocator = std.mem.Allocator;
+
+// Import CURSED compiler components
+const lexer = @import("../lexer.zig");
+const ast = @import("../ast.zig");
+
+// Formatting Configuration
+pub const FormatterConfig = struct {
+    indent_size: u32 = 4,
+    max_line_length: u32 = 100,
+    use_spaces: bool = true,
+    newline_before_brace: bool = false,
+    space_around_operators: bool = true,
+    align_struct_fields: bool = true,
+    sort_imports: bool = true,
+    
+    // CURSED-specific settings
+    align_gen_z_keywords: bool = true,
+    prefer_short_form_syntax: bool = true,
+    max_chained_calls: u32 = 3,
+};
+
+// Formatting Context
+const FormattingContext = struct {
+    config: FormatterConfig,
+    current_indent: u32 = 0,
+    in_function_params: bool = false,
+    in_struct_definition: bool = false,
+    in_interface_definition: bool = false,
+    line_length: u32 = 0,
+    
+    fn getIndent(self: *const FormattingContext, allocator: Allocator) ![]const u8 {
+        const indent_char = if (self.config.use_spaces) ' ' else '\t';
+        const indent_size = if (self.config.use_spaces) self.config.indent_size else 1;
+        const total_indent = self.current_indent * indent_size;
+        
+        const indent = try allocator.alloc(u8, total_indent);
+        for (indent) |*char| {
+            char.* = indent_char;
+        }
+        return indent;
+    }
+};
+
+// CURSED Code Formatter
+pub const Formatter = struct {
+    allocator: Allocator,
+    config: FormatterConfig,
+    output: ArrayList(u8),
+    
+    pub fn init(allocator: Allocator, config: FormatterConfig) Formatter {
+        return Formatter{
+            .allocator = allocator,
+            .config = config,
+            .output = ArrayList(u8).init(allocator),
+        };
+    }
+    
+    pub fn deinit(self: *Formatter) void {
+        self.output.deinit();
+    }
+    
+    pub fn format(self: *Formatter, source: []const u8) ![]const u8 {
+        // Clear previous output
+        self.output.clearRetainingCapacity();
+        
+        // Tokenize source
+        var token_lexer = lexer.Lexer.init(self.allocator, source);
+        defer token_lexer.deinit();
+        
+        const tokens = try token_lexer.tokenize();
+        defer tokens.deinit();
+        
+        // Format tokens
+        var context = FormattingContext{ .config = self.config };
+        try self.formatTokens(tokens.items, &context);
+        
+        return try self.output.toOwnedSlice();
+    }
+    
+    fn formatTokens(self: *Formatter, tokens: []const lexer.Token, context: *FormattingContext) !void {
+        var i: usize = 0;
+        while (i < tokens.len) {
+            const token = tokens[i];
+            
+            switch (token.type) {
+                .Keyword => try self.formatKeyword(token, context),
+                .Identifier => try self.formatIdentifier(token, context),
+                .LeftBrace => try self.formatLeftBrace(token, context),
+                .RightBrace => try self.formatRightBrace(token, context),
+                .LeftParen => try self.formatLeftParen(token, context),
+                .RightParen => try self.formatRightParen(token, context),
+                .Semicolon => try self.formatSemicolon(token, context),
+                .Comma => try self.formatComma(token, context),
+                .Operator => try self.formatOperator(token, context),
+                .String => try self.formatString(token, context),
+                .Number => try self.formatNumber(token, context),
+                .Comment => try self.formatComment(token, context),
+                .Newline => try self.formatNewline(token, context),
+                .Whitespace => {}, // Skip whitespace, we'll add our own
+                else => try self.formatDefault(token, context),
+            }
+            
+            i += 1;
+        }
+    }
+    
+    fn formatKeyword(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        const keyword = token.value;
+        
+        // Handle function declarations
+        if (std.mem.eql(u8, keyword, "slay")) {
+            try self.output.appendSlice("slay ");
+            context.line_length += 5;
+        }
+        // Handle variable declarations
+        else if (std.mem.eql(u8, keyword, "sus")) {
+            try self.output.appendSlice("sus ");
+            context.line_length += 4;
+        }
+        // Handle returns
+        else if (std.mem.eql(u8, keyword, "damn")) {
+            try self.output.appendSlice("damn ");
+            context.line_length += 5;
+        }
+        // Handle loops
+        else if (std.mem.eql(u8, keyword, "bestie")) {
+            try self.output.appendSlice("bestie ");
+            context.line_length += 7;
+        }
+        // Handle conditionals
+        else if (std.mem.eql(u8, keyword, "ready")) {
+            try self.output.appendSlice("ready ");
+            context.line_length += 6;
+        }
+        // Handle goroutines
+        else if (std.mem.eql(u8, keyword, "stan")) {
+            try self.output.appendSlice("stan ");
+            context.line_length += 5;
+        }
+        // Handle interfaces
+        else if (std.mem.eql(u8, keyword, "collab")) {
+            try self.output.appendSlice("collab ");
+            context.line_length += 7;
+            context.in_interface_definition = true;
+        }
+        // Handle structs
+        else if (std.mem.eql(u8, keyword, "squad")) {
+            try self.output.appendSlice("squad ");
+            context.line_length += 6;
+            context.in_struct_definition = true;
+        }
+        // Handle implementations
+        else if (std.mem.eql(u8, keyword, "flex")) {
+            try self.output.appendSlice("flex ");
+            context.line_length += 5;
+        }
+        // Default keyword formatting
+        else {
+            try self.output.appendSlice(keyword);
+            try self.output.append(' ');
+            context.line_length += keyword.len + 1;
+        }
+    }
+    
+    fn formatIdentifier(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        try self.output.appendSlice(token.value);
+        context.line_length += token.value.len;
+    }
+    
+    fn formatLeftBrace(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        if (context.config.newline_before_brace) {
+            try self.output.appendSlice("\n");
+            const indent = try context.getIndent(self.allocator);
+            defer self.allocator.free(indent);
+            try self.output.appendSlice(indent);
+            context.line_length = indent.len;
+        } else {
+            if (context.line_length > 0 and self.output.items[self.output.items.len - 1] != ' ') {
+                try self.output.append(' ');
+                context.line_length += 1;
+            }
+        }
+        
+        try self.output.append('{');
+        context.line_length += 1;
+        context.current_indent += 1;
+        
+        // Add newline after opening brace
+        try self.output.append('\n');
+        context.line_length = 0;
+    }
+    
+    fn formatRightBrace(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        context.current_indent -= 1;
+        
+        // Ensure we're on a new line
+        if (context.line_length > 0) {
+            try self.output.append('\n');
+        }
+        
+        const indent = try context.getIndent(self.allocator);
+        defer self.allocator.free(indent);
+        try self.output.appendSlice(indent);
+        try self.output.append('}');
+        
+        context.line_length = indent.len + 1;
+        context.in_struct_definition = false;
+        context.in_interface_definition = false;
+    }
+    
+    fn formatLeftParen(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        try self.output.append('(');
+        context.line_length += 1;
+        context.in_function_params = true;
+    }
+    
+    fn formatRightParen(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        try self.output.append(')');
+        context.line_length += 1;
+        context.in_function_params = false;
+    }
+    
+    fn formatSemicolon(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        // CURSED doesn't typically use semicolons, but handle them if present
+        try self.output.append(';');
+        try self.output.append('\n');
+        context.line_length = 0;
+    }
+    
+    fn formatComma(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        try self.output.append(',');
+        
+        if (context.in_function_params) {
+            try self.output.append(' ');
+            context.line_length += 2;
+        } else {
+            try self.output.append('\n');
+            const indent = try context.getIndent(self.allocator);
+            defer self.allocator.free(indent);
+            try self.output.appendSlice(indent);
+            context.line_length = indent.len;
+        }
+    }
+    
+    fn formatOperator(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        const operator = token.value;
+        
+        if (context.config.space_around_operators) {
+            // Add space before operator
+            if (self.output.items.len > 0 and self.output.items[self.output.items.len - 1] != ' ') {
+                try self.output.append(' ');
+                context.line_length += 1;
+            }
+            
+            try self.output.appendSlice(operator);
+            try self.output.append(' ');
+            context.line_length += operator.len + 1;
+        } else {
+            try self.output.appendSlice(operator);
+            context.line_length += operator.len;
+        }
+    }
+    
+    fn formatString(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        try self.output.appendSlice(token.value);
+        context.line_length += token.value.len;
+    }
+    
+    fn formatNumber(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        try self.output.appendSlice(token.value);
+        context.line_length += token.value.len;
+    }
+    
+    fn formatComment(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        // Handle both comment styles
+        if (std.mem.startsWith(u8, token.value, "fr fr")) {
+            try self.output.appendSlice("fr fr ");
+            try self.output.appendSlice(token.value[5..]);
+        } else if (std.mem.startsWith(u8, token.value, "#")) {
+            try self.output.appendSlice("# ");
+            try self.output.appendSlice(token.value[1..]);
+        } else {
+            try self.output.appendSlice(token.value);
+        }
+        
+        try self.output.append('\n');
+        context.line_length = 0;
+    }
+    
+    fn formatNewline(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        try self.output.append('\n');
+        context.line_length = 0;
+    }
+    
+    fn formatDefault(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        try self.output.appendSlice(token.value);
+        context.line_length += token.value.len;
+    }
+    
+    // Check if line needs breaking
+    fn needsLineBreak(self: *Formatter, context: *FormattingContext) bool {
+        return context.line_length > context.config.max_line_length;
+    }
+};
+
+// Formatter CLI Interface
+pub fn formatFile(allocator: Allocator, file_path: []const u8, config: FormatterConfig) !void {
+    // Read file
+    const file = try std.fs.cwd().openFile(file_path, .{});
+    defer file.close();
+    
+    const source = try file.readToEndAlloc(allocator, 1024 * 1024); // 1MB max
+    defer allocator.free(source);
+    
+    // Format code
+    var formatter = Formatter.init(allocator, config);
+    defer formatter.deinit();
+    
+    const formatted = try formatter.format(source);
+    defer allocator.free(formatted);
+    
+    // Write back to file
+    const output_file = try std.fs.cwd().createFile(file_path, .{});
+    defer output_file.close();
+    try output_file.writeAll(formatted);
+    
+    std.log.info("Formatted: {s}", .{file_path});
+}
+
+pub fn formatDirectory(allocator: Allocator, dir_path: []const u8, config: FormatterConfig) !void {
+    const dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
+    defer dir.close();
+    
+    var iterator = dir.iterate();
+    while (try iterator.next()) |entry| {
+        if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".csd")) {
+            const full_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, entry.name });
+            defer allocator.free(full_path);
+            
+            try formatFile(allocator, full_path, config);
+        } else if (entry.kind == .directory) {
+            const sub_dir = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, entry.name });
+            defer allocator.free(sub_dir);
+            
+            try formatDirectory(allocator, sub_dir, config);
+        }
+    }
+}
+
+// Main formatter entry point
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
+    
+    if (args.len < 2) {
+        std.log.err("Usage: cursed-fmt <file or directory>");
+        return;
+    }
+    
+    const config = FormatterConfig{};
+    const target = args[1];
+    
+    // Check if target is file or directory
+    const stat = std.fs.cwd().statFile(target) catch |err| {
+        std.log.err("Error accessing {s}: {}", .{ target, err });
+        return;
+    };
+    
+    if (stat.kind == .file) {
+        try formatFile(allocator, target, config);
+    } else if (stat.kind == .directory) {
+        try formatDirectory(allocator, target, config);
+    } else {
+        std.log.err("{s} is not a file or directory", .{target});
+    }
+}

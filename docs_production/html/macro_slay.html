@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macro_slay Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>macro_slay Module</h1>
+    <p>macro_slay - Complete Macro System Implementation for CURSED Provides comprehensive macro functionality including definition, expansion, AST integration, template substitution, and built-in macro library</p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>hash_macro_name</h3>
+        <p>Calculate simple hash for macro names</p>
+        <p><code>slay hash_macro_name(name tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>register_macro</h3>
+        <p>Core macro registration function</p>
+        <p><code>slay register_macro(name tea, macro_type normie, expand_mode normie, body tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>lookup_macro</h3>
+        <p>Lookup macro by name</p>
+        <p><code>slay lookup_macro(name tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_macro_defined</h3>
+        <p>Check if macro is defined</p>
+        <p><code>slay is_macro_defined(name tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_macro_count</h3>
+        <p>Get total number of registered macros</p>
+        <p><code>slay get_macro_count() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_macro_type</h3>
+        <p>Extract macro type from encoded ID</p>
+        <p><code>slay get_macro_type(macro_def normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_macro_expand_mode</h3>
+        <p>Extract expansion mode from encoded ID</p>
+        <p><code>slay get_macro_expand_mode(macro_def normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_macro_slot</h3>
+        <p>Get macro slot index from ID</p>
+        <p><code>slay get_macro_slot(macro_def normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_macro_body</h3>
+        <p>Get macro body by ID</p>
+        <p><code>slay get_macro_body(macro_def normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_macro_name</h3>
+        <p>Get macro name by ID</p>
+        <p><code>slay get_macro_name(macro_def normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_function_macro</h3>
+        <p>Type checking functions</p>
+        <p><code>slay is_function_macro(macro_def normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_expression_macro</h3>
+        <p></p>
+        <p><code>slay is_expression_macro(macro_def normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_statement_macro</h3>
+        <p></p>
+        <p><code>slay is_statement_macro(macro_def normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_template_macro</h3>
+        <p></p>
+        <p><code>slay is_template_macro(macro_def normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_generator_macro</h3>
+        <p></p>
+        <p><code>slay is_generator_macro(macro_def normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_syntax_macro</h3>
+        <p></p>
+        <p><code>slay is_syntax_macro(macro_def normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_attribute_macro</h3>
+        <p></p>
+        <p><code>slay is_attribute_macro(macro_def normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_directive_macro</h3>
+        <p></p>
+        <p><code>slay is_directive_macro(macro_def normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>substitute_template_params</h3>
+        <p>Template parameter substitution system</p>
+        <p><code>slay substitute_template_params(template tea, params tea, values tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_function_macro</h3>
+        <p>Function macro expansion with template support</p>
+        <p><code>slay expand_function_macro(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_expression_macro</h3>
+        <p>Expression macro expansion with arithmetic and logical operations</p>
+        <p><code>slay expand_expression_macro(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_statement_macro</h3>
+        <p>Statement macro expansion with control flow and declarations</p>
+        <p><code>slay expand_statement_macro(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_template_macro</h3>
+        <p>Template macro expansion with parameter substitution</p>
+        <p><code>slay expand_template_macro(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_generator_macro</h3>
+        <p>Generator macro expansion with repetitive code generation</p>
+        <p><code>slay expand_generator_macro(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_syntax_macro</h3>
+        <p>Syntax macro expansion for language extensions</p>
+        <p><code>slay expand_syntax_macro(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_attribute_macro</h3>
+        <p>Attribute macro expansion for metadata</p>
+        <p><code>slay expand_attribute_macro(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_directive_macro</h3>
+        <p>Directive macro expansion for compiler directives</p>
+        <p><code>slay expand_directive_macro(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_macro</h3>
+        <p>Main macro expansion function with dispatch</p>
+        <p><code>slay expand_macro(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_immediate</h3>
+        <p>Expansion mode-specific functions</p>
+        <p><code>slay expand_immediate(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_lazy</h3>
+        <p></p>
+        <p><code>slay expand_lazy(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_recursive</h3>
+        <p></p>
+        <p><code>slay expand_recursive(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_once</h3>
+        <p></p>
+        <p><code>slay expand_once(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>macro_to_ast</h3>
+        <p>AST Integration Functions</p>
+        <p><code>slay macro_to_ast(macro_def normie, args tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_to_code</h3>
+        <p></p>
+        <p><code>slay ast_to_code(ast_node normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_code_from_macro</h3>
+        <p>Code Generation Functions</p>
+        <p><code>slay generate_code_from_macro(macro_def normie, args tea, format normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>tokenize_code</h3>
+        <p></p>
+        <p><code>slay tokenize_code(code tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>define_builtin_macros</h3>
+        <p>Built-in Macro Library</p>
+        <p><code>slay define_builtin_macros() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_builtin_macro</h3>
+        <p></p>
+        <p><code>slay is_builtin_macro(name tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_builtin_macro_count</h3>
+        <p></p>
+        <p><code>slay get_builtin_macro_count() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>analyze_macro_complexity</h3>
+        <p>Analysis and Validation Functions</p>
+        <p><code>slay analyze_macro_complexity(macro_def normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>estimate_expansion_size</h3>
+        <p></p>
+        <p><code>slay estimate_expansion_size(macro_def normie, args tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>can_macro_expand_infinitely</h3>
+        <p></p>
+        <p><code>slay can_macro_expand_infinitely(macro_def normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_macro_signature</h3>
+        <p></p>
+        <p><code>slay get_macro_signature(macro_def normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_macro_syntax</h3>
+        <p>Validation and Parsing Functions</p>
+        <p><code>slay validate_macro_syntax(macro_text tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_macro_definition</h3>
+        <p></p>
+        <p><code>slay parse_macro_definition(macro_text tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>compile_macro</h3>
+        <p></p>
+        <p><code>slay compile_macro(macro_text tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>execute_macro</h3>
+        <p></p>
+        <p><code>slay execute_macro(name tea, args tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>debug_macro_expansion</h3>
+        <p>Debug and Tracing Functions</p>
+        <p><code>slay debug_macro_expansion(macro_def normie, args tea, context normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>trace_macro_expansion</h3>
+        <p></p>
+        <p><code>slay trace_macro_expansion(macro_def normie, args tea, depth normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>macro_slay_version</h3>
+        <p>System Information Functions</p>
+        <p><code>slay macro_slay_version() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>macro_slay_status</h3>
+        <p></p>
+        <p><code>slay macro_slay_status() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_macro_slay_ready</h3>
+        <p></p>
+        <p><code>slay is_macro_slay_ready() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_supported_macro_types</h3>
+        <p></p>
+        <p><code>slay get_supported_macro_types() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_supported_expand_modes</h3>
+        <p></p>
+        <p><code>slay get_supported_expand_modes() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>macro_system_info</h3>
+        <p></p>
+        <p><code>slay macro_system_info() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>init_macro_system</h3>
+        <p>Initialize the macro system</p>
+        <p><code>slay init_macro_system() {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>MACRO_UNKNOWN</h3>
+        <p>Macro Type Constants</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>MACRO_FUNCTION</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>MACRO_EXPRESSION</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>MACRO_STATEMENT</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>MACRO_TEMPLATE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>MACRO_GENERATOR</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>MACRO_SYNTAX</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>MACRO_ATTRIBUTE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>MACRO_DIRECTIVE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>EXPAND_IMMEDIATE</h3>
+        <p>Expansion Mode Constants</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>EXPAND_LAZY</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>EXPAND_RECURSIVE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>EXPAND_ONCE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>CODEGEN_AST</h3>
+        <p>Code Generation Format Constants</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>CODEGEN_STRING</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>CODEGEN_TOKENS</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>MACRO_REGISTRY_SIZE</h3>
+        <p>Global macro registry simulation using encoded integers</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>GLOBAL_MACRO_COUNT</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>BUILTIN_MACRO_COUNT</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>hash</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_code</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>slot</h3>
+        <p>Find next available slot</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>name_hash</h3>
+        <p>Create macro ID with metadata</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>remaining</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>remaining</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>slot</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>slot</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>template</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>template</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>template</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>template</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>template</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>template</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>template</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>iteration</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ast_node</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>code</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>tokens</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_token</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_code</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>expand_mode</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>complexity</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>body_length</h3>
+        <p>Body length factor</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>base_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>expand_mode</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>type_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>open_braces</h3>
+        <p>Check for balanced braces</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>close_braces</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>open_parens</h3>
+        <p>Check for balanced parentheses</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>close_parens</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_name</h3>
+        <p>Extract macro name and type from definition</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>expand_mode</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>macro_def</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>type_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>complexity</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>estimated_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>debug_info</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>indent</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>trace_info</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Trace actual expansion</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>registered</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>builtins</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>types</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>modes</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>registered</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>INIT_RESULT</h3>
+        <p>Auto-initialize when module loads</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+</body>
+</html>

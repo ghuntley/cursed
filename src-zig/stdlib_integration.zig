@@ -58,12 +58,12 @@ pub const StdlibFunctionMetadata = struct {
     last_compilation_time: u64,
     optimization_level: u8,
     
-    pub fn init(allocator: Allocator, module_name: []const u8, function_name: []const u8) StdlibFunctionMetadata {
+    pub fn init(allocator: Allocator, module_name: []const u8, function_name: []const u8) !StdlibFunctionMetadata {
         return StdlibFunctionMetadata{
-            .module_name = allocator.dupe(u8, module_name) catch unreachable,
-            .function_name = allocator.dupe(u8, function_name) catch unreachable,
-            .signature = allocator.dupe(u8, "() -> normie") catch unreachable,
-            .return_type = allocator.dupe(u8, "normie") catch unreachable,
+            .module_name = try allocator.dupe(u8, module_name),
+            .function_name = try allocator.dupe(u8, function_name),
+            .signature = try allocator.dupe(u8, "() -> normie"),
+            .return_type = try allocator.dupe(u8, "normie"),
             .parameter_types = &[_][]const u8{},
             .is_pure = false,
             .is_thread_safe = true,

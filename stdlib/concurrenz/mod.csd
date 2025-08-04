@@ -1,36 +1,36 @@
-yeet "core"
+yeet "atomic_drip"
+yeet "error_drip"
+yeet "memory"
 
-fr fr Concurrenz Module - Synchronization Primitives
-fr fr Pure CURSED implementation for async programming
+fr fr Concurrenz Module - Enhanced Synchronization Primitives
+fr fr Pure CURSED implementation with hardware atomics
 
-fr fr Mutex type definition
-be_like Mutex = mid
-
-fr fr WaitGroup type definition  
-be_like WaitGroup = mid
-
-fr fr Channel type for communication
-be_like SyncChannel = mid
-
-fr fr Mutex structure for mutual exclusion
-be_like MutexStruct = struct {
-    locked normie fr fr 0 = unlocked, 1 = locked
-    owner normie fr fr Thread/goroutine ID that owns the lock
-    waiters normie fr fr Number of goroutines waiting
+fr fr Enhanced Mutex using hardware atomics
+struct Mutex {
+    spill lock_state *atomic_drip.AtomicI32  fr fr 0=unlocked, 1=locked
+    spill owner *atomic_drip.AtomicI64       fr fr Owner thread/goroutine ID
+    spill waiters *atomic_drip.AtomicI32     fr fr Number of waiting goroutines
+    spill recursive_count *atomic_drip.AtomicI32  fr fr For recursive locking
 }
 
-fr fr Atomic operations structure
-be_like AtomicStruct = struct {
-    value normie fr fr Atomic value storage
-    version normie fr fr Version counter for ABA prevention
-    lock normie fr fr Internal lock for complex operations
+fr fr Enhanced WaitGroup with atomic operations
+struct WaitGroup {
+    spill counter *atomic_drip.AtomicI32     fr fr Number of operations to wait for
+    spill waiters *atomic_drip.AtomicI32     fr fr Number of goroutines waiting
+    spill generation *atomic_drip.AtomicI32  fr fr Generation counter for reuse
+    spill done_flag *atomic_drip.AtomicFlag  fr fr Done signal flag
 }
 
-fr fr Wait group structure for goroutine synchronization
-be_like WaitGroupStruct = struct {
-    counter normie fr fr Number of operations to wait for
-    waiters normie fr fr Number of goroutines waiting
-    generation normie fr fr Generation counter for reuse
+fr fr Channel structure for communication
+struct Channel {
+    spill buffer []normie                    fr fr Message buffer
+    spill capacity normie                    fr fr Maximum buffer size
+    spill size *atomic_drip.AtomicI32        fr fr Current buffer size
+    spill send_pos *atomic_drip.AtomicI32    fr fr Send position in buffer
+    spill recv_pos *atomic_drip.AtomicI32    fr fr Receive position in buffer
+    spill closed *atomic_drip.AtomicFlag     fr fr Channel closed flag
+    spill send_lock *Mutex                   fr fr Send operation lock
+    spill recv_lock *Mutex                   fr fr Receive operation lock
 }
 
 fr fr Create new mutex for synchronization

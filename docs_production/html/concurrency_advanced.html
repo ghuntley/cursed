@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>concurrency_advanced Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>concurrency_advanced Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>channel_create</h3>
+        <p>Channel operations and management</p>
+        <p><code>slay channel_create(capacity normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_send</h3>
+        <p></p>
+        <p><code>slay channel_send(ch_id tea, value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_receive</h3>
+        <p></p>
+        <p><code>slay channel_receive(ch_id tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_close</h3>
+        <p></p>
+        <p><code>slay channel_close(ch_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>mutex_create</h3>
+        <p>Mutex implementation with atomic operations</p>
+        <p><code>slay mutex_create() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>mutex_lock</h3>
+        <p></p>
+        <p><code>slay mutex_lock(mutex_id tea, goroutine_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>mutex_unlock</h3>
+        <p></p>
+        <p><code>slay mutex_unlock(mutex_id tea, goroutine_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>mutex_try_lock</h3>
+        <p></p>
+        <p><code>slay mutex_try_lock(mutex_id tea, goroutine_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>waitgroup_create</h3>
+        <p>Wait Group implementation for goroutine synchronization</p>
+        <p><code>slay waitgroup_create() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>waitgroup_add</h3>
+        <p></p>
+        <p><code>slay waitgroup_add(wg_id tea, delta normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>waitgroup_done</h3>
+        <p></p>
+        <p><code>slay waitgroup_done(wg_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>waitgroup_wait</h3>
+        <p></p>
+        <p><code>slay waitgroup_wait(wg_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>condition_create</h3>
+        <p>Condition Variable implementation</p>
+        <p><code>slay condition_create() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>condition_wait</h3>
+        <p></p>
+        <p><code>slay condition_wait(cond_id tea, mutex_id tea, goroutine_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>condition_signal</h3>
+        <p></p>
+        <p><code>slay condition_signal(cond_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>condition_broadcast</h3>
+        <p></p>
+        <p><code>slay condition_broadcast(cond_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>semaphore_create</h3>
+        <p>Semaphore implementation for resource limiting</p>
+        <p><code>slay semaphore_create(permits normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>semaphore_acquire</h3>
+        <p></p>
+        <p><code>slay semaphore_acquire(sem_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>semaphore_release</h3>
+        <p></p>
+        <p><code>slay semaphore_release(sem_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>semaphore_try_acquire</h3>
+        <p></p>
+        <p><code>slay semaphore_try_acquire(sem_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_create</h3>
+        <p>Read-Write Lock implementation</p>
+        <p><code>slay rwlock_create() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_read_lock</h3>
+        <p></p>
+        <p><code>slay rwlock_read_lock(rwlock_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_read_unlock</h3>
+        <p></p>
+        <p><code>slay rwlock_read_unlock(rwlock_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_write_lock</h3>
+        <p></p>
+        <p><code>slay rwlock_write_lock(rwlock_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_write_unlock</h3>
+        <p></p>
+        <p><code>slay rwlock_write_unlock(rwlock_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>barrier_create</h3>
+        <p>Barrier implementation for synchronizing multiple goroutines</p>
+        <p><code>slay barrier_create(count normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>barrier_wait</h3>
+        <p></p>
+        <p><code>slay barrier_wait(barrier_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>goroutine_pool_create</h3>
+        <p>Goroutine pool for managing worker threads</p>
+        <p><code>slay goroutine_pool_create(size normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>goroutine_pool_submit</h3>
+        <p></p>
+        <p><code>slay goroutine_pool_submit(pool_id tea, task_fn tea, task_data tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>select_operation</h3>
+        <p>Advanced select operation for multiple channels</p>
+        <p><code>slay select_operation(channels [tea], operations [tea]) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_can_send</h3>
+        <p></p>
+        <p><code>slay channel_can_send(ch_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_can_receive</h3>
+        <p></p>
+        <p><code>slay channel_can_receive(ch_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>concurrency_metrics</h3>
+        <p>Performance monitoring for concurrent operations</p>
+        <p><code>slay concurrency_metrics() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>deadlock_detector_create</h3>
+        <p>Deadlock detection utilities</p>
+        <p><code>slay deadlock_detector_create() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>deadlock_check</h3>
+        <p></p>
+        <p><code>slay deadlock_check(detector_id tea, resource_graph tea) lit {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>ch_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>capacity</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_closed</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_closed</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>value</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>mutex_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>locked</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>owner</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>locked</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>wg_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>counter</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>cond_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>signal</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>waiting</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>sem_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>permits</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>acquired</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>max_permits</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_permits</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>permits</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>acquired</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rwlock_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>writer</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>waiting_writers</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>readers</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>writer</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>acquired</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>barrier_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>total</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>generation</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_gen</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>pool_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>active</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>queue_size</h3>
+        <p>Queue task for later execution</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ready_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>op</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>can_send</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>can_receive</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>capacity</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_closed</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>metrics</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>detector_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>enabled</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_cycle</h3>
+        <p>Simple cycle detection in resource dependency graph</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+</body>
+</html>

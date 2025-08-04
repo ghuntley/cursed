@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wasm_mood Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>wasm_mood Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>wasm_compile_from_source</h3>
+        <p></p>
+        <p><code>slay wasm_compile_from_source(source tea, options normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_compile_from_file</h3>
+        <p></p>
+        <p><code>slay wasm_compile_from_file(filepath tea, options normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_optimize_module</h3>
+        <p></p>
+        <p><code>slay wasm_optimize_module(module normie, level normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_validate_module</h3>
+        <p></p>
+        <p><code>slay wasm_validate_module(module normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_create_runtime</h3>
+        <p></p>
+        <p><code>slay wasm_create_runtime(config normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_load_module</h3>
+        <p></p>
+        <p><code>slay wasm_load_module(runtime normie, module normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_call_function</h3>
+        <p></p>
+        <p><code>slay wasm_call_function(instance normie, func_name tea, args normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_get_memory</h3>
+        <p></p>
+        <p><code>slay wasm_get_memory(instance normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_alloc_memory</h3>
+        <p></p>
+        <p><code>slay wasm_alloc_memory(size normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_free_memory</h3>
+        <p></p>
+        <p><code>slay wasm_free_memory(memory normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_read_memory</h3>
+        <p></p>
+        <p><code>slay wasm_read_memory(memory normie, offset normie, size normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_write_memory</h3>
+        <p></p>
+        <p><code>slay wasm_write_memory(memory normie, offset normie, size normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_add_import</h3>
+        <p></p>
+        <p><code>slay wasm_add_import(module normie, name tea, func_id normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_add_export</h3>
+        <p></p>
+        <p><code>slay wasm_add_export(module normie, name tea, func_id normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_list_exports</h3>
+        <p></p>
+        <p><code>slay wasm_list_exports(module normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_list_imports</h3>
+        <p></p>
+        <p><code>slay wasm_list_imports(module normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_create_empty_module</h3>
+        <p></p>
+        <p><code>slay wasm_create_empty_module() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_create_empty_instance</h3>
+        <p></p>
+        <p><code>slay wasm_create_empty_instance() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_create_empty_value</h3>
+        <p></p>
+        <p><code>slay wasm_create_empty_value() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_create_config</h3>
+        <p></p>
+        <p><code>slay wasm_create_config(max_memory normie, max_instances normie, enable_jit lit) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_create_compile_options</h3>
+        <p></p>
+        <p><code>slay wasm_create_compile_options(opt_level normie, target tea, debug lit) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_create_value</h3>
+        <p></p>
+        <p><code>slay wasm_create_value(value_type tea, int_val normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_module_to_wat</h3>
+        <p></p>
+        <p><code>slay wasm_module_to_wat(module normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_wat_to_module</h3>
+        <p></p>
+        <p><code>slay wasm_wat_to_module(wat tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_validate_bytecode</h3>
+        <p></p>
+        <p><code>slay wasm_validate_bytecode(data normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_get_module_info</h3>
+        <p></p>
+        <p><code>slay wasm_get_module_info(module normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_get_runtime_info</h3>
+        <p></p>
+        <p><code>slay wasm_get_runtime_info(runtime normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_get_memory_size</h3>
+        <p></p>
+        <p><code>slay wasm_get_memory_size(memory normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_get_compilation_stats</h3>
+        <p></p>
+        <p><code>slay wasm_get_compilation_stats() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_get_runtime_stats</h3>
+        <p></p>
+        <p><code>slay wasm_get_runtime_stats() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_benchmark_compilation</h3>
+        <p></p>
+        <p><code>slay wasm_benchmark_compilation(source tea, iterations normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_get_last_error</h3>
+        <p></p>
+        <p><code>slay wasm_get_last_error() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_clear_errors</h3>
+        <p></p>
+        <p><code>slay wasm_clear_errors() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_set_error_handler</h3>
+        <p></p>
+        <p><code>slay wasm_set_error_handler(handler normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_compile_to_binary</h3>
+        <p></p>
+        <p><code>slay wasm_compile_to_binary(source tea, output_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_load_binary_module</h3>
+        <p></p>
+        <p><code>slay wasm_load_binary_module(binary_path tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_enable_simd</h3>
+        <p></p>
+        <p><code>slay wasm_enable_simd(instance normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_enable_threads</h3>
+        <p></p>
+        <p><code>slay wasm_enable_threads(instance normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_set_memory_limit</h3>
+        <p></p>
+        <p><code>slay wasm_set_memory_limit(instance normie, limit normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_get_execution_time</h3>
+        <p></p>
+        <p><code>slay wasm_get_execution_time(instance normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_enable_profiling</h3>
+        <p></p>
+        <p><code>slay wasm_enable_profiling(instance normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>wasm_get_performance_metrics</h3>
+        <p></p>
+        <p><code>slay wasm_get_performance_metrics(instance normie) normie {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>module_counter</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>runtime_counter</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>instance_counter</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>memory_counter</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>module_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>module_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>runtime_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>instance_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Simulate function execution</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>memory_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>memory_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>module_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>module_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>total_time</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>start_time</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>module</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>end_time</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>module</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>module_id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+</body>
+</html>

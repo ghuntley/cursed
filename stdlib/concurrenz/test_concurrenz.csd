@@ -1,174 +1,242 @@
 yeet "testz"
 yeet "concurrenz"
 
-fr fr Concurrency Primitives Test Suite
+fr fr Test basic concurrency primitives
+test_start("basic mutex operations")
 
-test_start("Mutex Operations")
+sus mutex := concurrenz.create_mutex()
+assert_true(mutex != cringe)
 
-fr fr Test mutex creation and basic locking
-sus mutex Mutex = concurrenz.create_mutex()
-assert_true(mutex == 0) fr fr Initial state is unlocked
-
-fr fr Test mutex locking
-sus lock_result lit = concurrenz.mutex_lock(mutex)
+sus lock_result := concurrenz.mutex_lock(mutex)
 assert_true(lock_result)
 
-fr fr Test mutex unlocking
-sus unlock_result lit = concurrenz.mutex_unlock(mutex)
+sus unlock_result := concurrenz.mutex_unlock(mutex)
 assert_true(unlock_result)
 
-fr fr Test mutex try lock
-sus trylock_result lit = concurrenz.mutex_trylock(mutex)
-assert_true(trylock_result)
+print_test_summary()
 
-test_start("WaitGroup Operations")
+fr fr Test mutex trylock
+test_start("mutex trylock")
 
-fr fr Test waitgroup creation
-sus wg WaitGroup = concurrenz.create_waitgroup()
-assert_true(wg == 0) fr fr Initial counter is zero
+sus mutex2 := concurrenz.create_mutex()
 
-fr fr Test waitgroup add operation
-sus add_result lit = concurrenz.waitgroup_add(wg, 3)
-assert_true(add_result)
+sus try_result := concurrenz.mutex_trylock(mutex2)
+assert_true(try_result)
 
-fr fr Test waitgroup done operation
-sus done_result lit = concurrenz.waitgroup_done(wg)
-assert_true(done_result)
-
-fr fr Test waitgroup wait operation
-sus wait_result lit = concurrenz.waitgroup_wait(wg)
-assert_true(wait_result)
-
-test_start("Channel Operations")
-
-fr fr Test channel creation
-sus channel SyncChannel = concurrenz.create_sync_channel()
-assert_true(channel == 0) fr fr Initial state is empty
-
-fr fr Test channel send operation
-sus send_result lit = concurrenz.channel_send(channel, 42)
-assert_true(send_result)
-
-fr fr Test channel receive operation
-sus received_data normie = concurrenz.channel_receive(channel)
-assert_eq_int(received_data, 42)
-
-test_start("Read-Write Mutex Operations")
-
-fr fr Test RWMutex creation
-sus rwmutex Mutex = concurrenz.create_rwmutex()
-assert_true(rwmutex == 0) fr fr Initial state is unlocked
-
-fr fr Test read lock acquisition
-sus rlock_result lit = concurrenz.rwmutex_rlock(rwmutex)
-assert_true(rlock_result)
-
-fr fr Test read lock release
-sus runlock_result lit = concurrenz.rwmutex_runlock(rwmutex)
-assert_true(runlock_result)
-
-fr fr Test write lock acquisition
-sus wlock_result lit = concurrenz.rwmutex_lock(rwmutex)
-assert_true(wlock_result)
-
-fr fr Test write lock release
-sus wunlock_result lit = concurrenz.rwmutex_unlock(rwmutex)
-assert_true(wunlock_result)
-
-test_start("Condition Variable Operations")
-
-fr fr Test condition variable creation
-sus condition Mutex = concurrenz.create_condition()
-assert_true(condition == 0) fr fr Initial state
-
-fr fr Test condition signal
-sus signal_result lit = concurrenz.condition_signal(condition)
-assert_true(signal_result)
-
-fr fr Test condition broadcast
-sus broadcast_result lit = concurrenz.condition_broadcast(condition)
-assert_true(broadcast_result)
-
-test_start("Atomic Operations")
-
-fr fr Test atomic compare-and-swap
-sus atomic_var Mutex = 0
-sus cas_result lit = concurrenz.atomic_cas(atomic_var, 0, 1)
-assert_true(cas_result)
-
-fr fr Test atomic increment
-sus inc_result normie = concurrenz.atomic_increment(atomic_var)
-assert_eq_int(inc_result, 1) fr fr Returns old value
-
-fr fr Test atomic decrement
-sus dec_result normie = concurrenz.atomic_decrement(atomic_var)
-assert_eq_int(dec_result, 2) fr fr Returns old value
-
-test_start("Barrier Synchronization")
-
-fr fr Test barrier creation
-sus barrier WaitGroup = concurrenz.create_barrier(3)
-assert_true(barrier == 3) fr fr Initial count
-
-fr fr Test barrier wait
-sus barrier_result lit = concurrenz.barrier_wait(barrier)
-assert_true(barrier_result)
-
-test_start("Semaphore Operations")
-
-fr fr Test semaphore creation
-sus semaphore Mutex = concurrenz.create_semaphore(5)
-assert_true(semaphore == 5) fr fr Initial count
-
-fr fr Test semaphore acquire
-sus acquire_result lit = concurrenz.semaphore_acquire(semaphore)
-assert_true(acquire_result)
-
-fr fr Test semaphore release
-sus release_result lit = concurrenz.semaphore_release(semaphore)
-assert_true(release_result)
-
-test_start("Once Primitive")
-
-fr fr Test once creation
-sus once lit = concurrenz.create_once()
-assert_false(once) fr fr Initial state is false
-
-fr fr Test once execution
-sus once_result lit = concurrenz.once_do(once, "test_function")
-assert_true(once_result)
-
-fr fr Test once second execution (should not execute)
-sus once_result2 lit = concurrenz.once_do(once, "test_function")
-assert_false(once_result2)
-
-test_start("Structured Concurrency Types")
-
-fr fr Test structured mutex creation
-sus structured_mutex *MutexStruct = concurrenz.mutex_new()
-assert_true(structured_mutex != cringe)
-
-fr fr Test structured atomic creation
-sus structured_atomic *AtomicStruct = concurrenz.atomic_new(100)
-assert_true(structured_atomic != cringe)
-
-fr fr Test atomic load operation
-sus loaded_value normie = concurrenz.atomic_load(structured_atomic)
-assert_eq_int(loaded_value, 100)
-
-fr fr Test atomic store operation
-concurrenz.atomic_store(structured_atomic, 200)
-sus stored_value normie = concurrenz.atomic_load(structured_atomic)
-assert_eq_int(stored_value, 200)
-
-fr fr Test structured waitgroup creation
-sus structured_wg *WaitGroupStruct = concurrenz.waitgroup_new()
-assert_true(structured_wg != cringe)
-
-test_start("Channel Utilities")
-
-fr fr Test make function for channels
-sus buffer_size normie = concurrenz.make("channel", 10)
-assert_eq_int(buffer_size, 10)
+concurrenz.mutex_unlock(mutex2)
 
 print_test_summary()
+
+fr fr Test waitgroup operations
+test_start("waitgroup operations")
+
+sus wg := concurrenz.create_waitgroup()
+assert_true(wg != cringe)
+
+sus add_result := concurrenz.waitgroup_add(wg, 3)
+assert_true(add_result)
+
+sus done1 := concurrenz.waitgroup_done(wg)
+assert_true(done1)
+
+sus done2 := concurrenz.waitgroup_done(wg)
+assert_true(done2)
+
+sus done3 := concurrenz.waitgroup_done(wg)
+assert_true(done3)
+
+sus wait_result := concurrenz.waitgroup_wait(wg)
+assert_true(wait_result)
+
+print_test_summary()
+
+fr fr Test channel operations
+test_start("channel operations")
+
+sus ch := concurrenz.create_sync_channel()
+assert_true(ch != cringe)
+
+sus send_result := concurrenz.channel_send(ch, 42)
+assert_true(send_result)
+
+sus received_data := concurrenz.channel_receive(ch)
+assert_eq_int(received_data, 42)
+
+print_test_summary()
+
+fr fr Test read-write mutex
+test_start("read-write mutex")
+
+sus rwmutex := concurrenz.create_rwmutex()
+assert_true(rwmutex != cringe)
+
+sus rlock1 := concurrenz.rwmutex_rlock(rwmutex)
+assert_true(rlock1)
+
+sus rlock2 := concurrenz.rwmutex_rlock(rwmutex)
+assert_true(rlock2)
+
+sus runlock1 := concurrenz.rwmutex_runlock(rwmutex)
+assert_true(runlock1)
+
+sus runlock2 := concurrenz.rwmutex_runlock(rwmutex)
+assert_true(runlock2)
+
+sus wlock := concurrenz.rwmutex_lock(rwmutex)
+assert_true(wlock)
+
+sus wunlock := concurrenz.rwmutex_unlock(rwmutex)
+assert_true(wunlock)
+
+print_test_summary()
+
+fr fr Test atomic operations
+test_start("atomic operations")
+
+sus atomic_val := concurrenz.create_mutex()  fr fr Using mutex as atomic storage
+
+sus cas_result := concurrenz.atomic_cas(atomic_val, 0, 1)
+assert_true(cas_result)
+
+sus old_val := concurrenz.atomic_increment(atomic_val)
+assert_eq_int(old_val, 1)
+
+sus dec_val := concurrenz.atomic_decrement(atomic_val)
+assert_eq_int(dec_val, 2)
+
+print_test_summary()
+
+fr fr Test semaphore operations
+test_start("semaphore operations")
+
+sus sem := concurrenz.create_semaphore(2)
+assert_true(sem != cringe)
+
+sus acquire1 := concurrenz.semaphore_acquire(sem)
+assert_true(acquire1)
+
+sus acquire2 := concurrenz.semaphore_acquire(sem)
+assert_true(acquire2)
+
+sus release1 := concurrenz.semaphore_release(sem)
+assert_true(release1)
+
+sus release2 := concurrenz.semaphore_release(sem)
+assert_true(release2)
+
+print_test_summary()
+
+fr fr Test barrier operations
+test_start("barrier operations")
+
+sus barrier := concurrenz.create_barrier(3)
+assert_true(barrier != cringe)
+
+fr fr Simulate barrier waiting (simplified)
+sus wait_result1 := concurrenz.barrier_wait(barrier)
+assert_true(wait_result1)
+
+print_test_summary()
+
+fr fr Test condition variables
+test_start("condition variables")
+
+sus condition := concurrenz.create_condition()
+assert_true(condition != cringe)
+
+sus mutex_for_cond := concurrenz.create_mutex()
+concurrenz.mutex_lock(mutex_for_cond)
+
+sus signal_result := concurrenz.condition_signal(condition)
+assert_true(signal_result)
+
+sus broadcast_result := concurrenz.condition_broadcast(condition)
+assert_true(broadcast_result)
+
+concurrenz.mutex_unlock(mutex_for_cond)
+
+print_test_summary()
+
+fr fr Test once primitive
+test_start("once primitive")
+
+sus once := concurrenz.create_once()
+assert_true(once != cringe)
+
+sus once_result := concurrenz.once_do(once, "test_function")
+assert_true(once_result)
+
+fr fr Second call should return false (already executed)
+sus once_again := concurrenz.once_do(once, "test_function")
+assert_false(once_again)
+
+print_test_summary()
+
+fr fr Test channel creation function
+test_start("channel creation")
+
+sus chan_result := concurrenz.make("normie", 10)
+assert_eq_int(chan_result, 10)
+
+print_test_summary()
+
+fr fr Test complex synchronization scenario
+test_start("complex synchronization")
+
+sus shared_mutex := concurrenz.create_mutex()
+sus shared_wg := concurrenz.create_waitgroup()
+sus shared_ch := concurrenz.create_sync_channel()
+
+fr fr Simulate producer-consumer pattern
+concurrenz.waitgroup_add(shared_wg, 2)
+
+fr fr Producer simulation
+concurrenz.mutex_lock(shared_mutex)
+concurrenz.channel_send(shared_ch, 100)
+concurrenz.mutex_unlock(shared_mutex)
+concurrenz.waitgroup_done(shared_wg)
+
+fr fr Consumer simulation
+concurrenz.mutex_lock(shared_mutex)
+sus consumed_data := concurrenz.channel_receive(shared_ch)
+assert_eq_int(consumed_data, 100)
+concurrenz.mutex_unlock(shared_mutex)
+concurrenz.waitgroup_done(shared_wg)
+
+concurrenz.waitgroup_wait(shared_wg)
+
+print_test_summary()
+
+fr fr Test atomic struct operations
+test_start("atomic struct operations")
+
+sus atomic_struct := concurrenz.atomic_new(42)
+assert_true(atomic_struct != cringe)
+
+sus loaded_value := concurrenz.atomic_load(atomic_struct)
+assert_eq_int(loaded_value, 42)
+
+concurrenz.atomic_store(atomic_struct, 84)
+sus stored_value := concurrenz.atomic_load(atomic_struct)
+assert_eq_int(stored_value, 84)
+
+print_test_summary()
+
+fr fr Test mutex struct operations
+test_start("mutex struct operations")
+
+sus mutex_struct := concurrenz.mutex_new()
+assert_true(mutex_struct != cringe)
+
+print_test_summary()
+
+fr fr Test waitgroup struct operations
+test_start("waitgroup struct operations")
+
+sus wg_struct := concurrenz.waitgroup_new()
+assert_true(wg_struct != cringe)
+
+print_test_summary()
+
+vibez.spill("concurrenz module comprehensive tests completed")
+vibez.spill("All basic synchronization primitives verified")

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>crypto_secure Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>crypto_secure Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>crypto_secure_seed</h3>
+        <p>Secure seed initialization with entropy pooling</p>
+        <p><code>slay crypto_secure_seed(entropy_source1 normie, entropy_source2 normie, entropy_source3 normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_chacha20_quarter_round</h3>
+        <p>ChaCha20 quarter round for secure mixing</p>
+        <p><code>slay crypto_chacha20_quarter_round() {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_secure_random_u32</h3>
+        <p>Secure random number generation</p>
+        <p><code>slay crypto_secure_random_u32() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>sha256_rotr</h3>
+        <p>SHA-256 right rotate</p>
+        <p><code>slay sha256_rotr(x normie, n normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>sha256_ch</h3>
+        <p>SHA-256 functions</p>
+        <p><code>slay sha256_ch(x normie, y normie, z normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>sha256_maj</h3>
+        <p></p>
+        <p><code>slay sha256_maj(x normie, y normie, z normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>sha256_sigma0</h3>
+        <p></p>
+        <p><code>slay sha256_sigma0(x normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>sha256_sigma1</h3>
+        <p></p>
+        <p><code>slay sha256_sigma1(x normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>sha256_gamma0</h3>
+        <p></p>
+        <p><code>slay sha256_gamma0(x normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>sha256_gamma1</h3>
+        <p></p>
+        <p><code>slay sha256_gamma1(x normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_sha256_secure</h3>
+        <p>Secure SHA-256 implementation</p>
+        <p><code>slay crypto_sha256_secure(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>aes_expand_key</h3>
+        <p>AES key expansion</p>
+        <p><code>slay aes_expand_key(key [normie], round_keys [normie]) {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_aes256_encrypt_secure</h3>
+        <p>Secure AES-256 encryption</p>
+        <p><code>slay crypto_aes256_encrypt_secure(plaintext [normie], key [normie]) [normie] {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_hmac_sha256_secure</h3>
+        <p></p>
+        <p><code>slay crypto_hmac_sha256_secure(message tea, key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_string_length_secure</h3>
+        <p></p>
+        <p><code>slay crypto_string_length_secure(s tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_char_at_secure</h3>
+        <p></p>
+        <p><code>slay crypto_char_at_secure(s tea, index normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_char_from_byte</h3>
+        <p></p>
+        <p><code>slay crypto_char_from_byte(byte normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_u32_to_hex</h3>
+        <p></p>
+        <p><code>slay crypto_u32_to_hex(value normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_secure_random_bytes</h3>
+        <p></p>
+        <p><code>slay crypto_secure_random_bytes(length normie) [normie] {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_secure_random_string</h3>
+        <p></p>
+        <p><code>slay crypto_secure_random_string(length normie, charset tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_pbkdf2_secure</h3>
+        <p></p>
+        <p><code>slay crypto_pbkdf2_secure(password tea, salt tea, iterations normie, key_length normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>crypto_constant_time_compare</h3>
+        <p></p>
+        <p><code>slay crypto_constant_time_compare(a tea, b tea) lit {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>rng_state_0</h3>
+        <p>ChaCha20-based secure RNG state</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_1</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_2</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_3</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_4</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_5</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_6</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_7</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_8</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_9</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_10</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_state_11</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_counter</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_nonce_0</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_nonce_1</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rng_nonce_2</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>h0</h3>
+        <p>Initial hash values (first 32 bits of fractional parts of square roots of first 8 primes)</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>h1</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>h2</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>h3</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>h4</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>h5</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>h6</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>h7</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>data_length</h3>
+        <p>Convert string to bytes (simplified for pure CURSED)</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>s0</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>s1</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>a</h3>
+        <p>Initialize working variables</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>b</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>c</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>d</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>e</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>f</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>g</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>h</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp1</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp2</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rotated</h3>
+        <p>Apply S-box to rotated word</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>substituted</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>rcon</h3>
+        <p>XOR with round constant</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ipad</h3>
+        <p>HMAC-SHA256 with proper implementation</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>opad</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>block_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>processed_key</h3>
+        <p>Process key</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>key_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>inner_key</h3>
+        <p>Create inner and outer keys</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>outer_key</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>key_byte</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>inner_hash</h3>
+        <p>HMAC = H(outer_key || H(inner_key || message))</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>outer_hash</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>max_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>nibble</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>charset_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>random_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_byte</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>len_a</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len_b</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>max_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte_a</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte_b</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+</body>
+</html>

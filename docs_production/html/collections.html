@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>collections Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>collections Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>Vec_new</h3>
+        <p>Create new empty vector</p>
+        <p><code>slay Vec_new() [extra] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_with_capacity</h3>
+        <p>Create vector with initial capacity</p>
+        <p><code>slay Vec_with_capacity(capacity normie) [extra] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_len</h3>
+        <p>Get vector length</p>
+        <p><code>slay Vec_len(vec [extra]) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_internal_length</h3>
+        <p>Internal vector length helper</p>
+        <p><code>slay Vec_internal_length(vec [extra]) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_is_empty</h3>
+        <p>Check if vector is empty</p>
+        <p><code>slay Vec_is_empty(vec [extra]) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_capacity</h3>
+        <p>Get vector capacity</p>
+        <p><code>slay Vec_capacity(vec [extra]) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_push</h3>
+        <p>Push element to end of vector</p>
+        <p><code>slay Vec_push(vec [extra], element extra) [extra] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_pop</h3>
+        <p>Pop element from end of vector</p>
+        <p><code>slay Vec_pop(vec [extra]) extra {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_insert</h3>
+        <p>Insert element at specific index</p>
+        <p><code>slay Vec_insert(vec [extra], index normie, element extra) [extra] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_remove</h3>
+        <p>Remove element at specific index</p>
+        <p><code>slay Vec_remove(vec [extra], index normie) [extra] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_get</h3>
+        <p>Get element at index</p>
+        <p><code>slay Vec_get(vec [extra], index normie) extra {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_set</h3>
+        <p>Set element at index</p>
+        <p><code>slay Vec_set(vec [extra], index normie, element extra) [extra] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_clear</h3>
+        <p>Clear all elements from vector</p>
+        <p><code>slay Vec_clear(vec [extra]) [extra] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Vec_reverse</h3>
+        <p>Reverse vector elements</p>
+        <p><code>slay Vec_reverse(vec [extra]) [extra] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_new</h3>
+        <p>Create new empty hashmap</p>
+        <p><code>slay Map_new() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_with_capacity</h3>
+        <p>Create hashmap with initial capacity</p>
+        <p><code>slay Map_with_capacity(capacity normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_len</h3>
+        <p>Get hashmap size (number of key-value pairs)</p>
+        <p><code>slay Map_len(map tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_is_empty</h3>
+        <p>Check if hashmap is empty</p>
+        <p><code>slay Map_is_empty(map tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_hash</h3>
+        <p>Simple hash function for strings</p>
+        <p><code>slay Map_hash(key tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_insert</h3>
+        <p>Insert or update key-value pair</p>
+        <p><code>slay Map_insert(map tea, key tea, value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_get</h3>
+        <p>Get value by key</p>
+        <p><code>slay Map_get(map tea, key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_contains_key</h3>
+        <p>Check if key exists in hashmap</p>
+        <p><code>slay Map_contains_key(map tea, key tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_remove</h3>
+        <p>Remove key-value pair by key</p>
+        <p><code>slay Map_remove(map tea, key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_keys</h3>
+        <p>Get all keys from hashmap</p>
+        <p><code>slay Map_keys(map tea) [tea] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_values</h3>
+        <p>Get all values from hashmap</p>
+        <p><code>slay Map_values(map tea) [tea] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Map_clear</h3>
+        <p>Clear all entries from hashmap</p>
+        <p><code>slay Map_clear(map tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>List_new</h3>
+        <p>Create new empty linked list</p>
+        <p><code>slay List_new() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>List_len</h3>
+        <p>Get linked list length</p>
+        <p><code>slay List_len(list tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>List_is_empty</h3>
+        <p>Check if linked list is empty</p>
+        <p><code>slay List_is_empty(list tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>List_push_front</h3>
+        <p>Add element to front of list</p>
+        <p><code>slay List_push_front(list tea, element tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>List_push_back</h3>
+        <p>Add element to back of list</p>
+        <p><code>slay List_push_back(list tea, element tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>List_pop_front</h3>
+        <p>Remove and return front element</p>
+        <p><code>slay List_pop_front(list tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>List_pop_back</h3>
+        <p>Remove and return back element</p>
+        <p><code>slay List_pop_back(list tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>List_front</h3>
+        <p>Get front element without removing</p>
+        <p><code>slay List_front(list tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>List_back</h3>
+        <p>Get back element without removing</p>
+        <p><code>slay List_back(list tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Set_new</h3>
+        <p>Create new empty set</p>
+        <p><code>slay Set_new() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Set_len</h3>
+        <p>Get set size</p>
+        <p><code>slay Set_len(set tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Set_is_empty</h3>
+        <p>Check if set is empty</p>
+        <p><code>slay Set_is_empty(set tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>Set_insert</h3>
+        <p>Insert element into set</p>
+        <p><code>slay Set_insert(set tea, element tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Set_contains</h3>
+        <p>Check if element exists in set</p>
+        <p><code>slay Set_contains(set tea, element tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>Set_remove</h3>
+        <p>Remove element from set</p>
+        <p><code>slay Set_remove(set tea, element tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Set_clear</h3>
+        <p>Clear all elements from set</p>
+        <p><code>slay Set_clear(set tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Set_to_array</h3>
+        <p>Convert set to array</p>
+        <p><code>slay Set_to_array(set tea) [tea] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Stack_new</h3>
+        <p>Create new empty stack</p>
+        <p><code>slay Stack_new() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Stack_is_empty</h3>
+        <p>Check if stack is empty</p>
+        <p><code>slay Stack_is_empty(stack tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>Stack_len</h3>
+        <p>Get stack size</p>
+        <p><code>slay Stack_len(stack tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Stack_push</h3>
+        <p>Push element onto stack</p>
+        <p><code>slay Stack_push(stack tea, element tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Stack_pop</h3>
+        <p>Pop element from stack</p>
+        <p><code>slay Stack_pop(stack tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Stack_peek</h3>
+        <p>Peek at top element without removing</p>
+        <p><code>slay Stack_peek(stack tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Queue_new</h3>
+        <p>Create new empty queue</p>
+        <p><code>slay Queue_new() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Queue_is_empty</h3>
+        <p>Check if queue is empty</p>
+        <p><code>slay Queue_is_empty(queue tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>Queue_len</h3>
+        <p>Get queue size</p>
+        <p><code>slay Queue_len(queue tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Queue_enqueue</h3>
+        <p>Enqueue element to back of queue</p>
+        <p><code>slay Queue_enqueue(queue tea, element tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Queue_dequeue</h3>
+        <p>Dequeue element from front of queue</p>
+        <p><code>slay Queue_dequeue(queue tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Queue_front</h3>
+        <p>Peek at front element without removing</p>
+        <p><code>slay Queue_front(queue tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Collections_bubble_sort</h3>
+        <p>Bubble sort for integer arrays</p>
+        <p><code>slay Collections_bubble_sort(arr [normie]) [normie] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Collections_quick_sort</h3>
+        <p>Quick sort for integer arrays</p>
+        <p><code>slay Collections_quick_sort(arr [normie]) [normie] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Collections_merge_sort</h3>
+        <p>Merge sort for integer arrays</p>
+        <p><code>slay Collections_merge_sort(arr [normie]) [normie] {</code></p>
+    </div>
+    <div class="function">
+        <h3>Collections_linear_search</h3>
+        <p>Linear search in array</p>
+        <p><code>slay Collections_linear_search(arr [normie], target normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Collections_binary_search</h3>
+        <p>Binary search in sorted array</p>
+        <p><code>slay Collections_binary_search(arr [normie], target normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Collections_max</h3>
+        <p>Find maximum element in array</p>
+        <p><code>slay Collections_max(arr [normie]) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Collections_min</h3>
+        <p>Find minimum element in array</p>
+        <p><code>slay Collections_min(arr [normie]) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Collections_sum</h3>
+        <p>Calculate sum of array elements</p>
+        <p><code>slay Collections_sum(arr [normie]) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>Collections_average</h3>
+        <p>Calculate average of array elements</p>
+        <p><code>slay Collections_average(arr [normie]) normie {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p>Simulate push operation</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>HASHMAP_SIZE</h3>
+        <p>HashMap bucket structure (simplified)</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>value</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>total</h3>
+        <p>Default calculation</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>sum</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+</body>
+</html>

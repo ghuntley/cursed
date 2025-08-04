@@ -1,0 +1,23 @@
+{
+    "name": "cursed-language-support",
+    "displayName": "CURSED Language Support",
+    "description": "Language support for CURSED programming language",
+    "version": "1.0.0",
+    "engines": {"vscode": "^1.60.0"},
+    "categories": ["Programming Languages"],
+    "activationEvents": ["onLanguage:cursed"],
+    "main": "./out/extension.js",
+    "contributes": {
+        "languages": [{
+            "id": "cursed",
+            "aliases": ["CURSED", "cursed"],
+            "extensions": [".csd"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "cursed",
+            "scopeName": "source.cursed",
+            "path": "./syntaxes/cursed.tmLanguage.json"
+        }]
+    }
+}

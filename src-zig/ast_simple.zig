@@ -320,6 +320,8 @@ pub const InterfaceStatement = struct {
     methods: ArrayList(MethodSignature),
     visibility: Visibility,
     type_parameters: ArrayList(TypeParameter),
+    extends: ArrayList([]const u8),
+    compositions: ArrayList([]const u8),
 };
 
 pub const MethodSignature = struct {
