@@ -1,0 +1,4 @@
+error: invalid option: -Dlto
+error:   access the help menu with 'zig build -h'
+error: the following build command failed with exit code 1:
+/home/ghuntley/code/cursed/.zig-cache/o/97d43856c2016cef56a83acf5d5852f4/build /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/bin/zig /nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig /home/ghuntley/code/cursed /home/ghuntley/code/cursed/.zig-cache /home/ghuntley/.cache/zig --seed 0xf56ec7b9 -Z95671add77f82f09 -Dtarget=x86_64-linux -Doptimize=ReleaseFast --prefix /home/ghuntley/code/cursed/zig-out/cross/linux-x86_64 -Dlto=true

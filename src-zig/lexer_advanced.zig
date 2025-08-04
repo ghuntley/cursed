@@ -533,7 +533,7 @@ pub const AdvancedLexer = struct {
     allocator: Allocator,
     keywords: std.StringHashMap(TokenKind),
     
-    pub fn init(allocator: Allocator, input: []const u8) AdvancedLexer {
+    pub fn init(allocator: Allocator, input: []const u8) !AdvancedLexer {
         var lexer = AdvancedLexer{
             .state = LexerState.init(input),
             .tokens = ArrayList(Token).init(allocator),
@@ -541,7 +541,7 @@ pub const AdvancedLexer = struct {
             .keywords = std.StringHashMap(TokenKind).init(allocator),
         };
         
-        lexer.initializeKeywords();
+        try lexer.initializeKeywords();
         return lexer;
     }
     
@@ -550,169 +550,169 @@ pub const AdvancedLexer = struct {
         self.keywords.deinit();
     }
     
-    fn initializeKeywords(self: *AdvancedLexer) void {
+    fn initializeKeywords(self: *AdvancedLexer) !void {
         // Core CURSED keywords
-        self.keywords.put("vibe", .Vibe) catch unreachable;
-        self.keywords.put("yeet", .Yeet) catch unreachable;
-        self.keywords.put("slay", .Slay) catch unreachable;
-        self.keywords.put("sus", .Sus) catch unreachable;
-        self.keywords.put("facts", .Facts) catch unreachable;
-        self.keywords.put("be_like", .BeLike) catch unreachable;
-        self.keywords.put("squad", .Squad) catch unreachable;
-        self.keywords.put("collab", .Collab) catch unreachable;
-        self.keywords.put("flex", .Flex) catch unreachable;
-        self.keywords.put("stan", .Stan) catch unreachable;
-        self.keywords.put("later", .Later) catch unreachable;
-        self.keywords.put("damn", .Damn) catch unreachable;
-        self.keywords.put("yolo", .Yolo) catch unreachable;
+        try self.keywords.put("vibe", .Vibe);
+        try self.keywords.put("yeet", .Yeet);
+        try self.keywords.put("slay", .Slay);
+        try self.keywords.put("sus", .Sus);
+        try self.keywords.put("facts", .Facts);
+        try self.keywords.put("be_like", .BeLike);
+        try self.keywords.put("squad", .Squad);
+        try self.keywords.put("collab", .Collab);
+        try self.keywords.put("flex", .Flex);
+        try self.keywords.put("stan", .Stan);
+        try self.keywords.put("later", .Later);
+        try self.keywords.put("damn", .Damn);
+        try self.keywords.put("yolo", .Yolo);
         
         // Control flow
-        self.keywords.put("lowkey", .Lowkey) catch unreachable;
-        self.keywords.put("highkey", .Highkey) catch unreachable;
-        self.keywords.put("vibe_check", .VibeCheck) catch unreachable;
-        self.keywords.put("mood", .Mood) catch unreachable;
-        self.keywords.put("basic", .Basic) catch unreachable;
-        self.keywords.put("bestie", .Bestie) catch unreachable;
-        self.keywords.put("periodt", .Periodt) catch unreachable;
-        self.keywords.put("ghosted", .Ghosted) catch unreachable;
-        self.keywords.put("simp", .Simp) catch unreachable;
-        self.keywords.put("ready", .Ready) catch unreachable;
+        try self.keywords.put("lowkey", .Lowkey);
+        try self.keywords.put("highkey", .Highkey);
+        try self.keywords.put("vibe_check", .VibeCheck);
+        try self.keywords.put("mood", .Mood);
+        try self.keywords.put("basic", .Basic);
+        try self.keywords.put("bestie", .Bestie);
+        try self.keywords.put("periodt", .Periodt);
+        try self.keywords.put("ghosted", .Ghosted);
+        try self.keywords.put("simp", .Simp);
+        try self.keywords.put("ready", .Ready);
         
         // Types
-        self.keywords.put("normie", .Normie) catch unreachable;
-        self.keywords.put("tea", .Tea) catch unreachable;
-        self.keywords.put("lit", .Lit) catch unreachable;
-        self.keywords.put("meal", .Meal) catch unreachable;
-        self.keywords.put("sip", .Sip) catch unreachable;
-        self.keywords.put("drip", .Drip) catch unreachable;
-        self.keywords.put("smol", .Smol) catch unreachable;
-        self.keywords.put("thicc", .Thicc) catch unreachable;
-        self.keywords.put("txt", .Txt) catch unreachable;
-        self.keywords.put("vibes", .Vibes) catch unreachable;
+        try self.keywords.put("normie", .Normie);
+        try self.keywords.put("tea", .Tea);
+        try self.keywords.put("lit", .Lit);
+        try self.keywords.put("meal", .Meal);
+        try self.keywords.put("sip", .Sip);
+        try self.keywords.put("drip", .Drip);
+        try self.keywords.put("smol", .Smol);
+        try self.keywords.put("thicc", .Thicc);
+        try self.keywords.put("txt", .Txt);
+        try self.keywords.put("vibes", .Vibes);
         
         // Boolean literals
-        self.keywords.put("based", .Based) catch unreachable;
-        self.keywords.put("cringe", .Cringe) catch unreachable;
+        try self.keywords.put("based", .Based);
+        try self.keywords.put("cringe", .Cringe);
         
         // Channel type
-        self.keywords.put("dm", .Dm) catch unreachable;
+        try self.keywords.put("dm", .Dm);
         
         // Error handling
-        self.keywords.put("yikes", .Yikes) catch unreachable;
-        self.keywords.put("shook", .Shook) catch unreachable;
-        self.keywords.put("fam", .Fam) catch unreachable;
+        try self.keywords.put("yikes", .Yikes);
+        try self.keywords.put("shook", .Shook);
+        try self.keywords.put("fam", .Fam);
         
         // Advanced keywords
-        self.keywords.put("where", .Where) catch unreachable;
-        self.keywords.put("impl", .Impl) catch unreachable;
-        self.keywords.put("trait", .Trait) catch unreachable;
-        self.keywords.put("type", .Type) catch unreachable;
-        self.keywords.put("typeof", .Typeof) catch unreachable;
-        self.keywords.put("sizeof", .Sizeof) catch unreachable;
-        self.keywords.put("alignof", .Alignof) catch unreachable;
+        try self.keywords.put("where", .Where);
+        try self.keywords.put("impl", .Impl);
+        try self.keywords.put("trait", .Trait);
+        try self.keywords.put("type", .Type);
+        try self.keywords.put("typeof", .Typeof);
+        try self.keywords.put("sizeof", .Sizeof);
+        try self.keywords.put("alignof", .Alignof);
         
         // Visibility
-        self.keywords.put("pub", .Pub) catch unreachable;
-        self.keywords.put("priv", .Priv) catch unreachable;
-        self.keywords.put("protected", .Protected) catch unreachable;
-        self.keywords.put("internal", .Internal) catch unreachable;
-        self.keywords.put("export", .Export) catch unreachable;
-        self.keywords.put("extern", .Extern) catch unreachable;
+        try self.keywords.put("pub", .Pub);
+        try self.keywords.put("priv", .Priv);
+        try self.keywords.put("protected", .Protected);
+        try self.keywords.put("internal", .Internal);
+        try self.keywords.put("export", .Export);
+        try self.keywords.put("extern", .Extern);
         
         // Async/await
-        self.keywords.put("async", .Async) catch unreachable;
-        self.keywords.put("await", .Await) catch unreachable;
-        self.keywords.put("future", .Future) catch unreachable;
-        self.keywords.put("promise", .Promise) catch unreachable;
+        try self.keywords.put("async", .Async);
+        try self.keywords.put("await", .Await);
+        try self.keywords.put("future", .Future);
+        try self.keywords.put("promise", .Promise);
         
         // Pattern matching
-        self.keywords.put("if", .If) catch unreachable;
-        self.keywords.put("guard", .Guard) catch unreachable;
-        self.keywords.put("when", .When) catch unreachable;
-        self.keywords.put("is", .Is) catch unreachable;
-        self.keywords.put("as", .As) catch unreachable;
-        self.keywords.put("in", .In) catch unreachable;
+        try self.keywords.put("if", .If);
+        try self.keywords.put("guard", .Guard);
+        try self.keywords.put("when", .When);
+        try self.keywords.put("is", .Is);
+        try self.keywords.put("as", .As);
+        try self.keywords.put("in", .In);
         
         // Memory management
-        self.keywords.put("new", .New) catch unreachable;
-        self.keywords.put("delete", .Delete) catch unreachable;
-        self.keywords.put("alloc", .Alloc) catch unreachable;
-        self.keywords.put("free", .Free) catch unreachable;
-        self.keywords.put("mut", .Mut) catch unreachable;
-        self.keywords.put("ref", .Ref) catch unreachable;
-        self.keywords.put("move", .Move) catch unreachable;
-        self.keywords.put("copy", .Copy) catch unreachable;
+        try self.keywords.put("new", .New);
+        try self.keywords.put("delete", .Delete);
+        try self.keywords.put("alloc", .Alloc);
+        try self.keywords.put("free", .Free);
+        try self.keywords.put("mut", .Mut);
+        try self.keywords.put("ref", .Ref);
+        try self.keywords.put("move", .Move);
+        try self.keywords.put("copy", .Copy);
         
         // Module system
-        self.keywords.put("module", .Module) catch unreachable;
-        self.keywords.put("use", .Use) catch unreachable;
-        self.keywords.put("from", .From) catch unreachable;
-        self.keywords.put("super", .Super) catch unreachable;
-        self.keywords.put("self", .Self) catch unreachable;
-        self.keywords.put("Self", .SelfType) catch unreachable;
+        try self.keywords.put("module", .Module);
+        try self.keywords.put("use", .Use);
+        try self.keywords.put("from", .From);
+        try self.keywords.put("super", .Super);
+        try self.keywords.put("self", .Self);
+        try self.keywords.put("Self", .SelfType);
         
         // Additional language constructs
-        self.keywords.put("struct", .Struct) catch unreachable;
-        self.keywords.put("union", .Union) catch unreachable;
-        self.keywords.put("enum", .Enum) catch unreachable;
-        self.keywords.put("interface", .Interface) catch unreachable;
-        self.keywords.put("match", .Match) catch unreachable;
-        self.keywords.put("case", .Case) catch unreachable;
-        self.keywords.put("default", .Default) catch unreachable;
-        self.keywords.put("for", .For) catch unreachable;
-        self.keywords.put("while", .While) catch unreachable;
-        self.keywords.put("loop", .Loop) catch unreachable;
-        self.keywords.put("break", .Break) catch unreachable;
-        self.keywords.put("continue", .Continue) catch unreachable;
-        self.keywords.put("return", .Return) catch unreachable;
-        self.keywords.put("yield", .Yield) catch unreachable;
-        self.keywords.put("throw", .Throw) catch unreachable;
-        self.keywords.put("catch", .Catch) catch unreachable;
-        self.keywords.put("finally", .Finally) catch unreachable;
-        self.keywords.put("try", .Try) catch unreachable;
-        self.keywords.put("unsafe", .Unsafe) catch unreachable;
-        self.keywords.put("const", .Const) catch unreachable;
-        self.keywords.put("static", .Static) catch unreachable;
-        self.keywords.put("inline", .Inline) catch unreachable;
-        self.keywords.put("pure", .Pure) catch unreachable;
-        self.keywords.put("comptime", .Comptime) catch unreachable;
-        self.keywords.put("test", .Test) catch unreachable;
-        self.keywords.put("bench", .Bench) catch unreachable;
-        self.keywords.put("debug", .Debug) catch unreachable;
-        self.keywords.put("assert", .Assert) catch unreachable;
-        self.keywords.put("panic", .Panic) catch unreachable;
+        try self.keywords.put("struct", .Struct);
+        try self.keywords.put("union", .Union);
+        try self.keywords.put("enum", .Enum);
+        try self.keywords.put("interface", .Interface);
+        try self.keywords.put("match", .Match);
+        try self.keywords.put("case", .Case);
+        try self.keywords.put("default", .Default);
+        try self.keywords.put("for", .For);
+        try self.keywords.put("while", .While);
+        try self.keywords.put("loop", .Loop);
+        try self.keywords.put("break", .Break);
+        try self.keywords.put("continue", .Continue);
+        try self.keywords.put("return", .Return);
+        try self.keywords.put("yield", .Yield);
+        try self.keywords.put("throw", .Throw);
+        try self.keywords.put("catch", .Catch);
+        try self.keywords.put("finally", .Finally);
+        try self.keywords.put("try", .Try);
+        try self.keywords.put("unsafe", .Unsafe);
+        try self.keywords.put("const", .Const);
+        try self.keywords.put("static", .Static);
+        try self.keywords.put("inline", .Inline);
+        try self.keywords.put("pure", .Pure);
+        try self.keywords.put("comptime", .Comptime);
+        try self.keywords.put("test", .Test);
+        try self.keywords.put("bench", .Bench);
+        try self.keywords.put("debug", .Debug);
+        try self.keywords.put("assert", .Assert);
+        try self.keywords.put("panic", .Panic);
         
         // Type system enhancements
-        self.keywords.put("generic", .Generic) catch unreachable;
-        self.keywords.put("template", .Template) catch unreachable;
-        self.keywords.put("typename", .Typename) catch unreachable;
-        self.keywords.put("auto", .Auto) catch unreachable;
-        self.keywords.put("var", .Var) catch unreachable;
-        self.keywords.put("let", .Let) catch unreachable;
+        try self.keywords.put("generic", .Generic);
+        try self.keywords.put("template", .Template);
+        try self.keywords.put("typename", .Typename);
+        try self.keywords.put("auto", .Auto);
+        try self.keywords.put("var", .Var);
+        try self.keywords.put("let", .Let);
         
         // Concurrency
-        self.keywords.put("atomic", .Atomic) catch unreachable;
-        self.keywords.put("volatile", .Volatile) catch unreachable;
-        self.keywords.put("sync", .Sync) catch unreachable;
-        self.keywords.put("lock", .Lock) catch unreachable;
-        self.keywords.put("mutex", .Mutex) catch unreachable;
-        self.keywords.put("send", .Send) catch unreachable;
-        self.keywords.put("recv", .Recv) catch unreachable;
-        self.keywords.put("close", .Close) catch unreachable;
-        self.keywords.put("select", .Select) catch unreachable;
+        try self.keywords.put("atomic", .Atomic);
+        try self.keywords.put("volatile", .Volatile);
+        try self.keywords.put("sync", .Sync);
+        try self.keywords.put("lock", .Lock);
+        try self.keywords.put("mutex", .Mutex);
+        try self.keywords.put("send", .Send);
+        try self.keywords.put("recv", .Recv);
+        try self.keywords.put("close", .Close);
+        try self.keywords.put("select", .Select);
         
         // Ownership and borrowing
-        self.keywords.put("own", .Own) catch unreachable;
-        self.keywords.put("borrow", .Borrow) catch unreachable;
-        self.keywords.put("shared", .Shared) catch unreachable;
-        self.keywords.put("unique", .Unique) catch unreachable;
-        self.keywords.put("weak", .Weak) catch unreachable;
+        try self.keywords.put("own", .Own);
+        try self.keywords.put("borrow", .Borrow);
+        try self.keywords.put("shared", .Shared);
+        try self.keywords.put("unique", .Unique);
+        try self.keywords.put("weak", .Weak);
         
         // Interface operations
-        self.keywords.put("implements", .Implements) catch unreachable;
-        self.keywords.put("extends", .Extends) catch unreachable;
-        self.keywords.put("with", .With) catch unreachable;
-        self.keywords.put("mixin", .Mixin) catch unreachable;
+        try self.keywords.put("implements", .Implements);
+        try self.keywords.put("extends", .Extends);
+        try self.keywords.put("with", .With);
+        try self.keywords.put("mixin", .Mixin);
     }
     
     pub fn tokenize(self: *AdvancedLexer) ![]Token {

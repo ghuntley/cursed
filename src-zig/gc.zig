@@ -269,7 +269,10 @@ pub const GC = struct {
             .heap_segments = ArrayList(HeapSegment).init(allocator),
             .forwarding_table = HashMap(*u8, *u8, std.hash_map.DefaultContext(u8), std.hash_map.default_max_load_percentage).init(allocator),
             .pause_mutex = Mutex{},
-            .last_gc_time = std.time.Instant.now() catch unreachable,
+            .last_gc_time = std.time.Instant.now() catch |err| blk: {
+                std.log.warn("Failed to get current time for GC: {}\n", .{err});
+                break :blk std.time.Instant{ .timestamp = 0 };
+            },
         };
         
         try gc.initializeHeap();

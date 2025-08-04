@@ -218,7 +218,7 @@ pub const DiagnosticMessage = struct {
                 self.message
             });
         } else {
-            try writer.print("{s}:{s} {}: {s}\n", .{
+            try writer.print("{s}:{s} {s}: {s}\n", .{
                 self.severity.toString(),
                 self.code.toString(),
                 self.location.file,
@@ -255,29 +255,37 @@ pub const DiagnosticMessage = struct {
             }
         }
         
-        try writer.print("\n");
+        try writer.print("\n", .{});
     }
     
     fn formatSourceSnippet(self: DiagnosticMessage, writer: anytype, snippet: []const u8, use_colors: bool) !void {
         const line_num_width = std.fmt.count("{d}", .{self.location.line});
-        const padding = " " ** 4;
+        const padding = "    "; // 4 spaces
         
         // Line number and source
         try writer.print("{s}{d} | {s}\n", .{ padding, self.location.line, snippet });
         
         // Error pointer/caret
         const spaces_before_caret = self.location.column - 1;
-        try writer.print("{s}{s} | ", .{ padding, " " ** line_num_width });
+        try writer.print("{s}", .{padding});
         
-        var i: u32 = 0;
+        // Print spaces for line number width
+        var i: usize = 0;
+        while (i < line_num_width) : (i += 1) {
+            try writer.print(" ", .{});
+        }
+        try writer.print(" | ", .{});
+        
+        // Print spaces before caret
+        i = 0;
         while (i < spaces_before_caret) : (i += 1) {
-            try writer.print(" ");
+            try writer.print(" ", .{});
         }
         
         if (use_colors) {
-            try writer.print("\x1b[31m^\x1b[0m error here\n");
+            try writer.print("\x1b[31m^\x1b[0m error here\n", .{});
         } else {
-            try writer.print("^ error here\n");
+            try writer.print("^ error here\n", .{});
         }
     }
 };
@@ -496,7 +504,7 @@ pub const ErrorReporter = struct {
             if (self.warning_count > 0 and self.error_count > 0) {
                 try writer.print(" and {d} warning(s)", .{self.warning_count});
             }
-            try writer.print("\n");
+            try writer.print("\n", .{});
         }
     }
     

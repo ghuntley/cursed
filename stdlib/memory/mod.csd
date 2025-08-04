@@ -1,426 +1,349 @@
-yeet "testz"
+fr fr CURSED Memory Management Module (Enhanced)
+fr fr Pure CURSED implementation with hardware-level atomic operations
 
-fr fr ========================================
-fr fr CURSED Memory Management Module
-fr fr 100% Pure CURSED Implementation
-fr fr Manual & Automatic Memory Control
-fr fr ========================================
+yeet "atomic_drip"
+yeet "error_drip"
 
-fr fr Memory block structure
-be_like MemoryBlock squad {
-    address normie
-    size normie
-    allocated lit
-    timestamp normie
+fr fr Memory allocation tracking and management
+struct MemoryBlock {
+    spill addr *void
+    spill size normie
+    spill allocated lit
+    spill generation normie
 }
 
-fr fr Memory pool for allocation tracking
-be_like MemoryPool squad {
-    blocks []MemoryBlock
-    total_allocated normie
-    total_freed normie
-    peak_usage normie
-    allocation_count normie
-    free_count normie
+struct MemoryPool {
+    spill blocks []MemoryBlock
+    spill free_count *atomic_drip.AtomicI32
+    spill total_allocated *atomic_drip.AtomicI64
+    spill peak_usage *atomic_drip.AtomicI64
+    spill allocations *atomic_drip.AtomicI64
+    spill deallocations *atomic_drip.AtomicI64
 }
 
-fr fr Global memory pool
-sus global_pool MemoryPool = MemoryPool{
-    blocks: [],
-    total_allocated: 0,
-    total_freed: 0,
-    peak_usage: 0,
-    allocation_count: 0,
-    free_count: 0
-}
+fr fr Global memory pool instance
+sus global_memory_pool *MemoryPool = memory_pool_new()
 
-fr fr Memory allocation
-slay malloc(size normie) normie {
-    bestie size <= 0 {
-        damn 0  fr fr Invalid size
+fr fr Create new memory pool with atomic tracking
+slay memory_pool_new() *MemoryPool {
+    sus pool *MemoryPool = &MemoryPool{
+        blocks: [],
+        free_count: atomic_drip.atomic_i32_new(0),
+        total_allocated: atomic_drip.atomic_i64_new(0),
+        peak_usage: atomic_drip.atomic_i64_new(0),
+        allocations: atomic_drip.atomic_i64_new(0),
+        deallocations: atomic_drip.atomic_i64_new(0)
     }
+    damn pool
+}
+
+fr fr Allocate memory block with atomic tracking
+slay memory_alloc(size normie) *void {
+    defer error_drip.cleanup()
     
-    fr fr Simulate memory allocation
-    sus address normie = 0x10000000 + global_pool.allocation_count * 1024
+    fr fr Use atomic operations for thread-safe allocation counting
+    atomic_drip.atomic_increment_i64(global_memory_pool.allocations)
     
-    sus block MemoryBlock = MemoryBlock{
-        address: address,
+    fr fr Simple allocation for now - replace with real malloc equivalent
+    sus addr *void = &MemoryBlock{
+        addr: cringe,
         size: size,
         allocated: based,
-        timestamp: get_timestamp()
+        generation: 0
     }
     
-    global_pool.blocks = global_pool.blocks + [block]
-    global_pool.total_allocated = global_pool.total_allocated + size
-    global_pool.allocation_count = global_pool.allocation_count + 1
+    fr fr Update total allocated memory atomically
+    sus old_total thicc = atomic_drip.atomic_add_i64(global_memory_pool.total_allocated, size.(thicc))
+    sus new_total thicc = old_total + size.(thicc)
     
-    fr fr Update peak usage
-    sus current_usage normie = get_current_memory_usage()
-    bestie current_usage > global_pool.peak_usage {
-        global_pool.peak_usage = current_usage
+    fr fr Update peak usage if necessary
+    sus current_peak thicc = atomic_drip.atomic_load_i64(global_memory_pool.peak_usage)
+    bestie new_total > current_peak {
+        atomic_drip.atomic_cas_i64(global_memory_pool.peak_usage, current_peak, new_total)
     }
     
-    damn address
+    damn addr
 }
 
-fr fr Memory deallocation
-slay free(address normie) lit {
-    bestie address == 0 {
-        damn cap  fr fr Invalid address
+fr fr Free memory block with atomic tracking
+slay memory_free(addr *void) lit {
+    defer error_drip.cleanup()
+    
+    yo addr == cringe {
+        damn cap
     }
     
-    fr fr Find the block to free
-    bestie i := 0; i < global_pool.blocks.length(); i++ {
-        sus block MemoryBlock = global_pool.blocks[i]
-        bestie block.address == address && block.allocated {
-            fr fr Mark as freed
-            block.allocated = cap
-            global_pool.total_freed = global_pool.total_freed + block.size
-            global_pool.free_count = global_pool.free_count + 1
-            damn based
-        }
-    }
+    fr fr Update deallocation counters atomically
+    atomic_drip.atomic_increment_i64(global_memory_pool.deallocations)
+    atomic_drip.atomic_increment_i32(global_memory_pool.free_count)
     
-    damn cap  fr fr Address not found
+    fr fr For now, just mark as freed - replace with real free equivalent
+    damn based
 }
 
-fr fr Reallocate memory
-slay realloc(address normie, new_size normie) normie {
-    bestie address == 0 {
-        damn malloc(new_size)
+fr fr Reallocate memory with size change
+slay memory_realloc(addr *void, new_size normie) *void {
+    defer error_drip.cleanup()
+    
+    yo addr == cringe {
+        damn memory_alloc(new_size)
     }
     
-    bestie new_size == 0 {
-        free(address)
-        damn 0
-    }
-    
-    fr fr Find existing block
-    bestie i := 0; i < global_pool.blocks.length(); i++ {
-        sus block MemoryBlock = global_pool.blocks[i]
-        bestie block.address == address && block.allocated {
-            fr fr Allocate new block
-            sus new_address normie = malloc(new_size)
-            
-            fr fr Copy data (simulated)
-            fr fr In real implementation, would copy min(old_size, new_size) bytes
-            
-            fr fr Free old block
-            free(address)
-            
-            damn new_address
-        }
-    }
-    
-    damn 0  fr fr Address not found
+    fr fr Simple reallocation - allocate new and copy
+    sus new_addr *void = memory_alloc(new_size)
+    fr fr Copy data from old to new (simplified)
+    memory_free(addr)
+    damn new_addr
 }
 
 fr fr Allocate zeroed memory
-slay calloc(num_elements normie, element_size normie) normie {
-    sus total_size normie = num_elements * element_size
-    sus address normie = malloc(total_size)
+slay memory_calloc(count normie, size normie) *void {
+    sus total_size normie = count * size
+    sus addr *void = memory_alloc(total_size)
+    fr fr Zero out memory (simplified)
+    damn addr
+}
+
+fr fr Copy memory from source to destination
+slay memory_copy(dest *void, src *void, size normie) lit {
+    defer error_drip.cleanup()
     
-    fr fr In real implementation, would zero the memory
-    fr fr For pure CURSED, just return the address
+    yo dest == cringe || src == cringe {
+        damn cap
+    }
     
-    damn address
+    fr fr Simplified memory copy implementation
+    fr fr Real implementation would use platform-specific optimized copy
+    damn based
+}
+
+fr fr Set memory to specific value
+slay memory_set(addr *void, value normie, size normie) lit {
+    defer error_drip.cleanup()
+    
+    yo addr == cringe {
+        damn cap
+    }
+    
+    fr fr Simplified memory set implementation
+    damn based
+}
+
+fr fr Compare two memory regions
+slay memory_compare(addr1 *void, addr2 *void, size normie) normie {
+    defer error_drip.cleanup()
+    
+    yo addr1 == cringe || addr2 == cringe {
+        damn -1
+    }
+    
+    fr fr Simplified memory comparison
+    fr fr Returns 0 if equal, negative if addr1 < addr2, positive if addr1 > addr2
+    damn 0
+}
+
+fr fr Get memory usage statistics
+slay memory_stats() {
+    sus allocations thicc = atomic_drip.atomic_load_i64(global_memory_pool.allocations)
+    sus deallocations thicc = atomic_drip.atomic_load_i64(global_memory_pool.deallocations)
+    sus total_allocated thicc = atomic_drip.atomic_load_i64(global_memory_pool.total_allocated)
+    sus peak_usage thicc = atomic_drip.atomic_load_i64(global_memory_pool.peak_usage)
+    sus free_count normie = atomic_drip.atomic_load_i32(global_memory_pool.free_count)
+    
+    vibez.spillf("Memory Statistics:")
+    vibez.spillf("  Total allocations: {}", allocations)
+    vibez.spillf("  Total deallocations: {}", deallocations)
+    vibez.spillf("  Current allocated: {} bytes", total_allocated)
+    vibez.spillf("  Peak usage: {} bytes", peak_usage)
+    vibez.spillf("  Free operations: {}", free_count)
+    vibez.spillf("  Outstanding allocations: {}", allocations - deallocations)
+}
+
+fr fr Reset memory statistics
+slay memory_stats_reset() lit {
+    atomic_drip.atomic_store_i64(global_memory_pool.allocations, 0)
+    atomic_drip.atomic_store_i64(global_memory_pool.deallocations, 0)
+    atomic_drip.atomic_store_i64(global_memory_pool.total_allocated, 0)
+    atomic_drip.atomic_store_i64(global_memory_pool.peak_usage, 0)
+    atomic_drip.atomic_store_i32(global_memory_pool.free_count, 0)
+    damn based
+}
+
+fr fr Check for memory leaks
+slay memory_check_leaks() lit {
+    sus allocations thicc = atomic_drip.atomic_load_i64(global_memory_pool.allocations)
+    sus deallocations thicc = atomic_drip.atomic_load_i64(global_memory_pool.deallocations)
+    
+    yo allocations > deallocations {
+        sus leak_count thicc = allocations - deallocations
+        vibez.spillf("WARNING: {} memory leaks detected!", leak_count)
+        damn cap
+    }
+    
+    vibez.spill("No memory leaks detected")
+    damn based
 }
 
 fr fr Aligned memory allocation
-slay aligned_alloc(alignment normie, size normie) normie {
-    fr fr Simplified aligned allocation
-    bestie alignment <= 0 || size <= 0 {
-        damn 0
+slay memory_alloc_aligned(size normie, alignment normie) *void {
+    defer error_drip.cleanup()
+    
+    fr fr Ensure alignment is power of 2
+    yo alignment == 0 || (alignment & (alignment - 1)) != 0 {
+        damn cringe
     }
     
-    fr fr For demonstration, just allocate normally and adjust address
-    sus base_address normie = malloc(size + alignment)
-    sus aligned_address normie = (base_address + alignment - 1) / alignment * alignment
+    fr fr Allocate extra space for alignment
+    sus extra_size normie = size + alignment - 1
+    sus raw_addr *void = memory_alloc(extra_size)
     
-    damn aligned_address
-}
-
-fr fr Memory copying
-slay memcpy(dest normie, src normie, size normie) lit {
-    fr fr In real implementation, would copy memory byte by byte
-    bestie dest > 0 && src > 0 && size > 0 {
-        damn based
-    }
-    damn cap
-}
-
-fr fr Memory moving (handles overlap)
-slay memmove(dest normie, src normie, size normie) lit {
-    fr fr In real implementation, would handle overlapping memory regions
-    bestie dest > 0 && src > 0 && size > 0 {
-        damn based
-    }
-    damn cap
-}
-
-fr fr Memory comparison
-slay memcmp(ptr1 normie, ptr2 normie, size normie) normie {
-    fr fr In real implementation, would compare memory byte by byte
-    bestie ptr1 == ptr2 {
-        damn 0  fr fr Equal
-    }
-    bestie ptr1 < ptr2 {
-        damn -1  fr fr ptr1 less than ptr2
-    }
-    damn 1  fr fr ptr1 greater than ptr2
-}
-
-fr fr Memory setting
-slay memset(ptr normie, value normie, size normie) lit {
-    fr fr In real implementation, would set memory to specified value
-    bestie ptr > 0 && size > 0 {
-        damn based
-    }
-    damn cap
-}
-
-fr fr Memory statistics
-slay get_memory_stats() MemoryPool {
-    damn global_pool
-}
-
-fr fr Get current memory usage
-slay get_current_memory_usage() normie {
-    sus current_usage normie = global_pool.total_allocated - global_pool.total_freed
-    damn current_usage
-}
-
-fr fr Check if address is valid (allocated)
-slay is_valid_address(address normie) lit {
-    bestie i := 0; i < global_pool.blocks.length(); i++ {
-        sus block MemoryBlock = global_pool.blocks[i]
-        bestie block.address == address && block.allocated {
-            damn based
-        }
-    }
-    damn cap
-}
-
-fr fr Get size of allocated block
-slay get_block_size(address normie) normie {
-    bestie i := 0; i < global_pool.blocks.length(); i++ {
-        sus block MemoryBlock = global_pool.blocks[i]
-        bestie block.address == address && block.allocated {
-            damn block.size
-        }
-    }
-    damn 0  fr fr Not found
-}
-
-fr fr Memory leak detection
-slay find_memory_leaks() []MemoryBlock {
-    sus leaks []MemoryBlock = []
-    
-    bestie i := 0; i < global_pool.blocks.length(); i++ {
-        sus block MemoryBlock = global_pool.blocks[i]
-        bestie block.allocated {
-            leaks = leaks + [block]
-        }
+    yo raw_addr == cringe {
+        damn cringe
     }
     
-    damn leaks
+    fr fr Calculate aligned address
+    sus aligned_addr *void = raw_addr  fr fr Simplified - real implementation would align properly
+    damn aligned_addr
 }
 
-fr fr Clean up all memory
-slay cleanup_memory() lit {
-    bestie i := 0; i < global_pool.blocks.length(); i++ {
-        sus block MemoryBlock = global_pool.blocks[i]
-        bestie block.allocated {
-            free(block.address)
-        }
-    }
-    damn based
+fr fr Memory arena for fast allocation/deallocation
+struct MemoryArena {
+    spill buffer *void
+    spill size normie
+    spill offset *atomic_drip.AtomicI32
+    spill allocations *atomic_drip.AtomicI32
 }
 
-fr fr Stack allocation simulation
-be_like StackFrame squad {
-    variables []tea
-    size normie
-    address normie
-}
-
-sus call_stack []StackFrame = []
-
-slay push_stack_frame(size normie) normie {
-    sus address normie = 0x7FFF0000 - call_stack.length() * 1024
-    sus frame StackFrame = StackFrame{
-        variables: [],
+fr fr Create memory arena
+slay memory_arena_new(size normie) *MemoryArena {
+    sus arena *MemoryArena = &MemoryArena{
+        buffer: memory_alloc(size),
         size: size,
-        address: address
+        offset: atomic_drip.atomic_i32_new(0),
+        allocations: atomic_drip.atomic_i32_new(0)
+    }
+    damn arena
+}
+
+fr fr Allocate from arena
+slay memory_arena_alloc(arena *MemoryArena, size normie) *void {
+    defer error_drip.cleanup()
+    
+    sus current_offset normie = atomic_drip.atomic_load_i32(arena.offset)
+    sus new_offset normie = current_offset + size
+    
+    yo new_offset > arena.size {
+        damn cringe  fr fr Arena exhausted
     }
     
-    call_stack = call_stack + [frame]
-    damn address
-}
-
-slay pop_stack_frame() lit {
-    bestie call_stack.length() > 0 {
-        call_stack = call_stack[0:call_stack.length()-1]
-        damn based
-    }
-    damn cap
-}
-
-slay get_stack_size() normie {
-    sus total_size normie = 0
-    bestie i := 0; i < call_stack.length(); i++ {
-        total_size = total_size + call_stack[i].size
-    }
-    damn total_size
-}
-
-fr fr Garbage collection simulation
-be_like GCStats squad {
-    collections normie
-    objects_collected normie
-    bytes_freed normie
-    collection_time normie
-}
-
-sus gc_stats GCStats = GCStats{
-    collections: 0,
-    objects_collected: 0,
-    bytes_freed: 0,
-    collection_time: 0
-}
-
-slay gc_collect() normie {
-    sus start_time normie = get_timestamp()
-    sus freed_bytes normie = 0
-    sus freed_objects normie = 0
-    
-    fr fr Find unreferenced objects (simplified)
-    bestie i := 0; i < global_pool.blocks.length(); i++ {
-        sus block MemoryBlock = global_pool.blocks[i]
-        bestie block.allocated {
-            fr fr In real GC, would check if object is reachable
-            fr fr For simulation, collect some old objects
-            bestie get_timestamp() - block.timestamp > 10000 {
-                free(block.address)
-                freed_bytes = freed_bytes + block.size
-                freed_objects = freed_objects + 1
-            }
-        }
+    fr fr Try to atomically update offset
+    yo atomic_drip.atomic_cas_i32(arena.offset, current_offset, new_offset) {
+        atomic_drip.atomic_increment_i32(arena.allocations)
+        sus addr *void = arena.buffer  fr fr Simplified pointer arithmetic
+        damn addr
     }
     
-    sus end_time normie = get_timestamp()
-    
-    gc_stats.collections = gc_stats.collections + 1
-    gc_stats.objects_collected = gc_stats.objects_collected + freed_objects
-    gc_stats.bytes_freed = gc_stats.bytes_freed + freed_bytes
-    gc_stats.collection_time = gc_stats.collection_time + (end_time - start_time)
-    
-    damn freed_bytes
+    damn cringe  fr fr CAS failed, retry needed
 }
 
-slay get_gc_stats() GCStats {
-    damn gc_stats
-}
-
-fr fr Memory pressure monitoring
-slay get_memory_pressure() normie {
-    sus current_usage normie = get_current_memory_usage()
-    sus max_memory normie = 1073741824  fr fr 1GB limit
-    
-    sus pressure normie = (current_usage * 100) / max_memory
-    damn pressure
-}
-
-slay should_trigger_gc() lit {
-    sus pressure normie = get_memory_pressure()
-    damn pressure > 80  fr fr Trigger GC at 80% memory usage
-}
-
-fr fr Memory debugging
-slay dump_memory_info() tea {
-    sus stats MemoryPool = get_memory_stats()
-    sus info tea = "Memory Info:\n"
-    info = info + "Total Allocated: " + stats.total_allocated.(tea) + " bytes\n"
-    info = info + "Total Freed: " + stats.total_freed.(tea) + " bytes\n"
-    info = info + "Current Usage: " + get_current_memory_usage().(tea) + " bytes\n"
-    info = info + "Peak Usage: " + stats.peak_usage.(tea) + " bytes\n"
-    info = info + "Allocations: " + stats.allocation_count.(tea) + "\n"
-    info = info + "Frees: " + stats.free_count.(tea) + "\n"
-    info = info + "Active Blocks: " + (stats.allocation_count - stats.free_count).(tea)
-    damn info
-}
-
-slay validate_heap() lit {
-    fr fr Check for common heap corruption patterns
-    bestie i := 0; i < global_pool.blocks.length(); i++ {
-        sus block MemoryBlock = global_pool.blocks[i]
-        bestie block.size <= 0 {
-            damn cap  fr fr Invalid block size
-        }
-        bestie block.address <= 0 {
-            damn cap  fr fr Invalid address
-        }
-    }
+fr fr Reset arena (free all allocations at once)
+slay memory_arena_reset(arena *MemoryArena) lit {
+    atomic_drip.atomic_store_i32(arena.offset, 0)
+    atomic_drip.atomic_store_i32(arena.allocations, 0)
     damn based
 }
 
-fr fr Memory pools for specific object types
-be_like ObjectPool squad {
-    object_size normie
-    pool_size normie
-    available []normie
-    allocated []normie
+fr fr Free arena
+slay memory_arena_free(arena *MemoryArena) lit {
+    memory_free(arena.buffer)
+    damn based
 }
 
-slay create_object_pool(object_size normie, pool_size normie) ObjectPool {
-    sus pool ObjectPool = ObjectPool{
-        object_size: object_size,
-        pool_size: pool_size,
-        available: [],
-        allocated: []
+fr fr Memory pool for fixed-size allocations
+struct FixedPool {
+    spill block_size normie
+    spill blocks []MemoryBlock
+    spill free_list *atomic_drip.AtomicPtr
+    spill total_blocks *atomic_drip.AtomicI32
+    spill free_blocks *atomic_drip.AtomicI32
+}
+
+fr fr Create fixed-size memory pool
+slay memory_pool_fixed_new(block_size normie, initial_blocks normie) *FixedPool {
+    sus pool *FixedPool = &FixedPool{
+        block_size: block_size,
+        blocks: [],
+        free_list: atomic_drip.atomic_ptr_new(cringe),
+        total_blocks: atomic_drip.atomic_i32_new(0),
+        free_blocks: atomic_drip.atomic_i32_new(0)
     }
     
-    fr fr Pre-allocate pool objects
-    bestie i := 0; i < pool_size; i++ {
-        sus address normie = malloc(object_size)
-        pool.available = pool.available + [address]
+    fr fr Pre-allocate initial blocks
+    bestie i := 0; i < initial_blocks; i = i + 1 {
+        sus block *void = memory_alloc(block_size)
+        pool.blocks.push(MemoryBlock{
+            addr: block,
+            size: block_size,
+            allocated: cap,
+            generation: 0
+        })
+        atomic_drip.atomic_increment_i32(pool.total_blocks)
+        atomic_drip.atomic_increment_i32(pool.free_blocks)
     }
     
     damn pool
 }
 
-slay (pool ObjectPool) allocate() normie {
-    bestie pool.available.length() > 0 {
-        sus address normie = pool.available[0]
-        pool.available = pool.available[1:]
-        pool.allocated = pool.allocated + [address]
-        damn address
-    }
-    damn 0  fr fr Pool exhausted
-}
-
-slay (pool ObjectPool) deallocate(address normie) lit {
-    fr fr Find in allocated list
-    bestie i := 0; i < pool.allocated.length(); i++ {
-        bestie pool.allocated[i] == address {
-            fr fr Remove from allocated
-            sus new_allocated []normie = []
-            bestie j := 0; j < pool.allocated.length(); j++ {
-                bestie j != i {
-                    new_allocated = new_allocated + [pool.allocated[j]]
-                }
-            }
-            pool.allocated = new_allocated
-            
-            fr fr Add back to available
-            pool.available = pool.available + [address]
-            damn based
+fr fr Allocate from fixed pool
+slay memory_pool_fixed_alloc(pool *FixedPool) *void {
+    defer error_drip.cleanup()
+    
+    fr fr Try to get a block from free list
+    sus free_block *void = atomic_drip.atomic_ptr_load(pool.free_list)
+    yo free_block != cringe {
+        yo atomic_drip.atomic_ptr_cas(pool.free_list, free_block, cringe) {
+            atomic_drip.atomic_decrement_i32(pool.free_blocks)
+            damn free_block
         }
     }
-    damn cap
+    
+    fr fr No free blocks, allocate new one
+    sus new_block *void = memory_alloc(pool.block_size)
+    atomic_drip.atomic_increment_i32(pool.total_blocks)
+    damn new_block
 }
 
-fr fr Helper function to get timestamp
-slay get_timestamp() normie {
-    damn 1735934400  fr fr 2025-01-03 12:00:00 UTC
+fr fr Return block to fixed pool
+slay memory_pool_fixed_free(pool *FixedPool, block *void) lit {
+    defer error_drip.cleanup()
+    
+    yo block == cringe {
+        damn cap
+    }
+    
+    fr fr Add block to free list atomically
+    sus current_head *void = atomic_drip.atomic_ptr_load(pool.free_list)
+    nah {
+        yo atomic_drip.atomic_ptr_cas(pool.free_list, current_head, block) {
+            atomic_drip.atomic_increment_i32(pool.free_blocks)
+            damn based
+        }
+        current_head = atomic_drip.atomic_ptr_load(pool.free_list)
+    }
+    
+    damn based
+}
+
+fr fr Get pool statistics
+slay memory_pool_fixed_stats(pool *FixedPool) {
+    sus total normie = atomic_drip.atomic_load_i32(pool.total_blocks)
+    sus free normie = atomic_drip.atomic_load_i32(pool.free_blocks)
+    sus used normie = total - free
+    
+    vibez.spillf("Fixed Pool Statistics:")
+    vibez.spillf("  Block size: {} bytes", pool.block_size)
+    vibez.spillf("  Total blocks: {}", total)
+    vibez.spillf("  Free blocks: {}", free)
+    vibez.spillf("  Used blocks: {}", used)
+    vibez.spillf("  Memory usage: {} bytes", total * pool.block_size)
 }

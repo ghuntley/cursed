@@ -52,6 +52,7 @@ pub const TokenKind = enum {
     Flex,     // implementation
     Vibe,     // package
     Yeet,     // import
+    As,       // alias keyword
     VibeCheck,// switch
     Mood,     // case
     Basic,    // default
@@ -202,6 +203,7 @@ pub const Lexer = struct {
         try self.keywords.put("flex", .Flex);
         try self.keywords.put("vibe", .Vibe);
         try self.keywords.put("yeet", .Yeet);
+        try self.keywords.put("as", .As);
         try self.keywords.put("vibecheck", .VibeCheck);
         try self.keywords.put("mood", .Mood);
         try self.keywords.put("basic", .Basic);
@@ -384,7 +386,9 @@ pub const Lexer = struct {
         
         while (!self.isAtEnd() and self.peek() != '"') {
             if (self.peek() == '\n') {
-                self.line += 1;
+                if (self.line < std.math.maxInt(u32)) {
+                    self.line += 1;
+                }
                 self.column = 1;
             } else if (self.peek() == '\\') {
                 // Handle escape sequences
@@ -529,7 +533,7 @@ pub const Lexer = struct {
     }
     
     fn identifier(self: *Lexer, start_column: u32, start_offset: usize) !void {
-        while (std.ascii.isAlphaNumeric(self.peek()) or self.peek() == '_') {
+        while (std.ascii.isAlphanumeric(self.peek()) or self.peek() == '_') {
             _ = self.advance();
         }
         

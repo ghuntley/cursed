@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>network Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>network Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>init_network</h3>
+        <p></p>
+        <p><code>slay init_network() {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_create</h3>
+        <p></p>
+        <p><code>slay tcp_create() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_connect</h3>
+        <p></p>
+        <p><code>slay tcp_connect(handle normie, address tea, port normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_bind</h3>
+        <p></p>
+        <p><code>slay tcp_bind(handle normie, address tea, port normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_listen</h3>
+        <p></p>
+        <p><code>slay tcp_listen(handle normie, backlog normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_accept</h3>
+        <p></p>
+        <p><code>slay tcp_accept(handle normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_send</h3>
+        <p></p>
+        <p><code>slay tcp_send(handle normie, data tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_recv</h3>
+        <p></p>
+        <p><code>slay tcp_recv(handle normie, max_size normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_close</h3>
+        <p></p>
+        <p><code>slay tcp_close(handle normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>udp_create</h3>
+        <p></p>
+        <p><code>slay udp_create() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>udp_bind</h3>
+        <p></p>
+        <p><code>slay udp_bind(handle normie, address tea, port normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>udp_send_to</h3>
+        <p></p>
+        <p><code>slay udp_send_to(handle normie, data tea, address tea, port normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>udp_recv_from</h3>
+        <p></p>
+        <p><code>slay udp_recv_from(handle normie, max_size normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>udp_close</h3>
+        <p></p>
+        <p><code>slay udp_close(handle normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>resolve_hostname</h3>
+        <p></p>
+        <p><code>slay resolve_hostname(hostname tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>resolve_ip</h3>
+        <p></p>
+        <p><code>slay resolve_ip(ip tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>lookup_mx</h3>
+        <p></p>
+        <p><code>slay lookup_mx(domain tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>lookup_txt</h3>
+        <p></p>
+        <p><code>slay lookup_txt(domain tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>http_send</h3>
+        <p></p>
+        <p><code>slay http_send(method tea, url tea, headers tea, body tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>tls_init</h3>
+        <p></p>
+        <p><code>slay tls_init(handle normie, hostname tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>tls_send</h3>
+        <p></p>
+        <p><code>slay tls_send(handle normie, data tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>tls_recv</h3>
+        <p></p>
+        <p><code>slay tls_recv(handle normie, max_size normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_local_ip</h3>
+        <p></p>
+        <p><code>slay get_local_ip() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ping</h3>
+        <p></p>
+        <p><code>slay ping(hostname tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>network_scan</h3>
+        <p></p>
+        <p><code>slay network_scan(start_ip tea, end_ip tea, port normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_remote_addr</h3>
+        <p></p>
+        <p><code>slay get_remote_addr(handle normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>find_socket</h3>
+        <p></p>
+        <p><code>slay find_socket(handle normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_port_in_use</h3>
+        <p></p>
+        <p><code>slay is_port_in_use(port normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_host_from_url</h3>
+        <p></p>
+        <p><code>slay extract_host_from_url(url tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_port_from_url</h3>
+        <p></p>
+        <p><code>slay extract_port_from_url(url tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_port_from_host</h3>
+        <p></p>
+        <p><code>slay extract_port_from_host(host_part tea, default_port normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_path_from_url</h3>
+        <p></p>
+        <p><code>slay extract_path_from_url(url tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_starts_with</h3>
+        <p></p>
+        <p><code>slay string_starts_with(text tea, prefix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_index_of</h3>
+        <p></p>
+        <p><code>slay string_index_of(text tea, substring tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_substring</h3>
+        <p></p>
+        <p><code>slay string_substring(text tea, start normie, end normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_char_at</h3>
+        <p></p>
+        <p><code>slay string_char_at(text tea, index normie) sip {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_length</h3>
+        <p></p>
+        <p><code>slay string_length(text tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_to_int</h3>
+        <p></p>
+        <p><code>slay string_to_int(text tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>int_to_string</h3>
+        <p></p>
+        <p><code>slay int_to_string(value normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>char_to_int</h3>
+        <p></p>
+        <p><code>slay char_to_int(character sip) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>char_from_int</h3>
+        <p></p>
+        <p><code>slay char_from_int(value normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>len</h3>
+        <p></p>
+        <p><code>slay len(slice []SocketHandle) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>append</h3>
+        <p></p>
+        <p><code>slay append(slice []SocketHandle, element SocketHandle) []SocketHandle {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>buffer</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>buffer</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>host</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>port</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>path</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_handle</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>connect_result</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>request</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>response</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>ip</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>active_hosts</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>socket</h3>
+        <p></p>
+        <p>Type: <code>SocketHandle</code></p>
+    </div>
+    <div class="variable">
+        <h3>slash_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>colon_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>default_port</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>host_part</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>default_port</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>host_part</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>slash_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>colon_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>port_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>slash_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>text_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>sub_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_negative</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>start</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>digit</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_negative</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>digits</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>digit</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+</body>
+</html>

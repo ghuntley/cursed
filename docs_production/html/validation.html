@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>validation Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>validation Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>create_validation_result</h3>
+        <p></p>
+        <p><code>slay create_validation_result() ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>add_error</h3>
+        <p></p>
+        <p><code>slay add_error(result *ValidationResult, error tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>add_warning</h3>
+        <p></p>
+        <p><code>slay add_warning(result *ValidationResult, warning tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>add_info</h3>
+        <p></p>
+        <p><code>slay add_info(result *ValidationResult, info tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_char_at</h3>
+        <p></p>
+        <p><code>slay get_char_at(str tea, index normie) sip {</code></p>
+    </div>
+    <div class="function">
+        <h3>substring</h3>
+        <p></p>
+        <p><code>slay substring(str tea, start normie, end normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>starts_with</h3>
+        <p></p>
+        <p><code>slay starts_with(str tea, prefix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ends_with</h3>
+        <p></p>
+        <p><code>slay ends_with(str tea, suffix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>contains_string</h3>
+        <p></p>
+        <p><code>slay contains_string(str tea, substring tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_to_int</h3>
+        <p></p>
+        <p><code>slay string_to_int(str tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_not_empty</h3>
+        <p></p>
+        <p><code>slay validate_not_empty(value tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_min_length</h3>
+        <p></p>
+        <p><code>slay validate_min_length(value tea, min_length normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_max_length</h3>
+        <p></p>
+        <p><code>slay validate_max_length(value tea, max_length normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_length</h3>
+        <p></p>
+        <p><code>slay validate_length(value tea, expected_length normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_length_range</h3>
+        <p></p>
+        <p><code>slay validate_length_range(value tea, min_length normie, max_length normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_contains</h3>
+        <p></p>
+        <p><code>slay validate_contains(value tea, substring tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_starts_with</h3>
+        <p></p>
+        <p><code>slay validate_starts_with(value tea, prefix tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_ends_with</h3>
+        <p></p>
+        <p><code>slay validate_ends_with(value tea, suffix tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_positive</h3>
+        <p></p>
+        <p><code>slay validate_positive(value normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_negative</h3>
+        <p></p>
+        <p><code>slay validate_negative(value normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_range</h3>
+        <p></p>
+        <p><code>slay validate_range(value normie, min_value normie, max_value normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_min_value</h3>
+        <p></p>
+        <p><code>slay validate_min_value(value normie, min_value normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_max_value</h3>
+        <p></p>
+        <p><code>slay validate_max_value(value normie, max_value normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_float_range</h3>
+        <p></p>
+        <p><code>slay validate_float_range(value meal, min_value meal, max_value meal) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_positive_float</h3>
+        <p></p>
+        <p><code>slay validate_positive_float(value meal) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_is_true</h3>
+        <p></p>
+        <p><code>slay validate_is_true(value lit) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_is_false</h3>
+        <p></p>
+        <p><code>slay validate_is_false(value lit) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_array_not_empty</h3>
+        <p></p>
+        <p><code>slay validate_array_not_empty(arr []tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_array_length</h3>
+        <p></p>
+        <p><code>slay validate_array_length(arr []tea, expected_length normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_array_min_length</h3>
+        <p></p>
+        <p><code>slay validate_array_min_length(arr []tea, min_length normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_array_max_length</h3>
+        <p></p>
+        <p><code>slay validate_array_max_length(arr []tea, max_length normie) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_email</h3>
+        <p></p>
+        <p><code>slay validate_email(email tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_phone_number</h3>
+        <p></p>
+        <p><code>slay validate_phone_number(phone tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_url</h3>
+        <p></p>
+        <p><code>slay validate_url(url tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_ip_address</h3>
+        <p></p>
+        <p><code>slay validate_ip_address(ip tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_credit_card</h3>
+        <p></p>
+        <p><code>slay validate_credit_card(card_number tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_date_format</h3>
+        <p></p>
+        <p><code>slay validate_date_format(date tea, format tea) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_all</h3>
+        <p></p>
+        <p><code>slay validate_all(validators []ValidationResult) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_any</h3>
+        <p></p>
+        <p><code>slay validate_any(validators []ValidationResult) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_validation_chain</h3>
+        <p></p>
+        <p><code>slay create_validation_chain() ValidationChain {</code></p>
+    </div>
+    <div class="function">
+        <h3>chain_add_validator</h3>
+        <p></p>
+        <p><code>slay chain_add_validator(chain *ValidationChain, validator ValidationResult) {</code></p>
+    </div>
+    <div class="function">
+        <h3>chain_execute</h3>
+        <p></p>
+        <p><code>slay chain_execute(chain ValidationChain) ValidationResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>format_validation_errors</h3>
+        <p></p>
+        <p><code>slay format_validation_errors(result ValidationResult) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>has_errors</h3>
+        <p></p>
+        <p><code>slay has_errors(result ValidationResult) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>has_warnings</h3>
+        <p></p>
+        <p><code>slay has_warnings(result ValidationResult) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_error_count</h3>
+        <p></p>
+        <p><code>slay get_error_count(result ValidationResult) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_warning_count</h3>
+        <p></p>
+        <p><code>slay get_warning_count(result ValidationResult) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_email</h3>
+        <p></p>
+        <p><code>slay is_valid_email(email tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_phone</h3>
+        <p></p>
+        <p><code>slay is_valid_phone(phone tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_url</h3>
+        <p></p>
+        <p><code>slay is_valid_url(url tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_ip</h3>
+        <p></p>
+        <p><code>slay is_valid_ip(ip tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_in_range</h3>
+        <p></p>
+        <p><code>slay is_in_range(value normie, min_value normie, max_value normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_positive</h3>
+        <p></p>
+        <p><code>slay is_positive(value normie) lit {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>start_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>found</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>contains</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>starts_with_result</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>ends_with_result</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>at_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>at_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>local_part</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>domain_part</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_dot</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_consecutive_dots</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>clean_phone</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_international</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_http</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_https</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_ftp</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_ftps</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_file</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_valid_scheme</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>domain_start</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>domain_end</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>domain</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_valid_domain_char</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_colon</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>colon_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>double_colon_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>dot_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_octet</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>octet_value</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>clean_card</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>sum</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_even</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>digit</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>first_digit</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>second_digit</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>month_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>month</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>day_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>day</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>month_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>month</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>day_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>day</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>day_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>day</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>month_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>month</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>validator</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>any_valid</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>chain</h3>
+        <p></p>
+        <p>Type: <code>ValidationChain</code></p>
+    </div>
+    <div class="variable">
+        <h3>formatted</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ValidationResult</code></p>
+    </div>
+</body>
+</html>

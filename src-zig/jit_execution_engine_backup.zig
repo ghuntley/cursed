@@ -55,10 +55,10 @@ pub const JITFunction = struct {
     native_ptr: ?*const fn() callconv(.C) void,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator, name: []const u8, module_name: []const u8) JITFunction {
+    pub fn init(allocator: Allocator, name: []const u8, module_name: []const u8) !JITFunction {
         return JITFunction{
-            .name = allocator.dupe(u8, name) catch unreachable,
-            .module_name = allocator.dupe(u8, module_name) catch unreachable,
+            .name = try allocator.dupe(u8, name),
+            .module_name = try allocator.dupe(u8, module_name),
             .tier = .Interpreter,
             .call_count = 0,
             .total_execution_time = 0,

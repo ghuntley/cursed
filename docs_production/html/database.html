@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>database Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>database Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>create_database_config</h3>
+        <p>Connection factory function</p>
+        <p><code>slay create_database_config(</code></p>
+    </div>
+    <div class="function">
+        <h3>connect_postgres</h3>
+        <p>PostgreSQL connection management</p>
+        <p><code>slay connect_postgres(config DatabaseConfig) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>connect_mysql</h3>
+        <p>MySQL connection management</p>
+        <p><code>slay connect_mysql(config DatabaseConfig) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>connect_sqlite</h3>
+        <p>SQLite connection management</p>
+        <p><code>slay connect_sqlite(database_path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>connect_database</h3>
+        <p>Universal connection function</p>
+        <p><code>slay connect_database(config DatabaseConfig) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_connection_pool</h3>
+        <p>Connection pool management</p>
+        <p><code>slay create_connection_pool(config DatabaseConfig) ConnectionPool {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_connection_from_pool</h3>
+        <p></p>
+        <p><code>slay get_connection_from_pool(pool ConnectionPool) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>return_connection_to_pool</h3>
+        <p></p>
+        <p><code>slay return_connection_to_pool(pool ConnectionPool, connection_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>execute_query</h3>
+        <p>SQL Query execution</p>
+        <p><code>slay execute_query(connection_id tea, query tea, params []tea) QueryResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>prepare_statement</h3>
+        <p>Prepared statement management</p>
+        <p><code>slay prepare_statement(connection_id tea, sql_query tea) PreparedStatement {</code></p>
+    </div>
+    <div class="function">
+        <h3>execute_prepared_statement</h3>
+        <p></p>
+        <p><code>slay execute_prepared_statement(stmt PreparedStatement, params []tea) QueryResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>begin_transaction</h3>
+        <p>Transaction management</p>
+        <p><code>slay begin_transaction(connection_id tea) Transaction {</code></p>
+    </div>
+    <div class="function">
+        <h3>commit_transaction</h3>
+        <p></p>
+        <p><code>slay commit_transaction(tx Transaction) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rollback_transaction</h3>
+        <p></p>
+        <p><code>slay rollback_transaction(tx Transaction) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>new_query_builder</h3>
+        <p></p>
+        <p><code>slay new_query_builder(table tea) QueryBuilder {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_select</h3>
+        <p></p>
+        <p><code>slay query_select(builder QueryBuilder, fields []tea) QueryBuilder {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_where</h3>
+        <p></p>
+        <p><code>slay query_where(builder QueryBuilder, condition tea) QueryBuilder {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_join</h3>
+        <p></p>
+        <p><code>slay query_join(builder QueryBuilder, join_clause tea) QueryBuilder {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_order_by</h3>
+        <p></p>
+        <p><code>slay query_order_by(builder QueryBuilder, field tea) QueryBuilder {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_limit</h3>
+        <p></p>
+        <p><code>slay query_limit(builder QueryBuilder, count normie) QueryBuilder {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_offset</h3>
+        <p></p>
+        <p><code>slay query_offset(builder QueryBuilder, count normie) QueryBuilder {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_select_query</h3>
+        <p></p>
+        <p><code>slay build_select_query(builder QueryBuilder) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_migration</h3>
+        <p></p>
+        <p><code>slay create_migration(version tea, description tea, up_sql tea, down_sql tea) Migration {</code></p>
+    </div>
+    <div class="function">
+        <h3>apply_migration</h3>
+        <p></p>
+        <p><code>slay apply_migration(connection_id tea, migration Migration) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rollback_migration</h3>
+        <p></p>
+        <p><code>slay rollback_migration(connection_id tea, migration Migration) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>count_parameters</h3>
+        <p>Utility functions</p>
+        <p><code>slay count_parameters(sql_query tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>escape_string</h3>
+        <p></p>
+        <p><code>slay escape_string(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>close_connection</h3>
+        <p></p>
+        <p><code>slay close_connection(connection_id tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>new_record</h3>
+        <p></p>
+        <p><code>slay new_record(table tea) Record {</code></p>
+    </div>
+    <div class="function">
+        <h3>set_field</h3>
+        <p></p>
+        <p><code>slay set_field(record Record, field tea, value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_field</h3>
+        <p></p>
+        <p><code>slay get_field(record Record, field tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>save_record</h3>
+        <p></p>
+        <p><code>slay save_record(connection_id tea, record Record) lit {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>config</h3>
+        <p></p>
+        <p>Type: <code>DatabaseConfig</code></p>
+    </div>
+    <div class="variable">
+        <h3>conn_string</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>connection_id</h3>
+        <p>Simulate connection establishment</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>conn_string</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>connection_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>connection_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>pool</h3>
+        <p></p>
+        <p>Type: <code>ConnectionPool</code></p>
+    </div>
+    <div class="variable">
+        <h3>connection_id</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>QueryResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>stmt</h3>
+        <p></p>
+        <p>Type: <code>PreparedStatement</code></p>
+    </div>
+    <div class="variable">
+        <h3>error_result</h3>
+        <p></p>
+        <p>Type: <code>QueryResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>tx</h3>
+        <p></p>
+        <p>Type: <code>Transaction</code></p>
+    </div>
+    <div class="variable">
+        <h3>builder</h3>
+        <p></p>
+        <p>Type: <code>QueryBuilder</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>migration</h3>
+        <p></p>
+        <p>Type: <code>Migration</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>QueryResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>QueryResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>escaped</h3>
+        <p>Basic SQL injection prevention</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>record</h3>
+        <p></p>
+        <p>Type: <code>Record</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>QueryResult</code></p>
+    </div>
+</body>
+</html>

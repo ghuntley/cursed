@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pem_drip Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>pem_drip Module</h1>
+    <p>PEM Encoding/Decoding Module for CURSED RFC 7468 compliant PEM implementation Base64 encoding table</p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>pem_block_create</h3>
+        <p>PEM block structure</p>
+        <p><code>slay pem_block_create(label tea, headers tea, body tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>base64_encode</h3>
+        <p>Base64 encoding helper</p>
+        <p><code>slay base64_encode(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>base64_decode</h3>
+        <p>Base64 decoding helper</p>
+        <p><code>slay base64_decode(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_base64_value</h3>
+        <p>Get base64 character value</p>
+        <p><code>slay get_base64_value(ch sip) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_decode</h3>
+        <p>PEM decode function</p>
+        <p><code>slay pem_decode(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_encode</h3>
+        <p>PEM encode function</p>
+        <p><code>slay pem_encode(data tea, label tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_parse</h3>
+        <p>PEM parse function</p>
+        <p><code>slay pem_parse(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_encode_block</h3>
+        <p>PEM encode block function</p>
+        <p><code>slay pem_encode_block(block tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_decode_block</h3>
+        <p>PEM decode block function</p>
+        <p><code>slay pem_decode_block(block tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_extract_cert</h3>
+        <p>Extract certificate from PEM data</p>
+        <p><code>slay pem_extract_cert(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_extract_key</h3>
+        <p>Extract private key from PEM data</p>
+        <p><code>slay pem_extract_key(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_extract_pubkey</h3>
+        <p>Extract public key from PEM data</p>
+        <p><code>slay pem_extract_pubkey(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_extract_csr</h3>
+        <p>Extract certificate request from PEM data</p>
+        <p><code>slay pem_extract_csr(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_extract_crl</h3>
+        <p>Extract certificate revocation list from PEM data</p>
+        <p><code>slay pem_extract_crl(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_validate</h3>
+        <p>Validate PEM format</p>
+        <p><code>slay pem_validate(data tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_get_label</h3>
+        <p>Get block label</p>
+        <p><code>slay pem_get_label(block tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_get_headers</h3>
+        <p>Get block headers</p>
+        <p><code>slay pem_get_headers(block tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pem_get_body</h3>
+        <p>Get block body</p>
+        <p><code>slay pem_get_body(block tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>starts_with</h3>
+        <p>Helper functions</p>
+        <p><code>slay starts_with(str tea, prefix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>contains</h3>
+        <p></p>
+        <p><code>slay contains(str tea, substr tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>trim</h3>
+        <p></p>
+        <p><code>slay trim(str tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>split</h3>
+        <p></p>
+        <p><code>slay split(str tea, delimiter tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>len</h3>
+        <p></p>
+        <p><code>slay len(str tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>char</h3>
+        <p></p>
+        <p><code>slay char(ch sip) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ord</h3>
+        <p></p>
+        <p><code>slay ord(str tea) normie {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>base64_chars</h3>
+        <p>Base64 encoding table</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>pem_begin_marker</h3>
+        <p>PEM constants</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>pem_end_marker</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>pem_marker_suffix</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>pem_line_length</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>padding</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>padded_data</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>b1</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>b2</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>b3</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>combined</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>clean_data</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_valid</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>base_ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>base_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch_code</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>base_code</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>c1</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>c2</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>c3</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>c4</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>combined</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>base_ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>base_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch_code</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>base_code</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>blocks</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>encoded_data</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>line_end</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>blocks</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>lines</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_block</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_label</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_headers</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>in_block</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>start_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>end_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>label</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>headers</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>line_end</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>body</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>blocks</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block_list</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>label</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>blocks</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block_list</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>label</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>blocks</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block_list</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>label</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>blocks</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block_list</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>label</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>blocks</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block_list</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>block</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>label</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>lines</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_begin</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_end</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>parts</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>parts</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>parts</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>start</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>end</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+</body>
+</html>

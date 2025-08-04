@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>json Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>json Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>parse_json</h3>
+        <p></p>
+        <p><code>slay parse_json(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>from_string</h3>
+        <p></p>
+        <p><code>slay from_string(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_value</h3>
+        <p></p>
+        <p><code>slay parse_value(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_object</h3>
+        <p></p>
+        <p><code>slay parse_object(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_array</h3>
+        <p></p>
+        <p><code>slay parse_array(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_simple_object</h3>
+        <p></p>
+        <p><code>slay parse_simple_object(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>to_json</h3>
+        <p></p>
+        <p><code>slay to_json(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>stringify</h3>
+        <p></p>
+        <p><code>slay stringify(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>stringify_value</h3>
+        <p></p>
+        <p><code>slay stringify_value(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>object_to_map</h3>
+        <p></p>
+        <p><code>slay object_to_map(json_object tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>array_to_slice</h3>
+        <p></p>
+        <p><code>slay array_to_slice(json_array tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_json</h3>
+        <p></p>
+        <p><code>slay is_valid_json(json_string tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_schema</h3>
+        <p></p>
+        <p><code>slay validate_schema(json_string tea, schema_type tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_json</h3>
+        <p></p>
+        <p><code>slay validate_json(json_string tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>stringify_simple</h3>
+        <p></p>
+        <p><code>slay stringify_simple(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>minify_json</h3>
+        <p></p>
+        <p><code>slay minify_json(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>pretty_print_json</h3>
+        <p></p>
+        <p><code>slay pretty_print_json(json_string tea, indent normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_indent_string</h3>
+        <p></p>
+        <p><code>slay get_indent_string(spaces normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>escape_json_string</h3>
+        <p></p>
+        <p><code>slay escape_json_string(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unescape_json_string</h3>
+        <p></p>
+        <p><code>slay unescape_json_string(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_numeric</h3>
+        <p></p>
+        <p><code>slay is_numeric(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_digit</h3>
+        <p></p>
+        <p><code>slay is_digit(char_str tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_trim</h3>
+        <p></p>
+        <p><code>slay string_trim(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_starts_with</h3>
+        <p></p>
+        <p><code>slay string_starts_with(input tea, prefix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_ends_with</h3>
+        <p></p>
+        <p><code>slay string_ends_with(input tea, suffix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>split_object_pairs</h3>
+        <p></p>
+        <p><code>slay split_object_pairs(content tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>split_array_elements</h3>
+        <p></p>
+        <p><code>slay split_array_elements(content tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_contains</h3>
+        <p></p>
+        <p><code>slay string_contains(haystack tea, needle tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse</h3>
+        <p></p>
+        <p><code>slay parse(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate</h3>
+        <p></p>
+        <p><code>slay validate(json_string tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>pretty_print</h3>
+        <p></p>
+        <p><code>slay pretty_print(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>minify</h3>
+        <p></p>
+        <p><code>slay minify(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>escape_string</h3>
+        <p></p>
+        <p><code>slay escape_string(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unescape_string</h3>
+        <p></p>
+        <p><code>slay unescape_string(input tea) tea {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p>Main RFC 7159 compliant JSON parser</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p>Parse a single JSON value (string, number, boolean, null, object, array)</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p>Parse JSON object to key-value representation</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>content</h3>
+        <p>Extract content between braces</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Simple key-value parsing for basic objects</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>pairs</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p>Parse JSON array to element representation</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>content</h3>
+        <p>Extract content between brackets</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Simple element parsing</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>elements</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p>Simple object parser for basic key-value pairs</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>content</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p>Convert JSON object to map-like representation</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p>Convert JSON array to slice-like representation</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p>RFC 7159 compliant JSON validation</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p>Basic schema validation</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Remove unnecessary whitespace</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>in_string</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Add formatting with indentation</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_indent</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>in_string</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Generate indentation string</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Escape special characters for JSON</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Unescape JSON string</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>next_char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>next_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_dot</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>start_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>start</h3>
+        <p>Simple trim function</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>end</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>prefix_part</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>start_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>suffix_part</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>substring</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+</body>
+</html>

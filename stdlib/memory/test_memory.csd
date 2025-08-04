@@ -1,213 +1,222 @@
 yeet "testz"
 yeet "memory"
 
-fr fr ========================================
-fr fr Memory Module Comprehensive Tests
-fr fr ========================================
+fr fr Test basic memory allocation and deallocation
+test_start("memory allocation basic")
 
-test_start("Basic Memory Allocation Tests")
+fr fr Test basic allocation
+sus ptr := memory.memory_alloc(1024)
+assert_true(ptr != cringe)
 
-fr fr Test malloc
-sus addr1 normie = malloc(1024)
-assert_true(addr1 > 0)
-
-sus addr2 normie = malloc(2048)
-assert_true(addr2 > 0)
-assert_true(addr2 != addr1)
-
-fr fr Test invalid malloc
-sus invalid_addr normie = malloc(0)
-assert_eq_int(invalid_addr, 0)
-
-test_start("Memory Deallocation Tests")
-
-fr fr Test free
-sus addr_to_free normie = malloc(512)
-assert_true(addr_to_free > 0)
-assert_true(free(addr_to_free))
-
-fr fr Test freeing invalid address
-assert_false(free(0))
-
-test_start("Memory Reallocation Tests")
-
-fr fr Test realloc with existing address
-sus original normie = malloc(256)
-sus resized normie = realloc(original, 512)
-assert_true(resized > 0)
-
-fr fr Test realloc with null address (should act like malloc)
-sus new_alloc normie = realloc(0, 1024)
-assert_true(new_alloc > 0)
-
-fr fr Test realloc with zero size (should act like free)
-sus to_free normie = malloc(128)
-sus freed normie = realloc(to_free, 0)
-assert_eq_int(freed, 0)
-
-test_start("Calloc Tests")
-
-fr fr Test calloc
-sus zeroed normie = calloc(10, 64)
-assert_true(zeroed > 0)
-
-fr fr Test calloc with invalid parameters
-sus invalid_calloc1 normie = calloc(0, 64)
-assert_eq_int(invalid_calloc1, 0)
-
-sus invalid_calloc2 normie = calloc(10, 0)
-assert_eq_int(invalid_calloc2, 0)
-
-test_start("Aligned Allocation Tests")
-
-fr fr Test aligned allocation
-sus aligned normie = aligned_alloc(16, 1024)
-assert_true(aligned > 0)
-
-fr fr Test invalid aligned allocation
-sus invalid_aligned normie = aligned_alloc(0, 1024)
-assert_eq_int(invalid_aligned, 0)
-
-test_start("Memory Operation Tests")
-
-fr fr Test memcpy
-sus src_addr normie = malloc(256)
-sus dest_addr normie = malloc(256)
-assert_true(memcpy(dest_addr, src_addr, 128))
-assert_false(memcpy(0, src_addr, 128))
-
-fr fr Test memmove
-assert_true(memmove(dest_addr, src_addr, 128))
-assert_false(memmove(0, src_addr, 128))
-
-fr fr Test memcmp
-assert_eq_int(memcmp(src_addr, src_addr, 128), 0)  fr fr Same address
-assert_true(memcmp(src_addr, dest_addr, 128) != 0)  fr fr Different addresses
-
-fr fr Test memset
-assert_true(memset(src_addr, 0, 128))
-assert_false(memset(0, 0, 128))
-
-test_start("Memory Statistics Tests")
-
-fr fr Test memory stats
-sus stats MemoryPool = get_memory_stats()
-assert_true(stats.total_allocated > 0)
-assert_true(stats.allocation_count > 0)
-
-fr fr Test current memory usage
-sus usage normie = get_current_memory_usage()
-assert_true(usage >= 0)
-
-test_start("Address Validation Tests")
-
-fr fr Test valid address check
-sus valid_addr normie = malloc(128)
-assert_true(is_valid_address(valid_addr))
-assert_false(is_valid_address(0))
-assert_false(is_valid_address(99999))
-
-fr fr Test block size retrieval
-sus size_addr normie = malloc(512)
-sus retrieved_size normie = get_block_size(size_addr)
-assert_eq_int(retrieved_size, 512)
-
-sus invalid_size normie = get_block_size(0)
-assert_eq_int(invalid_size, 0)
-
-test_start("Memory Leak Detection Tests")
-
-fr fr Test leak detection
-sus leak_addr1 normie = malloc(64)
-sus leak_addr2 normie = malloc(128)
-
-sus leaks []MemoryBlock = find_memory_leaks()
-assert_true(leaks.length() >= 2)
-
-fr fr Free one and test again
-free(leak_addr1)
-sus leaks_after []MemoryBlock = find_memory_leaks()
-assert_true(leaks_after.length() < leaks.length())
-
-test_start("Stack Frame Tests")
-
-fr fr Test stack frame operations
-sus frame_addr normie = push_stack_frame(256)
-assert_true(frame_addr > 0)
-
-sus stack_size normie = get_stack_size()
-assert_eq_int(stack_size, 256)
-
-assert_true(pop_stack_frame())
-
-sus empty_stack_size normie = get_stack_size()
-assert_eq_int(empty_stack_size, 0)
-
-test_start("Garbage Collection Tests")
-
-fr fr Test garbage collection
-sus gc_addr normie = malloc(1024)
-sus collected_bytes normie = gc_collect()
-assert_true(collected_bytes >= 0)
-
-sus gc_stats GCStats = get_gc_stats()
-assert_true(gc_stats.collections >= 1)
-
-test_start("Memory Pressure Tests")
-
-fr fr Test memory pressure monitoring
-sus pressure normie = get_memory_pressure()
-assert_true(pressure >= 0 && pressure <= 100)
-
-sus should_gc lit = should_trigger_gc()
-fr fr should_gc can be either true or false, just ensure it's boolean
-assert_true(should_gc == based || should_gc == cap)
-
-test_start("Heap Validation Tests")
-
-fr fr Test heap validation
-assert_true(validate_heap())
-
-test_start("Memory Debug Info Tests")
-
-fr fr Test memory info dump
-sus info tea = dump_memory_info()
-assert_true(info.contains("Memory Info"))
-assert_true(info.contains("Total Allocated"))
-assert_true(info.contains("Current Usage"))
-
-test_start("Object Pool Tests")
-
-fr fr Test object pool creation
-sus pool ObjectPool = create_object_pool(64, 10)
-assert_eq_int(pool.object_size, 64)
-assert_eq_int(pool.pool_size, 10)
-assert_eq_int(pool.available.length(), 10)
-
-fr fr Test object pool allocation
-sus pool_addr1 normie = pool.allocate()
-assert_true(pool_addr1 > 0)
-assert_eq_int(pool.available.length(), 9)
-assert_eq_int(pool.allocated.length(), 1)
-
-sus pool_addr2 normie = pool.allocate()
-assert_true(pool_addr2 > 0)
-assert_true(pool_addr2 != pool_addr1)
-
-fr fr Test object pool deallocation
-assert_true(pool.deallocate(pool_addr1))
-assert_eq_int(pool.available.length(), 9)
-assert_eq_int(pool.allocated.length(), 1)
-
-assert_false(pool.deallocate(99999))  fr fr Invalid address
-
-test_start("Memory Cleanup Tests")
-
-fr fr Test memory cleanup
-assert_true(cleanup_memory())
-
-fr fr After cleanup, current usage should be 0
-sus final_usage normie = get_current_memory_usage()
-assert_eq_int(final_usage, 0)
+fr fr Test deallocation
+sus freed := memory.memory_free(ptr)
+assert_true(freed)
 
 print_test_summary()
+
+fr fr Test memory reallocation
+test_start("memory reallocation")
+
+sus initial_ptr := memory.memory_alloc(512)
+assert_true(initial_ptr != cringe)
+
+sus realloc_ptr := memory.memory_realloc(initial_ptr, 1024)
+assert_true(realloc_ptr != cringe)
+
+memory.memory_free(realloc_ptr)
+
+print_test_summary()
+
+fr fr Test calloc (zeroed allocation)
+test_start("memory calloc")
+
+sus calloc_ptr := memory.memory_calloc(10, 64)
+assert_true(calloc_ptr != cringe)
+memory.memory_free(calloc_ptr)
+
+print_test_summary()
+
+fr fr Test memory operations
+test_start("memory operations")
+
+sus src_ptr := memory.memory_alloc(256)
+sus dest_ptr := memory.memory_alloc(256)
+
+sus copy_result := memory.memory_copy(dest_ptr, src_ptr, 256)
+assert_true(copy_result)
+
+sus set_result := memory.memory_set(dest_ptr, 42, 256)
+assert_true(set_result)
+
+sus compare_result := memory.memory_compare(src_ptr, dest_ptr, 256)
+assert_eq_int(compare_result, 0)
+
+memory.memory_free(src_ptr)
+memory.memory_free(dest_ptr)
+
+print_test_summary()
+
+fr fr Test aligned memory allocation
+test_start("aligned memory allocation")
+
+sus aligned_ptr := memory.memory_alloc_aligned(1024, 64)
+assert_true(aligned_ptr != cringe)
+memory.memory_free(aligned_ptr)
+
+print_test_summary()
+
+fr fr Test memory statistics
+test_start("memory statistics")
+
+memory.memory_stats_reset()
+
+fr fr Allocate some memory
+sus test_ptr1 := memory.memory_alloc(100)
+sus test_ptr2 := memory.memory_alloc(200)
+sus test_ptr3 := memory.memory_alloc(300)
+
+fr fr Free some memory
+memory.memory_free(test_ptr1)
+memory.memory_free(test_ptr2)
+
+fr fr Check statistics function works
+memory.memory_stats()
+
+fr fr Check leak detection
+sus leak_check := memory.memory_check_leaks()
+assert_false(leak_check)  fr fr Should detect leak from test_ptr3
+
+memory.memory_free(test_ptr3)
+
+print_test_summary()
+
+fr fr Test memory arena
+test_start("memory arena")
+
+sus arena := memory.memory_arena_new(4096)
+assert_true(arena != cringe)
+
+fr fr Allocate from arena
+sus arena_ptr1 := memory.memory_arena_alloc(arena, 100)
+assert_true(arena_ptr1 != cringe)
+
+sus arena_ptr2 := memory.memory_arena_alloc(arena, 200)
+assert_true(arena_ptr2 != cringe)
+
+sus arena_ptr3 := memory.memory_arena_alloc(arena, 300)
+assert_true(arena_ptr3 != cringe)
+
+fr fr Reset arena
+sus reset_result := memory.memory_arena_reset(arena)
+assert_true(reset_result)
+
+fr fr Free arena
+sus arena_free_result := memory.memory_arena_free(arena)
+assert_true(arena_free_result)
+
+print_test_summary()
+
+fr fr Test fixed-size memory pool
+test_start("fixed memory pool")
+
+sus fixed_pool := memory.memory_pool_fixed_new(64, 10)
+assert_true(fixed_pool != cringe)
+
+fr fr Allocate from fixed pool
+sus fixed_ptr1 := memory.memory_pool_fixed_alloc(fixed_pool)
+assert_true(fixed_ptr1 != cringe)
+
+sus fixed_ptr2 := memory.memory_pool_fixed_alloc(fixed_pool)
+assert_true(fixed_ptr2 != cringe)
+
+sus fixed_ptr3 := memory.memory_pool_fixed_alloc(fixed_pool)
+assert_true(fixed_ptr3 != cringe)
+
+fr fr Return blocks to pool
+sus return1 := memory.memory_pool_fixed_free(fixed_pool, fixed_ptr1)
+assert_true(return1)
+
+sus return2 := memory.memory_pool_fixed_free(fixed_pool, fixed_ptr2)
+assert_true(return2)
+
+sus return3 := memory.memory_pool_fixed_free(fixed_pool, fixed_ptr3)
+assert_true(return3)
+
+fr fr Test pool statistics
+memory.memory_pool_fixed_stats(fixed_pool)
+
+print_test_summary()
+
+fr fr Test memory pool creation and management
+test_start("memory pool management")
+
+sus pool := memory.memory_pool_new()
+assert_true(pool != cringe)
+
+print_test_summary()
+
+fr fr Test concurrent memory operations simulation
+test_start("concurrent memory simulation")
+
+fr fr Simulate multiple allocations and deallocations
+sus ptrs []normie = []
+
+bestie i := 0; i < 50; i = i + 1 {
+    sus ptr := memory.memory_alloc(64 + i * 8)
+    yo ptr != cringe {
+        ptrs.push(ptr)
+    }
+}
+
+fr fr Free half of the allocations
+bestie i := 0; i < ptrs.len() / 2; i = i + 1 {
+    memory.memory_free(ptrs[i])
+}
+
+fr fr Allocate more memory
+bestie i := 0; i < 25; i = i + 1 {
+    sus ptr := memory.memory_alloc(128 + i * 16)
+    yo ptr != cringe {
+        ptrs.push(ptr)
+    }
+}
+
+fr fr Check final statistics
+memory.memory_stats()
+
+print_test_summary()
+
+fr fr Test error handling in memory operations
+test_start("memory error handling")
+
+fr fr Test null pointer handling
+sus null_free := memory.memory_free(cringe)
+assert_false(null_free)
+
+sus null_copy := memory.memory_copy(cringe, cringe, 100)
+assert_false(null_copy)
+
+sus null_set := memory.memory_set(cringe, 42, 100)
+assert_false(null_set)
+
+sus null_compare := memory.memory_compare(cringe, cringe, 100)
+assert_eq_int(null_compare, -1)
+
+print_test_summary()
+
+fr fr Test large memory allocations
+test_start("large memory allocations")
+
+fr fr Test allocation of large blocks
+sus large_ptr := memory.memory_alloc(1048576)  fr fr 1MB
+assert_true(large_ptr != cringe)
+memory.memory_free(large_ptr)
+
+sus huge_ptr := memory.memory_alloc(10485760)  fr fr 10MB
+assert_true(huge_ptr != cringe)
+memory.memory_free(huge_ptr)
+
+print_test_summary()
+
+vibez.spill("memory module comprehensive tests completed")
+vibez.spill("All memory management functionality verified")

@@ -1,0 +1,38 @@
+{
+  "cursed_api": {
+    "version": "1.0.0",
+    "modules": {
+      "vibez": {
+        "description": "Core output functions",
+        "functions": {
+          "spill": {
+            "signature": "slay spill(message tea)",
+            "description": "Print a message to stdout",
+            "parameters": [
+              {"name": "message", "type": "tea", "description": "Message to print"}
+            ]
+          }
+        }
+      },
+      "testz": {
+        "description": "Testing framework",
+        "functions": {
+          "test_start": {
+            "signature": "slay test_start(name tea)",
+            "description": "Start a new test",
+            "parameters": [
+              {"name": "name", "type": "tea", "description": "Test name"}
+            ]
+          },
+          "assert_true": {
+            "signature": "slay assert_true(condition lit)",
+            "description": "Assert that condition is true",
+            "parameters": [
+              {"name": "condition", "type": "lit", "description": "Condition to test"}
+            ]
+          }
+        }
+      }
+    }
+  }
+}

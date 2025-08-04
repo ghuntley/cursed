@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>slay_io Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>slay_io Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>NewSlayReader</h3>
+        <p></p>
+        <p><code>slay NewSlayReader(reader tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSlayReaderSize</h3>
+        <p></p>
+        <p><code>slay NewSlayReaderSize(reader tea, size normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ReadData</h3>
+        <p></p>
+        <p><code>slay ReadData(reader tea, size normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ReadByte</h3>
+        <p></p>
+        <p><code>slay ReadByte(reader tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ReadLine</h3>
+        <p></p>
+        <p><code>slay ReadLine(reader tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ReadString</h3>
+        <p></p>
+        <p><code>slay ReadString(reader tea, delimiter tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>PeekData</h3>
+        <p></p>
+        <p><code>slay PeekData(reader tea, size normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>BufferedBytes</h3>
+        <p></p>
+        <p><code>slay BufferedBytes(reader tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ReaderSize</h3>
+        <p></p>
+        <p><code>slay ReaderSize(reader tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSlayWriter</h3>
+        <p></p>
+        <p><code>slay NewSlayWriter(writer tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSlayWriterSize</h3>
+        <p></p>
+        <p><code>slay NewSlayWriterSize(writer tea, size normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>WriteData</h3>
+        <p></p>
+        <p><code>slay WriteData(writer tea, data tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>WriteString</h3>
+        <p></p>
+        <p><code>slay WriteString(writer tea, str tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>WriteByte</h3>
+        <p></p>
+        <p><code>slay WriteByte(writer tea, byte tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>FlushWriter</h3>
+        <p></p>
+        <p><code>slay FlushWriter(writer tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>AvailableSpace</h3>
+        <p></p>
+        <p><code>slay AvailableSpace(writer tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>WriterBuffered</h3>
+        <p></p>
+        <p><code>slay WriterBuffered(writer tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>WriterSize</h3>
+        <p></p>
+        <p><code>slay WriterSize(writer tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSlayScanner</h3>
+        <p></p>
+        <p><code>slay NewSlayScanner(reader tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ScanNext</h3>
+        <p></p>
+        <p><code>slay ScanNext(scanner tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ScanBytes</h3>
+        <p></p>
+        <p><code>slay ScanBytes(scanner tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ScanText</h3>
+        <p></p>
+        <p><code>slay ScanText(scanner tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ScanError</h3>
+        <p></p>
+        <p><code>slay ScanError(scanner tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>SetScanBuffer</h3>
+        <p></p>
+        <p><code>slay SetScanBuffer(scanner tea, buffer tea, maxSize normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ScanLines</h3>
+        <p></p>
+        <p><code>slay ScanLines(data tea, atEOF lit) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ScanWords</h3>
+        <p></p>
+        <p><code>slay ScanWords(data tea, atEOF lit) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ScanRunes</h3>
+        <p></p>
+        <p><code>slay ScanRunes(data tea, atEOF lit) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ScanBytesData</h3>
+        <p></p>
+        <p><code>slay ScanBytesData(data tea, atEOF lit) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSlayReadWriter</h3>
+        <p></p>
+        <p><code>slay NewSlayReadWriter(reader tea, writer tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ReadWriteData</h3>
+        <p></p>
+        <p><code>slay ReadWriteData(readWriter tea, data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSlayPhraseReader</h3>
+        <p></p>
+        <p><code>slay NewSlayPhraseReader(reader tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ReadPhrase</h3>
+        <p></p>
+        <p><code>slay ReadPhrase(phraseReader tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ExpandPhrase</h3>
+        <p></p>
+        <p><code>slay ExpandPhrase(phrase tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>CopyData</h3>
+        <p></p>
+        <p><code>slay CopyData(writer tea, reader tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ResetReader</h3>
+        <p></p>
+        <p><code>slay ResetReader(reader tea, newReader tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ResetWriter</h3>
+        <p></p>
+        <p><code>slay ResetWriter(writer tea, newWriter tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>DiscardData</h3>
+        <p></p>
+        <p><code>slay DiscardData(reader tea, count normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetDefaultBufferSize</h3>
+        <p></p>
+        <p><code>slay GetDefaultBufferSize() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>SetDefaultBufferSize</h3>
+        <p></p>
+        <p><code>slay SetDefaultBufferSize(size normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>OptimalBufferSize</h3>
+        <p></p>
+        <p><code>slay OptimalBufferSize(operation tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetReaderStats</h3>
+        <p></p>
+        <p><code>slay GetReaderStats(reader tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetWriterStats</h3>
+        <p></p>
+        <p><code>slay GetWriterStats(writer tea) tea {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>bufferedReader</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>bufferedReader</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>data</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>byteData</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>lineData</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>stringData</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>peekData</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>bufferedWriter</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>bufferedWriter</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>scanner</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>tokenBytes</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>tokenText</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>readWriter</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>phraseReader</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>phrase</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>expanded</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>stats</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>stats</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+</body>
+</html>

@@ -519,7 +519,8 @@ pub const Parser = struct {
                 
                 return ast.Type{ .Generic = ast.GenericType{
                     .name = type_name,
-                    .constraints = type_args,
+                    .type_arguments = type_args,
+                    .constraints = ArrayList(ast.TypeConstraint).init(self.allocator),
                 }};
             }
             
@@ -2403,6 +2404,240 @@ pub const Parser = struct {
         
         expressions.deinit();
         return pointers;
+    }
+
+    // Advanced parser features
+    fn parseGenericType(self: *Parser, base_name: []const u8) ParserError!ast.Type {
+        // Parse generic type like Vec<T>, Map<K,V>
+        if (!self.match(.Less) and !self.match(.LeftAngle)) {
+            return ast.Type{ .Custom = base_name };
+        }
+        
+        var type_arguments = ArrayList(ast.Type).init(self.allocator);
+        
+        while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
+            const type_arg = try self.parseType();
+            try type_arguments.append(type_arg);
+            
+            if (!self.match(.Comma)) break;
+        }
+        
+        if (!self.match(.Greater) and !self.match(.RightAngle)) {
+            return ParserError.MissingToken;
+        }
+        
+        return ast.Type{ .Generic = ast.GenericType{
+            .name = base_name,
+            .type_arguments = type_arguments,
+            .constraints = ArrayList(ast.TypeConstraint).init(self.allocator),
+        }};
+    }
+    
+    fn parseTypeConstraint(self: *Parser) ParserError!ast.TypeConstraint {
+        // Parse constraints like T: Drawable, T = String, T <: Number
+        if (self.match(.Colon)) {
+            // Interface constraint: T: InterfaceName
+            if (!self.check(.Identifier)) {
+                return ParserError.UnexpectedToken;
+            }
+            const interface_name = self.advance().lexeme;
+            return ast.TypeConstraint{ .Interface = interface_name };
+        }
+        
+        if (self.match(.Equal)) {
+            // Equality constraint: T = ConcreteType
+            const concrete_type = try self.parseType();
+            return ast.TypeConstraint{ .Equality = concrete_type };
+        }
+        
+        if (self.check(.Less) and self.peekNext().kind == .Colon) {
+            // Subtype constraint: T <: SuperType
+            _ = self.advance(); // consume '<'
+            _ = self.advance(); // consume ':'
+            const super_type = try self.parseType();
+            return ast.TypeConstraint{ .Subtype = super_type };
+        }
+        
+        if (self.check(.Greater) and self.peekNext().kind == .Colon) {
+            // Supertype constraint: T >: SubType
+            _ = self.advance(); // consume '>'
+            _ = self.advance(); // consume ':'
+            const sub_type = try self.parseType();
+            return ast.TypeConstraint{ .Supertype = sub_type };
+        }
+        
+        if (self.matchIdentifier("where")) {
+            // Where clause constraint: where T.method() > 0
+            // For now, just consume the rest as a string
+            var where_clause = ArrayList(u8).init(self.allocator);
+            while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
+                const token = self.advance();
+                try where_clause.appendSlice(token.lexeme);
+                try where_clause.append(' ');
+            }
+            return ast.TypeConstraint{ .WhereClause = where_clause.items };
+        }
+        
+        return ParserError.InvalidSyntax;
+    }
+    
+    fn parseComplexType(self: *Parser) ParserError!ast.Type {
+        // Parse union types: Type1 | Type2 | Type3
+        var base_type = try self.parseBasicType();
+        
+        if (self.match(.Pipe)) {
+            var union_types = ArrayList(ast.Type).init(self.allocator);
+            try union_types.append(base_type);
+            
+            while (true) {
+                const union_member = try self.parseBasicType();
+                try union_types.append(union_member);
+                
+                if (!self.match(.Pipe)) break;
+            }
+            
+            // For now, represent union as a generic type
+            return ast.Type{ .Generic = ast.GenericType{
+                .name = "Union",
+                .type_arguments = union_types,
+                .constraints = ArrayList(ast.TypeConstraint).init(self.allocator),
+            }};
+        }
+        
+        return base_type;
+    }
+    
+    fn parseBasicType(self: *Parser) ParserError!ast.Type {
+        // Parse a single basic type (before union/intersection operators)
+        if (self.check(.Identifier)) {
+            const type_name = self.advance().lexeme;
+            
+            // Check for generic arguments
+            if (self.check(.Less) or self.check(.LeftAngle)) {
+                return try self.parseGenericType(type_name);
+            }
+            
+            return ast.Type{ .Custom = type_name };
+        }
+        
+        // Fall back to existing parseType logic
+        return try self.parseType();
+    }
+    
+    fn parseAdvancedFunctionSignature(self: *Parser) ParserError!FunctionStatement {
+        try self.consume(.Slay, "Expected 'slay'");
+        
+        if (!self.check(.Identifier)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        const name = self.advance().lexeme;
+        var func = FunctionStatement.init(self.allocator, name);
+        
+        // Parse generic type parameters with enhanced constraints
+        if (self.match(.Less) or self.match(.LeftAngle)) {
+            while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
+                if (self.check(.Identifier)) {
+                    const param_name = self.advance().lexeme;
+                    var type_param = ast.TypeParameter{
+                        .name = param_name,
+                        .constraints = ArrayList(ast.TypeConstraint).init(self.allocator),
+                        .default_type = null,
+                        .variance = .Invariant,
+                    };
+                    
+                    // Parse variance modifiers
+                    if (self.matchIdentifier("out")) {
+                        type_param.variance = .Covariant;
+                    } else if (self.matchIdentifier("in")) {
+                        type_param.variance = .Contravariant;
+                    }
+                    
+                    // Parse constraints (T: SomeInterface + AnotherInterface)
+                    if (self.match(.Colon)) {
+                        while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
+                            const constraint = try self.parseTypeConstraint();
+                            try type_param.constraints.append(constraint);
+                            if (!self.match(.Plus)) break;
+                        }
+                    }
+                    
+                    // Parse default type
+                    if (self.match(.Equal)) {
+                        type_param.default_type = try self.parseType();
+                    }
+                    
+                    try func.type_parameters.append(type_param);
+                }
+                
+                if (!self.match(.Comma)) break;
+            }
+            
+            if (!self.match(.Greater) and !self.match(.RightAngle)) {
+                return ParserError.MissingToken;
+            }
+        }
+        
+        // Parse parameters with complex types
+        try self.consume(.LeftParen, "Expected '(' after function name");
+        
+        if (!self.check(.RightParen)) {
+            while (true) {
+                const param = try self.parseAdvancedParameter();
+                try func.parameters.append(param);
+                
+                if (!self.match(.Comma)) break;
+            }
+        }
+        
+        try self.consume(.RightParen, "Expected ')' after parameters");
+        
+        // Parse return type (can be complex)
+        if (!self.check(.LeftBrace)) {
+            func.return_type = try self.parseComplexType();
+        }
+        
+        // Parse function body
+        try self.consume(.LeftBrace, "Expected '{'");
+        
+        self.in_function = true;
+        defer { self.in_function = false; }
+        
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            if (self.match(.Newline)) continue;
+            
+            const stmt = try self.parseStatement();
+            try func.body.append(stmt);
+        }
+        
+        try self.consume(.RightBrace, "Expected '}'");
+        
+        return func;
+    }
+    
+    fn parseAdvancedParameter(self: *Parser) ParserError!Parameter {
+        if (!self.check(.Identifier)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        const name = self.advance().lexeme;
+        
+        // Parse parameter type (can be complex)
+        const param_type = try self.parseComplexType();
+        
+        var param = Parameter{
+            .name = name,
+            .param_type = param_type,
+            .is_mutable = false,
+            .default_value = null,
+        };
+
+        // Parse default value
+        if (self.match(.Equal)) {
+            param.default_value = try self.parseExpression();
+        }
+        
+        return param;
     }
 };
 

@@ -49,9 +49,9 @@ const FunctionExecutionEntry = struct {
     call_count: u64,
     last_execution_time: u64,
     
-    pub fn init(allocator: Allocator, name: []const u8, ast_function: ast.Function) FunctionExecutionEntry {
+    pub fn init(allocator: Allocator, name: []const u8, ast_function: ast.Function) !FunctionExecutionEntry {
         return FunctionExecutionEntry{
-            .name = allocator.dupe(u8, name) catch unreachable,
+            .name = try allocator.dupe(u8, name),
             .ast_function = ast_function,
             .compilation_state = .NotCompiled,
             .call_count = 0,
@@ -73,9 +73,9 @@ pub const CompiledModule = struct {
     last_modified: i64,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator, name: []const u8) CompiledModule {
+    pub fn init(allocator: Allocator, name: []const u8) !CompiledModule {
         return CompiledModule{
-            .name = allocator.dupe(u8, name) catch unreachable,
+            .name = try allocator.dupe(u8, name),
             .module = codegen.CodeGen.init(allocator),
             .functions = HashMap([]const u8, *const fn() callconv(.C) void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .compiled_binary = null,
@@ -100,10 +100,10 @@ pub const ModuleCache = struct {
     cache_dir: []const u8,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator, cache_dir: []const u8) ModuleCache {
+    pub fn init(allocator: Allocator, cache_dir: []const u8) !ModuleCache {
         return ModuleCache{
             .modules = HashMap([]const u8, CompiledModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .cache_dir = allocator.dupe(u8, cache_dir) catch unreachable,
+            .cache_dir = try allocator.dupe(u8, cache_dir),
             .allocator = allocator,
         };
     }

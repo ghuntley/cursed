@@ -1,0 +1,13 @@
+{
+    "version": "1.0",
+    "max_size_mb": 1024,
+    "retention_days": 7,
+    "compression": true,
+    "created": "2025-08-04T12:13:59+00:00",
+    "stats": {
+        "hits": 0,
+        "misses": 0,
+        "builds_cached": 0,
+        "total_saved_time": 0
+    }
+}

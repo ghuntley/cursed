@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zip_zilla Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>zip_zilla Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>create_zip_archive</h3>
+        <p>Create ZIP archive with files - absolutely based functionality</p>
+        <p><code>slay create_zip_archive(archive_path tea, file_paths [tea], compression_level normie) ArchiveResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_zip_archive</h3>
+        <p>Extract ZIP archive - unpack that good stuff</p>
+        <p><code>slay extract_zip_archive(archive_path tea, destination_path tea, password tea) ArchiveResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_tar_archive</h3>
+        <p>Create TAR archive with compression options</p>
+        <p><code>slay create_tar_archive(archive_path tea, source_directory tea, compression_type normie) ArchiveResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_tar_archive</h3>
+        <p>Extract TAR archive with automatic format detection</p>
+        <p><code>slay extract_tar_archive(archive_path tea, destination_path tea) ArchiveResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>list_archive_contents</h3>
+        <p>List contents of archive without extracting - just browsing</p>
+        <p><code>slay list_archive_contents(archive_path tea) [ArchiveEntry] {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_archive_integrity</h3>
+        <p>Validate archive integrity - make sure it's not sus</p>
+        <p><code>slay validate_archive_integrity(archive_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>detect_archive_format</h3>
+        <p>Detect archive format from file extension and header - smart detection</p>
+        <p><code>slay detect_archive_format(archive_path tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>detect_tar_format</h3>
+        <p>Detect specific TAR format</p>
+        <p><code>slay detect_tar_format(archive_path tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_protected_archive</h3>
+        <p>Create password-protected archive - keep it secure bestie</p>
+        <p><code>slay create_protected_archive(archive_path tea, file_paths [tea], password tea, compression_level normie) ArchiveResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>archive_directory_with_progress</h3>
+        <p>Archive entire directory with progress reporting - for the big jobs</p>
+        <p><code>slay archive_directory_with_progress(source_dir tea, archive_path tea, progress_callback ProgressCallback) ArchiveResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_archive_info</h3>
+        <p>Get archive statistics and info - the deets</p>
+        <p><code>slay get_archive_info(archive_path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>count_archive_entries</h3>
+        <p>Count entries in archive</p>
+        <p><code>slay count_archive_entries(archive_path tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_single_file</h3>
+        <p>Extract specific file from archive - surgical extraction</p>
+        <p><code>slay extract_single_file(archive_path tea, file_path tea, destination_path tea) ArchiveResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>add_file_to_archive</h3>
+        <p>Add file to existing archive - append mode</p>
+        <p><code>slay add_file_to_archive(archive_path tea, file_path tea) ArchiveResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>remove_file_from_archive</h3>
+        <p>Remove file from archive - clean up</p>
+        <p><code>slay remove_file_from_archive(archive_path tea, file_path tea) ArchiveResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>recompress_archive</h3>
+        <p>Compress existing archive further - max that compression</p>
+        <p><code>slay recompress_archive(archive_path tea, new_compression_level normie) ArchiveResult {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_exists</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_created</h3>
+        <p>Create archive with compression</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_exists</h3>
+        <p>Validate archive exists</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_valid</h3>
+        <p>Validate archive integrity first</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>dest_created</h3>
+        <p>Create destination directory if it doesn't exist</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>extracted</h3>
+        <p>Extract with optional password</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>dir_exists</h3>
+        <p>Validate source directory</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>tar_created</h3>
+        <p>Create TAR archive based on compression type</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_exists</h3>
+        <p>Validate archive exists</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>tar_format</h3>
+        <p>Auto-detect TAR format</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>dest_created</h3>
+        <p>Create destination directory</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>extracted</h3>
+        <p>Extract based on detected format</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_exists</h3>
+        <p>Validate archive exists</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>format</h3>
+        <p>Detect archive format</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_exists</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_header</h3>
+        <p>Get file header to check magic bytes</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_zip</h3>
+        <p>Check for common archive signatures</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_tar</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_7z</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>extension</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_header</h3>
+        <p>Fallback to header detection</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>extension</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_exists</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>protected_created</h3>
+        <p>Create password-protected ZIP</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>dir_exists</h3>
+        <p>Validate source directory</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>total_files</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_created</h3>
+        <p>Create archive with progress reporting</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>info</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_exists</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>format</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>format_name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>entry_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_valid</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_exists</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_found</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>extracted</h3>
+        <p>Extract single file</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_exists</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_exists</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>added</h3>
+        <p>Add file to existing archive</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_exists</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_found</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>removed</h3>
+        <p>Remove file from archive</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>archive_exists</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp_path</h3>
+        <p>Create temporary path for recompressed archive</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp_dir</h3>
+        <p>Extract to temp, then recompress</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>extracted</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>recompressed</h3>
+        <p>Create new compressed archive</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>replaced</h3>
+        <p>Replace original with recompressed version</p>
+        <p>Type: <code>lit</code></p>
+    </div>
+</body>
+</html>

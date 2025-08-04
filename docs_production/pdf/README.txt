@@ -1,0 +1,1 @@
+PDF generation requires pandoc

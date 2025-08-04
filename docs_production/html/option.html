@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>option Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>option Module</h1>
+    <p>Option type module - Optional values that can be Some or None Critical for self-hosting and error handling</p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>some_int</h3>
+        <p></p>
+        <p><code>slay some_int(value normie) (lit, normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>some_string</h3>
+        <p></p>
+        <p><code>slay some_string(value tea) (lit, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>some_bool</h3>
+        <p></p>
+        <p><code>slay some_bool(value lit) (lit, lit) {</code></p>
+    </div>
+    <div class="function">
+        <h3>none_int</h3>
+        <p></p>
+        <p><code>slay none_int() (lit, normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>none_string</h3>
+        <p></p>
+        <p><code>slay none_string() (lit, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>none_bool</h3>
+        <p></p>
+        <p><code>slay none_bool() (lit, lit) {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_some_int</h3>
+        <p>Option utility functions</p>
+        <p><code>slay is_some_int(option (lit, normie)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_none_int</h3>
+        <p></p>
+        <p><code>slay is_none_int(option (lit, normie)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_some_string</h3>
+        <p></p>
+        <p><code>slay is_some_string(option (lit, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_none_string</h3>
+        <p></p>
+        <p><code>slay is_none_string(option (lit, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_some_bool</h3>
+        <p></p>
+        <p><code>slay is_some_bool(option (lit, lit)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_none_bool</h3>
+        <p></p>
+        <p><code>slay is_none_bool(option (lit, lit)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_int</h3>
+        <p>Unwrapping functions (with panic on None)</p>
+        <p><code>slay unwrap_int(option (lit, normie)) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_string</h3>
+        <p></p>
+        <p><code>slay unwrap_string(option (lit, tea)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_bool</h3>
+        <p></p>
+        <p><code>slay unwrap_bool(option (lit, lit)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_or_int</h3>
+        <p>Unwrap with default values</p>
+        <p><code>slay unwrap_or_int(option (lit, normie), default normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_or_string</h3>
+        <p></p>
+        <p><code>slay unwrap_or_string(option (lit, tea), default tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_or_bool</h3>
+        <p></p>
+        <p><code>slay unwrap_or_bool(option (lit, lit), default lit) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>map_int_to_string</h3>
+        <p>Map function for transforming Option values</p>
+        <p><code>slay map_int_to_string(option (lit, normie)) (lit, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>map_string_to_int_len</h3>
+        <p></p>
+        <p><code>slay map_string_to_int_len(option (lit, tea)) (lit, normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>filter_int</h3>
+        <p>Filter function for conditional values</p>
+        <p><code>slay filter_int(option (lit, normie), condition func(normie) lit) (lit, normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>filter_string</h3>
+        <p></p>
+        <p><code>slay filter_string(option (lit, tea), condition func(tea) lit) (lit, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>and_then_int</h3>
+        <p>And/Or operations for Option chaining</p>
+        <p><code>slay and_then_int(option (lit, normie), f func(normie) (lit, normie)) (lit, normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>and_then_string</h3>
+        <p></p>
+        <p><code>slay and_then_string(option (lit, tea), f func(tea) (lit, tea)) (lit, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>or_else_int</h3>
+        <p></p>
+        <p><code>slay or_else_int(option (lit, normie), f func() (lit, normie)) (lit, normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>or_else_string</h3>
+        <p></p>
+        <p><code>slay or_else_string(option (lit, tea), f func() (lit, tea)) (lit, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>option_equals_int</h3>
+        <p>Utility functions for working with Option types</p>
+        <p><code>slay option_equals_int(opt1 (lit, normie), opt2 (lit, normie)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>option_equals_string</h3>
+        <p></p>
+        <p><code>slay option_equals_string(opt1 (lit, tea), opt2 (lit, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>option_to_string_int</h3>
+        <p>Convert Option to string for debugging</p>
+        <p><code>slay option_to_string_int(option (lit, normie)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>option_to_string_string</h3>
+        <p></p>
+        <p><code>slay option_to_string_string(option (lit, tea)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>option_to_string_bool</h3>
+        <p></p>
+        <p><code>slay option_to_string_bool(option (lit, lit)) tea {</code></p>
+    </div>
+</body>
+</html>
