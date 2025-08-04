@@ -51,9 +51,9 @@ dm<T>[N]        // Buffered channel of type T with capacity N
 sus ch dm<normie>             // Unbuffered channel declaration
 sus buffered dm<tea>[10]      // Buffered channel with capacity 10
 
-ch <- value                   // Send operation (blocking)
-value := <-ch                 // Receive operation (blocking)
-value, ok := <-ch             // Receive with closed check
+dm_send(ch, value)            // Send operation (blocking)
+value := dm_recv(ch)          // Receive operation (blocking)
+value, ok := dm_recv(ch)      // Receive with closed check
 ```
 
 ### Channel States
@@ -63,8 +63,8 @@ value, ok := <-ch             // Receive with closed check
 
 ### Channel Closing
 ```
-close(ch)                     // Close channel
-value, ok := <-ch             // ok is false if channel is closed
+dm_close(ch)                  // Close channel
+value, ok := dm_recv(ch)      // ok is false if channel is closed
 ```
 
 ## Type Declarations

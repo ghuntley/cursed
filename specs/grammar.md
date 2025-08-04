@@ -224,16 +224,16 @@ periodt x > 0 {
 ### Return Statements
 
 ```
-ReturnStmt       = "damn" [ ExpressionList ] .
+ReturnStmt       = ( "damn" | "yolo" ) [ ExpressionList ] .
 ```
 
-The `damn` keyword is used to return values from functions.
+Both `damn` and `yolo` keywords can be used to return values from functions.
 
 Examples:
 
 ```
 damn x + y
-damn "Hello World"
+yolo "Hello World"
 damn  # return with no value
 ```
 
@@ -365,10 +365,10 @@ CloseStmt        = "close" "(" Channel ")" .
 sus ch dm<normie>                     // Unbuffered channel declaration
 sus buffered dm<tea>[10]              // Buffered channel declaration
 
-ch <- value                           // Send operation (blocking)
-value := <-ch                         // Receive operation (blocking)
-value, ok := <-ch                     // Receive with closed check
-close(ch)                             // Close channel
+dm_send(ch, value)                    // Send operation (blocking)
+value := dm_recv(ch)                  // Receive operation (blocking)
+value, ok := dm_recv(ch)              // Receive with closed check
+dm_close(ch)                          // Close channel
 ```
 
 ### Select Statements
@@ -377,7 +377,8 @@ close(ch)                             // Close channel
 SelectStmt       = "ready" "{" { SelectCase } "}" .
 SelectCase       = "mood" ( SendStmt | ReceiveStmt ) ":" StatementList |
                    "basic" ":" StatementList .
-ReceiveStmt      = [ ExpressionList "=" | IdentifierList ":=" ] ReceiveExpr .
+SendStmt         = "dm_send" "(" Channel "," Expression ")" .
+ReceiveStmt      = [ ExpressionList "=" | IdentifierList ":=" ] "dm_recv" "(" Channel ")" .
 ```
 
 The `ready` keyword is used for select statements that allow non-blocking operation on multiple channels.
@@ -400,11 +401,11 @@ slay select_with_channels() lit {
     sus timeout dm<lit>
     
     ready {
-        mood ch1 <- 42:
+        mood dm_send(ch1, 42):
             vibez.spill("Send to ch1 succeeded")
-        mood result := <-ch2:
+        mood result := dm_recv(ch2):
             vibez.spill("Received from ch2: " + result)
-        mood <-timeout:
+        mood dm_recv(timeout):
             vibez.spill("Timeout occurred")
         basic:
             vibez.spill("No operations ready")
@@ -418,11 +419,11 @@ slay select_multiple_operations() lit {
     sus done_ch dm<lit>
     
     ready {
-        mood msg := <-input_ch:
+        mood msg := dm_recv(input_ch):
             vibez.spill("Processing: " + msg)
-        mood output_ch <- 100:
+        mood dm_send(output_ch, 100):
             vibez.spill("Sent result")
-        mood <-done_ch:
+        mood dm_recv(done_ch):
             vibez.spill("Done signal received")
         basic:
             vibez.spill("No channel operations ready")
@@ -441,9 +442,9 @@ stan worker(data)
 sus done dm<lit>
 stan {
     doWork()
-    done <- based
+    dm_send(done, based)
 }
-<-done                                // Wait for completion
+dm_recv(done)                         // Wait for completion
 ```
 
 ## Defer Statements
