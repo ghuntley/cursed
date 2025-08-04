@@ -2362,7 +2362,7 @@ impl FunctionCompiler {
     /// Compile increment expression with real implementation
     fn compile_increment(&mut self, increment_expr: &IncrementExpression) -> Result<String, CursedError> {
         // Compile the target expression to get its register
-        let target_reg = self.compile_expression(&increment_expr.operand)?;
+        let target_reg = self.compile_expression(&Expression::Identifier { name: increment_expr.variable.clone() })?;
         
         // Load current value, increment by 1, and store back
         let load_reg = self.next_register();
@@ -2381,7 +2381,7 @@ impl FunctionCompiler {
     /// Compile decrement expression with real implementation
     fn compile_decrement(&mut self, decrement_expr: &DecrementExpression) -> Result<String, CursedError> {
         // Compile the target expression to get its register
-        let target_reg = self.compile_expression(&decrement_expr.operand)?;
+        let target_reg = self.compile_expression(&Expression::Identifier { name: decrement_expr.variable.clone() })?;
         
         // Load current value, decrement by 1, and store back
         let load_reg = self.next_register();

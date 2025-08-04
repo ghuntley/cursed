@@ -40,8 +40,8 @@ pub fn main() !void {
     }
 
     if (std.mem.eql(u8, args[1], "--version")) {
-        print("CURSED Zig Compiler v1.0.0-unified\n", .{});
-        print("Unified implementation with real compilation and variable evaluation\n", .{});
+        print("CURSED Zig Compiler v1.0.0-unified-simple\n", .{});
+        print("Simple implementation with variable evaluation\n", .{});
         return;
     }
 

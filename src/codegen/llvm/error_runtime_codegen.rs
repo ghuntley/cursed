@@ -8,13 +8,13 @@ use std::sync::Arc;
 
 use crate::error_types::{Error, Result};
 use crate::ast::{Expression, Statement, Type};
-use crate::codegen::llvm::main::LLVMCodegen;
+use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::runtime::enhanced_error_handling::CursedErrorType;
 
 /// LLVM error handling code generator
 pub struct LLVMErrorRuntimeCodegen {
     /// LLVM module builder
-    llvm_codegen: Arc<LLVMCodegen>,
+    llvm_codegen: Arc<LlvmCodeGenerator>,
     /// Error handling function registry
     error_functions: HashMap<String, String>,
     /// Runtime error types
@@ -25,7 +25,7 @@ pub struct LLVMErrorRuntimeCodegen {
 
 impl LLVMErrorRuntimeCodegen {
     /// Create new LLVM error runtime codegen
-    pub fn new(llvm_codegen: Arc<LLVMCodegen>) -> Self {
+    pub fn new(llvm_codegen: Arc<LlvmCodeGenerator>) -> Self {
         let mut instance = Self {
             llvm_codegen,
             error_functions: HashMap::new(),
@@ -476,7 +476,7 @@ impl LLVMErrorRuntimeCodegen {
 }
 
 /// Helper function to create LLVM error runtime codegen
-pub fn create_llvm_error_runtime_codegen(llvm_codegen: Arc<LLVMCodegen>) -> LLVMErrorRuntimeCodegen {
+pub fn create_llvm_error_runtime_codegen(llvm_codegen: Arc<LlvmCodeGenerator>) -> LLVMErrorRuntimeCodegen {
     LLVMErrorRuntimeCodegen::new(llvm_codegen)
 }
 

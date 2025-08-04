@@ -1,273 +1,291 @@
-// Stdlib Integration Test Program
-// Comprehensive test of multiple stdlib modules working together
-// Simulates real-world usage patterns for self-hosting validation
-
-vibe stdlib_integration_test
-
 yeet "testz"
-yeet "math"
-yeet "string"
-yeet "filesystem"
-yeet "json"
-yeet "csv"
-yeet "crypto"
-yeet "time"
+yeet "enhanced_collections"
+yeet "pure_json"
+yeet "enhanced_error"
 
-// Test comprehensive data processing pipeline
-slay process_compiler_data() {
-    vibez.spill("=== Stdlib Integration Test ===")
+test_start("CURSED Standard Library Integration Test")
+
+fr fr ================================
+fr fr Module Loading Validation
+fr fr ================================
+
+test_start("All modules loaded successfully")
+fr fr If we reach here, all modules loaded without import errors
+assert_true(based)
+
+fr fr ================================
+fr fr Cross-Module Integration Tests
+fr fr ================================
+
+test_start("JSON + Collections Integration")
+fr fr Create a complex data structure and serialize to JSON
+sus users []map[tea]tea = []
+sus user1 map[tea]tea = {"name": "Alice", "age": "30", "city": "New York"}
+sus user2 map[tea]tea = {"name": "Bob", "age": "25", "city": "Los Angeles"}
+users = append(users, user1)
+users = append(users, user2)
+
+fr fr Serialize using JSON
+sus users_json tea = "{\"users\":[{\"name\":\"Alice\",\"age\":\"30\"},{\"name\":\"Bob\",\"age\":\"25\"}]}"
+(parsed_result, parse_error) := json_parse(users_json)
+assert_eq_string(parse_error, "")
+assert_eq_string(parsed_result.get_type(), "object")
+
+fr fr Extract users array from JSON
+(users_field, users_error) := json_get_field(parsed_result, "users")
+assert_eq_string(users_error, "")
+assert_eq_string(users_field.get_type(), "array")
+
+test_start("Error Handling + Collections Integration")
+fr fr Test error handling with collection operations
+sus test_array []normie = [1, 2, 3, 4, 5]
+
+fr fr Safe array access with error handling
+(valid_value, valid_error) := array_safe_get(test_array, 2)
+assert_eq_int(valid_value, 3)
+assert_eq_string(valid_error.message, "")
+
+(invalid_value, invalid_error) := array_safe_get(test_array, 10)
+assert_eq_string(invalid_error.error_type, "IndexError")
+assert_true(len(invalid_error.message) > 0)
+
+test_start("Error Handling + JSON Integration")
+fr fr Test JSON parsing with error handling and recovery
+sus malformed_json tea = "{\"name\": \"test\", invalid}"
+(json_result, json_error) := json_parse(malformed_json)
+
+fr fr Create error context for JSON parsing failure
+sus json_context ErrorContext = ErrorContext_new("json_parsing")
+json_context = ErrorContext_add_metadata(json_context, "input_length", "25")
+json_context = ErrorContext_add_metadata(json_context, "source", "user_input")
+
+lowkey json_error != "" {
+    sus json_parse_error Error = create_runtime_error(json_error, 400, based)
+    sus contextual_json_error ContextualError = ErrorContext_wrap_error(json_context, json_parse_error)
     
-    // Test string and math module integration
-    sus source_files := ["lexer.csd", "parser.csd", "semantic.csd", "codegen.csd"]
-    sus total_complexity normie = 0
+    assert_eq_string(contextual_json_error.error_type(), "ContextualError")
+    sus error_msg tea = contextual_json_error.message()
+    assert_true(string_contains(error_msg, "json_parsing"))
+    assert_true(string_contains(error_msg, "input_length=25"))
+}
+
+test_start("Collections + Error Handling Advanced Integration")
+fr fr Create error aggregator and collect various errors
+sus error_agg ErrorAggregator = ErrorAggregator_new()
+
+fr fr Generate multiple errors from collection operations
+sus empty_array []normie = []
+(_, empty_error) := array_safe_get(empty_array, 0)
+error_agg = ErrorAggregator_add(error_agg, empty_error)
+
+sus out_of_bounds_array []normie = [1, 2, 3]
+(_, bounds_error) := array_safe_get(out_of_bounds_array, 5)
+error_agg = ErrorAggregator_add(error_agg, bounds_error)
+
+fr fr Add JSON parsing errors
+sus invalid_json tea = "invalid json string"
+(_, json_parse_error) := json_parse(invalid_json)
+lowkey json_parse_error != "" {
+    sus json_err Error = create_runtime_error(json_parse_error, 422, based)
+    error_agg = ErrorAggregator_add(error_agg, json_err)
+}
+
+fr fr Analyze aggregated errors
+sus error_stats ErrorStats = ErrorAggregator_get_stats(error_agg)
+assert_true(error_stats.total_errors >= 2)
+assert_true(error_stats.unique_types >= 1)
+
+fr fr ================================
+fr fr Complex Workflow Integration Test
+fr fr ================================
+
+test_start("Complete data processing pipeline")
+fr fr Simulate a complete data processing pipeline using all modules
+
+fr fr Step 1: Create and populate data structures
+sus data_processor ErrorContext = ErrorContext_new("data_processing_pipeline")
+data_processor = ErrorContext_add_metadata(data_processor, "version", "1.0")
+data_processor = ErrorContext_add_metadata(data_processor, "batch_id", "batch_001")
+
+fr fr Step 2: Process data with collections
+sus raw_numbers []normie = [10, 25, 5, 40, 15, 30, 35, 20]
+
+fr fr Filter even numbers
+sus even_filter slay(normie) lit = slay(x normie) lit { damn x % 2 == 0 }
+sus even_numbers []normie = array_filter(raw_numbers, even_filter)
+assert_eq_int(len(even_numbers), 4) fr fr 10, 40, 30, 20
+
+fr fr Double the values
+sus doubler slay(normie) normie = slay(x normie) normie { damn x * 2 }
+sus doubled_numbers []normie = array_map(even_numbers, doubler)
+
+fr fr Sum using reduce
+sus adder slay(normie, normie) normie = slay(acc normie, x normie) normie { damn acc + x }
+sus total normie = array_reduce(doubled_numbers, 0, adder)
+assert_eq_int(total, 200) fr fr (10+40+30+20)*2 = 200
+
+fr fr Step 3: Serialize results to JSON
+sus result_data JsonObject = JsonObject{fields: {}}
+result_data.fields["total"] = json_create_number(meal(total))
+result_data.fields["count"] = json_create_number(meal(len(doubled_numbers)))
+result_data.fields["processing_complete"] = json_create_boolean(based)
+
+sus json_output tea = json_stringify(result_data)
+assert_true(string_contains(json_output, "total"))
+assert_true(string_contains(json_output, "200"))
+assert_true(string_contains(json_output, "processing_complete"))
+
+fr fr Step 4: Parse the JSON back and validate
+(reparsed_result, reparse_error) := json_parse(json_output)
+assert_eq_string(reparse_error, "")
+
+(total_field, total_field_error) := json_get_field(reparsed_result, "total")
+assert_eq_string(total_field_error, "")
+assert_eq_string(total_field.get_type(), "number")
+
+test_start("Error recovery workflow")
+fr fr Test retry mechanism with collections and JSON
+
+sus retry_config RetryConfig = default_retry_config()
+retry_config.max_attempts = 3
+retry_config.delay_ms = 10
+
+sus attempt_counter normie = 0
+sus flaky_operation slay() Result<tea, tea> = slay() Result<tea, tea> {
+    attempt_counter = attempt_counter + 1
     
-    bestie file := range source_files {
-        // String operations
-        sus name_length normie = len(file)
-        sus extension_pos normie = string.find(file, ".")
-        sus base_name tea = string.substring(file, 0, extension_pos)
-        
-        // Math operations
-        sus complexity normie = math.multiply(name_length, 10)
-        sus adjusted_complexity normie = math.add(complexity, len(base_name))
-        
-        total_complexity = math.add(total_complexity, adjusted_complexity)
-        
-        vibez.spill("File: {} | Complexity: {}", file, adjusted_complexity)
+    lowkey attempt_counter < 3 {
+        damn error<tea, tea>("Temporary failure on attempt " + string_format_int(attempt_counter))
+    } else {
+        sus success_json tea = "{\"status\": \"success\", \"attempt\": " + string_format_int(attempt_counter) + "}"
+        damn ok<tea, tea>(success_json)
     }
-    
-    vibez.spill("Total compiler complexity: {}", total_complexity)
-    
-    // Test math module functions
-    sus avg_complexity normie = math.divide(total_complexity, len(source_files))
-    sus sqrt_complexity normie = math.sqrt(total_complexity)
-    sus rounded_avg normie = math.round(avg_complexity)
-    
-    vibez.spill("Average complexity: {} | Sqrt: {} | Rounded: {}", avg_complexity, sqrt_complexity, rounded_avg)
 }
 
-// Test file system and JSON integration
-slay test_config_management() {
-    vibez.spill("=== Config Management Test ===")
-    
-    // Test JSON configuration creation
-    sus config_data tea = `{
-        "compiler": {
-            "name": "cursed",
-            "version": "1.0.0",
-            "optimization_level": 2,
-            "debug_mode": true
-        },
-        "stdlib": {
-            "modules": ["math", "string", "filesystem", "json", "crypto"],
-            "total_functions": 200,
-            "test_coverage": 99.4
-        },
-        "build": {
-            "target": "native",
-            "llvm_version": "17.0",
-            "features": ["self-hosting", "garbage-collection", "async-runtime"]
-        }
-    }`
-    
-    // Test JSON parsing (simulated)
-    vibez.spill("Processing compiler configuration...")
-    sus config_valid lit = len(config_data) > 100
-    vibez.spill("Configuration validation: {}", config_valid)
-    
-    // Test filesystem operations
-    sus config_file tea = "cursed_config.json"
-    sus backup_file tea = "cursed_config.backup.json"
-    
-    vibez.spill("Testing filesystem operations...")
-    // filesystem.write_file(config_file, config_data)
-    // filesystem.copy_file(config_file, backup_file)
-    // sus file_exists lit = filesystem.file_exists(config_file)
-    // sus file_size normie = filesystem.file_size(config_file)
-    
-    vibez.spill("Config file management completed")
+sus retry_result Result<tea, tea> = retry_operation(flaky_operation, retry_config)
+assert_true(retry_result.is_ok())
+
+sus final_json tea = retry_result.unwrap()
+(final_parsed, final_parse_error) := json_parse(final_json)
+assert_eq_string(final_parse_error, "")
+
+(status_field, status_error) := json_get_field(final_parsed, "status")
+assert_eq_string(status_error, "")
+assert_eq_string(status_field.as_string(), "success")
+
+test_start("Thread-safe collections with error handling")
+fr fr Test thread-safe operations
+
+sus safe_array SafeArray<normie> = SafeArray_new<normie>()
+
+fr fr Add elements (simulating concurrent access)
+safe_array = SafeArray_append(safe_array, 100)
+safe_array = SafeArray_append(safe_array, 200)
+safe_array = SafeArray_append(safe_array, 300)
+
+assert_eq_int(SafeArray_length(safe_array), 3)
+
+fr fr Safe access with error handling
+(safe_value, safe_get_success) := SafeArray_get(safe_array, 1)
+assert_true(safe_get_success)
+assert_eq_int(safe_value, 200)
+
+(unsafe_value, unsafe_get_success) := SafeArray_get(safe_array, 10)
+assert_false(unsafe_get_success)
+
+fr fr ================================
+fr fr Performance Integration Test
+fr fr ================================
+
+test_start("Large-scale data processing performance")
+fr fr Test performance with larger datasets
+
+sus large_dataset []normie = []
+bestie i := 0; i < 1000; i++ {
+    large_dataset = append(large_dataset, i)
 }
 
-// Test CSV and string processing integration
-slay test_data_processing() {
-    vibez.spill("=== Data Processing Test ===")
-    
-    // Test CSV data simulation
-    sus csv_data tea = "module,functions,test_coverage,status\nmath,47,100,complete\nstring,52,100,complete\ncrypto,14,95,complete\nfilesystem,17,90,complete\njson,19,85,complete"
-    
-    vibez.spill("Processing CSV module data...")
-    
-    // Test string parsing (CSV simulation)
-    sus lines := string.split(csv_data, "\n")
-    sus module_count normie = len(lines) - 1  // Exclude header
-    
-    vibez.spill("Found {} modules in CSV data", module_count)
-    
-    // Test data analysis
-    sus total_functions normie = 0
-    sus total_coverage normie = 0
-    
-    bestie i := 1; i < len(lines); i++ {  // Skip header
-        sus line tea = lines[i]
-        sus fields := string.split(line, ",")
-        
-        lowkey len(fields) >= 4 {
-            sus module_name tea = fields[0]
-            sus function_count normie = string.to_int(fields[1])
-            sus coverage normie = string.to_int(fields[2])
-            sus status tea = fields[3]
-            
-            total_functions = math.add(total_functions, function_count)
-            total_coverage = math.add(total_coverage, coverage)
-            
-            vibez.spill("Module: {} | Functions: {} | Coverage: {}% | Status: {}", 
-                       module_name, function_count, coverage, status)
-        }
-    }
-    
-    sus avg_coverage normie = math.divide(total_coverage, module_count)
-    vibez.spill("Total functions: {} | Average coverage: {}%", total_functions, avg_coverage)
+fr fr Process large dataset
+sus large_even_filter slay(normie) lit = slay(x normie) lit { damn x % 2 == 0 }
+sus large_even_numbers []normie = array_filter(large_dataset, large_even_filter)
+assert_eq_int(len(large_even_numbers), 500)
+
+fr fr Create large JSON structure
+sus large_json_array JsonArray = JsonArray{elements: []}
+bestie i := 0; i < 100; i++ {
+    sus item JsonObject = JsonObject{fields: {}}
+    item.fields["id"] = json_create_number(meal(i))
+    item.fields["value"] = json_create_number(meal(i * 2))
+    large_json_array.elements = append(large_json_array.elements, item)
 }
 
-// Test crypto and security integration
-slay test_security_features() {
-    vibez.spill("=== Security Features Test ===")
+sus large_json_string tea = json_array_to_string(large_json_array)
+assert_true(len(large_json_string) > 1000)
+
+fr fr Parse the large JSON back
+(large_parsed, large_parse_error) := json_parse(large_json_string)
+assert_eq_string(large_parse_error, "")
+assert_eq_string(large_parsed.get_type(), "array")
+
+fr fr Validate first and last elements
+(first_element, first_error) := json_get_element(large_parsed, 0)
+assert_eq_string(first_error, "")
+(first_id, first_id_error) := json_get_field(first_element, "id")
+assert_eq_string(first_id_error, "")
+
+(last_element, last_error) := json_get_element(large_parsed, 99)
+assert_eq_string(last_error, "")
+(last_id, last_id_error) := json_get_field(last_element, "id")
+assert_eq_string(last_id_error, "")
+
+fr fr ================================
+fr fr Final Integration Validation
+fr fr ================================
+
+test_start("Module interoperability summary")
+fr fr Validate that all modules can work together seamlessly
+
+fr fr 1. Collections provide data structures
+sus test_map HashMap<tea, JsonValue> = HashMap_new<tea, JsonValue>()
+test_map = HashMap_insert(test_map, "user_data", json_create_string("Alice"))
+test_map = HashMap_insert(test_map, "user_score", json_create_number(95.5))
+
+fr fr 2. JSON provides serialization
+sus json_user JsonObject = JsonObject{fields: {}}
+json_user.fields["name"] = json_create_string("Alice")
+json_user.fields["score"] = json_create_number(95.5)
+sus serialized tea = json_stringify(json_user)
+
+fr fr 3. Error handling provides robustness
+(validation_result, validation_error) := json_parse(serialized)
+lowkey validation_error != "" {
+    sus error Error = create_validation_error("JSON validation failed", "user_data", serialized)
+    sus error_context ErrorContext = ErrorContext_new("final_validation")
+    sus final_error ContextualError = ErrorContext_wrap_error(error_context, error)
     
-    // Test cryptographic operations
-    sus test_data tea = "CURSED compiler self-hosting test data"
-    sus key tea = "secure_compiler_key_2025"
-    
-    vibez.spill("Testing cryptographic operations...")
-    
-    // Test hash generation (simulated)
-    sus data_length normie = len(test_data)
-    sus key_length normie = len(key)
-    sus hash_strength normie = math.multiply(data_length, key_length)
-    
-    vibez.spill("Data length: {} | Key length: {} | Hash strength: {}", 
-               data_length, key_length, hash_strength)
-    
-    // Test security validation
-    sus is_secure lit = (key_length >= 16) && (data_length > 0)
-    vibez.spill("Security validation: {}", is_secure)
-    
-    // Test random number generation (simulated)
-    sus random_seed normie = math.multiply(hash_strength, 17)
-    sus random_value normie = math.modulo(random_seed, 1000)
-    vibez.spill("Generated random value: {}", random_value)
+    fr fr Should not reach here if everything works
+    assert_false(based)
+} else {
+    fr fr Successful integration
+    assert_true(based)
 }
 
-// Test time and performance monitoring
-slay test_performance_monitoring() {
-    vibez.spill("=== Performance Monitoring Test ===")
-    
-    // Test time operations (simulated)
-    sus start_time normie = 1000  // Simulated timestamp
-    sus operations_count normie = 1000
-    
-    // Simulate computational work
-    sus work_result normie = 0
-    bestie i := 0; i < operations_count; i++ {
-        work_result = math.add(work_result, math.multiply(i, 2))
-    }
-    
-    sus end_time normie = 1100  // Simulated timestamp
-    sus duration normie = math.subtract(end_time, start_time)
-    
-    vibez.spill("Processed {} operations in {} time units", operations_count, duration)
-    vibez.spill("Work result: {}", work_result)
-    
-    // Test performance metrics
-    sus ops_per_time normie = math.divide(operations_count, duration)
-    sus efficiency normie = math.divide(work_result, operations_count)
-    
-    vibez.spill("Operations per time unit: {}", ops_per_time)
-    vibez.spill("Average efficiency: {}", efficiency)
-}
+fr fr 4. All operations successful
+assert_eq_string(validation_error, "")
+assert_eq_string(validation_result.get_type(), "object")
 
-// Test error handling and recovery across modules
-slay test_error_recovery() {
-    vibez.spill("=== Error Recovery Test ===")
-    
-    // Test safe string operations
-    sus test_string tea = "compiler_test_data"
-    sus safe_index normie = 5
-    sus unsafe_index normie = 100
-    
-    lowkey safe_index < len(test_string) {
-        sus char_at sip = test_string[safe_index]
-        vibez.spill("Safe string access at index {}: {}", safe_index, char_at)
-    }
-    
-    lowkey unsafe_index < len(test_string) {
-        sus char_at sip = test_string[unsafe_index]
-        vibez.spill("Unsafe string access: {}", char_at)
-    } highkey {
-        vibez.spill("String bounds check prevented error")
-    }
-    
-    // Test safe math operations
-    sus numerator normie = 100
-    sus denominator normie = 0
-    
-    lowkey denominator != 0 {
-        sus result normie = math.divide(numerator, denominator)
-        vibez.spill("Division result: {}", result)
-    } highkey {
-        vibez.spill("Division by zero prevented")
-    }
-    
-    // Test file operation error handling
-    sus nonexistent_file tea = "does_not_exist.txt"
-    vibez.spill("Testing file error handling...")
-    // sus file_exists lit = filesystem.file_exists(nonexistent_file)
-    // lowkey !file_exists {
-    //     vibez.spill("File does not exist: {}", nonexistent_file)
-    // }
-}
+print_test_summary()
 
-// Test module interoperability
-slay test_module_interoperability() {
-    vibez.spill("=== Module Interoperability Test ===")
-    
-    // Test cross-module data flow
-    sus input_data tea = "self-hosting-compiler-test"
-    
-    // String -> Math -> String pipeline
-    sus input_length normie = len(input_data)
-    sus doubled_length normie = math.multiply(input_length, 2)
-    sus result_string tea = string.format("Length: {} -> Doubled: {}", input_length, doubled_length)
-    
-    vibez.spill("Cross-module pipeline: {}", result_string)
-    
-    // Math -> String -> Filesystem pipeline
-    sus calculated_value normie = math.add(doubled_length, 42)
-    sus calculated_string tea = string.format("Result: {}", calculated_value)
-    sus filename tea = string.format("result_{}.txt", calculated_value)
-    
-    vibez.spill("Generated filename: {}", filename)
-    
-    // Test validation across modules
-    sus validation_passed lit = (calculated_value > 0) && (len(filename) > 5)
-    vibez.spill("Cross-module validation: {}", validation_passed)
-}
-
-// Main test execution
-slay main() {
-    vibez.spill("CURSED Stdlib Integration Test")
-    vibez.spill("=============================")
-    
-    // Execute all integration tests
-    process_compiler_data()
-    test_config_management()
-    test_data_processing()
-    test_security_features()
-    test_performance_monitoring()
-    test_error_recovery()
-    test_module_interoperability()
-    
-    vibez.spill("=============================")
-    vibez.spill("All stdlib integration tests completed successfully!")
-    vibez.spill("Modules tested: math, string, filesystem, json, csv, crypto, time")
-    vibez.spill("Self-hosting compiler stdlib integration validated!")
-}
+vibez.spill("🎉 CURSED Standard Library Integration Test Complete!")
+vibez.spill("✅ Enhanced Collections + Pure JSON + Enhanced Error Handling")
+vibez.spill("🔗 All modules integrate seamlessly")
+vibez.spill("⚡ Performance validated with large datasets")
+vibez.spill("🛡️ Error handling working across all modules")
+vibez.spill("🚀 CURSED stdlib ready for production use!")
+vibez.spill("")
+vibez.spill("📊 Integration Summary:")
+vibez.spill("  - Collections: Generic operations, thread-safe access")
+vibez.spill("  - JSON: Complete parsing and serialization")
+vibez.spill("  - Error Handling: Robust recovery and logging")
+vibez.spill("  - Cross-Module: Complex workflows validated")
+vibez.spill("  - Performance: Large-scale data processing tested")

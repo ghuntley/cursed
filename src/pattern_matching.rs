@@ -11,6 +11,37 @@ use crate::ast::{Expression, Statement, Type};
 use crate::error::CursedError;
 use std::collections::{HashMap, HashSet};
 
+/// Enum variant registry for variant index lookup
+#[derive(Debug, Clone)]
+pub struct EnumVariantRegistry {
+    /// Map from (enum_name, variant_name) to variant_index
+    pub variants: HashMap<(String, String), usize>,
+    /// Map from enum_name to list of variant names in order
+    pub enum_variants: HashMap<String, Vec<String>>,
+}
+
+impl EnumVariantRegistry {
+    pub fn new() -> Self {
+        Self {
+            variants: HashMap::new(),
+            enum_variants: HashMap::new(),
+        }
+    }
+    
+    /// Register an enum with its variants in order
+    pub fn register_enum(&mut self, enum_name: String, variant_names: Vec<String>) {
+        for (index, variant_name) in variant_names.iter().enumerate() {
+            self.variants.insert((enum_name.clone(), variant_name.clone()), index);
+        }
+        self.enum_variants.insert(enum_name, variant_names);
+    }
+    
+    /// Get variant index for given enum and variant name
+    pub fn get_variant_index(&self, enum_name: &str, variant_name: &str) -> Option<usize> {
+        self.variants.get(&(enum_name.to_string(), variant_name.to_string())).copied()
+    }
+}
+
 /// Pattern binding information for code generation
 #[derive(Debug, Clone)]
 pub struct PatternBinding {
@@ -359,14 +390,16 @@ pub struct PatternCompiler<'a> {
     ir_code: &'a mut String,
     register_counter: &'a mut usize,
     label_counter: &'a mut usize,
+    enum_registry: &'a EnumVariantRegistry,
 }
 
 impl<'a> PatternCompiler<'a> {
-    pub fn new(ir_code: &'a mut String, register_counter: &'a mut usize, label_counter: &'a mut usize) -> Self {
+    pub fn new(ir_code: &'a mut String, register_counter: &'a mut usize, label_counter: &'a mut usize, enum_registry: &'a EnumVariantRegistry) -> Self {
         Self {
             ir_code,
             register_counter,
             label_counter,
+            enum_registry,
         }
     }
     
@@ -956,8 +989,13 @@ impl<'a> PatternCompiler<'a> {
             tag_value, tag_ptr
         ));
         
-        // Compare with expected variant index - use enum_name to determine variant index
-        let variant_index = 0; // TODO: lookup actual variant index based on enum_name/variant_name
+        // Compare with expected variant index - lookup actual variant index
+        let variant_index = self.enum_registry.get_variant_index(&enum_pat.enum_name, &enum_pat.variant_name)
+            .ok_or_else(|| CursedError::SemanticError {
+                message: format!("Unknown variant '{}::{}' in pattern matching", 
+                               enum_pat.enum_name, enum_pat.variant_name),
+                location: None,
+            })?;
         let cmp_result = format!("%{}", *self.register_counter);
         *self.register_counter += 1;
         self.ir_code.push_str(&format!(

@@ -3,7 +3,7 @@ const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
 const lexer = @import("lexer.zig");
-const ast = @import("ast_simple.zig");
+const ast = @import("ast.zig");
 
 const Token = lexer.Token;
 const TokenKind = lexer.TokenKind;
@@ -86,7 +86,7 @@ pub const Parser = struct {
     }
 
     fn parsePackageDeclaration(self: *Parser) ParserError!ast.PackageDeclaration {
-        try self.consume(.Vibe, "Expected 'vibe'");
+        _ = try self.consume(.Vibe, "Expected 'vibe'");
         
         if (!self.check(.Identifier)) {
             return ParserError.UnexpectedToken;
@@ -102,7 +102,7 @@ pub const Parser = struct {
     }
 
     fn parseImportStatement(self: *Parser) ParserError!ast.ImportStatement {
-        try self.consume(.Yeet, "Expected 'yeet'");
+        _ = try self.consume(.Yeet, "Expected 'yeet'");
         
         if (!self.check(.StringLiteral) and !self.check(.String)) {
             return ParserError.UnexpectedToken;
@@ -703,16 +703,126 @@ pub const Parser = struct {
             })};
         }
 
-        // Handle shook error propagation operator
-        if (self.match(.Shook)) {
-            const wrapped_expr = try self.allocateExpression(try self.parseUnary());
+        // Handle yikes error creation
+        if (self.match(.Yikes)) {
+            const message_expr = try self.allocateExpression(try self.parseUnary());
+            var code_expr: ?*Expression = null;
             
-            return Expression{ .Shook = ast.ShookExpression{
-                .expression = wrapped_expr,
+            // Optional error code
+            if (self.match(.Comma)) {
+                code_expr = try self.allocateExpression(try self.parseUnary());
+            }
+            
+            return Expression{ .Yikes = ast.YikesExpression{
+                .message = message_expr,
+                .code = code_expr,
+                .source_location = null, // TODO: Add source location tracking
             }};
         }
 
+        // Handle shook error propagation operator
+        if (self.match(.Shook)) {
+            const wrapped_expr = try self.allocateExpression(try self.parseUnary());
+            var catch_handler: ?*Expression = null;
+            
+            // Optional immediate catch handler
+            if (self.check(.LeftBrace)) {
+                catch_handler = try self.allocateExpression(try self.parseExpression());
+            }
+            
+            return Expression{ .Shook = ast.ShookExpression{
+                .expression = wrapped_expr,
+                .catch_handler = catch_handler,
+            }};
+        }
+        
+        // Handle fam panic recovery blocks
+        if (self.match(.Fam)) {
+            return try self.parseFamBlock();
+        }
+
         return self.parseCall();
+    }
+
+    fn parseFamBlock(self: *Parser) ParserError!Expression {
+        // Parse fam { try_body } catch(error_var) { catch_body } finally { finally_body }
+        try self.consume(.LeftBrace, "Expected '{' after 'fam'");
+        
+        var try_body = ArrayList(*anyopaque).init(self.allocator);
+        
+        // Parse try body statements
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            if (self.match(.Newline)) continue;
+            
+            const stmt = try self.parseStatement();
+            const stmt_ptr = try self.allocator.create(Statement);
+            stmt_ptr.* = stmt;
+            try try_body.append(@ptrCast(stmt_ptr));
+        }
+        
+        try self.consume(.RightBrace, "Expected '}' after try body");
+        
+        var catch_handler: ?ast.FamExpression.CatchHandler = null;
+        var finally_handler: ?ast.FamExpression.FinallyHandler = null;
+        
+        // Optional catch handler
+        if (self.match(.Catch)) {
+            try self.consume(.LeftParen, "Expected '(' after 'catch'");
+            
+            const error_variable = if (self.check(.Identifier))
+                self.advance().lexeme
+            else
+                "error";
+                
+            try self.consume(.RightParen, "Expected ')' after error variable");
+            try self.consume(.LeftBrace, "Expected '{' for catch body");
+            
+            var catch_body = ArrayList(*anyopaque).init(self.allocator);
+            
+            while (!self.check(.RightBrace) and !self.isAtEnd()) {
+                if (self.match(.Newline)) continue;
+                
+                const stmt = try self.parseStatement();
+                const stmt_ptr = try self.allocator.create(Statement);
+                stmt_ptr.* = stmt;
+                try catch_body.append(@ptrCast(stmt_ptr));
+            }
+            
+            try self.consume(.RightBrace, "Expected '}' after catch body");
+            
+            catch_handler = ast.FamExpression.CatchHandler{
+                .error_variable = error_variable,
+                .handler_body = catch_body,
+            };
+        }
+        
+        // Optional finally handler
+        if (self.matchKeyword("finally")) {
+            try self.consume(.LeftBrace, "Expected '{' for finally body");
+            
+            var finally_body = ArrayList(*anyopaque).init(self.allocator);
+            
+            while (!self.check(.RightBrace) and !self.isAtEnd()) {
+                if (self.match(.Newline)) continue;
+                
+                const stmt = try self.parseStatement();
+                const stmt_ptr = try self.allocator.create(Statement);
+                stmt_ptr.* = stmt;
+                try finally_body.append(@ptrCast(stmt_ptr));
+            }
+            
+            try self.consume(.RightBrace, "Expected '}' after finally body");
+            
+            finally_handler = ast.FamExpression.FinallyHandler{
+                .finally_body = finally_body,
+            };
+        }
+        
+        return Expression{ .Fam = ast.FamExpression{
+            .try_body = try_body,
+            .catch_handler = catch_handler,
+            .finally_handler = finally_handler,
+        }};
     }
 
     fn parseCall(self: *Parser) ParserError!Expression {

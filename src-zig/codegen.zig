@@ -368,9 +368,179 @@ pub const CodeGen = struct {
 
 
 
-    fn generateBinaryOp_old(self: *CodeGen, _: c.LLVMValueRef, _: []const u8, _: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
-        // TODO: Implement binary operations
-        return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 1);
+    /// Generate struct type declaration
+    fn generateStruct(self: *CodeGen, struct_stmt: ast.StructStatement) CodeGenError!void {
+        // Create field types array
+        var field_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
+        defer field_types.deinit();
+        
+        for (struct_stmt.fields.items) |field| {
+            const field_type = try self.getLLVMType(field.field_type);
+            try field_types.append(field_type);
+        }
+        
+        // Create struct type
+        const struct_type = c.LLVMStructTypeInContext(
+            self.context,
+            if (field_types.items.len > 0) field_types.items.ptr else null,
+            @as(u32, @intCast(field_types.items.len)),
+            0 // not packed
+        );
+        
+        // Store struct type for later use
+        try self.struct_types.put(struct_stmt.name, struct_type);
+    }
+
+    /// Generate interface type declaration
+    fn generateInterface(self: *CodeGen, interface_stmt: ast.InterfaceStatement) CodeGenError!void {
+        var interface_info = InterfaceInfo{
+            .name = interface_stmt.name,
+            .methods = ArrayList(InterfaceMethod).init(self.allocator),
+            .vtable_type = null,
+        };
+        
+        // Create method info for each interface method
+        for (interface_stmt.methods.items, 0..) |method, i| {
+            var param_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
+            defer param_types.deinit();
+            
+            // Add 'self' parameter as first parameter
+            try param_types.append(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+            
+            for (method.parameters.items) |param| {
+                const param_type = try self.getLLVMType(param.param_type);
+                try param_types.append(param_type);
+            }
+            
+            const return_type = if (method.return_type) |ret_type|
+                try self.getLLVMType(ret_type)
+            else
+                c.LLVMVoidTypeInContext(self.context);
+            
+            const method_type = c.LLVMFunctionType(
+                return_type,
+                if (param_types.items.len > 0) param_types.items.ptr else null,
+                @as(u32, @intCast(param_types.items.len)),
+                0
+            );
+            
+            const interface_method = InterfaceMethod{
+                .name = method.name,
+                .index = i,
+                .function_type = method_type,
+            };
+            
+            try interface_info.methods.append(interface_method);
+        }
+        
+        // Create vtable type
+        const method_count = interface_info.methods.items.len;
+        if (method_count > 0) {
+            const func_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+            interface_info.vtable_type = c.LLVMArrayType(func_ptr_type, @as(u32, @intCast(method_count)));
+        }
+        
+        try self.interface_types.put(interface_stmt.name, interface_info);
+    }
+
+    /// Generate yikes statement (error handling/panic)
+    fn generateYikes(self: *CodeGen, yikes: ast.YikesStatement) CodeGenError!void {
+        // Evaluate panic condition if present
+        if (yikes.condition) |condition| {
+            const condition_value = try self.generateExpression(condition);
+            
+            // Create conditional panic
+            const current_func = self.current_function.?;
+            const panic_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "panic");
+            const continue_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "continue");
+            
+            _ = c.LLVMBuildCondBr(self.builder, condition_value, panic_block, continue_block);
+            
+            // Generate panic block
+            c.LLVMPositionBuilderAtEnd(self.builder, panic_block);
+            const panic_msg = if (yikes.message) |msg| 
+                c.LLVMBuildGlobalStringPtr(self.builder, msg.ptr, "panic_msg")
+            else
+                c.LLVMBuildGlobalStringPtr(self.builder, "panic", "panic_msg");
+            
+            const panic_func = self.runtime_functions.get("cursed_panic").?;
+            _ = c.LLVMBuildCall2(
+                self.builder,
+                c.LLVMVoidTypeInContext(self.context),
+                panic_func,
+                &[_]c.LLVMValueRef{panic_msg},
+                1,
+                ""
+            );
+            _ = c.LLVMBuildUnreachable(self.builder);
+            
+            // Continue normal execution
+            c.LLVMPositionBuilderAtEnd(self.builder, continue_block);
+        } else {
+            // Unconditional panic
+            const panic_msg = if (yikes.message) |msg| 
+                c.LLVMBuildGlobalStringPtr(self.builder, msg.ptr, "panic_msg")
+            else
+                c.LLVMBuildGlobalStringPtr(self.builder, "panic", "panic_msg");
+            
+            const panic_func = self.runtime_functions.get("cursed_panic").?;
+            _ = c.LLVMBuildCall2(
+                self.builder,
+                c.LLVMVoidTypeInContext(self.context),
+                panic_func,
+                &[_]c.LLVMValueRef{panic_msg},
+                1,
+                ""
+            );
+            _ = c.LLVMBuildUnreachable(self.builder);
+        }
+    }
+
+    /// Generate fam statement (error recovery)
+    fn generateFam(self: *CodeGen, fam: ast.FamStatement) CodeGenError!void {
+        const current_func = self.current_function.?;
+        
+        // Create blocks for error handling
+        const try_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "try");
+        const catch_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "catch");
+        const continue_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "continue");
+        
+        // Generate try block
+        _ = c.LLVMBuildBr(self.builder, try_block);
+        c.LLVMPositionBuilderAtEnd(self.builder, try_block);
+        
+        // Execute statements that might fail
+        for (fam.try_statements.items) |stmt| {
+            try self.generateStatement(stmt);
+        }
+        
+        // Jump to continue if no error occurred
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+            _ = c.LLVMBuildBr(self.builder, continue_block);
+        }
+        
+        // Generate catch block
+        c.LLVMPositionBuilderAtEnd(self.builder, catch_block);
+        
+        // If error variable specified, create it
+        if (fam.error_variable) |error_var| {
+            // Create error value (simplified)
+            const error_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+            const error_alloca = c.LLVMBuildAlloca(self.builder, error_type, error_var.ptr);
+            const error_msg = c.LLVMBuildGlobalStringPtr(self.builder, "error", "error_msg");
+            _ = c.LLVMBuildStore(self.builder, error_msg, error_alloca);
+            try self.variables.put(error_var, error_alloca);
+        }
+        
+        // Execute recovery code
+        for (fam.catch_statements.items) |stmt| {
+            try self.generateStatement(stmt);
+        }
+        
+        _ = c.LLVMBuildBr(self.builder, continue_block);
+        
+        // Continue execution after fam block
+        c.LLVMPositionBuilderAtEnd(self.builder, continue_block);
     }
 
     fn getLLVMTypeFromString(self: *CodeGen, cursed_type: []const u8) !c.LLVMTypeRef {
@@ -527,41 +697,76 @@ pub const CodeGen = struct {
         switch (call.function.*) {
             .MemberAccess => |member| {
                 if (std.mem.eql(u8, member.property, "spill")) {
-                    // vibez.spill - print function
-                    if (call.arguments.items.len != 1) {
-                        return CodeGenError.TypeMismatch;
-                    }
-                    
-                    const arg = try self.generateExpression(call.arguments.items[0]);
+                    // vibez.spill - print function (supports multiple arguments)
                     const printf_func = self.functions.get("printf").?;
                     
-                    // Create format string based on argument type
-                    const arg_type = c.LLVMTypeOf(arg);
-                    var format_str: []const u8 = undefined;
-                    
-                    if (c.LLVMGetTypeKind(arg_type) == c.LLVMIntegerTypeKind) {
-                        const bit_width = c.LLVMGetIntTypeWidth(arg_type);
-                        if (bit_width == 1) {
-                            format_str = "%s\n"; // boolean
-                            // Convert bool to string
-                            const true_str = c.LLVMBuildGlobalStringPtr(self.builder, "true", "true_str");
-                            const false_str = c.LLVMBuildGlobalStringPtr(self.builder, "false", "false_str");
-                            const cond_arg = c.LLVMBuildSelect(self.builder, arg, true_str, false_str, "bool_str");
-                            const format = c.LLVMBuildGlobalStringPtr(self.builder, format_str.ptr, "fmt");
-                            return c.LLVMBuildCall2(self.builder, c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)), printf_func, &[_]c.LLVMValueRef{format, cond_arg}, 2, "print_call");
-                        } else {
-                            format_str = "%lld\n"; // integer
-                        }
-                    } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMDoubleTypeKind) {
-                        format_str = "%f\n"; // float
-                    } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMPointerTypeKind) {
-                        format_str = "%s\n"; // string
-                    } else {
-                        format_str = "%p\n"; // pointer/other
+                    if (call.arguments.items.len == 0) {
+                        // No arguments, just print newline
+                        const format = c.LLVMBuildGlobalStringPtr(self.builder, "\n", "fmt");
+                        return c.LLVMBuildCall2(self.builder, c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)), printf_func, &[_]c.LLVMValueRef{format}, 1, "print_call");
                     }
                     
+                    // Build format string and arguments dynamically
+                    var format_parts = ArrayList(u8).init(self.allocator);
+                    defer format_parts.deinit();
+                    
+                    var printf_args = ArrayList(c.LLVMValueRef).init(self.allocator);
+                    defer printf_args.deinit();
+                    
+                    for (call.arguments.items, 0..) |arg_expr, i| {
+                        if (i > 0) {
+                            try format_parts.appendSlice(" ");
+                        }
+                        
+                        const arg = try self.generateExpression(arg_expr);
+                        const arg_type = c.LLVMTypeOf(arg);
+                        
+                        if (c.LLVMGetTypeKind(arg_type) == c.LLVMIntegerTypeKind) {
+                            const bit_width = c.LLVMGetIntTypeWidth(arg_type);
+                            if (bit_width == 1) {
+                                try format_parts.appendSlice("%s");
+                                // Convert bool to string
+                                const true_str = c.LLVMBuildGlobalStringPtr(self.builder, "true", "true_str");
+                                const false_str = c.LLVMBuildGlobalStringPtr(self.builder, "false", "false_str");
+                                const cond_arg = c.LLVMBuildSelect(self.builder, arg, true_str, false_str, "bool_str");
+                                try printf_args.append(cond_arg);
+                            } else {
+                                try format_parts.appendSlice("%d");
+                                try printf_args.append(arg);
+                            }
+                        } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMDoubleTypeKind) {
+                            try format_parts.appendSlice("%.2f");
+                            try printf_args.append(arg);
+                        } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMPointerTypeKind) {
+                            try format_parts.appendSlice("%s");
+                            try printf_args.append(arg);
+                        } else {
+                            try format_parts.appendSlice("%p");
+                            try printf_args.append(arg);
+                        }
+                    }
+                    
+                    try format_parts.appendSlice("\n");
+                    
+                    // Create final format string
+                    const format_str = try format_parts.toOwnedSlice();
+                    defer self.allocator.free(format_str);
                     const format = c.LLVMBuildGlobalStringPtr(self.builder, format_str.ptr, "fmt");
-                    return c.LLVMBuildCall2(self.builder, c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)), printf_func, &[_]c.LLVMValueRef{format, arg}, 2, "print_call");
+                    
+                    // Build final printf arguments (format string + actual arguments)
+                    var final_args = ArrayList(c.LLVMValueRef).init(self.allocator);
+                    defer final_args.deinit();
+                    try final_args.append(format);
+                    try final_args.appendSlice(printf_args.items);
+                    
+                    return c.LLVMBuildCall2(
+                        self.builder, 
+                        c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)), 
+                        printf_func, 
+                        final_args.items.ptr, 
+                        @as(u32, @intCast(final_args.items.len)), 
+                        "print_call"
+                    );
                 }
             },
             .Identifier => |name| {
@@ -766,76 +971,7 @@ pub const CodeGen = struct {
         std.debug.print("Note: Native compilation not yet implemented. Use llc to compile IR to object file.\n", .{});
     }
 
-    /// Generate struct definition
-    fn generateStruct(self: *CodeGen, struct_stmt: ast.StructStatement) CodeGenError!void {
-        // Create field types array
-        var field_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
-        defer field_types.deinit();
-        
-        for (struct_stmt.fields.items) |field| {
-            const field_type = try self.getLLVMType(field.field_type);
-            try field_types.append(field_type);
-        }
-        
-        // Create LLVM struct type
-        const struct_type = c.LLVMStructCreateNamed(self.context, struct_stmt.name.ptr);
-        c.LLVMStructSetBody(struct_type, field_types.items.ptr, @as(u32, @intCast(field_types.items.len)), 0);
-        
-        // Store struct type for later use
-        try self.struct_types.put(struct_stmt.name, struct_type);
-    }
 
-    /// Generate interface definition
-    fn generateInterface(self: *CodeGen, interface_stmt: ast.InterfaceStatement) CodeGenError!void {
-        var methods = ArrayList(InterfaceMethod).init(self.allocator);
-        
-        for (interface_stmt.methods.items, 0..) |method, index| {
-            // Create function type for method
-            var param_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
-            defer param_types.deinit();
-            
-            // Add self parameter (pointer to implementing type)
-            try param_types.append(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
-            
-            // Add method parameters
-            for (method.parameters.items) |param| {
-                const param_type = try self.getLLVMType(param.param_type);
-                try param_types.append(param_type);
-            }
-            
-            const return_type = if (method.return_type) |ret_type|
-                try self.getLLVMType(ret_type)
-            else
-                c.LLVMVoidTypeInContext(self.context);
-            
-            const function_type = c.LLVMFunctionType(
-                return_type,
-                param_types.items.ptr,
-                @as(u32, @intCast(param_types.items.len)),
-                0 // not variadic
-            );
-            
-            const interface_method = InterfaceMethod{
-                .name = method.name,
-                .index = index,
-                .function_type = function_type,
-            };
-            
-            try methods.append(interface_method);
-        }
-        
-        // Create vtable type (array of function pointers)
-        const func_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
-        const vtable_type = c.LLVMArrayType(func_ptr_type, @as(u32, @intCast(methods.items.len)));
-        
-        const interface_info = InterfaceInfo{
-            .name = interface_stmt.name,
-            .methods = methods,
-            .vtable_type = vtable_type,
-        };
-        
-        try self.interface_types.put(interface_stmt.name, interface_info);
-    }
 
     /// Generate struct literal expression
     fn generateStructLiteral(self: *CodeGen, struct_lit: ast.StructLiteralExpression) CodeGenError!c.LLVMValueRef {
@@ -930,88 +1066,7 @@ pub const CodeGen = struct {
         );
     }
 
-    // CURSED Error Handling System Code Generation
-    
-    fn generateYikes(self: *CodeGen, yikes: ast.YikesStatement) CodeGenError!void {
-        // Create error type structure 
-        // For CURSED error types: {i8*, i64, i8*} = {message, code, context}
-        const error_struct_types = [_]c.LLVMTypeRef{
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // message
-            c.LLVMInt64TypeInContext(self.context),                      // code
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // context
-        };
-        
-        const error_type = c.LLVMStructTypeInContext(
-            self.context,
-            &error_struct_types,
-            error_struct_types.len,
-            0 // not packed
-        );
-        
-        // Register the error type in symbol table
-        try self.struct_types.put(yikes.name, error_type);
-        
-        // If there's an initial value, create a global constant
-        if (yikes.value) |value| {
-            const error_value = try self.generateExpression(value);
-            const global_error = c.LLVMAddGlobal(self.module, error_type, yikes.name.ptr);
-            c.LLVMSetInitializer(global_error, error_value);
-            try self.variables.put(yikes.name, global_error);
-        }
-    }
 
-    fn generateFam(self: *CodeGen, fam: ast.FamStatement) CodeGenError!void {
-        // Implement panic recovery blocks using LLVM exception handling
-        const current_func = self.current_function orelse return CodeGenError.LLVMError;
-        
-        // Create basic blocks for try/catch pattern
-        const try_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_try");
-        const catch_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_catch");
-        const continue_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_continue");
-        
-        // Generate setjmp/longjmp style error handling for simplified implementation
-        // In production, would use LLVM's proper exception handling intrinsics
-        
-        // Jump to try block
-        _ = c.LLVMBuildBr(self.builder, try_block);
-        
-        // Generate try block
-        c.LLVMPositionBuilderAtEnd(self.builder, try_block);
-        
-        // Execute main body with error propagation context
-        for (fam.body.items) |stmt| {
-            try self.generateStatement(stmt);
-        }
-        
-        // If no exception occurred, jump to continue
-        _ = c.LLVMBuildBr(self.builder, continue_block);
-        
-        // Generate catch block (if recovery body exists)
-        if (fam.recovery_body) |recovery| {
-            c.LLVMPositionBuilderAtEnd(self.builder, catch_block);
-            
-            // If error variable specified, bind the caught error
-            if (fam.error_variable) |error_var| {
-                // Create error value binding (simplified)
-                const error_alloca = c.LLVMBuildAlloca(
-                    self.builder,
-                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-                    error_var.ptr
-                );
-                try self.variables.put(error_var, error_alloca);
-            }
-            
-            // Execute recovery code
-            for (recovery.items) |stmt| {
-                try self.generateStatement(stmt);
-            }
-            
-            _ = c.LLVMBuildBr(self.builder, continue_block);
-        }
-        
-        // Continue execution after fam block
-        c.LLVMPositionBuilderAtEnd(self.builder, continue_block);
-    }
 
     fn generateShook(self: *CodeGen, shook: ast.ShookExpression) CodeGenError!c.LLVMValueRef {
         // Generate the wrapped expression that might fail
