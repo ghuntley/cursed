@@ -20,18 +20,20 @@ Whitespace characters (spaces, tabs, newlines) separate tokens but are otherwise
 
 ## Comments
 
-CURSED supports two types of comments:
+CURSED supports multiple comment styles:
 
 - Line comments start with `fr fr` and continue until the end of the line
-- Block comments start with `/* cap` and end with `cap */`
+- Line comments can also use `#` (for compatibility)
+- Block comments start with `no cap` and end with `on god`
 
 ```
 fr fr This is a line comment
+# This is also a line comment
 
-/* cap
+no cap
 This is a block comment
 that spans multiple lines
-cap */
+on god
 ```
 
 ## Identifiers
@@ -53,7 +55,7 @@ Traditional programming keywords are replaced with Gen Z slang. Here's the mappi
 | package    | vibe          |
 | import     | yeet          |
 | func       | slay          |
-| return     | damn   |
+| return     | damn / yolo   |
 | var        | sus           |
 | const      | facts         |
 | if         | lowkey        |
