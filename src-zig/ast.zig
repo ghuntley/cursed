@@ -38,7 +38,9 @@ pub const Expression = union(enum) {
     TypeAssertion: TypeAssertionExpression,
     Increment: IncrementExpression,
     Decrement: DecrementExpression,
+    Yikes: YikesExpression,
     Shook: ShookExpression,
+    Fam: FamExpression,
     ErrorValue: ErrorValueExpression,
     StructuredError: StructuredErrorExpression,
     Panic: PanicExpression,
@@ -825,12 +827,44 @@ pub const DecrementExpression = struct {
     variable: *Expression,
 };
 
+/// YIKES - Error creation expression
+pub const YikesExpression = struct {
+    message: *Expression,
+    code: ?*Expression,
+    source_location: ?SourceLocation,
+    
+    pub const SourceLocation = struct {
+        file: []const u8,
+        line: u32,
+        column: u32,
+    };
+};
+
+/// SHOOK - Error propagation expression  
 pub const ShookExpression = struct {
     expression: *Expression,
+    catch_handler: ?*Expression, // Optional immediate catch
+};
+
+/// FAM - Panic recovery block
+pub const FamExpression = struct {
+    try_body: ArrayList(*anyopaque), // Points to Statement
+    catch_handler: ?CatchHandler,
+    finally_handler: ?FinallyHandler,
+    
+    pub const CatchHandler = struct {
+        error_variable: []const u8,
+        handler_body: ArrayList(*anyopaque), // Points to Statement
+    };
+    
+    pub const FinallyHandler = struct {
+        finally_body: ArrayList(*anyopaque), // Points to Statement
+    };
 };
 
 pub const ErrorValueExpression = struct {
     message: []const u8,
+    code: i64,
 };
 
 pub const StructuredErrorExpression = struct {
@@ -849,7 +883,9 @@ pub const PanicExpression = struct {
     message: *Expression,
 };
 
-pub const RecoverExpression = struct {};
+pub const RecoverExpression = struct {
+    context: ?*anyopaque, // Optional recovery context
+};
 
 pub const TestResultExpression = struct {
     test_name: []const u8,

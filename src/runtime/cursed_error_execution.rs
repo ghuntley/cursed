@@ -21,8 +21,8 @@ use crate::runtime::goroutine::GoroutineId;
 use crate::runtime::enhanced_error_handling::{
     CursedErrorType, PropagationContext, RecoveryContext, EnhancedErrorRuntime
 };
-use crate::value::Value;
-use crate::lexer::{Token, TokenType};
+use crate::runtime::value::Value;
+use crate::lexer::{Token, TokenKind};
 
 /// Global error execution runtime
 static CURSED_ERROR_EXECUTION: once_cell::sync::OnceCell<Arc<CursedErrorExecution>> = once_cell::sync::OnceCell::new();

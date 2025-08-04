@@ -7,7 +7,7 @@
 
 use crate::ast::{YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, Expression, Statement, Literal};
 use crate::error::CursedError;
-use crate::lexer::SourceLocation;
+use crate::error::SourceLocation;
 use crate::codegen::llvm::expression_compiler::ExpressionCompiler;
 use std::collections::HashMap;
 
@@ -21,6 +21,10 @@ pub struct ErrorHandlingCodegen {
     recovery_blocks: Vec<RecoveryBlock>,
     /// LLVM register counter
     register_counter: usize,
+    /// Expression compiler for handling complex expressions in error contexts
+    expression_compiler: ExpressionCompiler,
+    /// Error counter for tracking error occurrences
+    error_counter: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -37,6 +41,8 @@ impl ErrorHandlingCodegen {
             propagation_context: Vec::new(),
             recovery_blocks: Vec::new(),
             register_counter: 0,
+            expression_compiler: ExpressionCompiler::new(),
+            error_counter: 0,
         }
     }
 

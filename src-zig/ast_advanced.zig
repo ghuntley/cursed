@@ -591,6 +591,7 @@ pub const Pattern = union(enum) {
     Range: RangePattern,
     Type: TypePattern,
     Guard: GuardPattern,
+    Enum: EnumPattern,
     
     pub const LiteralPattern = struct {
         value: LiteralExpression.LiteralValue,
@@ -654,6 +655,12 @@ pub const Pattern = union(enum) {
         condition: *Expression,
     };
     
+    pub const EnumPattern = struct {
+        enum_name: []const u8,
+        variant_name: []const u8,
+        patterns: []Pattern,
+    };
+    
     pub fn deinit(self: *Pattern, allocator: Allocator) void {
         switch (self.*) {
             .Tuple => |*tuple| {
@@ -691,6 +698,12 @@ pub const Pattern = union(enum) {
                 guard.condition.deinit(allocator);
                 allocator.destroy(guard.pattern);
                 allocator.destroy(guard.condition);
+            },
+            .Enum => |*enum_pattern| {
+                for (enum_pattern.patterns) |*pattern| {
+                    pattern.deinit(allocator);
+                }
+                allocator.free(enum_pattern.patterns);
             },
             else => {},
         }

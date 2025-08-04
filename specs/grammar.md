@@ -224,16 +224,18 @@ periodt x > 0 {
 ### Return Statements
 
 ```
-ReturnStmt       = ( "damn" | "yolo" ) [ ExpressionList ] .
+ReturnStmt       = "damn" [ ExpressionList ] .
 ```
 
-Both `damn` and `yolo` keywords can be used to return values from functions.
+The `damn` keyword is used to return values from functions.
+
+**Note**: `yolo` is deprecated but supported for backward compatibility.
 
 Examples:
 
 ```
 damn x + y
-yolo "Hello World"
+damn "Hello World"
 damn  # return with no value
 ```
 
@@ -365,9 +367,12 @@ CloseStmt        = "close" "(" Channel ")" .
 sus ch dm<normie>                     // Unbuffered channel declaration
 sus buffered dm<tea>[10]              // Buffered channel declaration
 
-dm_send(ch, value)                    // Send operation (blocking)
-value := dm_recv(ch)                  // Receive operation (blocking)
-value, ok := dm_recv(ch)              // Receive with closed check
+dm_send(ch, value)                    // Send operation (blocking) - CANONICAL
+value := dm_recv(ch)                  // Receive operation (blocking) - CANONICAL  
+value, ok := dm_recv(ch)              // Receive with closed check - CANONICAL
+
+// Legacy Go-style syntax (deprecated):
+// ch <- value, value := <-ch
 dm_close(ch)                          // Close channel
 ```
 

@@ -2804,7 +2804,7 @@ impl Parser {
             
             // Parse method implementation (function statement)
             if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Slay) {
-                let method = self.parse_function_statement()?;
+                let method = self.parse_function()?;
                 methods.push(method);
             } else {
                 return Err(Error::Parse("Expected method implementation in impl block".to_string()));
