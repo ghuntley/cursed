@@ -363,14 +363,18 @@ impl ImportResolver {
             // Legacy mappings for backward compatibility
             "mathz", "stringz", "ioz", "dropz", "timez", "encode_mood", "tab_aesthetic",
             
-            // New modules that may have been added
+            // New modules including core runtime modules (without circular dependencies)
             "mime_vibe", "unicode", "database", "web", "select_core", "signal_boost",
             "cryptz", "plugin_system", "stat_flexin", "jit_vibes", "text_aesthetic",
             "error_handling", "fmt", "macro_slay", "user_check", "option", "reflect",
             "vibe_net", "smtp_tea", "parser", "image_processing", "error_management",
             "sus_containers", "mood_map", "tag_core", "plug_vibes", "token_vibe",
             "command_line", "elliptic_curve_tea", "database_complete", "runtime_core",
-            "panic_system", "vibe_context", "lookin_glass", "database_drivers"
+            "panic_system", "vibe_context", "lookin_glass", "database_drivers",
+            
+            // Core runtime modules (fixed circular dependencies)
+            "memory_core", "goroutine_core", "channel_core", "string_simple",
+            "string_enhanced", "collections_core", "async_runtime", "pure_cursed_runtime"
         ];
         
         // Normalize the name for comparison
@@ -840,7 +844,7 @@ impl ImportResolver {
         Ok(self.extract_dependencies_from_source(&source))
     }
     
-    /// Detect circular dependencies in the dependency graph
+    /// Detect circular dependencies in the dependency graph with enhanced error reporting
     pub fn detect_circular_dependencies(&self, graph: &HashMap<String, HashSet<String>>) -> Result<()> {
         let mut visited = HashSet::new();
         let mut rec_stack = HashSet::new();
@@ -849,10 +853,17 @@ impl ImportResolver {
         for node in graph.keys() {
             if !visited.contains(node) {
                 if self.has_cycle_dfs(node, graph, &mut visited, &mut rec_stack, &mut path)? {
-                    return Err(CursedError::ImportError(format!(
-                        "Circular dependency detected in chain: {}", 
-                        path.join(" -> ")
-                    )));
+                    // Enhanced error reporting with cycle resolution suggestions
+                    let cycle_info = format!(
+                        "Circular dependency detected in chain: {}\n\
+                         Suggestion: Remove one of these imports or use lazy loading:\n\
+                         - Consider removing import from {} to {}\n\
+                         - Or use dynamic imports where possible",
+                        path.join(" -> "),
+                        path[path.len()-2],
+                        path[path.len()-1]
+                    );
+                    return Err(CursedError::ImportError(cycle_info));
                 }
             }
         }

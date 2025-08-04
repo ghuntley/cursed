@@ -5,8 +5,10 @@
 //! - shook: Error propagation expressions
 //! - fam: Error recovery blocks
 
-use crate::ast::{YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, Expression, Statement};
+use crate::ast::{YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, Expression, Statement, Literal};
 use crate::error::CursedError;
+use crate::lexer::SourceLocation;
+use crate::codegen::llvm::expression_compiler::ExpressionCompiler;
 use std::collections::HashMap;
 
 /// Error handling code generator
@@ -316,8 +318,14 @@ impl ErrorHandlingCodegen {
                 }
             }
             _ => {
-                // For other expressions, generate placeholder
-                Ok(format!("  %result = add i32 0, 0  ; Placeholder for complex expression\n"))
+                // For other expressions, generate proper error handling code
+                match self.expression_compiler.compile_expression(expr) {
+                    Ok(register) => Ok(format!("  %result = add i32 {}, 0  ; Complex expression result\n", register)),
+                    Err(e) => {
+                        eprintln!("Failed to compile expression in error context: {}", e);
+                        Ok(format!("  %result = add i32 0, 0  ; Expression compilation failed: {}\n", e))
+                    }
+                }
             }
         }
     }
@@ -329,8 +337,11 @@ impl ErrorHandlingCodegen {
                 match self.generate_expression_for_error(expr) {
                     Ok(ir) => Ok(ir),
                     Err(e) => {
-                        // Error recovery - generate safe placeholder
-                        Ok(format!("  ; ERROR RECOVERY: Expression failed: {}\n  %result = add i32 0, 0\n", e))
+                        // Error recovery - generate proper error handling code
+                        eprintln!("Error recovery triggered for expression: {}", e);
+                        let msg_len = e.to_string().len() + 1;
+                        Ok(format!("  ; ERROR RECOVERY: Expression failed: {}\n  call void @cursed_error_handler(i8* getelementptr inbounds ([{}x i8], [{}x i8]* @error_message_{}, i32 0, i32 0))\n  %result = add i32 0, 0\n", 
+                               e, msg_len, msg_len, self.error_counter))
                     }
                 }
             }

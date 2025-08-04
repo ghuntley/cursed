@@ -156,4 +156,38 @@ pub fn build(b: *std.Build) void {
     all_tests_step.dependOn(&run_concurrency_tests.step);
     all_tests_step.dependOn(&run_stdlib_tests.step);
     all_tests_step.dependOn(&run_parser_tests.step);
+
+    // Self-hosting compilation targets
+    const selfhost_stage2_step = b.step("selfhost-stage2", "Compile Stage 2 CURSED compiler using Zig compiler");
+    const selfhost_stage3_step = b.step("selfhost-stage3", "Compile Stage 3 CURSED compiler using Stage 2");
+    const selfhost_step = b.step("selfhost", "Complete self-hosting bootstrap pipeline");
+
+    // Stage 2: Run CURSED compiler in interpretation mode (compilation mode not yet implemented)
+    const stage2_run = b.addSystemCommand(&[_][]const u8{
+        "zig-out/bin/cursed-zig", "src/bootstrap/stage2/main.csd"
+    });
+    stage2_run.step.dependOn(b.getInstallStep());
+    selfhost_stage2_step.dependOn(&stage2_run.step);
+
+    // Stage 3: Compile CURSED compiler using Stage 2 compiler
+    const stage3_run = b.addSystemCommand(&[_][]const u8{
+        "./cursed-stage2", "--compile", "src/bootstrap/stage2/main.csd", "-o", "cursed-stage3"
+    });
+    stage3_run.step.dependOn(&stage2_run.step);
+    selfhost_stage3_step.dependOn(&stage3_run.step);
+
+    // Complete self-hosting pipeline
+    const bootstrap_validation_run = b.addSystemCommand(&[_][]const u8{
+        "./bootstrap_complete.sh"
+    });
+    bootstrap_validation_run.step.dependOn(&stage3_run.step);
+    selfhost_step.dependOn(&bootstrap_validation_run.step);
+
+    // Self-hosting validation test
+    const selfhost_test_step = b.step("selfhost-test", "Test self-hosting compilation pipeline");
+    const test_stage2_run = b.addSystemCommand(&[_][]const u8{
+        "./cursed-stage2", "src/bootstrap/stage2/test_simple.csd"
+    });
+    test_stage2_run.step.dependOn(&stage2_run.step);
+    selfhost_test_step.dependOn(&test_stage2_run.step);
 }

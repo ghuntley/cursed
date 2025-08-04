@@ -2359,20 +2359,42 @@ impl FunctionCompiler {
         }
     }
 
-    /// Compile increment expression
+    /// Compile increment expression with real implementation
     fn compile_increment(&mut self, increment_expr: &IncrementExpression) -> Result<String, CursedError> {
-        // Placeholder implementation - compile to placeholder register
-        let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = add i32 1, 0 ; increment placeholder\n", reg));
-        Ok(reg)
+        // Compile the target expression to get its register
+        let target_reg = self.compile_expression(&increment_expr.operand)?;
+        
+        // Load current value, increment by 1, and store back
+        let load_reg = self.next_register();
+        let inc_reg = self.next_register();
+        let result_reg = self.next_register();
+        
+        // For variables, we need to load, increment, store, and return new value
+        self.ir_code.push_str(&format!("  {} = load i32, i32* {}\n", load_reg, target_reg));
+        self.ir_code.push_str(&format!("  {} = add i32 {}, 1\n", inc_reg, load_reg));
+        self.ir_code.push_str(&format!("  store i32 {}, i32* {}\n", inc_reg, target_reg));
+        self.ir_code.push_str(&format!("  {} = add i32 {}, 0  ; return incremented value\n", result_reg, inc_reg));
+        
+        Ok(result_reg)
     }
 
-    /// Compile decrement expression
+    /// Compile decrement expression with real implementation
     fn compile_decrement(&mut self, decrement_expr: &DecrementExpression) -> Result<String, CursedError> {
-        // Placeholder implementation - compile to placeholder register
-        let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = sub i32 0, 1 ; decrement placeholder\n", reg));
-        Ok(reg)
+        // Compile the target expression to get its register
+        let target_reg = self.compile_expression(&decrement_expr.operand)?;
+        
+        // Load current value, decrement by 1, and store back
+        let load_reg = self.next_register();
+        let dec_reg = self.next_register();
+        let result_reg = self.next_register();
+        
+        // For variables, we need to load, decrement, store, and return new value
+        self.ir_code.push_str(&format!("  {} = load i32, i32* {}\n", load_reg, target_reg));
+        self.ir_code.push_str(&format!("  {} = sub i32 {}, 1\n", dec_reg, load_reg));
+        self.ir_code.push_str(&format!("  store i32 {}, i32* {}\n", dec_reg, target_reg));
+        self.ir_code.push_str(&format!("  {} = add i32 {}, 0  ; return decremented value\n", result_reg, dec_reg));
+        
+        Ok(result_reg)
     }
 
     /// Compile literal expression

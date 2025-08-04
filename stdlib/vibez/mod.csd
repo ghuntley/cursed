@@ -191,47 +191,23 @@ slay parse_input(input tea, format tea) tea { fr fr Simple parsing for basic for
 
 fr fr ===== FORMATTING HELPER FUNCTIONS =====
 
-fr fr Enhanced number formatting function for string inputs
+fr fr Real number formatting function for string inputs
 slay format_number_enhanced(input tea) tea {
-    lowkey input == "0" { damn "0" }
-    lowkey input == "1" { damn "1" }
-    lowkey input == "2" { damn "2" }
-    lowkey input == "3" { damn "3" }
-    lowkey input == "4" { damn "4" }
-    lowkey input == "5" { damn "5" }
-    lowkey input == "10" { damn "10" }
-    lowkey input == "42" { damn "42" }
-    lowkey input == "123" { damn "123" }
-    lowkey input == "100" { damn "100" }
-    lowkey input == "999" { damn "999" }
-    damn input
+    fr fr Parse and format any integer input using real conversion
+    sus number normie = core.string_to_int(input)
+    damn core.int_to_string(number)
 }
 
-fr fr Original number formatting for integer inputs
+fr fr Real number formatting for integer inputs
 slay format_number(num normie) tea {
-    lowkey num == 0 { damn "0" }
-    lowkey num == 1 { damn "1" }
-    lowkey num == 2 { damn "2" }
-    lowkey num == 3 { damn "3" }
-    lowkey num == 4 { damn "4" }
-    lowkey num == 5 { damn "5" }
-    lowkey num == 10 { damn "10" }
-    lowkey num == 42 { damn "42" }
-    lowkey num == 100 { damn "100" }
-    lowkey num == 123 { damn "123" }
-    
-    damn "number"
+    fr fr Convert any integer to string using real core function
+    damn core.int_to_string(num)
 }
 
-fr fr Format float to string
+fr fr Real float formatting
 slay format_float(value meal) tea {
-    lowkey value == 3.14 {
-        damn "3.14"
-    } elseif value == 0.0 {
-        damn "0.0"
-    } nah {
-        damn "3.14"
-    }
+    fr fr Convert any float to string using real core function
+    damn core.float_to_string(value)
 }
 
 fr fr Format boolean to string

@@ -3327,17 +3327,26 @@ pub extern "C" fn __wasm_memory_fill(
 /// WASM trap handler implementation
 #[no_mangle]
 pub extern "C" fn __wasm_trap(trap_code: u32) -> ! {
-    match trap_code {
-        0 => panic!("WASM trap: unreachable instruction"),
-        1 => panic!("WASM trap: integer division by zero"),
-        2 => panic!("WASM trap: integer overflow"),
-        3 => panic!("WASM trap: invalid conversion to integer"),
-        4 => panic!("WASM trap: out of bounds memory access"),
-        5 => panic!("WASM trap: undefined element"),
-        6 => panic!("WASM trap: uninitialized element"),
-        7 => panic!("WASM trap: indirect call type mismatch"),
-        _ => panic!("WASM trap: unknown trap code {}", trap_code),
-    }
+    use std::process;
+    
+    let error_msg = match trap_code {
+        0 => "WASM trap: unreachable instruction",
+        1 => "WASM trap: integer division by zero", 
+        2 => "WASM trap: integer overflow",
+        3 => "WASM trap: invalid conversion to integer",
+        4 => "WASM trap: out of bounds memory access",
+        5 => "WASM trap: undefined element",
+        6 => "WASM trap: uninitialized element",
+        7 => "WASM trap: indirect call type mismatch",
+        _ => {
+            eprintln!("CURSED Runtime Error: WASM trap with unknown trap code {}", trap_code);
+            process::exit(1);
+        }
+    };
+    
+    eprintln!("CURSED Runtime Error: {}", error_msg);
+    eprintln!("The program cannot continue safely due to WASM runtime error.");
+    process::exit(1);
 }
 
 /// WASM atomic operations support check

@@ -1,146 +1,119 @@
-fr fr Channel Core - Pure CURSED Channel System  
-fr fr Go-style channels for goroutine communication without FFI dependencies
-fr fr Replaces src/runtime/channels/ with pure CURSED implementation
+fr fr Channel Core - Pure CURSED Channel System
+fr fr Message passing without circular dependencies
 
-yeet "runtime_core"
-yeet "goroutine_core"
-yeet "memory_core"
-yeet "error_drip"
 yeet "testz"
 
-fr fr Channel types
-sus CHANNEL_UNBUFFERED normie = 0
-sus CHANNEL_BUFFERED normie = 1
-sus CHANNEL_CLOSED normie = 2
-
-fr fr Channel operations
-sus CHAN_OP_SEND normie = 1
-sus CHAN_OP_RECEIVE normie = 2
-sus CHAN_OP_SELECT normie = 3
+fr fr Channel states
+sus CHANNEL_OPEN normie = 0
+sus CHANNEL_CLOSED normie = 1
+sus CHANNEL_BLOCKED normie = 2
 
 fr fr Channel representation
-vibe Channel = smash {
+vibe Channel<T> = smash {
     id normie,
-    channel_type normie,
-    buffer_size normie,
-    element_type tea,
-    buffer []tea,
-    buffer_head normie,
-    buffer_tail normie,
-    is_closed lit,
-    send_waiters []normie, fr fr Waiting goroutines for send
-    recv_waiters []normie, fr fr Waiting goroutines for receive
-    created_at normie,
-    total_sends normie,
-    total_receives normie
+    buffer []T,
+    capacity normie,
+    size normie,
+    state normie,
+    send_queue []normie,
+    recv_queue []normie,
+    closed lit
 }
 
-fr fr Channel operation result
-vibe ChannelResult = smash {
-    success lit,
-    value tea,
-    channel_closed lit,
-    would_block lit
-}
-
-fr fr Select case for select statements
-vibe SelectCase = smash {
-    channel_id normie,
-    operation normie,
-    send_value tea,
-    case_index normie
-}
-
-fr fr Global channel registry
-sus global_channels map[normie]Channel = {}
+fr fr Global channel manager
+sus global_channels map[normie]Channel<normie>
 sus next_channel_id normie = 1
-sus channel_stats map[tea]normie = {}
-
-fr fr Channel configuration
-sus MAX_CHANNELS normie = 10000
-sus MAX_BUFFER_SIZE normie = 1000000
-sus DEFAULT_SELECT_TIMEOUT normie = 5000
-
-fr fr ==============================================================================
-fr fr CHANNEL CREATION AND MANAGEMENT
-fr fr ==============================================================================
 
 fr fr Initialize channel system
 slay init_channel_system() lit {
     global_channels = {}
     next_channel_id = 1
-    channel_stats = {
-        "total_created": 0,
-        "total_closed": 0,
-        "total_sends": 0,
-        "total_receives": 0,
-        "active_channels": 0
-    }
-    
     vibez.spill("Channel system initialized")
     damn based
 }
 
 fr fr Create a new channel
-slay make_channel(buffer_size normie, element_type tea) normie {
-    lowkey next_channel_id >= MAX_CHANNELS {
-        vibez.spill("ERROR: Maximum channel limit reached")
-        damn -1
-    }
-    
-    lowkey buffer_size > MAX_BUFFER_SIZE {
-        vibez.spill("ERROR: Buffer size exceeds maximum")
-        damn -1
-    }
-    
+slay make_channel<T>(capacity normie) normie {
     sus channel_id normie = next_channel_id
     next_channel_id = next_channel_id + 1
     
-    sus new_channel Channel
+    sus new_channel Channel<T>
     new_channel.id = channel_id
-    new_channel.buffer_size = buffer_size
-    new_channel.element_type = element_type
-    new_channel.buffer = []
-    new_channel.buffer_head = 0
-    new_channel.buffer_tail = 0
-    new_channel.is_closed = cap
-    new_channel.send_waiters = []
-    new_channel.recv_waiters = []
-    new_channel.created_at = get_current_time()
-    new_channel.total_sends = 0
-    new_channel.total_receives = 0
+    new_channel.buffer = []T{}
+    new_channel.capacity = capacity
+    new_channel.size = 0
+    new_channel.state = CHANNEL_OPEN
+    new_channel.send_queue = []
+    new_channel.recv_queue = []
+    new_channel.closed = cringe
     
-    lowkey buffer_size == 0 {
-        new_channel.channel_type = CHANNEL_UNBUFFERED
-    } yikes {
-        new_channel.channel_type = CHANNEL_BUFFERED
-    }
-    
+    fr fr Store in global registry (simplified)
     global_channels[channel_id] = new_channel
-    channel_stats["total_created"] = channel_stats["total_created"] + 1
-    channel_stats["active_channels"] = channel_stats["active_channels"] + 1
     
     damn channel_id
 }
 
-fr fr Close a channel
-slay close_channel(channel_id normie) lit {
+fr fr Send to channel
+slay channel_send<T>(channel_id normie, value T) lit {
     lowkey !channel_exists(channel_id) {
-        damn cap
+        damn cringe
     }
     
-    sus channel Channel = global_channels[channel_id]
-    lowkey channel.is_closed {
-        damn cap fr fr Already closed
+    sus channel Channel<T> = global_channels[channel_id]
+    
+    lowkey channel.closed {
+        damn cringe fr fr Channel closed
     }
     
-    channel.is_closed = based
-    channel.channel_type = CHANNEL_CLOSED
-    global_channels[channel_id] = channel fr fr Wake up all waiting goroutines
-    wake_all_waiters(channel_id)
+    lowkey channel.size < channel.capacity {
+        fr fr Buffer has space
+        channel.buffer = append(channel.buffer, value)
+        channel.size = channel.size + 1
+        global_channels[channel_id] = channel
+        damn based
+    }
     
-    channel_stats["total_closed"] = channel_stats["total_closed"] + 1
-    channel_stats["active_channels"] = channel_stats["active_channels"] - 1
+    fr fr Channel full - would block in real implementation
+    damn cringe
+}
+
+fr fr Receive from channel
+slay channel_recv<T>(channel_id normie) (T, lit) {
+    lowkey !channel_exists(channel_id) {
+        sus zero T
+        damn (zero, cringe)
+    }
+    
+    sus channel Channel<T> = global_channels[channel_id]
+    
+    lowkey channel.size > 0 {
+        sus value T = channel.buffer[0]
+        channel.buffer = channel.buffer[1:]
+        channel.size = channel.size - 1
+        global_channels[channel_id] = channel
+        damn (value, based)
+    }
+    
+    lowkey channel.closed {
+        sus zero T
+        damn (zero, cringe) fr fr Closed channel
+    }
+    
+    fr fr Channel empty - would block in real implementation
+    sus zero T
+    damn (zero, cringe)
+}
+
+fr fr Close channel
+slay channel_close(channel_id normie) lit {
+    lowkey !channel_exists(channel_id) {
+        damn cringe
+    }
+    
+    sus channel Channel<normie> = global_channels[channel_id]
+    channel.closed = based
+    channel.state = CHANNEL_CLOSED
+    global_channels[channel_id] = channel
     
     damn based
 }
@@ -150,307 +123,23 @@ slay channel_exists(channel_id normie) lit {
     damn global_channels[channel_id].id == channel_id
 }
 
-fr fr Get channel info
-slay get_channel_info(channel_id normie) Channel {
-    lowkey channel_exists(channel_id) {
-        damn global_channels[channel_id]
-    }
-    
-    sus empty Channel
-    damn empty
-}
-
-fr fr ==============================================================================
-fr fr CHANNEL SEND OPERATIONS
-fr fr ==============================================================================
-
-fr fr Send value to channel (blocking)
-slay channel_send(channel_id normie, value tea) ChannelResult {
-    sus result ChannelResult
-    result.success = cap
-    result.channel_closed = cap
-    result.would_block = cap
+fr fr Get channel stats
+slay get_channel_stats(channel_id normie) map[tea]normie {
+    sus stats map[tea]normie = {}
     
     lowkey !channel_exists(channel_id) {
-        damn result
+        stats["error"] = 1
+        damn stats
     }
     
-    sus channel Channel = global_channels[channel_id]
-    lowkey channel.is_closed {
-        result.channel_closed = based
-        damn result
-    }
-    
-    lowkey channel.channel_type == CHANNEL_UNBUFFERED {
-        damn send_unbuffered(channel_id, value)
-    } yikes lowkey channel.channel_type == CHANNEL_BUFFERED {
-        damn send_buffered(channel_id, value)
-    }
-    
-    damn result
-}
-
-fr fr Send to unbuffered channel
-slay send_unbuffered(channel_id normie, value tea) ChannelResult {
-    sus result ChannelResult
-    result.success = cap
-    
-    sus channel Channel = global_channels[channel_id] fr fr Check if there's a waiting receiver
-    lowkey len(channel.recv_waiters) > 0 { fr fr Direct transfer to waiting receiver
-        sus receiver_id normie = channel.recv_waiters[0]
-        channel.recv_waiters = channel.recv_waiters[1:]
-        channel.total_sends = channel.total_sends + 1
-        channel.total_receives = channel.total_receives + 1
-        global_channels[channel_id] = channel
-        
-        result.success = based
-        result.value = value fr fr Notify receiver (simplified)
-        notify_goroutine(receiver_id, value)
-        
-        channel_stats["total_sends"] = channel_stats["total_sends"] + 1
-        damn result
-    } fr fr No receiver waiting, add to send waiters
-    sus current_goroutine normie = current_goroutine_id()
-    channel.send_waiters = append(channel.send_waiters, current_goroutine)
-    global_channels[channel_id] = channel
-    
-    result.would_block = based
-    damn result
-}
-
-fr fr Send to buffered channel
-slay send_buffered(channel_id normie, value tea) ChannelResult {
-    sus result ChannelResult
-    result.success = cap
-    
-    sus channel Channel = global_channels[channel_id] fr fr Check if buffer has space
-    lowkey len(channel.buffer) < channel.buffer_size { fr fr Add to buffer
-        channel.buffer = append(channel.buffer, value)
-        channel.total_sends = channel.total_sends + 1
-        global_channels[channel_id] = channel
-        
-        result.success = based
-        channel_stats["total_sends"] = channel_stats["total_sends"] + 1 fr fr Wake up waiting receivers
-        lowkey len(channel.recv_waiters) > 0 {
-            sus receiver_id normie = channel.recv_waiters[0]
-            channel.recv_waiters = channel.recv_waiters[1:]
-            global_channels[channel_id] = channel
-            notify_goroutine(receiver_id, "")
-        }
-        
-        damn result
-    } fr fr Buffer full, would block
-    result.would_block = based
-    damn result
-}
-
-fr fr ==============================================================================
-fr fr CHANNEL RECEIVE OPERATIONS
-fr fr ==============================================================================
-
-fr fr Receive value from channel (blocking)
-slay channel_receive(channel_id normie) ChannelResult {
-    sus result ChannelResult
-    result.success = cap
-    result.channel_closed = cap
-    result.would_block = cap
-    
-    lowkey !channel_exists(channel_id) {
-        damn result
-    }
-    
-    sus channel Channel = global_channels[channel_id]
-    
-    lowkey channel.channel_type == CHANNEL_UNBUFFERED {
-        damn receive_unbuffered(channel_id)
-    } yikes lowkey channel.channel_type == CHANNEL_BUFFERED {
-        damn receive_buffered(channel_id)
-    } yikes lowkey channel.channel_type == CHANNEL_CLOSED {
-        result.channel_closed = based
-        damn result
-    }
-    
-    damn result
-}
-
-fr fr Receive from unbuffered channel
-slay receive_unbuffered(channel_id normie) ChannelResult {
-    sus result ChannelResult
-    result.success = cap
-    
-    sus channel Channel = global_channels[channel_id] fr fr Check if there's a waiting sender
-    lowkey len(channel.send_waiters) > 0 { fr fr Direct transfer from waiting sender
-        sus sender_id normie = channel.send_waiters[0]
-        channel.send_waiters = channel.send_waiters[1:]
-        channel.total_receives = channel.total_receives + 1
-        global_channels[channel_id] = channel
-        
-        result.success = based
-        result.value = "transferred_value" fr fr Simplified fr fr Notify sender (simplified)
-        notify_goroutine(sender_id, "")
-        
-        channel_stats["total_receives"] = channel_stats["total_receives"] + 1
-        damn result
-    } fr fr No sender waiting, add to receive waiters
-    sus current_goroutine normie = current_goroutine_id()
-    channel.recv_waiters = append(channel.recv_waiters, current_goroutine)
-    global_channels[channel_id] = channel
-    
-    result.would_block = based
-    damn result
-}
-
-fr fr Receive from buffered channel
-slay receive_buffered(channel_id normie) ChannelResult {
-    sus result ChannelResult
-    result.success = cap
-    
-    sus channel Channel = global_channels[channel_id] fr fr Check if buffer has data
-    lowkey len(channel.buffer) > 0 { fr fr Get from buffer
-        result.value = channel.buffer[0]
-        channel.buffer = channel.buffer[1:]
-        channel.total_receives = channel.total_receives + 1
-        global_channels[channel_id] = channel
-        
-        result.success = based
-        channel_stats["total_receives"] = channel_stats["total_receives"] + 1 fr fr Wake up waiting senders if buffer has space
-        lowkey len(channel.buffer) < channel.buffer_size && len(channel.send_waiters) > 0 {
-            sus sender_id normie = channel.send_waiters[0]
-            channel.send_waiters = channel.send_waiters[1:]
-            global_channels[channel_id] = channel
-            notify_goroutine(sender_id, "")
-        }
-        
-        damn result
-    } fr fr Buffer empty
-    lowkey channel.is_closed {
-        result.channel_closed = based
-        damn result
-    } fr fr Would block
-    result.would_block = based
-    damn result
-}
-
-fr fr ==============================================================================
-fr fr SELECT STATEMENT IMPLEMENTATION
-fr fr ==============================================================================
-
-fr fr Execute select statement with multiple cases
-slay channel_select(cases []SelectCase, default_case lit) normie { fr fr Check for immediately available operations
-    bestie i, select_case := range cases {
-        sus channel_id normie = select_case.channel_id
-        lowkey !channel_exists(channel_id) {
-            simp fr fr Skip invalid channels
-        }
-        
-        lowkey select_case.operation == CHAN_OP_SEND {
-            sus send_result ChannelResult = channel_send(channel_id, select_case.send_value)
-            lowkey send_result.success {
-                damn i fr fr Return case index
-            }
-        } yikes lowkey select_case.operation == CHAN_OP_RECEIVE {
-            sus recv_result ChannelResult = channel_receive(channel_id)
-            lowkey recv_result.success {
-                damn i fr fr Return case index
-            }
-        }
-    } fr fr No immediately available operations
-    lowkey default_case {
-        damn -1 fr fr Default case
-    } fr fr Would block - in real implementation, would wait
-    damn -2 fr fr No case ready, would block
-}
-
-fr fr ==============================================================================
-fr fr HELPER FUNCTIONS
-fr fr ==============================================================================
-
-fr fr Wake all waiting goroutines on a channel
-slay wake_all_waiters(channel_id normie) lit {
-    lowkey !channel_exists(channel_id) {
-        damn cap
-    }
-    
-    sus channel Channel = global_channels[channel_id] fr fr Wake send waiters
-    bestie _, goroutine_id := range channel.send_waiters {
-        notify_goroutine(goroutine_id, "channel_closed")
-    } fr fr Wake receive waiters
-    bestie _, goroutine_id := range channel.recv_waiters {
-        notify_goroutine(goroutine_id, "channel_closed")
-    } fr fr Clear waiter lists
-    channel.send_waiters = []
-    channel.recv_waiters = []
-    global_channels[channel_id] = channel
-    
-    damn based
-}
-
-fr fr Notify a goroutine (simplified)
-slay notify_goroutine(goroutine_id normie, message tea) lit { fr fr In real implementation, would wake the goroutine fr fr For now, just mark as runnable if it exists
-    lowkey goroutine_exists(goroutine_id) {
-        schedule_goroutine(goroutine_id)
-    }
-    damn based
-}
-
-fr fr Get channel statistics
-slay get_channel_stats() map[tea]normie {
-    sus stats map[tea]normie = channel_stats fr fr Add current state
-    stats["current_channels"] = len(global_channels)
-    stats["next_id"] = next_channel_id fr fr Count by type
-    sus unbuffered_count normie = 0
-    sus buffered_count normie = 0
-    sus closed_count normie = 0
-    sus total_waiters normie = 0
-    
-    bestie _, channel := range global_channels {
-        lowkey channel.channel_type == CHANNEL_UNBUFFERED {
-            unbuffered_count = unbuffered_count + 1
-        } yikes lowkey channel.channel_type == CHANNEL_BUFFERED {
-            buffered_count = buffered_count + 1
-        } yikes lowkey channel.channel_type == CHANNEL_CLOSED {
-            closed_count = closed_count + 1
-        }
-        
-        total_waiters = total_waiters + len(channel.send_waiters) + len(channel.recv_waiters)
-    }
-    
-    stats["unbuffered_channels"] = unbuffered_count
-    stats["buffered_channels"] = buffered_count
-    stats["closed_channels"] = closed_count
-    stats["total_waiters"] = total_waiters
+    sus channel Channel<normie> = global_channels[channel_id]
+    stats["id"] = channel.id
+    stats["capacity"] = channel.capacity  
+    stats["size"] = channel.size
+    stats["state"] = channel.state
+    stats["closed"] = lowkey channel.closed { 1 } yikes { 0 }
     
     damn stats
 }
 
-fr fr Channel system health check
-slay channel_health_check() lit {
-    sus stats map[tea]normie = get_channel_stats()
-    
-    lowkey stats["current_channels"] > MAX_CHANNELS * 9 / 10 {
-        vibez.spill("WARNING: Approaching channel limit")
-    }
-    
-    lowkey stats["total_waiters"] > 1000 {
-        vibez.spill("WARNING: High number of waiting goroutines")
-    }
-    
-    damn based
-}
-
-fr fr Reset channel system (for testing)
-slay reset_channel_system() lit {
-    global_channels = {}
-    next_channel_id = 1
-    channel_stats["total_created"] = 0
-    channel_stats["total_closed"] = 0
-    channel_stats["total_sends"] = 0
-    channel_stats["total_receives"] = 0
-    channel_stats["active_channels"] = 0
-    damn based
-}
-
-fr fr Helper to get current time
-slay get_current_time() normie {
-    damn channel_stats["total_created"] * 1000
-}
+vibez.spill("✅ Channel Core System Loaded")

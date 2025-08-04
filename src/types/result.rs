@@ -39,7 +39,10 @@ impl<T, E> Result<T, E> {
     {
         match self {
             Result::Ok(t) => t,
-            Result::Err(e) => panic!("called `Result::unwrap()` on an `Err` value: {:?}", e),
+            Result::Err(e) => {
+            eprintln!("CURSED Runtime Error: called `Result::unwrap()` on an `Err` value: {:?}", e);
+            std::process::exit(1);
+        },
         }
     }
 
@@ -128,7 +131,10 @@ impl<T> Option<T> {
     pub fn unwrap(self) -> T {
         match self {
             Option::Some(val) => val,
-            Option::None => panic!("called `Option::unwrap()` on a `None` value"),
+            Option::None => {
+            eprintln!("CURSED Runtime Error: called `Option::unwrap()` on a `None` value");
+            std::process::exit(1);
+        },
         }
     }
 
@@ -350,7 +356,10 @@ pub mod error_patterns {
         pub fn unwrap_success(self) -> T {
             match self {
                 ErrorPattern::Success(val) => val,
-                _ => panic!("called `unwrap_success()` on an error pattern"),
+                _ => {
+                    eprintln!("CURSED Runtime Error: called `unwrap_success()` on an error pattern");
+                    std::process::exit(1);
+                },
             }
         }
 

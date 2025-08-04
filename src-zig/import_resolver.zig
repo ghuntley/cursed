@@ -75,15 +75,19 @@ pub const ImportResolver = struct {
         else
             module_name;
 
-        // Try different file patterns
+        // Enhanced module name mapping for common aliases
+        const mapped_name = self.mapStdlibModuleName(clean_name);
+
+        // Try different file patterns with both original and mapped names
         const patterns = [_][]const u8{
             "{s}/{s}/mod.csd",
             "{s}/{s}.csd",
             "{s}/{s}/lib.csd",
         };
 
+        // Try with mapped name first
         for (patterns) |pattern| {
-            const path = try std.fmt.allocPrint(self.allocator, pattern, .{ self.stdlib_path, clean_name });
+            const path = try std.fmt.allocPrint(self.allocator, pattern, .{ self.stdlib_path, mapped_name });
             defer self.allocator.free(path);
 
             if (self.fileExists(path)) {
@@ -91,7 +95,33 @@ pub const ImportResolver = struct {
             }
         }
 
+        // Try with original name if mapping failed
+        if (!std.mem.eql(u8, clean_name, mapped_name)) {
+            for (patterns) |pattern| {
+                const path = try std.fmt.allocPrint(self.allocator, pattern, .{ self.stdlib_path, clean_name });
+                defer self.allocator.free(path);
+
+                if (self.fileExists(path)) {
+                    return try self.allocator.dupe(u8, path);
+                }
+            }
+        }
+
         return null;
+    }
+
+    fn mapStdlibModuleName(self: *ImportResolver, module_name: []const u8) []const u8 {
+        _ = self;
+        
+        // Map legacy module names to current names
+        if (std.mem.eql(u8, module_name, "mathz")) return "math";
+        if (std.mem.eql(u8, module_name, "stringz")) return "string_simple";
+        if (std.mem.eql(u8, module_name, "ioz")) return "io";
+        if (std.mem.eql(u8, module_name, "timez")) return "time";
+        if (std.mem.eql(u8, module_name, "dropz")) return "collections";
+        
+        // Return original name if no mapping exists
+        return module_name;
     }
 
     fn resolveLocalModule(self: *ImportResolver, module_name: []const u8) !?[]const u8 {

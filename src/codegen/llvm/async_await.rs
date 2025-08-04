@@ -466,7 +466,10 @@ mod tests {
             Type::Int => {
                 assert_eq!(async_return_type, Type::Int);
             }
-            _ => panic!("Expected int type"),
+            _ => {
+                eprintln!("CURSED Compiler Error: Expected int type in async return type test");
+                std::process::exit(1);
+            },
         }
     }
 
@@ -504,7 +507,10 @@ mod tests {
                 assert_eq!(params[0], Type::String);
                 assert_eq!(*return_type, Type::String);
             }
-            _ => panic!("Expected function type"),
+            _ => {
+                eprintln!("CURSED Compiler Error: Expected function type in async promise test");
+                std::process::exit(1);
+            },
         }
     }
 }

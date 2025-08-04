@@ -1113,7 +1113,8 @@ pub fn get_global_channel_manager() -> Arc<ChannelLifecycleManager> {
 pub fn init_global_channel_manager(limits: ChannelResourceLimits) -> Arc<ChannelLifecycleManager> {
     let manager = Arc::new(ChannelLifecycleManager::with_limits(limits));
     GLOBAL_CHANNEL_MANAGER.set(manager.clone()).unwrap_or_else(|_| {
-        panic!("Global channel manager already initialized");
+        eprintln!("CURSED Runtime Error: Global channel manager already initialized");
+        std::process::exit(1);
     });
     manager
 }

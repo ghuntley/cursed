@@ -1,202 +1,213 @@
 yeet "testz"
 yeet "memory"
 
-fr fr Comprehensive Memory Management Test Suite
-test_start("Memory Management Operations Test")
+fr fr ========================================
+fr fr Memory Module Comprehensive Tests
+fr fr ========================================
 
-fr fr Basic Memory Allocation Tests
-sus addr1, err1 = memory_allocate(1024)
-assert_not_null(string(addr1))
-assert_eq_string(err1.(tea), "")
-assert_gt(addr1, 0)
+test_start("Basic Memory Allocation Tests")
 
-sus addr2, err2 = memory_allocate(2048)
-assert_not_null(string(addr2))
-assert_eq_string(err2.(tea), "")
-assert_gt(addr2, 0)
+fr fr Test malloc
+sus addr1 normie = malloc(1024)
+assert_true(addr1 > 0)
 
-fr fr Test different allocation addresses
-assert_true(addr1 != addr2)
+sus addr2 normie = malloc(2048)
+assert_true(addr2 > 0)
+assert_true(addr2 != addr1)
 
-fr fr Memory Deallocation Tests
-sus success1, dealloc_err1 = memory_deallocate(addr1)
-assert_true(success1)
-assert_eq_string(dealloc_err1.(tea), "")
+fr fr Test invalid malloc
+sus invalid_addr normie = malloc(0)
+assert_eq_int(invalid_addr, 0)
 
-sus success2, dealloc_err2 = memory_deallocate(addr2)
-assert_true(success2)
-assert_eq_string(dealloc_err2.(tea), "")
+test_start("Memory Deallocation Tests")
 
-fr fr Error Condition Tests - Invalid Allocation Size
-sus invalid_addr1, invalid_err1 = memory_allocate(0)
-assert_eq_int(invalid_addr1, 0)
-assert_not_null(invalid_err1.(tea))
+fr fr Test free
+sus addr_to_free normie = malloc(512)
+assert_true(addr_to_free > 0)
+assert_true(free(addr_to_free))
 
-sus invalid_addr2, invalid_err2 = memory_allocate(-100)
-assert_eq_int(invalid_addr2, 0)
-assert_not_null(invalid_err2.(tea))
+fr fr Test freeing invalid address
+assert_false(free(0))
 
-fr fr Error Condition Tests - Null Pointer Deallocation
-sus null_success, null_err = memory_deallocate(0)
-assert_false(null_success)
-assert_not_null(null_err.(tea))
+test_start("Memory Reallocation Tests")
 
-fr fr Memory Reallocation Tests
-sus realloc_addr, realloc_err1 = memory_allocate(512)
-assert_gt(realloc_addr, 0)
-assert_eq_string(realloc_err1.(tea), "")
+fr fr Test realloc with existing address
+sus original normie = malloc(256)
+sus resized normie = realloc(original, 512)
+assert_true(resized > 0)
 
-sus new_addr, realloc_err2 = memory_reallocate(realloc_addr, 1024)
-assert_gt(new_addr, 0)
-assert_eq_string(realloc_err2.(tea), "")
+fr fr Test realloc with null address (should act like malloc)
+sus new_alloc normie = realloc(0, 1024)
+assert_true(new_alloc > 0)
 
-fr fr Clean up reallocation test
-sus cleanup_success, cleanup_err = memory_deallocate(new_addr)
-assert_true(cleanup_success)
+fr fr Test realloc with zero size (should act like free)
+sus to_free normie = malloc(128)
+sus freed normie = realloc(to_free, 0)
+assert_eq_int(freed, 0)
 
-fr fr Memory Copy Tests
-sus src_addr, src_err = memory_allocate(256)
-assert_gt(src_addr, 0)
-sus dest_addr, dest_err = memory_allocate(256)
-assert_gt(dest_addr, 0)
+test_start("Calloc Tests")
 
-sus copy_success, copy_err = memory_copy(dest_addr, src_addr, 128)
-assert_true(copy_success)
-assert_eq_string(copy_err.(tea), "")
+fr fr Test calloc
+sus zeroed normie = calloc(10, 64)
+assert_true(zeroed > 0)
 
-fr fr Memory Move Tests
-sus move_success, move_err = memory_move(dest_addr, src_addr, 64)
-assert_true(move_success)
-assert_eq_string(move_err.(tea), "")
+fr fr Test calloc with invalid parameters
+sus invalid_calloc1 normie = calloc(0, 64)
+assert_eq_int(invalid_calloc1, 0)
 
-fr fr Memory Set Tests
-sus set_success, set_err = memory_set(dest_addr, 0, 256)
-assert_true(set_success)
-assert_eq_string(set_err.(tea), "")
+sus invalid_calloc2 normie = calloc(10, 0)
+assert_eq_int(invalid_calloc2, 0)
 
-fr fr Memory Compare Tests
-sus compare_result, compare_err = memory_compare(src_addr, dest_addr, 64)
-assert_eq_string(compare_err.(tea), "")
+test_start("Aligned Allocation Tests")
 
-fr fr Clean up copy/move/set tests
-memory_deallocate(src_addr)
-memory_deallocate(dest_addr)
+fr fr Test aligned allocation
+sus aligned normie = aligned_alloc(16, 1024)
+assert_true(aligned > 0)
 
-fr fr Memory Pool Tests
-sus pool, pool_err = memory_pool_create(64, 10)
-assert_eq_string(pool_err.(tea), "")
+fr fr Test invalid aligned allocation
+sus invalid_aligned normie = aligned_alloc(0, 1024)
+assert_eq_int(invalid_aligned, 0)
 
-sus pool_addr1, pool_acquire_err1 = memory_pool_acquire(pool)
-assert_gt(pool_addr1, 0)
-assert_eq_string(pool_acquire_err1.(tea), "")
+test_start("Memory Operation Tests")
 
-sus pool_addr2, pool_acquire_err2 = memory_pool_acquire(pool)
-assert_gt(pool_addr2, 0)
-assert_eq_string(pool_acquire_err2.(tea), "")
+fr fr Test memcpy
+sus src_addr normie = malloc(256)
+sus dest_addr normie = malloc(256)
+assert_true(memcpy(dest_addr, src_addr, 128))
+assert_false(memcpy(0, src_addr, 128))
 
-fr fr Pool addresses should be different
-assert_true(pool_addr1 != pool_addr2)
+fr fr Test memmove
+assert_true(memmove(dest_addr, src_addr, 128))
+assert_false(memmove(0, src_addr, 128))
 
-fr fr Release pool blocks
-sus pool_release1, pool_release_err1 = memory_pool_release(pool, pool_addr1)
-assert_true(pool_release1)
-assert_eq_string(pool_release_err1.(tea), "")
+fr fr Test memcmp
+assert_eq_int(memcmp(src_addr, src_addr, 128), 0)  fr fr Same address
+assert_true(memcmp(src_addr, dest_addr, 128) != 0)  fr fr Different addresses
 
-sus pool_release2, pool_release_err2 = memory_pool_release(pool, pool_addr2)
-assert_true(pool_release2)
-assert_eq_string(pool_release_err2.(tea), "")
+fr fr Test memset
+assert_true(memset(src_addr, 0, 128))
+assert_false(memset(0, 0, 128))
 
-fr fr Destroy pool
-sus pool_destroy_success, pool_destroy_err = memory_pool_destroy(pool)
-assert_true(pool_destroy_success)
-assert_eq_string(pool_destroy_err.(tea), "")
+test_start("Memory Statistics Tests")
 
-fr fr Garbage Collection Tests
-sus freed_bytes1, gc_err1 = memory_gc_collect()
-assert_eq_string(gc_err1.(tea), "")
-assert_gt(freed_bytes1, 0)
+fr fr Test memory stats
+sus stats MemoryPool = get_memory_stats()
+assert_true(stats.total_allocated > 0)
+assert_true(stats.allocation_count > 0)
 
-sus freed_bytes2, gc_err2 = memory_gc_force_collect()
-assert_eq_string(gc_err2.(tea), "")
-assert_gt(freed_bytes2, 0)
+fr fr Test current memory usage
+sus usage normie = get_current_memory_usage()
+assert_true(usage >= 0)
 
-sus gc_stats = memory_gc_get_stats()
-assert_not_null(string(gc_stats.total_allocated))
+test_start("Address Validation Tests")
 
-fr fr Memory Safety Tests
-sus safety_addr, safety_err = memory_allocate(128)
-assert_gt(safety_addr, 0)
+fr fr Test valid address check
+sus valid_addr normie = malloc(128)
+assert_true(is_valid_address(valid_addr))
+assert_false(is_valid_address(0))
+assert_false(is_valid_address(99999))
 
-sus bounds_check, bounds_err = memory_check_bounds(safety_addr, 128, 64)
-assert_true(bounds_check)
-assert_eq_string(bounds_err.(tea), "")
+fr fr Test block size retrieval
+sus size_addr normie = malloc(512)
+sus retrieved_size normie = get_block_size(size_addr)
+assert_eq_int(retrieved_size, 512)
 
-sus null_check, null_check_err = memory_check_null(safety_addr)
-assert_true(null_check)
-assert_eq_string(null_check_err.(tea), "")
+sus invalid_size normie = get_block_size(0)
+assert_eq_int(invalid_size, 0)
 
-sus double_free_check, double_free_err = memory_check_double_free(safety_addr)
-assert_true(double_free_check)
-assert_eq_string(double_free_err.(tea), "")
+test_start("Memory Leak Detection Tests")
 
-sus use_after_free_check, use_after_free_err = memory_check_use_after_free(safety_addr)
-assert_true(use_after_free_check)
-assert_eq_string(use_after_free_err.(tea), "")
+fr fr Test leak detection
+sus leak_addr1 normie = malloc(64)
+sus leak_addr2 normie = malloc(128)
 
-fr fr Clean up safety tests
-memory_deallocate(safety_addr)
+sus leaks []MemoryBlock = find_memory_leaks()
+assert_true(leaks.length() >= 2)
 
-fr fr Memory Statistics Tests
-sus total_allocated = memory_get_total_allocated()
-assert_gt(total_allocated, 0)
+fr fr Free one and test again
+free(leak_addr1)
+sus leaks_after []MemoryBlock = find_memory_leaks()
+assert_true(leaks_after.length() < leaks.length())
 
-sus allocation_count = memory_get_allocation_count()
-assert_gt(allocation_count, 0)
+test_start("Stack Frame Tests")
 
-sus fragmentation_ratio = memory_get_fragmentation_ratio()
-assert_true(fragmentation_ratio >= 0.0)
+fr fr Test stack frame operations
+sus frame_addr normie = push_stack_frame(256)
+assert_true(frame_addr > 0)
 
-fr fr Test memory threshold setting
-memory_gc_set_threshold(2097152) fr fr 2MB threshold
+sus stack_size normie = get_stack_size()
+assert_eq_int(stack_size, 256)
 
-fr fr Error Condition Tests - Large Allocation
-sus large_addr, large_err = memory_allocate(0x80000000) fr fr > 2GB
-assert_eq_int(large_addr, 0)
-assert_not_null(large_err.(tea))
+assert_true(pop_stack_frame())
 
-fr fr Error Condition Tests - Null Pointer Operations
-sus null_copy_success, null_copy_err = memory_copy(0, safety_addr, 64)
-assert_false(null_copy_success)
-assert_not_null(null_copy_err.(tea))
+sus empty_stack_size normie = get_stack_size()
+assert_eq_int(empty_stack_size, 0)
 
-sus null_move_success, null_move_err = memory_move(0, safety_addr, 64)
-assert_false(null_move_success)
-assert_not_null(null_move_err.(tea))
+test_start("Garbage Collection Tests")
 
-sus null_set_success, null_set_err = memory_set(0, 0, 64)
-assert_false(null_set_success)
-assert_not_null(null_set_err.(tea))
+fr fr Test garbage collection
+sus gc_addr normie = malloc(1024)
+sus collected_bytes normie = gc_collect()
+assert_true(collected_bytes >= 0)
 
-sus null_compare_result, null_compare_err = memory_compare(0, safety_addr, 64)
-assert_eq_int(null_compare_result, -2)
-assert_not_null(null_compare_err.(tea))
+sus gc_stats GCStats = get_gc_stats()
+assert_true(gc_stats.collections >= 1)
 
-fr fr Test reallocation edge cases
-sus realloc_null_addr, realloc_null_err = memory_reallocate(0, 256)
-assert_gt(realloc_null_addr, 0) fr fr Should work like malloc
-assert_eq_string(realloc_null_err.(tea), "")
+test_start("Memory Pressure Tests")
 
-sus realloc_zero_addr, realloc_zero_err = memory_reallocate(realloc_null_addr, 0)
-assert_eq_int(realloc_zero_addr, 0) fr fr Should work like free
-assert_eq_string(realloc_zero_err.(tea), "")
+fr fr Test memory pressure monitoring
+sus pressure normie = get_memory_pressure()
+assert_true(pressure >= 0 && pressure <= 100)
 
-fr fr Memory Pool Error Tests
-sus invalid_pool, invalid_pool_err = memory_pool_create(0, 10)
-assert_not_null(invalid_pool_err.(tea))
+sus should_gc lit = should_trigger_gc()
+fr fr should_gc can be either true or false, just ensure it's boolean
+assert_true(should_gc == based || should_gc == cap)
 
-sus invalid_pool2, invalid_pool_err2 = memory_pool_create(64, 0)
-assert_not_null(invalid_pool_err2.(tea))
+test_start("Heap Validation Tests")
 
-vibez.spill("🧠 Memory management tests completed successfully!")
+fr fr Test heap validation
+assert_true(validate_heap())
+
+test_start("Memory Debug Info Tests")
+
+fr fr Test memory info dump
+sus info tea = dump_memory_info()
+assert_true(info.contains("Memory Info"))
+assert_true(info.contains("Total Allocated"))
+assert_true(info.contains("Current Usage"))
+
+test_start("Object Pool Tests")
+
+fr fr Test object pool creation
+sus pool ObjectPool = create_object_pool(64, 10)
+assert_eq_int(pool.object_size, 64)
+assert_eq_int(pool.pool_size, 10)
+assert_eq_int(pool.available.length(), 10)
+
+fr fr Test object pool allocation
+sus pool_addr1 normie = pool.allocate()
+assert_true(pool_addr1 > 0)
+assert_eq_int(pool.available.length(), 9)
+assert_eq_int(pool.allocated.length(), 1)
+
+sus pool_addr2 normie = pool.allocate()
+assert_true(pool_addr2 > 0)
+assert_true(pool_addr2 != pool_addr1)
+
+fr fr Test object pool deallocation
+assert_true(pool.deallocate(pool_addr1))
+assert_eq_int(pool.available.length(), 9)
+assert_eq_int(pool.allocated.length(), 1)
+
+assert_false(pool.deallocate(99999))  fr fr Invalid address
+
+test_start("Memory Cleanup Tests")
+
+fr fr Test memory cleanup
+assert_true(cleanup_memory())
+
+fr fr After cleanup, current usage should be 0
+sus final_usage normie = get_current_memory_usage()
+assert_eq_int(final_usage, 0)
 
 print_test_summary()

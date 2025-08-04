@@ -329,7 +329,9 @@ impl AsyncExecutor {
         if let Some(handle) = &self.tokio_handle {
             // Use current runtime - cannot call block_on from within a runtime
             // This should not be called from within an async context
-            panic!("Cannot call block_on from within an async runtime context")
+            eprintln!("CURSED Runtime Error: Cannot call block_on from within an async runtime context");
+            eprintln!("This indicates a design issue in the async code.");
+            std::process::exit(1);
         } else {
             // Create a temporary runtime if no current handle
             let rt = tokio::runtime::Runtime::new()

@@ -217,7 +217,10 @@ impl<T> SendResult<T> {
             SendResult::Sent => {
                 // This is not a valid unwrap for Sent variant - return a default or handle differently
                 // For now, we'll provide a better error message
-                unreachable!("SendResult::Sent has no value to unwrap - use is_ok() to check success")
+                {
+            eprintln!("CURSED Runtime Error: SendResult::Sent has no value to unwrap - use is_ok() to check success");
+            std::process::exit(1);
+        }
             },
             SendResult::Closed(t) => t,
             SendResult::WouldBlock(t) => t,
@@ -280,10 +283,12 @@ impl<T> ReceiveResult<T> {
         match self {
             ReceiveResult::Received(t) => t,
             ReceiveResult::Closed => {
-                unreachable!("ReceiveResult::Closed has no value to unwrap - use is_ok() to check success")
+                eprintln!("CURSED Runtime Error: ReceiveResult::Closed has no value to unwrap - use is_ok() to check success");
+                std::process::exit(1);
             },
             ReceiveResult::WouldBlock => {
-                unreachable!("ReceiveResult::WouldBlock has no value to unwrap - use is_ok() to check success")
+                eprintln!("CURSED Runtime Error: ReceiveResult::WouldBlock has no value to unwrap - use is_ok() to check success");
+                std::process::exit(1);
             },
         }
     }

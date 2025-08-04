@@ -230,8 +230,13 @@ impl<T> SimpleChannel<T> {
                 }
                 
                 let remaining = deadline.saturating_duration_since(Instant::now());
-                let (new_guard, timeout_result) = self.sender_notify.wait_timeout(buffer, remaining)
-                    .unwrap_or_else(|_| panic!("Mutex poisoned"));
+                let (new_guard, timeout_result) = match self.sender_notify.wait_timeout(buffer, remaining) {
+                    Ok(result) => result,
+                    Err(_) => {
+                        eprintln!("CURSED Runtime Error: Channel mutex poisoned during send operation");
+                        return SendResult::Closed(value);
+                    }
+                };
                 
                 buffer = new_guard;
                 if timeout_result.timed_out() {
@@ -261,8 +266,13 @@ impl<T> SimpleChannel<T> {
             }
             
             let remaining = deadline.saturating_duration_since(Instant::now());
-            let (new_guard, timeout_result) = self.sender_notify.wait_timeout(buffer, remaining)
-                .unwrap_or_else(|_| panic!("Mutex poisoned"));
+            let (new_guard, timeout_result) = match self.sender_notify.wait_timeout(buffer, remaining) {
+                Ok(result) => result,
+                Err(_) => {
+                    eprintln!("CURSED Runtime Error: Channel mutex poisoned during buffered send operation");
+                    return SendResult::Closed(value);
+                }
+            };
                 
             buffer = new_guard;
             if timeout_result.timed_out() {
@@ -359,8 +369,13 @@ impl<T> SimpleChannel<T> {
             }
             
             let remaining = deadline.saturating_duration_since(Instant::now());
-            let (new_guard, timeout_result) = self.receiver_notify.wait_timeout(buffer, remaining)
-                .unwrap_or_else(|_| panic!("Mutex poisoned"));
+            let (new_guard, timeout_result) = match self.receiver_notify.wait_timeout(buffer, remaining) {
+                Ok(result) => result,
+                Err(_) => {
+                    eprintln!("CURSED Runtime Error: Channel mutex poisoned during receive operation");
+                    return ReceiveResult::Closed;
+                }
+            };
             
             buffer = new_guard;
             if timeout_result.timed_out() {

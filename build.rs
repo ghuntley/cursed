@@ -226,10 +226,14 @@ fn get_next_socket_id() -> i32 {
     // Use timeout for runtime library build to prevent hanging
     let _output = build_cmd
         .output()
-        .map_err(|e| panic!("Failed to execute runtime library build: {}", e))
+        .map_err(|e| {
+            eprintln!("CURSED Build Error: Failed to execute runtime library build: {}", e);
+            std::process::exit(1);
+        })
         .and_then(|output| {
             if !output.status.success() {
-                panic!("Runtime library build failed:\n{}", String::from_utf8_lossy(&output.stderr));
+                eprintln!("CURSED Build Error: Runtime library build failed:\n{}", String::from_utf8_lossy(&output.stderr));
+                std::process::exit(1);
             }
             Ok(output)
         })

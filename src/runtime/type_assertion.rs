@@ -393,7 +393,8 @@ pub extern "C" fn cursed_panic_type_assertion(source_type_id: c_int, target_type
     };
     
     // Still panic for backward compatibility, but with structured error
-    panic!("{}", error);
+    eprintln!("CURSED Runtime Error: {}", error);
+    std::process::exit(1);
 }
 
 #[no_mangle]
