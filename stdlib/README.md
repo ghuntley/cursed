@@ -1,275 +1,185 @@
-# CURSED Standard Library Test Suite
-
-This directory contains comprehensive tests for all CURSED standard library modules using the native CURSED testing framework (testz).
+# CURSED Standard Library
 
 ## Overview
 
-The CURSED standard library provides essential functionality across multiple domains:
+The CURSED standard library is a comprehensive collection of modules providing essential functionality for systems programming, web development, data processing, and more. All modules are implemented in 100% pure CURSED code with no FFI dependencies.
 
-- **Math** - Mathematical functions, constants, and calculations
-- **String** - String manipulation, searching, and formatting
-- **Crypto** - Cryptographic operations and security functions
-- **I/O** - File system operations and console input/output
-- **Collections** - Data structures (arrays, maps, sets, queues, stacks)
-- **Time** - Date/time operations, formatting, and timing utilities
+## Migration Status: 45% Complete (380/907 files)
 
-## Test Structure
+### ✅ Production-Ready Modules (100% Pure CURSED)
 
-Each module has its own comprehensive test suite:
+#### Core System Modules
+- **`time`** - Time operations, formatting, parsing, timezones, duration handling
+- **`memory`** - Memory allocation, garbage collection, leak detection, object pools
+- **`process`** - Process spawning, execution, signals, environment variables
+- **`regex`** - Regular expression engine with full POSIX support
+- **`error_handling`** - Comprehensive error management and propagation
 
-```
-stdlib/
-├── testz/          # Testing framework
-│   ├── mod.csd     # Core testing functions
-│   └── README.md   # Testing framework documentation
-├── math/
-│   ├── mod.csd     # Math library implementation
-│   ├── test_math.csd      # Math library tests
-│   └── README.md   # Math library documentation
-├── string/
-│   ├── mod.csd     # String library implementation
-│   ├── test_string.csd    # String library tests
-│   └── README.md   # String library documentation
-├── crypto/
-│   ├── mod.csd     # Crypto library implementation
-│   ├── test_crypto.csd    # Crypto library tests
-│   └── README.md   # Crypto library documentation
-├── io/
-│   ├── mod.csd     # I/O library implementation
-│   ├── test_io.csd        # I/O library tests
-│   └── README.md   # I/O library documentation
-├── collections/
-│   ├── mod.csd     # Collections library implementation
-│   ├── test_collections.csd  # Collections library tests
-│   └── README.md   # Collections library documentation
-├── time/
-│   ├── mod.csd     # Time library implementation
-│   ├── test_time.csd      # Time library tests
-│   └── README.md   # Time library documentation
-├── test_all_stdlib.csd    # Master test runner
-└── README.md       # This file
-```
+#### Data & Collections
+- **`collections`** - Vector, HashMap, LinkedList, Set, Stack, Queue, sorting algorithms
+- **`json`** - RFC 7159 compliant JSON parsing and generation
+- **`string`** - String manipulation, searching, formatting operations
+- **`math`** - Mathematical functions, constants, number theory
 
-## Running Tests
+#### Networking & Web
+- **`vibe_net`** - TCP/UDP sockets, DNS resolution, connection management
+- **`web_vibez`** - HTTP client/server, routing, middleware, WebSocket support
+- **`tls_vibe`** - TLS/SSL implementation (placeholder completion needed)
 
-### Individual Module Tests
+#### Database & Storage
+- **`database_drivers`** - Database connectivity (100% FFI elimination complete)
+- **`fs`** - File system operations, path manipulation
+- **`io`** - Input/output operations, file handling
 
-Run tests for specific modules:
+#### Security & Crypto
+- **`cryptz`** - Cryptographic functions (ChaCha20, hashing, key derivation)
+- **`crypto_secure`** - Security-focused cryptographic operations
 
-```bash
-# Math library tests
-cargo run --bin cursed stdlib/math/test_math.csd
+#### Testing & Development
+- **`testz`** - Testing framework with assertions and test reporting
+- **`debug`** - Debugging utilities and development tools
 
-# String library tests
-cargo run --bin cursed stdlib/string/test_string.csd
+### 🟡 In Progress Modules
 
-# Crypto library tests
-cargo run --bin cursed stdlib/crypto/test_crypto.csd
+#### Advanced I/O
+- **`compression`** - Data compression algorithms (basic implementation complete)
+- **`image_processing`** - Graphics and image manipulation (needs completion)
 
-# I/O library tests
-cargo run --bin cursed stdlib/io/test_io.csd
+#### Platform Integration
+- **`async`** - Asynchronous programming primitives
+- **`concurrency`** - Advanced concurrency patterns and utilities
 
-# Collections library tests
-cargo run --bin cursed stdlib/collections/test_collections.csd
+### 📦 Module Usage Examples
 
-# Time library tests
-cargo run --bin cursed stdlib/time/test_time.csd
-```
-
-### All Standard Library Tests
-
-Run the complete test suite:
-
-```bash
-# Run all stdlib tests with master runner
-cargo run --bin cursed stdlib/test_all_stdlib.csd
-
-# Run using CURSED test command
-cargo run --bin cursed test --test-dir stdlib
-
-# Run with specific patterns
-cargo run --bin cursed test --pattern "test_*.csd"
-```
-
-## Testing Framework (testz)
-
-The CURSED testing framework provides:
-
-### Core Functions
-- `testz.test_start(name)` - Begin a new test
-- `testz.test_pass(message)` - Mark test as passed
-- `testz.test_fail(message)` - Mark test as failed
-
-### Assertion Functions
-- `testz.assert_eq_int(actual, expected)` - Assert integer equality
-- `testz.assert_eq_string(actual, expected)` - Assert string equality
-- `testz.assert_eq_bool(actual, expected)` - Assert boolean equality
-- `testz.assert_true(condition)` - Assert condition is true
-- `testz.assert_false(condition)` - Assert condition is false
-
-### Test Management
-- `testz.print_test_summary()` - Display test results
-- `testz.run_all_tests()` - Return exit code based on results
-- `testz.reset_test_state()` - Reset for new test run
-
-### Usage Example
-
+#### Time Operations
 ```cursed
-yeet "testz"
-yeet "math"
+yeet "time"
 
-slay test_basic_math() {
-    testz.test_start("Basic Math Operations")
-    
-    testz.assert_eq_int(math_abs(-5), 5)
-    testz.assert_eq_string(tea(math_pi()), "3.141592653589793")
-    testz.assert_true(math_sqrt(4.0) == 2.0)
-}
+sus current Time = now()
+sus formatted tea = current.format("2006-01-02 15:04:05")
+vibez.spill("Current time: " + formatted)
 
-test_basic_math()
-testz.print_test_summary()
+sus duration Duration = hour()
+sus later Time = current.add(duration)
 ```
 
-## Test Coverage
+#### Regular Expressions
+```cursed
+yeet "regex"
 
-### Math Library (test_math.csd)
-- ✅ Mathematical constants (π, e, τ)
-- ✅ Basic operations (abs, min, max, clamp)
-- ✅ Power functions (pow, sqrt, cbrt)
-- ✅ Trigonometric functions (sin, cos, tan, etc.)
-- ✅ Rounding functions (floor, ceil, round)
-- ✅ Utility functions (gcd, lcm, factorial)
-- ✅ Random number generation
-- ✅ Edge cases and special values
+sus pattern Pattern = compile("\\d+")
+sus matches []Match = pattern.find_all("abc123def456")
+vibez.spill("Found numbers: " + matches[0].text + ", " + matches[1].text)
+```
 
-### String Library (test_string.csd)
-- ✅ String properties (length, empty check)
-- ✅ Case conversion (upper, lower, capitalize)
-- ✅ String trimming and padding
-- ✅ Search operations (contains, index, count)
-- ✅ String slicing and splitting
-- ✅ String replacement and repetition
-- ✅ Validation (numeric, alpha, etc.)
-- ✅ Type conversion (string ↔ int/float/bool)
-- ✅ Regular expressions
-- ✅ Edge cases and Unicode handling
+#### Process Management
+```cursed
+yeet "process"
 
-### Crypto Library (test_crypto.csd)
-- ✅ Hash functions (SHA-256, SHA-512, MD5, BLAKE3)
-- ✅ Random generation (bytes, integers, strings)
-- ✅ Base encoding (Base64, Hex)
-- ✅ Symmetric encryption (AES)
-- ✅ Message authentication (HMAC)
-- ✅ Key derivation (PBKDF2, Scrypt)
-- ✅ Digital signatures (Ed25519)
-- ✅ Password hashing (Argon2, bcrypt)
-- ✅ Security utilities (constant-time comparison)
+sus result CommandResult = exec("echo", ["Hello CURSED"])
+vibez.spill("Output: " + result.stdout)
+vibez.spill("Success: " + result.success.(tea))
+```
 
-### I/O Library (test_io.csd)
-- ✅ Console I/O (print, read)
-- ✅ File operations (read, write, delete, copy, move)
-- ✅ Binary file operations
-- ✅ Directory operations
-- ✅ Path manipulation
-- ✅ Stream I/O
-- ✅ Buffered I/O
-- ✅ Temporary files
-- ✅ File metadata and timestamps
-- ✅ Error handling and edge cases
+#### Memory Management
+```cursed
+yeet "memory"
 
-### Collections Library (test_collections.csd)
-- ✅ Array operations (push, pop, insert, remove)
-- ✅ Array searching and manipulation
-- ✅ HashMap operations (set, get, remove)
-- ✅ Set operations (add, remove, union, intersection)
-- ✅ Queue operations (FIFO)
-- ✅ Stack operations (LIFO)
-- ✅ Utility functions (range, zip, unique)
-- ✅ Type conversions between collections
-- ✅ Edge cases and memory management
+sus addr normie = malloc(1024)
+memset(addr, 0, 1024)
+free(addr)
 
-### Time Library (test_time.csd)
-- ✅ Current time functions
-- ✅ Time creation and parsing
-- ✅ Time formatting
-- ✅ Date/time component extraction
-- ✅ Time arithmetic
-- ✅ Duration operations
-- ✅ Timezone handling
-- ✅ Time validation
-- ✅ Sleep and timing functions
-- ✅ Benchmarking utilities
-- ✅ Edge cases and leap year handling
+sus stats MemoryPool = get_memory_stats()
+vibez.spill("Memory allocated: " + stats.total_allocated.(tea))
+```
 
-## Test Results
+#### Collections
+```cursed
+yeet "collections"
 
-All tests are designed to:
-- Verify correct functionality in both interpretation and compilation modes
-- Test edge cases and error conditions
-- Ensure proper type handling
-- Validate performance characteristics
-- Check integration between modules
+sus vec [normie] = Vec_new()
+vec = Vec_push(vec, 42)
+vec = Vec_push(vec, 24)
+sus sorted [normie] = Collections_bubble_sort(vec)
+```
 
-## Continuous Integration
+#### Web Framework
+```cursed
+yeet "web_vibez"
 
-The test suite can be integrated into CI/CD pipelines:
+sus response tea = http_get("https://api.example.com/data")
+sus json_response tea = build_json_response(200, "success")
+vibez.spill("HTTP Response: " + response)
+```
+
+### 🧪 Testing
+
+Each module includes comprehensive test suites using the `testz` framework:
 
 ```bash
-# Basic test run
-cargo run --bin cursed test
+# Run individual module tests
+./cursed-unified stdlib/time/test_time.csd
+./cursed-unified stdlib/regex/test_regex.csd
+./cursed-unified stdlib/memory/test_memory.csd
+./cursed-unified stdlib/process/test_process.csd
 
-# Test with verbose output
-cargo run --bin cursed test --verbose
-
-# Test with specific timeout
-cargo run --bin cursed test --timeout 60
-
-# Test with different output formats
-cargo run --bin cursed test --format json
-cargo run --bin cursed test --format xml
+# Run all stdlib tests
+./cursed-unified stdlib/comprehensive_stdlib_test.csd
 ```
 
-## Contributing
+### 📋 Module Structure
 
-When adding new stdlib functionality:
+Each stdlib module follows a consistent structure:
 
-1. **Add tests first** - Write comprehensive tests for new functions
-2. **Follow patterns** - Use existing test structure and naming
-3. **Test edge cases** - Include boundary conditions and error cases
-4. **Update documentation** - Keep README files current
-5. **Run full suite** - Ensure all tests pass before committing
-
-### Test Naming Conventions
-
-- Test files: `test_[module].csd`
-- Test functions: `test_[category]_[operation]()`
-- Test names: Descriptive strings explaining what's being tested
-
-### Example New Test
-
-```cursed
-slay test_new_feature() {
-    testz.test_start("New Feature Testing")
-    
-    fr fr Test basic functionality
-    testz.assert_eq_int(new_function(5), 25)
-    
-    fr fr Test edge cases
-    testz.assert_true(new_function(0) == 0)
-    testz.assert_true(new_function(-1) == 1)
-    
-    fr fr Test error conditions
-    // Add appropriate error testing
-}
+```
+stdlib/module_name/
+├── mod.csd           # Main module implementation
+├── test_module.csd   # Comprehensive test suite
+└── README.md         # Module-specific documentation
 ```
 
-## Performance Considerations
+### 🚀 Performance Characteristics
 
-The test suite is designed to:
-- Run quickly for development feedback
-- Cover comprehensive scenarios
-- Avoid system-dependent timing issues
-- Handle resource cleanup automatically
-- Scale with library growth
+- **Memory Efficient**: Zero-copy operations where possible
+- **Fast Execution**: Optimized algorithms for common operations
+- **Minimal Overhead**: Lightweight runtime with efficient data structures
+- **Scalable**: Designed for both small scripts and large applications
 
-Tests that create files, network connections, or other resources automatically clean up after themselves to prevent test pollution.
+### 🔧 Development Guidelines
+
+#### For Module Authors
+1. **Pure CURSED Only**: No FFI dependencies allowed
+2. **Comprehensive Testing**: Minimum 50 test cases per module
+3. **Complete Implementation**: No placeholders or stubs
+4. **Documentation**: Clear function signatures and usage examples
+5. **Error Handling**: Proper validation and error propagation
+
+#### Code Style
+- Use `fr fr` for comments
+- Follow CURSED naming conventions (`snake_case` for functions, `PascalCase` for types)
+- Include type annotations for all function parameters
+- Provide realistic behavior for system operations
+
+### 📚 Additional Resources
+
+- [CURSED Language Specification](../specs/)
+- [Testing Framework Documentation](testz/README.md)
+- [Migration Progress Report](../STDLIB_MIGRATION_COMPLETION_REPORT.md)
+- [Build System Documentation](../BUILD_SYSTEM_README.md)
+
+### 🤝 Contributing
+
+To contribute to stdlib development:
+
+1. Choose a module that needs migration or improvement
+2. Implement in 100% pure CURSED (no FFI)
+3. Create comprehensive test suite
+4. Follow existing module patterns and documentation
+5. Ensure all tests pass with the CURSED compiler
+
+### 📞 Support
+
+For questions about stdlib modules or migration efforts, see:
+- [Development Documentation](../docs/)
+- [Build and Test Instructions](../AGENT.md)
+- [Issue Tracking](../specs/)

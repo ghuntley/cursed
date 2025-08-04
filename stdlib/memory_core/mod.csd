@@ -2,8 +2,7 @@ fr fr Memory Core - Pure CURSED Memory Management System
 fr fr Garbage collection and heap management without FFI dependencies  
 fr fr Replaces src/runtime/memory.rs and src/runtime/gc.rs
 
-yeet "runtime_core"
-yeet "error_drip"
+fr fr Removed circular dependency on runtime_core
 yeet "testz"
 
 fr fr Memory allocation types

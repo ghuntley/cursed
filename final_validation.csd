@@ -1,1 +1,4 @@
-sus name tea = "CURSED"; sus version tea = "v37.0.0"; vibez.spill("Compiler: " + name + " " + version)
+vibez.spill("Final validation test")
+# Hash character comment  
+fr fr Standard comment
+vibez.spill("All systems operational!")

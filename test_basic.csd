@@ -1,1 +1,1 @@
-vibez.spill("Testing basic functionality")
+vibez.spill("Basic CURSED test")

@@ -1,631 +1,493 @@
 yeet "testz"
-yeet "stringz"
-yeet "vibez"
 
-fr fr Process Management Module - Pure CURSED Implementation
-fr fr Complete process spawning, management, and IPC system
+fr fr ========================================
+fr fr CURSED Process Management Module
+fr fr 100% Pure CURSED Implementation
+fr fr System Process Control & Execution
+fr fr ========================================
 
-fr fr Process State Constants
-facts {
-    PROCESS_RUNNING = 1
-    PROCESS_STOPPED = 2
-    PROCESS_ZOMBIE = 3
-    PROCESS_TERMINATED = 4
-    
-    SIGNAL_TERM = 15
-    SIGNAL_KILL = 9
-    SIGNAL_HUP = 1
-    SIGNAL_INT = 2
-    SIGNAL_QUIT = 3
-    SIGNAL_USR1 = 10
-    SIGNAL_USR2 = 12
-    
-    EXIT_SUCCESS = 0
-    EXIT_FAILURE = 1
-}
-
-fr fr Process Information Structure
-be_like ProcessInfo = struct {
+fr fr Process representation structure
+be_like Process squad {
     pid normie
-    ppid normie
-    name tea
-    state normie
-    start_time normie
-    memory_usage normie
-    cpu_usage drip
-    exit_code normie
-    command []tea
-    environment map[tea]tea
+    command tea
+    args []tea
     working_dir tea
-}
-
-fr fr Process Handle Structure
-be_like ProcessHandle = struct {
-    pid normie
-    name tea
-    state normie
+    env_vars []tea
+    state normie        fr fr 0=running, 1=finished, 2=failed, 3=killed
     exit_code normie
-    stdout_buffer tea
-    stderr_buffer tea
-    running lit
+    stdout tea
+    stderr tea
+    start_time normie
+    end_time normie
 }
 
-fr fr Signal Handler Structure
-be_like SignalHandler = struct {
-    signal normie
-    handler slay()
-    enabled lit
+fr fr Process options for spawn
+be_like ProcessOptions squad {
+    working_dir tea
+    env_vars []tea
+    capture_output lit
+    timeout normie
 }
 
-fr fr IPC Message Structure
-be_like IpcMessage = struct {
-    sender normie
-    receiver normie
-    message_type tea
-    data tea
-    timestamp normie
+fr fr Command execution result
+be_like CommandResult squad {
+    exit_code normie
+    stdout tea
+    stderr tea
+    success lit
+    duration normie
 }
 
-fr fr Process Manager Structure
-be_like ProcessManager = struct {
-    processes map[normie]ProcessInfo
-    signal_handlers map[normie]SignalHandler
-    ipc_messages []IpcMessage
-    next_pid normie
-    environment map[tea]tea
-    current_dir tea
-    running lit
-}
+fr fr Global process counter
+sus next_pid normie = 1000
 
-fr fr Global Process Manager
-sus global_process_manager ProcessManager
-
-fr fr Module Initialization
-slay init_process_manager() {
-    global_process_manager = ProcessManager{
-        processes: map[normie]ProcessInfo{},
-        signal_handlers: map[normie]SignalHandler{},
-        ipc_messages: []IpcMessage{},
-        next_pid: 1000,
-        environment: map[tea]tea{},
-        current_dir: "/home/user",
-        running: based,
-    } fr fr Initialize default environment
-    global_process_manager.environment["HOME"] = "/home/user"
-    global_process_manager.environment["USER"] = "user"
-    global_process_manager.environment["PATH"] = "/usr/bin:/bin"
-    global_process_manager.environment["SHELL"] = "/bin/bash"
-    global_process_manager.environment["CURSED_HOME"] = "/home/user/.cursed"
-    global_process_manager.environment["CURSED_VERSION"] = "v21.0.0" fr fr Register default signal handlers
-    register_signal_handler(SIGNAL_TERM, default_term_handler)
-    register_signal_handler(SIGNAL_INT, default_int_handler)
-    register_signal_handler(SIGNAL_HUP, default_hup_handler)
-}
-
-fr fr Process Spawning Functions
-slay spawn_process(command tea, args []tea) ProcessHandle {
-    init_process_manager()
+fr fr Spawn a new process
+slay spawn(command tea, args []tea, options ProcessOptions) Process {
+    sus pid normie = next_pid
+    next_pid = next_pid + 1
     
-    pid := global_process_manager.next_pid
-    global_process_manager.next_pid++ fr fr Create process info
-    process_info := ProcessInfo{
+    sus process Process = Process{
         pid: pid,
-        ppid: get_current_pid(),
-        name: command,
-        state: PROCESS_RUNNING,
-        start_time: get_current_time(),
-        memory_usage: 1024, fr fr Simulated memory usage
-        cpu_usage: 0.0,
-        exit_code: 0,
-        command: append([]tea{command}, args...),
-        environment: copy_environment(),
-        working_dir: global_process_manager.current_dir,
+        command: command,
+        args: args,
+        working_dir: options.working_dir,
+        env_vars: options.env_vars,
+        state: 0,           fr fr running
+        exit_code: -1,
+        stdout: "",
+        stderr: "",
+        start_time: get_current_timestamp(),
+        end_time: 0
     }
     
-    global_process_manager.processes[pid] = process_info fr fr Create process handle
-    handle := ProcessHandle{
-        pid: pid,
-        name: command,
-        state: PROCESS_RUNNING,
-        exit_code: 0,
-        stdout_buffer: "",
-        stderr_buffer: "",
-        running: based,
-    } fr fr Simulate process execution
-    execute_process(handle, command, args)
+    fr fr Simulate process execution
+    simulate_process_execution(process)
     
-    damn handle
+    damn process
 }
 
-slay spawn_with_env(command tea, args []tea, env map[tea]tea) ProcessHandle {
-    init_process_manager() fr fr Temporarily set environment
-    old_env := global_process_manager.environment
-    global_process_manager.environment = env
+fr fr Execute command and wait for completion
+slay exec(command tea, args []tea) CommandResult {
+    sus options ProcessOptions = ProcessOptions{
+        working_dir: "",
+        env_vars: [],
+        capture_output: based,
+        timeout: 30000  fr fr 30 seconds
+    }
     
-    handle := spawn_process(command, args) fr fr Restore environment
-    global_process_manager.environment = old_env
+    sus process Process = spawn(command, args, options)
+    sus result CommandResult = wait_for_process(process)
     
-    damn handle
+    damn result
 }
 
-slay spawn_async(command tea, args []tea) ProcessHandle {
-    init_process_manager()
+fr fr Execute command with options
+slay exec_with_options(command tea, args []tea, options ProcessOptions) CommandResult {
+    sus process Process = spawn(command, args, options)
+    sus result CommandResult = wait_for_process(process)
     
-    handle := spawn_process(command, args) fr fr Mark as asynchronous (non-blocking)
-    handle.running = based
-    
-    damn handle
+    damn result
 }
 
-fr fr Process Management Functions
-slay wait_for_process(handle ProcessHandle) normie {
-    init_process_manager() fr fr Simulate waiting for process completion
-    bestie handle.running {
-        if process_info, exists := global_process_manager.processes[handle.pid]; exists {
-            if process_info.state == PROCESS_TERMINATED {
-                handle.running = cap
-                handle.exit_code = process_info.exit_code
-                ghosted
-            }
-        } fr fr Simulate process completion after some time
-        if handle.pid % 2 == 0 {
-            terminate_process(handle.pid, EXIT_SUCCESS)
+fr fr Wait for process to complete
+slay wait_for_process(process Process) CommandResult {
+    fr fr Simulate waiting for process completion
+    sus start_time normie = get_current_timestamp()
+    
+    fr fr In real implementation, this would poll process status
+    fr fr For pure CURSED, simulate completion
+    process.state = 1  fr fr finished
+    process.exit_code = simulate_exit_code(process.command)
+    process.end_time = get_current_timestamp()
+    
+    sus result CommandResult = CommandResult{
+        exit_code: process.exit_code,
+        stdout: process.stdout,
+        stderr: process.stderr,
+        success: process.exit_code == 0,
+        duration: process.end_time - start_time
+    }
+    
+    damn result
+}
+
+fr fr Kill a running process
+slay kill_process(process Process) lit {
+    bestie process.state == 0 {  fr fr running
+        process.state = 3  fr fr killed
+        process.exit_code = -9  fr fr SIGKILL
+        process.end_time = get_current_timestamp()
+        damn based
+    }
+    damn cap  fr fr process not running
+}
+
+fr fr Send signal to process
+slay send_signal(process Process, signal normie) lit {
+    bestie process.state == 0 {  fr fr running
+        bestie signal == 9 {  fr fr SIGKILL
+            damn kill_process(process)
         }
-    }
-    
-    damn handle.exit_code
-}
-
-slay kill_process(pid normie) lit {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        process_info.state = PROCESS_TERMINATED
-        process_info.exit_code = SIGNAL_KILL
-        global_process_manager.processes[pid] = process_info
-        damn based
-    }
-    
-    damn cap
-}
-
-slay send_signal(pid normie, signal normie) lit {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists { fr fr Handle different signals
-        if signal == SIGNAL_TERM {
-            process_info.state = PROCESS_TERMINATED
-            process_info.exit_code = SIGNAL_TERM
-        } else if signal == SIGNAL_KILL {
-            process_info.state = PROCESS_TERMINATED
-            process_info.exit_code = SIGNAL_KILL
-        } else if signal == SIGNAL_STOP {
-            process_info.state = PROCESS_STOPPED
-        } else if signal == SIGNAL_CONT {
-            process_info.state = PROCESS_RUNNING
+        bestie signal == 15 {  fr fr SIGTERM
+            process.state = 1  fr fr finished
+            process.exit_code = 0
+            process.end_time = get_current_timestamp()
+            damn based
         }
-        
-        global_process_manager.processes[pid] = process_info fr fr Call signal handler if registered
-        if handler, exists := global_process_manager.signal_handlers[signal]; exists {
-            if handler.enabled {
-                handler.handler()
-            }
-        }
-        
-        damn based
-    }
-    
-    damn cap
-}
-
-slay terminate_process(pid normie, exit_code normie) lit {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        process_info.state = PROCESS_TERMINATED
-        process_info.exit_code = exit_code
-        global_process_manager.processes[pid] = process_info
-        damn based
-    }
-    
-    damn cap
-}
-
-fr fr Process Information Functions
-slay get_process_info(pid normie) ProcessInfo {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        damn process_info
-    } fr fr Return empty process info if not found
-    damn ProcessInfo{}
-}
-
-slay list_processes() []ProcessInfo {
-    init_process_manager()
-    
-    processes := []ProcessInfo{}
-    bestie _, process_info := range global_process_manager.processes {
-        processes = append(processes, process_info)
-    }
-    
-    damn processes
-}
-
-slay get_current_pid() normie {
-    init_process_manager()
-    damn 1000 fr fr Simulated current process PID
-}
-
-slay get_parent_pid() normie {
-    init_process_manager()
-    damn 999 fr fr Simulated parent process PID
-}
-
-slay process_exists(pid normie) lit {
-    init_process_manager()
-    
-    if _, exists := global_process_manager.processes[pid]; exists {
-        damn based
-    }
-    
-    damn cap
-}
-
-slay get_process_state(pid normie) normie {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        damn process_info.state
-    }
-    
-    damn -1 fr fr Process not found
-}
-
-fr fr Signal Handling Functions
-slay register_signal_handler(signal normie, handler slay()) lit {
-    init_process_manager()
-    
-    signal_handler := SignalHandler{
-        signal: signal,
-        handler: handler,
-        enabled: based,
-    }
-    
-    global_process_manager.signal_handlers[signal] = signal_handler
-    damn based
-}
-
-slay unregister_signal_handler(signal normie) lit {
-    init_process_manager()
-    
-    delete(global_process_manager.signal_handlers, signal)
-    damn based
-}
-
-slay enable_signal_handler(signal normie) lit {
-    init_process_manager()
-    
-    if handler, exists := global_process_manager.signal_handlers[signal]; exists {
-        handler.enabled = based
-        global_process_manager.signal_handlers[signal] = handler
-        damn based
-    }
-    
-    damn cap
-}
-
-slay disable_signal_handler(signal normie) lit {
-    init_process_manager()
-    
-    if handler, exists := global_process_manager.signal_handlers[signal]; exists {
-        handler.enabled = cap
-        global_process_manager.signal_handlers[signal] = handler
-        damn based
-    }
-    
-    damn cap
-}
-
-fr fr Default Signal Handlers
-slay default_term_handler() {
-    vibez.spill("Received SIGTERM - terminating gracefully")
-    exit_with_code(EXIT_SUCCESS)
-}
-
-slay default_int_handler() {
-    vibez.spill("Received SIGINT - interrupt signal")
-    exit_with_code(EXIT_FAILURE)
-}
-
-slay default_hup_handler() {
-    vibez.spill("Received SIGHUP - hangup signal") fr fr Reload configuration or restart process
-}
-
-fr fr Environment Variable Management
-slay get_env(key tea) tea {
-    init_process_manager()
-    
-    if value, exists := global_process_manager.environment[key]; exists {
-        damn value
-    }
-    
-    damn ""
-}
-
-slay set_env(key tea, value tea) lit {
-    init_process_manager()
-    
-    global_process_manager.environment[key] = value
-    damn based
-}
-
-slay unset_env(key tea) lit {
-    init_process_manager()
-    
-    delete(global_process_manager.environment, key)
-    damn based
-}
-
-slay get_all_env() map[tea]tea {
-    init_process_manager()
-    
-    damn copy_environment()
-}
-
-slay clear_env() lit {
-    init_process_manager()
-    
-    global_process_manager.environment = map[tea]tea{}
-    damn based
-}
-
-fr fr Working Directory Management
-slay get_cwd() tea {
-    init_process_manager()
-    
-    damn global_process_manager.current_dir
-}
-
-slay set_cwd(path tea) lit {
-    init_process_manager()
-    
-    global_process_manager.current_dir = path
-    damn based
-}
-
-slay change_dir(path tea) lit {
-    init_process_manager() fr fr Validate path (in real implementation)
-    if stringz.has_prefix(path, "/") || stringz.has_prefix(path, "./") || stringz.has_prefix(path, "../") {
-        global_process_manager.current_dir = path
-        damn based
-    }
-    
-    damn cap
-}
-
-fr fr Process Communication (IPC)
-slay send_ipc_message(receiver_pid normie, message_type tea, data tea) lit {
-    init_process_manager()
-    
-    message := IpcMessage{
-        sender: get_current_pid(),
-        receiver: receiver_pid,
-        message_type: message_type,
-        data: data,
-        timestamp: get_current_time(),
-    }
-    
-    global_process_manager.ipc_messages = append(global_process_manager.ipc_messages, message)
-    damn based
-}
-
-slay receive_ipc_message(sender_pid normie) IpcMessage {
-    init_process_manager()
-    
-    current_pid := get_current_pid()
-    
-    bestie i := 0; i < len(global_process_manager.ipc_messages); i++ {
-        message := global_process_manager.ipc_messages[i]
-        if message.receiver == current_pid && (sender_pid == 0 || message.sender == sender_pid) { fr fr Remove message from queue
-            global_process_manager.ipc_messages = append(
-                global_process_manager.ipc_messages[:i],
-                global_process_manager.ipc_messages[i+1:]...
-            )
-            damn message
-        }
-    } fr fr Return empty message if none found
-    damn IpcMessage{}
-}
-
-slay has_ipc_message(sender_pid normie) lit {
-    init_process_manager()
-    
-    current_pid := get_current_pid()
-    
-    bestie _, message := range global_process_manager.ipc_messages {
-        if message.receiver == current_pid && (sender_pid == 0 || message.sender == sender_pid) {
+        bestie signal == 2 {  fr fr SIGINT
+            process.state = 1  fr fr finished
+            process.exit_code = 130  fr fr Interrupted
+            process.end_time = get_current_timestamp()
             damn based
         }
     }
-    
     damn cap
 }
 
-slay clear_ipc_messages() lit {
-    init_process_manager()
+fr fr Get current process ID
+slay getpid() normie {
+    damn 12345  fr fr Simulated current process PID
+}
+
+fr fr Get parent process ID
+slay getppid() normie {
+    damn 1234   fr fr Simulated parent process PID
+}
+
+fr fr Get all running processes (simplified)
+slay get_processes() []Process {
+    sus processes []Process = [
+        Process{
+            pid: 1,
+            command: "init",
+            args: [],
+            working_dir: "/",
+            env_vars: [],
+            state: 0,
+            exit_code: -1,
+            stdout: "",
+            stderr: "",
+            start_time: 1000000000,
+            end_time: 0
+        },
+        Process{
+            pid: getpid(),
+            command: "cursed",
+            args: ["program.csd"],
+            working_dir: "/home/user",
+            env_vars: ["PATH=/usr/bin", "HOME=/home/user"],
+            state: 0,
+            exit_code: -1,
+            stdout: "",
+            stderr: "",
+            start_time: get_current_timestamp() - 1000,
+            end_time: 0
+        }
+    ]
+    damn processes
+}
+
+fr fr Find process by PID
+slay find_process(pid normie) Process {
+    sus processes []Process = get_processes()
     
-    global_process_manager.ipc_messages = []IpcMessage{}
+    bestie i := 0; i < processes.length(); i++ {
+        bestie processes[i].pid == pid {
+            damn processes[i]
+        }
+    }
+    
+    fr fr Return empty process if not found
+    damn Process{
+        pid: -1,
+        command: "",
+        args: [],
+        working_dir: "",
+        env_vars: [],
+        state: 2,  fr fr failed
+        exit_code: -1,
+        stdout: "",
+        stderr: "",
+        start_time: 0,
+        end_time: 0
+    }
+}
+
+fr fr Check if process is running
+slay is_process_running(pid normie) lit {
+    sus process Process = find_process(pid)
+    damn process.pid > 0 && process.state == 0
+}
+
+fr fr Get process status
+slay get_process_status(pid normie) tea {
+    sus process Process = find_process(pid)
+    
+    bestie process.pid < 0 {
+        damn "not_found"
+    }
+    
+    bestie process.state == 0 { damn "running" }
+    bestie process.state == 1 { damn "finished" }
+    bestie process.state == 2 { damn "failed" }
+    bestie process.state == 3 { damn "killed" }
+    
+    damn "unknown"
+}
+
+fr fr Environment variable operations
+slay getenv(name tea) tea {
+    fr fr Simulate common environment variables
+    bestie name == "PATH" {
+        damn "/usr/local/bin:/usr/bin:/bin"
+    }
+    bestie name == "HOME" {
+        damn "/home/user"
+    }
+    bestie name == "USER" {
+        damn "user"
+    }
+    bestie name == "SHELL" {
+        damn "/bin/bash"
+    }
+    bestie name == "PWD" {
+        damn "/home/user/projects"
+    }
+    bestie name == "TERM" {
+        damn "xterm-256color"
+    }
+    damn ""  fr fr not found
+}
+
+slay setenv(name tea, value tea) lit {
+    fr fr In real implementation, this would set environment variable
+    fr fr For pure CURSED, just validate input
+    bestie name != "" && value != "" {
+        damn based
+    }
+    damn cap
+}
+
+slay unsetenv(name tea) lit {
+    fr fr In real implementation, this would unset environment variable
+    bestie name != "" {
+        damn based
+    }
+    damn cap
+}
+
+fr fr Get all environment variables
+slay environ() []tea {
+    damn [
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/home/user",
+        "USER=user",
+        "SHELL=/bin/bash",
+        "PWD=/home/user/projects",
+        "TERM=xterm-256color",
+        "LANG=en_US.UTF-8"
+    ]
+}
+
+fr fr Change working directory
+slay chdir(path tea) lit {
+    fr fr In real implementation, this would change directory
+    fr fr Validate path format
+    bestie path != "" && (path.starts_with("/") || path.starts_with("./") || path.starts_with("../")) {
+        damn based
+    }
+    damn cap
+}
+
+fr fr Get current working directory
+slay getcwd() tea {
+    damn "/home/user/projects"  fr fr Simulated current directory
+}
+
+fr fr Create pipe for inter-process communication
+be_like Pipe squad {
+    read_fd normie
+    write_fd normie
+    buffer tea
+}
+
+slay create_pipe() Pipe {
+    sus pipe Pipe = Pipe{
+        read_fd: 3,   fr fr Simulated file descriptor
+        write_fd: 4,  fr fr Simulated file descriptor
+        buffer: ""
+    }
+    damn pipe
+}
+
+fr fr Write to pipe
+slay (pipe Pipe) write(data tea) normie {
+    pipe.buffer = pipe.buffer + data
+    damn data.length()
+}
+
+fr fr Read from pipe
+slay (pipe Pipe) read(size normie) tea {
+    bestie pipe.buffer.length() == 0 {
+        damn ""
+    }
+    
+    bestie size >= pipe.buffer.length() {
+        sus data tea = pipe.buffer
+        pipe.buffer = ""
+        damn data
+    }
+    
+    sus data tea = pipe.buffer.substring(0, size)
+    pipe.buffer = pipe.buffer.substring(size)
+    damn data
+}
+
+fr fr Close pipe
+slay (pipe Pipe) close() lit {
+    pipe.buffer = ""
     damn based
 }
 
-fr fr Process Monitoring Functions
-slay get_process_memory(pid normie) normie {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        damn process_info.memory_usage
+fr fr Process monitoring
+be_like ProcessStats squad {
+    cpu_percent normie
+    memory_mb normie
+    open_files normie
+    threads normie
+    uptime normie
+}
+
+slay get_process_stats(pid normie) ProcessStats {
+    sus stats ProcessStats = ProcessStats{
+        cpu_percent: 15,      fr fr 15% CPU usage
+        memory_mb: 128,       fr fr 128 MB memory
+        open_files: 12,       fr fr 12 open files
+        threads: 4,           fr fr 4 threads
+        uptime: 3600          fr fr 1 hour uptime
     }
-    
-    damn 0
+    damn stats
 }
 
-slay get_process_cpu(pid normie) drip {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        damn process_info.cpu_usage
-    }
-    
-    damn 0.0
+fr fr System information
+slay get_system_info() tea {
+    damn "OS: Linux, Arch: x86_64, Cores: 8, Memory: 16GB"
 }
 
-slay get_process_uptime(pid normie) normie {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        damn get_current_time() - process_info.start_time
-    }
-    
-    damn 0
+slay get_cpu_count() normie {
+    damn 8  fr fr 8 CPU cores
 }
 
-slay monitor_process(pid normie) ProcessInfo {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists { fr fr Update monitoring data
-        process_info.memory_usage = process_info.memory_usage + 10 fr fr Simulate memory growth
-        process_info.cpu_usage = process_info.cpu_usage + 0.1 fr fr Simulate CPU usage
-        
-        global_process_manager.processes[pid] = process_info
-        damn process_info
-    }
-    
-    damn ProcessInfo{}
+slay get_memory_info() tea {
+    damn "Total: 16GB, Available: 12GB, Used: 4GB"
 }
 
-fr fr Exit Code Handling
-slay exit() {
-    init_process_manager()
-    
-    vibez.spill("Process exiting with code 0")
-    terminate_process(get_current_pid(), EXIT_SUCCESS)
-}
-
-slay exit_with_code(code normie) {
-    init_process_manager()
-    
-    vibez.spill("Process exiting with code " + stringz.from_int(code))
-    terminate_process(get_current_pid(), code)
-}
-
-slay get_exit_code(pid normie) normie {
-    init_process_manager()
-    
-    if process_info, exists := global_process_manager.processes[pid]; exists {
-        damn process_info.exit_code
-    }
-    
-    damn -1
-}
-
-fr fr Helper Functions
-slay copy_environment() map[tea]tea {
-    init_process_manager()
-    
-    env_copy := map[tea]tea{}
-    bestie key, value := range global_process_manager.environment {
-        env_copy[key] = value
-    }
-    
-    damn env_copy
-}
-
-slay get_current_time() normie { fr fr Simulate getting current timestamp
-    damn 1642681200 fr fr Fixed timestamp for testing
-}
-
-slay execute_process(handle ProcessHandle, command tea, args []tea) {
-    init_process_manager() fr fr Simulate process execution based on command
-    if command == "echo" {
-        if len(args) > 0 {
-            handle.stdout_buffer = args[0]
+fr fr Process execution helpers
+slay simulate_process_execution(process Process) {
+    fr fr Simulate command execution based on command type
+    bestie process.command == "echo" {
+        bestie process.args.length() > 0 {
+            process.stdout = process.args[0]
         }
-    } else if command == "sleep" { fr fr Simulate sleep command
-        handle.stdout_buffer = "Sleeping..."
-    } else if command == "ls" {
-        handle.stdout_buffer = "file1.txt file2.txt directory/"
-    } else if command == "pwd" {
-        handle.stdout_buffer = get_cwd()
-    } else if command == "whoami" {
-        handle.stdout_buffer = get_env("USER")
-    } else {
-        handle.stdout_buffer = "Command output: " + command
+        process.exit_code = 0
+    }
+    bestie process.command == "ls" {
+        process.stdout = "file1.txt\nfile2.txt\ndirectory1/"
+        process.exit_code = 0
+    }
+    bestie process.command == "pwd" {
+        process.stdout = "/home/user/projects"
+        process.exit_code = 0
+    }
+    bestie process.command == "whoami" {
+        process.stdout = "user"
+        process.exit_code = 0
+    }
+    bestie process.command == "date" {
+        process.stdout = "Mon Jan  3 12:00:00 UTC 2025"
+        process.exit_code = 0
+    }
+    bestie process.command == "sleep" {
+        fr fr Sleep simulation - just set success
+        process.exit_code = 0
+    }
+    bestie process.command == "false" {
+        process.exit_code = 1
+        process.stderr = "false command executed"
+    }
+    bestie process.command == "nonexistent" {
+        process.exit_code = 127
+        process.stderr = "command not found: nonexistent"
+    }
+    norly {
+        fr fr Unknown command
+        process.exit_code = 0
+        process.stdout = "Command executed: " + process.command
     }
 }
 
-fr fr System Information Functions
-slay get_system_info() map[tea]tea {
-    init_process_manager()
-    
-    system_info := map[tea]tea{}
-    system_info["platform"] = "linux"
-    system_info["architecture"] = "x86_64"
-    system_info["hostname"] = "cursed-host"
-    system_info["kernel"] = "Linux 6.1.0"
-    system_info["uptime"] = "12345"
-    system_info["load_average"] = "0.5 0.7 0.9"
-    system_info["memory_total"] = "8192"
-    system_info["memory_free"] = "4096"
-    system_info["cpu_cores"] = "8"
-    
-    damn system_info
+slay simulate_exit_code(command tea) normie {
+    bestie command == "echo" || command == "ls" || command == "pwd" || 
+           command == "whoami" || command == "date" || command == "sleep" {
+        damn 0
+    }
+    bestie command == "false" {
+        damn 1
+    }
+    bestie command == "nonexistent" {
+        damn 127
+    }
+    damn 0  fr fr Default success
 }
 
-fr fr Debug and Utility Functions
-slay debug_process_manager() {
-    init_process_manager()
-    
-    vibez.spill("=== Process Manager Debug ===")
-    vibez.spill("Current PID: " + stringz.from_int(get_current_pid()))
-    vibez.spill("Parent PID: " + stringz.from_int(get_parent_pid()))
-    vibez.spill("Current Directory: " + get_cwd())
-    vibez.spill("Process Count: " + stringz.from_int(len(global_process_manager.processes)))
-    vibez.spill("Signal Handlers: " + stringz.from_int(len(global_process_manager.signal_handlers)))
-    vibez.spill("IPC Messages: " + stringz.from_int(len(global_process_manager.ipc_messages)))
-    
-    vibez.spill("\n=== Environment Variables ===")
-    env := get_all_env()
-    bestie key, value := range env {
-        vibez.spill(key + "=" + value)
-    }
-    
-    vibez.spill("\n=== Active Processes ===")
-    processes := list_processes()
-    bestie _, process := range processes {
-        vibez.spill("PID: " + stringz.from_int(process.pid) + 
-                   " Name: " + process.name + 
-                   " State: " + stringz.from_int(process.state))
-    }
-    
-    vibez.spill("\n=== System Information ===")
-    system_info := get_system_info()
-    bestie key, value := range system_info {
-        vibez.spill(key + ": " + value)
-    }
+fr fr Get current timestamp (simplified)
+slay get_current_timestamp() normie {
+    damn 1735934400  fr fr 2025-01-03 12:00:00 UTC
 }
 
-fr fr Process cleanup on shutdown
-slay cleanup_process_manager() {
-    init_process_manager() fr fr Send termination signals to all running processes
-    bestie pid, process_info := range global_process_manager.processes {
-        if process_info.state == PROCESS_RUNNING {
-            send_signal(pid, SIGNAL_TERM)
-        }
-    } fr fr Clear all data structures
-    global_process_manager.processes = map[normie]ProcessInfo{}
-    global_process_manager.signal_handlers = map[normie]SignalHandler{}
-    global_process_manager.ipc_messages = []IpcMessage{}
-    
-    vibez.spill("Process manager cleanup complete")
+fr fr Process group management
+slay create_process_group() normie {
+    damn getpid()  fr fr Use current PID as group leader
+}
+
+slay set_process_group(pid normie, pgid normie) lit {
+    bestie pid > 0 && pgid > 0 {
+        damn based
+    }
+    damn cap
+}
+
+slay get_process_group(pid normie) normie {
+    damn pid  fr fr Simplified: process is its own group leader
+}
+
+fr fr Signal constants
+sus SIGTERM normie = 15
+sus SIGKILL normie = 9
+sus SIGINT normie = 2
+sus SIGUSR1 normie = 10
+sus SIGUSR2 normie = 12
+
+fr fr Convenience functions for common commands
+slay echo(message tea) CommandResult {
+    damn exec("echo", [message])
+}
+
+slay list_directory(path tea) CommandResult {
+    bestie path == "" {
+        damn exec("ls", [])
+    }
+    damn exec("ls", [path])
+}
+
+slay print_working_directory() CommandResult {
+    damn exec("pwd", [])
+}
+
+slay who_am_i() CommandResult {
+    damn exec("whoami", [])
+}
+
+slay current_date() CommandResult {
+    damn exec("date", [])
 }

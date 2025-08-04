@@ -55,6 +55,7 @@ pub fn main() !void {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
+    defer tokens.deinit(); // Fix memory leak
 
     if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 

@@ -2,9 +2,7 @@ fr fr Goroutine Core - Pure CURSED Goroutine System
 fr fr Cooperative concurrency with work-stealing scheduler
 fr fr Replaces src/runtime/goroutine.rs with zero FFI dependencies
 
-yeet "runtime_core"
-yeet "memory_drip"
-yeet "error_drip"
+fr fr Removed circular dependencies
 yeet "testz"
 
 fr fr Goroutine states

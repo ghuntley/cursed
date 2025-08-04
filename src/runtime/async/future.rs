@@ -225,8 +225,8 @@ where
                             this.second = Some(chain_func(result));
                             this.state = ChainState::WaitingForSecond;
                         } else {
-                            // Should never happen - chain function was already taken
-                            panic!("AndThenFuture chain function already consumed");
+                            // Chain function was already consumed - return error instead of panic
+                            return Poll::Ready(Err(AsyncError::RuntimeError("AndThenFuture chain function already consumed".to_string())));
                         }
                     } else {
                         return Poll::Pending;
@@ -243,7 +243,7 @@ where
                 }
             }
             ChainState::Completed => {
-                panic!("AndThenFuture polled after completion");
+                return Poll::Ready(Err(AsyncError::RuntimeError("AndThenFuture polled after completion".to_string())));
             }
         }
 
@@ -289,7 +289,7 @@ where
                 if let Some(map_func) = this.map_func.take() {
                     return Poll::Ready(map_func(result));
                 } else {
-                    panic!("MapFuture polled after completion");
+                    return Poll::Ready(Err(AsyncError::RuntimeError("MapFuture polled after completion".to_string())));
                 }
             }
         }
@@ -563,8 +563,28 @@ impl<T> AsyncResult<T> {
     pub fn unwrap(self) -> T {
         match self {
             AsyncResult::Success(value) => value,
-            AsyncResult::Error(err) => panic!("AsyncResult error: {}", err),
-            AsyncResult::Timeout => panic!("AsyncResult timeout"),
+            AsyncResult::Error(err) => {
+                eprintln!("CURSED Runtime Error: AsyncResult error: {}", err);
+                std::process::exit(1);
+            },
+            AsyncResult::Timeout => {
+                eprintln!("CURSED Runtime Error: AsyncResult timeout");
+                std::process::exit(1);
+            },
+        }
+    }
+    
+    pub fn expect(self, msg: &str) -> T {
+        match self {
+            AsyncResult::Success(value) => value,
+            AsyncResult::Error(err) => {
+                eprintln!("CURSED Runtime Error: {}: {}", msg, err);
+                std::process::exit(1);
+            },
+            AsyncResult::Timeout => {
+                eprintln!("CURSED Runtime Error: {}: timeout", msg);
+                std::process::exit(1);
+            },
         }
     }
 

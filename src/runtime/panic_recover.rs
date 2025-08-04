@@ -405,7 +405,8 @@ pub fn cursed_panic(message: &str) -> ! {
         execute_stack_unwinding(&mut state);
     });
     
-    panic!("{}", message);
+    eprintln!("CURSED Runtime Error: {}", message);
+    std::process::exit(1);
 }
 
 /// Execute automatic stack unwinding during panic
@@ -459,7 +460,7 @@ pub fn cursed_panic_with_error(error: CursedErrorType) -> ! {
         execute_stack_unwinding(&mut state);
     });
     
-    panic!("CURSED error: {}", match error {
+    let error_message = match error {
         CursedErrorType::Yikes { message, .. } => message,
         CursedErrorType::Shook { source_error, .. } => {
             match source_error.as_ref() {
@@ -473,7 +474,10 @@ pub fn cursed_panic_with_error(error: CursedErrorType) -> ! {
                 _ => "Recovered error".to_string(),
             }
         },
-    });
+    };
+    
+    eprintln!("CURSED Runtime Error: {}", error_message);
+    std::process::exit(1);
 }
 
 /// CURSED recover function - attempts to recover from panic
@@ -575,7 +579,8 @@ pub fn goroutine_panic(goroutine_id: GoroutineId, message: &str) -> ! {
         execute_stack_unwinding(&mut state);
     }
     
-    panic!("Goroutine {} panic: {}", goroutine_id, message);
+    eprintln!("CURSED Runtime Error: Goroutine {} panic: {}", goroutine_id, message);
+    std::process::exit(1);
 }
 
 /// Goroutine recovery - attempt to recover from goroutine panic

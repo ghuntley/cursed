@@ -202,14 +202,32 @@ slay (f *File) read(b []byte) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
-    damn 10, "" fr fr Return fixed read count
+    
+    fr fr Perform actual read operation using core system calls
+    sus bytes_read normie = core.read_bytes(f.fd, b, len(b))
+    sus err tea = core.get_last_error()
+    
+    check err != "" {
+        damn 0, err
+    }
+    
+    damn bytes_read, ""
 }
 
 slay (f *File) write(b []byte) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
-    damn 10, "" fr fr Return fixed write count
+    
+    fr fr Perform actual write operation using core system calls
+    sus bytes_written normie = core.write_bytes(f.fd, b, len(b))
+    sus err tea = core.get_last_error()
+    
+    check err != "" {
+        damn 0, err
+    }
+    
+    damn bytes_written, ""
 }
 
 slay (f *File) close() tea {
@@ -248,20 +266,18 @@ slay read_file(filename tea) ([]byte, tea) {
     sus file, err := open(filename)
     check err != "" {
         damn [], err
-    } fr fr Enhanced file content simulation based on file type
-    sus data []byte
-    
-    check substring_match(filename, ".txt") {
-        data = []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100} fr fr "Hello World"
-    } elseif substring_match(filename, ".csd") {
-        data = []byte{118, 105, 98, 101, 122, 46, 115, 112, 105, 108, 108, 40, 34, 72, 105, 34, 41} fr fr vibez.spill("Hi")
-    } elseif substring_match(filename, ".json") {
-        data = []byte{123, 34, 116, 101, 115, 116, 34, 58, 116, 114, 117, 101, 125} fr fr {"test":true}
-    } else {
-        data = []byte{100, 97, 116, 97} fr fr "data"
     }
     
+    fr fr Read actual file content using core system calls
+    sus data []byte = core.read_file_bytes(file.fd)
+    sus read_err tea = core.get_last_error()
+    
     file.close()
+    
+    check read_err != "" {
+        damn [], read_err
+    }
+    
     damn data, ""
 }
 
@@ -404,19 +420,16 @@ slay has_suffix(p tea, suffix tea) lit {
     damn based
 }
 
-fr fr Real syscall implementations
+fr fr Real syscall implementations using core system calls
 slay syscall_open(filename tea, flags normie, mode normie) normie {
-    fr fr Real POSIX open() syscall - simplified implementation
+    fr fr Real POSIX open() syscall using core.open_file
     check filename == "" {
         damn -1
     }
     
-    fr fr Basic file existence check
-    check filename == "test.txt" || filename == "program.csd" || filename == "config.json" {
-        damn 3 fr fr Valid file descriptor
-    }
-    
-    damn -2 fr fr File not found
+    fr fr Use actual core system call for file opening
+    sus result normie = core.open_file(filename, flags, mode)
+    damn result
 }
 
 slay char_from_byte(b byte) tea {

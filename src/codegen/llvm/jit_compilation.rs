@@ -1687,11 +1687,12 @@ extern "C" fn cursed_panic(message_ptr: *const std::ffi::c_char) {
     if !message_ptr.is_null() {
         unsafe {
             let message = std::ffi::CStr::from_ptr(message_ptr).to_str().unwrap_or("Unknown panic");
-            panic!("CURSED panic: {}", message);
+            eprintln!("CURSED Runtime Error: {}", message);
         }
     } else {
-        panic!("CURSED panic: Unknown error");
+        eprintln!("CURSED Runtime Error: Unknown error");
     }
+    std::process::exit(1);
 }
 
 extern "C" fn cursed_error_propagate(error_code: i32, context_ptr: *const std::ffi::c_char) -> i32 {

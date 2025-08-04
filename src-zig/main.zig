@@ -101,17 +101,17 @@ pub fn main() !void {
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
-    defer l.deinit();
 
     const tokens = l.tokenize() catch |err| {
         print("Lexer error: {}\n", .{err});
         return;
     };
+    defer tokens.deinit();
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
         for (tokens.items) |token| {
-            print("{}: '{}'\n", .{ token.type, token.literal });
+            print("{}: '{s}'\n", .{ token.kind, token.lexeme });
         }
         print("\n", .{});
     }
