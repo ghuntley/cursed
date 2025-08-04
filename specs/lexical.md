@@ -53,7 +53,7 @@ Traditional programming keywords are replaced with Gen Z slang. Here's the mappi
 | package    | vibe          |
 | import     | yeet          |
 | func       | slay          |
-| return     | yolo / damn   |
+| return     | damn   |
 | var        | sus           |
 | const      | facts         |
 | if         | lowkey        |
@@ -68,7 +68,7 @@ Traditional programming keywords are replaced with Gen Z slang. Here's the mappi
 | type       | be_like       |
 | struct     | squad         |
 | interface  | collab        |
-| map        | vibes         |
+| map        | map         |
 | chan       | dm            |
 | go         | stan          |
 | range      | flex          |

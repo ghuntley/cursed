@@ -29,7 +29,7 @@ CURSED provides several ways to construct types from existing types:
 |---------------|--------|-------------|
 | Array       | `[n]T`   | Array of n elements of type T |
 | Slice       | `[]T`    | Dynamic array of elements of type T |
-| Map         | `vibes[K]V` | Map from keys of type K to values of type V |
+| Map         | `map[K]V` | Map from keys of type K to values of type V |
 | Struct      | `squad`  | Collection of fields |
 | Interface   | `collab` | Set of method signatures |
 | Pointer     | `@T`     | Pointer to a value of type T |
@@ -157,7 +157,7 @@ slay push[T](s @Stack[T], item T) {
 
 slay pop[T](s @Stack[T]) T {
     s.size--
-    yolo s.items[s.size]
+    damn s.items[s.size]
 }
 ```
 

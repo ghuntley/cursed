@@ -10,7 +10,9 @@ pub const TokenKind = enum {
     String,
     Boolean,
     Character,
-    Based, // For 'based' literal
+    Based, // For 'based' literal (true)
+    Cringe, // For 'cringe' literal (false)
+    Nah, // For 'nah' literal (nil)
 
     // Identifiers
     Identifier,
@@ -149,6 +151,7 @@ pub const TokenKind = enum {
 
     // Special
     At, // @ (for pointer types)
+    Hash, // # (for comments, directives, or operators)
     Newline,
     Eof,
 
@@ -247,6 +250,19 @@ pub const Lexer = struct {
             ',' => return self.makeToken(.Comma, start_line, start_column),
             ';' => return self.makeToken(.Semicolon, start_line, start_column),
             '@' => return self.makeToken(.At, start_line, start_column),
+            '#' => {
+                // Hash character - check if it's a line comment
+                if (self.peek() == ' ' or self.peek() == '\t' or std.ascii.isAlphabetic(self.peek())) {
+                    // Treat as line comment - consume until end of line
+                    while (self.peek() != '\n' and !self.isAtEnd()) {
+                        _ = self.advance();
+                    }
+                    return self.makeToken(.LineComment, start_line, start_column);
+                } else {
+                    // Standalone # token for other uses (preprocessor directives, etc.)
+                    return self.makeToken(.Hash, start_line, start_column);
+                }
+            },
             '?' => return self.makeToken(.Question, start_line, start_column),
             '\n' => {
                 self.line += 1;
@@ -607,13 +623,16 @@ pub const Lexer = struct {
         if (std.mem.eql(u8, text, "lit")) return .Lit;
         if (std.mem.eql(u8, text, "dm")) return .Dm;
 
-        // Literals
-        if (std.mem.eql(u8, text, "based")) return .Based;
-        if (std.mem.eql(u8, text, "cap")) return .Cap;
-        if (std.mem.eql(u8, text, "cringe")) return .Cap;  // cringe = false/nil
+        // Literals (canonical spec conformance)
+        if (std.mem.eql(u8, text, "based")) return .Based;   // true literal
+        if (std.mem.eql(u8, text, "cringe")) return .Cringe; // false literal  
+        if (std.mem.eql(u8, text, "nah")) return .Nah;       // nil literal
         if (std.mem.eql(u8, text, "no_cap")) return .NoCap;
-        if (std.mem.eql(u8, text, "truth")) return .Truth;
-        if (std.mem.eql(u8, text, "lies")) return .Lies;
+        
+        // Deprecated forms - treated as identifiers to trigger parser errors
+        if (std.mem.eql(u8, text, "cap")) return .Identifier;   // Use 'nah' instead
+        if (std.mem.eql(u8, text, "truth")) return .Identifier; // Use 'based' instead
+        if (std.mem.eql(u8, text, "lies")) return .Identifier;  // Use 'cringe' instead
         if (std.mem.eql(u8, text, "main_character")) return .MainCharacter;
 
         // Error handling
@@ -701,4 +720,30 @@ test "lexer bitwise operators" {
     try std.testing.expect(tokens.items[2].kind == .Caret);
     try std.testing.expect(tokens.items[3].kind == .LeftShift);
     try std.testing.expect(tokens.items[4].kind == .RightShift);
+}
+
+test "lexer hash character support" {
+    const allocator = std.testing.allocator;
+    
+    // Test standalone hash token
+    var lexer1 = Lexer.init(allocator, "#");
+    const token1 = try lexer1.nextToken();
+    try std.testing.expect(token1.kind == .Hash);
+    
+    // Test hash comment with space
+    var lexer2 = Lexer.init(allocator, "# comment");
+    const token2 = try lexer2.nextToken();
+    try std.testing.expect(token2.kind == .LineComment);
+    
+    // Test hash comment without space
+    var lexer3 = Lexer.init(allocator, "#comment");
+    const token3 = try lexer3.nextToken();
+    try std.testing.expect(token3.kind == .LineComment);
+    
+    // Test hash comment followed by code (filtered in tokenize)
+    var lexer4 = Lexer.init(allocator, "# comment\nvibez.spill");
+    const tokens4 = try lexer4.tokenize();
+    defer tokens4.deinit();
+    try std.testing.expect(tokens4.items.len >= 2);
+    try std.testing.expect(tokens4.items[0].kind == .Identifier); // vibez
 }

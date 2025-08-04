@@ -1,244 +1,164 @@
-# Runtime Core Module
+# CURSED Runtime Core Library
 
-The Runtime Core module (`stdlib/runtime_core/mod.csd`) provides essential runtime operations implemented in pure CURSED language for compiler self-hosting. This module eliminates FFI dependencies and provides a foundation for the CURSED runtime system.
+High-performance data structures and utilities for the CURSED compiler runtime, implemented entirely in pure CURSED.
 
 ## Overview
 
-This module implements critical runtime operations that were previously stubs, enabling the CURSED compiler to manage its own execution environment. All implementations are in pure CURSED language following the specifications in the `specs/` directory.
+The Runtime Core library provides essential data structures and utilities that the CURSED compiler uses internally. These implementations are optimized for compiler workloads and use no external FFI dependencies.
 
-## Implemented Operations
+## Core Data Structures
 
-### Array Operations
+### RuntimeVec<T> - Dynamic Array
+Generic dynamic array implementation similar to Zig's ArrayList:
 
-- `array_get_length(arr [RuntimeValue]) normie` - Get array length with bounds checking
-- `array_get_element(arr [RuntimeValue], index normie) RuntimeValue` - Safe element access
-- `array_set_element(arr [RuntimeValue], index normie, value RuntimeValue) lit` - Safe element assignment
-- `runtime_array_length(arr [RuntimeValue]) normie` - Runtime interface for array length
-- `runtime_array_get(arr [RuntimeValue], index normie) RuntimeValue` - Runtime interface for element access
-- `runtime_array_set(arr [RuntimeValue], index normie, value RuntimeValue) lit` - Runtime interface for element assignment
+```cursed
+sus vec RuntimeVec<normie> = RuntimeVec_new<normie>()
+vec = RuntimeVec_push(vec, 42)
+vec = RuntimeVec_push(vec, 100)
+sus value normie = RuntimeVec_get(vec, 0)  // 42
+sus length normie = RuntimeVec_len(vec)    // 2
+```
 
-#### Implementation Details
-- Uses linear search through array elements until null terminator found
-- Implements bounds checking to prevent out-of-bounds access
-- Returns `cringe` (nil) for invalid indices
-- Maximum array size limited to 10,000 elements for safety
+**Features:**
+- Automatic capacity growth (starts at 4, doubles on overflow)
+- Generic type support for any CURSED type
+- Bounds checking with safe zero-value returns
+- Memory-efficient contiguous storage
 
-### Map Operations
+### RuntimeHashMap<K, V> - Hash Table
+Generic hash map for symbol tables and fast lookups:
 
-- `map_has_key(map vibes[tea]RuntimeValue, key tea) lit` - Check if key exists in map
-- `map_get_value(map vibes[tea]RuntimeValue, key tea) RuntimeValue` - Get value by key
-- `map_set_value(map vibes[tea]RuntimeValue, key tea, value RuntimeValue) lit` - Set key-value pair
-- `runtime_map_get(map vibes[tea]RuntimeValue, key tea) RuntimeValue` - Runtime interface for map access
-- `runtime_map_set(map vibes[tea]RuntimeValue, key tea, value RuntimeValue) lit` - Runtime interface for map assignment
+```cursed
+sus map RuntimeHashMap<tea, normie> = RuntimeHashMap_new<tea, normie>()
+map = RuntimeHashMap_insert(map, "variable_count", 42)
+(value, found) := RuntimeHashMap_get(map, "variable_count")
+```
 
-#### Implementation Details
-- Uses linear search through map entries (pure CURSED implementation)
-- Supports up to 1,000 key-value pairs per map
-- String equality comparison for key matching
-- Handles map expansion by finding empty slots
+**Features:**
+- Linear probing collision resolution
+- String-optimized hash function (djb2 algorithm)
+- Generic key-value support
+- O(1) average case performance
 
-### String Operations
+### RuntimeStringBuilder - Efficient String Construction
+Optimized string building for compiler output generation:
 
-- `string_length_enhanced(input tea) normie` - Unicode-aware string length calculation
-- `string_char_at(str tea, index normie) normie` - Get character code at specific index
-- `string_concat(a tea, b tea) tea` - Concatenate two strings
-- `string_substring(str tea, start normie, end normie) tea` - Extract substring
-- `string_to_byte_array(str tea) [normie]` - Convert string to byte array
-- `runtime_strings_equal(a tea, b tea) lit` - String equality comparison
+```cursed
+sus sb RuntimeStringBuilder = RuntimeStringBuilder_new()
+sb = RuntimeStringBuilder_append(sb, "function ")
+sb = RuntimeStringBuilder_append(sb, function_name)
+sb = RuntimeStringBuilder_append_char(sb, '(')
+sus code tea = RuntimeStringBuilder_to_string(sb)
+```
 
-#### Implementation Details
-- Character-by-character processing for string operations
-- Bounds checking for all string access operations
-- UTF-8 byte-level access through `get_string_byte_at`
-- Efficient string concatenation and manipulation
+**Features:**
+- Avoids O(n²) string concatenation
+- Tracks total length for efficiency
+- Supports both string and character appending
+- Memory-efficient part storage
 
-### Memory Management
+## Utility Structures
 
-- `memory_allocate_bytes(size normie) normie` - Allocate memory block
-- `memory_deallocate_bytes(pointer normie, size normie) lit` - Deallocate memory block
-- `memory_copy_bytes(src normie, dest normie, size normie) lit` - Copy memory between blocks
-- `memory_zero_bytes(pointer normie, size normie) lit` - Zero out memory block
+### RuntimeStack<T> - Stack Data Structure
+Generic stack for runtime state management:
 
-#### Implementation Details
-- Simulated memory allocation using timestamp-based pointers
-- Size validation (0 < size <= 1MB)
-- Memory tracking for allocation/deallocation pairs
-- Safe parameter validation for all operations
+```cursed
+sus stack RuntimeStack<tea> = RuntimeStack_new<tea>()
+stack = RuntimeStack_push(stack, "function_scope")
+(current_scope, success) := RuntimeStack_pop(stack)
+```
 
-### Time Operations
+### RuntimeError - Structured Error Handling
+Comprehensive error information for compiler diagnostics:
 
-- `get_current_time_nanos() normie` - Get current time in nanoseconds
-- `get_current_time_millis() normie` - Get current time in milliseconds  
-- `time_elapsed_nanos(start_time normie) normie` - Calculate elapsed time
+```cursed
+sus err RuntimeError = RuntimeError_with_source(
+    E_SYNTAX_ERROR, 
+    "Unexpected token", 
+    "main.csd", 
+    42
+)
+sus error_msg tea = RuntimeError_to_string(err)
+```
 
-#### Implementation Details
-- Incremental time counter for pure CURSED simulation
-- Microsecond-precision time advancement
-- Consistent time progression across function calls
+### RuntimeMemoryPool - Block Allocator
+Efficient memory allocation for temporary compiler data:
 
-### Performance Metrics
+```cursed
+sus pool RuntimeMemoryPool = RuntimeMemoryPool_new(4096)
+sus buffer []byte = RuntimeMemoryPool_allocate(pool, 256)
+```
 
-- `log_performance_metric(operation tea, duration normie) lit` - Log performance data
-- `get_performance_stats() tea` - Get accumulated performance statistics
+## Performance Characteristics
 
-#### Implementation Details
-- String-based performance log accumulation
-- Metric format: "operation:duration_ns"
-- Thread-safe logging through global state management
+| Operation | Time Complexity | Space Complexity |
+|-----------|----------------|------------------|
+| Vec push | O(1) amortized | O(n) |
+| Vec get | O(1) | - |
+| HashMap insert | O(1) average | O(n) |
+| HashMap lookup | O(1) average | - |
+| StringBuilder append | O(1) amortized | O(n) |
+| Stack push/pop | O(1) | O(n) |
 
-### Garbage Collection
+## Compiler Integration
 
-- `trigger_gc_collection() lit` - Trigger garbage collection cycle
-- `get_gc_statistics() tea` - Get comprehensive GC statistics
-- `gc_mark_and_sweep() normie` - Perform mark-and-sweep collection
-- Individual stat accessors: `gc_get_collection_count()`, `gc_get_memory_freed()`, `gc_get_live_object_count()`
+The Runtime Core library is designed specifically for compiler workloads:
 
-#### Implementation Details
-- Simulated mark-and-sweep algorithm
-- 10% collection rate per GC cycle
-- Comprehensive statistics tracking
-- Memory usage estimation (64 bytes per object)
-
-### Dynamic Function Calling
-
-- `call_runtime_function(func_name tea, args [RuntimeValue]) RuntimeValue` - Dynamic function dispatch
-
-#### Implementation Details
-- Function registry with name-based dispatch
-- Built-in support for common functions (`print`, `length`)
-- Error handling for unknown functions
-- Argument validation and type checking
-
-## Value System
-
-### Runtime Value Types
-
-The module uses a `RuntimeValue` union type that can represent:
-- `normie` - 32-bit integers
-- `drip` - 64-bit floating point numbers  
-- `tea` - Unicode strings
-- `lit` - Boolean values (`based`/`cap`)
-- `cringe` - Nil/null values
-
-### Type Operations
-
-- `runtime_value_create(value_data tea, value_type tea) RuntimeValue` - Create typed values
-- `runtime_get_type(value RuntimeValue) tea` - Get type name
-- `runtime_type_check(value RuntimeValue, expected_type tea) lit` - Type validation
-- `runtime_convert_to_string(value RuntimeValue) tea` - String conversion
-- `runtime_values_equal(a RuntimeValue, b RuntimeValue) lit` - Value equality
+- **Symbol Tables**: Use RuntimeHashMap for variable/function lookups
+- **Token Storage**: Use RuntimeVec for dynamic token arrays
+- **Code Generation**: Use RuntimeStringBuilder for efficient output
+- **Error Tracking**: Use RuntimeError for diagnostic information
+- **Scope Management**: Use RuntimeStack for nested scopes
 
 ## Testing
 
-Comprehensive tests are provided in `test_runtime_core.csd`:
+Run the comprehensive test suite:
 
 ```bash
-# Test the runtime core module
-cargo run --bin cursed stdlib/runtime_core/test_runtime_core.csd
-
-# Test both interpretation and compilation modes
-cargo run --bin cursed stdlib/runtime_core/test_runtime_core.csd
-cargo run --bin cursed -- compile stdlib/runtime_core/test_runtime_core.csd
-./test_runtime_core
+./cursed-unified stdlib/runtime_core/test_runtime_core.csd
 ```
 
-### Test Coverage
+## Implementation Notes
 
-- ✅ Basic value system operations
-- ✅ Array operations with bounds checking
-- ✅ Map operations with linear search
-- ✅ String operations and manipulation
-- ✅ Memory management simulation
-- ✅ Time operations and elapsed calculation
-- ✅ Performance metrics logging
-- ✅ Garbage collection simulation
-- ✅ Dynamic function calling
-- ✅ Value comparison and equality
-- ✅ Error handling and creation
-- ✅ Helper function validation
+- All data structures use pure CURSED with no FFI dependencies
+- Generic implementations work with any CURSED type
+- Memory-safe with bounds checking and error handling
+- Optimized for typical compiler access patterns
+- Compatible with both interpretation and compilation modes
 
-## Architecture
+## API Reference
 
-### Pure CURSED Implementation
+### RuntimeVec<T>
+- `RuntimeVec_new<T>() RuntimeVec<T>`
+- `RuntimeVec_with_capacity<T>(normie) RuntimeVec<T>`
+- `RuntimeVec_push<T>(RuntimeVec<T>, T) RuntimeVec<T>`
+- `RuntimeVec_get<T>(RuntimeVec<T>, normie) T`
+- `RuntimeVec_len<T>(RuntimeVec<T>) normie`
+- `RuntimeVec_is_empty<T>(RuntimeVec<T>) lit`
 
-All operations are implemented in pure CURSED language without FFI dependencies:
+### RuntimeHashMap<K, V>
+- `RuntimeHashMap_new<K, V>() RuntimeHashMap<K, V>`
+- `RuntimeHashMap_insert<K, V>(RuntimeHashMap<K, V>, K, V) RuntimeHashMap<K, V>`
+- `RuntimeHashMap_get<K, V>(RuntimeHashMap<K, V>, K) (V, lit)`
+- `RuntimeHashMap_contains<K, V>(RuntimeHashMap<K, V>, K) lit`
+- `RuntimeHashMap_size<K, V>(RuntimeHashMap<K, V>) normie`
 
-- **No Rust FFI calls** - Eliminates external dependencies
-- **Self-contained** - All logic implemented in CURSED
-- **Simulation-based** - Uses mathematical simulation for system operations
-- **Safe by design** - Bounds checking and parameter validation throughout
+### RuntimeStringBuilder
+- `RuntimeStringBuilder_new() RuntimeStringBuilder`
+- `RuntimeStringBuilder_append(RuntimeStringBuilder, tea) RuntimeStringBuilder`
+- `RuntimeStringBuilder_append_char(RuntimeStringBuilder, sip) RuntimeStringBuilder`
+- `RuntimeStringBuilder_to_string(RuntimeStringBuilder) tea`
+- `RuntimeStringBuilder_len(RuntimeStringBuilder) normie`
 
-### Runtime Interface
+### RuntimeStack<T>
+- `RuntimeStack_new<T>() RuntimeStack<T>`
+- `RuntimeStack_push<T>(RuntimeStack<T>, T) RuntimeStack<T>`
+- `RuntimeStack_pop<T>(RuntimeStack<T>) (T, lit)`
+- `RuntimeStack_peek<T>(RuntimeStack<T>) (T, lit)`
+- `RuntimeStack_is_empty<T>(RuntimeStack<T>) lit`
+- `RuntimeStack_size<T>(RuntimeStack<T>) normie`
 
-The module provides both low-level operations and high-level runtime interfaces:
-
-- **Low-level functions** - Direct array/map/string manipulation
-- **Runtime interfaces** - Safe wrappers with additional validation
-- **Error handling** - Comprehensive error creation and propagation
-- **Performance tracking** - Built-in metrics collection
-
-### Global State Management
-
-Carefully managed global state for:
-- Time counter progression
-- Performance metrics accumulation  
-- Garbage collection statistics
-- Memory allocation tracking
-
-## Integration
-
-### Compiler Self-Hosting
-
-This module enables CURSED compiler self-hosting by providing:
-
-- **Value representation** - Runtime value types and operations
-- **Memory management** - Allocation and deallocation interfaces
-- **Type system support** - Type checking and conversion
-- **Performance monitoring** - Execution metrics and profiling
-
-### Runtime System
-
-Integrates with the broader runtime system:
-
-- **Interface definitions** - Standard runtime operation signatures
-- **Error propagation** - Consistent error handling patterns
-- **Resource management** - Memory and time resource tracking
-- **Debugging support** - Comprehensive logging and statistics
-
-## Future Enhancements
-
-### Performance Optimizations
-
-- Hash-based map implementations for O(1) operations
-- More efficient string concatenation algorithms
-- Advanced garbage collection strategies
-- Memory pool allocation patterns
-
-### Extended Operations
-
-- Advanced string operations (regex, formatting)
-- Complex number arithmetic  
-- File I/O interfaces
-- Network operation abstractions
-
-### Integration Improvements
-
-- Tighter integration with LLVM backend
-- Enhanced debugging information generation
-- Profile-guided optimization hooks
-- Cross-platform compatibility layers
-
-## Dependencies
-
-- `testz` - Testing framework for validation
-- CURSED language specifications from `specs/` directory
-- Runtime value types and interfaces
-
-## Compatibility
-
-- ✅ Interpretation mode - Full compatibility
-- ✅ Compilation mode - Full compatibility  
-- ✅ Cross-platform - Pure CURSED implementation
-- ✅ Self-hosting - Enables compiler self-hosting
-
-This implementation represents a critical milestone in CURSED's journey toward full self-hosting capability by eliminating FFI dependencies in core runtime operations.
+### RuntimeError
+- `RuntimeError_new(normie, tea) RuntimeError`
+- `RuntimeError_with_source(normie, tea, tea, normie) RuntimeError`
+- `RuntimeError_to_string(RuntimeError) tea`

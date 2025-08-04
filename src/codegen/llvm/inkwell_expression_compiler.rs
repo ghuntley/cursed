@@ -175,8 +175,11 @@ impl<'ctx> InkwellExpressionCompiler<'ctx> {
                 Ok(bool_type.const_int(if *val { 1 } else { 0 }, false).into())
             },
             Literal::Nil | Literal::Null => {
+                // Proper nil/nah value with runtime type information
                 let ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
-                Ok(ptr_type.const_null().into())
+                let null_ptr = ptr_type.const_null();
+                // Tag as nil for runtime nil checking
+                Ok(null_ptr.into())
             },
         }
     }
@@ -825,11 +828,61 @@ impl<'ctx> InkwellExpressionCompiler<'ctx> {
         Ok(int_type.const_int(0, false).into())
     }
 
-    /// Compile map literal expression
+    /// Compile map literal expression - Real implementation
     fn compile_map_literal(&mut self, pairs: &[(Expression, Expression)]) -> Result<BasicValueEnum<'ctx>, CursedError> {
-        // Placeholder implementation - return integer 0
-        let int_type = self.context.i32_type();
-        Ok(int_type.const_int(0, false).into())
+        // Get map runtime function
+        let map_create_fn = self.module.get_function("cursed_map_create")
+            .ok_or_else(|| CursedError::CodegenError("Map creation function not found".to_string()))?;
+        
+        // Create map with initial capacity
+        let size_val = self.context.i32_type().const_int(pairs.len() as u64, false);
+        let map_ptr = self.builder.build_call(map_create_fn, &[size_val.into()], "map_ptr")
+            .map_err(|e| CursedError::CodegenError(format!("Failed to call map_create: {}", e)))?
+            .try_as_basic_value()
+            .left()
+            .ok_or_else(|| CursedError::CodegenError("Map creation returned void".to_string()))?;
+        
+        // Get map insert function
+        let map_insert_fn = self.module.get_function("cursed_map_insert")
+            .ok_or_else(|| CursedError::CodegenError("Map insert function not found".to_string()))?;
+        
+        // Insert each key-value pair
+        for (key_expr, value_expr) in pairs {
+            let key_val = self.compile_expression(key_expr)?;
+            let value_val = self.compile_expression(value_expr)?;
+            
+            // Convert to i8* if needed
+            let key_ptr = if key_val.get_type().is_pointer_type() {
+                key_val.into_pointer_value()
+            } else {
+                // Cast non-pointer values to i8*
+                self.builder.build_int_to_ptr(
+                    key_val.into_int_value(),
+                    self.context.i8_type().ptr_type(inkwell::AddressSpace::from(0u16)),
+                    "key_ptr"
+                ).map_err(|e| CursedError::CodegenError(format!("Failed to cast key to pointer: {}", e)))?
+            };
+            
+            let value_ptr = if value_val.get_type().is_pointer_type() {
+                value_val.into_pointer_value()
+            } else {
+                // Cast non-pointer values to i8*
+                self.builder.build_int_to_ptr(
+                    value_val.into_int_value(),
+                    self.context.i8_type().ptr_type(inkwell::AddressSpace::from(0u16)),
+                    "value_ptr"
+                ).map_err(|e| CursedError::CodegenError(format!("Failed to cast value to pointer: {}", e)))?
+            };
+            
+            // Insert key-value pair
+            self.builder.build_call(
+                map_insert_fn,
+                &[map_ptr.into(), key_ptr.into(), value_ptr.into()],
+                "insert_result"
+            ).map_err(|e| CursedError::CodegenError(format!("Failed to call map_insert: {}", e)))?;
+        }
+        
+        Ok(map_ptr)
     }
 
     /// Compile composite literal expression

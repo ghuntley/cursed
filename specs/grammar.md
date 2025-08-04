@@ -104,7 +104,7 @@ Example:
 
 ```
 slay add(x, y normie) normie {
-    yolo x + y
+    damn x + y
 }
 ```
 
@@ -135,11 +135,11 @@ Example:
 
 ```
 lowkey x > 0 {
-    yolo x
+    damn x
 } highkey lowkey x < 0 {
-    yolo -x
+    damn -x
 } highkey {
-    yolo 0
+    damn 0
 }
 ```
 
@@ -147,7 +147,7 @@ Parentheses around the condition expression are optional:
 
 ```
 lowkey (x > 0) {
-    yolo x
+    damn x
 }
 ```
 
@@ -224,17 +224,17 @@ periodt x > 0 {
 ### Return Statements
 
 ```
-ReturnStmt       = "yolo" [ ExpressionList ] .
+ReturnStmt       = "damn" [ ExpressionList ] .
 ```
 
-The `yolo` keyword is used to return values from functions. The `damn` keyword is an alias for `yolo`.
+The `damn` keyword is used to return values from functions.
 
 Examples:
 
 ```
-yolo x + y
+damn x + y
 damn "Hello World"
-yolo  # return with no value
+damn  # return with no value
 ```
 
 ### Break and Continue Statements
@@ -494,14 +494,14 @@ CURSED follows Go's error handling pattern:
 
 ```
 slay doSomething() (tea, Error) {
-    lowkey err != cringe {
-        yolo "", err
+    lowkey err != nah {
+        damn "", err
     }
-    yolo "success", cringe
+    damn "success", nah
 }
 
 result, err := doSomething()
-lowkey err != cringe {
+lowkey err != nah {
     handleError(err)
 }
 ``` 
