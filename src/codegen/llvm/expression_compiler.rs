@@ -330,7 +330,12 @@ impl ExpressionCompiler {
             Literal::Float(val) => Ok(val.to_string()),
             Literal::String(val) => self.compile_string_literal(val),
             Literal::Boolean(val) => Ok(if *val { "1" } else { "0" }.to_string()),
-            Literal::Nil | Literal::Null => Ok("null".to_string()),
+            Literal::Nil | Literal::Null => {
+                // Proper nil/nah value codegen - null pointer with type safety
+                let nil_reg = self.next_register();
+                self.ir_buffer.push_str(&format!("  {} = inttoptr i64 0 to i8*\n", nil_reg));
+                Ok(nil_reg)
+            },
         }
     }
 
@@ -832,21 +837,46 @@ impl ExpressionCompiler {
         }
     }
 
-    /// Compile map expressions
+    /// Compile map expressions - Full implementation for map[K]V syntax
     fn compile_map_expression(&mut self, pairs: &[(Expression, Expression)]) -> Result<String, CursedError> {
         let map_reg = self.next_register();
         
-        // Allocate map structure
-        self.ir_buffer.push_str(&format!("  {} = alloca %struct.map, align 8\n", map_reg));
-        self.ir_buffer.push_str(&format!("  ; Map with {} entries\n", pairs.len()));
+        // Allocate map structure with proper hash table implementation
+        self.ir_buffer.push_str(&format!("  {} = call i8* @cursed_map_create(i32 {})\n", map_reg, pairs.len()));
         
-        // Initialize map entries
+        // Initialize map entries with proper key-value storage
         for (i, (key, value)) in pairs.iter().enumerate() {
             let key_reg = self.compile_expression(key)?;
             let value_reg = self.compile_expression(value)?;
-            self.ir_buffer.push_str(&format!("  ; Map entry {}: {} -> {}\n", i, key_reg, value_reg));
             
-            // For now, just generate comments - real map implementation would store in hash table
+            // Insert key-value pair into map using runtime hash table
+            let insert_reg = self.next_register();
+            self.ir_buffer.push_str(&format!(
+                "  {} = call i32 @cursed_map_insert(i8* {}, i8* {}, i8* {})\n",
+                insert_reg, map_reg, key_reg, value_reg
+            ));
+            
+            // Error checking for insert operation
+            let check_reg = self.next_register();
+            let success_label = format!("map_insert_success_{}", i);
+            let error_label = format!("map_insert_error_{}", i);
+            
+            self.ir_buffer.push_str(&format!(
+                "  {} = icmp eq i32 {}, 0\n",
+                check_reg, insert_reg
+            ));
+            self.ir_buffer.push_str(&format!(
+                "  br i1 {}, label %{}, label %{}\n",
+                check_reg, success_label, error_label
+            ));
+            
+            // Error handling for map insertion failure
+            self.ir_buffer.push_str(&format!("{}:\n", error_label));
+            self.ir_buffer.push_str("  call void @cursed_panic(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @str.map_insert_failed, i32 0, i32 0), i64 24)\n");
+            self.ir_buffer.push_str("  unreachable\n");
+            
+            // Success continuation
+            self.ir_buffer.push_str(&format!("{}:\n", success_label));
         }
         
         Ok(map_reg)

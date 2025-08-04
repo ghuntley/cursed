@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use crate::error_types::{Error, Result};
 use crate::ast::{Expression, Statement, Type};
-use crate::codegen::llvm::LLVMCodegen;
+use crate::codegen::llvm::main::LLVMCodegen;
 use crate::runtime::enhanced_error_handling::CursedErrorType;
 
 /// LLVM error handling code generator

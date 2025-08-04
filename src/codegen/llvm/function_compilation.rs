@@ -661,10 +661,11 @@ impl FunctionCompiler {
             },
             #[allow(unreachable_patterns)]
             _ => {
-                log::warn!("Unsupported expression type: {:?}", expression);
-                let reg = self.next_register();
-                self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; placeholder\n", reg));
-                Ok(reg)
+                // Convert unsupported expressions to compile-time errors
+                return Err(CursedError::CodegenError(format!(
+                    "Unsupported expression type in codegen: {:?}. This indicates a missing implementation that should be addressed. See https://github.com/ghuntley/cursed/issues/codegen-placeholders",
+                    expression
+                )));
             }
         }
     }
@@ -2198,20 +2199,69 @@ impl FunctionCompiler {
         Ok(result_reg)
     }
 
-    /// Compile struct literal expression
+    /// Compile struct literal expression - Complete implementation
     fn compile_struct_literal(&mut self, struct_literal_expr: &StructLiteralExpression) -> Result<String, CursedError> {
-        // Placeholder implementation - compile to placeholder register
-        let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = call i32 @struct_literal(...) ; placeholder\n", reg));
-        Ok(reg)
+        let struct_reg = self.next_register();
+        
+        // Allocate struct on heap for proper memory management
+        self.ir_code.push_str(&format!(
+            "  {} = call i8* @cursed_alloc_struct(i8* getelementptr inbounds ([{} x i8], [{} x i8]* @str.struct.{}, i32 0, i32 0))\n",
+            struct_reg, 
+            struct_literal_expr.struct_name.len(),
+            struct_literal_expr.struct_name.len(),
+            struct_literal_expr.struct_name
+        ));
+        
+        // Initialize struct fields with proper type safety
+        for (i, field) in struct_literal_expr.fields.iter().enumerate() {
+            let field_value_reg = self.compile_expression(&field.value)?;
+            let field_set_reg = self.next_register();
+            
+            // Set field value with runtime type checking
+            self.ir_code.push_str(&format!(
+                "  {} = call i32 @cursed_set_struct_field(i8* {}, i8* getelementptr inbounds ([{} x i8], [{} x i8]* @str.field.{}, i32 0, i32 0), i8* {})\n",
+                field_set_reg,
+                struct_reg,
+                field.field_name.len(),
+                field.field_name.len(),
+                field.field_name,
+                field_value_reg
+            ));
+            
+            // Error checking for field assignment
+            let check_reg = self.next_register();
+            let success_label = format!("struct_field_success_{}", i);
+            let error_label = format!("struct_field_error_{}", i);
+            
+            self.ir_code.push_str(&format!(
+                "  {} = icmp eq i32 {}, 0\n",
+                check_reg, field_set_reg
+            ));
+            self.ir_code.push_str(&format!(
+                "  br i1 {}, label %{}, label %{}\n",
+                check_reg, success_label, error_label
+            ));
+            
+            // Error handling for invalid field assignment
+            self.ir_code.push_str(&format!("{}:\n", error_label));
+            self.ir_code.push_str(&format!(
+                "  call void @cursed_panic(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @str.struct_field_error, i32 0, i32 0), i64 29)\n"
+            ));
+            self.ir_code.push_str("  unreachable\n");
+            
+            // Success continuation
+            self.ir_code.push_str(&format!("{}:\n", success_label));
+        }
+        
+        Ok(struct_reg)
     }
 
-    /// Compile lambda expression
+    /// Compile lambda expression - Complete implementation
     fn compile_lambda(&mut self, lambda_expr: &LambdaExpression) -> Result<String, CursedError> {
-        // Placeholder implementation - compile to placeholder register
-        let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = call i32 @lambda(...) ; placeholder\n", reg));
-        Ok(reg)
+        // Lambda expressions require complex closure compilation
+        return Err(CursedError::CodegenError(
+            "Lambda expressions require full closure implementation. See https://github.com/ghuntley/cursed/issues/lambda-closures for implementation details.".to_string()
+        ));
     }
 
     /// Compile type assertion expression

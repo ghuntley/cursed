@@ -454,7 +454,7 @@ module.exports = grammar({
     
     // Other statements
     return_statement: $ => seq(
-      'yolo',
+      'damn',
       optional($.expression_list)
     ),
     
@@ -645,8 +645,8 @@ module.exports = grammar({
       $.tuple_literal
     ),
     
-    bool_literal: $ => choice('based', 'cap'),
-    nil_literal: $ => 'cringe',
+    bool_literal: $ => choice('based', 'cringe'),
+    nil_literal: $ => 'nah',
     
     tuple_literal: $ => seq(
       '(',

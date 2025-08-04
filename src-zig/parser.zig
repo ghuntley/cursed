@@ -138,8 +138,8 @@ pub const Parser = struct {
             return Statement{ .Let = try self.parseLetStatement() };
         }
         
-        // Return statement (yolo/damn)
-        if (self.check(.Yolo) or self.matchIdentifier("damn")) {
+        // Return statement (damn only - canonical spec)
+        if (self.matchIdentifier("damn")) {
             return try self.parseReturnStatement();
         }
         
@@ -787,8 +787,18 @@ pub const Parser = struct {
             return Expression{ .Boolean = true };
         }
         
-        if (self.match(.Lies) or self.match(.Cap)) {
+        // SPEC CONFORMANCE: Only accept canonical boolean and nil literals
+        if (self.match(.Cringe)) {
             return Expression{ .Boolean = false };
+        }
+        
+        if (self.match(.Nah)) {
+            return Expression{ .Literal = ast.Literal{ .Nil = {} } };
+        }
+        
+        // SPEC CONFORMANCE: Reject deprecated forms
+        if (self.match(.Lies) or self.match(.Cap) or self.match(.Truth)) {
+            return ParserError.InvalidSyntax; // Deprecated: use canonical forms
         }
         
         // Numbers
@@ -1096,12 +1106,22 @@ pub const Parser = struct {
             return ast.Pattern{ .Literal = ast.Literal{ .String = str_content }};
         }
 
-        if (self.match(.Based) or self.match(.Truth)) {
+        // SPEC CONFORMANCE: Only accept canonical boolean and nil literals in patterns
+        if (self.match(.Based)) {
             return ast.Pattern{ .Literal = ast.Literal{ .Boolean = true }};
         }
 
-        if (self.match(.Lies) or self.match(.Cap)) {
+        if (self.match(.Cringe)) {
             return ast.Pattern{ .Literal = ast.Literal{ .Boolean = false }};
+        }
+        
+        if (self.match(.Nah)) {
+            return ast.Pattern{ .Literal = ast.Literal{ .Nil = {} }};
+        }
+        
+        // SPEC CONFORMANCE: Reject deprecated pattern forms
+        if (self.match(.Truth) or self.match(.Lies) or self.match(.Cap)) {
+            return ParserError.InvalidSyntax; // Use canonical forms instead
         }
 
         // Variable pattern
@@ -1169,11 +1189,8 @@ pub const Parser = struct {
 
     // Helper methods for parsing statements
     fn parseReturnStatement(self: *Parser) ParserError!Statement {
-        if (self.check(.Yolo)) {
-            _ = self.advance();
-        } else if (self.matchIdentifier("damn")) {
-            // "damn" is CURSED return
-        } else {
+        // SPEC CONFORMANCE: Only accept canonical "damn" return keyword
+        if (!self.matchIdentifier("damn")) {
             return ParserError.UnexpectedToken;
         }
         

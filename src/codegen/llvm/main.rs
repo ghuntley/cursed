@@ -923,6 +923,29 @@ impl LlvmCodeGenerator {
         self.declare_function("cursed_channel_error", "void @cursed_channel_error(i32)");
         self.declare_function("panic_non_exhaustive_match", "void @panic_non_exhaustive_match()");
         
+        // Map operations - Full implementation support
+        self.declare_function("cursed_map_create", "i8* @cursed_map_create(i32)");
+        self.declare_function("cursed_map_insert", "i32 @cursed_map_insert(i8*, i8*, i8*)");
+        self.declare_function("cursed_map_get", "i8* @cursed_map_get(i8*, i8*)");
+        self.declare_function("cursed_map_set", "void @cursed_map_set(i8*, i8*, i8*)");
+        self.declare_function("cursed_map_delete", "void @cursed_map_delete(i8*, i8*)");
+        self.declare_function("cursed_map_size", "i32 @cursed_map_size(i8*)");
+        self.declare_function("cursed_map_keys", "i8** @cursed_map_keys(i8*)");
+        self.declare_function("cursed_map_destroy", "void @cursed_map_destroy(i8*)");
+        self.declare_function("cursed_map_exists", "i1 @cursed_map_exists(i8*, i8*)");
+        
+        // Struct operations - Full implementation support  
+        self.declare_function("cursed_alloc_struct", "i8* @cursed_alloc_struct(i8*)");
+        self.declare_function("cursed_set_struct_field", "i32 @cursed_set_struct_field(i8*, i8*, i8*)");
+        self.declare_function("cursed_get_struct_field", "i8* @cursed_get_struct_field(i8*, i8*)");
+        
+        // Error handling runtime functions
+        self.declare_function("cursed_capture_execution_context", "i8* @cursed_capture_execution_context()");
+        self.declare_function("cursed_capture_stack_trace", "i8* @cursed_capture_stack_trace()");
+        self.declare_function("cursed_get_timestamp", "i64 @cursed_get_timestamp()");
+        self.declare_function("cursed_create_error_value_complete", "i8* @cursed_create_error_value_complete(i8*, i8*, i8*, i8*, i64)");
+        self.declare_function("cursed_register_error_for_recovery", "i32 @cursed_register_error_for_recovery(i8*)");
+        
         // Type assertion runtime functions
         self.declare_function("cursed_check_type_compatibility", "i1 @cursed_check_type_compatibility(i8*, i32, i32)");
         self.declare_function("cursed_check_interface_type", "i1 @cursed_check_interface_type(i8*)");
@@ -969,6 +992,11 @@ impl LlvmCodeGenerator {
         self.ir_code.push_str("\n; CURSED exception type info\n");
         self.ir_code.push_str("@_ZTI11CursedError = constant { i8*, i8* } { i8* null, i8* bitcast ([14 x i8]* @_ZTS11CursedError to i8*) }\n");
         self.ir_code.push_str("@_ZTS11CursedError = constant [14 x i8] c\"11CursedError\\00\"\n");
+        
+        // Error message string constants
+        self.ir_code.push_str("\n; Error message constants\n");
+        self.ir_code.push_str("@str.map_insert_failed = constant [25 x i8] c\"Map insertion failed\\00\"\n");
+        self.ir_code.push_str("@str.struct_field_error = constant [30 x i8] c\"Struct field assignment error\\00\"\n");
         
         self.ir_code.push_str("\n");
         
