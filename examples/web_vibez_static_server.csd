@@ -21,13 +21,13 @@ slay main() {
     server.add_middleware(slay(request) {
         fr fr Block access to hidden files and dangerous paths
         lowkey request.url.contains("..") || request.url.starts_with("/.") {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 403,
                 headers: {"Content-Type": "text/plain"},
                 body: "Forbidden: Access denied"
             }
         }
-        yolo cap fr fr Continue to next middleware
+        damn cap fr fr Continue to next middleware
     })
     
     fr fr Add logging middleware
@@ -40,7 +40,7 @@ slay main() {
     fr fr Add directory listing for root
     server.add_route("/", slay(request) {
         lowkey request.method != "GET" {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 405,
                 headers: {"Content-Type": "text/plain"},
                 body: "Method not allowed"
@@ -86,7 +86,7 @@ slay main() {
         </html>
         """
         
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 200,
             headers: {"Content-Type": "text/html"},
             body: html
@@ -126,7 +126,7 @@ slay main() {
                 </html>
                 """
                 
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 200,
                     headers: {"Content-Type": "text/html"},
                     body: upload_form
@@ -156,14 +156,14 @@ slay main() {
                 </html>
                 """
                 
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 200,
                     headers: {"Content-Type": "text/html"},
                     body: success_page
                 }
             }
             basic: {
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 405,
                     headers: {"Content-Type": "text/plain"},
                     body: "Method not allowed"
@@ -175,7 +175,7 @@ slay main() {
     fr fr Add server info endpoint
     server.add_route("/server-info", slay(request) {
         lowkey request.method != "GET" {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 405,
                 headers: {"Content-Type": "text/plain"},
                 body: "Method not allowed"
@@ -199,7 +199,7 @@ slay main() {
         }
         
         sus response_body = json_tea.encode(info)
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 200,
             headers: {"Content-Type": "application/json"},
             body: response_body

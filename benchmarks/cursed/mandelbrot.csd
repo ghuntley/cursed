@@ -31,7 +31,7 @@ slay calculate_mandelbrot(max_iterations normie) [][]normie {
         }
     }
     
-    yolo result
+    damn result
 }
 
 fr fr Count non-black pixels
@@ -44,7 +44,7 @@ slay count_non_black(result [][]normie, max_iterations normie) normie {
             }
         }
     }
-    yolo count
+    damn count
 }
 
 fr fr Main function

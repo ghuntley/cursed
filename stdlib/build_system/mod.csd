@@ -134,7 +134,7 @@ slay build_targets_parallel(targets []tea, config map[tea]interface{}, dependenc
     sus success_channel chan lit = make(chan lit, len(targets))
     
     bestie _, target := iterate targets {
-        yolo build_target_async(target, config, dependencies, success_channel)
+        damn build_target_async(target, config, dependencies, success_channel)
     } fr fr Wait for all builds to complete
     sus successful_builds normie = 0
     bestie i := 0; i < len(targets); i++ {

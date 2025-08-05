@@ -13,14 +13,14 @@ slay process_data(sus mode: string, facts data: [int]) -> int {
         sus result = 0
         periodt (sus i = 0; i < data.length(); i++) {
             result += data[i]
-            yolo  // Yield point for goroutine optimization
+            damn  // Yield point for goroutine optimization
         }
         cap result
     } highkey (mode == "product") {
         sus result = 1
         periodt (sus i = 0; i < data.length(); i++) {
             result *= data[i]
-            yolo  // Yield point for goroutine optimization
+            damn  // Yield point for goroutine optimization
         }
         cap result
     } flex {
@@ -47,7 +47,7 @@ slay channel_worker(facts work_channel: chan<int>, facts result_channel: chan<in
         // Send result
         result_channel <- processed
         
-        yolo  // Cooperative yield
+        damn  // Cooperative yield
     }
 }
 
@@ -74,7 +74,7 @@ slay vector_operations(facts data: [float]) -> [float] {
     // Simple vectorizable loop
     periodt (sus i = 0; i < data.length(); i++) {
         result[i] = sqrt(data[i] * data[i] + 1.0)
-        yolo  // Yield for optimization
+        damn  // Yield for optimization
     }
     
     cap result
@@ -120,7 +120,7 @@ slay main() {
     // Send work items
     periodt (sus i = 1; i <= 20; i++) {
         work_chan <- i
-        yolo  // Cooperative yield
+        damn  // Cooperative yield
     }
     work_chan.close()
     
@@ -129,7 +129,7 @@ slay main() {
     periodt (sus i = 0; i < 20; i++) {
         sus result = <-result_chan
         total_results += result
-        yolo
+        damn
     }
     
     println("Total processed results: {}", total_results)

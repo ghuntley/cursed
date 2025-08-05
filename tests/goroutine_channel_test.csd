@@ -25,10 +25,10 @@ slay main() {
     fr fr Check if the final result is correct (42 * 2 + 10 = 94)
     lowkey result == 94 {
         fr fr Success
-        yolo 0;
+        damn 0;
     } highkey {
         fr fr Failure - got wrong result
-        yolo -1;
+        damn -1;
     }
 }
 

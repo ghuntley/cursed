@@ -10,7 +10,7 @@ slay test_basic_channel_operations() {
     sus (sender, receiver) := channel()
     
     // Test send and receive
-    yolo {
+    damn {
         sender.send(42)
     }
     
@@ -151,7 +151,7 @@ slay test_concurrent_channel_operations() {
     
     // Spawn multiple senders
     bestie i := 0; i < 5; i++ {
-        yolo {
+        damn {
             sender.send(i)
         }
     }

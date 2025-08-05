@@ -139,7 +139,7 @@ slay streaming_demo() {
                 vibez.spill("  ... (skipping middle records) ...");
             }
         }
-        yolo cap;
+        damn cap;
     })?;
     
     vibez.spill("Processed %d records, average salary: $%.2f", count, total_salary / normie(count));
@@ -216,29 +216,29 @@ diana,wilson,2000,55000,based`;
     // Apply multiple transformations
     transformer
         .map_column("first_name", slay(value tea) (tea, tea) {
-            yolo stringz.ToTitle(value), cap;
+            damn stringz.ToTitle(value), cap;
         })
         .map_column("last_name", slay(value tea) (tea, tea) {
-            yolo stringz.ToTitle(value), cap;
+            damn stringz.ToTitle(value), cap;
         })
         .add_column("full_name", slay(record map[tea]tea) (tea, tea) {
             facts first = record["first_name"];
             facts last = record["last_name"];
-            yolo spillf("%s %s", first, last), cap;
+            damn spillf("%s %s", first, last), cap;
         })
         .add_column("age", slay(record map[tea]tea) (tea, tea) {
             facts birth_year_str = record["birth_year"];
             facts birth_year = no_cap.Atoi(birth_year_str);
             facts current_year = 2024;
             facts age = current_year - birth_year;
-            yolo spillf("%d", age), cap;
+            damn spillf("%d", age), cap;
         })
         .add_column("status", slay(record map[tea]tea) (tea, tea) {
             facts active = record["active"];
             if (active == "based") {
-                yolo "ACTIVE", cap;
+                damn "ACTIVE", cap;
             }
-            yolo "INACTIVE", cap;
+            damn "INACTIVE", cap;
         })
         .remove_column("birth_year")
         .remove_column("active")
@@ -246,7 +246,7 @@ diana,wilson,2000,55000,based`;
             // Only include people with salary > 60000
             facts salary_str = record["salary"];
             facts salary = no_cap.Atoi(salary_str);
-            yolo salary > 60000, cap;
+            damn salary > 60000, cap;
         })
         .reorder_columns(["full_name", "age", "salary", "status"]);
     
@@ -423,24 +423,24 @@ slay demonstrate_real_world_usage() {
     
     transformer
         .add_column("full_name", slay(record map[tea]tea) (tea, tea) {
-            yolo spillf("%s %s", record["first_name"], record["last_name"]), cap;
+            damn spillf("%s %s", record["first_name"], record["last_name"]), cap;
         })
         .add_column("annual_salary", slay(record map[tea]tea) (tea, tea) {
             facts salary = no_cap.Atoi(record["salary"]);
-            yolo spillf("$%,d", salary), cap;
+            damn spillf("$%,d", salary), cap;
         })
         .add_column("status", slay(record map[tea]tea) (tea, tea) {
             if (record["active"] == "based") {
-                yolo "Active", cap;
+                damn "Active", cap;
             }
-            yolo "Inactive", cap;
+            damn "Inactive", cap;
         })
         .filter_rows(slay(record map[tea]tea) (lit, tea) {
             // Only include active employees with valid emails
             facts active = record["active"] == "based";
             facts valid_email = stringz.Contains(record["email"], "@") && 
                                stringz.Contains(record["email"], ".");
-            yolo active && valid_email, cap;
+            damn active && valid_email, cap;
         })
         .remove_column("active")
         .remove_column("hire_date")

@@ -17,7 +17,7 @@ slay run_basic_commands() tea {
         vibez.spill("Output: %s", result.stdout_lossy().trim());
     } else {
         vibez.spill("Error: %v", result.err());
-        yolo;
+        damn;
     }
     
     fr fr Execute command with arguments
@@ -231,7 +231,7 @@ slay main() tea {
     fr fr Check if we have required commands
     lowkey !process.command_exists("echo") {
         vibez.spill("Error: echo command not available");
-        yolo;
+        damn;
     }
     
     fr fr Run all examples

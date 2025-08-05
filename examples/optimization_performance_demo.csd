@@ -38,7 +38,7 @@ slay array_processing(input: []f64, output: []f64, size: i32) -> f64 {
         sum = sum + squared;
         
         i = i + 1;
-        yolo; // Yield point for cooperative scheduling
+        damn; // Yield point for cooperative scheduling
     }
     
     return sum;
@@ -107,7 +107,7 @@ slay struct_operations(structs: []OptimizedStruct, count: i32) -> f64 {
         
         total = total + weighted;
         i = i + 1;
-        yolo;
+        damn;
     }
     
     return total;

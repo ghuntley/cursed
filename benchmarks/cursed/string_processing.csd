@@ -11,7 +11,7 @@ slay process_strings(count normie, size normie) tea {
         result = tea.concat(result, processed)
     }
     
-    yolo result
+    damn result
 }
 
 slay create_random_string(size normie) tea {
@@ -23,7 +23,7 @@ slay create_random_string(size normie) tea {
         result = result + tea.substring(chars, idx, idx+1)
     }
     
-    yolo result
+    damn result
 }
 
 slay process_string(input tea) tea {
@@ -61,7 +61,7 @@ slay process_string(input tea) tea {
     sus half_len normie = len(reversed) / 2
     result = tea.substring(reversed, 0, half_len)
     
-    yolo result
+    damn result
 }
 
 slay main() {

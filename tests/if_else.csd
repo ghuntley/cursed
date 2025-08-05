@@ -7,5 +7,5 @@ slay main() {
         puts(0);
     }
     
-    yolo 0;
+    damn 0;
 }

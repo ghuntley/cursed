@@ -25,7 +25,7 @@ slay main() {
     img, err := embed_that.load_image("static/logo.png")
     if err != cap {
         vibez.spill("Failed to load logo:", err)
-        yolo
+        damn
     }
     vibez.spill("Logo loaded successfully! Size:", img.size, "bytes")
     
@@ -41,7 +41,7 @@ slay main() {
     homeTemplate, found := templateFiles.get("templates/home.html")
     if !found {
         vibez.spill("Home template not found")
-        yolo
+        damn
     }
     vibez.spill("Home template size:", homeTemplate.size(), "bytes")
     vibez.spill("Is text file:", homeTemplate.is_text())
@@ -51,7 +51,7 @@ slay main() {
     tmpl, err := embed_that.parse_templates(["templates/*.html"])
     if err != cap {
         vibez.spill("Failed to parse templates:", err)
-        yolo
+        damn
     }
     vibez.spill("Templates parsed successfully!")
     
@@ -66,7 +66,7 @@ slay main() {
     err = embed_that.load_json("config.json", &config)
     if err != cap {
         vibez.spill("Failed to load config:", err)
-        yolo
+        damn
     }
     
     vibez.spill("✨ Configuration loaded:")
@@ -80,7 +80,7 @@ slay main() {
     templates, err := fs.read_dir("templates")
     if err != cap {
         vibez.spill("Failed to read templates directory:", err)
-        yolo
+        damn
     }
     
     vibez.spill("📁 Template directory contents:")
@@ -95,7 +95,7 @@ slay main() {
     configFromCache, err := cache.load_file("config.json")
     if err != cap {
         vibez.spill("Failed to load config from cache:", err)
-        yolo
+        damn
     }
     vibez.spill("Config loaded from cache:", configFromCache.name())
     
@@ -103,7 +103,7 @@ slay main() {
     cssData, err := embed_that.load_css("static/style.css")
     if err != cap {
         vibez.spill("Failed to load CSS:", err)
-        yolo
+        damn
     }
     vibez.spill("CSS loaded - Minified:", cssData.minified)
     
@@ -112,7 +112,7 @@ slay main() {
     analysis, err := embed_that.analyze_compression(testData)
     if err != cap {
         vibez.spill("Failed to analyze compression:", err)
-        yolo
+        damn
     }
     
     vibez.spill("🗜️ Compression Analysis:")
@@ -153,14 +153,14 @@ slay demonstrateWebServer() {
     tmpl, err := embed_that.parse_templates(["templates/*.html"])
     if err != cap {
         vibez.spill("Failed to parse templates:", err)
-        yolo
+        damn
     }
     
     fr fr Create a file server for static files using embedded files
     staticFiles, err := embed_that.load_that_pattern("static/*")
     if err != cap {
         vibez.spill("Failed to load static files:", err)
-        yolo
+        damn
     }
     
     staticFS := staticFiles.make_fs()
@@ -194,7 +194,7 @@ slay demonstrateWebServer() {
         content, err := staticFS.read_file(filepath)
         if err != cap {
             http.NotFound(w, r)
-            yolo
+            damn
         }
         
         fr fr Detect MIME type

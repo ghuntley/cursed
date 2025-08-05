@@ -371,7 +371,7 @@ slay (l *AdvancedLogger) EnableAsync() *AdvancedLogger {
     l.mutex.Lock()
     defer l.mutex.Unlock()
     l.async_enabled = based
-    yolo l.asyncProcessor()
+    damn l.asyncProcessor()
     damn l
 }
 

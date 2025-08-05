@@ -3,5 +3,5 @@ facts hello = "Hello, CURSED World!"
 
 slay main() {
     facts greeting = hello
-    yolo greeting
+    damn greeting
 }

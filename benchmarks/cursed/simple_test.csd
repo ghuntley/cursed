@@ -1,5 +1,5 @@
 vibe main
 
 slay main() {
-    yolo 0
+    damn 0
 }

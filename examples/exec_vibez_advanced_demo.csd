@@ -38,7 +38,7 @@ slay main() tea {
     
     vibez.spill("\n=== All demos completed successfully! ===")
     
-    yolo cap
+    damn cap
 }
 
 slay demo_enhanced_environment() tea {
@@ -76,7 +76,7 @@ slay demo_enhanced_environment() tea {
         vibez.spill(preview)
     }
     
-    yolo cap
+    damn cap
 }
 
 slay demo_enhanced_process_groups() tea {
@@ -114,7 +114,7 @@ slay demo_enhanced_process_groups() tea {
     err := group.start_all()
     if err != cap {
         vibez.spill("Error starting process group: %v", err)
-        yolo err
+        damn err
     }
     
     vibez.spill("Process group state: {:?}", group.state())
@@ -136,7 +136,7 @@ slay demo_enhanced_process_groups() tea {
     
     vibez.spill("Final group state: {:?}", group.state())
     
-    yolo cap
+    damn cap
 }
 
 slay demo_enhanced_output_streaming() tea {
@@ -170,7 +170,7 @@ slay demo_enhanced_output_streaming() tea {
     err := streamer.start()
     if err != cap {
         vibez.spill("Error starting streaming: %v", err)
-        yolo err
+        damn err
     }
     
     vibez.spill("Streaming state after start: {:?}", streamer.state())
@@ -185,7 +185,7 @@ slay demo_enhanced_output_streaming() tea {
     
     vibez.spill("Final streaming state: {:?}", streamer.state())
     
-    yolo cap
+    damn cap
 }
 
 slay demo_enhanced_input_generation() tea {
@@ -215,7 +215,7 @@ slay demo_enhanced_input_generation() tea {
     err := generator.start()
     if err != cap {
         vibez.spill("Error starting input generation: %v", err)
-        yolo err
+        damn err
     }
     
     vibez.spill("Input generation state after start: {:?}", generator.state())
@@ -233,7 +233,7 @@ slay demo_enhanced_input_generation() tea {
     
     vibez.spill("Final generator state: {:?}", generator.state())
     
-    yolo cap
+    damn cap
 }
 
 slay demo_enhanced_timeout_control() tea {
@@ -299,7 +299,7 @@ slay demo_enhanced_timeout_control() tea {
     vibez.spill("After 250ms total - expired: {}, remaining: {:?}", 
                 timeout_mgr.is_expired(), timeout_mgr.remaining())
     
-    yolo cap
+    damn cap
 }
 
 slay demo_enhanced_path_lookup() tea {
@@ -346,7 +346,7 @@ slay demo_enhanced_path_lookup() tea {
         }
     }
     
-    yolo cap
+    damn cap
 }
 
 slay demo_real_world_integration() tea {
@@ -468,14 +468,14 @@ slay demo_real_world_integration() tea {
     vibez.spill("  - Monitor streamer: {:?}", monitor_streamer.state())
     vibez.spill("  - Input generator: {:?}", input_gen.state())
     
-    yolo cap
+    damn cap
 }
 
 fr fr Helper function to demonstrate timeout callback
 slay create_timeout_callback() slay() {
     sus start_time = timez.now()
     
-    yolo slay() {
+    damn slay() {
         sus elapsed = timez.since(start_time)
         vibez.spill("⏰ Timeout occurred after {:?}", elapsed)
     }
@@ -500,16 +500,16 @@ slay create_dev_environment() exec_vibez_advanced.EnhancedEnvironment {
     env.remove("PRODUCTION_API_KEY")
     env.remove("PROD_DATABASE_URL")
     
-    yolo env
+    damn env
 }
 
 fr fr Utility function to format duration nicely
 slay format_duration(d timez.Duration) tea {
     if d >= timez.second(1) {
-        yolo format!("{:.2}s", d.as_secs_f64())
+        damn format!("{:.2}s", d.as_secs_f64())
     } bestie if d >= timez.millisecond(1) {
-        yolo format!("{}ms", d.as_millis())
+        damn format!("{}ms", d.as_millis())
     } else {
-        yolo format!("{}μs", d.as_micros())
+        damn format!("{}μs", d.as_micros())
     }
 }

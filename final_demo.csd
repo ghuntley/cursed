@@ -1,11 +1,11 @@
 fr fr CURSED v3.9.0 Final Demonstration - All Core Features Working
 
 slay add(x normie, y normie) normie {
-    yolo x + y;
+    damn x + y;
 }
 
 slay multiply(a normie, b normie) normie {
-    yolo a * b;
+    damn a * b;
 }
 
 slay main() {
@@ -36,5 +36,5 @@ slay main() {
     sus flag lit = based;
     lowkey flag { vibez.spill("Boolean flag is true"); }
     
-    yolo sum;
+    damn sum;
 }

@@ -330,5 +330,5 @@ slay parse_http_headers(headers_data: []byte) -> map[tea]tea {
         }
     }
     
-    yolo headers;
+    damn headers;
 }

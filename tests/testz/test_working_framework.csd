@@ -115,9 +115,9 @@ slay reset_test_state() {
 
 slay get_success_rate() normie {
     lowkey test_count == 0 {
-        yolo 0;
+        damn 0;
     } highkey {
-        yolo (test_passed * 100) / test_count;
+        damn (test_passed * 100) / test_count;
     }
 }
 
@@ -248,15 +248,15 @@ slay test_function_calls() {
 
 fr fr Helper functions for testing
 slay add_two_numbers(a normie, b normie) normie {
-    yolo a + b;
+    damn a + b;
 }
 
 slay multiply_by_two(n normie) normie {
-    yolo n * 2;
+    damn n * 2;
 }
 
 slay create_greeting(name tea) tea {
-    yolo "Hello, " + name + "!";
+    damn "Hello, " + name + "!";
 }
 
 slay test_failing_example() {
@@ -302,9 +302,9 @@ slay main() {
     fr fr Return appropriate exit code
     lowkey test_failed > 0 {
         vibez.spill("Exiting with error code 1");
-        yolo 1;
+        damn 1;
     } highkey {
         vibez.spill("Exiting with success code 0");
-        yolo 0;
+        damn 0;
     }
 }

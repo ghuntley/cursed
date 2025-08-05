@@ -33,16 +33,16 @@ sus next_user_id = 1
 
 fr fr Authentication middleware
 slay auth_middleware() {
-    yolo slay(request) {
+    damn slay(request) {
         fr fr Skip auth for login/register endpoints
         lowkey request.url == "/api/login" || request.url == "/api/register" || request.url == "/" {
-            yolo cap fr fr Continue
+            damn cap fr fr Continue
         }
         
         fr fr Check for Authorization header
         sus auth_header = request.headers.get("Authorization")
         lowkey auth_header == cap {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 401,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Missing Authorization header"}'
@@ -51,7 +51,7 @@ slay auth_middleware() {
         
         fr fr Extract bearer token
         lowkey !auth_header.starts_with("Bearer ") {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 401,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Invalid Authorization header format"}'
@@ -74,7 +74,7 @@ slay auth_middleware() {
         }
         
         lowkey session == cap {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 401,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Invalid or expired token"}'
@@ -85,16 +85,16 @@ slay auth_middleware() {
         request.user_id = session.user_id
         request.username = session.username
         
-        yolo cap fr fr Continue
+        damn cap fr fr Continue
     }
 }
 
 fr fr Role-based access control middleware
 slay rbac_middleware(required_role: tea) {
-    yolo slay(request) {
+    damn slay(request) {
         fr fr Get user from request context
         lowkey request.user_id == cap {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 403,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Access denied: User not authenticated"}'
@@ -111,14 +111,14 @@ slay rbac_middleware(required_role: tea) {
         }
         
         lowkey user == cap || user.role != required_role {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 403,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Access denied: Insufficient permissions"}'
             }
         }
         
-        yolo cap fr fr Continue
+        damn cap fr fr Continue
     }
 }
 
@@ -126,14 +126,14 @@ fr fr Rate limiting middleware
 slay rate_limit_middleware(max_requests: numo, window_seconds: numo) {
     sus request_counts = {}
     
-    yolo slay(request) {
+    damn slay(request) {
         sus client_ip = request.headers.get("X-Real-IP") || "127.0.0.1"
         sus now = time_utils.unix_timestamp()
         sus window_start = now - window_seconds
         
         fr fr Clean old entries
         bestie ip, timestamps in request_counts {
-            request_counts[ip] = timestamps.filter(slay(t) { yolo t > window_start })
+            request_counts[ip] = timestamps.filter(slay(t) { damn t > window_start })
         }
         
         fr fr Check current count
@@ -142,7 +142,7 @@ slay rate_limit_middleware(max_requests: numo, window_seconds: numo) {
         }
         
         lowkey request_counts[client_ip].len() >= max_requests {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 429,
                 headers: {
                     "Content-Type": "application/json",
@@ -155,7 +155,7 @@ slay rate_limit_middleware(max_requests: numo, window_seconds: numo) {
         fr fr Add current request
         request_counts[client_ip].append(now)
         
-        yolo cap fr fr Continue
+        damn cap fr fr Continue
     }
 }
 
@@ -249,7 +249,7 @@ slay main() {
         </html>
         """
         
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 200,
             headers: {"Content-Type": "text/html"},
             body: html
@@ -259,7 +259,7 @@ slay main() {
     fr fr User registration
     server.add_route("/api/register", slay(request) {
         lowkey request.method != "POST" {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 405,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Method not allowed"}'
@@ -268,7 +268,7 @@ slay main() {
         
         sus user_data = json_tea.decode(request.body)
         lowkey user_data.username == cap || user_data.email == cap || user_data.password == cap {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 400,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "username, email, and password are required"}'
@@ -278,7 +278,7 @@ slay main() {
         fr fr Check if username already exists
         bestie existing_user in users {
             lowkey existing_user.username == user_data.username {
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 409,
                     headers: {"Content-Type": "application/json"},
                     body: '{"error": "Username already exists"}'
@@ -312,7 +312,7 @@ slay main() {
             }
         }
         
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 201,
             headers: {"Content-Type": "application/json"},
             body: json_tea.encode(response)
@@ -322,7 +322,7 @@ slay main() {
     fr fr User login
     server.add_route("/api/login", slay(request) {
         lowkey request.method != "POST" {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 405,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Method not allowed"}'
@@ -331,7 +331,7 @@ slay main() {
         
         sus login_data = json_tea.decode(request.body)
         lowkey login_data.username == cap || login_data.password == cap {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 400,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "username and password are required"}'
@@ -348,7 +348,7 @@ slay main() {
         }
         
         lowkey user == cap || !cryptz.verify_password(login_data.password, user.password_hash) {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 401,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Invalid username or password"}'
@@ -381,7 +381,7 @@ slay main() {
             }
         }
         
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 200,
             headers: {"Content-Type": "application/json"},
             body: json_tea.encode(response)
@@ -396,7 +396,7 @@ slay main() {
     fr fr Get user profile
     server.add_route("/api/profile", slay(request) {
         lowkey request.method != "GET" {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 405,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Method not allowed"}'
@@ -420,7 +420,7 @@ slay main() {
             "created_at": user.created_at
         }
         
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 200,
             headers: {"Content-Type": "application/json"},
             body: json_tea.encode(response)
@@ -430,7 +430,7 @@ slay main() {
     fr fr Logout user
     server.add_route("/api/logout", slay(request) {
         lowkey request.method != "POST" {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 405,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Method not allowed"}'
@@ -448,7 +448,7 @@ slay main() {
             }
         }
         
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 200,
             headers: {"Content-Type": "application/json"},
             body: '{"message": "Logged out successfully"}'
@@ -461,7 +461,7 @@ slay main() {
     fr fr List all users (admin only)
     server.add_route("/api/admin/users", slay(request) {
         lowkey request.method != "GET" {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 405,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Method not allowed"}'
@@ -479,7 +479,7 @@ slay main() {
             })
         }
         
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 200,
             headers: {"Content-Type": "application/json"},
             body: json_tea.encode(user_list)

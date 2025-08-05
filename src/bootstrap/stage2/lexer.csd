@@ -124,7 +124,7 @@ slay new_lexer(input: tea) -> Lexer {
     };
     
     read_char(lexer);
-    yolo lexer;
+    damn lexer;
 }
 
 // Read the next character and advance position
@@ -149,9 +149,9 @@ slay read_char(lexer: Lexer) {
 // Peek at the next character without advancing
 slay peek_char(lexer: Lexer) -> tea {
     bestie (lexer.read_position >= lexer.input.length()) {
-        yolo "\0";
+        damn "\0";
     } highkey {
-        yolo lexer.input.charAt(lexer.read_position);
+        damn lexer.input.charAt(lexer.read_position);
     }
 }
 
@@ -168,7 +168,7 @@ slay read_identifier(lexer: Lexer) -> tea {
     periodt (is_letter(lexer.ch) || is_digit(lexer.ch)) {
         read_char(lexer);
     }
-    yolo lexer.input.substring(position, lexer.position);
+    damn lexer.input.substring(position, lexer.position);
 }
 
 // Read a number (integer or float)
@@ -183,7 +183,7 @@ slay read_number(lexer: Lexer) -> tea {
         read_char(lexer);
     }
     
-    yolo lexer.input.substring(position, lexer.position);
+    damn lexer.input.substring(position, lexer.position);
 }
 
 // Read a string literal
@@ -203,7 +203,7 @@ slay read_string(lexer: Lexer) -> tea {
     }
     
     sus literal = lexer.input.substring(position, lexer.position);
-    yolo literal;
+    damn literal;
 }
 
 // Read a line comment
@@ -212,24 +212,24 @@ slay read_line_comment(lexer: Lexer) -> tea {
     periodt (lexer.ch != "\n" && lexer.ch != "\0") {
         read_char(lexer);
     }
-    yolo lexer.input.substring(position, lexer.position);
+    damn lexer.input.substring(position, lexer.position);
 }
 
 // Check if character is a letter
 slay is_letter(ch: tea) -> cap {
-    yolo (ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z") || ch == "_";
+    damn (ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z") || ch == "_";
 }
 
 // Check if character is a digit
 slay is_digit(ch: tea) -> cap {
-    yolo ch >= "0" && ch <= "9";
+    damn ch >= "0" && ch <= "9";
 }
 
 // Look up identifier to see if it's a keyword
 slay lookup_ident(ident: tea) -> TokenType {
     sus keywords = collections::Map<tea, TokenType>();
     keywords.insert("slay", TokenType::Slay);
-    keywords.insert("yolo", TokenType::Yolo);
+    keywords.insert("damn", TokenType::Yolo);
     keywords.insert("sus", TokenType::Sus);
     keywords.insert("facts", TokenType::Facts);
     keywords.insert("lowkey", TokenType::Lowkey);
@@ -260,15 +260,15 @@ slay lookup_ident(ident: tea) -> TokenType {
     keywords.insert("dm", TokenType::Dm);
     
     bestie (keywords.contains_key(ident)) {
-        yolo keywords.get(ident);
+        damn keywords.get(ident);
     } highkey {
-        yolo TokenType::Identifier;
+        damn TokenType::Identifier;
     }
 }
 
 // Create a new token
 slay new_token(token_type: TokenType, literal: tea, line: normie, column: normie, position: normie) -> Token {
-    yolo Token {
+    damn Token {
         token_type: token_type,
         literal: literal,
         line: line,
@@ -290,10 +290,10 @@ slay next_token(lexer: Lexer) -> Token? {
             bestie (peek_char(lexer) == "=") {
                 read_char(lexer);
                 read_char(lexer);
-                yolo new_token(TokenType::Equal, "==", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Equal, "==", tok_line, tok_column, tok_position);
             } highkey {
                 read_char(lexer);
-                yolo new_token(TokenType::Assign, "=", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Assign, "=", tok_line, tok_column, tok_position);
             }
         }
         
@@ -301,10 +301,10 @@ slay next_token(lexer: Lexer) -> Token? {
             bestie (peek_char(lexer) == "=") {
                 read_char(lexer);
                 read_char(lexer);
-                yolo new_token(TokenType::NotEqual, "!=", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::NotEqual, "!=", tok_line, tok_column, tok_position);
             } highkey {
                 read_char(lexer);
-                yolo new_token(TokenType::Not, "!", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Not, "!", tok_line, tok_column, tok_position);
             }
         }
         
@@ -312,14 +312,14 @@ slay next_token(lexer: Lexer) -> Token? {
             bestie (peek_char(lexer) == "=") {
                 read_char(lexer);
                 read_char(lexer);
-                yolo new_token(TokenType::LessThanEqual, "<=", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::LessThanEqual, "<=", tok_line, tok_column, tok_position);
             } highkey bestie (peek_char(lexer) == "-") {
                 read_char(lexer);
                 read_char(lexer);
-                yolo new_token(TokenType::LeftArrow, "<-", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::LeftArrow, "<-", tok_line, tok_column, tok_position);
             } highkey {
                 read_char(lexer);
-                yolo new_token(TokenType::LessThan, "<", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::LessThan, "<", tok_line, tok_column, tok_position);
             }
         }
         
@@ -327,10 +327,10 @@ slay next_token(lexer: Lexer) -> Token? {
             bestie (peek_char(lexer) == "=") {
                 read_char(lexer);
                 read_char(lexer);
-                yolo new_token(TokenType::GreaterThanEqual, ">=", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::GreaterThanEqual, ">=", tok_line, tok_column, tok_position);
             } highkey {
                 read_char(lexer);
-                yolo new_token(TokenType::GreaterThan, ">", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::GreaterThan, ">", tok_line, tok_column, tok_position);
             }
         }
         
@@ -338,10 +338,10 @@ slay next_token(lexer: Lexer) -> Token? {
             bestie (peek_char(lexer) == "&") {
                 read_char(lexer);
                 read_char(lexer);
-                yolo new_token(TokenType::LogicalAnd, "&&", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::LogicalAnd, "&&", tok_line, tok_column, tok_position);
             } highkey {
                 read_char(lexer);
-                yolo new_token(TokenType::Unknown, "&", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Unknown, "&", tok_line, tok_column, tok_position);
             }
         }
         
@@ -349,10 +349,10 @@ slay next_token(lexer: Lexer) -> Token? {
             bestie (peek_char(lexer) == "|") {
                 read_char(lexer);
                 read_char(lexer);
-                yolo new_token(TokenType::LogicalOr, "||", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::LogicalOr, "||", tok_line, tok_column, tok_position);
             } highkey {
                 read_char(lexer);
-                yolo new_token(TokenType::Unknown, "|", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Unknown, "|", tok_line, tok_column, tok_position);
             }
         }
         
@@ -360,113 +360,113 @@ slay next_token(lexer: Lexer) -> Token? {
             bestie (peek_char(lexer) == ">") {
                 read_char(lexer);
                 read_char(lexer);
-                yolo new_token(TokenType::Arrow, "->", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Arrow, "->", tok_line, tok_column, tok_position);
             } highkey {
                 read_char(lexer);
-                yolo new_token(TokenType::Minus, "-", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Minus, "-", tok_line, tok_column, tok_position);
             }
         }
         
         mood "+" {
             read_char(lexer);
-            yolo new_token(TokenType::Plus, "+", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Plus, "+", tok_line, tok_column, tok_position);
         }
         
         mood "*" {
             read_char(lexer);
-            yolo new_token(TokenType::Multiply, "*", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Multiply, "*", tok_line, tok_column, tok_position);
         }
         
         mood "/" {
             bestie (peek_char(lexer) == "/") {
                 sus comment = read_line_comment(lexer);
-                yolo new_token(TokenType::Comment, comment, tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Comment, comment, tok_line, tok_column, tok_position);
             } highkey {
                 read_char(lexer);
-                yolo new_token(TokenType::Divide, "/", tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Divide, "/", tok_line, tok_column, tok_position);
             }
         }
         
         mood "%" {
             read_char(lexer);
-            yolo new_token(TokenType::Modulo, "%", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Modulo, "%", tok_line, tok_column, tok_position);
         }
         
         mood "(" {
             read_char(lexer);
-            yolo new_token(TokenType::LeftParen, "(", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::LeftParen, "(", tok_line, tok_column, tok_position);
         }
         
         mood ")" {
             read_char(lexer);
-            yolo new_token(TokenType::RightParen, ")", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::RightParen, ")", tok_line, tok_column, tok_position);
         }
         
         mood "{" {
             read_char(lexer);
-            yolo new_token(TokenType::LeftBrace, "{", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::LeftBrace, "{", tok_line, tok_column, tok_position);
         }
         
         mood "}" {
             read_char(lexer);
-            yolo new_token(TokenType::RightBrace, "}", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::RightBrace, "}", tok_line, tok_column, tok_position);
         }
         
         mood "[" {
             read_char(lexer);
-            yolo new_token(TokenType::LeftBracket, "[", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::LeftBracket, "[", tok_line, tok_column, tok_position);
         }
         
         mood "]" {
             read_char(lexer);
-            yolo new_token(TokenType::RightBracket, "]", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::RightBracket, "]", tok_line, tok_column, tok_position);
         }
         
         mood "," {
             read_char(lexer);
-            yolo new_token(TokenType::Comma, ",", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Comma, ",", tok_line, tok_column, tok_position);
         }
         
         mood ";" {
             read_char(lexer);
-            yolo new_token(TokenType::Semicolon, ";", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Semicolon, ";", tok_line, tok_column, tok_position);
         }
         
         mood ":" {
             read_char(lexer);
-            yolo new_token(TokenType::Colon, ":", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Colon, ":", tok_line, tok_column, tok_position);
         }
         
         mood "." {
             read_char(lexer);
-            yolo new_token(TokenType::Dot, ".", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Dot, ".", tok_line, tok_column, tok_position);
         }
         
         mood "?" {
             read_char(lexer);
-            yolo new_token(TokenType::Question, "?", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Question, "?", tok_line, tok_column, tok_position);
         }
         
         mood "\"" {
             sus literal = read_string(lexer);
             read_char(lexer); // Skip closing quote
-            yolo new_token(TokenType::String, literal, tok_line, tok_column, tok_position);
+            damn new_token(TokenType::String, literal, tok_line, tok_column, tok_position);
         }
         
         mood "\n" {
             read_char(lexer);
-            yolo new_token(TokenType::Newline, "\n", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Newline, "\n", tok_line, tok_column, tok_position);
         }
         
         mood "\0" {
-            yolo new_token(TokenType::Eof, "", tok_line, tok_column, tok_position);
+            damn new_token(TokenType::Eof, "", tok_line, tok_column, tok_position);
         }
         
         basic {
             bestie (is_letter(lexer.ch)) {
                 sus literal = read_identifier(lexer);
                 sus token_type = lookup_ident(literal);
-                yolo new_token(token_type, literal, tok_line, tok_column, tok_position);
+                damn new_token(token_type, literal, tok_line, tok_column, tok_position);
             } highkey bestie (is_digit(lexer.ch)) {
                 sus literal = read_number(lexer);
                 sus token_type = bestie (literal.contains(".")) {
@@ -474,11 +474,11 @@ slay next_token(lexer: Lexer) -> Token? {
                 } highkey {
                     TokenType::Integer
                 };
-                yolo new_token(token_type, literal, tok_line, tok_column, tok_position);
+                damn new_token(token_type, literal, tok_line, tok_column, tok_position);
             } highkey {
                 sus ch = lexer.ch;
                 read_char(lexer);
-                yolo new_token(TokenType::Unknown, ch, tok_line, tok_column, tok_position);
+                damn new_token(TokenType::Unknown, ch, tok_line, tok_column, tok_position);
             }
         }
     }
@@ -504,5 +504,5 @@ slay tokenize(input: tea) -> Token[]? {
         }
     }
     
-    yolo tokens;
+    damn tokens;
 }

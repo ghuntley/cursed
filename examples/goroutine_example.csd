@@ -13,8 +13,8 @@ slay main() {
     lowkey (sus i = 0; i < 5; i++) {
         stan process_item(i)
         
-        // Yield control occasionally in loops with 'yolo'
-        yolo  // This is a yield point for cooperative scheduling
+        // Yield control occasionally in loops with 'damn'
+        damn  // This is a yield point for cooperative scheduling
     }
     
     // Wait for some goroutines to complete
@@ -44,7 +44,7 @@ slay process_item(id: int) {
         
         // Yield occasionally to allow other goroutines to run
         lowkey (j % 100 == 0) {
-            yolo  // Cooperative yield point
+            damn  // Cooperative yield point
         }
     }
     
@@ -60,7 +60,7 @@ slay channel_example() {
     stan lowkey {
         lowkey (sus i = 0; i < 10; i++) {
             ch <- i
-            yolo  // Yield after sending
+            damn  // Yield after sending
         }
         close(ch)
     }
@@ -70,7 +70,7 @@ slay channel_example() {
         lowkey (facts value, ok = <-ch; ok) {
             // Process the value
             facts processed = value * 2
-            yolo  // Yield after processing
+            damn  // Yield after processing
         }
     }
 }
@@ -101,5 +101,5 @@ slay shared_state_example() {
 slay increment_counter(counter: &Mutex<int>) {
     facts guard = counter.lock()
     *guard += 1
-    yolo  // Yield periodt holding lock briefly
+    damn  // Yield periodt holding lock briefly
 }

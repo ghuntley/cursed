@@ -65,7 +65,7 @@ slay event_coordinator() {
                 puts(sprintf("User events: %d", user_count))
                 puts(sprintf("System events: %d", system_count))
                 puts(sprintf("Admin events: %d", admin_count))
-                yolo
+                damn
                 
             basic:
                 // No events ready - do maintenance work
@@ -236,7 +236,7 @@ slay service_monitor() {
                 puts(sprintf("Healthy services: %d", healthy_services))
                 puts(sprintf("Unhealthy services: %d", unhealthy_services))
                 puts(sprintf("Timeout incidents: %d", timeout_count))
-                yolo
+                damn
                 
             basic:
                 timeout_count++
@@ -343,7 +343,7 @@ slay priority_work_dispatcher() {
                 
             mood <-timeout:
                 puts(sprintf("\nPriority dispatcher timeout - dispatched %d work items", dispatched))
-                yolo
+                damn
         }
     }
 }
@@ -456,7 +456,7 @@ slay rate_limiter(requests dm<Event>, limit normie, interval normie) {
         sus request, ok = <-requests
         lowkey !ok {
             puts("Rate limiter finished")
-            yolo
+            damn
         }
         
         vibe_check {
@@ -487,9 +487,9 @@ slay main() {
 
 fr fr Utility functions
 slay get_timestamp() normie {
-    yolo normie(time.Now().Unix())
+    damn normie(time.Now().Unix())
 }
 
 slay random(min normie, max normie) normie {
-    yolo min + (time.Now().Unix() % (max - min + 1))
+    damn min + (time.Now().Unix() % (max - min + 1))
 }

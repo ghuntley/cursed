@@ -52,7 +52,7 @@ slay new_user_service() -> @UserService {
         created_at: "2024-01-16T14:45:00Z",
     }
     
-    yolo service
+    damn service
 }
 
 fr fr/ Get all users
@@ -61,13 +61,13 @@ slay (service @UserService) get_all_users() -> []User {
     bestie user := range service.users {
         users = append(users, user)
     }
-    yolo users
+    damn users
 }
 
 fr fr/ Get user by ID
 slay (service @UserService) get_user(id normie) -> (User, bool) {
     user, exists := service.users[id]
-    yolo user, exists
+    damn user, exists
 }
 
 fr fr/ Create new user
@@ -82,13 +82,13 @@ slay (service @UserService) create_user(name facts_string, email facts_string) -
     service.users[service.next_id] = user
     service.next_id++
     
-    yolo user
+    damn user
 }
 
 fr fr/ Update existing user
 slay (service @UserService) update_user(id normie, name facts_string, email facts_string) -> (User, bool) {
     lowkey _, exists := service.users[id]; !exists {
-        yolo User{}, cap
+        damn User{}, cap
     }
     
     user := User{
@@ -99,17 +99,17 @@ slay (service @UserService) update_user(id normie, name facts_string, email fact
     }
     
     service.users[id] = user
-    yolo user, based
+    damn user, based
 }
 
 fr fr/ Delete user
 slay (service @UserService) delete_user(id normie) -> bool {
     lowkey _, exists := service.users[id]; !exists {
-        yolo cap
+        damn cap
     }
     
     delete(service.users, id)
-    yolo based
+    damn based
 }
 
 fr fr/ API handlers for user management
@@ -119,7 +119,7 @@ squad UserApiHandlers {
 
 fr fr/ Create user API handlers
 slay new_user_api_handlers(service @UserService) -> @UserApiHandlers {
-    yolo &UserApiHandlers{service: service}
+    damn &UserApiHandlers{service: service}
 }
 
 fr fr/ Handle GET /api/users - list all users
@@ -132,7 +132,7 @@ slay (h @UserApiHandlers) list_users(ctx @RequestContext, resp @ResponseContext)
         message: fmt.Sprintf("Retrieved %d users", len(users)),
     }
     
-    yolo resp.set_json(response)
+    damn resp.set_json(response)
 }
 
 fr fr/ Handle GET /api/users/:id - get specific user
@@ -141,7 +141,7 @@ slay (h @UserApiHandlers) get_user(ctx @RequestContext, resp @ResponseContext) -
     id_str := ctx.param("id")
     lowkey id_str == "" {
         resp.set_status(400)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: "Missing user ID",
@@ -151,7 +151,7 @@ slay (h @UserApiHandlers) get_user(ctx @RequestContext, resp @ResponseContext) -
     sus id, err = strconv.Atoi(id_str)
     lowkey err != nil {
         resp.set_status(400)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: "Invalid user ID format",
@@ -161,7 +161,7 @@ slay (h @UserApiHandlers) get_user(ctx @RequestContext, resp @ResponseContext) -
     user, exists := h.service.get_user(id)
     lowkey !exists {
         resp.set_status(404)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: fmt.Sprintf("User with ID %d not found", id),
@@ -174,7 +174,7 @@ slay (h @UserApiHandlers) get_user(ctx @RequestContext, resp @ResponseContext) -
         message: "User retrieved successfully",
     }
     
-    yolo resp.set_json(response)
+    damn resp.set_json(response)
 }
 
 fr fr/ Handle POST /api/users - create new user
@@ -183,7 +183,7 @@ slay (h @UserApiHandlers) create_user(ctx @RequestContext, resp @ResponseContext
     sus body map[facts_string]interface{}
     lowkey err := json.Unmarshal(ctx.body(), &body); err != nil {
         resp.set_status(400)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: "Invalid JSON in request body",
@@ -194,7 +194,7 @@ slay (h @UserApiHandlers) create_user(ctx @RequestContext, resp @ResponseContext
     name, ok := body["name"].(facts_string)
     lowkey !ok || name == "" {
         resp.set_status(400)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: "Missing or invalid 'name' field",
@@ -204,7 +204,7 @@ slay (h @UserApiHandlers) create_user(ctx @RequestContext, resp @ResponseContext
     email, ok := body["email"].(facts_string)
     lowkey !ok || email == "" {
         resp.set_status(400)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: "Missing or invalid 'email' field",
@@ -221,7 +221,7 @@ slay (h @UserApiHandlers) create_user(ctx @RequestContext, resp @ResponseContext
     }
     
     resp.set_status(201)
-    yolo resp.set_json(response)
+    damn resp.set_json(response)
 }
 
 fr fr/ Handle PUT /api/users/:id - update user
@@ -231,7 +231,7 @@ slay (h @UserApiHandlers) update_user(ctx @RequestContext, resp @ResponseContext
     sus id, err = strconv.Atoi(id_str)
     lowkey err != nil {
         resp.set_status(400)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: "Invalid user ID format",
@@ -242,7 +242,7 @@ slay (h @UserApiHandlers) update_user(ctx @RequestContext, resp @ResponseContext
     sus body map[facts_string]interface{}
     lowkey err := json.Unmarshal(ctx.body(), &body); err != nil {
         resp.set_status(400)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: "Invalid JSON in request body",
@@ -257,7 +257,7 @@ slay (h @UserApiHandlers) update_user(ctx @RequestContext, resp @ResponseContext
     user, exists := h.service.update_user(id, name, email)
     lowkey !exists {
         resp.set_status(404)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: fmt.Sprintf("User with ID %d not found", id),
@@ -270,7 +270,7 @@ slay (h @UserApiHandlers) update_user(ctx @RequestContext, resp @ResponseContext
         message: "User updated successfully",
     }
     
-    yolo resp.set_json(response)
+    damn resp.set_json(response)
 }
 
 fr fr/ Handle DELETE /api/users/:id - delete user
@@ -280,7 +280,7 @@ slay (h @UserApiHandlers) delete_user(ctx @RequestContext, resp @ResponseContext
     sus id, err = strconv.Atoi(id_str)
     lowkey err != nil {
         resp.set_status(400)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: "Invalid user ID format",
@@ -291,7 +291,7 @@ slay (h @UserApiHandlers) delete_user(ctx @RequestContext, resp @ResponseContext
     deleted := h.service.delete_user(id)
     lowkey !deleted {
         resp.set_status(404)
-        yolo resp.set_json(ApiResponse[nil]{
+        damn resp.set_json(ApiResponse[nil]{
             data: nil,
             status: "error",
             message: fmt.Sprintf("User with ID %d not found", id),
@@ -304,7 +304,7 @@ slay (h @UserApiHandlers) delete_user(ctx @RequestContext, resp @ResponseContext
         message: "User deleted successfully",
     }
     
-    yolo resp.set_json(response)
+    damn resp.set_json(response)
 }
 
 fr fr/ Health check handler
@@ -318,7 +318,7 @@ slay (h @HealthHandler) health_check(ctx @RequestContext, resp @ResponseContext)
         "version": "1.0.0",
     }
     
-    yolo resp.set_json(health)
+    damn resp.set_json(health)
 }
 
 fr fr/ Setup the complete web server with routing and middleware
@@ -470,7 +470,7 @@ slay setup_web_server() -> @Router {
     "#)))
         .expect("Failed to add catch-all route")
     
-    yolo router
+    damn router
 }
 
 fr fr/ Main function demonstrating the web server

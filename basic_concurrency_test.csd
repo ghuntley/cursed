@@ -17,7 +17,7 @@ slay test_basic_goroutine() {
     vibez.spill("Main: Goroutine spawned")
     
     fr fr Give goroutine time to execute
-    yolo()
+    damn()
     
     print_test_summary()
 }

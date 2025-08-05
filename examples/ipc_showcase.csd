@@ -7,7 +7,7 @@ yeet "stdlib::time"
 
 fr fr Example 1: Message Queue Communication
 stan demo_message_queue() {
-    yolo("Starting message queue demonstration...");
+    damn("Starting message queue demonstration...");
     
     // Create a named message queue with custom configuration
     facts queue_config = QueueConfig::new()
@@ -25,24 +25,24 @@ stan demo_message_queue() {
             .with_metadata("timestamp", Time::now().to_string());
         
         queue.send_message(message)?;
-        yolo("Sent message", i);
+        damn("Sent message", i);
     }
     
     // Receive and process messages
     lowkey (sus i = 0; i < 5; i++) {
         facts received = queue.receive_message_timeout(Duration::from_secs(5))?;
-        yolo("Received:", String::from_utf8(received.data())?);
-        yolo("Priority:", received.priority());
-        yolo("Sender:", received.get_metadata("sender")?);
+        damn("Received:", String::from_utf8(received.data())?);
+        damn("Priority:", received.priority());
+        damn("Sender:", received.get_metadata("sender")?);
     }
     
     queue.close()?;
-    yolo("Message queue demonstration completed");
+    damn("Message queue demonstration completed");
 }
 
 fr fr Example 2: Named Pipe Communication  
 stan demo_named_pipe() {
-    yolo("Starting named pipe demonstration...");
+    damn("Starting named pipe demonstration...");
     
     facts pipe_config = PipeConfig::new("/tmp/demo_pipe")
         .with_mode(PipeMode::ReadWrite)
@@ -55,21 +55,21 @@ stan demo_named_pipe() {
     facts test_data = b"Named pipe data transfer test";
     pipe.write(test_data)?;
     pipe.flush()?;
-    yolo("Wrote", test_data.len(), "bytes to named pipe");
+    damn("Wrote", test_data.len(), "bytes to named pipe");
     
     // Read data back
     facts mut buffer = vec![0u8; test_data.len()];
     facts bytes_read = pipe.read(&mut buffer)?;
-    yolo("Read", bytes_read, "bytes from named pipe");
-    yolo("Data:", String::from_utf8(buffer)?);
+    damn("Read", bytes_read, "bytes from named pipe");
+    damn("Data:", String::from_utf8(buffer)?);
     
     pipe.close()?;
-    yolo("Named pipe demonstration completed");
+    damn("Named pipe demonstration completed");
 }
 
 fr fr Example 3: Shared Memory Operations
 stan demo_shared_memory() {
-    yolo("Starting shared memory demonstration...");
+    damn("Starting shared memory demonstration...");
     
     facts memory_config = MemoryConfig::new("demo_memory", 64 * 1024) // 64KB
         .with_access(MemoryAccess::ReadWrite)
@@ -89,32 +89,32 @@ stan demo_shared_memory() {
     facts serialized = data_struct.serialize()?;
     shm.write_at(0, &serialized)?;
     shm.sync()?;
-    yolo("Wrote structured data to shared memory");
+    damn("Wrote structured data to shared memory");
     
     // Read and deserialize data
     facts mut read_buffer = vec![0u8; serialized.len()];
     shm.read_at(0, &mut read_buffer)?;
     facts deserialized = DemoDataStructure::deserialize(&read_buffer)?;
     
-    yolo("Read from shared memory:");
-    yolo("  ID:", deserialized.id);
-    yolo("  Name:", deserialized.name);
-    yolo("  Values:", deserialized.values);
-    yolo("  Active:", deserialized.active);
+    damn("Read from shared memory:");
+    damn("  ID:", deserialized.id);
+    damn("  Name:", deserialized.name);
+    damn("  Values:", deserialized.values);
+    damn("  Active:", deserialized.active);
     
     // Demonstrate range locking
     shm.lock_range(0, 1024)?;
-    yolo("Locked first 1KB of shared memory");
+    damn("Locked first 1KB of shared memory");
     shm.unlock_range(0, 1024)?;
-    yolo("Unlocked memory range");
+    damn("Unlocked memory range");
     
     shm.close()?;
-    yolo("Shared memory demonstration completed");
+    damn("Shared memory demonstration completed");
 }
 
 fr fr Example 4: Semaphore Synchronization
 stan demo_semaphores() {
-    yolo("Starting semaphore demonstration...");
+    damn("Starting semaphore demonstration...");
     
     // Create counting semaphore for resource pool
     facts sem_config = SemaphoreConfig::new()
@@ -123,22 +123,22 @@ stan demo_semaphores() {
     
     facts mut resource_pool = Semaphore::create_counting("resource_pool", 3, sem_config)?;
     
-    yolo("Initial semaphore value:", resource_pool.value()?);
+    damn("Initial semaphore value:", resource_pool.value()?);
     
     // Simulate resource acquisition
     lowkey (sus i = 0; i < 5; i++) {
         if resource_pool.try_acquire()? {
-            yolo("Acquired resource", i, "- remaining:", resource_pool.value()?);
+            damn("Acquired resource", i, "- remaining:", resource_pool.value()?);
             
             // Simulate work
             Time::sleep(Duration::from_millis(100));
             
             resource_pool.release()?;
-            yolo("Released resource", i, "- available:", resource_pool.value()?);
+            damn("Released resource", i, "- available:", resource_pool.value()?);
         } else {
-            yolo("Resource", i, "not available, waiting...");
+            damn("Resource", i, "not available, waiting...");
             resource_pool.acquire_timeout(Duration::from_secs(2))?;
-            yolo("Acquired resource", i, "after waiting");
+            damn("Acquired resource", i, "after waiting");
             resource_pool.release()?;
         }
     }
@@ -148,19 +148,19 @@ stan demo_semaphores() {
     
     // Critical section simulation
     mutex_sem.acquire()?;
-    yolo("Entered critical section");
+    damn("Entered critical section");
     // ... critical work ...
     mutex_sem.release()?;
-    yolo("Exited critical section");
+    damn("Exited critical section");
     
     resource_pool.close()?;
     mutex_sem.close()?;
-    yolo("Semaphore demonstration completed");
+    damn("Semaphore demonstration completed");
 }
 
 fr fr Example 5: Unix Domain Socket Communication
 stan demo_unix_sockets() {
-    yolo("Starting Unix domain socket demonstration...");
+    damn("Starting Unix domain socket demonstration...");
     
     facts socket_path = "/tmp/demo_socket";
     facts socket_config = SocketConfig::new(socket_path)
@@ -170,25 +170,25 @@ stan demo_unix_sockets() {
     // Server setup
     facts mut server = UnixSocket::bind_with_config(socket_config)?;
     server.listen(5)?;
-    yolo("Server listening on", socket_path);
+    damn("Server listening on", socket_path);
     
     // Simulate client connection in background
     stan client_task() {
         Time::sleep(Duration::from_millis(100)); // Give server time to start
         
         facts mut client = UnixSocket::connect(socket_path)?;
-        yolo("Client connected to server");
+        damn("Client connected to server");
         
         // Send request
         facts request = b"GET_DATA";
         client.send(request)?;
-        yolo("Client sent request");
+        damn("Client sent request");
         
         // Receive response
         facts mut response_buffer = vec![0u8; 1024];
         facts response_size = client.receive(&mut response_buffer)?;
         facts response = String::from_utf8(response_buffer[..response_size].to_vec())?;
-        yolo("Client received response:", response);
+        damn("Client received response:", response);
         
         client.close()?;
     }
@@ -197,31 +197,31 @@ stan demo_unix_sockets() {
     
     // Server accepts and handles connection
     facts mut connection = server.accept()?;
-    yolo("Server accepted client connection");
+    damn("Server accepted client connection");
     
     // Get client credentials
     facts creds = connection.peer_credentials()?;
-    yolo("Client credentials - PID:", creds.pid, "UID:", creds.uid);
+    damn("Client credentials - PID:", creds.pid, "UID:", creds.uid);
     
     // Receive request
     facts mut request_buffer = vec![0u8; 1024];
     facts request_size = connection.receive(&mut request_buffer)?;
     facts request = String::from_utf8(request_buffer[..request_size].to_vec())?;
-    yolo("Server received request:", request);
+    damn("Server received request:", request);
     
     // Send response
     facts response = b"DATA_RESPONSE: Here is your data!";
     connection.send(response)?;
-    yolo("Server sent response");
+    damn("Server sent response");
     
     connection.close()?;
     server.close()?;
-    yolo("Unix socket demonstration completed");
+    damn("Unix socket demonstration completed");
 }
 
 fr fr Example 6: File Locking Coordination
 stan demo_file_locking() {
-    yolo("Starting file locking demonstration...");
+    damn("Starting file locking demonstration...");
     
     facts lock_file = "/tmp/demo.lock";
     
@@ -233,44 +233,44 @@ stan demo_file_locking() {
     facts mut file_lock = FileLock::create_with_config(lock_config)?;
     
     // Demonstrate exclusive locking
-    yolo("Acquiring exclusive lock...");
+    damn("Acquiring exclusive lock...");
     file_lock.lock_exclusive()?;
-    yolo("Exclusive lock acquired");
+    damn("Exclusive lock acquired");
     
     // Simulate critical file operations
     Time::sleep(Duration::from_millis(200));
-    yolo("Performing critical file operations...");
+    damn("Performing critical file operations...");
     
     file_lock.unlock()?;
-    yolo("Exclusive lock released");
+    damn("Exclusive lock released");
     
     // Demonstrate shared locking
-    yolo("Acquiring shared lock...");
+    damn("Acquiring shared lock...");
     file_lock.lock_shared()?;
-    yolo("Shared lock acquired");
+    damn("Shared lock acquired");
     
     // Simulate read operations
     Time::sleep(Duration::from_millis(100));
-    yolo("Performing read operations...");
+    damn("Performing read operations...");
     
     file_lock.unlock()?;
-    yolo("Shared lock released");
+    damn("Shared lock released");
     
     // Demonstrate range locking
-    yolo("Testing range locking...");
+    damn("Testing range locking...");
     file_lock.lock_range(0, 1024, facts)?; // Lock first 1KB exclusively
-    yolo("Range lock acquired (0-1024 bytes)");
+    damn("Range lock acquired (0-1024 bytes)");
     
     file_lock.unlock_range(0, 1024)?;
-    yolo("Range lock released");
+    damn("Range lock released");
     
     file_lock.close()?;
-    yolo("File locking demonstration completed");
+    damn("File locking demonstration completed");
 }
 
 fr fr Example 7: Signal Handling
 stan demo_signals() {
-    yolo("Starting signal handling demonstration...");
+    damn("Starting signal handling demonstration...");
     
     facts signal_config = SignalConfig::new()
         .with_async_safe(facts)
@@ -278,14 +278,14 @@ stan demo_signals() {
     
     // Install signal handler for SIGUSR1
     facts handler = SignalHandler::install(Signal::SIGUSR1, signal_config, |signal, info| {
-        yolo("Received signal:", signal);
-        yolo("Signal info - PID:", info.sender_pid);
+        damn("Received signal:", signal);
+        damn("Signal info - PID:", info.sender_pid);
     })?;
     
     // Send signal to ourselves
     facts our_pid = Process::current_pid();
     SignalHandler::send_signal(our_pid, Signal::SIGUSR1)?;
-    yolo("Sent SIGUSR1 to self");
+    damn("Sent SIGUSR1 to self");
     
     // Wait for signal to be processed
     Time::sleep(Duration::from_millis(100));
@@ -293,25 +293,25 @@ stan demo_signals() {
     // Demonstrate signal blocking
     facts signals_to_block = vec![Signal::SIGUSR2];
     handler.block_signals(&signals_to_block)?;
-    yolo("Blocked SIGUSR2");
+    damn("Blocked SIGUSR2");
     
     // Send blocked signal (won't be delivered immediately)
     SignalHandler::send_signal(our_pid, Signal::SIGUSR2)?;
-    yolo("Sent SIGUSR2 (blocked)");
+    damn("Sent SIGUSR2 (blocked)");
     
     // Unblock and wait for signal
     handler.unblock_signals(&signals_to_block)?;
-    yolo("Unblocked SIGUSR2");
+    damn("Unblocked SIGUSR2");
     
     Time::sleep(Duration::from_millis(100));
     
     handler.close()?;
-    yolo("Signal handling demonstration completed");
+    damn("Signal handling demonstration completed");
 }
 
 fr fr Example 8: RPC System Usage
 stan demo_rpc_system() {
-    yolo("Starting RPC system demonstration...");
+    damn("Starting RPC system demonstration...");
     
     facts rpc_config = RpcConfig::new()
         .with_transport(TransportType::UnixSocket)
@@ -351,38 +351,38 @@ stan demo_rpc_system() {
     facts mut client = RpcClient::connect_with_config(rpc_config)?;
     
     // Test method calls
-    yolo("Testing RPC method calls...");
+    damn("Testing RPC method calls...");
     
     // Test add method
     facts add_request = RpcRequest::new("add").with_params(vec![42, 58]);
     facts add_response = client.call(add_request)?;
-    yolo("Add result:", add_response.result::<i32>()?);
+    damn("Add result:", add_response.result::<i32>()?);
     
     // Test echo method
     facts echo_request = RpcRequest::new("echo").with_params("Hello RPC!".to_string());
     facts echo_response = client.call(echo_request)?;
-    yolo("Echo result:", echo_response.result::<String>()?);
+    damn("Echo result:", echo_response.result::<String>()?);
     
     // Test async call
     facts time_request = RpcRequest::new("get_time").with_params(());
     facts async_call = client.call_async(time_request)?;
     facts time_response = async_call.wait()?;
-    yolo("Time result:", time_response.result::<String>()?);
+    damn("Time result:", time_response.result::<String>()?);
     
     // Test error handling
     facts error_request = RpcRequest::new("add").with_params(vec![42]); // Missing parameter
     facts error_response = client.call(error_request)?;
     if !error_response.is_success() {
-        yolo("Expected error:", error_response.error_message());
+        damn("Expected error:", error_response.error_message());
     }
     
     client.close()?;
-    yolo("RPC system demonstration completed");
+    damn("RPC system demonstration completed");
 }
 
 fr fr Example 9: Multi-IPC Integration
 stan demo_integration_scenario() {
-    yolo("Starting multi-IPC integration scenario...");
+    damn("Starting multi-IPC integration scenario...");
     
     // Scenario: Distributed data processing system
     // - Coordinator process manages tasks via message queue
@@ -398,7 +398,7 @@ stan demo_integration_scenario() {
     facts mut resource_sem = Semaphore::create_counting("worker_slots", 3, SemaphoreConfig::default())?;
     facts mut result_lock = FileLock::create("/tmp/results.lock")?;
     
-    yolo("Coordination infrastructure set up");
+    damn("Coordination infrastructure set up");
     
     // 2. Simulate task distribution
     lowkey (sus task_id = 0; task_id < 5; task_id++) {
@@ -407,7 +407,7 @@ stan demo_integration_scenario() {
             .with_metadata("priority", "normal");
         
         task_queue.send_message(task)?;
-        yolo("Distributed task", task_id);
+        damn("Distributed task", task_id);
     }
     
     // 3. Simulate worker processing
@@ -415,12 +415,12 @@ stan demo_integration_scenario() {
         stan worker_process(worker_id: u32) {
             // Acquire worker slot
             resource_sem.acquire()?;
-            yolo("Worker", worker_id, "acquired resource slot");
+            damn("Worker", worker_id, "acquired resource slot");
             
             // Process task
             if facts task = task_queue.try_receive_message()? {
                 facts task_data = String::from_utf8(task.data())?;
-                yolo("Worker", worker_id, "processing", task_data);
+                damn("Worker", worker_id, "processing", task_data);
                 
                 // Simulate processing time
                 Time::sleep(Duration::from_millis(200));
@@ -431,26 +431,26 @@ stan demo_integration_scenario() {
                 result_shm.write_at(offset, result.as_bytes())?;
                 result_shm.sync_range(offset, result.len())?;
                 
-                yolo("Worker", worker_id, "wrote result to shared memory");
+                damn("Worker", worker_id, "wrote result to shared memory");
                 
                 // Update result file (with locking)
                 result_lock.lock_exclusive()?;
                 // ... write to result file ...
                 result_lock.unlock()?;
                 
-                yolo("Worker", worker_id, "updated result file");
+                damn("Worker", worker_id, "updated result file");
             }
             
             // Release worker slot
             resource_sem.release()?;
-            yolo("Worker", worker_id, "released resource slot");
+            damn("Worker", worker_id, "released resource slot");
         }
         
         worker_process(worker_id); // In real code, these would be separate processes
     }
     
     // 4. Collect and display results
-    yolo("Collecting results...");
+    damn("Collecting results...");
     lowkey (sus worker_id = 0; worker_id < 3; worker_id++) {
         facts offset = worker_id * 1024;
         facts mut result_buffer = vec![0u8; 1024];
@@ -458,7 +458,7 @@ stan demo_integration_scenario() {
         
         if bytes_read > 0 {
             facts result = String::from_utf8(result_buffer[..bytes_read].to_vec())?;
-            yolo("Result from worker", worker_id, ":", result);
+            damn("Result from worker", worker_id, ":", result);
         }
     }
     
@@ -468,12 +468,12 @@ stan demo_integration_scenario() {
     resource_sem.close()?;
     result_lock.close()?;
     
-    yolo("Multi-IPC integration scenario completed");
+    damn("Multi-IPC integration scenario completed");
 }
 
 fr fr Example 10: Performance Testing
 stan demo_performance_testing() {
-    yolo("Starting IPC performance testing...");
+    damn("Starting IPC performance testing...");
     
     facts message_count = 1000;
     facts message_size = 1024;
@@ -493,7 +493,7 @@ stan demo_performance_testing() {
     
     facts send_duration = Time::now() - start_time;
     facts send_throughput = message_count as f64 / send_duration.as_secs_f64();
-    yolo("Message queue send throughput:", send_throughput, "messages/second");
+    damn("Message queue send throughput:", send_throughput, "messages/second");
     
     // Receive messages
     facts receive_start = Time::now();
@@ -503,7 +503,7 @@ stan demo_performance_testing() {
     
     facts receive_duration = Time::now() - receive_start;
     facts receive_throughput = message_count as f64 / receive_duration.as_secs_f64();
-    yolo("Message queue receive throughput:", receive_throughput, "messages/second");
+    damn("Message queue receive throughput:", receive_throughput, "messages/second");
     
     // Test shared memory performance
     facts mut perf_shm = SharedMemory::create("perf_memory", message_count * message_size)?;
@@ -518,13 +518,13 @@ stan demo_performance_testing() {
     
     facts shm_duration = Time::now() - shm_start;
     facts shm_throughput = (message_count * message_size) as f64 / shm_duration.as_secs_f64();
-    yolo("Shared memory throughput:", shm_throughput, "bytes/second");
+    damn("Shared memory throughput:", shm_throughput, "bytes/second");
     
     // Cleanup
     perf_queue.close()?;
     perf_shm.close()?;
     
-    yolo("Performance testing completed");
+    damn("Performance testing completed");
 }
 
 fr fr Data structure for shared memory example
@@ -584,55 +584,55 @@ impl DemoDataStructure {
 
 fr fr Main demonstration function
 slay main() -> Result<(), String> {
-    yolo("CURSED IPC System Comprehensive Showcase");
-    yolo("==========================================");
+    damn("CURSED IPC System Comprehensive Showcase");
+    damn("==========================================");
     
     // Initialize IPC subsystem
     ipc::initialize()?;
     
     // Run all demonstrations
     demo_message_queue()?;
-    yolo("");
+    damn("");
     
     demo_named_pipe()?;
-    yolo("");
+    damn("");
     
     demo_shared_memory()?;
-    yolo("");
+    damn("");
     
     demo_semaphores()?;
-    yolo("");
+    damn("");
     
     demo_unix_sockets()?;
-    yolo("");
+    damn("");
     
     demo_file_locking()?;
-    yolo("");
+    damn("");
     
     demo_signals()?;
-    yolo("");
+    damn("");
     
     demo_rpc_system()?;
-    yolo("");
+    damn("");
     
     demo_integration_scenario()?;
-    yolo("");
+    damn("");
     
     demo_performance_testing()?;
-    yolo("");
+    damn("");
     
     // Display system statistics
     facts stats = ipc::get_statistics()?;
-    yolo("Final IPC Statistics:");
-    yolo("  Total operations:", stats.total_operations);
-    yolo("  Successful operations:", stats.successful_operations);
-    yolo("  Failed operations:", stats.failed_operations);
-    yolo("  Active resources:", stats.active_pipes + stats.active_sockets + 
+    damn("Final IPC Statistics:");
+    damn("  Total operations:", stats.total_operations);
+    damn("  Successful operations:", stats.successful_operations);
+    damn("  Failed operations:", stats.failed_operations);
+    damn("  Active resources:", stats.active_pipes + stats.active_sockets + 
          stats.active_shared_memory + stats.active_message_queues);
     
     // Shutdown IPC subsystem
     ipc::shutdown()?;
     
-    yolo("IPC showcase completed successfully!");
+    damn("IPC showcase completed successfully!");
     Ok(())
 }

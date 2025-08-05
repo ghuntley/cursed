@@ -349,7 +349,7 @@ slay AsyncTimeout.with_future(future *Future, duration normie) *Future {
     sus timeout_future *BasicFuture = BasicFuture.new()
     
     // Start timeout timer
-    yolo timeout.start_timer(timeout_future)
+    damn timeout.start_timer(timeout_future)
     
     // Create a race future
     sus race_future *Future = or_else(future, timeout_future)

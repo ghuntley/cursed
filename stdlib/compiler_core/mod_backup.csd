@@ -243,7 +243,7 @@ slay classify_token(value tea) normie {
         "sus", "slay", "damn", "yeet", "vibe", "facts", "lowkey", "highkey", 
         "bestie", "ghosted", "simp", "based", "cap", "cringe", "lit", "normie", 
         "drip", "tea", "thicc", "smol", "meal", "snack", "mid", "sip", "byte", 
-        "rune", "extra", "yolo", "ready", "chan", "defer", "yikes", "shook", 
+        "rune", "extra", "damn", "ready", "chan", "defer", "yikes", "shook", 
         "fam", "vibes", "be_like", "fr_fr"
     ]
     

@@ -63,8 +63,17 @@ value, ok := dm_recv(ch)      // Receive with closed check
 
 ### Channel Closing
 ```
-dm_close(ch)                  // Close channel
-value, ok := dm_recv(ch)      // ok is false if channel is closed
+dm_close(ch)                  // Close channel - CANONICAL
+value, ok := dm_recv(ch)      // ok is false if channel is closed - CANONICAL
+
+### DEPRECATED Channel Operations (REMOVE IN FUTURE VERSIONS)
+```
+ch <- value                   // DEPRECATED: Use dm_send(ch, value)
+value := <-ch                 // DEPRECATED: Use value := dm_recv(ch)
+close(ch)                     // DEPRECATED: Use dm_close(ch)
+```
+
+**PARSER REQUIREMENT**: New implementations SHOULD NOT support deprecated channel operations.
 ```
 
 ## Type Declarations

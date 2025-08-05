@@ -16,9 +16,9 @@ slay test_arrays() normie {
     sus last = numbers[4];
     
     lowkey first == 1 && last == 5 {
-        yolo 1;
+        damn 1;
     } highkey {
-        yolo 0;
+        damn 0;
     }
 }
 
@@ -30,9 +30,9 @@ slay test_slices() normie {
     sus third_name = names[2];
     
     lowkey first_name == "Alice" && third_name == "Charlie" {
-        yolo 1;
+        damn 1;
     } highkey {
-        yolo 0;
+        damn 0;
     }
 }
 
@@ -43,9 +43,9 @@ slay test_maps() normie {
     sus bob_score = scores["Bob"];
     
     lowkey alice_score == 95 && bob_score == 87 {
-        yolo 1;
+        damn 1;
     } highkey {
-        yolo 0;
+        damn 0;
     }
 }
 
@@ -58,9 +58,9 @@ slay test_structs() normie {
     };
     
     lowkey person.name == "John" && person.age == 30 {
-        yolo 1;
+        damn 1;
     } highkey {
-        yolo 0;
+        damn 0;
     }
 }
 
@@ -76,9 +76,9 @@ slay main() normie {
     fr fr All tests should pass (return 1)
     lowkey total == 4 {
         puts("All composite type tests passed!");
-        yolo 1;
+        damn 1;
     } highkey {
         puts("Some composite type tests failed!");
-        yolo 0;
+        damn 0;
     }
 }

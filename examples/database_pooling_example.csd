@@ -115,7 +115,7 @@ slay insert_users_concurrently(pool: sql_vibes.ConnectionPool, users: [][]String
     periodt worker_id : 0..workers {
         wait_group.add(1)
         
-        yolo {
+        damn {
             sus start_idx = worker_id * chunk_size
             sus end_idx = mathz.min((worker_id + 1) * chunk_size, len(users))
             
@@ -237,7 +237,7 @@ slay benchmark_concurrent_queries(pool: sql_vibes.ConnectionPool, concurrent_que
     periodt i : 0..concurrent_queries {
         wait_group.add(1)
         
-        yolo {
+        damn {
             sus conn_result = pool.get_connection()
             lowkey conn_result.is_error() {
                 vibez.spill("Query", i, "failed to get connection:", conn_result.error())

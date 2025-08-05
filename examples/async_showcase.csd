@@ -52,7 +52,7 @@ async function channel_producer_consumer() -> i32 {
         lowkey (sus i = 0; i < 10; i++) {
             sender.send(i).await.expect("Failed to send")
             sleep(Duration::from_millis(10)).await
-            yolo // Yield point for cooperative scheduling
+            damn // Yield point for cooperative scheduling
         }
         sender.close()
     })
@@ -142,7 +142,7 @@ async function rate_limited_operation() -> i32 {
         if rate_limiter.try_acquire() {
             successful_operations += 1
         }
-        yolo
+        damn
     }
     
     successful_operations
@@ -232,7 +232,7 @@ async function async_goroutine_integration() -> i32 {
     stan {
         lowkey (sus i = 0; i < 5; i++) {
             counter += 1
-            yolo // Yield to async runtime
+            damn // Yield to async runtime
         }
     }
     
@@ -390,7 +390,7 @@ async function async_iterator_example() -> Vec<i32> {
         }).await.unwrap_or(0)
         
         results.push(processed)
-        yolo // Yield between iterations
+        damn // Yield between iterations
     }
     
     results

@@ -197,15 +197,15 @@ fr fr Helper Functions for Testing
 fr fr ================================
 
 slay add_two(a normie, b normie) normie {
-    yolo a + b;
+    damn a + b;
 }
 
 slay multiply_by_three(n normie) normie {
-    yolo n * 3;
+    damn n * 3;
 }
 
 slay say_hello(name tea) tea {
-    yolo "Hello, " + name + "!";
+    damn "Hello, " + name + "!";
 }
 
 fr fr ================================
@@ -280,5 +280,5 @@ slay main() {
     vibez.spill("");
     vibez.spill("Ready for use in CURSED projects!");
     
-    yolo 0;
+    damn 0;
 }

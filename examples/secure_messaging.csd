@@ -181,7 +181,7 @@ function send_secure_message(
     secure_message
 }
 
-fr fr/ yolo Receive and decrypt secure message
+fr fr/ damn Receive and decrypt secure message
 function receive_secure_message(
     recipient: UserIdentity,
     sender_verify_key: Ed25519PublicKey,

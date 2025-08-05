@@ -16,7 +16,7 @@ slay create_test_image(width normie, height normie, channels normie) []byte {
         bestie c := 0; c < channels; c++ {
             vibe_check c < 3 { fr fr RGB channels
                 pixels = append(pixels, value)
-            } yolo { fr fr Alpha channel (if present)
+            } damn { fr fr Alpha channel (if present)
                 pixels = append(pixels, 255)
             }
         }

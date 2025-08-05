@@ -367,7 +367,7 @@ slay compress_lz77(data tea) tea {
             bestie k := 0; i + k < data_len && j + k < i; k++ {
                 if string_char_at(data, i + k) == string_char_at(data, j + k) {
                     current_match++
-                } yolo {
+                } damn {
                     break
                 }
             }
@@ -382,7 +382,7 @@ slay compress_lz77(data tea) tea {
             // Encode as (distance, length, next_char)
             result = result + serialize_lz77_token(match_distance, match_length)
             i = i + match_length
-        } yolo {
+        } damn {
             // Literal character
             result = result + string_char_at(data, i)
             i++
@@ -414,7 +414,7 @@ slay decompress_lz77(data tea) tea {
             }
             
             i = i + 8  // Skip token
-        } yolo {
+        } damn {
             // Literal character
             result = result + token
             i++
@@ -673,7 +673,7 @@ slay compress_data(data tea) tea {
         // Encode: char + count (if > 1)
         if count > 1 {
             result = result + current_char + serialize_int(count)
-        } yolo {
+        } damn {
             result = result + current_char
         }
         

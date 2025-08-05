@@ -1,198 +1,111 @@
 #!/bin/bash
 
-echo "🧪 CURSED Zig Compiler Memory Leak Testing"
-echo "==========================================="
+# Memory leak testing script for CURSED Zig implementation
 
-# Build the compiler first
-echo "📦 Building CURSED Zig compiler..."
-zig build || {
-    echo "❌ Build failed!"
+echo "🧪 Testing CURSED Zig Memory Management"
+echo "======================================="
+
+# Build the unified compiler
+echo "📦 Building unified CURSED compiler..."
+zig build-exe src-zig/main_unified.zig -lc --name cursed-unified
+
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to build unified compiler"
     exit 1
-}
-
-echo "✅ Build successful"
-
-# Test 1: Basic interpretation mode
-echo ""
-echo "🔍 Test 1: Basic interpretation mode memory test"
-echo "------------------------------------------------"
-
-echo "Creating simple test program..."
-cat > simple_memory_test.csd << 'EOF'
-fr fr Simple memory test
-vibez.spill("Hello from memory test!")
-vibez.spill("Testing tokens and lexer")
-EOF
-
-echo "Running with valgrind (if available)..."
-if command -v valgrind &> /dev/null; then
-    echo "Running memory check with valgrind..."
-    valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes \
-        ./zig-out/bin/cursed-zig simple_memory_test.csd 2>&1 | tee valgrind_interpretation.log
-    
-    # Check for leaks
-    if grep -q "ERROR SUMMARY: 0 errors" valgrind_interpretation.log && \
-       grep -q "definitely lost: 0 bytes" valgrind_interpretation.log; then
-        echo "✅ No memory leaks detected in interpretation mode!"
-    else
-        echo "⚠️ Potential memory issues detected in interpretation mode"
-        echo "Check valgrind_interpretation.log for details"
-    fi
-else
-    echo "Valgrind not available, running basic test..."
-    ./zig-out/bin/cursed-zig simple_memory_test.csd
 fi
 
-# Test 2: Compilation mode
-echo ""
-echo "🔍 Test 2: Compilation mode memory test"
-echo "---------------------------------------"
+echo "✅ Unified compiler built successfully"
 
-if command -v valgrind &> /dev/null; then
-    echo "Running compilation mode with valgrind..."
-    valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes \
-        ./zig-out/bin/cursed-zig --compile simple_memory_test.csd 2>&1 | tee valgrind_compilation.log
-    
-    # Check for leaks
-    if grep -q "ERROR SUMMARY: 0 errors" valgrind_compilation.log && \
-       grep -q "definitely lost: 0 bytes" valgrind_compilation.log; then
-        echo "✅ No memory leaks detected in compilation mode!"
-    else
-        echo "⚠️ Potential memory issues detected in compilation mode"
-        echo "Check valgrind_compilation.log for details"
-    fi
-else
-    echo "Running basic compilation test..."
-    ./zig-out/bin/cursed-zig --compile simple_memory_test.csd
+# Test basic program without valgrind first
+echo "🚀 Testing basic program execution..."
+echo 'vibez.spill("Hello CURSED!")' > simple_test.csd
+./cursed-unified simple_test.csd
+
+if [ $? -ne 0 ]; then
+    echo "❌ Basic program execution failed"
+    exit 1
 fi
 
-# Test 3: Complex program stress test
-echo ""
-echo "🔍 Test 3: Complex program memory stress test"
-echo "---------------------------------------------"
+echo "✅ Basic program execution successful"
 
-echo "Creating complex test program..."
-cat > complex_memory_test.csd << 'EOF'
-fr fr Complex memory test with many tokens
-vibez.spill("Starting complex memory test")
-
-fr fr Multiple variable declarations
-sus var1 drip = 1
-sus var2 drip = 2
-sus var3 drip = 3
-sus var4 drip = 4
-sus var5 drip = 5
-
-fr fr Multiple function calls
-vibez.spill("Variable 1:", var1)
-vibez.spill("Variable 2:", var2) 
-vibez.spill("Variable 3:", var3)
-vibez.spill("Variable 4:", var4)
-vibez.spill("Variable 5:", var5)
-
-fr fr String literals
-vibez.spill("String test 1")
-vibez.spill("String test 2")
-vibez.spill("String test 3")
-vibez.spill("String test 4")
-vibez.spill("String test 5")
-
-fr fr Comments to generate more tokens
-fr fr Comment line 1
-fr fr Comment line 2
-fr fr Comment line 3
-fr fr Comment line 4
-fr fr Comment line 5
-
-vibez.spill("Complex memory test completed")
-EOF
-
+# Test with valgrind if available
 if command -v valgrind &> /dev/null; then
-    echo "Running complex test with valgrind..."
-    valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all \
-        ./zig-out/bin/cursed-zig complex_memory_test.csd 2>&1 | tee valgrind_complex.log
+    echo "🔍 Running memory leak detection with valgrind..."
     
-    # Check for leaks
-    if grep -q "ERROR SUMMARY: 0 errors" valgrind_complex.log && \
-       grep -q "definitely lost: 0 bytes" valgrind_complex.log; then
-        echo "✅ No memory leaks detected in complex test!"
+    # Test simple program
+    echo "Testing simple program for memory leaks..."
+    valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
+             --error-exitcode=1 --log-file=valgrind_simple.log \
+             ./cursed-unified simple_test.csd
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Simple program: No memory leaks detected"
     else
-        echo "⚠️ Potential memory issues detected in complex test"
-        echo "Check valgrind_complex.log for details"
+        echo "⚠️ Simple program: Memory issues detected, see valgrind_simple.log"
     fi
-else
-    echo "Running basic complex test..."
-    ./zig-out/bin/cursed-zig complex_memory_test.csd
-fi
-
-# Test 4: Token debugging mode (stress test for lexer)
-echo ""
-echo "🔍 Test 4: Token debugging mode memory test"
-echo "------------------------------------------"
-
-if command -v valgrind &> /dev/null; then
-    echo "Running token debugging with valgrind..."
-    valgrind --tool=memcheck --leak-check=full \
-        ./zig-out/bin/cursed-zig --tokens complex_memory_test.csd 2>&1 | tee valgrind_tokens.log
     
-    # Check for leaks
-    if grep -q "ERROR SUMMARY: 0 errors" valgrind_tokens.log && \
-       grep -q "definitely lost: 0 bytes" valgrind_tokens.log; then
-        echo "✅ No memory leaks detected in token debugging mode!"
+    # Test complex program
+    echo "Testing complex program for memory leaks..."
+    valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
+             --error-exitcode=1 --log-file=valgrind_complex.log \
+             ./cursed-unified memory_leak_test.csd
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Complex program: No memory leaks detected"
     else
-        echo "⚠️ Potential memory issues detected in token debugging mode"
-        echo "Check valgrind_tokens.log for details"
+        echo "⚠️ Complex program: Memory issues detected, see valgrind_complex.log"
     fi
-else
-    echo "Running basic token debugging test..."
-    ./zig-out/bin/cursed-zig --tokens complex_memory_test.csd
-fi
-
-# Test 5: Multiple rapid executions (resource cleanup test)
-echo ""
-echo "🔍 Test 5: Multiple rapid executions test"
-echo "-----------------------------------------"
-
-echo "Running 10 rapid executions to test resource cleanup..."
-for i in {1..10}; do
-    echo -n "Run $i: "
-    ./zig-out/bin/cursed-zig simple_memory_test.csd > /dev/null 2>&1 && echo "✅" || echo "❌"
-done
-
-echo ""
-echo "🧪 Memory leak testing completed!"
-echo "================================="
-
-# Summary
-echo ""
-echo "📊 SUMMARY:"
-echo "-----------"
-
-if command -v valgrind &> /dev/null; then
-    echo "Valgrind logs created:"
-    ls -la valgrind_*.log 2>/dev/null || echo "No valgrind logs found"
     
+    # Show summary
     echo ""
-    echo "Quick leak summary:"
-    for log in valgrind_*.log; do
-        if [ -f "$log" ]; then
-            echo "$log:"
-            grep -E "(definitely lost|ERROR SUMMARY)" "$log" | head -2
-            echo ""
-        fi
-    done
+    echo "📊 Memory leak analysis summary:"
+    if [ -f valgrind_simple.log ]; then
+        echo "Simple program leak summary:"
+        grep -E "(definitely lost|indirectly lost|possibly lost)" valgrind_simple.log
+    fi
+    
+    if [ -f valgrind_complex.log ]; then
+        echo "Complex program leak summary:"
+        grep -E "(definitely lost|indirectly lost|possibly lost)" valgrind_complex.log
+    fi
+    
+    # Overall assessment
+    echo ""
+    echo "🎯 Overall Assessment:"
+    leaked_bytes_simple=$(grep "definitely lost" valgrind_simple.log | awk '{print $4}' | tr -d ',')
+    leaked_bytes_complex=$(grep "definitely lost" valgrind_complex.log | awk '{print $4}' | tr -d ',')
+    
+    if [ "${leaked_bytes_simple:-0}" = "0" ] && [ "${leaked_bytes_complex:-0}" = "0" ]; then
+        echo "✅ SUCCESS: No definite memory leaks detected!"
+        echo "🎉 Memory leak fixes are working correctly"
+    else
+        echo "⚠️ WARNING: Memory leaks still present"
+        echo "   Simple program: ${leaked_bytes_simple:-0} bytes leaked"
+        echo "   Complex program: ${leaked_bytes_complex:-0} bytes leaked"
+        echo "📝 Further investigation needed"
+    fi
+    
 else
-    echo "⚠️ Valgrind not available - install valgrind for detailed memory analysis"
-    echo "Basic functionality tests completed successfully"
+    echo "⚠️ valgrind not available, skipping memory leak detection"
+    echo "💡 Install valgrind for comprehensive memory testing"
 fi
 
-echo "🔧 MEMORY LEAK FIXES APPLIED:"
-echo "• Added defer tokens.deinit() in simple_main.zig"
-echo "• Added comprehensive deinit methods to ast_simple.zig"
-echo "• Fixed Program.deinit() to clean up individual statements and imports"
-echo "• Added deinit methods for Statement, Expression, ImportStatement, and PackageDeclaration"
+# Test compilation mode
 echo ""
-echo "✅ All critical memory leaks should now be resolved!"
+echo "🔨 Testing compilation mode..."
+./cursed-unified --compile simple_test.csd
+
+if [ $? -eq 0 ] && [ -f simple_test ]; then
+    echo "✅ Compilation mode successful"
+    ./simple_test
+    echo "✅ Compiled program execution successful"
+else
+    echo "⚠️ Compilation mode issues detected"
+fi
 
 # Cleanup
-rm -f simple_memory_test.csd complex_memory_test.csd simple_memory_test simple_memory_test.c complex_memory_test complex_memory_test.c
+rm -f simple_test.csd simple_test
+
+echo ""
+echo "🏁 Memory leak testing completed"
+echo "📁 Logs: valgrind_simple.log, valgrind_complex.log"

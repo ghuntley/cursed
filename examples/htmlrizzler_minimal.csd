@@ -5,5 +5,5 @@ yeet "htmlrizzler"
 
 slay main() {
     vibez.spill("The htmlrizzler module is loaded");
-    yolo 0;
+    damn 0;
 }

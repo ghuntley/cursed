@@ -369,7 +369,7 @@ slay math_log_impl(x meal) meal {
             term = term * u
             vibe_check i % 2 == 0 {
                 result = result - term / meal(i)
-            } yolo {
+            } damn {
                 result = result + term / meal(i)
             }
         }

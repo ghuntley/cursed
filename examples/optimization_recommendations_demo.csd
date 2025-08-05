@@ -37,17 +37,17 @@ slay large_complex_function(data: [String], numbers: [i32], flags: [bool]) -> [S
         results.push(final_result);
     }
     
-    yolo results;
+    damn results;
 }
 
 fr fr Example 2: Small function - good inlining candidate
 slay simple_square(x: i32) -> i32 {
-    yolo x * x;
+    damn x * x;
 }
 
 fr fr Example 3: Another small function - inlining candidate
 slay add_ten(value: i32) -> i32 {
-    yolo value + 10;
+    damn value + 10;
 }
 
 fr fr Example 4: Repeated computation pattern
@@ -69,7 +69,7 @@ slay compute_statistics(data: [f64]) -> (f64, f64, f64) {
     // Same computation repeated
     sus normalized_variance = (sum_squares / count) - (mean * mean);
     
-    yolo (mean, variance, std_dev);
+    damn (mean, variance, std_dev);
 }
 
 fr fr Example 5: Memory allocation in loop
@@ -82,7 +82,7 @@ slay process_large_dataset(size: usize) -> [String] {
         results.push(new_item);
     }
     
-    yolo results;
+    damn results;
 }
 
 fr fr Example 6: Complex expression that could be simplified
@@ -90,15 +90,15 @@ slay complex_calculation(a: f64, b: f64, c: f64, d: f64) -> f64 {
     sus result = ((a * b) + (c * d)) / ((a + b) * (c + d)) + 
                  ((a - b) * (c - d)) / ((a * c) + (b * d)) +
                  (a * b * c * d) / ((a + b + c + d) * (a * b * c * d));
-    yolo result;
+    damn result;
 }
 
 fr fr Example 7: Recursive function - could benefit from optimization
 slay fibonacci(n: i32) -> i32 {
     lowkey (n <= 1) {
-        yolo n;
+        damn n;
     }
-    yolo fibonacci(n - 1) + fibonacci(n - 2);
+    damn fibonacci(n - 1) + fibonacci(n - 2);
 }
 
 fr fr Example 8: Collection operations without pre-allocation
@@ -109,7 +109,7 @@ slay create_lookup_table(keys: [String], values: [i32]) -> HashMap<String, i32> 
         table.insert(keys[i].clone(), values[i]);
     }
     
-    yolo table;
+    damn table;
 }
 
 fr fr Example 9: String building without StringBuilder
@@ -129,7 +129,7 @@ slay generate_report(data: [String]) -> String {
     report = report + separator + "\n";
     report = report + "End of Report";
     
-    yolo report;
+    damn report;
 }
 
 fr fr Example 10: Main function demonstrating usage

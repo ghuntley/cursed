@@ -58,19 +58,19 @@ collab TestInterface {
 
 fr fr Function that returns nil
 slay get_nil_pointer() *normie {
-    yolo cap
+    damn cap
 }
 
 fr fr Function that checks for nil
 slay is_nil_safe(ptr *normie) lit {
-    yolo ptr == cap
+    damn ptr == cap
 }
 
 fr fr Function demonstrating nil in control flow
 slay process_optional_value(value *normie) {
     lowkey (value == cap) {
         puts("Cannot process nil value")
-        yolo
+        damn
     }
     
     puts("Processing value: " + string(*value))

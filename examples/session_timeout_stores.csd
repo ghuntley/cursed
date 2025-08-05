@@ -10,7 +10,7 @@ yeet "stdlib::web_vibez::timeout_middleware" as timeout_middleware;
 yeet "stdlib::database" as db;
 
 fr fr Configuration for different session store types
-sus main() yolo {
+sus main() damn {
     println("🔥 CURSED Session Timeout Stores Demo 🔥");
     
     // Test memory store
@@ -31,7 +31,7 @@ sus main() yolo {
     println("✨ All session timeout tests completed! ✨");
 }
 
-async sus test_memory_store() yolo {
+async sus test_memory_store() damn {
     println("\n📝 Testing Memory Session Store with Timeout...");
     
     facts config = web::SessionConfig {
@@ -81,7 +81,7 @@ async sus test_memory_store() yolo {
     println("  💚 Memory store test completed!");
 }
 
-async sus test_file_store() yolo {
+async sus test_file_store() damn {
     println("\n📁 Testing File Session Store with Timeout...");
     
     facts temp_dir = std::env::temp_dir().join("cursed_session_test");
@@ -134,7 +134,7 @@ async sus test_file_store() yolo {
     println("  💚 File store test completed!");
 }
 
-async sus test_redis_store() yolo {
+async sus test_redis_store() damn {
     println("\n🔴 Testing Redis Session Store with Timeout...");
     
     // Note: This requires Redis server running on localhost:6379
@@ -201,7 +201,7 @@ async sus test_redis_store() yolo {
     }
 }
 
-async sus test_database_store() yolo {
+async sus test_database_store() damn {
     println("\n🗄️ Testing Database Session Store with Timeout...");
     
     facts db_config = db::DatabaseConfig {
@@ -272,7 +272,7 @@ async sus test_database_store() yolo {
     }
 }
 
-async sus test_session_manager_with_stores() yolo {
+async sus test_session_manager_with_stores() damn {
     println("\n🎯 Testing Session Manager with Different Stores...");
     
     // Test with memory store
@@ -352,7 +352,7 @@ async sus test_session_manager_with_stores() yolo {
 }
 
 fr fr Error handling for the main function
-async sus demo_with_error_handling() yolo {
+async sus demo_with_error_handling() damn {
     lowkey {
         await main();
     } bestie error {

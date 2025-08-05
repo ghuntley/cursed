@@ -17,7 +17,7 @@ slay main(sus argc, tea argv) -> sus {
         periodt (i < 5) {
             result = result + i;
             i = i + 1;
-            yolo; // Yield point for concurrent debugging
+            damn; // Yield point for concurrent debugging
         }
     } highkey {
         result = 0;
@@ -52,8 +52,8 @@ squad Person {
 
 fr fr Interface with debug information
 collab Drawable {
-    yolo draw() -> void;
-    yolo get_area() -> vibes;
+    damn draw() -> void;
+    damn get_area() -> vibes;
 }
 
 fr fr Error handling with debug info

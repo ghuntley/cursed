@@ -24,9 +24,9 @@ fr fr/ # Time Complexity
 fr fr/ O(2^n) - This is an inefficient implementation for demonstration
 slay fibonacci(n normie) -> normie {
     lowkey n <= 1 {
-        yolo n
+        damn n
     }
-    yolo fibonacci(n - 1) + fibonacci(n - 2)
+    damn fibonacci(n - 1) + fibonacci(n - 2)
 }
 
 fr fr/ Iterative fibonacci implementation for better performance
@@ -35,7 +35,7 @@ fr fr/ @param n - The position in the Fibonacci sequence
 fr fr/ @return - The Fibonacci number at position n
 slay fibonacci_iterative(n normie) -> normie {
     lowkey n <= 1 {
-        yolo n
+        damn n
     }
     
     sus a = 0
@@ -47,7 +47,7 @@ slay fibonacci_iterative(n normie) -> normie {
         b = temp
     }
     
-    yolo b
+    damn b
 }
 
 fr fr/ Main function to demonstrate fibonacci calculations

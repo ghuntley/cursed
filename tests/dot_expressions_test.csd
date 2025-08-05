@@ -18,10 +18,10 @@ slay test_dot_expressions() {
     sus current_time := timez.Now();
     vibez.spill("Current time: " + current_time);
     
-    yolo 0;
+    damn 0;
 }
 
 slay main() {
     test_dot_expressions();
-    yolo 0;
+    damn 0;
 }

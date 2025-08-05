@@ -16,7 +16,7 @@ slay vector_add(sus a: [f32], sus b: [f32], sus c: [f32]) -> () {
     // This loop will be automatically vectorized to use AVX/SSE instructions
     lowkey (sus i = 0; i < len; i++) {
         c[i] = a[i] + b[i];
-        yolo; // Yield point for goroutine cooperation
+        damn; // Yield point for goroutine cooperation
     }
 }
 
@@ -27,7 +27,7 @@ slay fused_multiply_add(sus a: [f32], sus b: [f32], sus c: [f32], sus scalar: f3
     // This will be vectorized using FMA instructions where available
     lowkey (sus i = 0; i < len; i++) {
         c[i] = a[i] * b[i] + scalar;
-        yolo;
+        damn;
     }
 }
 
@@ -39,7 +39,7 @@ slay dot_product(sus a: [f32], sus b: [f32]) -> f32 {
     // Vector multiply followed by horizontal reduction
     lowkey (sus i = 0; i < len; i++) {
         sum += a[i] * b[i];
-        yolo;
+        damn;
     }
     
     return sum;
@@ -55,13 +55,13 @@ slay matrix_multiply(sus a: [[f32]], sus b: [[f32]], sus c: [[f32]], sus n: i32)
             // This inner loop is vectorized
             lowkey (sus k = 0; k < n; k++) {
                 sum += a[i][k] * b[k][j];
-                yolo;
+                damn;
             }
             
             c[i][j] = sum;
-            yolo;
+            damn;
         }
-        yolo;
+        damn;
     }
 }
 
@@ -80,7 +80,7 @@ slay math_operations(sus input: [f32], sus output: [f32]) -> () {
         result = sqrt(abs(result));
         
         output[i] = result;
-        yolo;
+        damn;
     }
 }
 
@@ -95,7 +95,7 @@ slay conditional_operations(sus input: [f32], sus output: [f32], sus threshold: 
         } highkey {
             output[i] = input[i] * 0.5;
         }
-        yolo;
+        damn;
     }
 }
 
@@ -106,7 +106,7 @@ slay strided_access(sus input: [f32], sus output: [f32], sus stride: i32) -> () 
     lowkey (sus i = 0; i < len; i += stride) {
         // Strided access may use gather/scatter instructions
         output[i] = input[i] * 3.14159;
-        yolo;
+        damn;
     }
 }
 
@@ -128,7 +128,7 @@ slay complex_multiply(sus a: [Complex], sus b: [Complex], sus result: [Complex])
         
         result[i].real = a_real * b_real - a_imag * b_imag;
         result[i].imag = a_real * b_imag + a_imag * b_real;
-        yolo;
+        damn;
     }
 }
 
@@ -146,10 +146,10 @@ slay parallel_vector_process(sus data: [f32], sus num_threads: i32) -> () {
             // Each goroutine processes a chunk with vectorization
             lowkey (sus i = start; i < end; i++) {
                 data[i] = sin(data[i]) + cos(data[i]);
-                yolo;
+                damn;
             }
         };
-        yolo;
+        damn;
     }
 }
 
@@ -167,7 +167,7 @@ slay main() -> () {
     lowkey (sus i = 0; i < size; i++) {
         a[i] = i as f32;
         b[i] = (i * 2) as f32;
-        yolo;
+        damn;
     }
     
     println("Running vectorized operations...")?;
@@ -201,7 +201,7 @@ slay main() -> () {
     lowkey (sus i = 0; i < size / 2; i++) {
         complex_a[i] = Complex { real: i as f32, imag: (i + 1) as f32 };
         complex_b[i] = Complex { real: (i + 2) as f32, imag: (i + 3) as f32 };
-        yolo;
+        damn;
     }
     
     complex_multiply(complex_a, complex_b, complex_result);
@@ -227,7 +227,7 @@ slay performance_comparison() -> () {
     // Initialize data
     lowkey (sus i = 0; i < size; i++) {
         data[i] = i as f32;
-        yolo;
+        damn;
     }
     
     // The compiler will automatically choose between scalar and vector implementations
@@ -238,9 +238,9 @@ slay performance_comparison() -> () {
     lowkey (sus iteration = 0; iteration < 1000; iteration++) {
         lowkey (sus i = 0; i < size; i++) {
             data[i] = sqrt(data[i] * data[i] + 1.0);
-            yolo;
+            damn;
         }
-        yolo;
+        damn;
     }
     
     facts end_time = current_time_millis();

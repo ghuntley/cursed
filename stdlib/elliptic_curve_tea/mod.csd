@@ -137,26 +137,26 @@ slay elliptic_curve_add(x1 normie, y1 normie, x2 normie, y2 normie) {
     vibes x1 == 0 && y1 == 0 {
         result_x = x2
         result_y = y2
-        yolo
+        damn
     }
     
     vibes x2 == 0 && y2 == 0 {
         result_x = x1
         result_y = y1
-        yolo
+        damn
     }
     
     fr fr Check if points are the same
     vibes x1 == x2 && y1 == y2 {
         elliptic_curve_double(x1, y1)
-        yolo
+        damn
     }
     
     fr fr Check if points are inverses
     vibes x1 == x2 && y1 == (-y2 % current_curve_p) {
         result_x = 0
         result_y = 0
-        yolo
+        damn
     }
     
     fr fr Compute slope (simplified)
@@ -196,14 +196,14 @@ slay elliptic_curve_double(x normie, y normie) {
     vibes x == 0 && y == 0 {
         result_x = 0
         result_y = 0
-        yolo
+        damn
     }
     
     fr fr Handle point with y = 0
     vibes y == 0 {
         result_x = 0
         result_y = 0
-        yolo
+        damn
     }
     
     fr fr Compute slope: (3x² - 3) / (2y) (simplified)
@@ -243,20 +243,20 @@ slay elliptic_curve_scalar_mult(x normie, y normie, k normie) {
     vibes k == 0 {
         result_x = 0
         result_y = 0
-        yolo
+        damn
     }
     
     fr fr Handle scalar = 1
     vibes k == 1 {
         result_x = x
         result_y = y
-        yolo
+        damn
     }
     
     fr fr Handle scalar = 2
     vibes k == 2 {
         elliptic_curve_double(x, y)
-        yolo
+        damn
     }
     
     fr fr Handle scalar = 3
@@ -265,7 +265,7 @@ slay elliptic_curve_scalar_mult(x normie, y normie, k normie) {
         sus double_x normie = result_x
         sus double_y normie = result_y
         elliptic_curve_add(x, y, double_x, double_y)
-        yolo
+        damn
     }
     
     fr fr For larger scalars, use repeated doubling (simplified)
@@ -366,7 +366,7 @@ slay elliptic_curve_unmarshal(data tea) {
     vibes data == "" {
         result_x = 0
         result_y = 0
-        yolo
+        damn
     }
     
     fr fr Extract coordinates from hex data (simplified)

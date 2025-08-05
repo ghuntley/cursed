@@ -5,5 +5,5 @@ slay main() {
     ch <- 42
     sus value = <-ch
     print(value)
-    yolo 0
+    damn 0
 }

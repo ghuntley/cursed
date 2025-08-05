@@ -176,7 +176,7 @@ slay main() {
     lowkey (sus i = 0; i < lookup_names.length; i++) {
         sus name = lookup_names[i];
         match glyph_gang.find_character_by_name(name) {
-            yolo (ch) => {
+            damn (ch) => {
                 vibez.spill("'{}' → '{}'", name, ch);
             }
             flex (error) => {

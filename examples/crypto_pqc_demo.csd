@@ -10,22 +10,22 @@ sus main() {
     println("========================================");
 
     // Initialize PQC package
-    pqc_init_demo() yolo return;
+    pqc_init_demo() damn return;
     
     // Algorithm selection demo
-    algorithm_selection_demo() yolo return;
+    algorithm_selection_demo() damn return;
     
     // Hybrid cryptography demo
-    hybrid_crypto_demo() yolo return;
+    hybrid_crypto_demo() damn return;
     
     // PQC utilities demo
-    utils_demo() yolo return;
+    utils_demo() damn return;
     
     // Migration assessment demo
-    migration_assessment_demo() yolo return;
+    migration_assessment_demo() damn return;
     
     // Performance benchmarking demo
-    benchmark_demo() yolo return;
+    benchmark_demo() damn return;
     
     println("✨ PQC demo completed successfully!");
 }
@@ -151,13 +151,13 @@ sus hybrid_crypto_demo() {
     println("   Security Level: {:?}", ed25519_dilithium_config.security_level);
     
     // X25519+Kyber hybrid KEM demo
-    x25519_kyber_kem_demo() yolo return;
+    x25519_kyber_kem_demo() damn return;
     
     // Ed25519+Dilithium hybrid signature demo
-    ed25519_dilithium_signature_demo() yolo return;
+    ed25519_dilithium_signature_demo() damn return;
     
     // Fallback mechanism demo
-    fallback_mechanism_demo() yolo return;
+    fallback_mechanism_demo() damn return;
 }
 
 fr fr/ X25519+Kyber hybrid KEM demonstration
@@ -310,16 +310,16 @@ sus utils_demo() {
     println("---------------------");
     
     // Polynomial arithmetic demo
-    polynomial_demo() yolo return;
+    polynomial_demo() damn return;
     
     // Matrix operations demo
-    matrix_demo() yolo return;
+    matrix_demo() damn return;
     
     // Sampling utilities demo
-    sampling_demo() yolo return;
+    sampling_demo() damn return;
     
     // Secure memory demo
-    secure_memory_demo() yolo return;
+    secure_memory_demo() damn return;
 }
 
 fr fr/ Polynomial arithmetic demonstration

@@ -20,7 +20,7 @@ slay catch_panic_demo() -> Bool {
     
     // Demo 1: Basic recovery
     println("\n1. Basic Recovery Demo:")
-    yolo // yield point for cooperative scheduling
+    damn // yield point for cooperative scheduling
     
     // This would use the recovery system to catch panics
     facts success = based
@@ -106,7 +106,7 @@ slay concurrent_demo() {
     lowkey (sus i = 0; i < goroutine_count; i++) {
         // In real code: stan safe_goroutine_operation(i)
         println("Goroutine " + i.to_string() + " would run safely")
-        yolo // yield point for cooperative scheduling
+        damn // yield point for cooperative scheduling
     }
     
     println("All goroutines completed safely")

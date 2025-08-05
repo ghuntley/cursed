@@ -46,5 +46,5 @@ slay main() normie {
     fr fr This should print 20 (4 inner loop iterations * 5 outer loops)
     puts(sum);
     
-    yolo 0;
+    damn 0;
 }

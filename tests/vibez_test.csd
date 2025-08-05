@@ -6,18 +6,18 @@ yeet "vibez"
 
 slay test_spill() lit {
     vibez.spill("Hello, World!")
-    yolo based
+    damn based
 }
 
 slay test_spillf() lit {
     vibez.spillf("Number: %d, String: %s, Float: %f", 42, "test", 3.14)
-    yolo based
+    damn based
 }
 
 slay test_spillstr() lit {
     sus result tea = vibez.spillstr("Number: %d, String: %s, Float: %f", 42, "test", 3.14)
     sus expected tea = "Number: 42, String: test, Float: 3.14"
-    yolo result == expected
+    damn result == expected
 }
 
 slay test_scan_string() lit {
@@ -36,7 +36,7 @@ slay test_scan_string() lit {
         vibez.spill("Expected: 42 3.14 hello")
     }
     
-    yolo success
+    damn success
 }
 
 slay test_scanln_string() lit {
@@ -55,7 +55,7 @@ slay test_scanln_string() lit {
         vibez.spill("Expected: 42 3.14 hello")
     }
     
-    yolo success
+    damn success
 }
 
 slay main() {

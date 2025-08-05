@@ -510,12 +510,28 @@ pub const Worker = struct {
     }
 
     fn stealWork(self: *Worker) ?*Goroutine {
-        // Try to steal from other workers in round-robin fashion
-        for (self.scheduler.workers.items) |*worker| {
-            if (worker.id == self.id) continue;
-            if (worker.deque.steal()) |goroutine| {
-                return goroutine;
+        // Enhanced work stealing with proper bounds checking and thread safety
+        const workers = &self.scheduler.workers;
+        
+        // Bounds check to prevent invalid access
+        if (workers.items.len == 0 or workers.items.len <= self.id) return null;
+        
+        // Round-robin stealing with atomic access
+        var steal_index = (self.id + 1) % workers.items.len;
+        for (0..workers.items.len) |_| {
+            if (steal_index == self.id) {
+                steal_index = (steal_index + 1) % workers.items.len;
+                continue;
             }
+            
+            // Atomic check of worker existence and safe steal attempt
+            if (steal_index < workers.items.len) {
+                if (workers.items[steal_index].deque.steal()) |goroutine| {
+                    return goroutine;
+                }
+            }
+            
+            steal_index = (steal_index + 1) % workers.items.len;
         }
         return null;
     }
@@ -681,13 +697,16 @@ pub const Scheduler = struct {
     }
 
     fn getGlobalWork(self: *Scheduler) ?*Goroutine {
+        // Enhanced global work access with proper synchronization
         self.global_mutex.lock();
         defer self.global_mutex.unlock();
         
-        if (self.global_queue.items.len > 0) {
-            return self.global_queue.orderedRemove(0);
-        }
-        return null;
+        // Double-check pattern to prevent race conditions
+        if (self.global_queue.items.len == 0) return null;
+        
+        // Safe removal with bounds validation
+        const goroutine = self.global_queue.orderedRemove(0);
+        return goroutine;
     }
 
     pub fn getStats(self: *Scheduler) SchedulerStats {

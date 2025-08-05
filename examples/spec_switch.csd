@@ -12,5 +12,5 @@ slay main() {
             vibez.spill("Mid-week")
     }
     
-    yolo 0
+    damn 0
 }

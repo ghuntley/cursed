@@ -712,35 +712,35 @@ vectorization-info: ## Show vectorization system information
 .PHONY: cross-windows cross-wasm cross-all-targets cross-test cross-help
 .PHONY: cross-check cross-validate cross-matrix cross-debug cross-release
 
-cross-compile: ## Build for all supported target platforms
-	$(AT)echo -e "$(CYAN)🌍 Starting cross-compilation for supported targets...$(RESET)"
-	$(AT)./scripts/cross_compile.sh --all
+cross-compile: ## Build for all supported target platforms (Zig-based)
+	$(AT)echo -e "$(CYAN)🌍 Starting Zig cross-compilation for all targets...$(RESET)"
+	$(AT)./scripts/cross_compile_zig.sh --all
 
 cross-mac-intel: ## Cross-compile to macOS Intel (x86_64) - UNSUPPORTED ON LINUX
 	$(AT)echo -e "$(RED)❌ macOS cross-compilation is not supported from Linux$(RESET)"
 	$(AT)echo -e "$(YELLOW)⚠️  Requires macOS SDK which is not available on NixOS$(RESET)"
 	$(AT)exit 1
 
-cross-linux-x64: ## Cross-compile to Linux x86_64
-	$(AT)echo -e "$(CYAN)🐧 Cross-compiling to Linux x86_64 (x86_64-unknown-linux-gnu)...$(RESET)"
-	$(AT)./scripts/cross_compile.sh x86_64-unknown-linux-gnu
+cross-linux-x64: ## Cross-compile to Linux x86_64 (Zig)
+	$(AT)echo -e "$(CYAN)🐧 Zig cross-compiling to Linux x86_64...$(RESET)"
+	$(AT)./scripts/cross_compile_zig.sh x86_64-linux
 
-cross-linux-arm64: ## Cross-compile to Linux ARM64
-	$(AT)echo -e "$(CYAN)🐧 Cross-compiling to Linux ARM64 (aarch64-unknown-linux-gnu)...$(RESET)"
-	$(AT)./scripts/cross_compile.sh aarch64-unknown-linux-gnu
+cross-linux-arm64: ## Cross-compile to Linux ARM64 (Zig)
+	$(AT)echo -e "$(CYAN)🐧 Zig cross-compiling to Linux ARM64...$(RESET)"
+	$(AT)./scripts/cross_compile_zig.sh aarch64-linux
 
-cross-windows: ## Cross-compile to Windows x86_64
-	$(AT)echo -e "$(CYAN)🪟 Cross-compiling to Windows x86_64 (x86_64-pc-windows-gnu)...$(RESET)"
-	$(AT)./scripts/cross_compile.sh x86_64-pc-windows-gnu
+cross-windows: ## Cross-compile to Windows x86_64 (Zig)
+	$(AT)echo -e "$(CYAN)🪟 Zig cross-compiling to Windows x86_64...$(RESET)"
+	$(AT)./scripts/cross_compile_zig.sh x86_64-windows
 
-cross-wasm: ## Cross-compile to WebAssembly
-	$(AT)echo -e "$(CYAN)🕷️ Cross-compiling to WebAssembly (wasm32-unknown-unknown)...$(RESET)"
-	$(AT)./scripts/cross_compile.sh wasm32-unknown-unknown
+cross-wasm: ## Cross-compile to WebAssembly (Zig)
+	$(AT)echo -e "$(CYAN)🕷️ Zig cross-compiling to WebAssembly...$(RESET)"
+	$(AT)./scripts/cross_compile_zig.sh wasm32-wasi
 
-cross-all-targets: ## Build for all supported targets (Linux x64/ARM64, Windows, WASM)
-	$(AT)echo -e "$(CYAN)🌍 Building all supported cross-compilation targets...$(RESET)"
-	$(AT)./scripts/cross_compile.sh --all
-	$(AT)echo -e "$(BOLD)$(GREEN)🎯 Supported cross-compilation targets completed!$(RESET)"
+cross-all-targets: ## Build for all supported targets (Zig-based: Linux x64/ARM64, Windows, WASM)
+	$(AT)echo -e "$(CYAN)🌍 Building all supported Zig cross-compilation targets...$(RESET)"
+	$(AT)./scripts/cross_compile_zig.sh --all
+	$(AT)echo -e "$(BOLD)$(GREEN)🎯 All Zig cross-compilation targets completed!$(RESET)"
 
 # Cross-compilation validation and testing
 cross-check: ## Quick check cross-compilation for supported targets only

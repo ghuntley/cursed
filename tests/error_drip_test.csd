@@ -35,7 +35,7 @@ slay test_basic_errors() {
     fr fr Make sure the message is what we expected
     lowkey !stringz.Contains(msg, "test error") {
         vibez.spill("ERROR: Expected message to contain 'test error', got '", msg, "'")
-        yolo
+        damn
     }
 }
 
@@ -59,7 +59,7 @@ slay test_error_wrapping() {
     
     lowkey !is_same {
         vibez.spill("ERROR: Expected unwrapped error to be the same as cause")
-        yolo
+        damn
     }
 }
 
@@ -91,7 +91,7 @@ slay test_error_testing() {
     
     lowkey !contains {
         vibez.spill("ERROR: Expected error to contain 'validation', got '", error_drip.Message(err), "'")
-        yolo
+        damn
     }
     
     fr fr Create an error with a code for testing

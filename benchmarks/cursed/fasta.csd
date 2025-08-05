@@ -38,7 +38,7 @@ fr fr Generate a random number
 slay gen_random(seed @normie) meal {
     sus value normie = (*seed * IA + IC) % IM
     *seed = value
-    yolo meal(value) / meal(IM)
+    damn meal(value) / meal(IM)
 }
 
 fr fr Generate a random FASTA sequence
@@ -61,7 +61,7 @@ slay gen_random_fasta(n normie, seed @normie, probs []meal, chars []tea) tea {
         buffer = buffer + c
     }
     
-    yolo buffer
+    damn buffer
 }
 
 fr fr Repeat a sequence until it reaches the required length
@@ -73,7 +73,7 @@ slay repeat_fasta(n normie, seq tea) tea {
         buffer = buffer + tea.substring(seq, i % seq_len, i % seq_len + 1)
     }
     
-    yolo buffer
+    damn buffer
 }
 
 slay main() {

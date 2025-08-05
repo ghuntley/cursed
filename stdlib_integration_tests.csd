@@ -233,7 +233,7 @@ sus done_count normie = 0
 
 # Spawn multiple goroutines for concurrent testing
 bestie i := 0; i < 10; i++ {
-    yolo {
+    damn {
         sus thread_id normie = i
         sus data tea = json.stringify({"thread": thread_id})
         sus hash tea = crypto.hash_sha256(data)

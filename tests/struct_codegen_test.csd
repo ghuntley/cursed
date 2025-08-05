@@ -12,5 +12,5 @@ slay main() {
     println(p.age);    // Should print 30
     println(p.isActive); // Should print "true"
     
-    yolo 0;
+    damn 0;
 }

@@ -28,11 +28,11 @@ be_like Rectangle squad {
 }
 
 slay (r Rectangle) Area() meal {
-    yolo r.Width * r.Height
+    damn r.Width * r.Height
 }
 
 slay (r Rectangle) Perimeter() meal {
-    yolo 2 * (r.Width + r.Height)
+    damn 2 * (r.Width + r.Height)
 }
 
 slay main() {
@@ -66,12 +66,12 @@ slay test_basic_types() {
     vibez.spill("Type of 42:", numType.Name())
     lowkey numType.Name() != "normie" && numType.Name() != "int" && numType.Name() != "int32" {
         vibez.spill("Invalid type name for integer. Got '", numType.Name(), "'")
-        yolo
+        damn
     }
     
     lowkey !numType.IsBasic() {
         vibez.spill("Integer should be a basic type")
-        yolo
+        damn
     }
     
     fr fr Get type of string
@@ -80,7 +80,7 @@ slay test_basic_types() {
     vibez.spill("Type of string:", strType.Name())
     lowkey strType.Name() != "tea" && strType.Name() != "string" {
         vibez.spill("Invalid type name for string. Got '", strType.Name(), "'")
-        yolo
+        damn
     }
     
     fr fr Get type of float
@@ -89,7 +89,7 @@ slay test_basic_types() {
     vibez.spill("Type of float:", fltType.Name())
     lowkey fltType.Name() != "meal" && fltType.Name() != "float64" {
         vibez.spill("Invalid type name for float. Got '", fltType.Name(), "'")
-        yolo
+        damn
     }
     
     fr fr Get type of boolean
@@ -98,7 +98,7 @@ slay test_basic_types() {
     vibez.spill("Type of boolean:", boolType.Name())
     lowkey boolType.Name() != "lit" && boolType.Name() != "bool" {
         vibez.spill("Invalid type name for boolean. Got '", boolType.Name(), "'")
-        yolo
+        damn
     }
     
     fr fr Get type of array
@@ -107,7 +107,7 @@ slay test_basic_types() {
     vibez.spill("Type of array:", arrType.Name())
     lowkey !arrType.IsArray() {
         vibez.spill("Array type not recognized as array")
-        yolo
+        damn
     }
     
     vibez.spill("Basic type reflection tests passed!")
@@ -129,12 +129,12 @@ slay test_struct_reflection() {
     vibez.spill("Type of Person:", personType.Name())
     lowkey personType.Name() != "Person" {
         vibez.spill("Invalid type name for Person. Got '", personType.Name(), "'")
-        yolo
+        damn
     }
     
     lowkey !personType.IsStruct() {
         vibez.spill("Person should be a struct type")
-        yolo
+        damn
     }
     
     fr fr Get fields
@@ -142,7 +142,7 @@ slay test_struct_reflection() {
     vibez.spill("Fields of Person:", fields)
     lowkey len(fields) != 3 {
         vibez.spill("Expected 3 fields, got", len(fields))
-        yolo
+        damn
     }
     
     fr fr Check field types
@@ -152,17 +152,17 @@ slay test_struct_reflection() {
         fr fr Verify field types are correct
         lowkey field.Name == "Name" && field.Type.Name() != "tea" && field.Type.Name() != "string" {
             vibez.spill("Invalid type for Name field. Got '", field.Type.Name(), "'")
-            yolo
+            damn
         }
         
         lowkey field.Name == "Age" && field.Type.Name() != "normie" && field.Type.Name() != "int" && field.Type.Name() != "int32" {
             vibez.spill("Invalid type for Age field. Got '", field.Type.Name(), "'")
-            yolo
+            damn
         }
         
         lowkey field.Name == "Active" && field.Type.Name() != "lit" && field.Type.Name() != "bool" {
             vibez.spill("Invalid type for Active field. Got '", field.Type.Name(), "'")
-            yolo
+            damn
         }
     }
     
@@ -181,7 +181,7 @@ slay test_struct_reflection() {
     tea empFields := employeeType.Fields()
     lowkey len(empFields) != 4 {
         vibez.spill("Expected 4 fields for Employee, got", len(empFields))
-        yolo
+        damn
     }
     
     fr fr Find Person field in Employee
@@ -196,7 +196,7 @@ slay test_struct_reflection() {
     
     lowkey personField == cap {
         vibez.spill("Could not find Person field in Employee")
-        yolo
+        damn
     }
     
     vibez.spill("Struct reflection tests passed!")
@@ -220,7 +220,7 @@ slay test_field_access() {
     tea nameField := val.FieldByName("Name")
     lowkey nameField.IsValid() == cap {
         vibez.spill("Could not find Name field")
-        yolo
+        damn
     }
     
     fr fr Get field value
@@ -228,7 +228,7 @@ slay test_field_access() {
     vibez.spill("Name field value:", nameValue)
     lowkey nameValue != "Jane Smith" {
         vibez.spill("Expected 'Jane Smith', got '", nameValue, "'")
-        yolo
+        damn
     }
     
     fr fr Get Age field
@@ -237,7 +237,7 @@ slay test_field_access() {
     vibez.spill("Age field value:", ageValue)
     lowkey ageValue != 25 {
         vibez.spill("Expected 25, got", ageValue)
-        yolo
+        damn
     }
     
     fr fr Get all field values
@@ -267,7 +267,7 @@ slay test_field_access() {
         
         lowkey mutablePerson.Name != "Modified Name" {
             vibez.spill("Name field not modified. Expected 'Modified Name', got '", mutablePerson.Name, "'")
-            yolo
+            damn
         }
     }
     
@@ -300,7 +300,7 @@ slay test_method_reflection() {
             
             lowkey returnType.Name() != "meal" && returnType.Name() != "float64" {
                 vibez.spill("Invalid return type for", method.Name, ". Got '", returnType.Name(), "'")
-                yolo
+                damn
             }
         }
     }
@@ -314,7 +314,7 @@ slay test_method_reflection() {
     vibez.spill("Rectangle implements Shape:", implsShape)
     lowkey !implsShape {
         vibez.spill("Rectangle should implement Shape interface")
-        yolo
+        damn
     }
     
     vibez.spill("Method reflection tests passed!")
@@ -334,14 +334,14 @@ slay test_method_calling() {
     tea areaMethod := val.MethodByName("Area")
     lowkey areaMethod.IsValid() == cap {
         vibez.spill("Could not find Area method")
-        yolo
+        damn
     }
     
     fr fr Call the method
     tea results := areaMethod.Call([]collab{})
     lowkey len(results) != 1 {
         vibez.spill("Expected 1 result, got", len(results))
-        yolo
+        damn
     }
     
     fr fr Check result
@@ -351,14 +351,14 @@ slay test_method_calling() {
     fr fr Area should be Width * Height = 4 * 3 = 12
     lowkey area != 12.0 {
         vibez.spill("Expected area 12.0, got", area)
-        yolo
+        damn
     }
     
     fr fr Call Perimeter method
     tea perimeterMethod := val.MethodByName("Perimeter")
     lowkey perimeterMethod.IsValid() == cap {
         vibez.spill("Could not find Perimeter method")
-        yolo
+        damn
     }
     
     fr fr Call the method
@@ -369,7 +369,7 @@ slay test_method_calling() {
     fr fr Perimeter should be 2 * (Width + Height) = 2 * (4 + 3) = 14
     lowkey perimeter != 14.0 {
         vibez.spill("Expected perimeter 14.0, got", perimeter)
-        yolo
+        damn
     }
     
     vibez.spill("Method calling tests passed!")

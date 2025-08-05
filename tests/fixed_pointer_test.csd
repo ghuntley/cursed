@@ -13,7 +13,7 @@ slay main() {
         puts(0);
     }
     
-    yolo 0;
+    damn 0;
 }
 
 be_like Person squad {

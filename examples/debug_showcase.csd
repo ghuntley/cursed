@@ -25,7 +25,7 @@ slay calculate_vibes(sus x, sus y) -> sus {
 }
 
 fr fr Function that demonstrates nested calls for stack traces
-yolo deep_nested_function(sus depth) -> sus {
+damn deep_nested_function(sus depth) -> sus {
     lowkey (depth <= 0) {
         // This will create a nice stack trace
         bestie calculate_vibes(500, 600);  // Will trigger panic

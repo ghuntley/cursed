@@ -37,14 +37,14 @@ impl HttpServer {
         })
     }
 
-    /// Start the server with yolo error handling
+    /// Start the server with damn error handling
     /// 
     /// This async method starts the HTTP server and begins listening for connections.
-    /// Uses CURSED's `yolo` keyword for enhanced async error handling.
+    /// Uses CURSED's `damn` keyword for enhanced async error handling.
     /// 
     /// @param bind_address Optional bind address (defaults to 0.0.0.0)
     /// @param max_connections Maximum number of concurrent connections
-    pub async yolo start(
+    pub async damn start(
         &mut self, 
         bind_address: Option<String>, 
         max_connections: usize = 1000

@@ -103,9 +103,9 @@ slay async_io_init() lit {
         failed_counter: 0
     } fr fr Start I/O worker threads
     bestie i := 0; i < global_io_scheduler.worker_threads; i++ {
-        yolo io_worker_thread(i)
+        damn io_worker_thread(i)
     } fr fr Start completion handler
-    yolo io_completion_handler()
+    damn io_completion_handler()
     
     global_io_scheduler.is_running = based
     damn based

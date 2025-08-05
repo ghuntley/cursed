@@ -152,9 +152,17 @@ Escape sequences in quoted strings:
 
 ### Boolean Literals
 
-- `based` (true)
-- `cringe` (false)
+- `based` (true) - CANONICAL
+- `cringe` (false) - CANONICAL
 
 ### Nil Literal
 
-- `nah` (nil)
+- `nah` (nil) - CANONICAL
+
+### Deprecated Literals (LEGACY COMPATIBILITY)
+
+The following literals are deprecated and SHOULD NOT be used in new code:
+- `cap` (formerly false) - Use `cringe` instead
+- `yolo` (formerly return) - Use `damn` instead
+
+**PARSER REQUIREMENT**: Parsers MAY emit deprecation warnings for these tokens.

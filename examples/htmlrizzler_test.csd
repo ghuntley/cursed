@@ -6,5 +6,5 @@ yeet "htmlrizzler"
 slay main() {
     vibez.spill("Testing the htmlrizzler module support");
     vibez.spill("Dot expressions are now properly supported");
-    yolo 0;
+    damn 0;
 }

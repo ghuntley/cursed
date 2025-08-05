@@ -25,7 +25,7 @@ slay main() {
             headers: {"Content-Type": "text/html"},
             body: "<html><body><h1>Hello, World! 🔥</h1><p>Your CURSED server is slaying! ✨</p></body></html>"
         }
-        yolo response
+        damn response
     })
     
     fr fr Add JSON API endpoint
@@ -35,7 +35,7 @@ slay main() {
             headers: {"Content-Type": "application/json"},
             body: '{"message": "Hello from CURSED API!", "status": "slaying"}'
         }
-        yolo response
+        damn response
     })
     
     fr fr Add health check endpoint
@@ -45,7 +45,7 @@ slay main() {
             headers: {"Content-Type": "application/json"},
             body: '{"status": "healthy", "server": "CURSED web_vibez"}'
         }
-        yolo response
+        damn response
     })
     
     vibez.spill("Server starting on http://127.0.0.1:8080")

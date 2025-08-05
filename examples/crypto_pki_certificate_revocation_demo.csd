@@ -36,7 +36,7 @@ squad RevocationStats {
     emergency_revocations: sus,
 }
 
-yolo slay main() {
+damn slay main() {
     io::println("🔒 CURSED PKI Certificate Revocation Management Demo")?;
     io::println("====================================================")?;
     
@@ -60,7 +60,7 @@ yolo slay main() {
     io::println("\n✅ Certificate revocation demo completed successfully!")?;
 }
 
-yolo slay create_revocation_demo() -> RevocationDemo {
+damn slay create_revocation_demo() -> RevocationDemo {
     io::println("\n📋 Setting up certificate revocation management...")?;
     
     // Create revocation manager with custom configuration
@@ -131,7 +131,7 @@ yolo slay create_revocation_demo() -> RevocationDemo {
     }
 }
 
-yolo slay demo_basic_revocation(demo: &mut RevocationDemo) {
+damn slay demo_basic_revocation(demo: &mut RevocationDemo) {
     io::println("\n🚫 Demonstrating basic certificate revocation...")?;
     
     // Revoke development server certificate (key compromise)
@@ -190,7 +190,7 @@ yolo slay demo_basic_revocation(demo: &mut RevocationDemo) {
     io::println("   📊 Basic revocation demonstration completed")?;
 }
 
-yolo slay demo_batch_revocation(demo: &mut RevocationDemo) {
+damn slay demo_batch_revocation(demo: &mut RevocationDemo) {
     io::println("\n📦 Demonstrating batch certificate revocation...")?;
     
     // Prepare batch revocation for user certificates
@@ -240,7 +240,7 @@ yolo slay demo_batch_revocation(demo: &mut RevocationDemo) {
     io::println("   📊 Batch revocation demonstration completed")?;
 }
 
-yolo slay demo_crl_generation(demo: &mut RevocationDemo) {
+damn slay demo_crl_generation(demo: &mut RevocationDemo) {
     io::println("\n📜 Demonstrating Certificate Revocation List (CRL) generation...")?;
     
     // Generate full CRL
@@ -298,7 +298,7 @@ yolo slay demo_crl_generation(demo: &mut RevocationDemo) {
     io::println("   📊 CRL generation demonstration completed")?;
 }
 
-yolo slay demo_ocsp_checking(demo: &mut RevocationDemo) {
+damn slay demo_ocsp_checking(demo: &mut RevocationDemo) {
     io::println("\n🔍 Demonstrating OCSP (Online Certificate Status Protocol) checking...")?;
     
     // Test OCSP for valid certificate
@@ -352,7 +352,7 @@ yolo slay demo_ocsp_checking(demo: &mut RevocationDemo) {
     io::println("   📊 OCSP checking demonstration completed")?;
 }
 
-yolo slay demo_emergency_revocation(demo: &mut RevocationDemo) {
+damn slay demo_emergency_revocation(demo: &mut RevocationDemo) {
     io::println("\n🚨 Demonstrating emergency revocation procedures...")?;
     
     io::println("   ⚠️  SIMULATING CA COMPROMISE SCENARIO")?;
@@ -398,7 +398,7 @@ yolo slay demo_emergency_revocation(demo: &mut RevocationDemo) {
     io::println("   📊 Emergency revocation demonstration completed")?;
 }
 
-yolo slay demo_revocation_status_checking(demo: &mut RevocationDemo) {
+damn slay demo_revocation_status_checking(demo: &mut RevocationDemo) {
     io::println("\n📊 Demonstrating comprehensive revocation status checking...")?;
     
     // Check status of all certificates
@@ -451,7 +451,7 @@ yolo slay demo_revocation_status_checking(demo: &mut RevocationDemo) {
     io::println("   📊 Revocation status checking demonstration completed")?;
 }
 
-yolo slay print_final_statistics(demo: &RevocationDemo) {
+damn slay print_final_statistics(demo: &RevocationDemo) {
     io::println("\n📊 Final Certificate Revocation Management Statistics")?;
     io::println("=====================================================")?;
     
@@ -496,7 +496,7 @@ yolo slay print_final_statistics(demo: &RevocationDemo) {
 
 fr fr Helper functions
 
-yolo slay create_distinguished_name(common_name: sus) -> pki::DistinguishedName {
+damn slay create_distinguished_name(common_name: sus) -> pki::DistinguishedName {
     pki::DistinguishedName {
         common_name: Some(common_name),
         organization: Some("CURSED PKI Demonstration"),
@@ -509,7 +509,7 @@ yolo slay create_distinguished_name(common_name: sus) -> pki::DistinguishedName 
     }
 }
 
-yolo slay create_audit_info(user: sus, auth_token: sus) -> pki::RevocationAuditInfo {
+damn slay create_audit_info(user: sus, auth_token: sus) -> pki::RevocationAuditInfo {
     pki::RevocationAuditInfo {
         initiated_by: user,
         authorization: auth_token,
@@ -522,21 +522,21 @@ yolo slay create_audit_info(user: sus, auth_token: sus) -> pki::RevocationAuditI
     }
 }
 
-yolo slay format_time(time: time::SystemTime) -> sus {
+damn slay format_time(time: time::SystemTime) -> sus {
     // In a real implementation, this would format the time properly
     // For demo purposes, we'll show a simplified representation
     facts duration = time.duration_since(time::UNIX_EPOCH).unwrap_or_default();
     format!("Time({}s)", duration.as_secs())
 }
 
-yolo slay format_time_option(time_opt: Option<time::SystemTime>) -> sus {
+damn slay format_time_option(time_opt: Option<time::SystemTime>) -> sus {
     vibe_check time_opt {
         mood Some(time) => format_time(time),
         mood None => "Not specified".to_string(),
     }
 }
 
-yolo slay format_distinguished_name(dn: &pki::DistinguishedName) -> sus {
+damn slay format_distinguished_name(dn: &pki::DistinguishedName) -> sus {
     facts parts = collections::Vec::new();
     
     highkey dn.common_name.is_some() {
@@ -552,7 +552,7 @@ yolo slay format_distinguished_name(dn: &pki::DistinguishedName) -> sus {
     parts.join(", ")
 }
 
-yolo slay format_ocsp_cert_status(status: &pki::OcspCertificateStatus) -> sus {
+damn slay format_ocsp_cert_status(status: &pki::OcspCertificateStatus) -> sus {
     vibe_check status {
         mood pki::OcspCertificateStatus::Good => "GOOD".to_string(),
         mood pki::OcspCertificateStatus::Revoked { revocation_time, reason } => {
@@ -568,7 +568,7 @@ yolo slay format_ocsp_cert_status(status: &pki::OcspCertificateStatus) -> sus {
 
 fr fr Advanced demonstration scenarios
 
-yolo slay demo_audit_trail_analysis(demo: &RevocationDemo) {
+damn slay demo_audit_trail_analysis(demo: &RevocationDemo) {
     io::println("\n📋 Demonstrating audit trail analysis...")?;
     
     // In a real implementation, this would:
@@ -584,7 +584,7 @@ yolo slay demo_audit_trail_analysis(demo: &RevocationDemo) {
     io::println("      - Compliance reporting")?;
 }
 
-yolo slay demo_performance_monitoring(demo: &RevocationDemo) {
+damn slay demo_performance_monitoring(demo: &RevocationDemo) {
     io::println("\n⚡ Demonstrating performance monitoring...")?;
     
     // In a real implementation, this would:
@@ -600,7 +600,7 @@ yolo slay demo_performance_monitoring(demo: &RevocationDemo) {
     io::println("      - SLA compliance tracking")?;
 }
 
-yolo slay demo_integration_scenarios(demo: &RevocationDemo) {
+damn slay demo_integration_scenarios(demo: &RevocationDemo) {
     io::println("\n🔗 Demonstrating integration scenarios...")?;
     
     // In a real implementation, this would:

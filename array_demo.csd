@@ -4,5 +4,5 @@ slay main() {
     sus pairs = [10, 20];
     vibez.spill("Array literals implemented!");
     vibez.spill("Arrays: [1,2,3,4,5], [42], [10,20]");
-    yolo 42;
+    damn 42;
 }

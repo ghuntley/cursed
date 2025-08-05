@@ -99,7 +99,7 @@ pub enum TokenKind {
     Dm,          // channel type
     Select,      // select statement
     Ready,       // ready (for select statements)
-    LeftArrow,   // <- channel operator
+
     Arrow,       // -> return type arrow
     Later,       // later (defer statement)
     In,          // in (for-in loops)
@@ -306,8 +306,6 @@ impl Lexer {
             '<' => {
                 if self.match_char('=') {
                     Ok(self.make_token(TokenKind::LessEqual, "<=".to_string(), start_column))
-                } else if self.match_char('-') {
-                    Ok(self.make_token(TokenKind::LeftArrow, "<-".to_string(), start_column))
                 } else {
                     // Check if this is a generic context (heuristic)
                     if self.is_generic_context() {
@@ -768,8 +766,8 @@ file: "".to_string(),
             
             // CURSED Gen Z keywords
             "slay" => TokenKind::Slay,
-            "yolo" => TokenKind::Yolo,
-            "damn" => TokenKind::Yolo,  // alias for return statement
+            "damn" => TokenKind::Yolo,  // preferred return statement keyword
+            "yolo" => TokenKind::Yolo,  // deprecated - use "damn" instead
             "sus" => TokenKind::Sus,
             "facts" => TokenKind::Facts,
             "lowkey" => TokenKind::Lowkey,

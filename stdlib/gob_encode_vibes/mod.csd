@@ -134,7 +134,7 @@ fr fr Encode a boolean value
 slay (enc *Encoder) EncodeBool(value lit) tea {
     if value {
         enc.buffer = enc.buffer + "BOOL:1:"
-    } yolo {
+    } damn {
         enc.buffer = enc.buffer + "BOOL:0:"
     }
     damn cap
@@ -248,7 +248,7 @@ slay (dec *Decoder) DecodeBool() (lit, tea) {
         
         if value_char == "1" {
             damn based, cap
-        } yolo {
+        } damn {
             damn cap, cap
         }
     }
@@ -349,7 +349,7 @@ slay (m *MetricsCollector) RecordBytes(bytes normie) {
 slay (m *MetricsCollector) RecordType(type_name tea) {
     if count, exists := m.type_counts[type_name]; exists {
         m.type_counts[type_name] = count + 1
-    } yolo {
+    } damn {
         m.type_counts[type_name] = 1
     }
 }

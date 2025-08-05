@@ -8,18 +8,18 @@ fr fr Function Testing
 fr fr ================================
 
 slay add_numbers(a normie, b normie) normie {
-    yolo a + b
+    damn a + b
 }
 
 slay multiply_numbers(a normie, b normie) normie {
-    yolo a * b
+    damn a * b
 }
 
 slay factorial(n normie) normie {
     lowkey n <= 1 {
-        yolo 1
+        damn 1
     } highkey {
-        yolo n * factorial(n - 1)
+        damn n * factorial(n - 1)
     }
 }
 
@@ -51,9 +51,9 @@ fr fr ================================
 
 slay fibonacci(n normie) normie {
     lowkey n <= 1 {
-        yolo n
+        damn n
     } highkey {
-        yolo fibonacci(n - 1) + fibonacci(n - 2)
+        damn fibonacci(n - 1) + fibonacci(n - 2)
     }
 }
 
@@ -328,8 +328,8 @@ slay main() {
     
     fr fr Return appropriate exit code
     lowkey testz.test_failed > 0 {
-        yolo 1
+        damn 1
     } highkey {
-        yolo 0
+        damn 0
     }
 }

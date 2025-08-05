@@ -10,8 +10,8 @@
                 }
             }
             
-            yolo sum  fr Should be 30 (0*0 + 0*1 + 0*2 + 1*0 + 1*1 + 1*2 + ... + 4*2)
+            damn sum  fr Should be 30 (0*0 + 0*1 + 0*2 + 1*0 + 1*1 + 1*2 + ... + 4*2)
         }
     
 fr Print the result for testing
-printn(yolo)
+printn(damn)

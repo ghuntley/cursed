@@ -1833,3 +1833,147 @@ safe_test_pattern() {
     ' > "$test_file"
 }
 ```
+
+## Latest Session Learnings: Rust-to-Zig Migration Process (December 2025)
+
+### Top 5 Critical Migration Fixes ✅
+
+#### 1. Critical Parser Bug Detection (Operator Precedence Testing)
+```bash
+# Testing pattern for operator precedence issues
+echo 'sus result = 2 + 3 * 4  fr fr Should be 14, not 20
+vibez.spill(result)' > precedence_test.csd
+./cursed-unified precedence_test.csd
+
+# Advanced precedence validation
+echo 'sus complex = (x + y) * z - w / v
+vibez.spillf("Result: {}", complex)' > complex_precedence.csd
+
+# Critical indicators: Look for wrong evaluation order in output
+# Fix: Update parser to respect mathematical operator precedence rules
+```
+
+#### 2. Syntax Cleanup and Deprecation Warning Best Practices
+```bash
+# Standardize comment syntax across codebase
+find . -name "*.csd" -exec sed -i 's/^#/fr fr/g' {} \;  # Replace # with fr fr
+grep -r "^#" . --include="*.csd" | wc -l                # Count remaining issues
+
+# Deprecation warning implementation pattern
+echo 'fr fr DEPRECATED: Use new_function() instead of old_function()
+slay old_function() { 
+    vibez.spill("WARNING: old_function deprecated")
+    damn new_function()
+}' > deprecation_pattern.csd
+
+# Validation: Run tests to ensure no syntax conflicts
+./cursed-unified comprehensive_syntax_test.csd
+```
+
+#### 3. Memory Leak Detection and Fixing Patterns in Zig
+```bash
+# Memory leak detection workflow
+valgrind --leak-check=full --show-leak-kinds=all ./cursed-unified program.csd
+valgrind --track-origins=yes ./cursed-unified program.csd  # Track allocation origins
+
+# Zig-specific memory management patterns
+# Pattern 1: Explicit defer cleanup
+echo 'slay main() {
+    defer arena.deinit()           # Always cleanup arena allocators
+    defer channel_cleanup()        # Close all channels
+    defer gc_final_cleanup()       # Final GC pass
+}' > memory_safe_pattern.csd
+
+# Pattern 2: Track allocations with ArenaAllocator
+# Use defer statements for automatic cleanup
+# Pattern 3: Monitor peak memory usage during development
+/usr/bin/time -v ./cursed-unified large_program.csd  # Check peak memory
+```
+
+#### 4. Testing Framework Enhancement Techniques
+```bash
+# Enhanced testz framework for migration validation
+echo 'yeet "testz"
+
+test_start("Migration Compatibility Test")
+# Test Rust vs Zig output equivalence
+sus rust_result = old_implementation()
+sus zig_result = new_implementation()
+assert_eq_string(rust_result, zig_result)
+
+# Memory usage comparison
+test_start("Memory Usage Test") 
+defer gc.collect()
+sus before_memory = get_memory_usage()
+run_test_operation()
+sus after_memory = get_memory_usage()
+assert_true(after_memory - before_memory < 1000000)  # Max 1MB increase
+
+print_test_summary()' > migration_test_pattern.csd
+
+# Automated regression testing for migration
+./cursed-unified migration_test_pattern.csd     # Interpretation mode
+./cursed-unified --compile migration_test_pattern.csd  # Compilation mode
+```
+
+#### 5. Parser Token Stream Debugging and Syntax Error Resolution
+```bash
+# Token stream debugging for parser issues
+echo 'sus x drip = 42; vibez.spill(x)' > debug_tokens.csd
+./cursed-unified --debug-tokens debug_tokens.csd  # Show token stream
+./cursed-unified --debug-ast debug_tokens.csd     # Show AST generation
+
+# Critical syntax error patterns to watch for:
+# - Missing semicolons after variable declarations
+# - Incorrect comment token handling (# vs fr fr)
+# - Operator precedence parsing errors
+# - Tuple syntax conflicts with function calls
+
+# Validation workflow for syntax changes
+find . -name "*.csd" -exec ./cursed-unified --syntax-check {} \;  # Batch validation
+grep -r "parse error" build_logs/ | head -20                      # Find common errors
+```
+
+### Migration Process Best Practices ✅
+
+#### Phase-by-Phase Migration Strategy
+1. **Lexer Migration**: Start with tokenization (lowest risk)
+2. **Parser Core**: Basic AST generation for simple constructs  
+3. **Semantic Analysis**: Type checking and validation
+4. **Code Generation**: Output generation (highest complexity)
+5. **Runtime Integration**: Memory management and execution
+
+#### Critical Testing During Migration
+```bash
+# Always test equivalent output between implementations
+migration_validate() {
+    local test_program=$1
+    echo "Testing: $test_program"
+    
+    # Rust implementation (legacy)
+    timeout 30s cargo run --bin cursed "$test_program" > rust_output.txt 2>&1
+    
+    # Zig implementation (new) 
+    timeout 30s ./cursed-unified "$test_program" > zig_output.txt 2>&1
+    
+    # Compare outputs
+    if diff rust_output.txt zig_output.txt > /dev/null; then
+        echo "✅ $test_program: Output matches"
+    else
+        echo "❌ $test_program: Output differs"
+        diff rust_output.txt zig_output.txt | head -10
+    fi
+}
+
+# Run on critical test cases
+migration_validate basic_test.csd
+migration_validate struct_test.csd
+migration_validate concurrency_test.csd
+```
+
+#### Actionable Development Guidelines
+- **Always run both implementations** side-by-side during migration
+- **Use valgrind extensively** to catch memory issues early in Zig
+- **Test operator precedence** with mathematical expressions
+- **Standardize syntax** before implementing new features
+- **Focus on test equivalence** over performance during migration phase

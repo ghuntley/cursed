@@ -968,108 +968,216 @@ impl Parser {
     }
     
     fn parse_expression(&mut self) -> Result<Expression> {
-        // Parse a primary expression first
-        let mut left = self.parse_primary_expression()?;
-        
-        // Then check for binary operators and chain them
+        self.parse_assignment()
+    }
+
+    fn parse_assignment(&mut self) -> Result<Expression> {
+        let expr = self.parse_or()?;
+
+        if let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::Equal | TokenKind::PlusEqual | TokenKind::MinusEqual | 
+                TokenKind::StarEqual | TokenKind::SlashEqual => {
+                    let operator = token.text.clone();
+                    self.next_token()?;
+                    let value = self.parse_assignment()?;
+                    
+                    return Ok(Expression::Binary(BinaryExpression {
+                        left: Box::new(expr),
+                        operator,
+                        right: Box::new(value),
+                    }));
+                }
+                _ => {}
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_or(&mut self) -> Result<Expression> {
+        let mut expr = self.parse_and()?;
+
         while let Some(token) = self.current_token.as_ref() {
             match token.kind {
-                TokenKind::Plus => {
+                TokenKind::PipePipe | TokenKind::Pipe => {
+                    let operator = token.text.clone();
                     self.next_token()?;
-                    let right = self.parse_primary_expression()?;
-                    left = Expression::Binary(BinaryExpression {
-                        left: Box::new(left),
-                        operator: "+".to_string(),
+                    let right = self.parse_and()?;
+                    
+                    expr = Expression::Binary(BinaryExpression {
+                        left: Box::new(expr),
+                        operator,
                         right: Box::new(right),
                     });
-                }
-                TokenKind::Minus => {
-                    self.next_token()?;
-                    let right = self.parse_primary_expression()?;
-                    left = Expression::Binary(BinaryExpression {
-                        left: Box::new(left),
-                        operator: "-".to_string(),
-                        right: Box::new(right),
-                    });
-                }
-                TokenKind::Star => {
-                    self.next_token()?;
-                    let right = self.parse_primary_expression()?;
-                    left = Expression::Binary(BinaryExpression {
-                        left: Box::new(left),
-                        operator: "*".to_string(),
-                        right: Box::new(right),
-                    });
-                }
-                TokenKind::Slash => {
-                    self.next_token()?;
-                    let right = self.parse_primary_expression()?;
-                    left = Expression::Binary(BinaryExpression {
-                        left: Box::new(left),
-                        operator: "/".to_string(),
-                        right: Box::new(right),
-                    });
-                }
-                TokenKind::Greater => {
-                    self.next_token()?;
-                    let right = self.parse_primary_expression()?;
-                    left = Expression::Binary(BinaryExpression {
-                        left: Box::new(left),
-                        operator: ">".to_string(),
-                        right: Box::new(right),
-                    });
-                }
-                TokenKind::Less => {
-                    self.next_token()?;
-                    let right = self.parse_primary_expression()?;
-                    left = Expression::Binary(BinaryExpression {
-                        left: Box::new(left),
-                        operator: "<".to_string(),
-                        right: Box::new(right),
-                    });
-                }
-                TokenKind::EqualEqual => {
-                    self.next_token()?;
-                    let right = self.parse_primary_expression()?;
-                    left = Expression::Binary(BinaryExpression {
-                        left: Box::new(left),
-                        operator: "==".to_string(),
-                        right: Box::new(right),
-                    });
-                }
-                TokenKind::LeftArrow => {
-                    // Channel send expression (channel <- value)
-                    self.next_token()?; // consume '<-'
-                    let right = self.parse_primary_expression()?;
-                    left = Expression::ChannelSend(crate::ast::ChannelSendExpression {
-                        channel: Box::new(left),
-                        value: Box::new(right),
-                    });
-                }
-                TokenKind::Shook => {
-                    // Parse error propagation operator
-                    self.next_token()?;
-                    left = Expression::Shook(ShookExpression::new(Box::new(left)));
                 }
                 _ => break,
             }
         }
+
+        Ok(expr)
+    }
+
+    fn parse_and(&mut self) -> Result<Expression> {
+        let mut expr = self.parse_equality()?;
+
+        while let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::AmpAmp => {
+                    let operator = token.text.clone();
+                    self.next_token()?;
+                    let right = self.parse_equality()?;
+                    
+                    expr = Expression::Binary(BinaryExpression {
+                        left: Box::new(expr),
+                        operator,
+                        right: Box::new(right),
+                    });
+                }
+                _ => break,
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_equality(&mut self) -> Result<Expression> {
+        let mut expr = self.parse_comparison()?;
+
+        while let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::EqualEqual | TokenKind::BangEqual => {
+                    let operator = token.text.clone();
+                    self.next_token()?;
+                    let right = self.parse_comparison()?;
+                    
+                    expr = Expression::Binary(BinaryExpression {
+                        left: Box::new(expr),
+                        operator,
+                        right: Box::new(right),
+                    });
+                }
+                _ => break,
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_comparison(&mut self) -> Result<Expression> {
+        let mut expr = self.parse_term()?;
+
+        while let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::Greater | TokenKind::GreaterEqual | 
+                TokenKind::Less | TokenKind::LessEqual => {
+                    let operator = token.text.clone();
+                    self.next_token()?;
+                    let right = self.parse_term()?;
+                    
+                    expr = Expression::Binary(BinaryExpression {
+                        left: Box::new(expr),
+                        operator,
+                        right: Box::new(right),
+                    });
+                }
+                _ => break,
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_term(&mut self) -> Result<Expression> {
+        let mut expr = self.parse_factor()?;
+
+        while let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::Plus | TokenKind::Minus => {
+                    let operator = token.text.clone();
+                    self.next_token()?;
+                    let right = self.parse_factor()?;
+                    
+                    expr = Expression::Binary(BinaryExpression {
+                        left: Box::new(expr),
+                        operator,
+                        right: Box::new(right),
+                    });
+                }
+                _ => break,
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_factor(&mut self) -> Result<Expression> {
+        let mut expr = self.parse_unary()?;
+
+        while let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::Star | TokenKind::Slash | TokenKind::Percent => {
+                    let operator = token.text.clone();
+                    self.next_token()?;
+                    let right = self.parse_unary()?;
+                    
+                    expr = Expression::Binary(BinaryExpression {
+                        left: Box::new(expr),
+                        operator,
+                        right: Box::new(right),
+                    });
+                }
+                _ => break,
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_unary(&mut self) -> Result<Expression> {
+        if let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::Bang | TokenKind::Minus | TokenKind::Plus => {
+                    let operator = token.text.clone();
+                    self.next_token()?;
+                    let right = self.parse_unary()?;
+                    
+                    return Ok(Expression::Unary(UnaryExpression {
+                        operator,
+                        operand: Box::new(right),
+                    }));
+                }
+                _ => {}
+            }
+        }
+
+        self.parse_postfix()
+    }
+
+    fn parse_postfix(&mut self) -> Result<Expression> {
+        let mut expr = self.parse_primary_expression()?;
         
-        Ok(left)
+        // Handle special operators that weren't in the original broken code
+        while let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+
+                TokenKind::Shook => {
+                    // Parse error propagation operator
+                    self.next_token()?;
+                    expr = Expression::Shook(ShookExpression::new(Box::new(expr)));
+                }
+                _ => break,
+            }
+        }
+
+        Ok(expr)
     }
     
     fn parse_primary_expression(&mut self) -> Result<Expression> {
         // Parse primary expressions (literals, identifiers, etc.)
         if let Some(token) = self.current_token.as_ref() {
             match token.kind {
-                TokenKind::LeftArrow => {
-                    // Channel receive expression (<-channel)
-                    self.next_token()?; // consume '<-'
-                    let channel_expr = self.parse_primary_expression()?;
-                    return Ok(Expression::ChannelReceive(crate::ast::ChannelReceiveExpression {
-                        channel: Box::new(channel_expr),
-                    }));
-                }
+
                 TokenKind::LeftBracket => {
                     // Parse array literal
                     self.next_token()?;
@@ -2088,7 +2196,19 @@ impl Parser {
     }
     
     fn parse_yolo_statement(&mut self) -> Result<ReturnStatement> {
-        // Consume 'yolo' keyword
+        // Check if we're using deprecated "yolo" keyword
+        if let Some(token) = self.current_token.as_ref() {
+            if token.lexeme == "yolo" {
+                // Emit deprecation warning for "yolo" keyword
+                self.emit_deprecation_warning(
+                    token.line, 
+                    token.column,
+                    "Deprecated keyword 'yolo' used for return statement. Please use 'damn' instead."
+                );
+            }
+        }
+        
+        // Consume 'yolo' or 'damn' keyword
         self.next_token()?;
         
         // Check if there's a return value
@@ -4263,6 +4383,18 @@ impl Parser {
                 }
             }
             None => Err(Error::Parse("Unexpected end of input in type pattern".to_string())),
+        }
+    }
+
+    /// Emit a deprecation warning for deprecated language features
+    fn emit_deprecation_warning(&mut self, line: usize, column: usize, message: &str) {
+        // For now, we'll use error recovery manager to emit warnings
+        // In a full implementation, this would integrate with the LSP diagnostics
+        eprintln!("Warning at {}:{}: {}", line, column, message);
+        
+        // You can extend this to integrate with LSP diagnostics or logging
+        if let Some(filename) = &self.filename {
+            eprintln!("  in file: {}", filename);
         }
     }
 }

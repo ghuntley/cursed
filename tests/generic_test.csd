@@ -5,15 +5,15 @@ be_like Box[T] squad {
 }
 
 slay identity[T](x T) T {
-    yolo x
+    damn x
 }
 
 slay apply[A, B](f stan(A) B, x A) B {
-    yolo f(x)
+    damn f(x)
 }
 
 slay add(x normie, y normie) normie {
-    yolo x + y
+    damn x + y
 }
 
 slay main() normie {
@@ -25,5 +25,5 @@ slay main() normie {
     
     sus addition_result = apply[normie, normie](add, 5, 3)
     
-    yolo addition_result
+    damn addition_result
 }

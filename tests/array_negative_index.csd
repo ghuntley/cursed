@@ -5,5 +5,5 @@ slay main() {
     puts("About to access with negative index");
     puts(arr[-1]); // Negative indices should be rejected
     puts("This should not print");
-    yolo 0;
+    damn 0;
 }

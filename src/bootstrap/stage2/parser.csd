@@ -47,7 +47,7 @@ squad Program {
 
 impl ASTNode lowkey Program {
     slay node_type() -> NodeType {
-        yolo NodeType::Program;
+        damn NodeType::Program;
     }
     
     slay to_string() -> tea {
@@ -56,7 +56,7 @@ impl ASTNode lowkey Program {
             result = result + "  " + stmt.to_string() + "\n";
         }
         result = result + "}";
-        yolo result;
+        damn result;
     }
 }
 
@@ -75,7 +75,7 @@ squad Parameter {
 
 impl ASTNode lowkey FunctionDecl {
     slay node_type() -> NodeType {
-        yolo NodeType::Function;
+        damn NodeType::Function;
     }
     
     slay to_string() -> tea {
@@ -86,7 +86,7 @@ impl ASTNode lowkey FunctionDecl {
             }
             params = params + parameters[i].name + ": " + parameters[i].param_type;
         }
-        yolo "slay " + name + "(" + params + ") -> " + return_type + " " + body.to_string();
+        damn "slay " + name + "(" + params + ") -> " + return_type + " " + body.to_string();
     }
 }
 
@@ -100,12 +100,12 @@ squad VariableDecl {
 
 impl ASTNode lowkey VariableDecl {
     slay node_type() -> NodeType {
-        yolo NodeType::Variable;
+        damn NodeType::Variable;
     }
     
     slay to_string() -> tea {
         sus keyword = bestie (is_mutable) { "sus" } highkey { "facts" };
-        yolo keyword + " " + name + ": " + var_type + " = " + value.to_string();
+        damn keyword + " " + name + ": " + var_type + " = " + value.to_string();
     }
 }
 
@@ -116,7 +116,7 @@ squad Block {
 
 impl ASTNode lowkey Block {
     slay node_type() -> NodeType {
-        yolo NodeType::Block;
+        damn NodeType::Block;
     }
     
     slay to_string() -> tea {
@@ -125,7 +125,7 @@ impl ASTNode lowkey Block {
             result = result + "  " + stmt.to_string() + "\n";
         }
         result = result + "}";
-        yolo result;
+        damn result;
     }
 }
 
@@ -138,7 +138,7 @@ squad IfStatement {
 
 impl ASTNode lowkey IfStatement {
     slay node_type() -> NodeType {
-        yolo NodeType::IfStatement;
+        damn NodeType::IfStatement;
     }
     
     slay to_string() -> tea {
@@ -146,7 +146,7 @@ impl ASTNode lowkey IfStatement {
         bestie (else_block != nocap) {
             result = result + " highkey " + else_block.to_string();
         }
-        yolo result;
+        damn result;
     }
 }
 
@@ -158,11 +158,11 @@ squad WhileStatement {
 
 impl ASTNode lowkey WhileStatement {
     slay node_type() -> NodeType {
-        yolo NodeType::WhileStatement;
+        damn NodeType::WhileStatement;
     }
     
     slay to_string() -> tea {
-        yolo "periodt (" + condition.to_string() + ") " + body.to_string();
+        damn "periodt (" + condition.to_string() + ") " + body.to_string();
     }
 }
 
@@ -173,14 +173,14 @@ squad ReturnStatement {
 
 impl ASTNode lowkey ReturnStatement {
     slay node_type() -> NodeType {
-        yolo NodeType::ReturnStatement;
+        damn NodeType::ReturnStatement;
     }
     
     slay to_string() -> tea {
         bestie (value != nocap) {
-            yolo "yolo " + value.to_string();
+            damn "damn " + value.to_string();
         } highkey {
-            yolo "yolo";
+            damn "damn";
         }
     }
 }
@@ -194,11 +194,11 @@ squad BinaryExpression {
 
 impl ASTNode lowkey BinaryExpression {
     slay node_type() -> NodeType {
-        yolo NodeType::BinaryExpression;
+        damn NodeType::BinaryExpression;
     }
     
     slay to_string() -> tea {
-        yolo "(" + left.to_string() + " " + operator + " " + right.to_string() + ")";
+        damn "(" + left.to_string() + " " + operator + " " + right.to_string() + ")";
     }
 }
 
@@ -209,11 +209,11 @@ squad Identifier {
 
 impl ASTNode lowkey Identifier {
     slay node_type() -> NodeType {
-        yolo NodeType::Identifier;
+        damn NodeType::Identifier;
     }
     
     slay to_string() -> tea {
-        yolo name;
+        damn name;
     }
 }
 
@@ -224,11 +224,11 @@ squad IntegerLiteral {
 
 impl ASTNode lowkey IntegerLiteral {
     slay node_type() -> NodeType {
-        yolo NodeType::IntegerLiteral;
+        damn NodeType::IntegerLiteral;
     }
     
     slay to_string() -> tea {
-        yolo value.to_string();
+        damn value.to_string();
     }
 }
 
@@ -239,11 +239,11 @@ squad StringLiteral {
 
 impl ASTNode lowkey StringLiteral {
     slay node_type() -> NodeType {
-        yolo NodeType::StringLiteral;
+        damn NodeType::StringLiteral;
     }
     
     slay to_string() -> tea {
-        yolo "\"" + value + "\"";
+        damn "\"" + value + "\"";
     }
 }
 
@@ -256,7 +256,7 @@ squad Parser {
 
 // Create new parser
 slay new_parser(tokens: Token[]) -> Parser {
-    yolo Parser {
+    damn Parser {
         tokens: tokens,
         current: 0,
         errors: tea[],
@@ -265,14 +265,14 @@ slay new_parser(tokens: Token[]) -> Parser {
 
 // Check if we're at end of tokens
 slay is_at_end(parser: Parser) -> cap {
-    yolo parser.current >= parser.tokens.length() ||
+    damn parser.current >= parser.tokens.length() ||
           parser.tokens[parser.current].token_type == TokenType::Eof;
 }
 
 // Get current token
 slay current_token(parser: Parser) -> Token {
     bestie (is_at_end(parser)) {
-        yolo Token {
+        damn Token {
             token_type: TokenType::Eof,
             literal: "",
             line: 0,
@@ -280,12 +280,12 @@ slay current_token(parser: Parser) -> Token {
             position: 0,
         };
     }
-    yolo parser.tokens[parser.current];
+    damn parser.tokens[parser.current];
 }
 
 // Get previous token
 slay previous_token(parser: Parser) -> Token {
-    yolo parser.tokens[parser.current - 1];
+    damn parser.tokens[parser.current - 1];
 }
 
 // Advance to next token
@@ -293,15 +293,15 @@ slay advance(parser: Parser) -> Token {
     bestie (!is_at_end(parser)) {
         parser.current = parser.current + 1;
     }
-    yolo previous_token(parser);
+    damn previous_token(parser);
 }
 
 // Check if current token matches type
 slay check(parser: Parser, token_type: TokenType) -> cap {
     bestie (is_at_end(parser)) {
-        yolo facts;
+        damn facts;
     }
-    yolo current_token(parser).token_type == token_type;
+    damn current_token(parser).token_type == token_type;
 }
 
 // Match any of the given token types
@@ -309,29 +309,29 @@ slay match_token(parser: Parser, types: TokenType[]) -> cap {
     lowkey (sus token_type in types) {
         bestie (check(parser, token_type)) {
             advance(parser);
-            yolo truth;
+            damn truth;
         }
     }
-    yolo facts;
+    damn facts;
 }
 
 // Consume token of expected type or error
 slay consume(parser: Parser, token_type: TokenType, message: tea) -> Token? {
     bestie (check(parser, token_type)) {
-        yolo advance(parser);
+        damn advance(parser);
     }
     
     sus token = current_token(parser);
     sus error_msg = "Error at line " + token.line.to_string() + 
                    ", column " + token.column.to_string() + ": " + message;
     parser.errors.push(error_msg);
-    yolo nocap;
+    damn nocap;
 }
 
 // Parse the program (entry point)
 slay parse(tokens: Token[]) -> Program? {
     sus parser = new_parser(tokens);
-    yolo parse_program(parser);
+    damn parse_program(parser);
 }
 
 // Parse program
@@ -347,10 +347,10 @@ slay parse_program(parser: Parser) -> Program? {
     
     bestie (parser.errors.length() > 0) {
         error::report_errors(parser.errors);
-        yolo nocap;
+        damn nocap;
     }
     
-    yolo Program {
+    damn Program {
         statements: statements,
     };
 }
@@ -359,31 +359,31 @@ slay parse_program(parser: Parser) -> Program? {
 slay parse_statement(parser: Parser) -> ASTNode? {
     vibe_check (current_token(parser).token_type) {
         mood TokenType::Slay {
-            yolo parse_function(parser);
+            damn parse_function(parser);
         }
         
         mood TokenType::Sus, TokenType::Facts {
-            yolo parse_variable_declaration(parser);
+            damn parse_variable_declaration(parser);
         }
         
         mood TokenType::Lowkey {
-            yolo parse_if_statement(parser);
+            damn parse_if_statement(parser);
         }
         
         mood TokenType::Periodt {
-            yolo parse_while_statement(parser);
+            damn parse_while_statement(parser);
         }
         
         mood TokenType::Yolo {
-            yolo parse_return_statement(parser);
+            damn parse_return_statement(parser);
         }
         
         mood TokenType::LeftBrace {
-            yolo parse_block(parser);
+            damn parse_block(parser);
         }
         
         basic {
-            yolo parse_expression_statement(parser);
+            damn parse_expression_statement(parser);
         }
     }
 }
@@ -394,7 +394,7 @@ slay parse_function(parser: Parser) -> FunctionDecl? {
     
     sus name_token = consume(parser, TokenType::Identifier, "Expected function name");
     bestie (name_token == nocap) {
-        yolo nocap;
+        damn nocap;
     }
     
     consume(parser, TokenType::LeftParen, "Expected '(' after function name");
@@ -405,14 +405,14 @@ slay parse_function(parser: Parser) -> FunctionDecl? {
         periodt (truth) {
             sus param_name = consume(parser, TokenType::Identifier, "Expected parameter name");
             bestie (param_name == nocap) {
-                yolo nocap;
+                damn nocap;
             }
             
             consume(parser, TokenType::Colon, "Expected ':' after parameter name");
             
             sus param_type = consume(parser, TokenType::Identifier, "Expected parameter type");
             bestie (param_type == nocap) {
-                yolo nocap;
+                damn nocap;
             }
             
             parameters.push(Parameter {
@@ -439,10 +439,10 @@ slay parse_function(parser: Parser) -> FunctionDecl? {
     
     sus body = parse_block(parser)?;
     bestie (body == nocap) {
-        yolo nocap;
+        damn nocap;
     }
     
-    yolo FunctionDecl {
+    damn FunctionDecl {
         name: name_token.literal,
         parameters: parameters,
         return_type: return_type,
@@ -457,7 +457,7 @@ slay parse_variable_declaration(parser: Parser) -> VariableDecl? {
     
     sus name_token = consume(parser, TokenType::Identifier, "Expected variable name");
     bestie (name_token == nocap) {
-        yolo nocap;
+        damn nocap;
     }
     
     // Optional type annotation
@@ -473,12 +473,12 @@ slay parse_variable_declaration(parser: Parser) -> VariableDecl? {
     
     sus value = parse_expression(parser)?;
     bestie (value == nocap) {
-        yolo nocap;
+        damn nocap;
     }
     
     consume(parser, TokenType::Semicolon, "Expected ';' after variable declaration");
     
-    yolo VariableDecl {
+    damn VariableDecl {
         name: name_token.literal,
         var_type: var_type,
         value: value,
@@ -493,14 +493,14 @@ slay parse_if_statement(parser: Parser) -> IfStatement? {
     
     sus condition = parse_expression(parser)?;
     bestie (condition == nocap) {
-        yolo nocap;
+        damn nocap;
     }
     
     consume(parser, TokenType::RightParen, "Expected ')' after if condition");
     
     sus then_block = parse_block(parser)?;
     bestie (then_block == nocap) {
-        yolo nocap;
+        damn nocap;
     }
     
     sus else_block = nocap;
@@ -508,7 +508,7 @@ slay parse_if_statement(parser: Parser) -> IfStatement? {
         else_block = parse_block(parser)?;
     }
     
-    yolo IfStatement {
+    damn IfStatement {
         condition: condition,
         then_block: then_block,
         else_block: else_block,
@@ -522,17 +522,17 @@ slay parse_while_statement(parser: Parser) -> WhileStatement? {
     
     sus condition = parse_expression(parser)?;
     bestie (condition == nocap) {
-        yolo nocap;
+        damn nocap;
     }
     
     consume(parser, TokenType::RightParen, "Expected ')' after while condition");
     
     sus body = parse_block(parser)?;
     bestie (body == nocap) {
-        yolo nocap;
+        damn nocap;
     }
     
-    yolo WhileStatement {
+    damn WhileStatement {
         condition: condition,
         body: body,
     };
@@ -540,7 +540,7 @@ slay parse_while_statement(parser: Parser) -> WhileStatement? {
 
 // Parse return statement
 slay parse_return_statement(parser: Parser) -> ReturnStatement? {
-    consume(parser, TokenType::Yolo, "Expected 'yolo'");
+    consume(parser, TokenType::Yolo, "Expected 'damn'");
     
     sus value = nocap;
     bestie (!check(parser, TokenType::Semicolon)) {
@@ -549,7 +549,7 @@ slay parse_return_statement(parser: Parser) -> ReturnStatement? {
     
     consume(parser, TokenType::Semicolon, "Expected ';' after return statement");
     
-    yolo ReturnStatement {
+    damn ReturnStatement {
         value: value,
     };
 }
@@ -569,7 +569,7 @@ slay parse_block(parser: Parser) -> Block? {
     
     consume(parser, TokenType::RightBrace, "Expected '}'");
     
-    yolo Block {
+    damn Block {
         statements: statements,
     };
 }
@@ -578,12 +578,12 @@ slay parse_block(parser: Parser) -> Block? {
 slay parse_expression_statement(parser: Parser) -> ASTNode? {
     sus expr = parse_expression(parser)?;
     consume(parser, TokenType::Semicolon, "Expected ';' after expression");
-    yolo expr;
+    damn expr;
 }
 
 // Parse expression
 slay parse_expression(parser: Parser) -> ASTNode? {
-    yolo parse_logical_or(parser);
+    damn parse_logical_or(parser);
 }
 
 // Parse logical OR
@@ -594,7 +594,7 @@ slay parse_logical_or(parser: Parser) -> ASTNode? {
         sus operator = previous_token(parser).literal;
         sus right = parse_logical_and(parser)?;
         bestie (right == nocap) {
-            yolo nocap;
+            damn nocap;
         }
         expr = BinaryExpression {
             left: expr,
@@ -603,7 +603,7 @@ slay parse_logical_or(parser: Parser) -> ASTNode? {
         };
     }
     
-    yolo expr;
+    damn expr;
 }
 
 // Parse logical AND
@@ -614,7 +614,7 @@ slay parse_logical_and(parser: Parser) -> ASTNode? {
         sus operator = previous_token(parser).literal;
         sus right = parse_equality(parser)?;
         bestie (right == nocap) {
-            yolo nocap;
+            damn nocap;
         }
         expr = BinaryExpression {
             left: expr,
@@ -623,7 +623,7 @@ slay parse_logical_and(parser: Parser) -> ASTNode? {
         };
     }
     
-    yolo expr;
+    damn expr;
 }
 
 // Parse equality
@@ -634,7 +634,7 @@ slay parse_equality(parser: Parser) -> ASTNode? {
         sus operator = previous_token(parser).literal;
         sus right = parse_comparison(parser)?;
         bestie (right == nocap) {
-            yolo nocap;
+            damn nocap;
         }
         expr = BinaryExpression {
             left: expr,
@@ -643,7 +643,7 @@ slay parse_equality(parser: Parser) -> ASTNode? {
         };
     }
     
-    yolo expr;
+    damn expr;
 }
 
 // Parse comparison
@@ -655,7 +655,7 @@ slay parse_comparison(parser: Parser) -> ASTNode? {
         sus operator = previous_token(parser).literal;
         sus right = parse_term(parser)?;
         bestie (right == nocap) {
-            yolo nocap;
+            damn nocap;
         }
         expr = BinaryExpression {
             left: expr,
@@ -664,7 +664,7 @@ slay parse_comparison(parser: Parser) -> ASTNode? {
         };
     }
     
-    yolo expr;
+    damn expr;
 }
 
 // Parse term (addition/subtraction)
@@ -675,7 +675,7 @@ slay parse_term(parser: Parser) -> ASTNode? {
         sus operator = previous_token(parser).literal;
         sus right = parse_factor(parser)?;
         bestie (right == nocap) {
-            yolo nocap;
+            damn nocap;
         }
         expr = BinaryExpression {
             left: expr,
@@ -684,7 +684,7 @@ slay parse_term(parser: Parser) -> ASTNode? {
         };
     }
     
-    yolo expr;
+    damn expr;
 }
 
 // Parse factor (multiplication/division)
@@ -695,7 +695,7 @@ slay parse_factor(parser: Parser) -> ASTNode? {
         sus operator = previous_token(parser).literal;
         sus right = parse_unary(parser)?;
         bestie (right == nocap) {
-            yolo nocap;
+            damn nocap;
         }
         expr = BinaryExpression {
             left: expr,
@@ -704,7 +704,7 @@ slay parse_factor(parser: Parser) -> ASTNode? {
         };
     }
     
-    yolo expr;
+    damn expr;
 }
 
 // Parse unary expression
@@ -713,17 +713,17 @@ slay parse_unary(parser: Parser) -> ASTNode? {
         sus operator = previous_token(parser).literal;
         sus right = parse_unary(parser)?;
         bestie (right == nocap) {
-            yolo nocap;
+            damn nocap;
         }
         // For now, create a binary expression with null left operand
-        yolo BinaryExpression {
+        damn BinaryExpression {
             left: nocap,
             operator: operator,
             right: right,
         };
     }
     
-    yolo parse_primary(parser);
+    damn parse_primary(parser);
 }
 
 // Parse primary expression
@@ -731,7 +731,7 @@ slay parse_primary(parser: Parser) -> ASTNode? {
     vibe_check (current_token(parser).token_type) {
         mood TokenType::Truth, TokenType::NoTruth {
             sus token = advance(parser);
-            yolo StringLiteral {
+            damn StringLiteral {
                 value: token.literal,
             };
         }
@@ -739,21 +739,21 @@ slay parse_primary(parser: Parser) -> ASTNode? {
         mood TokenType::Integer {
             sus token = advance(parser);
             sus value = token.literal.parse_int()?;
-            yolo IntegerLiteral {
+            damn IntegerLiteral {
                 value: value,
             };
         }
         
         mood TokenType::String {
             sus token = advance(parser);
-            yolo StringLiteral {
+            damn StringLiteral {
                 value: token.literal,
             };
         }
         
         mood TokenType::Identifier {
             sus token = advance(parser);
-            yolo Identifier {
+            damn Identifier {
                 name: token.literal,
             };
         }
@@ -762,7 +762,7 @@ slay parse_primary(parser: Parser) -> ASTNode? {
             advance(parser); // consume '('
             sus expr = parse_expression(parser)?;
             consume(parser, TokenType::RightParen, "Expected ')' after expression");
-            yolo expr;
+            damn expr;
         }
         
         basic {
@@ -770,7 +770,7 @@ slay parse_primary(parser: Parser) -> ASTNode? {
             sus error_msg = "Unexpected token: " + token.literal + 
                            " at line " + token.line.to_string();
             parser.errors.push(error_msg);
-            yolo nocap;
+            damn nocap;
         }
     }
 }

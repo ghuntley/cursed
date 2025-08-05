@@ -5,5 +5,5 @@ slay main() {
     puts("About to access out of bounds");
     puts(arr[5]); // This should fail with bounds check
     puts("This should not print");
-    yolo 0;
+    damn 0;
 }

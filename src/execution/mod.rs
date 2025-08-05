@@ -1404,12 +1404,7 @@ impl CursedExecutionEngine {
                 // For now, just return the size as an integer
                 Ok(CursedValue::Integer(pairs.len() as i64))
             },
-            Expression::ChannelSend(send_expr) => {
-                self.execute_channel_send(send_expr, context)
-            },
-            Expression::ChannelReceive(recv_expr) => {
-                self.execute_channel_receive(recv_expr, context)
-            },
+
             Expression::ChannelCreation(create_expr) => {
                 self.execute_channel_creation(create_expr, context)
             },
@@ -1912,60 +1907,7 @@ impl CursedExecutionEngine {
         }
     }
     
-    /// Execute channel send operation (channel <- value)
-    fn execute_channel_send(&mut self, send_expr: &crate::ast::ChannelSendExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
-        log::info!("📤 Executing channel send operation");
-        
-        // Evaluate the channel expression
-        let channel_value = self.evaluate_expression(&send_expr.channel, context)?;
-        let channel = match channel_value {
-            CursedValue::Channel(ch) => ch,
-            _ => return Err(CursedError::RuntimeError("Cannot send to non-channel value".to_string())),
-        };
-        
-        // Evaluate the value to send
-        let value = self.evaluate_expression(&send_expr.value, context)?;
-        
-        // Perform the send operation
-        match channel.send(value) {
-            crate::runtime::channels::SendResult::Sent => {
-                log::info!("📤 Channel send successful");
-                Ok(CursedValue::Nil)
-            },
-            crate::runtime::channels::SendResult::Closed(_) => {
-                Err(CursedError::RuntimeError("Cannot send on closed channel".to_string()))
-            },
-            crate::runtime::channels::SendResult::WouldBlock(_) => {
-                Err(CursedError::RuntimeError("Channel send would block".to_string()))
-            },
-        }
-    }
-    
-    /// Execute channel receive operation (<-channel)
-    fn execute_channel_receive(&mut self, recv_expr: &crate::ast::ChannelReceiveExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
-        log::info!("📥 Executing channel receive operation");
-        
-        // Evaluate the channel expression
-        let channel_value = self.evaluate_expression(&recv_expr.channel, context)?;
-        let channel = match channel_value {
-            CursedValue::Channel(ch) => ch,
-            _ => return Err(CursedError::RuntimeError("Cannot receive from non-channel value".to_string())),
-        };
-        
-        // Perform the receive operation
-        match channel.recv() {
-            crate::runtime::channels::ReceiveResult::Received(value) => {
-                log::info!("📥 Channel receive successful");
-                Ok(value)
-            },
-            crate::runtime::channels::ReceiveResult::Closed => {
-                Err(CursedError::RuntimeError("Cannot receive from closed channel".to_string()))
-            },
-            crate::runtime::channels::ReceiveResult::WouldBlock => {
-                Err(CursedError::RuntimeError("Channel receive would block".to_string()))
-            },
-        }
-    }
+
     
     /// Execute channel creation operation (dm type())
     fn execute_channel_creation(&mut self, create_expr: &crate::ast::ChannelCreationExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {

@@ -17,5 +17,5 @@ sus y = 24
 // Comment before function
 slay test() {
     /* Comment inside function */
-    yolo x
+    damn x
 } // End comment

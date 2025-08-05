@@ -64,7 +64,7 @@ facts hash_file_content() -> nil {
     // Incremental SHA-256 hashing
     sus incremental_hash = crypto::sha256_incremental()
     
-    yolo chunk in file_chunks {
+    damn chunk in file_chunks {
         incremental_hash.update(chunk)
         print("  Added chunk: " + chunk.trim())
     }
@@ -84,7 +84,7 @@ facts hash_file_content() -> nil {
     }
 }
 
-fr fr/ yolo Hash passwords with different algorithms
+fr fr/ damn Hash passwords with different algorithms
 facts hash_passwords() -> nil {
     sus passwords = [
         "password123",      // Weak password
@@ -94,7 +94,7 @@ facts hash_passwords() -> nil {
     
     print("Hashing passwords (basic example - use proper salt in production!):")
     
-    yolo password in passwords {
+    damn password in passwords {
         sus sha256_pass = crypto::sha256(password)
         sus sha512_pass = crypto::sha512(password)
         
@@ -161,7 +161,7 @@ facts verify_hashes() -> nil {
         ("Changed caps", received_data3)
     ]
     
-    yolo (description, data) in test_cases {
+    damn (description, data) in test_cases {
         sus computed_hash = crypto::sha256(data)
         sus is_valid = crypto::verify_hash(original_hash, computed_hash)
         
@@ -191,7 +191,7 @@ facts hash_data_structures() -> nil {
     
     sus hash_table = map[string]string{}
     
-    yolo (key, value) in data_items {
+    damn (key, value) in data_items {
         sus key_hash = crypto::sha256(key)
         hash_table[key_hash] = value
         print("Stored: " + key + " -> " + key_hash[0:8] + "...")
@@ -223,7 +223,7 @@ facts file_integrity_example() -> nil {
     sus checksums = map[string]string{}
     
     print("Generating checksums:")
-    yolo (filename, content) in files {
+    damn (filename, content) in files {
         sus checksum = crypto::sha256(content)
         checksums[filename] = checksum
         print("  " + filename + ": " + checksum[0:16] + "...")
@@ -233,7 +233,7 @@ facts file_integrity_example() -> nil {
     print("Verifying file integrity:")
     
     // Simulate checking files later
-    yolo (filename, original_content) in files {
+    damn (filename, original_content) in files {
         // Simulate potentially modified content
         sus current_content = lowkey filename == "script.csd" {
             original_content + " // Modified!"  // Simulate tampering

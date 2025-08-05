@@ -112,7 +112,7 @@ slay producer(buffer_ch dm<normie>, items normie) {
     bestie i drip = 1; i <= items; i = i + 1 {
         dm_send(buffer_ch, i)
         vibez.spillf("Produced: {}", i)
-        yolo fr fr Yield to allow other goroutines to run
+        damn fr fr Yield to allow other goroutines to run
     }
 }
 
@@ -122,7 +122,7 @@ slay consumer(buffer_ch dm<normie>, done_ch dm<lit>, expected_items normie) {
         sus item normie = dm_recv(buffer_ch)
         vibez.spillf("Consumed: {}", item)
         consumed = consumed + 1
-        yolo fr fr Yield to allow other goroutines to run
+        damn fr fr Yield to allow other goroutines to run
     }
     dm_send(done_ch, based)
 }
@@ -156,7 +156,7 @@ slay worker(id normie, work_ch dm<normie>, result_ch dm<normie>) {
             }
             default -> {
                 vibez.spillf("Worker {} idle", id)
-                yolo
+                damn
             }
         }
     }

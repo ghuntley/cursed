@@ -13,5 +13,5 @@ slay main() {
     puts(meal_val);  fr fr Should be 3.14
     puts(literal_val);  fr fr Should be "Hello, CURSED!"
     puts(sip_val);  fr fr Should be 'C'
-    yolo 0;
+    damn 0;
 }

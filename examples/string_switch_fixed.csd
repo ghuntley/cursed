@@ -14,7 +14,7 @@ slay string_switch(day txt) txt {
             result = "Weekend";
     }
     
-    yolo result;
+    damn result;
 }
 
 slay main() {

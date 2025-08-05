@@ -10,7 +10,7 @@ be_like Pair[A, B] squad {
 }
 
 slay transform[K, V](collection K, mapper stan(K) V) V {
-    yolo mapper(collection)
+    damn mapper(collection)
 }
 
 slay main() {

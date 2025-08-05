@@ -11,5 +11,5 @@ slay test_switch() {
 
 slay main() {
     test_switch();
-    yolo 0;
+    damn 0;
 }

@@ -25,7 +25,7 @@ slay test_day_of_week(day normie) tea {
             result = "Invalid day";
     }
     
-    yolo result;
+    damn result;
 }
 
 fr fr Example with multiple values per case
@@ -45,7 +45,7 @@ slay test_grade(score normie) tea {
             grade = "F";
     }
     
-    yolo grade;
+    damn grade;
 }
 
 fr fr Fallthrough example
@@ -77,7 +77,7 @@ slay test_fallthrough(category normie) tea {
         status = priority + " (requires attention)";
     }
     
-    yolo status;
+    damn status;
 }
 
 slay main() {

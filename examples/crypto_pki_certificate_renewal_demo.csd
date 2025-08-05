@@ -54,7 +54,7 @@ squad CertificateRenewalDemo {
         println("\n✅ Certificate Renewal Demo completed successfully!");
         println("All renewal scenarios tested and validated.");
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Initialize and configure the certificate renewal system
@@ -185,7 +185,7 @@ squad CertificateRenewalDemo {
         println("   💾 Certificate storage configured");
         println("   📊 Monitoring and metrics enabled");
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Demonstrate ACME protocol configuration and client setup
@@ -251,7 +251,7 @@ squad CertificateRenewalDemo {
         println("   🌐 Domains: {}", domain_names.join(", "));
         println("   🔧 Challenges: {} to complete", order.challenges.len());
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Demonstrate certificate monitoring and status detection
@@ -342,7 +342,7 @@ squad CertificateRenewalDemo {
         println("   ✅ Successful renewals: {}", stats.successful_renewals);
         println("   ❌ Failed renewals: {}", stats.failed_renewals);
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Demonstrate automated certificate renewal workflows
@@ -444,7 +444,7 @@ squad CertificateRenewalDemo {
             println("ℹ️  Certificate not due for renewal yet");
         }
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Demonstrate manual certificate renewal processes
@@ -530,7 +530,7 @@ squad CertificateRenewalDemo {
         // Custom script renewal example
         demonstrate_custom_script_renewal(&mut renewal_manager)?;
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Demonstrate custom script renewal method
@@ -605,7 +605,7 @@ squad CertificateRenewalDemo {
         println("   echo \"PRIVATE_KEY_PATH:/etc/letsencrypt/live/$DOMAIN/privkey.pem\"");
         println("   echo \"CHAIN_PATH:/etc/letsencrypt/live/$DOMAIN/chain.pem\"");
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Demonstrate notification systems and alerting
@@ -697,7 +697,7 @@ squad CertificateRenewalDemo {
         println("   🔄 Duplicate cooldown: 30 minutes");
         println("   🛡️  Anti-spam protection active");
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Demonstrate backup and rollback capabilities
@@ -769,7 +769,7 @@ squad CertificateRenewalDemo {
         println("   ✅ Backup compression integrity: PASSED");
         println("   ✅ Metadata consistency check: PASSED");
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Demonstrate error handling and recovery mechanisms
@@ -841,7 +841,7 @@ squad CertificateRenewalDemo {
         println("   ✅ Storage errors: 99% recovery rate");
         println("   ⏱️  Average recovery time: 5.2 minutes");
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Demonstrate monitoring and statistics collection
@@ -915,7 +915,7 @@ squad CertificateRenewalDemo {
         println("   ⚠️  Warning: Avg. renewal time > 15 minutes");
         println("   🚨 Critical: Failed renewals > 10% in 24h");
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Helper function to simulate ACME renewal process
@@ -943,14 +943,14 @@ squad CertificateRenewalDemo {
             thread::sleep(Duration::from_millis(100));
         }
         
-        yolo Ok(())
+        damn Ok(())
     }
     
     /// Helper function to create demo certificates
     slay create_demo_certificate(domain: &str, validity: Duration) -> X509Certificate {
         sus now = SystemTime::now();
         
-        yolo X509Certificate {
+        damn X509Certificate {
             version: 3,
             serial_number: SerialNumber::from_big_int(random_serial()),
             signature_algorithm: SignatureAlgorithm::RsaWithSha256,
@@ -1016,17 +1016,17 @@ squad CertificateRenewalDemo {
     
     /// Generate random serial number for demo
     slay random_serial() -> u64 {
-        yolo SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+        damn SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
     }
     
     /// Generate demo public key data
     slay generate_demo_public_key() -> Vec<u8> {
-        yolo b"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7VJTUt9Us8cKBJL7VJf\n-----END PUBLIC KEY-----\n".to_vec()
+        damn b"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7VJTUt9Us8cKBJL7VJf\n-----END PUBLIC KEY-----\n".to_vec()
     }
     
     /// Generate demo certificate data
     slay generate_demo_cert_data(domain: &str) -> Vec<u8> {
-        yolo format!(
+        damn format!(
             "-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n",
             base64_encode(&format!("demo_cert_for_{}", domain))
         ).into_bytes()
@@ -1035,7 +1035,7 @@ squad CertificateRenewalDemo {
     /// Simple base64 encoding for demo
     slay base64_encode(data: &str) -> String {
         // Simplified base64 encoding for demo purposes
-        yolo format!("{}==", data.chars().map(|c| c as u8).collect::<Vec<u8>>().iter().map(|b| format!("{:02x}", b)).collect::<String>())
+        damn format!("{}==", data.chars().map(|c| c as u8).collect::<Vec<u8>>().iter().map(|b| format!("{:02x}", b)).collect::<String>())
     }
 }
 

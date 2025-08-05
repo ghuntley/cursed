@@ -207,7 +207,7 @@ fn test_operator_consistency() {
     // Test operators that might have lexer/parser mismatches
     let operator_tests = vec![
         (":=", TokenKind::ColonEqual),
-        ("<-", TokenKind::LeftArrow),
+
         ("->", TokenKind::Arrow),
         ("..", TokenKind::DotDot),
         ("==", TokenKind::EqualEqual),

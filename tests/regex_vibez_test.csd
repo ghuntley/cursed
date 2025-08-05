@@ -76,14 +76,14 @@ slay test_basic_matching() {
     tea foundDigits := digitRegex.FindString("The price is $42.99")
     lowkey foundDigits != "42" {
         vibez.spill("Failed to find digits. Expected '42', got '", foundDigits, "'")
-        yolo
+        damn
     }
     
     tea wordRegex, _ := regex_vibez.Compile("\\b\\w{3}\\b")
     tea foundWord := wordRegex.FindString("The cat and dog ran")
     lowkey foundWord != "cat" && foundWord != "dog" && foundWord != "ran" && foundWord != "The" {
         vibez.spill("Failed to find 3-letter word. Got '", foundWord, "'")
-        yolo
+        damn
     }
     
     vibez.spill("Basic pattern matching tests passed!")
@@ -100,7 +100,7 @@ slay test_capture_groups() {
     tea regex, err := regex_vibez.Compile(namePattern)
     lowkey err != cap {
         vibez.spill("Error compiling pattern:", err)
-        yolo
+        damn
     }
     
     fr fr Test string
@@ -110,7 +110,7 @@ slay test_capture_groups() {
     tea matches := regex.FindSubmatch(testStr)
     lowkey len(matches) < 3 {
         vibez.spill("Expected at least 3 matches (full + 2 groups), got", len(matches))
-        yolo
+        damn
     }
     
     fr fr Verify matches
@@ -120,17 +120,17 @@ slay test_capture_groups() {
     
     lowkey matches[0] != "John Smith" {
         vibez.spill("Full match incorrect. Expected 'John Smith', got '", matches[0], "'")
-        yolo
+        damn
     }
     
     lowkey matches[1] != "John" {
         vibez.spill("First name incorrect. Expected 'John', got '", matches[1], "'")
-        yolo
+        damn
     }
     
     lowkey matches[2] != "Smith" {
         vibez.spill("Last name incorrect. Expected 'Smith', got '", matches[2], "'")
-        yolo
+        damn
     }
     
     fr fr Test named groups
@@ -140,7 +140,7 @@ slay test_capture_groups() {
     regex, err = regex_vibez.Compile(emailPattern)
     lowkey err != cap {
         vibez.spill("Error compiling pattern:", err)
-        yolo
+        damn
     }
     
     fr fr Test string
@@ -150,7 +150,7 @@ slay test_capture_groups() {
     tea namedMatches := regex.FindStringSubmatchMap(testStr)
     lowkey len(namedMatches) == 0 {
         vibez.spill("No matches found")
-        yolo
+        damn
     }
     
     fr fr Verify matches
@@ -159,12 +159,12 @@ slay test_capture_groups() {
     
     lowkey namedMatches["username"] != "info" {
         vibez.spill("Username incorrect. Expected 'info', got '", namedMatches["username"], "'")
-        yolo
+        damn
     }
     
     lowkey namedMatches["domain"] != "example.com" {
         vibez.spill("Domain incorrect. Expected 'example.com', got '", namedMatches["domain"], "'")
-        yolo
+        damn
     }
     
     vibez.spill("Capturing groups tests passed!")
@@ -181,7 +181,7 @@ slay test_find_match() {
     tea regex, err := regex_vibez.Compile(wordPattern)
     lowkey err != cap {
         vibez.spill("Error compiling pattern:", err)
-        yolo
+        damn
     }
     
     fr fr Test string
@@ -192,7 +192,7 @@ slay test_find_match() {
     vibez.spill("First word:", firstWord)
     lowkey firstWord != "The" {
         vibez.spill("Expected 'The', got '", firstWord, "'")
-        yolo
+        damn
     }
     
     fr fr FindAllString - find all matches
@@ -200,7 +200,7 @@ slay test_find_match() {
     vibez.spill("All words:", allWords)
     lowkey len(allWords) != 9 {
         vibez.spill("Expected 9 words, got", len(allWords))
-        yolo
+        damn
     }
     
     fr fr FindAllString with limit
@@ -208,7 +208,7 @@ slay test_find_match() {
     vibez.spill("First 3 words:", limitedWords)
     lowkey len(limitedWords) != 3 {
         vibez.spill("Expected 3 words, got", len(limitedWords))
-        yolo
+        damn
     }
     
     fr fr FindStringIndex - find index of match
@@ -216,7 +216,7 @@ slay test_find_match() {
     vibez.spill("First word index:", firstIndex)
     lowkey firstIndex[0] != 0 || firstIndex[1] != 3 {
         vibez.spill("Expected [0,3], got ", firstIndex)
-        yolo
+        damn
     }
     
     fr fr FindAllStringIndex - find all indexes
@@ -224,7 +224,7 @@ slay test_find_match() {
     vibez.spill("First 3 word indexes:", allIndexes)
     lowkey len(allIndexes) != 3 {
         vibez.spill("Expected 3 index pairs, got", len(allIndexes))
-        yolo
+        damn
     }
     
     vibez.spill("Find match tests passed!")
@@ -241,7 +241,7 @@ slay test_replace() {
     tea regex, err := regex_vibez.Compile(numPattern)
     lowkey err != cap {
         vibez.spill("Error compiling pattern:", err)
-        yolo
+        damn
     }
     
     fr fr Test string
@@ -252,20 +252,20 @@ slay test_replace() {
     vibez.spill("Numbers replaced with XX:", replaced)
     lowkey replaced != "The price is $XX.XX for XX items" {
         vibez.spill("Incorrect replacement. Got '", replaced, "'")
-        yolo
+        damn
     }
     
     fr fr ReplaceAllStringFunc - replace using a function
     tea replacedFunc := regex.ReplaceAllStringFunc(testStr, slay(match tea) tea {
         fr fr Double the number
         tea num := normie(match)
-        yolo tea(num * 2)
+        damn tea(num * 2)
     })
     
     vibez.spill("Numbers doubled:", replacedFunc)
     lowkey !regex_vibez.Contains(replacedFunc, "$84") || !regex_vibez.Contains(replacedFunc, "6 items") {
         vibez.spill("Incorrect functional replacement. Got '", replacedFunc, "'")
-        yolo
+        damn
     }
     
     fr fr Test capture group replacement
@@ -273,7 +273,7 @@ slay test_replace() {
     regex, err = regex_vibez.Compile(namePattern)
     lowkey err != cap {
         vibez.spill("Error compiling pattern:", err)
-        yolo
+        damn
     }
     
     tea nameStr := "John Smith is here and Jane Doe is there"
@@ -282,7 +282,7 @@ slay test_replace() {
     vibez.spill("Names with last name first:", nameSwapped)
     lowkey !regex_vibez.Contains(nameSwapped, "Smith, John") || !regex_vibez.Contains(nameSwapped, "Doe, Jane") {
         vibez.spill("Incorrect group replacement. Got '", nameSwapped, "'")
-        yolo
+        damn
     }
     
     vibez.spill("Replacement tests passed!")
@@ -299,7 +299,7 @@ slay test_split() {
     tea regex, err := regex_vibez.Compile(splitPattern)
     lowkey err != cap {
         vibez.spill("Error compiling pattern:", err)
-        yolo
+        damn
     }
     
     fr fr Test string
@@ -310,18 +310,18 @@ slay test_split() {
     vibez.spill("Split parts:", parts)
     lowkey len(parts) < 8 {
         vibez.spill("Expected at least 8 parts, got", len(parts))
-        yolo
+        damn
     }
     
     fr fr Check specific parts
     lowkey parts[0] != "Hello" {
         vibez.spill("First part should be 'Hello', got '", parts[0], "'")
-        yolo
+        damn
     }
     
     lowkey parts[1] != "world" {
         vibez.spill("Second part should be 'world', got '", parts[1], "'")
-        yolo
+        damn
     }
     
     fr fr Split with limit
@@ -329,7 +329,7 @@ slay test_split() {
     vibez.spill("Limited split (3):", limitedParts)
     lowkey len(limitedParts) != 3 {
         vibez.spill("Expected 3 parts, got", len(limitedParts))
-        yolo
+        damn
     }
     
     vibez.spill("Split tests passed!")

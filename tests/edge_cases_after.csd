@@ -10,15 +10,15 @@ slay new_matrix[T](rows normie, cols normie) Matrix[T] {
     bestie i flex range(rows) {
         data[i] = make([]T, cols)
     }
-    yolo Matrix[T]{data: data, rows: rows, cols: cols}
+    damn Matrix[T]{data: data, rows: rows, cols: cols}
 }
 
 // Error handling
 slay divide(a normie, b normie) (normie, error) {
     lowkey b == 0 {
-        yolo 0, error("division by zero")
+        damn 0, error("division by zero")
     }
-    yolo a / b, null
+    damn a / b, null
 }
 
 // Channel operations
@@ -41,7 +41,7 @@ slay very_long_function_name_that_exceeds_normal_line_width(
     very_long_parameter_name_two normie,
     very_long_parameter_name_three normie
 ) normie {
-    yolo very_long_parameter_name_one + 
+    damn very_long_parameter_name_one + 
          very_long_parameter_name_two + 
          very_long_parameter_name_three
 }

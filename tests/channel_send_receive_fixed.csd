@@ -17,9 +17,9 @@ slay main() {
     fr fr Check the result
     lowkey result == 42 {
         vibez.spill("Channel test passed: value received is 42");
-        yolo 0;
+        damn 0;
     } highkey {
         vibez.spill("Channel test failed: expected 42, got", result);
-        yolo 1;
+        damn 1;
     }
 }

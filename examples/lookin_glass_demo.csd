@@ -116,7 +116,7 @@ slay demo_struct_field_analysis() {
     
     // Iterate through all fields
     vibez.spill("\nField Details:")
-    yolo (sus i = 0; i < person_type.num_field(); i++) {
+    damn (sus i = 0; i < person_type.num_field(); i++) {
         facts field = person_type.field(i)
         facts field_value = lookin_glass.get_field(person, field.name())
         
@@ -162,9 +162,9 @@ slay demo_tag_parsing() {
     
     vibez.spill("Examining tags for ContactInfo struct:")
     
-    yolo (facts field_name, facts tags) in all_tags {
+    damn (facts field_name, facts tags) in all_tags {
         vibez.spill("\nField: $field_name")
-        yolo (facts tag_key, facts tag_value) in tags {
+        damn (facts tag_key, facts tag_value) in tags {
             vibez.spill("  $tag_key: '$tag_value'")
         }
         
@@ -227,7 +227,7 @@ slay demo_deep_operations() {
     facts person_map = lookin_glass.struct_to_map(original_person)
     
     vibez.spill("Person as map:")
-    yolo (facts key, facts value) in person_map {
+    damn (facts key, facts value) in person_map {
         vibez.spill("  $key: $value")
     }
     

@@ -21,5 +21,5 @@ slay main() {
     
     vibez.spill("Conditional calculation result: " + result);
     
-    yolo 0;
+    damn 0;
 }

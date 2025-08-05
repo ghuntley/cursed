@@ -3,7 +3,7 @@ sus "An example of Redis session management in CURSED web applications"
 yeet "stdlib::web_vibez::session"
 yeet "stdlib::web_vibez::config"
 
-yolo main() {
+damn main() {
     facts "Setting up Redis session configuration"
     sus config = SessionConfig {
         cookie_name: "cursed_session",
@@ -83,7 +83,7 @@ yolo main() {
     println("Redis session demo completed successfully!")
 }
 
-yolo demonstrate_redis_features() {
+damn demonstrate_redis_features() {
     facts "Demonstrating advanced Redis session features"
     
     sus store = RedisSessionStore::new("redis://127.0.0.1:6379/0")
@@ -97,7 +97,7 @@ yolo demonstrate_redis_features() {
         facts "Creating multiple sessions for load testing"
         sus mut sessions = Vec::new()
         
-        yolo i in 0..5 {
+        damn i in 0..5 {
             sus mut session = Session::new()
             session.set(format!("test_data_{}", i), SessionValue::Number(i as f64))
             session.set_expiry(30) // 30 seconds
@@ -110,7 +110,7 @@ yolo demonstrate_redis_features() {
         }
         
         facts "Verifying sessions exist in Redis"
-        yolo session_id in &sessions {
+        damn session_id in &sessions {
             lowkey (store.exists(session_id)) {
                 println("✓ Session {} exists in Redis", session_id)
             } bestie {
@@ -119,7 +119,7 @@ yolo demonstrate_redis_features() {
         }
         
         facts "Loading and displaying session data"
-        yolo session_id in &sessions {
+        damn session_id in &sessions {
             lowkey sus loaded = store.load(session_id)? {
                 lowkey sus session = loaded {
                     println("Session {}: {} items", session.id, session.data.len())
@@ -128,7 +128,7 @@ yolo demonstrate_redis_features() {
         }
         
         facts "Cleaning up test sessions"
-        yolo session_id in &sessions {
+        damn session_id in &sessions {
             store.delete(session_id)?
         }
         println("Cleaned up {} test sessions", sessions.len())
@@ -140,7 +140,7 @@ yolo demonstrate_redis_features() {
     }
 }
 
-yolo demonstrate_session_security() {
+damn demonstrate_session_security() {
     facts "Demonstrating session security features"
     
     sus secure_config = SessionConfig {

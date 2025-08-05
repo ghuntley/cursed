@@ -15,5 +15,5 @@ slay main() {
         println("Received 42 from channel")
     }
     
-    yolo 0
+    damn 0
 }

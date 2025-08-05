@@ -214,7 +214,7 @@ slay StartRegion(ctx vibe_context.Context, regionType tea) *Region {
 
 slay Log(ctx vibe_context.Context, category, message tea) {
     if global_tracer == cap || !global_tracer.active {
-        yolo
+        damn
     }
     
     event := &Event{
@@ -316,7 +316,7 @@ slay (s *Span) GetBaggageItem(key tea) tea {
 
 slay (s *Span) End() {
     if s.ended {
-        yolo
+        damn
     }
     
     s.duration = timez.Now().UnixNano() - s.start_time
@@ -335,7 +335,7 @@ fr fr Task Methods
 
 slay (t *Task) End() {
     if t.ended {
-        yolo
+        damn
     }
     
     t.ended = based
@@ -358,7 +358,7 @@ fr fr Region Methods
 
 slay (r *Region) End() {
     if r.ended {
-        yolo
+        damn
     }
     
     r.ended = based
@@ -624,21 +624,21 @@ fr fr Performance Monitoring Functions
 
 slay MonitorGoroutines() {
     if global_tracer == cap || !global_tracer.active {
-        yolo
+        damn
     } fr fr Monitor goroutine creation and lifecycle
     Log(vibe_context.Background(), EventGoroutine, "goroutine_monitoring_active")
 }
 
 slay MonitorMemory() {
     if global_tracer == cap || !global_tracer.active {
-        yolo
+        damn
     } fr fr Monitor memory allocation patterns
     Log(vibe_context.Background(), EventMemory, "memory_monitoring_active")
 }
 
 slay MonitorNetworkActivity() {
     if global_tracer == cap || !global_tracer.active {
-        yolo
+        damn
     } fr fr Monitor network I/O operations
     Log(vibe_context.Background(), EventNetwork, "network_monitoring_active")
 }

@@ -13,7 +13,7 @@ slay test_scan() lit {
     
     vibez.scan_string(input, &a, &b, &c)
     
-    yolo a == 42 && b == 3.14 && c == "hello"
+    damn a == 42 && b == 3.14 && c == "hello"
 }
 
 slay test_scanln() lit {
@@ -24,7 +24,7 @@ slay test_scanln() lit {
     
     vibez.scanln_string(input, &a, &b, &c)
     
-    yolo a == 42 && b == 3.14 && c == "hello"
+    damn a == 42 && b == 3.14 && c == "hello"
 }
 
 slay main() {

@@ -159,7 +159,7 @@ slay demo_user_creation_validation(handler *APIHandler) {
     facts validation_errors = handler.validate_struct(user)
     lowkey (validation_errors.len() > 0) {
         vibez.spill("❌ Validation errors found:")
-        yolo (facts err) in validation_errors {
+        damn (facts err) in validation_errors {
             vibez.spill("  - ${err.Field}: ${err.Message}")
         }
     } else {
@@ -176,7 +176,7 @@ slay demo_user_creation_validation(handler *APIHandler) {
     
     facts invalid_errors = handler.validate_struct(invalid_user)
     vibez.spill("Validation errors for invalid user:")
-    yolo (facts err) in invalid_errors {
+    damn (facts err) in invalid_errors {
         vibez.spill("  - ${err.Field}: ${err.Message} (rule: ${err.Rule})")
     }
 }
@@ -340,7 +340,7 @@ slay demo_validation_engine(handler *APIHandler) {
         }
     }
     
-    yolo (facts test_case) in test_cases {
+    damn (facts test_case) in test_cases {
         vibez.spill("\nTesting: ${test_case['name']}")
         facts errors = handler.validate_struct(test_case["user"])
         
@@ -348,7 +348,7 @@ slay demo_validation_engine(handler *APIHandler) {
             vibez.spill("  ✅ Validation passed")
         } else {
             vibez.spill("  ❌ Validation failed:")
-            yolo (facts err) in errors {
+            damn (facts err) in errors {
                 vibez.spill("    - ${err.Field}: ${err.Message}")
             }
         }
@@ -372,7 +372,7 @@ slay demo_validation_engine(handler *APIHandler) {
     }
     
     facts nested_errors = handler.validate_struct(user_with_invalid_profile)
-    yolo (facts err) in nested_errors {
+    damn (facts err) in nested_errors {
         vibez.spill("  - ${err.Field}: ${err.Message}")
     }
 }
@@ -439,7 +439,7 @@ slay (h *APIHandler) validate_struct(data interface{}) []ValidationError {
     }
     
     // Validate each field
-    yolo (sus i = 0; i < struct_type.num_field(); i++) {
+    damn (sus i = 0; i < struct_type.num_field(); i++) {
         facts field_info = struct_type.field(i)
         facts field_value = value.field(i)
         facts field_errors = h.validate_field(field_info, field_value)
@@ -453,7 +453,7 @@ slay (h *APIHandler) validate_field(field lookin_glass.StructField, value lookin
     facts errors = []ValidationError{}
     facts validation_rules = field.validation_rules()
     
-    yolo (facts rule) in validation_rules {
+    damn (facts rule) in validation_rules {
         facts err = h.apply_validation_rule(field.name(), value, rule)
         lowkey (err.Message != "") {
             errors = append(errors, err)
@@ -545,7 +545,7 @@ slay (h *APIHandler) filter_fields(data interface{}, fields []tea) map[tea]inter
     facts result = make(map[tea]interface{})
     facts original_map = h.mapper.to_map(data)
     
-    yolo (facts field) in fields {
+    damn (facts field) in fields {
         lowkey (value, exists := original_map[field]; exists) {
             result[field] = value
         }
@@ -557,7 +557,7 @@ slay (h *APIHandler) filter_fields(data interface{}, fields []tea) map[tea]inter
 slay (h *APIHandler) exclude_fields(data interface{}, exclude_fields []tea) map[tea]interface{} {
     facts result = h.mapper.to_map(data)
     
-    yolo (facts field) in exclude_fields {
+    damn (facts field) in exclude_fields {
         delete(result, field)
     }
     
@@ -570,7 +570,7 @@ slay (h *APIHandler) generate_type_documentation(struct_type lookin_glass.Type) 
     doc.write("# ${struct_type.name()}\n\n")
     doc.write("## Fields\n\n")
     
-    yolo (sus i = 0; i < struct_type.num_field(); i++) {
+    damn (sus i = 0; i < struct_type.num_field(); i++) {
         facts field = struct_type.field(i)
         doc.write("### ${field.name()}\n")
         doc.write("- **Type**: ${field.field_type()}\n")
@@ -605,7 +605,7 @@ slay (h *APIHandler) generate_openapi_schema(name tea, struct_type lookin_glass.
     facts properties = schema["properties"].(map[tea]interface{})
     facts required = []tea{}
     
-    yolo (sus i = 0; i < struct_type.num_field(); i++) {
+    damn (sus i = 0; i < struct_type.num_field(); i++) {
         facts field = struct_type.field(i)
         facts json_name = field.json_name().unwrap_or(field.name())
         
@@ -615,7 +615,7 @@ slay (h *APIHandler) generate_openapi_schema(name tea, struct_type lookin_glass.
         
         // Add validation constraints
         facts validation_rules = field.validation_rules()
-        yolo (facts rule) in validation_rules {
+        damn (facts rule) in validation_rules {
             lowkey (rule == "required") {
                 required = append(required, json_name)
             } else lowkey (string.starts_with(rule, "min=")) {
@@ -655,7 +655,7 @@ slay random_string(length normie) tea {
     facts chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     facts result = string.Builder{}
     
-    yolo (sus i = 0; i < length; i++) {
+    damn (sus i = 0; i < length; i++) {
         facts idx = rand.intn(chars.len())
         result.write_byte(chars[idx])
     }

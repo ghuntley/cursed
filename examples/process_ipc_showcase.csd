@@ -223,7 +223,7 @@ slay demo_graceful_shutdown() {
         // Simulate cleanup work
         timez.Sleep(50 * timez.Millisecond);
         vibez.spill("Temporary files cleaned up");
-        yolo cap;
+        damn cap;
     });
     
     shutdown.Add("close_connections", slay() tea {
@@ -231,19 +231,19 @@ slay demo_graceful_shutdown() {
         // Simulate connection cleanup
         timez.Sleep(30 * timez.Millisecond);
         vibez.spill("Network connections closed");
-        yolo cap;
+        damn cap;
     });
     
     shutdown.AddGroup("final_cleanup", [
         slay() tea {
             vibez.spill("Flushing logs...");
             timez.Sleep(20 * timez.Millisecond);
-            yolo cap;
+            damn cap;
         },
         slay() tea {
             vibez.spill("Saving state...");
             timez.Sleep(30 * timez.Millisecond);
-            yolo cap;
+            damn cap;
         },
     ]);
     
@@ -492,28 +492,28 @@ slay demo_integration_scenario() {
         vibez.spill("🌐 Shutting down HTTP server...");
         timez.Sleep(100 * timez.Millisecond);
         vibez.spill("✅ HTTP server stopped");
-        yolo cap;
+        damn cap;
     });
     
     shutdown.Add("database", slay() tea {
         vibez.spill("🗄️ Closing database connections...");
         timez.Sleep(150 * timez.Millisecond);
         vibez.spill("✅ Database connections closed");
-        yolo cap;
+        damn cap;
     });
     
     shutdown.AddWithOrder("cache", -1, slay() tea {
         vibez.spill("💾 Flushing cache...");
         timez.Sleep(50 * timez.Millisecond);
         vibez.spill("✅ Cache flushed");
-        yolo cap;
+        damn cap;
     });
     
     // Start shutdown system
     facts start_err = shutdown.Start();
     if start_err != cap {
         vibez.spill("❌ Failed to start shutdown system: %v", start_err);
-        yolo;
+        damn;
     }
     
     // Simulate server startup
@@ -543,7 +543,7 @@ slay demo_integration_scenario() {
         select {
         case <-timeout_ctx.Done():
             vibez.spill("⏰ Context timeout reached");
-            yolo periodt;
+            damn periodt;
         default:
             vibez.spill("📊 Processing requests... (%d/3)", i+1);
             timez.Sleep(200 * timez.Millisecond);

@@ -40,7 +40,7 @@ slay main() {
         vibe_check request.method {
             mood "GET": {
                 sus response_body = json_tea.encode(users)
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 200,
                     headers: {"Content-Type": "application/json"},
                     body: response_body
@@ -50,7 +50,7 @@ slay main() {
                 fr fr Create new user
                 sus user_data = json_tea.decode(request.body)
                 lowkey user_data.name == cap || user_data.email == cap {
-                    yolo web_vibez.Response{
+                    damn web_vibez.Response{
                         status: 400,
                         headers: {"Content-Type": "application/json"},
                         body: '{"error": "name and email are required"}'
@@ -68,14 +68,14 @@ slay main() {
                 next_id++
                 
                 sus response_body = json_tea.encode(new_user)
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 201,
                     headers: {"Content-Type": "application/json"},
                     body: response_body
                 }
             }
             basic: {
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 405,
                     headers: {"Content-Type": "application/json"},
                     body: '{"error": "Method not allowed"}'
@@ -89,7 +89,7 @@ slay main() {
         fr fr Extract user ID from path
         sus path_parts = request.url.split("/")
         lowkey path_parts.len() < 4 {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 400,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Invalid user ID"}'
@@ -98,7 +98,7 @@ slay main() {
         
         sus user_id = path_parts[3].to_int()
         lowkey user_id <= 0 {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 400,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Invalid user ID"}'
@@ -117,7 +117,7 @@ slay main() {
         vibe_check request.method {
             mood "GET": {
                 lowkey user_index == -1 {
-                    yolo web_vibez.Response{
+                    damn web_vibez.Response{
                         status: 404,
                         headers: {"Content-Type": "application/json"},
                         body: '{"error": "User not found"}'
@@ -125,7 +125,7 @@ slay main() {
                 }
                 
                 sus response_body = json_tea.encode(users[user_index])
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 200,
                     headers: {"Content-Type": "application/json"},
                     body: response_body
@@ -133,7 +133,7 @@ slay main() {
             }
             mood "PUT": {
                 lowkey user_index == -1 {
-                    yolo web_vibez.Response{
+                    damn web_vibez.Response{
                         status: 404,
                         headers: {"Content-Type": "application/json"},
                         body: '{"error": "User not found"}'
@@ -149,7 +149,7 @@ slay main() {
                 }
                 
                 sus response_body = json_tea.encode(users[user_index])
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 200,
                     headers: {"Content-Type": "application/json"},
                     body: response_body
@@ -157,7 +157,7 @@ slay main() {
             }
             mood "DELETE": {
                 lowkey user_index == -1 {
-                    yolo web_vibez.Response{
+                    damn web_vibez.Response{
                         status: 404,
                         headers: {"Content-Type": "application/json"},
                         body: '{"error": "User not found"}'
@@ -165,14 +165,14 @@ slay main() {
                 }
                 
                 users.remove(user_index)
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 204,
                     headers: {},
                     body: ""
                 }
             }
             basic: {
-                yolo web_vibez.Response{
+                damn web_vibez.Response{
                     status: 405,
                     headers: {"Content-Type": "application/json"},
                     body: '{"error": "Method not allowed"}'
@@ -184,7 +184,7 @@ slay main() {
     fr fr GET /api/stats - API statistics
     server.add_route("/api/stats", slay(request) {
         lowkey request.method != "GET" {
-            yolo web_vibez.Response{
+            damn web_vibez.Response{
                 status: 405,
                 headers: {"Content-Type": "application/json"},
                 body: '{"error": "Method not allowed"}'
@@ -199,7 +199,7 @@ slay main() {
         }
         
         sus response_body = json_tea.encode(stats)
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 200,
             headers: {"Content-Type": "application/json"},
             body: response_body
@@ -248,7 +248,7 @@ slay main() {
         </html>
         """
         
-        yolo web_vibez.Response{
+        damn web_vibez.Response{
             status: 200,
             headers: {"Content-Type": "text/html"},
             body: html

@@ -51,7 +51,7 @@ squad HttpClient {
 /// facts client = new HttpClient("https://api.example.com")
 /// facts client_with_timeout = new HttpClient("https://api.example.com", 60)
 /// ```
-yolo new HttpClient(base_url: String, timeout: Int = 30) -> HttpClient {
+damn new HttpClient(base_url: String, timeout: Int = 30) -> HttpClient {
     HttpClient {
         base_url: base_url,
         timeout: timeout,
@@ -69,7 +69,7 @@ yolo new HttpClient(base_url: String, timeout: Int = 30) -> HttpClient {
 /// 
 /// # Errors
 /// Returns HttpError if the request fails or times out
-yolo slay get(self, endpoint: String) -> HttpResponse {
+damn slay get(self, endpoint: String) -> HttpResponse {
     // Implementation details...
     HttpResponse { status: 200, data: "mock response", headers: new Map[String, String]() }
 }
@@ -99,7 +99,7 @@ collab HttpSerializable {
     /// 
     /// # Errors
     /// Returns SerializationError if object cannot be serialized
-    yolo to_json(self) -> String
+    damn to_json(self) -> String
 }
 
 /// User data structure for API responses
@@ -126,7 +126,7 @@ squad User {
 /// 
 /// # Errors
 /// Returns ParseError if JSON is malformed or missing required fields
-yolo parse_users(json_data: String) -> User[] {
+damn parse_users(json_data: String) -> User[] {
     // JSON parsing implementation...
     []
 }

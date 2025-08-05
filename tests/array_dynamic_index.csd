@@ -21,5 +21,5 @@ slay main() {
     test_dynamic_index(-1);
     test_dynamic_index(5);
     
-    yolo 0;
+    damn 0;
 }

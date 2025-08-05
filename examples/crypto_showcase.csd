@@ -171,7 +171,7 @@ function demonstrate_hash_functions() {
     println("")?;
 }
 
-fr fr/ yolo Demonstrate key derivation functions
+fr fr/ damn Demonstrate key derivation functions
 function demonstrate_key_derivation() {
     println("🔑 === Key Derivation Demo ===")?;
     

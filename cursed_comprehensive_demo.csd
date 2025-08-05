@@ -18,15 +18,15 @@ facts answer_to_everything = 42
 // Traditional and Gen-Z function definitions side by side
 slay greet_user(name) {
     facts welcome_msg = "Welcome to CURSED!"
-    yolo welcome_msg + " " + name
+    damn welcome_msg + " " + name
 }
 
 fn calculate_fibonacci(n) {
     lowkey (n <= 1) {
-        yolo n
+        damn n
     }
     highkey {
-        yolo calculate_fibonacci(n - 1) + calculate_fibonacci(n - 2)
+        damn calculate_fibonacci(n - 1) + calculate_fibonacci(n - 2)
     }
 }
 
@@ -39,7 +39,7 @@ slay showcase_language_features() {
     // Control flow with Gen-Z keywords
     lowkey (counter < 5) {
         counter = counter + 1
-        yolo "Counting: " + counter
+        damn "Counting: " + counter
     }
     
     // Traditional if-else
@@ -53,36 +53,36 @@ slay showcase_language_features() {
 // Main function - entry point
 slay main() {
     // Print application info
-    yolo app_name
-    yolo "Version: " + version
+    damn app_name
+    damn "Version: " + version
     
     // Demonstrate greeting
     facts greeting = greet_user("Gen Z Developer")
-    yolo greeting
+    damn greeting
     
     // Mathematical demonstration
     facts fib_result = calculate_fibonacci(8)
-    yolo "Fibonacci of 8: " + fib_result
+    damn "Fibonacci of 8: " + fib_result
     
     // Language features showcase
     facts feature_demo = showcase_language_features()
-    yolo feature_demo
+    damn feature_demo
     
     // Mixed syntax demonstration
     facts math_result = answer_to_everything * 2
-    yolo "Answer doubled: " + math_result
+    damn "Answer doubled: " + math_result
     
     // Boolean demonstration with Gen-Z keywords
     facts is_awesome = truth
     facts is_basic = lies
     
     lowkey (is_awesome) {
-        yolo "CURSED is absolutely slay! 🔥"
+        damn "CURSED is absolutely slay! 🔥"
     }
     
     lowkey (!is_basic) {
-        yolo "This language is no cap amazing! 💯"
+        damn "This language is no cap amazing! 💯"
     }
     
-    yolo "Demo completed successfully!"
+    damn "Demo completed successfully!"
 }

@@ -101,15 +101,15 @@ squad Circle {
 }
 
 slay (c Circle) area() float64 {
-    yolo 3.14159 * c.radius * c.radius
+    damn 3.14159 * c.radius * c.radius
 }
 
 slay (c Circle) perimeter() float64 {
-    yolo 2 * 3.14159 * c.radius
+    damn 2 * 3.14159 * c.radius
 }
 
 slay (c Circle) name() string {
-    yolo "Circle"
+    damn "Circle"
 }
 
 squad Rectangle {
@@ -118,15 +118,15 @@ squad Rectangle {
 }
 
 slay (r Rectangle) area() float64 {
-    yolo r.width * r.height
+    damn r.width * r.height
 }
 
 slay (r Rectangle) perimeter() float64 {
-    yolo 2 * (r.width + r.height)
+    damn 2 * (r.width + r.height)
 }
 
 slay (r Rectangle) name() string {
-    yolo "Rectangle"
+    damn "Rectangle"
 }
 
 slay demonstrate_interface_switching() {
@@ -159,21 +159,21 @@ fr fr Error handling with type switches
 slay safe_string_conversion(value interface{}) (string, error) {
     vibe_check v := value.(type) {
         mood string:
-            yolo v, nil
+            damn v, nil
         mood int:
-            yolo fmt.sprintf("%d", v), nil
+            damn fmt.sprintf("%d", v), nil
         mood float64:
-            yolo fmt.sprintf("%.6f", v), nil
+            damn fmt.sprintf("%.6f", v), nil
         mood bool:
             if v {
-                yolo "based", nil
+                damn "based", nil
             } else {
-                yolo "cap", nil
+                damn "cap", nil
             }
         mood nil:
-            yolo "null", nil
+            damn "null", nil
         basic:
-            yolo "", fmt.errorf("cannot convert %T to string", value)
+            damn "", fmt.errorf("cannot convert %T to string", value)
     }
 }
 

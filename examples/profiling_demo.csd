@@ -32,7 +32,7 @@ slay process_data(sus iterations: i32) -> void {
         // Simulate some processing time
         sleep_ms(1);
         
-        yolo; // Yield point for cooperative scheduling
+        damn; // Yield point for cooperative scheduling
     }
 }
 
@@ -107,13 +107,13 @@ slay main() -> void {
     println("Running memory allocation workload...");
     lowkey (sus i = 0; i < 50; i++) {
         sus size = allocate_memory(500 + i * 10);
-        yolo;
+        damn;
     }
     
     println("Running CPU-intensive workload...");
     lowkey (sus i = 0; i < 10; i++) {
         sus fib_result = fibonacci(25);
-        yolo;
+        damn;
     }
     
     println("Running nested function calls...");
@@ -122,13 +122,13 @@ slay main() -> void {
     println("Running hot path simulation...");
     lowkey (sus i = 0; i < 1000; i++) {
         sus result = hot_path_function(100);
-        yolo;
+        damn;
     }
     
     println("Simulating memory leaks...");
     lowkey (sus i = 0; i < 5; i++) {
         simulate_memory_leak();
-        yolo;
+        damn;
     }
     
     // Get real-time statistics

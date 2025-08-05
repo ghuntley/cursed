@@ -13,5 +13,5 @@ slay main() {
     puts(text_val);     fr fr Hello, CURSED!
     puts(char_val);     fr fr C (67 as int)
     puts(bool_val);     fr fr true (1)
-    yolo 0;
+    damn 0;
 }
