@@ -150,15 +150,30 @@ pub const ShookResult = union(enum) {
         };
     }
 
-    pub fn unwrap(self: ShookResult) Value {
+    /// Unwrap a result value, returning an error if the result contains an error
+    /// This replaces the panic behavior with proper error propagation
+    pub fn unwrap(self: ShookResult) CursedError!Value {
         return switch (self) {
             .Ok => |value| value,
-            .Error => |err| {
-                std.debug.panic("Called unwrap on error: {s}", .{err.message});
+            .Error => |error_value| {
+                // Map error codes to appropriate CursedError types
+                const cursed_error = switch (error_value.error_code) {
+                    1 => CursedError.ParseError,
+                    2 => CursedError.TypeMismatch,
+                    3 => CursedError.UndefinedVariable,
+                    4 => CursedError.RuntimeError,
+                    5 => CursedError.DivisionByZero,
+                    6 => CursedError.IndexOutOfBounds,
+                    7 => CursedError.NullPointerDereference,
+                    8 => CursedError.InvalidOperation,
+                    else => CursedError.UnknownError,
+                };
+                return cursed_error;
             },
         };
     }
 
+    /// Safe unwrap that returns a default value instead of panicking
     pub fn unwrapOr(self: ShookResult, default: Value) Value {
         return switch (self) {
             .Ok => |value| value,
@@ -166,21 +181,35 @@ pub const ShookResult = union(enum) {
         };
     }
 
+    /// Unsafe unwrap that returns a value but prints error information
+    /// Only use this when you're certain the result is Ok
+    pub fn unwrapUnsafe(self: ShookResult) Value {
+        return switch (self) {
+            .Ok => |value| value,
+            .Error => |error_value| {
+                // Log the error but return a sensible default instead of panicking
+                std.log.err("Unwrap called on error: {s} (code: {})", .{ error_value.message, error_value.error_code });
+                // Return a void value as the safest default
+                return Value{ .Void = {} };
+            },
+        };
+    }
+
     pub fn getError(self: ShookResult) ?YikesError {
         return switch (self) {
             .Ok => null,
-            .Error => |err| err,
+            .Error => |error_value| error_value,
         };
     }
 
     pub fn propagate(self: ShookResult) CursedError!Value {
         return switch (self) {
             .Ok => |value| value,
-            .Error => |err| {
-                if (err.error_code == 0) return CursedError.UnknownError;
-                if (err.error_code == 1) return CursedError.ParseError;
-                if (err.error_code == 2) return CursedError.RuntimeError;
-                if (err.error_code == 3) return CursedError.TypeMismatch;
+            .Error => |error_value| {
+                if (error_value.error_code == 0) return CursedError.UnknownError;
+                if (error_value.error_code == 1) return CursedError.ParseError;
+                if (error_value.error_code == 2) return CursedError.RuntimeError;
+                if (error_value.error_code == 3) return CursedError.TypeMismatch;
                 return CursedError.UnknownError;
             },
         };
@@ -194,7 +223,7 @@ pub const ShookResult = union(enum) {
                     else => {},
                 }
             },
-            .Error => |*err| err.deinit(),
+            .Error => |*error_value| error_value.deinit(),
         }
     }
 };
@@ -364,8 +393,6 @@ pub const FamBlock = struct {
     }
 
     fn executeStatement(self: *FamBlock, stmt: Statement, context: *ExecutionContext) ShookResult {
-        _ = self;
-        _ = context;
         
         switch (stmt) {
             .Expression => {
@@ -474,8 +501,9 @@ test "yikes error creation" {
 test "shook error propagation" {
     const allocator = std.testing.allocator;
     
-    var err = try yikes(allocator, "Test propagation", 1);
-    const shook_result = ShookResult.err(err);
+    const error_val = try yikes(allocator, "Test propagation", 1);
+    var shook_result = ShookResult.err(error_val);
+    defer shook_result.deinit(allocator);
     
     try std.testing.expect(shook_result.isError());
     try std.testing.expect(!shook_result.isOk());

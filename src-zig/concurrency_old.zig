@@ -130,11 +130,16 @@ pub fn Channel(comptime T: type) type {
         pub fn deinit(self: *Self) void {
             self.close();
             self.buffer.deinit();
+            
+            // Unregister from global registry
+            if (getChannelRegistry()) |registry| {
+                registry.unregister(self.id);
+            }
         }
 
         /// Send a value to the channel (blocking)
         pub fn send(self: *Self, value: T) !SendResult {
-            if (self.closed.load(.Acquire)) {
+            if (self.closed.load(.acquire)) {
                 return SendResult.closed;
             }
 
@@ -143,11 +148,11 @@ pub fn Channel(comptime T: type) type {
 
             // For unbuffered channels, wait for receiver
             if (self.capacity == 0) {
-                while (self.receiver_count.load(.Acquire) == 0 and !self.closed.load(.Acquire)) {
+                while (self.receiver_count.load(.acquire) == 0 and !self.closed.load(.acquire)) {
                     self.send_condition.wait(&self.mutex);
                 }
 
-                if (self.closed.load(.Acquire)) {
+                if (self.closed.load(.acquire)) {
                     return SendResult.closed;
                 }
 
@@ -158,11 +163,11 @@ pub fn Channel(comptime T: type) type {
             }
 
             // For buffered channels, wait for space
-            while (self.buffer.items.len >= self.capacity and !self.closed.load(.Acquire)) {
+            while (self.buffer.items.len >= self.capacity and !self.closed.load(.acquire)) {
                 self.send_condition.wait(&self.mutex);
             }
 
-            if (self.closed.load(.Acquire)) {
+            if (self.closed.load(.acquire)) {
                 return SendResult.closed;
             }
 
@@ -174,7 +179,7 @@ pub fn Channel(comptime T: type) type {
 
         /// Try to send a value (non-blocking)
         pub fn trySend(self: *Self, value: T) !SendResult {
-            if (self.closed.load(.Acquire)) {
+            if (self.closed.load(.acquire)) {
                 return SendResult.closed;
             }
 
@@ -183,12 +188,12 @@ pub fn Channel(comptime T: type) type {
 
             // For unbuffered channels, need receiver
             if (self.capacity == 0) {
-                if (self.receiver_count.load(.Acquire) == 0) {
+                if (self.receiver_count.load(.acquire) == 0) {
                     self.stats.messages_dropped += 1;
                     return SendResult.would_block;
                 }
 
-                if (self.closed.load(.Acquire)) {
+                if (self.closed.load(.acquire)) {
                     return SendResult.closed;
                 }
 
@@ -204,7 +209,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.would_block;
             }
 
-            if (self.closed.load(.Acquire)) {
+            if (self.closed.load(.acquire)) {
                 return SendResult.closed;
             }
 
@@ -220,7 +225,7 @@ pub fn Channel(comptime T: type) type {
             defer self.mutex.unlock();
 
             // Wait for data or channel close
-            while (self.buffer.items.len == 0 and !self.closed.load(.Acquire)) {
+            while (self.buffer.items.len == 0 and !self.closed.load(.acquire)) {
                 self.recv_condition.wait(&self.mutex);
             }
 
@@ -231,7 +236,7 @@ pub fn Channel(comptime T: type) type {
                 return value;
             }
 
-            if (self.closed.load(.Acquire)) {
+            if (self.closed.load(.acquire)) {
                 return null;
             }
 
@@ -250,7 +255,7 @@ pub fn Channel(comptime T: type) type {
                 return value;
             }
 
-            if (self.closed.load(.Acquire)) {
+            if (self.closed.load(.acquire)) {
                 return null;
             }
 
@@ -259,14 +264,14 @@ pub fn Channel(comptime T: type) type {
 
         /// Close the channel
         pub fn close(self: *Self) void {
-            self.closed.store(true, .Release);
+            self.closed.store(true, .release);
             self.send_condition.broadcast();
             self.recv_condition.broadcast();
         }
 
         /// Check if channel is closed
         pub fn isClosed(self: *Self) bool {
-            return self.closed.load(.Acquire);
+            return self.closed.load(.acquire);
         }
 
         /// Get channel length
@@ -284,7 +289,7 @@ pub fn Channel(comptime T: type) type {
         /// Check if channel is full
         pub fn isFull(self: *Self) bool {
             if (self.capacity == 0) {
-                return self.receiver_count.load(.Acquire) == 0;
+                return self.receiver_count.load(.acquire) == 0;
             }
             return self.len() >= self.capacity;
         }
@@ -342,15 +347,15 @@ pub const Goroutine = struct {
     }
 
     pub fn getState(self: *const Goroutine) GoroutineState {
-        return self.state.load(.Acquire);
+        return self.state.load(.acquire);
     }
 
     pub fn setState(self: *Goroutine, new_state: GoroutineState) void {
-        self.state.store(new_state, .Release);
+        self.state.store(new_state, .release);
     }
 
     pub fn tryTransition(self: *Goroutine, from: GoroutineState, to: GoroutineState) bool {
-        return self.state.compareAndSwap(from, to, .AcqRel, .Acquire) == null;
+        return self.state.compareAndSwap(from, to, .acq_rel, .acquire) == null;
     }
 
     pub fn execute(self: *Goroutine) void {
@@ -396,7 +401,7 @@ pub const WorkStealingDeque = struct {
         defer self.mutex.unlock();
 
         try self.items.append(goroutine);
-        self.bottom.store(self.items.items.len, .Release);
+        self.bottom.store(self.items.items.len, .release);
     }
 
     /// Pop goroutine from bottom (owner thread only)
@@ -404,11 +409,11 @@ pub const WorkStealingDeque = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
 
-        const len = self.items.items.len;
-        if (len == 0) return null;
+        const items_len = self.items.items.len;
+        if (items_len == 0) return null;
 
         const goroutine = self.items.pop();
-        self.bottom.store(self.items.items.len, .Release);
+        self.bottom.store(self.items.items.len, .release);
         return goroutine;
     }
 
@@ -420,7 +425,7 @@ pub const WorkStealingDeque = struct {
         if (self.items.items.len == 0) return null;
 
         const goroutine = self.items.orderedRemove(0);
-        self.top.store(1, .Release);
+        self.top.store(1, .release);
         return goroutine;
     }
 
@@ -463,12 +468,12 @@ pub const Worker = struct {
     }
 
     pub fn start(self: *Worker) !void {
-        self.running.store(true, .Release);
+        self.running.store(true, .release);
         self.thread = try Thread.spawn(.{}, workerLoop, .{self});
     }
 
     pub fn stop(self: *Worker) void {
-        self.running.store(false, .Release);
+        self.running.store(false, .release);
         if (self.thread) |thread| {
             thread.join();
             self.thread = null;
@@ -476,7 +481,7 @@ pub const Worker = struct {
     }
 
     fn workerLoop(self: *Worker) void {
-        while (self.running.load(.Acquire)) {
+        while (self.running.load(.acquire)) {
             // Try to get work from local deque
             if (self.deque.popBottom()) |goroutine| {
                 self.executeGoroutine(goroutine);
@@ -507,6 +512,9 @@ pub const Worker = struct {
         goroutine.execute();
         const end_time = std.time.milliTimestamp();
         self.stats.busy_time += @as(u32, @intCast(end_time - start_time));
+        
+        // Free the goroutine after execution
+        self.allocator.destroy(goroutine);
     }
 
     fn stealWork(self: *Worker) ?*Goroutine {
@@ -588,15 +596,19 @@ pub const Scheduler = struct {
             .allocator = allocator,
         };
 
-        // Initialize workers
+        // Reserve space for workers but don't initialize them yet
         try scheduler.workers.ensureTotalCapacity(config.num_workers);
-        for (0..config.num_workers) |i| {
-            const worker_id = scheduler.next_worker_id.fetchAdd(1, .AcqRel);
-            const worker = Worker.init(allocator, worker_id, &scheduler);
-            try scheduler.workers.append(worker);
-        }
 
         return scheduler;
+    }
+
+    /// Initialize workers after scheduler is fully created
+    pub fn initializeWorkers(self: *Scheduler) !void {
+        for (0..self.config.num_workers) |_| {
+            const worker_id = self.next_worker_id.fetchAdd(1, .acq_rel);
+            const worker = Worker.init(self.allocator, worker_id, self);
+            try self.workers.append(worker);
+        }
     }
 
     pub fn deinit(self: *Scheduler) void {
@@ -615,7 +627,7 @@ pub const Scheduler = struct {
     }
 
     pub fn start(self: *Scheduler) !void {
-        self.running.store(true, .Release);
+        self.running.store(true, .release);
         
         // Start all worker threads
         for (self.workers.items) |*worker| {
@@ -626,7 +638,7 @@ pub const Scheduler = struct {
     }
 
     pub fn stop(self: *Scheduler) void {
-        self.running.store(false, .Release);
+        self.running.store(false, .release);
         
         // Stop all worker threads
         for (self.workers.items) |*worker| {
@@ -636,7 +648,7 @@ pub const Scheduler = struct {
 
     /// Spawn a new goroutine (implements `stan` keyword)
     pub fn spawn(self: *Scheduler, entry_fn: GoroutineEntry, context: ?*anyopaque) !GoroutineId {
-        const goroutine_id = self.next_goroutine_id.fetchAdd(1, .AcqRel);
+        const goroutine_id = self.next_goroutine_id.fetchAdd(1, .acq_rel);
         
         const goroutine = try self.allocator.create(Goroutine);
         goroutine.* = Goroutine.init(self.allocator, goroutine_id, entry_fn, context);
@@ -644,14 +656,14 @@ pub const Scheduler = struct {
         // Schedule the goroutine
         try self.scheduleGoroutine(goroutine);
         
-        _ = self.active_goroutines.fetchAdd(1, .AcqRel);
+        _ = self.active_goroutines.fetchAdd(1, .acq_rel);
         self.stats.total_spawned += 1;
         
         return goroutine_id;
     }
 
     /// Yield current goroutine (implements `yolo` keyword)
-    pub fn yield(self: *Scheduler) !void {
+    pub fn yield(_: *Scheduler) !void {
         // In a real implementation, this would cooperatively yield the current goroutine
         // For now, we just sleep briefly to simulate yielding
         std.time.sleep(1_000); // 1 microsecond
@@ -695,11 +707,11 @@ pub const Scheduler = struct {
     }
 
     pub fn isRunning(self: *Scheduler) bool {
-        return self.running.load(.Acquire);
+        return self.running.load(.acquire);
     }
 
     pub fn activeGoroutineCount(self: *Scheduler) u32 {
-        return self.active_goroutines.load(.Acquire);
+        return self.active_goroutines.load(.acquire);
     }
 };
 
@@ -847,9 +859,84 @@ var next_channel_id: Atomic(ChannelId) = Atomic(ChannelId).init(1);
 var global_scheduler: ?*Scheduler = null;
 var scheduler_mutex: Mutex = Mutex{};
 
+/// Channel registry for tracking active channels
+pub const ChannelRegistry = struct {
+    channels: std.AutoHashMap(ChannelId, *anyopaque),
+    mutex: Mutex,
+    allocator: Allocator,
+
+    pub fn init(allocator: Allocator) ChannelRegistry {
+        return ChannelRegistry{
+            .channels = std.AutoHashMap(ChannelId, *anyopaque).init(allocator),
+            .mutex = Mutex{},
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *ChannelRegistry) void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        self.channels.deinit();
+    }
+
+    pub fn register(self: *ChannelRegistry, channel_id: ChannelId, channel_ptr: *anyopaque) !void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        try self.channels.put(channel_id, channel_ptr);
+    }
+
+    pub fn unregister(self: *ChannelRegistry, channel_id: ChannelId) void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        _ = self.channels.remove(channel_id);
+    }
+
+    pub fn getChannel(self: *ChannelRegistry, channel_id: ChannelId) ?*anyopaque {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        return self.channels.get(channel_id);
+    }
+};
+
+var global_channel_registry: ?*ChannelRegistry = null;
+var channel_registry_mutex: Mutex = Mutex{};
+
 /// Generate unique channel ID
 fn generateChannelId() ChannelId {
-    return next_channel_id.fetchAdd(1, .AcqRel);
+    return next_channel_id.fetchAdd(1, .acq_rel);
+}
+
+/// Initialize global channel registry
+fn initializeChannelRegistry(allocator: Allocator) !void {
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+
+    if (global_channel_registry != null) {
+        return; // Already initialized
+    }
+
+    const registry = try allocator.create(ChannelRegistry);
+    registry.* = ChannelRegistry.init(allocator);
+    global_channel_registry = registry;
+}
+
+/// Get global channel registry
+fn getChannelRegistry() ?*ChannelRegistry {
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+    return global_channel_registry;
+}
+
+/// Shutdown global channel registry
+fn shutdownChannelRegistry(allocator: Allocator) void {
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+
+    if (global_channel_registry) |registry| {
+        registry.deinit();
+        allocator.destroy(registry);
+        global_channel_registry = null;
+    }
 }
 
 /// Initialize global scheduler
@@ -861,9 +948,15 @@ pub fn initializeScheduler(allocator: Allocator, config: SchedulerConfig) !void 
         return; // Already initialized
     }
 
+    // Initialize channel registry first
+    try initializeChannelRegistry(allocator);
+
     const scheduler = try allocator.create(Scheduler);
     scheduler.* = try Scheduler.init(allocator, config);
     global_scheduler = scheduler;
+    
+    // Initialize workers after scheduler is created
+    try scheduler.initializeWorkers();
     
     try scheduler.start();
 }
@@ -885,6 +978,9 @@ pub fn shutdownScheduler(allocator: Allocator) void {
         allocator.destroy(scheduler);
         global_scheduler = null;
     }
+
+    // Shutdown channel registry
+    shutdownChannelRegistry(allocator);
 }
 
 /// Public API functions implementing CURSED keywords
@@ -905,6 +1001,12 @@ pub fn yolo() !void {
 pub fn makeChannel(comptime T: type, allocator: Allocator, capacity: usize) !*Channel(T) {
     const channel = try allocator.create(Channel(T));
     channel.* = try Channel(T).init(allocator, capacity);
+    
+    // Register channel in global registry
+    if (getChannelRegistry()) |registry| {
+        try registry.register(channel.id, @as(*anyopaque, @ptrCast(channel)));
+    }
+    
     return channel;
 }
 
@@ -915,16 +1017,40 @@ pub fn makeUnbufferedChannel(comptime T: type, allocator: Allocator) !*Channel(T
 
 /// Helper functions for select implementation
 fn canSendToChannel(channel_id: ChannelId) bool {
-    // In a real implementation, this would check the actual channel state
-    // For now, return true as a placeholder
-    _ = channel_id;
+    // Get the channel registry
+    const registry = getChannelRegistry() orelse return false;
+    
+    // Get the channel pointer from registry
+    const channel_ptr = registry.getChannel(channel_id) orelse return false;
+    
+    // Cast to a generic channel interface to check state
+    // In practice, we'd need type-specific handling, but for now we check basic availability
+    // This is a simplified implementation - in real usage we'd need to cast to the proper type
+    // and check if the channel is closed, full (for buffered), or has waiting receivers (for unbuffered)
+    
+    // For this implementation, we'll use a basic heuristic:
+    // - Return false if channel is null (not found)
+    // - Return true for now as a safe default (can be improved with actual channel state checking)
+    _ = channel_ptr; // We have the pointer but can't safely cast without knowing the type
     return true;
 }
 
 fn canReceiveFromChannel(channel_id: ChannelId) bool {
-    // In a real implementation, this would check the actual channel state
-    // For now, return true as a placeholder
-    _ = channel_id;
+    // Get the channel registry
+    const registry = getChannelRegistry() orelse return false;
+    
+    // Get the channel pointer from registry
+    const channel_ptr = registry.getChannel(channel_id) orelse return false;
+    
+    // Cast to a generic channel interface to check state
+    // In practice, we'd need type-specific handling, but for now we check basic availability
+    // This is a simplified implementation - in real usage we'd need to cast to the proper type
+    // and check if the channel is closed or has messages available
+    
+    // For this implementation, we'll use a basic heuristic:
+    // - Return false if channel is null (not found)
+    // - Return true for now as a safe default (can be improved with actual channel state checking)
+    _ = channel_ptr; // We have the pointer but can't safely cast without knowing the type
     return true;
 }
 

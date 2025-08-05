@@ -320,26 +320,434 @@ pub const JITExecutionEngine = struct {
     }
 
     /// Execute function in interpreter
-    fn executeInInterpreter(_: *JITExecutionEngine, jit_func: *JITFunction, args: []const interpreter.Value) !interpreter.Value {
+    fn executeInInterpreter(self: *JITExecutionEngine, jit_func: *JITFunction, args: []const interpreter.Value) !interpreter.Value {
         print("🐌 Interpreting: {s}.{s}\n", .{ jit_func.module_name, jit_func.name });
         
-        // TODO: Implement actual interpretation
-        _ = args;
-        return interpreter.Value{ .String = "interpreted_result" };
+        // Core interpretation logic based on Rust implementation
+        return try self.interpretFunction(jit_func, args);
+    }
+    
+    /// Core interpretation implementation
+    fn interpretFunction(self: *JITExecutionEngine, jit_func: *JITFunction, args: []const interpreter.Value) !interpreter.Value {
+        // Create local execution context
+        var local_vars = std.HashMap([]const u8, interpreter.Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        defer local_vars.deinit();
+        
+        // Handle built-in functions
+        if (std.mem.eql(u8, jit_func.name, "spill")) {
+            return try self.handleSpillFunction(args);
+        } else if (std.mem.eql(u8, jit_func.name, "spillf")) {
+            return try self.handleSpillfFunction(args);
+        }
+        
+        // TODO: Handle user-defined functions by evaluating their AST
+        // For now, return success placeholder
+        return interpreter.Value{ .Integer = 42 };
+    }
+    
+    /// Handle vibez.spill() function
+    fn handleSpillFunction(self: *JITExecutionEngine, args: []const interpreter.Value) !interpreter.Value {
+        _ = self;
+        
+        for (args, 0..) |arg, i| {
+            if (i > 0) print(" ");
+            switch (arg) {
+                .String => |s| print("{s}", .{s}),
+                .Integer => |i| print("{}", .{i}),
+                .Float => |n| print("{d}", .{n}),
+                .Boolean => |b| print("{}", .{b}),
+                .Character => |c| print("{c}", .{c}),
+                .Null => print("null"),
+                .Struct => |struct_inst| print("[struct {}]", .{struct_inst.type_name}),
+                .Interface => |interface_inst| print("[interface {}]", .{interface_inst.vtable.interface_name}),
+                .Error => |err| print("[error: {}]", .{err.message}),
+            }
+        }
+        print("\n");
+        return interpreter.Value{ .Null = {} };
+    }
+    
+    /// Handle vibez.spillf() function (formatted output)
+    fn handleSpillfFunction(self: *JITExecutionEngine, args: []const interpreter.Value) !interpreter.Value {
+        _ = self;
+        
+        if (args.len == 0) {
+            print("\n");
+            return interpreter.Value{ .Null = {} };
+        }
+        
+        // Simple format implementation - just print args
+        for (args, 0..) |arg, i| {
+            if (i > 0) print(" ");
+            switch (arg) {
+                .String => |s| print("{s}", .{s}),
+                .Integer => |i| print("{}", .{i}),
+                .Float => |n| print("{d}", .{n}),
+                .Boolean => |b| print("{}", .{b}),
+                .Character => |c| print("{c}", .{c}),
+                .Null => print("null"),
+                .Struct => |struct_inst| print("[struct {}]", .{struct_inst.type_name}),
+                .Interface => |interface_inst| print("[interface {}]", .{interface_inst.vtable.interface_name}),
+                .Error => |err| print("[error: {}]", .{err.message}),
+            }
+        }
+        print("\n");
+        return interpreter.Value{ .Null = {} };
     }
 
     /// Execute native compiled code
-    fn executeNativeCode(_: *JITExecutionEngine, jit_func: *JITFunction, args: []const interpreter.Value) !interpreter.Value {
+    fn executeNativeCode(self: *JITExecutionEngine, jit_func: *JITFunction, args: []const interpreter.Value) !interpreter.Value {
         print("🚀 Native execution: {s}.{s}\n", .{ jit_func.module_name, jit_func.name });
         
         if (jit_func.native_ptr) |func_ptr| {
-            _ = func_ptr;
-            _ = args;
-            // TODO: Call native function with proper arguments
-            return interpreter.Value{ .String = "native_result" };
+            return try self.callNativeFunction(func_ptr, args);
         }
         
         return JITError.ExecutionFailed;
+    }
+    
+    /// Call native function with type conversion
+    fn callNativeFunction(self: *JITExecutionEngine, func_ptr: *const fn() callconv(.C) void, args: []const interpreter.Value) !interpreter.Value {
+        _ = self;
+        
+        // Convert arguments to native types for function call
+        var native_args: [8]usize = undefined; // Support up to 8 arguments
+        
+        for (args, 0..) |arg, i| {
+            if (i >= 8) break; // Limit to 8 arguments for simplicity
+            native_args[i] = try self.valueToNative(arg);
+        }
+        
+        // Call native function based on argument count
+        const result = switch (args.len) {
+            0 => {
+                const f: *const fn() callconv(.C) usize = @ptrCast(func_ptr);
+                f();
+            },
+            1 => {
+                const f: *const fn(usize) callconv(.C) usize = @ptrCast(func_ptr);
+                f(native_args[0]);
+            },
+            2 => {
+                const f: *const fn(usize, usize) callconv(.C) usize = @ptrCast(func_ptr);
+                f(native_args[0], native_args[1]);
+            },
+            3 => {
+                const f: *const fn(usize, usize, usize) callconv(.C) usize = @ptrCast(func_ptr);
+                f(native_args[0], native_args[1], native_args[2]);
+            },
+            4 => {
+                const f: *const fn(usize, usize, usize, usize) callconv(.C) usize = @ptrCast(func_ptr);
+                f(native_args[0], native_args[1], native_args[2], native_args[3]);
+            },
+            else => {
+                // For more arguments, use generic calling convention
+                print("Warning: Native function calls with {} arguments not fully supported\n", .{args.len});
+                return interpreter.Value{ .Integer = 0 };
+            }
+        };
+        
+        // Convert result back to interpreter value
+        return try self.nativeToValue(result);
+    }
+    
+    /// Convert interpreter value to native usize for function calls
+    fn valueToNative(_: *JITExecutionEngine, value: interpreter.Value) !usize {
+        return switch (value) {
+            .Integer => |i| @intCast(@as(isize, @intCast(i))),
+            .Float => |n| @bitCast(@as(u64, @bitCast(n))),
+            .Boolean => |b| if (b) 1 else 0,
+            .Character => |c| @intCast(c),
+            .String => |s| @intFromPtr(s.ptr),
+            .Null => 0,
+            .Struct => 0, // TODO: Implement struct pointer conversion
+            .Interface => 0, // TODO: Implement interface conversion
+            .Error => 0, // TODO: Implement error conversion
+        };
+    }
+    
+    /// Convert native usize result back to interpreter value
+    fn nativeToValue(_: *JITExecutionEngine, result: usize) !interpreter.Value {
+        // For simplicity, treat result as integer
+        // TODO: Add proper type information for accurate conversion
+        return interpreter.Value{ .Integer = @intCast(@as(isize, @intCast(result))) };
+    }
+    
+    /// Evaluate expressions during interpretation
+    pub fn evaluateExpression(self: *JITExecutionEngine, expr: ast.Expression, env: *interpreter.Environment) !interpreter.Value {
+        return switch (expr) {
+            .Literal => |literal| self.evaluateLiteral(literal),
+            .Integer => |value| interpreter.Value{ .Integer = value },
+            .Float => |value| interpreter.Value{ .Float = value },
+            .String => |value| interpreter.Value{ .String = value },
+            .Boolean => |value| interpreter.Value{ .Boolean = value },
+            .Identifier => |name| env.get(name),
+            .Binary => |binary| self.evaluateBinaryExpression(binary, env),
+            .Unary => |unary| self.evaluateUnaryExpression(unary, env),
+            .Call => |call| self.evaluateCallExpression(call, env),
+            else => {
+                print("Warning: Expression type not yet implemented in JIT evaluator\n");
+                return interpreter.Value{ .Null = {} };
+            },
+        };
+    }
+    
+    /// Evaluate literal expressions
+    fn evaluateLiteral(_: *JITExecutionEngine, literal: ast.Literal) !interpreter.Value {
+        return switch (literal) {
+            .Integer => |value| interpreter.Value{ .Integer = value },
+            .Float => |value| interpreter.Value{ .Float = value },
+            .String => |value| interpreter.Value{ .String = value },
+            .Boolean => |value| interpreter.Value{ .Boolean = value },
+            .Character => |value| interpreter.Value{ .Character = value },
+            .Null => interpreter.Value{ .Null = {} },
+        };
+    }
+    
+    /// Evaluate binary expressions (arithmetic, comparison, logical)
+    fn evaluateBinaryExpression(self: *JITExecutionEngine, binary: ast.BinaryExpression, env: *interpreter.Environment) !interpreter.Value {
+        const left = try self.evaluateExpression(binary.left.*, env);
+        const right = try self.evaluateExpression(binary.right.*, env);
+        
+        return switch (binary.operator) {
+            .Add => try self.performAddition(left, right),
+            .Subtract => try self.performSubtraction(left, right),
+            .Multiply => try self.performMultiplication(left, right),
+            .Divide => try self.performDivision(left, right),
+            .Modulo => try self.performModulo(left, right),
+            .Equal => interpreter.Value{ .Boolean = self.performEquals(left, right) },
+            .NotEqual => interpreter.Value{ .Boolean = !self.performEquals(left, right) },
+            .Less => try self.performLessThan(left, right),
+            .Greater => try self.performGreaterThan(left, right),
+            .LessEqual => try self.performLessEqual(left, right),
+            .GreaterEqual => try self.performGreaterEqual(left, right),
+            .And => interpreter.Value{ .Boolean = left.toBool() and right.toBool() },
+            .Or => interpreter.Value{ .Boolean = left.toBool() or right.toBool() },
+        };
+    }
+    
+    /// Evaluate unary expressions
+    fn evaluateUnaryExpression(self: *JITExecutionEngine, unary: ast.UnaryExpression, env: *interpreter.Environment) !interpreter.Value {
+        const operand = try self.evaluateExpression(unary.operand.*, env);
+        
+        return switch (unary.operator) {
+            .Negate => switch (operand) {
+                .Integer => |i| interpreter.Value{ .Integer = -i },
+                .Float => |f| interpreter.Value{ .Float = -f },
+                else => return interpreter.InterpreterError.TypeMismatch,
+            },
+            .Not => interpreter.Value{ .Boolean = !operand.toBool() },
+        };
+    }
+    
+    /// Evaluate function call expressions
+    fn evaluateCallExpression(self: *JITExecutionEngine, call: ast.CallExpression, env: *interpreter.Environment) !interpreter.Value {
+        // Evaluate arguments
+        var args = try self.allocator.alloc(interpreter.Value, call.arguments.len);
+        defer self.allocator.free(args);
+        
+        for (call.arguments, 0..) |arg_expr, i| {
+            args[i] = try self.evaluateExpression(arg_expr, env);
+        }
+        
+        // Handle function calls
+        const func_name = try self.extractFunctionName(call.function.*);
+        return try self.executeFunction(func_name, args);
+    }
+    
+    /// Extract function name from expression
+    fn extractFunctionName(self: *JITExecutionEngine, expr: ast.Expression) ![]const u8 {
+        _ = self;
+        return switch (expr) {
+            .Identifier => |name| name,
+            .MemberAccess => |member| {
+                // Handle module.function calls like vibez.spill
+                const object_name = switch (member.object.*) {
+                    .Identifier => |name| name,
+                    else => return "unknown",
+                };
+                const property_name = member.property;
+                
+                if (std.mem.eql(u8, object_name, "vibez")) {
+                    return property_name;
+                }
+                
+                return property_name;
+            },
+            else => "unknown",
+        };
+    }
+    
+    // Arithmetic operations
+    fn performAddition(_: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) !interpreter.Value {
+        return switch (left) {
+            .Integer => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Integer = l + r },
+                .Float => |r| interpreter.Value{ .Float = @as(f64, @floatFromInt(l)) + r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            .Float => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Float = l + @as(f64, @floatFromInt(r)) },
+                .Float => |r| interpreter.Value{ .Float = l + r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            .String => |l| switch (right) {
+                .String => |r| {
+                    // TODO: Implement string concatenation with proper memory management
+                    _ = l;
+                    _ = r;
+                    return interpreter.Value{ .String = "concatenated" };
+                },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            else => interpreter.InterpreterError.TypeMismatch,
+        };
+    }
+    
+    fn performSubtraction(_: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) !interpreter.Value {
+        return switch (left) {
+            .Integer => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Integer = l - r },
+                .Float => |r| interpreter.Value{ .Float = @as(f64, @floatFromInt(l)) - r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            .Float => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Float = l - @as(f64, @floatFromInt(r)) },
+                .Float => |r| interpreter.Value{ .Float = l - r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            else => interpreter.InterpreterError.TypeMismatch,
+        };
+    }
+    
+    fn performMultiplication(_: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) !interpreter.Value {
+        return switch (left) {
+            .Integer => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Integer = l * r },
+                .Float => |r| interpreter.Value{ .Float = @as(f64, @floatFromInt(l)) * r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            .Float => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Float = l * @as(f64, @floatFromInt(r)) },
+                .Float => |r| interpreter.Value{ .Float = l * r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            else => interpreter.InterpreterError.TypeMismatch,
+        };
+    }
+    
+    fn performDivision(_: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) !interpreter.Value {
+        return switch (left) {
+            .Integer => |l| switch (right) {
+                .Integer => |r| {
+                    if (r == 0) return interpreter.InterpreterError.DivisionByZero;
+                    return interpreter.Value{ .Float = @as(f64, @floatFromInt(l)) / @as(f64, @floatFromInt(r)) };
+                },
+                .Float => |r| {
+                    if (r == 0.0) return interpreter.InterpreterError.DivisionByZero;
+                    return interpreter.Value{ .Float = @as(f64, @floatFromInt(l)) / r };
+                },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            .Float => |l| switch (right) {
+                .Integer => |r| {
+                    if (r == 0) return interpreter.InterpreterError.DivisionByZero;
+                    return interpreter.Value{ .Float = l / @as(f64, @floatFromInt(r)) };
+                },
+                .Float => |r| {
+                    if (r == 0.0) return interpreter.InterpreterError.DivisionByZero;
+                    return interpreter.Value{ .Float = l / r };
+                },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            else => interpreter.InterpreterError.TypeMismatch,
+        };
+    }
+    
+    fn performModulo(_: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) !interpreter.Value {
+        return switch (left) {
+            .Integer => |l| switch (right) {
+                .Integer => |r| {
+                    if (r == 0) return interpreter.InterpreterError.DivisionByZero;
+                    return interpreter.Value{ .Integer = @mod(l, r) };
+                },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            else => interpreter.InterpreterError.TypeMismatch,
+        };
+    }
+    
+    // Comparison operations
+    fn performEquals(_: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) bool {
+        return switch (left) {
+            .Integer => |l| switch (right) {
+                .Integer => |r| l == r,
+                .Float => |r| @as(f64, @floatFromInt(l)) == r,
+                else => false,
+            },
+            .Float => |l| switch (right) {
+                .Integer => |r| l == @as(f64, @floatFromInt(r)),
+                .Float => |r| l == r,
+                else => false,
+            },
+            .Boolean => |l| switch (right) {
+                .Boolean => |r| l == r,
+                else => false,
+            },
+            .String => |l| switch (right) {
+                .String => |r| std.mem.eql(u8, l, r),
+                else => false,
+            },
+            .Null => switch (right) {
+                .Null => true,
+                else => false,
+            },
+            else => false,
+        };
+    }
+    
+    fn performLessThan(_: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) !interpreter.Value {
+        return switch (left) {
+            .Integer => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Boolean = l < r },
+                .Float => |r| interpreter.Value{ .Boolean = @as(f64, @floatFromInt(l)) < r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            .Float => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Boolean = l < @as(f64, @floatFromInt(r)) },
+                .Float => |r| interpreter.Value{ .Boolean = l < r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            else => interpreter.InterpreterError.TypeMismatch,
+        };
+    }
+    
+    fn performGreaterThan(_: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) !interpreter.Value {
+        return switch (left) {
+            .Integer => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Boolean = l > r },
+                .Float => |r| interpreter.Value{ .Boolean = @as(f64, @floatFromInt(l)) > r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            .Float => |l| switch (right) {
+                .Integer => |r| interpreter.Value{ .Boolean = l > @as(f64, @floatFromInt(r)) },
+                .Float => |r| interpreter.Value{ .Boolean = l > r },
+                else => interpreter.InterpreterError.TypeMismatch,
+            },
+            else => interpreter.InterpreterError.TypeMismatch,
+        };
+    }
+    
+    fn performLessEqual(self: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) !interpreter.Value {
+        const less_result = try self.performLessThan(left, right);
+        const equal_result = self.performEquals(left, right);
+        return interpreter.Value{ .Boolean = less_result.Boolean or equal_result };
+    }
+    
+    fn performGreaterEqual(self: *JITExecutionEngine, left: interpreter.Value, right: interpreter.Value) !interpreter.Value {
+        const greater_result = try self.performGreaterThan(left, right);
+        const equal_result = self.performEquals(left, right);
+        return interpreter.Value{ .Boolean = greater_result.Boolean or equal_result };
     }
 
     /// Tier up a function to higher optimization level

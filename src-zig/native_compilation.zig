@@ -13,11 +13,14 @@ const c = @cImport({
     @cInclude("llvm-c/Transforms/Scalar.h");
     @cInclude("llvm-c/Linker.h");
     @cInclude("llvm-c/Object.h");
+    @cInclude("llvm-c/DebugInfo.h");
 });
 
 const ast = @import("ast.zig");
 const CodeGen = @import("codegen.zig").CodeGen;
 const AdvancedCodeGen = @import("advanced_codegen.zig").AdvancedCodeGen;
+const debug_info = @import("debug_info.zig");
+const DebugInfoGenerator = debug_info.DebugInfoGenerator;
 
 /// Native executable generation pipeline
 pub const NativeCompiler = struct {
@@ -304,12 +307,65 @@ pub const NativeCompiler = struct {
     
     /// Generate debug information (DWARF)
     fn generateDebugInfo(self: *NativeCompiler, output_path: []const u8) CompilationError!void {
+        if (!self.debug_info) return;
+        
+        // Get LLVM context and module from codegen
+        const module = self.codegen.module;
+        const context = c.LLVMGetModuleContext(module);
+        
+        // Create debug info generator
+        var debug_gen = DebugInfoGenerator.init(self.allocator, context, module) catch |err| switch (err) {
+            error.InitError => return CompilationError.DebugInfoError,
+            error.OutOfMemory => return CompilationError.OutOfMemory,
+            else => return CompilationError.DebugInfoError,
+        };
+        defer debug_gen.deinit();
+        
+        // Initialize debug compilation unit
+        debug_gen.createCompileUnit("main.csd", ".") catch |err| switch (err) {
+            error.MetadataError => return CompilationError.DebugInfoError,
+            error.OutOfMemory => return CompilationError.OutOfMemory,
+            else => return CompilationError.DebugInfoError,
+        };
+        
+        // Create standard CURSED debug types
+        const cursed_types = debug_gen.createCursedTypes() catch |err| switch (err) {
+            error.TypeCreationError => return CompilationError.DebugInfoError,
+            error.OutOfMemory => return CompilationError.OutOfMemory,
+            else => return CompilationError.DebugInfoError,
+        };
+        
+        // Add debug information for functions and variables
+        try self.addASTDebugInfo(&debug_gen, cursed_types);
+        
+        // Finalize debug information
+        debug_gen.finalize();
+        
+        // Generate debug symbols file for external tools
+        try self.generateExternalDebugSymbols(output_path);
+    }
+    
+    /// Add debug information for AST nodes
+    fn addASTDebugInfo(self: *NativeCompiler, debug_gen: *DebugInfoGenerator, cursed_types: debug_info.CursedDebugTypes) CompilationError!void {
+        // This is a simplified implementation - in a real compiler, you'd walk the AST
+        // and add debug info for each function, variable, etc.
+        
+        // Example: Add debug info for main function (if it exists)
+        // const main_func = c.LLVMGetNamedFunction(self.codegen.module, "main");
+        // if (main_func != null) {
+        //     const func_type = debug_gen.createFunctionType(cursed_types.normie_type, &[_]c.LLVMMetadataRef{}) catch return CompilationError.DebugInfoError;
+        //     _ = debug_gen.createFunction("main", "main", 1, func_type, main_func) catch return CompilationError.DebugInfoError;
+        // }
+        
+        // For now, just ensure the debug types are created
+        _ = cursed_types;
+    }
+    
+    /// Generate external debug symbols
+    fn generateExternalDebugSymbols(self: *NativeCompiler, output_path: []const u8) CompilationError!void {
         // Generate debug symbols file
         const debug_path = try std.fmt.allocPrint(self.allocator, "{s}.dSYM", .{output_path});
         defer self.allocator.free(debug_path);
-        
-        // For now, we'll create a placeholder debug info implementation
-        // In a full implementation, this would generate DWARF debug information
         
         const debug_args = switch (std.mem.indexOf(u8, self.target_triple, "darwin")) {
             null => &[_][]const u8{ // Linux/Windows
