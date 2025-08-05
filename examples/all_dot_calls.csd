@@ -18,5 +18,5 @@ slay main() {
     sus current_time := timez.Now();
     vibez.spill("Current timestamp: " + current_time);
     
-    yolo 0;
+    damn 0;
 }

@@ -208,8 +208,8 @@ slay main() {
     
     fr fr Return appropriate exit code
     lowkey testz.test_failed > 0 {
-        yolo 1
+        damn 1
     } highkey {
-        yolo 0
+        damn 0
     }
 }

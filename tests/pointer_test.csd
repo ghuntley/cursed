@@ -9,10 +9,10 @@ slay main() {
     fr fr Test that y equals x via the pointer
     lowkey y == 42 {
         puts(1);
-        yolo 0;
+        damn 0;
     } highkey {
         puts(0);
-        yolo 1;
+        damn 1;
     }
 }
 

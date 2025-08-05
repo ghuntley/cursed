@@ -1,7 +1,7 @@
 //! LLVM Function Compilation Module
 //! Complete function compilation with full LLVM IR generation
 
-use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression, YikesStatement, FamStatement, ShookExpression, DeferStatement, Type};
+use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression, YikesStatement, FamStatement, ShookExpression, DeferStatement, Type};
 use crate::error::CursedError;
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use crate::codegen::llvm::register_tracker::RegisterTracker;
@@ -598,12 +598,7 @@ impl FunctionCompiler {
             Expression::Map(pairs) => {
                 self.compile_map_literal(pairs)
             },
-            Expression::ChannelSend(channel_send_expr) => {
-                self.compile_channel_send(channel_send_expr)
-            },
-            Expression::ChannelReceive(channel_receive_expr) => {
-                self.compile_channel_receive(channel_receive_expr)
-            },
+
             Expression::ChannelCreation(channel_creation_expr) => {
                 self.compile_channel_creation(channel_creation_expr)
             },
@@ -2154,32 +2149,7 @@ impl FunctionCompiler {
     
 
 
-    /// Compile channel send expression
-    fn compile_channel_send(&mut self, channel_send_expr: &ChannelSendExpression) -> Result<String, CursedError> {
-        // Compile proper channel send operation
-        let channel_reg = self.compile_expression(&channel_send_expr.channel)?;
-        let value_reg = self.compile_expression(&channel_send_expr.value)?;
-        
-        // Generate LLVM call to channel send runtime function
-        let result_reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = call i32 @cursed_channel_send(i8* {}, i32 {})\n", 
-            result_reg, channel_reg, value_reg));
-        
-        Ok(result_reg)
-    }
 
-    /// Compile channel receive expression
-    fn compile_channel_receive(&mut self, channel_receive_expr: &ChannelReceiveExpression) -> Result<String, CursedError> {
-        // Compile proper channel receive operation
-        let channel_reg = self.compile_expression(&channel_receive_expr.channel)?;
-        
-        // Generate LLVM call to channel receive runtime function
-        let result_reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = call i32 @cursed_channel_receive(i8* {})\n", 
-            result_reg, channel_reg));
-        
-        Ok(result_reg)
-    }
 
     /// Compile channel creation expression
     fn compile_channel_creation(&mut self, channel_creation_expr: &ChannelCreationExpression) -> Result<String, CursedError> {

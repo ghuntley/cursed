@@ -51,38 +51,38 @@ slay demo_basic_compression() {
     facts test_data: []byte = MEDIUM_TEXT.as_bytes();
     
     // GZIP compression
-    yolo demo_format_compression(test_data, "GZIP", |data| {
+    damn demo_format_compression(test_data, "GZIP", |data| {
         facts compressed = squish_core.gzip_compress(data)?;
         facts decompressed = squish_core.gzip_decompress(&compressed)?;
-        yolo (compressed, decompressed);
+        damn (compressed, decompressed);
     });
     
     // ZLIB compression
-    yolo demo_format_compression(test_data, "ZLIB", |data| {
+    damn demo_format_compression(test_data, "ZLIB", |data| {
         facts compressed = squish_core.zlib_compress(data)?;
         facts decompressed = squish_core.zlib_decompress(&compressed)?;
-        yolo (compressed, decompressed);
+        damn (compressed, decompressed);
     });
     
     // DEFLATE compression
-    yolo demo_format_compression(test_data, "DEFLATE", |data| {
+    damn demo_format_compression(test_data, "DEFLATE", |data| {
         facts compressed = squish_core.flate_compress(data)?;
         facts decompressed = squish_core.flate_decompress(&compressed)?;
-        yolo (compressed, decompressed);
+        damn (compressed, decompressed);
     });
     
     // BZIP2 compression
-    yolo demo_format_compression(test_data, "BZIP2", |data| {
+    damn demo_format_compression(test_data, "BZIP2", |data| {
         facts compressed = squish_core.bzip2_compress(data)?;
         facts decompressed = squish_core.bzip2_decompress(&compressed)?;
-        yolo (compressed, decompressed);
+        damn (compressed, decompressed);
     });
     
     // LZW compression
-    yolo demo_format_compression(test_data, "LZW", |data| {
+    damn demo_format_compression(test_data, "LZW", |data| {
         facts compressed = squish_core.lzw_compress(data)?;
         facts decompressed = squish_core.lzw_decompress(&compressed)?;
-        yolo (compressed, decompressed);
+        damn (compressed, decompressed);
     });
     
     vibez.spillf("\n");
@@ -97,7 +97,7 @@ where F: FnOnce(&[u8]) -> squish_core.SquishResult<(Vec<u8>, Vec<u8>)> {
     
     // Verify decompression
     lowkey decompressed != data {
-        yolo squish_core.SquishError.generic("Decompression mismatch");
+        damn squish_core.SquishError.generic("Decompression mismatch");
     }
     
     facts compression_ratio = compressed.len() as f64 / data.len() as f64;
@@ -111,7 +111,7 @@ where F: FnOnce(&[u8]) -> squish_core.SquishResult<(Vec<u8>, Vec<u8>)> {
         duration.as_millis()
     );
     
-    yolo facts;
+    damn facts;
 }
 
 slay demo_compression_levels() {

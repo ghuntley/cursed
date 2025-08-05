@@ -52,7 +52,7 @@ slay calculate_magnitude(vec: Vector) -> f64 {
     lowkey (vec.z != nil) {
         facts z_val = vec.z ?? 0.0
         return sqrt(vec.x * vec.x + vec.y * vec.y + z_val * z_val)
-    } yolo {
+    } damn {
         return sqrt(vec.x * vec.x + vec.y * vec.y)
     }
 }

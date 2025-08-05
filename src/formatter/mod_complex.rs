@@ -610,8 +610,7 @@ impl CursedFormatter {
             Expression::Array(elements) => self.format_array_expression(elements),
             Expression::Map(pairs) => self.format_map_expression(pairs),
             Expression::CompositeLiteral(composite) => self.format_composite_literal(composite),
-            Expression::ChannelSend(send) => self.format_channel_send_expression(send),
-            Expression::ChannelReceive(receive) => self.format_channel_receive_expression(receive),
+
             Expression::ChannelCreation(creation) => self.format_channel_creation_expression(creation),
             Expression::StructLiteral(struct_lit) => self.format_struct_literal_expression(struct_lit),
             Expression::Lambda(lambda) => self.format_lambda_expression(lambda),
@@ -825,18 +824,7 @@ impl CursedFormatter {
         Ok(result)
     }
 
-    /// Format a channel send expression
-    fn format_channel_send_expression(&mut self, send: &ChannelSendExpression) -> Result<String, CursedError> {
-        let channel = self.format_expression(&send.channel)?;
-        let value = self.format_expression(&send.value)?;
-        Ok(format!("{} <- {}", channel, value))
-    }
 
-    /// Format a channel receive expression
-    fn format_channel_receive_expression(&mut self, receive: &ChannelReceiveExpression) -> Result<String, CursedError> {
-        let channel = self.format_expression(&receive.channel)?;
-        Ok(format!("<-{}", channel))
-    }
 
     /// Format a channel creation expression
     fn format_channel_creation_expression(&mut self, creation: &ChannelCreationExpression) -> Result<String, CursedError> {

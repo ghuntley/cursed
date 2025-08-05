@@ -112,7 +112,7 @@ slay scheduler_init(config SchedulerConfig) lit {
         global_scheduler.load_balancer.worker_queues[i] = channel_new()
         global_scheduler.load_balancer.worker_loads[i] = 0
     } fr fr Start scheduler thread
-    yolo scheduler_main_loop()
+    damn scheduler_main_loop()
     
     damn based
 }

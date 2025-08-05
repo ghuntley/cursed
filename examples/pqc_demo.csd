@@ -585,7 +585,7 @@ function demonstrate_advanced_features() {
 }
 
 fr fr Run all demonstrations
-yolo main() catch (error) {
+damn main() catch (error) {
     handle_crypto_error(error)
     println("Demo terminated due to error")?
 }

@@ -4,9 +4,9 @@ fr fr This demonstrates all major CURSED language features working together
 fr fr Function with typed parameters and return type
 slay factorial(n normie) normie {
     lowkey n <= 1 {
-        yolo 1;
+        damn 1;
     } highkey {
-        yolo n * factorial(n - 1);
+        damn n * factorial(n - 1);
     }
 }
 
@@ -42,5 +42,5 @@ slay main() {
     lowkey flag { vibez.spill("Flag is true!"); }
     
     fr fr Return the computed result
-    yolo result;
+    damn result;
 }

@@ -235,7 +235,7 @@ slay test_keyword_recognition() {
     assert_eq_int(recognize_keyword("cringe"), CRINGE_TOKEN)
     assert_eq_int(recognize_keyword("lowkey"), LOWKEY_TOKEN)
     assert_eq_int(recognize_keyword("bestie"), BESTIE_TOKEN)
-    assert_eq_int(recognize_keyword("yolo"), YOLO_TOKEN)
+    assert_eq_int(recognize_keyword("damn"), YOLO_TOKEN)
     assert_eq_int(recognize_keyword("ready"), READY_TOKEN)
     assert_eq_int(recognize_keyword("ghosted"), GHOSTED_TOKEN)
     assert_eq_int(recognize_keyword("simp"), SIMP_TOKEN)

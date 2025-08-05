@@ -13,7 +13,7 @@ squad VibeDemo {
         sus pattern = regex_vibez.compile(r"f[a-z]+");
         lowkey (pattern.is_err()) {
             println("Failed to compile pattern");
-            yolo;
+            damn;
         }
         
         facts compiled_pattern = pattern.unwrap();
@@ -60,7 +60,7 @@ squad VibeDemo {
         sus email_pattern = regex_vibez.compile(r"(?P<user>[a-zA-Z0-9._%+-]+)@(?P<domain>[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})");
         lowkey (email_pattern.is_err()) {
             println("Failed to compile email pattern");
-            yolo;
+            damn;
         }
         
         facts pattern = email_pattern.unwrap();
@@ -96,7 +96,7 @@ squad VibeDemo {
             
         lowkey (builder_result.is_err()) {
             println("Failed to build URL pattern");
-            yolo;
+            damn;
         }
         
         facts url_pattern = builder_result.unwrap();
@@ -130,7 +130,7 @@ squad VibeDemo {
         sus pattern = regex_vibez.compile(r"cap");
         lowkey (pattern.is_err()) {
             println("Failed to compile pattern");
-            yolo;
+            damn;
         }
         
         facts cap_pattern = pattern.unwrap();
@@ -158,7 +158,7 @@ squad VibeDemo {
         sus pattern = regex_vibez.compile(r",\s*");
         lowkey (pattern.is_err()) {
             println("Failed to compile split pattern");
-            yolo;
+            damn;
         }
         
         facts comma_pattern = pattern.unwrap();
@@ -190,7 +190,7 @@ squad VibeDemo {
         );
         lowkey (log_pattern.is_err()) {
             println("Failed to compile log pattern");
-            yolo;
+            damn;
         }
         
         facts pattern = log_pattern.unwrap();
@@ -234,7 +234,7 @@ squad VibeDemo {
         sus digit_only = regex_vibez.compile(r"[^\d]");
         lowkey (digit_only.is_err()) {
             println("Failed to compile digit pattern");
-            yolo;
+            damn;
         }
         
         facts normalize_pattern = digit_only.unwrap();

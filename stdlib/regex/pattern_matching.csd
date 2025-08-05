@@ -325,7 +325,7 @@ slay match_with_quantifier(text tea, elements [PatternElement], state MatchState
     } fr fr Then, try greedy or non-greedy matching
     vibe_check element.is_greedy {
         damn match_greedy(text, elements, current_state, element, match_count, max_matches)
-    } yolo {
+    } damn {
         damn match_non_greedy(text, elements, current_state, element, match_count, max_matches)
     }
 }
@@ -353,7 +353,7 @@ slay match_greedy(text tea, elements [PatternElement], state MatchState,
         vibe_check match_count > current_matches {
             match_count--
             current_state.position--
-        } yolo {
+        } damn {
             break
         }
     }

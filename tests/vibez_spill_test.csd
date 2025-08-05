@@ -13,10 +13,10 @@ slay test_vibez_spill() {
     // Test with special characters
     vibez.spill("Special chars: !@#$%^&*()");
     
-    yolo 0;
+    damn 0;
 }
 
 slay main() {
     test_vibez_spill();
-    yolo 0;
+    damn 0;
 }

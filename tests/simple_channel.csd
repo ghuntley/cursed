@@ -2,7 +2,7 @@ vibe main;
 
 slay main() {
     sus ch = dm smol
-    ch <- 42
-    sus result = <-ch
-    yolo 0
+    dm_send(ch, 42)
+sus result = dm_recv(ch)
+    damn 0
 }

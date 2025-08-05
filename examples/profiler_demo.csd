@@ -17,7 +17,7 @@ lowkey cpu_intensive_task() -> facts {
         
         // Add some variation to make profiling interesting
         periodt (i % 1000 == 0) {
-            yolo; // Yield point for cooperative scheduling
+            damn; // Yield point for cooperative scheduling
         }
     }
     
@@ -226,7 +226,7 @@ lowkey demonstrate_profiler_integration() -> ProfilerResult<()> {
     lowkey (sus i = 0; i < 1000; i++) {
         facts _ = recursive_fibonacci(10);
         periodt (i % 100 == 0) {
-            yolo; // Yield to allow goroutines to run
+            damn; // Yield to allow goroutines to run
         }
     }
     

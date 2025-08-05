@@ -4,28 +4,34 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     
-    // Use native target for dynamic library compatibility
+    // Cross-compilation configuration
     const resolved_target = target;
+    const is_wasm = target.result.cpu.arch == .wasm32;
+    _ = target.result.os.tag; // For potential future Windows-specific logic
 
     // Create the CURSED compiler executable - use minimal working version
     const exe = b.addExecutable(.{
         .name = "cursed-zig", 
-        .root_source_file = b.path("src-zig/main_concurrency_minimal.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_main.zig") else b.path("src-zig/main_concurrency_minimal.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
 
     // Configure libc for minimal compiler (no LLVM needed)
-    exe.linkLibC();
+    if (!is_wasm) {
+        exe.linkLibC();
+    }
 
     // Alternative implementations for testing and fallback
     const minimal_exe = b.addExecutable(.{
         .name = "cursed-minimal",
-        .root_source_file = b.path("src-zig/minimal_main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_main.zig") else b.path("src-zig/minimal_main.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
-    minimal_exe.linkLibC();
+    if (!is_wasm) {
+        minimal_exe.linkLibC();
+    }
 
     const complete_exe = b.addExecutable(.{
         .name = "cursed-complete",
@@ -33,7 +39,9 @@ pub fn build(b: *std.Build) void {
         .target = resolved_target,
         .optimize = optimize,
     });
-    complete_exe.linkLibC();
+    if (!is_wasm) {
+        complete_exe.linkLibC();
+    }
 
     // Enhanced compiler with improved error reporting and debugging (disabled due to API issues)
     // const enhanced_exe = b.addExecutable(.{
@@ -51,7 +59,9 @@ pub fn build(b: *std.Build) void {
         .target = resolved_target,
         .optimize = .ReleaseFast, // Always use fastest optimization for performance compiler
     });
-    optimized_exe.linkLibC();
+    if (!is_wasm) {
+        optimized_exe.linkLibC();
+    }
 
     b.installArtifact(exe);
     b.installArtifact(minimal_exe);
@@ -96,37 +106,39 @@ pub fn build(b: *std.Build) void {
     const concurrency_test_step = b.step("test-concurrency", "Run concurrency tests");
     concurrency_test_step.dependOn(&run_concurrency_tests.step);
 
-    // Create concurrency benchmark executable
-    const concurrency_benchmark = b.addExecutable(.{
-        .name = "cursed-concurrency-benchmark",
-        .root_source_file = b.path("src-zig/concurrency_benchmark.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
+    // Create concurrency benchmark executable (skip for WASM - no threading support)
+    if (!is_wasm) {
+        const concurrency_benchmark = b.addExecutable(.{
+            .name = "cursed-concurrency-benchmark",
+            .root_source_file = b.path("src-zig/concurrency_benchmark.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
 
-    b.installArtifact(concurrency_benchmark);
+        b.installArtifact(concurrency_benchmark);
 
-    const run_benchmark = b.addRunArtifact(concurrency_benchmark);
-    run_benchmark.step.dependOn(b.getInstallStep());
+        const run_benchmark = b.addRunArtifact(concurrency_benchmark);
+        run_benchmark.step.dependOn(b.getInstallStep());
 
-    const benchmark_step = b.step("benchmark", "Run concurrency benchmarks");
-    benchmark_step.dependOn(&run_benchmark.step);
+        const benchmark_step = b.step("benchmark", "Run concurrency benchmarks");
+        benchmark_step.dependOn(&run_benchmark.step);
 
-    // Create comprehensive concurrency test executable
-    const concurrency_test_exe = b.addExecutable(.{
-        .name = "cursed-concurrency-test",
-        .root_source_file = b.path("src-zig/concurrency_test.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
+        // Create comprehensive concurrency test executable
+        const concurrency_test_exe = b.addExecutable(.{
+            .name = "cursed-concurrency-test",
+            .root_source_file = b.path("src-zig/concurrency_test.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
 
-    b.installArtifact(concurrency_test_exe);
+        b.installArtifact(concurrency_test_exe);
 
-    const run_concurrency_test_exe = b.addRunArtifact(concurrency_test_exe);
-    run_concurrency_test_exe.step.dependOn(b.getInstallStep());
+        const run_concurrency_test_exe = b.addRunArtifact(concurrency_test_exe);
+        run_concurrency_test_exe.step.dependOn(b.getInstallStep());
 
-    const concurrency_full_test_step = b.step("test-concurrency-full", "Run comprehensive concurrency tests");
-    concurrency_full_test_step.dependOn(&run_concurrency_test_exe.step);
+        const concurrency_full_test_step = b.step("test-concurrency-full", "Run comprehensive concurrency tests");
+        concurrency_full_test_step.dependOn(&run_concurrency_test_exe.step);
+    }
 
     // Create stdlib tests
     const stdlib_tests = b.addTest(.{

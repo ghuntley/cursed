@@ -36,7 +36,7 @@ slay main_character() {
     // Loop with CURSED syntax
     lowkey (sus i = 0; i < 3; i++) {
         println("Loop iteration: " + i)
-        yolo // yield point for cooperative scheduling
+        damn // yield point for cooperative scheduling
     }
     
     println("That's the demo, no cap! ✨")

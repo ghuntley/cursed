@@ -271,7 +271,7 @@ slay testCircuitBreaker() {
     // Test execution
     facts err = cb.Execute(func() tea {
         oglogging.spill("Circuit breaker executed function")
-        yolo cap
+        damn cap
     })
     
     lowkey (err != cap) {

@@ -24,7 +24,7 @@ slay fibonacci_iterative(sus n: i32) -> i64 {
     sus b: i64 = 1;
     
     // This loop will benefit from unrolling and vectorization
-    yolo (sus i = 2; i <= n; i++) {
+    damn (sus i = 2; i <= n; i++) {
         sus temp = a + b;
         a = b;
         b = temp;
@@ -44,12 +44,12 @@ slay matrix_multiply(
     sus p = b.len();
     
     // Nested loops that benefit from cache optimization and vectorization
-    yolo (sus i = 0; i < n; i++) {
-        yolo (sus j = 0; j < m; j++) {
+    damn (sus i = 0; i < n; i++) {
+        damn (sus j = 0; j < m; j++) {
             sus sum: f64 = 0.0;
             
             // Inner loop is hot and vectorizable
-            yolo (sus k = 0; k < p; k++) {
+            damn (sus k = 0; k < p; k++) {
                 sum += a[i][k] * b[k][j];
             }
             
@@ -90,7 +90,7 @@ slay process_array_hot(sus data: &[i32]) -> i64 {
     sus sum: i64 = 0;
     
     // This loop will be heavily optimized due to high execution frequency
-    yolo (sus item in data) {
+    damn (sus item in data) {
         lowkey (item > 0) {
             sum += item as i64;
         }
@@ -116,12 +116,12 @@ slay process_large_dataset(sus data: &[f64]) -> f64 {
     sus result: f64 = 0.0;
     
     // Sequential access pattern - cache friendly
-    yolo (sus i = 0; i < n; i++) {
+    damn (sus i = 0; i < n; i++) {
         result += data[i] * data[i];
     }
     
     // Strided access pattern - may benefit from prefetching
-    yolo (sus i = 0; i < n; i += 8) {
+    damn (sus i = 0; i < n; i += 8) {
         lowkey (i + 7 < n) {
             result += data[i] + data[i + 4];
         }
@@ -135,7 +135,7 @@ slay complex_algorithm(sus input: &[i32]) -> i32 {
     sus result = 0;
     sus state = 0;
     
-    yolo (sus value in input) {
+    damn (sus value in input) {
         // Complex branching that benefits from profile-guided optimization
         vibe_check (state) {
             mood 0 => {
@@ -184,7 +184,7 @@ slay main() -> void {
     sus large_data: Vec<f64> = Vec::new();
     
     // Generate large dataset
-    yolo (sus i = 0; i < 10000; i++) {
+    damn (sus i = 0; i < 10000; i++) {
         large_data.push((i * 7 + 13) as f64);
     }
     
@@ -192,7 +192,7 @@ slay main() -> void {
     println("Testing hot path optimizations...");
     sus total_sum: i64 = 0;
     
-    yolo (sus iteration = 0; iteration < 1000; iteration++) {
+    damn (sus iteration = 0; iteration < 1000; iteration++) {
         // Fibonacci computation - hot recursive function
         sus fib_result = fibonacci_iterative(20);
         total_sum += fib_result;
@@ -202,7 +202,7 @@ slay main() -> void {
         total_sum += array_sum;
         
         // Classification - hot branchy function
-        yolo (sus value in &test_data) {
+        damn (sus value in &test_data) {
             sus classification = classify_number(value);
             // Most values will be "single_digit" or "double_digit" - hot branches
         }
@@ -221,7 +221,7 @@ slay main() -> void {
     sus matrix_result = [[0.0, 0.0], [0.0, 0.0]];
     
     // This will benefit from vectorization and cache optimization
-    yolo (sus i = 0; i < 100; i++) {
+    damn (sus i = 0; i < 100; i++) {
         matrix_multiply(&matrix_a, &matrix_b, &matrix_result);
     }
     
@@ -245,13 +245,13 @@ slay main() -> void {
     // Demonstrate different access patterns
     println("Testing access patterns...");
     sus pattern_test: Vec<i32> = Vec::new();
-    yolo (sus i = 0; i < 1000; i++) {
+    damn (sus i = 0; i < 1000; i++) {
         pattern_test.push(i % 100);
     }
     
     // Random access pattern - may benefit from different optimization
     sus random_sum = 0;
-    yolo (sus i = 0; i < 100; i++) {
+    damn (sus i = 0; i < 100; i++) {
         sus index = (i * 17 + 31) % pattern_test.len();
         random_sum += pattern_test[index];
     }
@@ -286,7 +286,7 @@ slay benchmark_pgo_effectiveness() -> void {
     
     // CPU-intensive benchmark
     sus cpu_result: i64 = 0;
-    yolo (sus i = 0; i < 10000; i++) {
+    damn (sus i = 0; i < 10000; i++) {
         cpu_result += fibonacci_iterative(25);
     }
     
@@ -296,7 +296,7 @@ slay benchmark_pgo_effectiveness() -> void {
     // Memory-intensive benchmark
     start_time = std::time::Instant::now();
     sus large_dataset: Vec<f64> = Vec::new();
-    yolo (sus i = 0; i < 100000; i++) {
+    damn (sus i = 0; i < 100000; i++) {
         large_dataset.push((i * 3.14159) % 1000.0);
     }
     
@@ -307,7 +307,7 @@ slay benchmark_pgo_effectiveness() -> void {
     // Branch-heavy benchmark
     start_time = std::time::Instant::now();
     sus branch_results: Vec<string> = Vec::new();
-    yolo (sus i = 0; i < 50000; i++) {
+    damn (sus i = 0; i < 50000; i++) {
         sus value = (i * 7 + 13) % 1000;
         branch_results.push(classify_number(value));
     }

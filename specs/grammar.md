@@ -210,16 +210,22 @@ bestie _, val := flex items {
 ### While Statements
 
 ```
-WhileStmt        = "periodt" Expression Block .
+WhileStmt        = ( "periodt" | "flex" ) Expression Block .
 ```
 
-Example:
+Examples:
 
 ```
 periodt x > 0 {
     x--
 }
+
+flex x < 100 {
+    x = x * 2
+}
 ```
+
+**COMPATIBILITY**: Both `periodt` and `flex` are accepted for while statements.
 
 ### Return Statements
 
@@ -229,7 +235,8 @@ ReturnStmt       = "damn" [ ExpressionList ] .
 
 The `damn` keyword is used to return values from functions.
 
-**Note**: `yolo` is deprecated but supported for backward compatibility.
+**CANONICAL**: `damn` is the canonical return keyword. `yolo` is deprecated and MAY be removed in future versions.
+**PARSER REQUIREMENT**: New parsers SHOULD prefer `damn` and MAY emit warnings for `yolo`.
 
 Examples:
 
@@ -288,6 +295,9 @@ CURSED follows standard operator precedence (highest to lowest):
 7. **Logical AND**: `&&`
 8. **Logical OR**: `||`
 9. **Assignment**: `=`, `:=`, `+=`, `-=`, etc.
+
+**CRITICAL**: Parsers MUST implement precedence climbing to ensure correct evaluation order.
+Example: `2 + 3 * 4` must parse as `2 + (3 * 4)`, not `(2 + 3) * 4`.
 
 ### Primary Expressions
 
@@ -371,9 +381,11 @@ dm_send(ch, value)                    // Send operation (blocking) - CANONICAL
 value := dm_recv(ch)                  // Receive operation (blocking) - CANONICAL  
 value, ok := dm_recv(ch)              // Receive with closed check - CANONICAL
 
-// Legacy Go-style syntax (deprecated):
-// ch <- value, value := <-ch
 dm_close(ch)                          // Close channel
+
+// Legacy Go-style syntax (DEPRECATED - remove in future versions):
+// ch <- value, value := <-ch
+// PARSER REQUIREMENT: New parsers SHOULD NOT implement legacy syntax.
 ```
 
 ### Select Statements

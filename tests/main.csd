@@ -34,10 +34,10 @@ slay verify_package_functionality() -> bool {
 }
 
 // Export functions for other packages to use
-yolo get_package_info() -> String {
+damn get_package_info() -> String {
     comeback "basic-test-package v1.0.0 - A simple test package";
 }
 
-yolo is_package_working() -> bool {
+damn is_package_working() -> bool {
     comeback verify_package_functionality();
 }

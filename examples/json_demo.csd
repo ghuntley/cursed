@@ -23,7 +23,7 @@ slay main() {
     sus json_bytes, err = json_tea.marshal(&person)
     lowkey err != cap {
         vibez.spillf("Marshal error: %v", err)
-        yolo
+        damn
     }
     
     sus json_string = tea(json_bytes)
@@ -33,7 +33,7 @@ slay main() {
     sus pretty_bytes, err = json_tea.marshal_indent(&person, "", "  ")
     lowkey err != cap {
         vibez.spillf("Marshal indent error: %v", err)
-        yolo
+        damn
     }
     
     sus pretty_string = tea(pretty_bytes)
@@ -47,7 +47,7 @@ slay main() {
     err = json_tea.unmarshal(json_bytes, &decoded_person)
     lowkey err != cap {
         vibez.spillf("Unmarshal error: %v", err)
-        yolo
+        damn
     }
     
     vibez.spillf("Decoded person: %+v", decoded_person)
@@ -73,7 +73,7 @@ slay main() {
     sus array_json, err = json_tea.marshal(&people)
     lowkey err != cap {
         vibez.spillf("Array marshal error: %v", err)
-        yolo
+        damn
     }
     
     vibez.spillf("Array JSON: %s", tea(array_json))
@@ -96,7 +96,7 @@ slay main() {
     sus company_json, err = json_tea.marshal_indent(&company, "", "  ")
     lowkey err != cap {
         vibez.spillf("Company marshal error: %v", err)
-        yolo
+        damn
     }
     
     vibez.spill("Company JSON:")

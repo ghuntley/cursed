@@ -36,7 +36,7 @@ slay fan_out[T](input dm<T>, output_count normie) []dm<T> {
                     close(outputs[i])
                     i++
                 }
-                yolo
+                damn
             }
             
             // Send to all outputs
@@ -49,7 +49,7 @@ slay fan_out[T](input dm<T>, output_count normie) []dm<T> {
         }
     }
     
-    yolo outputs
+    damn outputs
 }
 
 fr fr Fan-in: Merge messages from multiple inputs into one output
@@ -75,7 +75,7 @@ slay fan_in[T](inputs []dm<T>) dm<T> {
                         close(output)
                         puts("Fan-in: All inputs closed, closing output")
                     }
-                    yolo
+                    damn
                 }
                 
                 puts(sprintf("Fan-in: Received from input %d: %v", input_id, value))
@@ -85,7 +85,7 @@ slay fan_in[T](inputs []dm<T>) dm<T> {
         i++
     }
     
-    yolo output
+    damn output
 }
 
 fr fr Load balancer: Distribute work to the first available worker
@@ -103,7 +103,7 @@ slay load_balancer[T](input dm<T>, workers []dm<T>) {
                     close(workers[i])
                     i++
                 }
-                yolo
+                damn
             }
             
             // Try to send to any available worker
@@ -173,7 +173,7 @@ slay priority_fan_in(high_priority dm<Message>, normal_priority dm<Message>, low
         puts("Priority Fan-in: All inputs closed, output closed")
     }
     
-    yolo output
+    damn output
 }
 
 slay basic_fan_out_demo() {
@@ -194,7 +194,7 @@ slay basic_fan_out_demo() {
                 sus msg, ok = <-output_ch
                 lowkey !ok {
                     puts(sprintf("Consumer %d finished", output_id))
-                    yolo
+                    damn
                 }
                 puts(sprintf("Consumer %d processed: %s", output_id, msg.content))
                 sleep(random(100, 500))  // Simulate processing
@@ -244,7 +244,7 @@ slay basic_fan_in_demo() {
             sus msg, ok = <-merged
             lowkey !ok {
                 puts(sprintf("Merged consumer finished - processed %d messages", count))
-                yolo
+                damn
             }
             puts(sprintf("Merged: %s from %s", msg.content, msg.source))
             count++
@@ -311,7 +311,7 @@ slay load_balancing_demo() {
                 sus work, ok = <-worker_ch
                 lowkey !ok {
                     puts(sprintf("Worker %d finished", worker_id))
-                    yolo
+                    damn
                 }
                 
                 puts(sprintf("Worker %d processing: %s", worker_id, work.content))
@@ -362,7 +362,7 @@ slay priority_demo() {
             sus msg, ok = <-prioritized
             lowkey !ok {
                 puts("Priority consumer finished")
-                yolo
+                damn
             }
             puts(sprintf("Processing: %s (Priority %d)", msg.content, msg.priority))
             sleep(200)
@@ -423,7 +423,7 @@ slay scatter_gather_demo() {
                     close(service_channels[i])
                     i++
                 }
-                yolo
+                damn
             }
             
             puts(sprintf("Scattering query: %s", query.content))
@@ -453,7 +453,7 @@ slay scatter_gather_demo() {
             sus result, ok = <-gathered_results
             lowkey !ok {
                 puts("Result gatherer finished")
-                yolo
+                damn
             }
             puts(sprintf("Gathered result: %s", result.content))
         }
@@ -491,7 +491,7 @@ slay simulated_service(input dm<Message>, output dm<Message>, service_id normie)
         lowkey !ok {
             close(output)
             puts(sprintf("Service %d finished", service_id))
-            yolo
+            damn
         }
         
         puts(sprintf("Service %d processing: %s", service_id, query.content))
@@ -527,9 +527,9 @@ slay main() {
 
 fr fr Utility functions
 slay get_timestamp() normie {
-    yolo normie(time.Now().Unix())
+    damn normie(time.Now().Unix())
 }
 
 slay random(min normie, max normie) normie {
-    yolo min + (time.Now().Unix() % (max - min + 1))
+    damn min + (time.Now().Unix() % (max - min + 1))
 }

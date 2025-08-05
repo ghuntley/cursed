@@ -6,57 +6,57 @@ fr fr Provides random value generation, property test runners, and shrinking fun
 fr fr Random value generators  
 slay generate_random_int(min normie, max normie) { fr fr Simple deterministic generator for reproducible tests
     sus result normie = 42 fr fr Simplified for initial implementation
-    yolo result
+    damn result
 }
 
 slay generate_random_string(length normie) {
     sus result tea = "test_string"
-    yolo result
+    damn result
 }
 
 slay generate_random_boolean() {
-    yolo based fr fr Simplified - always return true
+    damn based fr fr Simplified - always return true
 }
 
 fr fr Shrinking functionality to find minimal failing cases
 slay shrink_string(input tea) {
-    yolo "s" fr fr Return shorter string
+    damn "s" fr fr Return shorter string
 }
 
 slay shrink_int(input normie) {
     lowkey input == 0 {
-        yolo input
+        damn input
     }
-    yolo input / 2
+    damn input / 2
 }
 
 slay shrink_boolean(input lit) {
-    yolo cap fr fr Boolean shrinking: prefer false
+    damn cap fr fr Boolean shrinking: prefer false
 }
 
 fr fr Property assertion functions
 slay property_assert_true(condition lit, message tea) {
     lowkey condition {
-        yolo based
+        damn based
     }
     vibez.spill("Property assertion failed: " + message)
-    yolo cap
+    damn cap
 }
 
 slay property_assert_equal_int(actual normie, expected normie, message tea) {
     lowkey actual == expected {
-        yolo based
+        damn based
     }
     vibez.spill("Property assertion failed: " + message)
-    yolo cap
+    damn cap
 }
 
 slay property_assert_equal_string(actual tea, expected tea, message tea) {
     lowkey actual == expected {
-        yolo based
+        damn based
     }
     vibez.spill("Property assertion failed: " + message)
-    yolo cap
+    damn cap
 }
 
 fr fr Simple property test runner
@@ -74,7 +74,7 @@ slay run_property_test(test_name tea, iterations normie) {
     }
     
     vibez.spill("Property test completed - success count: " + tea(success_count))
-    yolo based
+    damn based
 }
 
 fr fr Test reflexivity property for integers
@@ -87,7 +87,7 @@ slay test_reflexivity_int(test_name tea, iterations normie) {
     }
     
     vibez.spill("Reflexivity property completed")
-    yolo based
+    damn based
 }
 
 fr fr Test addition commutativity property
@@ -101,7 +101,7 @@ slay test_addition_commutative(test_name tea, iterations normie) {
     }
     
     vibez.spill("Addition commutativity completed")
-    yolo based
+    damn based
 }
 
 fr fr Property test result reporting

@@ -9,8 +9,8 @@ slay main() {
     sus last = numbers[4];
     
     lowkey (first == 1 && last == 5) {
-        yolo 1;
+        damn 1;
     } highkey {
-        yolo 0;
+        damn 0;
     }
 }

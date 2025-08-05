@@ -18,5 +18,5 @@ slay main() {
     fr fr Receive the last value (should succeed)
     sus result = <-ch
     
-    yolo 0
+    damn 0
 }

@@ -98,7 +98,7 @@ squad CodegenResult {
 
 // Create new code generator
 slay new_codegen(module_name: tea) -> CodeGenerator {
-    yolo CodeGenerator {
+    damn CodeGenerator {
         module_name: module_name,
         functions: LLVMFunction[],
         global_variables: LLVMValue[],
@@ -115,41 +115,41 @@ slay new_codegen(module_name: tea) -> CodeGenerator {
 slay next_value_name(codegen: CodeGenerator) -> tea {
     sus name = "%v" + codegen.value_counter.to_string();
     codegen.value_counter = codegen.value_counter + 1;
-    yolo name;
+    damn name;
 }
 
 // Get next block name
 slay next_block_name(codegen: CodeGenerator) -> tea {
     sus name = "bb" + codegen.block_counter.to_string();
     codegen.block_counter = codegen.block_counter + 1;
-    yolo name;
+    damn name;
 }
 
 // Convert CURSED type to LLVM type
 slay cursed_type_to_llvm(type_info: TypeInfo) -> LLVMType {
     vibe_check (type_info.kind) {
         mood TypeKind::Normie {
-            yolo LLVMType::I32;
+            damn LLVMType::I32;
         }
         
         mood TypeKind::Float {
-            yolo LLVMType::F64;
+            damn LLVMType::F64;
         }
         
         mood TypeKind::Tea {
-            yolo LLVMType::Ptr; // String as pointer
+            damn LLVMType::Ptr; // String as pointer
         }
         
         mood TypeKind::Cap {
-            yolo LLVMType::I1;
+            damn LLVMType::I1;
         }
         
         mood TypeKind::Void {
-            yolo LLVMType::Void;
+            damn LLVMType::Void;
         }
         
         basic {
-            yolo LLVMType::Ptr; // Default to pointer
+            damn LLVMType::Ptr; // Default to pointer
         }
     }
 }
@@ -158,35 +158,35 @@ slay cursed_type_to_llvm(type_info: TypeInfo) -> LLVMType {
 slay llvm_type_to_string(llvm_type: LLVMType) -> tea {
     vibe_check (llvm_type) {
         mood LLVMType::I32 {
-            yolo "i32";
+            damn "i32";
         }
         
         mood LLVMType::I64 {
-            yolo "i64";
+            damn "i64";
         }
         
         mood LLVMType::F32 {
-            yolo "float";
+            damn "float";
         }
         
         mood LLVMType::F64 {
-            yolo "double";
+            damn "double";
         }
         
         mood LLVMType::I1 {
-            yolo "i1";
+            damn "i1";
         }
         
         mood LLVMType::Ptr {
-            yolo "i8*";
+            damn "i8*";
         }
         
         mood LLVMType::Void {
-            yolo "void";
+            damn "void";
         }
         
         basic {
-            yolo "unknown";
+            damn "unknown";
         }
     }
 }
@@ -195,7 +195,7 @@ slay llvm_type_to_string(llvm_type: LLVMType) -> tea {
 slay create_basic_block(codegen: CodeGenerator, name: tea?) -> LLVMBasicBlock {
     sus block_name = bestie (name != nocap) { name } highkey { next_block_name(codegen) };
     
-    yolo LLVMBasicBlock {
+    damn LLVMBasicBlock {
         name: block_name,
         instructions: LLVMInstruction[],
         terminator: nocap,
@@ -226,7 +226,7 @@ slay create_alloca(codegen: CodeGenerator, llvm_type: LLVMType, name: tea) -> LL
     };
     
     add_instruction(codegen, instruction);
-    yolo result;
+    damn result;
 }
 
 // Create store instruction
@@ -258,7 +258,7 @@ slay create_load(codegen: CodeGenerator, pointer: LLVMValue, result_type: LLVMTy
     };
     
     add_instruction(codegen, instruction);
-    yolo result;
+    damn result;
 }
 
 // Create binary operation
@@ -278,7 +278,7 @@ slay create_binary_op(codegen: CodeGenerator, op: InstructionType, left: LLVMVal
     };
     
     add_instruction(codegen, instruction);
-    yolo result;
+    damn result;
 }
 
 // Create return instruction
@@ -299,7 +299,7 @@ slay create_return(codegen: CodeGenerator, value: LLVMValue?) {
 
 // Create constant value
 slay create_constant(value: tea, llvm_type: LLVMType) -> LLVMValue {
-    yolo LLVMValue {
+    damn LLVMValue {
         name: value,
         llvm_type: llvm_type,
         is_constant: truth,
@@ -320,7 +320,7 @@ slay generate(ast: Program, config: CompilerConfig) -> CodegenResult? {
     // Generate final LLVM IR
     sus output = generate_llvm_ir(codegen);
     
-    yolo CodegenResult {
+    damn CodegenResult {
         success: errors.length() == 0,
         output: output,
         errors: errors,
@@ -430,7 +430,7 @@ slay generate_variable_declaration(codegen: CodeGenerator, var_decl: VariableDec
     // Generate the value expression
     sus value = generate_expression(codegen, var_decl.value, errors);
     bestie (value == nocap) {
-        yolo;
+        damn;
     }
     
     // Create alloca for the variable
@@ -449,7 +449,7 @@ slay generate_if_statement(codegen: CodeGenerator, if_stmt: IfStatement, errors:
     // Generate condition
     sus condition = generate_expression(codegen, if_stmt.condition, errors);
     bestie (condition == nocap) {
-        yolo;
+        damn;
     }
     
     // Create basic blocks
@@ -587,29 +587,29 @@ slay generate_expression(codegen: CodeGenerator, expr: ASTNode, errors: tea[]) -
             sus var_ptr = codegen.local_variables.get(ident.name);
             bestie (var_ptr == nocap) {
                 errors.push("Undefined variable: " + ident.name);
-                yolo nocap;
+                damn nocap;
             }
-            yolo create_load(codegen, var_ptr, var_ptr.llvm_type);
+            damn create_load(codegen, var_ptr, var_ptr.llvm_type);
         }
         
         mood NodeType::IntegerLiteral {
             sus int_lit = expr as IntegerLiteral;
-            yolo create_constant(int_lit.value.to_string(), LLVMType::I32);
+            damn create_constant(int_lit.value.to_string(), LLVMType::I32);
         }
         
         mood NodeType::StringLiteral {
             sus str_lit = expr as StringLiteral;
-            yolo create_constant("\"" + str_lit.value + "\"", LLVMType::Ptr);
+            damn create_constant("\"" + str_lit.value + "\"", LLVMType::Ptr);
         }
         
         mood NodeType::BinaryExpression {
             sus bin_expr = expr as BinaryExpression;
-            yolo generate_binary_expression(codegen, bin_expr, errors);
+            damn generate_binary_expression(codegen, bin_expr, errors);
         }
         
         basic {
             errors.push("Unknown expression type");
-            yolo nocap;
+            damn nocap;
         }
     }
 }
@@ -620,37 +620,37 @@ slay generate_binary_expression(codegen: CodeGenerator, expr: BinaryExpression, 
     sus right = generate_expression(codegen, expr.right, errors);
     
     bestie (left == nocap || right == nocap) {
-        yolo nocap;
+        damn nocap;
     }
     
     vibe_check (expr.operator) {
         mood "+" {
-            yolo create_binary_op(codegen, InstructionType::Add, left, right);
+            damn create_binary_op(codegen, InstructionType::Add, left, right);
         }
         
         mood "-" {
-            yolo create_binary_op(codegen, InstructionType::Sub, left, right);
+            damn create_binary_op(codegen, InstructionType::Sub, left, right);
         }
         
         mood "*" {
-            yolo create_binary_op(codegen, InstructionType::Mul, left, right);
+            damn create_binary_op(codegen, InstructionType::Mul, left, right);
         }
         
         mood "/" {
-            yolo create_binary_op(codegen, InstructionType::Div, left, right);
+            damn create_binary_op(codegen, InstructionType::Div, left, right);
         }
         
         mood "%" {
-            yolo create_binary_op(codegen, InstructionType::Rem, left, right);
+            damn create_binary_op(codegen, InstructionType::Rem, left, right);
         }
         
         mood "==" {
-            yolo create_binary_op(codegen, InstructionType::ICmp, left, right);
+            damn create_binary_op(codegen, InstructionType::ICmp, left, right);
         }
         
         basic {
             errors.push("Unknown binary operator: " + expr.operator);
-            yolo nocap;
+            damn nocap;
         }
     }
 }
@@ -669,7 +669,7 @@ slay generate_llvm_ir(codegen: CodeGenerator) -> tea {
         output = output + "\n";
     }
     
-    yolo output;
+    damn output;
 }
 
 // Generate LLVM IR for function
@@ -696,7 +696,7 @@ slay generate_function_ir(func: LLVMFunction) -> tea {
     
     output = output + "}\n";
     
-    yolo output;
+    damn output;
 }
 
 // Generate LLVM IR for basic block
@@ -713,7 +713,7 @@ slay generate_block_ir(block: LLVMBasicBlock) -> tea {
         output = output + "  " + generate_instruction_ir(block.terminator) + "\n";
     }
     
-    yolo output;
+    damn output;
 }
 
 // Generate LLVM IR for instruction
@@ -721,20 +721,20 @@ slay generate_instruction_ir(instr: LLVMInstruction) -> tea {
     vibe_check (instr.opcode) {
         mood InstructionType::Alloca {
             sus result_name = bestie (instr.result != nocap) { instr.result.name } highkey { "%tmp" };
-            yolo result_name + " = alloca " + instr.metadata;
+            damn result_name + " = alloca " + instr.metadata;
         }
         
         mood InstructionType::Store {
             sus value = instr.operands[0];
             sus ptr = instr.operands[1];
-            yolo "store " + llvm_type_to_string(value.llvm_type) + " " + value.name + 
+            damn "store " + llvm_type_to_string(value.llvm_type) + " " + value.name + 
                  ", " + llvm_type_to_string(ptr.llvm_type) + " " + ptr.name;
         }
         
         mood InstructionType::Load {
             sus result_name = bestie (instr.result != nocap) { instr.result.name } highkey { "%tmp" };
             sus ptr = instr.operands[0];
-            yolo result_name + " = load " + instr.metadata + ", " + 
+            damn result_name + " = load " + instr.metadata + ", " + 
                  llvm_type_to_string(ptr.llvm_type) + " " + ptr.name;
         }
         
@@ -742,7 +742,7 @@ slay generate_instruction_ir(instr: LLVMInstruction) -> tea {
             sus result_name = bestie (instr.result != nocap) { instr.result.name } highkey { "%tmp" };
             sus left = instr.operands[0];
             sus right = instr.operands[1];
-            yolo result_name + " = add " + llvm_type_to_string(left.llvm_type) + " " + 
+            damn result_name + " = add " + llvm_type_to_string(left.llvm_type) + " " + 
                  left.name + ", " + right.name;
         }
         
@@ -750,7 +750,7 @@ slay generate_instruction_ir(instr: LLVMInstruction) -> tea {
             sus result_name = bestie (instr.result != nocap) { instr.result.name } highkey { "%tmp" };
             sus left = instr.operands[0];
             sus right = instr.operands[1];
-            yolo result_name + " = sub " + llvm_type_to_string(left.llvm_type) + " " + 
+            damn result_name + " = sub " + llvm_type_to_string(left.llvm_type) + " " + 
                  left.name + ", " + right.name;
         }
         
@@ -758,32 +758,32 @@ slay generate_instruction_ir(instr: LLVMInstruction) -> tea {
             sus result_name = bestie (instr.result != nocap) { instr.result.name } highkey { "%tmp" };
             sus left = instr.operands[0];
             sus right = instr.operands[1];
-            yolo result_name + " = mul " + llvm_type_to_string(left.llvm_type) + " " + 
+            damn result_name + " = mul " + llvm_type_to_string(left.llvm_type) + " " + 
                  left.name + ", " + right.name;
         }
         
         mood InstructionType::Ret {
             bestie (instr.operands.length() > 0) {
                 sus value = instr.operands[0];
-                yolo "ret " + llvm_type_to_string(value.llvm_type) + " " + value.name;
+                damn "ret " + llvm_type_to_string(value.llvm_type) + " " + value.name;
             } highkey {
-                yolo "ret void";
+                damn "ret void";
             }
         }
         
         mood InstructionType::Br {
-            yolo "br label %" + instr.metadata;
+            damn "br label %" + instr.metadata;
         }
         
         mood InstructionType::BrCond {
             sus condition = instr.operands[0];
             sus blocks = instr.metadata.split(",");
-            yolo "br " + llvm_type_to_string(condition.llvm_type) + " " + condition.name + 
+            damn "br " + llvm_type_to_string(condition.llvm_type) + " " + condition.name + 
                  ", label %" + blocks[0] + ", label %" + blocks[1];
         }
         
         basic {
-            yolo "; unknown instruction";
+            damn "; unknown instruction";
         }
     }
 }

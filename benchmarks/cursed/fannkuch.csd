@@ -109,7 +109,7 @@ slay fannkuch(n normie) normie {
         }
     }
     
-    yolo maxFlips
+    damn maxFlips
 }
 
 slay main() {

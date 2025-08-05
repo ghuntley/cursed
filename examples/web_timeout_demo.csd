@@ -9,7 +9,7 @@ yeet "stdlib::web_vibez" as web;
 yeet "stdlib::time" as time;
 
 facts main() -> Result<(), String> {
-    yolo; // Let the vibes flow
+    damn; // Let the vibes flow
 
     // Create server configuration with timeout settings
     sus config = web::ServerConfig {

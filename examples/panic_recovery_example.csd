@@ -46,7 +46,7 @@ slay divide_by_zero(normie a, normie b) normie {
     lowkey (b == 0) {
         yeet_error "Division by zero is not allowed!"
     }
-    yolo a / b
+    damn a / b
 }
 
 slay risky_calculation() normie {
@@ -54,7 +54,7 @@ slay risky_calculation() normie {
     lowkey (result > 40) {
         yeet_error "Result too large!"
     }
-    yolo result
+    damn result
 }
 
 slay process_file(tea filename) tea {
@@ -62,5 +62,5 @@ slay process_file(tea filename) tea {
     lowkey (filename == "nonexistent.txt") {
         yeet_error "File not found"
     }
-    yolo "File processed successfully"
+    damn "File processed successfully"
 }

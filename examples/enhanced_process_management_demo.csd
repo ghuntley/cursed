@@ -51,7 +51,7 @@ slay main() -> tea {
     demo_real_world_integration()?;
     
     vibez.spill("✅ Enhanced Process Management Demo Completed Successfully!\n");
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate basic SlayCommand functionality
@@ -76,7 +76,7 @@ slay demo_basic_slay_command() -> tea {
     timeout_cmd.RunWithTimeout(timeout_duration)?;
     vibez.spill("✓ Command completed within timeout\n");
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate SlayCommandBuilder fluent API
@@ -111,7 +111,7 @@ slay demo_slay_command_builder() -> tea {
         vibez.spill("No .txt files found in /tmp (or find failed)\n");
     }
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate SlayPipeline process chaining
@@ -143,7 +143,7 @@ slay demo_slay_pipeline() -> tea {
     fr fr Cleanup
     fs.remove_file("pipeline_test.txt")?;
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate background task execution
@@ -193,7 +193,7 @@ slay demo_background_tasks() -> tea {
     
     vibez.spill("✓ All background tasks completed\n");
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate enhanced environment management
@@ -234,7 +234,7 @@ slay demo_enhanced_environment() -> tea {
         }
     }
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate ProcessGroup coordination
@@ -289,7 +289,7 @@ slay demo_process_group() -> tea {
     vibez.spill(final_status.completed.to_string());
     vibez.spill(" processes finished\n");
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate OutputStreamer real-time processing
@@ -331,7 +331,7 @@ slay demo_output_streamer() -> tea {
     vibez.spill("📋 Captured output:\n");
     vibez.spill(captured_output);
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate InputGenerator programmatic input
@@ -366,7 +366,7 @@ slay demo_input_generator() -> tea {
     
     vibez.spill("✓ Input generation completed\n");
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate process monitoring and statistics
@@ -426,7 +426,7 @@ slay demo_process_monitoring() -> tea {
     
     vibez.spill("✓ Process monitoring completed\n");
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate error handling and recovery
@@ -490,7 +490,7 @@ slay demo_error_handling() -> tea {
         vibez.spill("\n");
     }
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate cross-platform features
@@ -564,7 +564,7 @@ slay demo_cross_platform() -> tea {
     fs.remove_file(test_file)?;
     vibez.spill("✓ Cross-platform file operations successful\n");
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Demonstrate real-world integration example
@@ -678,7 +678,7 @@ slay demo_real_world_integration() -> tea {
     vibez.spill("  - Error handling and recovery\n");
     vibez.spill("  - Cross-platform command execution\n");
     
-    yolo cap;
+    damn cap;
 }
 
 fr fr Helper function for error handling
@@ -700,5 +700,5 @@ slay time_operation<T>(operation: slay() -> T, description: tea) -> T {
     vibez.spill(elapsed.as_millis().to_string());
     vibez.spill(" ms\n");
     
-    yolo result;
+    damn result;
 }

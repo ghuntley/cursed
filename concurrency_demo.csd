@@ -17,7 +17,7 @@ slay test_basic_goroutines() {
     stan doWork()
     
     fr fr Wait a bit for goroutines to execute
-    yolo()  fr fr Yield to allow other goroutines to run
+    damn()  fr fr Yield to allow other goroutines to run
     
     print_test_summary()
 }
@@ -54,8 +54,8 @@ slay test_channel_communication() {
     }
     
     fr fr Let goroutines complete
-    yolo()
-    yolo()
+    damn()
+    damn()
     
     print_test_summary()
 }
@@ -148,7 +148,7 @@ slay test_producer_consumer() {
     
     fr fr Wait for all goroutines to complete
     bestie i := 0; i < 10; i = i + 1 {
-        yolo()
+        damn()
     }
     
     print_test_summary()
@@ -165,9 +165,9 @@ slay test_advanced_select() {
     fr fr Background worker
     stan {
         dm_send(low_priority, 42)
-        yolo()
+        damn()
         dm_send(high_priority, "urgent")
-        yolo()
+        damn()
         dm_send(control, based)
     }
     
@@ -190,7 +190,7 @@ slay test_advanced_select() {
                 
             basic:
                 vibez.spill("No messages available, waiting...")
-                yolo()
+                damn()
         }
     }
     
@@ -208,7 +208,7 @@ slay test_goroutine_coordination() {
     fr fr Worker 1
     stan {
         vibez.spill("Worker 1: Starting work...")
-        yolo()  fr fr Simulate work
+        damn()  fr fr Simulate work
         vibez.spill("Worker 1: Work complete")
         dm_send(barrier, based)
         dm_send(results, 1)
@@ -217,7 +217,7 @@ slay test_goroutine_coordination() {
     fr fr Worker 2
     stan {
         vibez.spill("Worker 2: Starting work...")
-        yolo()  fr fr Simulate work
+        damn()  fr fr Simulate work
         vibez.spill("Worker 2: Work complete")
         dm_send(barrier, based)
         dm_send(results, 2)
@@ -226,7 +226,7 @@ slay test_goroutine_coordination() {
     fr fr Worker 3
     stan {
         vibez.spill("Worker 3: Starting work...")
-        yolo()  fr fr Simulate work
+        damn()  fr fr Simulate work
         vibez.spill("Worker 3: Work complete")
         dm_send(barrier, based)
         dm_send(results, 3)

@@ -32,27 +32,27 @@ slay Person.compare(p @Person) normie {
     fr fr Implement the compare method
     
     lowkey this.age > p.age {
-        yolo 1
+        damn 1
     } lowkey this.age < p.age {
-        yolo -1
+        damn -1
     } basic {
-        yolo 0
+        damn 0
     }
 }
 
 slay Person.equals(p @Person) lit {
     fr fr Implement the equals method
-    yolo this.age == p.age && this.name == p.name
+    damn this.age == p.age && this.name == p.name
 }
 
 slay Person.to_string() tea {
     fr fr Implement the to_string method
-    yolo "Person(" + this.name + ", " + tea(this.age) + ")"
+    damn "Person(" + this.name + ", " + tea(this.age) + ")"
 }
 
 slay Person.serialize() tea {
     fr fr Implement the serialize method
-    yolo "{\"name\":\"" + this.name + "\",\"age\":" + tea(this.age) + "}"
+    damn "{\"name\":\"" + this.name + "\",\"age\":" + tea(this.age) + "}"
 }
 
 slay Person.deserialize(data tea) @Person {
@@ -61,7 +61,7 @@ slay Person.deserialize(data tea) @Person {
     p = new(Person)
     p.name = "Deserialized"
     p.age = 25
-    yolo p
+    damn p
 }
 
 fr fr Main test function

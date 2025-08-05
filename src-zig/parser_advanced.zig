@@ -16,6 +16,7 @@ const Allocator = std.mem.Allocator;
 const lexer = @import("lexer.zig");
 const lexer_advanced = @import("lexer_advanced.zig");
 const ast = @import("ast_simple.zig");
+const allocation_guards = @import("allocation_guards.zig");
 
 const Token = lexer_advanced.Token;
 const TokenKind = lexer_advanced.TokenKind;
@@ -220,6 +221,7 @@ pub const AdvancedParser = struct {
     
     pub fn parseProgram(self: *AdvancedParser) ParserError!Program {
         var program = Program.init(self.allocator);
+        errdefer program.deinit(); // Clean up on error
         
         while (!self.isAtEnd()) {
             if (self.recovery_state.error_count >= self.recovery_state.max_errors) {
@@ -238,7 +240,7 @@ pub const AdvancedParser = struct {
                 continue;
             }
             
-            // Parse top-level declarations
+            // Parse top-level declarations with cleanup on error
             const stmt = self.parseTopLevelDeclaration() catch |err| {
                 if (self.recovery_state.recovery_mode) {
                     self.synchronize();
@@ -248,7 +250,11 @@ pub const AdvancedParser = struct {
                 }
             };
             
-            try program.statements.append(stmt);
+            program.statements.append(stmt) catch |err| {
+                // Clean up the statement if append fails
+                stmt.deinit(self.allocator);
+                return err;
+            };
         }
         
         return program;
@@ -1173,13 +1179,26 @@ pub const AdvancedParser = struct {
         while (self.match(.PipePipe)) {
             const operator = self.previous();
             const right = try self.parseLogicalAnd();
+            
+            // Allocate left pointer with error cleanup
+            const left_ptr = self.allocator.create(Expression) catch return ParserError.OutOfMemory;
+            errdefer self.allocator.destroy(left_ptr);
+            
+            // Allocate right pointer with error cleanup
+            const right_ptr = self.allocator.create(Expression) catch {
+                self.allocator.destroy(left_ptr);
+                return ParserError.OutOfMemory;
+            };
+            errdefer self.allocator.destroy(right_ptr);
+            
+            left_ptr.* = expr;
+            right_ptr.* = right;
+            
             expr = Expression{ .Binary = ast.BinaryExpression{
-                .left = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
+                .left = left_ptr,
                 .operator = operator,
-                .right = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
+                .right = right_ptr,
             }};
-            expr.Binary.left.* = expr;
-            expr.Binary.right.* = right;
         }
         
         return expr;

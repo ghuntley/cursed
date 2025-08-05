@@ -1,5 +1,5 @@
 slay is_valid_container(container lit) lit {
-    yolo container != cap
+    damn container != cap
 }
 
 slay main() lit {
@@ -29,5 +29,5 @@ slay main() lit {
     
     fr The program should complete with the sum from valid_array
     printn("Result: " + result.toString())
-    yolo result
+    damn result
 }

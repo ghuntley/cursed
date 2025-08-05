@@ -120,30 +120,30 @@ slay demo_graceful_shutdown() tea {
     shutdown.add("database", slay() tea {
         vibez.spill("💾 Closing database connections...")
         time.sleep_millis(100) fr fr Simulate database cleanup
-        yolo Ok(())
+        damn Ok(())
     })
     
     shutdown.add_with_order("http_server", 1, slay() tea {
         vibez.spill("🌐 Shutting down HTTP server...")
         time.sleep_millis(50) fr fr Simulate server shutdown
-        yolo Ok(())
+        damn Ok(())
     })
     
     shutdown.add_with_order("cache", 2, slay() tea {
         vibez.spill("🗄️ Flushing cache...")
         time.sleep_millis(25)
-        yolo Ok(())
+        damn Ok(())
     })
     
     fr fr Add a task group
     facts cleanup_group = signal_boost.ShutdownTaskGroup.new("cleanup", cap)
         .add_task("temp_files", slay() tea {
             vibez.spill("🗑️ Removing temporary files...")
-            yolo Ok(())
+            damn Ok(())
         })
         .add_task("logs", slay() tea {
             vibez.spill("📝 Flushing logs...")
-            yolo Ok(())
+            damn Ok(())
         })
     
     shutdown.add_group(cleanup_group)
@@ -213,7 +213,7 @@ slay demo_signal_filtering() tea {
     
     fr fr Demo filtering
     facts filtered = signal_boost.filter_signals(source_receiver, slay(signal) lit {
-        yolo signal == signal_boost.SIGINT || signal == signal_boost.SIGTERM
+        damn signal == signal_boost.SIGINT || signal == signal_boost.SIGTERM
     })
     
     vibez.spill("✅ Set up signal filtering (SIGINT and SIGTERM only)")
@@ -261,7 +261,7 @@ slay demo_genZ_features() tea {
     sus vibe_checker = signal_boost.vibe_check(signal_boost.SIGUSR1, slay() lit {
         fr fr Simulate health check
         facts random_health = math.random() > 0.3
-        yolo random_health
+        damn random_health
     })
     
     vibez.spill("✅ VibeChecker created for SIGUSR1")
@@ -284,7 +284,7 @@ slay demo_genZ_features() tea {
         vibez.spill("🔄 No cap, reloading configuration...")
         fr fr Simulate config reload
         time.sleep_millis(10)
-        yolo Ok(())
+        damn Ok(())
     })
     
     vibez.spill("✅ NoCapReloadConfig set up for SIGHUP")
@@ -357,7 +357,7 @@ slay demo_signal_actions() tea {
     fr fr Create custom action
     facts custom_action = signal_boost.create_action(slay(signal) lit {
         vibez.spill("🎯 Custom action triggered by signal: {}", signal)
-        yolo based
+        damn based
     })
     
     fr fr Create chained actions
@@ -424,31 +424,31 @@ slay real_world_example() tea {
     fr fr Add shutdown tasks
     shutdown.add_with_order("stop_accepting_connections", 0, slay() tea {
         vibez.spill("🚫 Stopped accepting new connections")
-        yolo Ok(())
+        damn Ok(())
     })
     
     shutdown.add_with_order("finish_requests", 1, slay() tea {
         vibez.spill("⏳ Waiting for active requests to complete...")
         time.sleep_millis(100) fr fr Simulate request completion
-        yolo Ok(())
+        damn Ok(())
     })
     
     shutdown.add_with_order("close_database", 2, slay() tea {
         vibez.spill("💾 Closing database connections...")
-        yolo Ok(())
+        damn Ok(())
     })
     
     fr fr 2. Configuration reload on SIGHUP
     facts reload_handle = signal_boost.no_cap_reload_config("server.toml", slay() tea {
         vibez.spill("📄 Reloading server configuration...")
-        yolo Ok(())
+        damn Ok(())
     })
     
     fr fr 3. Health checks on SIGUSR1
     sus health_checker = signal_boost.vibe_check(signal_boost.SIGUSR1, slay() lit {
         fr fr Simulate health check
         vibez.spill("🏥 Running health check...")
-        yolo based fr fr Server is healthy
+        damn based fr fr Server is healthy
     })
     health_checker.start()
     

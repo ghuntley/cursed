@@ -12,7 +12,7 @@ yeet "stdlib::crypto_signatures"
 yeet "stdlib::io"
 
 fr fr Main demo function
-func main() -> yolo {
+func main() -> damn {
     println("🔐 CURSED Digital Signatures Demo - Let's secure some data!")?;
     println("=" * 60)?;
     
@@ -34,7 +34,7 @@ func main() -> yolo {
 }
 
 fr fr Demonstrate Ed25519 signatures
-func demo_ed25519_signatures() -> yolo {
+func demo_ed25519_signatures() -> damn {
     println("\n📝 Ed25519 Digital Signatures Demo")?;
     println("-" * 40)?;
     
@@ -74,7 +74,7 @@ func demo_ed25519_signatures() -> yolo {
 }
 
 fr fr Demonstrate ECDSA signatures
-func demo_ecdsa_signatures() -> yolo {
+func demo_ecdsa_signatures() -> damn {
     println("\n🌐 ECDSA Digital Signatures Demo")?;
     println("-" * 40)?;
     
@@ -106,7 +106,7 @@ func demo_ecdsa_signatures() -> yolo {
 }
 
 fr fr Demonstrate RSA signatures
-func demo_rsa_signatures() -> yolo {
+func demo_rsa_signatures() -> damn {
     println("\n🔒 RSA Digital Signatures Demo")?;
     println("-" * 40)?;
     
@@ -145,7 +145,7 @@ func demo_rsa_signatures() -> yolo {
 }
 
 fr fr Demonstrate universal signature interface
-func demo_universal_interface() -> yolo {
+func demo_universal_interface() -> damn {
     println("\n🌟 Universal Signature Interface Demo")?;
     println("-" * 40)?;
     
@@ -179,7 +179,7 @@ func demo_universal_interface() -> yolo {
 }
 
 fr fr Demonstrate key management
-func demo_key_management() -> yolo {
+func demo_key_management() -> damn {
     println("\n🔑 Key Management Demo")?;
     println("-" * 40)?;
     
@@ -221,7 +221,7 @@ func demo_key_management() -> yolo {
 }
 
 fr fr Demonstrate multi-signature schemes
-func demo_multi_signatures() -> yolo {
+func demo_multi_signatures() -> damn {
     println("\n🤝 Multi-Signature Demo")?;
     println("-" * 40)?;
     
@@ -280,7 +280,7 @@ func demo_multi_signatures() -> yolo {
 }
 
 fr fr Demonstrate batch verification
-func demo_batch_verification() -> yolo {
+func demo_batch_verification() -> damn {
     println("\n📦 Batch Verification Demo")?;
     println("-" * 40)?;
     
@@ -326,7 +326,7 @@ func demo_batch_verification() -> yolo {
 }
 
 fr fr Demonstrate real-world scenarios
-func demo_real_world_scenarios() -> yolo {
+func demo_real_world_scenarios() -> damn {
     println("\n🌍 Real-World Scenarios Demo")?;
     println("-" * 40)?;
     
@@ -344,7 +344,7 @@ func demo_real_world_scenarios() -> yolo {
 }
 
 fr fr Document signing workflow
-func demo_document_signing() -> yolo {
+func demo_document_signing() -> damn {
     sus mut generator = KeyGenerator::new();
     sus keypair = generator.generate_keypair(KeyType::Ed25519)?;
     sus signer = Ed25519Signer::new(keypair.clone())?;
@@ -369,7 +369,7 @@ func demo_document_signing() -> yolo {
 }
 
 fr fr API authentication
-func demo_api_authentication() -> yolo {
+func demo_api_authentication() -> damn {
     sus mut generator = KeyGenerator::new();
     sus keypair = generator.generate_keypair(KeyType::EcdsaSecp256k1)?;
     sus mut signer = EcdsaSigner::new(keypair)?;
@@ -399,7 +399,7 @@ func demo_api_authentication() -> yolo {
 }
 
 fr fr Blockchain transaction signing
-func demo_blockchain_signing() -> yolo {
+func demo_blockchain_signing() -> damn {
     sus mut generator = KeyGenerator::new();
     sus keypair = generator.generate_keypair(KeyType::EcdsaSecp256k1)?;
     sus mut signer = EcdsaSigner::new(keypair)?;

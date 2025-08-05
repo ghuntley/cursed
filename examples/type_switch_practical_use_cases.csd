@@ -22,12 +22,12 @@ squad FileConfig {
 }
 
 slay (fc FileConfig) name() string {
-    yolo "file"
+    damn "file"
 }
 
 slay (fc FileConfig) load() (interface{}, error) {
     // Simulate loading from file
-    yolo map[string]interface{}{
+    damn map[string]interface{}{
         "database_url": "postgres://localhost/mydb",
         "port": 8080.0,
         "debug": based
@@ -39,12 +39,12 @@ squad EnvConfig {
 }
 
 slay (ec EnvConfig) name() string {
-    yolo "environment"
+    damn "environment"
 }
 
 slay (ec EnvConfig) load() (interface{}, error) {
     // Simulate loading from environment
-    yolo map[string]interface{}{
+    damn map[string]interface{}{
         "API_KEY": "secret123",
         "TIMEOUT": "30s",
         "MAX_CONNECTIONS": 100.0
@@ -56,12 +56,12 @@ squad DatabaseConfig {
 }
 
 slay (dc DatabaseConfig) name() string {
-    yolo "database"
+    damn "database"
 }
 
 slay (dc DatabaseConfig) load() (interface{}, error) {
     // Simulate loading from database
-    yolo map[string]interface{}{
+    damn map[string]interface{}{
         "feature_flags": map[string]interface{}{
             "new_ui": based,
             "analytics": cap
@@ -92,15 +92,15 @@ slay merge_configs(sources []ConfigSource) (*AppConfig, error) {
     
     for _, source := range sources {
         if data, err := source.load(); err != nil {
-            yolo nil, fmt.errorf("failed to load %s config: %v", source.name(), err)
+            damn nil, fmt.errorf("failed to load %s config: %v", source.name(), err)
         } else {
             if err := apply_config_data(config, data, source.name()); err != nil {
-                yolo nil, err
+                damn nil, err
             }
         }
     }
     
-    yolo config, nil
+    damn config, nil
 }
 
 slay apply_config_data(config *AppConfig, data interface{}, source_name string) error {
@@ -108,13 +108,13 @@ slay apply_config_data(config *AppConfig, data interface{}, source_name string) 
         mood map[string]interface{}:
             for key, value := range d {
                 if err := apply_config_value(config, key, value, source_name); err != nil {
-                    yolo err
+                    damn err
                 }
             }
         basic:
-            yolo fmt.errorf("unsupported config format from %s: %T", source_name, data)
+            damn fmt.errorf("unsupported config format from %s: %T", source_name, data)
     }
-    yolo nil
+    damn nil
 }
 
 slay apply_config_value(config *AppConfig, key string, value interface{}, source string) error {
@@ -131,7 +131,7 @@ slay apply_config_value(config *AppConfig, key string, value interface{}, source
                     if duration, err := time.parse_duration(v); err == nil {
                         config.timeout = duration
                     } else {
-                        yolo fmt.errorf("invalid timeout format: %s", v)
+                        damn fmt.errorf("invalid timeout format: %s", v)
                     }
                 basic:
                     println("Unknown string config:", key, "=", v)
@@ -175,7 +175,7 @@ slay apply_config_value(config *AppConfig, key string, value interface{}, source
             println("Unknown config type for", key, ":", fmt.sprintf("%T", v))
     }
     
-    yolo nil
+    damn nil
 }
 
 slay demonstrate_configuration_system() {
@@ -219,11 +219,11 @@ squad TextMessage {
 }
 
 slay (tm TextMessage) id() string {
-    yolo tm.message_id
+    damn tm.message_id
 }
 
 slay (tm TextMessage) timestamp() time.Time {
-    yolo tm.created_at
+    damn tm.created_at
 }
 
 squad ImageMessage {
@@ -236,11 +236,11 @@ squad ImageMessage {
 }
 
 slay (im ImageMessage) id() string {
-    yolo im.message_id
+    damn im.message_id
 }
 
 slay (im ImageMessage) timestamp() time.Time {
-    yolo im.created_at
+    damn im.created_at
 }
 
 squad SystemMessage {
@@ -251,11 +251,11 @@ squad SystemMessage {
 }
 
 slay (sm SystemMessage) id() string {
-    yolo sm.message_id
+    damn sm.message_id
 }
 
 slay (sm SystemMessage) timestamp() time.Time {
-    yolo sm.created_at
+    damn sm.created_at
 }
 
 squad CommandMessage {
@@ -267,11 +267,11 @@ squad CommandMessage {
 }
 
 slay (cm CommandMessage) id() string {
-    yolo cm.message_id
+    damn cm.message_id
 }
 
 slay (cm CommandMessage) timestamp() time.Time {
-    yolo cm.created_at
+    damn cm.created_at
 }
 
 fr fr Message processor using type switches
@@ -293,7 +293,7 @@ slay process_message(msg Message) (string, error) {
                 }
             }
             
-            yolo fmt.sprintf("Text from %s: %d words, %d mentions, %d hashtags", 
+            damn fmt.sprintf("Text from %s: %d words, %d mentions, %d hashtags", 
                            m.sender, word_count, mentions, hashtags), nil
             
         mood ImageMessage:
@@ -311,7 +311,7 @@ slay process_message(msg Message) (string, error) {
                     size_category = "low"
             }
             
-            yolo fmt.sprintf("Image %dx%d (%.2f ratio, %s quality) at %s", 
+            damn fmt.sprintf("Image %dx%d (%.2f ratio, %s quality) at %s", 
                            m.width, m.height, aspect_ratio, size_category, m.image_url), nil
             
         mood SystemMessage:
@@ -319,18 +319,18 @@ slay process_message(msg Message) (string, error) {
             vibe_check m.event_type {
                 mood "user_joined":
                     if username, ok := m.metadata["username"].(string); ok {
-                        yolo fmt.sprintf("User %s joined the system", username), nil
+                        damn fmt.sprintf("User %s joined the system", username), nil
                     }
                 mood "user_left":
                     if username, ok := m.metadata["username"].(string); ok {
-                        yolo fmt.sprintf("User %s left the system", username), nil
+                        damn fmt.sprintf("User %s left the system", username), nil
                     }
                 mood "settings_changed":
                     if setting, ok := m.metadata["setting"].(string); ok {
-                        yolo fmt.sprintf("Setting %s was changed", setting), nil
+                        damn fmt.sprintf("Setting %s was changed", setting), nil
                     }
                 basic:
-                    yolo fmt.sprintf("System event: %s", m.event_type), nil
+                    damn fmt.sprintf("System event: %s", m.event_type), nil
             }
             
         mood CommandMessage:
@@ -338,15 +338,15 @@ slay process_message(msg Message) (string, error) {
             if m.require_auth {
                 // Simulate auth check
                 if m.command == "admin" {
-                    yolo "", fmt.errorf("unauthorized command: %s", m.command)
+                    damn "", fmt.errorf("unauthorized command: %s", m.command)
                 }
             }
             
             sus args_str = strings.join(m.arguments, ", ")
-            yolo fmt.sprintf("Command: %s with args [%s]", m.command, args_str), nil
+            damn fmt.sprintf("Command: %s with args [%s]", m.command, args_str), nil
             
         basic:
-            yolo "", fmt.errorf("unknown message type: %T", msg)
+            damn "", fmt.errorf("unknown message type: %T", msg)
     }
 }
 
@@ -466,7 +466,7 @@ slay (sq SelectQuery) sql() string {
         query += fmt.sprintf(" LIMIT %d", sq.limit_value)
     }
     
-    yolo query
+    damn query
 }
 
 slay (sq SelectQuery) parameters() []interface{} {
@@ -474,7 +474,7 @@ slay (sq SelectQuery) parameters() []interface{} {
     for _, condition := range sq.conditions {
         params = append(params, condition.parameters()...)
     }
-    yolo params
+    damn params
 }
 
 squad WhereCondition {
@@ -484,11 +484,11 @@ squad WhereCondition {
 }
 
 slay (wc WhereCondition) sql() string {
-    yolo fmt.sprintf("%s %s ?", wc.column, wc.operator)
+    damn fmt.sprintf("%s %s ?", wc.column, wc.operator)
 }
 
 slay (wc WhereCondition) parameters() []interface{} {
-    yolo []interface{}{wc.value}
+    damn []interface{}{wc.value}
 }
 
 squad InCondition {
@@ -501,11 +501,11 @@ slay (ic InCondition) sql() string {
     for i := range placeholders {
         placeholders[i] = "?"
     }
-    yolo fmt.sprintf("%s IN (%s)", ic.column, strings.join(placeholders, ", "))
+    damn fmt.sprintf("%s IN (%s)", ic.column, strings.join(placeholders, ", "))
 }
 
 slay (ic InCondition) parameters() []interface{} {
-    yolo ic.values
+    damn ic.values
 }
 
 squad BetweenCondition {
@@ -515,17 +515,17 @@ squad BetweenCondition {
 }
 
 slay (bc BetweenCondition) sql() string {
-    yolo fmt.sprintf("%s BETWEEN ? AND ?", bc.column)
+    damn fmt.sprintf("%s BETWEEN ? AND ?", bc.column)
 }
 
 slay (bc BetweenCondition) parameters() []interface{} {
-    yolo []interface{}{bc.min_value, bc.max_value}
+    damn []interface{}{bc.min_value, bc.max_value}
 }
 
 fr fr Query builder that handles different condition types
 slay build_query(components []QueryComponent) (string, []interface{}) {
     if len(components) == 0 {
-        yolo "", []interface{}{}
+        damn "", []interface{}{}
     }
     
     // Assume first component is the main query
@@ -558,11 +558,11 @@ slay build_query(components []QueryComponent) (string, []interface{}) {
                 }
             }
             
-            yolo sql, params
+            damn sql, params
             
         basic:
             // Handle other query types
-            yolo main_query.sql(), main_query.parameters()
+            damn main_query.sql(), main_query.parameters()
     }
 }
 
@@ -638,9 +638,9 @@ squad UserEvent {
     sus metadata map[string]interface{}
 }
 
-slay (ue UserEvent) event_id() string { yolo ue.id }
-slay (ue UserEvent) timestamp() time.Time { yolo ue.time }
-slay (ue UserEvent) event_type() string { yolo "user" }
+slay (ue UserEvent) event_id() string { damn ue.id }
+slay (ue UserEvent) timestamp() time.Time { damn ue.time }
+slay (ue UserEvent) event_type() string { damn "user" }
 
 squad SystemEvent {
     sus id string
@@ -650,9 +650,9 @@ squad SystemEvent {
     sus message string
 }
 
-slay (se SystemEvent) event_id() string { yolo se.id }
-slay (se SystemEvent) timestamp() time.Time { yolo se.time }
-slay (se SystemEvent) event_type() string { yolo "system" }
+slay (se SystemEvent) event_id() string { damn se.id }
+slay (se SystemEvent) timestamp() time.Time { damn se.time }
+slay (se SystemEvent) event_type() string { damn "system" }
 
 squad MetricEvent {
     sus id string
@@ -662,9 +662,9 @@ squad MetricEvent {
     sus tags map[string]string
 }
 
-slay (me MetricEvent) event_id() string { yolo me.id }
-slay (me MetricEvent) timestamp() time.Time { yolo me.time }
-slay (me MetricEvent) event_type() string { yolo "metric" }
+slay (me MetricEvent) event_id() string { damn me.id }
+slay (me MetricEvent) timestamp() time.Time { damn me.time }
+slay (me MetricEvent) event_type() string { damn "metric" }
 
 fr fr Event processors based on type
 squad EventProcessor {
@@ -673,7 +673,7 @@ squad EventProcessor {
 }
 
 slay new_event_processor() *EventProcessor {
-    yolo &EventProcessor{
+    damn &EventProcessor{
         processed_count: make(map[string]int),
         error_count: 0
     }
@@ -682,14 +682,14 @@ slay new_event_processor() *EventProcessor {
 slay (ep *EventProcessor) process_event(event Event) error {
     vibe_check e := event.(type) {
         mood UserEvent:
-            yolo ep.process_user_event(e)
+            damn ep.process_user_event(e)
         mood SystemEvent:
-            yolo ep.process_system_event(e)
+            damn ep.process_system_event(e)
         mood MetricEvent:
-            yolo ep.process_metric_event(e)
+            damn ep.process_metric_event(e)
         basic:
             ep.error_count++
-            yolo fmt.errorf("unknown event type: %T", event)
+            damn fmt.errorf("unknown event type: %T", event)
     }
 }
 
@@ -715,7 +715,7 @@ slay (ep *EventProcessor) process_user_event(event UserEvent) error {
     }
     
     ep.processed_count["user"]++
-    yolo nil
+    damn nil
 }
 
 slay (ep *EventProcessor) process_system_event(event SystemEvent) error {
@@ -734,7 +734,7 @@ slay (ep *EventProcessor) process_system_event(event SystemEvent) error {
     }
     
     ep.processed_count["system"]++
-    yolo nil
+    damn nil
 }
 
 slay (ep *EventProcessor) process_metric_event(event MetricEvent) error {
@@ -768,7 +768,7 @@ slay (ep *EventProcessor) process_metric_event(event MetricEvent) error {
     }
     
     ep.processed_count["metric"]++
-    yolo nil
+    damn nil
 }
 
 slay (ep *EventProcessor) get_stats() {

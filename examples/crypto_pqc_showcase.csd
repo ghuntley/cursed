@@ -298,7 +298,7 @@ squad PqcDemo {
         println("🚀 CURSED Post-Quantum Cryptography Showcase");
         println("============================================\n");
         
-        yolo {
+        damn {
             self.demonstrate_dilithium()?;
             self.demonstrate_kyber()?;
             self.demonstrate_lms()?;

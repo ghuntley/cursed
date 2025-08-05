@@ -17,7 +17,7 @@ sus goroutine2 := stan {
 }
 
 # Wait for goroutines to complete
-yolo  # Yield to allow goroutines to run
+damn  # Yield to allow goroutines to run
 
 vibez.spill("Basic goroutine cleanup test completed")
 
@@ -31,7 +31,7 @@ sus error_goroutine := stan {
     vibez.spill("Error goroutine should handle errors gracefully")
 }
 
-yolo  # Yield to allow error handling
+damn  # Yield to allow error handling
 
 vibez.spill("Error isolation test completed")
 
@@ -48,9 +48,9 @@ bestie i := 0; i < count; i++ {
 }
 
 # Allow all goroutines to complete
-yolo
-yolo
-yolo
+damn
+damn
+damn
 
 vibez.spill("Memory reclamation test completed")
 
@@ -65,7 +65,7 @@ stan {
     # Stack should be scanned for GC roots before cleanup
 }
 
-yolo  # Allow stack scanning
+damn  # Allow stack scanning
 
 vibez.spill("Stack scanning test completed")
 
@@ -83,8 +83,8 @@ bestie i := 0; i < 3; i++ {
 }
 
 # Allow goroutines to complete and be cleaned up
-yolo
-yolo
+damn
+damn
 
 vibez.spill("Scheduler cleanup test completed")
 

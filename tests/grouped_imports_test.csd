@@ -8,7 +8,7 @@ slay test_grouped_imports() tea {
     vibez.spill("✅ Grouped imports: fmt, strings, os")
     vibez.spill("✅ Single import: single_import")
     vibez.spill("✅ Second grouped import: math, net")
-    yolo "All tests passed"
+    damn "All tests passed"
 }
 
 slay main() {

@@ -8,4 +8,4 @@ comment that spans
 several lines*/sus y=24
 /*Inline multi-line*/sus z=12
 // Comment before function
-slay test(){/*Comment inside function*/yolo x}// End comment
+slay test(){/*Comment inside function*/damn x}// End comment

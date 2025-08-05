@@ -184,7 +184,7 @@ slay concurrent_type_processing(entities: [sus]) {
             }
         };
         
-        yolo; // Yield point for cooperative scheduling
+        damn; // Yield point for cooperative scheduling
     }
 }
 

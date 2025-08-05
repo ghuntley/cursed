@@ -58,7 +58,7 @@ fr fr   vibez.spill(fact) fr fr Outputs: 120
 slay factorial(n drip) drip {
     bestie n == 0 {
         damn 1
-    } yolo {
+    } damn {
         damn n * factorial(n - 1)
     }
 }
@@ -142,7 +142,7 @@ impl User {
     slay get_full_name(self) tea {
         bestie self.middle_name {
             damn self.first_name + " " + self.middle_name + " " + self.last_name
-        } yolo {
+        } damn {
             damn self.first_name + " " + self.last_name
         }
     }

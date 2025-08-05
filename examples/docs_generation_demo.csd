@@ -58,9 +58,9 @@ slay greet(name string, age i32, formal bool) string {
     
     // Generate appropriate greeting
     lowkey (formal) {
-        yolo "Good day, " + name + ". You are " + age.to_string() + " years of age."
+        damn "Good day, " + name + ". You are " + age.to_string() + " years of age."
     } flex {
-        yolo "Hey " + name + "! You're " + age.to_string() + " years old."
+        damn "Hey " + name + "! You're " + age.to_string() + " years old."
     }
 }
 
@@ -81,9 +81,9 @@ fr fr/ // Output: "See you later, Bob!"
 fr fr/ ```
 slay farewell(name string, formal bool) string {
     lowkey (formal) {
-        yolo "Farewell, " + name + ". It was a pleasure."
+        damn "Farewell, " + name + ". It was a pleasure."
     } flex {
-        yolo "See you later, " + name + "!"
+        damn "See you later, " + name + "!"
     }
 }
 
@@ -226,13 +226,13 @@ slay advanced_greet(person Person, style string, include_emoji bool) string {
     // Add emoji if requested
     lowkey (include_emoji) {
         vibe_check style {
-            mood "casual" { yolo "👋 " + base_greeting }
-            mood "friendly" { yolo "😊 " + base_greeting }
-            basic { yolo "🙂 " + base_greeting }
+            mood "casual" { damn "👋 " + base_greeting }
+            mood "friendly" { damn "😊 " + base_greeting }
+            basic { damn "🙂 " + base_greeting }
         }
     }
     
-    yolo base_greeting
+    damn base_greeting
 }
 
 fr fr/ Calculate a person's birth year
@@ -250,7 +250,7 @@ fr fr/ println("Born around: " + birth_year.to_string())
 fr fr/ ```
 slay calculate_birth_year(person Person) i32 {
     facts CURRENT_YEAR = 2024
-    yolo CURRENT_YEAR - person.age
+    damn CURRENT_YEAR - person.age
 }
 
 fr fr/ Validate email format
@@ -268,7 +268,7 @@ fr fr/ }
 fr fr/ ```
 slay is_valid_email(email string) bool {
     // Simple validation - in real code would use regex
-    yolo email.contains("@") && email.contains(".")
+    damn email.contains("@") && email.contains(".")
 }
 
 fr fr/ Demo function showcasing all features
@@ -298,7 +298,7 @@ slay demo_greeting_system() {
         println("✅ Email validation passed")
     } flex {
         println("❌ Invalid email format")
-        yolo
+        damn
     }
     
     // Try different greeting styles

@@ -3,7 +3,7 @@
 //! This module provides a type-safe, performance-oriented expression compiler
 //! using the inkwell LLVM bindings instead of string-based IR generation.
 
-use crate::ast::{Expression, Literal, BinaryOperator, UnaryOperator, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, MemberAccessExpression, CompositeLiteralExpression, ArrayAccessExpression, SliceAccessExpression, TupleExpression, TupleAccessExpression};
+use crate::ast::{Expression, Literal, BinaryOperator, UnaryOperator, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, MemberAccessExpression, CompositeLiteralExpression, ArrayAccessExpression, SliceAccessExpression, TupleExpression, TupleAccessExpression};
 use crate::error::CursedError;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
@@ -113,12 +113,7 @@ impl<'ctx> InkwellExpressionCompiler<'ctx> {
                 // Variable access - same as Identifier
                 self.compile_identifier(name)
             },
-            Expression::ChannelSend(channel_send_expr) => {
-                self.compile_channel_send(channel_send_expr)
-            },
-            Expression::ChannelReceive(channel_receive_expr) => {
-                self.compile_channel_receive(channel_receive_expr)
-            },
+
             Expression::ChannelCreation(channel_creation_expr) => {
                 self.compile_channel_creation(channel_creation_expr)
             },
@@ -779,19 +774,7 @@ impl<'ctx> InkwellExpressionCompiler<'ctx> {
         }
     }
 
-    /// Compile channel send expression
-    fn compile_channel_send(&mut self, channel_send_expr: &ChannelSendExpression) -> Result<BasicValueEnum<'ctx>, CursedError> {
-        // Placeholder implementation - return integer 0
-        let int_type = self.context.i32_type();
-        Ok(int_type.const_int(0, false).into())
-    }
 
-    /// Compile channel receive expression
-    fn compile_channel_receive(&mut self, channel_receive_expr: &ChannelReceiveExpression) -> Result<BasicValueEnum<'ctx>, CursedError> {
-        // Placeholder implementation - return integer 0
-        let int_type = self.context.i32_type();
-        Ok(int_type.const_int(0, false).into())
-    }
 
     /// Compile channel creation expression
     fn compile_channel_creation(&mut self, channel_creation_expr: &ChannelCreationExpression) -> Result<BasicValueEnum<'ctx>, CursedError> {

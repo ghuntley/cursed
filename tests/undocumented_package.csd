@@ -5,7 +5,7 @@ squad DatabaseConnection {
     password: String,
 }
 
-yolo connect(host: String, port: Int) -> DatabaseConnection {
+damn connect(host: String, port: Int) -> DatabaseConnection {
     DatabaseConnection {
         host: host,
         port: port,
@@ -14,7 +14,7 @@ yolo connect(host: String, port: Int) -> DatabaseConnection {
     }
 }
 
-yolo slay query(self, sql: String) -> QueryResult {
+damn slay query(self, sql: String) -> QueryResult {
     QueryResult { rows: [], affected: 0 }
 }
 
@@ -24,10 +24,10 @@ squad QueryResult {
 }
 
 collab Queryable {
-    yolo execute(self, query: String) -> QueryResult
+    damn execute(self, query: String) -> QueryResult
 }
 
-yolo slay execute_transaction(self, queries: String[]) -> Bool {
+damn slay execute_transaction(self, queries: String[]) -> Bool {
     true
 }
 
@@ -36,7 +36,7 @@ squad ConnectionPool {
     active_connections: Int,
 }
 
-yolo new ConnectionPool(max_size: Int) -> ConnectionPool {
+damn new ConnectionPool(max_size: Int) -> ConnectionPool {
     ConnectionPool {
         max_connections: max_size,
         active_connections: 0,

@@ -3,11 +3,11 @@ squad Container[T] {
 }
 
 slay new_container[T](v T) Container[T] {
-    yolo Container[T]{value: v}
+    damn Container[T]{value: v}
 }
 
 slay get_value[T](c Container[T]) T {
-    yolo c.value
+    damn c.value
 }
 
 slay process[T comparable](items []T) T where T: Comparable {
@@ -17,5 +17,5 @@ slay process[T comparable](items []T) T where T: Comparable {
             max = item
         }
     }
-    yolo max
+    damn max
 }

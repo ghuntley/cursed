@@ -27,7 +27,7 @@ slay concurrent_processing(data: Vec<i32>) -> Vec<i32> {
     // Multiple goroutine spawns in loop - can be batched
     lowkey (sus i = 0; i < data.len(); i++) {
         stan process_item(data[i], channel.clone());  // Small function - can inline
-        yolo;  // Yield point - can be optimized based on frequency
+        damn;  // Yield point - can be optimized based on frequency
     }
     
     // Collect results

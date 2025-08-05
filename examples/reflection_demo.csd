@@ -149,7 +149,7 @@ slay main() {
     fr fr Create function implementation (addition)
     facts add_func = lookin_glass.make_func(func_type, slay(args: &[lookin_glass.Value]) -> lookin_glass.LookinGlassResult<Vec<lookin_glass.Value>> {
         lowkey args.len() != 2 {
-            yolo Err(lookin_glass.reflection_error("Expected 2 arguments"))
+            damn Err(lookin_glass.reflection_error("Expected 2 arguments"))
         }
         
         facts a = args[0].int()?
@@ -189,7 +189,7 @@ slay main() {
 
 fr fr Helper function to demonstrate method reflection
 slay (p Person) GetInfo() tea {
-    yolo spillf("Name: %s, Age: %d, Email: %s", p.Name, p.Age, p.Email)
+    damn spillf("Name: %s, Age: %d, Email: %s", p.Name, p.Age, p.Email)
 }
 
 fr fr Example of complex nested structure for advanced reflection

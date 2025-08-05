@@ -21,25 +21,25 @@ slay create_test_stats() TestStats {
         test_passed: 0,
         test_failed: 0
     };
-    yolo stats;
+    damn stats;
 }
 
 slay test_start(stats TestStats, name tea) TestStats {
     stats.test_count = stats.test_count + 1;
     vibez.spill("Running test: " + name);
-    yolo stats;
+    damn stats;
 }
 
 slay test_pass(stats TestStats, message tea) TestStats {
     stats.test_passed = stats.test_passed + 1;
     vibez.spill("  ✓ PASS: " + message);
-    yolo stats;
+    damn stats;
 }
 
 slay test_fail(stats TestStats, message tea) TestStats {
     stats.test_failed = stats.test_failed + 1;
     vibez.spill("  ✗ FAIL: " + message);
-    yolo stats;
+    damn stats;
 }
 
 fr fr ================================
@@ -52,7 +52,7 @@ slay assert_eq(stats TestStats, actual normie, expected normie) TestStats {
     } highkey {
         stats = test_fail(stats, "assert_eq failed: got " + actual + ", expected " + expected);
     }
-    yolo stats;
+    damn stats;
 }
 
 slay assert_eq_string(stats TestStats, actual tea, expected tea) TestStats {
@@ -61,7 +61,7 @@ slay assert_eq_string(stats TestStats, actual tea, expected tea) TestStats {
     } highkey {
         stats = test_fail(stats, "assert_eq_string failed: got \"" + actual + "\", expected \"" + expected + "\"");
     }
-    yolo stats;
+    damn stats;
 }
 
 slay assert_true(stats TestStats, value lit) TestStats {
@@ -70,7 +70,7 @@ slay assert_true(stats TestStats, value lit) TestStats {
     } highkey {
         stats = test_fail(stats, "assert_true failed: got " + value + ", expected based");
     }
-    yolo stats;
+    damn stats;
 }
 
 slay assert_false(stats TestStats, value lit) TestStats {
@@ -79,7 +79,7 @@ slay assert_false(stats TestStats, value lit) TestStats {
     } highkey {
         stats = test_fail(stats, "assert_false failed: got " + value + ", expected cap");
     }
-    yolo stats;
+    damn stats;
 }
 
 slay assert_ne(stats TestStats, actual normie, expected normie) TestStats {
@@ -88,7 +88,7 @@ slay assert_ne(stats TestStats, actual normie, expected normie) TestStats {
     } highkey {
         stats = test_fail(stats, "assert_ne failed: got " + actual + ", expected not " + expected);
     }
-    yolo stats;
+    damn stats;
 }
 
 fr fr ================================
@@ -125,7 +125,7 @@ slay test_basic_math(stats TestStats) TestStats {
     sus difference normie = 10 - 3;
     stats = assert_eq(stats, difference, 7);
     
-    yolo stats;
+    damn stats;
 }
 
 slay test_string_operations(stats TestStats) TestStats {
@@ -139,7 +139,7 @@ slay test_string_operations(stats TestStats) TestStats {
     stats = assert_eq_string(stats, greeting, "Hello");
     stats = assert_eq_string(stats, target, "World");
     
-    yolo stats;
+    damn stats;
 }
 
 slay test_boolean_logic(stats TestStats) TestStats {
@@ -155,7 +155,7 @@ slay test_boolean_logic(stats TestStats) TestStats {
     stats = assert_true(stats, condition);
     stats = assert_false(stats, false_condition);
     
-    yolo stats;
+    damn stats;
 }
 
 slay test_arithmetic_operations(stats TestStats) TestStats {
@@ -169,7 +169,7 @@ slay test_arithmetic_operations(stats TestStats) TestStats {
     stats = assert_eq(stats, a * b, 50);
     stats = assert_eq(stats, a / b, 2);
     
-    yolo stats;
+    damn stats;
 }
 
 slay test_function_calls(stats TestStats) TestStats {
@@ -184,7 +184,7 @@ slay test_function_calls(stats TestStats) TestStats {
     sus greeting tea = make_greeting("CURSED");
     stats = assert_eq_string(stats, greeting, "Hello, CURSED!");
     
-    yolo stats;
+    damn stats;
 }
 
 slay test_failing_example(stats TestStats) TestStats {
@@ -195,7 +195,7 @@ slay test_failing_example(stats TestStats) TestStats {
     stats = assert_eq_string(stats, "hello", "goodbye");
     stats = assert_true(stats, cap);
     
-    yolo stats;
+    damn stats;
 }
 
 fr fr ================================
@@ -203,15 +203,15 @@ fr fr Helper Functions
 fr fr ================================
 
 slay add_numbers(a normie, b normie) normie {
-    yolo a + b;
+    damn a + b;
 }
 
 slay double_number(n normie) normie {
-    yolo n * 2;
+    damn n * 2;
 }
 
 slay make_greeting(name tea) tea {
-    yolo "Hello, " + name + "!";
+    damn "Hello, " + name + "!";
 }
 
 fr fr ================================
@@ -250,9 +250,9 @@ slay main() {
     fr fr Return appropriate exit code
     lowkey stats.test_failed > 0 {
         vibez.spill("Exiting with error code 1");
-        yolo 1;
+        damn 1;
     } highkey {
         vibez.spill("Exiting with success code 0");
-        yolo 0;
+        damn 0;
     }
 }

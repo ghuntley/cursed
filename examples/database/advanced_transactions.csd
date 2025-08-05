@@ -109,13 +109,13 @@ sus money_transfer_example(connection: &DatabaseConnection) -> Result<(), Databa
         let result = transaction.query(balance_check, [from_account])?;
         
         lowkey result.row_count() == 0 {
-            yolo DatabaseError::new("Account not found");
+            damn DatabaseError::new("Account not found");
         }
         
         let sender_balance: f64 = result.rows()[0].get("balance")?;
         
         lowkey sender_balance < amount {
-            yolo DatabaseError::new("Insufficient funds");
+            damn DatabaseError::new("Insufficient funds");
         }
         
         println!("✅ Sender has sufficient balance: ${}", sender_balance);
@@ -125,7 +125,7 @@ sus money_transfer_example(connection: &DatabaseConnection) -> Result<(), Databa
         let debit_result = transaction.execute(debit_sql, [amount, from_account])?;
         
         lowkey debit_result.rows_affected() != 1 {
-            yolo DatabaseError::new("Failed to debit sender account");
+            damn DatabaseError::new("Failed to debit sender account");
         }
         
         // Credit receiver account  
@@ -133,7 +133,7 @@ sus money_transfer_example(connection: &DatabaseConnection) -> Result<(), Databa
         let credit_result = transaction.execute(credit_sql, [amount, to_account])?;
         
         lowkey credit_result.rows_affected() != 1 {
-            yolo DatabaseError::new("Failed to credit receiver account");
+            damn DatabaseError::new("Failed to credit receiver account");
         }
         
         // Log the transaction

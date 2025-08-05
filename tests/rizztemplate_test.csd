@@ -61,7 +61,7 @@ slay test_basic_template() {
 slay test_conditional_template() {
     vibez.spill("Testing conditional templates")
     
-    sus tmpl, err := rizztemplate.Parse("{{ lowkey .Score > 80 }}That's fire!{{ highkey }}Keep grinding!{{ yolo }}")
+    sus tmpl, err := rizztemplate.Parse("{{ lowkey .Score > 80 }}That's fire!{{ highkey }}Keep grinding!{{ damn }}")
     lowkey err != cap {
         panic(err)
     }
@@ -96,7 +96,7 @@ slay test_conditional_template() {
 slay test_loop_template() {
     vibez.spill("Testing loop templates")
     
-    sus tmpl, err := rizztemplate.Parse("{{ bestie $item := flex .Items }}{{ $item }}{{ yolo }}")
+    sus tmpl, err := rizztemplate.Parse("{{ bestie $item := flex .Items }}{{ $item }}{{ damn }}")
     lowkey err != cap {
         panic(err)
     }
@@ -117,7 +117,7 @@ slay test_loop_template() {
     }
     
     fr fr Test loop with index
-    sus indexTmpl, err := rizztemplate.Parse("{{ bestie $index, $item := flex .Items }}{{ $index }}:{{ $item }}{{ yolo }}")
+    sus indexTmpl, err := rizztemplate.Parse("{{ bestie $index, $item := flex .Items }}{{ $index }}:{{ $item }}{{ damn }}")
     lowkey err != cap {
         panic(err)
     }
@@ -159,10 +159,10 @@ slay test_pipeline_functions() {
     
     sus funcMap := rizztemplate.FuncMap{
         "uppercase": slay(s tea) tea {
-            yolo s.toUpperCase()
+            damn s.toUpperCase()
         },
         "exclaim": slay(s tea) tea {
-            yolo s + "!"
+            damn s + "!"
         },
     }
     
@@ -191,7 +191,7 @@ slay test_nested_templates() {
     vibez.spill("Testing nested templates")
     
     sus tmpl := rizztemplate.New("parent")
-    sus _, err := tmpl.Parse(`{{ define "header" }}Header: {{ .Title }}{{ yolo }}{{ define "footer" }}Footer{{ yolo }}{{ template "header" . }}Content{{ template "footer" . }}`)
+    sus _, err := tmpl.Parse(`{{ define "header" }}Header: {{ .Title }}{{ damn }}{{ define "footer" }}Footer{{ damn }}{{ template "header" . }}Content{{ template "footer" . }}`)
     lowkey err != cap {
         panic(err)
     }

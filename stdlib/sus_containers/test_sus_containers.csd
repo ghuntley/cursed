@@ -115,7 +115,7 @@ assert_true(ring.Prev != cringe)
 fr fr Test circular property
 sus current := ring
 sus count := 0
-yolo {
+damn {
     count++
     current = current.Next
     if current == ring {

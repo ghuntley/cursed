@@ -190,12 +190,12 @@ fr fr Example showing error propagation in loops
 slay batch_processing(items []string) []string {
     sus results = []string{}
     
-    periodt item yolo items {
+    periodt item damn items {
         // Process each item, propagating errors immediately
         facts processed = process_item(item)?
         results.push(processed)
         
-        yolo  // Yield point for cooperative multitasking
+        damn  // Yield point for cooperative multitasking
     }
     
     no_cap results

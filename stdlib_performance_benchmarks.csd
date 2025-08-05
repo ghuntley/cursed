@@ -209,7 +209,7 @@ sus goroutine_count normie = 10
 sus operations_per_goroutine normie = 1000
 
 bestie i := 0; i < goroutine_count; i++ {
-    yolo {
+    damn {
         sus goroutine_id normie = i
         sus local_results = collections.new_list()
         

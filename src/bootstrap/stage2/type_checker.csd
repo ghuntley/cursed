@@ -72,7 +72,7 @@ slay new_type_checker() -> TypeChecker {
     // Add built-in types and functions
     add_builtin_symbols(global_scope);
     
-    yolo TypeChecker {
+    damn TypeChecker {
         current_scope: global_scope,
         global_scope: global_scope,
         errors: tea[],
@@ -145,7 +145,7 @@ slay enter_scope(checker: TypeChecker) -> Scope {
     };
     
     checker.current_scope = new_scope;
-    yolo new_scope;
+    damn new_scope;
 }
 
 // Exit current scope
@@ -161,12 +161,12 @@ slay lookup_symbol(checker: TypeChecker, name: tea) -> Symbol? {
     
     periodt (scope != nocap) {
         bestie (scope.symbols.contains_key(name)) {
-            yolo scope.symbols.get(name);
+            damn scope.symbols.get(name);
         }
         scope = scope.parent;
     }
     
-    yolo nocap;
+    damn nocap;
 }
 
 // Add symbol to current scope
@@ -174,18 +174,18 @@ slay add_symbol(checker: TypeChecker, symbol: Symbol) -> cap {
     bestie (checker.current_scope.symbols.contains_key(symbol.name)) {
         sus error = "Symbol '" + symbol.name + "' already defined in current scope";
         checker.errors.push(error);
-        yolo facts;
+        damn facts;
     }
     
     checker.current_scope.symbols.insert(symbol.name, symbol);
-    yolo truth;
+    damn truth;
 }
 
 // Get type info for type name
 slay get_type_info(name: tea) -> TypeInfo {
     vibe_check (name) {
         mood "normie" {
-            yolo TypeInfo {
+            damn TypeInfo {
                 kind: TypeKind::Normie,
                 name: "normie",
                 size: 4,
@@ -194,7 +194,7 @@ slay get_type_info(name: tea) -> TypeInfo {
         }
         
         mood "tea" {
-            yolo TypeInfo {
+            damn TypeInfo {
                 kind: TypeKind::Tea,
                 name: "tea",
                 size: 8,
@@ -203,7 +203,7 @@ slay get_type_info(name: tea) -> TypeInfo {
         }
         
         mood "cap" {
-            yolo TypeInfo {
+            damn TypeInfo {
                 kind: TypeKind::Cap,
                 name: "cap",
                 size: 1,
@@ -212,7 +212,7 @@ slay get_type_info(name: tea) -> TypeInfo {
         }
         
         mood "void" {
-            yolo TypeInfo {
+            damn TypeInfo {
                 kind: TypeKind::Void,
                 name: "void",
                 size: 0,
@@ -221,7 +221,7 @@ slay get_type_info(name: tea) -> TypeInfo {
         }
         
         mood "auto" {
-            yolo TypeInfo {
+            damn TypeInfo {
                 kind: TypeKind::Auto,
                 name: "auto",
                 size: 0,
@@ -230,7 +230,7 @@ slay get_type_info(name: tea) -> TypeInfo {
         }
         
         basic {
-            yolo TypeInfo {
+            damn TypeInfo {
                 kind: TypeKind::Unknown,
                 name: name,
                 size: 0,
@@ -244,30 +244,30 @@ slay get_type_info(name: tea) -> TypeInfo {
 slay types_compatible(type1: TypeInfo, type2: TypeInfo) -> cap {
     // Auto type can be assigned from any type
     bestie (type1.kind == TypeKind::Auto || type2.kind == TypeKind::Auto) {
-        yolo truth;
+        damn truth;
     }
     
     // Same types are compatible
     bestie (type1.kind == type2.kind) {
-        yolo truth;
+        damn truth;
     }
     
     // Check for valid conversions
     vibe_check (type1.kind) {
         mood TypeKind::Float {
             // Float can accept int
-            yolo type2.kind == TypeKind::Normie;
+            damn type2.kind == TypeKind::Normie;
         }
         
         mood TypeKind::Tea {
             // String can accept most types for conversion
-            yolo type2.kind == TypeKind::Normie || 
+            damn type2.kind == TypeKind::Normie || 
                  type2.kind == TypeKind::Float ||
                  type2.kind == TypeKind::Cap;
         }
         
         basic {
-            yolo facts;
+            damn facts;
         }
     }
 }
@@ -277,7 +277,7 @@ slay check(program: Program) -> TypeCheckResult? {
     sus checker = new_type_checker();
     check_program(checker, program);
     
-    yolo TypeCheckResult {
+    damn TypeCheckResult {
         success: checker.errors.length() == 0,
         errors: checker.errors,
         warnings: checker.warnings,
@@ -442,7 +442,7 @@ slay check_while_statement(checker: TypeChecker, while_stmt: WhileStatement) {
 slay check_return_statement(checker: TypeChecker, ret_stmt: ReturnStatement) {
     bestie (checker.function_return_type == nocap) {
         checker.errors.push("Return statement outside of function");
-        yolo;
+        damn;
     }
     
     bestie (ret_stmt.value != nocap) {
@@ -481,35 +481,35 @@ slay check_expression(checker: TypeChecker, expr: ASTNode) -> TypeInfo {
             bestie (symbol == nocap) {
                 sus error = "Undefined variable: " + ident.name;
                 checker.errors.push(error);
-                yolo get_type_info("unknown");
+                damn get_type_info("unknown");
             }
-            yolo symbol.type_info;
+            damn symbol.type_info;
         }
         
         mood NodeType::IntegerLiteral {
-            yolo get_type_info("normie");
+            damn get_type_info("normie");
         }
         
         mood NodeType::FloatLiteral {
-            yolo get_type_info("float");
+            damn get_type_info("float");
         }
         
         mood NodeType::StringLiteral {
-            yolo get_type_info("tea");
+            damn get_type_info("tea");
         }
         
         mood NodeType::BooleanLiteral {
-            yolo get_type_info("cap");
+            damn get_type_info("cap");
         }
         
         mood NodeType::BinaryExpression {
             sus bin_expr = expr as BinaryExpression;
-            yolo check_binary_expression(checker, bin_expr);
+            damn check_binary_expression(checker, bin_expr);
         }
         
         basic {
             checker.errors.push("Unknown expression type");
-            yolo get_type_info("unknown");
+            damn get_type_info("unknown");
         }
     }
 }
@@ -523,30 +523,30 @@ slay check_binary_expression(checker: TypeChecker, expr: BinaryExpression) -> Ty
         mood "+", "-", "*", "/", "%" {
             // Arithmetic operators
             bestie (left_type.kind == TypeKind::Normie && right_type.kind == TypeKind::Normie) {
-                yolo get_type_info("normie");
+                damn get_type_info("normie");
             } highkey bestie (left_type.kind == TypeKind::Float || right_type.kind == TypeKind::Float) {
-                yolo get_type_info("float");
+                damn get_type_info("float");
             } highkey bestie (expr.operator == "+" && 
                             (left_type.kind == TypeKind::Tea || right_type.kind == TypeKind::Tea)) {
                 // String concatenation
-                yolo get_type_info("tea");
+                damn get_type_info("tea");
             } highkey {
                 sus error = "Invalid operands for operator " + expr.operator + 
                            ": " + left_type.name + " and " + right_type.name;
                 checker.errors.push(error);
-                yolo get_type_info("unknown");
+                damn get_type_info("unknown");
             }
         }
         
         mood "==", "!=" {
             // Equality operators
             bestie (types_compatible(left_type, right_type)) {
-                yolo get_type_info("cap");
+                damn get_type_info("cap");
             } highkey {
                 sus error = "Cannot compare incompatible types: " + 
                            left_type.name + " and " + right_type.name;
                 checker.errors.push(error);
-                yolo get_type_info("cap");
+                damn get_type_info("cap");
             }
         }
         
@@ -554,32 +554,32 @@ slay check_binary_expression(checker: TypeChecker, expr: BinaryExpression) -> Ty
             // Comparison operators
             bestie ((left_type.kind == TypeKind::Normie || left_type.kind == TypeKind::Float) &&
                     (right_type.kind == TypeKind::Normie || right_type.kind == TypeKind::Float)) {
-                yolo get_type_info("cap");
+                damn get_type_info("cap");
             } highkey bestie (left_type.kind == TypeKind::Tea && right_type.kind == TypeKind::Tea) {
-                yolo get_type_info("cap");
+                damn get_type_info("cap");
             } highkey {
                 sus error = "Cannot compare types: " + left_type.name + " and " + right_type.name;
                 checker.errors.push(error);
-                yolo get_type_info("cap");
+                damn get_type_info("cap");
             }
         }
         
         mood "&&", "||" {
             // Logical operators
             bestie (left_type.kind == TypeKind::Cap && right_type.kind == TypeKind::Cap) {
-                yolo get_type_info("cap");
+                damn get_type_info("cap");
             } highkey {
                 sus error = "Logical operators require boolean operands, got " + 
                            left_type.name + " and " + right_type.name;
                 checker.errors.push(error);
-                yolo get_type_info("cap");
+                damn get_type_info("cap");
             }
         }
         
         basic {
             sus error = "Unknown binary operator: " + expr.operator;
             checker.errors.push(error);
-            yolo get_type_info("unknown");
+            damn get_type_info("unknown");
         }
     }
 }

@@ -8,12 +8,12 @@ yeet "stdlib::net::http::client"
 yeet "stdlib::collections::HashMap"
 
 facts main() -> Result<(), String> {
-    yolo showcase_basic_requests()?;
-    yolo showcase_json_apis()?;
-    yolo showcase_authentication()?;
-    yolo showcase_query_parameters()?;
-    yolo showcase_form_data()?;
-    yolo showcase_advanced_features()?;
+    damn showcase_basic_requests()?;
+    damn showcase_json_apis()?;
+    damn showcase_authentication()?;
+    damn showcase_query_parameters()?;
+    damn showcase_form_data()?;
+    damn showcase_advanced_features()?;
     
     println("✅ HTTP client showcase completed successfully!")?;
     Ok(())

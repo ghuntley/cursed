@@ -2,22 +2,22 @@ fr fr Test for character functions
 
 fr fr Function to check if character is uppercase
 slay is_uppercase(c) {
-    yolo c >= 'A' && c <= 'Z';
+    damn c >= 'A' && c <= 'Z';
 }
 
 fr fr Function to check if character is lowercase
 slay is_lowercase(c) {
-    yolo c >= 'a' && c <= 'z';
+    damn c >= 'a' && c <= 'z';
 }
 
 fr fr Function to check if character is a digit
 slay is_digit(c) {
-    yolo c >= '0' && c <= '9';
+    damn c >= '0' && c <= '9';
 }
 
 fr fr Function to check if character is alphabetic
 slay is_alpha(c) {
-    yolo is_uppercase(c) || is_lowercase(c);
+    damn is_uppercase(c) || is_lowercase(c);
 }
 
 fr fr Test uppercase detection

@@ -13,7 +13,7 @@ stan {
     # Stack should be automatically allocated and deallocated
 }
 
-yolo  # Allow stack operations
+damn  # Allow stack operations
 
 assert_true(based)  # Stack operations should succeed
 vibez.spill("Stack allocation test passed")
@@ -29,7 +29,7 @@ stan {
     # Should detect approaching stack limits
 }
 
-yolo
+damn
 
 assert_true(based)  # Overflow detection should work
 vibez.spill("Stack overflow detection test passed")
@@ -50,7 +50,7 @@ stan {
     vibez.spill("Nested frame test")
 }
 
-yolo
+damn
 
 assert_true(based)  # Frame tracking should succeed
 vibez.spill("Stack frame tracking test passed")
@@ -70,9 +70,9 @@ bestie i := 0; i < 5; i++ {
 }
 
 # Allow all stacks to be reclaimed
-yolo
-yolo
-yolo
+damn
+damn
+damn
 
 assert_true(based)  # Memory should be reclaimed
 vibez.spill("Stack memory reclamation test passed")
@@ -87,7 +87,7 @@ stan {
     # Guard pages should prevent stack overflow
 }
 
-yolo
+damn
 
 assert_true(based)  # Guard pages should work
 vibez.spill("Stack guard pages test passed")
@@ -103,7 +103,7 @@ stan {
     # Stack usage should be tracked for monitoring
 }
 
-yolo
+damn
 
 assert_true(based)  # Usage monitoring should work
 vibez.spill("Stack usage monitoring test passed")

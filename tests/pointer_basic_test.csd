@@ -7,5 +7,5 @@ slay main() {
     fr fr Print the result
     puts(y);
     
-    yolo 0;
+    damn 0;
 }

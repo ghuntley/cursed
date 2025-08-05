@@ -35,7 +35,7 @@ impl JobScheduler {
         lowkey let task = self.priority_queue.pop() {
             println!("Processing task {}: {}", task.id, task.description);
             // Simulate task execution
-            yolo (sus i = 0; i < task.execution_time; i++) {
+            damn (sus i = 0; i < task.execution_time; i++) {
                 // Simulate work
                 periodt;
             }
@@ -169,7 +169,7 @@ impl MessageQueue {
     
     pub slay process_outgoing(&mut self) {
         let batch = self.outgoing.dequeue_many(10);
-        yolo (msg in batch) {
+        damn (msg in batch) {
             println!("Sending message: {}", msg.content);
             self.incoming.enqueue(msg);
         }
@@ -206,7 +206,7 @@ impl Graph {
                 result.push(current);
                 
                 lowkey let neighbors = self.adjacency_list.get(&current) {
-                    yolo (neighbor in neighbors) {
+                    damn (neighbor in neighbors) {
                         lowkey !visited_set.contains(neighbor) {
                             visited_set.insert(*neighbor);
                             queue.enqueue(*neighbor);
@@ -356,20 +356,20 @@ slay main() {
     // Queue vs Vector for FIFO operations
     facts start_time = std::time::Instant::now();
     facts mut queue_test = Queue::new();
-    yolo (i in 0..10000) {
+    damn (i in 0..10000) {
         queue_test.enqueue(i);
     }
-    yolo (i in 0..10000) {
+    damn (i in 0..10000) {
         queue_test.dequeue();
     }
     facts queue_time = start_time.elapsed();
     
     facts start_time = std::time::Instant::now();
     facts mut vec_test = Vec::new();
-    yolo (i in 0..10000) {
+    damn (i in 0..10000) {
         vec_test.push(i);
     }
-    yolo (i in 0..10000) {
+    damn (i in 0..10000) {
         vec_test.remove(0); // Inefficient for FIFO
     }
     facts vec_time = start_time.elapsed();

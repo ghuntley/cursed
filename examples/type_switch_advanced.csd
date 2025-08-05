@@ -34,7 +34,7 @@ slay (jp *JsonProcessor) process_value(value interface{}) string {
             
             jp.indent_level--
             result += "\n" + indent + "}"
-            yolo result
+            damn result
             
         mood []interface{}:
             sus result = "[\n"
@@ -50,18 +50,18 @@ slay (jp *JsonProcessor) process_value(value interface{}) string {
             
             jp.indent_level--
             result += "\n" + indent + "]"
-            yolo result
+            damn result
             
         mood string:
-            yolo fmt.sprintf("\"%s\"", v)
+            damn fmt.sprintf("\"%s\"", v)
         mood float64:
-            yolo fmt.sprintf("%.6g", v)
+            damn fmt.sprintf("%.6g", v)
         mood bool:
-            yolo fmt.sprintf("%t", v)
+            damn fmt.sprintf("%t", v)
         mood nil:
-            yolo "null"
+            damn "null"
         basic:
-            yolo fmt.sprintf("\"<%T>\"", v)
+            damn fmt.sprintf("\"<%T>\"", v)
     }
 }
 
@@ -113,14 +113,14 @@ squad MockResponseWriter {
 
 slay (w *MockResponseWriter) write(data []byte) (int, error) {
     w.body = append(w.body, data...)
-    yolo len(data), nil
+    damn len(data), nil
 }
 
 slay (w *MockResponseWriter) header() map[string][]string {
     if w.headers == nil {
         w.headers = make(map[string][]string)
     }
-    yolo w.headers
+    damn w.headers
 }
 
 slay (w *MockResponseWriter) write_header(code int) {
@@ -269,27 +269,27 @@ squad TextPlugin {
 }
 
 slay (tp TextPlugin) name() string {
-    yolo tp.plugin_name
+    damn tp.plugin_name
 }
 
 slay (tp TextPlugin) version() string {
-    yolo "1.0.0"
+    damn "1.0.0"
 }
 
 slay (tp TextPlugin) supported_types() []string {
-    yolo []string{"string", "[]byte", "[]rune"}
+    damn []string{"string", "[]byte", "[]rune"}
 }
 
 slay (tp TextPlugin) execute(data interface{}) (interface{}, error) {
     vibe_check d := data.(type) {
         mood string:
-            yolo strings.to_upper(d), nil
+            damn strings.to_upper(d), nil
         mood []byte:
-            yolo strings.to_upper(string(d)), nil
+            damn strings.to_upper(string(d)), nil
         mood []rune:
-            yolo strings.to_upper(string(d)), nil
+            damn strings.to_upper(string(d)), nil
         basic:
-            yolo nil, fmt.errorf("TextPlugin: unsupported data type %T", data)
+            damn nil, fmt.errorf("TextPlugin: unsupported data type %T", data)
     }
 }
 
@@ -299,15 +299,15 @@ squad NumberPlugin {
 }
 
 slay (np NumberPlugin) name() string {
-    yolo "NumberPlugin"
+    damn "NumberPlugin"
 }
 
 slay (np NumberPlugin) version() string {
-    yolo "2.1.0"
+    damn "2.1.0"
 }
 
 slay (np NumberPlugin) supported_types() []string {
-    yolo []string{"int", "float64", "[]int", "[]float64"}
+    damn []string{"int", "float64", "[]int", "[]float64"}
 }
 
 slay (np NumberPlugin) execute(data interface{}) (interface{}, error) {
@@ -315,20 +315,20 @@ slay (np NumberPlugin) execute(data interface{}) (interface{}, error) {
         mood int:
             vibe_check np.operation {
                 mood "double":
-                    yolo d * 2, nil
+                    damn d * 2, nil
                 mood "square":
-                    yolo d * d, nil
+                    damn d * d, nil
                 basic:
-                    yolo d, nil
+                    damn d, nil
             }
         mood float64:
             vibe_check np.operation {
                 mood "double":
-                    yolo d * 2.0, nil
+                    damn d * 2.0, nil
                 mood "square":
-                    yolo d * d, nil
+                    damn d * d, nil
                 basic:
-                    yolo d, nil
+                    damn d, nil
             }
         mood []int:
             sus result = make([]int, len(d))
@@ -342,9 +342,9 @@ slay (np NumberPlugin) execute(data interface{}) (interface{}, error) {
                         result[i] = v
                 }
             }
-            yolo result, nil
+            damn result, nil
         basic:
-            yolo nil, fmt.errorf("NumberPlugin: unsupported data type %T", data)
+            damn nil, fmt.errorf("NumberPlugin: unsupported data type %T", data)
     }
 }
 
@@ -352,15 +352,15 @@ fr fr Validation plugin
 squad EmailValidator {}
 
 slay (ev EmailValidator) name() string {
-    yolo "EmailValidator"
+    damn "EmailValidator"
 }
 
 slay (ev EmailValidator) version() string {
-    yolo "1.2.0"
+    damn "1.2.0"
 }
 
 slay (ev EmailValidator) execute(data interface{}) (interface{}, error) {
-    yolo ev.validate(data), nil
+    damn ev.validate(data), nil
 }
 
 slay (ev EmailValidator) validate(data interface{}) []string {
@@ -376,9 +376,9 @@ slay (ev EmailValidator) validate(data interface{}) []string {
             if strings.has_prefix(d, "@") || strings.has_suffix(d, "@") {
                 errors = append(errors, "@ cannot be at start or end")
             }
-            yolo errors
+            damn errors
         basic:
-            yolo []string{fmt.sprintf("expected string, got %T", data)}
+            damn []string{fmt.sprintf("expected string, got %T", data)}
     }
 }
 

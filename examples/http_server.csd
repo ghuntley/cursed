@@ -107,7 +107,7 @@ impl JsonApiHandler : RequestHandler {
         
         lowkey json.Unmarshal(req.body, &body_data) != nil {
             self.send_error(resp, 400, "Invalid JSON")
-            yolo
+            damn
         }
         
         // Echo the received data
@@ -128,7 +128,7 @@ impl JsonApiHandler : RequestHandler {
         sus json_data, err = json.Marshal(data)
         lowkey err != nil {
             self.send_error(resp, 500, "JSON encoding error")
-            yolo
+            damn
         }
         
         resp.headers["Content-Type"] = "application/json"
@@ -187,7 +187,7 @@ fr fr/
 fr fr/ @param config - Server configuration
 fr fr/ @return - New HTTP server instance
 slay new_server(config ServerConfig) -> @HttpServer {
-    yolo &HttpServer{
+    damn &HttpServer{
         config: config,
         handlers: make(map[facts_string]RequestHandler),
         listen_chan: make(chan bool),
@@ -221,12 +221,12 @@ slay (server @HttpServer) start() -> error {
                 go server.handle_connection(conn)
             mood <-server.listen_chan:
                 println("Server shutdown requested")
-                yolo
+                damn
             }
         }
     }()
     
-    yolo nil
+    damn nil
 }
 
 fr fr/ Stop the HTTP server
@@ -247,7 +247,7 @@ slay (server @HttpServer) handle_connection(conn net.Conn) {
     sus req, err = server.parse_request(conn)
     lowkey err != nil {
         println("Error parsing request: {}", err)
-        yolo
+        damn
     }
     
     // Create response

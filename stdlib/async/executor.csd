@@ -90,7 +90,7 @@ slay executor_init(config ExecutorConfig) lit {
         global_executor.worker_threads = append(global_executor.worker_threads, worker)
     } fr fr Start worker threads
     bestie i := 0; i < len(global_executor.worker_threads); i++ {
-        yolo worker_thread_main(i)
+        damn worker_thread_main(i)
     }
     
     damn based

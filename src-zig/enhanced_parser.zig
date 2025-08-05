@@ -21,6 +21,7 @@ pub const Parser = struct {
     tokens: []const Token,
     current: usize,
     allocator: Allocator,
+    arena: std.heap.ArenaAllocator, // Arena for temporary allocations
     error_reporter: *ErrorReporter,
     in_function: bool,
     in_loop: bool,
@@ -32,6 +33,7 @@ pub const Parser = struct {
             .tokens = tokens,
             .current = 0,
             .allocator = allocator,
+            .arena = std.heap.ArenaAllocator.init(allocator),
             .error_reporter = error_reporter,
             .in_function = false,
             .in_loop = false,
@@ -40,8 +42,13 @@ pub const Parser = struct {
         };
     }
     
+    pub fn deinit(self: *Parser) void {
+        self.arena.deinit();
+    }
+    
     pub fn parseProgram(self: *Parser) !Program {
         var program = Program.init(self.allocator);
+        errdefer program.deinit(); // Clean up on error
         
         while (!self.isAtEnd()) {
             // Skip error tokens and newlines for recovery
@@ -64,7 +71,10 @@ pub const Parser = struct {
             // Parse import statement
             if (self.check(.Yeet)) {
                 if (self.parseImportStatement()) |import_stmt| {
-                    try program.imports.append(import_stmt);
+                    program.imports.append(import_stmt) catch |err| {
+                        import_stmt.deinit(self.allocator);
+                        return err;
+                    };
                 } else |err| {
                     try self.handleParseError(err, "Failed to parse import statement");
                     self.synchronize();
@@ -74,7 +84,10 @@ pub const Parser = struct {
             
             // Parse regular statements
             if (self.parseStatement()) |stmt| {
-                try program.statements.append(stmt);
+                program.statements.append(stmt) catch |err| {
+                    stmt.deinit(self.allocator);
+                    return err;
+                };
             } else |err| {
                 try self.handleParseError(err, "Failed to parse statement");
                 self.synchronize();
@@ -210,11 +223,15 @@ pub const Parser = struct {
         _ = try self.consume(.LeftParen, "Expected '(' after function name");
         
         var parameters = ArrayList(ast.Parameter).init(self.allocator);
+        errdefer parameters.deinit(); // Clean up on error
         
         if (!self.check(.RightParen)) {
             while (true) {
                 if (self.parseParameter()) |param| {
-                    try parameters.append(param);
+                    parameters.append(param) catch |err| {
+                        param.deinit(self.allocator);
+                        return err;
+                    };
                 } else |err| {
                     try self.handleParseError(err, "Failed to parse function parameter");
                     // Try to recover by skipping to next comma or closing paren
@@ -420,13 +437,27 @@ pub const Parser = struct {
         if (self.match(.Assign) or self.match(.PlusAssign) or self.match(.MinusAssign) or 
            self.match(.StarAssign) or self.match(.SlashAssign)) {
             const operator = self.previous();
-            _ = try self.parseAssignment();
+            const right_expr = try self.parseAssignment();
+            
+            // Allocate left pointer with cleanup
+            const left_ptr = self.allocator.create(Expression) catch return error.OutOfMemory;
+            errdefer self.allocator.destroy(left_ptr);
+            
+            // Allocate right pointer with cleanup
+            const right_ptr = self.allocator.create(Expression) catch {
+                self.allocator.destroy(left_ptr);
+                return error.OutOfMemory;
+            };
+            errdefer self.allocator.destroy(right_ptr);
+            
+            left_ptr.* = expr;
+            right_ptr.* = right_expr;
             
             return Expression{
                 .Assignment = .{
-                    .left = try self.allocator.create(Expression),
+                    .left = left_ptr,
                     .operator = operator.lexeme,
-                    .right = try self.allocator.create(Expression),
+                    .right = right_ptr,
                 }
             };
         }

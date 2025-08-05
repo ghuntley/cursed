@@ -7,5 +7,5 @@ slay main() normie {
     puts(42);
     
     fr fr This will print 42 first, then 10
-    yolo 0;
+    damn 0;
 }

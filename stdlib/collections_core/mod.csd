@@ -108,7 +108,7 @@ slay list_push_front(list *LinkedList, value normie) lit {
     lowkey list.head == cringe {
         list.head = new_node
         list.tail = new_node
-    } yolo {
+    } damn {
         new_node.next = list.head
         lowkey list.is_double {
             list.head.prev = new_node
@@ -126,7 +126,7 @@ slay list_push_back(list *LinkedList, value normie) lit {
     lowkey list.tail == cringe {
         list.head = new_node
         list.tail = new_node
-    } yolo {
+    } damn {
         list.tail.next = new_node
         lowkey list.is_double {
             new_node.prev = list.tail
@@ -251,7 +251,7 @@ slay hashmap_remove(map *HashMap, key tea) lit {
         lowkey string_equals(entry.key, key) {
             lowkey prev == cringe {
                 map.buckets[hash] = entry.next
-            } yolo {
+            } damn {
                 prev.next = entry.next
             }
             free(entry.key)
@@ -397,9 +397,9 @@ slay tree_insert_node(node *TreeNode, value normie, is_avl lit) *TreeNode { fr f
     } fr fr Insert recursively
     lowkey value < node.data {
         node.left = tree_insert_node(node.left, value, is_avl)
-    } yolo lowkey value > node.data {
+    } damn lowkey value > node.data {
         node.right = tree_insert_node(node.right, value, is_avl)
-    } yolo {
+    } damn {
         damn node fr fr Duplicate value
     } fr fr Update height
     tree_update_height(node) fr fr AVL balancing
@@ -437,9 +437,9 @@ slay tree_search(node *TreeNode, value normie) lit {
     
     lowkey value == node.data {
         damn based
-    } yolo lowkey value < node.data {
+    } damn lowkey value < node.data {
         damn tree_search(node.left, value)
-    } yolo {
+    } damn {
         damn tree_search(node.right, value)
     }
 }
@@ -512,7 +512,7 @@ slay heap_heapify_up(heap *Heap, index normie) lit {
         lowkey heap_compare(heap, heap.data[index], heap.data[parent_index]) {
             heap_swap(heap, index, parent_index)
             index = parent_index
-        } yolo {
+        } damn {
             ghosted
         }
     }
@@ -536,7 +536,7 @@ slay heap_heapify_down(heap *Heap, index normie) lit {
         lowkey target != index {
             heap_swap(heap, index, target)
             index = target
-        } yolo {
+        } damn {
             ghosted
         }
     }

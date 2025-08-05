@@ -281,10 +281,10 @@ slay main() {
     lowkey testz.test_failed > 0 {
         vibez.spill("")
         vibez.spill("Some tests failed. Check the output above.")
-        yolo 1
+        damn 1
     } highkey {
         vibez.spill("")
         vibez.spill("All tests passed!")
-        yolo 0
+        damn 0
     }
 }

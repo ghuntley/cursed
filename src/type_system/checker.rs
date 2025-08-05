@@ -7,7 +7,7 @@ use crate::ast::{Expression, Statement, Program, BinaryExpression, CallExpressio
                  MemberAccessExpression, LetStatement, FunctionStatement, IfStatement, 
                  WhileStatement, ReturnStatement, Literal, StructStatement, InterfaceStatement,
                  ChannelStatement, GoroutineStatement, SelectStatement, PanicStatement, 
-                 CatchStatement, ChannelSendExpression, ChannelReceiveExpression, 
+                 CatchStatement, 
                  ChannelCreationExpression, TypeAliasStatement, DeferStatement, AstVisitor};
 use crate::error::CursedError;
 use crate::core::Type;
@@ -423,12 +423,7 @@ impl TypeChecker {
             Expression::Map(pairs) => {
                 self.check_map_expression(pairs)
             }
-            Expression::ChannelSend(channel_send) => {
-                self.check_channel_send_expression(channel_send)
-            }
-            Expression::ChannelReceive(channel_receive) => {
-                self.check_channel_receive_expression(channel_receive)
-            }
+
             Expression::ChannelCreation(channel_creation) => {
                 self.check_channel_creation_expression(channel_creation)
             }
@@ -1920,68 +1915,7 @@ impl TypeChecker {
         }
     }
     
-    fn check_channel_send_expression(&mut self, channel_send: &ChannelSendExpression) -> Result<TypeExpression, TypeCheckError> {
-        // Check the channel expression
-        let channel_type = self.check_expression(&*channel_send.channel)?;
-        
-        // Validate that we have a proper channel type
-        if !self.is_channel_type(&channel_type) {
-            return Err(TypeCheckError {
-                message: format!("Cannot send to non-channel type '{:?}'", channel_type),
-                location: None,
-                error_type: TypeErrorKind::TypeMismatch,
-            });
-        }
-        
-        // Check the value being sent
-        let value_type = self.check_expression(&*channel_send.value)?;
-        
-        // Validate that the value type matches the channel's element type
-        if let Some(channel_element_type) = self.extract_channel_element_type(&channel_type) {
-            if !self.types_compatible(&value_type, &channel_element_type) {
-                return Err(TypeCheckError {
-                    message: format!("Channel send type mismatch: cannot send '{}' to channel of type '{}'", 
-                                   self.type_to_string(&value_type),
-                                   self.type_to_string(&channel_element_type)),
-                    location: None,
-                    error_type: TypeErrorKind::TypeMismatch,
-                });
-            }
-        } else {
-            return Err(TypeCheckError {
-                message: "Cannot determine channel element type for send operation".to_string(),
-                location: None,
-                error_type: TypeErrorKind::TypeMismatch,
-            });
-        }
-        
-        Ok(TypeExpression::named("void"))
-    }
-    
-    fn check_channel_receive_expression(&mut self, channel_receive: &ChannelReceiveExpression) -> Result<TypeExpression, TypeCheckError> {
-        // Check the channel expression
-        let channel_type = self.check_expression(&*channel_receive.channel)?;
-        
-        // Validate that we have a proper channel type
-        if !self.is_channel_type(&channel_type) {
-            return Err(TypeCheckError {
-                message: format!("Cannot receive from non-channel type '{:?}'", channel_type),
-                location: None,
-                error_type: TypeErrorKind::TypeMismatch,
-            });
-        }
-        
-        // Extract the element type from the channel type
-        if let Some(element_type) = self.extract_channel_element_type(&channel_type) {
-            Ok(element_type)
-        } else {
-            return Err(TypeCheckError {
-                message: "Cannot determine channel element type for receive operation".to_string(),
-                location: None,
-                error_type: TypeErrorKind::TypeMismatch,
-            });
-        }
-    }
+
     
     fn check_channel_creation_expression(&mut self, channel_creation: &ChannelCreationExpression) -> Result<TypeExpression, TypeCheckError> {
         // Check the element type
@@ -2304,12 +2238,7 @@ impl AstVisitor<Result<TypeExpression, TypeCheckError>> for TypeChecker {
             Expression::Map(pairs) => {
                 self.visit_map_expression(pairs)
             }
-            Expression::ChannelSend(channel_send) => {
-                self.visit_channel_send_expression(channel_send)
-            }
-            Expression::ChannelReceive(channel_receive) => {
-                self.visit_channel_receive_expression(channel_receive)
-            }
+
             Expression::ChannelCreation(channel_creation) => {
                 self.visit_channel_creation_expression(channel_creation)
             }
@@ -2396,13 +2325,7 @@ impl TypeChecker {
         self.check_catch_statement(catch_stmt)
     }
 
-    fn visit_channel_send_expression(&mut self, channel_send: &ChannelSendExpression) -> Result<TypeExpression, TypeCheckError> {
-        self.check_channel_send_expression(channel_send)
-    }
 
-    fn visit_channel_receive_expression(&mut self, channel_receive: &ChannelReceiveExpression) -> Result<TypeExpression, TypeCheckError> {
-        self.check_channel_receive_expression(channel_receive)
-    }
 
     fn visit_channel_creation_expression(&mut self, channel_creation: &ChannelCreationExpression) -> Result<TypeExpression, TypeCheckError> {
         self.check_channel_creation_expression(channel_creation)

@@ -76,7 +76,7 @@ squad Session {
 /// - [validate_session] for session validation
 /// - [logout] for session termination
 /// - [UserRepository.verify_password] for password checking
-yolo authenticate(email: String, password: String) -> Session? {
+damn authenticate(email: String, password: String) -> Session? {
     // Implementation references UserRepository and SessionManager
     nil
 }
@@ -95,7 +95,7 @@ yolo authenticate(email: String, password: String) -> Session? {
 /// # See Also
 /// - [authenticate] for session creation
 /// - [SessionManager.is_expired] for expiration checking
-yolo validate_session(session_id: String) -> Session? {
+damn validate_session(session_id: String) -> Session? {
     nil
 }
 
@@ -113,7 +113,7 @@ yolo validate_session(session_id: String) -> Session? {
 /// # Related
 /// - [authenticate] for creating sessions
 /// - [SessionManager.destroy_session] for cleanup
-yolo logout(session_id: String) -> Bool {
+damn logout(session_id: String) -> Bool {
     true
 }
 
@@ -130,7 +130,7 @@ yolo logout(session_id: String) -> Bool {
 /// 
 /// # Implementation Notes
 /// Uses database connection from [UserRepository.connection_pool]
-yolo slay find_by_email(self: UserRepository, email: String) -> User? {
+damn slay find_by_email(self: UserRepository, email: String) -> User? {
     nil
 }
 
@@ -148,7 +148,7 @@ yolo slay find_by_email(self: UserRepository, email: String) -> User? {
 /// 
 /// # Security Notes
 /// Uses secure hashing algorithm for password comparison
-yolo slay verify_password(self: UserRepository, user_id: Int, password: String) -> Bool {
+damn slay verify_password(self: UserRepository, user_id: Int, password: String) -> Bool {
     false
 }
 
@@ -165,7 +165,7 @@ yolo slay verify_password(self: UserRepository, user_id: Int, password: String) 
 /// 
 /// # Implementation
 /// Uses [SessionManager.timeout] for expiration calculation
-yolo slay create_session(self: SessionManager, user_id: Int) -> Session {
+damn slay create_session(self: SessionManager, user_id: Int) -> Session {
     Session {
         session_id: "mock_session",
         user_id: user_id,
@@ -188,7 +188,7 @@ yolo slay create_session(self: SessionManager, user_id: Int) -> Session {
 /// # Related
 /// - [validate_session] uses this for validation
 /// - [Session.expires_at] contains expiration timestamp
-yolo slay is_expired(self: SessionManager, session: Session) -> Bool {
+damn slay is_expired(self: SessionManager, session: Session) -> Bool {
     // Mock implementation
     false
 }
@@ -206,7 +206,7 @@ yolo slay is_expired(self: SessionManager, session: Session) -> Bool {
 /// 
 /// # Implementation
 /// Removes entry from [SessionManager.sessions] map
-yolo slay destroy_session(self: SessionManager, session_id: String) -> Bool {
+damn slay destroy_session(self: SessionManager, session_id: String) -> Bool {
     true
 }
 

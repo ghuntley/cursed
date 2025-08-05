@@ -6,7 +6,7 @@ slay incomplete_function(
 sus unclosed_string = "this string is never closed
 
 lowkey missing_condition {
-    yolo "no condition"
+    damn "no condition"
 }
 
 sus missing_semicolon = 42 sus another = 24
@@ -32,7 +32,7 @@ vibe_check {
 // Unmatched braces
 slay test() {
     lowkey based {
-        yolo 42
+        damn 42
     // Missing closing brace
 
 // Invalid token sequence

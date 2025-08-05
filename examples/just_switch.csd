@@ -12,5 +12,5 @@ slay main() normie {
         basic: 
             x = 0;
     }
-    yolo 0;
+    damn 0;
 }

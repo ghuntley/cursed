@@ -15,11 +15,11 @@ slay main() normie {
         fmt.Println(key, ":", value)
     }
     
-    yolo 0
+    damn 0
 }
 
 // Helper function to create and initialize a map
 slay make_map() tea[tea]thicc {
     sus result tea[tea]thicc = tea[tea]thicc{}
-    yolo result
+    damn result
 }

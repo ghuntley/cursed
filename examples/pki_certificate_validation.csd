@@ -39,7 +39,7 @@ slay main() -> nil {
         println("   Processor ID: " + pki_result["processor_id"]);
     } bestie {
         println("❌ Failed to create PKI processor");
-        yolo; // Exit early
+        damn; // Exit early
     }
     
     // 2. Parse and validate individual certificate
@@ -252,7 +252,7 @@ slay analyze_certificate(cert_pem: string, hostname: string) -> sus {
         analysis["signature_algorithm"] = cert_info["signature_algorithm"];
     } bestie {
         analysis["issues"] = analysis["issues"] + ["Certificate parsing failed"];
-        yolo analysis;
+        damn analysis;
     }
     
     // Validate certificate
@@ -286,7 +286,7 @@ slay analyze_certificate(cert_pem: string, hostname: string) -> sus {
         analysis["issues"] = analysis["issues"] + ["Certificate is revoked"];
     }
     
-    yolo analysis;
+    damn analysis;
 }
 
 fr fr Comprehensive certificate validation report
@@ -361,7 +361,7 @@ slay perform_security_audit() -> nil {
 
 fr fr Create a self-signed certificate for testing
 slay create_self_signed_cert() -> string {
-    yolo `-----BEGIN CERTIFICATE-----
+    damn `-----BEGIN CERTIFICATE-----
 MIICljCCAX4CCQCKMuQQwqfgvDANBgkqhkiG9w0BAQsFADCBjDELMAkGA1UEBhMC
 VVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcMDVNhbiBGcmFuY2lzY28x
 EjAQBgNVBAoMCUV4YW1wbGUgQ28xEjAQBgNVBAsMCUV4YW1wbGUgQ28xKDAmBgNV
@@ -376,7 +376,7 @@ AQoCggEBAMSx7FQfqVdlVFRFKJm7NUFAQAQUCXOBmNfA
 
 fr fr Create an expired certificate for testing
 slay create_expired_cert() -> string {
-    yolo `-----BEGIN CERTIFICATE-----
+    damn `-----BEGIN CERTIFICATE-----
 MIICljCCAX4CCQCKMuQQwqfgvDANBgkqhkiG9w0BAQsFADCBjDELMAkGA1UEBhMC
 VVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcMDVNhbiBGcmFuY2lzY28x
 EjAQBgNVBAoMCUV4YW1wbGUgQ28xEjAQBgNVBAsMCUV4YW1wbGUgQ28xKDAmBgNV
@@ -434,7 +434,7 @@ slay performance_test() -> nil {
 fr fr Utility function to get current time (placeholder)
 slay current_time() -> number {
     // In a real implementation, this would return actual timestamp
-    yolo 1000 + (random() * 100);
+    damn 1000 + (random() * 100);
 }
 
 fr fr Utility function to repeat string
@@ -443,19 +443,19 @@ slay string.repeat(count: number) -> string {
     periodt i in range(count) {
         result = result + this;
     }
-    yolo result;
+    damn result;
 }
 
 fr fr Utility function to get array size
 slay size(arr: sus) -> number {
     // In a real implementation, this would return actual array/object size
-    yolo 10; // Placeholder
+    damn 10; // Placeholder
 }
 
 fr fr Utility function to split string
 slay split(str: string, delimiter: string) -> [string] {
     // In a real implementation, this would split the string
-    yolo [str]; // Placeholder
+    damn [str]; // Placeholder
 }
 
 fr fr Utility function to generate range
@@ -464,12 +464,12 @@ slay range(n: number) -> [number] {
     periodt i in 0..n {
         result = result + [i];
     }
-    yolo result;
+    damn result;
 }
 
 fr fr Random number generator placeholder
 slay random() -> number {
-    yolo 0.5; // Placeholder
+    damn 0.5; // Placeholder
 }
 
 fr fr Entry point with error handling

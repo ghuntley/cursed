@@ -29,12 +29,12 @@ slay main() {
 }
 
 slay function_with_too_many_parameters(a, b, c, d, e, f, g, h, i, j) {
-    yolo a + b + c + d + e + f + g + i + j
+    damn a + b + c + d + e + f + g + i + j
 }
 
 slay doSomething() {
     sus single_letter_var = "bad practice"
-    yolo
+    damn
 }
 
 fr fr Function with Go-style naming instead of CURSED
@@ -44,5 +44,5 @@ func oldStyleFunction() {
 }
 
 slay test_function_with_very_long_name_that_exceeds_reasonable_expectations() {
-    yolo
+    damn
 }

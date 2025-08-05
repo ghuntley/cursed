@@ -10,11 +10,11 @@ be_like Pair[A, B] squad {
 }
 
 slay map[T, U](input T, fn stan(T) U) U {
-    yolo fn(input)
+    damn fn(input)
 }
 
 slay identity[T](x T) T {
-    yolo x
+    damn x
 }
 
 slay main() {

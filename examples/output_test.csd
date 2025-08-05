@@ -4,5 +4,5 @@ yeet "vibez"
 
 slay main() {
     vibez.spill("Test message");
-    yolo 0;
+    damn 0;
 }

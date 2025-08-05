@@ -325,7 +325,7 @@ slay getCurrentTime() normie {
 
 fr fr Start deadline timer
 slay startDeadlineTimer(ctx *deadlineCtx, deadline normie) {
-    yolo func() {
+    damn func() {
         currentTime := getCurrentTime()
         if currentTime >= deadline {
             ctx.cancel(ErrDeadlineExceeded)

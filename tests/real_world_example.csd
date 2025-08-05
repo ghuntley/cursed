@@ -16,7 +16,7 @@ squad Server {
 }
 
 slay new_server(port normie) Server {
-    yolo Server{
+    damn Server{
         port: port,
         middlewares: make([]Middleware, 0),
         routes: make(map[sip]Handler),
@@ -35,24 +35,24 @@ slay (s Server) handle_request(req Request, res Response) error {
     sus handler, exists = s.routes[req.path]
     lowkey !exists {
         res.status = 404
-        yolo error("Route not found")
+        damn error("Route not found")
     }
     
     // Apply middlewares
     bestie middleware flex s.middlewares {
         sus err = middleware.process(req, res, handler)
         lowkey err != null {
-            yolo err
+            damn err
         }
     }
     
-    yolo handler.handle(req, res)
+    damn handler.handle(req, res)
 }
 
 slay (s Server) start() error {
     sus listener, err = listen("tcp", ":" + s.port)
     lowkey err != null {
-        yolo err
+        damn err
     }
     
     periodt based {
@@ -75,5 +75,5 @@ slay main() {
     server.add_route("/api/users", UserHandler{})
     server.add_route("/api/posts", PostHandler{})
     
-    yolo server.start()
+    damn server.start()
 }

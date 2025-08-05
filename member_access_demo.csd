@@ -27,5 +27,5 @@ slay main() {
     vibez.spill("")
     vibez.spill("💯 CURSED member access is fully functional!")
     
-    yolo 0
+    damn 0
 }

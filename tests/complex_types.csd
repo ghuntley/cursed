@@ -36,7 +36,7 @@ collab Serializable {
     /// 
     /// # Returns
     /// Byte representation of the object
-    yolo to_bytes(self) -> Byte[]
+    damn to_bytes(self) -> Byte[]
     
     /// Deserialize object from byte array
     /// 
@@ -45,7 +45,7 @@ collab Serializable {
     /// 
     /// # Returns
     /// Reconstructed object instance
-    yolo from_bytes(data: Byte[]) -> Self
+    damn from_bytes(data: Byte[]) -> Self
 }
 
 /// Create a new empty container with specified capacity
@@ -64,7 +64,7 @@ collab Serializable {
 /// ```cursed
 /// facts container = new Container[User](100)
 /// ```
-yolo new Container[T: Serializable](capacity: Int) -> Container[T] {
+damn new Container[T: Serializable](capacity: Int) -> Container[T] {
     Container {
         items: [],
         capacity: capacity,
@@ -88,7 +88,7 @@ yolo new Container[T: Serializable](capacity: Int) -> Container[T] {
 ///     vibe_panic("Container is full!")
 /// }
 /// ```
-yolo slay add[T: Serializable](self: Container[T], item: T) -> Bool {
+damn slay add[T: Serializable](self: Container[T], item: T) -> Bool {
     lowkey self.size >= self.capacity {
         false
     } bestie {
@@ -115,7 +115,7 @@ yolo slay add[T: Serializable](self: Container[T], item: T) -> Bool {
 ///     // Use item...
 /// }
 /// ```
-yolo slay get[T: Serializable](self: Container[T], index: Int) -> T? {
+damn slay get[T: Serializable](self: Container[T], index: Int) -> T? {
     lowkey index >= 0 && index < self.size {
         self.items[index]
     } bestie {
@@ -177,7 +177,7 @@ collab Storage[K, V] {
     /// 
     /// # Returns
     /// True if storage succeeded, false otherwise
-    yolo put(self, key: K, value: V) -> Bool
+    damn put(self, key: K, value: V) -> Bool
     
     /// Retrieve value by key
     /// 
@@ -186,7 +186,7 @@ collab Storage[K, V] {
     /// 
     /// # Returns
     /// The associated value, or nil if key not found
-    yolo get(self, key: K) -> V?
+    damn get(self, key: K) -> V?
     
     /// Remove key-value pair
     /// 
@@ -195,7 +195,7 @@ collab Storage[K, V] {
     /// 
     /// # Returns
     /// True if key was found and removed, false otherwise
-    yolo remove(self, key: K) -> Bool
+    damn remove(self, key: K) -> Bool
 }
 
 /// Type constraint interfaces for generic bounds
@@ -209,7 +209,7 @@ collab Comparable {
     /// 
     /// # Returns
     /// Negative if less than, zero if equal, positive if greater than
-    yolo compare_to(self, other: Self) -> Int
+    damn compare_to(self, other: Self) -> Int
 }
 
 /// Hash computation interface for map keys
@@ -220,5 +220,5 @@ collab Hashable {
     /// 
     /// # Returns
     /// Hash code as integer
-    yolo hash_code(self) -> Int
+    damn hash_code(self) -> Int
 }

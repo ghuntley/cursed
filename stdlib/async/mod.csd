@@ -303,10 +303,10 @@ fr fr Start the async runtime
 slay start_runtime() lit {
     global_runtime.is_running = based fr fr Start worker threads
     bestie i := 0; i < global_runtime.worker_threads; i++ {
-        yolo worker_thread(i)
+        damn worker_thread(i)
     } fr fr Start event loop
-    yolo event_loop_run() fr fr Start timeout manager
-    yolo timeout_manager_run()
+    damn event_loop_run() fr fr Start timeout manager
+    damn timeout_manager_run()
     
     damn based
 }
@@ -513,7 +513,7 @@ slay promise_all(promises [Promise]) Promise {
     
     bestie i := 0; i < len(promises); i++ {
         sus promise = promises[i] fr fr Create completion handler
-        yolo promise_all_handler(promise, all_promise, i, results, completed_count, len(promises))
+        damn promise_all_handler(promise, all_promise, i, results, completed_count, len(promises))
     }
     
     damn all_promise
@@ -544,7 +544,7 @@ slay promise_race(promises [Promise]) Promise {
     
     bestie i := 0; i < len(promises); i++ {
         sus promise = promises[i]
-        yolo promise_race_handler(promise, race_promise)
+        damn promise_race_handler(promise, race_promise)
     }
     
     damn race_promise

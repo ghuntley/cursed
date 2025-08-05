@@ -6,7 +6,7 @@ fr fr showcasing Gen Z slang syntax and practical functionality
 yeet "vibez"  fr fr import standard library
 
 slay calculateArea(radius snack) snack {
-    yolo 3.14159 * radius * radius
+    damn 3.14159 * radius * radius
 }
 
 slay greetUser(name tea) {

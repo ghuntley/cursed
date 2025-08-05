@@ -14,8 +14,8 @@ slay main() {
     
     fr fr Check the result
     lowkey result == 42 {
-        yolo 0
+        damn 0
     }
     
-    yolo 1
+    damn 1
 }

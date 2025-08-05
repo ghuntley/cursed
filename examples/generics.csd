@@ -28,7 +28,7 @@ slay map[T, U](items []T, transformer slay(T) U) []U {
         i = i + 1
     }
     
-    yolo result
+    damn result
 }
 
 fr fr Example implementation of Container
@@ -47,11 +47,11 @@ slay get[T](l @List[T], index normie) T {
     lowkey index < 0 || index >= l.length {
         panic("Index out of bounds")
     }
-    yolo l.items[index]
+    damn l.items[index]
 }
 
 slay size[T](l @List[T]) normie {
-    yolo l.length
+    damn l.length
 }
 
 fr fr Main function to demonstrate the usage
@@ -73,7 +73,7 @@ slay main() {
     fr fr Use the generic map function
     sus numbers = []normie{1, 2, 3, 4, 5}
     sus toStrings = slay(n normie) tea {
-        yolo sprintf("%d", n)
+        damn sprintf("%d", n)
     }
     
     sus strings = map[normie, tea](numbers, toStrings)

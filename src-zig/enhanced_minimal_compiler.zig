@@ -323,6 +323,13 @@ const Parser = struct {
 
     pub fn parse(self: *Parser) !ArrayList(ASTNode) {
         var statements = ArrayList(ASTNode).init(self.allocator);
+        errdefer {
+            // Clean up any allocated AST nodes on error
+            for (statements.items) |stmt| {
+                self.freeASTNode(stmt);
+            }
+            statements.deinit();
+        }
         
         while (!self.isAtEnd()) {
             // Skip newlines
@@ -331,8 +338,16 @@ const Parser = struct {
                 continue;
             }
             
-            const stmt = try self.parseStatement();
-            try statements.append(stmt);
+            const stmt = self.parseStatement() catch |err| {
+                // Clean up partial parsing
+                return err;
+            };
+            
+            statements.append(stmt) catch |err| {
+                // Clean up the statement if append fails
+                self.freeASTNode(stmt);
+                return err;
+            };
         }
         
         return statements;
@@ -517,6 +532,44 @@ const Parser = struct {
 
     fn isAtEnd(self: *Parser) bool {
         return self.peek().type == .EOF;
+    }
+    
+    /// Free memory allocated for an AST node
+    fn freeASTNode(self: *Parser, node: ASTNode) void {
+        switch (node) {
+            .FunctionCall => |call| {
+                self.allocator.free(call.name);
+                for (call.args.items) |arg| {
+                    self.freeASTNode(arg);
+                }
+                call.args.deinit();
+            },
+            .YikesStatement => |yikes| {
+                if (yikes.value) |value| {
+                    self.freeASTNode(value.*);
+                    self.allocator.destroy(value);
+                }
+            },
+            .ShookExpression => |shook| {
+                self.freeASTNode(shook.expression.*);
+                self.allocator.destroy(shook.expression);
+            },
+            .FamStatement => |fam| {
+                for (fam.body.items) |stmt| {
+                    self.freeASTNode(stmt);
+                }
+                fam.body.deinit();
+                if (fam.recovery) |recovery| {
+                    for (recovery.items) |stmt| {
+                        self.freeASTNode(stmt);
+                    }
+                    recovery.deinit();
+                }
+            },
+            else => {
+                // Other node types don't need explicit cleanup
+            },
+        }
     }
 };
 

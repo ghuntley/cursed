@@ -74,7 +74,7 @@ slay init_solar_system() []Planet {
         mass: 5.15138902046611451e-05 * SOLAR_MASS
     }
     
-    yolo bodies
+    damn bodies
 }
 
 slay offset_momentum(bodies []Planet) {
@@ -110,7 +110,7 @@ slay energy(bodies []Planet) meal {
         }
     }
     
-    yolo e
+    damn e
 }
 
 slay advance(bodies []Planet, dt meal) {

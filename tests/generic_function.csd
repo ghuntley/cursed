@@ -1,5 +1,5 @@
 vibe test
 
 slay identity[T](x) {
-    yolo x
+    damn x
 }

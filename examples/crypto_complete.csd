@@ -1,7 +1,7 @@
 fr fr Comprehensive CURSED Crypto Package Example
 fr fr This example demonstrates all major cryptographic protocols and utilities
 
-yolo main() {
+damn main() {
     facts title = "CURSED Crypto Package - Complete Demo"
     print(title)
     print("=" * 50)
@@ -25,7 +25,7 @@ yolo main() {
 }
 
 fr fr JWT Authentication Example
-yolo demonstrate_jwt_authentication(platform: &CryptoPlatform) {
+damn demonstrate_jwt_authentication(platform: &CryptoPlatform) {
     print("\n📋 JWT Authentication Demo")
     print("-" * 30)
     
@@ -71,7 +71,7 @@ yolo demonstrate_jwt_authentication(platform: &CryptoPlatform) {
 }
 
 fr fr HMAC Authentication Example
-yolo demonstrate_hmac_authentication(platform: &CryptoPlatform) {
+damn demonstrate_hmac_authentication(platform: &CryptoPlatform) {
     print("\n🔐 HMAC Authentication Demo")
     print("-" * 30)
     
@@ -118,7 +118,7 @@ yolo demonstrate_hmac_authentication(platform: &CryptoPlatform) {
 }
 
 fr fr TOTP 2FA Example
-yolo demonstrate_totp_2fa(platform: &CryptoPlatform) {
+damn demonstrate_totp_2fa(platform: &CryptoPlatform) {
     print("\n📱 TOTP 2FA Demo")
     print("-" * 30)
     
@@ -162,7 +162,7 @@ yolo demonstrate_totp_2fa(platform: &CryptoPlatform) {
 }
 
 fr fr TLS Handshake Simulation
-yolo demonstrate_tls_handshake() {
+damn demonstrate_tls_handshake() {
     print("\n🤝 TLS Handshake Simulation")
     print("-" * 30)
     
@@ -202,7 +202,7 @@ yolo demonstrate_tls_handshake() {
 }
 
 fr fr Random Generation Demo
-yolo demonstrate_random_generation(platform: &CryptoPlatform) {
+damn demonstrate_random_generation(platform: &CryptoPlatform) {
     print("\n🎲 Secure Random Generation Demo")
     print("-" * 30)
     
@@ -248,7 +248,7 @@ yolo demonstrate_random_generation(platform: &CryptoPlatform) {
 }
 
 fr fr Encoding Utilities Demo
-yolo demonstrate_encoding_utilities() {
+damn demonstrate_encoding_utilities() {
     print("\n📝 Encoding Utilities Demo")
     print("-" * 30)
     
@@ -302,7 +302,7 @@ yolo demonstrate_encoding_utilities() {
 }
 
 fr fr Secure Communication Example
-yolo demonstrate_secure_communication_example() {
+damn demonstrate_secure_communication_example() {
     print("\n💬 Secure Communication Example")
     print("-" * 30)
     
@@ -406,7 +406,7 @@ yolo demonstrate_secure_communication_example() {
 }
 
 fr fr Helper function for crypto statistics
-yolo show_crypto_statistics() {
+damn show_crypto_statistics() {
     sus stats = CryptoStatistics::new()
     
     // In a real application, these would be populated during operation
@@ -428,7 +428,7 @@ yolo show_crypto_statistics() {
 }
 
 fr fr Example of production crypto configuration
-yolo show_production_config() {
+damn show_production_config() {
     print("\n⚙️  Production Crypto Configuration:")
     
     sus config = CryptoConfig::secure_defaults()

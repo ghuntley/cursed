@@ -70,7 +70,7 @@ slay promise_system_init() lit {
         pending_reactions: [],
         microtask_queue: []
     } fr fr Start microtask processor
-    yolo microtask_processor()
+    damn microtask_processor()
     
     damn based
 }
@@ -111,7 +111,7 @@ slay execute_promise_executor(promise Promise) lit { fr fr Create resolver and r
     } fr fr Set up context for executor
     promise.executor_context["resolver"] = tea(resolver.promise_id)
     promise.executor_context["rejector"] = tea(rejector.promise_id) fr fr Execute in separate task to avoid blocking
-    yolo execute_promise_executor_async(promise.executor_function, promise.executor_context, resolver, rejector)
+    damn execute_promise_executor_async(promise.executor_function, promise.executor_context, resolver, rejector)
     
     damn based
 }
@@ -413,7 +413,7 @@ slay promise_all(promise_ids [TaskId]) Promise {
         resolve_promise(all_promise.id, "[]")
         damn all_promise
     } fr fr Start monitoring
-    yolo promise_all_monitor(all_promise.id, promise_ids)
+    damn promise_all_monitor(all_promise.id, promise_ids)
     
     damn all_promise
 }
@@ -456,7 +456,7 @@ slay promise_all_monitor(all_promise_id TaskId, promise_ids [TaskId]) lit {
 fr fr Promise.race implementation
 slay promise_race(promise_ids [TaskId]) Promise {
     sus race_promise = create_promise("immediate_resolve", {"value": ""}) fr fr Start monitoring
-    yolo promise_race_monitor(race_promise.id, promise_ids)
+    damn promise_race_monitor(race_promise.id, promise_ids)
     
     damn race_promise
 }
@@ -508,7 +508,7 @@ slay promise_all_settled(promise_ids [TaskId]) Promise {
         resolve_promise(all_settled_promise.id, "[]")
         damn all_settled_promise
     } fr fr Start monitoring
-    yolo promise_all_settled_monitor(all_settled_promise.id, promise_ids)
+    damn promise_all_settled_monitor(all_settled_promise.id, promise_ids)
     
     damn all_settled_promise
 }

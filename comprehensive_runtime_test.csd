@@ -13,7 +13,7 @@ print("z = x + y =", z);
 
 // Function with parameters
 slay add(a, b) {
-    yolo a + b;
+    damn a + b;
 }
 
 sus result = add(15, 25);

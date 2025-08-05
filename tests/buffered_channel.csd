@@ -13,5 +13,5 @@ slay main() {
     sus result2 = <-ch
     
     fr fr Check the results
-    yolo 0
+    damn 0
 }

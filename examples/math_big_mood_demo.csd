@@ -482,7 +482,7 @@ slay demonstrate_large_number_performance() -> MathResult<()> {
 
 slay calculate_fibonacci_big(n int) -> *big_mood.Int {
     lowkey (n <= 1) {
-        yolo big_mood.NewInt(n)
+        damn big_mood.NewInt(n)
     }
     
     facts a = big_mood.NewInt(0)
@@ -494,7 +494,7 @@ slay calculate_fibonacci_big(n int) -> *big_mood.Int {
         b = temp
     }
     
-    yolo b
+    damn b
 }
 
 slay calculate_factorial_big(n int) -> *big_mood.Int {
@@ -504,5 +504,5 @@ slay calculate_factorial_big(n int) -> *big_mood.Int {
         result = result.Mul(big_mood.NewInt(i))
     }
     
-    yolo result
+    damn result
 }

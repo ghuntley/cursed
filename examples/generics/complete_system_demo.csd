@@ -87,7 +87,7 @@ collab Database<T> where T: Serialize + Deserialize + Clone + Send + Sync {
         // Begin transaction
         self.connection.begin_transaction()?
         
-        yolo {
+        damn {
             // Save to database
             sus query = format!("INSERT OR REPLACE INTO {} VALUES ({})", 
                                T::table_name(), 
@@ -154,7 +154,7 @@ collab Database<T> where T: Serialize + Deserialize + Clone + Send + Sync {
         
         self.connection.begin_transaction()?
         
-        yolo {
+        damn {
             bestie sus item = items {
                 self.save(item)?
                 success_count += 1
@@ -224,7 +224,7 @@ collab WebService<D, R> where D: Database, R: Router {
         // Route and handle
         sus response = vibe_check (self.router.route(processed_request)) {
             mood Some(handler) => {
-                yolo {
+                damn {
                     handler.handle(sus self.database)
                 } catch {
                     Response::error(500, "Internal server error")

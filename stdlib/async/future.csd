@@ -257,7 +257,7 @@ fr fr Handle future timeout
 slay handle_future_timeout(context map[tea]tea) lit {
     sus future_id = parse_int(context["future_id"])
     sus timeout_duration = parse_int(context["timeout_duration"]) fr fr Set up timeout
-    yolo timeout_watcher(future_id, timeout_duration)
+    damn timeout_watcher(future_id, timeout_duration)
     
     damn based
 }
@@ -369,7 +369,7 @@ slay future_all(future_ids [TaskId]) Future {
         resolve_future(all_future.id, "[]")
         damn all_future
     } fr fr Start monitoring all futures
-    yolo future_all_monitor(all_future.id, future_ids)
+    damn future_all_monitor(all_future.id, future_ids)
     
     damn all_future
 }
@@ -411,7 +411,7 @@ slay future_all_monitor(all_future_id TaskId, future_ids [TaskId]) lit {
 fr fr Future.race implementation
 slay future_race(future_ids [TaskId]) Future {
     sus race_future = create_future() fr fr Start monitoring race
-    yolo future_race_monitor(race_future.id, future_ids)
+    damn future_race_monitor(race_future.id, future_ids)
     
     damn race_future
 }
@@ -524,7 +524,7 @@ slay set_future_timeout(future_id TaskId, timeout_ms thicc) lit {
         sus future = global_future_registry.futures[future_id]
         future.timeout_duration = timeout_ms
         global_future_registry.futures[future_id] = future fr fr Start timeout watcher
-        yolo timeout_watcher(future_id, timeout_ms)
+        damn timeout_watcher(future_id, timeout_ms)
     }
     damn based
 }

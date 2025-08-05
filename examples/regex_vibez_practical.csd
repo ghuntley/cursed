@@ -25,54 +25,54 @@ squad LogAnalyzer {
     
     slay analyze_log_line(tea line) -> tea {
         lowkey (self.error_pattern.match_string(line)) {
-            yolo format!("🔴 {}", line);
+            damn format!("🔴 {}", line);
         } bestie lowkey (self.warning_pattern.match_string(line)) {
-            yolo format!("🟡 {}", line);
+            damn format!("🟡 {}", line);
         } bestie {
-            yolo format!("🟢 {}", line);
+            damn format!("🟢 {}", line);
         }
     }
     
     slay extract_timestamps(tea text) -> []tea {
-        yolo self.timestamp_pattern.find_all_string(text, -1);
+        damn self.timestamp_pattern.find_all_string(text, -1);
     }
 }
 
 squad DataValidator {
     slay validate_email(tea email) -> (lit, tea) {
         lowkey (regex_vibez.EMAIL_PATTERN.match_string(email)) {
-            yolo (based, "");
+            damn (based, "");
         } bestie {
-            yolo (nocap, "Invalid email format");
+            damn (nocap, "Invalid email format");
         }
     }
     
     slay validate_phone(tea phone) -> (lit, tea) {
         lowkey (regex_vibez.PHONE_PATTERN.match_string(phone)) {
-            yolo (based, "");
+            damn (based, "");
         } bestie {
-            yolo (nocap, "Invalid phone format");
+            damn (nocap, "Invalid phone format");
         }
     }
     
     slay validate_url(tea url) -> (lit, tea) {
         lowkey (regex_vibez.URL_PATTERN.match_string(url)) {
-            yolo (based, "");
+            damn (based, "");
         } bestie {
-            yolo (nocap, "Invalid URL format");
+            damn (nocap, "Invalid URL format");
         }
     }
     
     slay sanitize_input(tea input) -> tea {
         // Remove potentially dangerous characters
         facts dangerous_pattern = regex_vibez.compile(r"[<>\"'&]").unwrap();
-        yolo dangerous_pattern.replace_all_string(input, "");
+        damn dangerous_pattern.replace_all_string(input, "");
     }
 }
 
 squad TextProcessor {
     slay extract_hashtags(tea text) -> []tea {
-        yolo regex_vibez.HASHTAG_PATTERN.find_all_string(text, -1);
+        damn regex_vibez.HASHTAG_PATTERN.find_all_string(text, -1);
     }
     
     slay extract_mentions(tea text) -> []tea {
@@ -86,13 +86,13 @@ squad TextProcessor {
             }
         }
         
-        yolo mentions;
+        damn mentions;
     }
     
     slay format_currency(normie cents) -> tea {
         facts dollars = cents / 100;
         facts remaining_cents = cents % 100;
-        yolo format!("${}.{:02}", dollars, remaining_cents);
+        damn format!("${}.{:02}", dollars, remaining_cents);
     }
     
     slay parse_currency(tea text) -> Option<normie> {
@@ -103,9 +103,9 @@ squad TextProcessor {
         lowkey (matches.contains_key("1") && matches.contains_key("2")) {
             facts dollars: normie = matches.get("1").unwrap().parse().unwrap_or(0);
             facts cents: normie = matches.get("2").unwrap().parse().unwrap_or(0);
-            yolo Some(dollars * 100 + cents);
+            damn Some(dollars * 100 + cents);
         } bestie {
-            yolo None;
+            damn None;
         }
     }
 }
@@ -136,7 +136,7 @@ squad ConfigParser {
             }
         }
         
-        yolo result;
+        damn result;
     }
     
     slay remove_quotes(tea value) -> tea {
@@ -145,9 +145,9 @@ squad ConfigParser {
         facts matches = groups.find_groups_string(value);
         
         lowkey (matches.contains_key("1")) {
-            yolo matches.get("1").unwrap().clone();
+            damn matches.get("1").unwrap().clone();
         } bestie {
-            yolo value;
+            damn value;
         }
     }
 }
@@ -158,7 +158,7 @@ squad URLProcessor {
         facts groups = domain_pattern.vibe_groups();
         facts matches = groups.find_groups_string(url);
         
-        yolo matches.get("1").cloned();
+        damn matches.get("1").cloned();
     }
     
     slay extract_query_params(tea url) -> HashMap<tea, tea> {
@@ -175,12 +175,12 @@ squad URLProcessor {
             }
         }
         
-        yolo params;
+        damn params;
     }
     
     slay is_secure_url(tea url) -> lit {
         facts secure_pattern = regex_vibez.compile(r"^https://").unwrap();
-        yolo secure_pattern.match_string(url);
+        damn secure_pattern.match_string(url);
     }
 }
 
@@ -223,7 +223,7 @@ squad PasswordValidator {
             issues.push("Password contains common patterns".to_string());
         }
         
-        yolo (issues.is_empty(), issues);
+        damn (issues.is_empty(), issues);
     }
     
     slay generate_strength_score(tea password) -> normie {
@@ -246,7 +246,7 @@ squad PasswordValidator {
         facts common_pattern = regex_vibez.compile(r"(123|abc|password)").unwrap();
         lowkey (common_pattern.match_string(&password.to_lowercase())) { score -= 20; }
         
-        yolo std::cmp::max(0, std::cmp::min(100, score));
+        damn std::cmp::max(0, std::cmp::min(100, score));
     }
 }
 

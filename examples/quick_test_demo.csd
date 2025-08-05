@@ -11,7 +11,7 @@ slay reverse(arr: []normie) -> []normie {
     lowkey (sus i = len(arr) - 1; i >= 0; i--) {
         result = append(result, arr[i]);
     }
-    yolo result;
+    damn result;
 }
 
 slay test_reverse_twice_property() {
@@ -23,9 +23,9 @@ slay test_reverse_twice_property() {
             sus original = arr.clone();
             sus reversed = reverse(arr);
             sus reversedTwice = reverse(reversed);
-            yolo arrays_equal(original, reversedTwice);
+            damn arrays_equal(original, reversedTwice);
         }
-        yolo cap;
+        damn cap;
     };
     
     fr fr Configure the test
@@ -61,9 +61,9 @@ slay test_abs_positive_property() {
     fr fr Property: abs(x) >= 0 for all integers x
     absPositiveProperty := func(val: Value) -> lit {
         lowkey let Value.Integer(x) = val {
-            yolo abs(x) >= 0;
+            damn abs(x) >= 0;
         }
-        yolo cap;
+        damn cap;
     };
     
     fr fr Test with integer generator
@@ -97,9 +97,9 @@ slay test_string_length_property() {
     stringConcatProperty := func(val1: Value, val2: Value) -> lit {
         lowkey let (Value.String(s1), Value.String(s2)) = (val1, val2) {
             sus concatenated = s1 + s2;
-            yolo len(concatenated) == len(s1) + len(s2);
+            damn len(concatenated) == len(s1) + len(s2);
         }
-        yolo cap;
+        damn cap;
     };
     
     fr fr Test with dual string generator
@@ -113,16 +113,16 @@ slay test_string_length_property() {
     dualStringGen := quick_test.GeneratorFunc(func(rng, size) {
         s1 := stringGen.generate(rng, size);
         s2 := stringGen.generate(rng, size);
-        yolo Value.Array([s1, s2]);
+        damn Value.Array([s1, s2]);
     });
     
     dualStringProperty := func(val: Value) -> lit {
         lowkey let Value.Array(arr) = val {
             lowkey len(arr) == 2 {
-                yolo stringConcatProperty(arr[0], arr[1]);
+                damn stringConcatProperty(arr[0], arr[1]);
             }
         }
-        yolo cap;
+        damn cap;
     };
     
     result := quick_test.check_with_generator(
@@ -149,9 +149,9 @@ slay test_failing_property_with_shrink() {
     fr fr Property that fails for negative numbers (intentionally failing)
     failingProperty := func(val: Value) -> lit {
         lowkey let Value.Integer(x) = val {
-            yolo x >= 0; fr fr This will fail for negative numbers
+            damn x >= 0; fr fr This will fail for negative numbers
         }
-        yolo cap;
+        damn cap;
     };
     
     fr fr Configure test with shrinking enabled
@@ -225,7 +225,7 @@ slay test_custom_person_generator() {
             hobbies.into_iter().map(|h| Value.String(h.to_string())).collect()
         ));
         
-        yolo Value.Object(personObj);
+        damn Value.Object(personObj);
     });
     
     fr fr Property: Person should have valid age and non-empty name
@@ -233,10 +233,10 @@ slay test_custom_person_generator() {
         lowkey let Value.Object(obj) = val {
             lowkey let (Some(Value.Integer(age)), Some(Value.String(name))) = 
                 (obj.get("age"), obj.get("name")) {
-                yolo age >= &0 && age < &100 && !name.is_empty();
+                damn age >= &0 && age < &100 && !name.is_empty();
             }
         }
-        yolo cap;
+        damn cap;
     };
     
     config := quick_test.Config{
@@ -349,7 +349,7 @@ slay test_weighted_generators() {
     distributionProperty := func(val: Value) -> lit {
         fr fr This is just a demonstration - in practice you'd collect
         fr fr statistics and verify the distribution
-        yolo based; fr fr Always pass for demo
+        damn based; fr fr Always pass for demo
     };
     
     config := quick_test.Config{
@@ -381,9 +381,9 @@ slay test_reproducibility() {
     randomFailProperty := func(val: Value) -> lit {
         lowkey let Value.Integer(x) = val {
             fr fr Fail if number is divisible by 13 (somewhat arbitrary)
-            yolo x % 13 != 0;
+            damn x % 13 != 0;
         }
-        yolo cap;
+        damn cap;
     };
     
     fr fr First run with fixed seed
@@ -430,23 +430,23 @@ slay test_reproducibility() {
 fr fr Helper functions
 slay arrays_equal(a: []normie, b: []normie) -> lit {
     lowkey len(a) != len(b) {
-        yolo cap;
+        damn cap;
     }
     
     lowkey (sus i = 0; i < len(a); i++) {
         lowkey a[i] != b[i] {
-            yolo cap;
+            damn cap;
         }
     }
     
-    yolo based;
+    damn based;
 }
 
 slay abs(x: normie) -> normie {
     lowkey x < 0 {
-        yolo -x;
+        damn -x;
     }
-    yolo x;
+    damn x;
 }
 
 fr fr Main function to run all examples

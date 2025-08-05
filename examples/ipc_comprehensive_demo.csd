@@ -40,7 +40,7 @@ slay main() {
     ipc::shutdown()?;
     println("\n✅ Demo completed successfully!");
     
-    yolo;
+    damn;
 }
 
 fr fr Demonstrate named pipes

@@ -25,7 +25,7 @@ periodt i := 0; i < 5; i++ {
     stan {
         periodt j := 0; j < 10; j++ {
             task_counter++
-            yolo  // Cooperative yield point
+            damn  // Cooperative yield point
         }
         vibez.spill("Task " + str(i) + " completed")
     }

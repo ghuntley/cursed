@@ -21,5 +21,5 @@ slay main() normie {
     }
     
     puts(sum);
-    yolo 0;
+    damn 0;
 }

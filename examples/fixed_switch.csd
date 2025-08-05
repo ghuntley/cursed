@@ -10,5 +10,5 @@ slay main() {
     }
     
     vibez.spill(x);
-    yolo 0;
+    damn 0;
 }

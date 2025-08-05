@@ -292,14 +292,14 @@ fr fr/
 fr fr/ @example Async operations
 fr fr/ ```cursed
 fr fr/ stan async_task()  // spawn async task
-fr fr/ yolo result        // await result
+fr fr/ damn result        // await result
 fr fr/ ```
 slay demonstrate_advanced_features() {
     println("🚀 Advanced Feature Demonstrations:")
     
-    // Async operations (using stan/yolo)
+    // Async operations (using stan/damn)
     facts future = stan fetch_data()
-    facts result = yolo future
+    facts result = damn future
     println("Async result: " + result)
     
     // Error handling

@@ -140,6 +140,47 @@ impl CursedDiagnosticsProvider {
         let lines: Vec<&str> = text.lines().collect();
 
         for (line_num, line) in lines.iter().enumerate() {
+            // Check for deprecated "yolo" keyword
+            if let Some(yolo_pos) = line.find("yolo") {
+                // Make sure it's not part of another word
+                let is_whole_word = (yolo_pos == 0 || !line.chars().nth(yolo_pos - 1).unwrap_or(' ').is_alphanumeric()) &&
+                    (yolo_pos + 4 >= line.len() || !line.chars().nth(yolo_pos + 4).unwrap_or(' ').is_alphanumeric());
+                
+                if is_whole_word {
+                    diagnostics.push(Diagnostic {
+                        range: Range {
+                            start: Position { 
+                                line: line_num as u32, 
+                                character: yolo_pos as u32,
+                            },
+                            end: Position { 
+                                line: line_num as u32, 
+                                character: (yolo_pos + 4) as u32,
+                            },
+                        },
+                        severity: Some(DiagnosticSeverity::WARNING),
+                        code: Some(NumberOrString::String("CURSED_DEPRECATED_RETURN".to_string())),
+                        source: Some("cursed-lsp".to_string()),
+                        message: "Deprecated keyword 'yolo' used for return statement. Use 'damn' instead.".to_string(),
+                        related_information: Some(vec![DiagnosticRelatedInformation {
+                            location: Location {
+                                uri: text.to_string().parse().unwrap_or_default(), // This would need proper URI handling
+                                range: Range {
+                                    start: Position { line: line_num as u32, character: yolo_pos as u32 },
+                                    end: Position { line: line_num as u32, character: (yolo_pos + 4) as u32 },
+                                },
+                            },
+                            message: "Replace 'yolo' with 'damn'".to_string(),
+                        }]),
+                        tags: Some(vec![DiagnosticTag::DEPRECATED]),
+                        data: None,
+                        code_description: Some(CodeDescription {
+                            href: "https://cursed-lang.org/docs/migration-guide#return-statements".parse().unwrap(),
+                        }),
+                    });
+                }
+            }
+
             // Check for deprecated keywords
             if line.contains("if ") || line.contains("else ") {
                 diagnostics.push(Diagnostic {

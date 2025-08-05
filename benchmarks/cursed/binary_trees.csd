@@ -16,19 +16,19 @@ slay new_tree(item normie, depth normie) @TreeNode {
         node.right = new_tree(2 * item, depth - 1)
     }
     
-    yolo node
+    damn node
 }
 
 slay check_tree(node @TreeNode) normie {
     lowkey node == cap {
-        yolo 0
+        damn 0
     }
     
     lowkey node.left == cap {
-        yolo node.item
+        damn node.item
     }
     
-    yolo node.item + check_tree(node.left) - check_tree(node.right)
+    damn node.item + check_tree(node.left) - check_tree(node.right)
 }
 
 slay main() {

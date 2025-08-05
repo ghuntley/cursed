@@ -8,5 +8,5 @@ slay main() {
     vibez.spill("The htmlrizzler module is now properly loaded");
     vibez.spill("Function calls with dot expressions are now working correctly");
     
-    yolo 0;
+    damn 0;
 }

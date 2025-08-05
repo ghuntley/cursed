@@ -29,7 +29,7 @@ impl ValidationError bestie CustomError {
 }
 
 fr fr Function that can fail with custom error
-yolo validate_input(input: str) -> (bool, CustomError?) {
+damn validate_input(input: str) -> (bool, CustomError?) {
     lowkey (input.length() == 0) {
         sus error = ValidationError {
             message: "Input cannot be empty",
@@ -52,7 +52,7 @@ yolo validate_input(input: str) -> (bool, CustomError?) {
 }
 
 fr fr Function demonstrating question mark operator
-yolo process_file(filename: str) -> (str, error?) {
+damn process_file(filename: str) -> (str, error?) {
     // File operations that can fail
     sus content = fs::read_file(filename)?;  // ? operator propagates errors
     sus processed = validate_content(content)?;
@@ -61,14 +61,14 @@ yolo process_file(filename: str) -> (str, error?) {
     periodt (result, nil);
 }
 
-yolo validate_content(content: str) -> (str, error?) {
+damn validate_content(content: str) -> (str, error?) {
     lowkey (content.contains("forbidden")) {
         periodt ("", error::new("Content validation failed", "forbidden content"));
     }
     periodt (content, nil);
 }
 
-yolo transform_content(content: str) -> (str, error?) {
+damn transform_content(content: str) -> (str, error?) {
     // Simulate transformation that might fail
     lowkey (content.length() > 10000) {
         periodt ("", error::new("Content too large", "size limit exceeded"));
@@ -79,7 +79,7 @@ yolo transform_content(content: str) -> (str, error?) {
 }
 
 fr fr Function with panic/recovery demonstration
-yolo risky_operation(value: int) -> int {
+damn risky_operation(value: int) -> int {
     lowkey (value < 0) {
         panic("Negative values not allowed", severity: "critical", category: "validation");
     }
@@ -92,7 +92,7 @@ yolo risky_operation(value: int) -> int {
 }
 
 fr fr Function with recovery handling
-yolo safe_risky_operation(value: int) -> (int, error?) {
+damn safe_risky_operation(value: int) -> (int, error?) {
     recover {
         sus result = risky_operation(value);
         periodt (result, nil);
@@ -104,7 +104,7 @@ yolo safe_risky_operation(value: int) -> (int, error?) {
 }
 
 fr fr Function demonstrating error chaining
-yolo complex_operation(data: [str]) -> (str, error?) {
+damn complex_operation(data: [str]) -> (str, error?) {
     sus results = [];
     
     lowkey (data.length() == 0) {
@@ -125,7 +125,7 @@ yolo complex_operation(data: [str]) -> (str, error?) {
     periodt (final_result, nil);
 }
 
-yolo process_item(item: str) -> (str, error?) {
+damn process_item(item: str) -> (str, error?) {
     lowkey (item.length() < 3) {
         periodt ("", error::new("Item too short", "minimum 3 characters required"));
     }
@@ -135,7 +135,7 @@ yolo process_item(item: str) -> (str, error?) {
 }
 
 fr fr Function with nested error propagation
-yolo nested_operations() -> (str, error?) {
+damn nested_operations() -> (str, error?) {
     sus step1 = perform_step_1()?;
     sus step2 = perform_step_2(step1)?;
     sus step3 = perform_step_3(step2)?;
@@ -143,19 +143,19 @@ yolo nested_operations() -> (str, error?) {
     periodt (step3, nil);
 }
 
-yolo perform_step_1() -> (str, error?) {
+damn perform_step_1() -> (str, error?) {
     // Simulate operation that might fail
     periodt ("step1_result", nil);
 }
 
-yolo perform_step_2(input: str) -> (str, error?) {
+damn perform_step_2(input: str) -> (str, error?) {
     lowkey (input == "fail") {
         periodt ("", error::new("Step 2 failed", "invalid input from step 1"));
     }
     periodt (slay("{}_step2", input), nil);
 }
 
-yolo perform_step_3(input: str) -> (str, error?) {
+damn perform_step_3(input: str) -> (str, error?) {
     lowkey (input.contains("error")) {
         periodt ("", error::new("Step 3 failed", "error detected in input"));
     }
@@ -163,7 +163,7 @@ yolo perform_step_3(input: str) -> (str, error?) {
 }
 
 fr fr Function demonstrating error with stack trace
-yolo operation_with_trace(depth: int) -> (int, error?) {
+damn operation_with_trace(depth: int) -> (int, error?) {
     lowkey (depth <= 0) {
         // Capture stack trace for debugging
         sus trace = stacktrace::capture(20);
@@ -176,7 +176,7 @@ yolo operation_with_trace(depth: int) -> (int, error?) {
 }
 
 fr fr Main demonstration function
-yolo main() -> (int, error?) {
+damn main() -> (int, error?) {
     io::println("=== CURSED Error Handling Showcase ===");
     
     // 1. Basic error handling with question mark
@@ -271,7 +271,7 @@ yolo main() -> (int, error?) {
 fr fr Additional utility functions for error handling
 
 fr fr Function to create custom errors with context
-yolo create_context_error(message: str, context: map[str, str]) -> error {
+damn create_context_error(message: str, context: map[str, str]) -> error {
     sus error = error::new("Context Error", message);
     vibe_check (key, value) in context {
         error.add_context(key, value);
@@ -280,7 +280,7 @@ yolo create_context_error(message: str, context: map[str, str]) -> error {
 }
 
 fr fr Function to handle multiple errors
-yolo handle_multiple_errors(operations: [() -> (str, error?)]) -> ([]str, []error) {
+damn handle_multiple_errors(operations: [() -> (str, error?)]) -> ([]str, []error) {
     sus results = [];
     sus errors = [];
     
@@ -297,7 +297,7 @@ yolo handle_multiple_errors(operations: [() -> (str, error?)]) -> ([]str, []erro
 }
 
 fr fr Function demonstrating error retry logic
-yolo retry_operation<T>(operation: () -> (T, error?), max_attempts: int) -> (T, error?) {
+damn retry_operation<T>(operation: () -> (T, error?), max_attempts: int) -> (T, error?) {
     sus attempts = 0;
     
     lowkey (periodt) {
@@ -320,7 +320,7 @@ yolo retry_operation<T>(operation: () -> (T, error?), max_attempts: int) -> (T, 
 }
 
 fr fr Function to demonstrate error aggregation
-yolo aggregate_errors(errors: []error) -> error? {
+damn aggregate_errors(errors: []error) -> error? {
     lowkey (errors.length() == 0) {
         periodt nil;
     }

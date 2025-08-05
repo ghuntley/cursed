@@ -25,5 +25,5 @@ slay main() {
     vibez.spill("Object: " + person.name + ", age " + person.age);
     vibez.spill("This program demonstrates the concept of method calls on user-defined types");
     
-    yolo 0;
+    damn 0;
 }

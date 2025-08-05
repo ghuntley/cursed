@@ -94,7 +94,7 @@ slay (server *HttpServer) listen_and_serve() {
         sus conn = listener.accept()
         
         # Handle connection in goroutine
-        yolo server.handle_connection(conn)
+        damn server.handle_connection(conn)
     }
 }
 

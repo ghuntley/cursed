@@ -13,18 +13,18 @@ slay main() {
     // Variable declaration with 'sus' (mutable)
     sus count = number
     
-    // Output using 'yolo' (return/print statement)
-    yolo message
-    yolo count
+    // Output using 'damn' (return/print statement)
+    damn message
+    damn count
     
     // Simple arithmetic
     count = count + 8
-    yolo "Count updated: " + count
+    damn "Count updated: " + count
     
     // Conditional with 'lowkey' (if)
     lowkey (count > 40) {
-        yolo "Count is pretty high! 📈"
+        damn "Count is pretty high! 📈"
     }
     
-    yolo "CURSED language demo complete! ✨"
+    damn "CURSED language demo complete! ✨"
 }

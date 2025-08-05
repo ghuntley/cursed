@@ -292,7 +292,7 @@ slay convert_to_grayscale(pixels []byte, width normie, height normie, channels n
         bestie c := 0; c < channels; c++ {
             vibe_check c < 3 {
                 result = append(result, gray_value)
-            } yolo { fr fr Preserve alpha channel
+            } damn { fr fr Preserve alpha channel
                 result = append(result, pixels[base_index + c])
             }
         }

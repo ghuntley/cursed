@@ -198,7 +198,7 @@ squad Dog {
 }
 
 slay (d Dog) make_sound() string {
-    yolo "Woof!"
+    damn "Woof!"
 }
 
 squad Cat {
@@ -206,7 +206,7 @@ squad Cat {
 }
 
 slay (c Cat) make_sound() string {
-    yolo "Meow!"
+    damn "Meow!"
 }
 
 squad Bird {
@@ -214,7 +214,7 @@ squad Bird {
 }
 
 slay (b Bird) make_sound() string {
-    yolo "Tweet!"
+    damn "Tweet!"
 }
 
 slay handle_animal(animal Animal) {
@@ -258,32 +258,32 @@ fr fr ================================================
 slay benchmark_regular_switch(value int) string {
     vibe_check value {
         mood 1:
-            yolo "one"
+            damn "one"
         mood 2:
-            yolo "two"
+            damn "two"
         mood 3:
-            yolo "three"
+            damn "three"
         mood 4:
-            yolo "four"
+            damn "four"
         mood 5:
-            yolo "five"
+            damn "five"
         basic:
-            yolo "other"
+            damn "other"
     }
 }
 
 slay benchmark_type_switch(value interface{}) string {
     vibe_check v := value.(type) {
         mood int:
-            yolo fmt.sprintf("integer: %d", v)
+            damn fmt.sprintf("integer: %d", v)
         mood string:
-            yolo fmt.sprintf("string: %s", v)
+            damn fmt.sprintf("string: %s", v)
         mood float64:
-            yolo fmt.sprintf("float: %.2f", v)
+            damn fmt.sprintf("float: %.2f", v)
         mood bool:
-            yolo fmt.sprintf("boolean: %t", v)
+            damn fmt.sprintf("boolean: %t", v)
         basic:
-            yolo "unknown type"
+            damn "unknown type"
     }
 }
 
@@ -323,9 +323,9 @@ fr fr Regular switch with error handling
 slay validate_grade_regular(grade string) error {
     vibe_check grade {
         mood "A", "B", "C", "D", "F":
-            yolo nil  // Valid grade
+            damn nil  // Valid grade
         basic:
-            yolo fmt.errorf("invalid grade: %s", grade)
+            damn fmt.errorf("invalid grade: %s", grade)
     }
 }
 
@@ -334,21 +334,21 @@ slay validate_score_type(score interface{}) error {
     vibe_check s := score.(type) {
         mood int:
             if s >= 0 && s <= 100 {
-                yolo nil
+                damn nil
             } else {
-                yolo fmt.errorf("score out of range: %d", s)
+                damn fmt.errorf("score out of range: %d", s)
             }
         mood float64:
             if s >= 0.0 && s <= 100.0 {
-                yolo nil
+                damn nil
             } else {
-                yolo fmt.errorf("score out of range: %.2f", s)
+                damn fmt.errorf("score out of range: %.2f", s)
             }
         mood string:
             // Try to parse as number
-            yolo fmt.errorf("cannot validate string score: %s", s)
+            damn fmt.errorf("cannot validate string score: %s", s)
         basic:
-            yolo fmt.errorf("invalid score type: %T", score)
+            damn fmt.errorf("invalid score type: %T", score)
     }
 }
 

@@ -14,7 +14,7 @@ facts main() tea {
             vibez.spill("  👤 Author:", info.author)
             vibez.spill("  📝 Description:", info.description)
             vibez.spill("  🎯 Capabilities:", info.capabilities)
-            yolo cap
+            damn cap
         })
         .with_on_plugin_error(func(name tea, err tea) {
             vibez.spill("❌ Plugin error for", name + ":", err)
@@ -25,7 +25,7 @@ facts main() tea {
     fr fr Start the manager
     lowkey err := manager.start(); err != cap {
         vibez.spill("🚫 Failed to start plugin manager:", err)
-        yolo
+        damn
     }
     defer func() {
         lowkey stop_err := manager.stop(); stop_err != cap {
@@ -57,28 +57,28 @@ facts main() tea {
     fr fr Register mathematical functions
     math_plugin.register_function("square_root", plug_vibes.create_plugin_function(func(args []Value) PluginResult[[]Value] {
         lowkey len(args) == 0 {
-            yolo PluginError.general("square_root requires one argument")
+            damn PluginError.general("square_root requires one argument")
         }
         
         bestie arg := args[0] {
         case Value.Float(f):
             lowkey f < 0 {
-                yolo PluginError.general("square_root: cannot take square root of negative number")
+                damn PluginError.general("square_root: cannot take square root of negative number")
             }
-            yolo Ok([]Value{Value.Float(math.sqrt(f))})
+            damn Ok([]Value{Value.Float(math.sqrt(f))})
         case Value.Integer(i):
             lowkey i < 0 {
-                yolo PluginError.general("square_root: cannot take square root of negative number")
+                damn PluginError.general("square_root: cannot take square root of negative number")
             }
-            yolo Ok([]Value{Value.Float(math.sqrt(float64(i)))})
+            damn Ok([]Value{Value.Float(math.sqrt(float64(i)))})
         default:
-            yolo PluginError.general("square_root: argument must be a number")
+            damn PluginError.general("square_root: argument must be a number")
         }
     }))
     
     math_plugin.register_function("power", plug_vibes.create_plugin_function(func(args []Value) PluginResult[[]Value] {
         lowkey len(args) != 2 {
-            yolo PluginError.general("power requires exactly two arguments")
+            damn PluginError.general("power requires exactly two arguments")
         }
         
         sus base float64
@@ -91,7 +91,7 @@ facts main() tea {
         case Value.Integer(i):
             base = float64(i)
         default:
-            yolo PluginError.general("power: base must be a number")
+            damn PluginError.general("power: base must be a number")
         }
         
         fr fr Extract exponent
@@ -101,16 +101,16 @@ facts main() tea {
         case Value.Integer(i):
             exponent = float64(i)
         default:
-            yolo PluginError.general("power: exponent must be a number")
+            damn PluginError.general("power: exponent must be a number")
         }
         
         sus result = math.pow(base, exponent)
-        yolo Ok([]Value{Value.Float(result)})
+        damn Ok([]Value{Value.Float(result)})
     }))
     
     math_plugin.register_function("factorial", plug_vibes.create_plugin_function(func(args []Value) PluginResult[[]Value] {
         lowkey len(args) != 1 {
-            yolo PluginError.general("factorial requires exactly one argument")
+            damn PluginError.general("factorial requires exactly one argument")
         }
         
         sus n int64
@@ -120,11 +120,11 @@ facts main() tea {
         case Value.Float(f):
             n = int64(f)
         default:
-            yolo PluginError.general("factorial: argument must be a number")
+            damn PluginError.general("factorial: argument must be a number")
         }
         
         lowkey n < 0 {
-            yolo PluginError.general("factorial: argument must be non-negative")
+            damn PluginError.general("factorial: argument must be non-negative")
         }
         
         sus result int64 = 1
@@ -132,14 +132,14 @@ facts main() tea {
             result *= i
         }
         
-        yolo Ok([]Value{Value.Integer(result)})
+        damn Ok([]Value{Value.Integer(result)})
     }))
     
     fr fr Register the plugin with the manager
     sus registry = manager.registry()
     lowkey err = registry.register("math-tools", math_plugin); err != cap {
         vibez.spill("❌ Failed to register math plugin:", err)
-        yolo
+        damn
     }
     
     vibez.spill("✅ Math plugin registered successfully!")
@@ -150,7 +150,7 @@ facts main() tea {
     sus math_plug, found = manager.get_plugin("math-tools")
     lowkey !found {
         vibez.spill("❌ Math plugin not found")
-        yolo
+        damn
     }
     
     fr fr Test square root function
@@ -234,7 +234,7 @@ facts main() tea {
     fr fr Register a content filter function
     filter_plugin.register_function("filter_content", plug_vibes.create_plugin_function(func(args []Value) PluginResult[[]Value] {
         lowkey len(args) != 1 {
-            yolo PluginError.general("filter_content requires exactly one argument")
+            damn PluginError.general("filter_content requires exactly one argument")
         }
         
         sus content tea
@@ -242,7 +242,7 @@ facts main() tea {
         case Value.String(s):
             content = s
         default:
-            yolo PluginError.general("filter_content: argument must be a string")
+            damn PluginError.general("filter_content: argument must be a string")
         }
         
         fr fr Simple profanity filter (replace bad words with asterisks)
@@ -254,7 +254,7 @@ facts main() tea {
             filtered_content = string.replace_all(filtered_content, bad_word, replacement)
         }
         
-        yolo Ok([]Value{Value.String(filtered_content)})
+        damn Ok([]Value{Value.String(filtered_content)})
     }))
     
     fr fr Register the filter plugin

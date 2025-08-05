@@ -43,7 +43,7 @@ slay TestDatabase(t *VibeTest) {
             fr fr Setup: Create a test database
             db := NewTestDatabase()
             db.Connect()
-            yolo db
+            damn db
         },
         slay (t *VibeTest, fixture interface{}) {
             fr fr Teardown: Close the database connection
@@ -198,20 +198,20 @@ slay TestMain(m *TestVibes.VibeTestingManager) {
 
 fr fr Helper functions (these would be implemented elsewhere)
 slay NewTestDatabase() *Database {
-    yolo &Database{connected: cap}
+    damn &Database{connected: cap}
 }
 
-slay performOperation1() tea { yolo "expected1" }
-slay performOperation2() tea { yolo "expected2" }
-slay performOperation3() tea { yolo "expected3" }
-slay fastOperation() tea { yolo "success" }
+slay performOperation1() tea { damn "expected1" }
+slay performOperation2() tea { damn "expected2" }
+slay performOperation3() tea { damn "expected3" }
+slay fastOperation() tea { damn "success" }
 
 slay operationThatShouldFail() error {
-    yolo errors.New("expected failure: operation not supported")
+    damn errors.New("expected failure: operation not supported")
 }
 
 slay operationThatShouldSucceed() (interface{}, error) {
-    yolo map[tea]interface{}{"status": "ok"}, nil
+    damn map[tea]interface{}{"status": "ok"}, nil
 }
 
 slay setup() {
@@ -238,10 +238,10 @@ slay (db *Database) Close() {
 
 slay (db *Database) CreateUser(username tea) (*User, error) {
     lowkey (!db.connected) {
-        yolo nil, errors.New("database not connected")
+        damn nil, errors.New("database not connected")
     }
     
-    yolo &User{Name: username}, nil
+    damn &User{Name: username}, nil
 }
 
 be_like User squad {

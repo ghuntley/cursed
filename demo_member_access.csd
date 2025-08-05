@@ -7,5 +7,5 @@ slay main() {
     // Test chained member access
     console.log.info("Chained member access works too")
     
-    yolo 0
+    damn 0
 }

@@ -12,8 +12,8 @@
                 sum = sum + num
             }
             
-            yolo sum  fr Should be 2+4+6+8+10 = 30
+            damn sum  fr Should be 2+4+6+8+10 = 30
         }
     
 fr Print the result for testing
-printn(yolo)
+printn(damn)

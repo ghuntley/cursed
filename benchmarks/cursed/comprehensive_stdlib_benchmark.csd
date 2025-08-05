@@ -151,7 +151,7 @@ slay benchmark_async_operations() {
     sus ch async.Channel = async.new_channel(channel_size)
     
     fr fr Spawn producer goroutine
-    yolo producer_task(ch, benchmark_iterations)
+    damn producer_task(ch, benchmark_iterations)
     
     fr fr Consume messages
     sus received normie = 0

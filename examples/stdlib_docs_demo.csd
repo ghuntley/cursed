@@ -279,7 +279,7 @@ fr fr/ @example Goroutines
 fr fr/ ```cursed
 fr fr/ stan background_task()  // spawn goroutine
 fr fr/ 
-fr fr/ facts result = yolo async_operation()  // await result
+fr fr/ facts result = damn async_operation()  // await result
 fr fr/ ```
 fr fr/ 
 fr fr/ @goroutines Lightweight threads
@@ -297,7 +297,7 @@ slay demonstrate_concurrency() {
     // Channel communication
     facts channel = Channel::new()
     stan producer(channel)
-    facts result = yolo consumer(channel)
+    facts result = damn consumer(channel)
     
     println("Concurrent operation result: " + result)
 }

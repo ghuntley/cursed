@@ -50,11 +50,11 @@ slay format_string(format tea, args ...tea) tea { fr fr Enhanced printf-style fo
             } elseif format_spec == "%" { fr fr Escaped percent sign
                 result = result + "%"
                 i = i + 2
-            } yolo { fr fr Unknown format specifier, keep as is
+            } damn { fr fr Unknown format specifier, keep as is
                 result = result + current_char
                 i++
             }
-        } yolo {
+        } damn {
             result = result + current_char
             i++
         }

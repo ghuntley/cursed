@@ -141,7 +141,7 @@ sus filter_template = "
 </div>
 ";
 
-yolo slay compile_template_examples() -> Result<tea, tea> {
+damn slay compile_template_examples() -> Result<tea, tea> {
     facts engine = TemplateEngine::new();
     
     // Set up template compilation context
@@ -225,7 +225,7 @@ yolo slay compile_template_examples() -> Result<tea, tea> {
 }
 
 fr fr Helper function for template compilation
-yolo slay compile_template_to_llvm(
+damn slay compile_template_to_llvm(
     ast: &TemplateAst, 
     context: &TemplateCompilationContext
 ) -> Result<CompiledTemplate, tea> {
@@ -243,7 +243,7 @@ yolo slay compile_template_to_llvm(
 }
 
 fr fr Main execution
-yolo slay main() -> Result<(), tea> {
+damn slay main() -> Result<(), tea> {
     sus result = compile_template_examples()?;
     println(&format!("🎯 Result: {}", result));
     return ();

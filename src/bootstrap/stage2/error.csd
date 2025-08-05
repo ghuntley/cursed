@@ -50,7 +50,7 @@ facts global_error_config = ErrorConfig {
 
 // Create a new error
 slay new_error(severity: ErrorSeverity, code: tea, message: tea) -> CompilerError {
-    yolo CompilerError {
+    damn CompilerError {
         severity: severity,
         code: code,
         message: message,
@@ -67,7 +67,7 @@ slay new_error_with_location(
     message: tea, 
     location: ErrorLocation
 ) -> CompilerError {
-    yolo CompilerError {
+    damn CompilerError {
         severity: severity,
         code: code,
         message: message,
@@ -80,40 +80,40 @@ slay new_error_with_location(
 // Add help text to error
 slay with_help(error: CompilerError, help: tea) -> CompilerError {
     error.help_text = help;
-    yolo error;
+    damn error;
 }
 
 // Add related error
 slay with_related(error: CompilerError, related: CompilerError) -> CompilerError {
     error.related_errors.push(related);
-    yolo error;
+    damn error;
 }
 
 // Get severity color
 slay severity_color(severity: ErrorSeverity) -> tea {
     bestie (!global_error_config.show_colors) {
-        yolo "";
+        damn "";
     }
     
     vibe_check (severity) {
         mood ErrorSeverity::Info {
-            yolo "\033[34m"; // Blue
+            damn "\033[34m"; // Blue
         }
         
         mood ErrorSeverity::Warning {
-            yolo "\033[33m"; // Yellow
+            damn "\033[33m"; // Yellow
         }
         
         mood ErrorSeverity::Error {
-            yolo "\033[31m"; // Red
+            damn "\033[31m"; // Red
         }
         
         mood ErrorSeverity::Fatal {
-            yolo "\033[91m"; // Bright red
+            damn "\033[91m"; // Bright red
         }
         
         basic {
-            yolo "";
+            damn "";
         }
     }
 }
@@ -122,23 +122,23 @@ slay severity_color(severity: ErrorSeverity) -> tea {
 slay severity_name(severity: ErrorSeverity) -> tea {
     vibe_check (severity) {
         mood ErrorSeverity::Info {
-            yolo "info";
+            damn "info";
         }
         
         mood ErrorSeverity::Warning {
-            yolo "warning";
+            damn "warning";
         }
         
         mood ErrorSeverity::Error {
-            yolo "error";
+            damn "error";
         }
         
         mood ErrorSeverity::Fatal {
-            yolo "fatal";
+            damn "fatal";
         }
         
         basic {
-            yolo "unknown";
+            damn "unknown";
         }
     }
 }
@@ -146,18 +146,18 @@ slay severity_name(severity: ErrorSeverity) -> tea {
 // Reset color
 slay reset_color() -> tea {
     bestie (global_error_config.show_colors) {
-        yolo "\033[0m";
+        damn "\033[0m";
     } highkey {
-        yolo "";
+        damn "";
     }
 }
 
 // Bold text
 slay bold_text(text: tea) -> tea {
     bestie (global_error_config.show_colors) {
-        yolo "\033[1m" + text + "\033[0m";
+        damn "\033[1m" + text + "\033[0m";
     } highkey {
-        yolo text;
+        damn text;
     }
 }
 
@@ -230,7 +230,7 @@ slay lexer_error(message: tea, line: normie, column: normie) -> CompilerError {
         length: 1,
     };
     
-    yolo new_error_with_location(ErrorSeverity::Error, "L001", message, location);
+    damn new_error_with_location(ErrorSeverity::Error, "L001", message, location);
 }
 
 // Create parser error
@@ -242,7 +242,7 @@ slay parser_error(message: tea, line: normie, column: normie) -> CompilerError {
         length: 1,
     };
     
-    yolo new_error_with_location(ErrorSeverity::Error, "P001", message, location);
+    damn new_error_with_location(ErrorSeverity::Error, "P001", message, location);
 }
 
 // Create type checker error
@@ -254,22 +254,22 @@ slay type_error(message: tea, line: normie, column: normie) -> CompilerError {
         length: 1,
     };
     
-    yolo new_error_with_location(ErrorSeverity::Error, "T001", message, location);
+    damn new_error_with_location(ErrorSeverity::Error, "T001", message, location);
 }
 
 // Create codegen error
 slay codegen_error(message: tea) -> CompilerError {
-    yolo new_error(ErrorSeverity::Error, "C001", message);
+    damn new_error(ErrorSeverity::Error, "C001", message);
 }
 
 // Create warning
 slay warning(message: tea) -> CompilerError {
-    yolo new_error(ErrorSeverity::Warning, "W001", message);
+    damn new_error(ErrorSeverity::Warning, "W001", message);
 }
 
 // Create info message
 slay info(message: tea) -> CompilerError {
-    yolo new_error(ErrorSeverity::Info, "I001", message);
+    damn new_error(ErrorSeverity::Info, "I001", message);
 }
 
 // Fatal error - reports and exits
@@ -286,7 +286,7 @@ slay set_error_config(config: ErrorConfig) {
 
 // Create error location
 slay location(file: tea, line: normie, column: normie, length: normie) -> ErrorLocation {
-    yolo ErrorLocation {
+    damn ErrorLocation {
         file: file,
         line: line,
         column: column,
@@ -296,44 +296,44 @@ slay location(file: tea, line: normie, column: normie, length: normie) -> ErrorL
 
 // Predefined error messages
 slay unexpected_token(token: tea, expected: tea) -> tea {
-    yolo "Unexpected token '" + token + "', expected " + expected;
+    damn "Unexpected token '" + token + "', expected " + expected;
 }
 
 slay undefined_variable(name: tea) -> tea {
-    yolo "Undefined variable '" + name + "'";
+    damn "Undefined variable '" + name + "'";
 }
 
 slay type_mismatch(expected: tea, actual: tea) -> tea {
-    yolo "Type mismatch: expected " + expected + ", found " + actual;
+    damn "Type mismatch: expected " + expected + ", found " + actual;
 }
 
 slay redefined_symbol(name: tea) -> tea {
-    yolo "Symbol '" + name + "' is already defined";
+    damn "Symbol '" + name + "' is already defined";
 }
 
 slay invalid_operation(op: tea, left_type: tea, right_type: tea) -> tea {
-    yolo "Invalid operation '" + op + "' between " + left_type + " and " + right_type;
+    damn "Invalid operation '" + op + "' between " + left_type + " and " + right_type;
 }
 
 slay missing_return(function_name: tea) -> tea {
-    yolo "Function '" + function_name + "' must return a value";
+    damn "Function '" + function_name + "' must return a value";
 }
 
 slay unreachable_code() -> tea {
-    yolo "Unreachable code detected";
+    damn "Unreachable code detected";
 }
 
 slay invalid_assignment(target: tea) -> tea {
-    yolo "Invalid assignment target: " + target;
+    damn "Invalid assignment target: " + target;
 }
 
 // Common error patterns
 slay syntax_error(message: tea, line: normie, column: normie) -> CompilerError {
-    yolo parser_error(message, line, column);
+    damn parser_error(message, line, column);
 }
 
 slay semantic_error(message: tea, line: normie, column: normie) -> CompilerError {
-    yolo type_error(message, line, column);
+    damn type_error(message, line, column);
 }
 
 // Error context for better reporting
@@ -346,7 +346,7 @@ squad ErrorContext {
 
 // Create error context
 slay create_context(file_name: tea, source_lines: tea[]) -> ErrorContext {
-    yolo ErrorContext {
+    damn ErrorContext {
         function_name: nocap,
         struct_name: nocap,
         file_name: file_name,
@@ -388,18 +388,18 @@ slay contextual_error(
         full_message = full_message + " in struct '" + context.struct_name + "'";
     }
     
-    yolo new_error_with_location(severity, code, full_message, location);
+    damn new_error_with_location(severity, code, full_message, location);
 }
 
 // Error recovery suggestions
 slay suggest_fix(error: CompilerError, suggestion: tea) -> CompilerError {
-    yolo with_help(error, "Try: " + suggestion);
+    damn with_help(error, "Try: " + suggestion);
 }
 
 slay suggest_spelling(error: CompilerError, correct_spelling: tea) -> CompilerError {
-    yolo with_help(error, "Did you mean '" + correct_spelling + "'?");
+    damn with_help(error, "Did you mean '" + correct_spelling + "'?");
 }
 
 slay suggest_import(error: CompilerError, module_name: tea) -> CompilerError {
-    yolo with_help(error, "Consider adding: yeet \"" + module_name + "\"");
+    damn with_help(error, "Consider adding: yeet \"" + module_name + "\"");
 }

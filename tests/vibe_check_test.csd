@@ -17,7 +17,7 @@ slay test_simple_switch(x normie) tea {
             result = "other";
     }
     
-    yolo result;
+    damn result;
 }
 
 // Test multiple values in a single case
@@ -35,7 +35,7 @@ slay test_multiple_cases(x normie) tea {
             result = "unknown";
     }
     
-    yolo result;
+    damn result;
 }
 
 // Test fallthrough behavior
@@ -62,5 +62,5 @@ slay test_fallthrough(day tea) tea {
             result = "Weekend";
     }
     
-    yolo result;
+    damn result;
 }

@@ -35,12 +35,12 @@ slay main() -> normie {
         
         // Nested control flow
         lowkey (total > 1000) {
-            yolo 0; // Success
+            damn 0; // Success
         } highkey {
-            yolo 2; // Unexpected value
+            damn 2; // Unexpected value
         }
     } highkey {
-        yolo 1; // Logic error
+        damn 1; // Logic error
     }
 }
 
@@ -53,7 +53,7 @@ slay calculate(a: normie, b: normie) -> normie {
         result = result / 2;
     }
     
-    yolo result;
+    damn result;
 }
 
 // Function with loop and more complex control
@@ -76,7 +76,7 @@ slay count_up(limit: normie) -> normie {
         }
     }
     
-    yolo total;
+    damn total;
 }
 
 // Test function for type system
@@ -88,7 +88,7 @@ slay test_types() -> cap {
     // Type compatibility checks
     sus result = number + 456;
     
-    yolo flag;
+    damn flag;
 }
 
 // Test function for error handling patterns
@@ -98,8 +98,8 @@ slay test_error_patterns() -> normie {
     // Division by zero protection
     lowkey (value != 0) {
         sus safe_division = 100 / value;
-        yolo safe_division;
+        damn safe_division;
     } highkey {
-        yolo -1; // Error code
+        damn -1; // Error code
     }
 }

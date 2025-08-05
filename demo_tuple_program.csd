@@ -29,5 +29,5 @@ slay main() {
     vibez.spill(first_pair.1);
     
     // Return a tuple
-    yolo coordinates;
+    damn coordinates;
 }

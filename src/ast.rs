@@ -149,8 +149,7 @@ pub enum Expression {
     ArrayExpression(ArrayExpression), // New structured array expression
     Map(Vec<(Expression, Expression)>),
     CompositeLiteral(CompositeLiteralExpression),
-    ChannelSend(ChannelSendExpression),
-    ChannelReceive(ChannelReceiveExpression),
+
     ChannelCreation(Box<ChannelCreationExpression>),
     StructLiteral(StructLiteralExpression),
     Lambda(LambdaExpression),
@@ -769,18 +768,7 @@ pub struct ChannelStatement {
     pub buffer_size: Option<Expression>,
 }
 
-/// Channel send expression (channel <- value)
-#[derive(Debug, Clone)]
-pub struct ChannelSendExpression {
-    pub channel: Box<Expression>,
-    pub value: Box<Expression>,
-}
 
-/// Channel receive expression (<-channel)
-#[derive(Debug, Clone)]
-pub struct ChannelReceiveExpression {
-    pub channel: Box<Expression>,
-}
 
 /// Channel creation expression (dm type())
 #[derive(Debug, Clone)]
@@ -799,7 +787,7 @@ pub struct SelectStatement {
 /// Select case (mood keyword with channel operations)
 #[derive(Debug, Clone)]
 pub struct SelectCase {
-    pub operation: Box<Expression>, // ChannelSend or ChannelReceive
+    pub operation: Box<Expression>, // Function call expression (dm_send/dm_recv)
     pub body: Vec<Statement>,
 }
 

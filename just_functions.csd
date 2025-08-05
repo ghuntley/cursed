@@ -1,5 +1,5 @@
 slay add(a, b) {
-    yolo a + b;
+    damn a + b;
 }
 
 slay greet(name) {

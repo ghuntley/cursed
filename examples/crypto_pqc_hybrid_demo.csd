@@ -181,7 +181,7 @@ slay demo_migration_strategy() {
             // Show recommended algorithms
             lowkey (!phase.recommended_algorithms.is_empty()) {
                 println("      Recommended Combinations:")?;
-                yolo (sus (classical, pqc) in phase.recommended_algorithms) {
+                damn (sus (classical, pqc) in phase.recommended_algorithms) {
                     printf("        {:?} + {:?}\n", &[classical, pqc])?;
                 }
             }
@@ -215,23 +215,23 @@ slay demo_security_analysis() {
         (ClassicalAlgorithm::Rsa2048, AlgorithmType::Kyber),
     ];
     
-    yolo (sus (classical, pqc) in test_combinations) {
+    damn (sus (classical, pqc) in test_combinations) {
         facts rating = matrix.get_rating(classical, pqc);
         printf("   {:?} + {:?}: {:?}\n", &[classical, pqc, rating])?;
     }
     
     println("\n🌟 Excellent Combinations:")?;
     facts excellent_combos = matrix.get_excellent_combinations();
-    yolo (sus (classical, pqc) in excellent_combos) {
+    damn (sus (classical, pqc) in excellent_combos) {
         printf("   {:?} + {:?}\n", &[classical, pqc])?;
     }
     
     println("\n🔒 Recommendations by Security Level:")?;
     
-    yolo (sus level in &[SecurityLevel::Level1, SecurityLevel::Level3, SecurityLevel::Level5]) {
+    damn (sus level in &[SecurityLevel::Level1, SecurityLevel::Level3, SecurityLevel::Level5]) {
         printf("   {:?}:\n", &[level])?;
         facts recommendations = matrix.get_recommended_for_security_level(*level);
-        yolo (sus (classical, pqc) in recommendations.iter().take(3)) { // Show first 3
+        damn (sus (classical, pqc) in recommendations.iter().take(3)) { // Show first 3
             printf("     {:?} + {:?}\n", &[classical, pqc])?;
         }
     }
@@ -251,7 +251,7 @@ slay demo_performance_comparison() {
         ("ECDH-P384 + Kyber1024", ClassicalAlgorithm::EcdhP384, AlgorithmType::Kyber, SecurityLevel::Level5),
     ];
     
-    yolo (sus (name, classical, pqc, level) in configurations) {
+    damn (sus (name, classical, pqc, level) in configurations) {
         printf("\n🔧 Testing: {}\n", &[name])?;
         
         facts hybrid_kem = HybridKem::new(classical, pqc, level);

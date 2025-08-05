@@ -17,7 +17,7 @@ slay main() {
         print("Success!");
     }
     
-    yolo 0;
+    damn 0;
 }
 
 fr fr Function to run in a goroutine

@@ -18,7 +18,7 @@ slay test_file_exists() lit {
     sus exists lit = dropz.file_exists(TEST_FILE_PATH)
     sus non_exists lit = dropz.file_exists(NON_EXISTENT_FILE)
     
-    yolo exists
+    damn exists
 }
 
 fr fr Test if a file is readable
@@ -29,7 +29,7 @@ slay test_is_readable() lit {
     sus readable lit = dropz.is_readable(TEST_FILE_PATH)
     sus non_readable lit = dropz.is_readable(NON_EXISTENT_FILE)
     
-    yolo readable && !non_readable
+    damn readable && !non_readable
 }
 
 fr fr Test if a file is writable
@@ -40,7 +40,7 @@ slay test_is_writable() lit {
     sus writable lit = dropz.is_writable(TEST_FILE_PATH)
     sus non_writable lit = dropz.is_writable(NON_EXISTENT_FILE)
     
-    yolo writable && !non_writable
+    damn writable && !non_writable
 }
 
 fr fr Test getting file information
@@ -56,7 +56,7 @@ slay test_file_info() lit {
     sus non_info tea = dropz.file_info(NON_EXISTENT_FILE)
     sus has_error lit = non_info.len() == 0
     
-    yolo has_info && has_error
+    damn has_info && has_error
 }
 
 fr fr Test removing a file
@@ -73,7 +73,7 @@ slay test_remove_file() lit {
     fr fr Verify file no longer exists
     sus exists_after lit = dropz.file_exists(TEST_FILE_PATH)
     
-    yolo exists_before && !exists_after
+    damn exists_before && !exists_after
 }
 
 fr fr Test appending to a file
@@ -91,7 +91,7 @@ slay test_append_file() lit {
     sus has_initial lit = content.contains(initial_content)
     sus has_append lit = content.contains(append_content)
     
-    yolo has_initial && has_append
+    damn has_initial && has_append
 }
 
 fr fr Run all tests

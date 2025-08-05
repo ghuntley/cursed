@@ -103,12 +103,7 @@ impl ExpressionCompiler {
             Expression::Map(pairs) => {
                 self.compile_map_expression(pairs)
             },
-            Expression::ChannelSend(send_expr) => {
-                self.compile_channel_send(&send_expr.channel, &send_expr.value)
-            },
-            Expression::ChannelReceive(recv_expr) => {
-                self.compile_channel_receive(&recv_expr.channel)
-            },
+
             Expression::ChannelCreation(create_expr) => {
                 self.compile_channel_creation(&create_expr.element_type.to_string(), &create_expr.capacity)
             },

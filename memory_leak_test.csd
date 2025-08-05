@@ -1,20 +1,24 @@
-fr fr Memory leak test program for CURSED Zig compiler
-fr fr This program tests various language features to check for memory leaks
+fr fr Memory leak test program
+yeet "testz"
 
-vibez.spill("Testing basic output")
-vibez.spill("String literal test")
-vibez.spill("Multiple", "parameters", "test")
+test_start("Memory allocation test")
 
-fr fr Test different token types
-sus test_var drip = 42
-vibez.spill("Variable test:", test_var)
+fr fr Test various allocation patterns
+sus x drip = 42
+sus y tea = "Hello"  
+sus z lit = based
 
-fr fr Test function calls (if supported)
-slay test_function() {
-    vibez.spill("Function call test")
+fr fr Function calls that may allocate
+vibez.spill("Testing memory:", x, y, z)
+
+fr fr Error handling constructs
+yikes error_test = "test error"
+fam {
+    shook vibez.spill("This might fail")
 }
 
-test_function()
+fr fr Complex expressions
+sus result drip = x + 10 * 5
+vibez.spill("Result:", result)
 
-fr fr Test comments and various syntax
-vibez.spill("Memory leak test completed successfully")
+print_test_summary()

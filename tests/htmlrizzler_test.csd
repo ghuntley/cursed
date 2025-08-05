@@ -139,7 +139,7 @@ slay test_html_escaping() {
 slay test_template_functions() {
     sus funcMap := htmlrizzler.FuncMap{
         "uppercase": slay(s tea) tea {
-            yolo s.toUpperCase()
+            damn s.toUpperCase()
         },
     }
     

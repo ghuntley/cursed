@@ -56,36 +56,67 @@ export fn cursed_runtime_init() void {
     // Initialize channel registry
     channel_registry = std.HashMap(u64, *anyopaque, std.hash_map.AutoContext, std.hash_map.default_max_load_percentage).init(global_allocator.?);
     
-    // Initialize garbage collector
+    // Initialize garbage collector with proper error cleanup
     global_gc = global_allocator.?.create(gc.GC) catch |err| {
-        print("[RUNTIME] Failed to initialize GC: {}\n", .{err});
-        return;
-    };
-    global_gc.?.* = gc.GC.init(global_allocator.?) catch |err| {
-        print("[RUNTIME] Failed to initialize GC: {}\n", .{err});
+        print("[RUNTIME] Failed to create GC: {}\n", .{err});
+        channel_registry.deinit();
         return;
     };
     
-    // Initialize scheduler
+    global_gc.?.* = gc.GC.init(global_allocator.?) catch |err| {
+        print("[RUNTIME] Failed to initialize GC: {}\n", .{err});
+        global_allocator.?.destroy(global_gc.?);
+        global_gc = null;
+        channel_registry.deinit();
+        return;
+    };
+    
+    // Initialize scheduler with proper error cleanup
     const config = concurrency.SchedulerConfig.default();
     global_scheduler = global_allocator.?.create(concurrency.Scheduler) catch |err| {
         print("[RUNTIME] Failed to create scheduler: {}\n", .{err});
+        global_gc.?.deinit();
+        global_allocator.?.destroy(global_gc.?);
+        global_gc = null;
+        channel_registry.deinit();
         return;
     };
+    
     global_scheduler.?.* = concurrency.Scheduler.init(global_allocator.?, config) catch |err| {
         print("[RUNTIME] Failed to initialize scheduler: {}\n", .{err});
+        global_allocator.?.destroy(global_scheduler.?);
+        global_scheduler = null;
+        global_gc.?.deinit();
+        global_allocator.?.destroy(global_gc.?);
+        global_gc = null;
+        channel_registry.deinit();
         return;
     };
     
-    // Start scheduler
+    // Start scheduler with proper error cleanup
     global_scheduler.?.start() catch |err| {
         print("[RUNTIME] Failed to start scheduler: {}\n", .{err});
+        global_scheduler.?.deinit();
+        global_allocator.?.destroy(global_scheduler.?);
+        global_scheduler = null;
+        global_gc.?.deinit();
+        global_allocator.?.destroy(global_gc.?);
+        global_gc = null;
+        channel_registry.deinit();
         return;
     };
     
-    // Initialize global concurrency system
+    // Initialize global concurrency system with proper error cleanup
     concurrency.initializeScheduler(global_allocator.?, config) catch |err| {
         print("[RUNTIME] Failed to initialize global scheduler: {}\n", .{err});
+        global_scheduler.?.stop();
+        global_scheduler.?.deinit();
+        global_allocator.?.destroy(global_scheduler.?);
+        global_scheduler = null;
+        global_gc.?.deinit();
+        global_allocator.?.destroy(global_gc.?);
+        global_gc = null;
+        channel_registry.deinit();
         return;
     };
     

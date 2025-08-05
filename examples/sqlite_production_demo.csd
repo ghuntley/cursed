@@ -31,7 +31,7 @@ squad Post collab {
 }
 
 fr fr/ Comprehensive SQLite driver demonstration
-slay demonstrate_sqlite_driver() yolo {
+slay demonstrate_sqlite_driver() damn {
     println("🚀 Starting SQLite Production Driver Demo - get ready to slay!")?;
     
     // Configuration and connection setup
@@ -65,7 +65,7 @@ slay demonstrate_sqlite_driver() yolo {
 }
 
 fr fr/ Demonstrate connection setup and configuration
-slay demonstrate_connection_setup() yolo {
+slay demonstrate_connection_setup() damn {
     println("\n📊 Demonstrating Connection Setup...")?;
     
     // Create SQLite configuration
@@ -96,7 +96,7 @@ slay demonstrate_connection_setup() yolo {
 }
 
 fr fr/ Demonstrate basic database operations
-slay demonstrate_basic_operations() yolo {
+slay demonstrate_basic_operations() damn {
     println("\n🔧 Demonstrating Basic Operations...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -151,7 +151,7 @@ slay demonstrate_basic_operations() yolo {
 }
 
 fr fr/ Demonstrate prepared statements
-slay demonstrate_prepared_statements() yolo {
+slay demonstrate_prepared_statements() damn {
     println("\n📝 Demonstrating Prepared Statements...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -202,7 +202,7 @@ slay demonstrate_prepared_statements() yolo {
 }
 
 fr fr/ Demonstrate transaction management
-slay demonstrate_transactions() yolo {
+slay demonstrate_transactions() damn {
     println("\n💳 Demonstrating Transaction Management...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -269,7 +269,7 @@ slay demonstrate_transactions() yolo {
 }
 
 fr fr/ Demonstrate savepoint transactions
-slay demonstrate_savepoint_transactions() yolo {
+slay demonstrate_savepoint_transactions() damn {
     println("\n🔖 Demonstrating Savepoint Transactions...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -309,7 +309,7 @@ slay demonstrate_savepoint_transactions() yolo {
 }
 
 fr fr/ Demonstrate type handling and conversions
-slay demonstrate_type_handling() yolo {
+slay demonstrate_type_handling() damn {
     println("\n🎯 Demonstrating Type Handling...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -372,7 +372,7 @@ slay demonstrate_type_handling() yolo {
 }
 
 fr fr/ Demonstrate error handling scenarios
-slay demonstrate_error_handling() yolo {
+slay demonstrate_error_handling() damn {
     println("\n🚨 Demonstrating Error Handling...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -428,7 +428,7 @@ slay demonstrate_error_handling() yolo {
 }
 
 fr fr/ Demonstrate performance features
-slay demonstrate_performance_features() yolo {
+slay demonstrate_performance_features() damn {
     println("\n⚡ Demonstrating Performance Features...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -512,7 +512,7 @@ slay demonstrate_performance_features() yolo {
 }
 
 fr fr/ Demonstrate concurrent operations
-slay demonstrate_concurrent_operations() yolo {
+slay demonstrate_concurrent_operations() damn {
     println("\n🔄 Demonstrating Concurrent Operations...")?;
     
     // Create shared database file
@@ -586,7 +586,7 @@ slay demonstrate_concurrent_operations() yolo {
 }
 
 fr fr/ Demonstrate database maintenance operations
-slay demonstrate_maintenance_operations() yolo {
+slay demonstrate_maintenance_operations() damn {
     println("\n🔧 Demonstrating Maintenance Operations...")?;
     
     facts db_path = "maintenance_demo.db";
@@ -646,7 +646,7 @@ slay demonstrate_maintenance_operations() yolo {
 }
 
 fr fr/ Main entry point
-slay main() yolo {
+slay main() damn {
     periodt {
         demonstrate_sqlite_driver()?;
     } catch(err) {

@@ -3,5 +3,5 @@ slay main() {
     ch <- 42;
     sus result = <-ch;
     puts(result);
-    yolo 0;
+    damn 0;
 }

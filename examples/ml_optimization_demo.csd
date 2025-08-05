@@ -26,7 +26,7 @@ slay matrix_multiply(
         periodt (sus j = 0; j < 100; j++) {
             periodt (sus k = 0; k < 100; k++) {
                 result[i][j] += a[i][k] * b[k][j];
-                yolo; // Yield point for cooperative scheduling
+                damn; // Yield point for cooperative scheduling
             }
         }
     }

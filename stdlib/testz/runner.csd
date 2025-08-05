@@ -53,9 +53,9 @@ slay is_test_function(func_name tea) lit {
     fr fr Check if function name starts with "test_"
     lowkey func_name.length >= 5 {
         fr fr Simple prefix check - would need proper string functions
-        yolo based
+        damn based
     }
-    yolo cap
+    damn cap
 }
 
 fr fr ================================
@@ -78,10 +78,10 @@ slay run_test_function(test_func TestFunction) lit {
     
     lowkey success {
         test_pass("Test completed successfully")
-        yolo based
+        damn based
     } highkey {
         test_fail("Test failed")
-        yolo cap
+        damn cap
     }
 }
 
@@ -100,9 +100,9 @@ slay run_discovered_tests() normie {
     print_test_summary()
     
     lowkey test_failed > 0 {
-        yolo 1
+        damn 1
     } highkey {
-        yolo 0
+        damn 0
     }
 }
 
@@ -159,7 +159,7 @@ struct TestConfig {
 }
 
 slay create_default_config() TestConfig {
-    yolo TestConfig{
+    damn TestConfig{
         parallel: cap,
         timeout: 30000,  fr fr 30 seconds
         verbose: cap,
@@ -185,7 +185,7 @@ slay run_tests_with_config(config TestConfig) normie {
         filter_tests_by_name(config.pattern)
     }
     
-    yolo run_discovered_tests()
+    damn run_discovered_tests()
 }
 
 fr fr ================================
@@ -310,5 +310,5 @@ fr fr ================================
 slay main() {
     sus config TestConfig = create_default_config()
     sus exit_code normie = run_tests_with_config(config)
-    yolo exit_code
+    damn exit_code
 }
