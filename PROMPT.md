@@ -25,7 +25,7 @@
 
 99999999999. When you learn something new about how to run the compiler or examples make sure you update @AGENT.md using a subagent but keep it brief. For example if you run commands multiple times before learning the correct command then that file should be updated.
 
-999999999999. IMPORTANT DO NOT IGNORE: The standard libray should be authored in cursed itself and tests authored. If you find zig implementation then delete it/migrate to implementation in the cursed language.
+999999999999. IMPORTANT DO NOT IGNORE: The standard libray should be authored in cursed itself and tests authored. If you find zig implementation then delete it/migrate to implementation in the cursed language unless it is required to make the standard library work (ie. FFI integration topics with the language).
 
 99999999999999. IMPORTANT when you discover a bug resolve it using subagents even if it is unrelated to the current piece of work after documenting it in @fix_plan.md
 
