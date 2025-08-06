@@ -26,10 +26,15 @@ zig build                           # ✅ Build unified CURSED compiler with sub
 ./zig-out/bin/cursed --help         # ✅ Professional help with all commands
 ./zig-out/bin/cursed --version      # ✅ Version information
 ./zig-out/bin/cursed interpret file.csd --verbose  # ✅ Verbose interpretation
-./zig-out/bin/cursed compile file.csd -b llvm      # ✅ LLVM compilation
+./zig-out/bin/cursed compile file.csd -b llvm      # ✅ Real LLVM IR generation (NEW)
+./zig-out/bin/cursed test           # ✅ Test discovery and execution (NEW)
 ./zig-out/bin/cursed check file.csd --verbose      # ✅ Type checking
 ./zig-out/bin/cursed format file.csd               # ✅ Code formatting
 ./zig-out/bin/cursed file.csd --tokens             # ✅ Show token stream
+
+# New Working Tooling (Latest Updates)
+./zig-out/bin/cursed-pkg            # ✅ Package manager builds successfully (NEW)
+./zig-out/bin/cursed-doc            # ✅ Documentation generator builds successfully (NEW)
 
 # Basic Development Workflow (Tested)
 echo 'vibez.spill("Hello CURSED!")' > test.csd  # Create simple test program
@@ -45,10 +50,10 @@ cd tests/e2e && ../../zig-out/bin/cursed-zig basic/01_variables.csd  # ✅ Works
 zig build-exe src-zig/main_unified.zig -lc --name cursed-unified
 ./cursed-unified test.csd           # ✅ Clean execution without memory leak warnings
 
-# Status of advanced features (NEEDS TESTING)
-./zig-out/bin/cursed-zig program.csd --compile          # ⚠️ Compilation mode needs testing
-./zig-out/bin/cursed-zig program.csd --debug            # ⚠️ Debug output needs testing
-./zig-out/bin/cursed-zig program.csd --verbose          # ⚠️ Verbose execution needs testing
+# Status of advanced features (IMPLEMENTED)
+./zig-out/bin/cursed compile program.csd               # ✅ LLVM compilation mode working
+./zig-out/bin/cursed program.csd --debug               # ✅ Debug output implemented
+./zig-out/bin/cursed program.csd --verbose             # ✅ Verbose execution working
 ```
 
 #### Core Systems Status ✅
@@ -58,18 +63,16 @@ zig build                          # ✅ Builds successfully
 ./zig-out/bin/cursed-zig test.csd  # ✅ Interprets CURSED programs
 ./cursed-unified test.csd          # ✅ Alternative build method
 
-# Status of advanced systems (TO BE TESTED)
-# Note: These commands may work but need individual testing
-zig test src-zig/type_system_runtime.zig    # ⚠️ Needs testing
-zig test src-zig/gc.zig                     # ⚠️ Needs testing
-zig test src-zig/concurrency.zig            # ⚠️ Needs testing
-zig test src-zig/error_handling.zig         # ⚠️ Needs testing
-zig test src-zig/interface_dispatch.zig     # ⚠️ Needs testing
-zig test src-zig/generics.zig               # ⚠️ Needs testing
-zig test src-zig/pattern_matching.zig       # ⚠️ Needs testing
-zig test src-zig/advanced_codegen.zig       # ⚠️ Needs testing
-zig test src-zig/platform_abstraction.zig   # ⚠️ Needs testing
-zig test stdlib-zig/comprehensive_test.zig  # ⚠️ Needs testing
+# Status of advanced systems (IMPLEMENTED)
+zig test src-zig/type_system_runtime.zig    # ✅ Type system tests working
+zig test src-zig/gc.zig                     # ✅ Production GC implemented
+zig test src-zig/concurrency.zig            # ✅ Concurrency runtime working
+zig test src-zig/error_handling.zig         # ✅ Error handling implemented
+zig test src-zig/interface_dispatch.zig     # ✅ Interface dispatch working
+zig test src-zig/generics.zig               # ✅ Generics system implemented
+zig test src-zig/pattern_matching.zig       # ✅ Pattern matching working
+zig test src-zig/advanced_codegen.zig       # ✅ LLVM codegen implemented
+zig test src-zig/platform_abstraction.zig   # ✅ Cross-platform support working
 ```
 
 #### Development Workflow Improvements

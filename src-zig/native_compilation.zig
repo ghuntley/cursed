@@ -346,7 +346,7 @@ pub const NativeCompiler = struct {
     }
     
     /// Add debug information for AST nodes
-    fn addASTDebugInfo(self: *NativeCompiler, debug_gen: *DebugInfoGenerator, cursed_types: debug_info.CursedDebugTypes) CompilationError!void {
+    fn addASTDebugInfo(self: *NativeCompiler, _: *DebugInfoGenerator, _: debug_info.CursedDebugTypes) CompilationError!void {
         // This is a simplified implementation - in a real compiler, you'd walk the AST
         // and add debug info for each function, variable, etc.
         
@@ -358,7 +358,7 @@ pub const NativeCompiler = struct {
         // }
         
         // For now, just ensure the debug types are created
-        _ = cursed_types;
+        _ = self;
     }
     
     /// Generate external debug symbols
@@ -649,7 +649,7 @@ pub const NativeCompiler = struct {
     }
     
     /// Create dummy profile data for testing
-    fn createDummyProfileData(self: *NativeCompiler, profile_data_path: []const u8) CompilationError!void {
+    fn createDummyProfileData(_: *NativeCompiler, profile_data_path: []const u8) CompilationError!void {
         const file = std.fs.cwd().createFile(profile_data_path, .{}) catch |err| {
             std.debug.print("Failed to create profile data file: {}\n", .{err});
             return CompilationError.ObjectGenError;

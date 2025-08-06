@@ -541,7 +541,7 @@ pub const CodeGen = struct {
             c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 1, 0);
         
         // Call runtime error creation function
-        const create_error_func = self.runtime_functions.get("cursed_create_error") orelse {
+        const create_error_func = self.runtime_functions.get("cursed_create_error") orelse blk: {
             // Create the function type if it doesn't exist
             const error_func_type = c.LLVMFunctionType(
                 c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // returns error pointer
@@ -555,7 +555,7 @@ pub const CodeGen = struct {
             );
             const func = c.LLVMAddFunction(self.module, "cursed_create_error", error_func_type);
             try self.runtime_functions.put("cursed_create_error", func);
-            func
+            break :blk func;
         };
         
         // Create source location string for debugging
@@ -1343,7 +1343,7 @@ pub const CodeGen = struct {
         c.LLVMPositionBuilderAtEnd(self.builder, error_check_block);
         
         // Get or create error checking function
-        const is_error_func = self.runtime_functions.get("cursed_is_error") orelse {
+        const is_error_func = self.runtime_functions.get("cursed_is_error") orelse blk: {
             const error_check_type = c.LLVMFunctionType(
                 c.LLVMInt1TypeInContext(self.context), // returns bool
                 &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)}, // takes value
@@ -1352,7 +1352,7 @@ pub const CodeGen = struct {
             );
             const func = c.LLVMAddFunction(self.module, "cursed_is_error", error_check_type);
             try self.runtime_functions.put("cursed_is_error", func);
-            func
+            break :blk func;
         };
         
         // Check if the result is an error
@@ -1406,7 +1406,7 @@ pub const CodeGen = struct {
     /// Setup defer context for error handling cleanup
     fn setupDeferContext(self: *CodeGen) CodeGenError!c.LLVMValueRef {
         // Get or create defer initialization function
-        const defer_init_func = self.runtime_functions.get("cursed_defer_init") orelse {
+        const defer_init_func = self.runtime_functions.get("cursed_defer_init") orelse blk: {
             const defer_init_type = c.LLVMFunctionType(
                 c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // returns defer context
                 &[_]c.LLVMTypeRef{},
@@ -1415,7 +1415,7 @@ pub const CodeGen = struct {
             );
             const func = c.LLVMAddFunction(self.module, "cursed_defer_init", defer_init_type);
             try self.runtime_functions.put("cursed_defer_init", func);
-            func
+            break :blk func;
         };
         
         // Initialize defer context

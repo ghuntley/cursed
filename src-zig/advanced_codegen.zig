@@ -94,6 +94,9 @@ base_codegen: FinalWorkingCodeGen,
     source_file: ?[]const u8,
     source_locations: HashMap(c.LLVMValueRef, SourceLocation, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage),
     
+    // Required field to track current function
+    current_function: ?c.LLVMValueRef,
+    
     pub fn init(allocator: Allocator) !AdvancedCodeGen {
         var gc_registry = GCTypeRegistry.init(allocator);
         var interface_registry = InterfaceRegistry.init(allocator);
@@ -129,6 +132,7 @@ base_codegen: FinalWorkingCodeGen,
             .debug_enabled = false,
             .source_file = null,
             .source_locations = HashMap(c.LLVMValueRef, SourceLocation, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage).init(allocator),
+            .current_function = null,
         };
     }
 
@@ -1113,8 +1117,7 @@ base_codegen: FinalWorkingCodeGen,
         method_functions: ArrayList(c.LLVMValueRef),
     };
 
-    // Required field to track current function
-    current_function: ?c.LLVMValueRef = null,
+
 
     /// Initialize memory management system
     fn initializeMemoryManagement(self: *AdvancedCodeGen) CodeGenError!void {
@@ -2102,29 +2105,7 @@ base_codegen: FinalWorkingCodeGen,
     }
 };
 
-/// Type information structures
-const StructTypeInfo = struct {
-    name: []const u8,
-    field_types: []c.LLVMTypeRef,
-    field_names: [][]const u8,
-    llvm_type: ?c.LLVMTypeRef,
-    methods: ArrayList(MethodInfo),
-    is_generic: bool,
-    type_parameters: ArrayList(ast.TypeParameter),
-};
 
-const InterfaceTypeInfo = struct {
-    name: []const u8,
-    methods: ArrayList(InterfaceMethodInfo),
-    is_generic: bool,
-    type_parameters: ArrayList(ast.TypeParameter),
-};
-
-const InterfaceMethodInfo = struct {
-    name: []const u8,
-    index: usize,
-    signature: ast.MethodSignature,
-};
 
 const MethodInfo = struct {
     name: []const u8,
@@ -2140,12 +2121,7 @@ const VTableInfo = struct {
     method_count: usize,
 };
 
-const GenericInstance = struct {
-    base_name: []const u8,
-    type_arguments: [][]const u8,
-    generated_name: []const u8,
-    llvm_type: c.LLVMTypeRef,
-};
+
 
 // OptimizationPass enum removed - now using OptimizationEngine
 

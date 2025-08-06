@@ -424,21 +424,6 @@ pub fn build(b: *std.Build) void {
     // Only build for native target to avoid cross-compilation LLVM issues
     const is_cross_compile = resolved_target.result.cpu.arch != @import("builtin").target.cpu.arch or
                            resolved_target.result.os.tag != @import("builtin").target.os.tag;
-    
-    var syscall_exe: ?*std.Build.Step.Compile = null;
-    if (!is_cross_compile) {
-        syscall_exe = b.addExecutable(.{
-            .name = "cursed-syscall",
-            .root_source_file = b.path("src-zig/main_unified.zig"),
-            .target = resolved_target,
-            .optimize = optimize,
-        });
-        if (!is_wasm) {
-            syscall_exe.?.linkLibC();
-            
-            addLlvm(b, syscall_exe.?, resolved_target);
-        }
-    }
 
     b.installArtifact(exe);
     
@@ -459,9 +444,12 @@ b.installArtifact(minimal_exe);
 b.installArtifact(complete_exe);
     // b.installArtifact(enhanced_exe);  // Disabled due to API issues
     b.installArtifact(optimized_exe);
-    if (syscall_exe) |syscall| {
-        b.installArtifact(syscall);
-    }
+    // syscall_exe now handled after modules are defined
+    
+    // Create shared modules for tools (need to be defined before packages use them)
+    const tools_mod = b.addModule("tools", .{
+        .root_source_file = b.path("src-zig/tools/mod.zig"),
+    });
     
     // Create package manager CLI tool
     const pkg_manager_exe = b.addExecutable(.{
@@ -470,7 +458,10 @@ b.installArtifact(complete_exe);
         .target = resolved_target,
         .optimize = optimize,
     });
+    
+    // Add module imports to package manager
     if (!is_wasm) {
+        pkg_manager_exe.root_module.addImport("tools", tools_mod);
         pkg_manager_exe.linkLibC();
     }
     b.installArtifact(pkg_manager_exe);
@@ -544,6 +535,29 @@ b.installArtifact(complete_exe);
         concurrency_full_test_step.dependOn(&run_concurrency_test_exe.step);
     }
 
+    // Note: Using direct file imports instead of modules to avoid conflicts
+    
+    // Create syscall-enabled compiler with real file I/O, networking, and process management
+    // Only build for native target to avoid cross-compilation LLVM issues
+    var syscall_exe: ?*std.Build.Step.Compile = null;
+    if (!is_cross_compile) {
+        syscall_exe = b.addExecutable(.{
+            .name = "cursed-syscall",
+            .root_source_file = b.path("src-zig/main_unified.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        });
+        if (!is_wasm) {
+            syscall_exe.?.linkLibC();
+            
+            addLlvm(b, syscall_exe.?, resolved_target);
+        }
+    }
+    
+    if (syscall_exe) |syscall| {
+        b.installArtifact(syscall);
+    }
+    
     // Create LSP server executable
     const lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp",
@@ -557,14 +571,16 @@ b.installArtifact(complete_exe);
     }
     
     b.installArtifact(lsp_exe);
-
+    
     // Create documentation generator executable
     const doc_exe = b.addExecutable(.{
         .name = "cursed-doc",
-        .root_source_file = b.path("src-zig/tools/doc_generator.zig"),
+        .root_source_file = b.path("src-zig/doc_generator.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
+    
+    // Doc generator uses direct file imports to avoid module conflicts
     
     if (!is_wasm) {
         doc_exe.linkLibC();

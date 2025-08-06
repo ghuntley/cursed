@@ -80,7 +80,7 @@ pub const ToolRunner = struct {
         }
     }
     
-    fn runLSP(self: *ToolRunner, config: ToolConfig) !void {
+    fn runLSP(self: *ToolRunner, _: ToolConfig) !void {
         std.log.info("Starting CURSED Language Server...");
         
         var handler = lsp_server.LSPHandler.init(self.allocator);
@@ -348,7 +348,7 @@ pub const IDEIntegration = struct {
         std.log.info("Generated VS Code extension template in {s}", .{extension_dir});
     }
     
-    pub fn generateLanguageGrammar(self: *IDEIntegration, output_path: []const u8) !void {
+    pub fn generateLanguageGrammar(_: *IDEIntegration, output_path: []const u8) !void {
         const grammar_file = try std.fs.cwd().createFile(output_path, .{});
         defer grammar_file.close();
         
