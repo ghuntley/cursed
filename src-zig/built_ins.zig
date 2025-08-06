@@ -92,7 +92,7 @@ pub const BuiltInRegistry = struct {
             .arg_count = 1, // make(chan, capacity) or make(type)
         });
 
-        // Register string operations
+        // Register comprehensive string operations
         try self.functions.put("string.concat", BuiltInFunction{
             .name = "string.concat",
             .implementation = stringConcat,
@@ -103,6 +103,42 @@ pub const BuiltInRegistry = struct {
             .name = "string.length",
             .implementation = stringLength,
             .arg_count = 1,
+        });
+
+        try self.functions.put("runtime_string_char_at", BuiltInFunction{
+            .name = "runtime_string_char_at",
+            .implementation = runtimeStringCharAt,
+            .arg_count = 2,
+        });
+
+        try self.functions.put("runtime_char_to_string", BuiltInFunction{
+            .name = "runtime_char_to_string",
+            .implementation = runtimeCharToString,
+            .arg_count = 1,
+        });
+
+        try self.functions.put("string.compare", BuiltInFunction{
+            .name = "string.compare",
+            .implementation = stringCompare,
+            .arg_count = 2,
+        });
+
+        try self.functions.put("string.substring", BuiltInFunction{
+            .name = "string.substring",
+            .implementation = stringSubstring,
+            .arg_count = 3,
+        });
+
+        try self.functions.put("string.equals", BuiltInFunction{
+            .name = "string.equals",
+            .implementation = stringEquals,
+            .arg_count = 2,
+        });
+
+        try self.functions.put("string.indexOf", BuiltInFunction{
+            .name = "string.indexOf",
+            .implementation = stringIndexOf,
+            .arg_count = 2,
         });
 
         // Register math functions
@@ -223,6 +259,147 @@ pub const BuiltInRegistry = struct {
             },
             else => return error.TypeMismatch,
         }
+    }
+
+    // === COMPREHENSIVE STRING RUNTIME FUNCTIONS ===
+
+    fn runtimeStringCharAt(args: []const Value) anyerror!Value {
+        if (args.len != 2) return error.ArgumentCountMismatch;
+        
+        const str = switch (args[0]) {
+            .String => |s| s,
+            else => return error.TypeMismatch,
+        };
+        
+        const index = switch (args[1]) {
+            .Integer => |i| i,
+            else => return error.TypeMismatch,
+        };
+        
+        if (index < 0 or index >= str.len) {
+            return Value{ .Integer = 0 }; // Return null character as integer
+        }
+        
+        return Value{ .Integer = @intCast(str[@intCast(index)]) };
+    }
+
+    fn runtimeCharToString(args: []const Value) anyerror!Value {
+        if (args.len != 1) return error.ArgumentCountMismatch;
+        
+        const allocator = self.allocator;
+        
+        const char_code = switch (args[0]) {
+            .Integer => |i| i,
+            else => return error.TypeMismatch,
+        };
+        
+        if (char_code < 0 or char_code > 255) {
+            return Value{ .String = "" }; // Return empty string for invalid characters
+        }
+        
+        const char_byte: u8 = @intCast(char_code);
+        const result = try allocator.alloc(u8, 1);
+        result[0] = char_byte;
+        
+        return Value{ .String = result };
+    }
+
+    fn stringCompare(args: []const Value) anyerror!Value {
+        if (args.len != 2) return error.ArgumentCountMismatch;
+        
+        const str1 = switch (args[0]) {
+            .String => |s| s,
+            else => return error.TypeMismatch,
+        };
+        
+        const str2 = switch (args[1]) {
+            .String => |s| s,
+            else => return error.TypeMismatch,
+        };
+        
+        const result = std.mem.order(u8, str1, str2);
+        return Value{ .Integer = switch (result) {
+            .lt => -1,
+            .eq => 0,
+            .gt => 1,
+        }};
+    }
+
+    fn stringSubstring(args: []const Value) anyerror!Value {
+        if (args.len != 3) return error.ArgumentCountMismatch;
+        
+        const allocator = self.allocator;
+        
+        const str = switch (args[0]) {
+            .String => |s| s,
+            else => return error.TypeMismatch,
+        };
+        
+        const start = switch (args[1]) {
+            .Integer => |i| i,
+            else => return error.TypeMismatch,
+        };
+        
+        const length = switch (args[2]) {
+            .Integer => |i| i,
+            else => return error.TypeMismatch,
+        };
+        
+        if (start < 0 or start >= str.len or length <= 0) {
+            return Value{ .String = "" };
+        }
+        
+        const start_idx: usize = @intCast(start);
+        const end_idx = @min(start_idx + @as(usize, @intCast(length)), str.len);
+        
+        const result = try allocator.dupe(u8, str[start_idx..end_idx]);
+        return Value{ .String = result };
+    }
+
+    fn stringEquals(args: []const Value) anyerror!Value {
+        if (args.len != 2) return error.ArgumentCountMismatch;
+        
+        const str1 = switch (args[0]) {
+            .String => |s| s,
+            else => return error.TypeMismatch,
+        };
+        
+        const str2 = switch (args[1]) {
+            .String => |s| s,
+            else => return error.TypeMismatch,
+        };
+        
+        return Value{ .Boolean = std.mem.eql(u8, str1, str2) };
+    }
+
+    fn stringIndexOf(args: []const Value) anyerror!Value {
+        if (args.len != 2) return error.ArgumentCountMismatch;
+        
+        const haystack = switch (args[0]) {
+            .String => |s| s,
+            else => return error.TypeMismatch,
+        };
+        
+        const needle = switch (args[1]) {
+            .String => |s| s,
+            else => return error.TypeMismatch,
+        };
+        
+        if (needle.len == 0) {
+            return Value{ .Integer = 0 };
+        }
+        
+        if (needle.len > haystack.len) {
+            return Value{ .Integer = -1 };
+        }
+        
+        for (0..haystack.len - needle.len + 1) |i| {
+            if (std.mem.eql(u8, haystack[i..i + needle.len], needle)) {
+                return Value{ .Integer = @intCast(i) };
+            }
+        }
+        
+        return Value{ .Integer = -1 };
     }
 };
 

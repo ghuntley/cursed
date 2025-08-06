@@ -1465,6 +1465,10 @@ fn printHelp() void {
 }
 
 // Cross-compilation implementation functions
+
+
+
+
 fn compileWithLLVMCrossCompilation(
     source: []const u8, 
     filename: []const u8, 
@@ -1477,8 +1481,7 @@ fn compileWithLLVMCrossCompilation(
         print("🔨 LLVM cross-compilation for target: {s}\n", .{target_platform});
     }
     
-    // Step 1: Compile CURSED source to LLVM IR using enhanced compiler
-    const enhanced_compiler = @import("enhanced_compiler.zig");
+    // Step 1: Compile CURSED source to LLVM IR using advanced codegen
     
     // Create a temporary allocator for compilation
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -1493,7 +1496,8 @@ fn compileWithLLVMCrossCompilation(
         print("🔄 Compiling CURSED to LLVM IR: {s} → {s}\n", .{ filename, ir_filename });
     }
     
-    // Compile CURSED source to LLVM IR
+    // Compile CURSED source to LLVM IR using enhanced compiler
+    const enhanced_compiler = @import("enhanced_compiler.zig");
     try enhanced_compiler.compileToLLVMBackend(allocator, source, filename, ir_filename, config.verbose);
     
     if (config.verbose) {

@@ -677,6 +677,12 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                                 try writer.print("  %loaded.{} = load i64, i64* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
                                 try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
                                 try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
+                            } else if (std.mem.eql(u8, var_info.llvm_type, "i32")) {
+                                try writer.print("  %loaded.{} = load i32, i32* %{s}, align 4\n", .{ variable_counter.*, var_info.var_name });
+                                // Cast i32 to i64 for printf
+                                try writer.print("  %extended.{} = sext i32 %loaded.{} to i64\n", .{ variable_counter.*, variable_counter.* });
+                                try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", .{ variable_counter.*, variable_counter.* });
                             } else if (std.mem.eql(u8, var_info.llvm_type, "i1")) {
                                 try writer.print("  %loaded.{} = load i1, i1* %{s}, align 1\n", .{ variable_counter.*, var_info.var_name });
                                 try writer.print("  %select.{} = select i1 %loaded.{}, i8* getelementptr ([6 x i8], [6 x i8]* @.bool_true, i32 0, i32 0), i8* getelementptr ([7 x i8], [7 x i8]* @.bool_false, i32 0, i32 0)\n", .{ variable_counter.*, variable_counter.* });
@@ -720,15 +726,24 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
     
     if (verbose) try writer.print("  ; Variable: {s} {s} = {s}\n", .{ var_name, var_type, value_str });
     
-    if (std.mem.eql(u8, var_type, "drip")) {
-        // Integer type
-        try writer.print("  %{s} = alloca i64, align 8\n", .{var_name});
-        if (std.fmt.parseInt(i64, value_str, 10) catch null) |num| {
-            try writer.print("  store i64 {}, i64* %{s}, align 8\n", .{ num, var_name });
+    if (std.mem.eql(u8, var_type, "drip") or std.mem.eql(u8, var_type, "normie")) {
+        // Integer type (both drip and normie)
+        const llvm_type = if (std.mem.eql(u8, var_type, "drip")) "i64" else "i32";
+        try writer.print("  %{s} = alloca {s}, align {s}\n", .{ var_name, llvm_type, if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" });
+        
+        // Try to evaluate the expression
+        const expr_result = try evaluateIntegerExpression(value_str, variables);
+        if (expr_result.is_literal) {
+            try writer.print("  store {s} {}, {s}* %{s}, align {s}\n", .{ 
+                llvm_type, expr_result.value, llvm_type, var_name, 
+                if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
+            });
         } else {
-            try writer.print("  store i64 0, i64* %{s}, align 8\n", .{var_name});
+            // Generate arithmetic LLVM IR
+            try generateArithmeticLLVM(value_str, variables, writer, variable_counter, llvm_type, var_name);
         }
-        try variables.put(var_name, .{ .llvm_type = "i64", .var_name = var_name });
+        
+        try variables.put(var_name, .{ .llvm_type = llvm_type, .var_name = var_name });
     } else if (std.mem.eql(u8, var_type, "lit")) {
         // Boolean type
         try writer.print("  %{s} = alloca i1, align 1\n", .{var_name});
@@ -772,6 +787,161 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
         }
     }
     variable_counter.* += 1;
+}
+
+// Expression evaluation structures and functions
+
+const ExpressionResult = struct {
+    is_literal: bool,
+    value: i64,
+};
+
+/// Evaluate a simple integer expression
+fn evaluateIntegerExpression(expr_str: []const u8, variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !ExpressionResult {
+    const trimmed = std.mem.trim(u8, expr_str, " \t\r\n");
+    
+    // Check if it's a simple integer literal
+    if (std.fmt.parseInt(i64, trimmed, 10) catch null) |num| {
+        return ExpressionResult{ .is_literal = true, .value = num };
+    }
+    
+    // Check if it's a simple variable reference
+    if (variables.get(trimmed)) |_| {
+        return ExpressionResult{ .is_literal = false, .value = 0 };
+    }
+    
+    // Check for simple binary operations (a + b, a - b, etc.)
+    if (std.mem.indexOf(u8, trimmed, " + ")) |_| {
+        return ExpressionResult{ .is_literal = false, .value = 0 };
+    }
+    if (std.mem.indexOf(u8, trimmed, " - ")) |_| {
+        return ExpressionResult{ .is_literal = false, .value = 0 };
+    }
+    if (std.mem.indexOf(u8, trimmed, " * ")) |_| {
+        return ExpressionResult{ .is_literal = false, .value = 0 };
+    }
+    if (std.mem.indexOf(u8, trimmed, " / ")) |_| {
+        return ExpressionResult{ .is_literal = false, .value = 0 };
+    }
+    
+    // Default: treat as 0 literal
+    return ExpressionResult{ .is_literal = true, .value = 0 };
+}
+
+/// Generate LLVM IR for arithmetic expressions
+fn generateArithmeticLLVM(
+    expr_str: []const u8, 
+    variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), 
+    writer: anytype, 
+    variable_counter: *u32,
+    llvm_type: []const u8,
+    result_var: []const u8
+) !void {
+    const trimmed = std.mem.trim(u8, expr_str, " \t\r\n");
+    
+    // Handle simple binary operations
+    if (std.mem.indexOf(u8, trimmed, " + ")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 3..], " \t");
+        
+        const left_val = try getOperandValue(left_str, variables, writer, variable_counter, llvm_type);
+        const right_val = try getOperandValue(right_str, variables, writer, variable_counter, llvm_type);
+        
+        try writer.print("  %add_result.{} = add {s} {s}, {s}\n", .{ variable_counter.*, llvm_type, left_val, right_val });
+        try writer.print("  store {s} %add_result.{}, {s}* %{s}, align {s}\n", .{ 
+            llvm_type, variable_counter.*, llvm_type, result_var,
+            if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
+        });
+        variable_counter.* += 1;
+        return;
+    }
+    
+    if (std.mem.indexOf(u8, trimmed, " - ")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 3..], " \t");
+        
+        const left_val = try getOperandValue(left_str, variables, writer, variable_counter, llvm_type);
+        const right_val = try getOperandValue(right_str, variables, writer, variable_counter, llvm_type);
+        
+        try writer.print("  %sub_result.{} = sub {s} {s}, {s}\n", .{ variable_counter.*, llvm_type, left_val, right_val });
+        try writer.print("  store {s} %sub_result.{}, {s}* %{s}, align {s}\n", .{ 
+            llvm_type, variable_counter.*, llvm_type, result_var,
+            if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
+        });
+        variable_counter.* += 1;
+        return;
+    }
+    
+    if (std.mem.indexOf(u8, trimmed, " * ")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 3..], " \t");
+        
+        const left_val = try getOperandValue(left_str, variables, writer, variable_counter, llvm_type);
+        const right_val = try getOperandValue(right_str, variables, writer, variable_counter, llvm_type);
+        
+        try writer.print("  %mul_result.{} = mul {s} {s}, {s}\n", .{ variable_counter.*, llvm_type, left_val, right_val });
+        try writer.print("  store {s} %mul_result.{}, {s}* %{s}, align {s}\n", .{ 
+            llvm_type, variable_counter.*, llvm_type, result_var,
+            if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
+        });
+        variable_counter.* += 1;
+        return;
+    }
+    
+    // Default: store 0
+    try writer.print("  store {s} 0, {s}* %{s}, align {s}\n", .{ 
+        llvm_type, llvm_type, result_var,
+        if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
+    });
+}
+
+/// Get operand value (either literal or variable load)
+fn getOperandValue(
+    operand_str: []const u8,
+    variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    writer: anytype,
+    variable_counter: *u32,
+    target_llvm_type: []const u8
+) ![]const u8 {
+    const allocator = std.heap.page_allocator; // Simple allocator for temporary strings
+    
+    // Check if it's a literal
+    if (std.fmt.parseInt(i64, operand_str, 10) catch null) |num| {
+        return try std.fmt.allocPrint(allocator, "{}", .{num});
+    }
+    
+    // Check if it's a variable
+    if (variables.get(operand_str)) |var_info| {
+        const reg_name = try std.fmt.allocPrint(allocator, "%loaded_op.{}", .{variable_counter.*});
+        const align_val = if (std.mem.eql(u8, var_info.llvm_type, "i64")) "8" else "4";
+        
+        // Load the variable
+        try writer.print("  {s} = load {s}, {s}* %{s}, align {s}\n", .{ 
+            reg_name, var_info.llvm_type, var_info.llvm_type, var_info.var_name, align_val 
+        });
+        
+        // Cast if needed (e.g., i32 to i64 or vice versa)
+        if (!std.mem.eql(u8, var_info.llvm_type, target_llvm_type)) {
+            const cast_reg = try std.fmt.allocPrint(allocator, "%cast_op.{}", .{variable_counter.*});
+            if (std.mem.eql(u8, var_info.llvm_type, "i32") and std.mem.eql(u8, target_llvm_type, "i64")) {
+                try writer.print("  {s} = sext i32 {s} to i64\n", .{ cast_reg, reg_name });
+            } else if (std.mem.eql(u8, var_info.llvm_type, "i64") and std.mem.eql(u8, target_llvm_type, "i32")) {
+                try writer.print("  {s} = trunc i64 {s} to i32\n", .{ cast_reg, reg_name });
+            } else {
+                // No conversion needed, just use original register
+                variable_counter.* += 1;
+                return reg_name;
+            }
+            variable_counter.* += 1;
+            return cast_reg;
+        }
+        
+        variable_counter.* += 1;
+        return reg_name;
+    }
+    
+    // Default: return "0"
+    return "0";
 }
 
 /// Convert simple LLVM IR back to C code (fallback for when clang is not available)
