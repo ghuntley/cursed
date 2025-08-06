@@ -105,6 +105,18 @@ pub fn build(b: *std.Build) void {
         exe.linkLibC();
     }
 
+    // Memory-safe CURSED compiler executable
+    const memory_safe_exe = b.addExecutable(.{
+        .name = "cursed-memory-safe",
+        .root_source_file = b.path("src-zig/main_memory_safe.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    
+    if (!is_wasm) {
+        memory_safe_exe.linkLibC();
+    }
+
     // Alternative implementations for testing and fallback
     const minimal_exe = b.addExecutable(.{
         .name = "cursed-minimal",
@@ -160,8 +172,9 @@ pub fn build(b: *std.Build) void {
     }
 
     b.installArtifact(exe);
-    b.installArtifact(minimal_exe);
-    b.installArtifact(complete_exe);
+b.installArtifact(memory_safe_exe);
+b.installArtifact(minimal_exe);
+b.installArtifact(complete_exe);
     // b.installArtifact(enhanced_exe);  // Disabled due to API issues
     b.installArtifact(optimized_exe);
     b.installArtifact(syscall_exe);

@@ -362,3 +362,10 @@ stdlib/                    # Standard library (pure CURSED)
 - Pure CURSED stdlib implementations eliminate FFI dependencies successfully
 - Use arena allocators for automatic memory cleanup - critical for safety
 
+### Critical Debugging & Development Insights
+- Main `cursed-zig` executable remains functional even when specialized variants have build issues
+- TODO/FIXME comments in source code are reliable indicators of incomplete work
+- Specs consistency is critical - deprecated syntax causes confusion and build failures
+- Memory-safe patterns with arena allocators prevent leaks and improve stability
+- Full implementations (not placeholders) are essential for production readiness
+

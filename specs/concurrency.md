@@ -92,13 +92,13 @@ sus msgCh dm<Message>[5]
 
 #### Send Operation
 ```cursed
-ch <- value                    // Blocking send
+dm_send(ch, value)             // Blocking send
 ```
 
 #### Receive Operation
 ```cursed
-value := <-ch                  // Blocking receive
-value, ok := <-ch              // Receive with close check
+value := dm_recv(ch)           // Blocking receive
+value, ok := dm_recv_ok(ch)    // Receive with close check
 ```
 
 #### Channel Closing
@@ -120,7 +120,7 @@ close(ch)                      // Close channel
 
 #### Closed Channels
 - Sends panic on closed channel
-- Receives return zero value and `cap` (false)
+- Receives return zero value and `cringe` (false)
 - Multiple closes panic
 
 ### Channel Directions
@@ -128,18 +128,18 @@ close(ch)                      // Close channel
 ```cursed
 // Send-only channel
 slay sender(ch dm<normie>) {
-    ch <- 42
+    dm_send(ch, 42)
 }
 
 // Receive-only channel
 slay receiver(ch dm<normie>) {
-    value := <-ch
+    value := dm_recv(ch)
 }
 
 // Bidirectional channel (default)
 slay worker(ch dm<normie>) {
-    ch <- 42
-    value := <-ch
+    dm_send(ch, 42)
+    value := dm_recv(ch)
 }
 ```
 
@@ -153,9 +153,9 @@ Select statements enable non-blocking communication on multiple channels.
 
 ```cursed
 ready {
-    mood ch1 <- value:
+    mood dm_send(ch1, value):
         vibez.spill("Sent on ch1")
-    mood result := <-ch2:
+    mood result := dm_recv(ch2):
         vibez.spill("Received from ch2:", result)
     basic:
         vibez.spill("No operations ready")
@@ -174,7 +174,7 @@ ready {
 #### Non-blocking Send
 ```cursed
 ready {
-    mood ch <- value:
+    mood dm_send(ch, value):
         vibez.spill("Sent successfully")
     basic:
         vibez.spill("Channel full, skipping")
@@ -184,7 +184,7 @@ ready {
 #### Non-blocking Receive
 ```cursed
 ready {
-    mood value := <-ch:
+    mood value := dm_recv(ch):
         vibez.spill("Received:", value)
     basic:
         vibez.spill("No data available")
@@ -196,9 +196,9 @@ ready {
 sus timeout dm<lit> = make_timeout(5000) // 5 second timeout
 
 ready {
-    mood result := <-workCh:
+    mood result := dm_recv(workCh):
         vibez.spill("Work completed:", result)
-    mood <-timeout:
+    mood dm_recv(timeout):
         vibez.spill("Operation timed out")
 }
 ```
@@ -217,7 +217,7 @@ slay workerPool(jobs dm<Job>, results dm<Result>, numWorkers normie) {
 slay worker(jobs dm<Job>, results dm<Result>) {
     bestie job := flex jobs {
         result := processJob(job)
-        results <- result
+        dm_send(results, result)
     }
 }
 ```
@@ -244,7 +244,7 @@ slay fanIn(channels []dm<Result>) dm<Result> {
     bestie _, ch := flex channels {
         stan {
             bestie result := flex ch {
-                output <- result
+                dm_send(output, result)
             }
         }
     }
@@ -259,7 +259,7 @@ slay fanIn(channels []dm<Result>) dm<Result> {
 slay producer(ch dm<Data>) {
     bestie i := 0; i < 100; i++ {
         data := generateData(i)
-        ch <- data
+        dm_send(ch, data)
     }
     close(ch)
 }
@@ -298,7 +298,7 @@ slay broadcast(input dm<Data>, outputs []dm<Data>) {
     bestie data := flex input {
         bestie _, ch := flex outputs {
             ready {
-                mood ch <- data:
+                mood dm_send(ch, data):
                     // Sent successfully
                 basic:
                     // Skip if channel is full
@@ -463,7 +463,7 @@ lowkey !isClosed(ch) {
 }
 
 // Receive from closed channel
-value, ok := <-ch
+value, ok := dm_recv_ok(ch)
 lowkey !ok {
     vibez.spill("Channel is closed")
 }
@@ -489,10 +489,10 @@ slay testGoroutine() {
     
     stan {
         result = 42
-        done <- based
+        dm_send(done, based)
     }
     
-    <-done
+    dm_recv(done)
     assert_eq_int(result, 42)
 }
 
@@ -501,10 +501,10 @@ slay testChannel() {
     sus ch dm<normie>
     
     stan {
-        ch <- 42
+        dm_send(ch, 42)
     }
     
-    result := <-ch
+    result := dm_recv(ch)
     assert_eq_int(result, 42)
 }
 ```

@@ -111,9 +111,9 @@ slay (u *User) Groups() ([]*Group, tea)
 ```csd
 fr fr Get the current user
 currentUser, err := user_check.Current()
-if err != cap {
+if err != nah {
   vibez.spill("Error getting current user: %v", err)
-  yolo
+  damn
 }
 
 vibez.spill("Current user:")
@@ -125,7 +125,7 @@ vibez.spill("  Home directory: %s", currentUser.HomeDir)
 
 fr fr Look up a specific user by username
 user, err := user_check.Lookup("root")
-if err != cap {
+if err != nah {
   vibez.spill("Error looking up user 'root': %v", err)
 } else {
   vibez.spill("\nUser root:")
@@ -136,7 +136,7 @@ if err != cap {
 
 fr fr Look up a user by UID
 uidUser, err := user_check.LookupId("0") fr fr Usually root on Unix systems
-if err != cap {
+if err != nah {
   vibez.spill("Error looking up user with UID 0: %v", err)
 } else {
   vibez.spill("\nUser with UID 0:")
@@ -146,16 +146,16 @@ if err != cap {
 
 fr fr Look up a group by name
 group, err := user_check.LookupGroup("wheel") fr fr Common on Unix systems
-if err != cap {
+if err != nah {
   vibez.spill("Error looking up group 'wheel': %v", err)
   fr fr Try another common group
   group, err = user_check.LookupGroup("admin")
-  if err != cap {
+  if err != nah {
     vibez.spill("Error looking up group 'admin': %v", err)
   }
 }
 
-if group != cap {
+if group != nah {
   vibez.spill("\nGroup info:")
   vibez.spill("  Name: %s", group.Name)
   vibez.spill("  GID: %s", group.Gid)
@@ -163,7 +163,7 @@ if group != cap {
 
 fr fr Look up a group by GID
 gidGroup, err := user_check.LookupGroupId("0") fr fr Usually root group on Unix
-if err != cap {
+if err != nah {
   vibez.spill("Error looking up group with GID 0: %v", err)
 } else {
   vibez.spill("\nGroup with GID 0:")
@@ -172,7 +172,7 @@ if err != cap {
 
 fr fr Get groups for the current user
 guserGroups, err := currentUser.Groups()
-if err != cap {
+if err != nah {
   vibez.spill("Error getting groups for current user: %v", err)
 } else {
   vibez.spill("\nGroups for current user:")
@@ -183,7 +183,7 @@ if err != cap {
 
 fr fr Get just the group IDs for the current user
 groupIds, err := currentUser.GroupIds()
-if err != cap {
+if err != nah {
   vibez.spill("Error getting group IDs for current user: %v", err)
 } else {
   vibez.spill("\nGroup IDs for current user: %v", groupIds)
@@ -214,7 +214,7 @@ cache := user_check.NewUserCache(5 * timez.Minute)
 
 fr fr First lookup (from system)
 cachedUser, err := cache.Lookup(currentUser.Username)
-if err != cap {
+if err != nah {
   vibez.spill("Error in cached lookup: %v", err)
 } else {
   vibez.spill("\nCached user lookup successful: %s", cachedUser.Username)
@@ -222,7 +222,7 @@ if err != cap {
 
 fr fr Second lookup (should be from cache)
 cachedUser, err = cache.Lookup(currentUser.Username)
-if err != cap {
+if err != nah {
   vibez.spill("Error in second cached lookup: %v", err)
 } else {
   vibez.spill("Second lookup successful (from cache): %s", cachedUser.Username)
@@ -238,7 +238,7 @@ vibez.spill("\nProcess is running with elevated permissions: %v", isElevated)
 
 fr fr On platforms supporting it, check if the current user can become root
 canBecomeRoot, err := user_check.CanBecomeUser("root")
-if err != cap {
+if err != nah {
   vibez.spill("Error checking if user can become root: %v", err)
 } else {
   vibez.spill("Current user can become root: %v", canBecomeRoot)

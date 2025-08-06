@@ -46,13 +46,13 @@ CURSED supports two types of comments:
 line_comment: $ => token(seq('fr fr', /.*/)),
 
 block_comment: $ => token(seq(
-  '/* cap',
-  /([^c]|c[^a]|ca[^p]|cap[^\s]|cap\s[^*]|cap\s\*[^/])*/,
-  'cap */'
+  '/* fr fr',
+  /(.|\n)*?/,
+  'fr fr */'
 ))
 ```
 
-Line comments start with `fr fr` and continue until the end of the line. Block comments start with `/* cap` and end with `cap */`.
+Line comments start with `fr fr` and continue until the end of the line. Block comments start with `/* fr fr` and end with `fr fr */`.
 
 ### Declarations
 
@@ -208,7 +208,7 @@ const Cursed = require('tree-sitter-cursed');
 const parser = new Parser();
 parser.setLanguage(Cursed);
 
-const sourceCode = 'vibe main\n\nslay main() {\n  yolo 0\n}';
+const sourceCode = 'vibe main\n\nslay main() {\n  damn 0\n}';
 const tree = parser.parse(sourceCode);
 console.log(tree.rootNode.toString());
 ```

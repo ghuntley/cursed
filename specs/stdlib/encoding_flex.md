@@ -339,7 +339,7 @@ person := Person{Name: "Alice", Email: "alice@example.com"}
 
 fr fr Using convenience functions
 jsonData, err := encoding_flex.MarshalJSON(person, opts)
-if err != cap {
+if err != nah {
     vibez.spill("Error encoding JSON:", err)
     yolo
 }
@@ -354,13 +354,13 @@ fr fr }
 fr fr Using codec
 jsonCodec := encoding_flex.NewJSONCodec(opts)
 jsonData, err = jsonCodec.Encode(person)
-if err != cap {
+if err != nah {
     vibez.spill("Error encoding JSON:", err)
     yolo
 }
 
 var decodedPerson Person
-if err := jsonCodec.Decode(jsonData, &decodedPerson); err != cap {
+if err := jsonCodec.Decode(jsonData, &decodedPerson); err != nah {
     vibez.spill("Error decoding JSON:", err)
     yolo
 }
@@ -390,7 +390,7 @@ encoded := encoding_flex.EncodeBase64(originalData, encoding_flex.Base64Standard
 vibez.spill(encoded) fr fr "SGVsbG8sIFdvcmxkIQ=="
 
 decoded, err := encoding_flex.DecodeBase64(encoded, encoding_flex.Base64Standard)
-if err != cap {
+if err != nah {
     vibez.spill("Error decoding Base64:", err)
     yolo
 }
@@ -404,7 +404,7 @@ yamlOpts := &encoding_flex.YAMLOptions{
 }
 
 yamlData, err := encoding_flex.MarshalYAML(person, yamlOpts)
-if err != cap {
+if err != nah {
     vibez.spill("Error encoding YAML:", err)
     yolo
 }

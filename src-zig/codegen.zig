@@ -2095,7 +2095,7 @@ pub const CodeGen = struct {
 
         // Pack arguments into buffer for interface calls
         var arg_offset: u32 = 0;
-        for (args.items, 0..) |arg, i| {
+        for (args.items) |arg| {
             const arg_type = c.LLVMTypeOf(arg);
             const arg_size = c.LLVMSizeOf(arg_type);
             
@@ -2352,7 +2352,7 @@ pub const CodeGen = struct {
         const current_func = self.current_function.?;
         
         // Generate the iterable expression
-        const iterable = try self.generateExpression(for_in_stmt.iterable);
+        _ = try self.generateExpression(for_in_stmt.iterable);
         
         // Create blocks for the loop
         const condition_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "for_in_cond");

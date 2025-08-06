@@ -259,7 +259,7 @@ slay main() {
             vibez.spill("  Version:", info.Version)
             vibez.spill("  Author:", info.Author)
             vibez.spill("  Description:", info.Description)
-            yolo cap
+            damn nah
         },
         OnPluginError: func(name tea, err tea) {
             vibez.spill("Plugin tea:", name, err)
@@ -267,9 +267,9 @@ slay main() {
     })
     
     fr fr Start the manager
-    if err := manager.Start(); err != cap {
+    if err := manager.Start(); err != nah {
         vibez.spill("Failed to start plugin manager:", err)
-        yolo
+        damn
     }
     defer manager.Stop()
     
@@ -277,14 +277,14 @@ slay main() {
     mathPlug, found := manager.GetPlugin("math-tools")
     if !found {
         vibez.spill("Math plugin not found")
-        yolo
+        damn
     }
     
     fr fr Look up a function by name
     calculateFunc, err := mathPlug.LookupFunc("Calculate")
-    if err != cap {
+    if err != nah {
         vibez.spill("Function not found:", err)
-        yolo
+        damn
     }
     
     fr fr Call the function
@@ -310,7 +310,7 @@ slay main() {
     
     fr fr Install a new plugin
     newPlug, err := manager.InstallPlugin("https:fr frexample.com/plugins/image-effects.plug")
-    if err != cap {
+    if err != nah {
         vibez.spill("Failed to install plugin:", err)
     } else {
         vibez.spill("Installed new plugin:", newPlug.Info().Name)
@@ -328,7 +328,7 @@ import "math"
 
 fr fr PlugManifest provides information about this plugin
 slay PlugManifest() plug_vibes.PlugInfo {
-    yolo plug_vibes.PlugInfo{
+    damn plug_vibes.PlugInfo{
         Name:        "math-tools",
         Version:     "1.0.0",
         API:         "1.0",
@@ -347,34 +347,34 @@ fr fr Init is called when the plugin is loaded
 slay Init() tea {
     fr fr Register all exported functions
     plug_vibes.RegisterExport("Calculate", Calculate)
-    yolo cap
+    damn nah
 }
 
 fr fr Cleanup is called when the plugin is unloaded
 slay Cleanup() tea {
     fr fr Perform any necessary cleanup
-    yolo cap
+    damn nah
 }
 
 fr fr Calculate performs various mathematical operations
 slay Calculate(operation tea, value float64, args ...float64) float64 {
     switch operation {
     case "square-root":
-        yolo math.Sqrt(value)
+        damn math.Sqrt(value)
     case "cube-root":
-        yolo math.Cbrt(value)
+        damn math.Cbrt(value)
     case "power":
         if len(args) > 0 {
-            yolo math.Pow(value, args[0])
+            damn math.Pow(value, args[0])
         }
-        yolo math.Pow(value, 2) fr fr Square by default
+        damn math.Pow(value, 2) fr fr Square by default
     case "logarithm":
         if len(args) > 0 {
-            yolo math.Log(value) / math.Log(args[0]) fr fr Log with custom base
+            damn math.Log(value) / math.Log(args[0]) fr fr Log with custom base
         }
-        yolo math.Log(value) fr fr Natural logarithm by default
+        damn math.Log(value) fr fr Natural logarithm by default
     default:
-        yolo value fr fr Return input value unchanged
+        damn value fr fr Return input value unchanged
     }
 }
 ```

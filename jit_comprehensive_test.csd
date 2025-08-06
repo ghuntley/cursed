@@ -1,111 +1,103 @@
-# Comprehensive JIT Test - All CURSED Features
-# Tests all the newly implemented JIT functionality
+# Comprehensive JIT Engine Test Suite
+# Tests all major CURSED language features with the JIT execution engine
 
-# Function parameter handling test
-slay add_numbers(x normie, y normie) normie {
-    damn x + y
+# Basic arithmetic and types
+sus x normie = 42
+sus y meal = 3.14
+sus name tea = "Hello JIT"
+sus flag lit = based
+
+vibez.spill("Testing basic types:")
+vibez.spill("Integer:", x)
+vibez.spill("Float:", y)
+vibez.spill("String:", name)
+vibez.spill("Boolean:", flag)
+
+# Function definitions with parameters
+slay add_numbers(a normie, b normie) normie {
+    damn a + b
 }
 
-# Struct creation and member access test
+slay greet_user(user_name tea) tea {
+    damn "Hello, " + user_name + "!"
+}
+
+# Test function calls
+sus sum normie = add_numbers(10, 20)
+sus greeting tea = greet_user("JIT Engine")
+
+vibez.spill("Function results:")
+vibez.spill("Sum:", sum)
+vibez.spill("Greeting:", greeting)
+
+# Struct definition and usage
 squad Point {
     spill x normie
     spill y normie
 }
 
-slay struct_test() {
-    p := Point{ x: 10, y: 20 }
-    vibez.spill("Point coordinates:", p.x, p.y)
-    damn p.x + p.y
-}
+# Create struct instance
+sus p Point = Point{ x: 5, y: 10 }
+vibez.spill("Point struct:")
+vibez.spill("x =", p.x)
+vibez.spill("y =", p.y)
 
-# Array creation and access test
-slay array_test() {
-    arr := [1, 2, 3, 4, 5]
-    vibez.spill("Array length:", arr.length)
-    vibez.spill("First element:", arr.element_0)
-    vibez.spill("Second element:", arr.element_1)
-    damn arr.element_0 + arr.element_1
-}
-
-# Tuple creation and access test
-slay tuple_test() {
-    tup := (42, "hello", based)
-    vibez.spill("Tuple length:", tup.length)
-    vibez.spill("First element:", tup._0)
-    vibez.spill("Second element:", tup._1)
-    vibez.spill("Third element:", tup._2)
-    damn tup._0
-}
-
-# Interface test
+# Interface definition
 collab Drawable {
     slay draw()
 }
 
-squad Circle {
-    spill radius normie
+# Array and tuple operations
+sus numbers = [1, 2, 3, 4, 5]
+sus coordinates = (p.x, p.y, 0)
+
+vibez.spill("Array first element:", numbers[0])
+vibez.spill("Tuple access:", coordinates.0, coordinates.1)
+
+# Type assertions
+sus int_val normie = y.(normie)
+sus str_val tea = x.(tea)
+
+vibez.spill("Type conversions:")
+vibez.spill("Float to int:", int_val)
+vibez.spill("Int to string:", str_val)
+
+# Lambda expressions
+sus multiplier = lambda(x normie) normie { damn x * 2 }
+sus doubled normie = multiplier(21)
+
+vibez.spill("Lambda result:", doubled)
+
+# Error handling
+yikes CustomError {
+    spill message tea
+    spill code normie
 }
 
-# Lambda expression test (simplified)
-slay lambda_test() {
-    # Create a lambda that adds two numbers
-    add_lambda := lambda(a, b) { a + b }
-    vibez.spill("Lambda created with param count:", add_lambda.param_count)
-    damn 100
+sus error_val = CustomError{ message: "Test error", code: 404 }
+vibez.spill("Error:", error_val.message, "Code:", error_val.code)
+
+# Member access on different types
+vibez.spill("Point type:", p.type)
+vibez.spill("Point field count:", p.fieldCount)
+
+# String operations with concatenation
+sus long_text tea = "JIT " + "Engine " + "Test " + "Complete"
+vibez.spill("Concatenated string:", long_text)
+
+# Conditional expressions
+bestie (sum > 25) {
+    vibez.spill("Sum is greater than 25")
+} else {
+    vibez.spill("Sum is 25 or less")
 }
 
-# Type conversion test
-slay type_conversion_test() {
-    x := 42
-    y := x.(meal)  # Convert to float
-    s := y.(tea)   # Convert to string
-    vibez.spill("Type conversions:", x, y, s)
-    damn 1
+# Loop for performance testing
+vibez.spill("Performance test - counting to 1000:")
+sus counter normie = 0
+bestie (counter < 1000) {
+    counter = counter + 1
 }
+vibez.spill("Final counter:", counter)
 
-# String concatenation test
-slay string_concat_test() {
-    name := "CURSED"
-    version := "1.0"
-    result := name + " " + version
-    vibez.spill("Concatenated string:", result)
-    damn result
-}
-
-# Main test function that exercises all features
-slay main() {
-    vibez.spill("🧪 JIT Comprehensive Test Starting")
-    
-    # Test function parameters
-    result1 := add_numbers(10, 20)
-    vibez.spill("add_numbers(10, 20) =", result1)
-    
-    # Test structs
-    result2 := struct_test()
-    vibez.spill("struct_test() =", result2)
-    
-    # Test arrays
-    result3 := array_test()
-    vibez.spill("array_test() =", result3)
-    
-    # Test tuples
-    result4 := tuple_test()
-    vibez.spill("tuple_test() =", result4)
-    
-    # Test lambdas
-    result5 := lambda_test()
-    vibez.spill("lambda_test() =", result5)
-    
-    # Test type conversions
-    result6 := type_conversion_test()
-    vibez.spill("type_conversion_test() =", result6)
-    
-    # Test string concatenation
-    result7 := string_concat_test()
-    vibez.spill("string_concat_test() =", result7)
-    
-    vibez.spill("✅ All JIT tests completed!")
-    damn 0
-}
-
-main()
+vibez.spill("JIT Engine comprehensive test completed!")
