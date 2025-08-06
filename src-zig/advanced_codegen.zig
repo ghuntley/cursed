@@ -30,6 +30,10 @@ const debug_info = @import("debug_info.zig");
 const DebugInfoGenerator = debug_info.DebugInfoGenerator;
 const SourceLocation = debug_info.SourceLocation;
 
+const OptimizationEngine = @import("optimization_engine.zig").OptimizationEngine;
+const OptimizationConfig = @import("optimization_engine.zig").OptimizationConfig;
+const OptimizationResult = @import("optimization_engine.zig").OptimizationResult;
+
 /// Advanced CURSED Zig Code Generator with advanced language features
 /// Handles structs, interfaces, generics, and advanced memory management
 pub const AdvancedCodeGen = struct {
@@ -53,8 +57,10 @@ pub const AdvancedCodeGen = struct {
     gc_mark_func: ?c.LLVMValueRef,
     gc_sweep_func: ?c.LLVMValueRef,
     
-    // Optimization state
-    optimization_passes: ArrayList(OptimizationPass),
+    // Optimization engine
+    optimization_engine: ?OptimizationEngine,
+    optimization_config: OptimizationConfig,
+    last_optimization_result: ?OptimizationResult,
     
     // Debug information generation
     debug_generator: ?DebugInfoGenerator,
@@ -80,7 +86,9 @@ pub const AdvancedCodeGen = struct {
             .heap_allocator = null,
             .gc_mark_func = null,
             .gc_sweep_func = null,
-            .optimization_passes = ArrayList(OptimizationPass).init(allocator),
+            .optimization_engine = null,
+            .optimization_config = OptimizationConfig.default(),
+            .last_optimization_result = null,
             .debug_generator = null,
             .debug_enabled = false,
             .source_file = null,
@@ -97,11 +105,43 @@ pub const AdvancedCodeGen = struct {
         self.gc_type_registry.deinit();
         self.typed_allocator.deinit();
         self.interface_registry.deinit();
-        self.optimization_passes.deinit();
+        if (self.optimization_engine) |*engine| {
+            engine.deinit();
+        }
         if (self.debug_generator) |*debug_gen| {
             debug_gen.deinit();
         }
         self.source_locations.deinit();
+    }
+
+    /// Set optimization level
+    pub fn setOptimizationLevel(self: *AdvancedCodeGen, level: u32) void {
+        self.optimization_config.optimization_level = level;
+        
+        if (self.optimization_engine) |*engine| {
+            engine.setOptimizationLevel(level);
+        }
+    }
+
+    /// Enable size optimization
+    pub fn enableSizeOptimization(self: *AdvancedCodeGen, level: u32) void {
+        self.optimization_config.size_optimization_level = level;
+        self.optimization_config.size_optimizations = level > 0;
+        
+        if (self.optimization_engine) |*engine| {
+            engine.setSizeOptimizationLevel(level);
+        }
+    }
+
+    /// Enable profile-guided optimization
+    pub fn enableProfileGuidedOptimization(self: *AdvancedCodeGen, profile_path: []const u8) !void {
+        _ = profile_path; // TODO: Load profile data
+        self.optimization_config.pgo_enabled = true;
+        
+        if (self.optimization_engine) |*engine| {
+            // TODO: Load profile data and enable PGO
+            _ = engine;
+        }
     }
 
     /// Enable debug information generation
@@ -813,31 +853,43 @@ pub const AdvancedCodeGen = struct {
 
     /// Apply advanced optimization passes
     fn applyAdvancedOptimizations(self: *AdvancedCodeGen) CodeGenError!void {
-        // Create enhanced pass manager
-        const pass_manager = c.LLVMCreatePassManager();
-        defer c.LLVMDisposePassManager(pass_manager);
+        // Initialize optimization engine if not already done
+        if (self.optimization_engine == null) {
+            self.optimization_engine = OptimizationEngine.init(
+                self.base_codegen.allocator,
+                self.base_codegen.context,
+                self.base_codegen.module
+            ) catch |err| {
+                std.debug.print("Failed to initialize optimization engine: {}\n", .{err});
+                return; // Fall back to basic optimization
+            };
+        }
         
-        // Add aggressive optimization passes
-        c.LLVMAddInstructionCombiningPass(pass_manager);
-        c.LLVMAddReassociatePass(pass_manager);
-        c.LLVMAddGVNPass(pass_manager);
-        c.LLVMAddCFGSimplificationPass(pass_manager);
-        c.LLVMAddPromoteMemoryToRegisterPass(pass_manager);
-        
-        // Add interprocedural passes
-        c.LLVMAddInternalizePass(pass_manager, 1);
-        c.LLVMAddFunctionInliningPass(pass_manager);
-        c.LLVMAddGlobalDCEPass(pass_manager);
-        c.LLVMAddGlobalOptimizerPass(pass_manager);
-        
-        // Add loop optimization passes
-        c.LLVMAddLoopUnrollPass(pass_manager);
-        c.LLVMAddLICMPass(pass_manager);
-        c.LLVMAddLoopDeletionPass(pass_manager);
-        
-        // Run optimization passes multiple times for better results
-        for (0..3) |_| {
-            _ = c.LLVMRunPassManager(pass_manager, self.base_codegen.module);
+        if (self.optimization_engine) |*engine| {
+            // Configure optimization passes
+            engine.configurePasses() catch |err| {
+                std.debug.print("Failed to configure optimization passes: {}\n", .{err});
+                return; // Fall back to basic optimization
+            };
+            
+            // Run advanced optimizations
+            const result = engine.runOptimizations() catch |err| {
+                std.debug.print("Failed to run optimizations: {}\n", .{err});
+                return; // Fall back to basic optimization
+            };
+            
+            // Store optimization result
+            self.last_optimization_result = result;
+            
+            // Print optimization statistics
+            std.debug.print("✅ Advanced optimizations applied:\n");
+            std.debug.print("   - Functions optimized: {}\n", .{result.functions_optimized});
+            std.debug.print("   - Instructions eliminated: {}\n", .{result.instructions_eliminated});
+            std.debug.print("   - Constants folded: {}\n", .{result.constants_folded});
+            std.debug.print("   - Functions inlined: {}\n", .{result.functions_inlined});
+            std.debug.print("   - Loops optimized: {}\n", .{result.loops_optimized});
+            std.debug.print("   - Memory allocations optimized: {}\n", .{result.memory_allocations_optimized});
+            std.debug.print("   - Estimated performance improvement: {d:.2}x\n", .{result.estimated_performance_improvement});
         }
     }
 
@@ -1150,13 +1202,7 @@ const GenericInstance = struct {
     llvm_type: c.LLVMTypeRef,
 };
 
-const OptimizationPass = enum {
-    FunctionInlining,
-    DeadCodeElimination,
-    ConstantFolding,
-    LoopOptimization,
-    InterfaceDevirtualization,
-};
+// OptimizationPass enum removed - now using OptimizationEngine
 
     // Type comparison and interface method lookup implementation
     fn compareMethodSignatures(self: *AdvancedCodeGen, interface_method: MethodSignature, struct_method: MethodSignature) CodeGenError!bool {

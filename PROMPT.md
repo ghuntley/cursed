@@ -4,7 +4,7 @@
 
 0c. study fix_plan.md.
 
-1. Your task is to convert the compiler from rust to zig and produce an compiled application in the cursed language for that functionality using parrallel subagents. Follow the fix_plan.md and choose the most important 20 things. Before making changes search codebase (don't assume not implemented) using subagents. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of zig.
+1. Your task is to convert the compiler from rust to zig and produce an compiled application in the cursed language for that functionality using parrallel subagents. Follow the fix_plan.md and choose the most important 50 things. Before making changes search codebase (don't assume not implemented) using subagents. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of zig.
 
 2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think hard.
 
@@ -53,6 +53,6 @@
 9999999999999999999999999999999. SUPER IMPORTANT DO NOT IGNORE. DO NOT PLACE STATUS REPORT UPDATES INTO @AGENT.md
 
 
-99999999999. DO NOT COMPLETE RUST IMPLEMENTATION DO DIRECTLY TO DOING ZIG IMPLEMENTATION. ALWAYS CHECK THE ZIG IMPLEMENTATION TO THE SPECS AND RUST IMPLEMENTATION. DO NOT MAKE ASSUMPTIONS. CHOOSE TOP 20 ITEMS TO RESOLVE.
+99999999999. DO NOT COMPLETE RUST IMPLEMENTATION DO DIRECTLY TO DOING ZIG IMPLEMENTATION. ALWAYS CHECK THE ZIG IMPLEMENTATION TO THE SPECS AND RUST IMPLEMENTATION. DO NOT MAKE ASSUMPTIONS. CHOOSE TOP 50 ITEMS TO RESOLVE.
 
 999999999999999. DO NOT ATTEMPT TO FIX THE RUST IMPLEMENTAITON. FOCUS SOLEY ON THE ZIG IMPLEMENTATION.

@@ -99,30 +99,66 @@ pub const GCStats = struct {
 /// GC configuration parameters
 pub const GCConfig = struct {
     /// Initial heap size in bytes
-    initial_heap_size: usize = 16 * 1024 * 1024, // 16MB
+    initial_heap_size: usize = 32 * 1024 * 1024, // 32MB for better performance
     /// Maximum heap size in bytes (0 = unlimited)
     max_heap_size: usize = 0,
-    /// Young generation size in bytes
-    young_gen_size: usize = 4 * 1024 * 1024, // 4MB
+    /// Young generation size (33% of total heap)
+    young_gen_ratio: f32 = 0.33,
+    /// Old generation size (67% of total heap)
+    old_gen_ratio: f32 = 0.67,
     /// Nursery size for very young objects
-    nursery_size: usize = 1024 * 1024, // 1MB
-    /// Threshold for promoting objects to old generation (allocation count)
-    promotion_threshold: u32 = 5,
-    /// GC trigger threshold (heap usage percentage)
-    gc_trigger_threshold: f32 = 0.75,
+    nursery_size: usize = 2 * 1024 * 1024, // 2MB
+    /// Threshold for promoting objects to old generation (survival count)
+    promotion_threshold: u32 = 3,
+    /// Young GC trigger threshold (heap usage percentage)
+    young_gc_trigger_threshold: f32 = 0.80,
+    /// Old GC trigger threshold (heap usage percentage) 
+    old_gc_trigger_threshold: f32 = 0.85,
     /// Concurrent collection thread count
-    concurrent_threads: u32 = 2,
-    /// Maximum pause time target in microseconds
-    max_pause_time_us: u64 = 10_000, // 10ms
+    concurrent_threads: u32 = std.Thread.getCpuCount() catch 2,
+    /// Maximum young GC pause time target in microseconds (5ms)
+    max_young_pause_time_us: u64 = 5_000,
+    /// Maximum old GC pause time target in microseconds (50ms)
+    max_old_pause_time_us: u64 = 50_000,
     /// Enable write barriers for concurrent collection
     enable_write_barriers: bool = true,
     /// Enable finalization
     enable_finalization: bool = true,
     /// Stack scanning depth limit
-    stack_scan_depth: usize = 64 * 1024, // 64KB
+    stack_scan_depth: usize = 128 * 1024, // 128KB
+    /// Enable incremental collection for large heaps
+    enable_incremental_collection: bool = true,
+    /// Work chunk size for incremental collection
+    incremental_work_size: usize = 1024,
+    /// Enable parallel marking with multiple threads
+    enable_parallel_marking: bool = true,
+    /// Enable heap compaction after major collections
+    enable_compaction: bool = true,
+    /// Compaction trigger threshold (fragmentation percentage)
+    compaction_threshold: f32 = 0.30,
     
     pub fn default() GCConfig {
         return GCConfig{};
+    }
+    
+    pub fn optimizedForThroughput() GCConfig {
+        var config = GCConfig.default();
+        config.young_gc_trigger_threshold = 0.90;
+        config.old_gc_trigger_threshold = 0.95;
+        config.enable_parallel_marking = true;
+        config.concurrent_threads = std.Thread.getCpuCount() catch 4;
+        return config;
+    }
+    
+    pub fn optimizedForLatency() GCConfig {
+        var config = GCConfig.default();
+        config.young_gc_trigger_threshold = 0.60;
+        config.old_gc_trigger_threshold = 0.70;
+        config.max_young_pause_time_us = 2_000; // 2ms
+        config.max_old_pause_time_us = 25_000; // 25ms
+        config.enable_incremental_collection = true;
+        config.incremental_work_size = 512;
+        return config;
     }
 };
 
@@ -267,7 +303,7 @@ pub const GC = struct {
             .weak_refs = ArrayList(*WeakRef).init(allocator),
             .weak_ref_mutex = Mutex{},
             .heap_segments = ArrayList(HeapSegment).init(allocator),
-            .forwarding_table = HashMap(*u8, *u8, std.hash_map.DefaultContext(u8), std.hash_map.default_max_load_percentage).init(allocator),
+            .forwarding_table = HashMap(*u8, *u8, std.HashMap.DefaultContext(u8), 80).init(allocator),
             .pause_mutex = Mutex{},
             .last_gc_time = std.time.Instant.now() catch |err| blk: {
                 std.log.warn("Failed to get current time for GC: {}\n", .{err});
@@ -303,22 +339,25 @@ pub const GC = struct {
         self.allocator.destroy(self);
     }
     
-    /// Initialize the heap with separate young and old generations
+    /// Initialize the heap with separate young and old generations (33%/67% split)
     fn initializeHeap(self: *GC) !void {
         // Allocate total heap
         self.heap_size = self.config.initial_heap_size;
         const heap_slice = try self.allocator.alloc(u8, self.heap_size);
         self.heap_start = @ptrCast(heap_slice.ptr);
         
+        // Calculate generation sizes based on ratios
+        const young_gen_size = @as(usize, @intFromFloat(@as(f64, @floatFromInt(self.heap_size)) * self.config.young_gen_ratio));
+        const old_gen_size = self.heap_size - young_gen_size;
+        
         // Set up generational regions
         const heap_bytes = @as([*]u8, @ptrCast(self.heap_start));
         
-        // Young generation at the beginning
+        // Young generation at the beginning (33% of heap)
         self.young_heap_start = @ptrCast(heap_bytes);
         
-        // Old generation after young generation
-        const old_offset = self.config.young_gen_size;
-        self.old_heap_start = @ptrCast(heap_bytes + old_offset);
+        // Old generation after young generation (67% of heap)
+        self.old_heap_start = @ptrCast(heap_bytes + young_gen_size);
         
         self.heap_used = 0;
         self.young_heap_used = 0;
@@ -327,7 +366,7 @@ pub const GC = struct {
         // Set up heap segments for compaction
         const young_segment = HeapSegment{
             .start = @as(*u8, @ptrCast(self.young_heap_start)),
-            .end = @as(*u8, @ptrCast(self.young_heap_start)) + self.config.young_gen_size,
+            .end = @as(*u8, @ptrCast(self.young_heap_start)) + young_gen_size,
             .current = @as(*u8, @ptrCast(self.young_heap_start)),
             .generation = 0,
         };
@@ -342,8 +381,9 @@ pub const GC = struct {
         try self.heap_segments.append(young_segment);
         try self.heap_segments.append(old_segment);
         
-        std.log.info("GC: Initialized heap - Total: {} bytes, Young: {} bytes", .{ 
-            self.heap_size, self.config.young_gen_size 
+        std.log.info("GC: Initialized heap - Total: {} bytes, Young: {} bytes ({}%), Old: {} bytes ({}%)", .{ 
+            self.heap_size, young_gen_size, @as(u8, @intFromFloat(self.config.young_gen_ratio * 100)),
+            old_gen_size, @as(u8, @intFromFloat(self.config.old_gen_ratio * 100))
         });
     }
     
@@ -414,10 +454,19 @@ pub const GC = struct {
             self.stats.peak_heap_size = self.heap_used;
         }
         
-        // Check if GC should be triggered
-        const heap_usage = @as(f32, @floatFromInt(self.heap_used)) / @as(f32, @floatFromInt(self.heap_size));
-        if (heap_usage > self.config.gc_trigger_threshold) {
-            self.triggerCollection();
+        // Check if GC should be triggered based on generation-specific thresholds
+        if (generation == .Young) {
+            const young_gen_size = @as(usize, @intFromFloat(@as(f64, @floatFromInt(self.heap_size)) * self.config.young_gen_ratio));
+            const young_usage = @as(f32, @floatFromInt(self.young_heap_used)) / @as(f32, @floatFromInt(young_gen_size));
+            if (young_usage > self.config.young_gc_trigger_threshold) {
+                self.triggerYoungCollection();
+            }
+        } else {
+            const old_gen_size = self.heap_size - @as(usize, @intFromFloat(@as(f64, @floatFromInt(self.heap_size)) * self.config.young_gen_ratio));
+            const old_usage = @as(f32, @floatFromInt(self.old_heap_used)) / @as(f32, @floatFromInt(old_gen_size));
+            if (old_usage > self.config.old_gc_trigger_threshold) {
+                self.triggerOldCollection();
+            }
         }
         
         return header.getData();
@@ -429,10 +478,11 @@ pub const GC = struct {
         
         switch (generation) {
             .Young => {
-                if (self.young_heap_used + aligned_size > self.config.young_gen_size) {
+                const young_gen_size = @as(usize, @intFromFloat(@as(f64, @floatFromInt(self.heap_size)) * self.config.young_gen_ratio));
+                if (self.young_heap_used + aligned_size > young_gen_size) {
                     // Try minor collection first
                     try self.collectYoungGeneration();
-                    if (self.young_heap_used + aligned_size > self.config.young_gen_size) {
+                    if (self.young_heap_used + aligned_size > young_gen_size) {
                         return error.OutOfMemory;
                     }
                 }
@@ -443,7 +493,8 @@ pub const GC = struct {
                 return obj_ptr;
             },
             .Old => {
-                const old_heap_size = self.heap_size - self.config.young_gen_size;
+                const young_gen_size = @as(usize, @intFromFloat(@as(f64, @floatFromInt(self.heap_size)) * self.config.young_gen_ratio));
+                const old_heap_size = self.heap_size - young_gen_size;
                 if (self.old_heap_used + aligned_size > old_heap_size) {
                     // Try major collection
                     try self.collectOldGeneration();
@@ -533,13 +584,39 @@ pub const GC = struct {
         };
     }
     
-    /// Trigger garbage collection
+    /// Trigger garbage collection for both generations
     pub fn triggerCollection(self: *GC) void {
         self.collection_mutex.lock();
         defer self.collection_mutex.unlock();
         
         if (!self.collection_running.load(.acquire)) {
             self.collection_condition.signal();
+        }
+    }
+    
+    /// Trigger young generation collection (optimized for <5ms pause)
+    pub fn triggerYoungCollection(self: *GC) void {
+        if (self.config.enable_incremental_collection) {
+            // Use incremental collection for lower pause times
+            self.performIncrementalYoungCollection() catch {
+                // Fallback to full young collection if incremental fails
+                self.collectYoungGeneration() catch {};
+            };
+        } else {
+            self.collectYoungGeneration() catch {};
+        }
+    }
+    
+    /// Trigger old generation collection (optimized for <50ms pause)
+    pub fn triggerOldCollection(self: *GC) void {
+        if (self.config.enable_incremental_collection) {
+            // Use incremental collection for lower pause times
+            self.performIncrementalOldCollection() catch {
+                // Fallback to full old collection if incremental fails
+                self.collectOldGeneration() catch {};
+            };
+        } else {
+            self.collectOldGeneration() catch {};
         }
     }
     
@@ -1028,7 +1105,7 @@ pub const GC = struct {
             var scan_ptr = start_addr;
             const end_ptr = start_addr + stack_frame_size;
             
-            while (scan_ptr < end_ptr) {
+            while (@intFromPtr(scan_ptr) < @intFromPtr(end_ptr)) {
                 // Check if this looks like a pointer to our heap
                 const potential_ptr = @as(*?*anyopaque, @ptrCast(@alignCast(scan_ptr))).*;
                 
@@ -1048,6 +1125,186 @@ pub const GC = struct {
         }
     }
     
+    /// Perform incremental young generation collection for low pause times
+    fn performIncrementalYoungCollection(self: *GC) !void {
+        const start_time = std.time.nanoTimestamp();
+        const max_work_time_ns = self.config.max_young_pause_time_us * 1000;
+        
+        // Mark roots incrementally
+        try self.incrementalMarkRoots();
+        
+        var work_done: usize = 0;
+        while (self.mark_stack.items.len > 0 and 
+               (std.time.nanoTimestamp() - start_time) < max_work_time_ns) {
+            
+            const work_chunk = @min(self.config.incremental_work_size, self.mark_stack.items.len);
+            
+            for (0..work_chunk) |_| {
+                if (self.mark_stack.items.len == 0) break;
+                
+                const obj = self.mark_stack.pop();
+                obj.color = @intFromEnum(Color.Black);
+                try self.markObjectChildren(obj);
+                work_done += 1;
+            }
+            
+            // Check time constraint
+            if ((std.time.nanoTimestamp() - start_time) >= max_work_time_ns) {
+                // Schedule continuation for next cycle
+                self.triggerYoungCollection();
+                return;
+            }
+        }
+        
+        // Sweep young generation
+        const collected = self.sweepPhase(.Young);
+        self.stats.young_collections += collected;
+        
+        // Promote survivors if needed
+        try self.promoteObjects();
+        
+        const elapsed_us = @as(u64, @intCast((std.time.nanoTimestamp() - start_time) / 1000));
+        self.stats.total_pause_time_us += elapsed_us;
+        if (elapsed_us > self.stats.max_pause_time_us) {
+            self.stats.max_pause_time_us = elapsed_us;
+        }
+        
+        std.log.debug("GC: Incremental young collection completed in {} μs, collected {} objects", 
+                     .{elapsed_us, collected});
+    }
+    
+    /// Perform incremental old generation collection for low pause times
+    fn performIncrementalOldCollection(self: *GC) !void {
+        const start_time = std.time.nanoTimestamp();
+        const max_work_time_ns = self.config.max_old_pause_time_us * 1000;
+        
+        // Use parallel marking if enabled
+        if (self.config.enable_parallel_marking) {
+            try self.parallelMarkPhase();
+        } else {
+            try self.incrementalMarkRoots();
+            
+            var work_done: usize = 0;
+            while (self.mark_stack.items.len > 0 and 
+                   (std.time.nanoTimestamp() - start_time) < max_work_time_ns) {
+                
+                const work_chunk = @min(self.config.incremental_work_size, self.mark_stack.items.len);
+                
+                for (0..work_chunk) |_| {
+                    if (self.mark_stack.items.len == 0) break;
+                    
+                    const obj = self.mark_stack.pop();
+                    obj.color = @intFromEnum(Color.Black);
+                    try self.markObjectChildren(obj);
+                    work_done += 1;
+                }
+                
+                // Check time constraint
+                if ((std.time.nanoTimestamp() - start_time) >= max_work_time_ns) {
+                    // Schedule continuation for next cycle
+                    self.triggerOldCollection();
+                    return;
+                }
+            }
+        }
+        
+        // Sweep old generation
+        const collected = self.sweepPhase(.Old);
+        self.stats.old_collections += collected;
+        
+        // Compact heap if fragmentation is high
+        if (self.config.enable_compaction) {
+            const fragmentation = self.calculateFragmentation();
+            if (fragmentation > self.config.compaction_threshold) {
+                try self.compactHeap();
+            }
+        }
+        
+        const elapsed_us = @as(u64, @intCast((std.time.nanoTimestamp() - start_time) / 1000));
+        self.stats.total_pause_time_us += elapsed_us;
+        if (elapsed_us > self.stats.max_pause_time_us) {
+            self.stats.max_pause_time_us = elapsed_us;
+        }
+        
+        std.log.debug("GC: Incremental old collection completed in {} μs, collected {} objects", 
+                     .{elapsed_us, collected});
+    }
+    
+    /// Parallel marking phase for improved throughput
+    fn parallelMarkPhase(self: *GC) !void {
+        const thread_count = self.config.concurrent_threads;
+        const threads = try self.allocator.alloc(Thread, thread_count);
+        defer self.allocator.free(threads);
+        
+        // Divide work among threads
+        const work_per_thread = (self.mark_stack.items.len + thread_count - 1) / thread_count;
+        
+        for (threads, 0..) |*thread, i| {
+            const start_idx = i * work_per_thread;
+            const end_idx = @min((i + 1) * work_per_thread, self.mark_stack.items.len);
+            
+            if (start_idx < end_idx) {
+                thread.* = try Thread.spawn(.{}, parallelMarkWorker, .{self, start_idx, end_idx});
+            }
+        }
+        
+        // Wait for all threads to complete
+        for (threads) |*thread| {
+            thread.join();
+        }
+    }
+    
+    /// Worker function for parallel marking
+    fn parallelMarkWorker(gc: *GC, start_idx: usize, end_idx: usize) void {
+        for (start_idx..end_idx) |i| {
+            if (i >= gc.mark_stack.items.len) break;
+            
+            const obj = gc.mark_stack.items[i];
+            obj.color = @intFromEnum(Color.Black);
+            gc.markObjectChildren(obj) catch {};
+        }
+    }
+    
+    /// Incremental marking of roots to reduce pause time
+    fn incrementalMarkRoots(self: *GC) !void {
+        // Mark registered roots
+        self.roots_mutex.lock();
+        defer self.roots_mutex.unlock();
+        
+        for (self.roots.items) |root| {
+            if (root.ptr.*) |ptr| {
+                if (self.isValidHeapPointer(ptr)) {
+                    const header = ObjectHeader.fromData(ptr);
+                    if (header.color == @intFromEnum(Color.White)) {
+                        header.color = @intFromEnum(Color.Gray);
+                        try self.mark_stack.append(header);
+                    }
+                }
+            }
+        }
+        
+        // Mark stack roots
+        self.scanStackRoots();
+        
+        // Process write barriers
+        try self.processWriteBarriers();
+    }
+    
+    /// Calculate heap fragmentation percentage
+    fn calculateFragmentation(self: *GC) f32 {
+        
+        // Simplified fragmentation calculation
+        // In a real implementation, this would scan the heap for free blocks
+        // var total_free_space: usize = 0;
+        // var largest_free_block: usize = 0;
+        const used_space = self.heap_used;
+        const total_space = self.heap_size;
+        
+        if (total_space == 0) return 0.0;
+        
+        const fragmentation = 1.0 - (@as(f32, @floatFromInt(used_space)) / @as(f32, @floatFromInt(total_space)));
+        return @max(0.0, @min(1.0, fragmentation));
+    }
 
     
     /// Get current GC statistics

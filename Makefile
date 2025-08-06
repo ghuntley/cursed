@@ -146,12 +146,25 @@ performance-test: build ## Run performance benchmarks
 
 cross-compile: ## Build for all supported platforms
 	$(AT)echo -e "$(CYAN)🌐 Cross-compiling for all platforms...$(RESET)"
+	$(AT)mkdir -p $(OUTPUT_DIR)/linux-x64 $(OUTPUT_DIR)/windows-x64 $(OUTPUT_DIR)/macos-x64 $(OUTPUT_DIR)/linux-arm64 $(OUTPUT_DIR)/macos-arm64
+	$(AT)echo -e "$(CYAN)📦 Building Linux x64...$(RESET)"
 	$(AT)$(ZIG_CMD) build -Dtarget=x86_64-linux $(V)
+	$(AT)cp zig-out/bin/* $(OUTPUT_DIR)/linux-x64/ 2>/dev/null || true
+	$(AT)echo -e "$(CYAN)📦 Building Windows x64...$(RESET)"
 	$(AT)$(ZIG_CMD) build -Dtarget=x86_64-windows $(V)
+	$(AT)cp zig-out/bin/* $(OUTPUT_DIR)/windows-x64/ 2>/dev/null || true
+	$(AT)echo -e "$(CYAN)📦 Building macOS x64...$(RESET)"
 	$(AT)$(ZIG_CMD) build -Dtarget=x86_64-macos $(V)
+	$(AT)cp zig-out/bin/* $(OUTPUT_DIR)/macos-x64/ 2>/dev/null || true
+	$(AT)echo -e "$(CYAN)📦 Building Linux ARM64...$(RESET)"
 	$(AT)$(ZIG_CMD) build -Dtarget=aarch64-linux $(V)
+	$(AT)cp zig-out/bin/* $(OUTPUT_DIR)/linux-arm64/ 2>/dev/null || true
+	$(AT)echo -e "$(CYAN)📦 Building macOS ARM64...$(RESET)"
 	$(AT)$(ZIG_CMD) build -Dtarget=aarch64-macos $(V)
+	$(AT)cp zig-out/bin/* $(OUTPUT_DIR)/macos-arm64/ 2>/dev/null || true
 	$(AT)echo -e "$(GREEN)✅ Cross-compilation completed$(RESET)"
+	$(AT)echo -e "$(CYAN)📂 Output directories:$(RESET)"
+	$(AT)ls -la $(OUTPUT_DIR)/*/
 
 cross-windows: ## Build Windows executable
 	$(AT)echo -e "$(CYAN)🪟 Building Windows executable...$(RESET)"

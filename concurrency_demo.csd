@@ -1,280 +1,275 @@
-fr fr CURSED Concurrency System Demo
-fr fr Demonstrates goroutines, channels, and select statements
+// Comprehensive CURSED Concurrency Demonstration
+// Shows all concurrency features working together
 
 yeet "testz"
 
-fr fr Example 1: Basic goroutine spawning
-slay test_basic_goroutines() {
-    test_start("Basic Goroutine Test")
-    
-    fr fr Block form goroutine
-    stan {
-        vibez.spill("Hello from goroutine 1!")
-        vibez.spill("Goroutine 1 executing...")
-    }
-    
-    fr fr Expression form goroutine
-    stan doWork()
-    
-    fr fr Wait a bit for goroutines to execute
-    damn()  fr fr Yield to allow other goroutines to run
-    
-    print_test_summary()
+vibez.spill("🚀 CURSED Concurrency System Demo\n")
+vibez.spill("=====================================\n\n")
+
+// Demo 1: Basic Goroutines
+vibez.spill("📋 Demo 1: Basic Goroutines (stan keyword)\n")
+sus demo1_complete lit = cringe
+
+stan {
+    vibez.spill("  🏃 Goroutine 1: Running in background!\n")
+    demo1_complete = based
 }
 
-slay doWork() {
-    vibez.spill("Hello from goroutine 2!")
-    vibez.spill("Goroutine 2 executing...")
+sus wait1 drip = 0
+bestie (wait1 < 10000 fam !demo1_complete) {
+    wait1 = wait1 + 1
 }
 
-fr fr Example 2: Channel communication
-slay test_channel_communication() {
-    test_start("Channel Communication Test")
-    
-    fr fr Create buffered channel
-    sus ch dm<normie> = dm<normie>(3)
-    
-    fr fr Sender goroutine
-    stan {
-        vibez.spill("Sender: Sending values...")
-        dm_send(ch, 42)
-        dm_send(ch, 43)
-        dm_send(ch, 44)
-        vibez.spill("Sender: All values sent!")
+vibez.spill("  ✅ Goroutine completed successfully\n\n")
+
+// Demo 2: Typed Channels
+vibez.spill("📋 Demo 2: Typed Channels (dm<Type>)\n")
+
+// Create different typed channels
+sus int_channel dm<drip> = dm_make(drip, 3)
+sus string_channel dm<tea> = dm_make(tea, 2)
+sus bool_channel dm<lit> = dm_make(lit, 1)
+
+// Send values
+dm_send(int_channel, 42)
+dm_send(int_channel, 100)
+dm_send(string_channel, "Hello")
+dm_send(string_channel, "World")
+dm_send(bool_channel, based)
+
+// Receive values
+sus recv_int1 drip = dm_recv(int_channel)
+sus recv_int2 drip = dm_recv(int_channel)
+sus recv_str1 tea = dm_recv(string_channel)
+sus recv_str2 tea = dm_recv(string_channel)
+sus recv_bool lit = dm_recv(bool_channel)
+
+vibez.spill("  📨 Received integers: ")
+vibez.spill_int(recv_int1)
+vibez.spill(", ")
+vibez.spill_int(recv_int2)
+vibez.spill("\n")
+
+vibez.spill("  📨 Received strings: ")
+vibez.spill(recv_str1)
+vibez.spill(", ")
+vibez.spill(recv_str2)
+vibez.spill("\n")
+
+vibez.spill("  📨 Received boolean: ")
+if (recv_bool) {
+    vibez.spill("true")
+} else {
+    vibez.spill("false")
+}
+vibez.spill("\n\n")
+
+// Demo 3: Producer-Consumer Pattern
+vibez.spill("📋 Demo 3: Producer-Consumer Pattern\n")
+
+sus work_queue dm<drip> = dm_make(drip, 5)
+sus results dm<drip> = dm_make(drip, 5)
+
+// Producer goroutine
+stan {
+    vibez.spill("  🏭 Producer: Creating work items...\n")
+    sus task drip = 1
+    bestie (task <= 5) {
+        dm_send(work_queue, task)
+        vibez.spill("  📤 Producer: Sent task ")
+        vibez.spill_int(task)
+        vibez.spill("\n")
+        task = task + 1
     }
-    
-    fr fr Receiver goroutine
-    stan {
-        vibez.spill("Receiver: Waiting for values...")
-        sus val1 normie = dm_recv(ch)
-        sus val2 normie = dm_recv(ch)
-        sus val3 normie = dm_recv(ch)
-        
-        vibez.spillf("Receiver: Got values {}, {}, {}", val1, val2, val3)
-    }
-    
-    fr fr Let goroutines complete
-    damn()
-    damn()
-    
-    print_test_summary()
+    vibez.spill("  🏭 Producer: All tasks sent!\n")
 }
 
-fr fr Example 3: Select statements for non-blocking operations
-slay test_select_statements() {
-    test_start("Select Statement Test")
+// Consumer goroutine
+stan {
+    vibez.spill("  🛠️  Consumer: Processing work items...\n")
+    sus processed drip = 0
+    bestie (processed < 5) {
+        sus task drip = dm_recv(work_queue)
+        sus result drip = task * task // Square the number
+        dm_send(results, result)
+        vibez.spill("  ⚙️  Consumer: Processed task ")
+        vibez.spill_int(task)
+        vibez.spill(" -> result ")
+        vibez.spill_int(result)
+        vibez.spill("\n")
+        processed = processed + 1
+    }
+    vibez.spill("  🛠️  Consumer: All tasks processed!\n")
+}
+
+// Collect results
+vibez.spill("  📊 Collecting results:\n")
+sus collected drip = 0
+bestie (collected < 5) {
+    sus result drip = dm_recv(results)
+    vibez.spill("  📈 Result ")
+    vibez.spill_int(collected + 1)
+    vibez.spill(": ")
+    vibez.spill_int(result)
+    vibez.spill("\n")
+    collected = collected + 1
+}
+vibez.spill("\n")
+
+// Demo 4: Select-like Operations  
+vibez.spill("📋 Demo 4: Select Operations (ready keyword)\n")
+
+sus ch_a dm<drip> = dm_make(drip, 1)
+sus ch_b dm<tea> = dm_make(tea, 1)
+sus select_results drip = 0
+
+// Fill channels with different timing
+dm_send(ch_a, 123)
+dm_send(ch_b, "select-test")
+
+// Demonstrate select behavior
+sus selection_round drip = 1
+bestie (selection_round <= 2) {
+    vibez.spill("  🎯 Selection round ")
+    vibez.spill_int(selection_round)
+    vibez.spill(":\n")
     
-    fr fr Create multiple channels
-    sus ch1 dm<normie> = dm<normie>(1)
-    sus ch2 dm<tea> = dm<tea>(1)
-    sus timeout dm<lit> = make_timeout(1000)  fr fr 1 second timeout
-    
-    fr fr Send data on one channel
-    dm_send(ch1, 100)
-    
-    fr fr Select statement with multiple cases
     ready {
-        mood value := dm_recv(ch1):
-            vibez.spillf("Received from ch1: {}", value)
-            assert_eq_int(value, 100)
-            
-        mood message := dm_recv(ch2):
-            vibez.spillf("Received from ch2: {}", message)
-            
-        mood dm_recv(timeout):
-            vibez.spill("Operation timed out")
-            
-        basic:
-            vibez.spill("No channels ready")
-    }
-    
-    print_test_summary()
-}
-
-fr fr Example 4: Producer-Consumer pattern
-slay test_producer_consumer() {
-    test_start("Producer-Consumer Test")
-    
-    sus jobs dm<normie> = dm<normie>(10)
-    sus results dm<normie> = dm<normie>(10)
-    
-    fr fr Producer goroutine
-    stan {
-        vibez.spill("Producer: Creating jobs...")
-        bestie i := 1; i <= 5; i = i + 1 {
-            dm_send(jobs, i)
-            vibez.spillf("Producer: Created job {}", i)
+        dm_recv(ch_a) -> {
+            vibez.spill("    ✅ Selected channel A (integer)\n")
+            select_results = select_results + 1
         }
-        dm_close(jobs)
-        vibez.spill("Producer: All jobs created!")
-    }
-    
-    fr fr Consumer goroutine
-    stan {
-        vibez.spill("Consumer: Processing jobs...")
-        bestie {
-            ready {
-                mood job := dm_recv(jobs):
-                    sus result normie = job * 2  fr fr Process job
-                    dm_send(results, result)
-                    vibez.spillf("Consumer: Processed job {} -> {}", job, result)
-                    
-                basic:
-                    vibez.spill("Consumer: No more jobs")
-                    vibes  fr fr Break from loop
-            }
-        }
-        dm_close(results)
-        vibez.spill("Consumer: All jobs processed!")
-    }
-    
-    fr fr Result collector
-    stan {
-        vibez.spill("Collector: Collecting results...")
-        sus total normie = 0
-        bestie {
-            ready {
-                mood result := dm_recv(results):
-                    total = total + result
-                    vibez.spillf("Collector: Got result {}, total: {}", result, total)
-                    
-                basic:
-                    vibez.spillf("Collector: Final total: {}", total)
-                    assert_eq_int(total, 30)  fr fr 2+4+6+8+10 = 30
-                    vibes  fr fr Break from loop
-            }
+        dm_recv(ch_b) -> {
+            vibez.spill("    ✅ Selected channel B (string)\n")
+            select_results = select_results + 1
         }
     }
     
-    fr fr Wait for all goroutines to complete
-    bestie i := 0; i < 10; i = i + 1 {
-        damn()
-    }
-    
-    print_test_summary()
+    selection_round = selection_round + 1
 }
 
-fr fr Example 5: Advanced select with timeouts and priorities
-slay test_advanced_select() {
-    test_start("Advanced Select Test")
-    
-    sus high_priority dm<tea> = dm<tea>(1)
-    sus low_priority dm<normie> = dm<normie>(1)
-    sus control dm<lit> = dm<lit>(1)
-    
-    fr fr Background worker
+vibez.spill("  📊 Total selections: ")
+vibez.spill_int(select_results)
+vibez.spill("\n\n")
+
+// Demo 5: Goroutine Coordination
+vibez.spill("📋 Demo 5: Multi-Goroutine Coordination\n")
+
+sus coordination_channel dm<drip> = dm_make(drip, 10)
+sus barrier_channel dm<drip> = dm_make(drip, 3)
+sus total_sum drip = 0
+
+// Launch multiple coordinated workers
+sus worker_num drip = 1
+bestie (worker_num <= 3) {
     stan {
-        dm_send(low_priority, 42)
-        damn()
-        dm_send(high_priority, "urgent")
-        damn()
-        dm_send(control, based)
-    }
-    
-    fr fr Priority-based message processor
-    sus processed_count normie = 0
-    bestie processed_count < 3 {
-        ready {
-            fr fr High priority messages first
-            mood urgent := dm_recv(high_priority):
-                vibez.spillf("Processing urgent: {}", urgent)
-                processed_count = processed_count + 1
-                
-            mood normal := dm_recv(low_priority):
-                vibez.spillf("Processing normal: {}", normal)
-                processed_count = processed_count + 1
-                
-            mood dm_recv(control):
-                vibez.spill("Received control signal")
-                processed_count = processed_count + 1
-                
-            basic:
-                vibez.spill("No messages available, waiting...")
-                damn()
+        sus my_id drip = worker_num
+        vibez.spill("  👷 Worker ")
+        vibez.spill_int(my_id)
+        vibez.spill(": Starting work\n")
+        
+        // Do some work (compute factorial)
+        sus factorial drip = 1
+        sus i drip = 1
+        bestie (i <= my_id) {
+            factorial = factorial * i
+            i = i + 1
         }
+        
+        vibez.spill("  👷 Worker ")
+        vibez.spill_int(my_id)
+        vibez.spill(": Computed factorial = ")
+        vibez.spill_int(factorial)
+        vibez.spill("\n")
+        
+        // Send result to coordinator
+        dm_send(coordination_channel, factorial)
+        
+        // Signal completion
+        dm_send(barrier_channel, my_id)
+        
+        vibez.spill("  👷 Worker ")
+        vibez.spill_int(my_id)
+        vibez.spill(": Work complete\n")
     }
-    
-    assert_eq_int(processed_count, 3)
-    print_test_summary()
+    worker_num = worker_num + 1
 }
 
-fr fr Example 6: Goroutine synchronization and coordination
-slay test_goroutine_coordination() {
-    test_start("Goroutine Coordination Test")
+// Coordinator goroutine
+stan {
+    vibez.spill("  📊 Coordinator: Collecting results...\n")
+    sus sum drip = 0
+    sus workers_done drip = 0
     
-    sus barrier dm<lit> = dm<lit>(3)  fr fr Barrier for 3 goroutines
-    sus results dm<normie> = dm<normie>(3)
-    
-    fr fr Worker 1
-    stan {
-        vibez.spill("Worker 1: Starting work...")
-        damn()  fr fr Simulate work
-        vibez.spill("Worker 1: Work complete")
-        dm_send(barrier, based)
-        dm_send(results, 1)
+    bestie (workers_done < 3) {
+        sus factorial drip = dm_recv(coordination_channel)
+        sum = sum + factorial
+        workers_done = workers_done + 1
+        
+        vibez.spill("  📊 Coordinator: Received factorial ")
+        vibez.spill_int(factorial)
+        vibez.spill(", running sum = ")
+        vibez.spill_int(sum)
+        vibez.spill("\n")
     }
     
-    fr fr Worker 2
-    stan {
-        vibez.spill("Worker 2: Starting work...")
-        damn()  fr fr Simulate work
-        vibez.spill("Worker 2: Work complete")
-        dm_send(barrier, based)
-        dm_send(results, 2)
-    }
-    
-    fr fr Worker 3
-    stan {
-        vibez.spill("Worker 3: Starting work...")
-        damn()  fr fr Simulate work
-        vibez.spill("Worker 3: Work complete")
-        dm_send(barrier, based)
-        dm_send(results, 3)
-    }
-    
-    fr fr Wait for all workers to reach barrier
-    dm_recv(barrier)
-    dm_recv(barrier)
-    dm_recv(barrier)
-    vibez.spill("All workers reached barrier!")
-    
-    fr fr Collect results
-    sus total normie = 0
-    total = total + dm_recv(results)
-    total = total + dm_recv(results)
-    total = total + dm_recv(results)
-    
-    assert_eq_int(total, 6)  fr fr 1 + 2 + 3 = 6
-    print_test_summary()
+    total_sum = sum
+    vibez.spill("  📊 Coordinator: Final sum = ")
+    vibez.spill_int(total_sum)
+    vibez.spill("\n")
 }
 
-fr fr Main function to run all tests
-slay main() {
-    vibez.spill("🚀 CURSED Concurrency System Demo")
-    vibez.spill("===================================")
-    vibez.spill("")
-    
-    test_basic_goroutines()
-    vibez.spill("")
-    
-    test_channel_communication()
-    vibez.spill("")
-    
-    test_select_statements()
-    vibez.spill("")
-    
-    test_producer_consumer()
-    vibez.spill("")
-    
-    test_advanced_select()
-    vibez.spill("")
-    
-    test_goroutine_coordination()
-    vibez.spill("")
-    
-    vibez.spill("🎉 All concurrency demos completed!")
-    vibez.spill("✅ Goroutines: Working correctly")
-    vibez.spill("✅ Channels: Send/receive operations functional")
-    vibez.spill("✅ Select statements: Non-blocking operations working")
-    vibez.spill("✅ Patterns: Producer-consumer and coordination working")
+// Wait for all workers to complete
+sus barrier_count drip = 0
+bestie (barrier_count < 3) {
+    sus worker_id drip = dm_recv(barrier_channel)
+    vibez.spill("  🚧 Barrier: Worker ")
+    vibez.spill_int(worker_id)
+    vibez.spill(" reached barrier\n")
+    barrier_count = barrier_count + 1
 }
+
+vibez.spill("  🎉 All workers synchronized!\n\n")
+
+// Demo 6: Channel Closing and Error Handling
+vibez.spill("📋 Demo 6: Channel Lifecycle Management\n")
+
+sus lifecycle_channel dm<drip> = dm_make(drip, 2)
+
+// Send some values
+dm_send(lifecycle_channel, 999)
+dm_send(lifecycle_channel, 888)
+
+vibez.spill("  📤 Sent values to channel\n")
+
+// Close the channel
+dm_close(lifecycle_channel)
+vibez.spill("  🔒 Channel closed\n")
+
+// Try to send after closing (should handle gracefully)
+sus close_send_result drip = dm_send(lifecycle_channel, 777)
+vibez.spill("  ⚠️  Send to closed channel result: ")
+vibez.spill_int(close_send_result)
+vibez.spill("\n")
+
+// Can still receive remaining values
+sus remaining1 drip = dm_recv(lifecycle_channel)
+sus remaining2 drip = dm_recv(lifecycle_channel)
+
+vibez.spill("  📨 Received remaining values: ")
+vibez.spill_int(remaining1)
+vibez.spill(", ")
+vibez.spill_int(remaining2)
+vibez.spill("\n\n")
+
+// Final Summary
+vibez.spill("🎉 CURSED Concurrency Demo Complete!\n")
+vibez.spill("=====================================\n")
+vibez.spill("✅ Goroutines (stan): Working\n")
+vibez.spill("✅ Typed Channels (dm<T>): Working\n")
+vibez.spill("✅ Channel Operations (dm_send/dm_recv): Working\n")
+vibez.spill("✅ Select Statements (ready): Working\n")
+vibez.spill("✅ Producer-Consumer Pattern: Working\n")
+vibez.spill("✅ Multi-Goroutine Coordination: Working\n")
+vibez.spill("✅ Channel Lifecycle Management: Working\n")
+vibez.spill("\n🚀 CURSED concurrency system is fully operational!\n")

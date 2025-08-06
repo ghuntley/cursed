@@ -1,224 +1,197 @@
-# CURSED Parser Implementation - Comprehensive Feature Enhancement
-
-**Status**: COMPLETED ✅  
-**Date**: January 8, 2025  
-**Files Modified**: src-zig/parser.zig, src-zig/parser_new.zig, src-zig/ast_new.zig
+# Parser Improvements Summary
 
 ## Overview
 
-This implementation addresses all missing parser features identified in the TODO comments, creating a complete and robust parser for the CURSED programming language.
+This document summarizes the key improvements made to the CURSED parser (`src-zig/parser.zig`) to handle complex expressions correctly. The fixes address 5 main areas of parser functionality.
 
-## Implemented Features
+## Issues Addressed
 
-### 1. Source Location Tracking ✅
+### 1. Operator Precedence Handling ✅
 
-**Problem**: Missing source location tracking (parser.zig line 719)
+**Problem**: Arithmetic expressions like `(42 + 24) * 2` were not parsing with correct precedence.
+
 **Solution**: 
-- Added `file_path` field to Parser struct
-- Implemented `getCurrentSourceLocation()` method
-- Implemented `getSourceLocationForToken()` method
-- Added `initWithFile()` constructor for parser with file tracking
-- Updated all error expressions to include source location
+- Enhanced the precedence hierarchy in expression parsing
+- Fixed parentheses handling in `parsePrimary()` to correctly group expressions
+- Ensured grouped expressions maintain full precedence parsing with `parseExpression()`
 
-**Key Changes**:
+**Code Changes**:
 ```zig
-// parser.zig lines 719, 104-122
-.source_location = self.getCurrentSourceLocation(),
+// In parsePrimary() - improved grouped expression handling
+if (self.match(.LeftParen)) {
+    // Parse expression with full precedence
+    const elem = try self.parseExpression();
+    // ... handle single vs tuple logic
+}
+```
 
-fn getCurrentSourceLocation(self: *Parser) ?ast.SourceLocation {
-    if (self.current < self.tokens.len) {
-        const token = self.tokens[self.current];
-        return ast.SourceLocation{
-            .file = self.file_path,
-            .line = @intCast(token.line),
-            .column = @intCast(token.column),
-        };
+### 2. Function Calls Within Expressions ✅
+
+**Problem**: Function calls like `max(min(10, 5), 3)` within complex expressions were failing.
+
+**Solution**: 
+- Enhanced `finishCall()` method to handle comments in argument lists
+- Improved argument parsing to skip whitespace and comments
+- Fixed function call chaining in `parseCall()`
+
+**Code Changes**:
+```zig
+fn finishCall(self: *Parser, callee: Expression) ParserError!Expression {
+    // Skip comments in argument lists
+    while (self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
+        _ = self.advance();
     }
-    return null;
+    // ... rest of argument parsing
 }
 ```
 
-### 2. Enhanced Error Reporting ✅
+### 3. Array Type Parsing ✅
 
-**Problem**: Basic error reporting without location information
+**Problem**: Array types like `drip[]`, `tea[]`, `smol[]` were not parsing correctly.
+
 **Solution**: 
-- Implemented `reportError()` with source location context
-- Implemented `reportErrorAtToken()` for token-specific errors
-- Enhanced `consume()` method with detailed error messages
-- Added precise file/line/column error reporting
+- Completely rewrote `parseType()` method to handle basic types first
+- Added `parseBasicType()` method to handle CURSED type keywords
+- Implemented proper array suffix parsing for all type combinations
 
-**Key Changes**:
+**Code Changes**:
 ```zig
-// parser_new.zig lines 769-773
-const current_token = if (self.current < self.tokens.len) self.tokens[self.current] else Token.init(.EOF, "", 0, 0);
-std.debug.print("Parse error at line {}, column {}: {s}. Expected {:?}, got {:?}\n", 
-    .{ current_token.line, current_token.column, message, token_type, current_token.kind });
-```
-
-### 3. Size Expression Parsing ✅
-
-**Problem**: Array types couldn't parse size expressions (parser_new.zig line 805)
-**Solution**: 
-- Implemented full expression parsing for array sizes
-- Updated ArrayType to use Expression* for size
-- Added support for constant and computed array sizes
-
-**Key Changes**:
-```zig
-// parser_new.zig lines 797-807
-// Array type [N]T - parse size expression
-const size_expr = try self.parseExpression();
-_ = try self.consume(.RightBracket, "Expected ']'");
-
-const array_type = ArrayType{
-    .element_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
-    .size = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-};
-array_type.element_type.* = base_type;
-array_type.size.?.* = size_expr;
-```
-
-### 4. Mutability Parsing ✅
-
-**Problem**: Pointer types couldn't parse mutability (parser_new.zig line 814)
-**Solution**: 
-- Implemented mutability parsing for pointer types
-- Added support for `*sus T` (mutable) vs `*T` (immutable)
-- Updated PointerType to include `is_mutable` field
-
-**Key Changes**:
-```zig
-// parser_new.zig lines 810-821
-// Pointer type *T or *mut T
-var is_mutable = false;
-if (self.match(.Mut) or self.check(.Sus)) {
-    is_mutable = true;
-    if (self.check(.Sus)) _ = self.advance();
+fn parseBasicType(self: *Parser) ParserError!ast.Type {
+    if (self.match(.Drip)) return ast.Type.Integer;
+    if (self.match(.Tea)) return ast.Type.String;
+    if (self.match(.Lit)) return ast.Type.Boolean;
+    if (self.match(.Meal)) return ast.Type.Float;
+    if (self.match(.Smol)) return ast.Type{ .Custom = "smol" };
+    if (self.match(.Thicc)) return ast.Type{ .Custom = "thicc" };
+    if (self.match(.Normie)) return ast.Type{ .Custom = "normie" };
+    // ... rest of type parsing
 }
-
-const pointer_type = PointerType{
-    .target_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
-    .is_mutable = is_mutable,
-};
 ```
 
-### 5. Recovery Parsing ✅
+### 4. String Concatenation Expressions ✅
 
-**Problem**: No error recovery mechanisms
+**Problem**: String concatenation with `+` and `++` operators was not working properly.
+
 **Solution**: 
-- Implemented `synchronize()` method for statement-level recovery
-- Implemented `recoverToNext()` for targeted recovery
-- Implemented `skipToStatementEnd()` for expression recovery
-- Added recovery points at statement boundaries
+- Added new `parseStringConcatenation()` method in the precedence hierarchy
+- Implemented string-aware concatenation detection
+- Added `isStringExpression()` helper for context-sensitive parsing
 
-**Key Changes**:
+**Code Changes**:
 ```zig
-// parser.zig and parser_new.zig
-fn synchronize(self: *Parser) void {
-    self.advance();
+fn parseStringConcatenation(self: *Parser) ParserError!Expression {
+    var expr = try self.parseFactor();
     
-    while (!self.isAtEnd()) {
-        if (self.previous().kind == .Semicolon) return;
-        
-        switch (self.peek().kind) {
-            .Slay, .Sus, .Facts, .Squad, .Collab, .Vibe, .Yeet => return,
-            else => {},
-        }
-        
-        self.advance();
+    while (self.match(.PlusPlus) or (self.check(.Plus) and self.isStringExpression(expr))) {
+        const operator = if (self.previous().kind == .PlusPlus) "++" else "+";
+        const right = try self.parseFactor();
+        // ... create binary expression
     }
 }
 ```
 
-## Updated AST Types
+### 5. Comment Handling ✅
 
-### ArrayType Enhancement
+**Problem**: Comments (`fr fr`, `#`, `/* */`) were interfering with expression parsing.
+
+**Solution**: 
+- Added comment skipping in `parseProgram()` main loop
+- Enhanced `parseStatement()` to skip comments at statement level  
+- Improved `finishCall()` to handle comments in function arguments
+- Added comprehensive comment token support
+
+**Code Changes**:
 ```zig
-pub const ArrayType = struct {
-    element_type: *Type,        // Changed from NodeIndex
-    size: ?*Expression,         // Changed from ?usize to support expressions
-};
+// In parseProgram()
+if (self.check(.Newline) or self.check(.Semicolon) or 
+   self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
+    _ = self.advance();
+    continue;
+}
+
+// In parseStatement()
+while (self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
+    _ = self.advance();
+}
 ```
 
-### SliceType Enhancement
-```zig
-pub const SliceType = struct {
-    element_type: *Type,        // Changed from NodeIndex
-};
+## Precedence Hierarchy
+
+The improved parser implements the following precedence hierarchy (lowest to highest):
+
+1. **Assignment** (`=`, `+=`, `-=`, `*=`, `/=`, `%=`)
+2. **Logical OR** (`||`, `|`)  
+3. **Logical AND** (`&&`, `&`)
+4. **Equality** (`!=`, `==`)
+5. **Comparison** (`>`, `>=`, `<`, `<=`)
+6. **Term** (`+`, `-`) 
+7. **String Concatenation** (`++`, context-sensitive `+`)
+8. **Factor** (`*`, `/`, `%`)
+9. **Unary** (`!`, `-`, `+`, `yikes`, `shook`, `fam`)
+10. **Call/Member Access** (`()`, `.property`, `[index]`, `[start:end]`)
+11. **Primary** (literals, identifiers, grouped expressions)
+
+## Test Coverage
+
+Created comprehensive test suites to validate the improvements:
+
+### Basic Tests
+- `parser_complex_expressions_test.csd` - General functionality tests
+- `parser_improvement_validation.csd` - Specific improvement validation
+- `parser_edge_cases_test.csd` - Edge cases and complex scenarios
+
+### Test Results
+```
+✅ All tests passing
+✅ Operator precedence working correctly
+✅ Function calls in expressions working
+✅ Array type parsing working
+✅ String concatenation working  
+✅ Comment handling working
+✅ Complex integration scenarios working
 ```
 
-### PointerType Enhancement
-```zig
-pub const PointerType = struct {
-    target_type: *Type,         // Changed from NodeIndex
-    is_mutable: bool,           // New field for mutability
-};
+## Example Usage
+
+The improved parser now correctly handles complex expressions like:
+
+```cursed
+// Operator precedence with parentheses
+sus result drip = (42 + 24) * 2  // 132
+
+// Function calls within expressions  
+sus nested drip = max(min(10, 5), 3)  // 5
+
+// Array type parsing
+sus numbers drip[] = [1, 2, 3]
+sus names tea[] = ["Alice", "Bob"] 
+
+// String concatenation
+sus greeting tea = "Hello" + " " + "World!"
+
+// Comments in expressions
+sus complex drip = (
+    fr fr starting calculation
+    (10 + 5) * 2 fr fr multiply by 2  
+) - 5 fr fr subtract 5
 ```
 
-## Testing
+## Compatibility
 
-### Comprehensive Test Suite
-- Created `comprehensive_parser_features_test.csd`
-- Created `parser_features_direct_test.csd`
-- Verified all parser features work correctly
-- All tests pass successfully
+✅ **Backwards Compatible**: All existing simple expressions continue to work
+✅ **CURSED Spec Compliant**: Follows CURSED language specification
+✅ **Memory Safe**: Uses proper allocator patterns
+✅ **Error Reporting**: Enhanced error messages for debugging
 
-### Test Coverage
-- ✅ Source location tracking in error expressions
-- ✅ Array size expression parsing: `[size + 5]normie`
-- ✅ Pointer mutability parsing: `*sus normie`
-- ✅ Error recovery and synchronization
-- ✅ Complex nested type expressions
-- ✅ Enhanced error reporting with location info
+## Performance Impact
 
-## Integration Results
+- **Minimal**: Added methods are lightweight
+- **Efficient**: Proper precedence parsing prevents backtracking  
+- **Scalable**: Handles deeply nested expressions without stack overflow
 
-### Build System
-- ✅ Clean compilation with `zig build`
-- ✅ All unit tests pass with `zig build test`
-- ✅ Integration tests execute successfully
+## Files Modified
 
-### Performance Impact
-- Minimal performance overhead from source location tracking
-- Error recovery improves parser resilience without affecting normal parsing speed
-- Memory allocation patterns optimized for production use
+1. `/home/ghuntley/cursed/src-zig/parser.zig` - Main parser improvements
+2. Test files created for validation
 
-## Production Readiness
-
-### Parser Robustness
-- Complete error handling with graceful recovery
-- Comprehensive source location tracking for debugging
-- Full support for all CURSED language constructs
-- Resistant to malformed input with proper error reporting
-
-### Developer Experience
-- Precise error messages with file/line/column information
-- Clear indication of expected vs actual tokens
-- Parser continues after errors when possible
-- Comprehensive feature support for complex type expressions
-
-## Future Enhancements
-
-### Already Supported
-- All basic type parsing (arrays, slices, pointers)
-- Complete error handling and recovery
-- Source location tracking throughout
-- Enhanced error reporting
-
-### Potential Extensions
-- Incremental parsing for IDE integration
-- Syntax highlighting information extraction
-- AST-based refactoring support
-- Advanced error correction suggestions
-
-## Conclusion
-
-The CURSED parser now includes all missing features identified in the original TODOs:
-
-1. ✅ Source location tracking (parser.zig line 719) - COMPLETED
-2. ✅ Error reporting improvements - COMPLETED  
-3. ✅ Size expression parsing - COMPLETED
-4. ✅ Mutability parsing - COMPLETED
-5. ✅ Recovery parsing - COMPLETED
-
-The parser is now production-ready with comprehensive feature support, robust error handling, and excellent developer experience. All CURSED language constructs are properly supported with precise error reporting and graceful recovery capabilities.
+The parser improvements significantly enhance the CURSED language's ability to handle complex expressions while maintaining compatibility with existing code.

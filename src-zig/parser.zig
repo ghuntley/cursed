@@ -73,8 +73,9 @@ pub const Parser = struct {
         var program = Program.init(self.allocator);
         
         while (!self.isAtEnd()) {
-            // Skip newlines and semicolons
-            if (self.check(.Newline) or self.check(.Semicolon)) {
+            // Skip newlines, semicolons, and comments
+            if (self.check(.Newline) or self.check(.Semicolon) or 
+               self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
                 _ = self.advance();
                 continue;
             }
@@ -208,6 +209,11 @@ pub const Parser = struct {
     }
 
     fn parseStatement(self: *Parser) ParserError!Statement {
+        // Skip comments at statement level
+        while (self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
+            _ = self.advance();
+        }
+        
         // Function declaration (slay)
         if (self.check(.Slay)) {
             return Statement{ .Function = try self.parseFunctionStatement() };
@@ -276,7 +282,7 @@ pub const Parser = struct {
 
         // Goroutine statement (stan)
         if (self.check(.Stan)) {
-            return try self.parseGoroutineStatement();
+            return try self.parseStanStatement();
         }
 
         // Match expression (match)
@@ -462,6 +468,35 @@ pub const Parser = struct {
     }
 
     fn parseType(self: *Parser) ParserError!ast.Type {
+        // Check for basic types first (drip, tea, lit, etc.)
+        if (self.checkType()) {
+            const base_type = try self.parseBasicType();
+            
+            // Check for array suffix []
+            if (self.match(.LeftBracket)) {
+                // Check for size or empty for slice
+                var size: ?usize = null;
+                if (!self.check(.RightBracket)) {
+                    if (self.check(.Number) or self.check(.Integer)) {
+                        const size_token = self.advance();
+                        size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch null;
+                    }
+                }
+                
+                try self.consume(.RightBracket, "Expected ']'");
+                
+                const element_type_ptr = try self.allocator.create(ast.Type);
+                element_type_ptr.* = base_type;
+                
+                return ast.Type{ .Array = ast.ArrayType{
+                    .element_type = element_type_ptr,
+                    .size = size,
+                }};
+            }
+            
+            return base_type;
+        }
+
         // Array/slice types []element_type or [size]element_type
         if (self.match(.LeftBracket)) {
             // Check for size or empty for slice
@@ -739,10 +774,27 @@ pub const Parser = struct {
     }
 
     fn parseTerm(self: *Parser) ParserError!Expression {
-        var expr = try self.parseFactor();
+        var expr = try self.parseStringConcatenation();
 
         while (self.match(.Minus) or self.match(.Plus)) {
             const operator = self.previous().lexeme;
+            const right = try self.parseStringConcatenation();
+            
+            expr = Expression{ .Binary = ast.BinaryExpression{
+                .left = try self.allocateExpression(expr),
+                .operator = operator,
+                .right = try self.allocateExpression(right),
+            }};
+        }
+
+        return expr;
+    }
+
+    fn parseStringConcatenation(self: *Parser) ParserError!Expression {
+        var expr = try self.parseFactor();
+
+        while (self.match(.PlusPlus) or (self.check(.Plus) and self.isStringExpression(expr))) {
+            const operator = if (self.previous().kind == .PlusPlus) "++" else "+";
             const right = try self.parseFactor();
             
             expr = Expression{ .Binary = ast.BinaryExpression{
@@ -753,6 +805,16 @@ pub const Parser = struct {
         }
 
         return expr;
+    }
+
+    fn isStringExpression(self: *Parser, expr: Expression) bool {
+        switch (expr) {
+            .String => return true,
+            .Identifier => return true, // Could be a string variable
+            .Call => return true, // Could return a string
+            .MemberAccess => return true, // Could be a string property
+            else => return false,
+        }
     }
 
     fn parseFactor(self: *Parser) ParserError!Expression {
@@ -957,10 +1019,22 @@ pub const Parser = struct {
 
         if (!self.check(.RightParen)) {
             while (true) {
+                // Skip comments in argument lists
+                while (self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
+                    _ = self.advance();
+                }
+                
+                if (self.check(.RightParen)) break;
+                
                 const arg = try self.parseExpression();
                 try arguments.append(arg);
 
                 if (!self.match(.Comma)) break;
+                
+                // Skip comments after comma
+                while (self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
+                    _ = self.advance();
+                }
             }
         }
 
@@ -1055,7 +1129,7 @@ pub const Parser = struct {
             })};
         }
 
-        // Tuple literals (1, 2, 3)
+        // Grouped expressions and tuples (expr) or (1, 2, 3)
         if (self.match(.LeftParen)) {
             // Look ahead to see if this is a tuple or just grouped expression
             if (self.check(.RightParen)) {
@@ -1070,6 +1144,7 @@ pub const Parser = struct {
             var has_comma = false;
             
             while (true) {
+                // Parse expression with full precedence
                 const elem = try self.parseExpression();
                 try elements.append(elem);
                 
@@ -1913,6 +1988,27 @@ pub const Parser = struct {
         }};
     }
 
+    fn parseStanStatement(self: *Parser) ParserError!Statement {
+        try self.consume(.Stan, "Expected 'stan'");
+        
+        // Parse block: stan { ... }
+        try self.consume(.LeftBrace, "Expected '{'");
+        
+        var body = ArrayList(Statement).init(self.allocator);
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            if (self.match(.Newline)) continue;
+            
+            const stmt = try self.parseStatement();
+            try body.append(stmt);
+        }
+        
+        try self.consume(.RightBrace, "Expected '}'");
+        
+        return Statement{ .Stan = ast.StanStatement{
+            .body = body,
+        }};
+    }
+
     fn parseGoroutineStatement(self: *Parser) ParserError!Statement {
         try self.consume(.Stan, "Expected 'stan'");
         
@@ -2698,7 +2794,36 @@ pub const Parser = struct {
     }
     
     fn parseBasicType(self: *Parser) ParserError!ast.Type {
-        // Parse a single basic type (before union/intersection operators)
+        // CURSED type keywords
+        if (self.match(.Drip)) {
+            return ast.Type.Integer;
+        }
+        
+        if (self.match(.Tea)) {
+            return ast.Type.String;
+        }
+        
+        if (self.match(.Lit)) {
+            return ast.Type.Boolean;
+        }
+        
+        if (self.match(.Meal)) {
+            return ast.Type.Float;
+        }
+        
+        if (self.match(.Smol)) {
+            return ast.Type{ .Custom = "smol" }; // Small integer
+        }
+        
+        if (self.match(.Thicc)) {
+            return ast.Type{ .Custom = "thicc" }; // Large integer
+        }
+        
+        if (self.match(.Normie)) {
+            return ast.Type{ .Custom = "normie" }; // Regular integer
+        }
+        
+        // Custom/identifier types
         if (self.check(.Identifier)) {
             const type_name = self.advance().lexeme;
             
@@ -2710,8 +2835,7 @@ pub const Parser = struct {
             return ast.Type{ .Custom = type_name };
         }
         
-        // Fall back to existing parseType logic
-        return try self.parseType();
+        return ParserError.InvalidType;
     }
     
     fn parseAdvancedFunctionSignature(self: *Parser) ParserError!FunctionStatement {

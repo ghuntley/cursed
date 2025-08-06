@@ -313,6 +313,7 @@ pub const Interpreter = struct {
     environment: *Environment,
     functions: HashMap([]const u8, CursedFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     type_registry: TypeRegistry,
+    channel_storage: HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage),
     allocator: Allocator,
 
     pub fn init(allocator: Allocator) Interpreter {
@@ -323,6 +324,7 @@ pub const Interpreter = struct {
             .environment = &globals,
             .functions = HashMap([]const u8, CursedFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .type_registry = TypeRegistry.init(allocator),
+            .channel_storage = HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
     }
@@ -331,6 +333,13 @@ pub const Interpreter = struct {
         self.globals.deinit();
         self.functions.deinit();
         self.type_registry.deinit();
+        
+        // Clean up channel storage
+        var channel_iterator = self.channel_storage.iterator();
+        while (channel_iterator.next()) |entry| {
+            entry.value_ptr.deinit();
+        }
+        self.channel_storage.deinit();
     }
 
     pub fn execute(self: *Interpreter, program: Program) InterpreterError!void {
@@ -390,6 +399,7 @@ pub const Interpreter = struct {
             .Function => {
                 // Functions are already collected, skip execution
             },
+            .Stan => |stan| try self.executeStanStatement(stan),
             .Yikes => |yikes| try self.executeYikesStatement(yikes),
             .Fam => |fam| try self.executeFamStatement(fam),
             else => {
@@ -564,23 +574,21 @@ pub const Interpreter = struct {
                     const channel = try self.evaluateExpression(call.arguments.items[0]);
                     const value = try self.evaluateExpression(call.arguments.items[1]);
                     
-                    // For now, just return success (0)
-                    _ = channel;
-                    _ = value;
+                    // Store the value in a simple channel simulation
+                    const channel_id = @as(u64, @intFromFloat(try channel.toNumber()));
+                    try self.storeChannelValue(channel_id, value);
                     return Value{ .Number = 0 }; // Success
                 } else if (std.mem.eql(u8, name, "dm_recv")) {
-                    // dm_recv(channel, buffer) -> result code  
-                    if (call.arguments.items.len != 2) {
+                    // dm_recv(channel) -> value
+                    if (call.arguments.items.len != 1) {
                         return InterpreterError.TypeMismatch;
                     }
                     
                     const channel = try self.evaluateExpression(call.arguments.items[0]);
-                    const buffer = try self.evaluateExpression(call.arguments.items[1]);
                     
-                    // For now, simulate receiving the original value (42)
-                    _ = channel;
-                    _ = buffer;
-                    return Value{ .Number = 0 }; // Success
+                    // Retrieve the value from channel simulation
+                    const channel_id = @as(u64, @intFromFloat(try channel.toNumber()));
+                    return self.retrieveChannelValue(channel_id) catch Value{ .Number = 0 };
                 } else if (std.mem.eql(u8, name, "dm_close")) {
                     // dm_close(channel) -> void
                     if (call.arguments.items.len != 1) {
@@ -890,6 +898,25 @@ pub const Interpreter = struct {
         return last_result;
     }
 
+    fn executeStanStatement(self: *Interpreter, stan: ast.StanStatement) InterpreterError!void {
+        // Execute goroutine body in a separate context
+        // For now, we simulate goroutine execution by running the body immediately
+        // In a full implementation, this would spawn an actual goroutine
+        
+        // Create a new environment for the goroutine
+        var goroutine_env = Environment.init(self.allocator, self.environment);
+        defer goroutine_env.deinit();
+        
+        const old_env = self.environment;
+        self.environment = &goroutine_env;
+        defer self.environment = old_env;
+        
+        // Execute all statements in the goroutine body
+        for (stan.body.items) |stmt| {
+            try self.executeStatement(stmt);
+        }
+    }
+
     fn evaluateShook(self: *Interpreter, shook: ast.ShookExpression) InterpreterError!Value {
         // Evaluate the wrapped expression
         const result = self.evaluateExpression(shook.expression.*) catch |err| {
@@ -924,6 +951,26 @@ pub const Interpreter = struct {
                 return result;
             },
         }
+    }
+
+    // Channel simulation methods
+    fn storeChannelValue(self: *Interpreter, channel_id: u64, value: Value) InterpreterError!void {
+        if (self.channel_storage.getPtr(channel_id)) |channel_list| {
+            try channel_list.append(value);
+        } else {
+            var new_list = ArrayList(Value).init(self.allocator);
+            try new_list.append(value);
+            try self.channel_storage.put(channel_id, new_list);
+        }
+    }
+
+    fn retrieveChannelValue(self: *Interpreter, channel_id: u64) InterpreterError!Value {
+        if (self.channel_storage.getPtr(channel_id)) |channel_list| {
+            if (channel_list.items.len > 0) {
+                return channel_list.orderedRemove(0);
+            }
+        }
+        return Value{ .Number = 0 }; // Default value when channel is empty
     }
 };
 

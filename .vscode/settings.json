@@ -1,0 +1,40 @@
+{
+    "files.associations": {
+        "*.csd": "cursed"
+    },
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": "keyword.control.cursed",
+                "settings": {
+                    "foreground": "#ff6b9d",
+                    "fontStyle": "bold"
+                }
+            },
+            {
+                "scope": "storage.type.cursed",
+                "settings": {
+                    "foreground": "#45b7d1"
+                }
+            },
+            {
+                "scope": "constant.language.cursed",
+                "settings": {
+                    "foreground": "#96ceb4"
+                }
+            },
+            {
+                "scope": "string.quoted.double.cursed",
+                "settings": {
+                    "foreground": "#ffeaa7"
+                }
+            },
+            {
+                "scope": "entity.name.function.cursed",
+                "settings": {
+                    "foreground": "#fd79a8"
+                }
+            }
+        ]
+    }
+}

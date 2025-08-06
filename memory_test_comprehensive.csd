@@ -1,8 +1,11 @@
-fr fr Complex CURSED program test
-yeet "testz"
-sus count drip = 42
-sus name tea = "CURSED"
-slay greet(msg tea) {
-    vibez.spill("Hello", msg)
+slay test_arrays() {
+    sus arr normie = [1, 2, 3, 4, 5]
+    sus count drip = 0
+    bestie (count < 5) {
+        vibez.spill_drip(arr[count])
+        count = count + 1
+    }
 }
-greet(name)
+
+test_arrays()
+vibez.spill("Memory test completed")

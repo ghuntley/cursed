@@ -1,0 +1,39 @@
+install
++- install cursed-concurrency-test
+   +- zig build-exe cursed-concurrency-test Debug x86_64-macos 3 errors
+src-zig/gc.zig:306:62: error: no field or member function named 'DefaultContext' in 'fn (comptime type, comptime type, comptime type, comptime u64) type'
+src-zig/gc.zig:711:46: error: expected optional type, found '*gc.ObjectHeader'
+/opt/zig/lib/std/posix.zig:5022:38: error: comptime call of extern function
+/opt/zig/lib/std/Thread.zig:655:36: note: called from here
+/opt/zig/lib/std/Thread.zig:288:28: note: called from here
+src-zig/gc.zig:118:53: note: called from here
+error: the following command failed with 3 compilation errors:
+/opt/zig/zig build-exe -ODebug -target x86_64-macos -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/concurrency_test.zig --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-concurrency-test --listen=- 
+install
++- install cursed-concurrency-benchmark
+   +- zig build-exe cursed-concurrency-benchmark Debug x86_64-macos 3 errors
+src-zig/gc.zig:306:62: error: no field or member function named 'DefaultContext' in 'fn (comptime type, comptime type, comptime type, comptime u64) type'
+src-zig/gc.zig:711:46: error: expected optional type, found '*gc.ObjectHeader'
+/opt/zig/lib/std/posix.zig:5022:38: error: comptime call of extern function
+/opt/zig/lib/std/Thread.zig:655:36: note: called from here
+/opt/zig/lib/std/Thread.zig:288:28: note: called from here
+src-zig/gc.zig:118:53: note: called from here
+error: the following command failed with 3 compilation errors:
+/opt/zig/zig build-exe -ODebug -target x86_64-macos -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/concurrency_benchmark.zig --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-concurrency-benchmark --listen=- 
+install
++- install cursed-platform-test
+   +- zig build-exe cursed-platform-test Debug x86_64-macos 1 errors
+src-zig/platform_test.zig:10:14: error: expected 2 argument(s), found 1
+/opt/zig/lib/std/debug.zig:84:5: note: function declared here
+error: the following command failed with 1 compilation errors:
+/opt/zig/zig build-exe -ODebug -target x86_64-macos -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/platform_test.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-platform-test --listen=- 
+Build Summary: 12/19 steps succeeded; 3 failed (disable with --summary none)
+install transitive failure
++- install cursed-concurrency-benchmark transitive failure
+|  +- zig build-exe cursed-concurrency-benchmark Debug x86_64-macos 3 errors
++- install cursed-concurrency-test transitive failure
+|  +- zig build-exe cursed-concurrency-test Debug x86_64-macos 3 errors
++- install cursed-platform-test transitive failure
+   +- zig build-exe cursed-platform-test Debug x86_64-macos 1 errors
+error: the following build command failed with exit code 1:
+/home/ghuntley/cursed/zig-cache/o/d7d57ac5a30d3c52b25fff2bced6e397/build /opt/zig/zig /home/ghuntley/cursed /home/ghuntley/cursed/zig-cache /home/ghuntley/.cache/zig --seed 0xadd7fd86 -Zb5069a34cd455ba4 -Dtarget=x86_64-macos

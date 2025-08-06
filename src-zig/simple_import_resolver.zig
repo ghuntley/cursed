@@ -7,23 +7,97 @@ const Allocator = std.mem.Allocator;
 // Handles "yeet" import statements without complex formatting
 
 pub fn resolveStdlibImport(allocator: Allocator, module_name: []const u8) !bool {
-    // Get current working directory
+    return resolveStdlibImportWithPath(allocator, module_name, null);
+}
+
+pub fn resolveStdlibImportWithPath(allocator: Allocator, module_name: []const u8, stdlib_path_override: ?[]const u8) !bool {
     const cwd = std.fs.cwd();
     var buf: [1024]u8 = undefined;
-    const current_dir = try cwd.realpath(".", &buf);
     
-    // Build stdlib path manually
     var stdlib_path = std.ArrayList(u8).init(allocator);
     defer stdlib_path.deinit();
     
-    try stdlib_path.appendSlice(current_dir);
-    try stdlib_path.appendSlice("/stdlib/");
+    if (stdlib_path_override) |custom_path| {
+        // Use provided stdlib path
+        try stdlib_path.appendSlice(custom_path);
+    } else {
+        // Find project root by looking for build.zig or other marker files
+        const project_root = findProjectRoot(allocator) catch blk: {
+            // Fallback to current directory
+            const current_dir = try cwd.realpath(".", &buf);
+            break :blk try allocator.dupe(u8, current_dir);
+        };
+        defer allocator.free(project_root);
+        
+        try stdlib_path.appendSlice(project_root);
+        try stdlib_path.appendSlice("/stdlib");
+    }
+    
+    try stdlib_path.append('/');
     try stdlib_path.appendSlice(module_name);
     try stdlib_path.appendSlice("/mod.csd");
     
     // Check if file exists
     cwd.access(stdlib_path.items, .{}) catch return false;
     return true;
+}
+
+fn findProjectRoot(allocator: Allocator) ![]const u8 {
+    const cwd = std.fs.cwd();
+    var buf: [1024]u8 = undefined;
+    const current_path = try cwd.realpath(".", &buf);
+    
+    // Look for marker files that indicate project root
+    const markers = [_][]const u8{
+        "build.zig",
+        "Cargo.toml", 
+        "CursedPackage.toml",
+        "AGENT.md",
+        ".git"
+    };
+    
+    var path_components = std.ArrayList([]const u8).init(allocator);
+    defer path_components.deinit();
+    
+    // Split path into components
+    var iter = std.mem.splitScalar(u8, current_path, '/');
+    while (iter.next()) |component| {
+        if (component.len > 0) {
+            try path_components.append(component);
+        }
+    }
+    
+    // Walk up the directory tree
+    while (path_components.items.len > 0) {
+        // Build current test path
+        var test_path = std.ArrayList(u8).init(allocator);
+        defer test_path.deinit();
+        
+        for (path_components.items) |component| {
+            try test_path.append('/');
+            try test_path.appendSlice(component);
+        }
+        
+        // Check for marker files
+        for (markers) |marker| {
+            var marker_path = std.ArrayList(u8).init(allocator);
+            defer marker_path.deinit();
+            
+            try marker_path.appendSlice(test_path.items);
+            try marker_path.append('/');
+            try marker_path.appendSlice(marker);
+            
+            cwd.access(marker_path.items, .{}) catch continue;
+            // Found marker file, this is the project root
+            return try allocator.dupe(u8, test_path.items);
+        }
+        
+        // Remove last component and try parent directory
+        _ = path_components.pop();
+    }
+    
+    // Fallback to root directory
+    return try allocator.dupe(u8, "/");
 }
 
 pub fn extractImports(allocator: Allocator, source: []const u8) !ArrayList([]const u8) {
@@ -52,10 +126,14 @@ pub fn extractImports(allocator: Allocator, source: []const u8) !ArrayList([]con
 }
 
 pub fn validateImports(allocator: Allocator, imports: ArrayList([]const u8)) !bool {
+    return validateImportsWithPath(allocator, imports, null);
+}
+
+pub fn validateImportsWithPath(allocator: Allocator, imports: ArrayList([]const u8), stdlib_path_override: ?[]const u8) !bool {
     var all_valid = true;
     
     for (imports.items) |module_name| {
-        if (resolveStdlibImport(allocator, module_name)) |valid| {
+        if (resolveStdlibImportWithPath(allocator, module_name, stdlib_path_override)) |valid| {
             if (valid) {
                 print("✅ Module '{s}' found\n", .{module_name});
             } else {

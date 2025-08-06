@@ -35,13 +35,18 @@ const FormattingContext = struct {
     line_length: u32 = 0,
     
     fn getIndent(self: *const FormattingContext, allocator: Allocator) ![]const u8 {
-        const indent_char = if (self.config.use_spaces) ' ' else '\t';
         const indent_size = if (self.config.use_spaces) self.config.indent_size else 1;
         const total_indent = self.current_indent * indent_size;
         
         const indent = try allocator.alloc(u8, total_indent);
-        for (indent) |*char| {
-            char.* = indent_char;
+        if (self.config.use_spaces) {
+            for (indent) |*char| {
+                char.* = ' ';
+            }
+        } else {
+            for (indent) |*char| {
+                char.* = '\t';
+            }
         }
         return indent;
     }
@@ -71,7 +76,6 @@ pub const Formatter = struct {
         
         // Tokenize source
         var token_lexer = lexer.Lexer.init(self.allocator, source);
-        defer token_lexer.deinit();
         
         const tokens = try token_lexer.tokenize();
         defer tokens.deinit();
@@ -88,8 +92,8 @@ pub const Formatter = struct {
         while (i < tokens.len) {
             const token = tokens[i];
             
-            switch (token.type) {
-                .Keyword => try self.formatKeyword(token, context),
+            switch (token.kind) {
+                .Slay, .Sus, .Facts, .Lowkey, .Highkey, .Periodt, .Stan, .Bestie, .Squad, .Collab, .Yeet, .Later => try self.formatKeyword(token, context),
                 .Identifier => try self.formatIdentifier(token, context),
                 .LeftBrace => try self.formatLeftBrace(token, context),
                 .RightBrace => try self.formatRightBrace(token, context),
@@ -97,12 +101,11 @@ pub const Formatter = struct {
                 .RightParen => try self.formatRightParen(token, context),
                 .Semicolon => try self.formatSemicolon(token, context),
                 .Comma => try self.formatComma(token, context),
-                .Operator => try self.formatOperator(token, context),
-                .String => try self.formatString(token, context),
-                .Number => try self.formatNumber(token, context),
+                .Equal, .Plus, .Minus, .Star, .Slash, .Percent => try self.formatOperator(token, context),
+                .StringLiteral, .String => try self.formatString(token, context),
+                .Number, .Integer => try self.formatNumber(token, context),
                 .Comment => try self.formatComment(token, context),
                 .Newline => try self.formatNewline(token, context),
-                .Whitespace => {}, // Skip whitespace, we'll add our own
                 else => try self.formatDefault(token, context),
             }
             
@@ -111,7 +114,7 @@ pub const Formatter = struct {
     }
     
     fn formatKeyword(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
-        const keyword = token.value;
+        const keyword = token.lexeme;
         
         // Handle function declarations
         if (std.mem.eql(u8, keyword, "slay")) {
@@ -124,8 +127,8 @@ pub const Formatter = struct {
             context.line_length += 4;
         }
         // Handle returns
-        else if (std.mem.eql(u8, keyword, "damn")) {
-            try self.output.appendSlice("damn ");
+        else if (std.mem.eql(u8, keyword, "yolo")) {
+            try self.output.appendSlice("yolo ");
             context.line_length += 5;
         }
         // Handle loops
@@ -134,9 +137,9 @@ pub const Formatter = struct {
             context.line_length += 7;
         }
         // Handle conditionals
-        else if (std.mem.eql(u8, keyword, "ready")) {
-            try self.output.appendSlice("ready ");
-            context.line_length += 6;
+        else if (std.mem.eql(u8, keyword, "lowkey")) {
+            try self.output.appendSlice("lowkey ");
+            context.line_length += 7;
         }
         // Handle goroutines
         else if (std.mem.eql(u8, keyword, "stan")) {
@@ -164,22 +167,23 @@ pub const Formatter = struct {
         else {
             try self.output.appendSlice(keyword);
             try self.output.append(' ');
-            context.line_length += keyword.len + 1;
+            context.line_length += @as(u32, @intCast(keyword.len + 1));
         }
     }
     
     fn formatIdentifier(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
-        try self.output.appendSlice(token.value);
-        context.line_length += token.value.len;
+        try self.output.appendSlice(token.lexeme);
+        context.line_length += @as(u32, @intCast(token.lexeme.len));
     }
     
     fn formatLeftBrace(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        _ = token;
         if (context.config.newline_before_brace) {
             try self.output.appendSlice("\n");
             const indent = try context.getIndent(self.allocator);
             defer self.allocator.free(indent);
             try self.output.appendSlice(indent);
-            context.line_length = indent.len;
+            context.line_length = @as(u32, @intCast(indent.len));
         } else {
             if (context.line_length > 0 and self.output.items[self.output.items.len - 1] != ' ') {
                 try self.output.append(' ');
@@ -197,6 +201,7 @@ pub const Formatter = struct {
     }
     
     fn formatRightBrace(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        _ = token;
         context.current_indent -= 1;
         
         // Ensure we're on a new line
@@ -209,24 +214,27 @@ pub const Formatter = struct {
         try self.output.appendSlice(indent);
         try self.output.append('}');
         
-        context.line_length = indent.len + 1;
+        context.line_length = @as(u32, @intCast(indent.len + 1));
         context.in_struct_definition = false;
         context.in_interface_definition = false;
     }
     
     fn formatLeftParen(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        _ = token;
         try self.output.append('(');
         context.line_length += 1;
         context.in_function_params = true;
     }
     
     fn formatRightParen(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        _ = token;
         try self.output.append(')');
         context.line_length += 1;
         context.in_function_params = false;
     }
     
     fn formatSemicolon(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        _ = token;
         // CURSED doesn't typically use semicolons, but handle them if present
         try self.output.append(';');
         try self.output.append('\n');
@@ -234,6 +242,7 @@ pub const Formatter = struct {
     }
     
     fn formatComma(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        _ = token;
         try self.output.append(',');
         
         if (context.in_function_params) {
@@ -244,12 +253,12 @@ pub const Formatter = struct {
             const indent = try context.getIndent(self.allocator);
             defer self.allocator.free(indent);
             try self.output.appendSlice(indent);
-            context.line_length = indent.len;
+            context.line_length = @as(u32, @intCast(indent.len));
         }
     }
     
     fn formatOperator(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
-        const operator = token.value;
+        const operator = token.lexeme;
         
         if (context.config.space_around_operators) {
             // Add space before operator
@@ -260,33 +269,33 @@ pub const Formatter = struct {
             
             try self.output.appendSlice(operator);
             try self.output.append(' ');
-            context.line_length += operator.len + 1;
+            context.line_length += @as(u32, @intCast(operator.len + 1));
         } else {
             try self.output.appendSlice(operator);
-            context.line_length += operator.len;
+            context.line_length += @as(u32, @intCast(operator.len));
         }
     }
     
     fn formatString(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
-        try self.output.appendSlice(token.value);
-        context.line_length += token.value.len;
+        try self.output.appendSlice(token.lexeme);
+        context.line_length += @as(u32, @intCast(token.lexeme.len));
     }
     
     fn formatNumber(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
-        try self.output.appendSlice(token.value);
-        context.line_length += token.value.len;
+        try self.output.appendSlice(token.lexeme);
+        context.line_length += @as(u32, @intCast(token.lexeme.len));
     }
     
     fn formatComment(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
         // Handle both comment styles
-        if (std.mem.startsWith(u8, token.value, "fr fr")) {
+        if (std.mem.startsWith(u8, token.lexeme, "fr fr")) {
             try self.output.appendSlice("fr fr ");
-            try self.output.appendSlice(token.value[5..]);
-        } else if (std.mem.startsWith(u8, token.value, "#")) {
+            try self.output.appendSlice(token.lexeme[5..]);
+        } else if (std.mem.startsWith(u8, token.lexeme, "#")) {
             try self.output.appendSlice("# ");
-            try self.output.appendSlice(token.value[1..]);
+            try self.output.appendSlice(token.lexeme[1..]);
         } else {
-            try self.output.appendSlice(token.value);
+            try self.output.appendSlice(token.lexeme);
         }
         
         try self.output.append('\n');
@@ -294,17 +303,19 @@ pub const Formatter = struct {
     }
     
     fn formatNewline(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        _ = token;
         try self.output.append('\n');
         context.line_length = 0;
     }
     
     fn formatDefault(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
-        try self.output.appendSlice(token.value);
-        context.line_length += token.value.len;
+        try self.output.appendSlice(token.lexeme);
+        context.line_length += @as(u32, @intCast(token.lexeme.len));
     }
     
     // Check if line needs breaking
     fn needsLineBreak(self: *Formatter, context: *FormattingContext) bool {
+        _ = self;
         return context.line_length > context.config.max_line_length;
     }
 };
@@ -334,7 +345,7 @@ pub fn formatFile(allocator: Allocator, file_path: []const u8, config: Formatter
 }
 
 pub fn formatDirectory(allocator: Allocator, dir_path: []const u8, config: FormatterConfig) !void {
-    const dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
+    var dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
     defer dir.close();
     
     var iterator = dir.iterate();
@@ -363,7 +374,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
     
     if (args.len < 2) {
-        std.log.err("Usage: cursed-fmt <file or directory>");
+        std.log.err("Usage: cursed-fmt <file or directory>", .{});
         return;
     }
     
