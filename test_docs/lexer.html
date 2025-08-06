@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lexer - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>lexer</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="new_lexer">
+                <h4>new_lexer</h4>
+                <pre class="signature"><code>slay new_lexer(input: tea) -> Lexer {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L116">lexer.csd:116</a></p>
+            </div>
+            <div class="doc-item" id="read_char">
+                <h4>read_char</h4>
+                <pre class="signature"><code>slay read_char(lexer: Lexer) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L131">lexer.csd:131</a></p>
+            </div>
+            <div class="doc-item" id="peek_char">
+                <h4>peek_char</h4>
+                <pre class="signature"><code>slay peek_char(lexer: Lexer) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L150">lexer.csd:150</a></p>
+            </div>
+            <div class="doc-item" id="skip_whitespace">
+                <h4>skip_whitespace</h4>
+                <pre class="signature"><code>slay skip_whitespace(lexer: Lexer) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L159">lexer.csd:159</a></p>
+            </div>
+            <div class="doc-item" id="read_identifier">
+                <h4>read_identifier</h4>
+                <pre class="signature"><code>slay read_identifier(lexer: Lexer) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L166">lexer.csd:166</a></p>
+            </div>
+            <div class="doc-item" id="read_number">
+                <h4>read_number</h4>
+                <pre class="signature"><code>slay read_number(lexer: Lexer) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L175">lexer.csd:175</a></p>
+            </div>
+            <div class="doc-item" id="read_string">
+                <h4>read_string</h4>
+                <pre class="signature"><code>slay read_string(lexer: Lexer) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L190">lexer.csd:190</a></p>
+            </div>
+            <div class="doc-item" id="read_line_comment">
+                <h4>read_line_comment</h4>
+                <pre class="signature"><code>slay read_line_comment(lexer: Lexer) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L210">lexer.csd:210</a></p>
+            </div>
+            <div class="doc-item" id="is_letter">
+                <h4>is_letter</h4>
+                <pre class="signature"><code>slay is_letter(ch: tea) -> cap {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L219">lexer.csd:219</a></p>
+            </div>
+            <div class="doc-item" id="is_digit">
+                <h4>is_digit</h4>
+                <pre class="signature"><code>slay is_digit(ch: tea) -> cap {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L224">lexer.csd:224</a></p>
+            </div>
+            <div class="doc-item" id="lookup_ident">
+                <h4>lookup_ident</h4>
+                <pre class="signature"><code>slay lookup_ident(ident: tea) -> TokenType {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L229">lexer.csd:229</a></p>
+            </div>
+            <div class="doc-item" id="new_token">
+                <h4>new_token</h4>
+                <pre class="signature"><code>slay new_token(token_type: TokenType, literal: tea, line: normie, column: normie, position: normie) -> Token {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L270">lexer.csd:270</a></p>
+            </div>
+            <div class="doc-item" id="next_token">
+                <h4>next_token</h4>
+                <pre class="signature"><code>slay next_token(lexer: Lexer) -> Token? {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L281">lexer.csd:281</a></p>
+            </div>
+            <div class="doc-item" id="tokenize">
+                <h4>tokenize</h4>
+                <pre class="signature"><code>slay tokenize(input: tea) -> Token[]? {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L488">lexer.csd:488</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="Token">
+                <h4>Token</h4>
+                <pre class="signature"><code>squad Token {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L97">lexer.csd:97</a></p>
+            </div>
+            <div class="doc-item" id="Lexer">
+                <h4>Lexer</h4>
+                <pre class="signature"><code>squad Lexer {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/lexer.csd#L106">lexer.csd:106</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

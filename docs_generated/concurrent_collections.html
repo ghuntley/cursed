@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>concurrent_collections - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>concurrent_collections</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="atomic_load_int">
+                <h4>atomic_load_int</h4>
+                <pre class="signature"><code>slay atomic_load_int(ptr *normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L10">concurrent_collections.csd:10</a></p>
+            </div>
+            <div class="doc-item" id="atomic_store_int">
+                <h4>atomic_store_int</h4>
+                <pre class="signature"><code>slay atomic_store_int(ptr *normie, value normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L15">concurrent_collections.csd:15</a></p>
+            </div>
+            <div class="doc-item" id="atomic_compare_and_swap_int">
+                <h4>atomic_compare_and_swap_int</h4>
+                <pre class="signature"><code>slay atomic_compare_and_swap_int(ptr *normie, expected normie, new_value normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L20">concurrent_collections.csd:20</a></p>
+            </div>
+            <div class="doc-item" id="atomic_fetch_add_int">
+                <h4>atomic_fetch_add_int</h4>
+                <pre class="signature"><code>slay atomic_fetch_add_int(ptr *normie, value normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L29">concurrent_collections.csd:29</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_stack_new">
+                <h4>lockfree_stack_new</h4>
+                <pre class="signature"><code>slay lockfree_stack_new() LockFreeStack {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L50">concurrent_collections.csd:50</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_stack_push">
+                <h4>lockfree_stack_push</h4>
+                <pre class="signature"><code>slay lockfree_stack_push(stack LockFreeStack, data tea) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L57">concurrent_collections.csd:57</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_stack_pop">
+                <h4>lockfree_stack_pop</h4>
+                <pre class="signature"><code>slay lockfree_stack_pop(stack LockFreeStack) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L76">concurrent_collections.csd:76</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_stack_size">
+                <h4>lockfree_stack_size</h4>
+                <pre class="signature"><code>slay lockfree_stack_size(stack LockFreeStack) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L96">concurrent_collections.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_stack_is_empty">
+                <h4>lockfree_stack_is_empty</h4>
+                <pre class="signature"><code>slay lockfree_stack_is_empty(stack LockFreeStack) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L100">concurrent_collections.csd:100</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_queue_new">
+                <h4>lockfree_queue_new</h4>
+                <pre class="signature"><code>slay lockfree_queue_new() LockFreeQueue {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L119">concurrent_collections.csd:119</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_queue_enqueue">
+                <h4>lockfree_queue_enqueue</h4>
+                <pre class="signature"><code>slay lockfree_queue_enqueue(queue LockFreeQueue, data tea) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L132">concurrent_collections.csd:132</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_queue_dequeue">
+                <h4>lockfree_queue_dequeue</h4>
+                <pre class="signature"><code>slay lockfree_queue_dequeue(queue LockFreeQueue) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L159">concurrent_collections.csd:159</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_queue_size">
+                <h4>lockfree_queue_size</h4>
+                <pre class="signature"><code>slay lockfree_queue_size(queue LockFreeQueue) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L184">concurrent_collections.csd:184</a></p>
+            </div>
+            <div class="doc-item" id="lockfree_queue_is_empty">
+                <h4>lockfree_queue_is_empty</h4>
+                <pre class="signature"><code>slay lockfree_queue_is_empty(queue LockFreeQueue) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L188">concurrent_collections.csd:188</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_advanced_new">
+                <h4>concurrent_hashmap_advanced_new</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_advanced_new(bucket_count normie) ConcurrentHashMapAdvanced {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L208">concurrent_collections.csd:208</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_advanced_get_bucket">
+                <h4>concurrent_hashmap_advanced_get_bucket</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_advanced_get_bucket(chm ConcurrentHashMapAdvanced, key tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L225">concurrent_collections.csd:225</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_advanced_insert">
+                <h4>concurrent_hashmap_advanced_insert</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_advanced_insert(chm ConcurrentHashMapAdvanced, key tea, value tea) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L230">concurrent_collections.csd:230</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_advanced_get">
+                <h4>concurrent_hashmap_advanced_get</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_advanced_get(chm ConcurrentHashMapAdvanced, key tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L265">concurrent_collections.csd:265</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_advanced_remove">
+                <h4>concurrent_hashmap_advanced_remove</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_advanced_remove(chm ConcurrentHashMapAdvanced, key tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L288">concurrent_collections.csd:288</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_advanced_size">
+                <h4>concurrent_hashmap_advanced_size</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_advanced_size(chm ConcurrentHashMapAdvanced) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L313">concurrent_collections.csd:313</a></p>
+            </div>
+            <div class="doc-item" id="rwlock_new">
+                <h4>rwlock_new</h4>
+                <pre class="signature"><code>slay rwlock_new() ReadWriteLock {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L327">concurrent_collections.csd:327</a></p>
+            </div>
+            <div class="doc-item" id="rwlock_read_lock">
+                <h4>rwlock_read_lock</h4>
+                <pre class="signature"><code>slay rwlock_read_lock(rwlock ReadWriteLock) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L335">concurrent_collections.csd:335</a></p>
+            </div>
+            <div class="doc-item" id="rwlock_read_unlock">
+                <h4>rwlock_read_unlock</h4>
+                <pre class="signature"><code>slay rwlock_read_unlock(rwlock ReadWriteLock) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L348">concurrent_collections.csd:348</a></p>
+            </div>
+            <div class="doc-item" id="rwlock_write_lock">
+                <h4>rwlock_write_lock</h4>
+                <pre class="signature"><code>slay rwlock_write_lock(rwlock ReadWriteLock) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L352">concurrent_collections.csd:352</a></p>
+            </div>
+            <div class="doc-item" id="rwlock_write_unlock">
+                <h4>rwlock_write_unlock</h4>
+                <pre class="signature"><code>slay rwlock_write_unlock(rwlock ReadWriteLock) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L364">concurrent_collections.csd:364</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_set_new">
+                <h4>concurrent_set_new</h4>
+                <pre class="signature"><code>slay concurrent_set_new(bucket_count normie) ConcurrentSet {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L377">concurrent_collections.csd:377</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_set_add">
+                <h4>concurrent_set_add</h4>
+                <pre class="signature"><code>slay concurrent_set_add(set ConcurrentSet, item tea) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L383">concurrent_collections.csd:383</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_set_contains">
+                <h4>concurrent_set_contains</h4>
+                <pre class="signature"><code>slay concurrent_set_contains(set ConcurrentSet, item tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L387">concurrent_collections.csd:387</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_set_remove">
+                <h4>concurrent_set_remove</h4>
+                <pre class="signature"><code>slay concurrent_set_remove(set ConcurrentSet, item tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L392">concurrent_collections.csd:392</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_set_size">
+                <h4>concurrent_set_size</h4>
+                <pre class="signature"><code>slay concurrent_set_size(set ConcurrentSet) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L396">concurrent_collections.csd:396</a></p>
+            </div>
+            <div class="doc-item" id="work_stealing_queue_new">
+                <h4>work_stealing_queue_new</h4>
+                <pre class="signature"><code>slay work_stealing_queue_new(capacity normie) WorkStealingQueue {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L411">concurrent_collections.csd:411</a></p>
+            </div>
+            <div class="doc-item" id="work_stealing_queue_push">
+                <h4>work_stealing_queue_push</h4>
+                <pre class="signature"><code>slay work_stealing_queue_push(wsq WorkStealingQueue, item tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L420">concurrent_collections.csd:420</a></p>
+            </div>
+            <div class="doc-item" id="work_stealing_queue_pop">
+                <h4>work_stealing_queue_pop</h4>
+                <pre class="signature"><code>slay work_stealing_queue_pop(wsq WorkStealingQueue) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L433">concurrent_collections.csd:433</a></p>
+            </div>
+            <div class="doc-item" id="work_stealing_queue_steal">
+                <h4>work_stealing_queue_steal</h4>
+                <pre class="signature"><code>slay work_stealing_queue_steal(wsq WorkStealingQueue) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L461">concurrent_collections.csd:461</a></p>
+            </div>
+            <div class="doc-item" id="work_stealing_queue_size">
+                <h4>work_stealing_queue_size</h4>
+                <pre class="signature"><code>slay work_stealing_queue_size(wsq WorkStealingQueue) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L478">concurrent_collections.csd:478</a></p>
+            </div>
+            <div class="doc-item" id="work_stealing_queue_is_empty">
+                <h4>work_stealing_queue_is_empty</h4>
+                <pre class="signature"><code>slay work_stealing_queue_is_empty(wsq WorkStealingQueue) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L484">concurrent_collections.csd:484</a></p>
+            </div>
+            <div class="doc-item" id="bucket_lock">
+                <h4>bucket_lock</h4>
+                <pre class="signature"><code>slay bucket_lock(lock *lit) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L492">concurrent_collections.csd:492</a></p>
+            </div>
+            <div class="doc-item" id="bucket_unlock">
+                <h4>bucket_unlock</h4>
+                <pre class="signature"><code>slay bucket_unlock(lock *lit) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L501">concurrent_collections.csd:501</a></p>
+            </div>
+            <div class="doc-item" id="atomic_compare_and_swap_ptr">
+                <h4>atomic_compare_and_swap_ptr</h4>
+                <pre class="signature"><code>slay atomic_compare_and_swap_ptr(ptr **extra, expected *extra, new_value *extra) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L506">concurrent_collections.csd:506</a></p>
+            </div>
+            <div class="doc-item" id="memory_barrier_full">
+                <h4>memory_barrier_full</h4>
+                <pre class="signature"><code>slay memory_barrier_full() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L519">concurrent_collections.csd:519</a></p>
+            </div>
+            <div class="doc-item" id="memory_barrier_acquire">
+                <h4>memory_barrier_acquire</h4>
+                <pre class="signature"><code>slay memory_barrier_acquire() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L524">concurrent_collections.csd:524</a></p>
+            </div>
+            <div class="doc-item" id="memory_barrier_release">
+                <h4>memory_barrier_release</h4>
+                <pre class="signature"><code>slay memory_barrier_release() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L529">concurrent_collections.csd:529</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_stats_new">
+                <h4>concurrent_stats_new</h4>
+                <pre class="signature"><code>slay concurrent_stats_new() ConcurrentStats {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L545">concurrent_collections.csd:545</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_stats_increment_operations">
+                <h4>concurrent_stats_increment_operations</h4>
+                <pre class="signature"><code>slay concurrent_stats_increment_operations(stats ConcurrentStats) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L554">concurrent_collections.csd:554</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_stats_increment_successful">
+                <h4>concurrent_stats_increment_successful</h4>
+                <pre class="signature"><code>slay concurrent_stats_increment_successful(stats ConcurrentStats) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L558">concurrent_collections.csd:558</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_stats_increment_failed">
+                <h4>concurrent_stats_increment_failed</h4>
+                <pre class="signature"><code>slay concurrent_stats_increment_failed(stats ConcurrentStats) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L562">concurrent_collections.csd:562</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_stats_report">
+                <h4>concurrent_stats_report</h4>
+                <pre class="signature"><code>slay concurrent_stats_report(stats ConcurrentStats) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/concurrent_collections.csd#L566">concurrent_collections.csd:566</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

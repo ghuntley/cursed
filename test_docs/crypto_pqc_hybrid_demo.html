@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>crypto_pqc_hybrid_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>crypto_pqc_hybrid_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L10">crypto_pqc_hybrid_demo.csd:10</a></p>
+            </div>
+            <div class="doc-item" id="demo_hybrid_kem">
+                <h4>demo_hybrid_kem</h4>
+                <pre class="signature"><code>slay demo_hybrid_kem() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L32">crypto_pqc_hybrid_demo.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="demo_hybrid_signatures">
+                <h4>demo_hybrid_signatures</h4>
+                <pre class="signature"><code>slay demo_hybrid_signatures() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L101">crypto_pqc_hybrid_demo.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="demo_migration_strategy">
+                <h4>demo_migration_strategy</h4>
+                <pre class="signature"><code>slay demo_migration_strategy() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L163">crypto_pqc_hybrid_demo.csd:163</a></p>
+            </div>
+            <div class="doc-item" id="demo_security_analysis">
+                <h4>demo_security_analysis</h4>
+                <pre class="signature"><code>slay demo_security_analysis() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L201">crypto_pqc_hybrid_demo.csd:201</a></p>
+            </div>
+            <div class="doc-item" id="demo_performance_comparison">
+                <h4>demo_performance_comparison</h4>
+                <pre class="signature"><code>slay demo_performance_comparison() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L242">crypto_pqc_hybrid_demo.csd:242</a></p>
+            </div>
+            <div class="doc-item" id="format_bytes">
+                <h4>format_bytes</h4>
+                <pre class="signature"><code>slay format_bytes(sus size: usize) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L291">crypto_pqc_hybrid_demo.csd:291</a></p>
+            </div>
+            <div class="doc-item" id="format_duration">
+                <h4>format_duration</h4>
+                <pre class="signature"><code>slay format_duration(sus duration: Duration) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L301">crypto_pqc_hybrid_demo.csd:301</a></p>
+            </div>
+            <div class="doc-item" id="demo_real_world_scenarios">
+                <h4>demo_real_world_scenarios</h4>
+                <pre class="signature"><code>slay demo_real_world_scenarios() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L315">crypto_pqc_hybrid_demo.csd:315</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="hybrid_kem">
+                <h4>hybrid_kem</h4>
+                <pre class="signature"><code>facts hybrid_kem = HybridKem::new(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L37">crypto_pqc_hybrid_demo.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="key_pair">
+                <h4>key_pair</h4>
+                <pre class="signature"><code>facts key_pair = hybrid_kem.keygen()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L50">crypto_pqc_hybrid_demo.csd:50</a></p>
+            </div>
+            <div class="doc-item" id="(ciphertext, shared_secret1)">
+                <h4>(ciphertext, shared_secret1)</h4>
+                <pre class="signature"><code>facts (ciphertext, shared_secret1) = hybrid_kem.encaps(&key_pair)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L60">crypto_pqc_hybrid_demo.csd:60</a></p>
+            </div>
+            <div class="doc-item" id="shared_secret2">
+                <h4>shared_secret2</h4>
+                <pre class="signature"><code>facts shared_secret2 = hybrid_kem.decaps(&key_pair, &ciphertext)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L67">crypto_pqc_hybrid_demo.csd:67</a></p>
+            </div>
+            <div class="doc-item" id="classical_secret">
+                <h4>classical_secret</h4>
+                <pre class="signature"><code>facts classical_secret = vec![1u8, 2, 3, 4, 5, 6, 7, 8];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L79">crypto_pqc_hybrid_demo.csd:79</a></p>
+            </div>
+            <div class="doc-item" id="pqc_secret">
+                <h4>pqc_secret</h4>
+                <pre class="signature"><code>facts pqc_secret = vec![8u8, 7, 6, 5, 4, 3, 2, 1];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L80">crypto_pqc_hybrid_demo.csd:80</a></p>
+            </div>
+            <div class="doc-item" id="concat_result">
+                <h4>concat_result</h4>
+                <pre class="signature"><code>facts concat_result = hybrid_kem.combine_shared_secrets(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L83">crypto_pqc_hybrid_demo.csd:83</a></p>
+            </div>
+            <div class="doc-item" id="hkdf_result">
+                <h4>hkdf_result</h4>
+                <pre class="signature"><code>facts hkdf_result = hybrid_kem.combine_shared_secrets(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L91">crypto_pqc_hybrid_demo.csd:91</a></p>
+            </div>
+            <div class="doc-item" id="hybrid_sig">
+                <h4>hybrid_sig</h4>
+                <pre class="signature"><code>facts hybrid_sig = HybridSignature::new(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L106">crypto_pqc_hybrid_demo.csd:106</a></p>
+            </div>
+            <div class="doc-item" id="sig_keys">
+                <h4>sig_keys</h4>
+                <pre class="signature"><code>facts sig_keys = hybrid_sig.keygen()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L119">crypto_pqc_hybrid_demo.csd:119</a></p>
+            </div>
+            <div class="doc-item" id="message">
+                <h4>message</h4>
+                <pre class="signature"><code>facts message = b"Hello, post-quantum cryptographic world! This message demonstrates hybrid signatures.";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L126">crypto_pqc_hybrid_demo.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="signature">
+                <h4>signature</h4>
+                <pre class="signature"><code>facts signature = hybrid_sig.sign(&sig_keys, message)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L130">crypto_pqc_hybrid_demo.csd:130</a></p>
+            </div>
+            <div class="doc-item" id="is_valid">
+                <h4>is_valid</h4>
+                <pre class="signature"><code>facts is_valid = hybrid_sig.verify(&sig_keys, message, &signature)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L139">crypto_pqc_hybrid_demo.csd:139</a></p>
+            </div>
+            <div class="doc-item" id="modified_message">
+                <h4>modified_message</h4>
+                <pre class="signature"><code>facts modified_message = b"Hello, modified message!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L149">crypto_pqc_hybrid_demo.csd:149</a></p>
+            </div>
+            <div class="doc-item" id="is_invalid">
+                <h4>is_invalid</h4>
+                <pre class="signature"><code>facts is_invalid = hybrid_sig.verify(&sig_keys, modified_message, &signature)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L151">crypto_pqc_hybrid_demo.csd:151</a></p>
+            </div>
+            <div class="doc-item" id="current_phase">
+                <h4>current_phase</h4>
+                <pre class="signature"><code>facts current_phase = strategy.current_phase();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L173">crypto_pqc_hybrid_demo.csd:173</a></p>
+            </div>
+            <div class="doc-item" id="matrix">
+                <h4>matrix</h4>
+                <pre class="signature"><code>facts matrix = HybridCompatibilityMatrix::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L205">crypto_pqc_hybrid_demo.csd:205</a></p>
+            </div>
+            <div class="doc-item" id="test_combinations">
+                <h4>test_combinations</h4>
+                <pre class="signature"><code>facts test_combinations = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L210">crypto_pqc_hybrid_demo.csd:210</a></p>
+            </div>
+            <div class="doc-item" id="rating">
+                <h4>rating</h4>
+                <pre class="signature"><code>facts rating = matrix.get_rating(classical, pqc);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L219">crypto_pqc_hybrid_demo.csd:219</a></p>
+            </div>
+            <div class="doc-item" id="excellent_combos">
+                <h4>excellent_combos</h4>
+                <pre class="signature"><code>facts excellent_combos = matrix.get_excellent_combinations();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L224">crypto_pqc_hybrid_demo.csd:224</a></p>
+            </div>
+            <div class="doc-item" id="recommendations">
+                <h4>recommendations</h4>
+                <pre class="signature"><code>facts recommendations = matrix.get_recommended_for_security_level(*level);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L233">crypto_pqc_hybrid_demo.csd:233</a></p>
+            </div>
+            <div class="doc-item" id="configurations">
+                <h4>configurations</h4>
+                <pre class="signature"><code>facts configurations = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L248">crypto_pqc_hybrid_demo.csd:248</a></p>
+            </div>
+            <div class="doc-item" id="hybrid_kem">
+                <h4>hybrid_kem</h4>
+                <pre class="signature"><code>facts hybrid_kem = HybridKem::new(classical, pqc, level);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L257">crypto_pqc_hybrid_demo.csd:257</a></p>
+            </div>
+            <div class="doc-item" id="start_time">
+                <h4>start_time</h4>
+                <pre class="signature"><code>facts start_time = std::time::Instant::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L260">crypto_pqc_hybrid_demo.csd:260</a></p>
+            </div>
+            <div class="doc-item" id="key_pair">
+                <h4>key_pair</h4>
+                <pre class="signature"><code>facts key_pair = hybrid_kem.keygen()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L261">crypto_pqc_hybrid_demo.csd:261</a></p>
+            </div>
+            <div class="doc-item" id="keygen_time">
+                <h4>keygen_time</h4>
+                <pre class="signature"><code>facts keygen_time = start_time.elapsed();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L262">crypto_pqc_hybrid_demo.csd:262</a></p>
+            </div>
+            <div class="doc-item" id="start_time">
+                <h4>start_time</h4>
+                <pre class="signature"><code>facts start_time = std::time::Instant::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L265">crypto_pqc_hybrid_demo.csd:265</a></p>
+            </div>
+            <div class="doc-item" id="(ciphertext, shared_secret)">
+                <h4>(ciphertext, shared_secret)</h4>
+                <pre class="signature"><code>facts (ciphertext, shared_secret) = hybrid_kem.encaps(&key_pair)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L266">crypto_pqc_hybrid_demo.csd:266</a></p>
+            </div>
+            <div class="doc-item" id="encaps_time">
+                <h4>encaps_time</h4>
+                <pre class="signature"><code>facts encaps_time = start_time.elapsed();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L267">crypto_pqc_hybrid_demo.csd:267</a></p>
+            </div>
+            <div class="doc-item" id="start_time">
+                <h4>start_time</h4>
+                <pre class="signature"><code>facts start_time = std::time::Instant::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L270">crypto_pqc_hybrid_demo.csd:270</a></p>
+            </div>
+            <div class="doc-item" id="_decaps_secret">
+                <h4>_decaps_secret</h4>
+                <pre class="signature"><code>facts _decaps_secret = hybrid_kem.decaps(&key_pair, &ciphertext)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L271">crypto_pqc_hybrid_demo.csd:271</a></p>
+            </div>
+            <div class="doc-item" id="decaps_time">
+                <h4>decaps_time</h4>
+                <pre class="signature"><code>facts decaps_time = start_time.elapsed();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L272">crypto_pqc_hybrid_demo.csd:272</a></p>
+            </div>
+            <div class="doc-item" id="nanos">
+                <h4>nanos</h4>
+                <pre class="signature"><code>facts nanos = duration.as_nanos();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L302">crypto_pqc_hybrid_demo.csd:302</a></p>
+            </div>
+            <div class="doc-item" id="server_kem">
+                <h4>server_kem</h4>
+                <pre class="signature"><code>facts server_kem = HybridKem::new(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L324">crypto_pqc_hybrid_demo.csd:324</a></p>
+            </div>
+            <div class="doc-item" id="server_keys">
+                <h4>server_keys</h4>
+                <pre class="signature"><code>facts server_keys = server_kem.keygen()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L329">crypto_pqc_hybrid_demo.csd:329</a></p>
+            </div>
+            <div class="doc-item" id="(ciphertext, client_shared_secret)">
+                <h4>(ciphertext, client_shared_secret)</h4>
+                <pre class="signature"><code>facts (ciphertext, client_shared_secret) = server_kem.encaps(&server_keys)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L332">crypto_pqc_hybrid_demo.csd:332</a></p>
+            </div>
+            <div class="doc-item" id="server_shared_secret">
+                <h4>server_shared_secret</h4>
+                <pre class="signature"><code>facts server_shared_secret = server_kem.decaps(&server_keys, &ciphertext)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L335">crypto_pqc_hybrid_demo.csd:335</a></p>
+            </div>
+            <div class="doc-item" id="doc_signer">
+                <h4>doc_signer</h4>
+                <pre class="signature"><code>facts doc_signer = HybridSignature::new(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L346">crypto_pqc_hybrid_demo.csd:346</a></p>
+            </div>
+            <div class="doc-item" id="signing_keys">
+                <h4>signing_keys</h4>
+                <pre class="signature"><code>facts signing_keys = doc_signer.keygen()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L352">crypto_pqc_hybrid_demo.csd:352</a></p>
+            </div>
+            <div class="doc-item" id="important_document">
+                <h4>important_document</h4>
+                <pre class="signature"><code>facts important_document = b"IMPORTANT LEGAL CONTRACT - This document must remain verifiable for decades.";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L353">crypto_pqc_hybrid_demo.csd:353</a></p>
+            </div>
+            <div class="doc-item" id="document_signature">
+                <h4>document_signature</h4>
+                <pre class="signature"><code>facts document_signature = doc_signer.sign(&signing_keys, important_document)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L355">crypto_pqc_hybrid_demo.csd:355</a></p>
+            </div>
+            <div class="doc-item" id="is_valid">
+                <h4>is_valid</h4>
+                <pre class="signature"><code>facts is_valid = doc_signer.verify(&signing_keys, important_document, &document_signature)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pqc_hybrid_demo.csd#L356">crypto_pqc_hybrid_demo.csd:356</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

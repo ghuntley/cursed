@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>formatter_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>formatter_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="add">
+                <h4>add</h4>
+                <pre class="signature"><code>slay add(sus a int,sus b int)int{facts result=a+b;damn result;}</code></pre>
+                <p class="source">Source: <a href="file://./examples/formatter_demo.csd#L9">formatter_demo.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main(){facts p=Person{name:"Alice",age:30,email:"alice@example.com"};fmt.Println(p);lowkey p.age>=18{fmt.Println("Adult");}highkey{fmt.Println("Minor");}vibe_check p.age{mood 0,1,2:fmt.Println("Baby");mood 13,14,15,16,17:fmt.Println("Teen");basic:fmt.Println("Adult");}bestie sus i=0;i<5;i++{fmt.Printf("Count: %d\n",i);}periodt p.age>0{p.age--;fmt.Printf("Aging down: %d\n",p.age);lowkey p.age<=0{ghosted;}}bestie _,char:=flex p.name{fmt.Printf("Char: %c\n",char);}}</code></pre>
+                <p class="source">Source: <a href="file://./examples/formatter_demo.csd#L11">formatter_demo.csd:11</a></p>
+            </div>
+            <div class="doc-item" id="fibonacci">
+                <h4>fibonacci</h4>
+                <pre class="signature"><code>slay fibonacci(sus n int)int{lowkey n<=1{damn n;}damn fibonacci(n-1)+fibonacci(n-2);}</code></pre>
+                <p class="source">Source: <a href="file://./examples/formatter_demo.csd#L13">formatter_demo.csd:13</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (sus p Point)distance()float64{damn math.Sqrt(p.x*p.x+p.y*p.y);}</code></pre>
+                <p class="source">Source: <a href="file://./examples/formatter_demo.csd#L17">formatter_demo.csd:17</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="Person">
+                <h4>Person</h4>
+                <pre class="signature"><code>squad Person{name string;age int;email string;}</code></pre>
+                <p class="source">Source: <a href="file://./examples/formatter_demo.csd#L5">formatter_demo.csd:5</a></p>
+            </div>
+            <div class="doc-item" id="Point">
+                <h4>Point</h4>
+                <pre class="signature"><code>squad Point{x float64;y float64;}</code></pre>
+                <p class="source">Source: <a href="file://./examples/formatter_demo.csd#L15">formatter_demo.csd:15</a></p>
+            </div>
+        </section>
+        <section id="interfaces">
+            <h3>Interfaces</h3>
+            <div class="doc-item" id="Greeter">
+                <h4>Greeter</h4>
+                <pre class="signature"><code>collab Greeter{greet(p Person)string;farewell(name string)string;}</code></pre>
+                <p class="source">Source: <a href="file://./examples/formatter_demo.csd#L7">formatter_demo.csd:7</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

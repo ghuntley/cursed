@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>test_network_basic - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>test_network_basic</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="tcp_create">
+                <h4>tcp_create</h4>
+                <pre class="signature"><code>slay tcp_create() normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L7">test_network_basic.csd:7</a></p>
+            </div>
+            <div class="doc-item" id="udp_create">
+                <h4>udp_create</h4>
+                <pre class="signature"><code>slay udp_create() normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L13">test_network_basic.csd:13</a></p>
+            </div>
+            <div class="doc-item" id="resolve_hostname">
+                <h4>resolve_hostname</h4>
+                <pre class="signature"><code>slay resolve_hostname(hostname tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L19">test_network_basic.csd:19</a></p>
+            </div>
+            <div class="doc-item" id="resolve_ip">
+                <h4>resolve_ip</h4>
+                <pre class="signature"><code>slay resolve_ip(ip tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L36">test_network_basic.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="lookup_mx">
+                <h4>lookup_mx</h4>
+                <pre class="signature"><code>slay lookup_mx(domain tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L53">test_network_basic.csd:53</a></p>
+            </div>
+            <div class="doc-item" id="lookup_txt">
+                <h4>lookup_txt</h4>
+                <pre class="signature"><code>slay lookup_txt(domain tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L64">test_network_basic.csd:64</a></p>
+            </div>
+            <div class="doc-item" id="tcp_bind">
+                <h4>tcp_bind</h4>
+                <pre class="signature"><code>slay tcp_bind(handle normie, address tea, port normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L75">test_network_basic.csd:75</a></p>
+            </div>
+            <div class="doc-item" id="tcp_connect">
+                <h4>tcp_connect</h4>
+                <pre class="signature"><code>slay tcp_connect(handle normie, address tea, port normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L83">test_network_basic.csd:83</a></p>
+            </div>
+            <div class="doc-item" id="tcp_listen">
+                <h4>tcp_listen</h4>
+                <pre class="signature"><code>slay tcp_listen(handle normie, backlog normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L91">test_network_basic.csd:91</a></p>
+            </div>
+            <div class="doc-item" id="tcp_accept">
+                <h4>tcp_accept</h4>
+                <pre class="signature"><code>slay tcp_accept(handle normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L99">test_network_basic.csd:99</a></p>
+            </div>
+            <div class="doc-item" id="tcp_send">
+                <h4>tcp_send</h4>
+                <pre class="signature"><code>slay tcp_send(handle normie, data tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L108">test_network_basic.csd:108</a></p>
+            </div>
+            <div class="doc-item" id="tcp_recv">
+                <h4>tcp_recv</h4>
+                <pre class="signature"><code>slay tcp_recv(handle normie, max_size normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L116">test_network_basic.csd:116</a></p>
+            </div>
+            <div class="doc-item" id="tcp_close">
+                <h4>tcp_close</h4>
+                <pre class="signature"><code>slay tcp_close(handle normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L124">test_network_basic.csd:124</a></p>
+            </div>
+            <div class="doc-item" id="udp_bind">
+                <h4>udp_bind</h4>
+                <pre class="signature"><code>slay udp_bind(handle normie, address tea, port normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L129">test_network_basic.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="udp_send_to">
+                <h4>udp_send_to</h4>
+                <pre class="signature"><code>slay udp_send_to(handle normie, data tea, address tea, port normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L137">test_network_basic.csd:137</a></p>
+            </div>
+            <div class="doc-item" id="udp_recv_from">
+                <h4>udp_recv_from</h4>
+                <pre class="signature"><code>slay udp_recv_from(handle normie, max_size normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L145">test_network_basic.csd:145</a></p>
+            </div>
+            <div class="doc-item" id="udp_close">
+                <h4>udp_close</h4>
+                <pre class="signature"><code>slay udp_close(handle normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L153">test_network_basic.csd:153</a></p>
+            </div>
+            <div class="doc-item" id="http_send">
+                <h4>http_send</h4>
+                <pre class="signature"><code>slay http_send(method tea, url tea, headers tea, body tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L158">test_network_basic.csd:158</a></p>
+            </div>
+            <div class="doc-item" id="ping">
+                <h4>ping</h4>
+                <pre class="signature"><code>slay ping(hostname tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L166">test_network_basic.csd:166</a></p>
+            </div>
+            <div class="doc-item" id="get_local_ip">
+                <h4>get_local_ip</h4>
+                <pre class="signature"><code>slay get_local_ip() tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L174">test_network_basic.csd:174</a></p>
+            </div>
+            <div class="doc-item" id="network_scan">
+                <h4>network_scan</h4>
+                <pre class="signature"><code>slay network_scan(start_ip tea, end_ip tea, port normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L179">test_network_basic.csd:179</a></p>
+            </div>
+            <div class="doc-item" id="get_remote_addr">
+                <h4>get_remote_addr</h4>
+                <pre class="signature"><code>slay get_remote_addr(handle normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L187">test_network_basic.csd:187</a></p>
+            </div>
+            <div class="doc-item" id="tls_init">
+                <h4>tls_init</h4>
+                <pre class="signature"><code>slay tls_init(handle normie, hostname tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L195">test_network_basic.csd:195</a></p>
+            </div>
+            <div class="doc-item" id="tls_send">
+                <h4>tls_send</h4>
+                <pre class="signature"><code>slay tls_send(handle normie, data tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L203">test_network_basic.csd:203</a></p>
+            </div>
+            <div class="doc-item" id="tls_recv">
+                <h4>tls_recv</h4>
+                <pre class="signature"><code>slay tls_recv(handle normie, max_size normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L208">test_network_basic.csd:208</a></p>
+            </div>
+            <div class="doc-item" id="extract_host_from_url">
+                <h4>extract_host_from_url</h4>
+                <pre class="signature"><code>slay extract_host_from_url(url tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L213">test_network_basic.csd:213</a></p>
+            </div>
+            <div class="doc-item" id="extract_port_from_url">
+                <h4>extract_port_from_url</h4>
+                <pre class="signature"><code>slay extract_port_from_url(url tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L223">test_network_basic.csd:223</a></p>
+            </div>
+            <div class="doc-item" id="extract_path_from_url">
+                <h4>extract_path_from_url</h4>
+                <pre class="signature"><code>slay extract_path_from_url(url tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L236">test_network_basic.csd:236</a></p>
+            </div>
+            <div class="doc-item" id="string_length">
+                <h4>string_length</h4>
+                <pre class="signature"><code>slay string_length(text tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L247">test_network_basic.csd:247</a></p>
+            </div>
+            <div class="doc-item" id="string_contains">
+                <h4>string_contains</h4>
+                <pre class="signature"><code>slay string_contains(text tea, substring tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L261">test_network_basic.csd:261</a></p>
+            </div>
+            <div class="doc-item" id="string_substring">
+                <h4>string_substring</h4>
+                <pre class="signature"><code>slay string_substring(text tea, start normie, end normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L277">test_network_basic.csd:277</a></p>
+            </div>
+            <div class="doc-item" id="int_to_string">
+                <h4>int_to_string</h4>
+                <pre class="signature"><code>slay int_to_string(value normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L284">test_network_basic.csd:284</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/network/test_network_basic.csd#L307">test_network_basic.csd:307</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

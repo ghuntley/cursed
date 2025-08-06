@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pqc_falcon - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>pqc_falcon</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="falcon_mred">
+                <h4>falcon_mred</h4>
+                <pre class="signature"><code>slay falcon_mred(x normie) normie { fr fr Montgomery reduction for q = 12289</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L30">pqc_falcon.csd:30</a></p>
+            </div>
+            <div class="doc-item" id="falcon_modq">
+                <h4>falcon_modq</h4>
+                <pre class="signature"><code>slay falcon_modq(x normie) normie { fr fr Reduce modulo q with proper centering</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L40">pqc_falcon.csd:40</a></p>
+            </div>
+            <div class="doc-item" id="falcon_addmod">
+                <h4>falcon_addmod</h4>
+                <pre class="signature"><code>slay falcon_addmod(a normie, b normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L48">pqc_falcon.csd:48</a></p>
+            </div>
+            <div class="doc-item" id="falcon_submod">
+                <h4>falcon_submod</h4>
+                <pre class="signature"><code>slay falcon_submod(a normie, b normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L56">pqc_falcon.csd:56</a></p>
+            </div>
+            <div class="doc-item" id="falcon_mulmod">
+                <h4>falcon_mulmod</h4>
+                <pre class="signature"><code>slay falcon_mulmod(a normie, b normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L64">pqc_falcon.csd:64</a></p>
+            </div>
+            <div class="doc-item" id="falcon_ntt_forward">
+                <h4>falcon_ntt_forward</h4>
+                <pre class="signature"><code>slay falcon_ntt_forward(poly [normie], length normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L69">pqc_falcon.csd:69</a></p>
+            </div>
+            <div class="doc-item" id="falcon_ntt_inverse">
+                <h4>falcon_ntt_inverse</h4>
+                <pre class="signature"><code>slay falcon_ntt_inverse(poly [normie], length normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L97">pqc_falcon.csd:97</a></p>
+            </div>
+            <div class="doc-item" id="falcon_poly_add">
+                <h4>falcon_poly_add</h4>
+                <pre class="signature"><code>slay falcon_poly_add(result [normie], a [normie], b [normie], length normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L130">pqc_falcon.csd:130</a></p>
+            </div>
+            <div class="doc-item" id="falcon_poly_sub">
+                <h4>falcon_poly_sub</h4>
+                <pre class="signature"><code>slay falcon_poly_sub(result [normie], a [normie], b [normie], length normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L136">pqc_falcon.csd:136</a></p>
+            </div>
+            <div class="doc-item" id="falcon_poly_mul_ntt">
+                <h4>falcon_poly_mul_ntt</h4>
+                <pre class="signature"><code>slay falcon_poly_mul_ntt(result [normie], a [normie], b [normie], length normie) { fr fr Copy input polynomials</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L142">pqc_falcon.csd:142</a></p>
+            </div>
+            <div class="doc-item" id="falcon_xgcd_poly">
+                <h4>falcon_xgcd_poly</h4>
+                <pre class="signature"><code>slay falcon_xgcd_poly(u [normie], v [normie], f [normie], g [normie], length normie) { fr fr Solve f*u + g*v = gcd(f,g) = 1 in Z[x]/(x^n + 1) fr fr Simplified implementation for demonstration</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L159">pqc_falcon.csd:159</a></p>
+            </div>
+            <div class="doc-item" id="falcon_gaussian_sample">
+                <h4>falcon_gaussian_sample</h4>
+                <pre class="signature"><code>slay falcon_gaussian_sample(sigma normie, center normie) normie { fr fr Simplified discrete Gaussian sampling fr fr In practice, would use rejection sampling or ziggurat</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L169">pqc_falcon.csd:169</a></p>
+            </div>
+            <div class="doc-item" id="falcon_sample_gaussian_poly">
+                <h4>falcon_sample_gaussian_poly</h4>
+                <pre class="signature"><code>slay falcon_sample_gaussian_poly(poly [normie], sigma [normie], center [normie], length normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L181">pqc_falcon.csd:181</a></p>
+            </div>
+            <div class="doc-item" id="falcon_fft_forward">
+                <h4>falcon_fft_forward</h4>
+                <pre class="signature"><code>slay falcon_fft_forward(real [normie], imag [normie], length normie) { fr fr Simplified FFT implementation fr fr Real implementation would use Cooley-Tukey algorithm</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L191">pqc_falcon.csd:191</a></p>
+            </div>
+            <div class="doc-item" id="falcon_keygen">
+                <h4>falcon_keygen</h4>
+                <pre class="signature"><code>slay falcon_keygen(public_key [normie], secret_key [normie]) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L220">pqc_falcon.csd:220</a></p>
+            </div>
+            <div class="doc-item" id="falcon_hash_to_point">
+                <h4>falcon_hash_to_point</h4>
+                <pre class="signature"><code>slay falcon_hash_to_point(point [normie], message [normie], public_key [normie], salt [normie]) { fr fr Hash message to get a point in Z[x]/(x^n + 1)</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L249">pqc_falcon.csd:249</a></p>
+            </div>
+            <div class="doc-item" id="falcon_sign">
+                <h4>falcon_sign</h4>
+                <pre class="signature"><code>slay falcon_sign(signature [normie], message [normie], secret_key [normie]) { fr fr Extract secret key components</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L263">pqc_falcon.csd:263</a></p>
+            </div>
+            <div class="doc-item" id="falcon_verify">
+                <h4>falcon_verify</h4>
+                <pre class="signature"><code>slay falcon_verify(signature [normie], message [normie], public_key [normie]) lit { fr fr Extract signature components</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L316">pqc_falcon.csd:316</a></p>
+            </div>
+            <div class="doc-item" id="pqc_falcon_generate_keypair">
+                <h4>pqc_falcon_generate_keypair</h4>
+                <pre class="signature"><code>slay pqc_falcon_generate_keypair() [normie] {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L346">pqc_falcon.csd:346</a></p>
+            </div>
+            <div class="doc-item" id="pqc_falcon_sign">
+                <h4>pqc_falcon_sign</h4>
+                <pre class="signature"><code>slay pqc_falcon_sign(message [normie], secret_key [normie]) [normie] {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L369">pqc_falcon.csd:369</a></p>
+            </div>
+            <div class="doc-item" id="pqc_falcon_verify">
+                <h4>pqc_falcon_verify</h4>
+                <pre class="signature"><code>slay pqc_falcon_verify(signature [normie], message [normie], public_key [normie]) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_falcon.csd#L377">pqc_falcon.csd:377</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

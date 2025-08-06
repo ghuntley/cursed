@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>crypto_ecosystem_complete_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>crypto_ecosystem_complete_demo</h2>
+    </header>
+    <main>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="sensitive_key">
+                <h4>sensitive_key</h4>
+                <pre class="signature"><code>facts sensitive_key = b"super_secret_key_material_here_32b";</code></pre>
+                <p class="description">Shows production-ready crypto implementations in action</p>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L12">crypto_ecosystem_complete_demo.csd:12</a></p>
+            </div>
+            <div class="doc-item" id="secure_mem">
+                <h4>secure_mem</h4>
+                <pre class="signature"><code>facts secure_mem = SecureMemory::new(sensitive_key.to_vec())?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L13">crypto_ecosystem_complete_demo.csd:13</a></p>
+            </div>
+            <div class="doc-item" id="mut zero_drop">
+                <h4>mut zero_drop</h4>
+                <pre class="signature"><code>facts mut zero_drop = ZeroOnDrop::new(vec![0xAA, 0xBB, 0xCC, 0xDD]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L20">crypto_ecosystem_complete_demo.csd:20</a></p>
+            </div>
+            <div class="doc-item" id="protected">
+                <h4>protected</h4>
+                <pre class="signature"><code>facts protected = ProtectedBytes::new(vec![1, 2, 3, 4], 3)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L25">crypto_ecosystem_complete_demo.csd:25</a></p>
+            </div>
+            <div class="doc-item" id="first_access">
+                <h4>first_access</h4>
+                <pre class="signature"><code>facts first_access = protected.access(|data| data.len())?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L26">crypto_ecosystem_complete_demo.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="secret_token">
+                <h4>secret_token</h4>
+                <pre class="signature"><code>facts secret_token = b"secret_authentication_token";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L32">crypto_ecosystem_complete_demo.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="user_input">
+                <h4>user_input</h4>
+                <pre class="signature"><code>facts user_input = b"secret_authentication_token";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L33">crypto_ecosystem_complete_demo.csd:33</a></p>
+            </div>
+            <div class="doc-item" id="wrong_input">
+                <h4>wrong_input</h4>
+                <pre class="signature"><code>facts wrong_input = b"wrong_authentication_token!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L34">crypto_ecosystem_complete_demo.csd:34</a></p>
+            </div>
+            <div class="doc-item" id="valid_token">
+                <h4>valid_token</h4>
+                <pre class="signature"><code>facts valid_token = constant_time_compare(secret_token, user_input);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L37">crypto_ecosystem_complete_demo.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="invalid_token">
+                <h4>invalid_token</h4>
+                <pre class="signature"><code>facts invalid_token = constant_time_compare(secret_token, wrong_input);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L38">crypto_ecosystem_complete_demo.csd:38</a></p>
+            </div>
+            <div class="doc-item" id="option_a">
+                <h4>option_a</h4>
+                <pre class="signature"><code>facts option_a = b"option_a";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L44">crypto_ecosystem_complete_demo.csd:44</a></p>
+            </div>
+            <div class="doc-item" id="option_b">
+                <h4>option_b</h4>
+                <pre class="signature"><code>facts option_b = b"option_b";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L45">crypto_ecosystem_complete_demo.csd:45</a></p>
+            </div>
+            <div class="doc-item" id="selected">
+                <h4>selected</h4>
+                <pre class="signature"><code>facts selected = constant_time_select(valid_token, option_a, option_b)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L46">crypto_ecosystem_complete_demo.csd:46</a></p>
+            </div>
+            <div class="doc-item" id="nonce_gen">
+                <h4>nonce_gen</h4>
+                <pre class="signature"><code>facts nonce_gen = NonceGenerator::new()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L52">crypto_ecosystem_complete_demo.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="nonce1">
+                <h4>nonce1</h4>
+                <pre class="signature"><code>facts nonce1 = nonce_gen.generate_nonce(12)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L55">crypto_ecosystem_complete_demo.csd:55</a></p>
+            </div>
+            <div class="doc-item" id="nonce2">
+                <h4>nonce2</h4>
+                <pre class="signature"><code>facts nonce2 = nonce_gen.generate_nonce(12)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L56">crypto_ecosystem_complete_demo.csd:56</a></p>
+            </div>
+            <div class="doc-item" id="timestamped_nonce">
+                <h4>timestamped_nonce</h4>
+                <pre class="signature"><code>facts timestamped_nonce = nonce_gen.generate_timestamped_nonce(16)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L62">crypto_ecosystem_complete_demo.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="cipher_key">
+                <h4>cipher_key</h4>
+                <pre class="signature"><code>facts cipher_key = vec![42u8; 32];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L68">crypto_ecosystem_complete_demo.csd:68</a></p>
+            </div>
+            <div class="doc-item" id="cipher">
+                <h4>cipher</h4>
+                <pre class="signature"><code>facts cipher = ChaCha20Poly1305::new(&cipher_key)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L69">crypto_ecosystem_complete_demo.csd:69</a></p>
+            </div>
+            <div class="doc-item" id="plaintext">
+                <h4>plaintext</h4>
+                <pre class="signature"><code>facts plaintext = b"This is a secret message that needs protection!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L71">crypto_ecosystem_complete_demo.csd:71</a></p>
+            </div>
+            <div class="doc-item" id="associated_data">
+                <h4>associated_data</h4>
+                <pre class="signature"><code>facts associated_data = b"public metadata for authentication";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L72">crypto_ecosystem_complete_demo.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="encrypted">
+                <h4>encrypted</h4>
+                <pre class="signature"><code>facts encrypted = cipher.encrypt_with_aad(plaintext, associated_data)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L75">crypto_ecosystem_complete_demo.csd:75</a></p>
+            </div>
+            <div class="doc-item" id="decrypted">
+                <h4>decrypted</h4>
+                <pre class="signature"><code>facts decrypted = cipher.decrypt_with_aad(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L81">crypto_ecosystem_complete_demo.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="password">
+                <h4>password</h4>
+                <pre class="signature"><code>facts password = b"user_password_with_good_entropy";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L94">crypto_ecosystem_complete_demo.csd:94</a></p>
+            </div>
+            <div class="doc-item" id="salt">
+                <h4>salt</h4>
+                <pre class="signature"><code>facts salt = b"unique_salt_for_this_user_12345";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L95">crypto_ecosystem_complete_demo.csd:95</a></p>
+            </div>
+            <div class="doc-item" id="iterations">
+                <h4>iterations</h4>
+                <pre class="signature"><code>facts iterations = 100_000u32;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L96">crypto_ecosystem_complete_demo.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="password_cipher">
+                <h4>password_cipher</h4>
+                <pre class="signature"><code>facts password_cipher = ChaCha20Poly1305::from_password(password, salt, iterations)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L99">crypto_ecosystem_complete_demo.csd:99</a></p>
+            </div>
+            <div class="doc-item" id="secret_data">
+                <h4>secret_data</h4>
+                <pre class="signature"><code>facts secret_data = b"User's private document content";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L101">crypto_ecosystem_complete_demo.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="encrypted_doc">
+                <h4>encrypted_doc</h4>
+                <pre class="signature"><code>facts encrypted_doc = password_cipher.encrypt(secret_data)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L102">crypto_ecosystem_complete_demo.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="decrypted_doc">
+                <h4>decrypted_doc</h4>
+                <pre class="signature"><code>facts decrypted_doc = password_cipher.decrypt(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L105">crypto_ecosystem_complete_demo.csd:105</a></p>
+            </div>
+            <div class="doc-item" id="factory_key">
+                <h4>factory_key</h4>
+                <pre class="signature"><code>facts factory_key = vec![0x12; 32];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L116">crypto_ecosystem_complete_demo.csd:116</a></p>
+            </div>
+            <div class="doc-item" id="aead_cipher">
+                <h4>aead_cipher</h4>
+                <pre class="signature"><code>facts aead_cipher = AeadCipherFactory::create_cipher("ChaCha20-Poly1305", &factory_key)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L117">crypto_ecosystem_complete_demo.csd:117</a></p>
+            </div>
+            <div class="doc-item" id="supported_algs">
+                <h4>supported_algs</h4>
+                <pre class="signature"><code>facts supported_algs = AeadCipherFactory::supported_algorithms();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L124">crypto_ecosystem_complete_demo.csd:124</a></p>
+            </div>
+            <div class="doc-item" id="messages">
+                <h4>messages</h4>
+                <pre class="signature"><code>facts messages = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L130">crypto_ecosystem_complete_demo.csd:130</a></p>
+            </div>
+            <div class="doc-item" id="encrypted_batch">
+                <h4>encrypted_batch</h4>
+                <pre class="signature"><code>facts encrypted_batch = AeadUtils::encrypt_batch(aead_cipher.as_ref(), &messages)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L137">crypto_ecosystem_complete_demo.csd:137</a></p>
+            </div>
+            <div class="doc-item" id="doc_content">
+                <h4>doc_content</h4>
+                <pre class="signature"><code>facts doc_content = b"Important document that needs secure storage";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L151">crypto_ecosystem_complete_demo.csd:151</a></p>
+            </div>
+            <div class="doc-item" id="doc_metadata">
+                <h4>doc_metadata</h4>
+                <pre class="signature"><code>facts doc_metadata = b"document.pdf|2024-01-01|confidential";</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L152">crypto_ecosystem_complete_demo.csd:152</a></p>
+            </div>
+            <div class="doc-item" id="serialized">
+                <h4>serialized</h4>
+                <pre class="signature"><code>facts serialized = cipher.encrypt_and_serialize(doc_content, doc_metadata)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L154">crypto_ecosystem_complete_demo.csd:154</a></p>
+            </div>
+            <div class="doc-item" id="deserialized">
+                <h4>deserialized</h4>
+                <pre class="signature"><code>facts deserialized = cipher.decrypt_and_deserialize(&serialized, doc_metadata)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L157">crypto_ecosystem_complete_demo.csd:157</a></p>
+            </div>
+            <div class="doc-item" id="tag1">
+                <h4>tag1</h4>
+                <pre class="signature"><code>facts tag1 = AuthenticationTag::new(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], "ChaCha20-Poly1305".to_string());</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L163">crypto_ecosystem_complete_demo.csd:163</a></p>
+            </div>
+            <div class="doc-item" id="tag2">
+                <h4>tag2</h4>
+                <pre class="signature"><code>facts tag2 = AuthenticationTag::with_key_id(vec![1, 2, 3, 4], "ChaCha20-Poly1305".to_string(), "key123".to_string());</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L164">crypto_ecosystem_complete_demo.csd:164</a></p>
+            </div>
+            <div class="doc-item" id="test_sizes">
+                <h4>test_sizes</h4>
+                <pre class="signature"><code>facts test_sizes = vec![16, 1024, 65536]; // 16B, 1KB, 64KB</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L174">crypto_ecosystem_complete_demo.csd:174</a></p>
+            </div>
+            <div class="doc-item" id="test_data">
+                <h4>test_data</h4>
+                <pre class="signature"><code>facts test_data = vec![0xCC; size];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L177">crypto_ecosystem_complete_demo.csd:177</a></p>
+            </div>
+            <div class="doc-item" id="start_time">
+                <h4>start_time</h4>
+                <pre class="signature"><code>facts start_time = std::time::Instant::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L178">crypto_ecosystem_complete_demo.csd:178</a></p>
+            </div>
+            <div class="doc-item" id="enc_result">
+                <h4>enc_result</h4>
+                <pre class="signature"><code>facts enc_result = cipher.encrypt(&test_data)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L180">crypto_ecosystem_complete_demo.csd:180</a></p>
+            </div>
+            <div class="doc-item" id="dec_result">
+                <h4>dec_result</h4>
+                <pre class="signature"><code>facts dec_result = cipher.decrypt(&enc_result.ciphertext, &enc_result.nonce, &enc_result.tag)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L181">crypto_ecosystem_complete_demo.csd:181</a></p>
+            </div>
+            <div class="doc-item" id="duration">
+                <h4>duration</h4>
+                <pre class="signature"><code>facts duration = start_time.elapsed();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L183">crypto_ecosystem_complete_demo.csd:183</a></p>
+            </div>
+            <div class="doc-item" id="mut nonces">
+                <h4>mut nonces</h4>
+                <pre class="signature"><code>facts mut nonces = Vec::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L190">crypto_ecosystem_complete_demo.csd:190</a></p>
+            </div>
+            <div class="doc-item" id="nonce">
+                <h4>nonce</h4>
+                <pre class="signature"><code>facts nonce = nonce_gen.generate_nonce(12)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L192">crypto_ecosystem_complete_demo.csd:192</a></p>
+            </div>
+            <div class="doc-item" id="has_collision">
+                <h4>has_collision</h4>
+                <pre class="signature"><code>facts has_collision = NonceUtils::check_collision(&nonces);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L196">crypto_ecosystem_complete_demo.csd:196</a></p>
+            </div>
+            <div class="doc-item" id="mut test_data">
+                <h4>mut test_data</h4>
+                <pre class="signature"><code>facts mut test_data = vec![0xDE, 0xAD, 0xBE, 0xEF];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L202">crypto_ecosystem_complete_demo.csd:202</a></p>
+            </div>
+            <div class="doc-item" id="test_value">
+                <h4>test_value</h4>
+                <pre class="signature"><code>facts test_value = 42u32;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L211">crypto_ecosystem_complete_demo.csd:211</a></p>
+            </div>
+            <div class="doc-item" id="volatile_read">
+                <h4>volatile_read</h4>
+                <pre class="signature"><code>facts volatile_read = MemoryBarrier::volatile_read(&test_value);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_ecosystem_complete_demo.csd#L212">crypto_ecosystem_complete_demo.csd:212</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mysql_comprehensive_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>mysql_comprehensive_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L39">mysql_comprehensive_demo.csd:39</a></p>
+            </div>
+            <div class="doc-item" id="demo_user_operations">
+                <h4>demo_user_operations</h4>
+                <pre class="signature"><code>slay demo_user_operations() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L293">mysql_comprehensive_demo.csd:293</a></p>
+            </div>
+            <div class="doc-item" id="demo_order_operations">
+                <h4>demo_order_operations</h4>
+                <pre class="signature"><code>slay demo_order_operations() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L319">mysql_comprehensive_demo.csd:319</a></p>
+            </div>
+            <div class="doc-item" id="demo_transaction_handling">
+                <h4>demo_transaction_handling</h4>
+                <pre class="signature"><code>slay demo_transaction_handling() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L342">mysql_comprehensive_demo.csd:342</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="MySqlSetup">
+                <h4>MySqlSetup</h4>
+                <pre class="signature"><code>squad MySqlSetup {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L11">mysql_comprehensive_demo.csd:11</a></p>
+            </div>
+            <div class="doc-item" id="User">
+                <h4>User</h4>
+                <pre class="signature"><code>squad User {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L22">mysql_comprehensive_demo.csd:22</a></p>
+            </div>
+            <div class="doc-item" id="Order">
+                <h4>Order</h4>
+                <pre class="signature"><code>squad Order {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L31">mysql_comprehensive_demo.csd:31</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="mysql_config">
+                <h4>mysql_config</h4>
+                <pre class="signature"><code>facts mysql_config = mysql::ComprehensiveMySqlConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L41">mysql_comprehensive_demo.csd:41</a></p>
+            </div>
+            <div class="doc-item" id="driver">
+                <h4>driver</h4>
+                <pre class="signature"><code>facts driver = mysql::create_comprehensive_mysql_driver_with_config(mysql_config);</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L57">mysql_comprehensive_demo.csd:57</a></p>
+            </div>
+            <div class="doc-item" id="test_dsns">
+                <h4>test_dsns</h4>
+                <pre class="signature"><code>facts test_dsns = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L62">mysql_comprehensive_demo.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="parsed">
+                <h4>parsed</h4>
+                <pre class="signature"><code>facts parsed = mysql::parse_comprehensive_mysql_dsn(dsn);</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L71">mysql_comprehensive_demo.csd:71</a></p>
+            </div>
+            <div class="doc-item" id="examples">
+                <h4>examples</h4>
+                <pre class="signature"><code>facts examples = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L81">mysql_comprehensive_demo.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="caps">
+                <h4>caps</h4>
+                <pre class="signature"><code>facts caps = driver.capabilities();</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L95">mysql_comprehensive_demo.csd:95</a></p>
+            </div>
+            <div class="doc-item" id="test_values">
+                <h4>test_values</h4>
+                <pre class="signature"><code>facts test_values = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L109">mysql_comprehensive_demo.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="mysql_value">
+                <h4>mysql_value</h4>
+                <pre class="signature"><code>facts mysql_value = mysql::convert_to_mysql_value(&value);</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L120">mysql_comprehensive_demo.csd:120</a></p>
+            </div>
+            <div class="doc-item" id="cache">
+                <h4>cache</h4>
+                <pre class="signature"><code>facts cache = mysql::StatementCache::new(5);</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L129">mysql_comprehensive_demo.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="queries">
+                <h4>queries</h4>
+                <pre class="signature"><code>facts queries = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L131">mysql_comprehensive_demo.csd:131</a></p>
+            </div>
+            <div class="doc-item" id="stmt_data">
+                <h4>stmt_data</h4>
+                <pre class="signature"><code>facts stmt_data = vec![i as u8; 10]; // Mock statement data</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L141">mysql_comprehensive_demo.csd:141</a></p>
+            </div>
+            <div class="doc-item" id="(hits, misses, size)">
+                <h4>(hits, misses, size)</h4>
+                <pre class="signature"><code>facts (hits, misses, size) = cache.stats();</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L156">mysql_comprehensive_demo.csd:156</a></p>
+            </div>
+            <div class="doc-item" id="health">
+                <h4>health</h4>
+                <pre class="signature"><code>facts health = driver.health_check();</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L162">mysql_comprehensive_demo.csd:162</a></p>
+            </div>
+            <div class="doc-item" id="test_error_dsns">
+                <h4>test_error_dsns</h4>
+                <pre class="signature"><code>facts test_error_dsns = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L176">mysql_comprehensive_demo.csd:176</a></p>
+            </div>
+            <div class="doc-item" id="parsed">
+                <h4>parsed</h4>
+                <pre class="signature"><code>facts parsed = mysql::parse_comprehensive_mysql_dsn(dsn);</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L184">mysql_comprehensive_demo.csd:184</a></p>
+            </div>
+            <div class="doc-item" id="demo_dsn">
+                <h4>demo_dsn</h4>
+                <pre class="signature"><code>facts demo_dsn = "mysql://demo:demo@localhost:3306/cursed_demo";</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L208">mysql_comprehensive_demo.csd:208</a></p>
+            </div>
+            <div class="doc-item" id="conn">
+                <h4>conn</h4>
+                <pre class="signature"><code>facts conn = driver.open(demo_dsn);</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L212">mysql_comprehensive_demo.csd:212</a></p>
+            </div>
+            <div class="doc-item" id="metadata">
+                <h4>metadata</h4>
+                <pre class="signature"><code>facts metadata = conn.metadata();</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L216">mysql_comprehensive_demo.csd:216</a></p>
+            </div>
+            <div class="doc-item" id="sample_queries">
+                <h4>sample_queries</h4>
+                <pre class="signature"><code>facts sample_queries = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L232">mysql_comprehensive_demo.csd:232</a></p>
+            </div>
+            <div class="doc-item" id="new_user">
+                <h4>new_user</h4>
+                <pre class="signature"><code>facts new_user = User {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L297">mysql_comprehensive_demo.csd:297</a></p>
+            </div>
+            <div class="doc-item" id="sample_order">
+                <h4>sample_order</h4>
+                <pre class="signature"><code>facts sample_order = Order {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L322">mysql_comprehensive_demo.csd:322</a></p>
+            </div>
+            <div class="doc-item" id="order_statuses">
+                <h4>order_statuses</h4>
+                <pre class="signature"><code>facts order_statuses = ["pending", "confirmed", "shipped", "delivered"];</code></pre>
+                <p class="source">Source: <a href="file://./examples/mysql_comprehensive_demo.csd#L336">mysql_comprehensive_demo.csd:336</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

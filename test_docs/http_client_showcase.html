@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>http_client_showcase - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>http_client_showcase</h2>
+    </header>
+    <main>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="process_response(response">
+                <h4>process_response(response</h4>
+                <pre class="signature"><code>facts process_response(response: &HttpResponse) -> Result<(), String> {</code></pre>
+                <p class="description">Helper function to demonstrate response processing</p>
+                <p class="source">Source: <a href="file://./examples/http_client_showcase.csd#L248">http_client_showcase.csd:248</a></p>
+            </div>
+            <div class="doc-item" id="create_user_json(name">
+                <h4>create_user_json(name</h4>
+                <pre class="signature"><code>facts create_user_json(name: &str, email: &str, age: i32) -> Result<String, String> {</code></pre>
+                <p class="description">Utility function for JSON data creation</p>
+                <p class="source">Source: <a href="file://./examples/http_client_showcase.csd#L271">http_client_showcase.csd:271</a></p>
+            </div>
+            <div class="doc-item" id="timed_request<F, R>(operation">
+                <h4>timed_request<F, R>(operation</h4>
+                <pre class="signature"><code>facts timed_request<F, R>(operation: F) -> Result<(R, Duration), String></code></pre>
+                <p class="description">Utility function for measuring request timing</p>
+                <p class="source">Source: <a href="file://./examples/http_client_showcase.csd#L282">http_client_showcase.csd:282</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

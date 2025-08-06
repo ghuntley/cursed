@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>string_processing - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>string_processing</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="utf8_decode_char">
+                <h4>utf8_decode_char</h4>
+                <pre class="signature"><code>slay utf8_decode_char(bytes []byte, offset normie) (normie, normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L40">string_processing.csd:40</a></p>
+            </div>
+            <div class="doc-item" id="utf8_encode_char">
+                <h4>utf8_encode_char</h4>
+                <pre class="signature"><code>slay utf8_encode_char(codepoint normie) []byte {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L95">string_processing.csd:95</a></p>
+            </div>
+            <div class="doc-item" id="string_to_bytes">
+                <h4>string_to_bytes</h4>
+                <pre class="signature"><code>slay string_to_bytes(text tea) []byte {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L123">string_processing.csd:123</a></p>
+            </div>
+            <div class="doc-item" id="unicode_string_length">
+                <h4>unicode_string_length</h4>
+                <pre class="signature"><code>slay unicode_string_length(text tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L136">string_processing.csd:136</a></p>
+            </div>
+            <div class="doc-item" id="is_valid_utf8_string">
+                <h4>is_valid_utf8_string</h4>
+                <pre class="signature"><code>slay is_valid_utf8_string(text tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L154">string_processing.csd:154</a></p>
+            </div>
+            <div class="doc-item" id="get_unicode_category">
+                <h4>get_unicode_category</h4>
+                <pre class="signature"><code>slay get_unicode_category(codepoint normie) normie { fr fr ASCII letters</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L173">string_processing.csd:173</a></p>
+            </div>
+            <div class="doc-item" id="is_unicode_letter">
+                <h4>is_unicode_letter</h4>
+                <pre class="signature"><code>slay is_unicode_letter(codepoint normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L242">string_processing.csd:242</a></p>
+            </div>
+            <div class="doc-item" id="is_unicode_digit">
+                <h4>is_unicode_digit</h4>
+                <pre class="signature"><code>slay is_unicode_digit(codepoint normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L249">string_processing.csd:249</a></p>
+            </div>
+            <div class="doc-item" id="is_unicode_whitespace">
+                <h4>is_unicode_whitespace</h4>
+                <pre class="signature"><code>slay is_unicode_whitespace(codepoint normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L254">string_processing.csd:254</a></p>
+            </div>
+            <div class="doc-item" id="is_unicode_punctuation">
+                <h4>is_unicode_punctuation</h4>
+                <pre class="signature"><code>slay is_unicode_punctuation(codepoint normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L260">string_processing.csd:260</a></p>
+            </div>
+            <div class="doc-item" id="unicode_to_upper_codepoint">
+                <h4>unicode_to_upper_codepoint</h4>
+                <pre class="signature"><code>slay unicode_to_upper_codepoint(codepoint normie) normie { fr fr ASCII lowercase to uppercase</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L269">string_processing.csd:269</a></p>
+            </div>
+            <div class="doc-item" id="unicode_to_lower_codepoint">
+                <h4>unicode_to_lower_codepoint</h4>
+                <pre class="signature"><code>slay unicode_to_lower_codepoint(codepoint normie) normie { fr fr ASCII uppercase to lowercase</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L285">string_processing.csd:285</a></p>
+            </div>
+            <div class="doc-item" id="unicode_to_upper">
+                <h4>unicode_to_upper</h4>
+                <pre class="signature"><code>slay unicode_to_upper(text tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L302">string_processing.csd:302</a></p>
+            </div>
+            <div class="doc-item" id="unicode_to_lower">
+                <h4>unicode_to_lower</h4>
+                <pre class="signature"><code>slay unicode_to_lower(text tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L327">string_processing.csd:327</a></p>
+            </div>
+            <div class="doc-item" id="get_char_at_position">
+                <h4>get_char_at_position</h4>
+                <pre class="signature"><code>slay get_char_at_position(text tea, pos normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L352">string_processing.csd:352</a></p>
+            </div>
+            <div class="doc-item" id="normalize_nfc">
+                <h4>normalize_nfc</h4>
+                <pre class="signature"><code>slay normalize_nfc(text tea) tea { fr fr This is a simplified implementation fr fr Full NFC would require decomposition tables and combining character reordering</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L375">string_processing.csd:375</a></p>
+            </div>
+            <div class="doc-item" id="is_nfc_normalized">
+                <h4>is_nfc_normalized</h4>
+                <pre class="signature"><code>slay is_nfc_normalized(text tea) lit { fr fr Simplified check - assume it's normalized if valid UTF-8</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L380">string_processing.csd:380</a></p>
+            </div>
+            <div class="doc-item" id="is_word_boundary">
+                <h4>is_word_boundary</h4>
+                <pre class="signature"><code>slay is_word_boundary(text tea, pos normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L385">string_processing.csd:385</a></p>
+            </div>
+            <div class="doc-item" id="is_grapheme_boundary">
+                <h4>is_grapheme_boundary</h4>
+                <pre class="signature"><code>slay is_grapheme_boundary(text tea, pos normie) lit { fr fr Simplified - treat each codepoint as a grapheme cluster fr fr Full implementation would handle combining marks, emoji sequences, etc.</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L399">string_processing.csd:399</a></p>
+            </div>
+            <div class="doc-item" id="grapheme_count">
+                <h4>grapheme_count</h4>
+                <pre class="signature"><code>slay grapheme_count(text tea) normie { fr fr Simplified - same as character count for now</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L404">string_processing.csd:404</a></p>
+            </div>
+            <div class="doc-item" id="bytes_to_string">
+                <h4>bytes_to_string</h4>
+                <pre class="signature"><code>slay bytes_to_string(bytes []byte) tea { fr fr Convert byte array to UTF-8 string</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L409">string_processing.csd:409</a></p>
+            </div>
+            <div class="doc-item" id="string_byte_length">
+                <h4>string_byte_length</h4>
+                <pre class="signature"><code>slay string_byte_length(text tea) normie { fr fr Estimate byte length assuming mostly ASCII</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L426">string_processing.csd:426</a></p>
+            </div>
+            <div class="doc-item" id="string_char_at">
+                <h4>string_char_at</h4>
+                <pre class="signature"><code>slay string_char_at(text tea, index normie) normie { fr fr Get character code at specific index fr fr For ASCII strings, this is straightforward</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L432">string_processing.csd:432</a></p>
+            </div>
+            <div class="doc-item" id="string_from_byte">
+                <h4>string_from_byte</h4>
+                <pre class="signature"><code>slay string_from_byte(byte_val normie) tea { fr fr Convert single byte to character string</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L441">string_processing.csd:441</a></p>
+            </div>
+            <div class="doc-item" id="string_from_ascii">
+                <h4>string_from_ascii</h4>
+                <pre class="signature"><code>slay string_from_ascii(ascii_code normie) tea { fr fr Convert ASCII code to single character string fr fr Simplified implementation for common characters</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L458">string_processing.csd:458</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="UNICODE_CATEGORY_LU normie">
+                <h4>UNICODE_CATEGORY_LU normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_LU normie = 1 fr fr Uppercase Letter</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L8">string_processing.csd:8</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_LL normie">
+                <h4>UNICODE_CATEGORY_LL normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_LL normie = 2 fr fr Lowercase Letter</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L9">string_processing.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_LT normie">
+                <h4>UNICODE_CATEGORY_LT normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_LT normie = 3 fr fr Titlecase Letter</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L10">string_processing.csd:10</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_LM normie">
+                <h4>UNICODE_CATEGORY_LM normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_LM normie = 4 fr fr Modifier Letter</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L11">string_processing.csd:11</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_LO normie">
+                <h4>UNICODE_CATEGORY_LO normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_LO normie = 5 fr fr Other Letter</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L12">string_processing.csd:12</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_MN normie">
+                <h4>UNICODE_CATEGORY_MN normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_MN normie = 6 fr fr Nonspacing Mark</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L13">string_processing.csd:13</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_MC normie">
+                <h4>UNICODE_CATEGORY_MC normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_MC normie = 7 fr fr Spacing Mark</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L14">string_processing.csd:14</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_ME normie">
+                <h4>UNICODE_CATEGORY_ME normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_ME normie = 8 fr fr Enclosing Mark</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L15">string_processing.csd:15</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_ND normie">
+                <h4>UNICODE_CATEGORY_ND normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_ND normie = 9 fr fr Decimal Number</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L16">string_processing.csd:16</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_NL normie">
+                <h4>UNICODE_CATEGORY_NL normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_NL normie = 10 fr fr Letter Number</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L17">string_processing.csd:17</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_NO normie">
+                <h4>UNICODE_CATEGORY_NO normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_NO normie = 11 fr fr Other Number</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L18">string_processing.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_PC normie">
+                <h4>UNICODE_CATEGORY_PC normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_PC normie = 12 fr fr Connector Punctuation</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L19">string_processing.csd:19</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_PD normie">
+                <h4>UNICODE_CATEGORY_PD normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_PD normie = 13 fr fr Dash Punctuation</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L20">string_processing.csd:20</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_PS normie">
+                <h4>UNICODE_CATEGORY_PS normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_PS normie = 14 fr fr Open Punctuation</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L21">string_processing.csd:21</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_PE normie">
+                <h4>UNICODE_CATEGORY_PE normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_PE normie = 15 fr fr Close Punctuation</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L22">string_processing.csd:22</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_PI normie">
+                <h4>UNICODE_CATEGORY_PI normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_PI normie = 16 fr fr Initial Punctuation</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L23">string_processing.csd:23</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_PF normie">
+                <h4>UNICODE_CATEGORY_PF normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_PF normie = 17 fr fr Final Punctuation</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L24">string_processing.csd:24</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_PO normie">
+                <h4>UNICODE_CATEGORY_PO normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_PO normie = 18 fr fr Other Punctuation</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L25">string_processing.csd:25</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_SM normie">
+                <h4>UNICODE_CATEGORY_SM normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_SM normie = 19 fr fr Math Symbol</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L26">string_processing.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_SC normie">
+                <h4>UNICODE_CATEGORY_SC normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_SC normie = 20 fr fr Currency Symbol</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L27">string_processing.csd:27</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_SK normie">
+                <h4>UNICODE_CATEGORY_SK normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_SK normie = 21 fr fr Modifier Symbol</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L28">string_processing.csd:28</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_SO normie">
+                <h4>UNICODE_CATEGORY_SO normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_SO normie = 22 fr fr Other Symbol</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L29">string_processing.csd:29</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_ZS normie">
+                <h4>UNICODE_CATEGORY_ZS normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_ZS normie = 23 fr fr Space Separator</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L30">string_processing.csd:30</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_ZL normie">
+                <h4>UNICODE_CATEGORY_ZL normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_ZL normie = 24 fr fr Line Separator</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L31">string_processing.csd:31</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_ZP normie">
+                <h4>UNICODE_CATEGORY_ZP normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_ZP normie = 25 fr fr Paragraph Separator</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L32">string_processing.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_CC normie">
+                <h4>UNICODE_CATEGORY_CC normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_CC normie = 26 fr fr Control</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L33">string_processing.csd:33</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_CF normie">
+                <h4>UNICODE_CATEGORY_CF normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_CF normie = 27 fr fr Format</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L34">string_processing.csd:34</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_CS normie">
+                <h4>UNICODE_CATEGORY_CS normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_CS normie = 28 fr fr Surrogate</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L35">string_processing.csd:35</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_CO normie">
+                <h4>UNICODE_CATEGORY_CO normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_CO normie = 29 fr fr Private Use</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L36">string_processing.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="UNICODE_CATEGORY_CN normie">
+                <h4>UNICODE_CATEGORY_CN normie</h4>
+                <pre class="signature"><code>facts UNICODE_CATEGORY_CN normie = 30 fr fr Unassigned</code></pre>
+                <p class="source">Source: <a href="file://stdlib/unicode/string_processing.csd#L37">string_processing.csd:37</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

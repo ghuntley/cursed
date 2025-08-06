@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>advanced_types - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>advanced_types</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="function new">
+                <h4>function new</h4>
+                <pre class="signature"><code>slay function new(data: T) -> Container<T> {</code></pre>
+                <p class="description">Implementation block for Container with generic methods</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L40">advanced_types.csd:40</a></p>
+            </div>
+            <div class="doc-item" id="function add_tag">
+                <h4>function add_tag</h4>
+                <pre class="signature"><code>slay function add_tag(&mut self, tag: string) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L52">advanced_types.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="function get">
+                <h4>function get</h4>
+                <pre class="signature"><code>slay function get(&self) -> &T {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L60">advanced_types.csd:60</a></p>
+            </div>
+            <div class="doc-item" id="function update">
+                <h4>function update</h4>
+                <pre class="signature"><code>slay function update(&mut self, new_data: T) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L67">advanced_types.csd:67</a></p>
+            </div>
+            <div class="doc-item" id="function has_tag">
+                <h4>function has_tag</h4>
+                <pre class="signature"><code>slay function has_tag(&self, tag: &string) -> bool {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L77">advanced_types.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="function age_seconds">
+                <h4>function age_seconds</h4>
+                <pre class="signature"><code>slay function age_seconds(&self) -> u64 {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L84">advanced_types.csd:84</a></p>
+            </div>
+            <div class="doc-item" id="function to_json">
+                <h4>function to_json</h4>
+                <pre class="signature"><code>slay function to_json(&self) -> Result<string, string>;</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L94">advanced_types.csd:94</a></p>
+            </div>
+            <div class="doc-item" id="function from_json">
+                <h4>function from_json</h4>
+                <pre class="signature"><code>slay function from_json(json: &string) -> Result<Self, string>;</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L100">advanced_types.csd:100</a></p>
+            </div>
+            <div class="doc-item" id="function get_id">
+                <h4>function get_id</h4>
+                <pre class="signature"><code>slay function get_id(&self) -> string;</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L105">advanced_types.csd:105</a></p>
+            </div>
+            <div class="doc-item" id="function to_json">
+                <h4>function to_json</h4>
+                <pre class="signature"><code>slay function to_json(&self) -> Result<string, string> {</code></pre>
+                <p class="description">Implementation of Serializable for UserProfile</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L128">advanced_types.csd:128</a></p>
+            </div>
+            <div class="doc-item" id="function from_json">
+                <h4>function from_json</h4>
+                <pre class="signature"><code>slay function from_json(json: &string) -> Result<UserProfile, string> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L160">advanced_types.csd:160</a></p>
+            </div>
+            <div class="doc-item" id="function get_id">
+                <h4>function get_id</h4>
+                <pre class="signature"><code>slay function get_id(&self) -> string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L240">advanced_types.csd:240</a></p>
+            </div>
+            <div class="doc-item" id="function fmt">
+                <h4>function fmt</h4>
+                <pre class="signature"><code>slay function fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {</code></pre>
+                <p class="description">Custom error types for type system demo</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L258">advanced_types.csd:258</a></p>
+            </div>
+            <div class="doc-item" id="function new">
+                <h4>function new</h4>
+                <pre class="signature"><code>slay function new() -> UserRepository<S> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L283">advanced_types.csd:283</a></p>
+            </div>
+            <div class="doc-item" id="function store">
+                <h4>function store</h4>
+                <pre class="signature"><code>slay function store(&mut self, user: S) -> ProfileResult<()> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L294">advanced_types.csd:294</a></p>
+            </div>
+            <div class="doc-item" id="function get">
+                <h4>function get</h4>
+                <pre class="signature"><code>slay function get(&self, id: &string) -> ProfileResult<&S> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L317">advanced_types.csd:317</a></p>
+            </div>
+            <div class="doc-item" id="function update">
+                <h4>function update</h4>
+                <pre class="signature"><code>slay function update(&mut self, id: &string, user: S) -> ProfileResult<()> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L329">advanced_types.csd:329</a></p>
+            </div>
+            <div class="doc-item" id="function delete">
+                <h4>function delete</h4>
+                <pre class="signature"><code>slay function delete(&mut self, id: &string) -> ProfileResult<()> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L344">advanced_types.csd:344</a></p>
+            </div>
+            <div class="doc-item" id="function list_ids">
+                <h4>function list_ids</h4>
+                <pre class="signature"><code>slay function list_ids(&self) -> Vec<string> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L354">advanced_types.csd:354</a></p>
+            </div>
+            <div class="doc-item" id="function get_by_tag">
+                <h4>function get_by_tag</h4>
+                <pre class="signature"><code>slay function get_by_tag(&self, tag: &string) -> Vec<&S> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L362">advanced_types.csd:362</a></p>
+            </div>
+            <div class="doc-item" id="function export_json">
+                <h4>function export_json</h4>
+                <pre class="signature"><code>slay function export_json(&self) -> Result<string, string> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L377">advanced_types.csd:377</a></p>
+            </div>
+            <div class="doc-item" id="function demonstrate_type_assertions">
+                <h4>function demonstrate_type_assertions</h4>
+                <pre class="signature"><code>slay function demonstrate_type_assertions() {</code></pre>
+                <p class="description">Demonstrate type assertions and conversions</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L392">advanced_types.csd:392</a></p>
+            </div>
+            <div class="doc-item" id="function process_container<T: Clone + std::fmt::Debug>">
+                <h4>function process_container<T: Clone + std::fmt::Debug></h4>
+                <pre class="signature"><code>slay function process_container<T: Clone + std::fmt::Debug>(</code></pre>
+                <p class="description">Generic function that works with any type that can be cloned and debugged</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L455">advanced_types.csd:455</a></p>
+            </div>
+            <div class="doc-item" id="function demonstrate_pattern_matching">
+                <h4>function demonstrate_pattern_matching</h4>
+                <pre class="signature"><code>slay function demonstrate_pattern_matching() {</code></pre>
+                <p class="description">Demonstrate pattern matching with types</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L477">advanced_types.csd:477</a></p>
+            </div>
+            <div class="doc-item" id="function main">
+                <h4>function main</h4>
+                <pre class="signature"><code>slay function main() -> Result<(), string> {</code></pre>
+                <p class="description">Main demonstration function</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L516">advanced_types.csd:516</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="Container<T>">
+                <h4>Container<T></h4>
+                <pre class="signature"><code>squad Container<T> {</code></pre>
+                <p class="description">This demonstrates generic types, constraints, and methods.</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L23">advanced_types.csd:23</a></p>
+            </div>
+            <div class="doc-item" id="UserProfile">
+                <h4>UserProfile</h4>
+                <pre class="signature"><code>squad UserProfile {</code></pre>
+                <p class="description">User profile struct demonstrating complex data structures</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L109">advanced_types.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="UserRepository<S: Serializable>">
+                <h4>UserRepository<S: Serializable></h4>
+                <pre class="signature"><code>squad UserRepository<S: Serializable> {</code></pre>
+                <p class="description">User repository demonstrating advanced generic usage</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L272">advanced_types.csd:272</a></p>
+            </div>
+        </section>
+        <section id="interfaces">
+            <h3>Interfaces</h3>
+            <div class="doc-item" id="Serializable">
+                <h4>Serializable</h4>
+                <pre class="signature"><code>collab Serializable {</code></pre>
+                <p class="description">Trait-like interface for things that can be serialized</p>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L90">advanced_types.csd:90</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="(skill_name, level)">
+                <h4>(skill_name, level)</h4>
+                <pre class="signature"><code>facts (skill_name, level) = &self.skills[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L141">advanced_types.csd:141</a></p>
+            </div>
+            <div class="doc-item" id="json_value">
+                <h4>json_value</h4>
+                <pre class="signature"><code>facts json_value = json_tea::JsonValue::Object(json_obj);</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L156">advanced_types.csd:156</a></p>
+            </div>
+            <div class="doc-item" id="parsed">
+                <h4>parsed</h4>
+                <pre class="signature"><code>facts parsed = json_tea::unmarshal(json)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L161">advanced_types.csd:161</a></p>
+            </div>
+            <div class="doc-item" id="obj">
+                <h4>obj</h4>
+                <pre class="signature"><code>facts obj = match parsed {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L164">advanced_types.csd:164</a></p>
+            </div>
+            <div class="doc-item" id="id">
+                <h4>id</h4>
+                <pre class="signature"><code>facts id = match obj.get("id") {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L169">advanced_types.csd:169</a></p>
+            </div>
+            <div class="doc-item" id="name">
+                <h4>name</h4>
+                <pre class="signature"><code>facts name = match obj.get("name") {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L174">advanced_types.csd:174</a></p>
+            </div>
+            <div class="doc-item" id="email">
+                <h4>email</h4>
+                <pre class="signature"><code>facts email = match obj.get("email") {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L179">advanced_types.csd:179</a></p>
+            </div>
+            <div class="doc-item" id="age">
+                <h4>age</h4>
+                <pre class="signature"><code>facts age = match obj.get("age") {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L184">advanced_types.csd:184</a></p>
+            </div>
+            <div class="doc-item" id="is_active">
+                <h4>is_active</h4>
+                <pre class="signature"><code>facts is_active = match obj.get("is_active") {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L189">advanced_types.csd:189</a></p>
+            </div>
+            <div class="doc-item" id="skill_name">
+                <h4>skill_name</h4>
+                <pre class="signature"><code>facts skill_name = match skill_obj.get("name") {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L202">advanced_types.csd:202</a></p>
+            </div>
+            <div class="doc-item" id="skill_level">
+                <h4>skill_level</h4>
+                <pre class="signature"><code>facts skill_level = match skill_obj.get("level") {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L206">advanced_types.csd:206</a></p>
+            </div>
+            <div class="doc-item" id="id">
+                <h4>id</h4>
+                <pre class="signature"><code>facts id = user.get_id();</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L295">advanced_types.csd:295</a></p>
+            </div>
+            <div class="doc-item" id="user_json">
+                <h4>user_json</h4>
+                <pre class="signature"><code>facts user_json = container.get().to_json()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L381">advanced_types.csd:381</a></p>
+            </div>
+            <div class="doc-item" id="parsed">
+                <h4>parsed</h4>
+                <pre class="signature"><code>facts parsed = json_tea::unmarshal(&user_json)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L382">advanced_types.csd:382</a></p>
+            </div>
+            <div class="doc-item" id="export_obj">
+                <h4>export_obj</h4>
+                <pre class="signature"><code>facts export_obj = json_tea::JsonValue::Array(users_json);</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L386">advanced_types.csd:386</a></p>
+            </div>
+            <div class="doc-item" id="user1">
+                <h4>user1</h4>
+                <pre class="signature"><code>facts user1 = UserProfile {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L399">advanced_types.csd:399</a></p>
+            </div>
+            <div class="doc-item" id="item">
+                <h4>item</h4>
+                <pre class="signature"><code>facts item = &serializable_items[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L420">advanced_types.csd:420</a></p>
+            </div>
+            <div class="doc-item" id="preview">
+                <h4>preview</h4>
+                <pre class="signature"><code>facts preview = lowkey (json.length() > 100) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L438">advanced_types.csd:438</a></p>
+            </div>
+            <div class="doc-item" id="processed_data">
+                <h4>processed_data</h4>
+                <pre class="signature"><code>facts processed_data = processor(container.get());</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L464">advanced_types.csd:464</a></p>
+            </div>
+            <div class="doc-item" id="containers">
+                <h4>containers</h4>
+                <pre class="signature"><code>facts containers = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L481">advanced_types.csd:481</a></p>
+            </div>
+            <div class="doc-item" id="users">
+                <h4>users</h4>
+                <pre class="signature"><code>facts users = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L525">advanced_types.csd:525</a></p>
+            </div>
+            <div class="doc-item" id="user_ids">
+                <h4>user_ids</h4>
+                <pre class="signature"><code>facts user_ids = repo.list_ids();</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L593">advanced_types.csd:593</a></p>
+            </div>
+            <div class="doc-item" id="id">
+                <h4>id</h4>
+                <pre class="signature"><code>facts id = &user_ids[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L598">advanced_types.csd:598</a></p>
+            </div>
+            <div class="doc-item" id="(skill, level)">
+                <h4>(skill, level)</h4>
+                <pre class="signature"><code>facts (skill, level) = &top_skills[j];</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L610">advanced_types.csd:610</a></p>
+            </div>
+            <div class="doc-item" id="active_users">
+                <h4>active_users</h4>
+                <pre class="signature"><code>facts active_users = repo.get_by_tag(&"active".to_string());</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L622">advanced_types.csd:622</a></p>
+            </div>
+            <div class="doc-item" id="lines: Vec<&str>">
+                <h4>lines: Vec<&str></h4>
+                <pre class="signature"><code>facts lines: Vec<&str> = json.lines().collect();</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L636">advanced_types.csd:636</a></p>
+            </div>
+            <div class="doc-item" id="preview_lines">
+                <h4>preview_lines</h4>
+                <pre class="signature"><code>facts preview_lines = math::min(10, lines.length());</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L637">advanced_types.csd:637</a></p>
+            </div>
+            <div class="doc-item" id="processed_number">
+                <h4>processed_number</h4>
+                <pre class="signature"><code>facts processed_number = process_container(&number_container, |x| x * 2);</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L663">advanced_types.csd:663</a></p>
+            </div>
+            <div class="doc-item" id="processed_string">
+                <h4>processed_string</h4>
+                <pre class="signature"><code>facts processed_string = process_container(&string_container, |s| s.to_uppercase());</code></pre>
+                <p class="source">Source: <a href="file://./examples/comprehensive/language_features/advanced_types.csd#L671">advanced_types.csd:671</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

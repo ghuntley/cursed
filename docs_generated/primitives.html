@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>primitives - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>primitives</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="AsyncChannel.new">
+                <h4>AsyncChannel.new</h4>
+                <pre class="signature"><code>slay AsyncChannel.new(capacity normie) *AsyncChannel {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L56">primitives.csd:56</a></p>
+            </div>
+            <div class="doc-item" id="AsyncChannel.send">
+                <h4>AsyncChannel.send</h4>
+                <pre class="signature"><code>slay AsyncChannel.send(value extra) *Future {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L70">primitives.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="AsyncChannel.receive">
+                <h4>AsyncChannel.receive</h4>
+                <pre class="signature"><code>slay AsyncChannel.receive() *Future {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L105">primitives.csd:105</a></p>
+            </div>
+            <div class="doc-item" id="AsyncChannel.close">
+                <h4>AsyncChannel.close</h4>
+                <pre class="signature"><code>slay AsyncChannel.close() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L137">primitives.csd:137</a></p>
+            </div>
+            <div class="doc-item" id="AsyncChannel.is_closed">
+                <h4>AsyncChannel.is_closed</h4>
+                <pre class="signature"><code>slay AsyncChannel.is_closed() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L159">primitives.csd:159</a></p>
+            </div>
+            <div class="doc-item" id="AsyncChannel.len">
+                <h4>AsyncChannel.len</h4>
+                <pre class="signature"><code>slay AsyncChannel.len() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L163">primitives.csd:163</a></p>
+            </div>
+            <div class="doc-item" id="AsyncChannel.cap">
+                <h4>AsyncChannel.cap</h4>
+                <pre class="signature"><code>slay AsyncChannel.cap() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L167">primitives.csd:167</a></p>
+            </div>
+            <div class="doc-item" id="AsyncMutex.new">
+                <h4>AsyncMutex.new</h4>
+                <pre class="signature"><code>slay AsyncMutex.new() *AsyncMutex {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L172">primitives.csd:172</a></p>
+            </div>
+            <div class="doc-item" id="AsyncMutex.lock">
+                <h4>AsyncMutex.lock</h4>
+                <pre class="signature"><code>slay AsyncMutex.lock() *Future {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L180">primitives.csd:180</a></p>
+            </div>
+            <div class="doc-item" id="AsyncMutex.unlock">
+                <h4>AsyncMutex.unlock</h4>
+                <pre class="signature"><code>slay AsyncMutex.unlock() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L195">primitives.csd:195</a></p>
+            </div>
+            <div class="doc-item" id="AsyncMutex.is_locked">
+                <h4>AsyncMutex.is_locked</h4>
+                <pre class="signature"><code>slay AsyncMutex.is_locked() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L214">primitives.csd:214</a></p>
+            </div>
+            <div class="doc-item" id="AsyncMutex.try_lock">
+                <h4>AsyncMutex.try_lock</h4>
+                <pre class="signature"><code>slay AsyncMutex.try_lock() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L218">primitives.csd:218</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSelect.new">
+                <h4>AsyncSelect.new</h4>
+                <pre class="signature"><code>slay AsyncSelect.new() *AsyncSelect {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L228">primitives.csd:228</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSelect.add_send_case">
+                <h4>AsyncSelect.add_send_case</h4>
+                <pre class="signature"><code>slay AsyncSelect.add_send_case(channel *AsyncChannel, value extra) *AsyncSelect {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L237">primitives.csd:237</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSelect.add_receive_case">
+                <h4>AsyncSelect.add_receive_case</h4>
+                <pre class="signature"><code>slay AsyncSelect.add_receive_case(channel *AsyncChannel) *AsyncSelect {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L249">primitives.csd:249</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSelect.add_future_case">
+                <h4>AsyncSelect.add_future_case</h4>
+                <pre class="signature"><code>slay AsyncSelect.add_future_case(future *Future) *AsyncSelect {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L261">primitives.csd:261</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSelect.add_default_case">
+                <h4>AsyncSelect.add_default_case</h4>
+                <pre class="signature"><code>slay AsyncSelect.add_default_case() *AsyncSelect {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L273">primitives.csd:273</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSelect.execute">
+                <h4>AsyncSelect.execute</h4>
+                <pre class="signature"><code>slay AsyncSelect.execute() *Future {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L285">primitives.csd:285</a></p>
+            </div>
+            <div class="doc-item" id="AsyncTimeout.new">
+                <h4>AsyncTimeout.new</h4>
+                <pre class="signature"><code>slay AsyncTimeout.new(duration normie) *AsyncTimeout {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L336">primitives.csd:336</a></p>
+            </div>
+            <div class="doc-item" id="AsyncTimeout.with_future">
+                <h4>AsyncTimeout.with_future</h4>
+                <pre class="signature"><code>slay AsyncTimeout.with_future(future *Future, duration normie) *Future {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L345">primitives.csd:345</a></p>
+            </div>
+            <div class="doc-item" id="AsyncTimeout.start_timer">
+                <h4>AsyncTimeout.start_timer</h4>
+                <pre class="signature"><code>slay AsyncTimeout.start_timer(timeout_future *BasicFuture) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L359">primitives.csd:359</a></p>
+            </div>
+            <div class="doc-item" id="AsyncTimeout.cancel">
+                <h4>AsyncTimeout.cancel</h4>
+                <pre class="signature"><code>slay AsyncTimeout.cancel() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L368">primitives.csd:368</a></p>
+            </div>
+            <div class="doc-item" id="AsyncTimeout.is_expired">
+                <h4>AsyncTimeout.is_expired</h4>
+                <pre class="signature"><code>slay AsyncTimeout.is_expired() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L372">primitives.csd:372</a></p>
+            </div>
+            <div class="doc-item" id="make_async_channel">
+                <h4>make_async_channel</h4>
+                <pre class="signature"><code>slay make_async_channel(capacity normie) *AsyncChannel {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L383">primitives.csd:383</a></p>
+            </div>
+            <div class="doc-item" id="make_async_mutex">
+                <h4>make_async_mutex</h4>
+                <pre class="signature"><code>slay make_async_mutex() *AsyncMutex {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L387">primitives.csd:387</a></p>
+            </div>
+            <div class="doc-item" id="async_select">
+                <h4>async_select</h4>
+                <pre class="signature"><code>slay async_select() *AsyncSelect {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L391">primitives.csd:391</a></p>
+            </div>
+            <div class="doc-item" id="with_timeout">
+                <h4>with_timeout</h4>
+                <pre class="signature"><code>slay with_timeout(future *Future, duration normie) *Future {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L395">primitives.csd:395</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSemaphore.new">
+                <h4>AsyncSemaphore.new</h4>
+                <pre class="signature"><code>slay AsyncSemaphore.new(permits normie) *AsyncSemaphore {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L407">primitives.csd:407</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSemaphore.acquire">
+                <h4>AsyncSemaphore.acquire</h4>
+                <pre class="signature"><code>slay AsyncSemaphore.acquire() *Future {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L416">primitives.csd:416</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSemaphore.release">
+                <h4>AsyncSemaphore.release</h4>
+                <pre class="signature"><code>slay AsyncSemaphore.release() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L434">primitives.csd:434</a></p>
+            </div>
+            <div class="doc-item" id="AsyncSemaphore.available_permits">
+                <h4>AsyncSemaphore.available_permits</h4>
+                <pre class="signature"><code>slay AsyncSemaphore.available_permits() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L452">primitives.csd:452</a></p>
+            </div>
+            <div class="doc-item" id="AsyncBarrier.new">
+                <h4>AsyncBarrier.new</h4>
+                <pre class="signature"><code>slay AsyncBarrier.new(count normie) *AsyncBarrier {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L465">primitives.csd:465</a></p>
+            </div>
+            <div class="doc-item" id="AsyncBarrier.wait">
+                <h4>AsyncBarrier.wait</h4>
+                <pre class="signature"><code>slay AsyncBarrier.wait() *Future {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L475">primitives.csd:475</a></p>
+            </div>
+            <div class="doc-item" id="AsyncBarrier.get_generation">
+                <h4>AsyncBarrier.get_generation</h4>
+                <pre class="signature"><code>slay AsyncBarrier.get_generation() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L504">primitives.csd:504</a></p>
+            </div>
+            <div class="doc-item" id="AsyncBarrier.get_count">
+                <h4>AsyncBarrier.get_count</h4>
+                <pre class="signature"><code>slay AsyncBarrier.get_count() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/async/primitives.csd#L508">primitives.csd:508</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

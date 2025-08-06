@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>type_switch_practical_use_cases - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>type_switch_practical_use_cases</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="load">
+                <h4>load</h4>
+                <pre class="signature"><code>slay load() (interface{}, error)</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L16">type_switch_practical_use_cases.csd:16</a></p>
+            </div>
+            <div class="doc-item" id="name">
+                <h4>name</h4>
+                <pre class="signature"><code>slay name() string</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L17">type_switch_practical_use_cases.csd:17</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (fc FileConfig) name() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L24">type_switch_practical_use_cases.csd:24</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (fc FileConfig) load() (interface{}, error) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L28">type_switch_practical_use_cases.csd:28</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ec EnvConfig) name() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L41">type_switch_practical_use_cases.csd:41</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ec EnvConfig) load() (interface{}, error) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L45">type_switch_practical_use_cases.csd:45</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (dc DatabaseConfig) name() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L58">type_switch_practical_use_cases.csd:58</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (dc DatabaseConfig) load() (interface{}, error) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L62">type_switch_practical_use_cases.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="merge_configs">
+                <h4>merge_configs</h4>
+                <pre class="signature"><code>slay merge_configs(sources []ConfigSource) (*AppConfig, error) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L87">type_switch_practical_use_cases.csd:87</a></p>
+            </div>
+            <div class="doc-item" id="apply_config_data">
+                <h4>apply_config_data</h4>
+                <pre class="signature"><code>slay apply_config_data(config *AppConfig, data interface{}, source_name string) error {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L106">type_switch_practical_use_cases.csd:106</a></p>
+            </div>
+            <div class="doc-item" id="apply_config_value">
+                <h4>apply_config_value</h4>
+                <pre class="signature"><code>slay apply_config_value(config *AppConfig, key string, value interface{}, source string) error {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L120">type_switch_practical_use_cases.csd:120</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_configuration_system">
+                <h4>demonstrate_configuration_system</h4>
+                <pre class="signature"><code>slay demonstrate_configuration_system() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L181">type_switch_practical_use_cases.csd:181</a></p>
+            </div>
+            <div class="doc-item" id="id">
+                <h4>id</h4>
+                <pre class="signature"><code>slay id() string</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L210">type_switch_practical_use_cases.csd:210</a></p>
+            </div>
+            <div class="doc-item" id="timestamp">
+                <h4>timestamp</h4>
+                <pre class="signature"><code>slay timestamp() time.Time</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L211">type_switch_practical_use_cases.csd:211</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (tm TextMessage) id() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L221">type_switch_practical_use_cases.csd:221</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (tm TextMessage) timestamp() time.Time {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L225">type_switch_practical_use_cases.csd:225</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (im ImageMessage) id() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L238">type_switch_practical_use_cases.csd:238</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (im ImageMessage) timestamp() time.Time {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L242">type_switch_practical_use_cases.csd:242</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (sm SystemMessage) id() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L253">type_switch_practical_use_cases.csd:253</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (sm SystemMessage) timestamp() time.Time {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L257">type_switch_practical_use_cases.csd:257</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (cm CommandMessage) id() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L269">type_switch_practical_use_cases.csd:269</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (cm CommandMessage) timestamp() time.Time {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L273">type_switch_practical_use_cases.csd:273</a></p>
+            </div>
+            <div class="doc-item" id="process_message">
+                <h4>process_message</h4>
+                <pre class="signature"><code>slay process_message(msg Message) (string, error) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L278">type_switch_practical_use_cases.csd:278</a></p>
+            </div>
+            <div class="doc-item" id="process_message_batch">
+                <h4>process_message_batch</h4>
+                <pre class="signature"><code>slay process_message_batch(messages []Message) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L354">type_switch_practical_use_cases.csd:354</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_message_queue">
+                <h4>demonstrate_message_queue</h4>
+                <pre class="signature"><code>slay demonstrate_message_queue() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L394">type_switch_practical_use_cases.csd:394</a></p>
+            </div>
+            <div class="doc-item" id="sql">
+                <h4>sql</h4>
+                <pre class="signature"><code>slay sql() string</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L442">type_switch_practical_use_cases.csd:442</a></p>
+            </div>
+            <div class="doc-item" id="parameters">
+                <h4>parameters</h4>
+                <pre class="signature"><code>slay parameters() []interface{}</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L443">type_switch_practical_use_cases.csd:443</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (sq SelectQuery) sql() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L453">type_switch_practical_use_cases.csd:453</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (sq SelectQuery) parameters() []interface{} {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L472">type_switch_practical_use_cases.csd:472</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (wc WhereCondition) sql() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L486">type_switch_practical_use_cases.csd:486</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (wc WhereCondition) parameters() []interface{} {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L490">type_switch_practical_use_cases.csd:490</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ic InCondition) sql() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L499">type_switch_practical_use_cases.csd:499</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ic InCondition) parameters() []interface{} {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L507">type_switch_practical_use_cases.csd:507</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (bc BetweenCondition) sql() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L517">type_switch_practical_use_cases.csd:517</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (bc BetweenCondition) parameters() []interface{} {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L521">type_switch_practical_use_cases.csd:521</a></p>
+            </div>
+            <div class="doc-item" id="build_query">
+                <h4>build_query</h4>
+                <pre class="signature"><code>slay build_query(components []QueryComponent) (string, []interface{}) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L526">type_switch_practical_use_cases.csd:526</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_query_builder">
+                <h4>demonstrate_query_builder</h4>
+                <pre class="signature"><code>slay demonstrate_query_builder() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L569">type_switch_practical_use_cases.csd:569</a></p>
+            </div>
+            <div class="doc-item" id="event_id">
+                <h4>event_id</h4>
+                <pre class="signature"><code>slay event_id() string</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L628">type_switch_practical_use_cases.csd:628</a></p>
+            </div>
+            <div class="doc-item" id="timestamp">
+                <h4>timestamp</h4>
+                <pre class="signature"><code>slay timestamp() time.Time</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L629">type_switch_practical_use_cases.csd:629</a></p>
+            </div>
+            <div class="doc-item" id="event_type">
+                <h4>event_type</h4>
+                <pre class="signature"><code>slay event_type() string</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L630">type_switch_practical_use_cases.csd:630</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ue UserEvent) event_id() string { damn ue.id }</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L641">type_switch_practical_use_cases.csd:641</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ue UserEvent) timestamp() time.Time { damn ue.time }</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L642">type_switch_practical_use_cases.csd:642</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ue UserEvent) event_type() string { damn "user" }</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L643">type_switch_practical_use_cases.csd:643</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (se SystemEvent) event_id() string { damn se.id }</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L653">type_switch_practical_use_cases.csd:653</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (se SystemEvent) timestamp() time.Time { damn se.time }</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L654">type_switch_practical_use_cases.csd:654</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (se SystemEvent) event_type() string { damn "system" }</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L655">type_switch_practical_use_cases.csd:655</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (me MetricEvent) event_id() string { damn me.id }</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L665">type_switch_practical_use_cases.csd:665</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (me MetricEvent) timestamp() time.Time { damn me.time }</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L666">type_switch_practical_use_cases.csd:666</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (me MetricEvent) event_type() string { damn "metric" }</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L667">type_switch_practical_use_cases.csd:667</a></p>
+            </div>
+            <div class="doc-item" id="new_event_processor">
+                <h4>new_event_processor</h4>
+                <pre class="signature"><code>slay new_event_processor() *EventProcessor {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L675">type_switch_practical_use_cases.csd:675</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ep *EventProcessor) process_event(event Event) error {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L682">type_switch_practical_use_cases.csd:682</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ep *EventProcessor) process_user_event(event UserEvent) error {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L696">type_switch_practical_use_cases.csd:696</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ep *EventProcessor) process_system_event(event SystemEvent) error {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L721">type_switch_practical_use_cases.csd:721</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ep *EventProcessor) process_metric_event(event MetricEvent) error {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L740">type_switch_practical_use_cases.csd:740</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (ep *EventProcessor) get_stats() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L774">type_switch_practical_use_cases.csd:774</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_event_processing">
+                <h4>demonstrate_event_processing</h4>
+                <pre class="signature"><code>slay demonstrate_event_processing() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L782">type_switch_practical_use_cases.csd:782</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L835">type_switch_practical_use_cases.csd:835</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="FileConfig">
+                <h4>FileConfig</h4>
+                <pre class="signature"><code>squad FileConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L20">type_switch_practical_use_cases.csd:20</a></p>
+            </div>
+            <div class="doc-item" id="EnvConfig">
+                <h4>EnvConfig</h4>
+                <pre class="signature"><code>squad EnvConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L37">type_switch_practical_use_cases.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="DatabaseConfig">
+                <h4>DatabaseConfig</h4>
+                <pre class="signature"><code>squad DatabaseConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L54">type_switch_practical_use_cases.csd:54</a></p>
+            </div>
+            <div class="doc-item" id="AppConfig">
+                <h4>AppConfig</h4>
+                <pre class="signature"><code>squad AppConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L76">type_switch_practical_use_cases.csd:76</a></p>
+            </div>
+            <div class="doc-item" id="TextMessage">
+                <h4>TextMessage</h4>
+                <pre class="signature"><code>squad TextMessage {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L214">type_switch_practical_use_cases.csd:214</a></p>
+            </div>
+            <div class="doc-item" id="ImageMessage">
+                <h4>ImageMessage</h4>
+                <pre class="signature"><code>squad ImageMessage {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L229">type_switch_practical_use_cases.csd:229</a></p>
+            </div>
+            <div class="doc-item" id="SystemMessage">
+                <h4>SystemMessage</h4>
+                <pre class="signature"><code>squad SystemMessage {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L246">type_switch_practical_use_cases.csd:246</a></p>
+            </div>
+            <div class="doc-item" id="CommandMessage">
+                <h4>CommandMessage</h4>
+                <pre class="signature"><code>squad CommandMessage {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L261">type_switch_practical_use_cases.csd:261</a></p>
+            </div>
+            <div class="doc-item" id="SelectQuery">
+                <h4>SelectQuery</h4>
+                <pre class="signature"><code>squad SelectQuery {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L446">type_switch_practical_use_cases.csd:446</a></p>
+            </div>
+            <div class="doc-item" id="WhereCondition">
+                <h4>WhereCondition</h4>
+                <pre class="signature"><code>squad WhereCondition {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L480">type_switch_practical_use_cases.csd:480</a></p>
+            </div>
+            <div class="doc-item" id="InCondition">
+                <h4>InCondition</h4>
+                <pre class="signature"><code>squad InCondition {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L494">type_switch_practical_use_cases.csd:494</a></p>
+            </div>
+            <div class="doc-item" id="BetweenCondition">
+                <h4>BetweenCondition</h4>
+                <pre class="signature"><code>squad BetweenCondition {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L511">type_switch_practical_use_cases.csd:511</a></p>
+            </div>
+            <div class="doc-item" id="UserEvent">
+                <h4>UserEvent</h4>
+                <pre class="signature"><code>squad UserEvent {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L633">type_switch_practical_use_cases.csd:633</a></p>
+            </div>
+            <div class="doc-item" id="SystemEvent">
+                <h4>SystemEvent</h4>
+                <pre class="signature"><code>squad SystemEvent {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L645">type_switch_practical_use_cases.csd:645</a></p>
+            </div>
+            <div class="doc-item" id="MetricEvent">
+                <h4>MetricEvent</h4>
+                <pre class="signature"><code>squad MetricEvent {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L657">type_switch_practical_use_cases.csd:657</a></p>
+            </div>
+            <div class="doc-item" id="EventProcessor">
+                <h4>EventProcessor</h4>
+                <pre class="signature"><code>squad EventProcessor {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L670">type_switch_practical_use_cases.csd:670</a></p>
+            </div>
+        </section>
+        <section id="interfaces">
+            <h3>Interfaces</h3>
+            <div class="doc-item" id="ConfigSource">
+                <h4>ConfigSource</h4>
+                <pre class="signature"><code>collab ConfigSource {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L15">type_switch_practical_use_cases.csd:15</a></p>
+            </div>
+            <div class="doc-item" id="Message">
+                <h4>Message</h4>
+                <pre class="signature"><code>collab Message {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L209">type_switch_practical_use_cases.csd:209</a></p>
+            </div>
+            <div class="doc-item" id="QueryComponent">
+                <h4>QueryComponent</h4>
+                <pre class="signature"><code>collab QueryComponent {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L441">type_switch_practical_use_cases.csd:441</a></p>
+            </div>
+            <div class="doc-item" id="Event">
+                <h4>Event</h4>
+                <pre class="signature"><code>collab Event {</code></pre>
+                <p class="source">Source: <a href="file://./examples/type_switch_practical_use_cases.csd#L627">type_switch_practical_use_cases.csd:627</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

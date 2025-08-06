@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>collections_stacks_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>collections_stacks_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="demo_basic_stack">
+                <h4>demo_basic_stack</h4>
+                <pre class="signature"><code>slay demo_basic_stack() -> Result<(), String> {</code></pre>
+                <p class="description">- StackWithMin<T>: Stack that tracks minimum in O(1)</p>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L12">collections_stacks_demo.csd:12</a></p>
+            </div>
+            <div class="doc-item" id="demo_fixed_stack">
+                <h4>demo_fixed_stack</h4>
+                <pre class="signature"><code>slay demo_fixed_stack() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L36">collections_stacks_demo.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="demo_stack_with_min">
+                <h4>demo_stack_with_min</h4>
+                <pre class="signature"><code>slay demo_stack_with_min() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L65">collections_stacks_demo.csd:65</a></p>
+            </div>
+            <div class="doc-item" id="demo_thread_safe_stack">
+                <h4>demo_thread_safe_stack</h4>
+                <pre class="signature"><code>slay demo_thread_safe_stack() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L89">collections_stacks_demo.csd:89</a></p>
+            </div>
+            <div class="doc-item" id="demo_bulk_operations">
+                <h4>demo_bulk_operations</h4>
+                <pre class="signature"><code>slay demo_bulk_operations() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L120">collections_stacks_demo.csd:120</a></p>
+            </div>
+            <div class="doc-item" id="demo_stack_operations">
+                <h4>demo_stack_operations</h4>
+                <pre class="signature"><code>slay demo_stack_operations() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L143">collections_stacks_demo.csd:143</a></p>
+            </div>
+            <div class="doc-item" id="demo_iterators">
+                <h4>demo_iterators</h4>
+                <pre class="signature"><code>slay demo_iterators() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L164">collections_stacks_demo.csd:164</a></p>
+            </div>
+            <div class="doc-item" id="demo_practical_example">
+                <h4>demo_practical_example</h4>
+                <pre class="signature"><code>slay demo_practical_example() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L187">collections_stacks_demo.csd:187</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L226">collections_stacks_demo.csd:226</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="popped">
+                <h4>popped</h4>
+                <pre class="signature"><code>facts popped = stack.pop().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L28">collections_stacks_demo.csd:28</a></p>
+            </div>
+            <div class="doc-item" id="popped">
+                <h4>popped</h4>
+                <pre class="signature"><code>facts popped = stack.pop().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L56">collections_stacks_demo.csd:56</a></p>
+            </div>
+            <div class="doc-item" id="values">
+                <h4>values</h4>
+                <pre class="signature"><code>facts values = [15, 3, 8, 1, 12, 7];</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L71">collections_stacks_demo.csd:71</a></p>
+            </div>
+            <div class="doc-item" id="popped">
+                <h4>popped</h4>
+                <pre class="signature"><code>facts popped = stack.pop().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L81">collections_stacks_demo.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="stack">
+                <h4>stack</h4>
+                <pre class="signature"><code>facts stack = ThreadSafeStack::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L92">collections_stacks_demo.csd:92</a></p>
+            </div>
+            <div class="doc-item" id="doubled">
+                <h4>doubled</h4>
+                <pre class="signature"><code>facts doubled = stack.peek(|x| x * 2)?.unwrap_or(0);</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L103">collections_stacks_demo.csd:103</a></p>
+            </div>
+            <div class="doc-item" id="snapshot">
+                <h4>snapshot</h4>
+                <pre class="signature"><code>facts snapshot = stack.snapshot()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L107">collections_stacks_demo.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="popped">
+                <h4>popped</h4>
+                <pre class="signature"><code>facts popped = stack.pop()?.unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L112">collections_stacks_demo.csd:112</a></p>
+            </div>
+            <div class="doc-item" id="data">
+                <h4>data</h4>
+                <pre class="signature"><code>facts data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L126">collections_stacks_demo.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="popped">
+                <h4>popped</h4>
+                <pre class="signature"><code>facts popped = stack.pop_many(4);</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L131">collections_stacks_demo.csd:131</a></p>
+            </div>
+            <div class="doc-item" id="peeked">
+                <h4>peeked</h4>
+                <pre class="signature"><code>facts peeked = stack.peek_many(3);</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L136">collections_stacks_demo.csd:136</a></p>
+            </div>
+            <div class="doc-item" id="vec">
+                <h4>vec</h4>
+                <pre class="signature"><code>facts vec = stack.into_vec();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L180">collections_stacks_demo.csd:180</a></p>
+            </div>
+            <div class="doc-item" id="expression">
+                <h4>expression</h4>
+                <pre class="signature"><code>facts expression = ["3", "4", "+", "2", "*"];</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L193">collections_stacks_demo.csd:193</a></p>
+            </div>
+            <div class="doc-item" id="b">
+                <h4>b</h4>
+                <pre class="signature"><code>facts b = eval_stack.pop().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L200">collections_stacks_demo.csd:200</a></p>
+            </div>
+            <div class="doc-item" id="a">
+                <h4>a</h4>
+                <pre class="signature"><code>facts a = eval_stack.pop().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L201">collections_stacks_demo.csd:201</a></p>
+            </div>
+            <div class="doc-item" id="b">
+                <h4>b</h4>
+                <pre class="signature"><code>facts b = eval_stack.pop().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L206">collections_stacks_demo.csd:206</a></p>
+            </div>
+            <div class="doc-item" id="a">
+                <h4>a</h4>
+                <pre class="signature"><code>facts a = eval_stack.pop().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L207">collections_stacks_demo.csd:207</a></p>
+            </div>
+            <div class="doc-item" id="num">
+                <h4>num</h4>
+                <pre class="signature"><code>facts num = token.parse::<i32>().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L212">collections_stacks_demo.csd:212</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = eval_stack.pop().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/collections_stacks_demo.csd#L219">collections_stacks_demo.csd:219</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,15 @@
+name = "cursed-build-test"
+version = "0.1.0"
+description = "Test project for CURSED build system integration"
+authors = ["CURSED Build System"]
+keywords = ["test", "build-system"]
+categories = ["testing"]
+
+[dependencies]
+
+[dev_dependencies]
+
+[build]
+target_type = "executable"
+optimization = "debug"
+use_llvm = false

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>env_advanced_parsing - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>env_advanced_parsing</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L10">env_advanced_parsing.csd:10</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="db_config">
+                <h4>db_config</h4>
+                <pre class="signature"><code>facts db_config = parse_env_config("DATABASE_CONFIG", ",")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L18">env_advanced_parsing.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="hosts">
+                <h4>hosts</h4>
+                <pre class="signature"><code>facts hosts = parse_env_list("ALLOWED_HOSTS")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L31">env_advanced_parsing.csd:31</a></p>
+            </div>
+            <div class="doc-item" id="lib_paths">
+                <h4>lib_paths</h4>
+                <pre class="signature"><code>facts lib_paths = parse_env_colon_list("LIBRARY_PATH")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L37">env_advanced_parsing.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="search_paths">
+                <h4>search_paths</h4>
+                <pre class="signature"><code>facts search_paths = parse_env_semicolon_list("SEARCH_PATHS")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L43">env_advanced_parsing.csd:43</a></p>
+            </div>
+            <div class="doc-item" id="cache_ttl">
+                <h4>cache_ttl</h4>
+                <pre class="signature"><code>facts cache_ttl = parse_env_duration("CACHE_TTL")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L56">env_advanced_parsing.csd:56</a></p>
+            </div>
+            <div class="doc-item" id="session_timeout">
+                <h4>session_timeout</h4>
+                <pre class="signature"><code>facts session_timeout = parse_env_duration("SESSION_TIMEOUT")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L57">env_advanced_parsing.csd:57</a></p>
+            </div>
+            <div class="doc-item" id="backup_interval">
+                <h4>backup_interval</h4>
+                <pre class="signature"><code>facts backup_interval = parse_env_duration("BACKUP_INTERVAL")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L58">env_advanced_parsing.csd:58</a></p>
+            </div>
+            <div class="doc-item" id="max_heap">
+                <h4>max_heap</h4>
+                <pre class="signature"><code>facts max_heap = parse_env_memory_size("MAX_HEAP_SIZE")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L71">env_advanced_parsing.csd:71</a></p>
+            </div>
+            <div class="doc-item" id="buffer_size">
+                <h4>buffer_size</h4>
+                <pre class="signature"><code>facts buffer_size = parse_env_memory_size("BUFFER_SIZE")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L72">env_advanced_parsing.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="cache_size">
+                <h4>cache_size</h4>
+                <pre class="signature"><code>facts cache_size = parse_env_memory_size("CACHE_SIZE")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L73">env_advanced_parsing.csd:73</a></p>
+            </div>
+            <div class="doc-item" id="threads">
+                <h4>threads</h4>
+                <pre class="signature"><code>facts threads = get_numeric_env::<u32>("WORKER_THREADS", 1, 16)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L87">env_advanced_parsing.csd:87</a></p>
+            </div>
+            <div class="doc-item" id="cpu_percent">
+                <h4>cpu_percent</h4>
+                <pre class="signature"><code>facts cpu_percent = get_numeric_env::<f64>("CPU_PERCENT", 0.0, 100.0)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L90">env_advanced_parsing.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="paths">
+                <h4>paths</h4>
+                <pre class="signature"><code>facts paths = get_path_env("PATH");</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L102">env_advanced_parsing.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="bool_tests">
+                <h4>bool_tests</h4>
+                <pre class="signature"><code>facts bool_tests = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L124">env_advanced_parsing.csd:124</a></p>
+            </div>
+            <div class="doc-item" id="result_true">
+                <h4>result_true</h4>
+                <pre class="signature"><code>facts result_true = get_bool_env("CURSED_BOOL_TEST")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L134">env_advanced_parsing.csd:134</a></p>
+            </div>
+            <div class="doc-item" id="result_false">
+                <h4>result_false</h4>
+                <pre class="signature"><code>facts result_false = get_bool_env("CURSED_BOOL_TEST")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L137">env_advanced_parsing.csd:137</a></p>
+            </div>
+            <div class="doc-item" id="server_config">
+                <h4>server_config</h4>
+                <pre class="signature"><code>facts server_config = parse_env_config("SERVER_CONFIG", ",")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L151">env_advanced_parsing.csd:151</a></p>
+            </div>
+            <div class="doc-item" id="rate_limits">
+                <h4>rate_limits</h4>
+                <pre class="signature"><code>facts rate_limits = parse_env_config("RATE_LIMITS", ",")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L152">env_advanced_parsing.csd:152</a></p>
+            </div>
+            <div class="doc-item" id="features">
+                <h4>features</h4>
+                <pre class="signature"><code>facts features = parse_env_list("FEATURES")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L153">env_advanced_parsing.csd:153</a></p>
+            </div>
+            <div class="doc-item" id="cleanup_vars">
+                <h4>cleanup_vars</h4>
+                <pre class="signature"><code>facts cleanup_vars = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_advanced_parsing.csd#L173">env_advanced_parsing.csd:173</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

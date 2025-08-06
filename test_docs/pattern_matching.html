@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pattern_matching - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>pattern_matching</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="parse_regex_pattern">
+                <h4>parse_regex_pattern</h4>
+                <pre class="signature"><code>slay parse_regex_pattern(pattern tea) [PatternElement] {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L51">pattern_matching.csd:51</a></p>
+            </div>
+            <div class="doc-item" id="parse_escape_sequence">
+                <h4>parse_escape_sequence</h4>
+                <pre class="signature"><code>slay parse_escape_sequence(escaped_char tea) PatternElement {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L148">pattern_matching.csd:148</a></p>
+            </div>
+            <div class="doc-item" id="execute_regex_match">
+                <h4>execute_regex_match</h4>
+                <pre class="signature"><code>slay execute_regex_match(text tea, elements [PatternElement]) (lit, normie, normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L184">pattern_matching.csd:184</a></p>
+            </div>
+            <div class="doc-item" id="try_match_at_position">
+                <h4>try_match_at_position</h4>
+                <pre class="signature"><code>slay try_match_at_position(text tea, elements [PatternElement], start_pos normie) (lit, normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L197">pattern_matching.csd:197</a></p>
+            </div>
+            <div class="doc-item" id="match_recursive">
+                <h4>match_recursive</h4>
+                <pre class="signature"><code>slay match_recursive(text tea, elements [PatternElement], state MatchState) MatchState { fr fr Base case: end of pattern</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L214">pattern_matching.csd:214</a></p>
+            </div>
+            <div class="doc-item" id="match_literal">
+                <h4>match_literal</h4>
+                <pre class="signature"><code>slay match_literal(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L237">pattern_matching.csd:237</a></p>
+            </div>
+            <div class="doc-item" id="match_char_class">
+                <h4>match_char_class</h4>
+                <pre class="signature"><code>slay match_char_class(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L264">pattern_matching.csd:264</a></p>
+            </div>
+            <div class="doc-item" id="matches_char_class">
+                <h4>matches_char_class</h4>
+                <pre class="signature"><code>slay matches_char_class(char tea, class_def tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L294">pattern_matching.csd:294</a></p>
+            </div>
+            <div class="doc-item" id="match_with_quantifier">
+                <h4>match_with_quantifier</h4>
+                <pre class="signature"><code>slay match_with_quantifier(text tea, elements [PatternElement], state MatchState,</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L313">pattern_matching.csd:313</a></p>
+            </div>
+            <div class="doc-item" id="match_greedy">
+                <h4>match_greedy</h4>
+                <pre class="signature"><code>slay match_greedy(text tea, elements [PatternElement], state MatchState,</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L334">pattern_matching.csd:334</a></p>
+            </div>
+            <div class="doc-item" id="match_non_greedy">
+                <h4>match_non_greedy</h4>
+                <pre class="signature"><code>slay match_non_greedy(text tea, elements [PatternElement], state MatchState,</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L366">pattern_matching.csd:366</a></p>
+            </div>
+            <div class="doc-item" id="try_single_match">
+                <h4>try_single_match</h4>
+                <pre class="signature"><code>slay try_single_match(text tea, state MatchState, element PatternElement) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L390">pattern_matching.csd:390</a></p>
+            </div>
+            <div class="doc-item" id="match_anchor">
+                <h4>match_anchor</h4>
+                <pre class="signature"><code>slay match_anchor(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L409">pattern_matching.csd:409</a></p>
+            </div>
+            <div class="doc-item" id="match_group">
+                <h4>match_group</h4>
+                <pre class="signature"><code>slay match_group(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState { fr fr Parse group content as sub-pattern</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L432">pattern_matching.csd:432</a></p>
+            </div>
+            <div class="doc-item" id="match_alternation">
+                <h4>match_alternation</h4>
+                <pre class="signature"><code>slay match_alternation(text tea, elements [PatternElement], state MatchState, element PatternElement) MatchState { fr fr This is simplified - real implementation would need to handle alternation scope</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L456">pattern_matching.csd:456</a></p>
+            </div>
+            <div class="doc-item" id="is_digit">
+                <h4>is_digit</h4>
+                <pre class="signature"><code>slay is_digit(char tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L462">pattern_matching.csd:462</a></p>
+            </div>
+            <div class="doc-item" id="is_word_char">
+                <h4>is_word_char</h4>
+                <pre class="signature"><code>slay is_word_char(char tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L467">pattern_matching.csd:467</a></p>
+            </div>
+            <div class="doc-item" id="is_whitespace">
+                <h4>is_whitespace</h4>
+                <pre class="signature"><code>slay is_whitespace(char tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L475">pattern_matching.csd:475</a></p>
+            </div>
+            <div class="doc-item" id="is_word_boundary">
+                <h4>is_word_boundary</h4>
+                <pre class="signature"><code>slay is_word_boundary(text tea, position normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L483">pattern_matching.csd:483</a></p>
+            </div>
+            <div class="doc-item" id="matches_custom_char_class">
+                <h4>matches_custom_char_class</h4>
+                <pre class="signature"><code>slay matches_custom_char_class(char tea, class_def tea) lit { fr fr Handle negated classes</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L498">pattern_matching.csd:498</a></p>
+            </div>
+            <div class="doc-item" id="matches_positive_char_class">
+                <h4>matches_positive_char_class</h4>
+                <pre class="signature"><code>slay matches_positive_char_class(char tea, class_def tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L507">pattern_matching.csd:507</a></p>
+            </div>
+            <div class="doc-item" id="char_in_range">
+                <h4>char_in_range</h4>
+                <pre class="signature"><code>slay char_in_range(char tea, start_char tea, end_char tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L530">pattern_matching.csd:530</a></p>
+            </div>
+            <div class="doc-item" id="find_closing_bracket">
+                <h4>find_closing_bracket</h4>
+                <pre class="signature"><code>slay find_closing_bracket(text tea, start_pos normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L539">pattern_matching.csd:539</a></p>
+            </div>
+            <div class="doc-item" id="find_matching_parenthesis">
+                <h4>find_matching_parenthesis</h4>
+                <pre class="signature"><code>slay find_matching_parenthesis(text tea, start_pos normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L553">pattern_matching.csd:553</a></p>
+            </div>
+            <div class="doc-item" id="count_groups_before">
+                <h4>count_groups_before</h4>
+                <pre class="signature"><code>slay count_groups_before(elements [PatternElement]) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L575">pattern_matching.csd:575</a></p>
+            </div>
+            <div class="doc-item" id="substring">
+                <h4>substring</h4>
+                <pre class="signature"><code>slay substring(text tea, start normie, end normie) tea { fr fr This would be implemented as a built-in function fr fr For now, return placeholder</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L585">pattern_matching.csd:585</a></p>
+            </div>
+            <div class="doc-item" id="string_length">
+                <h4>string_length</h4>
+                <pre class="signature"><code>slay string_length(text tea) normie { fr fr This would be implemented as a built-in function</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L589">pattern_matching.csd:589</a></p>
+            </div>
+            <div class="doc-item" id="string_char_at">
+                <h4>string_char_at</h4>
+                <pre class="signature"><code>slay string_char_at(text tea, index normie) tea { fr fr This would be implemented as a built-in function</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L593">pattern_matching.csd:593</a></p>
+            </div>
+            <div class="doc-item" id="char_to_code">
+                <h4>char_to_code</h4>
+                <pre class="signature"><code>slay char_to_code(char tea) normie { fr fr This would be implemented as a built-in function</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L597">pattern_matching.csd:597</a></p>
+            </div>
+            <div class="doc-item" id="string_starts_with">
+                <h4>string_starts_with</h4>
+                <pre class="signature"><code>slay string_starts_with(text tea, prefix tea) lit { fr fr This would be implemented as a built-in function</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L601">pattern_matching.csd:601</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="CHAR_CLASS_DIGIT tea">
+                <h4>CHAR_CLASS_DIGIT tea</h4>
+                <pre class="signature"><code>facts CHAR_CLASS_DIGIT tea = "\\d"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L7">pattern_matching.csd:7</a></p>
+            </div>
+            <div class="doc-item" id="CHAR_CLASS_WORD tea">
+                <h4>CHAR_CLASS_WORD tea</h4>
+                <pre class="signature"><code>facts CHAR_CLASS_WORD tea = "\\w"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L8">pattern_matching.csd:8</a></p>
+            </div>
+            <div class="doc-item" id="CHAR_CLASS_SPACE tea">
+                <h4>CHAR_CLASS_SPACE tea</h4>
+                <pre class="signature"><code>facts CHAR_CLASS_SPACE tea = "\\s"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L9">pattern_matching.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="CHAR_CLASS_NOT_DIGIT tea">
+                <h4>CHAR_CLASS_NOT_DIGIT tea</h4>
+                <pre class="signature"><code>facts CHAR_CLASS_NOT_DIGIT tea = "\\D"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L10">pattern_matching.csd:10</a></p>
+            </div>
+            <div class="doc-item" id="CHAR_CLASS_NOT_WORD tea">
+                <h4>CHAR_CLASS_NOT_WORD tea</h4>
+                <pre class="signature"><code>facts CHAR_CLASS_NOT_WORD tea = "\\W"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L11">pattern_matching.csd:11</a></p>
+            </div>
+            <div class="doc-item" id="CHAR_CLASS_NOT_SPACE tea">
+                <h4>CHAR_CLASS_NOT_SPACE tea</h4>
+                <pre class="signature"><code>facts CHAR_CLASS_NOT_SPACE tea = "\\S"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L12">pattern_matching.csd:12</a></p>
+            </div>
+            <div class="doc-item" id="ANCHOR_START tea">
+                <h4>ANCHOR_START tea</h4>
+                <pre class="signature"><code>facts ANCHOR_START tea = "^"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L15">pattern_matching.csd:15</a></p>
+            </div>
+            <div class="doc-item" id="ANCHOR_END tea">
+                <h4>ANCHOR_END tea</h4>
+                <pre class="signature"><code>facts ANCHOR_END tea = "$"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L16">pattern_matching.csd:16</a></p>
+            </div>
+            <div class="doc-item" id="ANCHOR_WORD_BOUNDARY tea">
+                <h4>ANCHOR_WORD_BOUNDARY tea</h4>
+                <pre class="signature"><code>facts ANCHOR_WORD_BOUNDARY tea = "\\b"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L17">pattern_matching.csd:17</a></p>
+            </div>
+            <div class="doc-item" id="ANCHOR_NON_WORD_BOUNDARY tea">
+                <h4>ANCHOR_NON_WORD_BOUNDARY tea</h4>
+                <pre class="signature"><code>facts ANCHOR_NON_WORD_BOUNDARY tea = "\\B"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L18">pattern_matching.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="QUANTIFIER_ZERO_OR_MORE tea">
+                <h4>QUANTIFIER_ZERO_OR_MORE tea</h4>
+                <pre class="signature"><code>facts QUANTIFIER_ZERO_OR_MORE tea = "*"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L21">pattern_matching.csd:21</a></p>
+            </div>
+            <div class="doc-item" id="QUANTIFIER_ONE_OR_MORE tea">
+                <h4>QUANTIFIER_ONE_OR_MORE tea</h4>
+                <pre class="signature"><code>facts QUANTIFIER_ONE_OR_MORE tea = "+"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L22">pattern_matching.csd:22</a></p>
+            </div>
+            <div class="doc-item" id="QUANTIFIER_ZERO_OR_ONE tea">
+                <h4>QUANTIFIER_ZERO_OR_ONE tea</h4>
+                <pre class="signature"><code>facts QUANTIFIER_ZERO_OR_ONE tea = "?"</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L23">pattern_matching.csd:23</a></p>
+            </div>
+            <div class="doc-item" id="ELEMENT_LITERAL normie">
+                <h4>ELEMENT_LITERAL normie</h4>
+                <pre class="signature"><code>facts ELEMENT_LITERAL normie = 1</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L26">pattern_matching.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="ELEMENT_CHAR_CLASS normie">
+                <h4>ELEMENT_CHAR_CLASS normie</h4>
+                <pre class="signature"><code>facts ELEMENT_CHAR_CLASS normie = 2</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L27">pattern_matching.csd:27</a></p>
+            </div>
+            <div class="doc-item" id="ELEMENT_QUANTIFIER normie">
+                <h4>ELEMENT_QUANTIFIER normie</h4>
+                <pre class="signature"><code>facts ELEMENT_QUANTIFIER normie = 3</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L28">pattern_matching.csd:28</a></p>
+            </div>
+            <div class="doc-item" id="ELEMENT_GROUP normie">
+                <h4>ELEMENT_GROUP normie</h4>
+                <pre class="signature"><code>facts ELEMENT_GROUP normie = 4</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L29">pattern_matching.csd:29</a></p>
+            </div>
+            <div class="doc-item" id="ELEMENT_ANCHOR normie">
+                <h4>ELEMENT_ANCHOR normie</h4>
+                <pre class="signature"><code>facts ELEMENT_ANCHOR normie = 5</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L30">pattern_matching.csd:30</a></p>
+            </div>
+            <div class="doc-item" id="ELEMENT_ALTERNATION normie">
+                <h4>ELEMENT_ALTERNATION normie</h4>
+                <pre class="signature"><code>facts ELEMENT_ALTERNATION normie = 6</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/regex/pattern_matching.csd#L31">pattern_matching.csd:31</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

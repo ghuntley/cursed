@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>advanced_collections - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>advanced_collections</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="btree_new">
+                <h4>btree_new</h4>
+                <pre class="signature"><code>slay btree_new(min_degree normie) BTree {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L24">advanced_collections.csd:24</a></p>
+            </div>
+            <div class="doc-item" id="btree_node_new">
+                <h4>btree_node_new</h4>
+                <pre class="signature"><code>slay btree_node_new(is_leaf lit) BTreeNode {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L32">advanced_collections.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="btree_insert">
+                <h4>btree_insert</h4>
+                <pre class="signature"><code>slay btree_insert(tree BTree, key tea, value tea) BTree {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L42">advanced_collections.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="btree_node_is_full">
+                <h4>btree_node_is_full</h4>
+                <pre class="signature"><code>slay btree_node_is_full(node BTreeNode, min_degree normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L59">advanced_collections.csd:59</a></p>
+            </div>
+            <div class="doc-item" id="btree_split_child">
+                <h4>btree_split_child</h4>
+                <pre class="signature"><code>slay btree_split_child(parent BTreeNode, index normie, min_degree normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L63">advanced_collections.csd:63</a></p>
+            </div>
+            <div class="doc-item" id="btree_insert_non_full">
+                <h4>btree_insert_non_full</h4>
+                <pre class="signature"><code>slay btree_insert_non_full(node BTreeNode, key tea, value tea, min_degree normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L99">advanced_collections.csd:99</a></p>
+            </div>
+            <div class="doc-item" id="btree_search">
+                <h4>btree_search</h4>
+                <pre class="signature"><code>slay btree_search(tree BTree, key tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L136">advanced_collections.csd:136</a></p>
+            </div>
+            <div class="doc-item" id="btree_node_search">
+                <h4>btree_node_search</h4>
+                <pre class="signature"><code>slay btree_node_search(node BTreeNode, key tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L140">advanced_collections.csd:140</a></p>
+            </div>
+            <div class="doc-item" id="avl_new">
+                <h4>avl_new</h4>
+                <pre class="signature"><code>slay avl_new() AVLTree {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L174">advanced_collections.csd:174</a></p>
+            </div>
+            <div class="doc-item" id="avl_node_new">
+                <h4>avl_node_new</h4>
+                <pre class="signature"><code>slay avl_node_new(key tea, value tea) AVLNode {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L180">advanced_collections.csd:180</a></p>
+            </div>
+            <div class="doc-item" id="avl_height">
+                <h4>avl_height</h4>
+                <pre class="signature"><code>slay avl_height(node AVLNode) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L188">advanced_collections.csd:188</a></p>
+            </div>
+            <div class="doc-item" id="avl_balance_factor">
+                <h4>avl_balance_factor</h4>
+                <pre class="signature"><code>slay avl_balance_factor(node AVLNode) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L195">advanced_collections.csd:195</a></p>
+            </div>
+            <div class="doc-item" id="avl_update_height">
+                <h4>avl_update_height</h4>
+                <pre class="signature"><code>slay avl_update_height(node AVLNode) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L202">advanced_collections.csd:202</a></p>
+            </div>
+            <div class="doc-item" id="avl_rotate_right">
+                <h4>avl_rotate_right</h4>
+                <pre class="signature"><code>slay avl_rotate_right(y AVLNode) AVLNode {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L214">advanced_collections.csd:214</a></p>
+            </div>
+            <div class="doc-item" id="avl_rotate_left">
+                <h4>avl_rotate_left</h4>
+                <pre class="signature"><code>slay avl_rotate_left(x AVLNode) AVLNode {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L227">advanced_collections.csd:227</a></p>
+            </div>
+            <div class="doc-item" id="avl_insert">
+                <h4>avl_insert</h4>
+                <pre class="signature"><code>slay avl_insert(tree AVLTree, key tea, value tea) AVLTree {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L240">advanced_collections.csd:240</a></p>
+            </div>
+            <div class="doc-item" id="avl_node_insert">
+                <h4>avl_node_insert</h4>
+                <pre class="signature"><code>slay avl_node_insert(node AVLNode, key tea, value tea) AVLNode {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L246">advanced_collections.csd:246</a></p>
+            </div>
+            <div class="doc-item" id="avl_search">
+                <h4>avl_search</h4>
+                <pre class="signature"><code>slay avl_search(tree AVLTree, key tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L294">advanced_collections.csd:294</a></p>
+            </div>
+            <div class="doc-item" id="avl_node_search">
+                <h4>avl_node_search</h4>
+                <pre class="signature"><code>slay avl_node_search(node AVLNode, key tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L298">advanced_collections.csd:298</a></p>
+            </div>
+            <div class="doc-item" id="priority_queue_new">
+                <h4>priority_queue_new</h4>
+                <pre class="signature"><code>slay priority_queue_new() PriorityQueue {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L327">advanced_collections.csd:327</a></p>
+            </div>
+            <div class="doc-item" id="priority_queue_insert">
+                <h4>priority_queue_insert</h4>
+                <pre class="signature"><code>slay priority_queue_insert(pq PriorityQueue, key tea, priority normie) PriorityQueue {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L334">advanced_collections.csd:334</a></p>
+            </div>
+            <div class="doc-item" id="priority_queue_extract_max">
+                <h4>priority_queue_extract_max</h4>
+                <pre class="signature"><code>slay priority_queue_extract_max(pq PriorityQueue) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L346">advanced_collections.csd:346</a></p>
+            </div>
+            <div class="doc-item" id="priority_queue_peek">
+                <h4>priority_queue_peek</h4>
+                <pre class="signature"><code>slay priority_queue_peek(pq PriorityQueue) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L365">advanced_collections.csd:365</a></p>
+            </div>
+            <div class="doc-item" id="priority_queue_heapify_up">
+                <h4>priority_queue_heapify_up</h4>
+                <pre class="signature"><code>slay priority_queue_heapify_up(pq PriorityQueue, index normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L372">advanced_collections.csd:372</a></p>
+            </div>
+            <div class="doc-item" id="priority_queue_heapify_down">
+                <h4>priority_queue_heapify_down</h4>
+                <pre class="signature"><code>slay priority_queue_heapify_down(pq PriorityQueue, index normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L385">advanced_collections.csd:385</a></p>
+            </div>
+            <div class="doc-item" id="priority_queue_swap">
+                <h4>priority_queue_swap</h4>
+                <pre class="signature"><code>slay priority_queue_swap(pq PriorityQueue, i normie, j normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L404">advanced_collections.csd:404</a></p>
+            </div>
+            <div class="doc-item" id="priority_queue_is_empty">
+                <h4>priority_queue_is_empty</h4>
+                <pre class="signature"><code>slay priority_queue_is_empty(pq PriorityQueue) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L410">advanced_collections.csd:410</a></p>
+            </div>
+            <div class="doc-item" id="priority_queue_size">
+                <h4>priority_queue_size</h4>
+                <pre class="signature"><code>slay priority_queue_size(pq PriorityQueue) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L414">advanced_collections.csd:414</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_new">
+                <h4>concurrent_hashmap_new</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_new(segment_count normie) ConcurrentHashMap {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L428">advanced_collections.csd:428</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_get_segment">
+                <h4>concurrent_hashmap_get_segment</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_get_segment(chm ConcurrentHashMap, key tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L443">advanced_collections.csd:443</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_insert">
+                <h4>concurrent_hashmap_insert</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_insert(chm ConcurrentHashMap, key tea, value tea) ConcurrentHashMap {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L448">advanced_collections.csd:448</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_get">
+                <h4>concurrent_hashmap_get</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_get(chm ConcurrentHashMap, key tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L463">advanced_collections.csd:463</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_contains_key">
+                <h4>concurrent_hashmap_contains_key</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_contains_key(chm ConcurrentHashMap, key tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L468">advanced_collections.csd:468</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_remove">
+                <h4>concurrent_hashmap_remove</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_remove(chm ConcurrentHashMap, key tea) ConcurrentHashMap {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L473">advanced_collections.csd:473</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_hashmap_size">
+                <h4>concurrent_hashmap_size</h4>
+                <pre class="signature"><code>slay concurrent_hashmap_size(chm ConcurrentHashMap) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L488">advanced_collections.csd:488</a></p>
+            </div>
+            <div class="doc-item" id="string_compare">
+                <h4>string_compare</h4>
+                <pre class="signature"><code>slay string_compare(s1 tea, s2 tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L496">advanced_collections.csd:496</a></p>
+            </div>
+            <div class="doc-item" id="btree_insert_at">
+                <h4>btree_insert_at</h4>
+                <pre class="signature"><code>slay btree_insert_at(arr []BTreeNode, index normie, item BTreeNode) []BTreeNode {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L508">advanced_collections.csd:508</a></p>
+            </div>
+            <div class="doc-item" id="btree_insert_at_tea">
+                <h4>btree_insert_at_tea</h4>
+                <pre class="signature"><code>slay btree_insert_at_tea(arr []tea, index normie, item tea) []tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L528">advanced_collections.csd:528</a></p>
+            </div>
+            <div class="doc-item" id="memory_usage_report">
+                <h4>memory_usage_report</h4>
+                <pre class="signature"><code>slay memory_usage_report() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L552">advanced_collections.csd:552</a></p>
+            </div>
+            <div class="doc-item" id="trigger_gc">
+                <h4>trigger_gc</h4>
+                <pre class="signature"><code>slay trigger_gc() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L559">advanced_collections.csd:559</a></p>
+            </div>
+            <div class="doc-item" id="memory_pool_info">
+                <h4>memory_pool_info</h4>
+                <pre class="signature"><code>slay memory_pool_info() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/collections/advanced_collections.csd#L564">advanced_collections.csd:564</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

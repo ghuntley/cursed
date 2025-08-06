@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ipc_comprehensive_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>ipc_comprehensive_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L9">ipc_comprehensive_demo.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="demo_named_pipes">
+                <h4>demo_named_pipes</h4>
+                <pre class="signature"><code>slay demo_named_pipes() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L47">ipc_comprehensive_demo.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="demo_shared_memory">
+                <h4>demo_shared_memory</h4>
+                <pre class="signature"><code>slay demo_shared_memory() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L77">ipc_comprehensive_demo.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="demo_message_queues">
+                <h4>demo_message_queues</h4>
+                <pre class="signature"><code>slay demo_message_queues() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L116">ipc_comprehensive_demo.csd:116</a></p>
+            </div>
+            <div class="doc-item" id="demo_semaphores">
+                <h4>demo_semaphores</h4>
+                <pre class="signature"><code>slay demo_semaphores() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L151">ipc_comprehensive_demo.csd:151</a></p>
+            </div>
+            <div class="doc-item" id="demo_barriers">
+                <h4>demo_barriers</h4>
+                <pre class="signature"><code>slay demo_barriers() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L188">ipc_comprehensive_demo.csd:188</a></p>
+            </div>
+            <div class="doc-item" id="demo_rwlock_timeout">
+                <h4>demo_rwlock_timeout</h4>
+                <pre class="signature"><code>slay demo_rwlock_timeout() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L211">ipc_comprehensive_demo.csd:211</a></p>
+            </div>
+            <div class="doc-item" id="demo_condition_variables">
+                <h4>demo_condition_variables</h4>
+                <pre class="signature"><code>slay demo_condition_variables() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L233">ipc_comprehensive_demo.csd:233</a></p>
+            </div>
+            <div class="doc-item" id="demo_unix_sockets">
+                <h4>demo_unix_sockets</h4>
+                <pre class="signature"><code>slay demo_unix_sockets() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L255">ipc_comprehensive_demo.csd:255</a></p>
+            </div>
+            <div class="doc-item" id="demo_signal_handling">
+                <h4>demo_signal_handling</h4>
+                <pre class="signature"><code>slay demo_signal_handling() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L277">ipc_comprehensive_demo.csd:277</a></p>
+            </div>
+            <div class="doc-item" id="demo_rpc_system">
+                <h4>demo_rpc_system</h4>
+                <pre class="signature"><code>slay demo_rpc_system() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L306">ipc_comprehensive_demo.csd:306</a></p>
+            </div>
+            <div class="doc-item" id="demo_distributed_coordination">
+                <h4>demo_distributed_coordination</h4>
+                <pre class="signature"><code>slay demo_distributed_coordination() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L357">ipc_comprehensive_demo.csd:357</a></p>
+            </div>
+            <div class="doc-item" id="demo_performance_monitoring">
+                <h4>demo_performance_monitoring</h4>
+                <pre class="signature"><code>slay demo_performance_monitoring() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L379">ipc_comprehensive_demo.csd:379</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = ipc::get_statistics()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L31">ipc_comprehensive_demo.csd:31</a></p>
+            </div>
+            <div class="doc-item" id="pipe_path">
+                <h4>pipe_path</h4>
+                <pre class="signature"><code>facts pipe_path = "/tmp/cursed_demo_pipe";</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L51">ipc_comprehensive_demo.csd:51</a></p>
+            </div>
+            <div class="doc-item" id="config">
+                <h4>config</h4>
+                <pre class="signature"><code>facts config = ipc::PipeConfig::new(pipe_path)</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L54">ipc_comprehensive_demo.csd:54</a></p>
+            </div>
+            <div class="doc-item" id="pipe">
+                <h4>pipe</h4>
+                <pre class="signature"><code>facts pipe = ipc::NamedPipe::create_with_config(config)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L59">ipc_comprehensive_demo.csd:59</a></p>
+            </div>
+            <div class="doc-item" id="test_data">
+                <h4>test_data</h4>
+                <pre class="signature"><code>facts test_data = b"Hello from CURSED named pipe!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L63">ipc_comprehensive_demo.csd:63</a></p>
+            </div>
+            <div class="doc-item" id="read_data">
+                <h4>read_data</h4>
+                <pre class="signature"><code>facts read_data = pipe.read()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L68">ipc_comprehensive_demo.csd:68</a></p>
+            </div>
+            <div class="doc-item" id="shm_name">
+                <h4>shm_name</h4>
+                <pre class="signature"><code>facts shm_name = "cursed_demo_shm";</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L81">ipc_comprehensive_demo.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="shm_size">
+                <h4>shm_size</h4>
+                <pre class="signature"><code>facts shm_size = 4096;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L82">ipc_comprehensive_demo.csd:82</a></p>
+            </div>
+            <div class="doc-item" id="config">
+                <h4>config</h4>
+                <pre class="signature"><code>facts config = ipc::MemoryConfig::new(shm_name, shm_size)</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L85">ipc_comprehensive_demo.csd:85</a></p>
+            </div>
+            <div class="doc-item" id="test_message">
+                <h4>test_message</h4>
+                <pre class="signature"><code>facts test_message = "CURSED shared memory works!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L96">ipc_comprehensive_demo.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="read_data">
+                <h4>read_data</h4>
+                <pre class="signature"><code>facts read_data = shm.read_at(0, test_message.len())?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L101">ipc_comprehensive_demo.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="read_message">
+                <h4>read_message</h4>
+                <pre class="signature"><code>facts read_message = String::from_utf8(read_data)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L102">ipc_comprehensive_demo.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="view">
+                <h4>view</h4>
+                <pre class="signature"><code>facts view = shm.view(0, test_message.len())?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L106">ipc_comprehensive_demo.csd:106</a></p>
+            </div>
+            <div class="doc-item" id="queue_name">
+                <h4>queue_name</h4>
+                <pre class="signature"><code>facts queue_name = "cursed_demo_queue";</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L120">ipc_comprehensive_demo.csd:120</a></p>
+            </div>
+            <div class="doc-item" id="config">
+                <h4>config</h4>
+                <pre class="signature"><code>facts config = ipc::QueueConfig::new(queue_name, 100);</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L121">ipc_comprehensive_demo.csd:121</a></p>
+            </div>
+            <div class="doc-item" id="queue">
+                <h4>queue</h4>
+                <pre class="signature"><code>facts queue = ipc::MessageQueue::create_with_config(config)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L123">ipc_comprehensive_demo.csd:123</a></p>
+            </div>
+            <div class="doc-item" id="messages">
+                <h4>messages</h4>
+                <pre class="signature"><code>facts messages = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L127">ipc_comprehensive_demo.csd:127</a></p>
+            </div>
+            <div class="doc-item" id="received">
+                <h4>received</h4>
+                <pre class="signature"><code>facts received = queue.receive()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L140">ipc_comprehensive_demo.csd:140</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = queue.statistics();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L146">ipc_comprehensive_demo.csd:146</a></p>
+            </div>
+            <div class="doc-item" id="binary_sem">
+                <h4>binary_sem</h4>
+                <pre class="signature"><code>facts binary_sem = ipc::create_binary_semaphore()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L156">ipc_comprehensive_demo.csd:156</a></p>
+            </div>
+            <div class="doc-item" id="counting_sem">
+                <h4>counting_sem</h4>
+                <pre class="signature"><code>facts counting_sem = ipc::create_counting_semaphore(5, 10)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L166">ipc_comprehensive_demo.csd:166</a></p>
+            </div>
+            <div class="doc-item" id="named_sem">
+                <h4>named_sem</h4>
+                <pre class="signature"><code>facts named_sem = ipc::create_named_semaphore("demo_semaphore", 2)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L180">ipc_comprehensive_demo.csd:180</a></p>
+            </div>
+            <div class="doc-item" id="sem_stats">
+                <h4>sem_stats</h4>
+                <pre class="signature"><code>facts sem_stats = named_sem.statistics();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L183">ipc_comprehensive_demo.csd:183</a></p>
+            </div>
+            <div class="doc-item" id="thread_count">
+                <h4>thread_count</h4>
+                <pre class="signature"><code>facts thread_count = 3;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L192">ipc_comprehensive_demo.csd:192</a></p>
+            </div>
+            <div class="doc-item" id="barrier">
+                <h4>barrier</h4>
+                <pre class="signature"><code>facts barrier = ipc::create_barrier(thread_count)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L193">ipc_comprehensive_demo.csd:193</a></p>
+            </div>
+            <div class="doc-item" id="is_leader">
+                <h4>is_leader</h4>
+                <pre class="signature"><code>facts is_leader = barrier.wait()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L198">ipc_comprehensive_demo.csd:198</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = barrier.statistics();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L201">ipc_comprehensive_demo.csd:201</a></p>
+            </div>
+            <div class="doc-item" id="rwlock">
+                <h4>rwlock</h4>
+                <pre class="signature"><code>facts rwlock = ipc::create_rwlock_timeout(42);</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L215">ipc_comprehensive_demo.csd:215</a></p>
+            </div>
+            <div class="doc-item" id="read_guard">
+                <h4>read_guard</h4>
+                <pre class="signature"><code>facts read_guard = rwlock.read_timeout(Duration::from_millis(100))?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L219">ipc_comprehensive_demo.csd:219</a></p>
+            </div>
+            <div class="doc-item" id="write_guard">
+                <h4>write_guard</h4>
+                <pre class="signature"><code>facts write_guard = rwlock.write_timeout(Duration::from_millis(100))?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L224">ipc_comprehensive_demo.csd:224</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = rwlock.statistics();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L228">ipc_comprehensive_demo.csd:228</a></p>
+            </div>
+            <div class="doc-item" id="condvar">
+                <h4>condvar</h4>
+                <pre class="signature"><code>facts condvar = ipc::create_condition_variable();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L237">ipc_comprehensive_demo.csd:237</a></p>
+            </div>
+            <div class="doc-item" id="mutex">
+                <h4>mutex</h4>
+                <pre class="signature"><code>facts mutex = std::sync::Mutex::new(cap);</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L238">ipc_comprehensive_demo.csd:238</a></p>
+            </div>
+            <div class="doc-item" id="guard">
+                <h4>guard</h4>
+                <pre class="signature"><code>facts guard = mutex.lock().unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L243">ipc_comprehensive_demo.csd:243</a></p>
+            </div>
+            <div class="doc-item" id="(guard, timed_out)">
+                <h4>(guard, timed_out)</h4>
+                <pre class="signature"><code>facts (guard, timed_out) = condvar.wait_timeout(guard, Duration::from_millis(1))?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L247">ipc_comprehensive_demo.csd:247</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = condvar.statistics();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L250">ipc_comprehensive_demo.csd:250</a></p>
+            </div>
+            <div class="doc-item" id="(socket1, socket2)">
+                <h4>(socket1, socket2)</h4>
+                <pre class="signature"><code>facts (socket1, socket2) = ipc::create_socket_pair()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L260">ipc_comprehensive_demo.csd:260</a></p>
+            </div>
+            <div class="doc-item" id="test_data">
+                <h4>test_data</h4>
+                <pre class="signature"><code>facts test_data = b"Hello from socket!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L263">ipc_comprehensive_demo.csd:263</a></p>
+            </div>
+            <div class="doc-item" id="received">
+                <h4>received</h4>
+                <pre class="signature"><code>facts received = socket2.receive()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L270">ipc_comprehensive_demo.csd:270</a></p>
+            </div>
+            <div class="doc-item" id="config">
+                <h4>config</h4>
+                <pre class="signature"><code>facts config = ipc::SignalConfig::new("demo_signals");</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L281">ipc_comprehensive_demo.csd:281</a></p>
+            </div>
+            <div class="doc-item" id="handler">
+                <h4>handler</h4>
+                <pre class="signature"><code>facts handler = ipc::SignalHandler::new(config)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L282">ipc_comprehensive_demo.csd:282</a></p>
+            </div>
+            <div class="doc-item" id="signal">
+                <h4>signal</h4>
+                <pre class="signature"><code>facts signal = ipc::Signal::Custom("test_signal".to_string());</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L293">ipc_comprehensive_demo.csd:293</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = handler.statistics();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L300">ipc_comprehensive_demo.csd:300</a></p>
+            </div>
+            <div class="doc-item" id="config">
+                <h4>config</h4>
+                <pre class="signature"><code>facts config = ipc::RpcConfig::new("demo_rpc_service");</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L310">ipc_comprehensive_demo.csd:310</a></p>
+            </div>
+            <div class="doc-item" id="server">
+                <h4>server</h4>
+                <pre class="signature"><code>facts server = ipc::RpcServer::new(config.clone())?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L313">ipc_comprehensive_demo.csd:313</a></p>
+            </div>
+            <div class="doc-item" id="a">
+                <h4>a</h4>
+                <pre class="signature"><code>facts a = i32::from_le_bytes([params[0], params[1], params[2], params[3]]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L319">ipc_comprehensive_demo.csd:319</a></p>
+            </div>
+            <div class="doc-item" id="b">
+                <h4>b</h4>
+                <pre class="signature"><code>facts b = i32::from_le_bytes([params[4], params[5], params[6], params[7]]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L320">ipc_comprehensive_demo.csd:320</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = a + b;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L321">ipc_comprehensive_demo.csd:321</a></p>
+            </div>
+            <div class="doc-item" id="client">
+                <h4>client</h4>
+                <pre class="signature"><code>facts client = ipc::RpcClient::new(config)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L334">ipc_comprehensive_demo.csd:334</a></p>
+            </div>
+            <div class="doc-item" id="params">
+                <h4>params</h4>
+                <pre class="signature"><code>facts params = [5i32.to_le_bytes(), 7i32.to_le_bytes()].concat();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L339">ipc_comprehensive_demo.csd:339</a></p>
+            </div>
+            <div class="doc-item" id="request">
+                <h4>request</h4>
+                <pre class="signature"><code>facts request = ipc::RpcRequest::new("add", params);</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L340">ipc_comprehensive_demo.csd:340</a></p>
+            </div>
+            <div class="doc-item" id="response">
+                <h4>response</h4>
+                <pre class="signature"><code>facts response = client.call(request)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L342">ipc_comprehensive_demo.csd:342</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = i32::from_le_bytes([</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L344">ipc_comprehensive_demo.csd:344</a></p>
+            </div>
+            <div class="doc-item" id="coordinator">
+                <h4>coordinator</h4>
+                <pre class="signature"><code>facts coordinator = ipc::create_distributed_coordinator("demo_node");</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L361">ipc_comprehensive_demo.csd:361</a></p>
+            </div>
+            <div class="doc-item" id="shm">
+                <h4>shm</h4>
+                <pre class="signature"><code>facts shm = ipc::create_shared_memory("perf_monitor_shm", 1024)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L384">ipc_comprehensive_demo.csd:384</a></p>
+            </div>
+            <div class="doc-item" id="sem">
+                <h4>sem</h4>
+                <pre class="signature"><code>facts sem = ipc::create_semaphore(5)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L385">ipc_comprehensive_demo.csd:385</a></p>
+            </div>
+            <div class="doc-item" id="barrier">
+                <h4>barrier</h4>
+                <pre class="signature"><code>facts barrier = ipc::create_barrier(1)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L386">ipc_comprehensive_demo.csd:386</a></p>
+            </div>
+            <div class="doc-item" id="global_stats">
+                <h4>global_stats</h4>
+                <pre class="signature"><code>facts global_stats = ipc::get_statistics()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L398">ipc_comprehensive_demo.csd:398</a></p>
+            </div>
+            <div class="doc-item" id="sem_stats">
+                <h4>sem_stats</h4>
+                <pre class="signature"><code>facts sem_stats = sem.statistics();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L399">ipc_comprehensive_demo.csd:399</a></p>
+            </div>
+            <div class="doc-item" id="barrier_stats">
+                <h4>barrier_stats</h4>
+                <pre class="signature"><code>facts barrier_stats = barrier.statistics();</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_comprehensive_demo.csd#L400">ipc_comprehensive_demo.csd:400</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>core_functions - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>core_functions</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="init_runtime">
+                <h4>init_runtime</h4>
+                <pre class="signature"><code>slay init_runtime() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L19">core_functions.csd:19</a></p>
+            </div>
+            <div class="doc-item" id="is_runtime_ready">
+                <h4>is_runtime_ready</h4>
+                <pre class="signature"><code>slay is_runtime_ready() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L32">core_functions.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="get_last_error">
+                <h4>get_last_error</h4>
+                <pre class="signature"><code>slay get_last_error() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L37">core_functions.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="clear_error">
+                <h4>clear_error</h4>
+                <pre class="signature"><code>slay clear_error() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L42">core_functions.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="print">
+                <h4>print</h4>
+                <pre class="signature"><code>slay print(message tea) lit { fr fr Validate input</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L47">core_functions.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="print_safe">
+                <h4>print_safe</h4>
+                <pre class="signature"><code>slay print_safe(message tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L71">core_functions.csd:71</a></p>
+            </div>
+            <div class="doc-item" id="emergency_print">
+                <h4>emergency_print</h4>
+                <pre class="signature"><code>slay emergency_print(message tea) lit { fr fr Minimal error output - always succeeds</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L82">core_functions.csd:82</a></p>
+            </div>
+            <div class="doc-item" id="read_line">
+                <h4>read_line</h4>
+                <pre class="signature"><code>slay read_line() tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L91">core_functions.csd:91</a></p>
+            </div>
+            <div class="doc-item" id="read_line_safe">
+                <h4>read_line_safe</h4>
+                <pre class="signature"><code>slay read_line_safe(timeout_ms normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L119">core_functions.csd:119</a></p>
+            </div>
+            <div class="doc-item" id="is_valid_input">
+                <h4>is_valid_input</h4>
+                <pre class="signature"><code>slay is_valid_input(input tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L138">core_functions.csd:138</a></p>
+            </div>
+            <div class="doc-item" id="get_timestamp">
+                <h4>get_timestamp</h4>
+                <pre class="signature"><code>slay get_timestamp() tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L164">core_functions.csd:164</a></p>
+            </div>
+            <div class="doc-item" id="format_timestamp">
+                <h4>format_timestamp</h4>
+                <pre class="signature"><code>slay format_timestamp(year normie, month normie, day normie, hour normie, minute normie, second normie, ms normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L182">core_functions.csd:182</a></p>
+            </div>
+            <div class="doc-item" id="pad_number">
+                <h4>pad_number</h4>
+                <pre class="signature"><code>slay pad_number(number normie, width normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L198">core_functions.csd:198</a></p>
+            </div>
+            <div class="doc-item" id="get_timestamp_ms">
+                <h4>get_timestamp_ms</h4>
+                <pre class="signature"><code>slay get_timestamp_ms() normie { fr fr In real implementation, would return milliseconds since epoch fr fr For simulation, return a reasonable value</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L211">core_functions.csd:211</a></p>
+            </div>
+            <div class="doc-item" id="get_timestamp_us">
+                <h4>get_timestamp_us</h4>
+                <pre class="signature"><code>slay get_timestamp_us() normie { fr fr In real implementation, would return microseconds since epoch</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L216">core_functions.csd:216</a></p>
+            </div>
+            <div class="doc-item" id="number_to_string">
+                <h4>number_to_string</h4>
+                <pre class="signature"><code>slay number_to_string(number normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L221">core_functions.csd:221</a></p>
+            </div>
+            <div class="doc-item" id="digit_to_char">
+                <h4>digit_to_char</h4>
+                <pre class="signature"><code>slay digit_to_char(digit normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L253">core_functions.csd:253</a></p>
+            </div>
+            <div class="doc-item" id="float_to_string">
+                <h4>float_to_string</h4>
+                <pre class="signature"><code>slay float_to_string(number drip) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L268">core_functions.csd:268</a></p>
+            </div>
+            <div class="doc-item" id="float_to_string_precision">
+                <h4>float_to_string_precision</h4>
+                <pre class="signature"><code>slay float_to_string_precision(number drip, precision normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L273">core_functions.csd:273</a></p>
+            </div>
+            <div class="doc-item" id="float_to_int">
+                <h4>float_to_int</h4>
+                <pre class="signature"><code>slay float_to_int(value drip) normie { fr fr In real implementation, would use system conversion fr fr For simulation, handle common cases</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L321">core_functions.csd:321</a></p>
+            </div>
+            <div class="doc-item" id="int_to_float">
+                <h4>int_to_float</h4>
+                <pre class="signature"><code>slay int_to_float(value normie) drip { fr fr In real implementation, would use system conversion</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L332">core_functions.csd:332</a></p>
+            </div>
+            <div class="doc-item" id="string_to_number">
+                <h4>string_to_number</h4>
+                <pre class="signature"><code>slay string_to_number(str tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L343">core_functions.csd:343</a></p>
+            </div>
+            <div class="doc-item" id="is_valid_number_string">
+                <h4>is_valid_number_string</h4>
+                <pre class="signature"><code>slay is_valid_number_string(str tea, start_pos normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L384">core_functions.csd:384</a></p>
+            </div>
+            <div class="doc-item" id="is_digit_char">
+                <h4>is_digit_char</h4>
+                <pre class="signature"><code>slay is_digit_char(char tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L402">core_functions.csd:402</a></p>
+            </div>
+            <div class="doc-item" id="char_to_digit">
+                <h4>char_to_digit</h4>
+                <pre class="signature"><code>slay char_to_digit(char tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L416">core_functions.csd:416</a></p>
+            </div>
+            <div class="doc-item" id="get_env_var">
+                <h4>get_env_var</h4>
+                <pre class="signature"><code>slay get_env_var(name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L431">core_functions.csd:431</a></p>
+            </div>
+            <div class="doc-item" id="set_env_var">
+                <h4>set_env_var</h4>
+                <pre class="signature"><code>slay set_env_var(name tea, value tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L453">core_functions.csd:453</a></p>
+            </div>
+            <div class="doc-item" id="file_exists">
+                <h4>file_exists</h4>
+                <pre class="signature"><code>slay file_exists(path tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L468">core_functions.csd:468</a></p>
+            </div>
+            <div class="doc-item" id="get_file_size">
+                <h4>get_file_size</h4>
+                <pre class="signature"><code>slay get_file_size(path tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L487">core_functions.csd:487</a></p>
+            </div>
+            <div class="doc-item" id="track_memory_alloc">
+                <h4>track_memory_alloc</h4>
+                <pre class="signature"><code>slay track_memory_alloc(size normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L507">core_functions.csd:507</a></p>
+            </div>
+            <div class="doc-item" id="track_memory_free">
+                <h4>track_memory_free</h4>
+                <pre class="signature"><code>slay track_memory_free(size normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L524">core_functions.csd:524</a></p>
+            </div>
+            <div class="doc-item" id="get_memory_usage">
+                <h4>get_memory_usage</h4>
+                <pre class="signature"><code>slay get_memory_usage() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L541">core_functions.csd:541</a></p>
+            </div>
+            <div class="doc-item" id="get_available_memory">
+                <h4>get_available_memory</h4>
+                <pre class="signature"><code>slay get_available_memory() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L546">core_functions.csd:546</a></p>
+            </div>
+            <div class="doc-item" id="self_test">
+                <h4>self_test</h4>
+                <pre class="signature"><code>slay self_test() lit { fr fr Test print functionality</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L551">core_functions.csd:551</a></p>
+            </div>
+            <div class="doc-item" id="get_runtime_stats">
+                <h4>get_runtime_stats</h4>
+                <pre class="signature"><code>slay get_runtime_stats() tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L576">core_functions.csd:576</a></p>
+            </div>
+            <div class="doc-item" id="reset_runtime">
+                <h4>reset_runtime</h4>
+                <pre class="signature"><code>slay reset_runtime() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/core_functions.csd#L586">core_functions.csd:586</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

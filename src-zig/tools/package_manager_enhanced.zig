@@ -800,7 +800,7 @@ pub const LockFile = struct {
     version: u32 = 1,
     packages: ArrayList(LockedPackage),
     
-    const LockedPackage = struct {
+    pub const LockedPackage = struct {
         name: []const u8,
         version: Version,
         source: PackageSource,
@@ -1007,7 +1007,7 @@ pub const DependencyResolver = struct {
         return resolved;
     }
     
-    const ResolvedDependency = struct {
+    pub const ResolvedDependency = struct {
         name: []const u8,
         version: Version,
         source: PackageSource,

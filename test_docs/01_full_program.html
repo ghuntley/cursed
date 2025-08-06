@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>01_full_program - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>01_full_program</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="TaskManager.new">
+                <h4>TaskManager.new</h4>
+                <pre class="signature"><code>slay TaskManager.new() TaskManager {</code></pre>
+                <p class="source">Source: <a href="file://./tests/e2e/integration/01_full_program.csd#L22">01_full_program.csd:22</a></p>
+            </div>
+            <div class="doc-item" id="TaskManager.add_task">
+                <h4>TaskManager.add_task</h4>
+                <pre class="signature"><code>slay TaskManager.add_task(name tea, priority drip) {</code></pre>
+                <p class="source">Source: <a href="file://./tests/e2e/integration/01_full_program.csd#L30">01_full_program.csd:30</a></p>
+            </div>
+            <div class="doc-item" id="TaskManager.complete_task">
+                <h4>TaskManager.complete_task</h4>
+                <pre class="signature"><code>slay TaskManager.complete_task(id drip) (lit, tea) {</code></pre>
+                <p class="source">Source: <a href="file://./tests/e2e/integration/01_full_program.csd#L45">01_full_program.csd:45</a></p>
+            </div>
+            <div class="doc-item" id="TaskManager.list_tasks">
+                <h4>TaskManager.list_tasks</h4>
+                <pre class="signature"><code>slay TaskManager.list_tasks() {</code></pre>
+                <p class="source">Source: <a href="file://./tests/e2e/integration/01_full_program.csd#L57">01_full_program.csd:57</a></p>
+            </div>
+            <div class="doc-item" id="TaskManager.get_stats">
+                <h4>TaskManager.get_stats</h4>
+                <pre class="signature"><code>slay TaskManager.get_stats() (drip, drip, drip) {</code></pre>
+                <p class="source">Source: <a href="file://./tests/e2e/integration/01_full_program.csd#L78">01_full_program.csd:78</a></p>
+            </div>
+            <div class="doc-item" id="safe_complete_task">
+                <h4>safe_complete_task</h4>
+                <pre class="signature"><code>slay safe_complete_task(manager *TaskManager, id drip) {</code></pre>
+                <p class="source">Source: <a href="file://./tests/e2e/integration/01_full_program.csd#L96">01_full_program.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="process_high_priority_tasks">
+                <h4>process_high_priority_tasks</h4>
+                <pre class="signature"><code>slay process_high_priority_tasks(manager *TaskManager) {</code></pre>
+                <p class="source">Source: <a href="file://./tests/e2e/integration/01_full_program.csd#L111">01_full_program.csd:111</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="Task">
+                <h4>Task</h4>
+                <pre class="signature"><code>squad Task {</code></pre>
+                <p class="source">Source: <a href="file://./tests/e2e/integration/01_full_program.csd#L9">01_full_program.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="TaskManager">
+                <h4>TaskManager</h4>
+                <pre class="signature"><code>squad TaskManager {</code></pre>
+                <p class="source">Source: <a href="file://./tests/e2e/integration/01_full_program.csd#L16">01_full_program.csd:16</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

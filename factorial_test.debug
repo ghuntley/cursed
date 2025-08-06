@@ -1,0 +1,34 @@
+CURSED Debug Information (DWARF v5 Compatible)
+==================================================
+
+Source File: debug_test.csd
+Compile Unit ID: 1
+
+Functions (1 total):
+  [0] factorial -> drip (line 1)
+    param: n: drip
+
+Variables (2 total):
+  [0] result: drip (line 2, scope 0)
+  [1] i: drip (line 3, scope 0)
+
+Types (8 total):
+  [0] normie: 4 bytes, align 4, kind: enhanced_debug_generation.TypeKind.signed_integer
+  [1] tea: 8 bytes, align 8, kind: enhanced_debug_generation.TypeKind.string
+  [2] drip: 8 bytes, align 8, kind: enhanced_debug_generation.TypeKind.signed_integer
+  [3] lit: 1 bytes, align 1, kind: enhanced_debug_generation.TypeKind.boolean
+  [4] meal: 8 bytes, align 8, kind: enhanced_debug_generation.TypeKind.float
+  [5] smol: 1 bytes, align 1, kind: enhanced_debug_generation.TypeKind.signed_integer
+  [6] thicc: 8 bytes, align 8, kind: enhanced_debug_generation.TypeKind.signed_integer
+  [7] sip: 1 bytes, align 1, kind: enhanced_debug_generation.TypeKind.unsigned_integer
+
+Source Locations (9 total):
+  1:0 in debug_test.csd (context: factorial)
+  2:0 in debug_test.csd (context: result)
+  3:0 in debug_test.csd (context: i)
+  2:5 in debug_test.csd (context: variable initialization)
+  3:5 in debug_test.csd (context: loop counter)
+  4:9 in debug_test.csd (context: loop condition)
+  5:13 in debug_test.csd (context: multiplication)
+  6:9 in debug_test.csd (context: increment)
+  7:5 in debug_test.csd (context: return result)

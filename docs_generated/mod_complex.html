@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mod_complex - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>mod_complex</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="spill">
+                <h4>spill</h4>
+                <pre class="signature"><code>slay spill(message tea) lit { fr fr Output to console via runtime interface</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L8">mod_complex.csd:8</a></p>
+            </div>
+            <div class="doc-item" id="spillf">
+                <h4>spillf</h4>
+                <pre class="signature"><code>slay spillf(format tea, args ...tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L14">mod_complex.csd:14</a></p>
+            </div>
+            <div class="doc-item" id="spillstr">
+                <h4>spillstr</h4>
+                <pre class="signature"><code>slay spillstr(format tea, args ...tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L21">mod_complex.csd:21</a></p>
+            </div>
+            <div class="doc-item" id="format_string">
+                <h4>format_string</h4>
+                <pre class="signature"><code>slay format_string(format tea, args ...tea) tea { fr fr Enhanced printf-style formatting with proper string processing</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L26">mod_complex.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="spillln">
+                <h4>spillln</h4>
+                <pre class="signature"><code>slay spillln(message tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L67">mod_complex.csd:67</a></p>
+            </div>
+            <div class="doc-item" id="spillfln">
+                <h4>spillfln</h4>
+                <pre class="signature"><code>slay spillfln(format tea, args ...tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L73">mod_complex.csd:73</a></p>
+            </div>
+            <div class="doc-item" id="scan">
+                <h4>scan</h4>
+                <pre class="signature"><code>slay scan() tea { fr fr Basic input reading - implementation depends on runtime</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L80">mod_complex.csd:80</a></p>
+            </div>
+            <div class="doc-item" id="scanln">
+                <h4>scanln</h4>
+                <pre class="signature"><code>slay scanln() tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L85">mod_complex.csd:85</a></p>
+            </div>
+            <div class="doc-item" id="scanf">
+                <h4>scanf</h4>
+                <pre class="signature"><code>slay scanf(format tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L91">mod_complex.csd:91</a></p>
+            </div>
+            <div class="doc-item" id="parse_input">
+                <h4>parse_input</h4>
+                <pre class="signature"><code>slay parse_input(input tea, format tea) tea { fr fr Simple input parsing - just return input for now fr fr Could be extended for more complex parsing</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L97">mod_complex.csd:97</a></p>
+            </div>
+            <div class="doc-item" id="spill_values">
+                <h4>spill_values</h4>
+                <pre class="signature"><code>slay spill_values(values ...tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L102">mod_complex.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="spill_values_ln">
+                <h4>spill_values_ln</h4>
+                <pre class="signature"><code>slay spill_values_ln(values ...tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L115">mod_complex.csd:115</a></p>
+            </div>
+            <div class="doc-item" id="spill_sep">
+                <h4>spill_sep</h4>
+                <pre class="signature"><code>slay spill_sep(separator tea, values ...tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L122">mod_complex.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="spill_error">
+                <h4>spill_error</h4>
+                <pre class="signature"><code>slay spill_error(message tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L135">mod_complex.csd:135</a></p>
+            </div>
+            <div class="doc-item" id="spill_warning">
+                <h4>spill_warning</h4>
+                <pre class="signature"><code>slay spill_warning(message tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L142">mod_complex.csd:142</a></p>
+            </div>
+            <div class="doc-item" id="spill_debug">
+                <h4>spill_debug</h4>
+                <pre class="signature"><code>slay spill_debug(message tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L149">mod_complex.csd:149</a></p>
+            </div>
+            <div class="doc-item" id="spill_with_time">
+                <h4>spill_with_time</h4>
+                <pre class="signature"><code>slay spill_with_time(message tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L156">mod_complex.csd:156</a></p>
+            </div>
+            <div class="doc-item" id="format_number">
+                <h4>format_number</h4>
+                <pre class="signature"><code>slay format_number(number normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L164">mod_complex.csd:164</a></p>
+            </div>
+            <div class="doc-item" id="format_float">
+                <h4>format_float</h4>
+                <pre class="signature"><code>slay format_float(number drip) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L169">mod_complex.csd:169</a></p>
+            </div>
+            <div class="doc-item" id="format_bool">
+                <h4>format_bool</h4>
+                <pre class="signature"><code>slay format_bool(value lit) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L174">mod_complex.csd:174</a></p>
+            </div>
+            <div class="doc-item" id="clear_screen">
+                <h4>clear_screen</h4>
+                <pre class="signature"><code>slay clear_screen() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L183">mod_complex.csd:183</a></p>
+            </div>
+            <div class="doc-item" id="set_color">
+                <h4>set_color</h4>
+                <pre class="signature"><code>slay set_color(color tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L189">mod_complex.csd:189</a></p>
+            </div>
+            <div class="doc-item" id="spill_colored">
+                <h4>spill_colored</h4>
+                <pre class="signature"><code>slay spill_colored(message tea, color tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L207">mod_complex.csd:207</a></p>
+            </div>
+            <div class="doc-item" id="string_length">
+                <h4>string_length</h4>
+                <pre class="signature"><code>slay string_length(str tea) normie { fr fr Get string length</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L218">mod_complex.csd:218</a></p>
+            </div>
+            <div class="doc-item" id="string_char_at">
+                <h4>string_char_at</h4>
+                <pre class="signature"><code>slay string_char_at(str tea, index normie) tea { fr fr Get character at index as string fr fr Placeholder implementation - real version would access string internals</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L229">mod_complex.csd:229</a></p>
+            </div>
+            <div class="doc-item" id="string_length_internal">
+                <h4>string_length_internal</h4>
+                <pre class="signature"><code>slay string_length_internal(str tea) normie { fr fr Internal string length calculation</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L236">mod_complex.csd:236</a></p>
+            </div>
+            <div class="doc-item" id="string_extract_char">
+                <h4>string_extract_char</h4>
+                <pre class="signature"><code>slay string_extract_char(str tea, index normie) tea { fr fr Extract single character as string</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L240">mod_complex.csd:240</a></p>
+            </div>
+            <div class="doc-item" id="runtime_console_write">
+                <h4>runtime_console_write</h4>
+                <pre class="signature"><code>slay runtime_console_write(message tea) lit { fr fr Interface with runtime console output system fr fr This would be implemented by the runtime</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L244">mod_complex.csd:244</a></p>
+            </div>
+            <div class="doc-item" id="runtime_write_stdout">
+                <h4>runtime_write_stdout</h4>
+                <pre class="signature"><code>slay runtime_write_stdout(data tea) lit { fr fr Write to standard output via runtime bridge</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L249">mod_complex.csd:249</a></p>
+            </div>
+            <div class="doc-item" id="runtime_write_stderr">
+                <h4>runtime_write_stderr</h4>
+                <pre class="signature"><code>slay runtime_write_stderr(data tea) lit { fr fr Write to standard error via runtime bridge</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L254">mod_complex.csd:254</a></p>
+            </div>
+            <div class="doc-item" id="runtime_read_stdin">
+                <h4>runtime_read_stdin</h4>
+                <pre class="signature"><code>slay runtime_read_stdin() tea { fr fr Read from standard input via runtime bridge</code></pre>
+                <p class="source">Source: <a href="file://stdlib/vibez/mod_complex.csd#L259">mod_complex.csd:259</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

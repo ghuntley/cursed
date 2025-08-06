@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gc_performance_test - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>gc_performance_test</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="create_timer">
+                <h4>create_timer</h4>
+                <pre class="signature"><code>slay create_timer(description tea) PerfTimer {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L18">gc_performance_test.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="stop_timer">
+                <h4>stop_timer</h4>
+                <pre class="signature"><code>slay stop_timer(timer PerfTimer) drip {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L25">gc_performance_test.csd:25</a></p>
+            </div>
+            <div class="doc-item" id="time_now_microseconds">
+                <h4>time_now_microseconds</h4>
+                <pre class="signature"><code>slay time_now_microseconds() drip {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L32">gc_performance_test.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="create_promotion_tracker">
+                <h4>create_promotion_tracker</h4>
+                <pre class="signature"><code>slay create_promotion_tracker(id drip) PromotionTracker {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L152">gc_performance_test.csd:152</a></p>
+            </div>
+            <div class="doc-item" id="concurrent_worker">
+                <h4>concurrent_worker</h4>
+                <pre class="signature"><code>slay concurrent_worker(worker_id drip, operations drip) {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L206">gc_performance_test.csd:206</a></p>
+            </div>
+            <div class="doc-item" id="create_mutable_container">
+                <h4>create_mutable_container</h4>
+                <pre class="signature"><code>slay create_mutable_container(id drip) *MutableContainer {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L270">gc_performance_test.csd:270</a></p>
+            </div>
+            <div class="doc-item" id="get_current_heap_usage">
+                <h4>get_current_heap_usage</h4>
+                <pre class="signature"><code>slay get_current_heap_usage() drip {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L355">gc_performance_test.csd:355</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="PerfTimer">
+                <h4>PerfTimer</h4>
+                <pre class="signature"><code>squad PerfTimer {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L13">gc_performance_test.csd:13</a></p>
+            </div>
+            <div class="doc-item" id="PromotionTracker">
+                <h4>PromotionTracker</h4>
+                <pre class="signature"><code>squad PromotionTracker {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L145">gc_performance_test.csd:145</a></p>
+            </div>
+            <div class="doc-item" id="MutableContainer">
+                <h4>MutableContainer</h4>
+                <pre class="signature"><code>squad MutableContainer {</code></pre>
+                <p class="source">Source: <a href="file://./gc_performance_test.csd#L264">gc_performance_test.csd:264</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

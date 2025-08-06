@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vibe_net_enhanced_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>vibe_net_enhanced_demo</h2>
+    </header>
+    <main>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="retry_config">
+                <h4>retry_config</h4>
+                <pre class="signature"><code>facts retry_config = net::RetryConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L12">vibe_net_enhanced_demo.csd:12</a></p>
+            </div>
+            <div class="doc-item" id="quality_score">
+                <h4>quality_score</h4>
+                <pre class="signature"><code>facts quality_score = quality_tracker.quality_score();</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L34">vibe_net_enhanced_demo.csd:34</a></p>
+            </div>
+            <div class="doc-item" id="endpoints">
+                <h4>endpoints</h4>
+                <pre class="signature"><code>facts endpoints = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L47">vibe_net_enhanced_demo.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="peer_protocols">
+                <h4>peer_protocols</h4>
+                <pre class="signature"><code>facts peer_protocols = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L85">vibe_net_enhanced_demo.csd:85</a></p>
+            </div>
+            <div class="doc-item" id="test_ip">
+                <h4>test_ip</h4>
+                <pre class="signature"><code>facts test_ip = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 100));</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L112">vibe_net_enhanced_demo.csd:112</a></p>
+            </div>
+            <div class="doc-item" id="network_ip">
+                <h4>network_ip</h4>
+                <pre class="signature"><code>facts network_ip = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 0));</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L113">vibe_net_enhanced_demo.csd:113</a></p>
+            </div>
+            <div class="doc-item" id="bytes">
+                <h4>bytes</h4>
+                <pre class="signature"><code>facts bytes = 1048576u64;</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L120">vibe_net_enhanced_demo.csd:120</a></p>
+            </div>
+            <div class="doc-item" id="formatted">
+                <h4>formatted</h4>
+                <pre class="signature"><code>facts formatted = net::NetworkUtils::format_bytes(bytes);</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L121">vibe_net_enhanced_demo.csd:121</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = meter.bandwidth_stats();</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L144">vibe_net_enhanced_demo.csd:144</a></p>
+            </div>
+            <div class="doc-item" id="tls_config">
+                <h4>tls_config</h4>
+                <pre class="signature"><code>facts tls_config = net::TlsConfig::new()</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L177">vibe_net_enhanced_demo.csd:177</a></p>
+            </div>
+            <div class="doc-item" id="validator">
+                <h4>validator</h4>
+                <pre class="signature"><code>facts validator = net::CertificateValidator::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L187">vibe_net_enhanced_demo.csd:187</a></p>
+            </div>
+            <div class="doc-item" id="scan_config">
+                <h4>scan_config</h4>
+                <pre class="signature"><code>facts scan_config = net::ScanConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L191">vibe_net_enhanced_demo.csd:191</a></p>
+            </div>
+            <div class="doc-item" id="plaintext">
+                <h4>plaintext</h4>
+                <pre class="signature"><code>facts plaintext = b"Hello, secure world!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L211">vibe_net_enhanced_demo.csd:211</a></p>
+            </div>
+            <div class="doc-item" id="targets">
+                <h4>targets</h4>
+                <pre class="signature"><code>facts targets = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L227">vibe_net_enhanced_demo.csd:227</a></p>
+            </div>
+            <div class="doc-item" id="health_checker">
+                <h4>health_checker</h4>
+                <pre class="signature"><code>facts health_checker = net::ConnectionHealthChecker::new(</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L244">vibe_net_enhanced_demo.csd:244</a></p>
+            </div>
+            <div class="doc-item" id="interfaces">
+                <h4>interfaces</h4>
+                <pre class="signature"><code>facts interfaces = vec!["eth0".to_string(), "lo".to_string()];</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L256">vibe_net_enhanced_demo.csd:256</a></p>
+            </div>
+            <div class="doc-item" id="stats_collector">
+                <h4>stats_collector</h4>
+                <pre class="signature"><code>facts stats_collector = Box::new(net::NetworkStatsCollector::new(interfaces));</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L257">vibe_net_enhanced_demo.csd:257</a></p>
+            </div>
+            <div class="doc-item" id="event_handler">
+                <h4>event_handler</h4>
+                <pre class="signature"><code>facts event_handler = Box::new(net::LoggingEventHandler::new(net::LogLevel::Info));</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L261">vibe_net_enhanced_demo.csd:261</a></p>
+            </div>
+            <div class="doc-item" id="connection_event">
+                <h4>connection_event</h4>
+                <pre class="signature"><code>facts connection_event = net::NetworkEvent::ConnectionEstablished {</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L270">vibe_net_enhanced_demo.csd:270</a></p>
+            </div>
+            <div class="doc-item" id="health_event">
+                <h4>health_event</h4>
+                <pre class="signature"><code>facts health_event = net::NetworkEvent::HealthCheckRecovered {</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L276">vibe_net_enhanced_demo.csd:276</a></p>
+            </div>
+            <div class="doc-item" id="features">
+                <h4>features</h4>
+                <pre class="signature"><code>facts features = net::features();</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L340">vibe_net_enhanced_demo.csd:340</a></p>
+            </div>
+            <div class="doc-item" id="enhanced_features">
+                <h4>enhanced_features</h4>
+                <pre class="signature"><code>facts enhanced_features = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L343">vibe_net_enhanced_demo.csd:343</a></p>
+            </div>
+            <div class="doc-item" id="enabled">
+                <h4>enabled</h4>
+                <pre class="signature"><code>facts enabled = features.get(feature).unwrap_or(&cap);</code></pre>
+                <p class="source">Source: <a href="file://./examples/vibe_net_enhanced_demo.csd#L351">vibe_net_enhanced_demo.csd:351</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

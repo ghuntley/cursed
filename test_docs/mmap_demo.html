@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mmap_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>mmap_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="demonstrate_file_mapping">
+                <h4>demonstrate_file_mapping</h4>
+                <pre class="signature"><code>slay demonstrate_file_mapping() -> Result<Void, Error> {</code></pre>
+                <p class="description">high-performance data manipulation.</p>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L11">mmap_demo.csd:11</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_anonymous_mapping">
+                <h4>demonstrate_anonymous_mapping</h4>
+                <pre class="signature"><code>slay demonstrate_anonymous_mapping() -> Result<Void, Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L60">mmap_demo.csd:60</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_shared_memory_ipc">
+                <h4>demonstrate_shared_memory_ipc</h4>
+                <pre class="signature"><code>slay demonstrate_shared_memory_ipc() -> Result<Void, Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L109">mmap_demo.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_large_file_processing">
+                <h4>demonstrate_large_file_processing</h4>
+                <pre class="signature"><code>slay demonstrate_large_file_processing() -> Result<Void, Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L168">mmap_demo.csd:168</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_memory_locking">
+                <h4>demonstrate_memory_locking</h4>
+                <pre class="signature"><code>slay demonstrate_memory_locking() -> Result<Void, Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L259">mmap_demo.csd:259</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_performance_comparison">
+                <h4>demonstrate_performance_comparison</h4>
+                <pre class="signature"><code>slay demonstrate_performance_comparison() -> Result<Void, Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L312">mmap_demo.csd:312</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() -> Result<Void, Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L387">mmap_demo.csd:387</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="test_data">
+                <h4>test_data</h4>
+                <pre class="signature"><code>facts test_data = "Hello, memory-mapped world! This is a test file for demonstration.";</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L15">mmap_demo.csd:15</a></p>
+            </div>
+            <div class="doc-item" id="file_path">
+                <h4>file_path</h4>
+                <pre class="signature"><code>facts file_path = "test_mmap_file.txt";</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L16">mmap_demo.csd:16</a></p>
+            </div>
+            <div class="doc-item" id="test_pattern">
+                <h4>test_pattern</h4>
+                <pre class="signature"><code>facts test_pattern = b"CURSED memory mapping test pattern!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L78">mmap_demo.csd:78</a></p>
+            </div>
+            <div class="doc-item" id="message">
+                <h4>message</h4>
+                <pre class="signature"><code>facts message = "Hello from CURSED process! This is an IPC message.";</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L125">mmap_demo.csd:125</a></p>
+            </div>
+            <div class="doc-item" id="message_bytes">
+                <h4>message_bytes</h4>
+                <pre class="signature"><code>facts message_bytes = message.as_bytes();</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L126">mmap_demo.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="file_path">
+                <h4>file_path</h4>
+                <pre class="signature"><code>facts file_path = "large_test_file.dat";</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L172">mmap_demo.csd:172</a></p>
+            </div>
+            <div class="doc-item" id="chunk_size">
+                <h4>chunk_size</h4>
+                <pre class="signature"><code>facts chunk_size = 1024;</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L173">mmap_demo.csd:173</a></p>
+            </div>
+            <div class="doc-item" id="num_chunks">
+                <h4>num_chunks</h4>
+                <pre class="signature"><code>facts num_chunks = 100; // 100KB file</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L174">mmap_demo.csd:174</a></p>
+            </div>
+            <div class="doc-item" id="sensitive_data">
+                <h4>sensitive_data</h4>
+                <pre class="signature"><code>facts sensitive_data = b"This is sensitive data that should not be swapped to disk!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L281">mmap_demo.csd:281</a></p>
+            </div>
+            <div class="doc-item" id="file_size">
+                <h4>file_size</h4>
+                <pre class="signature"><code>facts file_size = 1024 * 1024; // 1MB</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L315">mmap_demo.csd:315</a></p>
+            </div>
+            <div class="doc-item" id="file_path">
+                <h4>file_path</h4>
+                <pre class="signature"><code>facts file_path = "perf_test_file.dat";</code></pre>
+                <p class="source">Source: <a href="file://./examples/mmap_demo.csd#L316">mmap_demo.csd:316</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

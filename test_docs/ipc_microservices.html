@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ipc_microservices - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>ipc_microservices</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new(service: &str, method: &str, payload: &str) -> Self {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L21">ipc_microservices.csd:21</a></p>
+            </div>
+            <div class="doc-item" id="to_json">
+                <h4>to_json</h4>
+                <pre class="signature"><code>slay to_json(&self) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L32">ipc_microservices.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="from_json">
+                <h4>from_json</h4>
+                <pre class="signature"><code>slay from_json(json_str: &str) -> Result<Self, String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L36">ipc_microservices.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new() -> Self {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L49">ipc_microservices.csd:49</a></p>
+            </div>
+            <div class="doc-item" id="start">
+                <h4>start</h4>
+                <pre class="signature"><code>slay start(&mut self) -> Result<(), IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L57">ipc_microservices.csd:57</a></p>
+            </div>
+            <div class="doc-item" id="handle_connection">
+                <h4>handle_connection</h4>
+                <pre class="signature"><code>slay handle_connection(&self, connection: DomainSocket) -> Result<(), IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L84">ipc_microservices.csd:84</a></p>
+            </div>
+            <div class="doc-item" id="handle_get_user">
+                <h4>handle_get_user</h4>
+                <pre class="signature"><code>slay handle_get_user(&self, user_id: &str) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L109">ipc_microservices.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="handle_create_user">
+                <h4>handle_create_user</h4>
+                <pre class="signature"><code>slay handle_create_user(&self, user_data: &str) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L115">ipc_microservices.csd:115</a></p>
+            </div>
+            <div class="doc-item" id="handle_update_user">
+                <h4>handle_update_user</h4>
+                <pre class="signature"><code>slay handle_update_user(&self, user_data: &str) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L121">ipc_microservices.csd:121</a></p>
+            </div>
+            <div class="doc-item" id="handle_delete_user">
+                <h4>handle_delete_user</h4>
+                <pre class="signature"><code>slay handle_delete_user(&self, user_id: &str) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L126">ipc_microservices.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="stop">
+                <h4>stop</h4>
+                <pre class="signature"><code>slay stop(&mut self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L131">ipc_microservices.csd:131</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new() -> Result<Self, IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L147">ipc_microservices.csd:147</a></p>
+            </div>
+            <div class="doc-item" id="start">
+                <h4>start</h4>
+                <pre class="signature"><code>slay start(&mut self) -> Result<(), IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L162">ipc_microservices.csd:162</a></p>
+            </div>
+            <div class="doc-item" id="handle_connection">
+                <h4>handle_connection</h4>
+                <pre class="signature"><code>slay handle_connection(&self, connection: DomainSocket) -> Result<(), IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L186">ipc_microservices.csd:186</a></p>
+            </div>
+            <div class="doc-item" id="handle_create_order">
+                <h4>handle_create_order</h4>
+                <pre class="signature"><code>slay handle_create_order(&self, order_data: &str) -> Result<String, IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L209">ipc_microservices.csd:209</a></p>
+            </div>
+            <div class="doc-item" id="handle_get_order">
+                <h4>handle_get_order</h4>
+                <pre class="signature"><code>slay handle_get_order(&self, order_id: &str) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L226">ipc_microservices.csd:226</a></p>
+            </div>
+            <div class="doc-item" id="handle_cancel_order">
+                <h4>handle_cancel_order</h4>
+                <pre class="signature"><code>slay handle_cancel_order(&self, order_id: &str) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L230">ipc_microservices.csd:230</a></p>
+            </div>
+            <div class="doc-item" id="stop">
+                <h4>stop</h4>
+                <pre class="signature"><code>slay stop(&mut self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L234">ipc_microservices.csd:234</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new() -> Result<Self, IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L248">ipc_microservices.csd:248</a></p>
+            </div>
+            <div class="doc-item" id="start">
+                <h4>start</h4>
+                <pre class="signature"><code>slay start(&mut self) -> Result<(), IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L260">ipc_microservices.csd:260</a></p>
+            </div>
+            <div class="doc-item" id="handle_notification">
+                <h4>handle_notification</h4>
+                <pre class="signature"><code>slay handle_notification(&self, message: Message) -> Result<(), IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L275">ipc_microservices.csd:275</a></p>
+            </div>
+            <div class="doc-item" id="send_notification">
+                <h4>send_notification</h4>
+                <pre class="signature"><code>slay send_notification(&self, notification: &str, priority: MessagePriority) -> Result<(), IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L291">ipc_microservices.csd:291</a></p>
+            </div>
+            <div class="doc-item" id="stop">
+                <h4>stop</h4>
+                <pre class="signature"><code>slay stop(&mut self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L296">ipc_microservices.csd:296</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new() -> Result<Self, IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L310">ipc_microservices.csd:310</a></p>
+            </div>
+            <div class="doc-item" id="create_user_and_order">
+                <h4>create_user_and_order</h4>
+                <pre class="signature"><code>slay create_user_and_order(&mut self, user_data: &str, order_data: &str) -> Result<String, IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L329">ipc_microservices.csd:329</a></p>
+            </div>
+            <div class="doc-item" id="run_microservices_demo">
+                <h4>run_microservices_demo</h4>
+                <pre class="signature"><code>slay run_microservices_demo() -> Result<(), IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L367">ipc_microservices.csd:367</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() -> Result<(), IpcError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L438">ipc_microservices.csd:438</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="ServiceMessage">
+                <h4>ServiceMessage</h4>
+                <pre class="signature"><code>squad ServiceMessage {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L11">ipc_microservices.csd:11</a></p>
+            </div>
+            <div class="doc-item" id="UserService">
+                <h4>UserService</h4>
+                <pre class="signature"><code>squad UserService {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L42">ipc_microservices.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="OrderService">
+                <h4>OrderService</h4>
+                <pre class="signature"><code>squad OrderService {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L139">ipc_microservices.csd:139</a></p>
+            </div>
+            <div class="doc-item" id="NotificationService">
+                <h4>NotificationService</h4>
+                <pre class="signature"><code>squad NotificationService {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L242">ipc_microservices.csd:242</a></p>
+            </div>
+            <div class="doc-item" id="ApiGateway">
+                <h4>ApiGateway</h4>
+                <pre class="signature"><code>squad ApiGateway {</code></pre>
+                <p class="source">Source: <a href="file://./examples/ipc_microservices.csd#L303">ipc_microservices.csd:303</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

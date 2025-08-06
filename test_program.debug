@@ -1,0 +1,47 @@
+CURSED Debug Information (DWARF v5 Compatible)
+==================================================
+
+Source File: test_program.csd
+Compile Unit ID: 1
+
+Functions (2 total):
+  [0] add_numbers -> normie (line 8)
+    param: first: normie
+    param: second: normie
+  [1] main -> void (line 14)
+
+Variables (6 total):
+  [0] global_count: drip (line 1, scope 0)
+  [1] local_sum: normie (line 9, scope 0)
+  [2] temp_var: drip (line 10, scope 0)
+  [3] x: normie (line 15, scope 1)
+  [4] y: normie (line 16, scope 1)
+  [5] result: normie (line 17, scope 1)
+
+Types (9 total):
+  [0] normie: 4 bytes, align 4, kind: enhanced_debug_generation.TypeKind.signed_integer
+  [1] tea: 8 bytes, align 8, kind: enhanced_debug_generation.TypeKind.string
+  [2] drip: 8 bytes, align 8, kind: enhanced_debug_generation.TypeKind.signed_integer
+  [3] lit: 1 bytes, align 1, kind: enhanced_debug_generation.TypeKind.boolean
+  [4] meal: 8 bytes, align 8, kind: enhanced_debug_generation.TypeKind.float
+  [5] smol: 1 bytes, align 1, kind: enhanced_debug_generation.TypeKind.signed_integer
+  [6] thicc: 8 bytes, align 8, kind: enhanced_debug_generation.TypeKind.signed_integer
+  [7] sip: 1 bytes, align 1, kind: enhanced_debug_generation.TypeKind.unsigned_integer
+  [8] Point: 8 bytes, align 4, kind: enhanced_debug_generation.TypeKind.struct_type
+
+Source Locations (15 total):
+  1:0 in test_program.csd (context: global_count)
+  8:0 in test_program.csd (context: add_numbers)
+  9:0 in test_program.csd (context: local_sum)
+  10:0 in test_program.csd (context: temp_var)
+  9:5 in test_program.csd (context: variable assignment)
+  10:5 in test_program.csd (context: variable assignment)
+  11:5 in test_program.csd (context: return statement)
+  14:0 in test_program.csd (context: main)
+  15:0 in test_program.csd (context: x)
+  16:0 in test_program.csd (context: y)
+  17:0 in test_program.csd (context: result)
+  15:5 in test_program.csd (context: variable declaration)
+  16:5 in test_program.csd (context: variable declaration)
+  17:5 in test_program.csd (context: function call)
+  18:5 in test_program.csd (context: print statement)

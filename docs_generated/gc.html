@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gc - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>gc</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="init_gc">
+                <h4>init_gc</h4>
+                <pre class="signature"><code>slay init_gc() *GarbageCollector {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L52">gc.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="get_gc">
+                <h4>get_gc</h4>
+                <pre class="signature"><code>slay get_gc() *GarbageCollector {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L74">gc.csd:74</a></p>
+            </div>
+            <div class="doc-item" id="gc_allocate">
+                <h4>gc_allocate</h4>
+                <pre class="signature"><code>slay gc_allocate(size normie, type_id normie) *GCObject {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L82">gc.csd:82</a></p>
+            </div>
+            <div class="doc-item" id="gc_retain">
+                <h4>gc_retain</h4>
+                <pre class="signature"><code>slay gc_retain(object *GCObject) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L125">gc.csd:125</a></p>
+            </div>
+            <div class="doc-item" id="gc_release">
+                <h4>gc_release</h4>
+                <pre class="signature"><code>slay gc_release(object *GCObject) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L134">gc.csd:134</a></p>
+            </div>
+            <div class="doc-item" id="gc_add_root">
+                <h4>gc_add_root</h4>
+                <pre class="signature"><code>slay gc_add_root(object *GCObject) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L148">gc.csd:148</a></p>
+            </div>
+            <div class="doc-item" id="gc_remove_root">
+                <h4>gc_remove_root</h4>
+                <pre class="signature"><code>slay gc_remove_root(object *GCObject) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L170">gc.csd:170</a></p>
+            </div>
+            <div class="doc-item" id="gc_collect">
+                <h4>gc_collect</h4>
+                <pre class="signature"><code>slay gc_collect(gc *GarbageCollector) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L202">gc.csd:202</a></p>
+            </div>
+            <div class="doc-item" id="gc_mark_phase">
+                <h4>gc_mark_phase</h4>
+                <pre class="signature"><code>slay gc_mark_phase(gc *GarbageCollector) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L229">gc.csd:229</a></p>
+            </div>
+            <div class="doc-item" id="gc_sweep_phase">
+                <h4>gc_sweep_phase</h4>
+                <pre class="signature"><code>slay gc_sweep_phase(gc *GarbageCollector) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L250">gc.csd:250</a></p>
+            </div>
+            <div class="doc-item" id="gc_mark_object">
+                <h4>gc_mark_object</h4>
+                <pre class="signature"><code>slay gc_mark_object(gc *GarbageCollector, object *GCObject) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L270">gc.csd:270</a></p>
+            </div>
+            <div class="doc-item" id="gc_trace_object">
+                <h4>gc_trace_object</h4>
+                <pre class="signature"><code>slay gc_trace_object(gc *GarbageCollector, object *GCObject) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L281">gc.csd:281</a></p>
+            </div>
+            <div class="doc-item" id="gc_trace_references">
+                <h4>gc_trace_references</h4>
+                <pre class="signature"><code>slay gc_trace_references(gc *GarbageCollector, object *GCObject) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L295">gc.csd:295</a></p>
+            </div>
+            <div class="doc-item" id="gc_is_valid_object">
+                <h4>gc_is_valid_object</h4>
+                <pre class="signature"><code>slay gc_is_valid_object(gc *GarbageCollector, object *GCObject) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L315">gc.csd:315</a></p>
+            </div>
+            <div class="doc-item" id="gc_push_mark_stack">
+                <h4>gc_push_mark_stack</h4>
+                <pre class="signature"><code>slay gc_push_mark_stack(gc *GarbageCollector, object *GCObject) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L333">gc.csd:333</a></p>
+            </div>
+            <div class="doc-item" id="gc_pop_mark_stack">
+                <h4>gc_pop_mark_stack</h4>
+                <pre class="signature"><code>slay gc_pop_mark_stack(gc *GarbageCollector) *GCObject {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L357">gc.csd:357</a></p>
+            </div>
+            <div class="doc-item" id="gc_reset_marks">
+                <h4>gc_reset_marks</h4>
+                <pre class="signature"><code>slay gc_reset_marks(gc *GarbageCollector) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L367">gc.csd:367</a></p>
+            </div>
+            <div class="doc-item" id="gc_deallocate_object">
+                <h4>gc_deallocate_object</h4>
+                <pre class="signature"><code>slay gc_deallocate_object(object *GCObject) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L376">gc.csd:376</a></p>
+            </div>
+            <div class="doc-item" id="gc_force_collect">
+                <h4>gc_force_collect</h4>
+                <pre class="signature"><code>slay gc_force_collect() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L406">gc.csd:406</a></p>
+            </div>
+            <div class="doc-item" id="gc_enable">
+                <h4>gc_enable</h4>
+                <pre class="signature"><code>slay gc_enable(enabled lit) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L414">gc.csd:414</a></p>
+            </div>
+            <div class="doc-item" id="gc_set_threshold">
+                <h4>gc_set_threshold</h4>
+                <pre class="signature"><code>slay gc_set_threshold(threshold normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L422">gc.csd:422</a></p>
+            </div>
+            <div class="doc-item" id="gc_get_stats">
+                <h4>gc_get_stats</h4>
+                <pre class="signature"><code>slay gc_get_stats() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L430">gc.csd:430</a></p>
+            </div>
+            <div class="doc-item" id="gc_cleanup">
+                <h4>gc_cleanup</h4>
+                <pre class="signature"><code>slay gc_cleanup() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L446">gc.csd:446</a></p>
+            </div>
+            <div class="doc-item" id="get_time_ms">
+                <h4>get_time_ms</h4>
+                <pre class="signature"><code>slay get_time_ms() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/gc.csd#L473">gc.csd:473</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

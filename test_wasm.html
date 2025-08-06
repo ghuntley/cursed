@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CURSED WASM Test</title>
+</head>
+<body>
+    <h1>CURSED WASM Compiler Test</h1>
+    <textarea id="code" rows="10" cols="80">vibez.spill("Hello WASM!")
+sus x drip = 42
+slay test() {
+    damn x
+}</textarea>
+    <br><br>
+    <button onclick="testCursed()">Test CURSED Compilation</button>
+    <br><br>
+    <div id="output"></div>
+
+    <script>
+        let wasmModule = null;
+        let memory = null;
+
+        async function loadWasm() {
+            try {
+                const response = await fetch('zig-out/bin/cursed.wasm');
+                const bytes = await response.arrayBuffer();
+                const wasmResult = await WebAssembly.instantiate(bytes, {
+                    env: {
+                        // Provide any required imports here
+                    }
+                });
+                wasmModule = wasmResult.instance.exports;
+                memory = wasmModule.memory;
+                console.log('WASM module loaded successfully');
+                console.log('Available exports:', Object.keys(wasmModule));
+            } catch (error) {
+                console.error('Failed to load WASM:', error);
+                document.getElementById('output').innerHTML = '<p style="color: red;">Failed to load WASM module: ' + error.message + '</p>';
+            }
+        }
+
+        async function testCursed() {
+            if (!wasmModule) {
+                await loadWasm();
+            }
+
+            if (!wasmModule) {
+                document.getElementById('output').innerHTML = '<p style="color: red;">WASM module not loaded</p>';
+                return;
+            }
+
+            const code = document.getElementById('code').value;
+            const encoder = new TextEncoder();
+            const decoder = new TextDecoder();
+            
+            try {
+                // Test if functions exist
+                const output = document.getElementById('output');
+                let result = '<h3>WASM Test Results:</h3>';
+                
+                // Test version function
+                if (wasmModule.cursed_wasm_version) {
+                    const versionPtr = wasmModule.cursed_wasm_version();
+                    const versionView = new Uint8Array(memory.buffer, versionPtr);
+                    let version = '';
+                    for (let i = 0; versionView[i] !== 0; i++) {
+                        version += String.fromCharCode(versionView[i]);
+                    }
+                    result += `<p><strong>Version:</strong> ${version}</p>`;
+                }
+                
+                // Test tokenization
+                if (wasmModule.cursed_wasm_tokenize) {
+                    const codeBytes = encoder.encode(code);
+                    const ptr = wasmModule.cursed_wasm_alloc ? wasmModule.cursed_wasm_alloc(codeBytes.length) : null;
+                    
+                    if (ptr) {
+                        const view = new Uint8Array(memory.buffer, ptr, codeBytes.length);
+                        view.set(codeBytes);
+                        
+                        const tokenCount = wasmModule.cursed_wasm_tokenize(ptr, codeBytes.length);
+                        result += `<p><strong>Token Count:</strong> ${tokenCount}</p>`;
+                        
+                        if (wasmModule.cursed_wasm_free) {
+                            wasmModule.cursed_wasm_free(ptr, codeBytes.length);
+                        }
+                    } else {
+                        // Try direct call without allocation
+                        const dataPtr = 0x1000; // Use a fixed address
+                        const view = new Uint8Array(memory.buffer, dataPtr, codeBytes.length);
+                        view.set(codeBytes);
+                        
+                        const tokenCount = wasmModule.cursed_wasm_tokenize(dataPtr, codeBytes.length);
+                        result += `<p><strong>Token Count:</strong> ${tokenCount}</p>`;
+                    }
+                }
+                
+                // Test syntax check
+                if (wasmModule.cursed_wasm_check) {
+                    const codeBytes = encoder.encode(code);
+                    const dataPtr = 0x1000;
+                    const view = new Uint8Array(memory.buffer, dataPtr, codeBytes.length);
+                    view.set(codeBytes);
+                    
+                    const hasErrors = wasmModule.cursed_wasm_check(dataPtr, codeBytes.length);
+                    result += `<p><strong>Syntax Check:</strong> ${hasErrors ? 'Has Errors' : 'OK'}</p>`;
+                }
+                
+                // Test basic test function
+                if (wasmModule.cursed_wasm_test) {
+                    const testResult = wasmModule.cursed_wasm_test();
+                    result += `<p><strong>Test Function:</strong> ${testResult}</p>`;
+                }
+                
+                result += '<p style="color: green;"><strong>WASM compilation and execution successful!</strong></p>';
+                output.innerHTML = result;
+                
+            } catch (error) {
+                console.error('WASM execution error:', error);
+                document.getElementById('output').innerHTML = '<p style="color: red;">WASM execution failed: ' + error.message + '</p>';
+            }
+        }
+
+        // Load WASM on page load
+        window.addEventListener('load', loadWasm);
+    </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bootstrap_compiler - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>bootstrap_compiler</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="init_bootstrap_compiler">
+                <h4>init_bootstrap_compiler</h4>
+                <pre class="signature"><code>slay init_bootstrap_compiler(source_file tea) BootstrapCompiler {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L18">bootstrap_compiler.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="read_source_file">
+                <h4>read_source_file</h4>
+                <pre class="signature"><code>slay read_source_file(filename tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L31">bootstrap_compiler.csd:31</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L36">bootstrap_compiler.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="get_output_filename">
+                <h4>get_output_filename</h4>
+                <pre class="signature"><code>slay get_output_filename(source_file tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L44">bootstrap_compiler.csd:44</a></p>
+            </div>
+            <div class="doc-item" id="bootstrap_tokenize">
+                <h4>bootstrap_tokenize</h4>
+                <pre class="signature"><code>slay bootstrap_tokenize(compiler BootstrapCompiler) lit {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L53">bootstrap_compiler.csd:53</a></p>
+            </div>
+            <div class="doc-item" id="bootstrap_parse">
+                <h4>bootstrap_parse</h4>
+                <pre class="signature"><code>slay bootstrap_parse(compiler BootstrapCompiler) lit {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L70">bootstrap_compiler.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="bootstrap_codegen">
+                <h4>bootstrap_codegen</h4>
+                <pre class="signature"><code>slay bootstrap_codegen(compiler BootstrapCompiler) lit {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L93">bootstrap_compiler.csd:93</a></p>
+            </div>
+            <div class="doc-item" id="generate_c_header">
+                <h4>generate_c_header</h4>
+                <pre class="signature"><code>slay generate_c_header() tea {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L107">bootstrap_compiler.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="generate_c_functions">
+                <h4>generate_c_functions</h4>
+                <pre class="signature"><code>slay generate_c_functions(compiler BootstrapCompiler) tea {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L136">bootstrap_compiler.csd:136</a></p>
+            </div>
+            <div class="doc-item" id="generate_c_main">
+                <h4>generate_c_main</h4>
+                <pre class="signature"><code>slay generate_c_main(compiler BootstrapCompiler) tea {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L149">bootstrap_compiler.csd:149</a></p>
+            </div>
+            <div class="doc-item" id="bootstrap_compile">
+                <h4>bootstrap_compile</h4>
+                <pre class="signature"><code>slay bootstrap_compile(compiler BootstrapCompiler) lit {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L180">bootstrap_compiler.csd:180</a></p>
+            </div>
+            <div class="doc-item" id="write_c_file">
+                <h4>write_c_file</h4>
+                <pre class="signature"><code>slay write_c_file(filename tea, content tea) {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L203">bootstrap_compiler.csd:203</a></p>
+            </div>
+            <div class="doc-item" id="execute_command">
+                <h4>execute_command</h4>
+                <pre class="signature"><code>slay execute_command(cmd tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L208">bootstrap_compiler.csd:208</a></p>
+            </div>
+            <div class="doc-item" id="compile_cursed_program">
+                <h4>compile_cursed_program</h4>
+                <pre class="signature"><code>slay compile_cursed_program(source_file tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L215">bootstrap_compiler.csd:215</a></p>
+            </div>
+            <div class="doc-item" id="test_self_hosting">
+                <h4>test_self_hosting</h4>
+                <pre class="signature"><code>slay test_self_hosting() {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L247">bootstrap_compiler.csd:247</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L259">bootstrap_compiler.csd:259</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="BootstrapCompiler">
+                <h4>BootstrapCompiler</h4>
+                <pre class="signature"><code>squad BootstrapCompiler {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_compiler.csd#L9">bootstrap_compiler.csd:9</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

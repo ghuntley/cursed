@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cursed_docs_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>cursed_docs_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="greet_user">
+                <h4>greet_user</h4>
+                <pre class="signature"><code>slay greet_user(name: string, times: i32) -> string {</code></pre>
+                <p class="description">```</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L34">cursed_docs_demo.csd:34</a></p>
+            </div>
+            <div class="doc-item" id="greet">
+                <h4>greet</h4>
+                <pre class="signature"><code>slay greet() -> string;</code></pre>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L85">cursed_docs_demo.csd:85</a></p>
+            </div>
+            <div class="doc-item" id="can_greet">
+                <h4>can_greet</h4>
+                <pre class="signature"><code>slay can_greet() -> bool;</code></pre>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L90">cursed_docs_demo.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="greet">
+                <h4>greet</h4>
+                <pre class="signature"><code>slay greet() -> string {</code></pre>
+                <p class="description">Implementation of Greetable for Person</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L95">cursed_docs_demo.csd:95</a></p>
+            </div>
+            <div class="doc-item" id="can_greet">
+                <h4>can_greet</h4>
+                <pre class="signature"><code>slay can_greet() -> bool {</code></pre>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L103">cursed_docs_demo.csd:103</a></p>
+            </div>
+            <div class="doc-item" id="calculate_vibe_score">
+                <h4>calculate_vibe_score</h4>
+                <pre class="signature"><code>slay calculate_vibe_score(base_score: f64, modifiers: [f64], boost_factor: f64) -> Result<f64, string> {</code></pre>
+                <p class="description">@see format_vibe_message for displaying results</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L129">cursed_docs_demo.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="format_vibe_message">
+                <h4>format_vibe_message</h4>
+                <pre class="signature"><code>slay format_vibe_message(score: f64) -> string {</code></pre>
+                <p class="description">```</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L173">cursed_docs_demo.csd:173</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="description">```</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L211">cursed_docs_demo.csd:211</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="Person">
+                <h4>Person</h4>
+                <pre class="signature"><code>squad Person {</code></pre>
+                <p class="description">```</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L57">cursed_docs_demo.csd:57</a></p>
+            </div>
+        </section>
+        <section id="interfaces">
+            <h3>Interfaces</h3>
+            <div class="doc-item" id="Greetable">
+                <h4>Greetable</h4>
+                <pre class="signature"><code>collab Greetable {</code></pre>
+                <p class="description">```</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L81">cursed_docs_demo.csd:81</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="MAX_VIBE_SCORE: f64">
+                <h4>MAX_VIBE_SCORE: f64</h4>
+                <pre class="signature"><code>facts MAX_VIBE_SCORE: f64 = 100.0;</code></pre>
+                <p class="description">Maximum possible vibe score (this is the ceiling, periodt)</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L191">cursed_docs_demo.csd:191</a></p>
+            </div>
+            <div class="doc-item" id="MIN_VIBE_SCORE: f64">
+                <h4>MIN_VIBE_SCORE: f64</h4>
+                <pre class="signature"><code>facts MIN_VIBE_SCORE: f64 = 0.0;</code></pre>
+                <p class="description">Minimum vibe score (we don't go below zero energy)</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L194">cursed_docs_demo.csd:194</a></p>
+            </div>
+            <div class="doc-item" id="DEFAULT_BOOST: f64">
+                <h4>DEFAULT_BOOST: f64</h4>
+                <pre class="signature"><code>facts DEFAULT_BOOST: f64 = 1.0;</code></pre>
+                <p class="description">Default boost factor for regular calculations</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L197">cursed_docs_demo.csd:197</a></p>
+            </div>
+            <div class="doc-item" id="PREMIUM_BOOST: f64">
+                <h4>PREMIUM_BOOST: f64</h4>
+                <pre class="signature"><code>facts PREMIUM_BOOST: f64 = 1.25;</code></pre>
+                <p class="description">Premium boost factor for when you're feeling extra</p>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L200">cursed_docs_demo.csd:200</a></p>
+            </div>
+            <div class="doc-item" id="person">
+                <h4>person</h4>
+                <pre class="signature"><code>facts person = Person {</code></pre>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L217">cursed_docs_demo.csd:217</a></p>
+            </div>
+            <div class="doc-item" id="greeting">
+                <h4>greeting</h4>
+                <pre class="signature"><code>facts greeting = greet_user("Documentation User", 2);</code></pre>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L224">cursed_docs_demo.csd:224</a></p>
+            </div>
+            <div class="doc-item" id="personal_greeting">
+                <h4>personal_greeting</h4>
+                <pre class="signature"><code>facts personal_greeting = person.greet();</code></pre>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L229">cursed_docs_demo.csd:229</a></p>
+            </div>
+            <div class="doc-item" id="modifiers">
+                <h4>modifiers</h4>
+                <pre class="signature"><code>facts modifiers = [1.2, 0.9, 1.4, 1.1];</code></pre>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L234">cursed_docs_demo.csd:234</a></p>
+            </div>
+            <div class="doc-item" id="message">
+                <h4>message</h4>
+                <pre class="signature"><code>facts message = format_vibe_message(score);</code></pre>
+                <p class="source">Source: <a href="file://./examples/cursed_docs_demo.csd#L238">cursed_docs_demo.csd:238</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>test_runner_example - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>test_runner_example</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() -> Result<(), TestError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L7">test_runner_example.csd:7</a></p>
+            </div>
+            <div class="doc-item" id="format_test_report">
+                <h4>format_test_report</h4>
+                <pre class="signature"><code>slay format_test_report(report: &TestFrameworkReport) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L51">test_runner_example.csd:51</a></p>
+            </div>
+            <div class="doc-item" id="generate_reports">
+                <h4>generate_reports</h4>
+                <pre class="signature"><code>slay generate_reports(report: &TestFrameworkReport) -> Result<(), TestError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L94">test_runner_example.csd:94</a></p>
+            </div>
+            <div class="doc-item" id="generate_json_report">
+                <h4>generate_json_report</h4>
+                <pre class="signature"><code>slay generate_json_report(report: &TestFrameworkReport, output_dir: &PathBuf) -> Result<(), TestError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L114">test_runner_example.csd:114</a></p>
+            </div>
+            <div class="doc-item" id="generate_html_report">
+                <h4>generate_html_report</h4>
+                <pre class="signature"><code>slay generate_html_report(report: &TestFrameworkReport, output_dir: &PathBuf) -> Result<(), TestError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L125">test_runner_example.csd:125</a></p>
+            </div>
+            <div class="doc-item" id="generate_xml_report">
+                <h4>generate_xml_report</h4>
+                <pre class="signature"><code>slay generate_xml_report(report: &TestFrameworkReport, output_dir: &PathBuf) -> Result<(), TestError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L136">test_runner_example.csd:136</a></p>
+            </div>
+            <div class="doc-item" id="run_integration_tests">
+                <h4>run_integration_tests</h4>
+                <pre class="signature"><code>slay run_integration_tests() -> Result<(), TestError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L148">test_runner_example.csd:148</a></p>
+            </div>
+            <div class="doc-item" id="run_performance_tests">
+                <h4>run_performance_tests</h4>
+                <pre class="signature"><code>slay run_performance_tests() -> Result<(), TestError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L168">test_runner_example.csd:168</a></p>
+            </div>
+            <div class="doc-item" id="run_ci_tests">
+                <h4>run_ci_tests</h4>
+                <pre class="signature"><code>slay run_ci_tests() -> Result<(), TestError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L189">test_runner_example.csd:189</a></p>
+            </div>
+            <div class="doc-item" id="to_runner_result">
+                <h4>to_runner_result</h4>
+                <pre class="signature"><code>slay to_runner_result(&self) -> RunnerResult {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L212">test_runner_example.csd:212</a></p>
+            </div>
+            <div class="doc-item" id="run_with_cli_args">
+                <h4>run_with_cli_args</h4>
+                <pre class="signature"><code>slay run_with_cli_args(args: Vec<String>) -> Result<(), TestError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L223">test_runner_example.csd:223</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="report">
+                <h4>report</h4>
+                <pre class="signature"><code>facts report = framework.run_tests()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L33">test_runner_example.csd:33</a></p>
+            </div>
+            <div class="doc-item" id="report_dir">
+                <h4>report_dir</h4>
+                <pre class="signature"><code>facts report_dir = PathBuf::from("./test_reports");</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L96">test_runner_example.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="json_reporter">
+                <h4>json_reporter</h4>
+                <pre class="signature"><code>facts json_reporter = JsonReporter::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L115">test_runner_example.csd:115</a></p>
+            </div>
+            <div class="doc-item" id="json_content">
+                <h4>json_content</h4>
+                <pre class="signature"><code>facts json_content = json_reporter.generate_report(&RunnerResult::from_framework_report(report))?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L116">test_runner_example.csd:116</a></p>
+            </div>
+            <div class="doc-item" id="file_path">
+                <h4>file_path</h4>
+                <pre class="signature"><code>facts file_path = output_dir.join("test_report.json");</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L118">test_runner_example.csd:118</a></p>
+            </div>
+            <div class="doc-item" id="html_reporter">
+                <h4>html_reporter</h4>
+                <pre class="signature"><code>facts html_reporter = HtmlReporter::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L126">test_runner_example.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="html_content">
+                <h4>html_content</h4>
+                <pre class="signature"><code>facts html_content = html_reporter.generate_report(&RunnerResult::from_framework_report(report))?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L127">test_runner_example.csd:127</a></p>
+            </div>
+            <div class="doc-item" id="file_path">
+                <h4>file_path</h4>
+                <pre class="signature"><code>facts file_path = output_dir.join("test_report.html");</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L129">test_runner_example.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="xml_reporter">
+                <h4>xml_reporter</h4>
+                <pre class="signature"><code>facts xml_reporter = XmlReporter::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L137">test_runner_example.csd:137</a></p>
+            </div>
+            <div class="doc-item" id="xml_content">
+                <h4>xml_content</h4>
+                <pre class="signature"><code>facts xml_content = xml_reporter.generate_report(&RunnerResult::from_framework_report(report))?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L138">test_runner_example.csd:138</a></p>
+            </div>
+            <div class="doc-item" id="file_path">
+                <h4>file_path</h4>
+                <pre class="signature"><code>facts file_path = output_dir.join("test_report.xml");</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L140">test_runner_example.csd:140</a></p>
+            </div>
+            <div class="doc-item" id="report">
+                <h4>report</h4>
+                <pre class="signature"><code>facts report = framework.run_tests()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L157">test_runner_example.csd:157</a></p>
+            </div>
+            <div class="doc-item" id="report">
+                <h4>report</h4>
+                <pre class="signature"><code>facts report = framework.run_tests()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L178">test_runner_example.csd:178</a></p>
+            </div>
+            <div class="doc-item" id="report">
+                <h4>report</h4>
+                <pre class="signature"><code>facts report = framework.run_tests()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L199">test_runner_example.csd:199</a></p>
+            </div>
+            <div class="doc-item" id="seconds: u64">
+                <h4>seconds: u64</h4>
+                <pre class="signature"><code>facts seconds: u64 = args[i + 1].parse().unwrap_or(60);</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L239">test_runner_example.csd:239</a></p>
+            </div>
+            <div class="doc-item" id="report">
+                <h4>report</h4>
+                <pre class="signature"><code>facts report = framework.run_tests()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L267">test_runner_example.csd:267</a></p>
+            </div>
+            <div class="doc-item" id="json_reporter">
+                <h4>json_reporter</h4>
+                <pre class="signature"><code>facts json_reporter = JsonReporter::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L273">test_runner_example.csd:273</a></p>
+            </div>
+            <div class="doc-item" id="json_output">
+                <h4>json_output</h4>
+                <pre class="signature"><code>facts json_output = json_reporter.generate_report(&report.to_runner_result())?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/test_runner_example.csd#L274">test_runner_example.csd:274</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

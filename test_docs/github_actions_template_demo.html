@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>github_actions_template_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>github_actions_template_demo</h2>
+    </header>
+    <main>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="workflow_data">
+                <h4>workflow_data</h4>
+                <pre class="signature"><code>facts workflow_data = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L8">github_actions_template_demo.csd:8</a></p>
+            </div>
+            <div class="doc-item" id="triggers">
+                <h4>triggers</h4>
+                <pre class="signature"><code>facts triggers = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L14">github_actions_template_demo.csd:14</a></p>
+            </div>
+            <div class="doc-item" id="push_config">
+                <h4>push_config</h4>
+                <pre class="signature"><code>facts push_config = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L17">github_actions_template_demo.csd:17</a></p>
+            </div>
+            <div class="doc-item" id="push_branches">
+                <h4>push_branches</h4>
+                <pre class="signature"><code>facts push_branches = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L18">github_actions_template_demo.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="pr_config">
+                <h4>pr_config</h4>
+                <pre class="signature"><code>facts pr_config = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L25">github_actions_template_demo.csd:25</a></p>
+            </div>
+            <div class="doc-item" id="pr_branches">
+                <h4>pr_branches</h4>
+                <pre class="signature"><code>facts pr_branches = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L26">github_actions_template_demo.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="schedule_config">
+                <h4>schedule_config</h4>
+                <pre class="signature"><code>facts schedule_config = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L32">github_actions_template_demo.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="cron_array">
+                <h4>cron_array</h4>
+                <pre class="signature"><code>facts cron_array = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L33">github_actions_template_demo.csd:33</a></p>
+            </div>
+            <div class="doc-item" id="global_env">
+                <h4>global_env</h4>
+                <pre class="signature"><code>facts global_env = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L41">github_actions_template_demo.csd:41</a></p>
+            </div>
+            <div class="doc-item" id="permissions">
+                <h4>permissions</h4>
+                <pre class="signature"><code>facts permissions = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L48">github_actions_template_demo.csd:48</a></p>
+            </div>
+            <div class="doc-item" id="concurrency">
+                <h4>concurrency</h4>
+                <pre class="signature"><code>facts concurrency = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L55">github_actions_template_demo.csd:55</a></p>
+            </div>
+            <div class="doc-item" id="jobs">
+                <h4>jobs</h4>
+                <pre class="signature"><code>facts jobs = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L61">github_actions_template_demo.csd:61</a></p>
+            </div>
+            <div class="doc-item" id="test_job">
+                <h4>test_job</h4>
+                <pre class="signature"><code>facts test_job = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L64">github_actions_template_demo.csd:64</a></p>
+            </div>
+            <div class="doc-item" id="strategy">
+                <h4>strategy</h4>
+                <pre class="signature"><code>facts strategy = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L69">github_actions_template_demo.csd:69</a></p>
+            </div>
+            <div class="doc-item" id="matrix">
+                <h4>matrix</h4>
+                <pre class="signature"><code>facts matrix = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L70">github_actions_template_demo.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="node_versions">
+                <h4>node_versions</h4>
+                <pre class="signature"><code>facts node_versions = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L72">github_actions_template_demo.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="os_matrix">
+                <h4>os_matrix</h4>
+                <pre class="signature"><code>facts os_matrix = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L78">github_actions_template_demo.csd:78</a></p>
+            </div>
+            <div class="doc-item" id="test_steps">
+                <h4>test_steps</h4>
+                <pre class="signature"><code>facts test_steps = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L90">github_actions_template_demo.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="checkout_step">
+                <h4>checkout_step</h4>
+                <pre class="signature"><code>facts checkout_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L93">github_actions_template_demo.csd:93</a></p>
+            </div>
+            <div class="doc-item" id="checkout_with">
+                <h4>checkout_with</h4>
+                <pre class="signature"><code>facts checkout_with = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L96">github_actions_template_demo.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="setup_node_step">
+                <h4>setup_node_step</h4>
+                <pre class="signature"><code>facts setup_node_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L102">github_actions_template_demo.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="node_with">
+                <h4>node_with</h4>
+                <pre class="signature"><code>facts node_with = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L105">github_actions_template_demo.csd:105</a></p>
+            </div>
+            <div class="doc-item" id="install_step">
+                <h4>install_step</h4>
+                <pre class="signature"><code>facts install_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L112">github_actions_template_demo.csd:112</a></p>
+            </div>
+            <div class="doc-item" id="lint_step">
+                <h4>lint_step</h4>
+                <pre class="signature"><code>facts lint_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L118">github_actions_template_demo.csd:118</a></p>
+            </div>
+            <div class="doc-item" id="test_step">
+                <h4>test_step</h4>
+                <pre class="signature"><code>facts test_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L125">github_actions_template_demo.csd:125</a></p>
+            </div>
+            <div class="doc-item" id="test_run_command">
+                <h4>test_run_command</h4>
+                <pre class="signature"><code>facts test_run_command = "npm test -- --coverage --watchAll=cap\nnpm run test:e2e";</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L127">github_actions_template_demo.csd:127</a></p>
+            </div>
+            <div class="doc-item" id="test_env">
+                <h4>test_env</h4>
+                <pre class="signature"><code>facts test_env = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L129">github_actions_template_demo.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="coverage_step">
+                <h4>coverage_step</h4>
+                <pre class="signature"><code>facts coverage_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L137">github_actions_template_demo.csd:137</a></p>
+            </div>
+            <div class="doc-item" id="coverage_with">
+                <h4>coverage_with</h4>
+                <pre class="signature"><code>facts coverage_with = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L140">github_actions_template_demo.csd:140</a></p>
+            </div>
+            <div class="doc-item" id="build_job">
+                <h4>build_job</h4>
+                <pre class="signature"><code>facts build_job = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L151">github_actions_template_demo.csd:151</a></p>
+            </div>
+            <div class="doc-item" id="build_needs">
+                <h4>build_needs</h4>
+                <pre class="signature"><code>facts build_needs = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L155">github_actions_template_demo.csd:155</a></p>
+            </div>
+            <div class="doc-item" id="build_steps">
+                <h4>build_steps</h4>
+                <pre class="signature"><code>facts build_steps = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L159">github_actions_template_demo.csd:159</a></p>
+            </div>
+            <div class="doc-item" id="build_node_step">
+                <h4>build_node_step</h4>
+                <pre class="signature"><code>facts build_node_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L165">github_actions_template_demo.csd:165</a></p>
+            </div>
+            <div class="doc-item" id="build_node_with">
+                <h4>build_node_with</h4>
+                <pre class="signature"><code>facts build_node_with = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L168">github_actions_template_demo.csd:168</a></p>
+            </div>
+            <div class="doc-item" id="build_step">
+                <h4>build_step</h4>
+                <pre class="signature"><code>facts build_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L177">github_actions_template_demo.csd:177</a></p>
+            </div>
+            <div class="doc-item" id="build_env">
+                <h4>build_env</h4>
+                <pre class="signature"><code>facts build_env = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L180">github_actions_template_demo.csd:180</a></p>
+            </div>
+            <div class="doc-item" id="artifact_step">
+                <h4>artifact_step</h4>
+                <pre class="signature"><code>facts artifact_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L186">github_actions_template_demo.csd:186</a></p>
+            </div>
+            <div class="doc-item" id="artifact_with">
+                <h4>artifact_with</h4>
+                <pre class="signature"><code>facts artifact_with = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L189">github_actions_template_demo.csd:189</a></p>
+            </div>
+            <div class="doc-item" id="deploy_job">
+                <h4>deploy_job</h4>
+                <pre class="signature"><code>facts deploy_job = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L200">github_actions_template_demo.csd:200</a></p>
+            </div>
+            <div class="doc-item" id="deploy_needs">
+                <h4>deploy_needs</h4>
+                <pre class="signature"><code>facts deploy_needs = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L205">github_actions_template_demo.csd:205</a></p>
+            </div>
+            <div class="doc-item" id="deploy_environment">
+                <h4>deploy_environment</h4>
+                <pre class="signature"><code>facts deploy_environment = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L210">github_actions_template_demo.csd:210</a></p>
+            </div>
+            <div class="doc-item" id="deploy_steps">
+                <h4>deploy_steps</h4>
+                <pre class="signature"><code>facts deploy_steps = object::create_array();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L215">github_actions_template_demo.csd:215</a></p>
+            </div>
+            <div class="doc-item" id="download_step">
+                <h4>download_step</h4>
+                <pre class="signature"><code>facts download_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L221">github_actions_template_demo.csd:221</a></p>
+            </div>
+            <div class="doc-item" id="download_with">
+                <h4>download_with</h4>
+                <pre class="signature"><code>facts download_with = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L224">github_actions_template_demo.csd:224</a></p>
+            </div>
+            <div class="doc-item" id="deploy_step">
+                <h4>deploy_step</h4>
+                <pre class="signature"><code>facts deploy_step = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L231">github_actions_template_demo.csd:231</a></p>
+            </div>
+            <div class="doc-item" id="deploy_env">
+                <h4>deploy_env</h4>
+                <pre class="signature"><code>facts deploy_env = object::create_map();</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L234">github_actions_template_demo.csd:234</a></p>
+            </div>
+            <div class="doc-item" id="renderer">
+                <h4>renderer</h4>
+                <pre class="signature"><code>facts renderer = templates::create_format_renderer("github-actions");</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L246">github_actions_template_demo.csd:246</a></p>
+            </div>
+            <div class="doc-item" id="workflow_yaml">
+                <h4>workflow_yaml</h4>
+                <pre class="signature"><code>facts workflow_yaml = templates::render(renderer, workflow_data);</code></pre>
+                <p class="source">Source: <a href="file://./examples/github_actions_template_demo.csd#L247">github_actions_template_demo.csd:247</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

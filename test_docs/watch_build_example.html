@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>watch_build_example - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>watch_build_example</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new(project_path: String) -> BuildWatcher {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L23">watch_build_example.csd:23</a></p>
+            </div>
+            <div class="doc-item" id="start_watching">
+                <h4>start_watching</h4>
+                <pre class="signature"><code>slay start_watching(bestie mut self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L36">watch_build_example.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="setup_demo_project">
+                <h4>setup_demo_project</h4>
+                <pre class="signature"><code>slay setup_demo_project(bestie self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L61">watch_build_example.csd:61</a></p>
+            </div>
+            <div class="doc-item" id="add">
+                <h4>add</h4>
+                <pre class="signature"><code>slay add(x: Int, y: Int) -> Int {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L75">watch_build_example.csd:75</a></p>
+            </div>
+            <div class="doc-item" id="multiply">
+                <h4>multiply</h4>
+                <pre class="signature"><code>slay multiply(x: Int, y: Int) -> Int {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L79">watch_build_example.csd:79</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L84">watch_build_example.csd:84</a></p>
+            </div>
+            <div class="doc-item" id="factorial">
+                <h4>factorial</h4>
+                <pre class="signature"><code>slay factorial(n: Int) -> Int {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L97">watch_build_example.csd:97</a></p>
+            </div>
+            <div class="doc-item" id="fibonacci">
+                <h4>fibonacci</h4>
+                <pre class="signature"><code>slay fibonacci(n: Int) -> Int {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L105">watch_build_example.csd:105</a></p>
+            </div>
+            <div class="doc-item" id="test_factorial">
+                <h4>test_factorial</h4>
+                <pre class="signature"><code>slay test_factorial() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L149">watch_build_example.csd:149</a></p>
+            </div>
+            <div class="doc-item" id="test_fibonacci">
+                <h4>test_fibonacci</h4>
+                <pre class="signature"><code>slay test_fibonacci() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L156">watch_build_example.csd:156</a></p>
+            </div>
+            <div class="doc-item" id="show_project_structure">
+                <h4>show_project_structure</h4>
+                <pre class="signature"><code>slay show_project_structure(bestie self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L170">watch_build_example.csd:170</a></p>
+            </div>
+            <div class="doc-item" id="show_watch_configuration">
+                <h4>show_watch_configuration</h4>
+                <pre class="signature"><code>slay show_watch_configuration(bestie self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L183">watch_build_example.csd:183</a></p>
+            </div>
+            <div class="doc-item" id="check_for_changes">
+                <h4>check_for_changes</h4>
+                <pre class="signature"><code>slay check_for_changes(bestie mut self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L194">watch_build_example.csd:194</a></p>
+            </div>
+            <div class="doc-item" id="handle_file_change">
+                <h4>handle_file_change</h4>
+                <pre class="signature"><code>slay handle_file_change(bestie mut self, file_path: String, event_type: String) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L215">watch_build_example.csd:215</a></p>
+            </div>
+            <div class="doc-item" id="determine_build_action">
+                <h4>determine_build_action</h4>
+                <pre class="signature"><code>slay determine_build_action(bestie self, file_path: String, event_type: String) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L234">watch_build_example.csd:234</a></p>
+            </div>
+            <div class="doc-item" id="process_build_queue">
+                <h4>process_build_queue</h4>
+                <pre class="signature"><code>slay process_build_queue(bestie mut self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L257">watch_build_example.csd:257</a></p>
+            </div>
+            <div class="doc-item" id="execute_build_action">
+                <h4>execute_build_action</h4>
+                <pre class="signature"><code>slay execute_build_action(bestie mut self, action: String, file_path: String) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L269">watch_build_example.csd:269</a></p>
+            </div>
+            <div class="doc-item" id="compile_source_file">
+                <h4>compile_source_file</h4>
+                <pre class="signature"><code>slay compile_source_file(bestie self, file_path: String) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L311">watch_build_example.csd:311</a></p>
+            </div>
+            <div class="doc-item" id="incremental_compile">
+                <h4>incremental_compile</h4>
+                <pre class="signature"><code>slay incremental_compile(bestie self, file_path: String) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L327">watch_build_example.csd:327</a></p>
+            </div>
+            <div class="doc-item" id="run_related_tests">
+                <h4>run_related_tests</h4>
+                <pre class="signature"><code>slay run_related_tests(bestie self, source_file: String) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L341">watch_build_example.csd:341</a></p>
+            </div>
+            <div class="doc-item" id="run_specific_test">
+                <h4>run_specific_test</h4>
+                <pre class="signature"><code>slay run_specific_test(bestie self, test_file: String) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L355">watch_build_example.csd:355</a></p>
+            </div>
+            <div class="doc-item" id="reload_configuration">
+                <h4>reload_configuration</h4>
+                <pre class="signature"><code>slay reload_configuration(bestie mut self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L367">watch_build_example.csd:367</a></p>
+            </div>
+            <div class="doc-item" id="full_rebuild">
+                <h4>full_rebuild</h4>
+                <pre class="signature"><code>slay full_rebuild(bestie self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L378">watch_build_example.csd:378</a></p>
+            </div>
+            <div class="doc-item" id="generate_documentation">
+                <h4>generate_documentation</h4>
+                <pre class="signature"><code>slay generate_documentation(bestie self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L390">watch_build_example.csd:390</a></p>
+            </div>
+            <div class="doc-item" id="cleanup">
+                <h4>cleanup</h4>
+                <pre class="signature"><code>slay cleanup(bestie self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L402">watch_build_example.csd:402</a></p>
+            </div>
+            <div class="doc-item" id="load_from_project">
+                <h4>load_from_project</h4>
+                <pre class="signature"><code>slay load_from_project(project_path: String) -> BuildConfiguration {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L422">watch_build_example.csd:422</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new() -> BuildWatcherStats {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L456">watch_build_example.csd:456</a></p>
+            </div>
+            <div class="doc-item" id="show_stats">
+                <h4>show_stats</h4>
+                <pre class="signature"><code>slay show_stats(bestie self) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L466">watch_build_example.csd:466</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_advanced_strategies">
+                <h4>demonstrate_advanced_strategies</h4>
+                <pre class="signature"><code>slay demonstrate_advanced_strategies() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L477">watch_build_example.csd:477</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L507">watch_build_example.csd:507</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="BuildWatcher">
+                <h4>BuildWatcher</h4>
+                <pre class="signature"><code>squad BuildWatcher {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L16">watch_build_example.csd:16</a></p>
+            </div>
+            <div class="doc-item" id="Calculator">
+                <h4>Calculator</h4>
+                <pre class="signature"><code>squad Calculator {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L74">watch_build_example.csd:74</a></p>
+            </div>
+            <div class="doc-item" id="MathUtils">
+                <h4>MathUtils</h4>
+                <pre class="signature"><code>squad MathUtils {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L96">watch_build_example.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="BuildConfiguration">
+                <h4>BuildConfiguration</h4>
+                <pre class="signature"><code>squad BuildConfiguration {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L413">watch_build_example.csd:413</a></p>
+            </div>
+            <div class="doc-item" id="BuildWatcherStats">
+                <h4>BuildWatcherStats</h4>
+                <pre class="signature"><code>squad BuildWatcherStats {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L449">watch_build_example.csd:449</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="config">
+                <h4>config</h4>
+                <pre class="signature"><code>facts config = BuildConfiguration::load_from_project(&project_path)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L24">watch_build_example.csd:24</a></p>
+            </div>
+            <div class="doc-item" id="src_dir">
+                <h4>src_dir</h4>
+                <pre class="signature"><code>facts src_dir = format!("{}/src", self.project_dir);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L65">watch_build_example.csd:65</a></p>
+            </div>
+            <div class="doc-item" id="main_file">
+                <h4>main_file</h4>
+                <pre class="signature"><code>facts main_file = format!("{}/main.csd", src_dir);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L69">watch_build_example.csd:69</a></p>
+            </div>
+            <div class="doc-item" id="main_content">
+                <h4>main_content</h4>
+                <pre class="signature"><code>facts main_content = r#"</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L70">watch_build_example.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="calc">
+                <h4>calc</h4>
+                <pre class="signature"><code>facts calc = Calculator {};</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L85">watch_build_example.csd:85</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = calc.add(5, 3);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L86">watch_build_example.csd:86</a></p>
+            </div>
+            <div class="doc-item" id="lib_file">
+                <h4>lib_file</h4>
+                <pre class="signature"><code>facts lib_file = format!("{}/lib.csd", src_dir);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L93">watch_build_example.csd:93</a></p>
+            </div>
+            <div class="doc-item" id="lib_content">
+                <h4>lib_content</h4>
+                <pre class="signature"><code>facts lib_content = r#"</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L94">watch_build_example.csd:94</a></p>
+            </div>
+            <div class="doc-item" id="config_file">
+                <h4>config_file</h4>
+                <pre class="signature"><code>facts config_file = format!("{}/CursedBuild.toml", self.project_dir);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L117">watch_build_example.csd:117</a></p>
+            </div>
+            <div class="doc-item" id="config_content">
+                <h4>config_content</h4>
+                <pre class="signature"><code>facts config_content = r#"</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L118">watch_build_example.csd:118</a></p>
+            </div>
+            <div class="doc-item" id="tests_dir">
+                <h4>tests_dir</h4>
+                <pre class="signature"><code>facts tests_dir = format!("{}/tests", self.project_dir);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L141">watch_build_example.csd:141</a></p>
+            </div>
+            <div class="doc-item" id="test_file">
+                <h4>test_file</h4>
+                <pre class="signature"><code>facts test_file = format!("{}/lib_test.csd", tests_dir);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L144">watch_build_example.csd:144</a></p>
+            </div>
+            <div class="doc-item" id="test_content">
+                <h4>test_content</h4>
+                <pre class="signature"><code>facts test_content = r#"</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L145">watch_build_example.csd:145</a></p>
+            </div>
+            <div class="doc-item" id="utils">
+                <h4>utils</h4>
+                <pre class="signature"><code>facts utils = MathUtils {};</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L150">watch_build_example.csd:150</a></p>
+            </div>
+            <div class="doc-item" id="utils">
+                <h4>utils</h4>
+                <pre class="signature"><code>facts utils = MathUtils {};</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L157">watch_build_example.csd:157</a></p>
+            </div>
+            <div class="doc-item" id="current_time">
+                <h4>current_time</h4>
+                <pre class="signature"><code>facts current_time = time::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L196">watch_build_example.csd:196</a></p>
+            </div>
+            <div class="doc-item" id="seconds_elapsed">
+                <h4>seconds_elapsed</h4>
+                <pre class="signature"><code>facts seconds_elapsed = current_time.duration_since(self.last_build_time).seconds();</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L197">watch_build_example.csd:197</a></p>
+            </div>
+            <div class="doc-item" id="timestamp">
+                <h4>timestamp</h4>
+                <pre class="signature"><code>facts timestamp = time::now_formatted()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L216">watch_build_example.csd:216</a></p>
+            </div>
+            <div class="doc-item" id="full_path">
+                <h4>full_path</h4>
+                <pre class="signature"><code>facts full_path = format!("{}/{}", self.project_dir, file_path);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L217">watch_build_example.csd:217</a></p>
+            </div>
+            <div class="doc-item" id="build_action">
+                <h4>build_action</h4>
+                <pre class="signature"><code>facts build_action = self.determine_build_action(&file_path, &event_type);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L223">watch_build_example.csd:223</a></p>
+            </div>
+            <div class="doc-item" id="action_item">
+                <h4>action_item</h4>
+                <pre class="signature"><code>facts action_item = self.build_queue.remove(0);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L259">watch_build_example.csd:259</a></p>
+            </div>
+            <div class="doc-item" id="parts">
+                <h4>parts</h4>
+                <pre class="signature"><code>facts parts = action_item.split(":");</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L260">watch_build_example.csd:260</a></p>
+            </div>
+            <div class="doc-item" id="action">
+                <h4>action</h4>
+                <pre class="signature"><code>facts action = parts[0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L261">watch_build_example.csd:261</a></p>
+            </div>
+            <div class="doc-item" id="file_path">
+                <h4>file_path</h4>
+                <pre class="signature"><code>facts file_path = parts[1];</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L262">watch_build_example.csd:262</a></p>
+            </div>
+            <div class="doc-item" id="compile_cmd">
+                <h4>compile_cmd</h4>
+                <pre class="signature"><code>facts compile_cmd = format!("cursed build --file {}/{}", self.project_dir, file_path);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L315">watch_build_example.csd:315</a></p>
+            </div>
+            <div class="doc-item" id="compile_cmd">
+                <h4>compile_cmd</h4>
+                <pre class="signature"><code>facts compile_cmd = format!("cursed build --incremental --file {}/{}",</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L331">watch_build_example.csd:331</a></p>
+            </div>
+            <div class="doc-item" id="test_pattern">
+                <h4>test_pattern</h4>
+                <pre class="signature"><code>facts test_pattern = source_file.replace("src/", "tests/").replace(".csd", "_test.csd");</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L345">watch_build_example.csd:345</a></p>
+            </div>
+            <div class="doc-item" id="test_cmd">
+                <h4>test_cmd</h4>
+                <pre class="signature"><code>facts test_cmd = format!("cursed test --pattern {}", test_pattern);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L346">watch_build_example.csd:346</a></p>
+            </div>
+            <div class="doc-item" id="test_cmd">
+                <h4>test_cmd</h4>
+                <pre class="signature"><code>facts test_cmd = format!("cursed test --file {}/{}", self.project_dir, test_file);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L358">watch_build_example.csd:358</a></p>
+            </div>
+            <div class="doc-item" id="rebuild_cmd">
+                <h4>rebuild_cmd</h4>
+                <pre class="signature"><code>facts rebuild_cmd = format!("cursed build --clean --project {}", self.project_dir);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L381">watch_build_example.csd:381</a></p>
+            </div>
+            <div class="doc-item" id="doc_cmd">
+                <h4>doc_cmd</h4>
+                <pre class="signature"><code>facts doc_cmd = format!("cursed doc generate --project {}", self.project_dir);</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L393">watch_build_example.csd:393</a></p>
+            </div>
+            <div class="doc-item" id="demo_project">
+                <h4>demo_project</h4>
+                <pre class="signature"><code>facts demo_project = "./build_watch_demo";</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L516">watch_build_example.csd:516</a></p>
+            </div>
+            <div class="doc-item" id="mut watcher">
+                <h4>mut watcher</h4>
+                <pre class="signature"><code>facts mut watcher = BuildWatcher::new(demo_project.to_string());</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L517">watch_build_example.csd:517</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = BuildWatcherStats {</code></pre>
+                <p class="source">Source: <a href="file://./examples/watch_build_example.csd#L523">watch_build_example.csd:523</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

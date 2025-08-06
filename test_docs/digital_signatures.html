@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>digital_signatures - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>digital_signatures</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L42">digital_signatures.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="basic_signing_demo">
+                <h4>basic_signing_demo</h4>
+                <pre class="signature"><code>slay basic_signing_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L78">digital_signatures.csd:78</a></p>
+            </div>
+            <div class="doc-item" id="multi_algorithm_demo">
+                <h4>multi_algorithm_demo</h4>
+                <pre class="signature"><code>slay multi_algorithm_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L133">digital_signatures.csd:133</a></p>
+            </div>
+            <div class="doc-item" id="integrity_verification_demo">
+                <h4>integrity_verification_demo</h4>
+                <pre class="signature"><code>slay integrity_verification_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L168">digital_signatures.csd:168</a></p>
+            </div>
+            <div class="doc-item" id="certificate_verification_demo">
+                <h4>certificate_verification_demo</h4>
+                <pre class="signature"><code>slay certificate_verification_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L206">digital_signatures.csd:206</a></p>
+            </div>
+            <div class="doc-item" id="batch_signing_demo">
+                <h4>batch_signing_demo</h4>
+                <pre class="signature"><code>slay batch_signing_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L267">digital_signatures.csd:267</a></p>
+            </div>
+            <div class="doc-item" id="legal_document_workflow">
+                <h4>legal_document_workflow</h4>
+                <pre class="signature"><code>slay legal_document_workflow() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L325">digital_signatures.csd:325</a></p>
+            </div>
+            <div class="doc-item" id="create_certificate">
+                <h4>create_certificate</h4>
+                <pre class="signature"><code>slay create_certificate(</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L428">digital_signatures.csd:428</a></p>
+            </div>
+            <div class="doc-item" id="is_certificate_valid">
+                <h4>is_certificate_valid</h4>
+                <pre class="signature"><code>slay is_certificate_valid(cert: &SignerCertificate) -> bool {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L449">digital_signatures.csd:449</a></p>
+            </div>
+            <div class="doc-item" id="verify_signed_document">
+                <h4>verify_signed_document</h4>
+                <pre class="signature"><code>slay verify_signed_document(doc: &SignedDocument, cert: &SignerCertificate) -> Result<bool, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L454">digital_signatures.csd:454</a></p>
+            </div>
+            <div class="doc-item" id="current_timestamp">
+                <h4>current_timestamp</h4>
+                <pre class="signature"><code>slay current_timestamp() -> u64 {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L468">digital_signatures.csd:468</a></p>
+            </div>
+            <div class="doc-item" id="hex_encode">
+                <h4>hex_encode</h4>
+                <pre class="signature"><code>slay hex_encode(data: &[u8]) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L475">digital_signatures.csd:475</a></p>
+            </div>
+            <div class="doc-item" id="sign">
+                <h4>sign</h4>
+                <pre class="signature"><code>slay sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn std::error::Error>>;</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L481">digital_signatures.csd:481</a></p>
+            </div>
+            <div class="doc-item" id="verify">
+                <h4>verify</h4>
+                <pre class="signature"><code>slay verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, Box<dyn std::error::Error>>;</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L485">digital_signatures.csd:485</a></p>
+            </div>
+            <div class="doc-item" id="to_bytes">
+                <h4>to_bytes</h4>
+                <pre class="signature"><code>slay to_bytes(&self) -> Vec<u8>;</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L486">digital_signatures.csd:486</a></p>
+            </div>
+            <div class="doc-item" id="from_bytes">
+                <h4>from_bytes</h4>
+                <pre class="signature"><code>slay from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L490">digital_signatures.csd:490</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new() -> Self {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L495">digital_signatures.csd:495</a></p>
+            </div>
+            <div class="doc-item" id="verify">
+                <h4>verify</h4>
+                <pre class="signature"><code>slay verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L504">digital_signatures.csd:504</a></p>
+            </div>
+            <div class="doc-item" id="to_bytes">
+                <h4>to_bytes</h4>
+                <pre class="signature"><code>slay to_bytes(&self) -> Vec<u8> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L509">digital_signatures.csd:509</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="SignedDocument">
+                <h4>SignedDocument</h4>
+                <pre class="signature"><code>squad SignedDocument {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L16">digital_signatures.csd:16</a></p>
+            </div>
+            <div class="doc-item" id="SignerCertificate">
+                <h4>SignerCertificate</h4>
+                <pre class="signature"><code>squad SignerCertificate {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L26">digital_signatures.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="SignatureContext">
+                <h4>SignatureContext</h4>
+                <pre class="signature"><code>squad SignatureContext {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L36">digital_signatures.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="Ed25519PublicKey">
+                <h4>Ed25519PublicKey</h4>
+                <pre class="signature"><code>squad Ed25519PublicKey {}</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L501">digital_signatures.csd:501</a></p>
+            </div>
+        </section>
+        <section id="interfaces">
+            <h3>Interfaces</h3>
+            <div class="doc-item" id="PrivateKey">
+                <h4>PrivateKey</h4>
+                <pre class="signature"><code>collab PrivateKey {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L480">digital_signatures.csd:480</a></p>
+            </div>
+            <div class="doc-item" id="PublicKey">
+                <h4>PublicKey</h4>
+                <pre class="signature"><code>collab PublicKey {</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L484">digital_signatures.csd:484</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="document_content">
+                <h4>document_content</h4>
+                <pre class="signature"><code>facts document_content = "</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L86">digital_signatures.csd:86</a></p>
+            </div>
+            <div class="doc-item" id="tampered_content">
+                <h4>tampered_content</h4>
+                <pre class="signature"><code>facts tampered_content = document_content.replace("PRODUCTION READY", "TAMPERED VERSION")</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L125">digital_signatures.csd:125</a></p>
+            </div>
+            <div class="doc-item" id="test_document">
+                <h4>test_document</h4>
+                <pre class="signature"><code>facts test_document = "Multi-algorithm signature test document - crypto security bestie!"</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L134">digital_signatures.csd:134</a></p>
+            </div>
+            <div class="doc-item" id="original_doc">
+                <h4>original_doc</h4>
+                <pre class="signature"><code>facts original_doc = "CONTRACT: Alice agrees to pay Bob 1000 CURSED tokens for premium crypto consulting."</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L172">digital_signatures.csd:172</a></p>
+            </div>
+            <div class="doc-item" id="tampering_tests">
+                <h4>tampering_tests</h4>
+                <pre class="signature"><code>facts tampering_tests = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L182">digital_signatures.csd:182</a></p>
+            </div>
+            <div class="doc-item" id="important_doc">
+                <h4>important_doc</h4>
+                <pre class="signature"><code>facts important_doc = "BOARD RESOLUTION: Approved budget of $1M for CURSED crypto development."</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L230">digital_signatures.csd:230</a></p>
+            </div>
+            <div class="doc-item" id="documents">
+                <h4>documents</h4>
+                <pre class="signature"><code>facts documents = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L274">digital_signatures.csd:274</a></p>
+            </div>
+            <div class="doc-item" id="contract">
+                <h4>contract</h4>
+                <pre class="signature"><code>facts contract = "</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L336">digital_signatures.csd:336</a></p>
+            </div>
+            <div class="doc-item" id="now">
+                <h4>now</h4>
+                <pre class="signature"><code>facts now = current_timestamp()</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L436">digital_signatures.csd:436</a></p>
+            </div>
+            <div class="doc-item" id="valid_until">
+                <h4>valid_until</h4>
+                <pre class="signature"><code>facts valid_until = now + (365 * 24 * 60 * 60) // 1 year</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L437">digital_signatures.csd:437</a></p>
+            </div>
+            <div class="doc-item" id="now">
+                <h4>now</h4>
+                <pre class="signature"><code>facts now = current_timestamp()</code></pre>
+                <p class="source">Source: <a href="file://./examples/digital_signatures.csd#L450">digital_signatures.csd:450</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

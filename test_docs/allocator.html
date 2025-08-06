@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>allocator - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>allocator</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="init_allocator">
+                <h4>init_allocator</h4>
+                <pre class="signature"><code>slay init_allocator(alloc *Allocator, name tea, total_size normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L37">allocator.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="allocate">
+                <h4>allocate</h4>
+                <pre class="signature"><code>slay allocate(alloc *Allocator, size normie, alignment normie) *byte {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L64">allocator.csd:64</a></p>
+            </div>
+            <div class="doc-item" id="deallocate">
+                <h4>deallocate</h4>
+                <pre class="signature"><code>slay deallocate(alloc *Allocator, ptr *byte) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L102">allocator.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="find_free_block">
+                <h4>find_free_block</h4>
+                <pre class="signature"><code>slay find_free_block(alloc *Allocator, size normie, alignment normie) *MemoryBlock {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L132">allocator.csd:132</a></p>
+            </div>
+            <div class="doc-item" id="split_block">
+                <h4>split_block</h4>
+                <pre class="signature"><code>slay split_block(block *MemoryBlock, size normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L153">allocator.csd:153</a></p>
+            </div>
+            <div class="doc-item" id="coalesce_free_blocks">
+                <h4>coalesce_free_blocks</h4>
+                <pre class="signature"><code>slay coalesce_free_blocks(alloc *Allocator, block *MemoryBlock) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L176">allocator.csd:176</a></p>
+            </div>
+            <div class="doc-item" id="align_size">
+                <h4>align_size</h4>
+                <pre class="signature"><code>slay align_size(size normie, alignment normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L205">allocator.csd:205</a></p>
+            </div>
+            <div class="doc-item" id="align_pointer">
+                <h4>align_pointer</h4>
+                <pre class="signature"><code>slay align_pointer(ptr *byte, alignment normie) *byte {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L209">allocator.csd:209</a></p>
+            </div>
+            <div class="doc-item" id="add_to_free_list">
+                <h4>add_to_free_list</h4>
+                <pre class="signature"><code>slay add_to_free_list(alloc *Allocator, block *MemoryBlock) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L216">allocator.csd:216</a></p>
+            </div>
+            <div class="doc-item" id="remove_from_free_list">
+                <h4>remove_from_free_list</h4>
+                <pre class="signature"><code>slay remove_from_free_list(alloc *Allocator, block *MemoryBlock) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L227">allocator.csd:227</a></p>
+            </div>
+            <div class="doc-item" id="add_to_allocated_list">
+                <h4>add_to_allocated_list</h4>
+                <pre class="signature"><code>slay add_to_allocated_list(alloc *Allocator, block *MemoryBlock) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L239">allocator.csd:239</a></p>
+            </div>
+            <div class="doc-item" id="remove_from_allocated_list">
+                <h4>remove_from_allocated_list</h4>
+                <pre class="signature"><code>slay remove_from_allocated_list(alloc *Allocator, block *MemoryBlock) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L250">allocator.csd:250</a></p>
+            </div>
+            <div class="doc-item" id="get_allocator_stats">
+                <h4>get_allocator_stats</h4>
+                <pre class="signature"><code>slay get_allocator_stats(alloc *Allocator) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L263">allocator.csd:263</a></p>
+            </div>
+            <div class="doc-item" id="get_global_stats">
+                <h4>get_global_stats</h4>
+                <pre class="signature"><code>slay get_global_stats() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/allocator.csd#L271">allocator.csd:271</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

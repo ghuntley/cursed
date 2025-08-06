@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>generics_advanced_test - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>generics_advanced_test</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="sort<T>">
+                <h4>sort<T></h4>
+                <pre class="signature"><code>slay sort<T>(items: [T]) -> [T] where T: Comparable<T> + Clone {</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L18">generics_advanced_test.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new() -> SortedContainer<T> {</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L43">generics_advanced_test.csd:43</a></p>
+            </div>
+            <div class="doc-item" id="insert">
+                <h4>insert</h4>
+                <pre class="signature"><code>slay insert(self, item: T) {</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L47">generics_advanced_test.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="get">
+                <h4>get</h4>
+                <pre class="signature"><code>slay get(self, index: normie) -> Option<T> {</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L52">generics_advanced_test.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="display">
+                <h4>display</h4>
+                <pre class="signature"><code>slay display(self) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L60">generics_advanced_test.csd:60</a></p>
+            </div>
+            <div class="doc-item" id="map<T, U>">
+                <h4>map<T, U></h4>
+                <pre class="signature"><code>slay map<T, U>(items: [T], func: slay(T) -> U) -> [U] {</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L66">generics_advanced_test.csd:66</a></p>
+            </div>
+            <div class="doc-item" id="process<T, U>">
+                <h4>process<T, U></h4>
+                <pre class="signature"><code>slay process<T, U>(input: T, processor: slay(T) -> U) -> U</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L77">generics_advanced_test.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L89">generics_advanced_test.csd:89</a></p>
+            </div>
+            <div class="doc-item" id="zip<T, U>">
+                <h4>zip<T, U></h4>
+                <pre class="signature"><code>slay zip<T, U>(vec1: [T], vec2: [U]) -> [(T, U)]</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L116">generics_advanced_test.csd:116</a></p>
+            </div>
+        </section>
+        <section id="interfaces">
+            <h3>Interfaces</h3>
+            <div class="doc-item" id="Iterator<T>">
+                <h4>Iterator<T></h4>
+                <pre class="signature"><code>collab Iterator<T> {</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L5">generics_advanced_test.csd:5</a></p>
+            </div>
+            <div class="doc-item" id="Comparable<T: Display>">
+                <h4>Comparable<T: Display></h4>
+                <pre class="signature"><code>collab Comparable<T: Display> {</code></pre>
+                <p class="source">Source: <a href="file://./generics_advanced_test.csd#L13">generics_advanced_test.csd:13</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

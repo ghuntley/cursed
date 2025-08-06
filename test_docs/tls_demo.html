@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tls_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>tls_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="crypto_secure_random_int">
+                <h4>crypto_secure_random_int</h4>
+                <pre class="signature"><code>slay crypto_secure_random_int(min normie, max normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L14">tls_demo.csd:14</a></p>
+            </div>
+            <div class="doc-item" id="timez_now">
+                <h4>timez_now</h4>
+                <pre class="signature"><code>slay timez_now() normie {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L18">tls_demo.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="string_length">
+                <h4>string_length</h4>
+                <pre class="signature"><code>slay string_length(s tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L22">tls_demo.csd:22</a></p>
+            </div>
+            <div class="doc-item" id="tls_config_new">
+                <h4>tls_config_new</h4>
+                <pre class="signature"><code>slay tls_config_new() TLSConfig {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L51">tls_demo.csd:51</a></p>
+            </div>
+            <div class="doc-item" id="tls_config_set_server_name">
+                <h4>tls_config_set_server_name</h4>
+                <pre class="signature"><code>slay tls_config_set_server_name(config TLSConfig, hostname tea) TLSConfig {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L69">tls_demo.csd:69</a></p>
+            </div>
+            <div class="doc-item" id="tls_dial">
+                <h4>tls_dial</h4>
+                <pre class="signature"><code>slay tls_dial(hostname tea, port normie, config TLSConfig) TLSConnection {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L76">tls_demo.csd:76</a></p>
+            </div>
+            <div class="doc-item" id="tls_write">
+                <h4>tls_write</h4>
+                <pre class="signature"><code>slay tls_write(conn TLSConnection, data tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L107">tls_demo.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="tls_read">
+                <h4>tls_read</h4>
+                <pre class="signature"><code>slay tls_read(conn TLSConnection, buffer_size normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L122">tls_demo.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="tls_close">
+                <h4>tls_close</h4>
+                <pre class="signature"><code>slay tls_close(conn TLSConnection) lit {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L138">tls_demo.csd:138</a></p>
+            </div>
+            <div class="doc-item" id="tls_get_connection_info">
+                <h4>tls_get_connection_info</h4>
+                <pre class="signature"><code>slay tls_get_connection_info(conn TLSConnection) tea {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L150">tls_demo.csd:150</a></p>
+            </div>
+            <div class="doc-item" id="tea">
+                <h4>tea</h4>
+                <pre class="signature"><code>slay tea(value normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L167">tls_demo.csd:167</a></p>
+            </div>
+            <div class="doc-item" id="tea">
+                <h4>tea</h4>
+                <pre class="signature"><code>slay tea(value lit) tea {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L180">tls_demo.csd:180</a></p>
+            </div>
+            <div class="doc-item" id="demo_tls_client">
+                <h4>demo_tls_client</h4>
+                <pre class="signature"><code>slay demo_tls_client() {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L189">tls_demo.csd:189</a></p>
+            </div>
+            <div class="doc-item" id="demo_tls_server">
+                <h4>demo_tls_server</h4>
+                <pre class="signature"><code>slay demo_tls_server() {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L215">tls_demo.csd:215</a></p>
+            </div>
+            <div class="doc-item" id="demo_tls_security_features">
+                <h4>demo_tls_security_features</h4>
+                <pre class="signature"><code>slay demo_tls_security_features() {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L258">tls_demo.csd:258</a></p>
+            </div>
+            <div class="doc-item" id="demo_tls_mutual_auth">
+                <h4>demo_tls_mutual_auth</h4>
+                <pre class="signature"><code>slay demo_tls_mutual_auth() {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L294">tls_demo.csd:294</a></p>
+            </div>
+            <div class="doc-item" id="run_tls_demo">
+                <h4>run_tls_demo</h4>
+                <pre class="signature"><code>slay run_tls_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./tls_demo.csd#L317">tls_demo.csd:317</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

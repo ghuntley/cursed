@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>math_constants_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>math_constants_demo</h2>
+    </header>
+    <main>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="wavelength">
+                <h4>wavelength</h4>
+                <pre class="signature"><code>facts wavelength = 500e-9; // 500 nanometers</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L40">math_constants_demo.csd:40</a></p>
+            </div>
+            <div class="doc-item" id="frequency">
+                <h4>frequency</h4>
+                <pre class="signature"><code>facts frequency = SPEED_OF_LIGHT / wavelength;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L41">math_constants_demo.csd:41</a></p>
+            </div>
+            <div class="doc-item" id="photon_energy">
+                <h4>photon_energy</h4>
+                <pre class="signature"><code>facts photon_energy = PLANCK * frequency;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L42">math_constants_demo.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="earth_mass">
+                <h4>earth_mass</h4>
+                <pre class="signature"><code>facts earth_mass = 5.972e24; // kg</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L46">math_constants_demo.csd:46</a></p>
+            </div>
+            <div class="doc-item" id="moon_mass">
+                <h4>moon_mass</h4>
+                <pre class="signature"><code>facts moon_mass = 7.342e22;  // kg</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L47">math_constants_demo.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="earth_moon_distance">
+                <h4>earth_moon_distance</h4>
+                <pre class="signature"><code>facts earth_moon_distance = 3.844e8; // meters</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L48">math_constants_demo.csd:48</a></p>
+            </div>
+            <div class="doc-item" id="gravitational_force">
+                <h4>gravitational_force</h4>
+                <pre class="signature"><code>facts gravitational_force = GRAVITATIONAL * earth_mass * moon_mass /</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L49">math_constants_demo.csd:49</a></p>
+            </div>
+            <div class="doc-item" id="room_temp_c">
+                <h4>room_temp_c</h4>
+                <pre class="signature"><code>facts room_temp_c = 22.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L62">math_constants_demo.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="room_temp_f">
+                <h4>room_temp_f</h4>
+                <pre class="signature"><code>facts room_temp_f = celsius_to_fahrenheit(room_temp_c);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L63">math_constants_demo.csd:63</a></p>
+            </div>
+            <div class="doc-item" id="boiling_f">
+                <h4>boiling_f</h4>
+                <pre class="signature"><code>facts boiling_f = 212.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L66">math_constants_demo.csd:66</a></p>
+            </div>
+            <div class="doc-item" id="boiling_c">
+                <h4>boiling_c</h4>
+                <pre class="signature"><code>facts boiling_c = fahrenheit_to_celsius(boiling_f);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L67">math_constants_demo.csd:67</a></p>
+            </div>
+            <div class="doc-item" id="pipe_length_inches">
+                <h4>pipe_length_inches</h4>
+                <pre class="signature"><code>facts pipe_length_inches = 24.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L71">math_constants_demo.csd:71</a></p>
+            </div>
+            <div class="doc-item" id="pipe_length_cm">
+                <h4>pipe_length_cm</h4>
+                <pre class="signature"><code>facts pipe_length_cm = inches_to_cm(pipe_length_inches);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L72">math_constants_demo.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="distance_miles">
+                <h4>distance_miles</h4>
+                <pre class="signature"><code>facts distance_miles = 100.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L76">math_constants_demo.csd:76</a></p>
+            </div>
+            <div class="doc-item" id="distance_km">
+                <h4>distance_km</h4>
+                <pre class="signature"><code>facts distance_km = miles_to_km(distance_miles);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L77">math_constants_demo.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="package_pounds">
+                <h4>package_pounds</h4>
+                <pre class="signature"><code>facts package_pounds = 50.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L81">math_constants_demo.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="package_kg">
+                <h4>package_kg</h4>
+                <pre class="signature"><code>facts package_kg = pounds_to_kg(package_pounds);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L82">math_constants_demo.csd:82</a></p>
+            </div>
+            <div class="doc-item" id="radius">
+                <h4>radius</h4>
+                <pre class="signature"><code>facts radius = 5.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L94">math_constants_demo.csd:94</a></p>
+            </div>
+            <div class="doc-item" id="circumference">
+                <h4>circumference</h4>
+                <pre class="signature"><code>facts circumference = TAU * radius;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L95">math_constants_demo.csd:95</a></p>
+            </div>
+            <div class="doc-item" id="area">
+                <h4>area</h4>
+                <pre class="signature"><code>facts area = PI * radius * radius;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L96">math_constants_demo.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="golden_rect_width">
+                <h4>golden_rect_width</h4>
+                <pre class="signature"><code>facts golden_rect_width = 10.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L101">math_constants_demo.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="golden_rect_height">
+                <h4>golden_rect_height</h4>
+                <pre class="signature"><code>facts golden_rect_height = golden_rect_width / PHI;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L102">math_constants_demo.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="golden_rect_area">
+                <h4>golden_rect_area</h4>
+                <pre class="signature"><code>facts golden_rect_area = golden_rect_width * golden_rect_height;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L103">math_constants_demo.csd:103</a></p>
+            </div>
+            <div class="doc-item" id="triangle_base">
+                <h4>triangle_base</h4>
+                <pre class="signature"><code>facts triangle_base = 12.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L108">math_constants_demo.csd:108</a></p>
+            </div>
+            <div class="doc-item" id="triangle_height">
+                <h4>triangle_height</h4>
+                <pre class="signature"><code>facts triangle_height = 8.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L109">math_constants_demo.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="triangle_area">
+                <h4>triangle_area</h4>
+                <pre class="signature"><code>facts triangle_area = triangle_base * triangle_height * ONE_SECOND; // 1/2</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L110">math_constants_demo.csd:110</a></p>
+            </div>
+            <div class="doc-item" id="recipe_cups">
+                <h4>recipe_cups</h4>
+                <pre class="signature"><code>facts recipe_cups = 6.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L123">math_constants_demo.csd:123</a></p>
+            </div>
+            <div class="doc-item" id="board_length">
+                <h4>board_length</h4>
+                <pre class="signature"><code>facts board_length = 96.0; // inches</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L131">math_constants_demo.csd:131</a></p>
+            </div>
+            <div class="doc-item" id="angles_deg">
+                <h4>angles_deg</h4>
+                <pre class="signature"><code>facts angles_deg = [30.0, 45.0, 60.0, 90.0, 120.0, 180.0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L147">math_constants_demo.csd:147</a></p>
+            </div>
+            <div class="doc-item" id="deg">
+                <h4>deg</h4>
+                <pre class="signature"><code>facts deg = angles_deg[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L151">math_constants_demo.csd:151</a></p>
+            </div>
+            <div class="doc-item" id="rad">
+                <h4>rad</h4>
+                <pre class="signature"><code>facts rad = degrees_to_radians(deg);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L152">math_constants_demo.csd:152</a></p>
+            </div>
+            <div class="doc-item" id="arc_radius">
+                <h4>arc_radius</h4>
+                <pre class="signature"><code>facts arc_radius = 10.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L157">math_constants_demo.csd:157</a></p>
+            </div>
+            <div class="doc-item" id="arc_angle_deg">
+                <h4>arc_angle_deg</h4>
+                <pre class="signature"><code>facts arc_angle_deg = 60.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L158">math_constants_demo.csd:158</a></p>
+            </div>
+            <div class="doc-item" id="arc_angle_rad">
+                <h4>arc_angle_rad</h4>
+                <pre class="signature"><code>facts arc_angle_rad = degrees_to_radians(arc_angle_deg);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L159">math_constants_demo.csd:159</a></p>
+            </div>
+            <div class="doc-item" id="arc_length">
+                <h4>arc_length</h4>
+                <pre class="signature"><code>facts arc_length = arc_radius * arc_angle_rad;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L160">math_constants_demo.csd:160</a></p>
+            </div>
+            <div class="doc-item" id="calculated_pi">
+                <h4>calculated_pi</h4>
+                <pre class="signature"><code>facts calculated_pi = 4.0 * (1.0 - ONE_THIRD + ONE_FIFTH - ONE_SEVENTH + ONE_NINTH);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L173">math_constants_demo.csd:173</a></p>
+            </div>
+            <div class="doc-item" id="mystery_value">
+                <h4>mystery_value</h4>
+                <pre class="signature"><code>facts mystery_value = 2.71828;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L178">math_constants_demo.csd:178</a></p>
+            </div>
+            <div class="doc-item" id="calculated_value">
+                <h4>calculated_value</h4>
+                <pre class="signature"><code>facts calculated_value = PI * 2.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L190">math_constants_demo.csd:190</a></p>
+            </div>
+            <div class="doc-item" id="sigma">
+                <h4>sigma</h4>
+                <pre class="signature"><code>facts sigma = 2.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L205">math_constants_demo.csd:205</a></p>
+            </div>
+            <div class="doc-item" id="normal_factor">
+                <h4>normal_factor</h4>
+                <pre class="signature"><code>facts normal_factor = 1.0 / (sigma * sqrt(TAU));</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L206">math_constants_demo.csd:206</a></p>
+            </div>
+            <div class="doc-item" id="principal">
+                <h4>principal</h4>
+                <pre class="signature"><code>facts principal = 1000.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L210">math_constants_demo.csd:210</a></p>
+            </div>
+            <div class="doc-item" id="rate">
+                <h4>rate</h4>
+                <pre class="signature"><code>facts rate = 0.05; // 5% annual rate</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L211">math_constants_demo.csd:211</a></p>
+            </div>
+            <div class="doc-item" id="time">
+                <h4>time</h4>
+                <pre class="signature"><code>facts time = 10.0; // 10 years</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L212">math_constants_demo.csd:212</a></p>
+            </div>
+            <div class="doc-item" id="continuous_amount">
+                <h4>continuous_amount</h4>
+                <pre class="signature"><code>facts continuous_amount = principal * pow(E, rate * time);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L213">math_constants_demo.csd:213</a></p>
+            </div>
+            <div class="doc-item" id="initial_amount">
+                <h4>initial_amount</h4>
+                <pre class="signature"><code>facts initial_amount = 100.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L218">math_constants_demo.csd:218</a></p>
+            </div>
+            <div class="doc-item" id="half_life">
+                <h4>half_life</h4>
+                <pre class="signature"><code>facts half_life = 5.73; // years (Carbon-14)</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L219">math_constants_demo.csd:219</a></p>
+            </div>
+            <div class="doc-item" id="decay_constant">
+                <h4>decay_constant</h4>
+                <pre class="signature"><code>facts decay_constant = LN_2 / half_life;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L220">math_constants_demo.csd:220</a></p>
+            </div>
+            <div class="doc-item" id="years_elapsed">
+                <h4>years_elapsed</h4>
+                <pre class="signature"><code>facts years_elapsed = 1000.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L221">math_constants_demo.csd:221</a></p>
+            </div>
+            <div class="doc-item" id="remaining">
+                <h4>remaining</h4>
+                <pre class="signature"><code>facts remaining = initial_amount * pow(E, -decay_constant * years_elapsed);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L222">math_constants_demo.csd:222</a></p>
+            </div>
+            <div class="doc-item" id="tiny_diff">
+                <h4>tiny_diff</h4>
+                <pre class="signature"><code>facts tiny_diff = PI + EPSILON;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_constants_demo.csd#L264">math_constants_demo.csd:264</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

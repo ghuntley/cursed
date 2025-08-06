@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fs_example - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>fs_example</h2>
+    </header>
+    <main>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="test_dir">
+                <h4>test_dir</h4>
+                <pre class="signature"><code>facts test_dir = "example_files";</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L8">fs_example.csd:8</a></p>
+            </div>
+            <div class="doc-item" id="file_path">
+                <h4>file_path</h4>
+                <pre class="signature"><code>facts file_path = fs::join_path(vec![test_dir, "hello.txt"]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L12">fs_example.csd:12</a></p>
+            </div>
+            <div class="doc-item" id="content">
+                <h4>content</h4>
+                <pre class="signature"><code>facts content = fs::read_file(file_path)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L16">fs_example.csd:16</a></p>
+            </div>
+            <div class="doc-item" id="meta">
+                <h4>meta</h4>
+                <pre class="signature"><code>facts meta = fs::metadata(file_path)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L20">fs_example.csd:20</a></p>
+            </div>
+            <div class="doc-item" id="entries">
+                <h4>entries</h4>
+                <pre class="signature"><code>facts entries = fs::list_dir(test_dir)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L31">fs_example.csd:31</a></p>
+            </div>
+            <div class="doc-item" id="type_info">
+                <h4>type_info</h4>
+                <pre class="signature"><code>facts type_info = fs::file_type_from_extension(&entry.name);</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L34">fs_example.csd:34</a></p>
+            </div>
+            <div class="doc-item" id="some_path">
+                <h4>some_path</h4>
+                <pre class="signature"><code>facts some_path = "/home/user/documents/file.txt";</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L42">fs_example.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="txt_files">
+                <h4>txt_files</h4>
+                <pre class="signature"><code>facts txt_files = fs::find_files(test_dir, |entry| {</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L48">fs_example.csd:48</a></p>
+            </div>
+            <div class="doc-item" id="copy_path">
+                <h4>copy_path</h4>
+                <pre class="signature"><code>facts copy_path = fs::join_path(vec![test_dir, "hello_copy.txt"]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L54">fs_example.csd:54</a></p>
+            </div>
+            <div class="doc-item" id="total_size">
+                <h4>total_size</h4>
+                <pre class="signature"><code>facts total_size = fs::dir_size(test_dir)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L58">fs_example.csd:58</a></p>
+            </div>
+            <div class="doc-item" id="safe_content">
+                <h4>safe_content</h4>
+                <pre class="signature"><code>facts safe_content = "This is safe content that won't break the system";</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L62">fs_example.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="safe_path">
+                <h4>safe_path</h4>
+                <pre class="signature"><code>facts safe_path = fs::join_path(vec![test_dir, "safe.txt"]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/fs_example.csd#L63">fs_example.csd:63</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

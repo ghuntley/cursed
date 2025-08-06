@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>env_expansion_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>env_expansion_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L10">env_expansion_demo.csd:10</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="simple">
+                <h4>simple</h4>
+                <pre class="signature"><code>facts simple = expand_env_vars("Running $APP_NAME version $APP_VERSION")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L26">env_expansion_demo.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="braced">
+                <h4>braced</h4>
+                <pre class="signature"><code>facts braced = expand_env_vars("Application: ${APP_NAME} v${APP_VERSION}")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L29">env_expansion_demo.csd:29</a></p>
+            </div>
+            <div class="doc-item" id="mixed">
+                <h4>mixed</h4>
+                <pre class="signature"><code>facts mixed = expand_env_vars("$USER_NAME uses ${APP_NAME} from ${HOME_DIR}/apps")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L32">env_expansion_demo.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="with_default">
+                <h4>with_default</h4>
+                <pre class="signature"><code>facts with_default = expand_env_vars("Database: ${DATABASE_URL:-sqlite:///app.db}")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L38">env_expansion_demo.csd:38</a></p>
+            </div>
+            <div class="doc-item" id="env_with_default">
+                <h4>env_with_default</h4>
+                <pre class="signature"><code>facts env_with_default = expand_env_vars("Environment: ${ENVIRONMENT:-development}")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L41">env_expansion_demo.csd:41</a></p>
+            </div>
+            <div class="doc-item" id="complex_default">
+                <h4>complex_default</h4>
+                <pre class="signature"><code>facts complex_default = expand_env_vars("Log file: ${LOG_FILE:-${TEMP_DIR}/app.log}")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L44">env_expansion_demo.csd:44</a></p>
+            </div>
+            <div class="doc-item" id="conditional">
+                <h4>conditional</h4>
+                <pre class="signature"><code>facts conditional = expand_env_vars("Mode: ${ENVIRONMENT:+Production Mode}")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L50">env_expansion_demo.csd:50</a></p>
+            </div>
+            <div class="doc-item" id="conditional_unset">
+                <h4>conditional_unset</h4>
+                <pre class="signature"><code>facts conditional_unset = expand_env_vars("Debug: ${DEBUG_MODE:+Debug Enabled}")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L53">env_expansion_demo.csd:53</a></p>
+            </div>
+            <div class="doc-item" id="config_file">
+                <h4>config_file</h4>
+                <pre class="signature"><code>facts config_file = expand_env_vars("${HOME_DIR}/.config/${APP_NAME}/${ENVIRONMENT}.conf")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L59">env_expansion_demo.csd:59</a></p>
+            </div>
+            <div class="doc-item" id="backup_path">
+                <h4>backup_path</h4>
+                <pre class="signature"><code>facts backup_path = expand_env_vars("${BACKUP_DIR:-${HOME_DIR}/backups}/${APP_NAME}_${APP_VERSION}.tar.gz")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L62">env_expansion_demo.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="log_format">
+                <h4>log_format</h4>
+                <pre class="signature"><code>facts log_format = expand_env_vars("[${APP_NAME}:${ENVIRONMENT}] ${LOG_LEVEL:-INFO}: ${MESSAGE:-No message}")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L65">env_expansion_demo.csd:65</a></p>
+            </div>
+            <div class="doc-item" id="db_url">
+                <h4>db_url</h4>
+                <pre class="signature"><code>facts db_url = expand_env_vars("postgresql://${DB_USER}:${DB_PASS:-secret}@${DB_HOST}:${DB_PORT}/${DB_NAME}")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L76">env_expansion_demo.csd:76</a></p>
+            </div>
+            <div class="doc-item" id="api_url">
+                <h4>api_url</h4>
+                <pre class="signature"><code>facts api_url = expand_env_vars("${API_PROTOCOL:-https}://${API_HOST:-api.example.com}:${API_PORT:-443}/v1")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L79">env_expansion_demo.csd:79</a></p>
+            </div>
+            <div class="doc-item" id="with_custom">
+                <h4>with_custom</h4>
+                <pre class="signature"><code>facts with_custom = expand_env_vars_with_defaults(</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L90">env_expansion_demo.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="test_string">
+                <h4>test_string</h4>
+                <pre class="signature"><code>facts test_string = "${HOME_DIR}/projects/${APP_NAME}/${ENVIRONMENT}.log";</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L99">env_expansion_demo.csd:99</a></p>
+            </div>
+            <div class="doc-item" id="variables">
+                <h4>variables</h4>
+                <pre class="signature"><code>facts variables = extract_env_vars(test_string)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L114">env_expansion_demo.csd:114</a></p>
+            </div>
+            <div class="doc-item" id="expanded">
+                <h4>expanded</h4>
+                <pre class="signature"><code>facts expanded = expand_env_vars(test_string)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L118">env_expansion_demo.csd:118</a></p>
+            </div>
+            <div class="doc-item" id="template">
+                <h4>template</h4>
+                <pre class="signature"><code>facts template = "Deploying ${SERVICE_NAME} version ${SERVICE_VERSION} to ${DEPLOY_ENV}";</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L130">env_expansion_demo.csd:130</a></p>
+            </div>
+            <div class="doc-item" id="substituted">
+                <h4>substituted</h4>
+                <pre class="signature"><code>facts substituted = substitute_env_vars(template, &substitutions)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L131">env_expansion_demo.csd:131</a></p>
+            </div>
+            <div class="doc-item" id="original">
+                <h4>original</h4>
+                <pre class="signature"><code>facts original = "Path: $HOME/documents and ${USER} files";</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L137">env_expansion_demo.csd:137</a></p>
+            </div>
+            <div class="doc-item" id="escaped">
+                <h4>escaped</h4>
+                <pre class="signature"><code>facts escaped = escape_env_value(original);</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L138">env_expansion_demo.csd:138</a></p>
+            </div>
+            <div class="doc-item" id="unescaped">
+                <h4>unescaped</h4>
+                <pre class="signature"><code>facts unescaped = unescape_env_value(&escaped)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L139">env_expansion_demo.csd:139</a></p>
+            </div>
+            <div class="doc-item" id="invalid_strings">
+                <h4>invalid_strings</h4>
+                <pre class="signature"><code>facts invalid_strings = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L148">env_expansion_demo.csd:148</a></p>
+            </div>
+            <div class="doc-item" id="config_template">
+                <h4>config_template</h4>
+                <pre class="signature"><code>facts config_template = "</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L168">env_expansion_demo.csd:168</a></p>
+            </div>
+            <div class="doc-item" id="expanded_config">
+                <h4>expanded_config</h4>
+                <pre class="signature"><code>facts expanded_config = expand_env_vars(config_template)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L193">env_expansion_demo.csd:193</a></p>
+            </div>
+            <div class="doc-item" id="cleanup_vars">
+                <h4>cleanup_vars</h4>
+                <pre class="signature"><code>facts cleanup_vars = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/env_expansion_demo.csd#L200">env_expansion_demo.csd:200</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

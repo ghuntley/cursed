@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>advanced_generics_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>advanced_generics_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="safe_clone<T>">
+                <h4>safe_clone<T></h4>
+                <pre class="signature"><code>slay safe_clone<T>(value T) T where T: Clone + Debug {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L7">advanced_generics_demo.csd:7</a></p>
+            </div>
+            <div class="doc-item" id="compare">
+                <h4>compare</h4>
+                <pre class="signature"><code>slay compare(self, other T) normie</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L14">advanced_generics_demo.csd:14</a></p>
+            </div>
+            <div class="doc-item" id="equals">
+                <h4>equals</h4>
+                <pre class="signature"><code>slay equals(self, other T) lit {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L15">advanced_generics_demo.csd:15</a></p>
+            </div>
+            <div class="doc-item" id="compare">
+                <h4>compare</h4>
+                <pre class="signature"><code>slay compare(self, other normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L22">advanced_generics_demo.csd:22</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new(name tea) Container<T> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L40">advanced_generics_demo.csd:40</a></p>
+            </div>
+            <div class="doc-item" id="add">
+                <h4>add</h4>
+                <pre class="signature"><code>slay add(self, item T) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L47">advanced_generics_demo.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="get">
+                <h4>get</h4>
+                <pre class="signature"><code>slay get(self, index normie) Option<T> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L52">advanced_generics_demo.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="size">
+                <h4>size</h4>
+                <pre class="signature"><code>slay size(self) normie {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L60">advanced_generics_demo.csd:60</a></p>
+            </div>
+            <div class="doc-item" id="map<A, B>">
+                <h4>map<A, B></h4>
+                <pre class="signature"><code>slay map<A, B>(self F<A>, f slay(A) B) F<B></code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L67">advanced_generics_demo.csd:67</a></p>
+            </div>
+            <div class="doc-item" id="map<A, B>">
+                <h4>map<A, B></h4>
+                <pre class="signature"><code>slay map<A, B>(self Option<A>, f slay(A) B) Option<B> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L72">advanced_generics_demo.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="next">
+                <h4>next</h4>
+                <pre class="signature"><code>slay next(self) Option<Self::Item></code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L83">advanced_generics_demo.csd:83</a></p>
+            </div>
+            <div class="doc-item" id="count">
+                <h4>count</h4>
+                <pre class="signature"><code>slay count(self) normie</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L84">advanced_generics_demo.csd:84</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new(max normie) NumberIterator {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L94">advanced_generics_demo.csd:94</a></p>
+            </div>
+            <div class="doc-item" id="next">
+                <h4>next</h4>
+                <pre class="signature"><code>slay next(self) Option<normie> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L102">advanced_generics_demo.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="count">
+                <h4>count</h4>
+                <pre class="signature"><code>slay count(self) normie {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L112">advanced_generics_demo.csd:112</a></p>
+            </div>
+            <div class="doc-item" id="process_collection<T, U>">
+                <h4>process_collection<T, U></h4>
+                <pre class="signature"><code>slay process_collection<T, U>(items Array<T>, processor slay(T) U) Array<U></code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L118">advanced_generics_demo.csd:118</a></p>
+            </div>
+            <div class="doc-item" id="sort_and_display<T>">
+                <h4>sort_and_display<T></h4>
+                <pre class="signature"><code>slay sort_and_display<T>(items Array<T>)</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L133">advanced_generics_demo.csd:133</a></p>
+            </div>
+            <div class="doc-item" id="produce">
+                <h4>produce</h4>
+                <pre class="signature"><code>slay produce() T</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L146">advanced_generics_demo.csd:146</a></p>
+            </div>
+            <div class="doc-item" id="produce">
+                <h4>produce</h4>
+                <pre class="signature"><code>slay produce() normie {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L154">advanced_generics_demo.csd:154</a></p>
+            </div>
+            <div class="doc-item" id="collect">
+                <h4>collect</h4>
+                <pre class="signature"><code>slay collect(self) Result<Self::Output, Self::Error></code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L164">advanced_generics_demo.csd:164</a></p>
+            </div>
+            <div class="doc-item" id="collect">
+                <h4>collect</h4>
+                <pre class="signature"><code>slay collect(self) Result<Array<normie>, tea> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L171">advanced_generics_demo.csd:171</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L181">advanced_generics_demo.csd:181</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="Container<T> where T: Clone + Debug + Send">
+                <h4>Container<T> where T: Clone + Debug + Send</h4>
+                <pre class="signature"><code>squad Container<T> where T: Clone + Debug + Send {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L34">advanced_generics_demo.csd:34</a></p>
+            </div>
+            <div class="doc-item" id="NumberIterator">
+                <h4>NumberIterator</h4>
+                <pre class="signature"><code>squad NumberIterator {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L88">advanced_generics_demo.csd:88</a></p>
+            </div>
+            <div class="doc-item" id="NumberProducer">
+                <h4>NumberProducer</h4>
+                <pre class="signature"><code>squad NumberProducer {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L149">advanced_generics_demo.csd:149</a></p>
+            </div>
+        </section>
+        <section id="interfaces">
+            <h3>Interfaces</h3>
+            <div class="doc-item" id="Comparable<T>">
+                <h4>Comparable<T></h4>
+                <pre class="signature"><code>collab Comparable<T> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L13">advanced_generics_demo.csd:13</a></p>
+            </div>
+            <div class="doc-item" id="Functor<F>">
+                <h4>Functor<F></h4>
+                <pre class="signature"><code>collab Functor<F> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L66">advanced_generics_demo.csd:66</a></p>
+            </div>
+            <div class="doc-item" id="Iterator">
+                <h4>Iterator</h4>
+                <pre class="signature"><code>collab Iterator {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L81">advanced_generics_demo.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="Producer<+T>">
+                <h4>Producer<+T></h4>
+                <pre class="signature"><code>collab Producer<+T> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L145">advanced_generics_demo.csd:145</a></p>
+            </div>
+            <div class="doc-item" id="Collect<T>">
+                <h4>Collect<T></h4>
+                <pre class="signature"><code>collab Collect<T> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/advanced_generics_demo.csd#L160">advanced_generics_demo.csd:160</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

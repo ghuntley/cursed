@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>postgresql - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>postgresql</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="PostgreSQLConfig">
+                <h4>PostgreSQLConfig</h4>
+                <pre class="signature"><code>slay PostgreSQLConfig() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L7">postgresql.csd:7</a></p>
+            </div>
+            <div class="doc-item" id="PostgreSQLConnection">
+                <h4>PostgreSQLConnection</h4>
+                <pre class="signature"><code>slay PostgreSQLConnection() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L21">postgresql.csd:21</a></p>
+            </div>
+            <div class="doc-item" id="PostgreSQLStatement">
+                <h4>PostgreSQLStatement</h4>
+                <pre class="signature"><code>slay PostgreSQLStatement() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L37">postgresql.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="PostgreSQLTransaction">
+                <h4>PostgreSQLTransaction</h4>
+                <pre class="signature"><code>slay PostgreSQLTransaction() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L50">postgresql.csd:50</a></p>
+            </div>
+            <div class="doc-item" id="PostgreSQLResult">
+                <h4>PostgreSQLResult</h4>
+                <pre class="signature"><code>slay PostgreSQLResult() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L63">postgresql.csd:63</a></p>
+            </div>
+            <div class="doc-item" id="PostgreSQLPool">
+                <h4>PostgreSQLPool</h4>
+                <pre class="signature"><code>slay PostgreSQLPool() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L77">postgresql.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="create_postgresql_config">
+                <h4>create_postgresql_config</h4>
+                <pre class="signature"><code>slay create_postgresql_config() PostgreSQLConfig {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L90">postgresql.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="create_postgresql_connection">
+                <h4>create_postgresql_connection</h4>
+                <pre class="signature"><code>slay create_postgresql_connection(config: PostgreSQLConfig) PostgreSQLConnection {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L107">postgresql.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="generate_connection_id">
+                <h4>generate_connection_id</h4>
+                <pre class="signature"><code>slay generate_connection_id() normie { fr fr Simple ID generation based on timestamp</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L126">postgresql.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="current_timestamp">
+                <h4>current_timestamp</h4>
+                <pre class="signature"><code>slay current_timestamp() tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L133">postgresql.csd:133</a></p>
+            </div>
+            <div class="doc-item" id="connect_postgresql">
+                <h4>connect_postgresql</h4>
+                <pre class="signature"><code>slay connect_postgresql(connection: *PostgreSQLConnection) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L138">postgresql.csd:138</a></p>
+            </div>
+            <div class="doc-item" id="disconnect_postgresql">
+                <h4>disconnect_postgresql</h4>
+                <pre class="signature"><code>slay disconnect_postgresql(connection: *PostgreSQLConnection) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L166">postgresql.csd:166</a></p>
+            </div>
+            <div class="doc-item" id="execute_postgresql_query">
+                <h4>execute_postgresql_query</h4>
+                <pre class="signature"><code>slay execute_postgresql_query(connection: *PostgreSQLConnection, query: tea) PostgreSQLResult {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L181">postgresql.csd:181</a></p>
+            </div>
+            <div class="doc-item" id="starts_with">
+                <h4>starts_with</h4>
+                <pre class="signature"><code>slay starts_with(s: tea, prefix: tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L283">postgresql.csd:283</a></p>
+            </div>
+            <div class="doc-item" id="to_upper">
+                <h4>to_upper</h4>
+                <pre class="signature"><code>slay to_upper(s: tea) tea { fr fr Simplified uppercase conversion</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L294">postgresql.csd:294</a></p>
+            </div>
+            <div class="doc-item" id="contains">
+                <h4>contains</h4>
+                <pre class="signature"><code>slay contains(s: tea, substr: tea) lit { fr fr Simplified contains check</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L299">postgresql.csd:299</a></p>
+            </div>
+            <div class="doc-item" id="prepare_postgresql_statement">
+                <h4>prepare_postgresql_statement</h4>
+                <pre class="signature"><code>slay prepare_postgresql_statement(connection: *PostgreSQLConnection, query: tea) PostgreSQLStatement {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L304">postgresql.csd:304</a></p>
+            </div>
+            <div class="doc-item" id="generate_statement_id">
+                <h4>generate_statement_id</h4>
+                <pre class="signature"><code>slay generate_statement_id() normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L343">postgresql.csd:343</a></p>
+            </div>
+            <div class="doc-item" id="count_parameters">
+                <h4>count_parameters</h4>
+                <pre class="signature"><code>slay count_parameters(query: tea) normie { fr fr Simplified parameter counting</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L350">postgresql.csd:350</a></p>
+            </div>
+            <div class="doc-item" id="detect_parameter_types">
+                <h4>detect_parameter_types</h4>
+                <pre class="signature"><code>slay detect_parameter_types(query: tea) [tea] { fr fr Simplified type detection</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L355">postgresql.csd:355</a></p>
+            </div>
+            <div class="doc-item" id="make_empty_parameters">
+                <h4>make_empty_parameters</h4>
+                <pre class="signature"><code>slay make_empty_parameters(count: normie) [tea] {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L360">postgresql.csd:360</a></p>
+            </div>
+            <div class="doc-item" id="detect_result_columns">
+                <h4>detect_result_columns</h4>
+                <pre class="signature"><code>slay detect_result_columns(query: tea) [tea] {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L369">postgresql.csd:369</a></p>
+            </div>
+            <div class="doc-item" id="bind_parameter">
+                <h4>bind_parameter</h4>
+                <pre class="signature"><code>slay bind_parameter(stmt: *PostgreSQLStatement, index: normie, value: tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L377">postgresql.csd:377</a></p>
+            </div>
+            <div class="doc-item" id="execute_prepared_statement">
+                <h4>execute_prepared_statement</h4>
+                <pre class="signature"><code>slay execute_prepared_statement(stmt: *PostgreSQLStatement) PostgreSQLResult {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L394">postgresql.csd:394</a></p>
+            </div>
+            <div class="doc-item" id="begin_postgresql_transaction">
+                <h4>begin_postgresql_transaction</h4>
+                <pre class="signature"><code>slay begin_postgresql_transaction(connection: *PostgreSQLConnection, isolation_level: tea) PostgreSQLTransaction {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L436">postgresql.csd:436</a></p>
+            </div>
+            <div class="doc-item" id="generate_transaction_id">
+                <h4>generate_transaction_id</h4>
+                <pre class="signature"><code>slay generate_transaction_id() normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L492">postgresql.csd:492</a></p>
+            </div>
+            <div class="doc-item" id="commit_postgresql_transaction">
+                <h4>commit_postgresql_transaction</h4>
+                <pre class="signature"><code>slay commit_postgresql_transaction(connection: *PostgreSQLConnection, tx: *PostgreSQLTransaction) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L499">postgresql.csd:499</a></p>
+            </div>
+            <div class="doc-item" id="rollback_postgresql_transaction">
+                <h4>rollback_postgresql_transaction</h4>
+                <pre class="signature"><code>slay rollback_postgresql_transaction(connection: *PostgreSQLConnection, tx: *PostgreSQLTransaction) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L521">postgresql.csd:521</a></p>
+            </div>
+            <div class="doc-item" id="create_savepoint">
+                <h4>create_savepoint</h4>
+                <pre class="signature"><code>slay create_savepoint(tx: *PostgreSQLTransaction, savepoint_name: tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L543">postgresql.csd:543</a></p>
+            </div>
+            <div class="doc-item" id="rollback_to_savepoint">
+                <h4>rollback_to_savepoint</h4>
+                <pre class="signature"><code>slay rollback_to_savepoint(tx: *PostgreSQLTransaction, savepoint_name: tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L559">postgresql.csd:559</a></p>
+            </div>
+            <div class="doc-item" id="create_postgresql_pool">
+                <h4>create_postgresql_pool</h4>
+                <pre class="signature"><code>slay create_postgresql_pool(config: PostgreSQLConfig, max_connections: normie) PostgreSQLPool {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L578">postgresql.csd:578</a></p>
+            </div>
+            <div class="doc-item" id="get_pool_connection">
+                <h4>get_pool_connection</h4>
+                <pre class="signature"><code>slay get_pool_connection(pool: *PostgreSQLPool) PostgreSQLConnection {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L598">postgresql.csd:598</a></p>
+            </div>
+            <div class="doc-item" id="return_pool_connection">
+                <h4>return_pool_connection</h4>
+                <pre class="signature"><code>slay return_pool_connection(pool: *PostgreSQLPool, connection_id: normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L639">postgresql.csd:639</a></p>
+            </div>
+            <div class="doc-item" id="get_pool_stats">
+                <h4>get_pool_stats</h4>
+                <pre class="signature"><code>slay get_pool_stats(pool: *PostgreSQLPool) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L651">postgresql.csd:651</a></p>
+            </div>
+            <div class="doc-item" id="health_check_postgresql">
+                <h4>health_check_postgresql</h4>
+                <pre class="signature"><code>slay health_check_postgresql(connection: *PostgreSQLConnection) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L663">postgresql.csd:663</a></p>
+            </div>
+            <div class="doc-item" id="get_postgresql_server_info">
+                <h4>get_postgresql_server_info</h4>
+                <pre class="signature"><code>slay get_postgresql_server_info(connection: *PostgreSQLConnection) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database_drivers/postgresql.csd#L680">postgresql.csd:680</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
