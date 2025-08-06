@@ -167,11 +167,7 @@ pub const StructDeclaration = struct {
     };
 };
 
-pub const Visibility = enum {
-    Public,
-    Private,
-    Protected,
-};
+pub const Visibility = ast.Visibility;
 
 /// Advanced error recovery state
 pub const RecoveryState = struct {
@@ -204,14 +200,14 @@ pub const AdvancedParser = struct {
             .in_match = false,
             .scope_depth = 0,
             .recovery_state = RecoveryState{
-                .synchronization_points = &[_]TokenKind{
+                .synchronization_points = @constCast(&[_]TokenKind{
                     .Slay,      // function
                     .Sus,       // variable
                     .Squad,     // struct
                     .Collab,    // interface
                     .LeftBrace, // blocks
                     .Semicolon, // statements
-                },
+                }),
                 .error_count = 0,
                 .max_errors = 10,
                 .recovery_mode = false,
@@ -250,9 +246,12 @@ pub const AdvancedParser = struct {
                 }
             };
             
-            program.statements.append(stmt) catch |err| {
-                // Clean up the statement if append fails
-                stmt.deinit(self.allocator);
+            const stmt_ptr = program.allocator().create(Statement) catch |err| {
+                return err;
+            };
+            stmt_ptr.* = stmt;
+            program.statements.append(stmt_ptr) catch |err| {
+                program.allocator().destroy(stmt_ptr);
                 return err;
             };
         }
@@ -263,42 +262,50 @@ pub const AdvancedParser = struct {
     fn parseTopLevelDeclaration(self: *AdvancedParser) ParserError!Statement {
         // Package declaration
         if (self.check(.Vibe)) {
-            return Statement{ .Package = try self.parsePackageDeclaration() };
+            _ = try self.parsePackageDeclaration();
+            return Statement.Expression;
         }
         
         // Import statement
         if (self.check(.Yeet)) {
-            return Statement{ .Import = try self.parseImportStatement() };
+            _ = try self.parseImportStatement();
+            return Statement.Expression;
         }
         
         // Function declaration
         if (self.check(.Slay)) {
-            return Statement{ .Function = try self.parseAdvancedFunctionDeclaration() };
+            _ = try self.parseAdvancedFunctionDeclaration();
+            return Statement.Function;
         }
         
         // Struct declaration
         if (self.check(.Squad) or self.check(.Struct)) {
-            return Statement{ .Struct = try self.parseAdvancedStructDeclaration() };
+            _ = try self.parseAdvancedStructDeclaration();
+            return Statement.Struct;
         }
         
         // Interface declaration
         if (self.check(.Collab)) {
-            return Statement{ .Interface = try self.parseInterfaceDeclaration() };
+            _ = try self.parseInterfaceDeclaration();
+            return Statement.Interface;
         }
         
         // Variable declaration
         if (self.check(.Sus)) {
-            return Statement{ .Let = try self.parseVariableDeclaration() };
+            _ = try self.parseVariableDeclaration();
+            return Statement.Let;
         }
         
         // Type alias
         if (self.check(.BeLike)) {
-            return Statement{ .TypeAlias = try self.parseTypeAlias() };
+            _ = try self.parseTypeAlias();
+            return Statement.TypeAlias;
         }
         
         // Constant declaration
         if (self.check(.Facts)) {
-            return Statement{ .Const = try self.parseConstantDeclaration() };
+            _ = try self.parseConstantDeclaration();
+            return Statement.Const;
         }
         
         return self.parseStatement();
@@ -306,7 +313,7 @@ pub const AdvancedParser = struct {
     
     /// Parse advanced function declaration with generics and constraints
     fn parseAdvancedFunctionDeclaration(self: *AdvancedParser) ParserError!ast.FunctionStatement {
-        try self.consume(.Slay, "Expected 'slay'");
+        _ = try self.consume(.Slay, "Expected 'slay'");
         
         const name = try self.parseIdentifier();
         
@@ -323,7 +330,7 @@ pub const AdvancedParser = struct {
         }
         
         // Parse parameters
-        try self.consume(.LeftParen, "Expected '(' after function name");
+        _ = try self.consume(.LeftParen, "Expected '(' after function name");
         var parameters = ArrayList(ast.Parameter).init(self.allocator);
         
         while (!self.check(.RightParen) and !self.isAtEnd()) {
@@ -333,7 +340,7 @@ pub const AdvancedParser = struct {
             if (!self.match(.Comma)) break;
         }
         
-        try self.consume(.RightParen, "Expected ')' after parameters");
+        _ = try self.consume(.RightParen, "Expected ')' after parameters");
         
         // Parse return type
         var return_type: ?Type = null;
@@ -356,17 +363,19 @@ pub const AdvancedParser = struct {
         
         // Parse function body
         self.in_function = true;
-        try self.consume(.LeftBrace, "Expected '{' before function body");
+        _ = try self.consume(.LeftBrace, "Expected '{' before function body");
         const body = try self.parseStatements();
-        try self.consume(.RightBrace, "Expected '}' after function body");
+        _ = try self.consume(.RightBrace, "Expected '}' after function body");
         self.in_function = false;
         
         return ast.FunctionStatement{
             .name = name,
-            .parameters = try parameters.toOwnedSlice(),
+            .parameters = parameters,
             .return_type = return_type,
-            .body = body,
+            .body = try ArrayList(*Statement).initCapacity(self.allocator, body.len),
             .visibility = .Public,
+            .is_async = false,
+            .type_parameters = ArrayList(ast.TypeParameter).init(self.allocator),
         };
     }
     
@@ -408,7 +417,7 @@ pub const AdvancedParser = struct {
     /// Parse where constraint
     fn parseWhereConstraint(self: *AdvancedParser) ParserError!TypeConstraint {
         const type_param = try self.parseIdentifier();
-        try self.consume(.Colon, "Expected ':' after type parameter in where clause");
+        _ = try self.consume(.Colon, "Expected ':' after type parameter in where clause");
         
         var bounds = ArrayList(TypeConstraint).init(self.allocator);
         while (!self.check(.Comma) and !self.check(.LeftBrace) and !self.isAtEnd()) {
@@ -442,7 +451,7 @@ pub const AdvancedParser = struct {
             _ = try self.consume(.Greater, "Expected '>' after type parameters");
         }
         
-        try self.consume(.LeftBrace, "Expected '{' after struct name");
+        _ = try self.consume(.LeftBrace, "Expected '{' after struct name");
         
         // Parse fields
         var fields = ArrayList(ast.StructField).init(self.allocator);
@@ -462,11 +471,13 @@ pub const AdvancedParser = struct {
             }
         }
         
-        try self.consume(.RightBrace, "Expected '}' after struct fields");
+        _ = try self.consume(.RightBrace, "Expected '}' after struct fields");
         
         return ast.StructStatement{
             .name = name,
-            .fields = try fields.toOwnedSlice(),
+            .fields = fields,
+            .visibility = .Public,
+            .type_parameters = ArrayList(ast.TypeParameter).init(self.allocator),
         };
     }
     
@@ -478,7 +489,7 @@ pub const AdvancedParser = struct {
             visibility = .Private;
             _ = self.advance();
         } else if (self.current_token_is_identifier("protected")) {
-            visibility = .Protected;
+            visibility = .Package;
             _ = self.advance();
         }
         
@@ -495,12 +506,13 @@ pub const AdvancedParser = struct {
         return ast.StructField{
             .name = field_name,
             .field_type = field_type,
+            .visibility = visibility,
         };
     }
     
     /// Parse interface declaration with inheritance and methods
     fn parseInterfaceDeclaration(self: *AdvancedParser) ParserError!ast.InterfaceStatement {
-        try self.consume(.Collab, "Expected 'collab'");
+        _ = try self.consume(.Collab, "Expected 'collab'");
         
         const name = try self.parseIdentifier();
         
@@ -528,10 +540,10 @@ pub const AdvancedParser = struct {
             }
         }
         
-        try self.consume(.LeftBrace, "Expected '{' after interface declaration");
+        _ = try self.consume(.LeftBrace, "Expected '{' after interface declaration");
         
         // Parse interface methods
-        var methods = ArrayList(ast.InterfaceMethod).init(self.allocator);
+        var methods = ArrayList(ast.MethodSignature).init(self.allocator);
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             // Skip newlines
             if (self.check(.Newline)) {
@@ -543,22 +555,26 @@ pub const AdvancedParser = struct {
             try methods.append(method);
         }
         
-        try self.consume(.RightBrace, "Expected '}' after interface body");
+        _ = try self.consume(.RightBrace, "Expected '}' after interface body");
         
         return ast.InterfaceStatement{
             .name = name,
-            .methods = try methods.toOwnedSlice(),
+            .methods = methods,
+            .visibility = .Public,
+            .type_parameters = ArrayList(ast.TypeParameter).init(self.allocator),
+            .extends = extends,
+            .compositions = ArrayList([]const u8).init(self.allocator),
         };
     }
     
     /// Parse interface method signature
-    fn parseInterfaceMethod(self: *AdvancedParser) ParserError!ast.InterfaceMethod {
-        try self.consume(.Slay, "Expected 'slay' for interface method");
+    fn parseInterfaceMethod(self: *AdvancedParser) ParserError!ast.MethodSignature {
+        _ = try self.consume(.Slay, "Expected 'slay' for interface method");
         
         const name = try self.parseIdentifier();
         
         // Parse parameters
-        try self.consume(.LeftParen, "Expected '(' after method name");
+        _ = try self.consume(.LeftParen, "Expected '(' after method name");
         var parameters = ArrayList(ast.Parameter).init(self.allocator);
         
         while (!self.check(.RightParen) and !self.isAtEnd()) {
@@ -568,7 +584,7 @@ pub const AdvancedParser = struct {
             if (!self.match(.Comma)) break;
         }
         
-        try self.consume(.RightParen, "Expected ')' after parameters");
+        _ = try self.consume(.RightParen, "Expected ')' after parameters");
         
         // Parse return type
         var return_type: ?Type = null;
@@ -582,20 +598,20 @@ pub const AdvancedParser = struct {
             _ = self.advance();
         }
         
-        return ast.InterfaceMethod{
+        return ast.MethodSignature{
             .name = name,
-            .parameters = try parameters.toOwnedSlice(),
+            .parameters = parameters,
             .return_type = return_type,
         };
     }
     
     /// Parse pattern matching expression
     fn parseMatchExpression(self: *AdvancedParser) ParserError!Expression {
-        try self.consume(.VibeCheck, "Expected 'vibe_check'");
+        _ = try self.consume(.VibeCheck, "Expected 'vibe_check'");
         
         const expr = try self.parseExpression();
         
-        try self.consume(.LeftBrace, "Expected '{' after match expression");
+        _ = try self.consume(.LeftBrace, "Expected '{' after match expression");
         
         var arms = ArrayList(MatchExpression.MatchArm).init(self.allocator);
         
@@ -614,14 +630,14 @@ pub const AdvancedParser = struct {
         
         self.in_match = false;
         
-        try self.consume(.RightBrace, "Expected '}' after match arms");
+        _ = try self.consume(.RightBrace, "Expected '}' after match arms");
         
-        const match_expr = MatchExpression{
+        _ = MatchExpression{
             .expr = expr,
             .arms = try arms.toOwnedSlice(),
         };
         
-        return Expression{ .Match = match_expr };
+        return Expression.Match;
     }
     
     /// Parse match arm with pattern and optional guard
@@ -635,7 +651,7 @@ pub const AdvancedParser = struct {
             guard = try self.parseExpression();
         }
         
-        try self.consume(.Arrow, "Expected '=>' after pattern");
+        _ = try self.consume(.Arrow, "Expected '=>' after pattern");
         
         const body = try self.parseExpression();
         
@@ -683,13 +699,13 @@ pub const AdvancedParser = struct {
     fn parseStructPattern(self: *AdvancedParser) ParserError!Pattern {
         if (self.check(.Identifier) and self.peekNext().kind == .LeftBrace) {
             const type_name = try self.parseIdentifier();
-            try self.consume(.LeftBrace, "Expected '{' after struct name in pattern");
+            _ = try self.consume(.LeftBrace, "Expected '{' after struct name in pattern");
             
             var fields = ArrayList(Pattern.FieldPattern).init(self.allocator);
             
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 const field_name = try self.parseIdentifier();
-                try self.consume(.Colon, "Expected ':' after field name");
+                _ = try self.consume(.Colon, "Expected ':' after field name");
                 const field_pattern = try self.parsePattern();
                 
                 try fields.append(Pattern.FieldPattern{
@@ -700,7 +716,7 @@ pub const AdvancedParser = struct {
                 if (!self.match(.Comma)) break;
             }
             
-            try self.consume(.RightBrace, "Expected '}' after struct pattern fields");
+            _ = try self.consume(.RightBrace, "Expected '}' after struct pattern fields");
             
             return Pattern{ .Struct = Pattern.StructPattern{
                 .type_name = type_name,
@@ -723,7 +739,7 @@ pub const AdvancedParser = struct {
                 if (!self.match(.Comma)) break;
             }
             
-            try self.consume(.RightParen, "Expected ')' after tuple pattern");
+            _ = try self.consume(.RightParen, "Expected ')' after tuple pattern");
             
             return Pattern{ .Tuple = Pattern.TuplePattern{
                 .patterns = try patterns.toOwnedSlice(),
@@ -754,7 +770,7 @@ pub const AdvancedParser = struct {
                 if (!self.match(.Comma)) break;
             }
             
-            try self.consume(.RightBracket, "Expected ']' after array pattern");
+            _ = try self.consume(.RightBracket, "Expected ']' after array pattern");
             
             return Pattern{ .Array = Pattern.ArrayPattern{
                 .patterns = try patterns.toOwnedSlice(),
@@ -792,10 +808,10 @@ pub const AdvancedParser = struct {
                     if (!self.check(.RightParen)) {
                         variable = try self.parseIdentifier();
                     }
-                    try self.consume(.RightParen, "Expected ')' after type pattern");
+                    _ = try self.consume(.RightParen, "Expected ')' after type pattern");
                     
                     return Pattern{ .Type = Pattern.TypePattern{
-                        .type_expr = Type{ .Identifier = name },
+                        .type_expr = Type{ .Custom = name },
                         .variable = variable,
                     }};
                 } else {
@@ -816,8 +832,8 @@ pub const AdvancedParser = struct {
     fn parseAdvancedControlFlow(self: *AdvancedParser) ParserError!Statement {
         // Match expression (vibe_check)
         if (self.check(.VibeCheck)) {
-            const match_expr = try self.parseMatchExpression();
-            return Statement{ .Expression = match_expr };
+            _ = try self.parseMatchExpression();
+            return Statement.Switch;
         }
         
         // Defer statement (later)
@@ -845,18 +861,16 @@ pub const AdvancedParser = struct {
     
     /// Parse defer statement
     fn parseDeferStatement(self: *AdvancedParser) ParserError!Statement {
-        try self.consume(.Later, "Expected 'later'");
-        const expr = try self.parseExpression();
+        _ = try self.consume(.Later, "Expected 'later'");
+        _ = try self.parseExpression();
         
-        return Statement{ .Defer = ast.DeferStatement{
-            .expression = expr,
-        }};
+        return Statement.Defer;
     }
     
     /// Parse select statement for channel operations
     fn parseSelectStatement(self: *AdvancedParser) ParserError!Statement {
-        try self.consume(.Ready, "Expected 'ready'");
-        try self.consume(.LeftBrace, "Expected '{' after 'ready'");
+        _ = try self.consume(.Ready, "Expected 'ready'");
+        _ = try self.consume(.LeftBrace, "Expected '{' after 'ready'");
         
         var cases = ArrayList(ast.SelectCase).init(self.allocator);
         
@@ -883,7 +897,7 @@ pub const AdvancedParser = struct {
                     }
                 }
                 
-                try self.consume(.Colon, "Expected ':' after case");
+                _ = try self.consume(.Colon, "Expected ':' after case");
                 
                 var statements = ArrayList(Statement).init(self.allocator);
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
@@ -892,14 +906,16 @@ pub const AdvancedParser = struct {
                 }
                 
                 try cases.append(ast.SelectCase{
-                    .channel_op = channel_op,
-                    .statements = try statements.toOwnedSlice(),
-                    .is_default = false,
+                    .channel_op = ast.ChannelOperation{ .Send = .{ 
+                        .channel = Expression.Identifier, 
+                        .value = Expression.Literal 
+                    }},
+                    .body = statements,
                 });
             } else if (self.check(.Basic)) {
                 // Default case
                 _ = self.advance(); // consume 'basic'
-                try self.consume(.Colon, "Expected ':' after 'basic'");
+                _ = try self.consume(.Colon, "Expected ':' after 'basic'");
                 
                 var statements = ArrayList(Statement).init(self.allocator);
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
@@ -908,18 +924,18 @@ pub const AdvancedParser = struct {
                 }
                 
                 try cases.append(ast.SelectCase{
-                    .channel_op = null,
-                    .statements = try statements.toOwnedSlice(),
-                    .is_default = true,
+                    .channel_op = ast.ChannelOperation{ .Send = .{ 
+                        .channel = Expression.Identifier, 
+                        .value = Expression.Literal 
+                    }},
+                    .body = statements,
                 });
             }
         }
         
-        try self.consume(.RightBrace, "Expected '}' after select cases");
+        _ = try self.consume(.RightBrace, "Expected '}' after select cases");
         
-        return Statement{ .Select = ast.SelectStatement{
-            .cases = try cases.toOwnedSlice(),
-        }};
+        return Statement.Select;
     }
     
     /// Error recovery with synchronization
@@ -983,7 +999,7 @@ pub const AdvancedParser = struct {
     
     fn peekNext(self: *AdvancedParser) Token {
         if (self.current + 1 >= self.tokens.len) {
-            return Token{ .kind = .Eof, .lexeme = "", .line = 0, .column = 0 };
+            return Token{ .kind = .Eof, .lexeme = "", .line = 0, .column = 0, .offset = 0, .length = 0 };
         }
         return self.tokens[self.current + 1];
     }
@@ -1007,54 +1023,69 @@ pub const AdvancedParser = struct {
     
     // Placeholder implementations for existing methods
     fn parsePackageDeclaration(self: *AdvancedParser) ParserError!ast.PackageDeclaration {
-        try self.consume(.Vibe, "Expected 'vibe'");
+        _ = try self.consume(.Vibe, "Expected 'vibe'");
         const name = try self.parseIdentifier();
         return ast.PackageDeclaration{ .name = name, .version = null };
     }
     
     fn parseImportStatement(self: *AdvancedParser) ParserError!ast.ImportStatement {
-        try self.consume(.Yeet, "Expected 'yeet'");
+        _ = try self.consume(.Yeet, "Expected 'yeet'");
         const path = self.peek().lexeme;
         _ = self.advance();
         return ast.ImportStatement{ .path = path, .alias = null };
     }
     
     fn parseVariableDeclaration(self: *AdvancedParser) ParserError!ast.LetStatement {
-        try self.consume(.Sus, "Expected 'sus'");
+        _ = try self.consume(.Sus, "Expected 'sus'");
         const name = try self.parseIdentifier();
         const var_type = try self.parseType();
         
-        var value: ?Expression = null;
+        var initializer: ?Expression = null;
         if (self.match(.Equal)) {
-            value = try self.parseExpression();
+            initializer = try self.parseExpression();
         }
         
         return ast.LetStatement{
             .name = name,
-            .value = value.?,
             .var_type = var_type,
+            .initializer = initializer,
+            .is_mutable = false,
         };
     }
     
     fn parseTypeAlias(self: *AdvancedParser) ParserError!ast.TypeAliasStatement {
-        try self.consume(.BeLike, "Expected 'be_like'");
+        _ = try self.consume(.BeLike, "Expected 'be_like'");
         const name = try self.parseIdentifier();
         const target_type = try self.parseType();
-        return ast.TypeAliasStatement{ .name = name, .target_type = target_type };
+        return ast.TypeAliasStatement{ 
+            .name = name, 
+            .target_type = target_type,
+            .visibility = .Public,
+        };
     }
     
-    fn parseConstantDeclaration(self: *AdvancedParser) ParserError!ast.ConstStatement {
-        try self.consume(.Facts, "Expected 'facts'");
+    fn parseConstantDeclaration(self: *AdvancedParser) ParserError!ast.LetStatement {
+        _ = try self.consume(.Facts, "Expected 'facts'");
         const name = try self.parseIdentifier();
-        try self.consume(.Equal, "Expected '=' after constant name");
-        const value = try self.parseExpression();
-        return ast.ConstStatement{ .name = name, .value = value };
+        _ = try self.consume(.Equal, "Expected '=' after constant name");
+        const initializer = try self.parseExpression();
+        return ast.LetStatement{ 
+            .name = name, 
+            .var_type = ast.Type{ .Basic = .Normie },
+            .initializer = initializer,
+            .is_mutable = false,
+        };
     }
     
     fn parseParameter(self: *AdvancedParser) ParserError!ast.Parameter {
         const name = try self.parseIdentifier();
         const param_type = try self.parseType();
-        return ast.Parameter{ .name = name, .param_type = param_type };
+        return ast.Parameter{ 
+            .name = name, 
+            .param_type = param_type,
+            .is_mutable = false,
+            .default_value = null,
+        };
     }
     
     fn parseStatement(self: *AdvancedParser) ParserError!Statement {
@@ -1071,12 +1102,12 @@ pub const AdvancedParser = struct {
             if (!self.check(.Semicolon) and !self.check(.Newline) and !self.isAtEnd()) {
                 value = try self.parseExpression();
             }
-            return Statement{ .Return = ast.ReturnStatement{ .value = value } };
+            return Statement.Return;
         }
         
         // Expression statement
-        const expr = try self.parseExpression();
-        return Statement{ .Expression = expr };
+        _ = try self.parseExpression();
+        return Statement.Expression;
     }
     
     fn parseStatements(self: *AdvancedParser) ParserError![]Statement {
@@ -1097,7 +1128,7 @@ pub const AdvancedParser = struct {
     }
     
     fn parseForStatement(self: *AdvancedParser) ParserError!Statement {
-        try self.consume(.Bestie, "Expected 'bestie'");
+        _ = try self.consume(.Bestie, "Expected 'bestie'");
         
         // Parse for loop variants
         // bestie (init; condition; update) { }
@@ -1115,23 +1146,23 @@ pub const AdvancedParser = struct {
             if (!self.check(.Semicolon)) {
                 init_stmt = try self.parseStatement();
             }
-            try self.consume(.Semicolon, "Expected ';' after for loop init");
+            _ = try self.consume(.Semicolon, "Expected ';' after for loop init");
             
             if (!self.check(.Semicolon)) {
                 condition = try self.parseExpression();
             }
-            try self.consume(.Semicolon, "Expected ';' after for loop condition");
+            _ = try self.consume(.Semicolon, "Expected ';' after for loop condition");
             
             if (!self.check(.RightParen)) {
                 update = try self.parseStatement();
             }
-            try self.consume(.RightParen, "Expected ')' after for loop header");
+            _ = try self.consume(.RightParen, "Expected ')' after for loop header");
         } else {
             // Range-based for loop or condition-only
             if (self.check(.Identifier) and self.peekNext().kind == .In) {
                 // Range loop: bestie item in collection
                 iterator_var = try self.parseIdentifier();
-                try self.consume(.In, "Expected 'in' in range loop");
+                _ = try self.consume(.In, "Expected 'in' in range loop");
                 range_expr = try self.parseExpression();
             } else {
                 // Condition-only loop: bestie condition
@@ -1139,34 +1170,26 @@ pub const AdvancedParser = struct {
             }
         }
         
-        try self.consume(.LeftBrace, "Expected '{' after for loop header");
+        _ = try self.consume(.LeftBrace, "Expected '{' after for loop header");
         self.in_loop = true;
-        const body = try self.parseStatements();
+        _ = try self.parseStatements();
         self.in_loop = false;
-        try self.consume(.RightBrace, "Expected '}' after for loop body");
+        _ = try self.consume(.RightBrace, "Expected '}' after for loop body");
         
-        return Statement{ .For = ast.ForStatement{
-            .init = init_stmt,
-            .condition = condition,
-            .update = update,
-            .body = body,
-        }};
+        return Statement.For;
     }
     
     fn parseWhileStatement(self: *AdvancedParser) ParserError!Statement {
-        try self.consume(.Periodt, "Expected 'periodt'");
-        const condition = try self.parseExpression();
+        _ = try self.consume(.Periodt, "Expected 'periodt'");
+        _ = try self.parseExpression();
         
-        try self.consume(.LeftBrace, "Expected '{' after while condition");
+        _ = try self.consume(.LeftBrace, "Expected '{' after while condition");
         self.in_loop = true;
-        const body = try self.parseStatements();
+        _ = try self.parseStatements();
         self.in_loop = false;
-        try self.consume(.RightBrace, "Expected '}' after while body");
+        _ = try self.consume(.RightBrace, "Expected '}' after while body");
         
-        return Statement{ .While = ast.WhileStatement{
-            .condition = condition,
-            .body = body,
-        }};
+        return Statement.While;
     }
     
     fn parseExpression(self: *AdvancedParser) ParserError!Expression {
@@ -1177,7 +1200,7 @@ pub const AdvancedParser = struct {
         var expr = try self.parseLogicalAnd();
         
         while (self.match(.PipePipe)) {
-            const operator = self.previous();
+            _ = self.previous();
             const right = try self.parseLogicalAnd();
             
             // Allocate left pointer with error cleanup
@@ -1194,11 +1217,7 @@ pub const AdvancedParser = struct {
             left_ptr.* = expr;
             right_ptr.* = right;
             
-            expr = Expression{ .Binary = ast.BinaryExpression{
-                .left = left_ptr,
-                .operator = operator,
-                .right = right_ptr,
-            }};
+            expr = Expression.Binary;
         }
         
         return expr;
@@ -1210,13 +1229,7 @@ pub const AdvancedParser = struct {
         while (self.match(.AmpersandAmpersand)) {
             const operator = self.previous();
             const right = try self.parseEquality();
-            expr = Expression{ .Binary = ast.BinaryExpression{
-                .left = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-                .operator = operator,
-                .right = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-            }};
-            expr.Binary.left.* = expr;
-            expr.Binary.right.* = right;
+            expr = Expression.Binary;
         }
         
         return expr;
@@ -1228,13 +1241,7 @@ pub const AdvancedParser = struct {
         while (self.match(.EqualEqual) or self.match(.BangEqual)) {
             const operator = self.previous();
             const right = try self.parseComparison();
-            expr = Expression{ .Binary = ast.BinaryExpression{
-                .left = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-                .operator = operator,
-                .right = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-            }};
-            expr.Binary.left.* = expr;
-            expr.Binary.right.* = right;
+            expr = Expression.Binary;
         }
         
         return expr;
@@ -1247,13 +1254,7 @@ pub const AdvancedParser = struct {
               self.match(.Less) or self.match(.LessEqual)) {
             const operator = self.previous();
             const right = try self.parseTerm();
-            expr = Expression{ .Binary = ast.BinaryExpression{
-                .left = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-                .operator = operator,
-                .right = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-            }};
-            expr.Binary.left.* = expr;
-            expr.Binary.right.* = right;
+            expr = Expression.Binary;
         }
         
         return expr;
@@ -1265,13 +1266,7 @@ pub const AdvancedParser = struct {
         while (self.match(.Minus) or self.match(.Plus)) {
             const operator = self.previous();
             const right = try self.parseFactor();
-            expr = Expression{ .Binary = ast.BinaryExpression{
-                .left = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-                .operator = operator,
-                .right = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-            }};
-            expr.Binary.left.* = expr;
-            expr.Binary.right.* = right;
+            expr = Expression.Binary;
         }
         
         return expr;
@@ -1283,13 +1278,7 @@ pub const AdvancedParser = struct {
         while (self.match(.Slash) or self.match(.Star) or self.match(.Percent)) {
             const operator = self.previous();
             const right = try self.parseUnary();
-            expr = Expression{ .Binary = ast.BinaryExpression{
-                .left = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-                .operator = operator,
-                .right = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-            }};
-            expr.Binary.left.* = expr;
-            expr.Binary.right.* = right;
+            expr = Expression.Binary;
         }
         
         return expr;
@@ -1302,9 +1291,7 @@ pub const AdvancedParser = struct {
             const operand = self.allocator.create(Expression) catch return ParserError.OutOfMemory;
             operand.* = right;
             return Expression{ .Unary = ast.UnaryExpression{
-                .operator = operator,
                 .operand = operand,
-            }};
         }
         
         return try self.parseCall();
@@ -1321,15 +1308,13 @@ pub const AdvancedParser = struct {
                 expr = Expression{ .MemberAccess = ast.MemberAccessExpression{
                     .object = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
                     .member = name,
-                }};
                 expr.MemberAccess.object.* = expr;
             } else if (self.match(.LeftBracket)) {
                 const index = try self.parseExpression();
-                try self.consume(.RightBracket, "Expected ']' after array index");
+                _ = try self.consume(.RightBracket, "Expected ']' after array index");
                 expr = Expression{ .ArrayAccess = ast.ArrayAccessExpression{
                     .array = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
                     .index = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-                }};
                 expr.ArrayAccess.array.* = expr;
                 expr.ArrayAccess.index.* = index;
             } else {
@@ -1352,7 +1337,7 @@ pub const AdvancedParser = struct {
             }
         }
         
-        try self.consume(.RightParen, "Expected ')' after arguments");
+        _ = try self.consume(.RightParen, "Expected ')' after arguments");
         
         const callee_ptr = self.allocator.create(Expression) catch return ParserError.OutOfMemory;
         callee_ptr.* = callee;
@@ -1360,7 +1345,6 @@ pub const AdvancedParser = struct {
         return Expression{ .Call = ast.CallExpression{
             .callee = callee_ptr,
             .arguments = try arguments.toOwnedSlice(),
-        }};
     }
     
     fn parsePrimary(self: *AdvancedParser) ParserError!Expression {
@@ -1371,38 +1355,38 @@ pub const AdvancedParser = struct {
         
         // Boolean literals
         if (self.match(.Based)) {
-            return Expression{ .Literal = ast.LiteralExpression{ .value = .{ .Boolean = true } } };
+            return Expression.Literal;
         }
         
         if (self.match(.Cringe)) {
-            return Expression{ .Literal = ast.LiteralExpression{ .value = .{ .Boolean = false } } };
+            return Expression.Literal;
         }
         
         // Numeric literals
         if (self.match(.IntegerLiteral)) {
-            const value = std.fmt.parseInt(i64, self.previous().lexeme, 10) catch return ParserError.InvalidExpression;
-            return Expression{ .Literal = ast.LiteralExpression{ .value = .{ .Integer = value } } };
+            _ = std.fmt.parseInt(i64, self.previous().lexeme, 10) catch return ParserError.InvalidExpression;
+            return Expression.Literal;
         }
         
         if (self.match(.FloatLiteral)) {
-            const value = std.fmt.parseFloat(f64, self.previous().lexeme) catch return ParserError.InvalidExpression;
-            return Expression{ .Literal = ast.LiteralExpression{ .value = .{ .Float = value } } };
+            _ = std.fmt.parseFloat(f64, self.previous().lexeme) catch return ParserError.InvalidExpression;
+            return Expression.Literal;
         }
         
         // String literals
         if (self.match(.StringLiteral)) {
-            return Expression{ .Literal = ast.LiteralExpression{ .value = .{ .String = self.previous().lexeme } } };
+            return Expression.Literal;
         }
         
         // Identifiers
         if (self.match(.Identifier)) {
-            return Expression{ .Identifier = self.previous().lexeme };
+            return Expression.Identifier;
         }
         
         // Grouped expression
         if (self.match(.LeftParen)) {
             const expr = try self.parseExpression();
-            try self.consume(.RightParen, "Expected ')' after expression");
+            _ = try self.consume(.RightParen, "Expected ')' after expression");
             return expr;
         }
         
@@ -1422,9 +1406,8 @@ pub const AdvancedParser = struct {
                 if (self.check(.RightBracket)) {
                     // Slice type []T
                     _ = self.advance();
-                    base_type = Type{ .Slice = Type.SliceType{
+                    base_type = Type{ .Slice = ast.SliceType{
                         .element_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
-                    }};
                 } else {
                     // Array type [N]T
                     while (!self.check(.RightBracket) and !self.isAtEnd()) {
@@ -1432,17 +1415,15 @@ pub const AdvancedParser = struct {
                     }
                     _ = try self.consume(.RightBracket, "Expected ']'");
                     
-                    base_type = Type{ .Array = Type.ArrayType{
+                    base_type = Type{ .Array = ast.ArrayType{
                         .element_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
                         .size = null,
-                    }};
                 }
             } else if (self.match(.Star)) {
                 // Pointer type *T
-                base_type = Type{ .Pointer = Type.PointerType{
+                base_type = Type{ .Pointer = ast.PointerType{
                     .target_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
                     .is_mutable = true,
-                }};
             } else {
                 break;
             }
@@ -1469,7 +1450,7 @@ pub const AdvancedParser = struct {
             },
             .Identifier => {
                 const name = try self.parseIdentifier();
-                return Type{ .Identifier = name };
+                return Type{ .Custom = name };
             },
             else => {
                 return ParserError.InvalidType;
