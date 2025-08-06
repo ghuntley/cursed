@@ -168,6 +168,226 @@ const RootRef = struct {
     type_id: u16,
 };
 
+/// Allocation information for tracking
+const AllocationInfo = struct {
+    size: usize,
+    type_id: u16,
+    timestamp: u64,
+    thread_id: u32,
+    source_location: ?[]const u8,
+    ref_count: Atomic(u32),
+    
+    pub fn init(size: usize, type_id: u16, source_location: ?[]const u8) AllocationInfo {
+        return AllocationInfo{
+            .size = size,
+            .type_id = type_id,
+            .timestamp = @as(u64, @intCast(std.time.microTimestamp())),
+            .thread_id = if (builtin.single_threaded) 0 else std.Thread.getCurrentId(),
+            .source_location = source_location,
+            .ref_count = Atomic(u32).init(1),
+        };
+    }
+};
+
+/// Memory leak detection information
+const LeakInfo = struct {
+    address: usize,
+    info: AllocationInfo,
+};
+
+/// Memory pressure monitoring
+const PressureLevel = enum {
+    Low,    // < 50% heap usage
+    Medium, // 50-80% heap usage  
+    High,   // 80-95% heap usage
+    Critical, // > 95% heap usage
+};
+
+/// Memory tracker for leak detection and profiling
+const MemoryTracker = struct {
+    allocations: HashMap(usize, AllocationInfo, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage),
+    total_allocated: Atomic(usize),
+    total_freed: Atomic(usize),
+    peak_usage: Atomic(usize),
+    leak_threshold: usize,
+    tracker_mutex: Mutex,
+    
+    pub fn init(allocator: std.mem.Allocator) MemoryTracker {
+        return MemoryTracker{
+            .allocations = HashMap(usize, AllocationInfo, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
+            .total_allocated = Atomic(usize).init(0),
+            .total_freed = Atomic(usize).init(0),
+            .peak_usage = Atomic(usize).init(0),
+            .leak_threshold = 1024 * 1024, // 1MB threshold
+            .tracker_mutex = Mutex{},
+        };
+    }
+    
+    pub fn deinit(self: *MemoryTracker) void {
+        self.allocations.deinit();
+    }
+    
+    pub fn trackAllocation(self: *MemoryTracker, address: usize, info: AllocationInfo) !void {
+        self.tracker_mutex.lock();
+        defer self.tracker_mutex.unlock();
+        
+        try self.allocations.put(address, info);
+        
+        const new_total = self.total_allocated.fetchAdd(info.size, .release) + info.size;
+        
+        // Update peak usage
+        var current_peak = self.peak_usage.load(.acquire);
+        while (new_total > current_peak) {
+            const old_peak = self.peak_usage.cmpxchgWeak(current_peak, new_total, .acq_rel, .acquire) orelse break;
+            current_peak = old_peak;
+        }
+    }
+    
+    pub fn trackDeallocation(self: *MemoryTracker, address: usize) void {
+        self.tracker_mutex.lock();
+        defer self.tracker_mutex.unlock();
+        
+        if (self.allocations.fetchRemove(address)) |entry| {
+            _ = self.total_freed.fetchAdd(entry.value.size, .release);
+        }
+    }
+    
+    pub fn detectLeaks(self: *MemoryTracker, allocator: std.mem.Allocator) ![]LeakInfo {
+        self.tracker_mutex.lock();
+        defer self.tracker_mutex.unlock();
+        
+        var leaks = ArrayList(LeakInfo).init(allocator);
+        
+        var iterator = self.allocations.iterator();
+        while (iterator.next()) |entry| {
+            const age_ms = @as(u64, @intCast(std.time.microTimestamp())) - entry.value_ptr.timestamp;
+            
+            // Consider allocation a leak if it's old and large
+            if (age_ms > 60_000_000 and entry.value_ptr.size > self.leak_threshold) { // 60 seconds
+                try leaks.append(LeakInfo{
+                    .address = entry.key_ptr.*,
+                    .info = entry.value_ptr.*,
+                });
+            }
+        }
+        
+        return leaks.toOwnedSlice();
+    }
+    
+    pub fn getCurrentUsage(self: *MemoryTracker) usize {
+        const allocated = self.total_allocated.load(.acquire);
+        const freed = self.total_freed.load(.acquire);
+        return allocated - freed;
+    }
+};
+
+/// Memory pool for specific allocation sizes
+const MemoryPool = struct {
+    block_size: usize,
+    blocks_per_chunk: usize,
+    free_blocks: ArrayList(*anyopaque),
+    chunks: ArrayList([]u8),
+    pool_mutex: Mutex,
+    allocator: std.mem.Allocator,
+    
+    pub fn init(allocator: std.mem.Allocator, block_size: usize, blocks_per_chunk: usize) MemoryPool {
+        return MemoryPool{
+            .block_size = block_size,
+            .blocks_per_chunk = blocks_per_chunk,
+            .free_blocks = ArrayList(*anyopaque).init(allocator),
+            .chunks = ArrayList([]u8).init(allocator),
+            .pool_mutex = Mutex{},
+            .allocator = allocator,
+        };
+    }
+    
+    pub fn deinit(self: *MemoryPool) void {
+        for (self.chunks.items) |chunk| {
+            self.allocator.free(chunk);
+        }
+        self.chunks.deinit();
+        self.free_blocks.deinit();
+    }
+    
+    pub fn allocate(self: *MemoryPool) !*anyopaque {
+        self.pool_mutex.lock();
+        defer self.pool_mutex.unlock();
+        
+        if (self.free_blocks.items.len == 0) {
+            try self.addChunk();
+        }
+        
+        return self.free_blocks.pop();
+    }
+    
+    pub fn deallocate(self: *MemoryPool, ptr: *anyopaque) !void {
+        self.pool_mutex.lock();
+        defer self.pool_mutex.unlock();
+        
+        try self.free_blocks.append(ptr);
+    }
+    
+    fn addChunk(self: *MemoryPool) !void {
+        const chunk_size = self.block_size * self.blocks_per_chunk;
+        const chunk = try self.allocator.alloc(u8, chunk_size);
+        try self.chunks.append(chunk);
+        
+        var ptr = chunk.ptr;
+        for (0..self.blocks_per_chunk) |_| {
+            try self.free_blocks.append(@ptrCast(ptr));
+            ptr += self.block_size;
+        }
+    }
+};
+
+/// Memory pool manager for different sizes
+const MemoryPoolManager = struct {
+    pools: [16]MemoryPool, // 16 size classes
+    size_classes: [16]usize,
+    allocator: std.mem.Allocator,
+    
+    pub fn init(allocator: std.mem.Allocator) !MemoryPoolManager {
+        var manager = MemoryPoolManager{
+            .pools = undefined,
+            .size_classes = undefined,
+            .allocator = allocator,
+        };
+        
+        // Initialize size classes: 16, 32, 64, 128, 256, 512, 1KB, 2KB, etc.
+        for (0..16) |i| {
+            const size_class = 16 * std.math.pow(usize, 2, i);
+            manager.size_classes[i] = size_class;
+            manager.pools[i] = MemoryPool.init(allocator, size_class, 64);
+        }
+        
+        return manager;
+    }
+    
+    pub fn deinit(self: *MemoryPoolManager) void {
+        for (&self.pools) |*pool| {
+            pool.deinit();
+        }
+    }
+    
+    pub fn getAllocation(self: *MemoryPoolManager, size: usize) !?*anyopaque {
+        for (self.size_classes, 0..) |class_size, i| {
+            if (size <= class_size) {
+                return try self.pools[i].allocate();
+            }
+        }
+        return null; // Size too large for pools
+    }
+    
+    pub fn deallocate(self: *MemoryPoolManager, ptr: *anyopaque, size: usize) !void {
+        for (self.size_classes, 0..) |class_size, i| {
+            if (size <= class_size) {
+                try self.pools[i].deallocate(ptr);
+                return;
+            }
+        }
+    }
+};
+
 /// Weak reference structure
 pub const WeakRef = struct {
     target: ?*anyopaque,
@@ -230,6 +450,14 @@ pub const GC = struct {
     old_heap_start: ?*anyopaque,
     old_heap_used: usize,
     
+    /// Advanced memory management features
+    memory_pressure: Atomic(f32),
+    memory_tracker: MemoryTracker,
+    allocation_map: HashMap(usize, AllocationInfo, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage),
+    ref_count_map: HashMap(usize, Atomic(u32), std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage),
+    memory_pools: MemoryPoolManager,
+    gc_trigger_threshold: Atomic(f32),
+    
     /// Object tracking
     all_objects: ?*ObjectHeader,
     free_list: ?*ObjectHeader,
@@ -283,6 +511,15 @@ pub const GC = struct {
             .young_heap_used = 0,
             .old_heap_start = null,
             .old_heap_used = 0,
+            
+            // Initialize advanced memory management features
+            .memory_pressure = Atomic(f32).init(0.0),
+            .memory_tracker = MemoryTracker.init(allocator),
+            .allocation_map = HashMap(usize, AllocationInfo, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
+            .ref_count_map = HashMap(usize, Atomic(u32), std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
+            .memory_pools = try MemoryPoolManager.init(allocator),
+            .gc_trigger_threshold = Atomic(f32).init(config.young_gc_trigger_threshold),
+            
             .all_objects = null,
             .free_list = null,
             .mark_stack = ArrayList(*ObjectHeader).init(allocator),
@@ -321,6 +558,12 @@ pub const GC = struct {
         
         // Clean up heap
         self.deallocateHeap();
+        
+        // Clean up advanced memory management features
+        self.memory_tracker.deinit();
+        self.allocation_map.deinit();
+        self.ref_count_map.deinit();
+        self.memory_pools.deinit();
         
         // Clean up data structures
         self.mark_stack.deinit();
@@ -425,7 +668,19 @@ pub const GC = struct {
     
     /// Allocate object with GC header
     pub fn alloc(self: *GC, size: usize, type_id: u16) !*anyopaque {
+        return self.allocWithSource(size, type_id, null);
+    }
+    
+    /// Allocate object with source location tracking for debugging
+    pub fn allocWithSource(self: *GC, size: usize, type_id: u16, source_location: ?[]const u8) !*anyopaque {
         const total_size = ObjectHeader.HEADER_SIZE + size;
+        
+        // Try memory pool allocation first for better performance
+        const pool_ptr = self.memory_pools.getAllocation(total_size) catch null;
+        if (pool_ptr) |ptr| {
+            // Initialize as pool-allocated object
+            return ptr;
+        }
         
         // Try allocation in appropriate generation
         const generation = if (self.shouldAllocateInOld()) Generation.Old else Generation.Young;
@@ -441,6 +696,18 @@ pub const GC = struct {
         header.next = self.all_objects;
         self.all_objects = header;
         
+        const data_ptr = header.getData();
+        const address = @intFromPtr(data_ptr);
+        
+        // Track allocation for leak detection
+        const alloc_info = AllocationInfo.init(total_size, type_id, source_location);
+        self.memory_tracker.trackAllocation(address, alloc_info) catch {};
+        self.allocation_map.put(address, alloc_info) catch {};
+        
+        // Initialize reference count
+        const ref_count = Atomic(u32).init(1);
+        self.ref_count_map.put(address, ref_count) catch {};
+        
         // Update statistics
         self.stats.total_allocations += 1;
         self.stats.total_bytes_allocated += total_size;
@@ -451,11 +718,14 @@ pub const GC = struct {
             self.stats.peak_heap_size = self.heap_used;
         }
         
+        // Update memory pressure
+        self.updateMemoryPressure();
+        
         // Check if GC should be triggered based on generation-specific thresholds
         if (generation == .Young) {
             const young_gen_size = @as(usize, @intFromFloat(@as(f64, @floatFromInt(self.heap_size)) * self.config.young_gen_ratio));
             const young_usage = @as(f32, @floatFromInt(self.young_heap_used)) / @as(f32, @floatFromInt(young_gen_size));
-            if (young_usage > self.config.young_gc_trigger_threshold) {
+            if (young_usage > self.gc_trigger_threshold.load(.acquire)) {
                 self.triggerYoungCollection();
             }
         } else {
@@ -466,7 +736,101 @@ pub const GC = struct {
             }
         }
         
-        return header.getData();
+        return data_ptr;
+    }
+    
+    /// Reference counting operations
+    pub fn retainObject(self: *GC, ptr: *anyopaque) void {
+        const address = @intFromPtr(ptr);
+        if (self.ref_count_map.getPtr(address)) |ref_count| {
+            _ = ref_count.fetchAdd(1, .acquire);
+        }
+    }
+    
+    pub fn releaseObject(self: *GC, ptr: *anyopaque) void {
+        const address = @intFromPtr(ptr);
+        if (self.ref_count_map.getPtr(address)) |ref_count| {
+            const old_count = ref_count.fetchSub(1, .release);
+            if (old_count == 1) {
+                // Object should be freed immediately
+                self.freeObjectImmediate(ptr);
+            }
+        }
+    }
+    
+    pub fn getRefCount(self: *GC, ptr: *anyopaque) u32 {
+        const address = @intFromPtr(ptr);
+        if (self.ref_count_map.get(address)) |ref_count| {
+            return ref_count.load(.acquire);
+        }
+        return 0;
+    }
+    
+    /// Update memory pressure based on current usage
+    fn updateMemoryPressure(self: *GC) void {
+        const usage_ratio = @as(f32, @floatFromInt(self.heap_used)) / @as(f32, @floatFromInt(self.heap_size));
+        self.memory_pressure.store(usage_ratio, .release);
+        
+        // Adjust GC trigger threshold based on pressure
+        if (usage_ratio > 0.90) {
+            // High pressure - trigger more aggressive collection
+            self.gc_trigger_threshold.store(0.60, .release);
+        } else if (usage_ratio < 0.50) {
+            // Low pressure - less aggressive collection
+            self.gc_trigger_threshold.store(0.85, .release);
+        }
+    }
+    
+    /// Get current memory pressure level
+    pub fn getMemoryPressure(self: *GC) PressureLevel {
+        const pressure = self.memory_pressure.load(.acquire);
+        if (pressure < 0.50) return .Low;
+        if (pressure < 0.80) return .Medium;
+        if (pressure < 0.95) return .High;
+        return .Critical;
+    }
+    
+    /// Force immediate deallocation (for reference counting)
+    fn freeObjectImmediate(self: *GC, ptr: *anyopaque) void {
+        const address = @intFromPtr(ptr);
+        
+        // Remove from tracking
+        self.memory_tracker.trackDeallocation(address);
+        _ = self.allocation_map.remove(address);
+        _ = self.ref_count_map.remove(address);
+        
+        // Try to free from memory pool first
+        if (self.allocation_map.get(address)) |info| {
+            self.memory_pools.deallocate(ptr, info.size) catch {
+                // Fall back to normal GC deallocation
+                self.freeObjectDirect(ObjectHeader.fromData(ptr));
+            };
+        } else {
+            // Normal GC deallocation
+            self.freeObjectDirect(ObjectHeader.fromData(ptr));
+        }
+    }
+    
+    /// Detect memory leaks
+    pub fn detectMemoryLeaks(self: *GC) ![]LeakInfo {
+        return self.memory_tracker.detectLeaks(self.allocator);
+    }
+    
+    /// Get memory usage statistics  
+    pub fn getMemoryUsage(self: *GC) struct {
+        current_usage: usize,
+        peak_usage: usize,
+        total_allocated: usize,
+        total_freed: usize,
+        pressure: f32,
+    } {
+        return .{
+            .current_usage = self.memory_tracker.getCurrentUsage(),
+            .peak_usage = self.memory_tracker.peak_usage.load(.acquire),
+            .total_allocated = self.memory_tracker.total_allocated.load(.acquire),
+            .total_freed = self.memory_tracker.total_freed.load(.acquire),
+            .pressure = self.memory_pressure.load(.acquire),
+        };
     }
     
     /// Allocate in specific generation
@@ -1471,5 +1835,202 @@ export fn cursed_gc_write_barrier(gc: ?*GC, old_ref: *anyopaque, new_ref: *anyop
 export fn cursed_gc_print_stats(gc: ?*GC) void {
     if (gc) |g| {
         g.printStats();
+    }
+}
+
+// Advanced memory management exports for LLVM integration
+export fn cursed_gc_alloc_with_source(gc: ?*GC, size: usize, type_id: u16, source_location: ?[*:0]const u8) ?*anyopaque {
+    if (gc) |g| {
+        const source_slice = if (source_location) |src| std.mem.span(src) else null;
+        return g.allocWithSource(size, type_id, source_slice) catch null;
+    }
+    return null;
+}
+
+export fn cursed_gc_retain_object(gc: ?*GC, ptr: *anyopaque) void {
+    if (gc) |g| {
+        g.retainObject(ptr);
+    }
+}
+
+export fn cursed_gc_release_object(gc: ?*GC, ptr: *anyopaque) void {
+    if (gc) |g| {
+        g.releaseObject(ptr);
+    }
+}
+
+export fn cursed_gc_get_ref_count(gc: ?*GC, ptr: *anyopaque) u32 {
+    if (gc) |g| {
+        return g.getRefCount(ptr);
+    }
+    return 0;
+}
+
+export fn cursed_gc_get_memory_pressure(gc: ?*GC) u8 {
+    if (gc) |g| {
+        return switch (g.getMemoryPressure()) {
+            .Low => 0,
+            .Medium => 1,
+            .High => 2,
+            .Critical => 3,
+        };
+    }
+    return 0;
+}
+
+export fn cursed_gc_detect_leaks(gc: ?*GC, leak_count: *usize) [*]LeakInfo {
+    if (gc) |g| {
+        const leaks = g.detectMemoryLeaks() catch {
+            leak_count.* = 0;
+            return undefined;
+        };
+        leak_count.* = leaks.len;
+        return leaks.ptr;
+    }
+    leak_count.* = 0;
+    return undefined;
+}
+
+// Define extern struct for C compatibility
+const CMemoryUsage = extern struct {
+    current_usage: usize,
+    peak_usage: usize,
+    total_allocated: usize,
+    total_freed: usize,
+    pressure: f32,
+};
+
+export fn cursed_gc_get_memory_usage(gc: ?*GC) CMemoryUsage {
+    if (gc) |g| {
+        const usage = g.getMemoryUsage();
+        return CMemoryUsage{
+            .current_usage = usage.current_usage,
+            .peak_usage = usage.peak_usage,
+            .total_allocated = usage.total_allocated,
+            .total_freed = usage.total_freed,
+            .pressure = usage.pressure,
+        };
+    }
+    return CMemoryUsage{
+        .current_usage = 0,
+        .peak_usage = 0,
+        .total_allocated = 0,
+        .total_freed = 0,
+        .pressure = 0.0,
+    };
+}
+
+export fn cursed_gc_register_stack_root(gc: ?*GC, ptr: *anyopaque) void {
+    if (gc) |g| {
+        g.registerStackRoot(ptr) catch {};
+    }
+}
+
+export fn cursed_gc_unregister_stack_root(gc: ?*GC, ptr: *anyopaque) void {
+    if (gc) |g| {
+        g.unregisterStackRoot(ptr) catch {};
+    }
+}
+
+export fn cursed_gc_create_weak_ref(gc: ?*GC, target: *anyopaque) ?*WeakRef {
+    if (gc) |g| {
+        const weak_ref = g.allocator.create(WeakRef) catch return null;
+        weak_ref.* = WeakRef{
+            .target = target,
+            .header = ObjectHeader.fromData(target),
+        };
+        
+        g.weak_ref_mutex.lock();
+        g.weak_refs.append(weak_ref) catch {
+            g.weak_ref_mutex.unlock();
+            g.allocator.destroy(weak_ref);
+            return null;
+        };
+        g.weak_ref_mutex.unlock();
+        
+        return weak_ref;
+    }
+    return null;
+}
+
+export fn cursed_gc_weak_ref_get(weak_ref: ?*WeakRef) ?*anyopaque {
+    if (weak_ref) |ref| {
+        return ref.get();
+    }
+    return null;
+}
+
+export fn cursed_gc_weak_ref_valid(weak_ref: ?*WeakRef) bool {
+    if (weak_ref) |ref| {
+        return ref.get() != null;
+    }
+    return false;
+}
+
+export fn cursed_gc_register_finalizer(gc: ?*GC, object: *anyopaque, finalizer: ?*const fn (*anyopaque) callconv(.C) void) void {
+    if (gc) |g| {
+        if (finalizer) |fn_ptr| {
+            const header = ObjectHeader.fromData(object);
+            header.finalize = 1;
+            
+            g.finalization_mutex.lock();
+            g.finalizers.append(Finalizer{
+                .object = header,
+                .fn_ptr = @ptrCast(fn_ptr),
+            }) catch {};
+            g.finalization_mutex.unlock();
+        }
+    }
+}
+
+export fn cursed_gc_set_max_pause_time(gc: ?*GC, max_pause_us: u64) void {
+    if (gc) |g| {
+        g.config.max_young_pause_time_us = max_pause_us;
+        g.config.max_old_pause_time_us = max_pause_us * 2; // Old gen gets 2x the time budget
+    }
+}
+
+export fn cursed_gc_collect_incremental(gc: ?*GC) void {
+    if (gc) |g| {
+        g.performIncrementalYoungCollection() catch {};
+    }
+}
+
+// Stack scanning support for compiled code
+export fn cursed_gc_scan_stack_frame(gc: ?*GC, frame_start: *anyopaque, frame_size: usize) void {
+    if (gc) |g| {
+        const start_addr = @as([*]u8, @ptrCast(frame_start));
+        const end_addr = start_addr + frame_size;
+        
+        var scan_ptr = start_addr;
+        while (@intFromPtr(scan_ptr) < @intFromPtr(end_addr)) {
+            const potential_ptr = @as(*?*anyopaque, @ptrCast(@alignCast(scan_ptr))).*;
+            
+            if (potential_ptr) |ptr| {
+                if (g.isValidHeapPointer(ptr)) {
+                    const header = ObjectHeader.fromData(ptr);
+                    if (header.color == @intFromEnum(Color.White)) {
+                        header.color = @intFromEnum(Color.Gray);
+                        g.mark_stack.append(header) catch {};
+                    }
+                }
+            }
+            
+            scan_ptr = @as([*]u8, @ptrFromInt(@intFromPtr(scan_ptr) + @sizeOf(*anyopaque)));
+        }
+    }
+}
+
+// Memory pool allocation for compiled code
+export fn cursed_gc_pool_alloc(gc: ?*GC, size: usize) ?*anyopaque {
+    if (gc) |g| {
+        return g.memory_pools.getAllocation(size) catch null;
+    }
+    return null;
+}
+
+export fn cursed_gc_pool_free(gc: ?*GC, ptr: *anyopaque, size: usize) void {
+    if (gc) |g| {
+        g.memory_pools.deallocate(ptr, size) catch {};
     }
 }

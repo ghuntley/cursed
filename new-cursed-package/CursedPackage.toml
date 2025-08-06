@@ -1,0 +1,12 @@
+name = "new-cursed-package"
+version = "0.1.0"
+description = "A reusable CURSED library"
+license = "MIT"
+main = "src/lib.csd"
+authors = ["Your Name <your.email@example.com>"]
+
+[dependencies]
+testz = "^1.0.0"
+
+[dev_dependencies]
+testz = "^1.0.0"

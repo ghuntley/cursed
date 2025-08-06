@@ -1,30 +1,44 @@
 {
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "name": "CURSED",
-    "scopeName": "source.cursed",
-    "fileTypes": ["csd"],
     "patterns": [
-        { "include": "#comments" },
-        { "include": "#keywords" },
-        { "include": "#strings" },
-        { "include": "#numbers" },
-        { "include": "#functions" },
-        { "include": "#types" },
-        { "include": "#constants" },
-        { "include": "#operators" },
-        { "include": "#punctuation" }
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#types"
+        },
+        {
+            "include": "#functions"
+        },
+        {
+            "include": "#variables"
+        },
+        {
+            "include": "#operators"
+        }
     ],
     "repository": {
         "comments": {
             "patterns": [
                 {
-                    "name": "comment.line.cursed",
-                    "match": "(fr fr|#).*$"
+                    "name": "comment.line.double-slash.cursed",
+                    "begin": "//",
+                    "end": "$"
                 },
                 {
                     "name": "comment.block.cursed",
-                    "begin": "fr fr",
-                    "end": "end comment"
+                    "begin": "/\\*",
+                    "end": "\\*/"
                 }
             ]
         },
@@ -32,47 +46,19 @@
             "patterns": [
                 {
                     "name": "keyword.control.cursed",
-                    "match": "\\b(lowkey|highkey|bestie|periodt|stan|ready|select|match|case|basic|ghosted|simp|later)\\b"
+                    "match": "\\b(slay|sus|facts|lowkey|highkey|periodt|stan|bestie|flex|ghosted|simp|squad|collab|yeet|vibes|mood|basic|match|ready|later|dm|select)\\b"
                 },
                 {
-                    "name": "keyword.declaration.cursed",
-                    "match": "\\b(slay|sus|facts|squad|collab|yeet|vibe)\\b"
+                    "name": "keyword.control.traditional.cursed",
+                    "match": "\\b(fn|let|mut|if|else|while|for|return|struct|interface|import|package|switch|case|default)\\b"
                 },
                 {
-                    "name": "keyword.other.cursed",
-                    "match": "\\b(damn|in|as|where|impl|extends|with|except|rename)\\b"
+                    "name": "constant.language.boolean.cursed",
+                    "match": "\\b(based|cringe|true|false)\\b"
                 },
                 {
-                    "name": "keyword.control.traditional",
-                    "match": "\\b(fn|let|mut|if|else|while|for|return|struct|interface|import|package|switch|default|break|continue|defer)\\b"
-                }
-            ]
-        },
-        "constants": {
-            "patterns": [
-                {
-                    "name": "constant.language.cursed",
-                    "match": "\\b(based|cringe|lit|cap|nocap|truth|lies)\\b"
-                },
-                {
-                    "name": "constant.language.traditional",
-                    "match": "\\b(true|false|nil|null)\\b"
-                }
-            ]
-        },
-        "types": {
-            "patterns": [
-                {
-                    "name": "storage.type.cursed",
-                    "match": "\\b(normie|thicc|smol|mid|meal|snack|tea|txt|sip|byte|rune|extra|drip|lit|dm)\\b"
-                },
-                {
-                    "name": "storage.type.traditional", 
-                    "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|string|char|bool|int|uint|float)\\b"
-                },
-                {
-                    "name": "storage.modifier.cursed",
-                    "match": "\\b(spill|priv|crew)\\b"
+                    "name": "constant.language.null.cursed",
+                    "match": "\\b(nil)\\b"
                 }
             ]
         },
@@ -86,10 +72,6 @@
                         {
                             "name": "constant.character.escape.cursed",
                             "match": "\\\\."
-                        },
-                        {
-                            "name": "constant.other.placeholder.cursed",
-                            "match": "\\{[^}]*\\}"
                         }
                     ]
                 },
@@ -109,8 +91,8 @@
         "numbers": {
             "patterns": [
                 {
-                    "name": "constant.numeric.float.cursed",
-                    "match": "\\b\\d+\\.\\d+([eE][+-]?\\d+)?\\b"
+                    "name": "constant.numeric.decimal.cursed",
+                    "match": "\\b\\d+\\.\\d+\\b"
                 },
                 {
                     "name": "constant.numeric.integer.cursed",
@@ -123,10 +105,18 @@
                 {
                     "name": "constant.numeric.binary.cursed",
                     "match": "\\b0[bB][01]+\\b"
+                }
+            ]
+        },
+        "types": {
+            "patterns": [
+                {
+                    "name": "storage.type.cursed",
+                    "match": "\\b(normie|tea|lit|drip|thicc|smol|meal|byte|rune)\\b"
                 },
                 {
-                    "name": "constant.numeric.octal.cursed",
-                    "match": "\\b0[oO][0-7]+\\b"
+                    "name": "storage.type.complex.cursed",
+                    "match": "\\b(\\[\\]\\w+|dm\\s+\\w+|map\\[\\w+\\]\\w+|interface\\{\\})\\b"
                 }
             ]
         },
@@ -134,11 +124,23 @@
             "patterns": [
                 {
                     "name": "entity.name.function.cursed",
-                    "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()"
+                    "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()"
                 },
                 {
-                    "name": "support.function.stdlib.cursed",
-                    "match": "\\b(vibez\\.(spill|spillf|read_line)|len|append|make|cryptz\\.(hash|encrypt)|concurrenz\\.(spawn|send|receive))\\b"
+                    "name": "support.function.builtin.cursed",
+                    "match": "\\b(spill|spillf|read_line|len|append|make|hash|encrypt|spawn|send|receive)\\b"
+                },
+                {
+                    "name": "support.function.module.cursed",
+                    "match": "\\b(vibez|cryptz|concurrenz|testz|stringz|mathz|arrayz|hashz)\\."
+                }
+            ]
+        },
+        "variables": {
+            "patterns": [
+                {
+                    "name": "variable.other.cursed",
+                    "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b"
                 }
             ]
         },
@@ -146,57 +148,30 @@
             "patterns": [
                 {
                     "name": "keyword.operator.assignment.cursed",
-                    "match": "(=|\\+=|-=|\\*=|/=|%=|:=)"
+                    "match": "(:=|=)"
+                },
+                {
+                    "name": "keyword.operator.arithmetic.cursed",
+                    "match": "(\\+|\\-|\\*|\\/|%)"
                 },
                 {
                     "name": "keyword.operator.comparison.cursed",
-                    "match": "(==|!=|<|<=|>|>=)"
+                    "match": "(==|!=|<|>|<=|>=)"
                 },
                 {
                     "name": "keyword.operator.logical.cursed",
                     "match": "(&&|\\|\\||!)"
                 },
                 {
-                    "name": "keyword.operator.arithmetic.cursed",
-                    "match": "(\\+|-|\\*|/|%|\\+\\+|--)"
-                },
-                {
                     "name": "keyword.operator.bitwise.cursed",
                     "match": "(&|\\||\\^|<<|>>)"
                 },
                 {
-                    "name": "keyword.operator.channel.cursed",
-                    "match": "(<-|->)"
-                },
-                {
-                    "name": "keyword.operator.range.cursed",
-                    "match": "\\.\\."
-                },
-                {
-                    "name": "keyword.operator.type.cursed",
-                    "match": "\\?"
-                }
-            ]
-        },
-        "punctuation": {
-            "patterns": [
-                {
-                    "name": "punctuation.separator.cursed",
-                    "match": "[,;]"
-                },
-                {
-                    "name": "punctuation.section.cursed",
-                    "match": "[{}\\[\\]()]"
-                },
-                {
-                    "name": "punctuation.accessor.cursed",
-                    "match": "\\."
-                },
-                {
-                    "name": "punctuation.definition.type.cursed",
-                    "match": ":"
+                    "name": "keyword.operator.damn.cursed",
+                    "match": "\\b(damn)\\b"
                 }
             ]
         }
-    }
+    },
+    "scopeName": "source.cursed"
 }

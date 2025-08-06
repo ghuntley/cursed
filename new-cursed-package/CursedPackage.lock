@@ -1,0 +1,12 @@
+# CursedPackage.lock - Generated lock file
+# Do not edit manually
+
+[[package]]
+name = "new-cursed-package"
+version = "0.1.0"
+
+[[package]]
+name = "testz"
+version = "1.0.0"
+source = "registry+https://packages.cursed.dev"
+checksum = "ed77a5a24a40444ab71b55e536314fe917c70bffe9affaeb9a3de5651dbebe60"

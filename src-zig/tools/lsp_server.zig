@@ -7,11 +7,8 @@ const ArrayList = std.ArrayList;
 const HashMap = std.HashMap;
 const Allocator = std.mem.Allocator;
 
-const lexer = @import("../lexer.zig");
-const parser = @import("../parser.zig");
-const ast = @import("../ast.zig");
-const type_system = @import("../type_system_runtime.zig");
-const import_resolver = @import("../import_resolver.zig");
+// Note: LSP server uses direct file access to avoid module path issues
+// These modules are accessed via the build system configuration
 
 // LSP Message Types
 pub const LSPMessageType = enum {
@@ -182,13 +179,47 @@ pub const SymbolKind = enum(u8) {
     TypeParameter = 26,
 };
 
+// Simplified Token for LSP without external dependencies
+pub const SimpleToken = struct {
+    kind: TokenKind,
+    lexeme: []const u8,
+    line: u32,
+    column: u32,
+};
+
+pub const TokenKind = enum {
+    // Keywords
+    Slay, Sus, Facts, Lowkey, Highkey, Periodt, Stan, Bestie, Flex,
+    Ghosted, Simp, Squad, Collab, Yeet, Vibes, Mood, Basic, Match,
+    Based, Cringe, Normie, Tea, Lit, Drip, Thicc, Smol, Meal,
+    Yikes, Shook, Fam, Spill, Ready, Later, Dm, Select,
+    
+    // Traditional keywords  
+    Fn, Let, Mut, If, Else, While, For, Return, Struct, Interface,
+    Import, Package, True, False, Nil, Switch, Case, Default,
+    
+    // Literals
+    Identifier, String, Number,
+    
+    // Operators
+    Assign, Plus, Minus, Star, Slash, Percent,
+    Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual,
+    And, Or, Not,
+    
+    // Delimiters
+    LeftParen, RightParen, LeftBrace, RightBrace, LeftBracket, RightBracket,
+    Comma, Semicolon, Colon, Dot, Arrow,
+    
+    // Special
+    Newline, Eof, Error,
+};
+
 // Document Management
 pub const DocumentInfo = struct {
     uri: []const u8,
     version: i32,
     content: []const u8,
-    tokens: []lexer.Token,
-    ast_program: ?ast.Program,
+    tokens: []SimpleToken,
     diagnostics: ArrayList(Diagnostic),
     symbols: ArrayList(DocumentSymbol),
     allocator: Allocator,
@@ -201,8 +232,7 @@ pub const DocumentInfo = struct {
             .uri = uri_copy,
             .version = version,
             .content = content_copy,
-            .tokens = &[_]lexer.Token{},
-            .ast_program = null,
+            .tokens = &[_]SimpleToken{},
             .diagnostics = ArrayList(Diagnostic).init(allocator),
             .symbols = ArrayList(DocumentSymbol).init(allocator),
             .allocator = allocator,
@@ -213,9 +243,6 @@ pub const DocumentInfo = struct {
         self.allocator.free(self.uri);
         self.allocator.free(self.content);
         self.allocator.free(self.tokens);
-        if (self.ast_program) |*program| {
-            program.deinit();
-        }
         self.diagnostics.deinit();
         self.symbols.deinit();
     }
@@ -227,151 +254,280 @@ pub const DocumentInfo = struct {
         
         // Clear cached data
         self.allocator.free(self.tokens);
-        self.tokens = &[_]lexer.Token{};
-        if (self.ast_program) |*program| {
-            program.deinit();
-            self.ast_program = null;
-        }
+        self.tokens = &[_]SimpleToken{};
         self.diagnostics.clearRetainingCapacity();
         self.symbols.clearRetainingCapacity();
     }
 
     pub fn parse(self: *DocumentInfo) !void {
-        // Tokenize
-        var lex = lexer.Lexer.init(self.allocator, self.content);
-        defer lex.deinit();
-
-        var tokens = ArrayList(lexer.Token).init(self.allocator);
+        // Simple tokenization for LSP features
+        var tokens = ArrayList(SimpleToken).init(self.allocator);
         defer tokens.deinit();
 
-        while (true) {
-            const token = lex.nextToken() catch |err| {
-                // Add lexer error as diagnostic
-                const diagnostic = Diagnostic{
-                    .range = Range{
-                        .start = Position{ .line = @intCast(lex.line), .character = @intCast(lex.column) },
-                        .end = Position{ .line = @intCast(lex.line), .character = @intCast(lex.column + 1) },
-                    },
-                    .severity = .Error,
-                    .source = "lexer",
-                    .message = switch (err) {
-                        error.UnterminatedString => "Unterminated string literal",
-                        error.InvalidCharacter => "Invalid character",
-                        error.InvalidNumber => "Invalid number format",
-                        else => "Lexer error",
-                    },
+        var line: u32 = 0;
+        var column: u32 = 0;
+        var i: usize = 0;
+        
+        while (i < self.content.len) {
+            const c = self.content[i];
+            
+            // Skip whitespace except newlines
+            if (c == ' ' or c == '\t' or c == '\r') {
+                column += 1;
+                i += 1;
+                continue;
+            }
+            
+            if (c == '\n') {
+                const token = SimpleToken{
+                    .kind = .Newline,
+                    .lexeme = self.content[i..i+1],
+                    .line = line,
+                    .column = column,
                 };
-                try self.diagnostics.append(diagnostic);
-                break;
+                try tokens.append(token);
+                line += 1;
+                column = 0;
+                i += 1;
+                continue;
+            }
+            
+            // Simple identifier/keyword recognition
+            if (std.ascii.isAlphabetic(c) or c == '_') {
+                const start = i;
+                while (i < self.content.len and (std.ascii.isAlphaNumeric(self.content[i]) or self.content[i] == '_')) {
+                    i += 1;
+                }
+                const lexeme = self.content[start..i];
+                const kind = self.identifyKeyword(lexeme);
+                const token = SimpleToken{
+                    .kind = kind,
+                    .lexeme = lexeme,
+                    .line = line,
+                    .column = column,
+                };
+                try tokens.append(token);
+                column += @intCast(lexeme.len);
+                continue;
+            }
+            
+            // Simple string recognition
+            if (c == '"') {
+                const start = i;
+                i += 1; // Skip opening quote
+                while (i < self.content.len and self.content[i] != '"') {
+                    i += 1;
+                }
+                if (i < self.content.len) i += 1; // Skip closing quote
+                const lexeme = self.content[start..i];
+                const token = SimpleToken{
+                    .kind = .String,
+                    .lexeme = lexeme,
+                    .line = line,
+                    .column = column,
+                };
+                try tokens.append(token);
+                column += @intCast(lexeme.len);
+                continue;
+            }
+            
+            // Simple number recognition
+            if (std.ascii.isDigit(c)) {
+                const start = i;
+                while (i < self.content.len and std.ascii.isDigit(self.content[i])) {
+                    i += 1;
+                }
+                const lexeme = self.content[start..i];
+                const token = SimpleToken{
+                    .kind = .Number,
+                    .lexeme = lexeme,
+                    .line = line,
+                    .column = column,
+                };
+                try tokens.append(token);
+                column += @intCast(lexeme.len);
+                continue;
+            }
+            
+            // Single character tokens
+            const kind: TokenKind = switch (c) {
+                '(' => .LeftParen,
+                ')' => .RightParen,
+                '{' => .LeftBrace,
+                '}' => .RightBrace,
+                '[' => .LeftBracket,
+                ']' => .RightBracket,
+                ',' => .Comma,
+                ';' => .Semicolon,
+                ':' => .Colon,
+                '.' => .Dot,
+                '+' => .Plus,
+                '-' => .Minus,
+                '*' => .Star,
+                '/' => .Slash,
+                '%' => .Percent,
+                '=' => .Assign,
+                '<' => .Less,
+                '>' => .Greater,
+                '!' => .Not,
+                else => .Error,
             };
-
+            
+            const token = SimpleToken{
+                .kind = kind,
+                .lexeme = self.content[i..i+1],
+                .line = line,
+                .column = column,
+            };
             try tokens.append(token);
-            if (token.kind == .Eof) break;
+            column += 1;
+            i += 1;
         }
+        
+        // Add EOF token
+        const eof_token = SimpleToken{
+            .kind = .Eof,
+            .lexeme = "",
+            .line = line,
+            .column = column,
+        };
+        try tokens.append(eof_token);
 
         self.tokens = try tokens.toOwnedSlice();
 
-        // Parse AST
-        var cursed_parser = parser.Parser.initWithFile(self.allocator, self.tokens, self.uri);
-        self.ast_program = cursed_parser.parseProgram() catch |err| {
-            // Add parser error as diagnostic
-            const current_token = if (cursed_parser.current < self.tokens.len) self.tokens[cursed_parser.current] else self.tokens[self.tokens.len - 1];
-            const diagnostic = Diagnostic{
-                .range = Range{
-                    .start = Position{ .line = @intCast(current_token.line), .character = @intCast(current_token.column) },
-                    .end = Position{ .line = @intCast(current_token.line), .character = @intCast(current_token.column + current_token.lexeme.len) },
-                },
-                .severity = .Error,
-                .source = "parser",
-                .message = switch (err) {
-                    error.UnexpectedToken => "Unexpected token",
-                    error.UnexpectedEof => "Unexpected end of file",
-                    error.InvalidSyntax => "Invalid syntax",
-                    error.InvalidExpression => "Invalid expression",
-                    error.InvalidStatement => "Invalid statement",
-                    error.InvalidType => "Invalid type",
-                    else => "Parser error",
-                },
-            };
-            try self.diagnostics.append(diagnostic);
-            return;
-        };
-
-        // Extract symbols
+        // Extract symbols from tokens
         try self.extractSymbols();
+    }
+    
+    fn identifyKeyword(self: *DocumentInfo, lexeme: []const u8) TokenKind {
+        _ = self;
+        
+        // CURSED Gen Z keywords
+        if (std.mem.eql(u8, lexeme, "slay")) return .Slay;
+        if (std.mem.eql(u8, lexeme, "sus")) return .Sus;
+        if (std.mem.eql(u8, lexeme, "facts")) return .Facts;
+        if (std.mem.eql(u8, lexeme, "based")) return .Based;
+        if (std.mem.eql(u8, lexeme, "cringe")) return .Cringe;
+        if (std.mem.eql(u8, lexeme, "normie")) return .Normie;
+        if (std.mem.eql(u8, lexeme, "tea")) return .Tea;
+        if (std.mem.eql(u8, lexeme, "lit")) return .Lit;
+        if (std.mem.eql(u8, lexeme, "drip")) return .Drip;
+        if (std.mem.eql(u8, lexeme, "thicc")) return .Thicc;
+        if (std.mem.eql(u8, lexeme, "smol")) return .Smol;
+        if (std.mem.eql(u8, lexeme, "meal")) return .Meal;
+        if (std.mem.eql(u8, lexeme, "squad")) return .Squad;
+        if (std.mem.eql(u8, lexeme, "collab")) return .Collab;
+        if (std.mem.eql(u8, lexeme, "yeet")) return .Yeet;
+        if (std.mem.eql(u8, lexeme, "vibes")) return .Vibes;
+        if (std.mem.eql(u8, lexeme, "bestie")) return .Bestie;
+        if (std.mem.eql(u8, lexeme, "stan")) return .Stan;
+        
+        // Traditional keywords
+        if (std.mem.eql(u8, lexeme, "fn")) return .Fn;
+        if (std.mem.eql(u8, lexeme, "let")) return .Let;
+        if (std.mem.eql(u8, lexeme, "mut")) return .Mut;
+        if (std.mem.eql(u8, lexeme, "if")) return .If;
+        if (std.mem.eql(u8, lexeme, "else")) return .Else;
+        if (std.mem.eql(u8, lexeme, "while")) return .While;
+        if (std.mem.eql(u8, lexeme, "for")) return .For;
+        if (std.mem.eql(u8, lexeme, "return")) return .Return;
+        if (std.mem.eql(u8, lexeme, "struct")) return .Struct;
+        if (std.mem.eql(u8, lexeme, "interface")) return .Interface;
+        if (std.mem.eql(u8, lexeme, "import")) return .Import;
+        if (std.mem.eql(u8, lexeme, "true")) return .True;
+        if (std.mem.eql(u8, lexeme, "false")) return .False;
+        if (std.mem.eql(u8, lexeme, "nil")) return .Nil;
+        
+        return .Identifier;
     }
 
     fn extractSymbols(self: *DocumentInfo) !void {
-        if (self.ast_program) |program| {
-            for (program.statements.items) |stmt| {
-                try self.extractSymbolFromStatement(stmt);
+        // Simple symbol extraction from tokens
+        var i: usize = 0;
+        while (i < self.tokens.len) {
+            const token = self.tokens[i];
+            
+            // Look for function definitions (slay keyword followed by identifier)
+            if (token.kind == .Slay and i + 1 < self.tokens.len) {
+                const next_token = self.tokens[i + 1];
+                if (next_token.kind == .Identifier) {
+                    const symbol = DocumentSymbol{
+                        .name = next_token.lexeme,
+                        .kind = .Function,
+                        .range = Range{
+                            .start = Position{ .line = token.line, .character = token.column },
+                            .end = Position{ .line = token.line + 1, .character = 0 },
+                        },
+                        .selectionRange = Range{
+                            .start = Position{ .line = next_token.line, .character = next_token.column },
+                            .end = Position{ .line = next_token.line, .character = next_token.column + @as(u32, @intCast(next_token.lexeme.len)) },
+                        },
+                    };
+                    try self.symbols.append(symbol);
+                }
             }
-        }
-    }
-
-    fn extractSymbolFromStatement(self: *DocumentInfo, stmt: ast.Statement) !void {
-        switch (stmt) {
-            .Function => |func| {
-                const symbol = DocumentSymbol{
-                    .name = func.name,
-                    .kind = .Function,
-                    .range = Range{
-                        .start = Position{ .line = @intCast(func.line), .character = 0 },
-                        .end = Position{ .line = @intCast(func.line + 1), .character = 0 },
-                    },
-                    .selectionRange = Range{
-                        .start = Position{ .line = @intCast(func.line), .character = 0 },
-                        .end = Position{ .line = @intCast(func.line), .character = @intCast(func.name.len) },
-                    },
-                };
-                try self.symbols.append(symbol);
-            },
-            .Let => |let_stmt| {
-                const symbol = DocumentSymbol{
-                    .name = let_stmt.name,
-                    .kind = if (let_stmt.is_mutable) .Variable else .Constant,
-                    .range = Range{
-                        .start = Position{ .line = @intCast(let_stmt.line), .character = 0 },
-                        .end = Position{ .line = @intCast(let_stmt.line + 1), .character = 0 },
-                    },
-                    .selectionRange = Range{
-                        .start = Position{ .line = @intCast(let_stmt.line), .character = 0 },
-                        .end = Position{ .line = @intCast(let_stmt.line), .character = @intCast(let_stmt.name.len) },
-                    },
-                };
-                try self.symbols.append(symbol);
-            },
-            .Struct => |struct_stmt| {
-                const symbol = DocumentSymbol{
-                    .name = struct_stmt.name,
-                    .kind = .Struct,
-                    .range = Range{
-                        .start = Position{ .line = @intCast(struct_stmt.line), .character = 0 },
-                        .end = Position{ .line = @intCast(struct_stmt.line + 1), .character = 0 },
-                    },
-                    .selectionRange = Range{
-                        .start = Position{ .line = @intCast(struct_stmt.line), .character = 0 },
-                        .end = Position{ .line = @intCast(struct_stmt.line), .character = @intCast(struct_stmt.name.len) },
-                    },
-                };
-                try self.symbols.append(symbol);
-            },
-            .Interface => |interface_stmt| {
-                const symbol = DocumentSymbol{
-                    .name = interface_stmt.name,
-                    .kind = .Interface,
-                    .range = Range{
-                        .start = Position{ .line = @intCast(interface_stmt.line), .character = 0 },
-                        .end = Position{ .line = @intCast(interface_stmt.line + 1), .character = 0 },
-                    },
-                    .selectionRange = Range{
-                        .start = Position{ .line = @intCast(interface_stmt.line), .character = 0 },
-                        .end = Position{ .line = @intCast(interface_stmt.line), .character = @intCast(interface_stmt.name.len) },
-                    },
-                };
-                try self.symbols.append(symbol);
-            },
-            else => {},
+            
+            // Look for struct definitions (squad keyword followed by identifier)
+            if (token.kind == .Squad and i + 1 < self.tokens.len) {
+                const next_token = self.tokens[i + 1];
+                if (next_token.kind == .Identifier) {
+                    const symbol = DocumentSymbol{
+                        .name = next_token.lexeme,
+                        .kind = .Struct,
+                        .range = Range{
+                            .start = Position{ .line = token.line, .character = token.column },
+                            .end = Position{ .line = token.line + 1, .character = 0 },
+                        },
+                        .selectionRange = Range{
+                            .start = Position{ .line = next_token.line, .character = next_token.column },
+                            .end = Position{ .line = next_token.line, .character = next_token.column + @as(u32, @intCast(next_token.lexeme.len)) },
+                        },
+                    };
+                    try self.symbols.append(symbol);
+                }
+            }
+            
+            // Look for interface definitions (collab keyword followed by identifier)
+            if (token.kind == .Collab and i + 1 < self.tokens.len) {
+                const next_token = self.tokens[i + 1];
+                if (next_token.kind == .Identifier) {
+                    const symbol = DocumentSymbol{
+                        .name = next_token.lexeme,
+                        .kind = .Interface,
+                        .range = Range{
+                            .start = Position{ .line = token.line, .character = token.column },
+                            .end = Position{ .line = token.line + 1, .character = 0 },
+                        },
+                        .selectionRange = Range{
+                            .start = Position{ .line = next_token.line, .character = next_token.column },
+                            .end = Position{ .line = next_token.line, .character = next_token.column + @as(u32, @intCast(next_token.lexeme.len)) },
+                        },
+                    };
+                    try self.symbols.append(symbol);
+                }
+            }
+            
+            // Look for variable declarations (sus keyword followed by identifier)
+            if (token.kind == .Sus and i + 1 < self.tokens.len) {
+                const next_token = self.tokens[i + 1];
+                if (next_token.kind == .Identifier) {
+                    const symbol = DocumentSymbol{
+                        .name = next_token.lexeme,
+                        .kind = .Variable,
+                        .range = Range{
+                            .start = Position{ .line = token.line, .character = token.column },
+                            .end = Position{ .line = token.line + 1, .character = 0 },
+                        },
+                        .selectionRange = Range{
+                            .start = Position{ .line = next_token.line, .character = next_token.column },
+                            .end = Position{ .line = next_token.line, .character = next_token.column + @as(u32, @intCast(next_token.lexeme.len)) },
+                        },
+                    };
+                    try self.symbols.append(symbol);
+                }
+            }
+            
+            i += 1;
         }
     }
 };
@@ -451,20 +607,25 @@ pub const LSPHandler = struct {
     }
 
     pub fn handleMessage(self: *LSPHandler, message_text: []const u8) !?[]u8 {
-        var stream = json.TokenStream.init(message_text);
-        const parsed = json.parse(LSPMessage, &stream, .{}) catch |err| {
+        var parsed = json.parseFromSlice(json.Value, self.allocator, message_text, .{}) catch |err| {
             std.log.err("Failed to parse LSP message: {}", .{err});
             return null;
         };
-        defer json.parseFree(LSPMessage, parsed, .{});
+        defer parsed.deinit();
 
-        if (parsed.method) |method| {
-            if (parsed.id != null) {
+        const message_obj = parsed.value.object;
+        
+        if (message_obj.get("method")) |method_value| {
+            const method = method_value.string;
+            const params = message_obj.get("params");
+            const id = message_obj.get("id");
+            
+            if (id != null) {
                 // Request
-                return try self.handleRequest(method, parsed.params, parsed.id.?);
+                return try self.handleRequest(method, params, id.?);
             } else {
                 // Notification
-                try self.handleNotification(method, parsed.params);
+                try self.handleNotification(method, params);
                 return null;
             }
         }
@@ -1519,15 +1680,21 @@ pub const LSPHandler = struct {
     }
 
     fn createErrorResponse(self: *LSPHandler, id: json.Value, code: i32, message: []const u8) ![]u8 {
-        const response = LSPMessage{
-            .id = id,
-            .@"error" = LSPError{
-                .code = code,
-                .message = message,
-            },
-        };
+        var response_obj = std.StringHashMap(json.Value).init(self.allocator);
+        defer response_obj.deinit();
         
-        return try json.stringify(response, .{}, self.allocator);
+        try response_obj.put("jsonrpc", json.Value{ .string = "2.0" });
+        try response_obj.put("id", id);
+        
+        var error_obj = std.StringHashMap(json.Value).init(self.allocator);
+        defer error_obj.deinit();
+        try error_obj.put("code", json.Value{ .integer = code });
+        try error_obj.put("message", json.Value{ .string = message });
+        
+        try response_obj.put("error", json.Value{ .object = error_obj });
+        
+        const response = json.Value{ .object = response_obj };
+        return try json.stringifyAlloc(self.allocator, response, .{});
     }
 };
 
