@@ -41,6 +41,7 @@ pub const Parser = struct {
     in_function: bool,
     in_loop: bool,
     scope_depth: usize,
+    file_path: []const u8,
 
     pub fn init(allocator: Allocator, tokens: []const Token) Parser {
         return Parser{
@@ -51,6 +52,20 @@ pub const Parser = struct {
             .in_function = false,
             .in_loop = false,
             .scope_depth = 0,
+            .file_path = "unknown",
+        };
+    }
+
+    pub fn initWithFile(allocator: Allocator, tokens: []const Token, file_path: []const u8) Parser {
+        return Parser{
+            .tokens = tokens,
+            .current = 0,
+            .allocator = allocator,
+            .had_error = false,
+            .in_function = false,
+            .in_loop = false,
+            .scope_depth = 0,
+            .file_path = file_path,
         };
     }
 
@@ -83,6 +98,71 @@ pub const Parser = struct {
         }
 
         return program;
+    }
+
+    // Source location tracking methods
+    fn getCurrentSourceLocation(self: *Parser) ?ast.SourceLocation {
+        if (self.current < self.tokens.len) {
+            const token = self.tokens[self.current];
+            return ast.SourceLocation{
+                .file = self.file_path,
+                .line = @intCast(token.line),
+                .column = @intCast(token.column),
+            };
+        }
+        return null;
+    }
+
+    fn getSourceLocationForToken(self: *Parser, token: Token) ast.SourceLocation {
+        return ast.SourceLocation{
+            .file = self.file_path,
+            .line = @intCast(token.line),
+            .column = @intCast(token.column),
+        };
+    }
+
+    // Enhanced error reporting
+    fn reportError(self: *Parser, message: []const u8) ParserError {
+        const location = self.getCurrentSourceLocation();
+        if (location) |loc| {
+            std.debug.print("Error at {}:{}:{} - {s}\n", .{ loc.file, loc.line, loc.column, message });
+        } else {
+            std.debug.print("Error: {s}\n", .{message});
+        }
+        self.had_error = true;
+        return ParserError.SyntaxError;
+    }
+
+    fn reportErrorAtToken(self: *Parser, token: Token, message: []const u8) ParserError {
+        const location = self.getSourceLocationForToken(token);
+        std.debug.print("Error at {}:{}:{} - {s}\n", .{ location.file, location.line, location.column, message });
+        self.had_error = true;
+        return ParserError.SyntaxError;
+    }
+
+    // Recovery parsing
+    fn synchronize(self: *Parser) void {
+        self.advance();
+        
+        while (!self.isAtEnd()) {
+            if (self.previous().kind == .Semicolon) return;
+            
+            switch (self.peek().kind) {
+                .Slay, .Sus, .Facts, .Squad, .Collab, .Vibe, .Yeet => return,
+                else => {},
+            }
+            
+            self.advance();
+        }
+    }
+
+    fn recoverToNext(self: *Parser, target_tokens: []const TokenKind) void {
+        while (!self.isAtEnd()) {
+            for (target_tokens) |target| {
+                if (self.check(target)) return;
+            }
+            self.advance();
+        }
     }
 
     fn parsePackageDeclaration(self: *Parser) ParserError!ast.PackageDeclaration {
@@ -716,7 +796,7 @@ pub const Parser = struct {
             return Expression{ .Yikes = ast.YikesExpression{
                 .message = message_expr,
                 .code = code_expr,
-                .source_location = null, // TODO: Add source location tracking
+                .source_location = self.getCurrentSourceLocation(),
             }};
         }
 

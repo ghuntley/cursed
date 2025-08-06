@@ -123,6 +123,42 @@ pub const CodeGenerator = struct {
                     try self.generateStatement(block_stmt.*);
                 }
             },
+            .Struct => |struct_stmt| {
+                try self.generateStructStatement(struct_stmt);
+            },
+            .Interface => |interface_stmt| {
+                try self.generateInterfaceStatement(interface_stmt);
+            },
+            .Implementation => |impl_stmt| {
+                try self.generateImplementationStatement(impl_stmt);
+            },
+            .Match => |match_stmt| {
+                try self.generateMatchStatement(match_stmt);
+            },
+            .Defer => |defer_stmt| {
+                try self.generateDeferStatement(defer_stmt);
+            },
+            .Try => |try_stmt| {
+                try self.generateTryStatement(try_stmt);
+            },
+            .Goroutine => |goroutine_stmt| {
+                try self.generateGoroutineStatement(goroutine_stmt);
+            },
+            .Select => |select_stmt| {
+                try self.generateSelectStatement(select_stmt);
+            },
+            .Break => |break_stmt| {
+                try self.generateBreakStatement(break_stmt);
+            },
+            .Continue => |continue_stmt| {
+                try self.generateContinueStatement(continue_stmt);
+            },
+            .Constant => |const_stmt| {
+                try self.generateConstantStatement(const_stmt);
+            },
+            .Type => |type_stmt| {
+                try self.generateTypeStatement(type_stmt);
+            },
             .Import => {
                 // Import statements don't generate code
             },
@@ -303,6 +339,362 @@ pub const CodeGenerator = struct {
         try self.variables.put(var_decl.name, alloca);
     }
 
+    /// Generate LLVM IR for expressions
+    fn generateExpression(self: *CodeGenerator, expr: ast.Expression) !c.LLVMValueRef {
+        switch (expr) {
+            .Literal => |literal| {
+                return try self.generateLiteral(literal);
+            },
+            .Identifier => |identifier| {
+                return try self.generateIdentifier(identifier);
+            },
+            .Binary => |binary| {
+                return try self.generateBinaryExpression(binary);
+            },
+            .Unary => |unary| {
+                return try self.generateUnaryExpression(unary);
+            },
+            .Call => |call| {
+                return try self.generateCallExpression(call);
+            },
+            .Access => |access| {
+                return try self.generateAccessExpression(access);
+            },
+            .Index => |index| {
+                return try self.generateIndexExpression(index);
+            },
+            .Assignment => |assignment| {
+                return try self.generateAssignmentExpression(assignment);
+            },
+            .Array => |array| {
+                return try self.generateArrayExpression(array);
+            },
+            .Map => |map| {
+                return try self.generateMapExpression(map);
+            },
+            .Tuple => |tuple| {
+                return try self.generateTupleExpression(tuple);
+            },
+            .TypeAssertion => |type_assertion| {
+                return try self.generateTypeAssertionExpression(type_assertion);
+            },
+            .Lambda => |lambda| {
+                return try self.generateLambdaExpression(lambda);
+            },
+            else => {
+                std.debug.print("Warning: Unimplemented expression type in codegen\n", .{});
+                // Return a placeholder value for unimplemented expressions
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            },
+        }
+    }
+
+    /// Generate literal values
+    fn generateLiteral(self: *CodeGenerator, literal: ast.Literal) !c.LLVMValueRef {
+        switch (literal) {
+            .Integer => |int_val| {
+                const int_type = c.LLVMInt32TypeInContext(self.context);
+                return c.LLVMConstInt(int_type, @intCast(int_val), 0);
+            },
+            .Float => |float_val| {
+                const float_type = c.LLVMDoubleTypeInContext(self.context);
+                return c.LLVMConstReal(float_type, float_val);
+            },
+            .String => |string_val| {
+                return try self.generateStringLiteral(string_val);
+            },
+            .Boolean => |bool_val| {
+                const bool_type = c.LLVMInt1TypeInContext(self.context);
+                return c.LLVMConstInt(bool_type, if (bool_val) 1 else 0, 0);
+            },
+            .Character => |char_val| {
+                const char_type = c.LLVMInt8TypeInContext(self.context);
+                return c.LLVMConstInt(char_type, char_val, 0);
+            },
+            .Null => {
+                const ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+                return c.LLVMConstNull(ptr_type);
+            },
+        }
+    }
+
+    /// Generate string literals with global string constants
+    fn generateStringLiteral(self: *CodeGenerator, string_val: []const u8) !c.LLVMValueRef {
+        const string_type = c.LLVMArrayType(c.LLVMInt8TypeInContext(self.context), @intCast(string_val.len + 1));
+        
+        // Create a global string constant
+        const global_string = c.LLVMAddGlobal(self.module, string_type, "str_const");
+        
+        // Create string value with null terminator
+        var string_with_null = try self.allocator.alloc(u8, string_val.len + 1);
+        defer self.allocator.free(string_with_null);
+        
+        @memcpy(string_with_null[0..string_val.len], string_val);
+        string_with_null[string_val.len] = 0;
+        
+        const string_constant = c.LLVMConstStringInContext(
+            self.context,
+            string_with_null.ptr,
+            @intCast(string_with_null.len),
+            0 // don't null terminate (we already did)
+        );
+        
+        c.LLVMSetInitializer(global_string, string_constant);
+        c.LLVMSetLinkage(global_string, c.LLVMPrivateLinkage);
+        c.LLVMSetGlobalConstant(global_string, 1);
+        
+        // Return a pointer to the string
+        const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        return c.LLVMConstGEP2(string_type, global_string, &[_]c.LLVMValueRef{ zero, zero }, 2);
+    }
+
+    /// Generate identifier access
+    fn generateIdentifier(self: *CodeGenerator, identifier: ast.Identifier) !c.LLVMValueRef {
+        if (self.variables.get(identifier.name)) |variable| {
+            // Load the variable value
+            const var_type = c.LLVMTypeOf(variable);
+            const element_type = c.LLVMGetElementType(var_type);
+            return c.LLVMBuildLoad2(self.builder, element_type, variable, identifier.name.ptr);
+        } else {
+            std.debug.print("Error: Undefined variable '{s}'\n", .{identifier.name});
+            return error.UndefinedSymbol;
+        }
+    }
+
+    /// Generate binary expressions
+    fn generateBinaryExpression(self: *CodeGenerator, binary: ast.BinaryExpression) !c.LLVMValueRef {
+        const left = try self.generateExpression(binary.left.*);
+        const right = try self.generateExpression(binary.right.*);
+        
+        switch (binary.operator) {
+            .Add => return c.LLVMBuildAdd(self.builder, left, right, "add_tmp"),
+            .Subtract => return c.LLVMBuildSub(self.builder, left, right, "sub_tmp"),
+            .Multiply => return c.LLVMBuildMul(self.builder, left, right, "mul_tmp"),
+            .Divide => return c.LLVMBuildSDiv(self.builder, left, right, "div_tmp"),
+            .Modulo => return c.LLVMBuildSRem(self.builder, left, right, "mod_tmp"),
+            .Equal => return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp"),
+            .NotEqual => return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "neq_tmp"),
+            .LessThan => return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp"),
+            .LessThanOrEqual => return c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, left, right, "lte_tmp"),
+            .GreaterThan => return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp"),
+            .GreaterThanOrEqual => return c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, left, right, "gte_tmp"),
+            .LogicalAnd => {
+                // Short-circuit AND
+                const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+                const and_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "and.rhs");
+                const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "and.end");
+                
+                _ = c.LLVMBuildCondBr(self.builder, left, and_block, merge_block);
+                
+                c.LLVMPositionBuilderAtEnd(self.builder, and_block);
+                _ = c.LLVMBuildBr(self.builder, merge_block);
+                
+                c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+                const phi = c.LLVMBuildPhi(self.builder, c.LLVMInt1TypeInContext(self.context), "and_result");
+                
+                const false_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 0, 0);
+                const incoming_values = [_]c.LLVMValueRef{ false_val, right };
+                const incoming_blocks = [_]c.LLVMBasicBlockRef{ c.LLVMGetPreviousBasicBlock(and_block), and_block };
+                c.LLVMAddIncoming(phi, &incoming_values, &incoming_blocks, 2);
+                
+                return phi;
+            },
+            .LogicalOr => {
+                // Short-circuit OR
+                const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+                const or_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "or.rhs");
+                const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "or.end");
+                
+                _ = c.LLVMBuildCondBr(self.builder, left, merge_block, or_block);
+                
+                c.LLVMPositionBuilderAtEnd(self.builder, or_block);
+                _ = c.LLVMBuildBr(self.builder, merge_block);
+                
+                c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+                const phi = c.LLVMBuildPhi(self.builder, c.LLVMInt1TypeInContext(self.context), "or_result");
+                
+                const true_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
+                const incoming_values = [_]c.LLVMValueRef{ true_val, right };
+                const incoming_blocks = [_]c.LLVMBasicBlockRef{ c.LLVMGetPreviousBasicBlock(or_block), or_block };
+                c.LLVMAddIncoming(phi, &incoming_values, &incoming_blocks, 2);
+                
+                return phi;
+            },
+            else => {
+                std.debug.print("Warning: Unimplemented binary operator\n", .{});
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            },
+        }
+    }
+
+    /// Generate unary expressions
+    fn generateUnaryExpression(self: *CodeGenerator, unary: ast.UnaryExpression) !c.LLVMValueRef {
+        const operand = try self.generateExpression(unary.operand.*);
+        
+        switch (unary.operator) {
+            .Negate => return c.LLVMBuildNeg(self.builder, operand, "neg_tmp"),
+            .LogicalNot => return c.LLVMBuildNot(self.builder, operand, "not_tmp"),
+            .BitwiseNot => return c.LLVMBuildNot(self.builder, operand, "bnot_tmp"),
+            .AddressOf => {
+                // Return the address of the operand (if it's an lvalue)
+                std.debug.print("Warning: AddressOf operator not fully implemented\n", .{});
+                return operand;
+            },
+            .Dereference => {
+                // Dereference the pointer
+                const element_type = c.LLVMGetElementType(c.LLVMTypeOf(operand));
+                return c.LLVMBuildLoad2(self.builder, element_type, operand, "deref_tmp");
+            },
+            else => {
+                std.debug.print("Warning: Unimplemented unary operator\n", .{});
+                return operand;
+            },
+        }
+    }
+
+    /// Generate function call expressions
+    fn generateCallExpression(self: *CodeGenerator, call: ast.CallExpression) !c.LLVMValueRef {
+        // Special handling for built-in functions
+        if (call.function.* == .Identifier) {
+            const func_name = call.function.Identifier.name;
+            
+            if (std.mem.eql(u8, func_name, "printf") or std.mem.eql(u8, func_name, "vibez.spill")) {
+                return try self.generatePrintfCall(call);
+            }
+        }
+        
+        // General function call handling
+        const function = try self.generateExpression(call.function.*);
+        
+        // Generate arguments
+        var args = try self.allocator.alloc(c.LLVMValueRef, call.arguments.len);
+        defer self.allocator.free(args);
+        
+        for (call.arguments, 0..) |arg, i| {
+            args[i] = try self.generateExpression(arg);
+        }
+        
+        // Get function type for call
+        const func_type = c.LLVMGetReturnType(c.LLVMGlobalGetValueType(function));
+        
+        return c.LLVMBuildCall2(
+            self.builder,
+            func_type,
+            function,
+            args.ptr,
+            @intCast(args.len),
+            "call_tmp"
+        );
+    }
+
+    /// Generate printf/vibez.spill calls
+    fn generatePrintfCall(self: *CodeGenerator, call: ast.CallExpression) !c.LLVMValueRef {
+        if (call.arguments.len == 0) {
+            return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        }
+        
+        const printf_func = c.LLVMGetNamedFunction(self.module, "printf");
+        const puts_func = c.LLVMGetNamedFunction(self.module, "puts");
+        
+        // For simple string literals, use puts
+        if (call.arguments.len == 1 and call.arguments[0] == .Literal and call.arguments[0].Literal == .String) {
+            const string_arg = try self.generateExpression(call.arguments[0]);
+            return c.LLVMBuildCall2(
+                self.builder,
+                c.LLVMGlobalGetValueType(puts_func),
+                puts_func,
+                &[_]c.LLVMValueRef{string_arg},
+                1,
+                "puts_call"
+            );
+        }
+        
+        // For format strings, use printf
+        var args = try self.allocator.alloc(c.LLVMValueRef, call.arguments.len);
+        defer self.allocator.free(args);
+        
+        for (call.arguments, 0..) |arg, i| {
+            args[i] = try self.generateExpression(arg);
+        }
+        
+        return c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGlobalGetValueType(printf_func),
+            printf_func,
+            args.ptr,
+            @intCast(args.len),
+            "printf_call"
+        );
+    }
+
+    /// Generate member access expressions
+    fn generateAccessExpression(self: *CodeGenerator, access: ast.AccessExpression) !c.LLVMValueRef {
+        _ = access;
+        std.debug.print("Warning: Member access not implemented\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    /// Generate array/slice index expressions
+    fn generateIndexExpression(self: *CodeGenerator, index: ast.IndexExpression) !c.LLVMValueRef {
+        _ = index;
+        std.debug.print("Warning: Index expressions not implemented\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    /// Generate assignment expressions
+    fn generateAssignmentExpression(self: *CodeGenerator, assignment: ast.AssignmentExpression) !c.LLVMValueRef {
+        const value = try self.generateExpression(assignment.value.*);
+        
+        // Handle simple variable assignment
+        if (assignment.target.* == .Identifier) {
+            const var_name = assignment.target.Identifier.name;
+            if (self.variables.get(var_name)) |variable| {
+                _ = c.LLVMBuildStore(self.builder, value, variable);
+                return value;
+            } else {
+                std.debug.print("Error: Undefined variable '{s}' in assignment\n", .{var_name});
+                return error.UndefinedSymbol;
+            }
+        }
+        
+        std.debug.print("Warning: Complex assignment targets not implemented\n", .{});
+        return value;
+    }
+
+    /// Generate array literal expressions
+    fn generateArrayExpression(self: *CodeGenerator, array: ast.ArrayExpression) !c.LLVMValueRef {
+        _ = array;
+        std.debug.print("Warning: Array literals not implemented\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    /// Generate map literal expressions
+    fn generateMapExpression(self: *CodeGenerator, map: ast.MapExpression) !c.LLVMValueRef {
+        _ = map;
+        std.debug.print("Warning: Map literals not implemented\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    /// Generate tuple expressions
+    fn generateTupleExpression(self: *CodeGenerator, tuple: ast.TupleExpression) !c.LLVMValueRef {
+        _ = tuple;
+        std.debug.print("Warning: Tuple expressions not implemented\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    /// Generate type assertion expressions
+    fn generateTypeAssertionExpression(self: *CodeGenerator, type_assertion: ast.TypeAssertionExpression) !c.LLVMValueRef {
+        // For now, just return the expression being asserted
+        return try self.generateExpression(type_assertion.expression.*);
+    }
+
+    /// Generate lambda expressions
+    fn generateLambdaExpression(self: *CodeGenerator, lambda: ast.LambdaExpression) !c.LLVMValueRef {
+        _ = lambda;
+        std.debug.print("Warning: Lambda expressions not implemented\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
 
 
 
@@ -456,5 +848,77 @@ pub const CodeGenerator = struct {
         if (c.LLVMWriteBitcodeToFile(self.module, output_path.ptr) != 0) {
             return error.BitcodeWriteFailed;
         }
+    }
+
+    /// Generate struct definitions
+    fn generateStructStatement(self: *CodeGenerator, struct_stmt: ast.StructStatement) !void {
+        _ = struct_stmt;
+        std.debug.print("Warning: Struct statements not implemented\n", .{});
+    }
+
+    /// Generate interface definitions
+    fn generateInterfaceStatement(self: *CodeGenerator, interface_stmt: ast.InterfaceStatement) !void {
+        _ = interface_stmt;
+        std.debug.print("Warning: Interface statements not implemented\n", .{});
+    }
+
+    /// Generate implementation blocks
+    fn generateImplementationStatement(self: *CodeGenerator, impl_stmt: ast.ImplementationStatement) !void {
+        _ = impl_stmt;
+        std.debug.print("Warning: Implementation statements not implemented\n", .{});
+    }
+
+    /// Generate match/pattern matching statements
+    fn generateMatchStatement(self: *CodeGenerator, match_stmt: ast.MatchStatement) !void {
+        _ = match_stmt;
+        std.debug.print("Warning: Match statements not implemented\n", .{});
+    }
+
+    /// Generate defer statements
+    fn generateDeferStatement(self: *CodeGenerator, defer_stmt: ast.DeferStatement) !void {
+        _ = defer_stmt;
+        std.debug.print("Warning: Defer statements not implemented\n", .{});
+    }
+
+    /// Generate try statements
+    fn generateTryStatement(self: *CodeGenerator, try_stmt: ast.TryStatement) !void {
+        _ = try_stmt;
+        std.debug.print("Warning: Try statements not implemented\n", .{});
+    }
+
+    /// Generate goroutine/async statements
+    fn generateGoroutineStatement(self: *CodeGenerator, goroutine_stmt: ast.GoroutineStatement) !void {
+        _ = goroutine_stmt;
+        std.debug.print("Warning: Goroutine statements not implemented\n", .{});
+    }
+
+    /// Generate select statements for channel operations
+    fn generateSelectStatement(self: *CodeGenerator, select_stmt: ast.SelectStatement) !void {
+        _ = select_stmt;
+        std.debug.print("Warning: Select statements not implemented\n", .{});
+    }
+
+    /// Generate break statements
+    fn generateBreakStatement(self: *CodeGenerator, break_stmt: ast.BreakStatement) !void {
+        _ = break_stmt;
+        std.debug.print("Warning: Break statements not implemented\n", .{});
+    }
+
+    /// Generate continue statements
+    fn generateContinueStatement(self: *CodeGenerator, continue_stmt: ast.ContinueStatement) !void {
+        _ = continue_stmt;
+        std.debug.print("Warning: Continue statements not implemented\n", .{});
+    }
+
+    /// Generate constant definitions
+    fn generateConstantStatement(self: *CodeGenerator, const_stmt: ast.ConstantStatement) !void {
+        _ = const_stmt;
+        std.debug.print("Warning: Constant statements not implemented\n", .{});
+    }
+
+    /// Generate type alias statements
+    fn generateTypeStatement(self: *CodeGenerator, type_stmt: ast.TypeStatement) !void {
+        _ = type_stmt;
+        std.debug.print("Warning: Type statements not implemented\n", .{});
     }
 };
