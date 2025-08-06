@@ -2,37 +2,33 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
-// Simple AST for parser testing without circular dependencies
+// Arena-based AST for parser testing without circular dependencies or memory leaks
 pub const Program = struct {
-    statements: ArrayList(Statement),
-    imports: ArrayList(ImportStatement),
-    package: ?PackageDeclaration,
+    statements: ArrayList(*Statement),
+    imports: ArrayList(*ImportStatement),
+    package: ?*PackageDeclaration,
+    arena: std.heap.ArenaAllocator,
 
-    pub fn init(allocator: Allocator) Program {
+    pub fn init(backing_allocator: Allocator) Program {
+        var arena = std.heap.ArenaAllocator.init(backing_allocator);
+        const arena_allocator = arena.allocator();
+        
         return Program{
-            .statements = ArrayList(Statement).init(allocator),
-            .imports = ArrayList(ImportStatement).init(allocator),
+            .statements = ArrayList(*Statement).init(arena_allocator),
+            .imports = ArrayList(*ImportStatement).init(arena_allocator),
             .package = null,
+            .arena = arena,
         };
     }
 
-    pub fn deinit(self: *Program, allocator: Allocator) void {
-        // CRITICAL FIX: Clean up individual statements first
-        for (self.statements.items) |*stmt| {
-            stmt.deinit(allocator);
-        }
-        self.statements.deinit();
-        
-        // Clean up individual imports
-        for (self.imports.items) |*import| {
-            import.deinit(allocator);
-        }
-        self.imports.deinit();
-        
-        // Clean up package if allocated
-        if (self.package) |*pkg| {
-            pkg.deinit(allocator);
-        }
+    pub fn deinit(self: *Program) void {
+        // Arena allocator automatically cleans up all allocated memory
+        // No need to manually free individual statements/imports/package
+        self.arena.deinit();
+    }
+
+    pub fn allocator(self: *Program) Allocator {
+        return self.arena.allocator();
     }
 
     pub fn print(self: Program, indent: usize) !void {
@@ -48,7 +44,7 @@ pub const Program = struct {
         }
         
         for (self.statements.items, 0..) |stmt, i| {
-            std.debug.print("{s}  Statement {}: {s}\n", .{ spaces[0..indent], i, @tagName(stmt) });
+            std.debug.print("{s}  Statement {}: {s}\n", .{ spaces[0..indent], i, @tagName(stmt.*) });
         }
     }
 };
@@ -57,30 +53,17 @@ pub const ImportStatement = struct {
     path: []const u8,
     alias: ?[]const u8,
 
-    pub fn init(allocator: Allocator, path: []const u8) ImportStatement {
-        _ = allocator;
+    pub fn init(path: []const u8) ImportStatement {
         return ImportStatement{
             .path = path,
             .alias = null,
         };
-    }
-    
-    pub fn deinit(self: *ImportStatement, allocator: Allocator) void {
-        // Note: path and alias are typically slices of original source, not allocated
-        _ = self;
-        _ = allocator;
     }
 };
 
 pub const PackageDeclaration = struct {
     name: []const u8,
     version: ?[]const u8,
-    
-    pub fn deinit(self: *PackageDeclaration, allocator: Allocator) void {
-        // Note: name and version are typically slices of original source, not allocated
-        _ = self;
-        _ = allocator;
-    }
 };
 
 pub const Statement = enum {
@@ -113,14 +96,6 @@ pub const Statement = enum {
     Yikes,
     Fam,
     Const,
-    
-    pub fn deinit(self: *Statement, allocator: Allocator) void {
-        // CRITICAL FIX: Statement memory cleanup
-        // Note: For simple AST, statements are typically just enum tags
-        // If statements contained allocated data, we would clean it up here
-        _ = self;
-        _ = allocator;
-    }
 };
 
 pub const Expression = enum {
@@ -162,21 +137,13 @@ pub const Expression = enum {
     Match,
     TypeSwitch,
     Block,
-    
-    pub fn deinit(self: *Expression, allocator: Allocator) void {
-        // CRITICAL FIX: Expression memory cleanup
-        // Note: For simple AST, expressions are typically just enum tags
-        // If expressions contained allocated data, we would clean it up here
-        _ = self;
-        _ = allocator;
-    }
 };
 
 pub const FunctionStatement = struct {
     name: []const u8,
     parameters: ArrayList(Parameter),
     return_type: ?Type,
-    body: ArrayList(Statement),
+    body: ArrayList(*Statement),
     visibility: Visibility,
     is_async: bool,
     type_parameters: ArrayList(TypeParameter),
@@ -186,18 +153,11 @@ pub const FunctionStatement = struct {
             .name = name,
             .parameters = ArrayList(Parameter).init(allocator),
             .return_type = null,
-            .body = ArrayList(Statement).init(allocator),
+            .body = ArrayList(*Statement).init(allocator),
             .visibility = .Private,
             .is_async = false,
             .type_parameters = ArrayList(TypeParameter).init(allocator),
         };
-    }
-
-    pub fn deinit(self: *FunctionStatement, allocator: Allocator) void {
-        self.parameters.deinit();
-        self.body.deinit();
-        self.type_parameters.deinit();
-        _ = allocator;
     }
 };
 
@@ -268,26 +228,26 @@ pub const LetStatement = struct {
 
 pub const IfStatement = struct {
     condition: Expression,
-    then_branch: ArrayList(Statement),
-    else_branch: ?ArrayList(Statement),
+    then_branch: ArrayList(*Statement),
+    else_branch: ?ArrayList(*Statement),
 };
 
 pub const WhileStatement = struct {
     condition: Expression,
-    body: ArrayList(Statement),
+    body: ArrayList(*Statement),
 };
 
 pub const ForStatement = struct {
-    init: ?Statement,
+    init: ?*Statement,
     condition: ?Expression,
-    update: ?Statement,
-    body: ArrayList(Statement),
+    update: ?*Statement,
+    body: ArrayList(*Statement),
 };
 
 pub const ForInStatement = struct {
     variable: []const u8,
     iterable: Expression,
-    body: ArrayList(Statement),
+    body: ArrayList(*Statement),
 };
 
 pub const ReturnStatement = struct {

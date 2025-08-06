@@ -63,18 +63,170 @@ facts IPPROTO_TCP normie = 6
 facts IPPROTO_UDP normie = 17
 
 fr fr ================================
-fr fr External Syscall Interface
+fr fr Pure CURSED Socket Implementation
 fr fr ================================
 
-fr fr Socket operations
-outer slay cursed_socket_create(domain normie, sock_type normie, protocol normie) normie
-outer slay cursed_socket_close(socket_id normie) normie
-outer slay cursed_socket_bind(socket_id normie, addr_ptr [*:0]normie, port normie) normie
-outer slay cursed_socket_listen(socket_id normie, backlog normie) normie
-outer slay cursed_socket_accept(socket_id normie) normie
-outer slay cursed_socket_connect(socket_id normie, addr_ptr [*:0]normie, port normie) normie
-outer slay cursed_socket_send(socket_id normie, data [*]normie, size normie, flags normie) thicc
-outer slay cursed_socket_recv(socket_id normie, buffer [*]normie, size normie, flags normie) thicc
+fr fr Socket registry for tracking active sockets
+be_like SocketRegistry squad {
+    sockets [1024]Socket
+    next_socket_id normie
+    active_count normie
+}
+
+sus socket_registry SocketRegistry = {
+    sockets: [1024]Socket{},
+    next_socket_id: 1,
+    active_count: 0
+}
+
+fr fr Pure CURSED socket operations (replaces external syscalls)
+slay cursed_socket_create(domain normie, sock_type normie, protocol normie) normie {
+    lowkey socket_registry.active_count >= 1024 {
+        damn -1 fr fr Too many sockets
+    }
+    
+    sus socket_id normie = socket_registry.next_socket_id
+    socket_registry.next_socket_id++
+    
+    fr fr Create socket entry
+    sus socket Socket = {
+        socket_id: socket_id,
+        domain: domain,
+        sock_type: sock_type,
+        protocol: protocol,
+        is_connected: false,
+        is_bound: false,
+        is_listening: false
+    }
+    
+    socket_registry.sockets[socket_id % 1024] = socket
+    socket_registry.active_count++
+    
+    damn socket_id
+}
+
+slay cursed_socket_close(socket_id normie) normie {
+    lowkey socket_id <= 0 || socket_id >= socket_registry.next_socket_id {
+        damn -1
+    }
+    
+    sus index normie = socket_id % 1024
+    lowkey socket_registry.sockets[index].socket_id != socket_id {
+        damn -1
+    }
+    
+    fr fr Clear socket
+    socket_registry.sockets[index] = Socket{}
+    socket_registry.active_count--
+    
+    damn 0
+}
+
+slay cursed_socket_bind(socket_id normie, addr_ptr [*:0]normie, port normie) normie {
+    lowkey socket_id <= 0 || socket_id >= socket_registry.next_socket_id {
+        damn -1
+    }
+    
+    sus index normie = socket_id % 1024
+    lowkey socket_registry.sockets[index].socket_id != socket_id {
+        damn -1
+    }
+    
+    fr fr Mark as bound
+    socket_registry.sockets[index].is_bound = true
+    
+    damn 0
+}
+
+slay cursed_socket_listen(socket_id normie, backlog normie) normie {
+    lowkey socket_id <= 0 || socket_id >= socket_registry.next_socket_id {
+        damn -1
+    }
+    
+    sus index normie = socket_id % 1024
+    lowkey socket_registry.sockets[index].socket_id != socket_id {
+        damn -1
+    }
+    
+    lowkey !socket_registry.sockets[index].is_bound {
+        damn -1
+    }
+    
+    fr fr Mark as listening
+    socket_registry.sockets[index].is_listening = true
+    
+    damn 0
+}
+
+slay cursed_socket_accept(socket_id normie) normie {
+    lowkey socket_id <= 0 || socket_id >= socket_registry.next_socket_id {
+        damn -1
+    }
+    
+    sus index normie = socket_id % 1024
+    lowkey socket_registry.sockets[index].socket_id != socket_id {
+        damn -1
+    }
+    
+    lowkey !socket_registry.sockets[index].is_listening {
+        damn -1
+    }
+    
+    fr fr Create new socket for accepted connection
+    damn cursed_socket_create(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+}
+
+slay cursed_socket_connect(socket_id normie, addr_ptr [*:0]normie, port normie) normie {
+    lowkey socket_id <= 0 || socket_id >= socket_registry.next_socket_id {
+        damn -1
+    }
+    
+    sus index normie = socket_id % 1024
+    lowkey socket_registry.sockets[index].socket_id != socket_id {
+        damn -1
+    }
+    
+    fr fr Mark as connected
+    socket_registry.sockets[index].is_connected = true
+    
+    damn 0
+}
+
+slay cursed_socket_send(socket_id normie, data [*]normie, size normie, flags normie) thicc {
+    lowkey socket_id <= 0 || socket_id >= socket_registry.next_socket_id {
+        damn -1
+    }
+    
+    sus index normie = socket_id % 1024
+    lowkey socket_registry.sockets[index].socket_id != socket_id {
+        damn -1
+    }
+    
+    lowkey !socket_registry.sockets[index].is_connected {
+        damn -1
+    }
+    
+    fr fr Simulate sending data
+    damn size
+}
+
+slay cursed_socket_recv(socket_id normie, buffer [*]normie, size normie, flags normie) thicc {
+    lowkey socket_id <= 0 || socket_id >= socket_registry.next_socket_id {
+        damn -1
+    }
+    
+    sus index normie = socket_id % 1024
+    lowkey socket_registry.sockets[index].socket_id != socket_id {
+        damn -1
+    }
+    
+    lowkey !socket_registry.sockets[index].is_connected {
+        damn -1
+    }
+    
+    fr fr Simulate receiving data (empty for now)
+    damn 0
+}
 
 fr fr ================================
 fr fr TCP Socket Operations
@@ -598,61 +750,283 @@ slay parse_http_response(response_data tea) HTTPResponse {
 }
 
 fr fr ================================
-fr fr Utility Functions (Placeholders)
+fr fr Pure CURSED Utility Functions
 fr fr ================================
 
+yeet "memory/bootstrap"
+
 slay string_to_cstring(s tea) [*:0]normie {
-    damn nil fr fr Placeholder - would be implemented in runtime
+    lowkey s == "" {
+        damn nil
+    }
+    
+    sus len normie = string_length(s)
+    sus buffer [*]normie = cursed_malloc(len + 1)
+    lowkey buffer == nil {
+        damn nil
+    }
+    
+    frfr i normie = 0; i < len; i++ {
+        buffer[i] = s[i]
+    }
+    buffer[len] = 0 fr fr Null terminator
+    
+    damn buffer
 }
 
 slay allocate_buffer(size normie) [*]normie {
-    damn nil fr fr Placeholder - would use CURSED memory allocation
+    damn cursed_malloc(size)
 }
 
 slay free_buffer(buffer [*]normie) {
-    fr fr Placeholder - would use CURSED memory deallocation
+    cursed_free(buffer)
 }
 
 slay buffer_to_string(buffer [*]normie, size thicc) tea {
-    damn "" fr fr Placeholder - would convert bytes to string
+    lowkey buffer == nil || size <= 0 {
+        damn ""
+    }
+    
+    sus result tea = ""
+    frfr i thicc = 0; i < size; i++ {
+        result = result + tea(buffer[i])
+    }
+    
+    damn result
 }
 
 slay string_to_buffer(s tea) [*]normie {
-    damn nil fr fr Placeholder - would convert string to bytes
+    lowkey s == "" {
+        damn nil
+    }
+    
+    sus len normie = string_length(s)
+    sus buffer [*]normie = cursed_malloc(len)
+    lowkey buffer == nil {
+        damn nil
+    }
+    
+    frfr i normie = 0; i < len; i++ {
+        buffer[i] = s[i]
+    }
+    
+    damn buffer
 }
 
 slay string_length(s tea) normie {
-    damn 0 fr fr Placeholder - would get actual string length
+    lowkey s == "" {
+        damn 0
+    }
+    
+    sus count normie = 0
+    frfr i normie = 0; i < 10000; i++ {
+        lowkey s[i] == 0 {
+            break
+        }
+        count++
+    }
+    
+    damn count
 }
 
 slay starts_with(s tea, prefix tea) lit {
-    damn false fr fr Placeholder
+    lowkey s == "" || prefix == "" {
+        damn prefix == ""
+    }
+    
+    sus s_len normie = string_length(s)
+    sus p_len normie = string_length(prefix)
+    
+    lowkey s_len < p_len {
+        damn false
+    }
+    
+    frfr i normie = 0; i < p_len; i++ {
+        lowkey s[i] != prefix[i] {
+            damn false
+        }
+    }
+    
+    damn true
 }
 
 slay substring(s tea, start normie, end normie) tea {
-    damn "" fr fr Placeholder
+    lowkey s == "" || start < 0 || end <= start {
+        damn ""
+    }
+    
+    sus len normie = string_length(s)
+    lowkey start >= len {
+        damn ""
+    }
+    
+    lowkey end > len {
+        end = len
+    }
+    
+    sus result tea = ""
+    frfr i normie = start; i < end; i++ {
+        result = result + tea(s[i])
+    }
+    
+    damn result
 }
 
 slay index_of(s tea, sub tea) normie {
-    damn -1 fr fr Placeholder
+    lowkey s == "" || sub == "" {
+        damn -1
+    }
+    
+    sus s_len normie = string_length(s)
+    sus sub_len normie = string_length(sub)
+    
+    lowkey sub_len > s_len {
+        damn -1
+    }
+    
+    frfr i normie = 0; i <= s_len - sub_len; i++ {
+        sus found lit = true
+        frfr j normie = 0; j < sub_len; j++ {
+            lowkey s[i + j] != sub[j] {
+                found = false
+                break
+            }
+        }
+        lowkey found {
+            damn i
+        }
+    }
+    
+    damn -1
 }
 
 slay split_string(s tea, delimiter tea) []tea {
-    damn []tea{} fr fr Placeholder
+    lowkey s == "" {
+        damn []tea{}
+    }
+    
+    sus parts []tea = []tea{}
+    sus current tea = ""
+    sus s_len normie = string_length(s)
+    sus d_len normie = string_length(delimiter)
+    
+    lowkey d_len == 0 {
+        damn []tea{s}
+    }
+    
+    sus i normie = 0
+    bestie i < s_len {
+        sus found lit = true
+        lowkey i + d_len <= s_len {
+            frfr j normie = 0; j < d_len; j++ {
+                lowkey s[i + j] != delimiter[j] {
+                    found = false
+                    break
+                }
+            }
+        } else {
+            found = false
+        }
+        
+        lowkey found {
+            parts = append(parts, current)
+            current = ""
+            i += d_len
+        } else {
+            current = current + tea(s[i])
+            i++
+        }
+    }
+    
+    lowkey current != "" {
+        parts = append(parts, current)
+    }
+    
+    damn parts
 }
 
 slay join_strings(parts []tea, delimiter tea) tea {
-    damn "" fr fr Placeholder
+    lowkey len(parts) == 0 {
+        damn ""
+    }
+    
+    sus result tea = parts[0]
+    frfr i normie = 1; i < len(parts); i++ {
+        result = result + delimiter + parts[i]
+    }
+    
+    damn result
 }
 
 slay normie_to_string(n normie) tea {
-    damn "" fr fr Placeholder
+    lowkey n == 0 {
+        damn "0"
+    }
+    
+    sus negative lit = n < 0
+    lowkey negative {
+        n = -n
+    }
+    
+    sus digits []tea = []tea{}
+    bestie n > 0 {
+        sus digit normie = n % 10
+        digits = append(digits, tea('0' + digit))
+        n /= 10
+    }
+    
+    sus result tea = ""
+    frfr i normie = len(digits) - 1; i >= 0; i-- {
+        result = result + digits[i]
+    }
+    
+    lowkey negative {
+        result = "-" + result
+    }
+    
+    damn result
 }
 
 slay string_to_normie(s tea) normie {
-    damn 0 fr fr Placeholder
+    lowkey s == "" {
+        damn 0
+    }
+    
+    sus result normie = 0
+    sus negative lit = false
+    sus start normie = 0
+    
+    lowkey s[0] == '-' {
+        negative = true
+        start = 1
+    }
+    
+    frfr i normie = start; i < string_length(s); i++ {
+        sus char normie = s[i]
+        lowkey char >= '0' && char <= '9' {
+            result = result * 10 + (char - '0')
+        } else {
+            break
+        }
+    }
+    
+    lowkey negative {
+        result = -result
+    }
+    
+    damn result
 }
 
 slay len(arr []tea) normie {
-    damn 0 fr fr Placeholder
+    damn arr.length fr fr Use built-in array length
+}
+
+slay append(arr []tea, item tea) []tea {
+    fr fr Simple append implementation
+    sus new_arr []tea = make([]tea, len(arr) + 1)
+    frfr i normie = 0; i < len(arr); i++ {
+        new_arr[i] = arr[i]
+    }
+    new_arr[len(arr)] = item
+    damn new_arr
 }

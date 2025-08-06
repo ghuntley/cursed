@@ -1,5 +1,88 @@
 const std = @import("std");
 
+fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.ResolvedTarget) void {
+    const env = std.process.getEnvMap(b.allocator) catch return;
+    
+    // Try to auto-detect LLVM paths on NixOS
+    const potential_llvm_lib_paths = [_][]const u8{
+        "/nix/store/i7laizikxvx5hi86g98k4v3p7g8s2a7s-llvm-18.1.8-lib/lib",
+        "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib", // Fallback from original config
+        "/usr/lib/llvm-18/lib",
+        "/usr/lib64",
+        "/lib64",
+    };
+    
+    const potential_llvm_inc_paths = [_][]const u8{
+        "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include",
+        "/usr/include/llvm-18",
+        "/usr/include",
+    };
+    
+    switch (target.result.os.tag) {
+        .linux => {
+            // Auto-detect LLVM library path
+            var llvm_lib_found = false;
+            for (potential_llvm_lib_paths) |path| {
+                var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
+                dir.close();
+                exe.addLibraryPath(.{ .cwd_relative = path });
+                llvm_lib_found = true;
+                break;
+            }
+            
+            // Use environment variable override if provided
+            if (env.get("LLVM_LINUX_LIB")) |lib_path| {
+                exe.addLibraryPath(.{ .cwd_relative = lib_path });
+                llvm_lib_found = true;
+            }
+            
+            // Auto-detect LLVM include path
+            for (potential_llvm_inc_paths) |path| {
+                var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
+                dir.close();
+                exe.addIncludePath(.{ .cwd_relative = path });
+                break;
+            }
+            
+            if (env.get("LLVM_LINUX_INC")) |inc_path| {
+                exe.addIncludePath(.{ .cwd_relative = inc_path });
+            }
+            
+            // Only link LLVM if we found the library path
+            if (llvm_lib_found) {
+                exe.linkSystemLibrary("LLVM-18");
+            }
+        },
+        .windows => {
+            exe.linkSystemLibrary("LLVM-18");
+            if (env.get("LLVM_WINDOWS_LIB")) |lib_path| {
+                exe.addLibraryPath(.{ .cwd_relative = lib_path });
+            }
+            if (env.get("LLVM_WINDOWS_INC")) |inc_path| {
+                exe.addIncludePath(.{ .cwd_relative = inc_path });
+            }
+            exe.linkSystemLibrary("z");
+            exe.linkSystemLibrary("xml2");
+            exe.linkSystemLibrary("psapi");
+            exe.linkSystemLibrary("bcrypt");
+        },
+        .macos => {
+            exe.linkSystemLibrary("LLVM-18");
+            if (env.get("LLVM_MACOS_LIB")) |lib_path| {
+                exe.addLibraryPath(.{ .cwd_relative = lib_path });
+            }
+            if (env.get("LLVM_MACOS_INC")) |inc_path| {
+                exe.addIncludePath(.{ .cwd_relative = inc_path });
+            }
+            exe.linkFramework("Security");
+            exe.linkFramework("CoreFoundation");
+            exe.linkSystemLibrary("z");
+            exe.linkSystemLibrary("xml2");
+        },
+        else => {},
+    }
+}
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -72,12 +155,8 @@ pub fn build(b: *std.Build) void {
     });
     if (!is_wasm) {
         syscall_exe.linkLibC();
-        // Only link LLVM for native Linux builds to avoid cross-compilation issues
-        if (resolved_target.result.os.tag == .linux and resolved_target.result.cpu.arch == std.Target.Cpu.Arch.x86_64) {
-            syscall_exe.linkSystemLibrary("LLVM-18");
-            syscall_exe.addLibraryPath(.{ .cwd_relative = "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib" });
-            syscall_exe.addIncludePath(.{ .cwd_relative = "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include" });
-        }
+        
+        addLlvm(b, syscall_exe, resolved_target);
     }
 
     b.installArtifact(exe);
@@ -105,9 +184,7 @@ pub fn build(b: *std.Build) void {
     });
 
     unit_tests.linkLibC();
-    unit_tests.linkSystemLibrary("LLVM-18");
-    unit_tests.addLibraryPath(.{ .cwd_relative = "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib" });
-    unit_tests.addIncludePath(.{ .cwd_relative = "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include" });
+    addLlvm(b, unit_tests, target);
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test", "Run unit tests");

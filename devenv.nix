@@ -34,6 +34,11 @@ in
     pkgs.llvmPackages_18.libllvm
     pkgs.llvmPackages_18.libllvm.dev
     pkgs.llvmPackages_18.stdenv
+    # Cross-compilation LLVM packages
+    pkgs.pkgsCross.mingwW64.llvmPackages_18.libllvm
+    pkgs.pkgsCross.mingwW64.llvmPackages_18.libllvm.dev
+    pkgs.pkgsCross.mingwW64.zlib
+    pkgs.pkgsCross.mingwW64.libxml2
     # Zig as universal fallback linker
     pkgs.zig
     # C compiler and build tools for cc-rs
@@ -91,6 +96,11 @@ in
     pkgs.darwin.apple_sdk.frameworks.CoreFoundation
     pkgs.darwin.apple_sdk.frameworks.Security
     pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+    # macOS cross-compilation packages (only available on macOS)
+    pkgs.pkgsCross.aarch64-darwin.llvmPackages_18.libllvm
+    pkgs.pkgsCross.aarch64-darwin.llvmPackages_18.libllvm.dev
+    pkgs.pkgsCross.x86_64-darwin.llvmPackages_18.libllvm
+    pkgs.pkgsCross.x86_64-darwin.llvmPackages_18.libllvm.dev
 
   ];
 
@@ -124,6 +134,16 @@ in
     # LLVM configuration - using LLVM 18 for stability
     export LLVM_SYS_181_PREFIX="${pkgs.llvmPackages_18.llvm.dev}"
     export LLVM_CONFIG_PATH="${pkgs.llvmPackages_18.llvm.dev}/bin/llvm-config"
+    
+    # Cross-compilation LLVM paths for Zig
+    export LLVM_LINUX_LIB="${pkgs.llvmPackages_18.libllvm}/lib"
+    export LLVM_LINUX_INC="${pkgs.llvmPackages_18.libllvm.dev}/include"
+    export LLVM_WINDOWS_LIB="${pkgs.pkgsCross.mingwW64.llvmPackages_18.libllvm}/lib"
+    export LLVM_WINDOWS_INC="${pkgs.pkgsCross.mingwW64.llvmPackages_18.libllvm.dev}/include"
+    ${lib.optionalString pkgs.stdenv.isDarwin ''
+    export LLVM_MACOS_LIB="${pkgs.pkgsCross.aarch64-darwin.llvmPackages_18.libllvm}/lib"
+    export LLVM_MACOS_INC="${pkgs.pkgsCross.aarch64-darwin.llvmPackages_18.libllvm.dev}/include"
+    ''}
 
     # Debug LLVM setup
     echo "📋 LLVM Debug Information:"

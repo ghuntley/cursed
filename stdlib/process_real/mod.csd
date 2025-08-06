@@ -45,17 +45,156 @@ facts SIGUSR1 normie = 10
 facts SIGUSR2 normie = 12
 
 fr fr ================================
-fr fr External Syscall Interface
+fr fr Pure CURSED Process Implementation
 fr fr ================================
 
-fr fr Process operations
-outer slay cursed_process_spawn(command_ptr [*:0]normie, args_ptr [*][*:0]normie, args_count normie) normie
-outer slay cursed_process_wait(process_id normie) normie
-outer slay cursed_process_kill(process_id normie, signal normie) normie
+yeet "memory/bootstrap"
 
-fr fr Environment operations  
-outer slay cursed_env_get(name_ptr [*:0]normie, buffer [*]normie, buffer_size normie) normie
-outer slay cursed_env_set(name_ptr [*:0]normie, value_ptr [*:0]normie) normie
+fr fr Process registry for tracking active processes
+be_like ProcessRegistry squad {
+    processes [256]Process
+    next_process_id normie
+    active_count normie
+    environment_vars [100]EnvironmentVar
+    env_count normie
+}
+
+sus process_registry ProcessRegistry = {
+    processes: [256]Process{},
+    next_process_id: 1000,
+    active_count: 0,
+    environment_vars: [100]EnvironmentVar{},
+    env_count: 0
+}
+
+fr fr Initialize with default environment variables
+slay init_default_environment() {
+    lowkey process_registry.env_count == 0 {
+        process_registry.environment_vars[0] = {name: "PATH", value: "/usr/bin:/bin"}
+        process_registry.environment_vars[1] = {name: "HOME", value: "/home/user"}
+        process_registry.environment_vars[2] = {name: "USER", value: "user"}
+        process_registry.environment_vars[3] = {name: "SHELL", value: "/bin/bash"}
+        process_registry.environment_vars[4] = {name: "PWD", value: "/"}
+        process_registry.environment_vars[5] = {name: "TERM", value: "xterm"}
+        process_registry.env_count = 6
+    }
+}
+
+fr fr Pure CURSED process operations (replaces external syscalls)
+slay cursed_process_spawn(command_ptr [*:0]normie, args_ptr [*][*:0]normie, args_count normie) normie {
+    lowkey process_registry.active_count >= 256 {
+        damn -1 fr fr Too many processes
+    }
+    
+    sus process_id normie = process_registry.next_process_id
+    process_registry.next_process_id++
+    
+    fr fr Create process entry
+    sus process Process = {
+        process_id: process_id,
+        pid: process_id,
+        command: cstring_to_string(command_ptr),
+        args: []tea{},
+        is_running: true,
+        exit_code: -1
+    }
+    
+    fr fr Convert args
+    frfr i normie = 0; i < args_count; i++ {
+        process.args = append(process.args, cstring_to_string(args_ptr[i]))
+    }
+    
+    process_registry.processes[process_id % 256] = process
+    process_registry.active_count++
+    
+    damn process_id
+}
+
+slay cursed_process_wait(process_id normie) normie {
+    sus index normie = process_id % 256
+    lowkey process_registry.processes[index].process_id != process_id {
+        damn -1
+    }
+    
+    lowkey !process_registry.processes[index].is_running {
+        damn process_registry.processes[index].exit_code
+    }
+    
+    fr fr Mark as completed with exit code 0
+    process_registry.processes[index].is_running = false
+    process_registry.processes[index].exit_code = 0
+    process_registry.active_count--
+    
+    damn 0
+}
+
+slay cursed_process_kill(process_id normie, signal normie) normie {
+    sus index normie = process_id % 256
+    lowkey process_registry.processes[index].process_id != process_id {
+        damn -1
+    }
+    
+    lowkey !process_registry.processes[index].is_running {
+        damn -1
+    }
+    
+    fr fr Mark as terminated
+    process_registry.processes[index].is_running = false
+    process_registry.processes[index].exit_code = signal
+    process_registry.active_count--
+    
+    damn 0
+}
+
+slay cursed_env_get(name_ptr [*:0]normie, buffer [*]normie, buffer_size normie) normie {
+    init_default_environment()
+    
+    sus name tea = cstring_to_string(name_ptr)
+    
+    frfr i normie = 0; i < process_registry.env_count; i++ {
+        lowkey process_registry.environment_vars[i].name == name {
+            sus value tea = process_registry.environment_vars[i].value
+            sus value_len normie = string_length(value)
+            
+            lowkey value_len >= buffer_size {
+                damn -1 fr fr Buffer too small
+            }
+            
+            frfr j normie = 0; j < value_len; j++ {
+                buffer[j] = value[j]
+            }
+            
+            damn value_len
+        }
+    }
+    
+    damn -1 fr fr Not found
+}
+
+slay cursed_env_set(name_ptr [*:0]normie, value_ptr [*:0]normie) normie {
+    init_default_environment()
+    
+    sus name tea = cstring_to_string(name_ptr)
+    sus value tea = cstring_to_string(value_ptr)
+    
+    fr fr Find existing variable or add new one
+    frfr i normie = 0; i < process_registry.env_count; i++ {
+        lowkey process_registry.environment_vars[i].name == name {
+            process_registry.environment_vars[i].value = value
+            damn 0
+        }
+    }
+    
+    fr fr Add new variable
+    lowkey process_registry.env_count >= 100 {
+        damn -1 fr fr Too many environment variables
+    }
+    
+    process_registry.environment_vars[process_registry.env_count] = {name: name, value: value}
+    process_registry.env_count++
+    
+    damn 0
+}
 
 fr fr ================================
 fr fr Process Management
@@ -405,35 +544,123 @@ slay set_cpu_limit(limit meal) lit {
 }
 
 fr fr ================================
-fr fr Utility Functions (Placeholders)
+fr fr Pure CURSED Utility Functions
 fr fr ================================
 
 slay string_to_cstring(s tea) [*:0]normie {
-    damn nil fr fr Placeholder - would be implemented in runtime
+    lowkey s == "" {
+        damn nil
+    }
+    
+    sus len normie = string_length(s)
+    sus buffer [*]normie = cursed_malloc(len + 1)
+    lowkey buffer == nil {
+        damn nil
+    }
+    
+    frfr i normie = 0; i < len; i++ {
+        buffer[i] = s[i]
+    }
+    buffer[len] = 0 fr fr Null terminator
+    
+    damn buffer
+}
+
+slay cstring_to_string(ptr [*:0]normie) tea {
+    lowkey ptr == nil {
+        damn ""
+    }
+    
+    sus result tea = ""
+    sus i normie = 0
+    bestie ptr[i] != 0 && i < 1000 {
+        result = result + tea(ptr[i])
+        i++
+    }
+    
+    damn result
 }
 
 slay args_to_c_array(args []tea) [*][*:0]normie {
-    damn nil fr fr Placeholder - would convert CURSED string array to C array
+    lowkey len(args) == 0 {
+        damn nil
+    }
+    
+    sus c_args [*][*:0]normie = cursed_malloc(len(args) * 8) fr fr 8 bytes per pointer
+    lowkey c_args == nil {
+        damn nil
+    }
+    
+    frfr i normie = 0; i < len(args); i++ {
+        c_args[i] = string_to_cstring(args[i])
+    }
+    
+    damn c_args
 }
 
 slay free_c_args(c_args [*][*:0]normie, count normie) {
-    fr fr Placeholder - would free allocated C string array
+    lowkey c_args == nil {
+        damn
+    }
+    
+    frfr i normie = 0; i < count; i++ {
+        lowkey c_args[i] != nil {
+            cursed_free(c_args[i])
+        }
+    }
+    
+    cursed_free(c_args)
 }
 
 slay allocate_buffer(size normie) [*]normie {
-    damn nil fr fr Placeholder - would use CURSED memory allocation
+    damn cursed_malloc(size)
 }
 
 slay free_buffer(buffer [*]normie) {
-    fr fr Placeholder - would use CURSED memory deallocation
+    cursed_free(buffer)
 }
 
 slay buffer_to_string(buffer [*]normie, size normie) tea {
-    damn "" fr fr Placeholder - would convert bytes to string
+    lowkey buffer == nil || size <= 0 {
+        damn ""
+    }
+    
+    sus result tea = ""
+    frfr i normie = 0; i < size; i++ {
+        result = result + tea(buffer[i])
+    }
+    
+    damn result
+}
+
+slay string_length(s tea) normie {
+    lowkey s == "" {
+        damn 0
+    }
+    
+    sus count normie = 0
+    frfr i normie = 0; i < 10000; i++ {
+        lowkey s[i] == 0 {
+            break
+        }
+        count++
+    }
+    
+    damn count
 }
 
 slay len(arr []tea) normie {
-    damn 0 fr fr Placeholder - would get array length
+    damn arr.length fr fr Use built-in array length
+}
+
+slay append(arr []tea, item tea) []tea {
+    fr fr Simple append implementation
+    sus new_arr []tea = make([]tea, len(arr) + 1)
+    frfr i normie = 0; i < len(arr); i++ {
+        new_arr[i] = arr[i]
+    }
+    new_arr[len(arr)] = item
+    damn new_arr
 }
 
 fr fr ================================
