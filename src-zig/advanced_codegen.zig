@@ -43,10 +43,23 @@ const OptimizationEngine = @import("optimization_engine.zig").OptimizationEngine
 const OptimizationConfig = @import("optimization_engine.zig").OptimizationConfig;
 const OptimizationResult = @import("optimization_engine.zig").OptimizationResult;
 
+/// Defer statement information for LLVM code generation
+pub const DeferInfo = struct {
+    cleanup_function: c.LLVMValueRef,
+    cleanup_block: c.LLVMBasicBlockRef,
+    scope_name: []const u8,
+    function_name: []const u8,
+};
+
 /// Advanced CURSED Zig Code Generator with advanced language features
-/// Handles structs, interfaces, generics, and advanced memory management
+/// Handles structs, interfaces, generics, advanced memory management, and defer statements
 pub const AdvancedCodeGen = struct {
-    base_codegen: FinalWorkingCodeGen,
+base_codegen: FinalWorkingCodeGen,
+    
+    // Defer statement management
+    defer_stack: ArrayList(DeferInfo),
+    scope_defer_stacks: HashMap([]const u8, ArrayList(DeferInfo), std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    current_function_name: ?[]const u8,
     
     // Advanced type system support
     struct_types: HashMap([]const u8, StructTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
@@ -92,6 +105,9 @@ pub const AdvancedCodeGen = struct {
         
         return AdvancedCodeGen{
             .base_codegen = try FinalWorkingCodeGen.init(allocator),
+            .defer_stack = ArrayList(DeferInfo).init(allocator),
+            .scope_defer_stacks = HashMap([]const u8, ArrayList(DeferInfo), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .current_function_name = null,
             .struct_types = HashMap([]const u8, StructTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .interface_types = HashMap([]const u8, InterfaceTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .generic_instances = HashMap([]const u8, GenericInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -118,6 +134,15 @@ pub const AdvancedCodeGen = struct {
 
     pub fn deinit(self: *AdvancedCodeGen) void {
         self.base_codegen.deinit();
+        self.defer_stack.deinit();
+        
+        // Clean up scope defer stacks
+        var scope_iter = self.scope_defer_stacks.iterator();
+        while (scope_iter.next()) |entry| {
+            entry.value_ptr.deinit();
+        }
+        self.scope_defer_stacks.deinit();
+        
         self.struct_types.deinit();
         self.interface_types.deinit();
         self.generic_instances.deinit();
@@ -188,6 +213,198 @@ pub const AdvancedCodeGen = struct {
         try self.debug_generator.?.createCompileUnit(filename, directory);
         
         std.debug.print("✅ Debug information enabled for {s}\n", .{source_file});
+    }
+
+    /// Compile defer statement with proper LLVM integration
+    /// Handles scope-based cleanup and LIFO execution order
+    pub fn compileDeferStatement(self: *AdvancedCodeGen, defer_stmt: ast.DeferStatement) !void {
+        const context = self.base_codegen.context;
+        const module = self.base_codegen.module;
+        const builder = self.base_codegen.builder;
+        const current_function = self.base_codegen.current_function orelse return error.NoCurrentFunction;
+        
+        // Generate unique cleanup function name
+        const defer_count = self.defer_stack.items.len;
+        const cleanup_func_name = try std.fmt.allocPrint(
+            self.base_codegen.allocator, 
+            "defer_cleanup_{s}_{d}", 
+            .{ self.current_function_name orelse "anonymous", defer_count }
+        );
+        defer self.base_codegen.allocator.free(cleanup_func_name);
+        
+        // Create cleanup function type (void function with no parameters)
+        const cleanup_func_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(context),
+            null,
+            0,
+            0
+        );
+        
+        // Create cleanup function
+        const cleanup_func = c.LLVMAddFunction(module, cleanup_func_name.ptr, cleanup_func_type);
+        const cleanup_entry = c.LLVMAppendBasicBlockInContext(context, cleanup_func, "entry");
+        
+        // Save current builder context
+        const saved_function = self.base_codegen.current_function;
+        const saved_block = c.LLVMGetInsertBlock(builder);
+        
+        // Generate cleanup code in separate function
+        c.LLVMPositionBuilderAtEnd(builder, cleanup_entry);
+        self.base_codegen.current_function = cleanup_func;
+        
+        // Compile the deferred statement
+        const statement_ptr: *ast.Statement = @ptrCast(@alignCast(defer_stmt.statement));
+        try self.compileStatement(statement_ptr.*);
+        
+        // Ensure cleanup function has proper return
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(builder)) == null) {
+            _ = c.LLVMBuildRetVoid(builder);
+        }
+        
+        // Restore builder context
+        self.base_codegen.current_function = saved_function;
+        if (saved_block != null) {
+            c.LLVMPositionBuilderAtEnd(builder, saved_block);
+        }
+        
+        // Register cleanup function with runtime defer stack
+        try self.registerDeferCleanup(cleanup_func);
+        
+        // Store defer info for scope management
+        const defer_info = DeferInfo{
+            .cleanup_function = cleanup_func,
+            .cleanup_block = cleanup_entry,
+            .scope_name = self.current_function_name orelse "global",
+            .function_name = self.current_function_name orelse "main",
+        };
+        
+        try self.defer_stack.append(defer_info);
+        
+        std.debug.print("✅ Defer statement compiled: {s}\n", .{cleanup_func_name});
+    }
+    
+    /// Register defer cleanup function with runtime
+    fn registerDeferCleanup(self: *AdvancedCodeGen, cleanup_func: c.LLVMValueRef) !void {
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        
+        // Declare runtime defer functions if not already declared
+        try self.declareDeferRuntimeFunctions();
+        
+        // Get defer push function
+        const defer_push_func = self.base_codegen.runtime_functions.get("cursed_defer_push") orelse
+            return error.DeferRuntimeNotAvailable;
+            
+        // Cast cleanup function to void* for runtime
+        const void_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0);
+        const func_ptr = c.LLVMBuildBitCast(
+            builder,
+            cleanup_func,
+            void_ptr_type,
+            "cleanup_ptr"
+        );
+        
+        // Call runtime defer push
+        _ = c.LLVMBuildCall2(
+            builder,
+            c.LLVMVoidTypeInContext(context),
+            defer_push_func,
+            &[_]c.LLVMValueRef{func_ptr},
+            1,
+            ""
+        );
+    }
+    
+    /// Declare defer runtime functions
+    fn declareDeferRuntimeFunctions(self: *AdvancedCodeGen) !void {
+        const context = self.base_codegen.context;
+        const module = self.base_codegen.module;
+        
+        // cursed_defer_push(void* cleanup_func)
+        if (self.base_codegen.runtime_functions.get("cursed_defer_push") == null) {
+            const defer_push_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0)},
+                1,
+                0
+            );
+            const defer_push_func = c.LLVMAddFunction(module, "cursed_defer_push", defer_push_type);
+            try self.base_codegen.runtime_functions.put("cursed_defer_push", defer_push_func);
+        }
+        
+        // cursed_defer_pop()
+        if (self.base_codegen.runtime_functions.get("cursed_defer_pop") == null) {
+            const defer_pop_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                null,
+                0,
+                0
+            );
+            const defer_pop_func = c.LLVMAddFunction(module, "cursed_defer_pop", defer_pop_type);
+            try self.base_codegen.runtime_functions.put("cursed_defer_pop", defer_pop_func);
+        }
+        
+        // cursed_defer_execute_all() - executes all defers for current scope
+        if (self.base_codegen.runtime_functions.get("cursed_defer_execute_all") == null) {
+            const defer_exec_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                null,
+                0,
+                0
+            );
+            const defer_exec_func = c.LLVMAddFunction(module, "cursed_defer_execute_all", defer_exec_type);
+            try self.base_codegen.runtime_functions.put("cursed_defer_execute_all", defer_exec_func);
+        }
+    }
+    
+    /// Generate function exit with defer cleanup
+    pub fn generateFunctionExitWithDefers(self: *AdvancedCodeGen) !void {
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        
+        // Execute all defers for current function in LIFO order
+        if (self.base_codegen.runtime_functions.get("cursed_defer_execute_all")) |defer_exec_func| {
+            _ = c.LLVMBuildCall2(
+                builder,
+                c.LLVMVoidTypeInContext(context),
+                defer_exec_func,
+                null,
+                0,
+                ""
+            );
+        }
+    }
+    
+    /// Compile statement with defer awareness
+    pub fn compileStatement(self: *AdvancedCodeGen, statement: ast.Statement) !void {
+        switch (statement) {
+            .Defer => |defer_stmt| {
+                try self.compileDeferStatement(defer_stmt);
+            },
+            .Return => |return_stmt| {
+                // Execute defers before return
+                try self.generateFunctionExitWithDefers();
+                try self.compileReturnStatement(return_stmt);
+            },
+            else => {
+                // Use base codegen for other statements
+                try self.base_codegen.generateStatement(&statement);
+            },
+        }
+    }
+    
+    /// Compile return statement  
+    fn compileReturnStatement(self: *AdvancedCodeGen, return_stmt: ast.ReturnStatement) !void {
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        
+        if (return_stmt.expression) |expr_ptr| {
+            const expr: *ast.Expression = @ptrCast(@alignCast(expr_ptr));
+            const value = try self.base_codegen.generateExpression(expr.*);
+            _ = c.LLVMBuildRet(builder, value);
+        } else {
+            _ = c.LLVMBuildRetVoid(builder);
+        }
     }
 
     /// Compile CURSED source code to executable
@@ -1578,6 +1795,19 @@ pub const AdvancedCodeGen = struct {
                 std.debug.print("Failed to initialize optimization engine: {}\n", .{err});
                 return; // Fall back to basic optimization
             };
+            
+            // Configure optimization settings
+            if (self.optimization_engine) |*engine| {
+                engine.setOptimizationLevel(self.optimization_config.optimization_level);
+                
+                if (self.optimization_config.lto_enabled) {
+                    engine.enableLTO();
+                }
+                
+                if (self.optimization_config.debug_info_enabled) {
+                    engine.enableDebugInfo(self.optimization_config.preserve_debug_info);
+                }
+            }
         }
         
         if (self.optimization_engine) |*engine| {

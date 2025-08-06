@@ -7,7 +7,7 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
-    std.debug.print("CURSED Platform Abstraction Test Suite\n", .{});
+    std.debug.print("CURSED Platform Abstraction Test Suite\n");
     std.debug.print("=====================================\n\n", .{});
     
     // Initialize platform (required for some platforms like Windows)

@@ -11,6 +11,10 @@ const VariableInfo = struct {
 
 /// Simple CURSED-to-C compiler that generates and compiles C code
 pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []const u8, optimization_level: u8, verbose: bool) !void {
+    return compileProgramWithOutput(allocator, source, filename, null, optimization_level, verbose);
+}
+
+pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filename: []const u8, output_file: ?[]const u8, optimization_level: u8, verbose: bool) !void {
     _ = optimization_level;
     
     if (verbose) print("🔥 Compiling CURSED program to native executable...\n", .{});
@@ -163,7 +167,9 @@ pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []cons
     // Step 4: Compile C code
     print("[4/5] Compiling C to executable...\n", .{});
     
-    const output_filename = if (std.mem.endsWith(u8, filename, ".csd"))
+    const output_filename = if (output_file) |custom_output| 
+        try allocator.dupe(u8, custom_output)
+    else if (std.mem.endsWith(u8, filename, ".csd"))
         try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
     else
         try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});

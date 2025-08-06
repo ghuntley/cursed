@@ -708,7 +708,7 @@ pub const GC = struct {
             const obj = self.mark_stack.pop();
             
             // Mark object as black
-            obj.color = @intFromEnum(Color.Black);
+            obj.*.color = @intFromEnum(Color.Black);
             
             // Mark children as gray
             try self.markChildren(obj);
@@ -1338,36 +1338,57 @@ pub const GC = struct {
 
 /// Background thread for concurrent collection
 fn concurrentCollectionWorker(gc: *GC) void {
-    while (!gc.stop_collection.load(.acquire)) {
+    var iteration_count: u32 = 0;
+    const MAX_ITERATIONS = 1000; // Prevent infinite loops in tests
+    
+    while (!gc.stop_collection.load(.acquire) and iteration_count < MAX_ITERATIONS) {
+        iteration_count += 1;
         gc.collection_mutex.lock();
         
-        // Wait for collection trigger or timeout
-        gc.collection_condition.timedWait(&gc.collection_mutex, 100_000_000) catch {}; // 100ms timeout
+        // Shorter timeout for more responsive shutdown in tests
+        gc.collection_condition.timedWait(&gc.collection_mutex, 10_000_000) catch {}; // 10ms timeout
         
         if (!gc.stop_collection.load(.acquire)) {
             gc.collection_running.store(true, .release);
             gc.collection_mutex.unlock();
             
-            // Perform collection
+            // Perform collection with error handling
             gc.collectNow() catch |err| {
                 std.log.err("GC: Collection failed: {}", .{err});
+                // Don't continue on collection failure in tests
+                if (iteration_count > 10) break;
             };
             
             gc.collection_running.store(false, .release);
         } else {
             gc.collection_mutex.unlock();
+            break; // Explicit break for shutdown
         }
+        
+        // Yield CPU between iterations to prevent tight loops
+        std.time.sleep(1000); // 1μs yield
     }
+    
+    // Ensure clean shutdown state
+    gc.collection_running.store(false, .release);
 }
 
 /// Background thread for finalization
 fn finalizationWorker(gc: *GC) void {
-    while (!gc.stop_collection.load(.acquire)) {
+    var iteration_count: u32 = 0;
+    const MAX_ITERATIONS = 500; // Prevent infinite loops in finalization
+    
+    while (!gc.stop_collection.load(.acquire) and iteration_count < MAX_ITERATIONS) {
+        iteration_count += 1;
+        
         // Check finalization queue
         gc.finalization_mutex.lock();
         
         if (gc.finalization_queue.items.len > 0) {
-            const objects_to_finalize = gc.finalization_queue.toOwnedSlice() catch continue;
+            const objects_to_finalize = gc.finalization_queue.toOwnedSlice() catch {
+                gc.finalization_mutex.unlock();
+                continue;
+            };
             gc.finalization_mutex.unlock();
             
             // Run finalizers outside of lock

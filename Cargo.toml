@@ -109,7 +109,7 @@ walkdir = "2.0"
 
 # Windows-specific dependencies
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["winbase", "winnt", "memoryapi", "processthreadsapi", "sysinfoapi", "winuser"] }
+winapi = { version = "0.3", features = ["winbase", "winnt", "memoryapi", "processthreadsapi", "sysinfoapi", "winuser", "handleapi"] }
 # Native compression libraries for non-WASM targets
 flate2 = "1.0"
 
@@ -153,6 +153,10 @@ tokio = { version = "1.0", default-features = false, features = ["rt", "macros",
 # WASM-compatible getrandom with js feature
 getrandom = { version = "0.2", features = ["js"], default-features = false }
 # Exclude native-only dependencies for WASM
+
+# Windows-specific dependencies
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["memoryapi", "winnt", "handleapi", "winbase", "processthreadsapi"] }
 flate2 = { version = "1.0", default-features = false, features = ["rust_backend"] }
 # Replace zstd with a pure Rust implementation for WASM
 zstd = { version = "0.13", default-features = false, features = ["zstdmt"] }

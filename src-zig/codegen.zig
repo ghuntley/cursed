@@ -82,6 +82,10 @@ pub const CodeGen = struct {
     current_function: ?c.LLVMValueRef,
     goroutine_counter: u32,
     
+    // Error handling context
+    current_error_var: ?c.LLVMValueRef,
+    current_error_flag: ?c.LLVMValueRef,
+    
     // Runtime function declarations
     runtime_functions: std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
 
@@ -109,6 +113,8 @@ pub const CodeGen = struct {
             .defer_stack = ArrayList(DeferInfo).init(allocator),
             .current_function = null,
             .goroutine_counter = 0,
+            .current_error_var = null,
+            .current_error_flag = null,
             .runtime_functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
     }
@@ -506,65 +512,118 @@ pub const CodeGen = struct {
 
     /// Generate yikes statement (error handling/panic)
     fn generateYikes(self: *CodeGen, yikes: ast.YikesStatement) CodeGenError!void {
+        // Complete error creation and propagation
+        const current_func = self.current_function.?;
+        
         // Evaluate panic condition if present
         if (yikes.condition) |condition| {
             const condition_value = try self.generateExpression(condition);
             
-            // Create conditional panic
-            const current_func = self.current_function.?;
-            const panic_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "panic");
-            const continue_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "continue");
+            // Create conditional error creation
+            const error_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "create_error");
+            const continue_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "no_error");
             
-            _ = c.LLVMBuildCondBr(self.builder, condition_value, panic_block, continue_block);
+            _ = c.LLVMBuildCondBr(self.builder, condition_value, error_block, continue_block);
             
-            // Generate panic block
-            c.LLVMPositionBuilderAtEnd(self.builder, panic_block);
-            const panic_msg = if (yikes.message) |msg| 
-                c.LLVMBuildGlobalStringPtr(self.builder, msg.ptr, "panic_msg")
-            else
-                c.LLVMBuildGlobalStringPtr(self.builder, "panic", "panic_msg");
-            
-            const panic_func = self.runtime_functions.get("cursed_panic").?;
-            _ = c.LLVMBuildCall2(
-                self.builder,
-                c.LLVMVoidTypeInContext(self.context),
-                panic_func,
-                &[_]c.LLVMValueRef{panic_msg},
-                1,
-                ""
+            // Generate error creation block
+            c.LLVMPositionBuilderAtEnd(self.builder, error_block);
+        }
+        
+        // Create error object with message and optional code
+        const error_msg = if (yikes.message) |msg| 
+            c.LLVMBuildGlobalStringPtr(self.builder, msg.ptr, "error_msg")
+        else
+            c.LLVMBuildGlobalStringPtr(self.builder, "error", "error_msg");
+        
+        const error_code = if (yikes.code) |code| 
+            c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @as(u32, @intCast(code)), 0)
+        else 
+            c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 1, 0);
+        
+        // Call runtime error creation function
+        const create_error_func = self.runtime_functions.get("cursed_create_error") orelse {
+            // Create the function type if it doesn't exist
+            const error_func_type = c.LLVMFunctionType(
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // returns error pointer
+                &[_]c.LLVMTypeRef{
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // message
+                    c.LLVMInt32TypeInContext(self.context), // error code
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // source location
+                },
+                3,
+                0
             );
-            _ = c.LLVMBuildUnreachable(self.builder);
-            
-            // Continue normal execution
+            const func = c.LLVMAddFunction(self.module, "cursed_create_error", error_func_type);
+            try self.runtime_functions.put("cursed_create_error", func);
+            func
+        };
+        
+        // Create source location string for debugging
+        const source_loc = c.LLVMBuildGlobalStringPtr(self.builder, "file:line:col", "source_loc");
+        
+        const error_obj = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            create_error_func,
+            &[_]c.LLVMValueRef{error_msg, error_code, source_loc},
+            3,
+            "error_obj"
+        );
+        
+        // Store error in current function's error context
+        if (self.current_error_var) |error_var| {
+            _ = c.LLVMBuildStore(self.builder, error_obj, error_var);
+        }
+        
+        // Set error flag to indicate error state
+        if (self.current_error_flag) |error_flag| {
+            const true_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
+            _ = c.LLVMBuildStore(self.builder, true_val, error_flag);
+        }
+        
+        // Continue or jump based on context
+        if (yikes.condition != null) {
+            const continue_block = c.LLVMGetNextBasicBlock(c.LLVMGetInsertBlock(self.builder)).?;
+            _ = c.LLVMBuildBr(self.builder, continue_block);
             c.LLVMPositionBuilderAtEnd(self.builder, continue_block);
-        } else {
-            // Unconditional panic
-            const panic_msg = if (yikes.message) |msg| 
-                c.LLVMBuildGlobalStringPtr(self.builder, msg.ptr, "panic_msg")
-            else
-                c.LLVMBuildGlobalStringPtr(self.builder, "panic", "panic_msg");
-            
-            const panic_func = self.runtime_functions.get("cursed_panic").?;
-            _ = c.LLVMBuildCall2(
-                self.builder,
-                c.LLVMVoidTypeInContext(self.context),
-                panic_func,
-                &[_]c.LLVMValueRef{panic_msg},
-                1,
-                ""
-            );
-            _ = c.LLVMBuildUnreachable(self.builder);
         }
     }
 
-    /// Generate fam statement (error recovery)
+    /// Generate fam statement (error recovery) with complete try/catch/finally/defer support
     fn generateFam(self: *CodeGen, fam: ast.FamStatement) CodeGenError!void {
         const current_func = self.current_function.?;
         
-        // Create blocks for error handling
-        const try_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "try");
-        const catch_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "catch");
-        const continue_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "continue");
+        // Create blocks for comprehensive error handling
+        const try_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_try");
+        const catch_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_catch");
+        const finally_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_finally");
+        const continue_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_continue");
+        
+        // Save previous error context
+        const prev_error_var = self.current_error_var;
+        const prev_error_flag = self.current_error_flag;
+        
+        // Create new error context for this fam block
+        const error_var = c.LLVMBuildAlloca(
+            self.builder, 
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), 
+            "fam_error"
+        );
+        const error_flag = c.LLVMBuildAlloca(
+            self.builder, 
+            c.LLVMInt1TypeInContext(self.context), 
+            "fam_error_flag"
+        );
+        
+        // Initialize error state
+        const false_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 0, 0);
+        _ = c.LLVMBuildStore(self.builder, false_val, error_flag);
+        
+        self.current_error_var = error_var;
+        self.current_error_flag = error_flag;
+        
+        // Set up defer context for cleanup
+        const defer_context = try self.setupDeferContext();
         
         // Generate try block
         _ = c.LLVMBuildBr(self.builder, try_block);
@@ -573,15 +632,72 @@ pub const CodeGen = struct {
         // Execute statements that might fail
         for (fam.try_statements.items) |stmt| {
             try self.generateStatement(stmt);
+            
+            // Check for error after each statement
+            const error_check = c.LLVMBuildLoad2(
+                self.builder,
+                c.LLVMInt1TypeInContext(self.context),
+                error_flag,
+                "error_check"
+            );
+            
+            // If error occurred, jump to catch block
+            const next_stmt_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "next_stmt");
+            _ = c.LLVMBuildCondBr(self.builder, error_check, catch_block, next_stmt_block);
+            c.LLVMPositionBuilderAtEnd(self.builder, next_stmt_block);
         }
         
-        // Jump to continue if no error occurred
-        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
-            _ = c.LLVMBuildBr(self.builder, continue_block);
-        }
+        // No error occurred, jump to finally block
+        _ = c.LLVMBuildBr(self.builder, finally_block);
         
         // Generate catch block
         c.LLVMPositionBuilderAtEnd(self.builder, catch_block);
+        
+        // Execute catch statements if provided
+        if (fam.catch_statements) |catch_statements| {
+            // Load the error that was caught
+            const caught_error = c.LLVMBuildLoad2(
+                self.builder,
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                error_var,
+                "caught_error"
+            );
+            
+            // Store caught error in catch variable if specified
+            if (fam.catch_variable) |catch_var| {
+                const catch_var_alloca = try self.lookupVariable(catch_var);
+                _ = c.LLVMBuildStore(self.builder, caught_error, catch_var_alloca);
+            }
+            
+            // Execute catch block statements
+            for (catch_statements.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+        }
+        
+        // Jump to finally block
+        _ = c.LLVMBuildBr(self.builder, finally_block);
+        
+        // Generate finally block
+        c.LLVMPositionBuilderAtEnd(self.builder, finally_block);
+        
+        // Execute defer statements in LIFO order
+        try self.executeDeferCleanup(defer_context);
+        
+        // Execute finally statements if provided
+        if (fam.finally_statements) |finally_statements| {
+            for (finally_statements.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+        }
+        
+        // Restore previous error context
+        self.current_error_var = prev_error_var;
+        self.current_error_flag = prev_error_flag;
+        
+        // Jump to continue block
+        _ = c.LLVMBuildBr(self.builder, continue_block);
+        c.LLVMPositionBuilderAtEnd(self.builder, continue_block);
         
         // If error variable specified, create it
         if (fam.error_variable) |error_var| {
@@ -1214,48 +1330,136 @@ pub const CodeGen = struct {
         // Generate the wrapped expression that might fail
         const result = try self.generateExpression(shook.expression.*);
         
-        // Check if result indicates an error (simplified error propagation)
-        // In full implementation, would check error union type and propagate accordingly
-        
-        // For now, create a simple error check pattern:
-        // if (is_error(result)) return error;
-        // return result;
-        
-        const is_error_func = c.LLVMGetNamedFunction(self.module, "cursed_is_error");
-        if (is_error_func == null) {
-            // Create error checking function if it doesn't exist
-            const error_check_type = c.LLVMFunctionType(
-                c.LLVMInt1TypeInContext(self.context), // returns bool
-                &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)}, // takes pointer
-                1,
-                0
-            );
-            _ = c.LLVMAddFunction(self.module, "cursed_is_error", error_check_type);
-        }
-        
-        // Generate error propagation logic
+        // Complete error propagation with proper error type checking
         const current_func = self.current_function orelse return CodeGenError.LLVMError;
+        
+        // Create blocks for error propagation logic
         const error_check_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "shook_check");
-        const return_error_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "shook_error");
+        const propagate_error_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "shook_propagate");
         const continue_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "shook_continue");
         
         // Jump to error check
         _ = c.LLVMBuildBr(self.builder, error_check_block);
-        
         c.LLVMPositionBuilderAtEnd(self.builder, error_check_block);
         
-        // Create error condition check (simplified)
-        const null_check = c.LLVMBuildIsNull(self.builder, result, "error_check");
-        _ = c.LLVMBuildCondBr(self.builder, null_check, return_error_block, continue_block);
+        // Get or create error checking function
+        const is_error_func = self.runtime_functions.get("cursed_is_error") orelse {
+            const error_check_type = c.LLVMFunctionType(
+                c.LLVMInt1TypeInContext(self.context), // returns bool
+                &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)}, // takes value
+                1,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "cursed_is_error", error_check_type);
+            try self.runtime_functions.put("cursed_is_error", func);
+            func
+        };
         
-        // Return error block
-        c.LLVMPositionBuilderAtEnd(self.builder, return_error_block);
-        _ = c.LLVMBuildRet(self.builder, result); // Return the error value
+        // Check if the result is an error
+        const error_check = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMInt1TypeInContext(self.context),
+            is_error_func,
+            &[_]c.LLVMValueRef{result},
+            1,
+            "is_error"
+        );
+        
+        _ = c.LLVMBuildCondBr(self.builder, error_check, propagate_error_block, continue_block);
+        
+        // Propagate error block
+        c.LLVMPositionBuilderAtEnd(self.builder, propagate_error_block);
+        
+        // Store error in current error context if available
+        if (self.current_error_var) |error_var| {
+            _ = c.LLVMBuildStore(self.builder, result, error_var);
+            
+            // Set error flag
+            if (self.current_error_flag) |error_flag| {
+                const true_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
+                _ = c.LLVMBuildStore(self.builder, true_val, error_flag);
+            }
+            
+            // Jump to error propagation (not return)
+            _ = c.LLVMBuildBr(self.builder, continue_block);
+        } else {
+            // No error context, return error directly
+            _ = c.LLVMBuildRet(self.builder, result);
+        }
         
         // Continue with normal execution
         c.LLVMPositionBuilderAtEnd(self.builder, continue_block);
         
-        return result;
+        // Create a phi node to handle both error and non-error cases
+        const phi = c.LLVMBuildPhi(self.builder, c.LLVMTypeOf(result), "shook_result");
+        const error_incoming = [_]c.LLVMValueRef{result};
+        const error_blocks = [_]c.LLVMBasicBlockRef{propagate_error_block};
+        const success_incoming = [_]c.LLVMValueRef{result};
+        const success_blocks = [_]c.LLVMBasicBlockRef{error_check_block};
+        
+        c.LLVMAddIncoming(phi, &error_incoming, &error_blocks, 1);
+        c.LLVMAddIncoming(phi, &success_incoming, &success_blocks, 1);
+        
+        return phi;
+    }
+
+    /// Setup defer context for error handling cleanup
+    fn setupDeferContext(self: *CodeGen) CodeGenError!c.LLVMValueRef {
+        // Get or create defer initialization function
+        const defer_init_func = self.runtime_functions.get("cursed_defer_init") orelse {
+            const defer_init_type = c.LLVMFunctionType(
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // returns defer context
+                &[_]c.LLVMTypeRef{},
+                0,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "cursed_defer_init", defer_init_type);
+            try self.runtime_functions.put("cursed_defer_init", func);
+            func
+        };
+        
+        // Initialize defer context
+        const defer_context = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            defer_init_func,
+            &[_]c.LLVMValueRef{},
+            0,
+            "defer_context"
+        );
+        
+        return defer_context;
+    }
+
+    /// Execute defer cleanup in LIFO order
+    fn executeDeferCleanup(self: *CodeGen, defer_context: c.LLVMValueRef) CodeGenError!void {
+        // Get or create defer cleanup function
+        const defer_cleanup_func = self.runtime_functions.get("cursed_defer_execute_all") orelse {
+            const defer_cleanup_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(self.context), // returns void
+                &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)}, // takes context
+                1,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "cursed_defer_execute_all", defer_cleanup_type);
+            try self.runtime_functions.put("cursed_defer_execute_all", func);
+            func
+        };
+        
+        // Execute all defers in LIFO order
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMVoidTypeInContext(self.context),
+            defer_cleanup_func,
+            &[_]c.LLVMValueRef{defer_context},
+            1,
+            ""
+        );
+    }
+
+    /// Lookup variable in current scope
+    fn lookupVariable(self: *CodeGen, name: []const u8) CodeGenError!c.LLVMValueRef {
+        return self.variables.get(name) orelse return CodeGenError.UndefinedVariable;
     }
 
     /// Generate unary operation
