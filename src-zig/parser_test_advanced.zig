@@ -14,7 +14,7 @@ const ArrayList = std.ArrayList;
 
 const lexer_advanced = @import("lexer_advanced.zig");
 const parser_advanced = @import("parser_advanced.zig");
-const ast_advanced = @import("ast_advanced.zig");
+const ast_simple = @import("ast_simple.zig");
 
 const AdvancedLexer = lexer_advanced.AdvancedLexer;
 const AdvancedParser = parser_advanced.AdvancedParser;
@@ -22,7 +22,7 @@ const TokenKind = lexer_advanced.TokenKind;
 const Token = lexer_advanced.Token;
 
 /// Test helper to tokenize and parse code
-fn parseCode(allocator: std.mem.Allocator, code: []const u8) !ast_advanced.Program {
+fn parseCode(allocator: std.mem.Allocator, code: []const u8) !ast_simple.Program {
     var lexer = try AdvancedLexer.init(allocator, code);
     defer lexer.deinit();
     
