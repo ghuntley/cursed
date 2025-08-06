@@ -737,18 +737,36 @@ pub const CodeGen = struct {
             .Literal => |literal| {
                 switch (literal) {
                     .IntegerLiteral => |int| {
+                        // Use 64-bit integers by default for 'drip' type
                         return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @intCast(int), 0);
                     },
                     .FloatLiteral => |float| {
+                        // Use double precision for 'meal' type
                         return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float);
                     },
                     .StringLiteral => |str| {
-                        return c.LLVMBuildGlobalStringPtr(self.builder, str.ptr, "str");
+                        // Create global string constant for 'tea' type with proper null termination
+                        const str_constant = c.LLVMConstStringInContext(self.context, str.ptr, @intCast(str.len), 0);
+                        const global_str = c.LLVMAddGlobal(self.module, c.LLVMTypeOf(str_constant), "str_const");
+                        c.LLVMSetInitializer(global_str, str_constant);
+                        c.LLVMSetGlobalConstant(global_str, 1);
+                        
+                        // Return pointer to string
+                        const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                        const indices = [_]c.LLVMValueRef{zero, zero};
+                        return c.LLVMConstGEP2(
+                            c.LLVMTypeOf(str_constant),
+                            global_str,
+                            &indices,
+                            2
+                        );
                     },
                     .BooleanLiteral => |bool_val| {
+                        // Use 1-bit boolean for 'lit' type
                         return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
                     },
                     .CharLiteral => |char| {
+                        // Use 8-bit char for 'sip' type
                         return c.LLVMConstInt(c.LLVMInt8TypeInContext(self.context), @as(u8, @intCast(char)), 0);
                     },
                 }
@@ -761,7 +779,8 @@ pub const CodeGen = struct {
                 return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float);
             },
             .String => |str| {
-                return c.LLVMBuildGlobalStringPtr(self.builder, str.ptr, "str");
+                // Enhanced string handling with proper memory management
+                return try self.generateStringLiteral(str);
             },
             .Boolean => |bool_val| {
                 return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
@@ -770,13 +789,8 @@ pub const CodeGen = struct {
                 return c.LLVMConstInt(c.LLVMInt8TypeInContext(self.context), char, 0);
             },
             .Identifier => |ident| {
-                // Look up variable in symbol table
-                if (self.variables.get(ident)) |alloca| {
-                    const var_type = c.LLVMGetAllocatedType(alloca);
-                    return c.LLVMBuildLoad2(self.builder, var_type, alloca, ident.ptr);
-                } else {
-                    return CodeGenError.UndefinedSymbol;
-                }
+                // Enhanced variable lookup with proper type preservation
+                return try self.generateVariableLoad(ident);
             },
             .BinaryOp => |binary| {
                 const left = try self.generateExpression(binary.left.*);
@@ -908,42 +922,99 @@ pub const CodeGen = struct {
     }
 
     fn generateBinaryOp(self: *CodeGen, left: c.LLVMValueRef, operator: []const u8, right: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        const left_type = c.LLVMTypeOf(left);
+        const right_type = c.LLVMTypeOf(right);
+        
+        // Handle string concatenation for '+'
+        if (std.mem.eql(u8, operator, "+") and 
+            c.LLVMGetTypeKind(left_type) == c.LLVMPointerTypeKind and 
+            c.LLVMGetTypeKind(right_type) == c.LLVMPointerTypeKind) {
+            return try self.generateStringConcatenation(left, right);
+        }
+        
+        // Type promotion and conversion for arithmetic operations
+        const promoted_left, const promoted_right, const result_type = try self.promoteArithmeticTypes(left, right);
+        
         if (std.mem.eql(u8, operator, "+")) {
-            return c.LLVMBuildAdd(self.builder, left, right, "add");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildAdd(self.builder, promoted_left, promoted_right, "add");
+            } else {
+                return c.LLVMBuildFAdd(self.builder, promoted_left, promoted_right, "fadd");
+            }
         } else if (std.mem.eql(u8, operator, "-")) {
-            return c.LLVMBuildSub(self.builder, left, right, "sub");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildSub(self.builder, promoted_left, promoted_right, "sub");
+            } else {
+                return c.LLVMBuildFSub(self.builder, promoted_left, promoted_right, "fsub");
+            }
         } else if (std.mem.eql(u8, operator, "*")) {
-            return c.LLVMBuildMul(self.builder, left, right, "mul");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildMul(self.builder, promoted_left, promoted_right, "mul");
+            } else {
+                return c.LLVMBuildFMul(self.builder, promoted_left, promoted_right, "fmul");
+            }
         } else if (std.mem.eql(u8, operator, "/")) {
-            return c.LLVMBuildSDiv(self.builder, left, right, "div");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildSDiv(self.builder, promoted_left, promoted_right, "div");
+            } else {
+                return c.LLVMBuildFDiv(self.builder, promoted_left, promoted_right, "fdiv");
+            }
         } else if (std.mem.eql(u8, operator, "%")) {
-            return c.LLVMBuildSRem(self.builder, left, right, "rem");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildSRem(self.builder, promoted_left, promoted_right, "rem");
+            } else {
+                return c.LLVMBuildFRem(self.builder, promoted_left, promoted_right, "frem");
+            }
         } else if (std.mem.eql(u8, operator, "==")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, promoted_left, promoted_right, "eq");
+            } else {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, promoted_left, promoted_right, "feq");
+            }
         } else if (std.mem.eql(u8, operator, "!=")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "ne");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, promoted_left, promoted_right, "ne");
+            } else {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealONE, promoted_left, promoted_right, "fne");
+            }
         } else if (std.mem.eql(u8, operator, "<")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, promoted_left, promoted_right, "lt");
+            } else {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOLT, promoted_left, promoted_right, "flt");
+            }
         } else if (std.mem.eql(u8, operator, "<=")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, left, right, "le");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, promoted_left, promoted_right, "le");
+            } else {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOLE, promoted_left, promoted_right, "fle");
+            }
         } else if (std.mem.eql(u8, operator, ">")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, promoted_left, promoted_right, "gt");
+            } else {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOGT, promoted_left, promoted_right, "fgt");
+            }
         } else if (std.mem.eql(u8, operator, ">=")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, left, right, "ge");
+            if (c.LLVMGetTypeKind(result_type) == c.LLVMIntegerTypeKind) {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, promoted_left, promoted_right, "ge");
+            } else {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOGE, promoted_left, promoted_right, "fge");
+            }
         } else if (std.mem.eql(u8, operator, "&&")) {
-            return c.LLVMBuildAnd(self.builder, left, right, "and");
+            return c.LLVMBuildAnd(self.builder, promoted_left, promoted_right, "and");
         } else if (std.mem.eql(u8, operator, "||")) {
-            return c.LLVMBuildOr(self.builder, left, right, "or");
+            return c.LLVMBuildOr(self.builder, promoted_left, promoted_right, "or");
         } else if (std.mem.eql(u8, operator, "&")) {
-            return c.LLVMBuildAnd(self.builder, left, right, "bitand");
+            return c.LLVMBuildAnd(self.builder, promoted_left, promoted_right, "bitand");
         } else if (std.mem.eql(u8, operator, "|")) {
-            return c.LLVMBuildOr(self.builder, left, right, "bitor");
+            return c.LLVMBuildOr(self.builder, promoted_left, promoted_right, "bitor");
         } else if (std.mem.eql(u8, operator, "^")) {
-            return c.LLVMBuildXor(self.builder, left, right, "xor");
+            return c.LLVMBuildXor(self.builder, promoted_left, promoted_right, "xor");
         } else if (std.mem.eql(u8, operator, "<<")) {
-            return c.LLVMBuildShl(self.builder, left, right, "shl");
+            return c.LLVMBuildShl(self.builder, promoted_left, promoted_right, "shl");
         } else if (std.mem.eql(u8, operator, ">>")) {
-            return c.LLVMBuildAShr(self.builder, left, right, "shr");
+            return c.LLVMBuildAShr(self.builder, promoted_left, promoted_right, "shr");
         } else {
             std.debug.print("Unsupported binary operator: {s}\n", .{operator});
             return CodeGenError.LLVMError;
@@ -1434,7 +1505,7 @@ pub const CodeGen = struct {
     /// Execute defer cleanup in LIFO order
     fn executeDeferCleanup(self: *CodeGen, defer_context: c.LLVMValueRef) CodeGenError!void {
         // Get or create defer cleanup function
-        const defer_cleanup_func = self.runtime_functions.get("cursed_defer_execute_all") orelse {
+        const defer_cleanup_func = self.runtime_functions.get("cursed_defer_execute_all") orelse blk: {
             const defer_cleanup_type = c.LLVMFunctionType(
                 c.LLVMVoidTypeInContext(self.context), // returns void
                 &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)}, // takes context
@@ -1443,7 +1514,7 @@ pub const CodeGen = struct {
             );
             const func = c.LLVMAddFunction(self.module, "cursed_defer_execute_all", defer_cleanup_type);
             try self.runtime_functions.put("cursed_defer_execute_all", func);
-            func
+            break :blk func;
         };
         
         // Execute all defers in LIFO order
@@ -3229,6 +3300,298 @@ pub const CodeGen = struct {
         );
         
         return channel;
+    }
+
+    // ===== ENHANCED VARIABLE AND EXPRESSION HELPERS =====
+
+    /// Enhanced string literal generation with proper memory management
+    fn generateStringLiteral(self: *CodeGen, str: []const u8) CodeGenError!c.LLVMValueRef {
+        // Check if GC is enabled for memory management
+        if (self.runtime_functions.get("cursed_gc_malloc")) |gc_malloc| {
+            // Use GC allocation for string
+            const str_len = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), str.len + 1, 0);
+            const str_ptr = c.LLVMBuildCall2(
+                self.builder,
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                gc_malloc,
+                &[_]c.LLVMValueRef{str_len},
+                1,
+                "gc_str"
+            );
+            
+            // Copy string content
+            try self.generateMemoryCopy(str_ptr, str);
+            return str_ptr;
+        } else {
+            // Fall back to global string constant
+            return c.LLVMBuildGlobalStringPtr(self.builder, str.ptr, "str");
+        }
+    }
+
+    /// Enhanced variable load with proper type preservation
+    fn generateVariableLoad(self: *CodeGen, ident: []const u8) CodeGenError!c.LLVMValueRef {
+        if (self.variables.get(ident)) |alloca| {
+            const var_type = c.LLVMGetAllocatedType(alloca);
+            
+            // Add debug information if available
+            if (self.runtime_functions.get("cursed_debug_variable_access")) |debug_func| {
+                const var_name_str = c.LLVMBuildGlobalStringPtr(self.builder, ident.ptr, "var_name");
+                _ = c.LLVMBuildCall2(
+                    self.builder,
+                    c.LLVMVoidTypeInContext(self.context),
+                    debug_func,
+                    &[_]c.LLVMValueRef{var_name_str},
+                    1,
+                    ""
+                );
+            }
+            
+            return c.LLVMBuildLoad2(self.builder, var_type, alloca, ident.ptr);
+        } else {
+            return CodeGenError.UndefinedSymbol;
+        }
+    }
+
+    /// Type promotion for arithmetic operations
+    fn promoteArithmeticTypes(self: *CodeGen, left: c.LLVMValueRef, right: c.LLVMValueRef) !struct { c.LLVMValueRef, c.LLVMValueRef, c.LLVMTypeRef } {
+        const left_type = c.LLVMTypeOf(left);
+        const right_type = c.LLVMTypeOf(right);
+        
+        const left_kind = c.LLVMGetTypeKind(left_type);
+        const right_kind = c.LLVMGetTypeKind(right_type);
+        
+        // If both are same type, no promotion needed
+        if (left_type == right_type) {
+            return .{ left, right, left_type };
+        }
+        
+        // Float promotion rules: promote integers to floats if one operand is float
+        if (left_kind == c.LLVMDoubleTypeKind or left_kind == c.LLVMFloatTypeKind) {
+            if (right_kind == c.LLVMIntegerTypeKind) {
+                const promoted_right = c.LLVMBuildSIToFP(self.builder, right, left_type, "promote_to_float");
+                return .{ left, promoted_right, left_type };
+            }
+            return .{ left, right, left_type };
+        } else if (right_kind == c.LLVMDoubleTypeKind or right_kind == c.LLVMFloatTypeKind) {
+            if (left_kind == c.LLVMIntegerTypeKind) {
+                const promoted_left = c.LLVMBuildSIToFP(self.builder, left, right_type, "promote_to_float");
+                return .{ promoted_left, right, right_type };
+            }
+            return .{ left, right, right_type };
+        }
+        
+        // Integer promotion rules: promote to larger integer type
+        if (left_kind == c.LLVMIntegerTypeKind and right_kind == c.LLVMIntegerTypeKind) {
+            const left_width = c.LLVMGetIntTypeWidth(left_type);
+            const right_width = c.LLVMGetIntTypeWidth(right_type);
+            
+            if (left_width > right_width) {
+                const promoted_right = c.LLVMBuildSExt(self.builder, right, left_type, "promote_int");
+                return .{ left, promoted_right, left_type };
+            } else if (right_width > left_width) {
+                const promoted_left = c.LLVMBuildSExt(self.builder, left, right_type, "promote_int");
+                return .{ promoted_left, right, right_type };
+            }
+        }
+        
+        // Default: no promotion
+        return .{ left, right, left_type };
+    }
+
+    /// String concatenation operation
+    fn generateStringConcatenation(self: *CodeGen, left: c.LLVMValueRef, right: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        // Get or declare string concatenation runtime function
+        const strcat_func = self.runtime_functions.get("cursed_string_concat") orelse blk: {
+            const strcat_type = c.LLVMFunctionType(
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // returns char*
+                &[_]c.LLVMTypeRef{
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // left string
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // right string
+                },
+                2,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "cursed_string_concat", strcat_type);
+            try self.runtime_functions.put("cursed_string_concat", func);
+            break :blk func;
+        };
+        
+        // Call string concatenation function
+        return c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            strcat_func,
+            &[_]c.LLVMValueRef{ left, right },
+            2,
+            "str_concat"
+        );
+    }
+
+    /// Enhanced type casting with proper CURSED type system support
+    fn generateTypeCast(self: *CodeGen, cast: ast.TypeCastExpression) CodeGenError!c.LLVMValueRef {
+        const source_value = try self.generateExpression(cast.expression.*);
+        const source_type = c.LLVMTypeOf(source_value);
+        const target_type = try self.getCursedLLVMType(cast.target_type);
+        
+        const source_kind = c.LLVMGetTypeKind(source_type);
+        const target_kind = c.LLVMGetTypeKind(target_type);
+        
+        // Integer to float conversion (drip -> meal)
+        if (source_kind == c.LLVMIntegerTypeKind and 
+            (target_kind == c.LLVMFloatTypeKind or target_kind == c.LLVMDoubleTypeKind)) {
+            return c.LLVMBuildSIToFP(self.builder, source_value, target_type, "int_to_float");
+        }
+        
+        // Float to integer conversion (meal -> drip)
+        if ((source_kind == c.LLVMFloatTypeKind or source_kind == c.LLVMDoubleTypeKind) and 
+            target_kind == c.LLVMIntegerTypeKind) {
+            return c.LLVMBuildFPToSI(self.builder, source_value, target_type, "float_to_int");
+        }
+        
+        // Integer to integer conversion (size changes)
+        if (source_kind == c.LLVMIntegerTypeKind and target_kind == c.LLVMIntegerTypeKind) {
+            const source_width = c.LLVMGetIntTypeWidth(source_type);
+            const target_width = c.LLVMGetIntTypeWidth(target_type);
+            
+            if (source_width > target_width) {
+                return c.LLVMBuildTrunc(self.builder, source_value, target_type, "trunc");
+            } else if (source_width < target_width) {
+                return c.LLVMBuildSExt(self.builder, source_value, target_type, "sext");
+            }
+        }
+        
+        // Pointer bitcast
+        if (source_kind == c.LLVMPointerTypeKind and target_kind == c.LLVMPointerTypeKind) {
+            return c.LLVMBuildBitCast(self.builder, source_value, target_type, "ptr_cast");
+        }
+        
+        // Default: bitcast (unsafe but preserves bit pattern)
+        return c.LLVMBuildBitCast(self.builder, source_value, target_type, "cast");
+    }
+
+    /// Get LLVM type for CURSED type
+    fn getCursedLLVMType(self: *CodeGen, cursed_type: []const u8) CodeGenError!c.LLVMTypeRef {
+        if (std.mem.eql(u8, cursed_type, "drip")) {
+            return c.LLVMInt64TypeInContext(self.context);
+        } else if (std.mem.eql(u8, cursed_type, "normie")) {
+            return c.LLVMInt32TypeInContext(self.context);
+        } else if (std.mem.eql(u8, cursed_type, "smol")) {
+            return c.LLVMInt8TypeInContext(self.context);
+        } else if (std.mem.eql(u8, cursed_type, "thicc")) {
+            return c.LLVMInt64TypeInContext(self.context);
+        } else if (std.mem.eql(u8, cursed_type, "meal")) {
+            return c.LLVMDoubleTypeInContext(self.context);
+        } else if (std.mem.eql(u8, cursed_type, "snack")) {
+            return c.LLVMFloatTypeInContext(self.context);
+        } else if (std.mem.eql(u8, cursed_type, "lit")) {
+            return c.LLVMInt1TypeInContext(self.context);
+        } else if (std.mem.eql(u8, cursed_type, "tea")) {
+            return c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+        } else if (std.mem.eql(u8, cursed_type, "sip")) {
+            return c.LLVMInt8TypeInContext(self.context);
+        } else {
+            return CodeGenError.InvalidType;
+        }
+    }
+
+    /// Enhanced variable assignment with proper memory management
+    fn generateAssignment(self: *CodeGen, assign: ast.AssignmentStatement) CodeGenError!void {
+        const value = try self.generateExpression(assign.value);
+        
+        if (self.variables.get(assign.variable)) |alloca| {
+            const var_type = c.LLVMGetAllocatedType(alloca);
+            const value_type = c.LLVMTypeOf(value);
+            
+            // Type-compatible assignment
+            var final_value = value;
+            if (var_type != value_type) {
+                // Attempt automatic type conversion
+                final_value = try self.generateImplicitConversion(value, var_type);
+            }
+            
+            _ = c.LLVMBuildStore(self.builder, final_value, alloca);
+            
+            // Add GC tracking if enabled
+            if (self.runtime_functions.get("cursed_gc_track_assignment")) |gc_track| {
+                _ = c.LLVMBuildCall2(
+                    self.builder,
+                    c.LLVMVoidTypeInContext(self.context),
+                    gc_track,
+                    &[_]c.LLVMValueRef{alloca, final_value},
+                    2,
+                    ""
+                );
+            }
+        } else {
+            return CodeGenError.UndefinedSymbol;
+        }
+    }
+
+    /// Implicit type conversion for compatible types
+    fn generateImplicitConversion(self: *CodeGen, value: c.LLVMValueRef, target_type: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
+        const source_type = c.LLVMTypeOf(value);
+        const source_kind = c.LLVMGetTypeKind(source_type);
+        const target_kind = c.LLVMGetTypeKind(target_type);
+        
+        // Same type - no conversion needed
+        if (source_type == target_type) {
+            return value;
+        }
+        
+        // Integer to integer conversion
+        if (source_kind == c.LLVMIntegerTypeKind and target_kind == c.LLVMIntegerTypeKind) {
+            const source_width = c.LLVMGetIntTypeWidth(source_type);
+            const target_width = c.LLVMGetIntTypeWidth(target_type);
+            
+            if (source_width > target_width) {
+                return c.LLVMBuildTrunc(self.builder, value, target_type, "implicit_trunc");
+            } else if (source_width < target_width) {
+                return c.LLVMBuildSExt(self.builder, value, target_type, "implicit_sext");
+            }
+        }
+        
+        // Integer to float promotion
+        if (source_kind == c.LLVMIntegerTypeKind and 
+            (target_kind == c.LLVMFloatTypeKind or target_kind == c.LLVMDoubleTypeKind)) {
+            return c.LLVMBuildSIToFP(self.builder, value, target_type, "implicit_int_to_float");
+        }
+        
+        // Unsafe but sometimes necessary: bitcast
+        return c.LLVMBuildBitCast(self.builder, value, target_type, "implicit_cast");
+    }
+
+    /// Memory copy helper for string operations
+    fn generateMemoryCopy(self: *CodeGen, dest: c.LLVMValueRef, src: []const u8) CodeGenError!void {
+        // Get or declare memcpy function
+        const memcpy_func = self.runtime_functions.get("memcpy") orelse blk: {
+            const memcpy_type = c.LLVMFunctionType(
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // returns void*
+                &[_]c.LLVMTypeRef{
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // dest
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // src
+                    c.LLVMInt64TypeInContext(self.context), // size
+                },
+                3,
+                0
+            );
+            const func = c.LLVMAddFunction(self.module, "memcpy", memcpy_type);
+            try self.runtime_functions.put("memcpy", func);
+            break :blk func;
+        };
+        
+        // Create source string constant
+        const src_str = c.LLVMBuildGlobalStringPtr(self.builder, src.ptr, "src_str");
+        const src_len = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), src.len, 0);
+        
+        // Call memcpy
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            memcpy_func,
+            &[_]c.LLVMValueRef{ dest, src_str, src_len },
+            3,
+            ""
+        );
     }
 };
 

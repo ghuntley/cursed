@@ -34,6 +34,8 @@ pub const Expression = union(enum) {
     ChannelReceive: ChannelReceiveExpression,
     ChannelCreation: ChannelCreationExpression,
     StructLiteral: StructLiteralExpression,
+    Struct: *StructExpression,
+    MethodCall: *MethodCallExpression,
     Lambda: LambdaExpression,
     Tuple: TupleExpression,
     TupleAccess: TupleAccessExpression,
@@ -90,6 +92,12 @@ pub const Expression = union(enum) {
             },
             .Map => |map| {
                 allocator.destroy(map);
+            },
+            .Struct => |struct_expr| {
+                allocator.destroy(struct_expr);
+            },
+            .MethodCall => |method_call| {
+                allocator.destroy(method_call);
             },
             else => {}, // Simple types don't need special cleanup
         }
@@ -816,6 +824,41 @@ pub const StructLiteralExpression = struct {
 pub const StructFieldAssignment = struct {
     field_name: []const u8,
     value: *Expression,
+};
+
+pub const FieldInitializer = struct {
+    field_name: []const u8,
+    value: *Expression,
+};
+
+pub const StructExpression = struct {
+    struct_name: []const u8,
+    fields: ArrayList(FieldInitializer),
+    
+    pub fn deinit(self: *StructExpression, allocator: Allocator) void {
+        for (self.fields.items) |*field| {
+            field.value.deinit(allocator);
+            allocator.destroy(field.value);
+        }
+        self.fields.deinit();
+    }
+};
+
+pub const MethodCallExpression = struct {
+    object: *Expression,
+    method_name: []const u8,
+    arguments: ArrayList(*Expression),
+    
+    pub fn deinit(self: *MethodCallExpression, allocator: Allocator) void {
+        self.object.deinit(allocator);
+        allocator.destroy(self.object);
+        
+        for (self.arguments.items) |arg| {
+            arg.deinit(allocator);
+            allocator.destroy(arg);
+        }
+        self.arguments.deinit();
+    }
 };
 
 pub const LambdaExpression = struct {

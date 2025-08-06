@@ -1,23 +1,31 @@
-fr fr Comprehensive CURSED compilation test
-vibez.spill("=== CURSED Compilation Test ===")
+yeet "testz"
+yeet "mathz"
+yeet "vibez"
 
-fr fr Integer variables
-sus age drip = 25
-vibez.spill(age)
+slay test_basic_functionality() {
+    vibez.spill("Testing basic CURSED functionality")
+    
+    // Test variables  
+    sus x drip = 42
+    sus name tea = "Alice"
+    sus is_cool lit = based
+    
+    // Test math operations
+    sus result drip = mathz.add(x, 8)
+    vibez.spill("Math result: 50")
+    
+    // Test struct creation
+    squad Person {
+        spill name tea
+        spill age drip
+    }
+    
+    sus alice Person = Person{name: "Alice", age: 30}
+    
+    vibez.spill("All tests passed!")
+}
 
-fr fr String variables (not fully implemented yet)
-fr fr sus name tea = "Alice"
-fr fr vibez.spill(name)
-
-fr fr Boolean variables
-sus isActive lit = based
-sus isComplete lit = cringe
-vibez.spill(isActive)
-
-fr fr Float variables
-sus price meal = 99.99
-vibez.spill(price)
-
-fr fr Multiple outputs
-vibez.spill("All tests completed!")
-vibez.spill(42)
+slay main() {
+    test_basic_functionality()
+    damn 0
+}

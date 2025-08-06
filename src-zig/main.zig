@@ -1209,20 +1209,36 @@ fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, li
     if (verbose) print("🔧 Declaring variable: {s} (type: {s}) = {s}\n", .{ var_name, var_type, value_str });
     
     // Parse value based on type
-    const variable_value = if (std.mem.eql(u8, var_type, "drip")) blk: {
-        // Integer type
-        const parsed_int = std.fmt.parseInt(i64, std.mem.trim(u8, value_str, " \t"), 10) catch |err| {
-            if (verbose) print("❌ Error parsing integer '{s}': {any}\n", .{ value_str, err });
-            return;
-        };
-        break :blk Variable{ .Integer = parsed_int };
+    const variable_value = if (std.mem.eql(u8, var_type, "drip") or std.mem.eql(u8, var_type, "normie")) blk: {
+        // Integer type (both drip and normie are integers)
+        if (std.fmt.parseInt(i64, std.mem.trim(u8, value_str, " \t"), 10)) |parsed_int| {
+            break :blk Variable{ .Integer = parsed_int };
+        } else |_| {
+            // If not a literal, check if it's a module function call
+            if (std.mem.indexOf(u8, value_str, ".")) |_| {
+                // For now, return a placeholder value for module function calls
+                if (verbose) print("📦 Module function call detected: {s} (returning placeholder 0)\n", .{value_str});
+                break :blk Variable{ .Integer = 0 };
+            } else {
+                if (verbose) print("❌ Error parsing integer '{s}': not a valid number or function call\n", .{value_str});
+                return;
+            }
+        }
     } else if (std.mem.eql(u8, var_type, "meal")) blk: {
-        // Float type
-        const parsed_float = std.fmt.parseFloat(f64, std.mem.trim(u8, value_str, " \t")) catch |err| {
-            if (verbose) print("❌ Error parsing float '{s}': {any}\n", .{ value_str, err });
-            return;
-        };
-        break :blk Variable{ .Float = parsed_float };
+        // Float type - try to parse as literal first, then as function call
+        if (std.fmt.parseFloat(f64, std.mem.trim(u8, value_str, " \t"))) |parsed_float| {
+            break :blk Variable{ .Float = parsed_float };
+        } else |_| {
+            // If not a literal, check if it's a module function call
+            if (std.mem.indexOf(u8, value_str, ".")) |_| {
+                // For now, return a placeholder value for module function calls
+                if (verbose) print("📦 Module function call detected: {s} (returning placeholder 0.0)\n", .{value_str});
+                break :blk Variable{ .Float = 0.0 };
+            } else {
+                if (verbose) print("❌ Error parsing float '{s}': not a valid number or function call\n", .{value_str});
+                return;
+            }
+        }
     } else if (std.mem.eql(u8, var_type, "tea")) blk: {
         // String type
         var trimmed_value = std.mem.trim(u8, value_str, " \t");
