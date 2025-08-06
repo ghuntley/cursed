@@ -525,7 +525,7 @@ b.installArtifact(complete_exe);
     // Create LSP server executable
     const lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp",
-        .root_source_file = b.path("src-zig/tools/simple_lsp_server.zig"),
+        .root_source_file = b.path("lsp_standalone.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });

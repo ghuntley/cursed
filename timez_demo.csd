@@ -1,59 +1,36 @@
+yeet "vibez"
 yeet "timez"
 
-# Demo of timez module functionality
-vibez.spill("=== CURSED timez Module Demo ===")
+fr fr Simple timez demonstration
 
-# Get current time
-sus current := timez.now()
-sus current_val normie = current.(normie)
-vibez.spill("Current time (Unix): " + current_val)
-
-# Create durations
-sus five_seconds := timez.seconds(5)
-sus hundred_millis := timez.milliseconds(100)
-sus thousand_nanos := timez.nanoseconds(1000)
-
-vibez.spill("Created durations:")
-sus five_sec_val normie = five_seconds.(normie)
-sus hundred_ms_val normie = hundred_millis.(normie)
-sus thousand_ns_val normie = thousand_nanos.(normie)
-vibez.spill("5 seconds: " + five_sec_val + " nanoseconds")
-vibez.spill("100 milliseconds: " + hundred_ms_val + " nanoseconds")
-vibez.spill("1000 nanoseconds: " + thousand_ns_val + " nanoseconds")
-
-# Time arithmetic
-sus future := timez.add_duration(current, five_seconds)
-sus past := timez.sub_duration(current, hundred_millis)
-
-vibez.spill("Time arithmetic:")
-sus future_val normie = future.(normie)
-sus past_val normie = past.(normie)
-vibez.spill("Future time: " + future_val)
-vibez.spill("Past time: " + past_val)
-
-# Time comparison
-sus is_future_after := timez.is_after(future, current)
-sus is_past_before := timez.is_before(past, current)
-vibez.spill("Future is after current: " + is_future_after)
-vibez.spill("Past is before current: " + is_past_before)
-
-# Formatting
-sus rfc_formatted := timez.format_rfc3339(current)
-sus unix_formatted := timez.format_unix(current)
-sus human_formatted := timez.format_human(current)
-
-vibez.spill("Formatted times:")
-vibez.spill("RFC3339: " + rfc_formatted)
-vibez.spill("Unix: " + unix_formatted)
-vibez.spill("Human: " + human_formatted)
-
-# Duration operations
-sus combined := timez.add_durations(five_seconds, hundred_millis)
-sus doubled := timez.multiply_duration(five_seconds, 2)
-
-sus combined_val normie = combined.(normie)
-sus doubled_val normie = doubled.(normie)
-vibez.spill("Combined duration: " + combined_val + " nanoseconds")
-vibez.spill("Doubled 5 seconds: " + doubled_val + " nanoseconds")
-
-vibez.spill("=== timez Demo Complete ===")
+slay main() {
+    vibez.spill("=== CURSED timez Module Demo ===")
+    
+    fr fr Test current time
+    sus current_time Time = timez.now()
+    sus formatted_time tea = timez.format_rfc3339(current_time)
+    vibez.spillf("Current time: %s", formatted_time)
+    
+    fr fr Test timestamp
+    sus ts normie = timez.timestamp()
+    vibez.spillf("Timestamp (ms): %d", ts)
+    
+    fr fr Test duration creation
+    sus one_hour Duration = timez.hours(1)
+    sus thirty_mins Duration = timez.minutes(30)
+    sus total_duration Duration = timez.add_durations(one_hour, thirty_mins)
+    sus total_mins normie = timez.duration_minutes(total_duration)
+    vibez.spillf("1.5 hours = %d minutes", total_mins)
+    
+    fr fr Test time arithmetic
+    sus future_time Time = timez.add_hours(current_time, 2)
+    sus formatted_future tea = timez.format_human(future_time)
+    vibez.spillf("In 2 hours: %s", formatted_future)
+    
+    fr fr Test timezone operations
+    sus utc_time Time = timez.to_utc(current_time)
+    sus offset normie = timez.timezone_offset()
+    vibez.spillf("UTC offset: %d seconds", offset)
+    
+    vibez.spill("=== timez Demo Complete ===")
+}

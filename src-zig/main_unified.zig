@@ -388,6 +388,7 @@ fn handleFormatCommand(allocator: Allocator, args: [][]const u8) !void {
         if (check_only) {
             try checkFileFormatting(allocator, target, config);
         } else {
+            print("📝 Formatting {s}\n", .{target});
             try formatter.formatFile(allocator, target, config);
             print("✅ Formatted: {s}\n", .{target});
         }
@@ -535,7 +536,7 @@ fn checkFileFormatting(allocator: Allocator, file_path: []const u8, config: form
 }
 
 fn lintDirectory(allocator: Allocator, cursed_linter: *linter.Linter, dir_path: []const u8) !void {
-    const dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
+    var dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
     defer dir.close();
 
     var iterator = dir.iterate();

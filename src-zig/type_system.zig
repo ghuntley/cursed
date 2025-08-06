@@ -429,19 +429,23 @@ pub const TypeChecker = struct {
     // Convert AST types to TypeExpression
     pub fn astTypeToTypeExpression(self: *TypeChecker, ast_type: *const ast.Type) !TypeExpression {
         return switch (ast_type.*) {
-            .Lit => TypeExpression.named(self.allocator, "lit"),
-            .Drip => TypeExpression.named(self.allocator, "drip"),
-            .Normie => TypeExpression.named(self.allocator, "normie"),
-            .Thicc => TypeExpression.named(self.allocator, "thicc"),
-            .Smol => TypeExpression.named(self.allocator, "smol"),
-            .Mid => TypeExpression.named(self.allocator, "mid"),
-            .Tea => TypeExpression.named(self.allocator, "tea"),
-            .Sip => TypeExpression.named(self.allocator, "sip"),
-            .Snack => TypeExpression.named(self.allocator, "snack"),
-            .Meal => TypeExpression.named(self.allocator, "meal"),
-            .Byte => TypeExpression.named(self.allocator, "byte"),
-            .Rune => TypeExpression.named(self.allocator, "rune"),
-            .Cap => TypeExpression.named(self.allocator, "cap"),
+            .Basic => |basic| switch (basic) {
+                .Lit => TypeExpression.named(self.allocator, "lit"),
+                .Drip => TypeExpression.named(self.allocator, "drip"),
+                .Normie => TypeExpression.named(self.allocator, "normie"),
+                .Thicc => TypeExpression.named(self.allocator, "thicc"),
+                .Smol => TypeExpression.named(self.allocator, "smol"),
+                .Mid => TypeExpression.named(self.allocator, "mid"),
+                .Tea => TypeExpression.named(self.allocator, "tea"),
+                .Sip => TypeExpression.named(self.allocator, "sip"),
+                .Snack => TypeExpression.named(self.allocator, "snack"),
+                .Meal => TypeExpression.named(self.allocator, "meal"),
+                .Txt => TypeExpression.named(self.allocator, "txt"),
+                .Byte => TypeExpression.named(self.allocator, "byte"),
+                .Rune => TypeExpression.named(self.allocator, "rune"),
+                .Extra => TypeExpression.named(self.allocator, "extra"),
+                .Cap => TypeExpression.named(self.allocator, "cap"),
+            },
             .Custom => |name| TypeExpression.named(self.allocator, name),
             .Array => |array_info| {
                 const element_type = try self.astTypeToTypeExpression(array_info.element_type);
@@ -455,7 +459,7 @@ pub const TypeChecker = struct {
                 var element_types = ArrayList(TypeExpression).init(self.allocator);
                 defer element_types.deinit();
                 
-                for (tuple_info.element_types.items) |*elem_type| {
+                for (tuple_info.elements.items) |*elem_type| {
                     try element_types.append(try self.astTypeToTypeExpression(elem_type));
                 }
                 
@@ -484,10 +488,10 @@ pub const TypeChecker = struct {
                 return self.checkMemberAccess(member_access);
             },
             .Call => |call_expr| {
-                return self.checkCall(call_expr);
+                return self.checkCall(&call_expr);
             },
             .Binary => |binary| {
-                return self.checkBinaryOperation(binary);
+                return self.checkBinaryOperation(&binary);
             },
             .Unary => |unary| {
                 return self.checkUnaryOperation(unary);
@@ -496,7 +500,7 @@ pub const TypeChecker = struct {
                 var element_types = ArrayList(TypeExpression).init(self.allocator);
                 defer element_types.deinit();
                 
-                for (tuple_expr.elements.items) |*element| {
+                for (tuple_expr.elements.items) |element| {
                     try element_types.append(try self.checkExpression(element));
                 }
                 
@@ -506,7 +510,7 @@ pub const TypeChecker = struct {
         };
     }
 
-    fn checkMemberAccess(self: *TypeChecker, member_access: *const ast.MemberAccess) !TypeExpression {
+    fn checkMemberAccess(self: *TypeChecker, member_access: *const ast.MemberAccessExpression) anyerror!TypeExpression {
         const object_type = try self.checkExpression(member_access.object);
         
         if (object_type.name) |type_name| {
@@ -524,10 +528,10 @@ pub const TypeChecker = struct {
         return error.UnknownProperty;
     }
 
-    fn checkCall(self: *TypeChecker, call_expr: *const ast.CallExpression) !TypeExpression {
+    fn checkCall(self: *TypeChecker, call_expr: anytype) !TypeExpression {
         // Check if this is a method call
         if (call_expr.function.* == .MemberAccess) {
-            const member_access = &call_expr.function.MemberAccess;
+            const member_access = call_expr.function.MemberAccess;
             const object_type = try self.checkExpression(member_access.object);
             
             if (object_type.name) |type_name| {
@@ -540,7 +544,7 @@ pub const TypeChecker = struct {
                         
                         // Check argument types
                         for (call_expr.arguments.items, 0..) |*arg, i| {
-                            const arg_type = try self.checkExpression(arg);
+                            const arg_type = try self.checkExpression(arg.*);
                             const expected_type = &method.parameters.items[i];
                             if (!self.typesCompatible(&arg_type, expected_type)) {
                                 return error.TypeMismatch;
@@ -564,59 +568,63 @@ pub const TypeChecker = struct {
         const left_type = try self.checkExpression(binary.left);
         const right_type = try self.checkExpression(binary.right);
         
-        switch (binary.operator) {
-            .Add, .Subtract, .Multiply, .Divide => {
-                if (left_type.isNumeric() and right_type.isNumeric()) {
-                    return left_type; // Return left type for now
-                } else {
-                    return error.TypeMismatch;
-                }
-            },
-            .Equal, .NotEqual, .Less, .Greater, .LessEqual, .GreaterEqual => {
-                if (self.typesCompatible(&left_type, &right_type)) {
-                    return TypeExpression.named(self.allocator, "lit");
-                } else {
-                    return error.TypeMismatch;
-                }
-            },
-            .And, .Or => {
-                if (left_type.isBoolean() and right_type.isBoolean()) {
-                    return TypeExpression.named(self.allocator, "lit");
-                } else {
-                    return error.TypeMismatch;
-                }
-            },
+        if (std.mem.eql(u8, binary.operator, "+") or 
+            std.mem.eql(u8, binary.operator, "-") or 
+            std.mem.eql(u8, binary.operator, "*") or 
+            std.mem.eql(u8, binary.operator, "/")) {
+            if (left_type.isNumeric() and right_type.isNumeric()) {
+                return left_type; // Return left type for now
+            } else {
+                return error.TypeMismatch;
+            }
+        } else if (std.mem.eql(u8, binary.operator, "==") or 
+                   std.mem.eql(u8, binary.operator, "!=") or 
+                   std.mem.eql(u8, binary.operator, "<") or 
+                   std.mem.eql(u8, binary.operator, "<=") or 
+                   std.mem.eql(u8, binary.operator, ">") or 
+                   std.mem.eql(u8, binary.operator, ">=")) {
+            if (self.typesCompatible(&left_type, &right_type)) {
+                return TypeExpression.named(self.allocator, "lit");
+            } else {
+                return error.TypeMismatch;
+            }
+        } else if (std.mem.eql(u8, binary.operator, "&&") or 
+                   std.mem.eql(u8, binary.operator, "||")) {
+            if (left_type.isBoolean() and right_type.isBoolean()) {
+                return TypeExpression.named(self.allocator, "lit");
+            } else {
+                return error.TypeMismatch;
+            }
+        } else {
+            return error.UnsupportedOperation;
         }
     }
 
     fn checkUnaryOperation(self: *TypeChecker, unary: *const ast.UnaryExpression) !TypeExpression {
         const operand_type = try self.checkExpression(unary.operand);
         
-        switch (unary.operator) {
-            .Not => {
-                if (operand_type.isBoolean()) {
-                    return TypeExpression.named(self.allocator, "lit");
-                } else {
-                    return error.TypeMismatch;
-                }
-            },
-            .Minus, .Plus => {
-                if (operand_type.isNumeric()) {
-                    return operand_type;
-                } else {
-                    return error.TypeMismatch;
-                }
-            },
-            .AddressOf => {
-                return TypeExpression.pointer(self.allocator, operand_type);
-            },
-            .Dereference => {
-                if (operand_type.kind == .Pointer and operand_type.parameters.items.len > 0) {
-                    return operand_type.parameters.items[0];
-                } else {
-                    return error.TypeMismatch;
-                }
-            },
+        if (std.mem.eql(u8, unary.operator, "!")) {
+            if (operand_type.isBoolean()) {
+                return TypeExpression.named(self.allocator, "lit");
+            } else {
+                return error.TypeMismatch;
+            }
+        } else if (std.mem.eql(u8, unary.operator, "-") or std.mem.eql(u8, unary.operator, "+")) {
+            if (operand_type.isNumeric()) {
+                return operand_type;
+            } else {
+                return error.TypeMismatch;
+            }
+        } else if (std.mem.eql(u8, unary.operator, "&")) {
+            return TypeExpression.pointer(self.allocator, operand_type);
+        } else if (std.mem.eql(u8, unary.operator, "*")) {
+            if (operand_type.kind == .Pointer and operand_type.parameters.items.len > 0) {
+                return operand_type.parameters.items[0];
+            } else {
+                return error.TypeMismatch;
+            }
+        } else {
+            return error.UnsupportedOperation;
         }
     }
 
@@ -625,7 +633,7 @@ pub const TypeChecker = struct {
         switch (stmt.*) {
             .Let => |var_decl| {
                 const var_type: TypeExpression = if (var_decl.type_annotation) |type_annotation|
-                    try self.astTypeToTypeExpression(type_annotation)
+                    try self.astTypeToTypeExpression(&type_annotation)
                 else if (var_decl.initializer) |init_expr|
                     try self.checkExpression(init_expr)
                 else
@@ -642,7 +650,7 @@ pub const TypeChecker = struct {
                 try self.addVariable(var_decl.name, var_type, var_decl.is_mutable);
             },
             .Expression => |expr| {
-                _ = try self.checkExpression(expr);
+                _ = try self.checkExpression(@ptrCast(@alignCast(expr)));
             },
             // Note: Block statements handled at higher level
             else => {

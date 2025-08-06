@@ -9,6 +9,13 @@ fr fr Test current time
 sus current_time Time = timez.now()
 assert_true(current_time > 0)
 
+fr fr Test timestamp functions
+sus ts normie = timez.timestamp()
+assert_true(ts > 0)
+
+sus ut normie = timez.unix_time()
+assert_true(ut > 0)
+
 fr fr Test Unix timestamp creation
 sus unix_time Time = timez.unix(1720857600)
 assert_true(unix_time > 0)
@@ -16,6 +23,10 @@ assert_true(unix_time > 0)
 fr fr Test RFC3339 parsing
 sus parsed_time Time = timez.parse_rfc3339("2024-07-13T12:34:56Z")
 assert_true(parsed_time > 0)
+
+fr fr Test advanced parsing
+sus parsed_iso Time = timez.parse_time("2024-07-13T12:34:56Z", "iso8601")
+assert_true(parsed_iso > 0)
 
 test_start("Duration Operations")
 
@@ -35,6 +46,19 @@ fr fr Test duration creation from nanoseconds
 sus dur_ns Duration = timez.nanoseconds(1000000000)
 assert_true(dur_ns > 0)
 
+fr fr Test additional duration creation
+sus dur_min Duration = timez.minutes(30)
+assert_true(dur_min > 0)
+
+sus dur_hour Duration = timez.hours(2)
+assert_true(dur_hour > 0)
+
+sus dur_day Duration = timez.days(1)
+assert_true(dur_day > 0)
+
+sus dur_week Duration = timez.weeks(1)
+assert_true(dur_week > 0)
+
 test_start("Time Arithmetic")
 
 fr fr Test adding duration to time
@@ -52,6 +76,32 @@ sus time1 Time = timez.unix(1720857600)
 sus time2 Time = timez.unix(1720861200) fr fr 1 hour later
 sus diff Duration = timez.time_diff(time1, time2)
 assert_true(diff > 0)
+
+fr fr Test convenient time arithmetic
+sus base Time = timez.unix(1720857600)
+sus plus_sec Time = timez.add_seconds(base, 60)
+assert_true(plus_sec > base)
+
+sus plus_min Time = timez.add_minutes(base, 30)
+assert_true(plus_min > base)
+
+sus plus_hour Time = timez.add_hours(base, 2)
+assert_true(plus_hour > base)
+
+sus plus_day Time = timez.add_days(base, 1)
+assert_true(plus_day > base)
+
+fr fr Test duration calculations
+sus diff_sec normie = timez.diff_seconds(time1, time2)
+assert_eq_int(diff_sec, 3600) fr fr 1 hour = 3600 seconds
+
+sus diff_day normie = timez.diff_days(time1, time2)
+assert_true(diff_day >= 0)
+
+fr fr Test elapsed time
+sus ref_time Time = timez.unix(1720857600)
+sus elapsed_dur Duration = timez.elapsed(ref_time)
+assert_true(elapsed_dur >= 0)
 
 test_start("Time Comparison")
 
@@ -85,6 +135,20 @@ fr fr Test human-readable formatting
 sus human_formatted tea = timez.format_human(current)
 assert_eq_string(human_formatted, "July 13, 2024 12:34:56 UTC")
 
+fr fr Test ISO8601 formatting
+sus iso_formatted tea = timez.iso8601(current)
+assert_eq_string(iso_formatted, "2024-07-13T12:34:56Z")
+
+fr fr Test advanced formatting
+sus fmt_iso tea = timez.format_time(current, "iso")
+assert_eq_string(fmt_iso, "2024-07-13T12:34:56Z")
+
+sus fmt_unix tea = timez.format_time(current, "unix")
+assert_eq_string(fmt_unix, "1720857600")
+
+sus fmt_human tea = timez.format_time(current, "human")
+assert_eq_string(fmt_human, "July 13, 2024 12:34:56 UTC")
+
 test_start("Duration Conversions")
 
 fr fr Test duration to seconds conversion
@@ -103,6 +167,18 @@ assert_eq_int(dur_micros, 120000000)
 fr fr Test duration to nanoseconds conversion
 sus dur_nanos normie = timez.duration_nanos(dur)
 assert_eq_int(dur_nanos, 120000000000)
+
+fr fr Test additional duration conversions
+sus large_dur Duration = timez.hours(2)
+sus dur_minutes normie = timez.duration_minutes(large_dur)
+assert_eq_int(dur_minutes, 120)
+
+sus dur_hours normie = timez.duration_hours(large_dur)
+assert_eq_int(dur_hours, 2)
+
+sus day_dur Duration = timez.days(2)
+sus dur_days normie = timez.duration_days(day_dur)
+assert_eq_int(dur_days, 2)
 
 test_start("Duration Arithmetic")
 
@@ -146,12 +222,34 @@ assert_false(timez.duration_less(dur_c, dur_a))
 assert_true(timez.duration_greater(dur_c, dur_a))
 assert_false(timez.duration_greater(dur_a, dur_c))
 
-test_start("Sleep Function")
+test_start("Sleep and Delay Functions")
 
 fr fr Test sleep function (simulation)
 sus start_time Time = timez.now()
 sus sleep_dur Duration = timez.milliseconds(100)
 timez.sleep(sleep_dur)
 assert_true(based) fr fr Sleep completed without error
+
+fr fr Test usleep function
+timez.usleep(1000) fr fr 1000 microseconds
+assert_true(based) fr fr usleep completed without error
+
+fr fr Test delay function
+sus delay_dur Duration = timez.milliseconds(50)
+timez.delay(delay_dur)
+assert_true(based) fr fr delay completed without error
+
+test_start("Timezone Operations")
+
+fr fr Test timezone functions
+sus current Time = timez.now()
+sus utc_time Time = timez.to_utc(current)
+assert_eq_int(utc_time.(normie), current.(normie)) fr fr Should be same in UTC implementation
+
+sus from_utc_time Time = timez.from_utc(current)
+assert_eq_int(from_utc_time.(normie), current.(normie)) fr fr Should be same in UTC implementation
+
+sus offset normie = timez.timezone_offset()
+assert_eq_int(offset, 0) fr fr UTC offset should be 0
 
 print_test_summary()

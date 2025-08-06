@@ -1,113 +1,359 @@
 yeet "atomic_drip"
-yeet "error_drip"
+yeet "error_drip"  
 yeet "memory"
+yeet "testz"
 
-fr fr Concurrenz Module - Enhanced Synchronization Primitives
-fr fr Pure CURSED implementation with hardware atomics
+fr fr Concurrenz Module - Complete Synchronization Primitives
+fr fr Pure CURSED implementation with hardware atomics and proper memory ordering
+
+fr fr Memory ordering constants for atomic operations
+sus RELAXED normie = 0
+sus ACQUIRE normie = 1  
+sus RELEASE normie = 2
+sus ACQREL normie = 3
+sus SEQCST normie = 4
 
 fr fr Enhanced Mutex using hardware atomics
 struct Mutex {
-    spill lock_state *atomic_drip.AtomicI32  fr fr 0=unlocked, 1=locked
-    spill owner *atomic_drip.AtomicI64       fr fr Owner thread/goroutine ID
-    spill waiters *atomic_drip.AtomicI32     fr fr Number of waiting goroutines
-    spill recursive_count *atomic_drip.AtomicI32  fr fr For recursive locking
+    spill lock_state normie     fr fr 0=unlocked, 1=locked, using atomic operations
+    spill owner thicc           fr fr Owner thread/goroutine ID
+    spill waiters normie        fr fr Number of waiting goroutines
+    spill recursive_count normie fr fr For recursive locking
 }
 
 fr fr Enhanced WaitGroup with atomic operations
 struct WaitGroup {
-    spill counter *atomic_drip.AtomicI32     fr fr Number of operations to wait for
-    spill waiters *atomic_drip.AtomicI32     fr fr Number of goroutines waiting
-    spill generation *atomic_drip.AtomicI32  fr fr Generation counter for reuse
-    spill done_flag *atomic_drip.AtomicFlag  fr fr Done signal flag
+    spill counter normie        fr fr Number of operations to wait for
+    spill waiters normie        fr fr Number of goroutines waiting
+    spill generation normie     fr fr Generation counter for reuse
+    spill done_flag normie      fr fr Done signal flag (0=not done, 1=done)
 }
 
-fr fr Channel structure for communication
+fr fr Channel structure for buffered communication
 struct Channel {
-    spill buffer []normie                    fr fr Message buffer
-    spill capacity normie                    fr fr Maximum buffer size
-    spill size *atomic_drip.AtomicI32        fr fr Current buffer size
-    spill send_pos *atomic_drip.AtomicI32    fr fr Send position in buffer
-    spill recv_pos *atomic_drip.AtomicI32    fr fr Receive position in buffer
-    spill closed *atomic_drip.AtomicFlag     fr fr Channel closed flag
-    spill send_lock *Mutex                   fr fr Send operation lock
-    spill recv_lock *Mutex                   fr fr Receive operation lock
+    spill buffer []normie       fr fr Message buffer array
+    spill capacity normie       fr fr Maximum buffer size
+    spill size normie           fr fr Current buffer size (atomic)
+    spill send_pos normie       fr fr Send position in buffer (atomic)
+    spill recv_pos normie       fr fr Receive position in buffer (atomic)
+    spill closed normie         fr fr Channel closed flag (atomic, 0=open, 1=closed)
+    spill send_waiters normie   fr fr Number of goroutines waiting to send
+    spill recv_waiters normie   fr fr Number of goroutines waiting to receive
 }
+
+fr fr Thread pool structure for concurrent execution
+struct ThreadPool {
+    spill workers []normie      fr fr Worker thread IDs
+    spill task_queue []normie   fr fr Queue of pending tasks
+    spill queue_size normie     fr fr Current queue size (atomic)
+    spill queue_head normie     fr fr Queue head position (atomic)
+    spill queue_tail normie     fr fr Queue tail position (atomic)
+    spill active_workers normie fr fr Number of active workers (atomic)
+    spill shutdown normie       fr fr Shutdown flag (atomic, 0=running, 1=shutdown)
+}
+
+fr fr Barrier synchronization structure
+struct Barrier {
+    spill count normie          fr fr Total number of participants
+    spill arrived normie        fr fr Number of participants arrived (atomic)
+    spill generation normie     fr fr Generation counter for reuse (atomic)
+    spill waiting_list []normie fr fr List of waiting goroutines
+}
+
+fr fr Semaphore structure for resource counting
+struct Semaphore {
+    spill permits normie        fr fr Available permits (atomic)
+    spill max_permits normie    fr fr Maximum permits allowed
+    spill waiters []normie      fr fr Queue of waiting goroutines
+    spill waiter_count normie   fr fr Number of waiting goroutines (atomic)
+}
+
+fr fr Read-Write Mutex structure
+struct RWMutex {
+    spill readers normie        fr fr Number of active readers (atomic)
+    spill writer normie         fr fr Writer flag (atomic, 0=no writer, 1=writer active)
+    spill pending_writers normie fr fr Number of pending writers (atomic)
+    spill reader_waiters []normie fr fr Queue of waiting readers
+    spill writer_waiters []normie fr fr Queue of waiting writers
+}
+
+fr fr Condition Variable structure
+struct CondVar {
+    spill waiters []normie      fr fr Queue of waiting goroutines
+    spill waiter_count normie   fr fr Number of waiting goroutines (atomic)
+    spill signal_count normie   fr fr Number of signals sent (atomic)
+    spill broadcast_flag normie fr fr Broadcast flag (atomic)
+}
+
+fr fr Once structure for one-time initialization
+struct Once {
+    spill done normie           fr fr Done flag (atomic, 0=not done, 1=done)
+    spill in_progress normie    fr fr In progress flag (atomic)
+}
+
+fr fr Atomic wrapper structures for type safety
+struct AtomicI32 {
+    spill value normie          fr fr 32-bit atomic integer value
+}
+
+struct AtomicI64 {
+    spill value thicc           fr fr 64-bit atomic integer value
+}
+
+struct AtomicBool {
+    spill value normie          fr fr Boolean atomic value (0=false, 1=true)
+}
+
+fr fr =============================================================================
+fr fr MUTEX OPERATIONS - Thread-safe locking primitives
+fr fr =============================================================================
 
 fr fr Create new mutex for synchronization
-slay create_mutex() Mutex {
-    sus mutex Mutex = 0
+slay create_mutex() *Mutex {
+    sus mutex *Mutex = memory.allocate(Mutex)
+    mutex.lock_state = 0
+    mutex.owner = 0
+    mutex.waiters = 0
+    mutex.recursive_count = 0
     damn mutex
 }
 
-fr fr Lock mutex (blocking operation)
-slay mutex_lock(mutex Mutex) lit { fr fr Pure CURSED mutex implementation fr fr Uses atomic compare-and-swap semantics
+fr fr Lock mutex (blocking operation) using atomic compare-and-swap
+slay mutex_lock(mutex *Mutex) lit {
     lowkey mutex == 0 {
-        mutex = 1
+        damn cap  fr fr Invalid mutex
+    }
+    
+    fr fr Try to acquire lock atomically
+    sus expected normie = 0
+    sus current_owner thicc = 42  fr fr Current goroutine ID (simplified)
+    
+    fr fr Use atomic compare-and-swap to acquire lock
+    lowkey atomic_drip.compare_and_swap_i32(&mutex.lock_state, expected, 1, ACQUIRE) {
+        mutex.owner = current_owner
         damn based
     }
-    damn cap
+    
+    fr fr Failed to acquire - increment waiters and retry
+    atomic_drip.atomic_add_i32(&mutex.waiters, 1, RELAXED)
+    bestie mutex.lock_state != 0 {
+        fr fr Spin-wait for lock (in real implementation would use OS primitives)
+    }
+    atomic_drip.atomic_sub_i32(&mutex.waiters, 1, RELAXED)
+    damn based
 }
 
-fr fr Unlock mutex
-slay mutex_unlock(mutex Mutex) lit {
-    mutex = 0
+fr fr Unlock mutex using atomic operations
+slay mutex_unlock(mutex *Mutex) lit {
+    lowkey mutex == 0 {
+        damn cap
+    }
+    
+    fr fr Verify we own the lock
+    sus current_owner thicc = 42
+    lowkey mutex.owner != current_owner {
+        damn cap  fr fr Not lock owner
+    }
+    
+    fr fr Release lock atomically
+    mutex.owner = 0
+    atomic_drip.atomic_store_i32(&mutex.lock_state, 0, RELEASE)
     damn based
 }
 
 fr fr Try to lock mutex (non-blocking)
-slay mutex_trylock(mutex Mutex) lit {
+slay mutex_trylock(mutex *Mutex) lit {
     lowkey mutex == 0 {
-        mutex = 1
+        damn cap
+    }
+    
+    sus expected normie = 0
+    sus current_owner thicc = 42
+    
+    lowkey atomic_drip.compare_and_swap_i32(&mutex.lock_state, expected, 1, ACQUIRE) {
+        mutex.owner = current_owner
         damn based
     }
     damn cap
 }
 
+fr fr =============================================================================
+fr fr WAITGROUP OPERATIONS - Goroutine synchronization
+fr fr =============================================================================
+
 fr fr Create new wait group for goroutine synchronization
-slay create_waitgroup() WaitGroup {
-    sus wg WaitGroup = 0
+slay create_waitgroup() *WaitGroup {
+    sus wg *WaitGroup = memory.allocate(WaitGroup)
+    wg.counter = 0
+    wg.waiters = 0
+    wg.generation = 0
+    wg.done_flag = 0
     damn wg
 }
 
-fr fr Add count to wait group
-slay waitgroup_add(wg WaitGroup, count normie) lit {
-    wg = wg + count
+fr fr Add count to wait group using atomic operations
+slay waitgroup_add(wg *WaitGroup, count normie) lit {
+    lowkey wg == 0 {
+        damn cap
+    }
+    
+    sus old_counter normie = atomic_drip.atomic_add_i32(&wg.counter, count, SEQCST)
+    lowkey old_counter + count < 0 {
+        damn cap  fr fr Would make counter negative
+    }
     damn based
 }
 
 fr fr Mark one task as done in wait group
-slay waitgroup_done(wg WaitGroup) lit {
-    lowkey wg > 0 {
-        wg = wg - 1
-        damn based
+slay waitgroup_done(wg *WaitGroup) lit {
+    lowkey wg == 0 {
+        damn cap
     }
-    damn cap
-}
-
-fr fr Wait for all tasks to complete
-slay waitgroup_wait(wg WaitGroup) lit {
-    bestie wg > 0 { fr fr Busy wait implementation fr fr In real implementation would use OS primitives
+    
+    sus old_counter normie = atomic_drip.atomic_sub_i32(&wg.counter, 1, SEQCST)
+    lowkey old_counter <= 0 {
+        damn cap  fr fr Already at zero or negative
+    }
+    
+    fr fr Check if all tasks are done
+    lowkey old_counter == 1 {
+        atomic_drip.atomic_store_i32(&wg.done_flag, 1, RELEASE)
     }
     damn based
 }
 
-fr fr Create synchronous channel for communication
-slay create_sync_channel() SyncChannel {
-    sus channel SyncChannel = 0
-    damn channel
+fr fr Wait for all tasks to complete
+slay waitgroup_wait(wg *WaitGroup) lit {
+    lowkey wg == 0 {
+        damn cap
+    }
+    
+    atomic_drip.atomic_add_i32(&wg.waiters, 1, RELAXED)
+    
+    bestie atomic_drip.atomic_load_i32(&wg.counter, ACQUIRE) > 0 {
+        fr fr Spin-wait for completion (in real implementation would use OS primitives)
+    }
+    
+    atomic_drip.atomic_sub_i32(&wg.waiters, 1, RELAXED)
+    damn based
+}
+
+fr fr =============================================================================
+fr fr CHANNEL OPERATIONS - Buffered communication primitives
+fr fr =============================================================================
+
+fr fr Create buffered channel for communication
+slay create_channel(capacity normie) *Channel {
+    sus ch *Channel = memory.allocate(Channel)
+    ch.buffer = memory.allocate_array(normie, capacity)
+    ch.capacity = capacity
+    ch.size = 0
+    ch.send_pos = 0
+    ch.recv_pos = 0
+    ch.closed = 0
+    ch.send_waiters = 0
+    ch.recv_waiters = 0
+    damn ch
+}
+
+fr fr Create synchronous channel (unbuffered)
+slay create_sync_channel() *Channel {
+    damn create_channel(0)
 }
 
 fr fr Send data through channel (blocking)
-slay channel_send(channel SyncChannel, data normie) lit { fr fr Simple synchronous send implementation
-    channel = data
+slay channel_send(ch *Channel, data normie) lit {
+    lowkey ch == 0 {
+        damn cap  fr fr Invalid channel
+    }
+    
+    fr fr Check if channel is closed
+    lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
+        damn cap  fr fr Channel closed
+    }
+    
+    fr fr For unbuffered channels
+    lowkey ch.capacity == 0 {
+        fr fr Synchronous send - wait for receiver
+        atomic_drip.atomic_add_i32(&ch.send_waiters, 1, RELAXED)
+        ch.buffer[0] = data  fr fr Store data temporarily
+        bestie atomic_drip.atomic_load_i32(&ch.recv_waiters, ACQUIRE) == 0 {
+            fr fr Wait for receiver
+        }
+        atomic_drip.atomic_sub_i32(&ch.send_waiters, 1, RELAXED)
+        damn based
+    }
+    
+    fr fr For buffered channels - check if space available
+    bestie atomic_drip.atomic_load_i32(&ch.size, ACQUIRE) >= ch.capacity {
+        atomic_drip.atomic_add_i32(&ch.send_waiters, 1, RELAXED)
+        fr fr Wait for space (simplified - real implementation would block goroutine)
+        atomic_drip.atomic_sub_i32(&ch.send_waiters, 1, RELAXED)
+    }
+    
+    fr fr Add data to buffer atomically
+    sus current_pos normie = atomic_drip.atomic_load_i32(&ch.send_pos, ACQUIRE)
+    ch.buffer[current_pos % ch.capacity] = data
+    atomic_drip.atomic_add_i32(&ch.send_pos, 1, RELEASE)
+    atomic_drip.atomic_add_i32(&ch.size, 1, RELEASE)
     damn based
 }
 
 fr fr Receive data from channel (blocking)
-slay channel_receive(channel SyncChannel) normie { fr fr Simple synchronous receive implementation
-    sus data normie = channel
-    channel = 0
+slay channel_receive(ch *Channel) normie {
+    lowkey ch == 0 {
+        damn 0  fr fr Invalid channel
+    }
+    
+    fr fr Check if channel is closed and empty
+    lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 && 
+          atomic_drip.atomic_load_i32(&ch.size, ACQUIRE) == 0 {
+        damn 0  fr fr Channel closed and empty
+    }
+    
+    fr fr For unbuffered channels
+    lowkey ch.capacity == 0 {
+        atomic_drip.atomic_add_i32(&ch.recv_waiters, 1, RELAXED)
+        bestie atomic_drip.atomic_load_i32(&ch.send_waiters, ACQUIRE) == 0 {
+            fr fr Wait for sender
+        }
+        sus data normie = ch.buffer[0]  fr fr Get data from sender
+        atomic_drip.atomic_sub_i32(&ch.recv_waiters, 1, RELAXED)
+        damn data
+    }
+    
+    fr fr For buffered channels - wait for data
+    bestie atomic_drip.atomic_load_i32(&ch.size, ACQUIRE) == 0 {
+        atomic_drip.atomic_add_i32(&ch.recv_waiters, 1, RELAXED)
+        fr fr Wait for data (simplified - real implementation would block goroutine)
+        atomic_drip.atomic_sub_i32(&ch.recv_waiters, 1, RELAXED)
+    }
+    
+    fr fr Get data from buffer atomically
+    sus current_pos normie = atomic_drip.atomic_load_i32(&ch.recv_pos, ACQUIRE)
+    sus data normie = ch.buffer[current_pos % ch.capacity]
+    atomic_drip.atomic_add_i32(&ch.recv_pos, 1, RELEASE)
+    atomic_drip.atomic_sub_i32(&ch.size, 1, RELEASE)
     damn data
+}
+
+fr fr Close channel to signal no more data
+slay channel_close(ch *Channel) lit {
+    lowkey ch == 0 {
+        damn cap
+    }
+    
+    atomic_drip.atomic_store_i32(&ch.closed, 1, RELEASE)
+    damn based
+}
+
+fr fr Check if channel is closed
+slay channel_is_closed(ch *Channel) lit {
+    lowkey ch == 0 {
+        damn based  fr fr Invalid channel treated as closed
+    }
+    
+    damn atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1
 }
 
 fr fr Create read-write mutex for shared resource access
@@ -179,76 +425,292 @@ slay condition_broadcast(condition Mutex) lit {
     damn based
 }
 
-fr fr Atomic compare and swap operation
-slay atomic_cas(addr Mutex, old normie, new normie) lit {
-    lowkey addr == old {
-        addr = new
-        damn based
+fr fr =============================================================================
+fr fr ATOMIC OPERATIONS - Lock-free primitives
+fr fr =============================================================================
+
+fr fr Create atomic 32-bit integer
+slay atomic_i32_new(initial normie) *AtomicI32 {
+    sus atomic *AtomicI32 = memory.allocate(AtomicI32)
+    atomic.value = initial
+    damn atomic
+}
+
+fr fr Create atomic 64-bit integer
+slay atomic_i64_new(initial thicc) *AtomicI64 {
+    sus atomic *AtomicI64 = memory.allocate(AtomicI64)
+    atomic.value = initial
+    damn atomic
+}
+
+fr fr Create atomic boolean
+slay atomic_bool_new(initial lit) *AtomicBool {
+    sus atomic *AtomicBool = memory.allocate(AtomicBool)
+    atomic.value = lowkey initial == based { 1 } else { 0 }
+    damn atomic
+}
+
+fr fr Atomic compare and swap operation for 32-bit
+slay atomic_cas_i32(atomic *AtomicI32, expected normie, desired normie) lit {
+    lowkey atomic == 0 {
+        damn cap
     }
-    damn cap
+    damn atomic_drip.compare_and_swap_i32(&atomic.value, expected, desired, SEQCST)
+}
+
+fr fr Atomic compare and swap operation for 64-bit
+slay atomic_cas_i64(atomic *AtomicI64, expected thicc, desired thicc) lit {
+    lowkey atomic == 0 {
+        damn cap
+    }
+    damn atomic_drip.compare_and_swap_i64(&atomic.value, expected, desired, SEQCST)
 }
 
 fr fr Atomic increment operation
-slay atomic_increment(addr Mutex) normie {
-    sus old normie = addr
-    addr = addr + 1
-    damn old
+slay atomic_increment(atomic *AtomicI32) normie {
+    lowkey atomic == 0 {
+        damn 0
+    }
+    damn atomic_drip.atomic_add_i32(&atomic.value, 1, SEQCST)
 }
 
 fr fr Atomic decrement operation
-slay atomic_decrement(addr Mutex) normie {
-    sus old normie = addr
-    addr = addr - 1
-    damn old
+slay atomic_decrement(atomic *AtomicI32) normie {
+    lowkey atomic == 0 {
+        damn 0
+    }
+    damn atomic_drip.atomic_sub_i32(&atomic.value, 1, SEQCST)
 }
 
-fr fr Barrier synchronization primitive
-slay create_barrier(count normie) WaitGroup {
-    sus barrier WaitGroup = count
+fr fr Atomic load operation
+slay atomic_load_i32(atomic *AtomicI32) normie {
+    lowkey atomic == 0 {
+        damn 0
+    }
+    damn atomic_drip.atomic_load_i32(&atomic.value, ACQUIRE)
+}
+
+fr fr Atomic store operation
+slay atomic_store_i32(atomic *AtomicI32, value normie) {
+    lowkey atomic == 0 {
+        damn
+    }
+    atomic_drip.atomic_store_i32(&atomic.value, value, RELEASE)
+}
+
+fr fr Atomic add operation
+slay atomic_add_i32(atomic *AtomicI32, delta normie) normie {
+    lowkey atomic == 0 {
+        damn 0
+    }
+    damn atomic_drip.atomic_add_i32(&atomic.value, delta, SEQCST)
+}
+
+fr fr Atomic subtract operation
+slay atomic_sub_i32(atomic *AtomicI32, delta normie) normie {
+    lowkey atomic == 0 {
+        damn 0
+    }
+    damn atomic_drip.atomic_sub_i32(&atomic.value, delta, SEQCST)
+}
+
+fr fr =============================================================================
+fr fr BARRIER OPERATIONS - Synchronization point for multiple goroutines
+fr fr =============================================================================
+
+fr fr Create barrier for synchronized waiting
+slay create_barrier(count normie) *Barrier {
+    sus barrier *Barrier = memory.allocate(Barrier)
+    barrier.count = count
+    barrier.arrived = 0
+    barrier.generation = 0
+    barrier.waiting_list = memory.allocate_array(normie, count)
     damn barrier
 }
 
 fr fr Wait at barrier until all participants arrive
-slay barrier_wait(barrier WaitGroup) lit {
-    barrier = barrier - 1
-    bestie barrier > 0 { fr fr Wait for all participants
+slay barrier_wait(barrier *Barrier) lit {
+    lowkey barrier == 0 {
+        damn cap
+    }
+    
+    sus current_gen normie = atomic_drip.atomic_load_i32(&barrier.generation, ACQUIRE)
+    sus arrived_count normie = atomic_drip.atomic_add_i32(&barrier.arrived, 1, SEQCST)
+    
+    lowkey arrived_count + 1 == barrier.count {
+        fr fr Last participant - wake everyone up
+        atomic_drip.atomic_store_i32(&barrier.arrived, 0, RELEASE)
+        atomic_drip.atomic_add_i32(&barrier.generation, 1, RELEASE)
+        damn based
+    }
+    
+    fr fr Wait for all participants to arrive
+    bestie atomic_drip.atomic_load_i32(&barrier.generation, ACQUIRE) == current_gen {
+        fr fr Spin-wait (real implementation would block goroutine)
     }
     damn based
 }
 
-fr fr Semaphore for resource counting
-slay create_semaphore(initial normie) Mutex {
-    sus semaphore Mutex = initial
-    damn semaphore
+fr fr =============================================================================
+fr fr SEMAPHORE OPERATIONS - Resource counting primitive
+fr fr =============================================================================
+
+fr fr Create semaphore for resource counting
+slay create_semaphore(initial normie) *Semaphore {
+    sus sem *Semaphore = memory.allocate(Semaphore)
+    sem.permits = initial
+    sem.max_permits = initial
+    sem.waiters = memory.allocate_array(normie, 100)  fr fr Max 100 waiters
+    sem.waiter_count = 0
+    damn sem
 }
 
 fr fr Acquire semaphore (decrement count)
-slay semaphore_acquire(semaphore Mutex) lit {
-    lowkey semaphore > 0 {
-        semaphore = semaphore - 1
-        damn based
+slay semaphore_acquire(sem *Semaphore) lit {
+    lowkey sem == 0 {
+        damn cap
+    }
+    
+    fr fr Try to acquire permit atomically
+    bestie based {
+        sus current_permits normie = atomic_drip.atomic_load_i32(&sem.permits, ACQUIRE)
+        lowkey current_permits > 0 {
+            lowkey atomic_drip.compare_and_swap_i32(&sem.permits, current_permits, current_permits - 1, SEQCST) {
+                damn based
+            }
+        } else {
+            fr fr No permits available - wait
+            atomic_drip.atomic_add_i32(&sem.waiter_count, 1, RELAXED)
+            fr fr Spin-wait for permits (real implementation would block goroutine)
+            atomic_drip.atomic_sub_i32(&sem.waiter_count, 1, RELAXED)
+        }
+    }
+    damn based
+}
+
+fr fr Release semaphore (increment count)
+slay semaphore_release(sem *Semaphore) lit {
+    lowkey sem == 0 {
+        damn cap
+    }
+    
+    sus current_permits normie = atomic_drip.atomic_add_i32(&sem.permits, 1, SEQCST)
+    lowkey current_permits + 1 > sem.max_permits {
+        fr fr Don't exceed max permits
+        atomic_drip.atomic_sub_i32(&sem.permits, 1, SEQCST)
+        damn cap
+    }
+    damn based
+}
+
+fr fr Try to acquire semaphore (non-blocking)
+slay semaphore_try_acquire(sem *Semaphore) lit {
+    lowkey sem == 0 {
+        damn cap
+    }
+    
+    sus current_permits normie = atomic_drip.atomic_load_i32(&sem.permits, ACQUIRE)
+    lowkey current_permits > 0 {
+        damn atomic_drip.compare_and_swap_i32(&sem.permits, current_permits, current_permits - 1, SEQCST)
     }
     damn cap
 }
 
-fr fr Release semaphore (increment count)
-slay semaphore_release(semaphore Mutex) lit {
-    semaphore = semaphore + 1
+fr fr =============================================================================
+fr fr THREAD POOL OPERATIONS - Concurrent task execution
+fr fr =============================================================================
+
+fr fr Create thread pool for concurrent execution
+slay create_thread_pool(worker_count normie, queue_size normie) *ThreadPool {
+    sus pool *ThreadPool = memory.allocate(ThreadPool)
+    pool.workers = memory.allocate_array(normie, worker_count)
+    pool.task_queue = memory.allocate_array(normie, queue_size)
+    pool.queue_size = 0
+    pool.queue_head = 0
+    pool.queue_tail = 0
+    pool.active_workers = 0
+    pool.shutdown = 0
+    damn pool
+}
+
+fr fr Submit task to thread pool
+slay thread_pool_submit(pool *ThreadPool, task normie) lit {
+    lowkey pool == 0 {
+        damn cap
+    }
+    
+    lowkey atomic_drip.atomic_load_i32(&pool.shutdown, ACQUIRE) == 1 {
+        damn cap  fr fr Pool is shutting down
+    }
+    
+    fr fr Check if queue has space
+    sus current_size normie = atomic_drip.atomic_load_i32(&pool.queue_size, ACQUIRE)
+    lowkey current_size >= 100 {  fr fr Assume max queue size of 100
+        damn cap  fr fr Queue full
+    }
+    
+    fr fr Add task to queue atomically
+    sus tail_pos normie = atomic_drip.atomic_load_i32(&pool.queue_tail, ACQUIRE)
+    pool.task_queue[tail_pos % 100] = task
+    atomic_drip.atomic_add_i32(&pool.queue_tail, 1, RELEASE)
+    atomic_drip.atomic_add_i32(&pool.queue_size, 1, RELEASE)
     damn based
 }
 
-fr fr Once primitive for one-time initialization
-slay create_once() lit {
-    sus once lit = cap
+fr fr Shutdown thread pool
+slay thread_pool_shutdown(pool *ThreadPool) lit {
+    lowkey pool == 0 {
+        damn cap
+    }
+    
+    atomic_drip.atomic_store_i32(&pool.shutdown, 1, RELEASE)
+    damn based
+}
+
+fr fr Wait for all tasks to complete
+slay thread_pool_wait_all(pool *ThreadPool) lit {
+    lowkey pool == 0 {
+        damn cap
+    }
+    
+    bestie atomic_drip.atomic_load_i32(&pool.queue_size, ACQUIRE) > 0 {
+        fr fr Wait for all tasks to complete
+    }
+    damn based
+}
+
+fr fr =============================================================================
+fr fr ONCE OPERATIONS - One-time initialization primitive
+fr fr =============================================================================
+
+fr fr Create once primitive for one-time initialization
+slay create_once() *Once {
+    sus once *Once = memory.allocate(Once)
+    once.done = 0
+    once.in_progress = 0
     damn once
 }
 
 fr fr Execute function exactly once
-slay once_do(once lit, func tea) lit {
-    lowkey once == cap {
-        once = based fr fr Execute function here
+slay once_do(once *Once, func_id normie) lit {
+    lowkey once == 0 {
+        damn cap
+    }
+    
+    fr fr Check if already done
+    lowkey atomic_drip.atomic_load_i32(&once.done, ACQUIRE) == 1 {
+        damn cap  fr fr Already executed
+    }
+    
+    fr fr Try to start execution
+    lowkey atomic_drip.compare_and_swap_i32(&once.in_progress, 0, 1, SEQCST) {
+        fr fr We got to execute - set done flag
+        atomic_drip.atomic_store_i32(&once.done, 1, RELEASE)
+        atomic_drip.atomic_store_i32(&once.in_progress, 0, RELEASE)
         damn based
     }
+    
+    fr fr Someone else is executing or already done
     damn cap
 }
 
@@ -281,7 +743,171 @@ slay waitgroup_new() *WaitGroupStruct {
     damn &wg
 }
 
-fr fr Channel creation function
-slay make(chan_type tea, buffer_size normie) normie { fr fr Simplified channel creation for compatibility
-    damn buffer_size
+fr fr =============================================================================
+fr fr UTILITY FUNCTIONS - Compatibility and convenience functions
+fr fr =============================================================================
+
+fr fr Channel creation function for Go-style compatibility
+slay make(chan_type tea, buffer_size normie) *Channel {
+    damn create_channel(buffer_size)
 }
+
+fr fr Memory fence operation for ordering guarantees
+slay memory_fence() {
+    atomic_drip.memory_fence(SEQCST)
+}
+
+fr fr Get current number of goroutines (simplified)
+slay num_goroutines() normie {
+    damn 1  fr fr Simplified - always return 1
+}
+
+fr fr Runtime yield to other goroutines
+slay runtime_yield() {
+    fr fr In real implementation would yield to scheduler
+}
+
+fr fr Sleep for specified duration (simplified)
+slay sleep_ms(duration normie) {
+    fr fr In real implementation would sleep for duration milliseconds
+}
+
+fr fr =============================================================================
+fr fr READ-WRITE MUTEX OPERATIONS - Shared/exclusive locking
+fr fr =============================================================================
+
+fr fr Create read-write mutex for shared resource access
+slay create_rwmutex() *RWMutex {
+    sus rwmutex *RWMutex = memory.allocate(RWMutex)
+    rwmutex.readers = 0
+    rwmutex.writer = 0
+    rwmutex.pending_writers = 0
+    rwmutex.reader_waiters = memory.allocate_array(normie, 100)
+    rwmutex.writer_waiters = memory.allocate_array(normie, 100)
+    damn rwmutex
+}
+
+fr fr Acquire read lock (multiple readers allowed)
+slay rwmutex_rlock(rwmutex *RWMutex) lit {
+    lowkey rwmutex == 0 {
+        damn cap
+    }
+    
+    fr fr Wait while there's a writer or pending writers
+    bestie atomic_drip.atomic_load_i32(&rwmutex.writer, ACQUIRE) == 1 || 
+          atomic_drip.atomic_load_i32(&rwmutex.pending_writers, ACQUIRE) > 0 {
+        fr fr Spin-wait (real implementation would block)
+    }
+    
+    atomic_drip.atomic_add_i32(&rwmutex.readers, 1, ACQUIRE)
+    damn based
+}
+
+fr fr Release read lock
+slay rwmutex_runlock(rwmutex *RWMutex) lit {
+    lowkey rwmutex == 0 {
+        damn cap
+    }
+    
+    sus reader_count normie = atomic_drip.atomic_sub_i32(&rwmutex.readers, 1, RELEASE)
+    lowkey reader_count < 0 {
+        damn cap  fr fr Not holding read lock
+    }
+    damn based
+}
+
+fr fr Acquire write lock (exclusive access)
+slay rwmutex_lock(rwmutex *RWMutex) lit {
+    lowkey rwmutex == 0 {
+        damn cap
+    }
+    
+    atomic_drip.atomic_add_i32(&rwmutex.pending_writers, 1, RELAXED)
+    
+    fr fr Wait for no readers and no active writer
+    bestie atomic_drip.atomic_load_i32(&rwmutex.readers, ACQUIRE) > 0 ||
+          !atomic_drip.compare_and_swap_i32(&rwmutex.writer, 0, 1, ACQUIRE) {
+        fr fr Spin-wait (real implementation would block)
+    }
+    
+    atomic_drip.atomic_sub_i32(&rwmutex.pending_writers, 1, RELAXED)
+    damn based
+}
+
+fr fr Release write lock
+slay rwmutex_unlock(rwmutex *RWMutex) lit {
+    lowkey rwmutex == 0 {
+        damn cap
+    }
+    
+    lowkey atomic_drip.atomic_load_i32(&rwmutex.writer, ACQUIRE) != 1 {
+        damn cap  fr fr Not holding write lock
+    }
+    
+    atomic_drip.atomic_store_i32(&rwmutex.writer, 0, RELEASE)
+    damn based
+}
+
+fr fr =============================================================================
+fr fr CONDITION VARIABLE OPERATIONS - Thread coordination
+fr fr =============================================================================
+
+fr fr Create condition variable for thread coordination
+slay create_condition() *CondVar {
+    sus cond *CondVar = memory.allocate(CondVar)
+    cond.waiters = memory.allocate_array(normie, 100)
+    cond.waiter_count = 0
+    cond.signal_count = 0
+    cond.broadcast_flag = 0
+    damn cond
+}
+
+fr fr Wait on condition variable
+slay condition_wait(cond *CondVar, mutex *Mutex) lit {
+    lowkey cond == 0 || mutex == 0 {
+        damn cap
+    }
+    
+    atomic_drip.atomic_add_i32(&cond.waiter_count, 1, RELAXED)
+    
+    fr fr Release mutex and wait for signal
+    mutex_unlock(mutex)
+    
+    bestie atomic_drip.atomic_load_i32(&cond.signal_count, ACQUIRE) == 0 &&
+          atomic_drip.atomic_load_i32(&cond.broadcast_flag, ACQUIRE) == 0 {
+        fr fr Spin-wait for signal (real implementation would block)
+    }
+    
+    fr fr Reacquire mutex
+    mutex_lock(mutex)
+    atomic_drip.atomic_sub_i32(&cond.waiter_count, 1, RELAXED)
+    damn based
+}
+
+fr fr Signal one waiting goroutine
+slay condition_signal(cond *CondVar) lit {
+    lowkey cond == 0 {
+        damn cap
+    }
+    
+    lowkey atomic_drip.atomic_load_i32(&cond.waiter_count, ACQUIRE) > 0 {
+        atomic_drip.atomic_add_i32(&cond.signal_count, 1, RELEASE)
+    }
+    damn based
+}
+
+fr fr Signal all waiting goroutines
+slay condition_broadcast(cond *CondVar) lit {
+    lowkey cond == 0 {
+        damn cap
+    }
+    
+    lowkey atomic_drip.atomic_load_i32(&cond.waiter_count, ACQUIRE) > 0 {
+        atomic_drip.atomic_store_i32(&cond.broadcast_flag, 1, RELEASE)
+    }
+    damn based
+}
+
+fr fr Legacy compatibility functions
+slay create_mutex() *Mutex { damn mutex_new() }
+slay create_waitgroup() *WaitGroup { damn waitgroup_new() }

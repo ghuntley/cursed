@@ -151,6 +151,111 @@ sus formatted tea = json_tea.format_json_with_indent(compact_json, "", "  ")
 # Returns formatted JSON with indentation
 ```
 
+## Advanced Functionality
+
+### JSON Parsing Functions
+
+#### `parse_json(input tea) tea`
+Parse JSON input with comprehensive error handling.
+
+#### `parse_json_string(json_string tea) tea`
+Parse a JSON string value.
+
+#### `parse_json_file(filename tea) tea`
+Parse JSON from file (file system operations not implemented in demo).
+
+### JSON Generation Functions
+
+#### `to_json(data tea) tea`
+Convert data to JSON format.
+
+#### `stringify(data tea) tea`
+Stringify data as JSON.
+
+#### `format_json(data tea) tea`
+Format JSON with indentation.
+
+### Value Access Functions
+
+#### `get_value(json_data tea, key tea) tea`
+Extract value from JSON object by key.
+
+```cursed
+sus obj tea = "{\"name\": \"John\", \"age\": 30}"
+sus name tea = json_tea.get_value(obj, "name")  # "John"
+sus age tea = json_tea.get_value(obj, "age")    # "30"
+```
+
+#### `get_string(json_data tea, key tea) tea`
+Get string value from JSON object.
+
+#### `get_number(json_data tea, key tea) tea`
+Get numeric value from JSON object.
+
+#### `get_array(json_data tea, key tea) tea`
+Get array value from JSON object.
+
+#### `get_object(json_data tea, key tea) tea`
+Get nested object from JSON object.
+
+### Type Checking Functions
+
+#### `is_string(json_value tea) lit`
+Check if JSON value is a string.
+
+#### `is_number(json_value tea) lit`
+Check if JSON value is a number.
+
+#### `is_boolean_value(json_value tea) lit`
+Check if JSON value is a boolean.
+
+#### `is_array_value(json_value tea) lit`
+Check if JSON value is an array.
+
+#### `is_object_value(json_value tea) lit`
+Check if JSON value is an object.
+
+#### `is_null_value(json_value tea) lit`
+Check if JSON value is null.
+
+### Manipulation Functions
+
+#### `set_value(json_data tea, key tea, value tea) tea`
+Set a value in JSON object.
+
+```cursed
+sus obj tea = "{\"name\": \"John\", \"age\": 30}"
+sus modified tea = json_tea.set_value(obj, "name", "Jane")
+# Returns "{\"name\": \"Jane\", \"age\": 30}"
+```
+
+#### `add_to_array(json_array tea, value tea) tea`
+Add item to JSON array.
+
+```cursed
+sus arr tea = "[1, 2, 3]"
+sus new_arr tea = json_tea.add_to_array(arr, "4")
+# Returns "[1, 2, 3, \"4\"]"
+```
+
+#### `merge_objects(obj1 tea, obj2 tea) tea`
+Merge two JSON objects.
+
+```cursed
+sus obj1 tea = "{\"name\": \"John\"}"
+sus obj2 tea = "{\"age\": 30}"
+sus merged tea = json_tea.merge_objects(obj1, obj2)
+# Returns "{\"name\": \"John\", \"age\": 30}"
+```
+
+### Enhanced Validation Functions
+
+#### `validate_json(json_string tea) lit`
+Validate JSON string format.
+
+#### `validate_schema(json_string tea, schema tea) lit`
+Validate JSON against type schema.
+
 ## Legacy Compatibility
 
 The module provides legacy function names for backward compatibility:
@@ -158,8 +263,6 @@ The module provides legacy function names for backward compatibility:
 - `marshal(data tea) tea` - Alias for `Marshal`
 - `unmarshal(json_string tea) tea` - Alias for `Unmarshal`
 - `parse(json_string tea) tea` - Alias for `Unmarshal`
-- `stringify(data tea) tea` - Alias for `Marshal`
-- `parse_json(input tea) tea` - Alias for `Unmarshal`
 
 ## Supported Data Types
 

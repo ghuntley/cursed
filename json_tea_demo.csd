@@ -1,99 +1,90 @@
-# JSON Tea Module Demo
-# Demonstrates the core functionality of the json_tea module
+yeet "json_tea"
 
-vibez.spill("🍵 JSON Tea Module Demonstration")
-vibez.spill("===============================")
+vibez.spill("🍵 CURSED JSON Tea Module Demo")
+vibez.spill("=====================================")
 
-# Simple marshal function for demo
-slay demo_marshal(data tea) tea {
-    bestie data == "based" {
-        damn "true"
-    } else bestie data == "cap" {
-        damn "false"
-    } else bestie data == "cringe" {
-        damn "null"
-    } else bestie data == "42" || data == "3.14" || data == "100" {
-        damn data
-    } else {
-        damn "\"" + data + "\""
-    }
-}
+fr fr Basic JSON marshaling/unmarshaling
+vibez.spill("\n--- Basic Marshal/Unmarshal ---")
+sus string_data tea = "hello"
+sus marshaled_string tea = json_tea.Marshal(string_data)
+vibez.spill("String data: " + string_data)
+vibez.spill("Marshaled: " + marshaled_string)
 
-# Simple unmarshal function for demo
-slay demo_unmarshal(json_string tea) tea {
-    bestie json_string == "true" {
-        damn "based"
-    } else bestie json_string == "false" {
-        damn "cap"
-    } else bestie json_string == "null" {
-        damn "cringe"
-    } else bestie json_string == "\"hello\"" {
-        damn "hello"
-    } else bestie json_string == "42" {
-        damn "42"
-    } else {
-        damn json_string
-    }
-}
+sus number_data tea = "42"  
+sus marshaled_number tea = json_tea.Marshal(number_data)
+vibez.spill("Number data: " + number_data)
+vibez.spill("Marshaled: " + marshaled_number)
 
-vibez.spill("Testing Marshal functionality:")
-vibez.spill("============================")
+fr fr JSON parsing
+vibez.spill("\n--- JSON Parsing ---")
+sus json_string tea = "\"world\""
+sus parsed tea = json_tea.parse_json(json_string)
+vibez.spill("JSON string: " + json_string)
+vibez.spill("Parsed: " + parsed)
 
-# Test string marshaling
-sus str_result tea = demo_marshal("hello")
-vibez.spill("Marshal('hello') = " + str_result)
+fr fr Type checking
+vibez.spill("\n--- Type Checking ---")
+sus test_string tea = "\"hello\""
+sus test_number tea = "42"
+sus test_boolean tea = "true"
+sus test_object tea = "{\"name\": \"John\"}"
+sus test_array tea = "[1, 2, 3]"
 
-# Test number marshaling
-sus num_result tea = demo_marshal("42")
-vibez.spill("Marshal('42') = " + num_result)
-
-# Test boolean marshaling
-sus bool_result tea = demo_marshal("based")
-vibez.spill("Marshal('based') = " + bool_result)
-
-# Test null marshaling
-sus null_result tea = demo_marshal("cringe")
-vibez.spill("Marshal('cringe') = " + null_result)
-
-vibez.spill("")
-vibez.spill("Testing Unmarshal functionality:")
-vibez.spill("================================")
-
-# Test string unmarshaling
-sus str_unmarshaled tea = demo_unmarshal("\"hello\"")
-vibez.spill("Unmarshal('\"hello\"') = " + str_unmarshaled)
-
-# Test number unmarshaling
-sus num_unmarshaled tea = demo_unmarshal("42")
-vibez.spill("Unmarshal('42') = " + num_unmarshaled)
-
-# Test boolean unmarshaling
-sus bool_unmarshaled tea = demo_unmarshal("true")
-vibez.spill("Unmarshal('true') = " + bool_unmarshaled)
-
-# Test null unmarshaling
-sus null_unmarshaled tea = demo_unmarshal("null")
-vibez.spill("Unmarshal('null') = " + null_unmarshaled)
-
-vibez.spill("")
-vibez.spill("Testing Round-trip conversion:")
-vibez.spill("=============================")
-
-# Test round-trip conversion
-sus original tea = "world"
-sus marshaled tea = demo_marshal(original)
-sus unmarshaled tea = demo_unmarshal(marshaled)
-vibez.spill("Original: " + original)
-vibez.spill("Marshaled: " + marshaled)
-vibez.spill("Unmarshaled: " + unmarshaled)
-
-bestie original == unmarshaled {
-    vibez.spill("✅ Round-trip conversion successful!")
+bestie json_tea.is_string(test_string) {
+    vibez.spill("✅ " + test_string + " is a string")
 } else {
-    vibez.spill("❌ Round-trip conversion failed!")
+    vibez.spill("❌ " + test_string + " is NOT a string")
 }
 
-vibez.spill("")
-vibez.spill("🎉 JSON Tea Module Demo Complete!")
-vibez.spill("This demonstrates the core Marshal/Unmarshal functionality")
-vibez.spill("that would be implemented in the full json_tea module.")
+bestie json_tea.is_number(test_number) {
+    vibez.spill("✅ " + test_number + " is a number")
+} else {
+    vibez.spill("❌ " + test_number + " is NOT a number")
+}
+
+bestie json_tea.is_boolean_value(test_boolean) {
+    vibez.spill("✅ " + test_boolean + " is a boolean")
+} else {
+    vibez.spill("❌ " + test_boolean + " is NOT a boolean")
+}
+
+bestie json_tea.is_object_value(test_object) {
+    vibez.spill("✅ " + test_object + " is an object")
+} else {
+    vibez.spill("❌ " + test_object + " is NOT an object")
+}
+
+bestie json_tea.is_array_value(test_array) {
+    vibez.spill("✅ " + test_array + " is an array")
+} else {
+    vibez.spill("❌ " + test_array + " is NOT an array")
+}
+
+fr fr Value access
+vibez.spill("\n--- Value Access ---")
+sus json_obj tea = "{\"name\": \"John\", \"age\": 30}"
+sus name_value tea = json_tea.get_value(json_obj, "name")
+sus age_value tea = json_tea.get_value(json_obj, "age")
+
+vibez.spill("Object: " + json_obj)
+vibez.spill("Name value: " + name_value)
+vibez.spill("Age value: " + age_value)
+
+fr fr Validation
+vibez.spill("\n--- JSON Validation ---")
+sus valid_json tea = "{\"test\": \"value\"}"
+sus invalid_json tea = "invalid"
+
+bestie json_tea.validate_json(valid_json) {
+    vibez.spill("✅ " + valid_json + " is valid JSON")
+} else {
+    vibez.spill("❌ " + valid_json + " is NOT valid JSON")
+}
+
+bestie json_tea.validate_json(invalid_json) {
+    vibez.spill("✅ " + invalid_json + " is valid JSON")
+} else {
+    vibez.spill("❌ " + invalid_json + " is NOT valid JSON")
+}
+
+vibez.spill("\n🎉 JSON Tea Demo Complete!")
