@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>documentation_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>documentation_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="get_connection_count">
+                <h4>get_connection_count</h4>
+                <pre class="signature"><code>slay get_connection_count(&self) -> usize { 0 }</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L205">documentation_demo.csd:205</a></p>
+            </div>
+            <div class="doc-item" id="get_uptime">
+                <h4>get_uptime</h4>
+                <pre class="signature"><code>slay get_uptime(&self) -> Duration { Duration::from_secs(0) }</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L206">documentation_demo.csd:206</a></p>
+            </div>
+            <div class="doc-item" id="get_total_requests">
+                <h4>get_total_requests</h4>
+                <pre class="signature"><code>slay get_total_requests(&self) -> u64 { 0 }</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L207">documentation_demo.csd:207</a></p>
+            </div>
+            <div class="doc-item" id="default">
+                <h4>default</h4>
+                <pre class="signature"><code>slay default() -> Self {</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L233">documentation_demo.csd:233</a></p>
+            </div>
+            <div class="doc-item" id="new">
+                <h4>new</h4>
+                <pre class="signature"><code>slay new(port: u16) -> Self {</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L274">documentation_demo.csd:274</a></p>
+            </div>
+            <div class="doc-item" id="from_row_mock">
+                <h4>from_row_mock</h4>
+                <pre class="signature"><code>slay from_row_mock() -> Self;</code></pre>
+                <p class="description">Mock FromRow collab for database results</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L535">documentation_demo.csd:535</a></p>
+            </div>
+            <div class="doc-item" id="method">
+                <h4>method</h4>
+                <pre class="signature"><code>slay method(&self) -> &HttpMethod;</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L588">documentation_demo.csd:588</a></p>
+            </div>
+            <div class="doc-item" id="path">
+                <h4>path</h4>
+                <pre class="signature"><code>slay path(&self) -> &str;</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L589">documentation_demo.csd:589</a></p>
+            </div>
+            <div class="doc-item" id="headers">
+                <h4>headers</h4>
+                <pre class="signature"><code>slay headers(&self) -> &HashMap<String, String>;</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L590">documentation_demo.csd:590</a></p>
+            </div>
+            <div class="doc-item" id="body">
+                <h4>body</h4>
+                <pre class="signature"><code>slay body(&self) -> &[u8];</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L591">documentation_demo.csd:591</a></p>
+            </div>
+            <div class="doc-item" id="status">
+                <h4>status</h4>
+                <pre class="signature"><code>slay status(&mut self, code: u16);</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L596">documentation_demo.csd:596</a></p>
+            </div>
+            <div class="doc-item" id="header">
+                <h4>header</h4>
+                <pre class="signature"><code>slay header(&mut self, name: String, value: String);</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L597">documentation_demo.csd:597</a></p>
+            </div>
+            <div class="doc-item" id="body">
+                <h4>body</h4>
+                <pre class="signature"><code>slay body(&mut self, content: Vec<u8>);</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L598">documentation_demo.csd:598</a></p>
+            </div>
+            <div class="doc-item" id="into_response">
+                <h4>into_response</h4>
+                <pre class="signature"><code>slay into_response(self) -> Response;</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L603">documentation_demo.csd:603</a></p>
+            </div>
+            <div class="doc-item" id="process">
+                <h4>process</h4>
+                <pre class="signature"><code>slay process(&self, request: &mut Request, response: &mut Response) -> Result<(), Error>;</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L608">documentation_demo.csd:608</a></p>
+            </div>
+            <div class="doc-item" id="from_row">
+                <h4>from_row</h4>
+                <pre class="signature"><code>slay from_row(row: &Row) -> Result<Self, DeserializationError></code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L626">documentation_demo.csd:626</a></p>
+            </div>
+            <div class="doc-item" id="to_sql">
+                <h4>to_sql</h4>
+                <pre class="signature"><code>slay to_sql(&self) -> Result<SqlValue, SqlError>;</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L632">documentation_demo.csd:632</a></p>
+            </div>
+            <div class="doc-item" id="max_connections">
+                <h4>max_connections</h4>
+                <pre class="signature"><code>slay max_connections(&self) -> usize;</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L637">documentation_demo.csd:637</a></p>
+            </div>
+            <div class="doc-item" id="min_connections">
+                <h4>min_connections</h4>
+                <pre class="signature"><code>slay min_connections(&self) -> usize;</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L638">documentation_demo.csd:638</a></p>
+            </div>
+            <div class="doc-item" id="connection_timeout">
+                <h4>connection_timeout</h4>
+                <pre class="signature"><code>slay connection_timeout(&self) -> Duration;</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L639">documentation_demo.csd:639</a></p>
+            </div>
+            <div class="doc-item" id="max_connections">
+                <h4>max_connections</h4>
+                <pre class="signature"><code>slay max_connections(&self) -> usize { 10 }</code></pre>
+                <p class="description">Default pool configuration</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L646">documentation_demo.csd:646</a></p>
+            </div>
+            <div class="doc-item" id="min_connections">
+                <h4>min_connections</h4>
+                <pre class="signature"><code>slay min_connections(&self) -> usize { 1 }</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L647">documentation_demo.csd:647</a></p>
+            </div>
+            <div class="doc-item" id="connection_timeout">
+                <h4>connection_timeout</h4>
+                <pre class="signature"><code>slay connection_timeout(&self) -> Duration { Duration::from_secs(30) }</code></pre>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L648">documentation_demo.csd:648</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="HttpServer">
+                <h4>HttpServer</h4>
+                <pre class="signature"><code>squad HttpServer {</code></pre>
+                <p class="description">HTTP server implementation with CURSED Gen Z syntax</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L8">documentation_demo.csd:8</a></p>
+            </div>
+            <div class="doc-item" id="Route">
+                <h4>Route</h4>
+                <pre class="signature"><code>squad Route {</code></pre>
+                <p class="description">Route configuration structure</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L211">documentation_demo.csd:211</a></p>
+            </div>
+            <div class="doc-item" id="ServerConfig">
+                <h4>ServerConfig</h4>
+                <pre class="signature"><code>squad ServerConfig {</code></pre>
+                <p class="description">Server configuration options</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L221">documentation_demo.csd:221</a></p>
+            </div>
+            <div class="doc-item" id="ServerStatus">
+                <h4>ServerStatus</h4>
+                <pre class="signature"><code>squad ServerStatus {</code></pre>
+                <p class="description">Server status information</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L255">documentation_demo.csd:255</a></p>
+            </div>
+            <div class="doc-item" id="ShutdownReport">
+                <h4>ShutdownReport</h4>
+                <pre class="signature"><code>squad ShutdownReport {</code></pre>
+                <p class="description">Server shutdown report</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L263">documentation_demo.csd:263</a></p>
+            </div>
+            <div class="doc-item" id="ServerHandle">
+                <h4>ServerHandle</h4>
+                <pre class="signature"><code>squad ServerHandle {</code></pre>
+                <p class="description">Server handle for managing running server</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L269">documentation_demo.csd:269</a></p>
+            </div>
+            <div class="doc-item" id="PoolStats">
+                <h4>PoolStats</h4>
+                <pre class="signature"><code>squad PoolStats {</code></pre>
+                <p class="description">Pool statistics</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L652">documentation_demo.csd:652</a></p>
+            </div>
+            <div class="doc-item" id="RequestContext<T>">
+                <h4>RequestContext<T></h4>
+                <pre class="signature"><code>squad RequestContext<T> {</code></pre>
+                <p class="description">Request context for middleware</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L660">documentation_demo.csd:660</a></p>
+            </div>
+            <div class="doc-item" id="CallbackResult">
+                <h4>CallbackResult</h4>
+                <pre class="signature"><code>squad CallbackResult {</code></pre>
+                <p class="description">Callback result container</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L667">documentation_demo.csd:667</a></p>
+            </div>
+            <div class="doc-item" id="Row">
+                <h4>Row</h4>
+                <pre class="signature"><code>squad Row {</code></pre>
+                <p class="description">Row representation</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L676">documentation_demo.csd:676</a></p>
+            </div>
+        </section>
+        <section id="interfaces">
+            <h3>Interfaces</h3>
+            <div class="doc-item" id="Request">
+                <h4>Request</h4>
+                <pre class="signature"><code>collab Request {</code></pre>
+                <p class="description">HTTP request collab</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L587">documentation_demo.csd:587</a></p>
+            </div>
+            <div class="doc-item" id="Response">
+                <h4>Response</h4>
+                <pre class="signature"><code>collab Response {</code></pre>
+                <p class="description">HTTP response collab</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L595">documentation_demo.csd:595</a></p>
+            </div>
+            <div class="doc-item" id="IntoResponse">
+                <h4>IntoResponse</h4>
+                <pre class="signature"><code>collab IntoResponse {</code></pre>
+                <p class="description">Response conversion collab</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L602">documentation_demo.csd:602</a></p>
+            </div>
+            <div class="doc-item" id="Middleware">
+                <h4>Middleware</h4>
+                <pre class="signature"><code>collab Middleware {</code></pre>
+                <p class="description">Request middleware collab</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L607">documentation_demo.csd:607</a></p>
+            </div>
+            <div class="doc-item" id="Connection">
+                <h4>Connection</h4>
+                <pre class="signature"><code>collab Connection {</code></pre>
+                <p class="description">Database connection collab</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L612">documentation_demo.csd:612</a></p>
+            </div>
+            <div class="doc-item" id="FromRow">
+                <h4>FromRow</h4>
+                <pre class="signature"><code>collab FromRow {</code></pre>
+                <p class="description">Row deserialization collab</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L625">documentation_demo.csd:625</a></p>
+            </div>
+            <div class="doc-item" id="ToSql">
+                <h4>ToSql</h4>
+                <pre class="signature"><code>collab ToSql {</code></pre>
+                <p class="description">SQL parameter collab</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L631">documentation_demo.csd:631</a></p>
+            </div>
+            <div class="doc-item" id="PoolConfig">
+                <h4>PoolConfig</h4>
+                <pre class="signature"><code>collab PoolConfig {</code></pre>
+                <p class="description">Pool configuration collab</p>
+                <p class="source">Source: <a href="file://./examples/documentation_demo.csd#L636">documentation_demo.csd:636</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

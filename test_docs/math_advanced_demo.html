@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>math_advanced_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>math_advanced_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="demonstrate_numerical_methods">
+                <h4>demonstrate_numerical_methods</h4>
+                <pre class="signature"><code>slay demonstrate_numerical_methods() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L11">math_advanced_demo.csd:11</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_optimization">
+                <h4>demonstrate_optimization</h4>
+                <pre class="signature"><code>slay demonstrate_optimization() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L55">math_advanced_demo.csd:55</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_signal_processing">
+                <h4>demonstrate_signal_processing</h4>
+                <pre class="signature"><code>slay demonstrate_signal_processing() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L89">math_advanced_demo.csd:89</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_interpolation">
+                <h4>demonstrate_interpolation</h4>
+                <pre class="signature"><code>slay demonstrate_interpolation() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L133">math_advanced_demo.csd:133</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_matrix_operations">
+                <h4>demonstrate_matrix_operations</h4>
+                <pre class="signature"><code>slay demonstrate_matrix_operations() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L166">math_advanced_demo.csd:166</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_mathematical_modeling">
+                <h4>demonstrate_mathematical_modeling</h4>
+                <pre class="signature"><code>slay demonstrate_mathematical_modeling() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L196">math_advanced_demo.csd:196</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_engineering_applications">
+                <h4>demonstrate_engineering_applications</h4>
+                <pre class="signature"><code>slay demonstrate_engineering_applications() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L221">math_advanced_demo.csd:221</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_scientific_computing">
+                <h4>demonstrate_scientific_computing</h4>
+                <pre class="signature"><code>slay demonstrate_scientific_computing() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L276">math_advanced_demo.csd:276</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L333">math_advanced_demo.csd:333</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="f">
+                <h4>f</h4>
+                <pre class="signature"><code>facts f = |x| x * x * x - 2.0 * x * x + x + 1.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L18">math_advanced_demo.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="derivative_at_2">
+                <h4>derivative_at_2</h4>
+                <pre class="signature"><code>facts derivative_at_2 = numerical_derivative(f, 2.0, None)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L19">math_advanced_demo.csd:19</a></p>
+            </div>
+            <div class="doc-item" id="sin_integral">
+                <h4>sin_integral</h4>
+                <pre class="signature"><code>facts sin_integral = adaptive_simpson_integration(|x| x.sin(), 0.0, PI, None, None)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L26">math_advanced_demo.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="functions">
+                <h4>functions</h4>
+                <pre class="signature"><code>facts functions = |vars: &[f64]| -> Vec<f64> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L33">math_advanced_demo.csd:33</a></p>
+            </div>
+            <div class="doc-item" id="x">
+                <h4>x</h4>
+                <pre class="signature"><code>facts x = vars[0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L34">math_advanced_demo.csd:34</a></p>
+            </div>
+            <div class="doc-item" id="y">
+                <h4>y</h4>
+                <pre class="signature"><code>facts y = vars[1];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L35">math_advanced_demo.csd:35</a></p>
+            </div>
+            <div class="doc-item" id="jacobian">
+                <h4>jacobian</h4>
+                <pre class="signature"><code>facts jacobian = |vars: &[f64]| -> Vec<Vec<f64>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L39">math_advanced_demo.csd:39</a></p>
+            </div>
+            <div class="doc-item" id="x">
+                <h4>x</h4>
+                <pre class="signature"><code>facts x = vars[0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L40">math_advanced_demo.csd:40</a></p>
+            </div>
+            <div class="doc-item" id="y">
+                <h4>y</h4>
+                <pre class="signature"><code>facts y = vars[1];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L41">math_advanced_demo.csd:41</a></p>
+            </div>
+            <div class="doc-item" id="initial_guess">
+                <h4>initial_guess</h4>
+                <pre class="signature"><code>facts initial_guess = vec![0.5, 0.5];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L48">math_advanced_demo.csd:48</a></p>
+            </div>
+            <div class="doc-item" id="solution">
+                <h4>solution</h4>
+                <pre class="signature"><code>facts solution = multidimensional_newton_raphson(functions, jacobian, &initial_guess, None, None)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L49">math_advanced_demo.csd:49</a></p>
+            </div>
+            <div class="doc-item" id="f_quad">
+                <h4>f_quad</h4>
+                <pre class="signature"><code>facts f_quad = |x: f64| (x - 3.0) * (x - 3.0) + 2.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L62">math_advanced_demo.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="min_x">
+                <h4>min_x</h4>
+                <pre class="signature"><code>facts min_x = golden_section_search(f_quad, 0.0, 6.0, None)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L63">math_advanced_demo.csd:63</a></p>
+            </div>
+            <div class="doc-item" id="f_multi">
+                <h4>f_multi</h4>
+                <pre class="signature"><code>facts f_multi = |vars: &[f64]| {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L70">math_advanced_demo.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="x">
+                <h4>x</h4>
+                <pre class="signature"><code>facts x = vars[0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L71">math_advanced_demo.csd:71</a></p>
+            </div>
+            <div class="doc-item" id="y">
+                <h4>y</h4>
+                <pre class="signature"><code>facts y = vars[1];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L72">math_advanced_demo.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="gradient">
+                <h4>gradient</h4>
+                <pre class="signature"><code>facts gradient = |vars: &[f64]| {</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L76">math_advanced_demo.csd:76</a></p>
+            </div>
+            <div class="doc-item" id="x">
+                <h4>x</h4>
+                <pre class="signature"><code>facts x = vars[0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L77">math_advanced_demo.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="y">
+                <h4>y</h4>
+                <pre class="signature"><code>facts y = vars[1];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L78">math_advanced_demo.csd:78</a></p>
+            </div>
+            <div class="doc-item" id="initial_point">
+                <h4>initial_point</h4>
+                <pre class="signature"><code>facts initial_point = vec![0.0, 0.0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L82">math_advanced_demo.csd:82</a></p>
+            </div>
+            <div class="doc-item" id="minimum">
+                <h4>minimum</h4>
+                <pre class="signature"><code>facts minimum = gradient_descent(f_multi, gradient, &initial_point, None, None, None)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L83">math_advanced_demo.csd:83</a></p>
+            </div>
+            <div class="doc-item" id="sample_rate">
+                <h4>sample_rate</h4>
+                <pre class="signature"><code>facts sample_rate = 8.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L96">math_advanced_demo.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="frequency">
+                <h4>frequency</h4>
+                <pre class="signature"><code>facts frequency = 1.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L97">math_advanced_demo.csd:97</a></p>
+            </div>
+            <div class="doc-item" id="t">
+                <h4>t</h4>
+                <pre class="signature"><code>facts t = i as f64 / sample_rate;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L100">math_advanced_demo.csd:100</a></p>
+            </div>
+            <div class="doc-item" id="value">
+                <h4>value</h4>
+                <pre class="signature"><code>facts value = 1.0 + 0.5 * (2.0 * PI * frequency * t).sin();</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L101">math_advanced_demo.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="fft_result">
+                <h4>fft_result</h4>
+                <pre class="signature"><code>facts fft_result = fast_fourier_transform(&signal)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L110">math_advanced_demo.csd:110</a></p>
+            </div>
+            <div class="doc-item" id="magnitude">
+                <h4>magnitude</h4>
+                <pre class="signature"><code>facts magnitude = fft_result[i].magnitude();</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L113">math_advanced_demo.csd:113</a></p>
+            </div>
+            <div class="doc-item" id="noisy_signal">
+                <h4>noisy_signal</h4>
+                <pre class="signature"><code>facts noisy_signal = vec![1.0, 3.0, 2.0, 5.0, 4.0, 2.0, 6.0, 3.0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L119">math_advanced_demo.csd:119</a></p>
+            </div>
+            <div class="doc-item" id="filter_coeffs">
+                <h4>filter_coeffs</h4>
+                <pre class="signature"><code>facts filter_coeffs = vec![0.25, 0.5, 0.25]; // Simple smoothing filter</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L120">math_advanced_demo.csd:120</a></p>
+            </div>
+            <div class="doc-item" id="filtered">
+                <h4>filtered</h4>
+                <pre class="signature"><code>facts filtered = convolution_filter(&noisy_signal, &filter_coeffs)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L122">math_advanced_demo.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="x_data">
+                <h4>x_data</h4>
+                <pre class="signature"><code>facts x_data = vec![0.0, 1.0, 2.0, 3.0, 4.0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L138">math_advanced_demo.csd:138</a></p>
+            </div>
+            <div class="doc-item" id="y_data">
+                <h4>y_data</h4>
+                <pre class="signature"><code>facts y_data = vec![0.0, 1.0, 4.0, 9.0, 16.0]; // y = x²</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L139">math_advanced_demo.csd:139</a></p>
+            </div>
+            <div class="doc-item" id="interp_points">
+                <h4>interp_points</h4>
+                <pre class="signature"><code>facts interp_points = vec![0.5, 1.5, 2.5, 3.5];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L143">math_advanced_demo.csd:143</a></p>
+            </div>
+            <div class="doc-item" id="interpolated">
+                <h4>interpolated</h4>
+                <pre class="signature"><code>facts interpolated = cubic_spline_interpolation(&x_data, &y_data, point)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L145">math_advanced_demo.csd:145</a></p>
+            </div>
+            <div class="doc-item" id="analytical">
+                <h4>analytical</h4>
+                <pre class="signature"><code>facts analytical = point * point;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L146">math_advanced_demo.csd:146</a></p>
+            </div>
+            <div class="doc-item" id="f_exp">
+                <h4>f_exp</h4>
+                <pre class="signature"><code>facts f_exp = |x: f64| x.exp();</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L154">math_advanced_demo.csd:154</a></p>
+            </div>
+            <div class="doc-item" id="chebyshev_coeffs">
+                <h4>chebyshev_coeffs</h4>
+                <pre class="signature"><code>facts chebyshev_coeffs = chebyshev_approximation(f_exp, -1.0, 1.0, 5)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L155">math_advanced_demo.csd:155</a></p>
+            </div>
+            <div class="doc-item" id="matrix">
+                <h4>matrix</h4>
+                <pre class="signature"><code>facts matrix = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L173">math_advanced_demo.csd:173</a></p>
+            </div>
+            <div class="doc-item" id="vector">
+                <h4>vector</h4>
+                <pre class="signature"><code>facts vector = vec![8.0, -1.0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L177">math_advanced_demo.csd:177</a></p>
+            </div>
+            <div class="doc-item" id="solution">
+                <h4>solution</h4>
+                <pre class="signature"><code>facts solution = solve_linear_system(&matrix, &vector)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L179">math_advanced_demo.csd:179</a></p>
+            </div>
+            <div class="doc-item" id="test_matrix">
+                <h4>test_matrix</h4>
+                <pre class="signature"><code>facts test_matrix = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L184">math_advanced_demo.csd:184</a></p>
+            </div>
+            <div class="doc-item" id="det">
+                <h4>det</h4>
+                <pre class="signature"><code>facts det = matrix_determinant(&test_matrix)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L190">math_advanced_demo.csd:190</a></p>
+            </div>
+            <div class="doc-item" id="x_data">
+                <h4>x_data</h4>
+                <pre class="signature"><code>facts x_data = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L204">math_advanced_demo.csd:204</a></p>
+            </div>
+            <div class="doc-item" id="y_data">
+                <h4>y_data</h4>
+                <pre class="signature"><code>facts y_data = vec![1.1, 3.4, 6.8, 11.2, 16.9, 24.1]; // With small noise</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L205">math_advanced_demo.csd:205</a></p>
+            </div>
+            <div class="doc-item" id="poly_coeffs">
+                <h4>poly_coeffs</h4>
+                <pre class="signature"><code>facts poly_coeffs = polynomial_fit(&x_data, &y_data, 2)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L207">math_advanced_demo.csd:207</a></p>
+            </div>
+            <div class="doc-item" id="test_x">
+                <h4>test_x</h4>
+                <pre class="signature"><code>facts test_x = 2.5;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L213">math_advanced_demo.csd:213</a></p>
+            </div>
+            <div class="doc-item" id="fitted_value">
+                <h4>fitted_value</h4>
+                <pre class="signature"><code>facts fitted_value = evaluate_polynomial(&poly_coeffs, test_x)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L214">math_advanced_demo.csd:214</a></p>
+            </div>
+            <div class="doc-item" id="analytical_value">
+                <h4>analytical_value</h4>
+                <pre class="signature"><code>facts analytical_value = 1.0 + 2.0 * test_x + 0.5 * test_x * test_x;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L215">math_advanced_demo.csd:215</a></p>
+            </div>
+            <div class="doc-item" id="time_points">
+                <h4>time_points</h4>
+                <pre class="signature"><code>facts time_points = 16;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L228">math_advanced_demo.csd:228</a></p>
+            </div>
+            <div class="doc-item" id="sampling_rate">
+                <h4>sampling_rate</h4>
+                <pre class="signature"><code>facts sampling_rate = 16.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L229">math_advanced_demo.csd:229</a></p>
+            </div>
+            <div class="doc-item" id="t">
+                <h4>t</h4>
+                <pre class="signature"><code>facts t = i as f64 / sampling_rate;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L233">math_advanced_demo.csd:233</a></p>
+            </div>
+            <div class="doc-item" id="signal">
+                <h4>signal</h4>
+                <pre class="signature"><code>facts signal =</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L234">math_advanced_demo.csd:234</a></p>
+            </div>
+            <div class="doc-item" id="frequency_spectrum">
+                <h4>frequency_spectrum</h4>
+                <pre class="signature"><code>facts frequency_spectrum = fast_fourier_transform(&vibration_signal)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L241">math_advanced_demo.csd:241</a></p>
+            </div>
+            <div class="doc-item" id="frequency">
+                <h4>frequency</h4>
+                <pre class="signature"><code>facts frequency = i as f64 * sampling_rate / time_points as f64;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L245">math_advanced_demo.csd:245</a></p>
+            </div>
+            <div class="doc-item" id="magnitude">
+                <h4>magnitude</h4>
+                <pre class="signature"><code>facts magnitude = frequency_spectrum[i].magnitude() / time_points as f64 * 2.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L246">math_advanced_demo.csd:246</a></p>
+            </div>
+            <div class="doc-item" id="time_samples">
+                <h4>time_samples</h4>
+                <pre class="signature"><code>facts time_samples = vec![0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L255">math_advanced_demo.csd:255</a></p>
+            </div>
+            <div class="doc-item" id="zeta">
+                <h4>zeta</h4>
+                <pre class="signature"><code>facts zeta = 0.5;     // Damping ratio</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L259">math_advanced_demo.csd:259</a></p>
+            </div>
+            <div class="doc-item" id="omega_n">
+                <h4>omega_n</h4>
+                <pre class="signature"><code>facts omega_n = 5.0;  // Natural frequency</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L260">math_advanced_demo.csd:260</a></p>
+            </div>
+            <div class="doc-item" id="omega_d">
+                <h4>omega_d</h4>
+                <pre class="signature"><code>facts omega_d = omega_n * (1.0 - zeta * zeta).sqrt(); // Damped frequency</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L261">math_advanced_demo.csd:261</a></p>
+            </div>
+            <div class="doc-item" id="exponential">
+                <h4>exponential</h4>
+                <pre class="signature"><code>facts exponential = (-zeta * omega_n * t).exp();</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L264">math_advanced_demo.csd:264</a></p>
+            </div>
+            <div class="doc-item" id="cosine_term">
+                <h4>cosine_term</h4>
+                <pre class="signature"><code>facts cosine_term = (omega_d * t).cos();</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L265">math_advanced_demo.csd:265</a></p>
+            </div>
+            <div class="doc-item" id="sine_term">
+                <h4>sine_term</h4>
+                <pre class="signature"><code>facts sine_term = (zeta / (1.0 - zeta * zeta).sqrt()) * (omega_d * t).sin();</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L266">math_advanced_demo.csd:266</a></p>
+            </div>
+            <div class="doc-item" id="response">
+                <h4>response</h4>
+                <pre class="signature"><code>facts response = 1.0 - exponential * (cosine_term + sine_term);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L267">math_advanced_demo.csd:267</a></p>
+            </div>
+            <div class="doc-item" id="force_function">
+                <h4>force_function</h4>
+                <pre class="signature"><code>facts force_function = |x: f64| 10.0 - 0.5 * x * x;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L283">math_advanced_demo.csd:283</a></p>
+            </div>
+            <div class="doc-item" id="work">
+                <h4>work</h4>
+                <pre class="signature"><code>facts work = adaptive_simpson_integration(force_function, 0.0, 4.0, None, None)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L284">math_advanced_demo.csd:284</a></p>
+            </div>
+            <div class="doc-item" id="cost_function">
+                <h4>cost_function</h4>
+                <pre class="signature"><code>facts cost_function = |r: f64| 2.0 * PI * r * r + 2000.0 / r;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L292">math_advanced_demo.csd:292</a></p>
+            </div>
+            <div class="doc-item" id="optimal_radius">
+                <h4>optimal_radius</h4>
+                <pre class="signature"><code>facts optimal_radius = golden_section_search(cost_function, 0.1, 20.0, None)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L293">math_advanced_demo.csd:293</a></p>
+            </div>
+            <div class="doc-item" id="optimal_height">
+                <h4>optimal_height</h4>
+                <pre class="signature"><code>facts optimal_height = 1000.0 / (PI * optimal_radius * optimal_radius);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L294">math_advanced_demo.csd:294</a></p>
+            </div>
+            <div class="doc-item" id="minimum_cost">
+                <h4>minimum_cost</h4>
+                <pre class="signature"><code>facts minimum_cost = cost_function(optimal_radius);</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L295">math_advanced_demo.csd:295</a></p>
+            </div>
+            <div class="doc-item" id="measurement_x">
+                <h4>measurement_x</h4>
+                <pre class="signature"><code>facts measurement_x = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L306">math_advanced_demo.csd:306</a></p>
+            </div>
+            <div class="doc-item" id="measurement_y">
+                <h4>measurement_y</h4>
+                <pre class="signature"><code>facts measurement_y = vec![2.9, 4.1, 5.8, 8.2, 10.1, 12.3]; // Roughly y = x² - x + 2</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L307">math_advanced_demo.csd:307</a></p>
+            </div>
+            <div class="doc-item" id="fitted_coeffs">
+                <h4>fitted_coeffs</h4>
+                <pre class="signature"><code>facts fitted_coeffs = polynomial_fit(&measurement_x, &measurement_y, 2)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L309">math_advanced_demo.csd:309</a></p>
+            </div>
+            <div class="doc-item" id="mean_y">
+                <h4>mean_y</h4>
+                <pre class="signature"><code>facts mean_y = measurement_y.iter().sum::<f64>() / measurement_y.len() as f64;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L315">math_advanced_demo.csd:315</a></p>
+            </div>
+            <div class="doc-item" id="predicted">
+                <h4>predicted</h4>
+                <pre class="signature"><code>facts predicted = evaluate_polynomial(&fitted_coeffs, measurement_x[i])?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L318">math_advanced_demo.csd:318</a></p>
+            </div>
+            <div class="doc-item" id="residual">
+                <h4>residual</h4>
+                <pre class="signature"><code>facts residual = measurement_y[i] - predicted;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L319">math_advanced_demo.csd:319</a></p>
+            </div>
+            <div class="doc-item" id="deviation">
+                <h4>deviation</h4>
+                <pre class="signature"><code>facts deviation = measurement_y[i] - mean_y;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L322">math_advanced_demo.csd:322</a></p>
+            </div>
+            <div class="doc-item" id="r_squared">
+                <h4>r_squared</h4>
+                <pre class="signature"><code>facts r_squared = 1.0 - residual_sum_squares / total_sum_squares;</code></pre>
+                <p class="source">Source: <a href="file://./examples/math_advanced_demo.csd#L326">math_advanced_demo.csd:326</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

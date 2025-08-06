@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>console_io_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>console_io_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() -> Result<(), IoError> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L6">console_io_demo.csd:6</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_buffered_io">
+                <h4>demonstrate_buffered_io</h4>
+                <pre class="signature"><code>slay demonstrate_buffered_io() -> IoResult<()> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L117">console_io_demo.csd:117</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_progress_bar">
+                <h4>demonstrate_progress_bar</h4>
+                <pre class="signature"><code>slay demonstrate_progress_bar() -> IoResult<()> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L133">console_io_demo.csd:133</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_pagination">
+                <h4>demonstrate_pagination</h4>
+                <pre class="signature"><code>slay demonstrate_pagination() -> IoResult<()> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L150">console_io_demo.csd:150</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_error_handling">
+                <h4>demonstrate_error_handling</h4>
+                <pre class="signature"><code>slay demonstrate_error_handling() -> IoResult<()> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L166">console_io_demo.csd:166</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_threaded_io">
+                <h4>demonstrate_threaded_io</h4>
+                <pre class="signature"><code>slay demonstrate_threaded_io() -> IoResult<()> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L191">console_io_demo.csd:191</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="name">
+                <h4>name</h4>
+                <pre class="signature"><code>facts name = "CURSED";</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L24">console_io_demo.csd:24</a></p>
+            </div>
+            <div class="doc-item" id="version">
+                <h4>version</h4>
+                <pre class="signature"><code>facts version = 1.0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L25">console_io_demo.csd:25</a></p>
+            </div>
+            <div class="doc-item" id="user_name">
+                <h4>user_name</h4>
+                <pre class="signature"><code>facts user_name = prompt("Enter your name: ")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L32">console_io_demo.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="age_str">
+                <h4>age_str</h4>
+                <pre class="signature"><code>facts age_str = prompt("Enter your age: ")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L35">console_io_demo.csd:35</a></p>
+            </div>
+            <div class="doc-item" id="proceed">
+                <h4>proceed</h4>
+                <pre class="signature"><code>facts proceed = confirm("Do you want to continue with the demo?")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L45">console_io_demo.csd:45</a></p>
+            </div>
+            <div class="doc-item" id="options">
+                <h4>options</h4>
+                <pre class="signature"><code>facts options = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L56">console_io_demo.csd:56</a></p>
+            </div>
+            <div class="doc-item" id="choice">
+                <h4>choice</h4>
+                <pre class="signature"><code>facts choice = select("Choose an option:", &options)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L63">console_io_demo.csd:63</a></p>
+            </div>
+            <div class="doc-item" id="multi_options">
+                <h4>multi_options</h4>
+                <pre class="signature"><code>facts multi_options = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L77">console_io_demo.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="selections">
+                <h4>selections</h4>
+                <pre class="signature"><code>facts selections = multi_select("Select features to enable (use numbers to toggle):", &multi_options)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L84">console_io_demo.csd:84</a></p>
+            </div>
+            <div class="doc-item" id="ch">
+                <h4>ch</h4>
+                <pre class="signature"><code>facts ch = read_char()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L100">console_io_demo.csd:100</a></p>
+            </div>
+            <div class="doc-item" id="delimited_text">
+                <h4>delimited_text</h4>
+                <pre class="signature"><code>facts delimited_text = read_until('|')?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L107">console_io_demo.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="content: Vec<String>">
+                <h4>content: Vec<String></h4>
+                <pre class="signature"><code>facts content: Vec<String> = (1..=50)</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L154">console_io_demo.csd:154</a></p>
+            </div>
+            <div class="doc-item" id="invalid_result">
+                <h4>invalid_result</h4>
+                <pre class="signature"><code>facts invalid_result = read_until('α'); // Non-ASCII character</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L170">console_io_demo.csd:170</a></p>
+            </div>
+            <div class="doc-item" id="io_err">
+                <h4>io_err</h4>
+                <pre class="signature"><code>facts io_err = io_error("Custom I/O error");</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L182">console_io_demo.csd:182</a></p>
+            </div>
+            <div class="doc-item" id="cursed_err: CursedError">
+                <h4>cursed_err: CursedError</h4>
+                <pre class="signature"><code>facts cursed_err: CursedError = io_err.into();</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L183">console_io_demo.csd:183</a></p>
+            </div>
+            <div class="doc-item" id="shared_writer">
+                <h4>shared_writer</h4>
+                <pre class="signature"><code>facts shared_writer = shared_buffered_stdout();</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L194">console_io_demo.csd:194</a></p>
+            </div>
+            <div class="doc-item" id="handles">
+                <h4>handles</h4>
+                <pre class="signature"><code>facts handles = vec![];</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L195">console_io_demo.csd:195</a></p>
+            </div>
+            <div class="doc-item" id="writer_clone">
+                <h4>writer_clone</h4>
+                <pre class="signature"><code>facts writer_clone = shared_writer.clone();</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L199">console_io_demo.csd:199</a></p>
+            </div>
+            <div class="doc-item" id="handle">
+                <h4>handle</h4>
+                <pre class="signature"><code>facts handle = std::thread::spawn(move || -> IoResult<()> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/console_io_demo.csd#L200">console_io_demo.csd:200</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

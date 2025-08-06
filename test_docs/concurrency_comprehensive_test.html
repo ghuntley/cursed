@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>concurrency_comprehensive_test - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>concurrency_comprehensive_test</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="goroutine_function">
+                <h4>goroutine_function</h4>
+                <pre class="signature"><code>slay goroutine_function() {</code></pre>
+                <p class="source">Source: <a href="file://./concurrency_comprehensive_test.csd#L9">concurrency_comprehensive_test.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="sender_goroutine">
+                <h4>sender_goroutine</h4>
+                <pre class="signature"><code>slay sender_goroutine(ch dm<normie>) {</code></pre>
+                <p class="source">Source: <a href="file://./concurrency_comprehensive_test.csd#L52">concurrency_comprehensive_test.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="receiver_goroutine">
+                <h4>receiver_goroutine</h4>
+                <pre class="signature"><code>slay receiver_goroutine(ch dm<normie>) {</code></pre>
+                <p class="source">Source: <a href="file://./concurrency_comprehensive_test.csd#L59">concurrency_comprehensive_test.csd:59</a></p>
+            </div>
+            <div class="doc-item" id="producer">
+                <h4>producer</h4>
+                <pre class="signature"><code>slay producer(buffer_ch dm<normie>, items normie) {</code></pre>
+                <p class="source">Source: <a href="file://./concurrency_comprehensive_test.csd#L111">concurrency_comprehensive_test.csd:111</a></p>
+            </div>
+            <div class="doc-item" id="consumer">
+                <h4>consumer</h4>
+                <pre class="signature"><code>slay consumer(buffer_ch dm<normie>, done_ch dm<lit>, expected_items normie) {</code></pre>
+                <p class="source">Source: <a href="file://./concurrency_comprehensive_test.csd#L119">concurrency_comprehensive_test.csd:119</a></p>
+            </div>
+            <div class="doc-item" id="worker">
+                <h4>worker</h4>
+                <pre class="signature"><code>slay worker(id normie, work_ch dm<normie>, result_ch dm<normie>) {</code></pre>
+                <p class="source">Source: <a href="file://./concurrency_comprehensive_test.csd#L149">concurrency_comprehensive_test.csd:149</a></p>
+            </div>
+            <div class="doc-item" id="error_prone_goroutine">
+                <h4>error_prone_goroutine</h4>
+                <pre class="signature"><code>slay error_prone_goroutine(err_ch dm<tea>) {</code></pre>
+                <p class="source">Source: <a href="file://./concurrency_comprehensive_test.csd#L230">concurrency_comprehensive_test.csd:230</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

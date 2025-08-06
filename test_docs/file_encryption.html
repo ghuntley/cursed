@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>file_encryption - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>file_encryption</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="default">
+                <h4>default</h4>
+                <pre class="signature"><code>slay default() -> Self {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L46">file_encryption.csd:46</a></p>
+            </div>
+            <div class="doc-item" id="high_security">
+                <h4>high_security</h4>
+                <pre class="signature"><code>slay high_security() -> Self {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L58">file_encryption.csd:58</a></p>
+            </div>
+            <div class="doc-item" id="fast_mode">
+                <h4>fast_mode</h4>
+                <pre class="signature"><code>slay fast_mode() -> Self {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L68">file_encryption.csd:68</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L78">file_encryption.csd:78</a></p>
+            </div>
+            <div class="doc-item" id="print_usage">
+                <h4>print_usage</h4>
+                <pre class="signature"><code>slay print_usage() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L114">file_encryption.csd:114</a></p>
+            </div>
+            <div class="doc-item" id="encrypt_file_interactive">
+                <h4>encrypt_file_interactive</h4>
+                <pre class="signature"><code>slay encrypt_file_interactive(file_path: &str) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L126">file_encryption.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="decrypt_file_interactive">
+                <h4>decrypt_file_interactive</h4>
+                <pre class="signature"><code>slay decrypt_file_interactive(file_path: &str) {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L186">file_encryption.csd:186</a></p>
+            </div>
+            <div class="doc-item" id="encrypt_file">
+                <h4>encrypt_file</h4>
+                <pre class="signature"><code>slay encrypt_file(file_path: &str, password: &str, config: &EncryptionConfig) -> Result<String, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L222">file_encryption.csd:222</a></p>
+            </div>
+            <div class="doc-item" id="decrypt_file">
+                <h4>decrypt_file</h4>
+                <pre class="signature"><code>slay decrypt_file(file_path: &str, password: &str) -> Result<String, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L270">file_encryption.csd:270</a></p>
+            </div>
+            <div class="doc-item" id="derive_key_from_password">
+                <h4>derive_key_from_password</h4>
+                <pre class="signature"><code>slay derive_key_from_password(password: &[u8], salt: &[u8], config: &EncryptionConfig) -> Result<Vec<u8>, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L319">file_encryption.csd:319</a></p>
+            </div>
+            <div class="doc-item" id="encrypt_content">
+                <h4>encrypt_content</h4>
+                <pre class="signature"><code>slay encrypt_content(content: &[u8], key: &[u8], config: &EncryptionConfig) -> Result<Vec<u8>, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L330">file_encryption.csd:330</a></p>
+            </div>
+            <div class="doc-item" id="decrypt_content">
+                <h4>decrypt_content</h4>
+                <pre class="signature"><code>slay decrypt_content(encrypted: &[u8], key: &[u8], config: &EncryptionConfig) -> Result<Vec<u8>, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L343">file_encryption.csd:343</a></p>
+            </div>
+            <div class="doc-item" id="serialize_encrypted_file">
+                <h4>serialize_encrypted_file</h4>
+                <pre class="signature"><code>slay serialize_encrypted_file(encrypted_file: &EncryptedFile) -> Result<Vec<u8>, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L356">file_encryption.csd:356</a></p>
+            </div>
+            <div class="doc-item" id="deserialize_encrypted_file">
+                <h4>deserialize_encrypted_file</h4>
+                <pre class="signature"><code>slay deserialize_encrypted_file(data: &[u8]) -> Result<EncryptedFile, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L396">file_encryption.csd:396</a></p>
+            </div>
+            <div class="doc-item" id="from_metadata">
+                <h4>from_metadata</h4>
+                <pre class="signature"><code>slay from_metadata(metadata: &EncryptionMetadata) -> Result<Self, Box<dyn std::error::Error>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L466">file_encryption.csd:466</a></p>
+            </div>
+            <div class="doc-item" id="name">
+                <h4>name</h4>
+                <pre class="signature"><code>slay name(&self) -> &'static str {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L489">file_encryption.csd:489</a></p>
+            </div>
+            <div class="doc-item" id="name">
+                <h4>name</h4>
+                <pre class="signature"><code>slay name(&self) -> &'static str {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L498">file_encryption.csd:498</a></p>
+            </div>
+            <div class="doc-item" id="verify_decrypted_file">
+                <h4>verify_decrypted_file</h4>
+                <pre class="signature"><code>slay verify_decrypted_file(file_path: &str) -> bool {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L506">file_encryption.csd:506</a></p>
+            </div>
+            <div class="doc-item" id="read_password">
+                <h4>read_password</h4>
+                <pre class="signature"><code>slay read_password() -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L514">file_encryption.csd:514</a></p>
+            </div>
+            <div class="doc-item" id="read_line">
+                <h4>read_line</h4>
+                <pre class="signature"><code>slay read_line() -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L520">file_encryption.csd:520</a></p>
+            </div>
+            <div class="doc-item" id="run_encryption_demo">
+                <h4>run_encryption_demo</h4>
+                <pre class="signature"><code>slay run_encryption_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L526">file_encryption.csd:526</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="EncryptionMetadata">
+                <h4>EncryptionMetadata</h4>
+                <pre class="signature"><code>squad EncryptionMetadata {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L12">file_encryption.csd:12</a></p>
+            </div>
+            <div class="doc-item" id="EncryptedFile">
+                <h4>EncryptedFile</h4>
+                <pre class="signature"><code>squad EncryptedFile {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L22">file_encryption.csd:22</a></p>
+            </div>
+            <div class="doc-item" id="EncryptionConfig">
+                <h4>EncryptionConfig</h4>
+                <pre class="signature"><code>squad EncryptionConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L28">file_encryption.csd:28</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="command">
+                <h4>command</h4>
+                <pre class="signature"><code>facts command = &args[1]</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L94">file_encryption.csd:94</a></p>
+            </div>
+            <div class="doc-item" id="file_path">
+                <h4>file_path</h4>
+                <pre class="signature"><code>facts file_path = &args[2]</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L95">file_encryption.csd:95</a></p>
+            </div>
+            <div class="doc-item" id="magic">
+                <h4>magic</h4>
+                <pre class="signature"><code>facts magic = b"CURSED_ENCRYPTED_FILE"</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L400">file_encryption.csd:400</a></p>
+            </div>
+            <div class="doc-item" id="demo_content">
+                <h4>demo_content</h4>
+                <pre class="signature"><code>facts demo_content = "This is a secret document that needs protection!\nIt contains sensitive information that should be encrypted.\nCURSED crypto provides military-grade security bestie! 🔐"</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L531">file_encryption.csd:531</a></p>
+            </div>
+            <div class="doc-item" id="demo_file">
+                <h4>demo_file</h4>
+                <pre class="signature"><code>facts demo_file = "demo_secret.txt"</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L532">file_encryption.csd:532</a></p>
+            </div>
+            <div class="doc-item" id="password">
+                <h4>password</h4>
+                <pre class="signature"><code>facts password = "demo_password_bestie"</code></pre>
+                <p class="source">Source: <a href="file://./examples/file_encryption.csd#L538">file_encryption.csd:538</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>reflection_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>reflection_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L12">reflection_demo.csd:12</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (p Person) GetInfo() tea {</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L191">reflection_demo.csd:191</a></p>
+            </div>
+            <div class="doc-item" id="demo_nested_reflection">
+                <h4>demo_nested_reflection</h4>
+                <pre class="signature"><code>slay demo_nested_reflection() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L209">reflection_demo.csd:209</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="person">
+                <h4>person</h4>
+                <pre class="signature"><code>facts person = Person{</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L17">reflection_demo.csd:17</a></p>
+            </div>
+            <div class="doc-item" id="person_val">
+                <h4>person_val</h4>
+                <pre class="signature"><code>facts person_val = lookin_glass.value_of(person)</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L27">reflection_demo.csd:27</a></p>
+            </div>
+            <div class="doc-item" id="person_type">
+                <h4>person_type</h4>
+                <pre class="signature"><code>facts person_type = person_val.typ()</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L28">reflection_demo.csd:28</a></p>
+            </div>
+            <div class="doc-item" id="field">
+                <h4>field</h4>
+                <pre class="signature"><code>facts field = person_type.field(i)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L38">reflection_demo.csd:38</a></p>
+            </div>
+            <div class="doc-item" id="field_val">
+                <h4>field_val</h4>
+                <pre class="signature"><code>facts field_val = person_val.field(i)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L39">reflection_demo.csd:39</a></p>
+            </div>
+            <div class="doc-item" id="json_tag">
+                <h4>json_tag</h4>
+                <pre class="signature"><code>facts json_tag = field.tag().get("json")</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L47">reflection_demo.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="validation_tag">
+                <h4>validation_tag</h4>
+                <pre class="signature"><code>facts validation_tag = field.tag().get("validation")</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L48">reflection_demo.csd:48</a></p>
+            </div>
+            <div class="doc-item" id="person_map">
+                <h4>person_map</h4>
+                <pre class="signature"><code>facts person_map = lookin_glass.struct_to_map(person)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L62">reflection_demo.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="new_map">
+                <h4>new_map</h4>
+                <pre class="signature"><code>facts new_map = map[tea]collab{}{</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L69">reflection_demo.csd:69</a></p>
+            </div>
+            <div class="doc-item" id="mapper">
+                <h4>mapper</h4>
+                <pre class="signature"><code>facts mapper = lookin_glass.VibeMapper.new()</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L81">reflection_demo.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="json_data">
+                <h4>json_data</h4>
+                <pre class="signature"><code>facts json_data = mapper.to_json(person)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L86">reflection_demo.csd:86</a></p>
+            </div>
+            <div class="doc-item" id="zero_person">
+                <h4>zero_person</h4>
+                <pre class="signature"><code>facts zero_person = lookin_glass.zero(person_type)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L96">reflection_demo.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="person_copy">
+                <h4>person_copy</h4>
+                <pre class="signature"><code>facts person_copy = lookin_glass.deep_copy(person)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L101">reflection_demo.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="are_equal">
+                <h4>are_equal</h4>
+                <pre class="signature"><code>facts are_equal = lookin_glass.deep_equal(person, person_copy)</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L102">reflection_demo.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="int_slice_type">
+                <h4>int_slice_type</h4>
+                <pre class="signature"><code>facts int_slice_type = lookin_glass.slice_of(lookin_glass.Type.basic(lookin_glass.Kind.Int32))</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L109">reflection_demo.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="int_slice">
+                <h4>int_slice</h4>
+                <pre class="signature"><code>facts int_slice = lookin_glass.make_slice(int_slice_type, 3, 5)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L110">reflection_demo.csd:110</a></p>
+            </div>
+            <div class="doc-item" id="string_int_map_type">
+                <h4>string_int_map_type</h4>
+                <pre class="signature"><code>facts string_int_map_type = lookin_glass.map_of(</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L121">reflection_demo.csd:121</a></p>
+            </div>
+            <div class="doc-item" id="string_int_map">
+                <h4>string_int_map</h4>
+                <pre class="signature"><code>facts string_int_map = lookin_glass.make_map(string_int_map_type)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L125">reflection_demo.csd:125</a></p>
+            </div>
+            <div class="doc-item" id="func_type">
+                <h4>func_type</h4>
+                <pre class="signature"><code>facts func_type = lookin_glass.func_of(</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L143">reflection_demo.csd:143</a></p>
+            </div>
+            <div class="doc-item" id="add_func">
+                <h4>add_func</h4>
+                <pre class="signature"><code>facts add_func = lookin_glass.make_func(func_type, slay(args: &[lookin_glass.Value]) -> lookin_glass.LookinGlassResult<Vec<lookin_glass.Value>> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L150">reflection_demo.csd:150</a></p>
+            </div>
+            <div class="doc-item" id="a">
+                <h4>a</h4>
+                <pre class="signature"><code>facts a = args[0].int()?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L155">reflection_demo.csd:155</a></p>
+            </div>
+            <div class="doc-item" id="b">
+                <h4>b</h4>
+                <pre class="signature"><code>facts b = args[1].int()?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L156">reflection_demo.csd:156</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = a + b</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L157">reflection_demo.csd:157</a></p>
+            </div>
+            <div class="doc-item" id="func_args">
+                <h4>func_args</h4>
+                <pre class="signature"><code>facts func_args = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L163">reflection_demo.csd:163</a></p>
+            </div>
+            <div class="doc-item" id="result_values">
+                <h4>result_values</h4>
+                <pre class="signature"><code>facts result_values = add_func.call(func_args)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L167">reflection_demo.csd:167</a></p>
+            </div>
+            <div class="doc-item" id="int_ptr">
+                <h4>int_ptr</h4>
+                <pre class="signature"><code>facts int_ptr = lookin_glass.new(lookin_glass.Type.basic(lookin_glass.Kind.Int32))?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L172">reflection_demo.csd:172</a></p>
+            </div>
+            <div class="doc-item" id="pointed_val">
+                <h4>pointed_val</h4>
+                <pre class="signature"><code>facts pointed_val = lookin_glass.indirect(int_ptr)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L173">reflection_demo.csd:173</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = lookin_glass.get_reflection_statistics()</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L181">reflection_demo.csd:181</a></p>
+            </div>
+            <div class="doc-item" id="company">
+                <h4>company</h4>
+                <pre class="signature"><code>facts company = Company{</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L212">reflection_demo.csd:212</a></p>
+            </div>
+            <div class="doc-item" id="company_val">
+                <h4>company_val</h4>
+                <pre class="signature"><code>facts company_val = lookin_glass.value_of(company)</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L223">reflection_demo.csd:223</a></p>
+            </div>
+            <div class="doc-item" id="company_type">
+                <h4>company_type</h4>
+                <pre class="signature"><code>facts company_type = company_val.typ()</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L224">reflection_demo.csd:224</a></p>
+            </div>
+            <div class="doc-item" id="field">
+                <h4>field</h4>
+                <pre class="signature"><code>facts field = company_type.field(i)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L230">reflection_demo.csd:230</a></p>
+            </div>
+            <div class="doc-item" id="field_val">
+                <h4>field_val</h4>
+                <pre class="signature"><code>facts field_val = company_val.field(i)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L231">reflection_demo.csd:231</a></p>
+            </div>
+            <div class="doc-item" id="nested_field">
+                <h4>nested_field</h4>
+                <pre class="signature"><code>facts nested_field = field.field_type().field(j)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L238">reflection_demo.csd:238</a></p>
+            </div>
+            <div class="doc-item" id="nested_val">
+                <h4>nested_val</h4>
+                <pre class="signature"><code>facts nested_val = field_val.field(j)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/reflection_demo.csd#L239">reflection_demo.csd:239</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

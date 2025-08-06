@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>enhanced_implementations - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>enhanced_implementations</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="string_length_real">
+                <h4>string_length_real</h4>
+                <pre class="signature"><code>slay string_length_real(s tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L9">enhanced_implementations.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="string_contains_real">
+                <h4>string_contains_real</h4>
+                <pre class="signature"><code>slay string_contains_real(s tea, substr tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L30">enhanced_implementations.csd:30</a></p>
+            </div>
+            <div class="doc-item" id="get_file_descriptor_real">
+                <h4>get_file_descriptor_real</h4>
+                <pre class="signature"><code>slay get_file_descriptor_real(filename tea, flags normie, mode normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L62">enhanced_implementations.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="close_file_descriptor">
+                <h4>close_file_descriptor</h4>
+                <pre class="signature"><code>slay close_file_descriptor(fd normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L86">enhanced_implementations.csd:86</a></p>
+            </div>
+            <div class="doc-item" id="read_file_real">
+                <h4>read_file_real</h4>
+                <pre class="signature"><code>slay read_file_real(filename tea) ([]byte, tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L101">enhanced_implementations.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="write_file_real">
+                <h4>write_file_real</h4>
+                <pre class="signature"><code>slay write_file_real(filename tea, data []byte, perm normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L124">enhanced_implementations.csd:124</a></p>
+            </div>
+            <div class="doc-item" id="open_real">
+                <h4>open_real</h4>
+                <pre class="signature"><code>slay open_real(filename tea) (*FileReal, tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L154">enhanced_implementations.csd:154</a></p>
+            </div>
+            <div class="doc-item" id="create_real">
+                <h4>create_real</h4>
+                <pre class="signature"><code>slay create_real(filename tea) (*FileReal, tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L185">enhanced_implementations.csd:185</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (f *FileReal) read_real(b []byte) (normie, tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L207">enhanced_implementations.csd:207</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (f *FileReal) write_real(b []byte) (normie, tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L232">enhanced_implementations.csd:232</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (f *FileReal) close_real() tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L254">enhanced_implementations.csd:254</a></p>
+            </div>
+            <div class="doc-item" id="">
+                <h4></h4>
+                <pre class="signature"><code>slay (f *FileReal) seek_real(offset thicc, whence normie) (thicc, tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L264">enhanced_implementations.csd:264</a></p>
+            </div>
+            <div class="doc-item" id="read_dir_real">
+                <h4>read_dir_real</h4>
+                <pre class="signature"><code>slay read_dir_real(dirname tea) ([]DirEntry, tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L290">enhanced_implementations.csd:290</a></p>
+            </div>
+            <div class="doc-item" id="join_paths_real">
+                <h4>join_paths_real</h4>
+                <pre class="signature"><code>slay join_paths_real(path1 tea, path2 tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L369">enhanced_implementations.csd:369</a></p>
+            </div>
+            <div class="doc-item" id="dir_real">
+                <h4>dir_real</h4>
+                <pre class="signature"><code>slay dir_real(path tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L392">enhanced_implementations.csd:392</a></p>
+            </div>
+            <div class="doc-item" id="base_real">
+                <h4>base_real</h4>
+                <pre class="signature"><code>slay base_real(path tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L420">enhanced_implementations.csd:420</a></p>
+            </div>
+            <div class="doc-item" id="ext_real">
+                <h4>ext_real</h4>
+                <pre class="signature"><code>slay ext_real(path tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L452">enhanced_implementations.csd:452</a></p>
+            </div>
+            <div class="doc-item" id="is_abs_real">
+                <h4>is_abs_real</h4>
+                <pre class="signature"><code>slay is_abs_real(path tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L470">enhanced_implementations.csd:470</a></p>
+            </div>
+            <div class="doc-item" id="exists_real">
+                <h4>exists_real</h4>
+                <pre class="signature"><code>slay exists_real(path tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/dropz/enhanced_implementations.csd#L478">enhanced_implementations.csd:478</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

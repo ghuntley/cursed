@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>crypto_pki_certificate_renewal_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>crypto_pki_certificate_renewal_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="run_certificate_renewal_demo">
+                <h4>run_certificate_renewal_demo</h4>
+                <pre class="signature"><code>slay run_certificate_renewal_demo() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L23">crypto_pki_certificate_renewal_demo.csd:23</a></p>
+            </div>
+            <div class="doc-item" id="init_certificate_renewal_system">
+                <h4>init_certificate_renewal_system</h4>
+                <pre class="signature"><code>slay init_certificate_renewal_system() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L61">crypto_pki_certificate_renewal_demo.csd:61</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_acme_configuration">
+                <h4>demonstrate_acme_configuration</h4>
+                <pre class="signature"><code>slay demonstrate_acme_configuration() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L192">crypto_pki_certificate_renewal_demo.csd:192</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_certificate_monitoring">
+                <h4>demonstrate_certificate_monitoring</h4>
+                <pre class="signature"><code>slay demonstrate_certificate_monitoring() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L258">crypto_pki_certificate_renewal_demo.csd:258</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_automated_renewal">
+                <h4>demonstrate_automated_renewal</h4>
+                <pre class="signature"><code>slay demonstrate_automated_renewal() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L349">crypto_pki_certificate_renewal_demo.csd:349</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_manual_renewal">
+                <h4>demonstrate_manual_renewal</h4>
+                <pre class="signature"><code>slay demonstrate_manual_renewal() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L451">crypto_pki_certificate_renewal_demo.csd:451</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_custom_script_renewal">
+                <h4>demonstrate_custom_script_renewal</h4>
+                <pre class="signature"><code>slay demonstrate_custom_script_renewal(renewal_manager: &mut CertificateRenewalManager) -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L537">crypto_pki_certificate_renewal_demo.csd:537</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_notification_systems">
+                <h4>demonstrate_notification_systems</h4>
+                <pre class="signature"><code>slay demonstrate_notification_systems() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L612">crypto_pki_certificate_renewal_demo.csd:612</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_backup_and_rollback">
+                <h4>demonstrate_backup_and_rollback</h4>
+                <pre class="signature"><code>slay demonstrate_backup_and_rollback() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L704">crypto_pki_certificate_renewal_demo.csd:704</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_error_handling">
+                <h4>demonstrate_error_handling</h4>
+                <pre class="signature"><code>slay demonstrate_error_handling() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L776">crypto_pki_certificate_renewal_demo.csd:776</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_monitoring_and_statistics">
+                <h4>demonstrate_monitoring_and_statistics</h4>
+                <pre class="signature"><code>slay demonstrate_monitoring_and_statistics() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L848">crypto_pki_certificate_renewal_demo.csd:848</a></p>
+            </div>
+            <div class="doc-item" id="simulate_acme_renewal_process">
+                <h4>simulate_acme_renewal_process</h4>
+                <pre class="signature"><code>slay simulate_acme_renewal_process() -> Result<(), String> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L922">crypto_pki_certificate_renewal_demo.csd:922</a></p>
+            </div>
+            <div class="doc-item" id="create_demo_certificate">
+                <h4>create_demo_certificate</h4>
+                <pre class="signature"><code>slay create_demo_certificate(domain: &str, validity: Duration) -> X509Certificate {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L950">crypto_pki_certificate_renewal_demo.csd:950</a></p>
+            </div>
+            <div class="doc-item" id="status_to_emoji">
+                <h4>status_to_emoji</h4>
+                <pre class="signature"><code>slay status_to_emoji(status: &CertificateStatus) -> &str {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L995">crypto_pki_certificate_renewal_demo.csd:995</a></p>
+            </div>
+            <div class="doc-item" id="method_to_emoji">
+                <h4>method_to_emoji</h4>
+                <pre class="signature"><code>slay method_to_emoji(method: &str) -> &str {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L1007">crypto_pki_certificate_renewal_demo.csd:1007</a></p>
+            </div>
+            <div class="doc-item" id="random_serial">
+                <h4>random_serial</h4>
+                <pre class="signature"><code>slay random_serial() -> u64 {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L1018">crypto_pki_certificate_renewal_demo.csd:1018</a></p>
+            </div>
+            <div class="doc-item" id="generate_demo_public_key">
+                <h4>generate_demo_public_key</h4>
+                <pre class="signature"><code>slay generate_demo_public_key() -> Vec<u8> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L1023">crypto_pki_certificate_renewal_demo.csd:1023</a></p>
+            </div>
+            <div class="doc-item" id="generate_demo_cert_data">
+                <h4>generate_demo_cert_data</h4>
+                <pre class="signature"><code>slay generate_demo_cert_data(domain: &str) -> Vec<u8> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L1028">crypto_pki_certificate_renewal_demo.csd:1028</a></p>
+            </div>
+            <div class="doc-item" id="base64_encode">
+                <h4>base64_encode</h4>
+                <pre class="signature"><code>slay base64_encode(data: &str) -> String {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L1036">crypto_pki_certificate_renewal_demo.csd:1036</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() -> Result<(), String> {</code></pre>
+                <p class="description">Main function to run the certificate renewal demo</p>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L1043">crypto_pki_certificate_renewal_demo.csd:1043</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="CertificateRenewalDemo">
+                <h4>CertificateRenewalDemo</h4>
+                <pre class="signature"><code>squad CertificateRenewalDemo {</code></pre>
+                <p class="description">- Notification systems</p>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_renewal_demo.csd#L21">crypto_pki_certificate_renewal_demo.csd:21</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

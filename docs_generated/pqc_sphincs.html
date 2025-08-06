@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pqc_sphincs - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>pqc_sphincs</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="sphincs_hash_n_n">
+                <h4>sphincs_hash_n_n</h4>
+                <pre class="signature"><code>slay sphincs_hash_n_n(output [normie], input [normie], addr_type normie) { fr fr Simplified hash function using built-in operations</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L41">pqc_sphincs.csd:41</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_hash_2n_n">
+                <h4>sphincs_hash_2n_n</h4>
+                <pre class="signature"><code>slay sphincs_hash_2n_n(output [normie], input1 [normie], input2 [normie], addr_type normie) { fr fr Hash two n-byte inputs to one n-byte output</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L52">pqc_sphincs.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_prf">
+                <h4>sphincs_prf</h4>
+                <pre class="signature"><code>slay sphincs_prf(output [normie], key [normie], addr_type normie, index normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L61">pqc_sphincs.csd:61</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_wots_checksum">
+                <h4>sphincs_wots_checksum</h4>
+                <pre class="signature"><code>slay sphincs_wots_checksum(csum [normie], msg [normie], len1 normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L70">pqc_sphincs.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_wots_chain">
+                <h4>sphincs_wots_chain</h4>
+                <pre class="signature"><code>slay sphincs_wots_chain(output [normie], input [normie], start normie, steps normie, addr_type normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L83">pqc_sphincs.csd:83</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_wots_pkgen">
+                <h4>sphincs_wots_pkgen</h4>
+                <pre class="signature"><code>slay sphincs_wots_pkgen(pk [normie], sk [normie], addr_type normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L93">pqc_sphincs.csd:93</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_wots_sign">
+                <h4>sphincs_wots_sign</h4>
+                <pre class="signature"><code>slay sphincs_wots_sign(sig [normie], msg [normie], sk [normie], addr_type normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L107">pqc_sphincs.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_fors_skgen">
+                <h4>sphincs_fors_skgen</h4>
+                <pre class="signature"><code>slay sphincs_fors_skgen(sk [normie], seed [normie], addr_type normie, index normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L135">pqc_sphincs.csd:135</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_fors_node">
+                <h4>sphincs_fors_node</h4>
+                <pre class="signature"><code>slay sphincs_fors_node(node [normie], sk [normie], target_node normie, tree_height normie, addr_type normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L139">pqc_sphincs.csd:139</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_fors_sign">
+                <h4>sphincs_fors_sign</h4>
+                <pre class="signature"><code>slay sphincs_fors_sign(sig [normie], msg [normie], sk [normie], addr_type normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L154">pqc_sphincs.csd:154</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_xmss_node">
+                <h4>sphincs_xmss_node</h4>
+                <pre class="signature"><code>slay sphincs_xmss_node(node [normie], sk [normie], target_node normie, tree_height normie, addr_type normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L174">pqc_sphincs.csd:174</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_xmss_sign">
+                <h4>sphincs_xmss_sign</h4>
+                <pre class="signature"><code>slay sphincs_xmss_sign(sig [normie], msg [normie], sk [normie], idx normie, addr_type normie) { fr fr Generate WOTS+ signature</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L191">pqc_sphincs.csd:191</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_ht_sign">
+                <h4>sphincs_ht_sign</h4>
+                <pre class="signature"><code>slay sphincs_ht_sign(sig [normie], msg [normie], sk [normie], tree_idx normie, leaf_idx normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L212">pqc_sphincs.csd:212</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_keygen">
+                <h4>sphincs_keygen</h4>
+                <pre class="signature"><code>slay sphincs_keygen(public_key [normie], secret_key [normie]) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L234">pqc_sphincs.csd:234</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_sign">
+                <h4>sphincs_sign</h4>
+                <pre class="signature"><code>slay sphincs_sign(signature [normie], message [normie], secret_key [normie]) { fr fr Generate randomizer (simplified)</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L245">pqc_sphincs.csd:245</a></p>
+            </div>
+            <div class="doc-item" id="sphincs_verify">
+                <h4>sphincs_verify</h4>
+                <pre class="signature"><code>slay sphincs_verify(signature [normie], message [normie], public_key [normie]) lit { fr fr Extract signature components</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L266">pqc_sphincs.csd:266</a></p>
+            </div>
+            <div class="doc-item" id="pqc_sphincs_generate_keypair">
+                <h4>pqc_sphincs_generate_keypair</h4>
+                <pre class="signature"><code>slay pqc_sphincs_generate_keypair() [normie] {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L293">pqc_sphincs.csd:293</a></p>
+            </div>
+            <div class="doc-item" id="pqc_sphincs_sign">
+                <h4>pqc_sphincs_sign</h4>
+                <pre class="signature"><code>slay pqc_sphincs_sign(message [normie], secret_key [normie]) [normie] {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L314">pqc_sphincs.csd:314</a></p>
+            </div>
+            <div class="doc-item" id="pqc_sphincs_verify">
+                <h4>pqc_sphincs_verify</h4>
+                <pre class="signature"><code>slay pqc_sphincs_verify(signature [normie], message [normie], public_key [normie]) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/crypto_secure/pqc_sphincs.csd#L323">pqc_sphincs.csd:323</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

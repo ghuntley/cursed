@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sqlite - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>sqlite</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="sqlite_create_config">
+                <h4>sqlite_create_config</h4>
+                <pre class="signature"><code>slay sqlite_create_config(database_path tea) SQLiteConfig {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L15">sqlite.csd:15</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_connection_string">
+                <h4>sqlite_connection_string</h4>
+                <pre class="signature"><code>slay sqlite_connection_string(config SQLiteConfig) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L27">sqlite.csd:27</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_set_pragma">
+                <h4>sqlite_set_pragma</h4>
+                <pre class="signature"><code>slay sqlite_set_pragma(pragma_name tea, value tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L48">sqlite.csd:48</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_get_pragma">
+                <h4>sqlite_get_pragma</h4>
+                <pre class="signature"><code>slay sqlite_get_pragma(pragma_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L52">sqlite.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_enable_foreign_keys">
+                <h4>sqlite_enable_foreign_keys</h4>
+                <pre class="signature"><code>slay sqlite_enable_foreign_keys() tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L56">sqlite.csd:56</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_set_journal_mode">
+                <h4>sqlite_set_journal_mode</h4>
+                <pre class="signature"><code>slay sqlite_set_journal_mode(mode tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L60">sqlite.csd:60</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_set_synchronous">
+                <h4>sqlite_set_synchronous</h4>
+                <pre class="signature"><code>slay sqlite_set_synchronous(level tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L64">sqlite.csd:64</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_set_cache_size">
+                <h4>sqlite_set_cache_size</h4>
+                <pre class="signature"><code>slay sqlite_set_cache_size(size normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L68">sqlite.csd:68</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_format_value">
+                <h4>sqlite_format_value</h4>
+                <pre class="signature"><code>slay sqlite_format_value(value tea, data_type tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L73">sqlite.csd:73</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_escape_string">
+                <h4>sqlite_escape_string</h4>
+                <pre class="signature"><code>slay sqlite_escape_string(value tea) tea { fr fr SQLite uses '' to escape single quotes</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L103">sqlite.csd:103</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_create_table">
+                <h4>sqlite_create_table</h4>
+                <pre class="signature"><code>slay sqlite_create_table(table_name tea, columns []tea, without_rowid lit) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L108">sqlite.csd:108</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_add_column">
+                <h4>sqlite_add_column</h4>
+                <pre class="signature"><code>slay sqlite_add_column(table_name tea, column_definition tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L120">sqlite.csd:120</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_create_index">
+                <h4>sqlite_create_index</h4>
+                <pre class="signature"><code>slay sqlite_create_index(index_name tea, table_name tea, columns []tea, unique lit, where_clause tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L124">sqlite.csd:124</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_upsert_query">
+                <h4>sqlite_upsert_query</h4>
+                <pre class="signature"><code>slay sqlite_upsert_query(table_name tea, columns []tea, conflict_resolution tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L142">sqlite.csd:142</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_insert_or_ignore">
+                <h4>sqlite_insert_or_ignore</h4>
+                <pre class="signature"><code>slay sqlite_insert_or_ignore(table_name tea, columns []tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L154">sqlite.csd:154</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_insert_or_replace">
+                <h4>sqlite_insert_or_replace</h4>
+                <pre class="signature"><code>slay sqlite_insert_or_replace(table_name tea, columns []tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L158">sqlite.csd:158</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_json_extract">
+                <h4>sqlite_json_extract</h4>
+                <pre class="signature"><code>slay sqlite_json_extract(column tea, path tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L163">sqlite.csd:163</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_json_array_length">
+                <h4>sqlite_json_array_length</h4>
+                <pre class="signature"><code>slay sqlite_json_array_length(column tea, path tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L167">sqlite.csd:167</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_json_valid">
+                <h4>sqlite_json_valid</h4>
+                <pre class="signature"><code>slay sqlite_json_valid(column tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L175">sqlite.csd:175</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_json_type">
+                <h4>sqlite_json_type</h4>
+                <pre class="signature"><code>slay sqlite_json_type(column tea, path tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L179">sqlite.csd:179</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_create_fts_table">
+                <h4>sqlite_create_fts_table</h4>
+                <pre class="signature"><code>slay sqlite_create_fts_table(table_name tea, columns []tea, content_table tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L188">sqlite.csd:188</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_fts_search">
+                <h4>sqlite_fts_search</h4>
+                <pre class="signature"><code>slay sqlite_fts_search(table_name tea, search_term tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L200">sqlite.csd:200</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_fts_highlight">
+                <h4>sqlite_fts_highlight</h4>
+                <pre class="signature"><code>slay sqlite_fts_highlight(table_name tea, column_index normie, start_tag tea, end_tag tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L204">sqlite.csd:204</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_fts_snippet">
+                <h4>sqlite_fts_snippet</h4>
+                <pre class="signature"><code>slay sqlite_fts_snippet(table_name tea, column_index normie, start_tag tea, end_tag tea, ellipsis tea, max_tokens normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L208">sqlite.csd:208</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_row_number">
+                <h4>sqlite_row_number</h4>
+                <pre class="signature"><code>slay sqlite_row_number() tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L214">sqlite.csd:214</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_row_number_partitioned">
+                <h4>sqlite_row_number_partitioned</h4>
+                <pre class="signature"><code>slay sqlite_row_number_partitioned(partition_by []tea, order_by []tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L218">sqlite.csd:218</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_lag">
+                <h4>sqlite_lag</h4>
+                <pre class="signature"><code>slay sqlite_lag(column tea, offset normie, default_value tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L236">sqlite.csd:236</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_lead">
+                <h4>sqlite_lead</h4>
+                <pre class="signature"><code>slay sqlite_lead(column tea, offset normie, default_value tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L240">sqlite.csd:240</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_current_timestamp">
+                <h4>sqlite_current_timestamp</h4>
+                <pre class="signature"><code>slay sqlite_current_timestamp() tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L245">sqlite.csd:245</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_date_add">
+                <h4>sqlite_date_add</h4>
+                <pre class="signature"><code>slay sqlite_date_add(date_value tea, interval tea, unit tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L249">sqlite.csd:249</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_date_diff">
+                <h4>sqlite_date_diff</h4>
+                <pre class="signature"><code>slay sqlite_date_diff(date1 tea, date2 tea, unit tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L253">sqlite.csd:253</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_strftime">
+                <h4>sqlite_strftime</h4>
+                <pre class="signature"><code>slay sqlite_strftime(format tea, date_value tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L267">sqlite.csd:267</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_list_tables">
+                <h4>sqlite_list_tables</h4>
+                <pre class="signature"><code>slay sqlite_list_tables() tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L272">sqlite.csd:272</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_table_info">
+                <h4>sqlite_table_info</h4>
+                <pre class="signature"><code>slay sqlite_table_info(table_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L276">sqlite.csd:276</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_index_list">
+                <h4>sqlite_index_list</h4>
+                <pre class="signature"><code>slay sqlite_index_list(table_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L280">sqlite.csd:280</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_foreign_key_list">
+                <h4>sqlite_foreign_key_list</h4>
+                <pre class="signature"><code>slay sqlite_foreign_key_list(table_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L284">sqlite.csd:284</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_vacuum">
+                <h4>sqlite_vacuum</h4>
+                <pre class="signature"><code>slay sqlite_vacuum() tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L289">sqlite.csd:289</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_vacuum_into">
+                <h4>sqlite_vacuum_into</h4>
+                <pre class="signature"><code>slay sqlite_vacuum_into(target_file tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L293">sqlite.csd:293</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_analyze">
+                <h4>sqlite_analyze</h4>
+                <pre class="signature"><code>slay sqlite_analyze() tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L297">sqlite.csd:297</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_analyze_table">
+                <h4>sqlite_analyze_table</h4>
+                <pre class="signature"><code>slay sqlite_analyze_table(table_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L301">sqlite.csd:301</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_create_pool">
+                <h4>sqlite_create_pool</h4>
+                <pre class="signature"><code>slay sqlite_create_pool(config SQLiteConfig, max_conn normie) SQLitePool {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L312">sqlite.csd:312</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_parse_error">
+                <h4>sqlite_parse_error</h4>
+                <pre class="signature"><code>slay sqlite_parse_error(error_message tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L322">sqlite.csd:322</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_optimize_query">
+                <h4>sqlite_optimize_query</h4>
+                <pre class="signature"><code>slay sqlite_optimize_query(query tea) tea { fr fr Add query optimization hints</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L349">sqlite.csd:349</a></p>
+            </div>
+            <div class="doc-item" id="sqlite_memory_optimization">
+                <h4>sqlite_memory_optimization</h4>
+                <pre class="signature"><code>slay sqlite_memory_optimization() []tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/database/sqlite.csd#L356">sqlite.csd:356</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

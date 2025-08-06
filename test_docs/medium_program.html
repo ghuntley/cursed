@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>medium_program - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>medium_program</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="distance">
+                <h4>distance</h4>
+                <pre class="signature"><code>slay distance(p1: Point, p2: Point) -> f64 {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L16">medium_program.csd:16</a></p>
+            </div>
+            <div class="doc-item" id="vector_magnitude">
+                <h4>vector_magnitude</h4>
+                <pre class="signature"><code>slay vector_magnitude(vec: Vector) -> f64 {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L22">medium_program.csd:22</a></p>
+            </div>
+            <div class="doc-item" id="create_circle_points">
+                <h4>create_circle_points</h4>
+                <pre class="signature"><code>slay create_circle_points(radius: f64, num_points: i32) -> Vector {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L34">medium_program.csd:34</a></p>
+            </div>
+            <div class="doc-item" id="compute_circle_properties">
+                <h4>compute_circle_properties</h4>
+                <pre class="signature"><code>slay compute_circle_properties(radius: f64, num_points: i32) -> (f64, f64, f64) {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L50">medium_program.csd:50</a></p>
+            </div>
+            <div class="doc-item" id="benchmark_calculations">
+                <h4>benchmark_calculations</h4>
+                <pre class="signature"><code>slay benchmark_calculations() -> f64 {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L59">medium_program.csd:59</a></p>
+            </div>
+            <div class="doc-item" id="process_data_intensive">
+                <h4>process_data_intensive</h4>
+                <pre class="signature"><code>slay process_data_intensive() -> List<f64> {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L77">medium_program.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() -> i32 {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L89">medium_program.csd:89</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="Point">
+                <h4>Point</h4>
+                <pre class="signature"><code>squad Point {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L7">medium_program.csd:7</a></p>
+            </div>
+            <div class="doc-item" id="Vector">
+                <h4>Vector</h4>
+                <pre class="signature"><code>squad Vector {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L12">medium_program.csd:12</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="dx">
+                <h4>dx</h4>
+                <pre class="signature"><code>facts dx = p1.x - p2.x;</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L17">medium_program.csd:17</a></p>
+            </div>
+            <div class="doc-item" id="dy">
+                <h4>dy</h4>
+                <pre class="signature"><code>facts dy = p1.y - p2.y;</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L18">medium_program.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="current_point">
+                <h4>current_point</h4>
+                <pre class="signature"><code>facts current_point = vec.points.get(i);</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L26">medium_program.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="next_point">
+                <h4>next_point</h4>
+                <pre class="signature"><code>facts next_point = vec.points.get(i + 1);</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L27">medium_program.csd:27</a></p>
+            </div>
+            <div class="doc-item" id="angle_step">
+                <h4>angle_step</h4>
+                <pre class="signature"><code>facts angle_step = 2.0 * PI / num_points as f64;</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L36">medium_program.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="angle">
+                <h4>angle</h4>
+                <pre class="signature"><code>facts angle = i as f64 * angle_step;</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L39">medium_program.csd:39</a></p>
+            </div>
+            <div class="doc-item" id="point">
+                <h4>point</h4>
+                <pre class="signature"><code>facts point = Point {</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L40">medium_program.csd:40</a></p>
+            </div>
+            <div class="doc-item" id="circle">
+                <h4>circle</h4>
+                <pre class="signature"><code>facts circle = create_circle_points(radius, num_points);</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L51">medium_program.csd:51</a></p>
+            </div>
+            <div class="doc-item" id="perimeter">
+                <h4>perimeter</h4>
+                <pre class="signature"><code>facts perimeter = vector_magnitude(circle);</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L52">medium_program.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="area">
+                <h4>area</h4>
+                <pre class="signature"><code>facts area = PI * radius * radius;</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L53">medium_program.csd:53</a></p>
+            </div>
+            <div class="doc-item" id="circumference">
+                <h4>circumference</h4>
+                <pre class="signature"><code>facts circumference = 2.0 * PI * radius;</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L54">medium_program.csd:54</a></p>
+            </div>
+            <div class="doc-item" id="(perimeter, area, circumference)">
+                <h4>(perimeter, area, circumference)</h4>
+                <pre class="signature"><code>facts (perimeter, area, circumference) = compute_circle_properties(radius as f64, 100);</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L64">medium_program.csd:64</a></p>
+            </div>
+            <div class="doc-item" id="x">
+                <h4>x</h4>
+                <pre class="signature"><code>facts x = i as f64 / 100.0;</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L70">medium_program.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="value">
+                <h4>value</h4>
+                <pre class="signature"><code>facts value = i as f64;</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L81">medium_program.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="processed">
+                <h4>processed</h4>
+                <pre class="signature"><code>facts processed = sqrt(value) + pow(value, 0.5) + ln(value + 1.0);</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L82">medium_program.csd:82</a></p>
+            </div>
+            <div class="doc-item" id="calc_result">
+                <h4>calc_result</h4>
+                <pre class="signature"><code>facts calc_result = benchmark_calculations();</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L90">medium_program.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="data_result">
+                <h4>data_result</h4>
+                <pre class="signature"><code>facts data_result = process_data_intensive();</code></pre>
+                <p class="source">Source: <a href="file://./benchmarks/medium_program.csd#L91">medium_program.csd:91</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

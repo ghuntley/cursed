@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>redis_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>redis_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="demonstrate_configuration">
+                <h4>demonstrate_configuration</h4>
+                <pre class="signature"><code>slay demonstrate_configuration() {</code></pre>
+                <p class="description">slay Configuration examples</p>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L268">redis_demo.csd:268</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="driver">
+                <h4>driver</h4>
+                <pre class="signature"><code>facts driver = RedisDriver::new();</code></pre>
+                <p class="description">slay Main demo function - showcase Redis capabilities</p>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L15">redis_demo.csd:15</a></p>
+            </div>
+            <div class="doc-item" id="ping_result">
+                <h4>ping_result</h4>
+                <pre class="signature"><code>facts ping_result = connection.ping(Some("Hello Redis!")).await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L21">redis_demo.csd:21</a></p>
+            </div>
+            <div class="doc-item" id="name">
+                <h4>name</h4>
+                <pre class="signature"><code>facts name = connection.get("user:1:name").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L32">redis_demo.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="age">
+                <h4>age</h4>
+                <pre class="signature"><code>facts age = connection.get("user:1:age").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L33">redis_demo.csd:33</a></p>
+            </div>
+            <div class="doc-item" id="active">
+                <h4>active</h4>
+                <pre class="signature"><code>facts active = connection.get("user:1:active").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L34">redis_demo.csd:34</a></p>
+            </div>
+            <div class="doc-item" id="ttl">
+                <h4>ttl</h4>
+                <pre class="signature"><code>facts ttl = connection.ttl("session:abc123").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L42">redis_demo.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="new_views">
+                <h4>new_views</h4>
+                <pre class="signature"><code>facts new_views = connection.incr("page:views").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L47">redis_demo.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="views_by_5">
+                <h4>views_by_5</h4>
+                <pre class="signature"><code>facts views_by_5 = connection.incr_by("page:views", 5).await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L50">redis_demo.csd:50</a></p>
+            </div>
+            <div class="doc-item" id="tasks">
+                <h4>tasks</h4>
+                <pre class="signature"><code>facts tasks = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L57">redis_demo.csd:57</a></p>
+            </div>
+            <div class="doc-item" id="list_length">
+                <h4>list_length</h4>
+                <pre class="signature"><code>facts list_length = connection.rpush("tasks", &tasks).await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L63">redis_demo.csd:63</a></p>
+            </div>
+            <div class="doc-item" id="all_tasks">
+                <h4>all_tasks</h4>
+                <pre class="signature"><code>facts all_tasks = connection.lrange("tasks", 0, -1).await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L70">redis_demo.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="completed_task">
+                <h4>completed_task</h4>
+                <pre class="signature"><code>facts completed_task = connection.lpop("tasks").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L77">redis_demo.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="remaining_count">
+                <h4>remaining_count</h4>
+                <pre class="signature"><code>facts remaining_count = connection.llen("tasks").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L80">redis_demo.csd:80</a></p>
+            </div>
+            <div class="doc-item" id="user_tags">
+                <h4>user_tags</h4>
+                <pre class="signature"><code>facts user_tags = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L87">redis_demo.csd:87</a></p>
+            </div>
+            <div class="doc-item" id="is_developer">
+                <h4>is_developer</h4>
+                <pre class="signature"><code>facts is_developer = connection.sismember("user:1:tags", &Value::string("developer")).await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L97">redis_demo.csd:97</a></p>
+            </div>
+            <div class="doc-item" id="is_dog_person">
+                <h4>is_dog_person</h4>
+                <pre class="signature"><code>facts is_dog_person = connection.sismember("user:1:tags", &Value::string("dog-person")).await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L98">redis_demo.csd:98</a></p>
+            </div>
+            <div class="doc-item" id="all_tags">
+                <h4>all_tags</h4>
+                <pre class="signature"><code>facts all_tags = connection.smembers("user:1:tags").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L104">redis_demo.csd:104</a></p>
+            </div>
+            <div class="doc-item" id="tag_count">
+                <h4>tag_count</h4>
+                <pre class="signature"><code>facts tag_count = connection.scard("user:1:tags").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L109">redis_demo.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="email">
+                <h4>email</h4>
+                <pre class="signature"><code>facts email = connection.hget("profile:1", "email").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L122">redis_demo.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="profile">
+                <h4>profile</h4>
+                <pre class="signature"><code>facts profile = connection.hgetall("profile:1").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L126">redis_demo.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="field_count">
+                <h4>field_count</h4>
+                <pre class="signature"><code>facts field_count = connection.hlen("profile:1").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L133">redis_demo.csd:133</a></p>
+            </div>
+            <div class="doc-item" id="user_keys">
+                <h4>user_keys</h4>
+                <pre class="signature"><code>facts user_keys = connection.keys("user:*").await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L140">redis_demo.csd:140</a></p>
+            </div>
+            <div class="doc-item" id="(new_cursor, keys)">
+                <h4>(new_cursor, keys)</h4>
+                <pre class="signature"><code>facts (new_cursor, keys) = connection.scan(cursor, Some("*"), Some(10)).await?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L150">redis_demo.csd:150</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = connection.get_stats().await;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L161">redis_demo.csd:161</a></p>
+            </div>
+            <div class="doc-item" id="keys_to_delete">
+                <h4>keys_to_delete</h4>
+                <pre class="signature"><code>facts keys_to_delete = vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L188">redis_demo.csd:188</a></p>
+            </div>
+            <div class="doc-item" id="driver">
+                <h4>driver</h4>
+                <pre class="signature"><code>facts driver = RedisDriver::from_url("redis://invalid-host:9999")?;</code></pre>
+                <p class="description">slay Error handling demonstration</p>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L207">redis_demo.csd:207</a></p>
+            </div>
+            <div class="doc-item" id="driver">
+                <h4>driver</h4>
+                <pre class="signature"><code>facts driver = RedisDriver::new();</code></pre>
+                <p class="description">slay Performance benchmarking demo</p>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L229">redis_demo.csd:229</a></p>
+            </div>
+            <div class="doc-item" id="operations">
+                <h4>operations</h4>
+                <pre class="signature"><code>facts operations = 1000;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L232">redis_demo.csd:232</a></p>
+            </div>
+            <div class="doc-item" id="start_time">
+                <h4>start_time</h4>
+                <pre class="signature"><code>facts start_time = std::time::Instant::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L233">redis_demo.csd:233</a></p>
+            </div>
+            <div class="doc-item" id="key">
+                <h4>key</h4>
+                <pre class="signature"><code>facts key = format!("bench:set:{}", i);</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L237">redis_demo.csd:237</a></p>
+            </div>
+            <div class="doc-item" id="set_duration">
+                <h4>set_duration</h4>
+                <pre class="signature"><code>facts set_duration = start_time.elapsed();</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L241">redis_demo.csd:241</a></p>
+            </div>
+            <div class="doc-item" id="get_start">
+                <h4>get_start</h4>
+                <pre class="signature"><code>facts get_start = std::time::Instant::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L247">redis_demo.csd:247</a></p>
+            </div>
+            <div class="doc-item" id="key">
+                <h4>key</h4>
+                <pre class="signature"><code>facts key = format!("bench:set:{}", i);</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L249">redis_demo.csd:249</a></p>
+            </div>
+            <div class="doc-item" id="get_duration">
+                <h4>get_duration</h4>
+                <pre class="signature"><code>facts get_duration = get_start.elapsed();</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L253">redis_demo.csd:253</a></p>
+            </div>
+            <div class="doc-item" id="key">
+                <h4>key</h4>
+                <pre class="signature"><code>facts key = format!("bench:set:{}", i);</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L260">redis_demo.csd:260</a></p>
+            </div>
+            <div class="doc-item" id="default_config">
+                <h4>default_config</h4>
+                <pre class="signature"><code>facts default_config = RedisConfig::default();</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L272">redis_demo.csd:272</a></p>
+            </div>
+            <div class="doc-item" id="url_config">
+                <h4>url_config</h4>
+                <pre class="signature"><code>facts url_config = RedisConfig::from_url("redis://user:pass@localhost:6380/1?connection_timeout=10000")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L276">redis_demo.csd:276</a></p>
+            </div>
+            <div class="doc-item" id="custom_config">
+                <h4>custom_config</h4>
+                <pre class="signature"><code>facts custom_config = RedisConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/redis_demo.csd#L283">redis_demo.csd:283</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

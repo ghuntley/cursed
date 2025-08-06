@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pki_comprehensive_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>pki_comprehensive_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() -> void {</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L16">pki_comprehensive_demo.csd:16</a></p>
+            </div>
+            <div class="doc-item" id="demo_certificate_authority_creation">
+                <h4>demo_certificate_authority_creation</h4>
+                <pre class="signature"><code>slay demo_certificate_authority_creation() -> void {</code></pre>
+                <p class="description">Demo Certificate Authority creation and management</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L63">pki_comprehensive_demo.csd:63</a></p>
+            </div>
+            <div class="doc-item" id="demo_certificate_parsing">
+                <h4>demo_certificate_parsing</h4>
+                <pre class="signature"><code>slay demo_certificate_parsing() -> void {</code></pre>
+                <p class="description">Demo certificate parsing from various formats</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L116">pki_comprehensive_demo.csd:116</a></p>
+            </div>
+            <div class="doc-item" id="demo_chain_validation">
+                <h4>demo_chain_validation</h4>
+                <pre class="signature"><code>slay demo_chain_validation() -> void {</code></pre>
+                <p class="description">Demo certificate chain validation</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L181">pki_comprehensive_demo.csd:181</a></p>
+            </div>
+            <div class="doc-item" id="demo_csr_generation">
+                <h4>demo_csr_generation</h4>
+                <pre class="signature"><code>slay demo_csr_generation() -> void {</code></pre>
+                <p class="description">Demo Certificate Signing Request generation</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L238">pki_comprehensive_demo.csd:238</a></p>
+            </div>
+            <div class="doc-item" id="demo_certificate_issuance">
+                <h4>demo_certificate_issuance</h4>
+                <pre class="signature"><code>slay demo_certificate_issuance() -> void {</code></pre>
+                <p class="description">Demo certificate issuance by a CA</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L293">pki_comprehensive_demo.csd:293</a></p>
+            </div>
+            <div class="doc-item" id="demo_certificate_revocation">
+                <h4>demo_certificate_revocation</h4>
+                <pre class="signature"><code>slay demo_certificate_revocation() -> void {</code></pre>
+                <p class="description">Demo certificate revocation and CRL management</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L324">pki_comprehensive_demo.csd:324</a></p>
+            </div>
+            <div class="doc-item" id="demo_trust_store_management">
+                <h4>demo_trust_store_management</h4>
+                <pre class="signature"><code>slay demo_trust_store_management() -> void {</code></pre>
+                <p class="description">Demo trust store management</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L356">pki_comprehensive_demo.csd:356</a></p>
+            </div>
+            <div class="doc-item" id="demo_key_management">
+                <h4>demo_key_management</h4>
+                <pre class="signature"><code>slay demo_key_management() -> void {</code></pre>
+                <p class="description">Demo key management operations</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L389">pki_comprehensive_demo.csd:389</a></p>
+            </div>
+            <div class="doc-item" id="demo_ocsp_checking">
+                <h4>demo_ocsp_checking</h4>
+                <pre class="signature"><code>slay demo_ocsp_checking() -> void {</code></pre>
+                <p class="description">Demo OCSP certificate status checking</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L428">pki_comprehensive_demo.csd:428</a></p>
+            </div>
+            <div class="doc-item" id="demo_pki_statistics">
+                <h4>demo_pki_statistics</h4>
+                <pre class="signature"><code>slay demo_pki_statistics() -> void {</code></pre>
+                <p class="description">Demo PKI statistics and monitoring</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L469">pki_comprehensive_demo.csd:469</a></p>
+            </div>
+            <div class="doc-item" id="create_sample_certificate">
+                <h4>create_sample_certificate</h4>
+                <pre class="signature"><code>slay create_sample_certificate(subject: DistinguishedName, is_ca: bool) -> X509Certificate {</code></pre>
+                <p class="description">Helper function to create sample certificates for demos</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L517">pki_comprehensive_demo.csd:517</a></p>
+            </div>
+            <div class="doc-item" id="rand_u64">
+                <h4>rand_u64</h4>
+                <pre class="signature"><code>slay rand_u64() -> u64 {</code></pre>
+                <p class="description">Helper function to generate random numbers for demo</p>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L582">pki_comprehensive_demo.csd:582</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="ca_name">
+                <h4>ca_name</h4>
+                <pre class="signature"><code>facts ca_name = "Demo Root CA";</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L68">pki_comprehensive_demo.csd:68</a></p>
+            </div>
+            <div class="doc-item" id="ca_dn">
+                <h4>ca_dn</h4>
+                <pre class="signature"><code>facts ca_dn = DistinguishedName::from_common_name(ca_name);</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L69">pki_comprehensive_demo.csd:69</a></p>
+            </div>
+            <div class="doc-item" id="ca_config">
+                <h4>ca_config</h4>
+                <pre class="signature"><code>facts ca_config = CaConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L73">pki_comprehensive_demo.csd:73</a></p>
+            </div>
+            <div class="doc-item" id="pem_cert">
+                <h4>pem_cert</h4>
+                <pre class="signature"><code>facts pem_cert = "-----BEGIN CERTIFICATE-----</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L121">pki_comprehensive_demo.csd:121</a></p>
+            </div>
+            <div class="doc-item" id="malformed_cert">
+                <h4>malformed_cert</h4>
+                <pre class="signature"><code>facts malformed_cert = "-----BEGIN CERTIFICATE-----</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L170">pki_comprehensive_demo.csd:170</a></p>
+            </div>
+            <div class="doc-item" id="end_entity_dn">
+                <h4>end_entity_dn</h4>
+                <pre class="signature"><code>facts end_entity_dn = DistinguishedName::from_common_name("www.example.com");</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L186">pki_comprehensive_demo.csd:186</a></p>
+            </div>
+            <div class="doc-item" id="intermediate_dn">
+                <h4>intermediate_dn</h4>
+                <pre class="signature"><code>facts intermediate_dn = DistinguishedName::from_common_name("Intermediate CA");</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L187">pki_comprehensive_demo.csd:187</a></p>
+            </div>
+            <div class="doc-item" id="root_dn">
+                <h4>root_dn</h4>
+                <pre class="signature"><code>facts root_dn = DistinguishedName::from_common_name("Root CA");</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L188">pki_comprehensive_demo.csd:188</a></p>
+            </div>
+            <div class="doc-item" id="end_entity_cert">
+                <h4>end_entity_cert</h4>
+                <pre class="signature"><code>facts end_entity_cert = create_sample_certificate(end_entity_dn, cap)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L191">pki_comprehensive_demo.csd:191</a></p>
+            </div>
+            <div class="doc-item" id="intermediate_cert">
+                <h4>intermediate_cert</h4>
+                <pre class="signature"><code>facts intermediate_cert = create_sample_certificate(intermediate_dn, based)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L192">pki_comprehensive_demo.csd:192</a></p>
+            </div>
+            <div class="doc-item" id="root_cert">
+                <h4>root_cert</h4>
+                <pre class="signature"><code>facts root_cert = create_sample_certificate(root_dn, based)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L193">pki_comprehensive_demo.csd:193</a></p>
+            </div>
+            <div class="doc-item" id="cert_chain">
+                <h4>cert_chain</h4>
+                <pre class="signature"><code>facts cert_chain = CertificateChain {</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L196">pki_comprehensive_demo.csd:196</a></p>
+            </div>
+            <div class="doc-item" id="chain">
+                <h4>chain</h4>
+                <pre class="signature"><code>facts chain = result.trust_chain.unwrap();</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L228">pki_comprehensive_demo.csd:228</a></p>
+            </div>
+            <div class="doc-item" id="subject_dn">
+                <h4>subject_dn</h4>
+                <pre class="signature"><code>facts subject_dn = DistinguishedName::from_common_name("test.example.com");</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L243">pki_comprehensive_demo.csd:243</a></p>
+            </div>
+            <div class="doc-item" id="csr_request">
+                <h4>csr_request</h4>
+                <pre class="signature"><code>facts csr_request = CsrRequest {</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L251">pki_comprehensive_demo.csd:251</a></p>
+            </div>
+            <div class="doc-item" id="san">
+                <h4>san</h4>
+                <pre class="signature"><code>facts san = &csr_request.subject_alternative_names[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L276">pki_comprehensive_demo.csd:276</a></p>
+            </div>
+            <div class="doc-item" id="now">
+                <h4>now</h4>
+                <pre class="signature"><code>facts now = SystemTime::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L518">pki_comprehensive_demo.csd:518</a></p>
+            </div>
+            <div class="doc-item" id="one_year">
+                <h4>one_year</h4>
+                <pre class="signature"><code>facts one_year = Duration::from_secs(365 * 24 * 3600);</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L519">pki_comprehensive_demo.csd:519</a></p>
+            </div>
+            <div class="doc-item" id="cert">
+                <h4>cert</h4>
+                <pre class="signature"><code>facts cert = X509Certificate {</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L521">pki_comprehensive_demo.csd:521</a></p>
+            </div>
+            <div class="doc-item" id="timestamp">
+                <h4>timestamp</h4>
+                <pre class="signature"><code>facts timestamp = SystemTime::now()</code></pre>
+                <p class="source">Source: <a href="file://./examples/pki_comprehensive_demo.csd#L584">pki_comprehensive_demo.csd:584</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

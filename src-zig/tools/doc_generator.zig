@@ -144,7 +144,7 @@ pub const DocGenerator = struct {
     }
     
     pub fn generateFromDirectory(self: *DocGenerator, dir_path: []const u8) !void {
-        const dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
+        var dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
         defer dir.close();
         
         var iterator = dir.iterate();
@@ -561,6 +561,7 @@ pub const DocGenerator = struct {
     }
     
     fn writeHTMLDocItem(self: *DocGenerator, writer: anytype, item: DocItem) !void {
+        _ = self;
         try writer.print(
             \\            <div class="doc-item" id="{s}">
             \\                <h4>{s}</h4>
@@ -697,7 +698,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
     
     if (args.len < 2) {
-        std.log.err("Usage: cursed-doc <source-directory> [--output <output-dir>] [--format html|markdown|json]");
+        std.log.err("Usage: cursed-doc <source-directory> [--output <output-dir>] [--format html|markdown|json]", .{});
         return;
     }
     

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>csv_mood_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>csv_mood_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L7">csv_mood_demo.csd:7</a></p>
+            </div>
+            <div class="doc-item" id="basic_csv_demo">
+                <h4>basic_csv_demo</h4>
+                <pre class="signature"><code>slay basic_csv_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L32">csv_mood_demo.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="column_access_demo">
+                <h4>column_access_demo</h4>
+                <pre class="signature"><code>slay column_access_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L70">csv_mood_demo.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="streaming_demo">
+                <h4>streaming_demo</h4>
+                <pre class="signature"><code>slay streaming_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L108">csv_mood_demo.csd:108</a></p>
+            </div>
+            <div class="doc-item" id="schema_validation_demo">
+                <h4>schema_validation_demo</h4>
+                <pre class="signature"><code>slay schema_validation_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L153">csv_mood_demo.csd:153</a></p>
+            </div>
+            <div class="doc-item" id="transformation_demo">
+                <h4>transformation_demo</h4>
+                <pre class="signature"><code>slay transformation_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L199">csv_mood_demo.csd:199</a></p>
+            </div>
+            <div class="doc-item" id="error_handling_demo">
+                <h4>error_handling_demo</h4>
+                <pre class="signature"><code>slay error_handling_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L263">csv_mood_demo.csd:263</a></p>
+            </div>
+            <div class="doc-item" id="advanced_features_demo">
+                <h4>advanced_features_demo</h4>
+                <pre class="signature"><code>slay advanced_features_demo() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L319">csv_mood_demo.csd:319</a></p>
+            </div>
+            <div class="doc-item" id="demonstrate_real_world_usage">
+                <h4>demonstrate_real_world_usage</h4>
+                <pre class="signature"><code>slay demonstrate_real_world_usage() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L387">csv_mood_demo.csd:387</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="csv_data">
+                <h4>csv_data</h4>
+                <pre class="signature"><code>facts csv_data = `name,age,city</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L36">csv_mood_demo.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="records">
+                <h4>records</h4>
+                <pre class="signature"><code>facts records = csv_mood.read_all_from_string(csv_data)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L45">csv_mood_demo.csd:45</a></p>
+            </div>
+            <div class="doc-item" id="output">
+                <h4>output</h4>
+                <pre class="signature"><code>facts output = csv_mood.write_all_to_string(records)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L52">csv_mood_demo.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="tsv_data">
+                <h4>tsv_data</h4>
+                <pre class="signature"><code>facts tsv_data = "name\tage\tcity\nAlice\t30\tNew York\nBob\t25\tSan Francisco";</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L57">csv_mood_demo.csd:57</a></p>
+            </div>
+            <div class="doc-item" id="tsv_records">
+                <h4>tsv_records</h4>
+                <pre class="signature"><code>facts tsv_records = reader.read_all()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L61">csv_mood_demo.csd:61</a></p>
+            </div>
+            <div class="doc-item" id="csv_data">
+                <h4>csv_data</h4>
+                <pre class="signature"><code>facts csv_data = `name,age,email,registered</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L73">csv_mood_demo.csd:73</a></p>
+            </div>
+            <div class="doc-item" id="name">
+                <h4>name</h4>
+                <pre class="signature"><code>facts name = column_reader.get("name")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L85">csv_mood_demo.csd:85</a></p>
+            </div>
+            <div class="doc-item" id="age">
+                <h4>age</h4>
+                <pre class="signature"><code>facts age = column_reader.get_int("age")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L86">csv_mood_demo.csd:86</a></p>
+            </div>
+            <div class="doc-item" id="email">
+                <h4>email</h4>
+                <pre class="signature"><code>facts email = column_reader.get("email")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L87">csv_mood_demo.csd:87</a></p>
+            </div>
+            <div class="doc-item" id="registered">
+                <h4>registered</h4>
+                <pre class="signature"><code>facts registered = column_reader.get_bool("registered")?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L88">csv_mood_demo.csd:88</a></p>
+            </div>
+            <div class="doc-item" id="all_fields">
+                <h4>all_fields</h4>
+                <pre class="signature"><code>facts all_fields = column_reader.get_all()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L93">csv_mood_demo.csd:93</a></p>
+            </div>
+            <div class="doc-item" id="typed_values">
+                <h4>typed_values</h4>
+                <pre class="signature"><code>facts typed_values = column_reader.get_all_typed()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L97">csv_mood_demo.csd:97</a></p>
+            </div>
+            <div class="doc-item" id="count">
+                <h4>count</h4>
+                <pre class="signature"><code>facts count = streamer.process(slay(record []tea, header []tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L126">csv_mood_demo.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="salary_str">
+                <h4>salary_str</h4>
+                <pre class="signature"><code>facts salary_str = record[3];</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L131">csv_mood_demo.csd:131</a></p>
+            </div>
+            <div class="doc-item" id="salary">
+                <h4>salary</h4>
+                <pre class="signature"><code>facts salary = no_cap.ParseFloat(salary_str, 64)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L132">csv_mood_demo.csd:132</a></p>
+            </div>
+            <div class="doc-item" id="stats">
+                <h4>stats</h4>
+                <pre class="signature"><code>facts stats = streamer.statistics();</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L147">csv_mood_demo.csd:147</a></p>
+            </div>
+            <div class="doc-item" id="valid_csv">
+                <h4>valid_csv</h4>
+                <pre class="signature"><code>facts valid_csv = `name,email,age,department</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L166">csv_mood_demo.csd:166</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = schema.validate(stringz.NewReader(valid_csv));</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L172">csv_mood_demo.csd:172</a></p>
+            </div>
+            <div class="doc-item" id="invalid_csv">
+                <h4>invalid_csv</h4>
+                <pre class="signature"><code>facts invalid_csv = `name,email,age,department</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L180">csv_mood_demo.csd:180</a></p>
+            </div>
+            <div class="doc-item" id="bad_result">
+                <h4>bad_result</h4>
+                <pre class="signature"><code>facts bad_result = schema.validate(stringz.NewReader(invalid_csv));</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L186">csv_mood_demo.csd:186</a></p>
+            </div>
+            <div class="doc-item" id="csv_data">
+                <h4>csv_data</h4>
+                <pre class="signature"><code>facts csv_data = `first_name,last_name,birth_year,salary,active</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L202">csv_mood_demo.csd:202</a></p>
+            </div>
+            <div class="doc-item" id="original_records">
+                <h4>original_records</h4>
+                <pre class="signature"><code>facts original_records = csv_mood.read_all_from_string(csv_data)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L209">csv_mood_demo.csd:209</a></p>
+            </div>
+            <div class="doc-item" id="first">
+                <h4>first</h4>
+                <pre class="signature"><code>facts first = record["first_name"];</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L225">csv_mood_demo.csd:225</a></p>
+            </div>
+            <div class="doc-item" id="last">
+                <h4>last</h4>
+                <pre class="signature"><code>facts last = record["last_name"];</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L226">csv_mood_demo.csd:226</a></p>
+            </div>
+            <div class="doc-item" id="birth_year_str">
+                <h4>birth_year_str</h4>
+                <pre class="signature"><code>facts birth_year_str = record["birth_year"];</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L230">csv_mood_demo.csd:230</a></p>
+            </div>
+            <div class="doc-item" id="birth_year">
+                <h4>birth_year</h4>
+                <pre class="signature"><code>facts birth_year = no_cap.Atoi(birth_year_str);</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L231">csv_mood_demo.csd:231</a></p>
+            </div>
+            <div class="doc-item" id="current_year">
+                <h4>current_year</h4>
+                <pre class="signature"><code>facts current_year = 2024;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L232">csv_mood_demo.csd:232</a></p>
+            </div>
+            <div class="doc-item" id="age">
+                <h4>age</h4>
+                <pre class="signature"><code>facts age = current_year - birth_year;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L233">csv_mood_demo.csd:233</a></p>
+            </div>
+            <div class="doc-item" id="active">
+                <h4>active</h4>
+                <pre class="signature"><code>facts active = record["active"];</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L237">csv_mood_demo.csd:237</a></p>
+            </div>
+            <div class="doc-item" id="salary_str">
+                <h4>salary_str</h4>
+                <pre class="signature"><code>facts salary_str = record["salary"];</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L247">csv_mood_demo.csd:247</a></p>
+            </div>
+            <div class="doc-item" id="salary">
+                <h4>salary</h4>
+                <pre class="signature"><code>facts salary = no_cap.Atoi(salary_str);</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L248">csv_mood_demo.csd:248</a></p>
+            </div>
+            <div class="doc-item" id="transformed">
+                <h4>transformed</h4>
+                <pre class="signature"><code>facts transformed = transformer.transform()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L253">csv_mood_demo.csd:253</a></p>
+            </div>
+            <div class="doc-item" id="malformed_csv">
+                <h4>malformed_csv</h4>
+                <pre class="signature"><code>facts malformed_csv = `name,description</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L267">csv_mood_demo.csd:267</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = reader.read_all();</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L273">csv_mood_demo.csd:273</a></p>
+            </div>
+            <div class="doc-item" id="mismatched_csv">
+                <h4>mismatched_csv</h4>
+                <pre class="signature"><code>facts mismatched_csv = `name,age</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L286">csv_mood_demo.csd:286</a></p>
+            </div>
+            <div class="doc-item" id="result2">
+                <h4>result2</h4>
+                <pre class="signature"><code>facts result2 = reader2.read_all();</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L292">csv_mood_demo.csd:292</a></p>
+            </div>
+            <div class="doc-item" id="csv_data">
+                <h4>csv_data</h4>
+                <pre class="signature"><code>facts csv_data = "name,age\nAlice,30";</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L299">csv_mood_demo.csd:299</a></p>
+            </div>
+            <div class="doc-item" id="value">
+                <h4>value</h4>
+                <pre class="signature"><code>facts value = column_reader.get("nonexistent");</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L305">csv_mood_demo.csd:305</a></p>
+            </div>
+            <div class="doc-item" id="type_result">
+                <h4>type_result</h4>
+                <pre class="signature"><code>facts type_result = column_reader.get_int("name");</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L311">csv_mood_demo.csd:311</a></p>
+            </div>
+            <div class="doc-item" id="unicode_csv">
+                <h4>unicode_csv</h4>
+                <pre class="signature"><code>facts unicode_csv = `名前,年齢,都市</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L323">csv_mood_demo.csd:323</a></p>
+            </div>
+            <div class="doc-item" id="unicode_records">
+                <h4>unicode_records</h4>
+                <pre class="signature"><code>facts unicode_records = csv_mood.read_all_from_string(unicode_csv)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L329">csv_mood_demo.csd:329</a></p>
+            </div>
+            <div class="doc-item" id="custom_csv">
+                <h4>custom_csv</h4>
+                <pre class="signature"><code>facts custom_csv = `'name'|'description'|'tags'</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L335">csv_mood_demo.csd:335</a></p>
+            </div>
+            <div class="doc-item" id="custom_records">
+                <h4>custom_records</h4>
+                <pre class="signature"><code>facts custom_records = custom_reader.read_all()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L343">csv_mood_demo.csd:343</a></p>
+            </div>
+            <div class="doc-item" id="commented_csv">
+                <h4>commented_csv</h4>
+                <pre class="signature"><code>facts commented_csv = `# Employee data export</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L349">csv_mood_demo.csd:349</a></p>
+            </div>
+            <div class="doc-item" id="comment_records">
+                <h4>comment_records</h4>
+                <pre class="signature"><code>facts comment_records = comment_reader.read_all()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L364">csv_mood_demo.csd:364</a></p>
+            </div>
+            <div class="doc-item" id="flexible_csv">
+                <h4>flexible_csv</h4>
+                <pre class="signature"><code>facts flexible_csv = `name,description</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L371">csv_mood_demo.csd:371</a></p>
+            </div>
+            <div class="doc-item" id="flexible_records">
+                <h4>flexible_records</h4>
+                <pre class="signature"><code>facts flexible_records = lazy_reader.read_all()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L379">csv_mood_demo.csd:379</a></p>
+            </div>
+            <div class="doc-item" id="employee_csv">
+                <h4>employee_csv</h4>
+                <pre class="signature"><code>facts employee_csv = `employee_id,first_name,last_name,email,department,hire_date,salary,active</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L391">csv_mood_demo.csd:391</a></p>
+            </div>
+            <div class="doc-item" id="validation">
+                <h4>validation</h4>
+                <pre class="signature"><code>facts validation = schema.validate(stringz.NewReader(employee_csv));</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L411">csv_mood_demo.csd:411</a></p>
+            </div>
+            <div class="doc-item" id="salary">
+                <h4>salary</h4>
+                <pre class="signature"><code>facts salary = no_cap.Atoi(record["salary"]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L429">csv_mood_demo.csd:429</a></p>
+            </div>
+            <div class="doc-item" id="active">
+                <h4>active</h4>
+                <pre class="signature"><code>facts active = record["active"] == "based";</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L440">csv_mood_demo.csd:440</a></p>
+            </div>
+            <div class="doc-item" id="valid_email">
+                <h4>valid_email</h4>
+                <pre class="signature"><code>facts valid_email = stringz.Contains(record["email"], "@") &&</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L441">csv_mood_demo.csd:441</a></p>
+            </div>
+            <div class="doc-item" id="report_data">
+                <h4>report_data</h4>
+                <pre class="signature"><code>facts report_data = transformer.transform()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L449">csv_mood_demo.csd:449</a></p>
+            </div>
+            <div class="doc-item" id="record">
+                <h4>record</h4>
+                <pre class="signature"><code>facts record = report_data[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L469">csv_mood_demo.csd:469</a></p>
+            </div>
+            <div class="doc-item" id="salary_str">
+                <h4>salary_str</h4>
+                <pre class="signature"><code>facts salary_str = stringz.ReplaceAll(record[3], "$", "");</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L475">csv_mood_demo.csd:475</a></p>
+            </div>
+            <div class="doc-item" id="salary">
+                <h4>salary</h4>
+                <pre class="signature"><code>facts salary = no_cap.Atoi(salary_str);</code></pre>
+                <p class="source">Source: <a href="file://./examples/csv_mood_demo.csd#L477">csv_mood_demo.csd:477</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

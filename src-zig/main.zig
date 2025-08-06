@@ -7,6 +7,7 @@ const HashMap = std.HashMap;
 const lexer = @import("lexer.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
 const simple_compiler = @import("simple_compiler.zig");
+// const cursed_cli_commands = @import("cursed_cli_commands.zig");
 
 // Version information
 const VERSION = "1.0.0";
@@ -21,6 +22,13 @@ const Command = enum {
     test_cmd,
     version,
     help,
+    // Build system commands
+    init,
+    run,
+    clean,
+    doc,
+    install,
+    build,
 };
 
 // Backend enumeration
@@ -37,6 +45,7 @@ const Config = struct {
     backend: Backend = .script,
     source_file: ?[]const u8 = null,
     output_file: ?[]const u8 = null,
+    project_dir: ?[]const u8 = null,
     optimization_level: u8 = 2,
     debug_mode: bool = false,
     verbose: bool = false,
@@ -109,6 +118,10 @@ pub fn main() !void {
         .test_cmd => {
             try executeTest(allocator, config);
         },
+        // Build system commands - delegate to CLI command handler (disabled)
+        .init, .run, .clean, .doc, .install, .build => {
+            print("Build system command '{s}' not yet implemented\n", .{@tagName(config.command)});
+        },
     }
 }
 
@@ -150,6 +163,24 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
     } else if (std.mem.eql(u8, args[i], "test")) {
         config.command = .test_cmd;
         i += 1;
+    } else if (std.mem.eql(u8, args[i], "init")) {
+        config.command = .init;
+        i += 1;
+    } else if (std.mem.eql(u8, args[i], "run")) {
+        config.command = .run;
+        i += 1;
+    } else if (std.mem.eql(u8, args[i], "clean")) {
+        config.command = .clean;
+        i += 1;
+    } else if (std.mem.eql(u8, args[i], "doc")) {
+        config.command = .doc;
+        i += 1;
+    } else if (std.mem.eql(u8, args[i], "install")) {
+        config.command = .install;
+        i += 1;
+    } else if (std.mem.eql(u8, args[i], "build")) {
+        config.command = .build;
+        i += 1;
     } else {
         // No subcommand provided, assume interpret with first arg as file
         config.command = .interpret;
@@ -189,6 +220,13 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
                 return error.InvalidArgs;
             }
             config.output_file = args[i];
+        } else if (std.mem.eql(u8, arg, "--project")) {
+            i += 1;
+            if (i >= args.len) {
+                print("Error: --project requires a value\n", .{});
+                return error.InvalidArgs;
+            }
+            config.project_dir = args[i];
         } else if (std.mem.startsWith(u8, arg, "--optimize=")) {
             const level_str = arg[11..];
             config.optimization_level = std.fmt.parseUnsigned(u8, level_str, 10) catch {
@@ -893,6 +931,15 @@ fn printHelp() void {
     print("    check           Type check CURSED source code\n", .{});
     print("    format          Format CURSED source code\n", .{});
     print("    test            Run tests\n", .{});
+    print("\n", .{});
+    print("BUILD SYSTEM COMMANDS:\n", .{});
+    print("    init            Initialize new CURSED project\n", .{});
+    print("    run             Run CURSED project\n", .{});
+    print("    clean           Clean build artifacts\n", .{});
+    print("    doc             Generate documentation\n", .{});
+    print("    install         Install project dependencies\n", .{});
+    print("    build           Build project using Zig build system\n", .{});
+    print("\n", .{});
     print("    --version, -v   Show version information\n", .{});
     print("    --help, -h      Show this help message\n\n", .{});
     

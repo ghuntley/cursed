@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>discovery - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>discovery</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="discover_all_stdlib_tests">
+                <h4>discover_all_stdlib_tests</h4>
+                <pre class="signature"><code>slay discover_all_stdlib_tests() TestDiscoveryResult {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L28">discovery.csd:28</a></p>
+            </div>
+            <div class="doc-item" id="get_stdlib_modules">
+                <h4>get_stdlib_modules</h4>
+                <pre class="signature"><code>slay get_stdlib_modules() []tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L66">discovery.csd:66</a></p>
+            </div>
+            <div class="doc-item" id="find_alternative_test_files">
+                <h4>find_alternative_test_files</h4>
+                <pre class="signature"><code>slay find_alternative_test_files(module tea) []tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L101">discovery.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="file_exists">
+                <h4>file_exists</h4>
+                <pre class="signature"><code>slay file_exists(file_path tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L125">discovery.csd:125</a></p>
+            </div>
+            <div class="doc-item" id="execute_all_stdlib_tests">
+                <h4>execute_all_stdlib_tests</h4>
+                <pre class="signature"><code>slay execute_all_stdlib_tests() []TestExecutionResult {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L132">discovery.csd:132</a></p>
+            </div>
+            <div class="doc-item" id="execute_single_test">
+                <h4>execute_single_test</h4>
+                <pre class="signature"><code>slay execute_single_test(test_file tea) TestExecutionResult {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L157">discovery.csd:157</a></p>
+            </div>
+            <div class="doc-item" id="extract_module_name_from_test_file">
+                <h4>extract_module_name_from_test_file</h4>
+                <pre class="signature"><code>slay extract_module_name_from_test_file(test_file tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L181">discovery.csd:181</a></p>
+            </div>
+            <div class="doc-item" id="simulate_test_execution">
+                <h4>simulate_test_execution</h4>
+                <pre class="signature"><code>slay simulate_test_execution(test_file tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L197">discovery.csd:197</a></p>
+            </div>
+            <div class="doc-item" id="generate_missing_test_files">
+                <h4>generate_missing_test_files</h4>
+                <pre class="signature"><code>slay generate_missing_test_files() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L204">discovery.csd:204</a></p>
+            </div>
+            <div class="doc-item" id="generate_test_file_for_module">
+                <h4>generate_test_file_for_module</h4>
+                <pre class="signature"><code>slay generate_test_file_for_module(module_name tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L219">discovery.csd:219</a></p>
+            </div>
+            <div class="doc-item" id="detect_module_type">
+                <h4>detect_module_type</h4>
+                <pre class="signature"><code>slay detect_module_type(module_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L241">discovery.csd:241</a></p>
+            </div>
+            <div class="doc-item" id="enhance_collection_test_template">
+                <h4>enhance_collection_test_template</h4>
+                <pre class="signature"><code>slay enhance_collection_test_template(base_template tea, module_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L266">discovery.csd:266</a></p>
+            </div>
+            <div class="doc-item" id="enhance_math_test_template">
+                <h4>enhance_math_test_template</h4>
+                <pre class="signature"><code>slay enhance_math_test_template(base_template tea, module_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L280">discovery.csd:280</a></p>
+            </div>
+            <div class="doc-item" id="enhance_crypto_test_template">
+                <h4>enhance_crypto_test_template</h4>
+                <pre class="signature"><code>slay enhance_crypto_test_template(base_template tea, module_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L296">discovery.csd:296</a></p>
+            </div>
+            <div class="doc-item" id="enhance_io_test_template">
+                <h4>enhance_io_test_template</h4>
+                <pre class="signature"><code>slay enhance_io_test_template(base_template tea, module_name tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L307">discovery.csd:307</a></p>
+            </div>
+            <div class="doc-item" id="generate_test_coverage_report">
+                <h4>generate_test_coverage_report</h4>
+                <pre class="signature"><code>slay generate_test_coverage_report() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L320">discovery.csd:320</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="TestDiscoveryResult">
+                <h4>TestDiscoveryResult</h4>
+                <pre class="signature"><code>squad TestDiscoveryResult {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L9">discovery.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="TestExecutionResult">
+                <h4>TestExecutionResult</h4>
+                <pre class="signature"><code>squad TestExecutionResult {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/discovery.csd#L18">discovery.csd:18</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

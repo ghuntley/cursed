@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>question_mark_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>question_mark_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="risky_operation">
+                <h4>risky_operation</h4>
+                <pre class="signature"><code>slay risky_operation(input normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L14">question_mark_demo.csd:14</a></p>
+            </div>
+            <div class="doc-item" id="read_config_file">
+                <h4>read_config_file</h4>
+                <pre class="signature"><code>slay read_config_file(path string) string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L30">question_mark_demo.csd:30</a></p>
+            </div>
+            <div class="doc-item" id="process_user_input">
+                <h4>process_user_input</h4>
+                <pre class="signature"><code>slay process_user_input(input string) normie {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L42">question_mark_demo.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="backup_important_data">
+                <h4>backup_important_data</h4>
+                <pre class="signature"><code>slay backup_important_data() string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L54">question_mark_demo.csd:54</a></p>
+            </div>
+            <div class="doc-item" id="manual_error_handling">
+                <h4>manual_error_handling</h4>
+                <pre class="signature"><code>slay manual_error_handling(input string) normie {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L66">question_mark_demo.csd:66</a></p>
+            </div>
+            <div class="doc-item" id="automatic_error_handling">
+                <h4>automatic_error_handling</h4>
+                <pre class="signature"><code>slay automatic_error_handling(input string) normie {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L83">question_mark_demo.csd:83</a></p>
+            </div>
+            <div class="doc-item" id="complex_workflow">
+                <h4>complex_workflow</h4>
+                <pre class="signature"><code>slay complex_workflow(config_path string, input_data string) string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L90">question_mark_demo.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L110">question_mark_demo.csd:110</a></p>
+            </div>
+            <div class="doc-item" id="apply_timeout_processing">
+                <h4>apply_timeout_processing</h4>
+                <pre class="signature"><code>slay apply_timeout_processing(value normie, timeout_ms normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L150">question_mark_demo.csd:150</a></p>
+            </div>
+            <div class="doc-item" id="type_assertion_example">
+                <h4>type_assertion_example</h4>
+                <pre class="signature"><code>slay type_assertion_example(value interface{}) string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L165">question_mark_demo.csd:165</a></p>
+            </div>
+            <div class="doc-item" id="channel_example">
+                <h4>channel_example</h4>
+                <pre class="signature"><code>slay channel_example() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L176">question_mark_demo.csd:176</a></p>
+            </div>
+            <div class="doc-item" id="batch_processing">
+                <h4>batch_processing</h4>
+                <pre class="signature"><code>slay batch_processing(items []string) []string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L190">question_mark_demo.csd:190</a></p>
+            </div>
+            <div class="doc-item" id="process_item">
+                <h4>process_item</h4>
+                <pre class="signature"><code>slay process_item(item string) string {</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L204">question_mark_demo.csd:204</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="content">
+                <h4>content</h4>
+                <pre class="signature"><code>facts content = fs::read_to_string(path)?  // <- Question mark operator here!</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L32">question_mark_demo.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="number">
+                <h4>number</h4>
+                <pre class="signature"><code>facts number = input.parse_int()?  // <- Question mark propagates parse errors</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L44">question_mark_demo.csd:44</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = risky_operation(number)?  // <- Question mark propagates operation errors</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L47">question_mark_demo.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="data">
+                <h4>data</h4>
+                <pre class="signature"><code>facts data = read_config_file("important.config")?  // <- Propagates file read errors</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L56">question_mark_demo.csd:56</a></p>
+            </div>
+            <div class="doc-item" id="parse_result">
+                <h4>parse_result</h4>
+                <pre class="signature"><code>facts parse_result = input.parse_int()</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L68">question_mark_demo.csd:68</a></p>
+            </div>
+            <div class="doc-item" id="number">
+                <h4>number</h4>
+                <pre class="signature"><code>facts number = parse_result.get_value()</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L72">question_mark_demo.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="operation_result">
+                <h4>operation_result</h4>
+                <pre class="signature"><code>facts operation_result = risky_operation(number)</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L74">question_mark_demo.csd:74</a></p>
+            </div>
+            <div class="doc-item" id="number">
+                <h4>number</h4>
+                <pre class="signature"><code>facts number = input.parse_int()?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L84">question_mark_demo.csd:84</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = risky_operation(number)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L85">question_mark_demo.csd:85</a></p>
+            </div>
+            <div class="doc-item" id="config">
+                <h4>config</h4>
+                <pre class="signature"><code>facts config = read_config_file(config_path)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L92">question_mark_demo.csd:92</a></p>
+            </div>
+            <div class="doc-item" id="settings">
+                <h4>settings</h4>
+                <pre class="signature"><code>facts settings = config.parse_json()?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L95">question_mark_demo.csd:95</a></p>
+            </div>
+            <div class="doc-item" id="timeout">
+                <h4>timeout</h4>
+                <pre class="signature"><code>facts timeout = settings.get("timeout")?.parse_int()?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L98">question_mark_demo.csd:98</a></p>
+            </div>
+            <div class="doc-item" id="processed">
+                <h4>processed</h4>
+                <pre class="signature"><code>facts processed = process_user_input(input_data)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L101">question_mark_demo.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="final_result">
+                <h4>final_result</h4>
+                <pre class="signature"><code>facts final_result = apply_timeout_processing(processed, timeout)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L104">question_mark_demo.csd:104</a></p>
+            </div>
+            <div class="doc-item" id="success_result">
+                <h4>success_result</h4>
+                <pre class="signature"><code>facts success_result = automatic_error_handling("42")</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L115">question_mark_demo.csd:115</a></p>
+            </div>
+            <div class="doc-item" id="error_result">
+                <h4>error_result</h4>
+                <pre class="signature"><code>facts error_result = automatic_error_handling("invalid")</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L123">question_mark_demo.csd:123</a></p>
+            </div>
+            <div class="doc-item" id="backup_result">
+                <h4>backup_result</h4>
+                <pre class="signature"><code>facts backup_result = backup_important_data()</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L131">question_mark_demo.csd:131</a></p>
+            </div>
+            <div class="doc-item" id="workflow_result">
+                <h4>workflow_result</h4>
+                <pre class="signature"><code>facts workflow_result = complex_workflow("config.json", "123")</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L139">question_mark_demo.csd:139</a></p>
+            </div>
+            <div class="doc-item" id="processed_value">
+                <h4>processed_value</h4>
+                <pre class="signature"><code>facts processed_value = value * timeout_ms / 1000</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L160">question_mark_demo.csd:160</a></p>
+            </div>
+            <div class="doc-item" id="string_value">
+                <h4>string_value</h4>
+                <pre class="signature"><code>facts string_value = value.(string)?  // <- Propagates type assertion errors</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L167">question_mark_demo.csd:167</a></p>
+            </div>
+            <div class="doc-item" id="processed">
+                <h4>processed</h4>
+                <pre class="signature"><code>facts processed = string_value.to_uppercase()?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L170">question_mark_demo.csd:170</a></p>
+            </div>
+            <div class="doc-item" id="ch">
+                <h4>ch</h4>
+                <pre class="signature"><code>facts ch = make(dm string, 10)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L178">question_mark_demo.csd:178</a></p>
+            </div>
+            <div class="doc-item" id="message">
+                <h4>message</h4>
+                <pre class="signature"><code>facts message = <-ch?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L184">question_mark_demo.csd:184</a></p>
+            </div>
+            <div class="doc-item" id="processed">
+                <h4>processed</h4>
+                <pre class="signature"><code>facts processed = process_item(item)?</code></pre>
+                <p class="source">Source: <a href="file://./examples/question_mark_demo.csd#L195">question_mark_demo.csd:195</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>process_ipc_showcase - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>process_ipc_showcase</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L9">process_ipc_showcase.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="demo_basic_commands">
+                <h4>demo_basic_commands</h4>
+                <pre class="signature"><code>slay demo_basic_commands() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L37">process_ipc_showcase.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="demo_advanced_commands">
+                <h4>demo_advanced_commands</h4>
+                <pre class="signature"><code>slay demo_advanced_commands() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L72">process_ipc_showcase.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="demo_process_groups">
+                <h4>demo_process_groups</h4>
+                <pre class="signature"><code>slay demo_process_groups() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L114">process_ipc_showcase.csd:114</a></p>
+            </div>
+            <div class="doc-item" id="demo_signal_handling">
+                <h4>demo_signal_handling</h4>
+                <pre class="signature"><code>slay demo_signal_handling() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L143">process_ipc_showcase.csd:143</a></p>
+            </div>
+            <div class="doc-item" id="demo_graceful_shutdown">
+                <h4>demo_graceful_shutdown</h4>
+                <pre class="signature"><code>slay demo_graceful_shutdown() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L204">process_ipc_showcase.csd:204</a></p>
+            </div>
+            <div class="doc-item" id="demo_ipc_mechanisms">
+                <h4>demo_ipc_mechanisms</h4>
+                <pre class="signature"><code>slay demo_ipc_mechanisms() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L276">process_ipc_showcase.csd:276</a></p>
+            </div>
+            <div class="doc-item" id="demo_named_pipes">
+                <h4>demo_named_pipes</h4>
+                <pre class="signature"><code>slay demo_named_pipes() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L298">process_ipc_showcase.csd:298</a></p>
+            </div>
+            <div class="doc-item" id="demo_message_queues">
+                <h4>demo_message_queues</h4>
+                <pre class="signature"><code>slay demo_message_queues() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L332">process_ipc_showcase.csd:332</a></p>
+            </div>
+            <div class="doc-item" id="demo_shared_memory">
+                <h4>demo_shared_memory</h4>
+                <pre class="signature"><code>slay demo_shared_memory() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L363">process_ipc_showcase.csd:363</a></p>
+            </div>
+            <div class="doc-item" id="demo_semaphores">
+                <h4>demo_semaphores</h4>
+                <pre class="signature"><code>slay demo_semaphores() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L394">process_ipc_showcase.csd:394</a></p>
+            </div>
+            <div class="doc-item" id="demo_unix_sockets">
+                <h4>demo_unix_sockets</h4>
+                <pre class="signature"><code>slay demo_unix_sockets() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L431">process_ipc_showcase.csd:431</a></p>
+            </div>
+            <div class="doc-item" id="demo_integration_scenario">
+                <h4>demo_integration_scenario</h4>
+                <pre class="signature"><code>slay demo_integration_scenario() {</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L471">process_ipc_showcase.csd:471</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="cmd">
+                <h4>cmd</h4>
+                <pre class="signature"><code>facts cmd = exec_vibez.Command("echo", ["Hello", "from", "CURSED!"]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L42">process_ipc_showcase.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="output">
+                <h4>output</h4>
+                <pre class="signature"><code>facts output = cmd.Output();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L43">process_ipc_showcase.csd:43</a></p>
+            </div>
+            <div class="doc-item" id="find_cmd">
+                <h4>find_cmd</h4>
+                <pre class="signature"><code>facts find_cmd = exec_vibez.Command("find", ["/tmp", "-name", "*.log"]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L51">process_ipc_showcase.csd:51</a></p>
+            </div>
+            <div class="doc-item" id="combined_output">
+                <h4>combined_output</h4>
+                <pre class="signature"><code>facts combined_output = find_cmd.CombinedOutput();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L52">process_ipc_showcase.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="timeout_result">
+                <h4>timeout_result</h4>
+                <pre class="signature"><code>facts timeout_result = exec_vibez.RunWithTimeout("sleep", ["2"], 1*timez.Second);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L58">process_ipc_showcase.csd:58</a></p>
+            </div>
+            <div class="doc-item" id="python_path">
+                <h4>python_path</h4>
+                <pre class="signature"><code>facts python_path = exec_vibez.LookPath("python");</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L64">process_ipc_showcase.csd:64</a></p>
+            </div>
+            <div class="doc-item" id="env">
+                <h4>env</h4>
+                <pre class="signature"><code>facts env = exec_vibez.NewEnvironment();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L77">process_ipc_showcase.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="env_cmd">
+                <h4>env_cmd</h4>
+                <pre class="signature"><code>facts env_cmd = exec_vibez.CommandWithEnv("env", [], env);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L81">process_ipc_showcase.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="env_output">
+                <h4>env_output</h4>
+                <pre class="signature"><code>facts env_output = env_cmd.Output();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L82">process_ipc_showcase.csd:82</a></p>
+            </div>
+            <div class="doc-item" id="stream_cmd">
+                <h4>stream_cmd</h4>
+                <pre class="signature"><code>facts stream_cmd = exec_vibez.Command("sh", ["-c", "for i in 1 2 3; do echo Line $i; sleep 0.1; done"]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L89">process_ipc_showcase.csd:89</a></p>
+            </div>
+            <div class="doc-item" id="streamer">
+                <h4>streamer</h4>
+                <pre class="signature"><code>facts streamer = exec_vibez.NewOutputStreamer(stream_cmd);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L90">process_ipc_showcase.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="stream_err">
+                <h4>stream_err</h4>
+                <pre class="signature"><code>facts stream_err = streamer.Start();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L96">process_ipc_showcase.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="input_cmd">
+                <h4>input_cmd</h4>
+                <pre class="signature"><code>facts input_cmd = exec_vibez.Command("cat");</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L102">process_ipc_showcase.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="generator">
+                <h4>generator</h4>
+                <pre class="signature"><code>facts generator = exec_vibez.NewInputGenerator(input_cmd);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L103">process_ipc_showcase.csd:103</a></p>
+            </div>
+            <div class="doc-item" id="input_err">
+                <h4>input_err</h4>
+                <pre class="signature"><code>facts input_err = generator.Start();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L106">process_ipc_showcase.csd:106</a></p>
+            </div>
+            <div class="doc-item" id="group">
+                <h4>group</h4>
+                <pre class="signature"><code>facts group = exec_vibez.NewProcessGroup();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L119">process_ipc_showcase.csd:119</a></p>
+            </div>
+            <div class="doc-item" id="start_err">
+                <h4>start_err</h4>
+                <pre class="signature"><code>facts start_err = group.StartAll();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L127">process_ipc_showcase.csd:127</a></p>
+            </div>
+            <div class="doc-item" id="wait_err">
+                <h4>wait_err</h4>
+                <pre class="signature"><code>facts wait_err = group.WaitAll();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L132">process_ipc_showcase.csd:132</a></p>
+            </div>
+            <div class="doc-item" id="signals">
+                <h4>signals</h4>
+                <pre class="signature"><code>facts signals = [signal_boost.SIGUSR1, signal_boost.SIGUSR2];</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L148">process_ipc_showcase.csd:148</a></p>
+            </div>
+            <div class="doc-item" id="(receiver, handle)">
+                <h4>(receiver, handle)</h4>
+                <pre class="signature"><code>facts (receiver, handle) = signal_boost.Notify(signals);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L149">process_ipc_showcase.csd:149</a></p>
+            </div>
+            <div class="doc-item" id="new_signals">
+                <h4>new_signals</h4>
+                <pre class="signature"><code>facts new_signals = [signal_boost.SIGTERM];</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L155">process_ipc_showcase.csd:155</a></p>
+            </div>
+            <div class="doc-item" id="reset_err">
+                <h4>reset_err</h4>
+                <pre class="signature"><code>facts reset_err = handle.Reset(new_signals);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L156">process_ipc_showcase.csd:156</a></p>
+            </div>
+            <div class="doc-item" id="handler">
+                <h4>handler</h4>
+                <pre class="signature"><code>facts handler = signal_boost.NewSignalHandler();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L162">process_ipc_showcase.csd:162</a></p>
+            </div>
+            <div class="doc-item" id="handler_err">
+                <h4>handler_err</h4>
+                <pre class="signature"><code>facts handler_err = handler.Start();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L172">process_ipc_showcase.csd:172</a></p>
+            </div>
+            <div class="doc-item" id="mux">
+                <h4>mux</h4>
+                <pre class="signature"><code>facts mux = signal_boost.NewSignalMultiplexer();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L182">process_ipc_showcase.csd:182</a></p>
+            </div>
+            <div class="doc-item" id="chan1">
+                <h4>chan1</h4>
+                <pre class="signature"><code>facts chan1 = make(chan signal_boost.BoostSignal, 1);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L184">process_ipc_showcase.csd:184</a></p>
+            </div>
+            <div class="doc-item" id="chan2">
+                <h4>chan2</h4>
+                <pre class="signature"><code>facts chan2 = make(chan signal_boost.BoostSignal, 1);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L185">process_ipc_showcase.csd:185</a></p>
+            </div>
+            <div class="doc-item" id="id1">
+                <h4>id1</h4>
+                <pre class="signature"><code>facts id1 = mux.Add(chan1, [signal_boost.SIGINT]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L187">process_ipc_showcase.csd:187</a></p>
+            </div>
+            <div class="doc-item" id="id2">
+                <h4>id2</h4>
+                <pre class="signature"><code>facts id2 = mux.Add(chan2, [signal_boost.SIGTERM, signal_boost.SIGHUP]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L188">process_ipc_showcase.csd:188</a></p>
+            </div>
+            <div class="doc-item" id="mux_err">
+                <h4>mux_err</h4>
+                <pre class="signature"><code>facts mux_err = mux.Start();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L190">process_ipc_showcase.csd:190</a></p>
+            </div>
+            <div class="doc-item" id="shutdown">
+                <h4>shutdown</h4>
+                <pre class="signature"><code>facts shutdown = signal_boost.NewGracefulShutdown().WithOptions(signal_boost.ShutdownOptions{</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L209">process_ipc_showcase.csd:209</a></p>
+            </div>
+            <div class="doc-item" id="start_err">
+                <h4>start_err</h4>
+                <pre class="signature"><code>facts start_err = shutdown.Start();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L251">process_ipc_showcase.csd:251</a></p>
+            </div>
+            <div class="doc-item" id="shutdown_err">
+                <h4>shutdown_err</h4>
+                <pre class="signature"><code>facts shutdown_err = shutdown.Shutdown();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L256">process_ipc_showcase.csd:256</a></p>
+            </div>
+            <div class="doc-item" id="wait_err">
+                <h4>wait_err</h4>
+                <pre class="signature"><code>facts wait_err = shutdown.Wait();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L261">process_ipc_showcase.csd:261</a></p>
+            </div>
+            <div class="doc-item" id="status">
+                <h4>status</h4>
+                <pre class="signature"><code>facts status = shutdown.Status();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L263">process_ipc_showcase.csd:263</a></p>
+            </div>
+            <div class="doc-item" id="pipe_name">
+                <h4>pipe_name</h4>
+                <pre class="signature"><code>facts pipe_name = "demo_pipe_" + tea(timez.Now().Unix());</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L301">process_ipc_showcase.csd:301</a></p>
+            </div>
+            <div class="doc-item" id="server">
+                <h4>server</h4>
+                <pre class="signature"><code>facts server = ipc.NamedPipeServer.New(pipe_name);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L304">process_ipc_showcase.csd:304</a></p>
+            </div>
+            <div class="doc-item" id="client">
+                <h4>client</h4>
+                <pre class="signature"><code>facts client = ipc.NamedPipeClient.New(pipe_name);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L312">process_ipc_showcase.csd:312</a></p>
+            </div>
+            <div class="doc-item" id="message">
+                <h4>message</h4>
+                <pre class="signature"><code>facts message = []byte("Hello from client!");</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L314">process_ipc_showcase.csd:314</a></p>
+            </div>
+            <div class="doc-item" id="write_err">
+                <h4>write_err</h4>
+                <pre class="signature"><code>facts write_err = client.Write(message);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L315">process_ipc_showcase.csd:315</a></p>
+            </div>
+            <div class="doc-item" id="queue_name">
+                <h4>queue_name</h4>
+                <pre class="signature"><code>facts queue_name = "demo_queue_" + tea(timez.Now().Unix());</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L335">process_ipc_showcase.csd:335</a></p>
+            </div>
+            <div class="doc-item" id="queue">
+                <h4>queue</h4>
+                <pre class="signature"><code>facts queue = ipc.MessageQueue.New(queue_name);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L337">process_ipc_showcase.csd:337</a></p>
+            </div>
+            <div class="doc-item" id="msg">
+                <h4>msg</h4>
+                <pre class="signature"><code>facts msg = ipc.Message.New([]byte("Demo message content"));</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L342">process_ipc_showcase.csd:342</a></p>
+            </div>
+            <div class="doc-item" id="send_err">
+                <h4>send_err</h4>
+                <pre class="signature"><code>facts send_err = queue.Send(msg);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L343">process_ipc_showcase.csd:343</a></p>
+            </div>
+            <div class="doc-item" id="received">
+                <h4>received</h4>
+                <pre class="signature"><code>facts received = queue.ReceiveTimeout(1 * timez.Second);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L348">process_ipc_showcase.csd:348</a></p>
+            </div>
+            <div class="doc-item" id="shm_name">
+                <h4>shm_name</h4>
+                <pre class="signature"><code>facts shm_name = "demo_shm_" + tea(timez.Now().Unix());</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L366">process_ipc_showcase.csd:366</a></p>
+            </div>
+            <div class="doc-item" id="shm_size">
+                <h4>shm_size</h4>
+                <pre class="signature"><code>facts shm_size = 1024;</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L367">process_ipc_showcase.csd:367</a></p>
+            </div>
+            <div class="doc-item" id="shm">
+                <h4>shm</h4>
+                <pre class="signature"><code>facts shm = ipc.SharedMemory.New(shm_name, shm_size);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L369">process_ipc_showcase.csd:369</a></p>
+            </div>
+            <div class="doc-item" id="data">
+                <h4>data</h4>
+                <pre class="signature"><code>facts data = []byte("Shared memory test data");</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L374">process_ipc_showcase.csd:374</a></p>
+            </div>
+            <div class="doc-item" id="write_err">
+                <h4>write_err</h4>
+                <pre class="signature"><code>facts write_err = shm.Write(0, data);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L375">process_ipc_showcase.csd:375</a></p>
+            </div>
+            <div class="doc-item" id="read_data">
+                <h4>read_data</h4>
+                <pre class="signature"><code>facts read_data = shm.Read(0, len(data));</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L380">process_ipc_showcase.csd:380</a></p>
+            </div>
+            <div class="doc-item" id="sem_name">
+                <h4>sem_name</h4>
+                <pre class="signature"><code>facts sem_name = "demo_sem_" + tea(timez.Now().Unix());</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L397">process_ipc_showcase.csd:397</a></p>
+            </div>
+            <div class="doc-item" id="initial_value">
+                <h4>initial_value</h4>
+                <pre class="signature"><code>facts initial_value = 3;</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L398">process_ipc_showcase.csd:398</a></p>
+            </div>
+            <div class="doc-item" id="sem">
+                <h4>sem</h4>
+                <pre class="signature"><code>facts sem = ipc.Semaphore.New(sem_name, initial_value);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L400">process_ipc_showcase.csd:400</a></p>
+            </div>
+            <div class="doc-item" id="acquire_err">
+                <h4>acquire_err</h4>
+                <pre class="signature"><code>facts acquire_err = sem.Acquire();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L405">process_ipc_showcase.csd:405</a></p>
+            </div>
+            <div class="doc-item" id="try_err">
+                <h4>try_err</h4>
+                <pre class="signature"><code>facts try_err = sem.TryAcquire();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L410">process_ipc_showcase.csd:410</a></p>
+            </div>
+            <div class="doc-item" id="socket_path">
+                <h4>socket_path</h4>
+                <pre class="signature"><code>facts socket_path = "/tmp/demo_socket_" + tea(timez.Now().Unix());</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L434">process_ipc_showcase.csd:434</a></p>
+            </div>
+            <div class="doc-item" id="server">
+                <h4>server</h4>
+                <pre class="signature"><code>facts server = ipc.UnixSocketServer.New(socket_path);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L439">process_ipc_showcase.csd:439</a></p>
+            </div>
+            <div class="doc-item" id="client">
+                <h4>client</h4>
+                <pre class="signature"><code>facts client = ipc.UnixSocketClient.New(socket_path);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L447">process_ipc_showcase.csd:447</a></p>
+            </div>
+            <div class="doc-item" id="message">
+                <h4>message</h4>
+                <pre class="signature"><code>facts message = []byte("Unix socket message");</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L449">process_ipc_showcase.csd:449</a></p>
+            </div>
+            <div class="doc-item" id="write_err">
+                <h4>write_err</h4>
+                <pre class="signature"><code>facts write_err = client.Write(message);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L450">process_ipc_showcase.csd:450</a></p>
+            </div>
+            <div class="doc-item" id="ctx">
+                <h4>ctx</h4>
+                <pre class="signature"><code>facts ctx = vibe_context.Background();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L477">process_ipc_showcase.csd:477</a></p>
+            </div>
+            <div class="doc-item" id="(timeout_ctx, cancel)">
+                <h4>(timeout_ctx, cancel)</h4>
+                <pre class="signature"><code>facts (timeout_ctx, cancel) = vibe_context.WithTimeout(ctx, 30*timez.Second);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L478">process_ipc_showcase.csd:478</a></p>
+            </div>
+            <div class="doc-item" id="shutdown">
+                <h4>shutdown</h4>
+                <pre class="signature"><code>facts shutdown = signal_boost.NewGracefulShutdown().WithOptions(signal_boost.ShutdownOptions{</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L482">process_ipc_showcase.csd:482</a></p>
+            </div>
+            <div class="doc-item" id="start_err">
+                <h4>start_err</h4>
+                <pre class="signature"><code>facts start_err = shutdown.Start();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L513">process_ipc_showcase.csd:513</a></p>
+            </div>
+            <div class="doc-item" id="log_processor">
+                <h4>log_processor</h4>
+                <pre class="signature"><code>facts log_processor = exec_vibez.Command("echo", ["Log processor started"]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L523">process_ipc_showcase.csd:523</a></p>
+            </div>
+            <div class="doc-item" id="metric_collector">
+                <h4>metric_collector</h4>
+                <pre class="signature"><code>facts metric_collector = exec_vibez.Command("echo", ["Metrics collector started"]);</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L524">process_ipc_showcase.csd:524</a></p>
+            </div>
+            <div class="doc-item" id="process_group">
+                <h4>process_group</h4>
+                <pre class="signature"><code>facts process_group = exec_vibez.NewProcessGroup();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L526">process_ipc_showcase.csd:526</a></p>
+            </div>
+            <div class="doc-item" id="group_err">
+                <h4>group_err</h4>
+                <pre class="signature"><code>facts group_err = process_group.StartAll();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L530">process_ipc_showcase.csd:530</a></p>
+            </div>
+            <div class="doc-item" id="shutdown_err">
+                <h4>shutdown_err</h4>
+                <pre class="signature"><code>facts shutdown_err = shutdown.Shutdown();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L555">process_ipc_showcase.csd:555</a></p>
+            </div>
+            <div class="doc-item" id="wait_err">
+                <h4>wait_err</h4>
+                <pre class="signature"><code>facts wait_err = shutdown.Wait();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L558">process_ipc_showcase.csd:558</a></p>
+            </div>
+            <div class="doc-item" id="status">
+                <h4>status</h4>
+                <pre class="signature"><code>facts status = shutdown.Status();</code></pre>
+                <p class="source">Source: <a href="file://./examples/process_ipc_showcase.csd#L560">process_ipc_showcase.csd:560</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

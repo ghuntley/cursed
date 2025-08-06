@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pools - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>pools</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="init_pool_manager">
+                <h4>init_pool_manager</h4>
+                <pre class="signature"><code>slay init_pool_manager() *PoolManager {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L89">pools.csd:89</a></p>
+            </div>
+            <div class="doc-item" id="get_pool_manager">
+                <h4>get_pool_manager</h4>
+                <pre class="signature"><code>slay get_pool_manager() *PoolManager {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L114">pools.csd:114</a></p>
+            </div>
+            <div class="doc-item" id="create_object_pool">
+                <h4>create_object_pool</h4>
+                <pre class="signature"><code>slay create_object_pool(name tea, object_size normie, initial_objects normie) *ObjectPool {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L122">pools.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="pool_add_chunk">
+                <h4>pool_add_chunk</h4>
+                <pre class="signature"><code>slay pool_add_chunk(pool *ObjectPool, num_objects normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L168">pools.csd:168</a></p>
+            </div>
+            <div class="doc-item" id="pool_allocate">
+                <h4>pool_allocate</h4>
+                <pre class="signature"><code>slay pool_allocate(pool *ObjectPool) *byte {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L215">pools.csd:215</a></p>
+            </div>
+            <div class="doc-item" id="pool_deallocate">
+                <h4>pool_deallocate</h4>
+                <pre class="signature"><code>slay pool_deallocate(pool *ObjectPool, ptr *byte) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L252">pools.csd:252</a></p>
+            </div>
+            <div class="doc-item" id="create_stack_allocator">
+                <h4>create_stack_allocator</h4>
+                <pre class="signature"><code>slay create_stack_allocator(name tea, size normie) *StackAllocator {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L267">pools.csd:267</a></p>
+            </div>
+            <div class="doc-item" id="stack_allocate">
+                <h4>stack_allocate</h4>
+                <pre class="signature"><code>slay stack_allocate(allocator *StackAllocator, size normie, alignment normie) *byte {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L309">pools.csd:309</a></p>
+            </div>
+            <div class="doc-item" id="stack_reset">
+                <h4>stack_reset</h4>
+                <pre class="signature"><code>slay stack_reset(allocator *StackAllocator) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L333">pools.csd:333</a></p>
+            </div>
+            <div class="doc-item" id="create_ring_allocator">
+                <h4>create_ring_allocator</h4>
+                <pre class="signature"><code>slay create_ring_allocator(name tea, size normie) *RingAllocator {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L344">pools.csd:344</a></p>
+            </div>
+            <div class="doc-item" id="ring_allocate">
+                <h4>ring_allocate</h4>
+                <pre class="signature"><code>slay ring_allocate(allocator *RingAllocator, size normie) *byte {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L386">pools.csd:386</a></p>
+            </div>
+            <div class="doc-item" id="ring_deallocate">
+                <h4>ring_deallocate</h4>
+                <pre class="signature"><code>slay ring_deallocate(allocator *RingAllocator, size normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L409">pools.csd:409</a></p>
+            </div>
+            <div class="doc-item" id="get_pool_stats">
+                <h4>get_pool_stats</h4>
+                <pre class="signature"><code>slay get_pool_stats(pool *ObjectPool) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L424">pools.csd:424</a></p>
+            </div>
+            <div class="doc-item" id="get_stack_stats">
+                <h4>get_stack_stats</h4>
+                <pre class="signature"><code>slay get_stack_stats(allocator *StackAllocator) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L439">pools.csd:439</a></p>
+            </div>
+            <div class="doc-item" id="get_ring_stats">
+                <h4>get_ring_stats</h4>
+                <pre class="signature"><code>slay get_ring_stats(allocator *RingAllocator) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L452">pools.csd:452</a></p>
+            </div>
+            <div class="doc-item" id="cleanup_pools">
+                <h4>cleanup_pools</h4>
+                <pre class="signature"><code>slay cleanup_pools() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L468">pools.csd:468</a></p>
+            </div>
+            <div class="doc-item" id="cleanup_object_pool">
+                <h4>cleanup_object_pool</h4>
+                <pre class="signature"><code>slay cleanup_object_pool(pool *ObjectPool) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L506">pools.csd:506</a></p>
+            </div>
+            <div class="doc-item" id="cleanup_stack_allocator">
+                <h4>cleanup_stack_allocator</h4>
+                <pre class="signature"><code>slay cleanup_stack_allocator(allocator *StackAllocator) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L523">pools.csd:523</a></p>
+            </div>
+            <div class="doc-item" id="cleanup_ring_allocator">
+                <h4>cleanup_ring_allocator</h4>
+                <pre class="signature"><code>slay cleanup_ring_allocator(allocator *RingAllocator) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/memory/pools.csd#L532">pools.csd:532</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

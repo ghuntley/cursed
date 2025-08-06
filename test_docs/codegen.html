@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>codegen - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>codegen</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="new_codegen">
+                <h4>new_codegen</h4>
+                <pre class="signature"><code>slay new_codegen(module_name: tea) -> CodeGenerator {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L100">codegen.csd:100</a></p>
+            </div>
+            <div class="doc-item" id="next_value_name">
+                <h4>next_value_name</h4>
+                <pre class="signature"><code>slay next_value_name(codegen: CodeGenerator) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L115">codegen.csd:115</a></p>
+            </div>
+            <div class="doc-item" id="next_block_name">
+                <h4>next_block_name</h4>
+                <pre class="signature"><code>slay next_block_name(codegen: CodeGenerator) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L122">codegen.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="cursed_type_to_llvm">
+                <h4>cursed_type_to_llvm</h4>
+                <pre class="signature"><code>slay cursed_type_to_llvm(type_info: TypeInfo) -> LLVMType {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L129">codegen.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="llvm_type_to_string">
+                <h4>llvm_type_to_string</h4>
+                <pre class="signature"><code>slay llvm_type_to_string(llvm_type: LLVMType) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L158">codegen.csd:158</a></p>
+            </div>
+            <div class="doc-item" id="create_basic_block">
+                <h4>create_basic_block</h4>
+                <pre class="signature"><code>slay create_basic_block(codegen: CodeGenerator, name: tea?) -> LLVMBasicBlock {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L195">codegen.csd:195</a></p>
+            </div>
+            <div class="doc-item" id="add_instruction">
+                <h4>add_instruction</h4>
+                <pre class="signature"><code>slay add_instruction(codegen: CodeGenerator, instruction: LLVMInstruction) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L206">codegen.csd:206</a></p>
+            </div>
+            <div class="doc-item" id="create_alloca">
+                <h4>create_alloca</h4>
+                <pre class="signature"><code>slay create_alloca(codegen: CodeGenerator, llvm_type: LLVMType, name: tea) -> LLVMValue {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L213">codegen.csd:213</a></p>
+            </div>
+            <div class="doc-item" id="create_store">
+                <h4>create_store</h4>
+                <pre class="signature"><code>slay create_store(codegen: CodeGenerator, value: LLVMValue, pointer: LLVMValue) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L233">codegen.csd:233</a></p>
+            </div>
+            <div class="doc-item" id="create_load">
+                <h4>create_load</h4>
+                <pre class="signature"><code>slay create_load(codegen: CodeGenerator, pointer: LLVMValue, result_type: LLVMType) -> LLVMValue {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L245">codegen.csd:245</a></p>
+            </div>
+            <div class="doc-item" id="create_binary_op">
+                <h4>create_binary_op</h4>
+                <pre class="signature"><code>slay create_binary_op(codegen: CodeGenerator, op: InstructionType, left: LLVMValue, right: LLVMValue) -> LLVMValue {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L265">codegen.csd:265</a></p>
+            </div>
+            <div class="doc-item" id="create_return">
+                <h4>create_return</h4>
+                <pre class="signature"><code>slay create_return(codegen: CodeGenerator, value: LLVMValue?) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L285">codegen.csd:285</a></p>
+            </div>
+            <div class="doc-item" id="create_constant">
+                <h4>create_constant</h4>
+                <pre class="signature"><code>slay create_constant(value: tea, llvm_type: LLVMType) -> LLVMValue {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L301">codegen.csd:301</a></p>
+            </div>
+            <div class="doc-item" id="generate">
+                <h4>generate</h4>
+                <pre class="signature"><code>slay generate(ast: Program, config: CompilerConfig) -> CodegenResult? {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L311">codegen.csd:311</a></p>
+            </div>
+            <div class="doc-item" id="generate_statement">
+                <h4>generate_statement</h4>
+                <pre class="signature"><code>slay generate_statement(codegen: CodeGenerator, stmt: ASTNode, errors: tea[]) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L332">codegen.csd:332</a></p>
+            </div>
+            <div class="doc-item" id="generate_function">
+                <h4>generate_function</h4>
+                <pre class="signature"><code>slay generate_function(codegen: CodeGenerator, func: FunctionDecl, errors: tea[]) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L371">codegen.csd:371</a></p>
+            </div>
+            <div class="doc-item" id="generate_variable_declaration">
+                <h4>generate_variable_declaration</h4>
+                <pre class="signature"><code>slay generate_variable_declaration(codegen: CodeGenerator, var_decl: VariableDecl, errors: tea[]) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L429">codegen.csd:429</a></p>
+            </div>
+            <div class="doc-item" id="generate_if_statement">
+                <h4>generate_if_statement</h4>
+                <pre class="signature"><code>slay generate_if_statement(codegen: CodeGenerator, if_stmt: IfStatement, errors: tea[]) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L448">codegen.csd:448</a></p>
+            </div>
+            <div class="doc-item" id="generate_while_statement">
+                <h4>generate_while_statement</h4>
+                <pre class="signature"><code>slay generate_while_statement(codegen: CodeGenerator, while_stmt: WhileStatement, errors: tea[]) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L512">codegen.csd:512</a></p>
+            </div>
+            <div class="doc-item" id="generate_return_statement">
+                <h4>generate_return_statement</h4>
+                <pre class="signature"><code>slay generate_return_statement(codegen: CodeGenerator, ret_stmt: ReturnStatement, errors: tea[]) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L566">codegen.csd:566</a></p>
+            </div>
+            <div class="doc-item" id="generate_block">
+                <h4>generate_block</h4>
+                <pre class="signature"><code>slay generate_block(codegen: CodeGenerator, block: Block, errors: tea[]) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L576">codegen.csd:576</a></p>
+            </div>
+            <div class="doc-item" id="generate_expression">
+                <h4>generate_expression</h4>
+                <pre class="signature"><code>slay generate_expression(codegen: CodeGenerator, expr: ASTNode, errors: tea[]) -> LLVMValue? {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L583">codegen.csd:583</a></p>
+            </div>
+            <div class="doc-item" id="generate_binary_expression">
+                <h4>generate_binary_expression</h4>
+                <pre class="signature"><code>slay generate_binary_expression(codegen: CodeGenerator, expr: BinaryExpression, errors: tea[]) -> LLVMValue? {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L618">codegen.csd:618</a></p>
+            </div>
+            <div class="doc-item" id="generate_llvm_ir">
+                <h4>generate_llvm_ir</h4>
+                <pre class="signature"><code>slay generate_llvm_ir(codegen: CodeGenerator) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L659">codegen.csd:659</a></p>
+            </div>
+            <div class="doc-item" id="generate_function_ir">
+                <h4>generate_function_ir</h4>
+                <pre class="signature"><code>slay generate_function_ir(func: LLVMFunction) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L676">codegen.csd:676</a></p>
+            </div>
+            <div class="doc-item" id="generate_block_ir">
+                <h4>generate_block_ir</h4>
+                <pre class="signature"><code>slay generate_block_ir(block: LLVMBasicBlock) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L703">codegen.csd:703</a></p>
+            </div>
+            <div class="doc-item" id="generate_instruction_ir">
+                <h4>generate_instruction_ir</h4>
+                <pre class="signature"><code>slay generate_instruction_ir(instr: LLVMInstruction) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L720">codegen.csd:720</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="LLVMValue">
+                <h4>LLVMValue</h4>
+                <pre class="signature"><code>squad LLVMValue {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L47">codegen.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="LLVMInstruction">
+                <h4>LLVMInstruction</h4>
+                <pre class="signature"><code>squad LLVMInstruction {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L55">codegen.csd:55</a></p>
+            </div>
+            <div class="doc-item" id="LLVMBasicBlock">
+                <h4>LLVMBasicBlock</h4>
+                <pre class="signature"><code>squad LLVMBasicBlock {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L63">codegen.csd:63</a></p>
+            </div>
+            <div class="doc-item" id="LLVMFunction">
+                <h4>LLVMFunction</h4>
+                <pre class="signature"><code>squad LLVMFunction {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L70">codegen.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="CodeGenerator">
+                <h4>CodeGenerator</h4>
+                <pre class="signature"><code>squad CodeGenerator {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L79">codegen.csd:79</a></p>
+            </div>
+            <div class="doc-item" id="CodegenResult">
+                <h4>CodegenResult</h4>
+                <pre class="signature"><code>squad CodegenResult {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/codegen.csd#L92">codegen.csd:92</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

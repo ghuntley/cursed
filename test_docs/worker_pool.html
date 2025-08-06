@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>worker_pool - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>worker_pool</h2>
+    </header>
+    <main>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="numWorkers">
+                <h4>numWorkers</h4>
+                <pre class="signature"><code>facts numWorkers = 4</code></pre>
+                <p class="source">Source: <a href="file://./examples/channels/worker_pool.csd#L38">worker_pool.csd:38</a></p>
+            </div>
+            <div class="doc-item" id="numJobs">
+                <h4>numJobs</h4>
+                <pre class="signature"><code>facts numJobs = 12</code></pre>
+                <p class="source">Source: <a href="file://./examples/channels/worker_pool.csd#L39">worker_pool.csd:39</a></p>
+            </div>
+            <div class="doc-item" id="jobs">
+                <h4>jobs</h4>
+                <pre class="signature"><code>facts jobs = make(dm<Job>, numJobs)</code></pre>
+                <p class="source">Source: <a href="file://./examples/channels/worker_pool.csd#L42">worker_pool.csd:42</a></p>
+            </div>
+            <div class="doc-item" id="results">
+                <h4>results</h4>
+                <pre class="signature"><code>facts results = make(dm<Result>, numJobs)</code></pre>
+                <p class="source">Source: <a href="file://./examples/channels/worker_pool.csd#L43">worker_pool.csd:43</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

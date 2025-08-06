@@ -1,0 +1,18 @@
+# CURSED Source Line Mapping
+# Format: source_line:generated_line:context
+
+1:1:global_count
+8:2:add_numbers
+9:3:local_sum
+10:4:temp_var
+9:5:variable assignment
+10:6:variable assignment
+11:7:return statement
+14:8:main
+15:9:x
+16:10:y
+17:11:result
+15:12:variable declaration
+16:13:variable declaration
+17:14:function call
+18:15:print statement

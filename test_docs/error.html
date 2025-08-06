@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>error - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>error</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="new_error">
+                <h4>new_error</h4>
+                <pre class="signature"><code>slay new_error(severity: ErrorSeverity, code: tea, message: tea) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L52">error.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="new_error_with_location">
+                <h4>new_error_with_location</h4>
+                <pre class="signature"><code>slay new_error_with_location(</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L64">error.csd:64</a></p>
+            </div>
+            <div class="doc-item" id="with_help">
+                <h4>with_help</h4>
+                <pre class="signature"><code>slay with_help(error: CompilerError, help: tea) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L81">error.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="with_related">
+                <h4>with_related</h4>
+                <pre class="signature"><code>slay with_related(error: CompilerError, related: CompilerError) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L87">error.csd:87</a></p>
+            </div>
+            <div class="doc-item" id="severity_color">
+                <h4>severity_color</h4>
+                <pre class="signature"><code>slay severity_color(severity: ErrorSeverity) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L93">error.csd:93</a></p>
+            </div>
+            <div class="doc-item" id="severity_name">
+                <h4>severity_name</h4>
+                <pre class="signature"><code>slay severity_name(severity: ErrorSeverity) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L122">error.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="reset_color">
+                <h4>reset_color</h4>
+                <pre class="signature"><code>slay reset_color() -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L147">error.csd:147</a></p>
+            </div>
+            <div class="doc-item" id="bold_text">
+                <h4>bold_text</h4>
+                <pre class="signature"><code>slay bold_text(text: tea) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L156">error.csd:156</a></p>
+            </div>
+            <div class="doc-item" id="report_error">
+                <h4>report_error</h4>
+                <pre class="signature"><code>slay report_error(error: CompilerError) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L165">error.csd:165</a></p>
+            </div>
+            <div class="doc-item" id="report_errors">
+                <h4>report_errors</h4>
+                <pre class="signature"><code>slay report_errors(errors: tea[]) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L202">error.csd:202</a></p>
+            </div>
+            <div class="doc-item" id="report_compiler_errors">
+                <h4>report_compiler_errors</h4>
+                <pre class="signature"><code>slay report_compiler_errors(errors: CompilerError[]) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L210">error.csd:210</a></p>
+            </div>
+            <div class="doc-item" id="lexer_error">
+                <h4>lexer_error</h4>
+                <pre class="signature"><code>slay lexer_error(message: tea, line: normie, column: normie) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L225">error.csd:225</a></p>
+            </div>
+            <div class="doc-item" id="parser_error">
+                <h4>parser_error</h4>
+                <pre class="signature"><code>slay parser_error(message: tea, line: normie, column: normie) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L237">error.csd:237</a></p>
+            </div>
+            <div class="doc-item" id="type_error">
+                <h4>type_error</h4>
+                <pre class="signature"><code>slay type_error(message: tea, line: normie, column: normie) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L249">error.csd:249</a></p>
+            </div>
+            <div class="doc-item" id="codegen_error">
+                <h4>codegen_error</h4>
+                <pre class="signature"><code>slay codegen_error(message: tea) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L261">error.csd:261</a></p>
+            </div>
+            <div class="doc-item" id="warning">
+                <h4>warning</h4>
+                <pre class="signature"><code>slay warning(message: tea) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L266">error.csd:266</a></p>
+            </div>
+            <div class="doc-item" id="info">
+                <h4>info</h4>
+                <pre class="signature"><code>slay info(message: tea) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L271">error.csd:271</a></p>
+            </div>
+            <div class="doc-item" id="fatal">
+                <h4>fatal</h4>
+                <pre class="signature"><code>slay fatal(message: tea) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L276">error.csd:276</a></p>
+            </div>
+            <div class="doc-item" id="set_error_config">
+                <h4>set_error_config</h4>
+                <pre class="signature"><code>slay set_error_config(config: ErrorConfig) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L283">error.csd:283</a></p>
+            </div>
+            <div class="doc-item" id="location">
+                <h4>location</h4>
+                <pre class="signature"><code>slay location(file: tea, line: normie, column: normie, length: normie) -> ErrorLocation {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L288">error.csd:288</a></p>
+            </div>
+            <div class="doc-item" id="unexpected_token">
+                <h4>unexpected_token</h4>
+                <pre class="signature"><code>slay unexpected_token(token: tea, expected: tea) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L298">error.csd:298</a></p>
+            </div>
+            <div class="doc-item" id="undefined_variable">
+                <h4>undefined_variable</h4>
+                <pre class="signature"><code>slay undefined_variable(name: tea) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L302">error.csd:302</a></p>
+            </div>
+            <div class="doc-item" id="type_mismatch">
+                <h4>type_mismatch</h4>
+                <pre class="signature"><code>slay type_mismatch(expected: tea, actual: tea) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L306">error.csd:306</a></p>
+            </div>
+            <div class="doc-item" id="redefined_symbol">
+                <h4>redefined_symbol</h4>
+                <pre class="signature"><code>slay redefined_symbol(name: tea) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L310">error.csd:310</a></p>
+            </div>
+            <div class="doc-item" id="invalid_operation">
+                <h4>invalid_operation</h4>
+                <pre class="signature"><code>slay invalid_operation(op: tea, left_type: tea, right_type: tea) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L314">error.csd:314</a></p>
+            </div>
+            <div class="doc-item" id="missing_return">
+                <h4>missing_return</h4>
+                <pre class="signature"><code>slay missing_return(function_name: tea) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L318">error.csd:318</a></p>
+            </div>
+            <div class="doc-item" id="unreachable_code">
+                <h4>unreachable_code</h4>
+                <pre class="signature"><code>slay unreachable_code() -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L322">error.csd:322</a></p>
+            </div>
+            <div class="doc-item" id="invalid_assignment">
+                <h4>invalid_assignment</h4>
+                <pre class="signature"><code>slay invalid_assignment(target: tea) -> tea {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L326">error.csd:326</a></p>
+            </div>
+            <div class="doc-item" id="syntax_error">
+                <h4>syntax_error</h4>
+                <pre class="signature"><code>slay syntax_error(message: tea, line: normie, column: normie) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L331">error.csd:331</a></p>
+            </div>
+            <div class="doc-item" id="semantic_error">
+                <h4>semantic_error</h4>
+                <pre class="signature"><code>slay semantic_error(message: tea, line: normie, column: normie) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L335">error.csd:335</a></p>
+            </div>
+            <div class="doc-item" id="create_context">
+                <h4>create_context</h4>
+                <pre class="signature"><code>slay create_context(file_name: tea, source_lines: tea[]) -> ErrorContext {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L348">error.csd:348</a></p>
+            </div>
+            <div class="doc-item" id="set_function_context">
+                <h4>set_function_context</h4>
+                <pre class="signature"><code>slay set_function_context(context: ErrorContext, function_name: tea) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L358">error.csd:358</a></p>
+            </div>
+            <div class="doc-item" id="set_struct_context">
+                <h4>set_struct_context</h4>
+                <pre class="signature"><code>slay set_struct_context(context: ErrorContext, struct_name: tea) {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L363">error.csd:363</a></p>
+            </div>
+            <div class="doc-item" id="contextual_error">
+                <h4>contextual_error</h4>
+                <pre class="signature"><code>slay contextual_error(</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L368">error.csd:368</a></p>
+            </div>
+            <div class="doc-item" id="suggest_fix">
+                <h4>suggest_fix</h4>
+                <pre class="signature"><code>slay suggest_fix(error: CompilerError, suggestion: tea) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L395">error.csd:395</a></p>
+            </div>
+            <div class="doc-item" id="suggest_spelling">
+                <h4>suggest_spelling</h4>
+                <pre class="signature"><code>slay suggest_spelling(error: CompilerError, correct_spelling: tea) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L399">error.csd:399</a></p>
+            </div>
+            <div class="doc-item" id="suggest_import">
+                <h4>suggest_import</h4>
+                <pre class="signature"><code>slay suggest_import(error: CompilerError, module_name: tea) -> CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L403">error.csd:403</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="ErrorLocation">
+                <h4>ErrorLocation</h4>
+                <pre class="signature"><code>squad ErrorLocation {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L18">error.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="CompilerError">
+                <h4>CompilerError</h4>
+                <pre class="signature"><code>squad CompilerError {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L26">error.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="ErrorConfig">
+                <h4>ErrorConfig</h4>
+                <pre class="signature"><code>squad ErrorConfig {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L36">error.csd:36</a></p>
+            </div>
+            <div class="doc-item" id="ErrorContext">
+                <h4>ErrorContext</h4>
+                <pre class="signature"><code>squad ErrorContext {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L340">error.csd:340</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="global_error_config">
+                <h4>global_error_config</h4>
+                <pre class="signature"><code>facts global_error_config = ErrorConfig {</code></pre>
+                <p class="source">Source: <a href="file://./src/bootstrap/stage2/error.csd#L44">error.csd:44</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

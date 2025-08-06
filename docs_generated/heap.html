@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>heap - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>heap</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="init_heap">
+                <h4>init_heap</h4>
+                <pre class="signature"><code>slay init_heap(size normie) *Heap {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L32">heap.csd:32</a></p>
+            </div>
+            <div class="doc-item" id="get_global_heap">
+                <h4>get_global_heap</h4>
+                <pre class="signature"><code>slay get_global_heap() *Heap {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L64">heap.csd:64</a></p>
+            </div>
+            <div class="doc-item" id="heap_allocate">
+                <h4>heap_allocate</h4>
+                <pre class="signature"><code>slay heap_allocate(size normie, alignment normie) *byte {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L72">heap.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="heap_deallocate">
+                <h4>heap_deallocate</h4>
+                <pre class="signature"><code>slay heap_deallocate(ptr *byte) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L130">heap.csd:130</a></p>
+            </div>
+            <div class="doc-item" id="find_block_in_bin">
+                <h4>find_block_in_bin</h4>
+                <pre class="signature"><code>slay find_block_in_bin(heap *Heap, bin_index normie, size normie, alignment normie) *MemoryBlock {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L164">heap.csd:164</a></p>
+            </div>
+            <div class="doc-item" id="find_large_block">
+                <h4>find_large_block</h4>
+                <pre class="signature"><code>slay find_large_block(heap *Heap, size normie, alignment normie) *MemoryBlock {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L189">heap.csd:189</a></p>
+            </div>
+            <div class="doc-item" id="expand_heap">
+                <h4>expand_heap</h4>
+                <pre class="signature"><code>slay expand_heap(heap *Heap, size normie, alignment normie) *MemoryBlock {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L209">heap.csd:209</a></p>
+            </div>
+            <div class="doc-item" id="split_heap_block">
+                <h4>split_heap_block</h4>
+                <pre class="signature"><code>slay split_heap_block(heap *Heap, block *MemoryBlock, size normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L238">heap.csd:238</a></p>
+            </div>
+            <div class="doc-item" id="coalesce_heap_blocks">
+                <h4>coalesce_heap_blocks</h4>
+                <pre class="signature"><code>slay coalesce_heap_blocks(heap *Heap, block *MemoryBlock) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L260">heap.csd:260</a></p>
+            </div>
+            <div class="doc-item" id="get_bin_index">
+                <h4>get_bin_index</h4>
+                <pre class="signature"><code>slay get_bin_index(size normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L280">heap.csd:280</a></p>
+            </div>
+            <div class="doc-item" id="insert_into_bin">
+                <h4>insert_into_bin</h4>
+                <pre class="signature"><code>slay insert_into_bin(heap *Heap, block *MemoryBlock, bin_index normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L296">heap.csd:296</a></p>
+            </div>
+            <div class="doc-item" id="remove_from_bin">
+                <h4>remove_from_bin</h4>
+                <pre class="signature"><code>slay remove_from_bin(heap *Heap, block *MemoryBlock, bin_index normie) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L319">heap.csd:319</a></p>
+            </div>
+            <div class="doc-item" id="update_fragmentation_ratio">
+                <h4>update_fragmentation_ratio</h4>
+                <pre class="signature"><code>slay update_fragmentation_ratio(heap *Heap) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L347">heap.csd:347</a></p>
+            </div>
+            <div class="doc-item" id="get_heap_stats">
+                <h4>get_heap_stats</h4>
+                <pre class="signature"><code>slay get_heap_stats(heap *Heap) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L381">heap.csd:381</a></p>
+            </div>
+            <div class="doc-item" id="defragment_heap">
+                <h4>defragment_heap</h4>
+                <pre class="signature"><code>slay defragment_heap(heap *Heap) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L393">heap.csd:393</a></p>
+            </div>
+            <div class="doc-item" id="cleanup_heap">
+                <h4>cleanup_heap</h4>
+                <pre class="signature"><code>slay cleanup_heap(heap *Heap) {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/memory/heap.csd#L415">heap.csd:415</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

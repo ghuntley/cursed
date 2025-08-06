@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hot_reload_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>hot_reload_demo</h2>
+    </header>
+    <main>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="DevServer">
+                <h4>DevServer</h4>
+                <pre class="signature"><code>squad DevServer {</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L64">hot_reload_demo.csd:64</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="current_dir">
+                <h4>current_dir</h4>
+                <pre class="signature"><code>facts current_dir = std::env::current_dir()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L23">hot_reload_demo.csd:23</a></p>
+            </div>
+            <div class="doc-item" id="changed_files">
+                <h4>changed_files</h4>
+                <pre class="signature"><code>facts changed_files = watcher.check_for_changes();</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L40">hot_reload_demo.csd:40</a></p>
+            </div>
+            <div class="doc-item" id="mut hot_reload">
+                <h4>mut hot_reload</h4>
+                <pre class="signature"><code>facts mut hot_reload = debug::HotReloadWatcher::new()</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L72">hot_reload_demo.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="changed_files">
+                <h4>changed_files</h4>
+                <pre class="signature"><code>facts changed_files = self.hot_reload.check_for_changes();</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L97">hot_reload_demo.csd:97</a></p>
+            </div>
+            <div class="doc-item" id="headers">
+                <h4>headers</h4>
+                <pre class="signature"><code>facts headers = std::collections::HashMap::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L107">hot_reload_demo.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="body">
+                <h4>body</h4>
+                <pre class="signature"><code>facts body = b"";</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L108">hot_reload_demo.csd:108</a></p>
+            </div>
+            <div class="doc-item" id="debug_info">
+                <h4>debug_info</h4>
+                <pre class="signature"><code>facts debug_info = self.request_debugger.log_request(method, path, &headers, body);</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L109">hot_reload_demo.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="response_body">
+                <h4>response_body</h4>
+                <pre class="signature"><code>facts response_body = format!("Hello from {} {}", method, path);</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L115">hot_reload_demo.csd:115</a></p>
+            </div>
+            <div class="doc-item" id="response_headers">
+                <h4>response_headers</h4>
+                <pre class="signature"><code>facts response_headers = std::collections::HashMap::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L116">hot_reload_demo.csd:116</a></p>
+            </div>
+            <div class="doc-item" id="duration">
+                <h4>duration</h4>
+                <pre class="signature"><code>facts duration = time::Duration::from_millis(50);</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L117">hot_reload_demo.csd:117</a></p>
+            </div>
+            <div class="doc-item" id="response_debug">
+                <h4>response_debug</h4>
+                <pre class="signature"><code>facts response_debug = self.response_debugger.log_response(</code></pre>
+                <p class="source">Source: <a href="file://./examples/hot_reload_demo.csd#L120">hot_reload_demo.csd:120</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

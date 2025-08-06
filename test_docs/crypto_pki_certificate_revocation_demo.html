@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>crypto_pki_certificate_revocation_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>crypto_pki_certificate_revocation_demo</h2>
+    </header>
+    <main>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="CertificateInfo">
+                <h4>CertificateInfo</h4>
+                <pre class="signature"><code>squad CertificateInfo {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L17">crypto_pki_certificate_revocation_demo.csd:17</a></p>
+            </div>
+            <div class="doc-item" id="RevocationDemo">
+                <h4>RevocationDemo</h4>
+                <pre class="signature"><code>squad RevocationDemo {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L25">crypto_pki_certificate_revocation_demo.csd:25</a></p>
+            </div>
+            <div class="doc-item" id="RevocationStats">
+                <h4>RevocationStats</h4>
+                <pre class="signature"><code>squad RevocationStats {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L31">crypto_pki_certificate_revocation_demo.csd:31</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="mut demo">
+                <h4>mut demo</h4>
+                <pre class="signature"><code>facts mut demo = create_revocation_demo()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L47">crypto_pki_certificate_revocation_demo.csd:47</a></p>
+            </div>
+            <div class="doc-item" id="crl_config">
+                <h4>crl_config</h4>
+                <pre class="signature"><code>facts crl_config = pki::CrlConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L67">crypto_pki_certificate_revocation_demo.csd:67</a></p>
+            </div>
+            <div class="doc-item" id="ocsp_config">
+                <h4>ocsp_config</h4>
+                <pre class="signature"><code>facts ocsp_config = pki::OcspConfig {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L81">crypto_pki_certificate_revocation_demo.csd:81</a></p>
+            </div>
+            <div class="doc-item" id="manager">
+                <h4>manager</h4>
+                <pre class="signature"><code>facts manager = pki::create_revocation_manager(crl_config, ocsp_config)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L90">crypto_pki_certificate_revocation_demo.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="mut certificates">
+                <h4>mut certificates</h4>
+                <pre class="signature"><code>facts mut certificates = collections::Map::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L93">crypto_pki_certificate_revocation_demo.csd:93</a></p>
+            </div>
+            <div class="doc-item" id="cert_data">
+                <h4>cert_data</h4>
+                <pre class="signature"><code>facts cert_data = [</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L96">crypto_pki_certificate_revocation_demo.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="(serial, issuer, subject, issued, expiry)">
+                <h4>(serial, issuer, subject, issued, expiry)</h4>
+                <pre class="signature"><code>facts (serial, issuer, subject, issued, expiry) = cert_data[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L108">crypto_pki_certificate_revocation_demo.csd:108</a></p>
+            </div>
+            <div class="doc-item" id="cert_info">
+                <h4>cert_info</h4>
+                <pre class="signature"><code>facts cert_info = CertificateInfo {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L109">crypto_pki_certificate_revocation_demo.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="serial_number">
+                <h4>serial_number</h4>
+                <pre class="signature"><code>facts serial_number = pki::SerialNumber::from_big_int(12345);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L138">crypto_pki_certificate_revocation_demo.csd:138</a></p>
+            </div>
+            <div class="doc-item" id="issuer">
+                <h4>issuer</h4>
+                <pre class="signature"><code>facts issuer = create_distinguished_name("CURSED Root CA");</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L139">crypto_pki_certificate_revocation_demo.csd:139</a></p>
+            </div>
+            <div class="doc-item" id="initial_status">
+                <h4>initial_status</h4>
+                <pre class="signature"><code>facts initial_status = demo.revocation_manager.check_revocation_status(&serial_number, &issuer)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L142">crypto_pki_certificate_revocation_demo.csd:142</a></p>
+            </div>
+            <div class="doc-item" id="audit_info">
+                <h4>audit_info</h4>
+                <pre class="signature"><code>facts audit_info = pki::RevocationAuditInfo {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L153">crypto_pki_certificate_revocation_demo.csd:153</a></p>
+            </div>
+            <div class="doc-item" id="revoked_status">
+                <h4>revoked_status</h4>
+                <pre class="signature"><code>facts revoked_status = demo.revocation_manager.check_revocation_status(&serial_number, &issuer)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L178">crypto_pki_certificate_revocation_demo.csd:178</a></p>
+            </div>
+            <div class="doc-item" id="revocations">
+                <h4>revocations</h4>
+                <pre class="signature"><code>facts revocations = collections::Vec::from([</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L197">crypto_pki_certificate_revocation_demo.csd:197</a></p>
+            </div>
+            <div class="doc-item" id="start_time">
+                <h4>start_time</h4>
+                <pre class="signature"><code>facts start_time = time::SystemTime::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L223">crypto_pki_certificate_revocation_demo.csd:223</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = demo.revocation_manager.revoke_certificates_batch(revocations)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L224">crypto_pki_certificate_revocation_demo.csd:224</a></p>
+            </div>
+            <div class="doc-item" id="processing_time">
+                <h4>processing_time</h4>
+                <pre class="signature"><code>facts processing_time = start_time.elapsed();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L225">crypto_pki_certificate_revocation_demo.csd:225</a></p>
+            </div>
+            <div class="doc-item" id="(serial, error)">
+                <h4>(serial, error)</h4>
+                <pre class="signature"><code>facts (serial, error) = &result.failed_revocations[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L236">crypto_pki_certificate_revocation_demo.csd:236</a></p>
+            </div>
+            <div class="doc-item" id="full_crl">
+                <h4>full_crl</h4>
+                <pre class="signature"><code>facts full_crl = demo.revocation_manager.generate_full_crl()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L248">crypto_pki_certificate_revocation_demo.csd:248</a></p>
+            </div>
+            <div class="doc-item" id="entry">
+                <h4>entry</h4>
+                <pre class="signature"><code>facts entry = &full_crl.revoked_certificates[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L262">crypto_pki_certificate_revocation_demo.csd:262</a></p>
+            </div>
+            <div class="doc-item" id="delta_crl_option">
+                <h4>delta_crl_option</h4>
+                <pre class="signature"><code>facts delta_crl_option = demo.revocation_manager.generate_delta_crl()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L283">crypto_pki_certificate_revocation_demo.csd:283</a></p>
+            </div>
+            <div class="doc-item" id="valid_serial">
+                <h4>valid_serial</h4>
+                <pre class="signature"><code>facts valid_serial = pki::SerialNumber::from_big_int(12346);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L306">crypto_pki_certificate_revocation_demo.csd:306</a></p>
+            </div>
+            <div class="doc-item" id="valid_issuer">
+                <h4>valid_issuer</h4>
+                <pre class="signature"><code>facts valid_issuer = create_distinguished_name("CURSED Root CA");</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L307">crypto_pki_certificate_revocation_demo.csd:307</a></p>
+            </div>
+            <div class="doc-item" id="ocsp_response_valid">
+                <h4>ocsp_response_valid</h4>
+                <pre class="signature"><code>facts ocsp_response_valid = pki::process_ocsp_status_request(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L309">crypto_pki_certificate_revocation_demo.csd:309</a></p>
+            </div>
+            <div class="doc-item" id="revoked_serial">
+                <h4>revoked_serial</h4>
+                <pre class="signature"><code>facts revoked_serial = pki::SerialNumber::from_big_int(12345);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L325">crypto_pki_certificate_revocation_demo.csd:325</a></p>
+            </div>
+            <div class="doc-item" id="revoked_issuer">
+                <h4>revoked_issuer</h4>
+                <pre class="signature"><code>facts revoked_issuer = create_distinguished_name("CURSED Root CA");</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L326">crypto_pki_certificate_revocation_demo.csd:326</a></p>
+            </div>
+            <div class="doc-item" id="ocsp_response_revoked">
+                <h4>ocsp_response_revoked</h4>
+                <pre class="signature"><code>facts ocsp_response_revoked = pki::process_ocsp_status_request(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L328">crypto_pki_certificate_revocation_demo.csd:328</a></p>
+            </div>
+            <div class="doc-item" id="cached_response">
+                <h4>cached_response</h4>
+                <pre class="signature"><code>facts cached_response = pki::process_ocsp_status_request(</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L342">crypto_pki_certificate_revocation_demo.csd:342</a></p>
+            </div>
+            <div class="doc-item" id="emergency_certificates">
+                <h4>emergency_certificates</h4>
+                <pre class="signature"><code>facts emergency_certificates = collections::Vec::from([</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L362">crypto_pki_certificate_revocation_demo.csd:362</a></p>
+            </div>
+            <div class="doc-item" id="emergency_start">
+                <h4>emergency_start</h4>
+                <pre class="signature"><code>facts emergency_start = time::SystemTime::now();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L370">crypto_pki_certificate_revocation_demo.csd:370</a></p>
+            </div>
+            <div class="doc-item" id="emergency_time">
+                <h4>emergency_time</h4>
+                <pre class="signature"><code>facts emergency_time = emergency_start.elapsed();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L376">crypto_pki_certificate_revocation_demo.csd:376</a></p>
+            </div>
+            <div class="doc-item" id="(serial, issuer)">
+                <h4>(serial, issuer)</h4>
+                <pre class="signature"><code>facts (serial, issuer) = &emergency_certificates[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L388">crypto_pki_certificate_revocation_demo.csd:388</a></p>
+            </div>
+            <div class="doc-item" id="is_revoked">
+                <h4>is_revoked</h4>
+                <pre class="signature"><code>facts is_revoked = pki::is_certificate_revoked(&demo.revocation_manager, serial, issuer)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L389">crypto_pki_certificate_revocation_demo.csd:389</a></p>
+            </div>
+            <div class="doc-item" id="certificates_to_check">
+                <h4>certificates_to_check</h4>
+                <pre class="signature"><code>facts certificates_to_check = collections::Vec::from([</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L405">crypto_pki_certificate_revocation_demo.csd:405</a></p>
+            </div>
+            <div class="doc-item" id="revoked_count">
+                <h4>revoked_count</h4>
+                <pre class="signature"><code>facts revoked_count = 0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L418">crypto_pki_certificate_revocation_demo.csd:418</a></p>
+            </div>
+            <div class="doc-item" id="valid_count">
+                <h4>valid_count</h4>
+                <pre class="signature"><code>facts valid_count = 0;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L419">crypto_pki_certificate_revocation_demo.csd:419</a></p>
+            </div>
+            <div class="doc-item" id="(serial_num, issuer_name, expected_status)">
+                <h4>(serial_num, issuer_name, expected_status)</h4>
+                <pre class="signature"><code>facts (serial_num, issuer_name, expected_status) = &certificates_to_check[i];</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L422">crypto_pki_certificate_revocation_demo.csd:422</a></p>
+            </div>
+            <div class="doc-item" id="serial">
+                <h4>serial</h4>
+                <pre class="signature"><code>facts serial = pki::SerialNumber::from_big_int(serial_num);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L423">crypto_pki_certificate_revocation_demo.csd:423</a></p>
+            </div>
+            <div class="doc-item" id="issuer">
+                <h4>issuer</h4>
+                <pre class="signature"><code>facts issuer = create_distinguished_name(issuer_name);</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L424">crypto_pki_certificate_revocation_demo.csd:424</a></p>
+            </div>
+            <div class="doc-item" id="status">
+                <h4>status</h4>
+                <pre class="signature"><code>facts status = demo.revocation_manager.check_revocation_status(&serial, &issuer)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L426">crypto_pki_certificate_revocation_demo.csd:426</a></p>
+            </div>
+            <div class="doc-item" id="mgr_stats">
+                <h4>mgr_stats</h4>
+                <pre class="signature"><code>facts mgr_stats = demo.revocation_manager.get_statistics()?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L459">crypto_pki_certificate_revocation_demo.csd:459</a></p>
+            </div>
+            <div class="doc-item" id="duration">
+                <h4>duration</h4>
+                <pre class="signature"><code>facts duration = time.duration_since(time::UNIX_EPOCH).unwrap_or_default();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L528">crypto_pki_certificate_revocation_demo.csd:528</a></p>
+            </div>
+            <div class="doc-item" id="parts">
+                <h4>parts</h4>
+                <pre class="signature"><code>facts parts = collections::Vec::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L540">crypto_pki_certificate_revocation_demo.csd:540</a></p>
+            </div>
+            <div class="doc-item" id="reason_str">
+                <h4>reason_str</h4>
+                <pre class="signature"><code>facts reason_str = vibe_check reason {</code></pre>
+                <p class="source">Source: <a href="file://./examples/crypto_pki_certificate_revocation_demo.csd#L559">crypto_pki_certificate_revocation_demo.csd:559</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

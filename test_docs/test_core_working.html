@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>test_core_working - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>test_core_working</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="test_start">
+                <h4>test_start</h4>
+                <pre class="signature"><code>slay test_start(name tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L9">test_core_working.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="test_pass">
+                <h4>test_pass</h4>
+                <pre class="signature"><code>slay test_pass(message tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L14">test_core_working.csd:14</a></p>
+            </div>
+            <div class="doc-item" id="test_fail">
+                <h4>test_fail</h4>
+                <pre class="signature"><code>slay test_fail(message tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L19">test_core_working.csd:19</a></p>
+            </div>
+            <div class="doc-item" id="assert_eq_int">
+                <h4>assert_eq_int</h4>
+                <pre class="signature"><code>slay assert_eq_int(actual normie, expected normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L24">test_core_working.csd:24</a></p>
+            </div>
+            <div class="doc-item" id="assert_eq_string">
+                <h4>assert_eq_string</h4>
+                <pre class="signature"><code>slay assert_eq_string(actual tea, expected tea) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L31">test_core_working.csd:31</a></p>
+            </div>
+            <div class="doc-item" id="assert_true">
+                <h4>assert_true</h4>
+                <pre class="signature"><code>slay assert_true(value lit) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L38">test_core_working.csd:38</a></p>
+            </div>
+            <div class="doc-item" id="assert_false">
+                <h4>assert_false</h4>
+                <pre class="signature"><code>slay assert_false(value lit) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L45">test_core_working.csd:45</a></p>
+            </div>
+            <div class="doc-item" id="print_test_summary">
+                <h4>print_test_summary</h4>
+                <pre class="signature"><code>slay print_test_summary() {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L52">test_core_working.csd:52</a></p>
+            </div>
+            <div class="doc-item" id="core_max">
+                <h4>core_max</h4>
+                <pre class="signature"><code>slay core_max(a normie, b normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L66">test_core_working.csd:66</a></p>
+            </div>
+            <div class="doc-item" id="core_min">
+                <h4>core_min</h4>
+                <pre class="signature"><code>slay core_min(a normie, b normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L73">test_core_working.csd:73</a></p>
+            </div>
+            <div class="doc-item" id="core_abs">
+                <h4>core_abs</h4>
+                <pre class="signature"><code>slay core_abs(value normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L80">test_core_working.csd:80</a></p>
+            </div>
+            <div class="doc-item" id="core_string_from_int">
+                <h4>core_string_from_int</h4>
+                <pre class="signature"><code>slay core_string_from_int(value normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L87">test_core_working.csd:87</a></p>
+            </div>
+            <div class="doc-item" id="core_option_some">
+                <h4>core_option_some</h4>
+                <pre class="signature"><code>slay core_option_some(value normie) (lit, normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L103">test_core_working.csd:103</a></p>
+            </div>
+            <div class="doc-item" id="core_option_none">
+                <h4>core_option_none</h4>
+                <pre class="signature"><code>slay core_option_none() (lit, normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L107">test_core_working.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="core_option_is_some">
+                <h4>core_option_is_some</h4>
+                <pre class="signature"><code>slay core_option_is_some(opt (lit, normie)) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L111">test_core_working.csd:111</a></p>
+            </div>
+            <div class="doc-item" id="core_option_unwrap_or">
+                <h4>core_option_unwrap_or</h4>
+                <pre class="signature"><code>slay core_option_unwrap_or(opt (lit, normie), default_value normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L115">test_core_working.csd:115</a></p>
+            </div>
+            <div class="doc-item" id="core_result_ok">
+                <h4>core_result_ok</h4>
+                <pre class="signature"><code>slay core_result_ok(value normie) (lit, normie, normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L122">test_core_working.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="core_result_err">
+                <h4>core_result_err</h4>
+                <pre class="signature"><code>slay core_result_err(error_code normie) (lit, normie, normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L126">test_core_working.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="core_result_is_ok">
+                <h4>core_result_is_ok</h4>
+                <pre class="signature"><code>slay core_result_is_ok(result (lit, normie, normie)) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L130">test_core_working.csd:130</a></p>
+            </div>
+            <div class="doc-item" id="core_result_unwrap_or">
+                <h4>core_result_unwrap_or</h4>
+                <pre class="signature"><code>slay core_result_unwrap_or(result (lit, normie, normie), default_value normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/core/test_core_working.csd#L134">test_core_working.csd:134</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

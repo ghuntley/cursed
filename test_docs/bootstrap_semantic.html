@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bootstrap_semantic - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>bootstrap_semantic</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="new_symbol_table">
+                <h4>new_symbol_table</h4>
+                <pre class="signature"><code>slay new_symbol_table(parent SymbolTable) SymbolTable {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L53">bootstrap_semantic.csd:53</a></p>
+            </div>
+            <div class="doc-item" id="add_symbol">
+                <h4>add_symbol</h4>
+                <pre class="signature"><code>slay add_symbol(table SymbolTable, name tea, symbol_type normie, is_function lit, line normie, column normie) {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L62">bootstrap_semantic.csd:62</a></p>
+            </div>
+            <div class="doc-item" id="lookup_symbol">
+                <h4>lookup_symbol</h4>
+                <pre class="signature"><code>slay lookup_symbol(table SymbolTable, name tea) Symbol {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L74">bootstrap_semantic.csd:74</a></p>
+            </div>
+            <div class="doc-item" id="new_semantic_analyzer">
+                <h4>new_semantic_analyzer</h4>
+                <pre class="signature"><code>slay new_semantic_analyzer() SemanticAnalyzer {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L94">bootstrap_semantic.csd:94</a></p>
+            </div>
+            <div class="doc-item" id="add_error">
+                <h4>add_error</h4>
+                <pre class="signature"><code>slay add_error(analyzer SemanticAnalyzer, message tea) {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L109">bootstrap_semantic.csd:109</a></p>
+            </div>
+            <div class="doc-item" id="get_type_from_name">
+                <h4>get_type_from_name</h4>
+                <pre class="signature"><code>slay get_type_from_name(type_name tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L114">bootstrap_semantic.csd:114</a></p>
+            </div>
+            <div class="doc-item" id="get_type_name">
+                <h4>get_type_name</h4>
+                <pre class="signature"><code>slay get_type_name(type_id normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L129">bootstrap_semantic.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="analyze_node">
+                <h4>analyze_node</h4>
+                <pre class="signature"><code>slay analyze_node(analyzer SemanticAnalyzer, node ASTNode) normie {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L146">bootstrap_semantic.csd:146</a></p>
+            </div>
+            <div class="doc-item" id="analyze_program">
+                <h4>analyze_program</h4>
+                <pre class="signature"><code>slay analyze_program(analyzer SemanticAnalyzer, node ASTNode) normie {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L163">bootstrap_semantic.csd:163</a></p>
+            </div>
+            <div class="doc-item" id="analyze_function">
+                <h4>analyze_function</h4>
+                <pre class="signature"><code>slay analyze_function(analyzer SemanticAnalyzer, node ASTNode) normie {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L175">bootstrap_semantic.csd:175</a></p>
+            </div>
+            <div class="doc-item" id="analyze_variable">
+                <h4>analyze_variable</h4>
+                <pre class="signature"><code>slay analyze_variable(analyzer SemanticAnalyzer, node ASTNode) normie {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L198">bootstrap_semantic.csd:198</a></p>
+            </div>
+            <div class="doc-item" id="analyze_block">
+                <h4>analyze_block</h4>
+                <pre class="signature"><code>slay analyze_block(analyzer SemanticAnalyzer, node ASTNode) normie {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L222">bootstrap_semantic.csd:222</a></p>
+            </div>
+            <div class="doc-item" id="analyze_return">
+                <h4>analyze_return</h4>
+                <pre class="signature"><code>slay analyze_return(analyzer SemanticAnalyzer, node ASTNode) normie {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L242">bootstrap_semantic.csd:242</a></p>
+            </div>
+            <div class="doc-item" id="infer_literal_type">
+                <h4>infer_literal_type</h4>
+                <pre class="signature"><code>slay infer_literal_type(value tea) normie {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L255">bootstrap_semantic.csd:255</a></p>
+            </div>
+            <div class="doc-item" id="run_semantic_analysis">
+                <h4>run_semantic_analysis</h4>
+                <pre class="signature"><code>slay run_semantic_analysis(ast ASTNode) SemanticAnalyzer {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L274">bootstrap_semantic.csd:274</a></p>
+            </div>
+            <div class="doc-item" id="test_semantic_analyzer">
+                <h4>test_semantic_analyzer</h4>
+                <pre class="signature"><code>slay test_semantic_analyzer() {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L292">bootstrap_semantic.csd:292</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L360">bootstrap_semantic.csd:360</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="Symbol">
+                <h4>Symbol</h4>
+                <pre class="signature"><code>squad Symbol {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L22">bootstrap_semantic.csd:22</a></p>
+            </div>
+            <div class="doc-item" id="SymbolTable">
+                <h4>SymbolTable</h4>
+                <pre class="signature"><code>squad SymbolTable {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L31">bootstrap_semantic.csd:31</a></p>
+            </div>
+            <div class="doc-item" id="SemanticAnalyzer">
+                <h4>SemanticAnalyzer</h4>
+                <pre class="signature"><code>squad SemanticAnalyzer {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L37">bootstrap_semantic.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="ASTNode">
+                <h4>ASTNode</h4>
+                <pre class="signature"><code>squad ASTNode {</code></pre>
+                <p class="source">Source: <a href="file://./bootstrap_semantic.csd#L44">bootstrap_semantic.csd:44</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

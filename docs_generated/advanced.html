@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>advanced - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>advanced</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="test_group_start">
+                <h4>test_group_start</h4>
+                <pre class="signature"><code>slay test_group_start(group_name tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L37">advanced.csd:37</a></p>
+            </div>
+            <div class="doc-item" id="test_group_end">
+                <h4>test_group_end</h4>
+                <pre class="signature"><code>slay test_group_end() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L44">advanced.csd:44</a></p>
+            </div>
+            <div class="doc-item" id="benchmark">
+                <h4>benchmark</h4>
+                <pre class="signature"><code>slay benchmark(name tea, operation slay()) BenchmarkResult {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L51">advanced.csd:51</a></p>
+            </div>
+            <div class="doc-item" id="property_test">
+                <h4>property_test</h4>
+                <pre class="signature"><code>slay property_test(test_case PropertyTestCase) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L80">advanced.csd:80</a></p>
+            </div>
+            <div class="doc-item" id="get_memory_usage">
+                <h4>get_memory_usage</h4>
+                <pre class="signature"><code>slay get_memory_usage() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L105">advanced.csd:105</a></p>
+            </div>
+            <div class="doc-item" id="assert_memory_usage_under">
+                <h4>assert_memory_usage_under</h4>
+                <pre class="signature"><code>slay assert_memory_usage_under(threshold normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L110">advanced.csd:110</a></p>
+            </div>
+            <div class="doc-item" id="mark_line_covered">
+                <h4>mark_line_covered</h4>
+                <pre class="signature"><code>slay mark_line_covered(file tea, line normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L122">advanced.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="get_coverage_percentage">
+                <h4>get_coverage_percentage</h4>
+                <pre class="signature"><code>slay get_coverage_percentage() meal {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L129">advanced.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="run_test_suite">
+                <h4>run_test_suite</h4>
+                <pre class="signature"><code>slay run_test_suite(suite_name tea, tests []slay()) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L137">advanced.csd:137</a></p>
+            </div>
+            <div class="doc-item" id="assert_near">
+                <h4>assert_near</h4>
+                <pre class="signature"><code>slay assert_near(actual meal, expected meal, tolerance meal) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L160">advanced.csd:160</a></p>
+            </div>
+            <div class="doc-item" id="assert_throws">
+                <h4>assert_throws</h4>
+                <pre class="signature"><code>slay assert_throws(operation slay()) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L173">advanced.csd:173</a></p>
+            </div>
+            <div class="doc-item" id="assert_array_eq">
+                <h4>assert_array_eq</h4>
+                <pre class="signature"><code>slay assert_array_eq(actual []normie, expected []normie) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L190">advanced.csd:190</a></p>
+            </div>
+            <div class="doc-item" id="print_benchmark_summary">
+                <h4>print_benchmark_summary</h4>
+                <pre class="signature"><code>slay print_benchmark_summary() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L208">advanced.csd:208</a></p>
+            </div>
+            <div class="doc-item" id="print_coverage_report">
+                <h4>print_coverage_report</h4>
+                <pre class="signature"><code>slay print_coverage_report() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L220">advanced.csd:220</a></p>
+            </div>
+            <div class="doc-item" id="discover_stdlib_tests">
+                <h4>discover_stdlib_tests</h4>
+                <pre class="signature"><code>slay discover_stdlib_tests() []tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L229">advanced.csd:229</a></p>
+            </div>
+            <div class="doc-item" id="run_all_stdlib_tests">
+                <h4>run_all_stdlib_tests</h4>
+                <pre class="signature"><code>slay run_all_stdlib_tests() lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L243">advanced.csd:243</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="PropertyTestCase">
+                <h4>PropertyTestCase</h4>
+                <pre class="signature"><code>squad PropertyTestCase {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L13">advanced.csd:13</a></p>
+            </div>
+            <div class="doc-item" id="BenchmarkResult">
+                <h4>BenchmarkResult</h4>
+                <pre class="signature"><code>squad BenchmarkResult {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/testz/advanced.csd#L26">advanced.csd:26</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

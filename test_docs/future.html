@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>future - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>future</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="future_system_init">
+                <h4>future_system_init</h4>
+                <pre class="signature"><code>slay future_system_init() lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L74">future.csd:74</a></p>
+            </div>
+            <div class="doc-item" id="create_future">
+                <h4>create_future</h4>
+                <pre class="signature"><code>slay create_future() Future {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L86">future.csd:86</a></p>
+            </div>
+            <div class="doc-item" id="resolve_future">
+                <h4>resolve_future</h4>
+                <pre class="signature"><code>slay resolve_future(future_id TaskId, value AsyncResult) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L111">future.csd:111</a></p>
+            </div>
+            <div class="doc-item" id="reject_future">
+                <h4>reject_future</h4>
+                <pre class="signature"><code>slay reject_future(future_id TaskId, error tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L129">future.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="cancel_future">
+                <h4>cancel_future</h4>
+                <pre class="signature"><code>slay cancel_future(future_id TaskId, reason tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L147">future.csd:147</a></p>
+            </div>
+            <div class="doc-item" id="execute_future_callbacks">
+                <h4>execute_future_callbacks</h4>
+                <pre class="signature"><code>slay execute_future_callbacks(future Future) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L167">future.csd:167</a></p>
+            </div>
+            <div class="doc-item" id="execute_future_error_callbacks">
+                <h4>execute_future_error_callbacks</h4>
+                <pre class="signature"><code>slay execute_future_error_callbacks(future Future) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L178">future.csd:178</a></p>
+            </div>
+            <div class="doc-item" id="execute_future_cancellation_callbacks">
+                <h4>execute_future_cancellation_callbacks</h4>
+                <pre class="signature"><code>slay execute_future_cancellation_callbacks(future Future) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L189">future.csd:189</a></p>
+            </div>
+            <div class="doc-item" id="cancel_child_futures">
+                <h4>cancel_child_futures</h4>
+                <pre class="signature"><code>slay cancel_child_futures(future Future) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L200">future.csd:200</a></p>
+            </div>
+            <div class="doc-item" id="execute_callback_function">
+                <h4>execute_callback_function</h4>
+                <pre class="signature"><code>slay execute_callback_function(function_name tea, context map[tea]tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L209">future.csd:209</a></p>
+            </div>
+            <div class="doc-item" id="handle_future_then">
+                <h4>handle_future_then</h4>
+                <pre class="signature"><code>slay handle_future_then(context map[tea]tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L223">future.csd:223</a></p>
+            </div>
+            <div class="doc-item" id="handle_future_catch">
+                <h4>handle_future_catch</h4>
+                <pre class="signature"><code>slay handle_future_catch(context map[tea]tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L240">future.csd:240</a></p>
+            </div>
+            <div class="doc-item" id="handle_future_finally">
+                <h4>handle_future_finally</h4>
+                <pre class="signature"><code>slay handle_future_finally(context map[tea]tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L249">future.csd:249</a></p>
+            </div>
+            <div class="doc-item" id="handle_future_timeout">
+                <h4>handle_future_timeout</h4>
+                <pre class="signature"><code>slay handle_future_timeout(context map[tea]tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L257">future.csd:257</a></p>
+            </div>
+            <div class="doc-item" id="timeout_watcher">
+                <h4>timeout_watcher</h4>
+                <pre class="signature"><code>slay timeout_watcher(future_id TaskId, timeout_duration thicc) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L266">future.csd:266</a></p>
+            </div>
+            <div class="doc-item" id="add_future_callback">
+                <h4>add_future_callback</h4>
+                <pre class="signature"><code>slay add_future_callback(future_id TaskId, callback FutureCallback) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L280">future.csd:280</a></p>
+            </div>
+            <div class="doc-item" id="add_future_error_callback">
+                <h4>add_future_error_callback</h4>
+                <pre class="signature"><code>slay add_future_error_callback(future_id TaskId, callback FutureErrorCallback) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L290">future.csd:290</a></p>
+            </div>
+            <div class="doc-item" id="future_then">
+                <h4>future_then</h4>
+                <pre class="signature"><code>slay future_then(future_id TaskId, then_function tea) Future {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L300">future.csd:300</a></p>
+            </div>
+            <div class="doc-item" id="future_catch">
+                <h4>future_catch</h4>
+                <pre class="signature"><code>slay future_catch(future_id TaskId, catch_function tea) Future {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L322">future.csd:322</a></p>
+            </div>
+            <div class="doc-item" id="future_finally">
+                <h4>future_finally</h4>
+                <pre class="signature"><code>slay future_finally(future_id TaskId, finally_function tea) Future {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L344">future.csd:344</a></p>
+            </div>
+            <div class="doc-item" id="future_all">
+                <h4>future_all</h4>
+                <pre class="signature"><code>slay future_all(future_ids [TaskId]) Future {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L365">future.csd:365</a></p>
+            </div>
+            <div class="doc-item" id="future_all_monitor">
+                <h4>future_all_monitor</h4>
+                <pre class="signature"><code>slay future_all_monitor(all_future_id TaskId, future_ids [TaskId]) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L378">future.csd:378</a></p>
+            </div>
+            <div class="doc-item" id="future_race">
+                <h4>future_race</h4>
+                <pre class="signature"><code>slay future_race(future_ids [TaskId]) Future {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L412">future.csd:412</a></p>
+            </div>
+            <div class="doc-item" id="future_race_monitor">
+                <h4>future_race_monitor</h4>
+                <pre class="signature"><code>slay future_race_monitor(race_future_id TaskId, future_ids [TaskId]) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L420">future.csd:420</a></p>
+            </div>
+            <div class="doc-item" id="await_future_blocking">
+                <h4>await_future_blocking</h4>
+                <pre class="signature"><code>slay await_future_blocking(future_id TaskId) AsyncResult {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L448">future.csd:448</a></p>
+            </div>
+            <div class="doc-item" id="is_future_resolved">
+                <h4>is_future_resolved</h4>
+                <pre class="signature"><code>slay is_future_resolved(future_id TaskId) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L470">future.csd:470</a></p>
+            </div>
+            <div class="doc-item" id="is_future_rejected">
+                <h4>is_future_rejected</h4>
+                <pre class="signature"><code>slay is_future_rejected(future_id TaskId) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L479">future.csd:479</a></p>
+            </div>
+            <div class="doc-item" id="is_future_cancelled">
+                <h4>is_future_cancelled</h4>
+                <pre class="signature"><code>slay is_future_cancelled(future_id TaskId) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L488">future.csd:488</a></p>
+            </div>
+            <div class="doc-item" id="get_future_value">
+                <h4>get_future_value</h4>
+                <pre class="signature"><code>slay get_future_value(future_id TaskId) AsyncResult {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L497">future.csd:497</a></p>
+            </div>
+            <div class="doc-item" id="get_future_error">
+                <h4>get_future_error</h4>
+                <pre class="signature"><code>slay get_future_error(future_id TaskId) tea {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L513">future.csd:513</a></p>
+            </div>
+            <div class="doc-item" id="set_future_timeout">
+                <h4>set_future_timeout</h4>
+                <pre class="signature"><code>slay set_future_timeout(future_id TaskId, timeout_ms thicc) lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L522">future.csd:522</a></p>
+            </div>
+            <div class="doc-item" id="create_resolved_future">
+                <h4>create_resolved_future</h4>
+                <pre class="signature"><code>slay create_resolved_future(value AsyncResult) Future {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L533">future.csd:533</a></p>
+            </div>
+            <div class="doc-item" id="create_rejected_future">
+                <h4>create_rejected_future</h4>
+                <pre class="signature"><code>slay create_rejected_future(error tea) Future {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L540">future.csd:540</a></p>
+            </div>
+            <div class="doc-item" id="get_future_registry_stats">
+                <h4>get_future_registry_stats</h4>
+                <pre class="signature"><code>slay get_future_registry_stats() map[tea]normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L547">future.csd:547</a></p>
+            </div>
+            <div class="doc-item" id="cleanup_completed_futures">
+                <h4>cleanup_completed_futures</h4>
+                <pre class="signature"><code>slay cleanup_completed_futures() lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L561">future.csd:561</a></p>
+            </div>
+            <div class="doc-item" id="init_future_system">
+                <h4>init_future_system</h4>
+                <pre class="signature"><code>slay init_future_system() lit {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/async/future.csd#L581">future.csd:581</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

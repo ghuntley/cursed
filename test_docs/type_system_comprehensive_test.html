@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>type_system_comprehensive_test - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>type_system_comprehensive_test</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="create_container<T>">
+                <h4>create_container<T></h4>
+                <pre class="signature"><code>slay create_container<T>(initial_value T) Container<T> {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L77">type_system_comprehensive_test.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="serialize">
+                <h4>serialize</h4>
+                <pre class="signature"><code>slay serialize() tea</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L94">type_system_comprehensive_test.csd:94</a></p>
+            </div>
+            <div class="doc-item" id="deserialize">
+                <h4>deserialize</h4>
+                <pre class="signature"><code>slay deserialize(data tea) T</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L95">type_system_comprehensive_test.csd:95</a></p>
+            </div>
+            <div class="doc-item" id="get_type_name">
+                <h4>get_type_name</h4>
+                <pre class="signature"><code>slay get_type_name() tea</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L96">type_system_comprehensive_test.csd:96</a></p>
+            </div>
+            <div class="doc-item" id="store">
+                <h4>store</h4>
+                <pre class="signature"><code>slay store(value T)</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L100">type_system_comprehensive_test.csd:100</a></p>
+            </div>
+            <div class="doc-item" id="retrieve">
+                <h4>retrieve</h4>
+                <pre class="signature"><code>slay retrieve() T</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L101">type_system_comprehensive_test.csd:101</a></p>
+            </div>
+            <div class="doc-item" id="size">
+                <h4>size</h4>
+                <pre class="signature"><code>slay size() normie</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L102">type_system_comprehensive_test.csd:102</a></p>
+            </div>
+            <div class="doc-item" id="store">
+                <h4>store</h4>
+                <pre class="signature"><code>slay store(value T) {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L111">type_system_comprehensive_test.csd:111</a></p>
+            </div>
+            <div class="doc-item" id="retrieve">
+                <h4>retrieve</h4>
+                <pre class="signature"><code>slay retrieve() T {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L115">type_system_comprehensive_test.csd:115</a></p>
+            </div>
+            <div class="doc-item" id="size">
+                <h4>size</h4>
+                <pre class="signature"><code>slay size() normie {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L122">type_system_comprehensive_test.csd:122</a></p>
+            </div>
+            <div class="doc-item" id="divide_safe">
+                <h4>divide_safe</h4>
+                <pre class="signature"><code>slay divide_safe(a normie, b normie) Result<normie, tea> {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L201">type_system_comprehensive_test.csd:201</a></p>
+            </div>
+        </section>
+        <section id="structs">
+            <h3>Structs</h3>
+            <div class="doc-item" id="Person">
+                <h4>Person</h4>
+                <pre class="signature"><code>squad Person {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L48">type_system_comprehensive_test.csd:48</a></p>
+            </div>
+            <div class="doc-item" id="Container<T>">
+                <h4>Container<T></h4>
+                <pre class="signature"><code>squad Container<T> {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L72">type_system_comprehensive_test.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="DataStore<T> where T: Serializable<T>">
+                <h4>DataStore<T> where T: Serializable<T></h4>
+                <pre class="signature"><code>squad DataStore<T> where T: Serializable<T> {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L105">type_system_comprehensive_test.csd:105</a></p>
+            </div>
+        </section>
+        <section id="interfaces">
+            <h3>Interfaces</h3>
+            <div class="doc-item" id="Serializable<T>">
+                <h4>Serializable<T></h4>
+                <pre class="signature"><code>collab Serializable<T> {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L93">type_system_comprehensive_test.csd:93</a></p>
+            </div>
+            <div class="doc-item" id="Container_Interface<T> where T: Serializable<T>">
+                <h4>Container_Interface<T> where T: Serializable<T></h4>
+                <pre class="signature"><code>collab Container_Interface<T> where T: Serializable<T> {</code></pre>
+                <p class="source">Source: <a href="file://./type_system_comprehensive_test.csd#L99">type_system_comprehensive_test.csd:99</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -331,7 +331,7 @@ pub fn build(b: *std.Build) void {
     // Create the CURSED compiler executable - unified main with subcommands
     const exe = b.addExecutable(.{
         .name = "cursed", 
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_main.zig") else b.path("src-zig/main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/main.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -346,18 +346,25 @@ pub fn build(b: *std.Build) void {
         //     .flags = &[_][]const u8{"-std=c99", "-O2"},
         // });
         
-        // Add error handling runtime C source
-        exe.addCSourceFile(.{
-            .file = b.path("runtime/cursed_error_runtime.c"),
-            .flags = &[_][]const u8{"-std=c99", "-O2"},
-        });
+        // Add error handling runtime C source (temporarily disabled)
+        // exe.addCSourceFile(.{
+        //     .file = b.path("runtime/cursed_error_runtime.c"),
+        //     .flags = &[_][]const u8{"-std=c99", "-O2"},
+        // });
         
         // Integrate package manager dependencies
         const build_integration = @import("src-zig/build_integration.zig");
         build_integration.integrateBuildSystem(b, exe, resolved_target, optimize) catch |err| {
-            std.debug.print("Package manager integration failed: {}\n", .{err});
-            // Continue with build even if package integration fails
+        std.debug.print("Package manager integration failed: {}\n", .{err});
+        // Continue with build even if package integration fails
         };
+    
+    // Integrate CURSED build system for .csd file compilation (disabled temporarily)
+    // const cursed_build_system = @import("src-zig/cursed_build_system.zig");
+    // cursed_build_system.createCursedBuildStep(b, resolved_target, optimize, "zig-out/bin/cursed") catch |err| {
+    //     std.debug.print("CURSED build system integration failed: {}\n", .{err});
+    //     // Continue with build even if CURSED integration fails
+    // };
     }
 
     // Memory-safe CURSED compiler executable (temporarily disabled for cross-compilation)
@@ -375,7 +382,7 @@ pub fn build(b: *std.Build) void {
     // Alternative implementations for testing and fallback
     const minimal_exe = b.addExecutable(.{
         .name = "cursed-minimal",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_main.zig") else b.path("src-zig/minimal_main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/minimal_main.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -385,7 +392,7 @@ pub fn build(b: *std.Build) void {
 
     const complete_exe = b.addExecutable(.{
         .name = "cursed-complete",
-        .root_source_file = b.path("src-zig/main_complete.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/main_complete.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -405,7 +412,7 @@ pub fn build(b: *std.Build) void {
     // Create performance-optimized compiler
     const optimized_exe = b.addExecutable(.{
         .name = "cursed-optimized",
-        .root_source_file = b.path("src-zig/simplified_optimized_main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/simplified_optimized_main.zig"),
         .target = resolved_target,
         .optimize = .ReleaseFast, // Always use fastest optimization for performance compiler
     });
@@ -438,7 +445,7 @@ pub fn build(b: *std.Build) void {
     // Create legacy alias for backwards compatibility
     const legacy_exe = b.addExecutable(.{
         .name = "cursed-zig",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_main.zig") else b.path("src-zig/main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/main.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -459,7 +466,7 @@ b.installArtifact(complete_exe);
     // Create package manager CLI tool
     const pkg_manager_exe = b.addExecutable(.{
         .name = "cursed-pkg",
-        .root_source_file = b.path("src-zig/cursed_pkg.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/cursed_pkg.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -540,7 +547,7 @@ b.installArtifact(complete_exe);
     // Create LSP server executable
     const lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp",
-        .root_source_file = b.path("lsp_standalone.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("lsp_standalone.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -550,6 +557,20 @@ b.installArtifact(complete_exe);
     }
     
     b.installArtifact(lsp_exe);
+
+    // Create documentation generator executable
+    const doc_exe = b.addExecutable(.{
+        .name = "cursed-doc",
+        .root_source_file = b.path("src-zig/tools/doc_generator.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    
+    if (!is_wasm) {
+        doc_exe.linkLibC();
+    }
+    
+    b.installArtifact(doc_exe);
     
     const run_lsp = b.addRunArtifact(lsp_exe);
     run_lsp.step.dependOn(b.getInstallStep());
@@ -603,7 +624,7 @@ b.installArtifact(complete_exe);
     // Create diagnostic demo executable
     const diagnostics_demo = b.addExecutable(.{
         .name = "cursed-diagnostics-demo",
-        .root_source_file = b.path("src-zig/test_diagnostics_demo.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/test_diagnostics_demo.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -702,7 +723,7 @@ b.installArtifact(complete_exe);
         const cross_exe = b.addExecutable(.{
             .name = b.fmt("cursed-{s}", .{cross_config.name}),
             .root_source_file = if (query.cpu_arch == .wasm32) 
-                b.path("src-zig/wasm_main.zig") 
+                b.path("src-zig/wasm_pure.zig") 
             else 
                 b.path("src-zig/main.zig"),
             .target = cross_target,
@@ -757,6 +778,47 @@ b.installArtifact(complete_exe);
         archive_step.dependOn(&archive_cmd.step);
     }
     
+    // CURSED project compilation steps
+    const cursed_compile_step = b.step("cursed-compile", "Compile CURSED projects in current directory");
+    const cursed_test_step = b.step("cursed-test", "Run CURSED project tests");
+    const cursed_run_step = b.step("cursed-run", "Run CURSED project");
+    const cursed_clean_step = b.step("cursed-clean", "Clean CURSED build artifacts");
+    
+    // Implement CURSED compilation for .csd files in current directory
+    const cursed_project_compile = b.addSystemCommand(&[_][]const u8{
+        "zig-out/bin/cursed", "compile", "--project", "."
+    });
+    cursed_project_compile.step.dependOn(b.getInstallStep());
+    cursed_compile_step.dependOn(&cursed_project_compile.step);
+    
+    // CURSED project testing
+    const cursed_project_test = b.addSystemCommand(&[_][]const u8{
+        "zig-out/bin/cursed", "test", "--project", "."
+    });
+    cursed_project_test.step.dependOn(&cursed_project_compile.step);
+    cursed_test_step.dependOn(&cursed_project_test.step);
+    
+    // CURSED project execution
+    const cursed_project_run = b.addSystemCommand(&[_][]const u8{
+        "zig-out/bin/cursed", "run", "--project", "."
+    });
+    cursed_project_run.step.dependOn(&cursed_project_compile.step);
+    cursed_run_step.dependOn(&cursed_project_run.step);
+    
+    // CURSED build cleanup
+    const cursed_project_clean = b.addSystemCommand(&[_][]const u8{
+        "rm", "-rf", "target/", "build/", "zig-cache/cursed/"
+    });
+    cursed_clean_step.dependOn(&cursed_project_clean.step);
+    
+    // CURSED project initialization step
+    const cursed_init_step = b.step("cursed-init", "Initialize new CURSED project");
+    const cursed_project_init = b.addSystemCommand(&[_][]const u8{
+        "zig-out/bin/cursed", "init", "--name", "cursed-project"
+    });
+    cursed_project_init.step.dependOn(b.getInstallStep());
+    cursed_init_step.dependOn(&cursed_project_init.step);
+
     // Cross-platform testing step
     const cross_test_step = b.step("cross-test", "Test cross-compilation functionality");
     

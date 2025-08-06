@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>test_rpc_vibes - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>test_rpc_vibes</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="create_rpc_request">
+                <h4>create_rpc_request</h4>
+                <pre class="signature"><code>slay create_rpc_request(req_id tea, rpc_method tea, rpc_params tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L8">test_rpc_vibes.csd:8</a></p>
+            </div>
+            <div class="doc-item" id="create_rpc_response">
+                <h4>create_rpc_response</h4>
+                <pre class="signature"><code>slay create_rpc_response(resp_id tea, resp_result tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L13">test_rpc_vibes.csd:13</a></p>
+            </div>
+            <div class="doc-item" id="create_rpc_error">
+                <h4>create_rpc_error</h4>
+                <pre class="signature"><code>slay create_rpc_error(err_id tea, err_code normie, err_msg tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L18">test_rpc_vibes.csd:18</a></p>
+            </div>
+            <div class="doc-item" id="execute_rpc_method">
+                <h4>execute_rpc_method</h4>
+                <pre class="signature"><code>slay execute_rpc_method(exec_method tea, exec_params tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L23">test_rpc_vibes.csd:23</a></p>
+            </div>
+            <div class="doc-item" id="register_rpc_method">
+                <h4>register_rpc_method</h4>
+                <pre class="signature"><code>slay register_rpc_method(reg_method tea, reg_handler tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L40">test_rpc_vibes.csd:40</a></p>
+            </div>
+            <div class="doc-item" id="is_rpc_method_registered">
+                <h4>is_rpc_method_registered</h4>
+                <pre class="signature"><code>slay is_rpc_method_registered(check_method tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L46">test_rpc_vibes.csd:46</a></p>
+            </div>
+            <div class="doc-item" id="get_rpc_method_handler">
+                <h4>get_rpc_method_handler</h4>
+                <pre class="signature"><code>slay get_rpc_method_handler(handler_method tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L53">test_rpc_vibes.csd:53</a></p>
+            </div>
+            <div class="doc-item" id="process_rpc_request">
+                <h4>process_rpc_request</h4>
+                <pre class="signature"><code>slay process_rpc_request(proc_request tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L61">test_rpc_vibes.csd:61</a></p>
+            </div>
+            <div class="doc-item" id="call_rpc_sync">
+                <h4>call_rpc_sync</h4>
+                <pre class="signature"><code>slay call_rpc_sync(call_url tea, call_method tea, call_params tea) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L72">test_rpc_vibes.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="init_rpc_stats">
+                <h4>init_rpc_stats</h4>
+                <pre class="signature"><code>slay init_rpc_stats() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L89">test_rpc_vibes.csd:89</a></p>
+            </div>
+            <div class="doc-item" id="increment_rpc_requests">
+                <h4>increment_rpc_requests</h4>
+                <pre class="signature"><code>slay increment_rpc_requests() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L95">test_rpc_vibes.csd:95</a></p>
+            </div>
+            <div class="doc-item" id="increment_rpc_responses">
+                <h4>increment_rpc_responses</h4>
+                <pre class="signature"><code>slay increment_rpc_responses() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L99">test_rpc_vibes.csd:99</a></p>
+            </div>
+            <div class="doc-item" id="increment_rpc_errors">
+                <h4>increment_rpc_errors</h4>
+                <pre class="signature"><code>slay increment_rpc_errors() {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L103">test_rpc_vibes.csd:103</a></p>
+            </div>
+            <div class="doc-item" id="get_rpc_requests">
+                <h4>get_rpc_requests</h4>
+                <pre class="signature"><code>slay get_rpc_requests() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L107">test_rpc_vibes.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="get_rpc_responses">
+                <h4>get_rpc_responses</h4>
+                <pre class="signature"><code>slay get_rpc_responses() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L111">test_rpc_vibes.csd:111</a></p>
+            </div>
+            <div class="doc-item" id="get_rpc_errors">
+                <h4>get_rpc_errors</h4>
+                <pre class="signature"><code>slay get_rpc_errors() normie {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L115">test_rpc_vibes.csd:115</a></p>
+            </div>
+            <div class="doc-item" id="has_rpc_error">
+                <h4>has_rpc_error</h4>
+                <pre class="signature"><code>slay has_rpc_error(check_response tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L120">test_rpc_vibes.csd:120</a></p>
+            </div>
+            <div class="doc-item" id="contains_text">
+                <h4>contains_text</h4>
+                <pre class="signature"><code>slay contains_text(check_str tea, check_substr tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L127">test_rpc_vibes.csd:127</a></p>
+            </div>
+            <div class="doc-item" id="create_connection_string">
+                <h4>create_connection_string</h4>
+                <pre class="signature"><code>slay create_connection_string(conn_host tea, conn_port normie) tea {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L143">test_rpc_vibes.csd:143</a></p>
+            </div>
+            <div class="doc-item" id="test_rpc_connection">
+                <h4>test_rpc_connection</h4>
+                <pre class="signature"><code>slay test_rpc_connection(test_config tea) lit {</code></pre>
+                <p class="source">Source: <a href="file://stdlib/rpc_vibes/test_rpc_vibes.csd#L152">test_rpc_vibes.csd:152</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

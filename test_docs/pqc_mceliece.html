@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pqc_mceliece - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>pqc_mceliece</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="mceliece_gf_init">
+                <h4>mceliece_gf_init</h4>
+                <pre class="signature"><code>slay mceliece_gf_init() { fr fr Simplified initialization for demonstration</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L26">pqc_mceliece.csd:26</a></p>
+            </div>
+            <div class="doc-item" id="gf_add">
+                <h4>gf_add</h4>
+                <pre class="signature"><code>slay gf_add(a normie, b normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L41">pqc_mceliece.csd:41</a></p>
+            </div>
+            <div class="doc-item" id="gf_mul">
+                <h4>gf_mul</h4>
+                <pre class="signature"><code>slay gf_mul(a normie, b normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L45">pqc_mceliece.csd:45</a></p>
+            </div>
+            <div class="doc-item" id="gf_div">
+                <h4>gf_div</h4>
+                <pre class="signature"><code>slay gf_div(a normie, b normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L57">pqc_mceliece.csd:57</a></p>
+            </div>
+            <div class="doc-item" id="gf_inv">
+                <h4>gf_inv</h4>
+                <pre class="signature"><code>slay gf_inv(a normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L72">pqc_mceliece.csd:72</a></p>
+            </div>
+            <div class="doc-item" id="poly_eval">
+                <h4>poly_eval</h4>
+                <pre class="signature"><code>slay poly_eval(poly [normie], degree normie, x normie) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L77">pqc_mceliece.csd:77</a></p>
+            </div>
+            <div class="doc-item" id="poly_gcd">
+                <h4>poly_gcd</h4>
+                <pre class="signature"><code>slay poly_gcd(result [normie], a [normie], deg_a normie, b [normie], deg_b normie) normie { fr fr Simplified Euclidean algorithm for GF(2^m)[x]</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L90">pqc_mceliece.csd:90</a></p>
+            </div>
+            <div class="doc-item" id="mceliece_generate_support">
+                <h4>mceliece_generate_support</h4>
+                <pre class="signature"><code>slay mceliece_generate_support(support [normie], seed normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L135">pqc_mceliece.csd:135</a></p>
+            </div>
+            <div class="doc-item" id="mceliece_generate_goppa_poly">
+                <h4>mceliece_generate_goppa_poly</h4>
+                <pre class="signature"><code>slay mceliece_generate_goppa_poly(goppa [normie], seed normie) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L158">pqc_mceliece.csd:158</a></p>
+            </div>
+            <div class="doc-item" id="mceliece_construct_generator_matrix">
+                <h4>mceliece_construct_generator_matrix</h4>
+                <pre class="signature"><code>slay mceliece_construct_generator_matrix(generator [normie], support [normie], goppa [normie]) { fr fr Construct systematic generator matrix [I_k | P] fr fr Where P is derived from the parity check matrix H fr fr Initialize generator matrix to zero</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L178">pqc_mceliece.csd:178</a></p>
+            </div>
+            <div class="doc-item" id="mceliece_compute_syndrome">
+                <h4>mceliece_compute_syndrome</h4>
+                <pre class="signature"><code>slay mceliece_compute_syndrome(syndrome [normie], received [normie], support [normie], goppa [normie]) { fr fr S(z) = sum over i of (r_i / (z - alpha_i))</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L197">pqc_mceliece.csd:197</a></p>
+            </div>
+            <div class="doc-item" id="mceliece_berlekamp_massey">
+                <h4>mceliece_berlekamp_massey</h4>
+                <pre class="signature"><code>slay mceliece_berlekamp_massey(locator [normie], syndrome [normie]) normie {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L214">pqc_mceliece.csd:214</a></p>
+            </div>
+            <div class="doc-item" id="mceliece_keygen">
+                <h4>mceliece_keygen</h4>
+                <pre class="signature"><code>slay mceliece_keygen(public_key [normie], secret_key [normie]) {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L266">pqc_mceliece.csd:266</a></p>
+            </div>
+            <div class="doc-item" id="mceliece_encrypt">
+                <h4>mceliece_encrypt</h4>
+                <pre class="signature"><code>slay mceliece_encrypt(ciphertext [normie], plaintext [normie], public_key [normie]) { fr fr Add t random errors to encoded message</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L283">pqc_mceliece.csd:283</a></p>
+            </div>
+            <div class="doc-item" id="mceliece_decrypt">
+                <h4>mceliece_decrypt</h4>
+                <pre class="signature"><code>slay mceliece_decrypt(plaintext [normie], ciphertext [normie], secret_key [normie]) { fr fr Extract secret key components</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L307">pqc_mceliece.csd:307</a></p>
+            </div>
+            <div class="doc-item" id="pqc_mceliece_generate_keypair">
+                <h4>pqc_mceliece_generate_keypair</h4>
+                <pre class="signature"><code>slay pqc_mceliece_generate_keypair() [normie] {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L356">pqc_mceliece.csd:356</a></p>
+            </div>
+            <div class="doc-item" id="pqc_mceliece_encrypt">
+                <h4>pqc_mceliece_encrypt</h4>
+                <pre class="signature"><code>slay pqc_mceliece_encrypt(plaintext [normie], public_key [normie]) [normie] {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L375">pqc_mceliece.csd:375</a></p>
+            </div>
+            <div class="doc-item" id="pqc_mceliece_decrypt">
+                <h4>pqc_mceliece_decrypt</h4>
+                <pre class="signature"><code>slay pqc_mceliece_decrypt(ciphertext [normie], secret_key [normie]) [normie] {</code></pre>
+                <p class="source">Source: <a href="file://./stdlib/crypto_secure/pqc_mceliece.csd#L382">pqc_mceliece.csd:382</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

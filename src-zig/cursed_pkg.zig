@@ -3,6 +3,7 @@
 
 const std = @import("std");
 const package_manager = @import("tools/package_manager_enhanced.zig");
+const production_manager = @import("tools/package_manager_production.zig");
 const build_integration = @import("build_integration.zig");
 
 const Command = enum {
@@ -271,15 +272,14 @@ fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
         }
     }
     
+    // Initialize production package manager
+    production_manager.commands.init(allocator);
+    defer production_manager.commands.deinit();
+    
     switch (args.command) {
-        .init => try package_manager.commands.init(allocator, args.packages),
+        .init => try production_manager.commands.initProduction(allocator, args.packages),
         .add => {
-            var add_args = std.ArrayList([]const u8).init(allocator);
-            defer add_args.deinit();
-            
-            try add_args.appendSlice(args.packages);
-            
-            // Add version if specified with @
+            // Handle package@version syntax
             if (args.packages.len > 0) {
                 const pkg_spec = args.packages[0];
                 if (std.mem.indexOf(u8, pkg_spec, "@")) |at_pos| {
@@ -287,16 +287,16 @@ fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
                     const version = pkg_spec[at_pos + 1 ..];
                     
                     var add_args_array = [_][]const u8{ pkg_name, version };
-                    try package_manager.commands.add(allocator, add_args_array[0..]);
+                    try production_manager.commands.addProduction(allocator, add_args_array[0..]);
                     return;
                 }
             }
             
-            try package_manager.commands.add(allocator, add_args.items);
+            try production_manager.commands.addProduction(allocator, args.packages);
         },
         .remove => try package_manager.commands.remove(allocator, args.packages),
         .install => try package_manager.commands.install(allocator, args.packages),
-        .update => try package_manager.commands.update(allocator, args.packages),
+        .update => try production_manager.commands.updateProduction(allocator, args.packages),
         .search => try package_manager.commands.search(allocator, args.packages),
         .publish => try package_manager.commands.publish(allocator, args.packages),
         .info => try cmdInfo(allocator, args),

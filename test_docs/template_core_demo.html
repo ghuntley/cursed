@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>template_core_demo - CURSED Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">CURSED Documentation</a></h1>
+        <h2>template_core_demo</h2>
+    </header>
+    <main>
+        <section id="functions">
+            <h3>Functions</h3>
+            <div class="doc-item" id="demo_basic_templating">
+                <h4>demo_basic_templating</h4>
+                <pre class="signature"><code>slay demo_basic_templating() -> Result<(), Error> {</code></pre>
+                <p class="description">Demonstrates the comprehensive template engine capabilities</p>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L9">template_core_demo.csd:9</a></p>
+            </div>
+            <div class="doc-item" id="demo_advanced_templating">
+                <h4>demo_advanced_templating</h4>
+                <pre class="signature"><code>slay demo_advanced_templating() -> Result<(), Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L46">template_core_demo.csd:46</a></p>
+            </div>
+            <div class="doc-item" id="demo_template_caching">
+                <h4>demo_template_caching</h4>
+                <pre class="signature"><code>slay demo_template_caching() -> Result<(), Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L88">template_core_demo.csd:88</a></p>
+            </div>
+            <div class="doc-item" id="demo_template_security">
+                <h4>demo_template_security</h4>
+                <pre class="signature"><code>slay demo_template_security() -> Result<(), Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L106">template_core_demo.csd:106</a></p>
+            </div>
+            <div class="doc-item" id="demo_template_inheritance">
+                <h4>demo_template_inheritance</h4>
+                <pre class="signature"><code>slay demo_template_inheritance() -> Result<(), Error> {</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L125">template_core_demo.csd:125</a></p>
+            </div>
+            <div class="doc-item" id="main">
+                <h4>main</h4>
+                <pre class="signature"><code>slay main() -> Result<(), Error> {</code></pre>
+                <p class="description">Main function demonstrating all template features</p>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L192">template_core_demo.csd:192</a></p>
+            </div>
+        </section>
+        <section id="constants">
+            <h3>Constants</h3>
+            <div class="doc-item" id="engine">
+                <h4>engine</h4>
+                <pre class="signature"><code>facts engine = TemplateEngine::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L11">template_core_demo.csd:11</a></p>
+            </div>
+            <div class="doc-item" id="template_source">
+                <h4>template_source</h4>
+                <pre class="signature"><code>facts template_source = "</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L24">template_core_demo.csd:24</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = engine.render_string(template_source, context)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L31">template_core_demo.csd:31</a></p>
+            </div>
+            <div class="doc-item" id="loader">
+                <h4>loader</h4>
+                <pre class="signature"><code>facts loader = Arc::new(FileSystemLoader::new("templates"));</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L54">template_core_demo.csd:54</a></p>
+            </div>
+            <div class="doc-item" id="engine">
+                <h4>engine</h4>
+                <pre class="signature"><code>facts engine = TemplateEngine::with_config_and_loader(config, loader);</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L55">template_core_demo.csd:55</a></p>
+            </div>
+            <div class="doc-item" id="template_with_filter">
+                <h4>template_with_filter</h4>
+                <pre class="signature"><code>facts template_with_filter = "Hello {{ name | uppercase }}!";</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L70">template_core_demo.csd:70</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = engine.render_string(template_with_filter, context)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L75">template_core_demo.csd:75</a></p>
+            </div>
+            <div class="doc-item" id="validation_result">
+                <h4>validation_result</h4>
+                <pre class="signature"><code>facts validation_result = engine.validate_template_source("{{ invalid | nonexistent }}");</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L79">template_core_demo.csd:79</a></p>
+            </div>
+            <div class="doc-item" id="engine">
+                <h4>engine</h4>
+                <pre class="signature"><code>facts engine = TemplateEngine::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L89">template_core_demo.csd:89</a></p>
+            </div>
+            <div class="doc-item" id="engine">
+                <h4>engine</h4>
+                <pre class="signature"><code>facts engine = TemplateEngine::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L107">template_core_demo.csd:107</a></p>
+            </div>
+            <div class="doc-item" id="unsafe_template">
+                <h4>unsafe_template</h4>
+                <pre class="signature"><code>facts unsafe_template = "{{ user_input | raw }}";  // Raw output without escaping</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L110">template_core_demo.csd:110</a></p>
+            </div>
+            <div class="doc-item" id="safe_template">
+                <h4>safe_template</h4>
+                <pre class="signature"><code>facts safe_template = "{{ user_input }}";          // Auto-escaped output</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L111">template_core_demo.csd:111</a></p>
+            </div>
+            <div class="doc-item" id="unsafe_result">
+                <h4>unsafe_result</h4>
+                <pre class="signature"><code>facts unsafe_result = engine.render_string(unsafe_template, context.clone())?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L116">template_core_demo.csd:116</a></p>
+            </div>
+            <div class="doc-item" id="safe_result">
+                <h4>safe_result</h4>
+                <pre class="signature"><code>facts safe_result = engine.render_string(safe_template, context)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L117">template_core_demo.csd:117</a></p>
+            </div>
+            <div class="doc-item" id="engine">
+                <h4>engine</h4>
+                <pre class="signature"><code>facts engine = TemplateEngine::new();</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L126">template_core_demo.csd:126</a></p>
+            </div>
+            <div class="doc-item" id="base_template">
+                <h4>base_template</h4>
+                <pre class="signature"><code>facts base_template = "</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L129">template_core_demo.csd:129</a></p>
+            </div>
+            <div class="doc-item" id="child_template">
+                <h4>child_template</h4>
+                <pre class="signature"><code>facts child_template = "</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L150">template_core_demo.csd:150</a></p>
+            </div>
+            <div class="doc-item" id="items">
+                <h4>items</h4>
+                <pre class="signature"><code>facts items = Object::Array(vec![</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L172">template_core_demo.csd:172</a></p>
+            </div>
+            <div class="doc-item" id="result">
+                <h4>result</h4>
+                <pre class="signature"><code>facts result = engine.render_string(child_template, context)?;</code></pre>
+                <p class="source">Source: <a href="file://./examples/template_core_demo.csd#L184">template_core_demo.csd:184</a></p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
