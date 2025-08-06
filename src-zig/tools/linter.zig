@@ -119,10 +119,8 @@ pub const Linter = struct {
         
         // Parse tokens
         var cursed_parser = parser.Parser.init(self.allocator, tokens.items);
-        defer cursed_parser.deinit();
         
-        const ast_tree = cursed_parser.parse() catch |err| {
-            _ = err;
+        const ast_tree = cursed_parser.parseProgram() catch {
             try self.addIssue(LintIssue{
                 .rule_id = "parse-error",
                 .severity = .Error,

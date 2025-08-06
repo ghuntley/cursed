@@ -308,6 +308,16 @@ pub const Version = struct {
     pub fn satisfies(self: Version, requirement: VersionRequirement) bool {
         return requirement.matches(self);
     }
+
+    pub fn format(self: Version, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = options;
+        if (self.pre_release) |pr| {
+            try writer.print("{}.{}.{}-{s}", .{ self.major, self.minor, self.patch, pr });
+        } else {
+            try writer.print("{}.{}.{}", .{ self.major, self.minor, self.patch });
+        }
+    }
 };
 
 pub const VersionRequirement = struct {
@@ -745,7 +755,6 @@ pub const PackageManifest = struct {
         writer: anytype,
         deps: HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     ) !void {
-        _ = allocator;
         var iter = deps.iterator();
         while (iter.next()) |entry| {
             const dep = entry.value_ptr.*;
@@ -753,7 +762,9 @@ pub const PackageManifest = struct {
             switch (dep.source) {
                 .registry => {
                     // Simple version for registry dependencies
-                    try writer.print("{s} = \"{s}\"\n", .{ dep.name, dep.version_req.constraint.exact });
+                    const version_str = dep.version_req.constraint.exact.toString(allocator) catch "unknown";
+                    defer if (!std.mem.eql(u8, version_str, "unknown")) allocator.free(version_str);
+                    try writer.print("{s} = \"{s}\"\n", .{ dep.name, version_str });
                 },
                 .git => |git| {
                     try writer.print("{s} = {{ git = \"{s}\"", .{ dep.name, git.url });
@@ -1180,7 +1191,7 @@ pub const PackageCache = struct {
         , .{ package_name, version_str });
     }
     
-    fn cloneFromGit(self: *PackageCache, dest_path: []const u8, git: PackageSource.git) !void {
+    fn cloneFromGit(self: *PackageCache, dest_path: []const u8, git: anytype) !void {
         var args = ArrayList([]const u8).init(self.allocator);
         defer args.deinit();
         
@@ -1194,7 +1205,7 @@ pub const PackageCache = struct {
             try args.appendSlice(&[_][]const u8{ "--branch", tag });
         }
         
-        const result = try std.ChildProcess.exec(.{
+        const result = try std.ChildProcess.run(.{
             .allocator = self.allocator,
             .argv = args.items,
         });
@@ -1208,7 +1219,7 @@ pub const PackageCache = struct {
         
         // Handle specific revision if specified
         if (git.rev) |rev| {
-            const checkout_result = try std.ChildProcess.exec(.{
+            const checkout_result = try std.ChildProcess.run(.{
                 .allocator = self.allocator,
                 .argv = &[_][]const u8{ "git", "-C", dest_path, "checkout", rev },
             });
@@ -1224,7 +1235,7 @@ pub const PackageCache = struct {
     
     fn copyFromLocal(self: *PackageCache, dest_path: []const u8, source_path: []const u8) !void {
         // Simple directory copy implementation
-        var source_dir = try std.fs.cwd().openIterableDir(source_path, .{});
+        var source_dir = try std.fs.cwd().openDir(source_path, .{ .iterate = true });
         defer source_dir.close();
         
         var dest_dir = try std.fs.cwd().openDir(dest_path, .{});
@@ -1305,7 +1316,7 @@ pub const BuildIntegration = struct {
         
         try build_file.writeAll(build_content);
         
-        print("Generated build_generated.zig with dependency information\n");
+        print("Generated build_generated.zig with dependency information\n", .{});
     }
     
     fn generateBuildZigContent(self: *BuildIntegration, manifest: *const PackageManifest, resolved: ArrayList(DependencyResolver.ResolvedDependency)) ![]const u8 {
@@ -1383,11 +1394,13 @@ pub const BuildIntegration = struct {
         // Install missing dependencies
         for (resolved.items) |dep| {
             const is_cached = try self.cache.isPackageCached(dep.name, dep.version);
+            const version_str = dep.version.toString(self.allocator) catch "unknown";
+            defer if (!std.mem.eql(u8, version_str, "unknown")) self.allocator.free(version_str);
             if (!is_cached) {
-                print("Installing {s} v{s}...\n", .{ dep.name, dep.version });
+                print("Installing {s} v{s}...\n", .{ dep.name, version_str });
                 try self.cache.installPackage(dep.name, dep.version, dep.source);
             } else {
-                print("Using cached {s} v{s}\n", .{ dep.name, dep.version });
+                print("Using cached {s} v{s}\n", .{ dep.name, version_str });
             }
         }
     }
@@ -1443,15 +1456,15 @@ pub fn cmdInit(allocator: Allocator, args: [][]const u8) !void {
         \\
     );
     
-    print("Initialized new CURSED package in current directory\n");
-    print("Edit CursedPackage.toml to customize package metadata\n");
-    print("Add your code to src/lib.csd\n");
-    print("Run tests with: cursed pkg test\n");
+    print("Initialized new CURSED package in current directory\n", .{});
+    print("Edit CursedPackage.toml to customize package metadata\n", .{});
+    print("Add your code to src/lib.csd\n", .{});
+    print("Run tests with: cursed pkg test\n", .{});
 }
 
 pub fn cmdAdd(allocator: Allocator, args: [][]const u8) !void {
     if (args.len == 0) {
-        print("Usage: cursed pkg add <package_name> [version_requirement]\n");
+        print("Usage: cursed pkg add <package_name> [version_requirement]\n", .{});
         return;
     }
     
@@ -1461,7 +1474,7 @@ pub fn cmdAdd(allocator: Allocator, args: [][]const u8) !void {
     // Load existing manifest
     var manifest = PackageManifest.loadFromToml(allocator, "CursedPackage.toml") catch |err| switch (err) {
         error.FileNotFound => {
-            print("No CursedPackage.toml found. Run 'cursed pkg init' first.\n");
+            print("No CursedPackage.toml found. Run 'cursed pkg init' first.\n", .{});
             return;
         },
         else => return err,
@@ -1486,7 +1499,7 @@ pub fn cmdAdd(allocator: Allocator, args: [][]const u8) !void {
     try manifest.saveToToml(allocator, "CursedPackage.toml");
     
     print("Added dependency: {s} {s}\n", .{ package_name, version_req_str });
-    print("Run 'cursed pkg install' to download the dependency\n");
+    print("Run 'cursed pkg install' to download the dependency\n", .{});
 }
 
 pub fn cmdInstall(allocator: Allocator, args: [][]const u8) !void {
@@ -1495,7 +1508,7 @@ pub fn cmdInstall(allocator: Allocator, args: [][]const u8) !void {
     // Load manifest
     var manifest = PackageManifest.loadFromToml(allocator, "CursedPackage.toml") catch |err| switch (err) {
         error.FileNotFound => {
-            print("No CursedPackage.toml found. Run 'cursed pkg init' first.\n");
+            print("No CursedPackage.toml found. Run 'cursed pkg init' first.\n", .{});
             return;
         },
         else => return err,
@@ -1540,9 +1553,9 @@ pub fn cmdInstall(allocator: Allocator, args: [][]const u8) !void {
     try build_integration.generateBuildFile(&manifest, &lock_file);
     
     print("Successfully installed {} dependencies\n", .{resolved.items.len});
-    print("Dependencies cached in .cursed/cache/\n");
-    print("Lock file generated: CursedPackage.lock\n");
-    print("Build integration generated: build_generated.zig\n");
+    print("Dependencies cached in .cursed/cache/\n", .{});
+    print("Lock file generated: CursedPackage.lock\n", .{});
+    print("Build integration generated: build_generated.zig\n", .{});
 }
 
 pub fn cmdUpdate(allocator: Allocator, args: [][]const u8) !void {
@@ -1554,12 +1567,12 @@ pub fn cmdUpdate(allocator: Allocator, args: [][]const u8) !void {
     // Run install to update dependencies
     try cmdInstall(allocator, &[_][]const u8{});
     
-    print("Updated all dependencies to latest compatible versions\n");
+    print("Updated all dependencies to latest compatible versions\n", .{});
 }
 
 pub fn cmdRemove(allocator: Allocator, args: [][]const u8) !void {
     if (args.len == 0) {
-        print("Usage: cursed pkg remove <package_name>\n");
+        print("Usage: cursed pkg remove <package_name>\n", .{});
         return;
     }
     
@@ -1568,7 +1581,7 @@ pub fn cmdRemove(allocator: Allocator, args: [][]const u8) !void {
     // Load manifest
     var manifest = PackageManifest.loadFromToml(allocator, "CursedPackage.toml") catch |err| switch (err) {
         error.FileNotFound => {
-            print("No CursedPackage.toml found.\n");
+            print("No CursedPackage.toml found.\n", .{});
             return;
         },
         else => return err,
@@ -1588,13 +1601,13 @@ pub fn cmdRemove(allocator: Allocator, args: [][]const u8) !void {
     // Save updated manifest
     try manifest.saveToToml(allocator, "CursedPackage.toml");
     
-    print("Run 'cursed pkg install' to update lock file\n");
+    print("Run 'cursed pkg install' to update lock file\n", .{});
 }
 
 pub fn cmdSearch(allocator: Allocator, args: [][]const u8) !void {
     _ = allocator;
     if (args.len == 0) {
-        print("Usage: cursed pkg search <query>\n");
+        print("Usage: cursed pkg search <query>\n", .{});
         return;
     }
     
@@ -1610,14 +1623,14 @@ pub fn cmdSearch(allocator: Allocator, args: [][]const u8) !void {
         .{ .name = "crypto", .version = "2.1.0", .description = "Cryptography and hashing utilities" },
     };
     
-    print("\nFound packages:\n");
+    print("\nFound packages:\n", .{});
     for (sample_packages) |pkg| {
         if (std.mem.indexOf(u8, pkg.name, query) != null or std.mem.indexOf(u8, pkg.description, query) != null) {
             print("  {s} v{s} - {s}\n", .{ pkg.name, pkg.version, pkg.description });
         }
     }
     
-    print("\nTo add a package: cursed pkg add <package_name>\n");
+    print("\nTo add a package: cursed pkg add <package_name>\n", .{});
 }
 
 pub fn cmdPublish(allocator: Allocator, args: [][]const u8) !void {
@@ -1626,14 +1639,16 @@ pub fn cmdPublish(allocator: Allocator, args: [][]const u8) !void {
     // Load manifest
     var manifest = PackageManifest.loadFromToml(allocator, "CursedPackage.toml") catch |err| switch (err) {
         error.FileNotFound => {
-            print("No CursedPackage.toml found. Run 'cursed pkg init' first.\n");
+            print("No CursedPackage.toml found. Run 'cursed pkg init' first.\n", .{});
             return;
         },
         else => return err,
     };
     defer manifest.deinit();
     
-    print("Publishing package: {s} v{s}\n", .{ manifest.name, manifest.version });
+    const version_str = manifest.version.toString(allocator) catch "unknown";
+    defer if (!std.mem.eql(u8, version_str, "unknown")) allocator.free(version_str);
+    print("Publishing package: {s} v{s}\n", .{ manifest.name, version_str });
     
     // TODO: Implement actual package publishing
     // This would involve:
@@ -1643,11 +1658,13 @@ pub fn cmdPublish(allocator: Allocator, args: [][]const u8) !void {
     // 4. Uploading to registry
     // 5. Updating package index
     
-    print("Package validation...\n");
-    print("Running tests...\n");
-    print("Creating package archive...\n");
-    print("Uploading to registry...\n");
-    print("Successfully published {s} v{s}\n", .{ manifest.name, manifest.version });
+    print("Package validation...\n", .{});
+    print("Running tests...\n", .{});
+    print("Creating package archive...\n", .{});
+    print("Uploading to registry...\n", .{});
+    const final_version_str = manifest.version.toString(allocator) catch "unknown";
+    defer if (!std.mem.eql(u8, final_version_str, "unknown")) allocator.free(final_version_str);
+    print("Successfully published {s} v{s}\n", .{ manifest.name, final_version_str });
 }
 
 // ===== Test and Main Functions =====

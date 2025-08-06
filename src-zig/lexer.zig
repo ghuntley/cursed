@@ -62,6 +62,7 @@ pub const TokenKind = enum {
     Catch, // catch error
     Where, // where clause for generics
     Normie, // integer type (i32)
+    Drip, // float type (f32/f64 - legacy support)
     Tea, // string type
     Txt, // string type (alias)
     Sip, // character type
@@ -180,6 +181,7 @@ pub const Token = struct {
     lexeme: []const u8,
     line: usize,
     column: usize,
+    offset: usize,
 
     pub fn init(kind: TokenKind, lexeme: []const u8, line: usize, column: usize) Token {
         return Token{
@@ -187,6 +189,17 @@ pub const Token = struct {
             .lexeme = lexeme,
             .line = line,
             .column = column,
+            .offset = 0, // Default offset, will be updated in the lexer
+        };
+    }
+
+    pub fn initWithOffset(kind: TokenKind, lexeme: []const u8, line: usize, column: usize, offset: usize) Token {
+        return Token{
+            .kind = kind,
+            .lexeme = lexeme,
+            .line = line,
+            .column = column,
+            .offset = offset,
         };
     }
 
@@ -609,6 +622,7 @@ pub const Lexer = struct {
 
         // Types
         if (std.mem.eql(u8, text, "normie")) return .Normie;
+        if (std.mem.eql(u8, text, "drip")) return .Drip;
         if (std.mem.eql(u8, text, "tea")) return .Tea;
         if (std.mem.eql(u8, text, "txt")) return .Txt;
         if (std.mem.eql(u8, text, "sip")) return .Sip;

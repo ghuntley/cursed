@@ -138,20 +138,20 @@ fn printHelp() void {
         \\    cursed-pkg publish                       # Publish current package
         \\    cursed-pkg clean                         # Clean cache
         \\
-    );
+    , .{});
 }
 
 fn cmdInfo(allocator: std.mem.Allocator, args: CliArgs) !void {
     if (args.packages.len == 0) {
-        std.debug.print("Error: Package name required for 'info' command\n");
-        std.debug.print("Usage: cursed-pkg info <package>\n");
+        std.debug.print("Error: Package name required for 'info' command\n", .{});
+        std.debug.print("Usage: cursed-pkg info <package>\n", .{});
         return;
     }
     
     const package_name = args.packages[0];
     
     std.debug.print("Package: {s}\n", .{package_name});
-    std.debug.print("Fetching information...\n");
+    std.debug.print("Fetching information...\n", .{});
     
     // TODO: Implement actual package info fetching from registry
     // For now, show sample information
@@ -178,12 +178,12 @@ fn cmdInfo(allocator: std.mem.Allocator, args: CliArgs) !void {
 }
 
 fn cmdList(allocator: std.mem.Allocator, args: CliArgs) !void {
-    std.debug.print("Installed packages:\n");
+    std.debug.print("Installed packages:\n", .{});
     
     // Load manifest to get dependencies
     var manifest = package_manager.PackageManifest.loadFromToml(allocator, "CursedPackage.toml") catch |err| switch (err) {
         error.FileNotFound => {
-            std.debug.print("No CursedPackage.toml found in current directory\n");
+            std.debug.print("No CursedPackage.toml found in current directory\n", .{});
             return;
         },
         else => return err,
@@ -191,23 +191,45 @@ fn cmdList(allocator: std.mem.Allocator, args: CliArgs) !void {
     defer manifest.deinit();
     
     if (manifest.dependencies.count() == 0 and manifest.dev_dependencies.count() == 0) {
-        std.debug.print("  (no dependencies)\n");
+        std.debug.print("  (no dependencies)\n", .{});
         return;
     }
     
-    std.debug.print("\nDependencies:\n");
+    std.debug.print("\nDependencies:\n", .{});
     var dep_iter = manifest.dependencies.iterator();
     while (dep_iter.next()) |entry| {
         const dep = entry.value_ptr.*;
-        std.debug.print("  {s} {s}\n", .{ dep.name, dep.version_req.constraint });
+        const version_str = switch (dep.version_req.constraint) {
+            .exact => |v| v.toString(allocator) catch "unknown",
+            .caret => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, "^{s}", .{vstr}) catch "unknown"; },
+            .tilde => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, "~{s}", .{vstr}) catch "unknown"; },
+            .greater => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, ">{s}", .{vstr}) catch "unknown"; },
+            .greater_eq => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, ">={s}", .{vstr}) catch "unknown"; },
+            .less => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, "<{s}", .{vstr}) catch "unknown"; },
+            .less_eq => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, "<={s}", .{vstr}) catch "unknown"; },
+            .wildcard => |w| if (w.minor) |minor| std.fmt.allocPrint(allocator, "{}.{}.*", .{w.major.?, minor}) catch "unknown" else std.fmt.allocPrint(allocator, "{}.*", .{w.major.?}) catch "unknown",
+        };
+        defer if (!std.mem.eql(u8, version_str, "unknown")) allocator.free(version_str);
+        std.debug.print("  {s} {s}\n", .{ dep.name, version_str });
     }
     
     if (manifest.dev_dependencies.count() > 0) {
-        std.debug.print("\nDevelopment dependencies:\n");
+        std.debug.print("\nDevelopment dependencies:\n", .{});
         var dev_dep_iter = manifest.dev_dependencies.iterator();
         while (dev_dep_iter.next()) |entry| {
             const dep = entry.value_ptr.*;
-            std.debug.print("  {s} {s}\n", .{ dep.name, dep.version_req.constraint });
+            const version_str = switch (dep.version_req.constraint) {
+                .exact => |v| v.toString(allocator) catch "unknown",
+                .caret => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, "^{s}", .{vstr}) catch "unknown"; },
+                .tilde => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, "~{s}", .{vstr}) catch "unknown"; },
+                .greater => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, ">{s}", .{vstr}) catch "unknown"; },
+                .greater_eq => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, ">={s}", .{vstr}) catch "unknown"; },
+                .less => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, "<{s}", .{vstr}) catch "unknown"; },
+                .less_eq => |v| blk: { const vstr = v.toString(allocator) catch "unknown"; break :blk std.fmt.allocPrint(allocator, "<={s}", .{vstr}) catch "unknown"; },
+                .wildcard => |w| if (w.minor) |minor| std.fmt.allocPrint(allocator, "{}.{}.*", .{w.major.?, minor}) catch "unknown" else std.fmt.allocPrint(allocator, "{}.*", .{w.major.?}) catch "unknown",
+            };
+            defer if (!std.mem.eql(u8, version_str, "unknown")) allocator.free(version_str);
+            std.debug.print("  {s} {s}\n", .{ dep.name, version_str });
         }
     }
     
@@ -215,7 +237,7 @@ fn cmdList(allocator: std.mem.Allocator, args: CliArgs) !void {
     std.debug.print("\nCache location: {s}\n", .{args.cache_dir});
     
     const cache_stat = std.fs.cwd().statFile(args.cache_dir) catch {
-        std.debug.print("Cache status: not found\n");
+        std.debug.print("Cache status: not found\n", .{});
         return;
     };
     
@@ -226,20 +248,17 @@ fn cmdClean(allocator: std.mem.Allocator, args: CliArgs) !void {
     std.debug.print("Cleaning package cache: {s}\n", .{args.cache_dir});
     
     if (args.dry_run) {
-        std.debug.print("(dry run) Would remove cache directory\n");
+        std.debug.print("(dry run) Would remove cache directory\n", .{});
         return;
     }
     
     // Remove cache directory
-    std.fs.cwd().deleteTree(args.cache_dir) catch |err| switch (err) {
-        error.FileNotFound => {
-            std.debug.print("Cache directory not found (already clean)\n");
-            return;
-        },
-        else => return err,
+    std.fs.cwd().deleteTree(args.cache_dir) catch {
+        std.debug.print("Cache directory not found (already clean)\n", .{});
+        return;
     };
     
-    std.debug.print("Cache cleaned successfully\n");
+    std.debug.print("Cache cleaned successfully\n", .{});
     
     _ = allocator;
 }
@@ -267,8 +286,8 @@ fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
                     const pkg_name = pkg_spec[0..at_pos];
                     const version = pkg_spec[at_pos + 1 ..];
                     
-                    const add_args_array = [_][]const u8{ pkg_name, version };
-                    try package_manager.commands.add(allocator, &add_args_array);
+                    var add_args_array = [_][]const u8{ pkg_name, version };
+                    try package_manager.commands.add(allocator, add_args_array[0..]);
                     return;
                 }
             }

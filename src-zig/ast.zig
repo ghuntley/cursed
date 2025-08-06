@@ -2,6 +2,14 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
+/// Source location for error reporting and debugging
+pub const SourceLocation = struct {
+    file: []const u8,
+    line: u32,
+    column: u32,
+    offset: u32,
+};
+
 // Forward declaration for Expression type
 pub const Expression = union(enum) {
     Identifier: []const u8,
@@ -216,6 +224,7 @@ pub const Comment = struct {
 
 pub const Type = union(enum) {
     Basic: BasicType,
+    Custom: []const u8, // For user-defined types and identifiers
     Channel: ChannelType,
     Array: ArrayType,
     Slice: SliceType,
@@ -240,6 +249,7 @@ pub const Type = union(enum) {
 
 pub const BasicType = enum {
     Normie,    // i32
+    Drip,      // f32/f64 (legacy float type)
     Tea,       // string  
     Txt,       // string alias
     Sip,       // char
@@ -321,6 +331,7 @@ pub const StructType = struct {
 pub const GenericType = struct {
     name: []const u8,
     constraints: ArrayList(Type),
+    type_arguments: ArrayList(Type),
 };
 
 pub const TupleType = struct {
@@ -452,6 +463,7 @@ pub const Literal = union(enum) {
     Boolean: bool,
     Character: u8,
     Null,
+    Nil,
 };
 
 // Statement structures
@@ -465,8 +477,10 @@ pub const LetStatement = struct {
         if (self.var_type) |*var_type| {
             var_type.deinit(allocator);
         }
-        if (self.initializer) |*init| {
-            init.deinit(allocator);
+        if (self.initializer) |init| {
+            const expr_ptr: *Expression = @ptrCast(@alignCast(init));
+            expr_ptr.deinit(allocator);
+            allocator.destroy(expr_ptr);
         }
     }
 };
@@ -477,8 +491,13 @@ pub const AssignmentStatement = struct {
     operator: []const u8,
 
     pub fn deinit(self: *AssignmentStatement, allocator: Allocator) void {
-        self.target.deinit(allocator);
-        self.value.deinit(allocator);
+        const target_expr: *Expression = @ptrCast(@alignCast(self.target));
+        target_expr.deinit(allocator);
+        allocator.destroy(target_expr);
+        
+        const value_expr: *Expression = @ptrCast(@alignCast(self.value));
+        value_expr.deinit(allocator);
+        allocator.destroy(value_expr);
     }
 };
 
@@ -486,8 +505,10 @@ pub const ReturnStatement = struct {
     value: ?*anyopaque,
 
     pub fn deinit(self: *ReturnStatement, allocator: Allocator) void {
-        if (self.value) |*val| {
-            val.deinit(allocator);
+        if (self.value) |val| {
+            const expr_ptr: *Expression = @ptrCast(@alignCast(val));
+            expr_ptr.deinit(allocator);
+            allocator.destroy(expr_ptr);
         }
     }
 };
@@ -498,16 +519,14 @@ pub const IfStatement = struct {
     else_branch: ?ArrayList(*anyopaque),
 
     pub fn deinit(self: *IfStatement, allocator: Allocator) void {
-        self.condition.deinit(allocator);
-        for (self.then_branch.items) |*stmt| {
-            stmt.deinit(allocator);
-        }
+        const condition_expr: *Expression = @ptrCast(@alignCast(self.condition));
+        condition_expr.deinit(allocator);
+        allocator.destroy(condition_expr);
+        // Note: Individual statement cleanup handled by parent scope
         self.then_branch.deinit();
         
         if (self.else_branch) |*else_br| {
-            for (else_br.items) |*stmt| {
-                stmt.deinit(allocator);
-            }
+            // Note: Individual statement cleanup handled by parent scope  
             else_br.deinit();
         }
     }
@@ -610,11 +629,12 @@ pub const GoroutineStatement = struct {
 };
 
 pub const StanStatement = struct {
-    body: ArrayList(Statement),
+    body: ArrayList(*anyopaque),
     
     pub fn deinit(self: *StanStatement, allocator: Allocator) void {
-        for (self.body.items) |*stmt| {
-            stmt.deinit(allocator);
+        for (self.body.items) |stmt| {
+            const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
+            stmt_ptr.deinit(allocator);
         }
         self.body.deinit();
     }
@@ -845,12 +865,6 @@ pub const YikesExpression = struct {
     message: *Expression,
     code: ?*Expression,
     source_location: ?SourceLocation,
-    
-    pub const SourceLocation = struct {
-        file: []const u8,
-        line: u32,
-        column: u32,
-    };
 };
 
 /// SHOOK - Error propagation expression  
