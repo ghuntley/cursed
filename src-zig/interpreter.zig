@@ -310,6 +310,12 @@ pub const TypeRegistry = struct {
     }
 };
 
+// Defer statement entry for LIFO execution
+pub const DeferEntry = struct {
+    statement: Statement,
+    environment: *Environment,
+};
+
 pub const Interpreter = struct {
     globals: Environment,
     environment: *Environment,
@@ -317,6 +323,7 @@ pub const Interpreter = struct {
     type_registry: TypeRegistry,
     channel_storage: HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage),
     next_goroutine_id: u64,
+    defer_stack: ArrayList(DeferEntry),  // LIFO defer execution stack
     allocator: Allocator,
 
     pub fn init(allocator: Allocator) Interpreter {
@@ -329,14 +336,19 @@ pub const Interpreter = struct {
             .type_registry = TypeRegistry.init(allocator),
             .channel_storage = HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .next_goroutine_id = 0,
+            .defer_stack = ArrayList(DeferEntry).init(allocator),
             .allocator = allocator,
         };
     }
 
     pub fn deinit(self: *Interpreter) void {
+        // Execute any remaining deferred statements before cleanup
+        self.executeAllDefers();
+        
         self.globals.deinit();
         self.functions.deinit();
         self.type_registry.deinit();
+        self.defer_stack.deinit();
         
         // Clean up channel storage
         var channel_iterator = self.channel_storage.iterator();
@@ -406,6 +418,7 @@ pub const Interpreter = struct {
             .Stan => |stan| try self.executeStanStatement(stan),
             .Yikes => |yikes| try self.executeYikesStatement(yikes),
             .Fam => |fam| try self.executeFamStatement(fam),
+            .Defer => |defer_stmt| try self.executeDeferStatement(defer_stmt),
             else => {
                 std.debug.print("Unsupported statement type in interpreter: {s}\n", .{@tagName(stmt)});
             },
@@ -700,25 +713,38 @@ pub const Interpreter = struct {
             try function_env.define(param.name, args[i]);
         }
         
+        // Save defer stack size at function entry (for scope-based cleanup)
+        const defer_stack_size_at_entry = self.defer_stack.items.len;
+        
         // Execute function body
         const previous_env = self.environment;
         self.environment = &function_env;
-        defer self.environment = previous_env;
+        defer {
+            // Execute defers for this function scope in LIFO order
+            self.executeDeferToSize(defer_stack_size_at_entry);
+            self.environment = previous_env;
+        }
+        
+        var return_value: Value = Value.Null;
+        var has_returned = false;
         
         for (func.declaration.body.items) |stmt| {
             switch (stmt) {
                 .Return => |ret| {
                     if (ret.value) |value| {
-                        return try self.evaluateExpression(value);
+                        return_value = try self.evaluateExpression(value);
                     } else {
-                        return Value.Null;
+                        return_value = Value.Null;
                     }
+                    has_returned = true;
+                    break; // Exit function body loop
                 },
                 else => try self.executeStatement(stmt),
             }
         }
         
-        return Value.Null;
+        // Function completed - defers will be executed by the defer block above
+        return return_value;
     }
 
     fn valuesEqual(self: *Interpreter, left: Value, right: Value) bool {
@@ -921,6 +947,71 @@ pub const Interpreter = struct {
         // Execute all statements in the goroutine body
         for (stan.body.items) |stmt| {
             try self.executeStatement(stmt);
+        }
+    }
+    
+    /// Execute defer statement by pushing it onto the defer stack
+    fn executeDeferStatement(self: *Interpreter, defer_stmt: ast.DeferStatement) InterpreterError!void {
+        // Get the deferred statement
+        const statement_ptr: *Statement = @ptrCast(@alignCast(defer_stmt.statement));
+        const statement = statement_ptr.*;
+        
+        // Create defer entry with current environment
+        const defer_entry = DeferEntry{
+            .statement = statement,
+            .environment = self.environment,
+        };
+        
+        // Push onto defer stack (LIFO order)
+        try self.defer_stack.append(defer_entry);
+        
+        std.debug.print("✅ Defer statement pushed to stack (size: {d})\n", .{self.defer_stack.items.len});
+    }
+    
+    /// Execute all deferred statements in LIFO order
+    fn executeAllDefers(self: *Interpreter) void {
+        std.debug.print("Executing {d} deferred statements\n", .{self.defer_stack.items.len});
+        
+        // Execute in reverse order (LIFO - Last In, First Out)
+        while (self.defer_stack.items.len > 0) {
+            const defer_entry = self.defer_stack.pop();
+            
+            // Save current environment and switch to defer environment
+            const saved_env = self.environment;
+            self.environment = defer_entry.environment;
+            
+            // Execute the deferred statement
+            std.debug.print("Executing deferred statement\n");
+            self.executeStatement(defer_entry.statement) catch |err| {
+                std.debug.print("Error executing deferred statement: {}\n", .{err});
+                // Continue with other defers even if one fails
+            };
+            
+            // Restore environment
+            self.environment = saved_env;
+        }
+    }
+    
+    /// Execute defers up to a specific stack size (for function scope cleanup)
+    fn executeDeferToSize(self: *Interpreter, target_size: usize) void {
+        std.debug.print("Executing defers from size {d} to {d}\n", .{ self.defer_stack.items.len, target_size });
+        
+        while (self.defer_stack.items.len > target_size) {
+            const defer_entry = self.defer_stack.pop();
+            
+            // Save current environment and switch to defer environment
+            const saved_env = self.environment;
+            self.environment = defer_entry.environment;
+            
+            // Execute the deferred statement
+            std.debug.print("Executing scoped deferred statement\n");
+            self.executeStatement(defer_entry.statement) catch |err| {
+                std.debug.print("Error executing deferred statement: {}\n", .{err});
+                // Continue with other defers even if one fails
+            };
+            
+            // Restore environment
+            self.environment = saved_env;
         }
     }
 

@@ -1,1 +1,1 @@
-vibez.spill("hello")
+slay main() { vibez.spill("Hello World") }

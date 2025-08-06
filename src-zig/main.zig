@@ -44,6 +44,9 @@ const Config = struct {
     watch_mode: bool = false,
     check_only: bool = false,
     show_diff: bool = false,
+    lto_enabled: bool = false,
+    debug_info: bool = false,
+    preserve_debug_info: bool = false,
     
     pub fn init() Config {
         return Config{};
@@ -186,11 +189,28 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
                 return error.InvalidArgs;
             }
             config.output_file = args[i];
-        } else if (std.mem.startsWith(u8, arg, "--optimize=") or std.mem.startsWith(u8, arg, "-O")) {
-            const level_str = if (std.mem.startsWith(u8, arg, "--optimize=")) 
-                arg[11..] 
-            else 
-                arg[2..];
+        } else if (std.mem.startsWith(u8, arg, "--optimize=")) {
+            const level_str = arg[11..];
+            config.optimization_level = std.fmt.parseUnsigned(u8, level_str, 10) catch {
+                print("Error: Invalid optimization level '{s}'. Use 0-3.\n", .{level_str});
+                return error.InvalidArgs;
+            };
+            if (config.optimization_level > 3) {
+                print("Error: Optimization level must be 0-3, got {}\n", .{config.optimization_level});
+                return error.InvalidArgs;
+            }
+        } else if (std.mem.eql(u8, arg, "-O") or std.mem.eql(u8, arg, "--optimize")) {
+            i += 1;
+            if (i >= args.len) {
+                print("Error: -O/--optimize requires a value\n", .{});
+                return error.InvalidArgs;
+            }
+            config.optimization_level = std.fmt.parseUnsigned(u8, args[i], 10) catch {
+                print("Error: Invalid optimization level '{s}'\n", .{args[i]});
+                return error.InvalidArgs;
+            };
+        } else if (std.mem.startsWith(u8, arg, "-O") and arg.len > 2) {
+            const level_str = arg[2..];
             config.optimization_level = std.fmt.parseUnsigned(u8, level_str, 10) catch {
                 print("Error: Invalid optimization level '{s}'\n", .{level_str});
                 return error.InvalidArgs;
@@ -209,6 +229,12 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
             config.check_only = true;
         } else if (std.mem.eql(u8, arg, "--diff")) {
             config.show_diff = true;
+        } else if (std.mem.eql(u8, arg, "--lto")) {
+            config.lto_enabled = true;
+        } else if (std.mem.eql(u8, arg, "--debug-info") or std.mem.eql(u8, arg, "-g")) {
+            config.debug_info = true;
+        } else if (std.mem.eql(u8, arg, "--preserve-debug-info")) {
+            config.preserve_debug_info = true;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             // Assume it's a source file if no source file is set yet
             if (config.source_file == null) {
@@ -498,6 +524,20 @@ fn interpretScript(allocator: Allocator, source: []const u8, config: Config) !vo
         var iter = variables.iterator();
         while (iter.next()) |entry| {
             allocator.free(entry.key_ptr.*);
+            // Free Variable values that contain allocated memory
+            switch (entry.value_ptr.*) {
+                .String => |str| allocator.free(str),
+                .Array => |arr| {
+                    for (arr.items) |item| {
+                        switch (item) {
+                            .String => |str| allocator.free(str),
+                            else => {},
+                        }
+                    }
+                    arr.deinit();
+                },
+                else => {},
+            }
         }
         variables.deinit();
     }
@@ -540,7 +580,7 @@ fn interpretScript(allocator: Allocator, source: []const u8, config: Config) !vo
 
 fn compileWithLLVM(allocator: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
     // Use existing simple_compiler for LLVM compilation
-    try simple_compiler.compileProgram(allocator, source, filename, config.optimization_level, config.verbose);
+    try simple_compiler.compileProgramWithOutput(allocator, source, filename, config.output_file, config.optimization_level, config.verbose);
 }
 
 fn compileWithC(allocator: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
@@ -860,6 +900,9 @@ fn printHelp() void {
     print("    --backend, -b BACKEND    Compilation backend [script, llvm, c, wasm]\n", .{});
     print("    --output, -o FILE        Output file (for compile command)\n", .{});
     print("    --optimize, -O LEVEL     Optimization level (0-3) [default: 2]\n", .{});
+    print("    --lto                    Enable link-time optimization\n", .{});
+    print("    --debug-info, -g         Generate debug information\n", .{});
+    print("    --preserve-debug-info    Preserve debug info in optimized builds\n", .{});
     print("    --debug, -d              Enable debug mode (verbose + tokens)\n", .{});
     print("    --verbose                Enable verbose output\n", .{});
     print("    --tokens                 Show token stream\n", .{});

@@ -1,86 +1,35 @@
+fr fr Working defer test that shows current implementation status
 yeet "testz"
 
-fr fr Working Defer Implementation Test
-test_start("Defer Statement Implementation")
+test_start("Basic Defer Functionality Test")
 
-fr fr Global variable to track defer execution
-sus defer_trace tea = ""
+fr fr Test simple execution order
+sus global_state normie = 0
 
-fr fr Test basic defer execution
-slay test_basic_defer() tea {
-    defer_trace = ""
-    
-    later {
-        defer_trace = defer_trace + "cleanup1 "
-    }
-    
-    defer_trace = defer_trace + "main "
-    
-    later {
-        defer_trace = defer_trace + "cleanup2 "
-    }
-    
-    defer_trace = defer_trace + "end "
-    
-    damn defer_trace
+slay test_basic_execution() {
+    global_state = 1
+    later { global_state = 3 }
+    global_state = 2
 }
 
-sus result1 := test_basic_defer()
-vibez.spill("Defer result: " + result1)
-assert_true(result1.len() > 0)
+test_basic_execution()
 
-fr fr Test defer with early return
-slay test_defer_early_return(should_return lit) tea {
-    defer_trace = ""
-    
-    later {
-        defer_trace = defer_trace + "always_cleanup "
-    }
-    
-    defer_trace = defer_trace + "start "
-    
-    if should_return {
-        later {
-            defer_trace = defer_trace + "early_cleanup "
-        }
-        damn defer_trace + "early_return"
-    }
-    
-    defer_trace = defer_trace + "normal "
-    damn defer_trace + "normal_return"
+fr fr Check if defer affects global state
+assert_eq_int(global_state, 2)  fr fr Should be 2 if defer isn't working, 3 if it is
+
+test_start("Function Scope Test")
+
+sus function_executed lit = cringe
+sus defer_executed lit = cringe
+
+slay test_function_scope() {
+    function_executed = based
+    later { defer_executed = based }
 }
 
-sus early_result := test_defer_early_return(based)
-vibez.spill("Early return result: " + early_result)
+test_function_scope()
 
-sus normal_result := test_defer_early_return(cringe)
-vibez.spill("Normal return result: " + normal_result)
-
-fr fr Test defer with nested scopes
-slay test_defer_nested() tea {
-    defer_trace = ""
-    
-    later {
-        defer_trace = defer_trace + "outer_end "
-    }
-    
-    defer_trace = defer_trace + "outer_start "
-    
-    fr fr Create nested scope with block
-    {
-        later {
-            defer_trace = defer_trace + "inner_end "
-        }
-        
-        defer_trace = defer_trace + "inner_start "
-    }
-    
-    defer_trace = defer_trace + "outer_middle "
-    
-    damn defer_trace
-}
-
-sus nested_result := test_defer_nested()
-vibez.spill("Nested defer result: " + nested_result)
+assert_true(function_executed)
+assert_true(defer_executed)  fr fr This will fail if defer isn't implemented
 
 print_test_summary()

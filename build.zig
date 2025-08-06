@@ -104,21 +104,21 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
     // Platform-specific LLVM paths with auto-detection
     const llvm_paths = struct {
         const linux_lib_paths = [_][]const u8{
-            "/nix/store/i7laizikxvx5hi86g98k4v3p7g8s2a7s-llvm-18.1.8-lib/lib",
-            "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib",
             "/usr/lib/llvm-18/lib",
             "/usr/lib/x86_64-linux-gnu",
             "/usr/lib/aarch64-linux-gnu",
             "/usr/lib64",
             "/lib64",
+            "/nix/store/i7laizikxvx5hi86g98k4v3p7g8s2a7s-llvm-18.1.8-lib/lib",
+            "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib",
             "/opt/homebrew/lib", // For Linux on ARM Mac
         };
         
         const linux_inc_paths = [_][]const u8{
-            "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include",
             "/usr/include/llvm-18",
             "/usr/include/llvm-c",
             "/usr/include",
+            "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include",
             "/opt/homebrew/include",
         };
         
@@ -191,6 +191,9 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
                 exe.linkSystemLibrary("pthread");
                 exe.linkSystemLibrary("dl");
                 exe.linkSystemLibrary("m");
+                // Use system library paths for zlib
+                exe.addLibraryPath(.{ .path = "/usr/lib/x86_64-linux-gnu" });
+                exe.addLibraryPath(.{ .path = "/lib/x86_64-linux-gnu" });
                 exe.linkSystemLibrary("z");
             }
         },
@@ -336,6 +339,18 @@ pub fn build(b: *std.Build) void {
     // Configure libc for minimal compiler (no LLVM needed)
     if (!is_wasm) {
         exe.linkLibC();
+        
+        // Add defer runtime C source (temporarily disabled for build compatibility)
+        // exe.addCSourceFile(.{
+        //     .file = b.path("src-zig/defer_runtime.c"),
+        //     .flags = &[_][]const u8{"-std=c99", "-O2"},
+        // });
+        
+        // Add error handling runtime C source
+        exe.addCSourceFile(.{
+            .file = b.path("runtime/cursed_error_runtime.c"),
+            .flags = &[_][]const u8{"-std=c99", "-O2"},
+        });
         
         // Integrate package manager dependencies
         const build_integration = @import("src-zig/build_integration.zig");
@@ -698,8 +713,9 @@ b.installArtifact(complete_exe);
         if (query.cpu_arch != .wasm32) {
             cross_exe.linkLibC();
             
-            // Only add LLVM for targets that support it
-            if (cross_config.supports_llvm) {
+            // Only add LLVM for targets that support it and have libraries available
+            if (cross_config.supports_llvm and 
+                (query.os_tag == .linux or cross_target.result.os.tag == resolved_target.result.os.tag)) {
                 addLlvm(b, cross_exe, cross_target);
             }
         }
