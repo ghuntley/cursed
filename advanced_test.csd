@@ -1,5 +1,4 @@
-fr fr Advanced CURSED program
-sus name tea = "CURSED"
-slay greet() {
-    vibez.spill("Hello from advanced CURSED!")
-}
+sus x drip = 42
+sus y tea = "Hello CURSED!"
+vibez.spill(y)
+vibez.spill("Number: " + tea(x))

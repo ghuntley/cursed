@@ -25,6 +25,7 @@ const VariableInfo = struct {
 const LLVMVariableInfo = struct {
     llvm_type: []const u8,
     var_name: []const u8,
+    string_len: ?usize = null, // Only used for tea (string) types
 };
 
 /// Compile CURSED source code to native executable using specified backend
@@ -684,6 +685,15 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                                 try writer.print("  %loaded.{} = load double, double* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
                                 try writer.print("  %fmt_ptr.{} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
                                 try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
+                            } else if (std.mem.eql(u8, var_info.llvm_type, "tea")) {
+                                // String variable - get pointer to first character and print
+                                if (var_info.string_len) |len| {
+                                    try writer.print("  %str_ptr.{} = getelementptr [{} x i8], [{} x i8]* %{s}, i32 0, i32 0\n", 
+                                        .{ variable_counter.*, len, len, var_info.var_name });
+                                } else {
+                                    try writer.print("  %str_ptr.{} = load i8*, i8** %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
+                                }
+                                try writer.print("  call i32 @puts(i8* %str_ptr.{})\n", .{variable_counter.*});
                             }
                             variable_counter.* += 1;
                         } else {
@@ -734,6 +744,32 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
             try writer.print("  store double 0.0, double* %{s}, align 8\n", .{var_name});
         }
         try variables.put(var_name, .{ .llvm_type = "double", .var_name = var_name });
+    } else if (std.mem.eql(u8, var_type, "tea")) {
+        // String type
+        if (value_str.len >= 2 and value_str[0] == '"' and value_str[value_str.len - 1] == '"') {
+            // String literal
+            const string_content = value_str[1..value_str.len - 1];
+            const string_len = string_content.len + 1; // +1 for null terminator
+            
+            try writer.print("  %{s} = alloca [{} x i8], align 1\n", .{ var_name, string_len });
+            
+            // Store each character individually
+            for (string_content, 0..) |char, i| {
+                try writer.print("  %{s}.ptr.{} = getelementptr [{} x i8], [{} x i8]* %{s}, i32 0, i32 {}\n", 
+                    .{ var_name, i, string_len, string_len, var_name, i });
+                try writer.print("  store i8 {}, i8* %{s}.ptr.{}, align 1\n", .{ char, var_name, i });
+            }
+            // Add null terminator
+            try writer.print("  %{s}.ptr.{} = getelementptr [{} x i8], [{} x i8]* %{s}, i32 0, i32 {}\n", 
+                .{ var_name, string_content.len, string_len, string_len, var_name, string_content.len });
+            try writer.print("  store i8 0, i8* %{s}.ptr.{}, align 1\n", .{ var_name, string_content.len });
+            
+            try variables.put(var_name, .{ .llvm_type = "tea", .var_name = var_name, .string_len = string_len });
+        } else {
+            try writer.print("  %{s} = alloca i8*, align 8\n", .{var_name});
+            try writer.print("  store i8* null, i8** %{s}, align 8\n", .{var_name});
+            try variables.put(var_name, .{ .llvm_type = "tea", .var_name = var_name, .string_len = null });
+        }
     }
     variable_counter.* += 1;
 }
