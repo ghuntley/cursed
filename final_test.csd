@@ -1,1 +1,1 @@
-vibez.spill("Final test - all systems working!")
+sus x drip = 42; vibez.spill("Testing final build:", x)
