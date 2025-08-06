@@ -378,12 +378,12 @@ slay split_lines(content tea) []tea {
 
 slay append_string(arr []tea, str tea) []tea {
     fr fr Runtime-provided dynamic append
-    damn arr fr fr Placeholder implementation
+    damn runtime_slice_append<tea>(arr, str)
 }
 
 slay len(arr []tea) normie {
     fr fr Runtime-provided array length
-    damn 0 fr fr Placeholder implementation
+    damn runtime_slice_length(arr)
 }
 
 fr fr Import enhanced string operations

@@ -254,6 +254,10 @@ fn testBufferedChannel() !void {
 
 fn testUnbufferedChannel() !void {
     const allocator = gpa.allocator();
+    const config = concurrency.SchedulerConfig.default();
+    
+    try concurrency.initializeScheduler(allocator, config);
+    defer concurrency.shutdownScheduler(allocator);
     
     var channel = try concurrency.makeUnbufferedChannel(i32, allocator);
     defer {
@@ -615,6 +619,10 @@ fn testHighGoroutineCount() !void {
 
 fn testChannelThroughput() !void {
     const allocator = gpa.allocator();
+    const config = concurrency.SchedulerConfig.default();
+    
+    try concurrency.initializeScheduler(allocator, config);
+    defer concurrency.shutdownScheduler(allocator);
     
     var channel = try concurrency.makeChannel(u64, allocator, 1000);
     defer {

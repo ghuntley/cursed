@@ -1,0 +1,91 @@
+1/8 concurrency_memory_fixes.test.memory safe channel creation and cleanup...OK
+[gpa] (err): memory address 0x7fe9203e0100 leaked: 
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/heap/arena_allocator.zig:183:29: 0x1052814 in alloc (test)
+            (self.createNode(0, n + ptr_align) orelse return null);
+                            ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/mem/Allocator.zig:129:26: 0x10bac69 in allocBytesWithAlignment__anon_18532 (test)
+    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                         ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/mem/Allocator.zig:260:40: 0x10a8852 in allocWithSizeAndAlignment__anon_14118 (test)
+    return self.allocBytesWithAlignment(alignment, byte_count, return_address);
+                                       ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/mem/Allocator.zig:254:75: 0x10925b1 in alignedAlloc__anon_11613 (test)
+    const ptr: [*]align(a) T = @ptrCast(try self.allocWithSizeAndAlignment(@sizeOf(T), a, n, return_address));
+                                                                          ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:474:67: 0x1072432 in ensureTotalCapacityPrecise (test)
+                const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+                                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:450:51: 0x10564a0 in ensureTotalCapacity (test)
+            return self.ensureTotalCapacityPrecise(better_capacity);
+                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:500:41: 0x1053abf in addOne (test)
+            try self.ensureTotalCapacity(newlen);
+                                        ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:261:49: 0x104ddac in append (test)
+            const new_item_ptr = try self.addOne();
+                                                ^
+/home/ghuntley/code/cursed/src-zig/concurrency_memory_fixes.zig:167:31: 0x104d90c in sendTimeout (test)
+            self.buffer.append(value) catch return error.OutOfMemory;
+                              ^
+/home/ghuntley/code/cursed/src-zig/concurrency_memory_fixes.zig:101:36: 0x104de45 in send (test)
+            return self.sendTimeout(value, null);
+                                   ^
+
+2/8 concurrency_memory_fixes.test.memory safe goroutine execution...Segmentation fault at address 0x18
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/heap/arena_allocator.zig:185:77: 0x1052852 in alloc (test)
+            const cur_alloc_buf = @as([*]u8, @ptrCast(cur_node))[0..cur_node.data];
+                                                                            ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/mem/Allocator.zig:129:26: 0x10524a9 in allocBytesWithAlignment__anon_4610 (test)
+    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                         ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/mem/Allocator.zig:260:40: 0x10e8962 in allocWithSizeAndAlignment__anon_23045 (test)
+    return self.allocBytesWithAlignment(alignment, byte_count, return_address);
+                                       ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/mem/Allocator.zig:254:75: 0x10e97e1 in alignedAlloc__anon_23149 (test)
+    const ptr: [*]align(a) T = @ptrCast(try self.allocWithSizeAndAlignment(@sizeOf(T), a, n, return_address));
+                                                                          ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:474:67: 0x10e8c52 in ensureTotalCapacityPrecise (test)
+                const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+                                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:450:51: 0x10e8400 in ensureTotalCapacity (test)
+            return self.ensureTotalCapacityPrecise(better_capacity);
+                                                  ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:500:41: 0x10e75cf in addOne (test)
+            try self.ensureTotalCapacity(newlen);
+                                        ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/array_list.zig:261:49: 0x10e534e in append (test)
+            const new_item_ptr = try self.addOne();
+                                                ^
+/home/ghuntley/code/cursed/src-zig/concurrency_memory_fixes.zig:422:30: 0x10e52ad in pushBottom (test)
+        try self.items.append(goroutine);
+                             ^
+/home/ghuntley/code/cursed/src-zig/concurrency_memory_fixes.zig:671:40: 0x10e54a4 in scheduleGoroutine (test)
+            try worker.deque.pushBottom(goroutine);
+                                       ^
+/home/ghuntley/code/cursed/src-zig/concurrency_memory_fixes.zig:650:35: 0x10e56c1 in spawn (test)
+        try self.scheduleGoroutine(goroutine);
+                                  ^
+/home/ghuntley/code/cursed/src-zig/concurrency_memory_fixes.zig:759:27: 0x10e57fc in spawnMemorySafe (test)
+    return scheduler.spawn(entry_fn, context);
+                          ^
+/home/ghuntley/code/cursed/src-zig/concurrency_memory_fixes.zig:756:31: 0x10e58f2 in spawnMemorySafe (test)
+        return spawnMemorySafe(allocator, entry_fn, context);
+                              ^
+/home/ghuntley/code/cursed/src-zig/concurrency_memory_fixes.zig:792:45: 0x10e5ab3 in test.memory safe goroutine execution (test)
+    const goroutine_id = try spawnMemorySafe(allocator, testFn, &context);
+                                            ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/compiler/test_runner.zig:214:25: 0x1107569 in mainTerminal (test)
+        if (test_fn.func()) |_| {
+                        ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/compiler/test_runner.zig:62:28: 0x110168d in main (test)
+        return mainTerminal();
+                           ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/start.zig:647:22: 0x1100c12 in posixCallMainAndExit (test)
+            root.main();
+                     ^
+/nix/store/figbx3530fg8m6b1mfd9mvd9cpc141z3-zig-0.14.0/lib/zig/std/start.zig:271:5: 0x11007ed in _start (test)
+    asm volatile (switch (native_arch) {
+    ^
+???:?:?: 0x0 in ??? (???)
+error: the following test command crashed:
+memory_test_temp/zig-cache-concurrency/o/54339687a6cda7e85fa2f973e343bd76/test --seed=0xefaad8f5

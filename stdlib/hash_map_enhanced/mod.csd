@@ -64,7 +64,7 @@ slay make_symbol_buckets<T>(capacity normie) []SymbolBucket<T> {
 
 slay append_symbol_bucket<T>(buckets []SymbolBucket<T>, bucket SymbolBucket<T>) []SymbolBucket<T> {
     fr fr Runtime-provided dynamic append
-    damn buckets fr fr Placeholder implementation
+    damn runtime_slice_append<SymbolBucket<T>>(buckets, bucket)
 }
 
 fr fr FNV-1a hash function for better distribution
@@ -408,12 +408,12 @@ slay TypeTable_is_type_declared(table TypeTable, name tea) lit {
 fr fr Utility functions
 slay append_string(arr []tea, str tea) []tea {
     fr fr Runtime-provided dynamic append
-    damn arr fr fr Placeholder implementation
+    damn runtime_slice_append<tea>(arr, str)
 }
 
 slay append_value<T>(arr []T, val T) []T {
     fr fr Runtime-provided dynamic append
-    damn arr fr fr Placeholder implementation
+    damn runtime_slice_append<T>(arr, val)
 }
 
 slay char_to_int(ch sip) normie {
@@ -422,12 +422,12 @@ slay char_to_int(ch sip) normie {
 
 slay meal(n normie) meal {
     fr fr Runtime-provided integer to float conversion
-    damn 0.0 fr fr Placeholder implementation
+    damn runtime_int_to_float(n)
 }
 
 slay null<T>() *T {
     fr fr Runtime-provided null pointer
-    damn null fr fr Placeholder implementation
+    damn runtime_null_pointer<T>()
 }
 
 vibez.spill("🚀 CURSED Enhanced HashMap Library v1.0 Loaded")

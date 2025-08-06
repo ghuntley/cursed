@@ -20,6 +20,19 @@ CURSED has several built-in basic types:
 | String        | `tea`        | A sequence of bytes representing Unicode text |
 | Character     | `sip`        | Single Unicode character (rune) |
 | Complex       | `extra`      | Complex number with two floating-point components |
+| Error         | `Error`      | Built-in interface for error handling |
+
+## Error Type
+
+The `Error` type is a built-in interface that represents an error condition:
+
+```cursed
+be_like Error collab {
+    error() tea
+}
+```
+
+Any type that implements an `error()` method returning a string satisfies the `Error` interface.
 
 ## Composite Types
 
@@ -35,6 +48,7 @@ CURSED provides several ways to construct types from existing types:
 | Pointer     | `@T`     | Pointer to a value of type T |
 | Function    | `slay`   | Function with parameters and return values |
 | Channel     | `dm<T>`  | Channel of type T for goroutine communication |
+| Error       | `Error`  | Built-in error interface type |
 
 ## Channel Types
 
@@ -65,6 +79,7 @@ value, ok := dm_recv(ch)      // Receive with closed check
 ```
 dm_close(ch)                  // Close channel - CANONICAL
 value, ok := dm_recv(ch)      // ok is false if channel is closed - CANONICAL
+```
 
 ### DEPRECATED Channel Operations (REMOVE IN FUTURE VERSIONS)
 ```
@@ -74,7 +89,6 @@ close(ch)                     // DEPRECATED: Use dm_close(ch)
 ```
 
 **PARSER REQUIREMENT**: New implementations SHOULD NOT support deprecated channel operations.
-```
 
 ## Type Declarations
 
@@ -115,6 +129,7 @@ Each type has a zero value that variables of that type are initialized to when n
 | slices | `nah` (nil) |
 | maps | `nah` (nil) |
 | channels | `nah` (nil) |
+| Error | `nah` (nil) |
 | structs | Each field has its zero value |
 | arrays | Each element has its zero value |
 
