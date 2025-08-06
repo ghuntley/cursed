@@ -941,30 +941,34 @@ pub const Parser = struct {
     fn parseIdentifierType(self: *Parser) ParserError!Type {
         const name = self.advance().lexeme;
         
-        // Check for generic type arguments
-        if (self.match(.LeftAngle)) {
-            // Generic type like Vec<T> or Map<K, V>
-            var type_arguments = ArrayList(Type).init(self.allocator);
-            
-            if (!self.check(.RightAngle)) {
-                while (true) {
-                    const type_arg = try self.parseType();
-                    try type_arguments.append(type_arg);
-                    
-                    if (!self.match(.Comma)) break;
-                }
+        // Check for generic type arguments with both [T] and <T> syntax
+        if (self.match(.LeftAngle) or self.match(.LeftBracket)) {
+        const is_square_bracket = self.previous().token_type == .LeftBracket;
+        
+        // Generic type like Vec<T>, Map<K, V> or Box[T]
+        var type_arguments = ArrayList(Type).init(self.allocator);
+        
+        const closing_token = if (is_square_bracket) TokenType.RightBracket else TokenType.RightAngle;
+        
+        if (!self.check(closing_token)) {
+        while (true) {
+            const type_arg = try self.parseType();
+                try type_arguments.append(type_arg);
+                
+                if (!self.match(.Comma)) break;
             }
-            
-            _ = try self.consume(.RightAngle, "Expected '>' after type arguments");
-            
-            const generic_type = GenericType{
-                .name = name,
-                .type_arguments = type_arguments,
-                .constraints = ArrayList(TypeConstraint).init(self.allocator),
-            };
-            
-            return Type{ .Generic = generic_type };
         }
+        
+        _ = try self.consume(closing_token, if (is_square_bracket) "Expected ']' after type arguments" else "Expected '>' after type arguments");
+        
+        const generic_type = GenericType{
+            .name = name,
+            .type_arguments = type_arguments,
+                .constraints = ArrayList(TypeConstraint).init(self.allocator),
+        };
+        
+        return Type{ .Generic = generic_type };
+    }
         
         // Simple custom type
         return Type{ .Custom = name };

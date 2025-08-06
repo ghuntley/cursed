@@ -637,6 +637,22 @@ pub const CodeGen = struct {
                     },
                 }
             },
+            // Direct expression types (not wrapped in Literal)
+            .Integer => |int| {
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @intCast(int), 0);
+            },
+            .Float => |float| {
+                return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float);
+            },
+            .String => |str| {
+                return c.LLVMBuildGlobalStringPtr(self.builder, str.ptr, "str");
+            },
+            .Boolean => |bool_val| {
+                return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
+            },
+            .Character => |char| {
+                return c.LLVMConstInt(c.LLVMInt8TypeInContext(self.context), char, 0);
+            },
             .Identifier => |ident| {
                 // Look up variable in symbol table
                 if (self.variables.get(ident)) |alloca| {
@@ -672,6 +688,9 @@ pub const CodeGen = struct {
             },
             .ArrayLiteral => |array| {
                 return try self.generateArrayLiteral(array);
+            },
+            .Array => |array| {
+                return try self.generateArrayExpression(array);
             },
             .IndexAccess => |index| {
                 return try self.generateIndexAccess(index);
@@ -752,6 +771,18 @@ pub const CodeGen = struct {
             },
             .Block => |block| {
                 return try self.generateBlockExpression(block);
+            },
+            .Increment => |increment| {
+                return try self.generateIncrementExpression(increment);
+            },
+            .Decrement => |decrement| {
+                return try self.generateDecrementExpression(decrement);
+            },
+            .Yikes => |yikes| {
+                return try self.generateYikesExpression(yikes);
+            },
+            .Fam => |fam| {
+                return try self.generateFamExpression(fam);
             },
             else => {
                 std.debug.print("Unknown expression type in codegen: {}\n", .{expr});
@@ -2882,6 +2913,118 @@ pub const CodeGen = struct {
         }
         
         return last_value;
+    }
+
+    /// Generate array expression (different from ArrayLiteral)
+    fn generateArrayExpression(self: *CodeGen, array: ast.ArrayExpression) CodeGenError!c.LLVMValueRef {
+        // Generate array elements
+        var element_values = ArrayList(c.LLVMValueRef).init(self.allocator);
+        defer element_values.deinit();
+        
+        for (array.elements.items) |element| {
+            const element_value = try self.generateExpression(element.*);
+            try element_values.append(element_value);
+        }
+        
+        if (element_values.items.len == 0) {
+            // Empty array - return null array
+            const array_type = c.LLVMArrayType(c.LLVMInt64TypeInContext(self.context), 0);
+            return c.LLVMConstNull(array_type);
+        }
+        
+        // Create array constant
+        const array_type = c.LLVMArrayType(c.LLVMTypeOf(element_values.items[0]), @as(u32, @intCast(element_values.items.len)));
+        return c.LLVMConstArray(c.LLVMTypeOf(element_values.items[0]), element_values.items.ptr, @as(u32, @intCast(element_values.items.len)));
+    }
+
+    /// Generate increment expression
+    fn generateIncrementExpression(self: *CodeGen, increment: ast.IncrementExpression) CodeGenError!c.LLVMValueRef {
+        // Look up variable
+        const alloca = self.variables.get(increment.variable) orelse {
+            return CodeGenError.UndefinedSymbol;
+        };
+        
+        // Load current value
+        const var_type = c.LLVMGetAllocatedType(alloca);
+        const current_value = c.LLVMBuildLoad2(self.builder, var_type, alloca, "current_value");
+        
+        // Increment by 1
+        const one = c.LLVMConstInt(var_type, 1, 0);
+        const incremented = c.LLVMBuildAdd(self.builder, current_value, one, "incremented");
+        
+        // Store back to variable
+        _ = c.LLVMBuildStore(self.builder, incremented, alloca);
+        
+        // Return the new value (post-increment)
+        return incremented;
+    }
+
+    /// Generate decrement expression
+    fn generateDecrementExpression(self: *CodeGen, decrement: ast.DecrementExpression) CodeGenError!c.LLVMValueRef {
+        // Look up variable
+        const alloca = self.variables.get(decrement.variable) orelse {
+            return CodeGenError.UndefinedSymbol;
+        };
+        
+        // Load current value
+        const var_type = c.LLVMGetAllocatedType(alloca);
+        const current_value = c.LLVMBuildLoad2(self.builder, var_type, alloca, "current_value");
+        
+        // Decrement by 1
+        const one = c.LLVMConstInt(var_type, 1, 0);
+        const decremented = c.LLVMBuildSub(self.builder, current_value, one, "decremented");
+        
+        // Store back to variable
+        _ = c.LLVMBuildStore(self.builder, decremented, alloca);
+        
+        // Return the new value (post-decrement)
+        return decremented;
+    }
+
+    /// Generate yikes expression (error creation)
+    fn generateYikesExpression(self: *CodeGen, yikes: ast.YikesExpression) CodeGenError!c.LLVMValueRef {
+        // Create error value from message and optional code
+        const error_msg = c.LLVMBuildGlobalStringPtr(self.builder, yikes.message.ptr, "error_msg");
+        const error_code = if (yikes.code) |code| 
+            c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @as(u32, @intCast(code)), 0)
+        else 
+            c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 1, 0); // Default error code
+        
+        // For now, return the error code (simplified error handling)
+        _ = error_msg;
+        return error_code;
+    }
+
+    /// Generate fam expression (panic recovery)
+    fn generateFamExpression(self: *CodeGen, fam: ast.FamExpression) CodeGenError!c.LLVMValueRef {
+        // Generate the expression that might panic
+        const expr_value = try self.generateExpression(fam.expression.*);
+        
+        // Simplified recovery - in a real implementation, this would involve
+        // exception handling mechanisms. For now, just return the expression value.
+        return expr_value;
+    }
+
+    /// Generate channel creation expression
+    fn generateChannelCreation(self: *CodeGen, create: ast.ChannelCreationExpression) CodeGenError!c.LLVMValueRef {
+        // Get channel capacity (buffer size)
+        const capacity = if (create.capacity) |cap|
+            try self.generateExpression(cap.*)
+        else
+            c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0); // Unbuffered channel
+        
+        // Call runtime channel creation function
+        const channel_create_func = self.runtime_functions.get("cursed_channel_create").?;
+        const channel = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            channel_create_func,
+            &[_]c.LLVMValueRef{capacity},
+            1,
+            "channel"
+        );
+        
+        return channel;
     }
 };
 

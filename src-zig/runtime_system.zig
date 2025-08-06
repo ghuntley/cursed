@@ -510,19 +510,12 @@ pub const RuntimeSystem = struct {
         _ = c.LLVMBuildCall2(builder, c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)), printf_func, &[_]c.LLVMValueRef{format_str, msg_param}, 2, "");
         _ = c.LLVMBuildRetVoid(builder);
         
-        // Read line function
+        // Read line function - declare external function
         const readline_type = c.LLVMFunctionType(
             c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
             null, 0, 0
         );
-        const readline_func = c.LLVMAddFunction(module, "cursed_readline", readline_type);
-        
-        const readline_entry = c.LLVMAppendBasicBlockInContext(context, readline_func, "entry");
-        c.LLVMPositionBuilderAtEnd(builder, readline_entry);
-        
-        // For now, return empty string (full implementation would read from stdin)
-        const empty_str = c.LLVMBuildGlobalStringPtr(builder, "", "empty");
-        _ = c.LLVMBuildRet(builder, empty_str);
+        _ = c.LLVMAddFunction(module, "cursed_read_line", readline_type);
     }
     
     /// Generate runtime initialization function

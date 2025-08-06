@@ -22,13 +22,22 @@ const c = @cImport({
 });
 
 const ast = @import("ast.zig");
+const Type = ast.Type;
+const MethodSignature = ast.MethodSignature;
+const PointerType = ast.PointerType;
 const CodeGen = @import("codegen.zig").CodeGen;
 const CodeGenError = @import("codegen.zig").CodeGenError;
 const WorkingCodeGen = @import("working_codegen.zig").WorkingCodeGen;
+const generics = @import("generics.zig");
 const FinalWorkingCodeGen = @import("final_working_codegen.zig").FinalWorkingCodeGen;
 const debug_info = @import("debug_info.zig");
 const DebugInfoGenerator = debug_info.DebugInfoGenerator;
 const SourceLocation = debug_info.SourceLocation;
+
+const interface_dispatch = @import("interface_dispatch.zig");
+const InterfaceDispatcher = interface_dispatch.InterfaceDispatcher;
+const VTable = interface_dispatch.VTable;
+const InterfaceInstance = interface_dispatch.InterfaceInstance;
 
 const OptimizationEngine = @import("optimization_engine.zig").OptimizationEngine;
 const OptimizationConfig = @import("optimization_engine.zig").OptimizationConfig;
@@ -45,11 +54,15 @@ pub const AdvancedCodeGen = struct {
     generic_instances: HashMap([]const u8, GenericInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     vtables: HashMap([]const u8, VTableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
+    // Generics monomorphization system
+    monomorphizer: *generics.Monomorphizer,
+    
     // Enhanced type system runtime support
     gc_type_registry: GCTypeRegistry,
     typed_allocator: TypedAllocator,
     interface_registry: InterfaceRegistry,
     type_checker: TypeChecker,
+    interface_dispatcher: InterfaceDispatcher,
     
     // Memory management
     gc_enabled: bool,
@@ -71,6 +84,11 @@ pub const AdvancedCodeGen = struct {
     pub fn init(allocator: Allocator) !AdvancedCodeGen {
         var gc_registry = GCTypeRegistry.init(allocator);
         var interface_registry = InterfaceRegistry.init(allocator);
+        var interface_dispatcher = InterfaceDispatcher.init(allocator, &interface_registry);
+        
+        // Initialize monomorphizer
+        const monomorphizer = try allocator.create(generics.Monomorphizer);
+        monomorphizer.* = generics.Monomorphizer.init(allocator, context, module);
         
         return AdvancedCodeGen{
             .base_codegen = try FinalWorkingCodeGen.init(allocator),
@@ -78,10 +96,12 @@ pub const AdvancedCodeGen = struct {
             .interface_types = HashMap([]const u8, InterfaceTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .generic_instances = HashMap([]const u8, GenericInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .vtables = HashMap([]const u8, VTableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .monomorphizer = monomorphizer,
             .gc_type_registry = gc_registry,
             .typed_allocator = TypedAllocator.init(allocator, &gc_registry),
             .interface_registry = interface_registry,
             .type_checker = TypeChecker.init(&gc_registry, &interface_registry),
+            .interface_dispatcher = interface_dispatcher,
             .gc_enabled = true,
             .heap_allocator = null,
             .gc_mark_func = null,
@@ -102,9 +122,15 @@ pub const AdvancedCodeGen = struct {
         self.interface_types.deinit();
         self.generic_instances.deinit();
         self.vtables.deinit();
+        
+        // Clean up monomorphizer
+        self.monomorphizer.deinit();
+        self.base_codegen.allocator.destroy(self.monomorphizer);
+        
         self.gc_type_registry.deinit();
         self.typed_allocator.deinit();
         self.interface_registry.deinit();
+        self.interface_dispatcher.deinit();
         if (self.optimization_engine) |*engine| {
             engine.deinit();
         }
@@ -203,9 +229,12 @@ pub const AdvancedCodeGen = struct {
         try self.generateInterfaceVTables();
         
         // Fourth pass: process generic instantiations
-        try self.processGenericInstantiations();
+        try self.monomorphizer.processInstantiations();
         
-        // Fifth pass: generate code - skip for now due to type mismatch
+        // Fifth pass: generate pattern matching support
+        try self.generatePatternMatchingSupport();
+        
+        // Sixth pass: generate code - skip for now due to type mismatch
         // try self.base_codegen.generateProgram(program);
         
         // Final pass: apply optimizations
@@ -221,6 +250,654 @@ pub const AdvancedCodeGen = struct {
     pub fn printIR(self: *AdvancedCodeGen) void {
         self.base_codegen.printIR();
     }
+
+    /// Generate comprehensive pattern matching support
+    fn generatePatternMatchingSupport(self: *AdvancedCodeGen) CodeGenError!void {
+        // Generate pattern matching helper functions
+        try self.generatePatternMatchHelpers();
+        
+        // Generate pattern type checking functions
+        try self.generatePatternTypeCheckers();
+        
+        // Generate optimized switch dispatch tables
+        try self.generateSwitchDispatchTables();
+    }
+
+    /// Generate pattern matching helper functions
+    fn generatePatternMatchHelpers(self: *AdvancedCodeGen) CodeGenError!void {
+        // Generate string comparison helper for pattern matching
+        const string_compare_type = c.LLVMFunctionType(
+            c.LLVMInt1TypeInContext(self.base_codegen.context), // return bool
+            &[_]c.LLVMTypeRef{
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // str1
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // str2
+            },
+            2, // parameter count
+            0  // not variadic
+        );
+        
+        const string_compare_func = c.LLVMAddFunction(self.base_codegen.module, "pattern_string_compare", string_compare_type);
+        try self.base_codegen.functions.put("pattern_string_compare", string_compare_func);
+        
+        // Generate implementation
+        const entry_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, string_compare_func, "entry");
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, entry_block);
+        
+        const str1 = c.LLVMGetParam(string_compare_func, 0);
+        const str2 = c.LLVMGetParam(string_compare_func, 1);
+        
+        // Call strcmp and compare result to 0
+        const strcmp_func = self.base_codegen.functions.get("strcmp").?;
+        const strcmp_result = c.LLVMBuildCall2(
+            self.base_codegen.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(strcmp_func)),
+            strcmp_func,
+            &[_]c.LLVMValueRef{ str1, str2 },
+            2,
+            "strcmp_result"
+        );
+        
+        const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), 0, 0);
+        const is_equal = c.LLVMBuildICmp(self.base_codegen.builder, c.LLVMIntEQ, strcmp_result, zero, "is_equal");
+        _ = c.LLVMBuildRet(self.base_codegen.builder, is_equal);
+        
+        // Generate tuple destructuring helper
+        try self.generateTupleDestructuringHelper();
+        
+        // Generate array pattern matching helper
+        try self.generateArrayPatternHelper();
+    }
+
+    /// Generate tuple destructuring helper
+    fn generateTupleDestructuringHelper(self: *AdvancedCodeGen) CodeGenError!void {
+        // Generate tuple access function: get_tuple_element(tuple_ptr, index) -> element_ptr
+        const tuple_access_type = c.LLVMFunctionType(
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // return void*
+            &[_]c.LLVMTypeRef{
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // tuple_ptr
+                c.LLVMInt32TypeInContext(self.base_codegen.context), // index
+            },
+            2, // parameter count
+            0  // not variadic
+        );
+        
+        const tuple_access_func = c.LLVMAddFunction(self.base_codegen.module, "pattern_tuple_access", tuple_access_type);
+        try self.base_codegen.functions.put("pattern_tuple_access", tuple_access_func);
+        
+        // Implementation will be generated separately for each tuple type
+    }
+
+    /// Generate array pattern matching helper
+    fn generateArrayPatternHelper(self: *AdvancedCodeGen) CodeGenError!void {
+        // Generate array length check: check_array_length(array_ptr, expected_length) -> bool
+        const array_length_check_type = c.LLVMFunctionType(
+            c.LLVMInt1TypeInContext(self.base_codegen.context), // return bool
+            &[_]c.LLVMTypeRef{
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // array_ptr
+                c.LLVMInt32TypeInContext(self.base_codegen.context), // expected_length
+                c.LLVMInt1TypeInContext(self.base_codegen.context), // is_exact (false for >= check)
+            },
+            3, // parameter count
+            0  // not variadic
+        );
+        
+        const array_length_check_func = c.LLVMAddFunction(self.base_codegen.module, "pattern_array_length_check", array_length_check_type);
+        try self.base_codegen.functions.put("pattern_array_length_check", array_length_check_func);
+    }
+
+    /// Generate pattern type checking functions
+    fn generatePatternTypeCheckers(self: *AdvancedCodeGen) CodeGenError!void {
+        // Generate runtime type checking for patterns
+        const type_check_type = c.LLVMFunctionType(
+            c.LLVMInt1TypeInContext(self.base_codegen.context), // return bool
+            &[_]c.LLVMTypeRef{
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // value_ptr
+                c.LLVMInt32TypeInContext(self.base_codegen.context), // expected_type_id
+            },
+            2, // parameter count
+            0  // not variadic
+        );
+        
+        const type_check_func = c.LLVMAddFunction(self.base_codegen.module, "pattern_type_check", type_check_type);
+        try self.base_codegen.functions.put("pattern_type_check", type_check_func);
+        
+        // Generate implementation
+        const entry_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, type_check_func, "entry");
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, entry_block);
+        
+        const value_ptr = c.LLVMGetParam(type_check_func, 0);
+        const expected_type = c.LLVMGetParam(type_check_func, 1);
+        
+        // Extract type information from GC header
+        const header_ptr = c.LLVMBuildGEP2(
+            self.base_codegen.builder,
+            c.LLVMInt8TypeInContext(self.base_codegen.context),
+            value_ptr,
+            &[_]c.LLVMValueRef{c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), @as(u64, @intCast(-16)), 1)}, // -16 bytes for header
+            1,
+            "header_ptr"
+        );
+        
+        const type_id_ptr = c.LLVMBuildBitCast(
+            self.base_codegen.builder,
+            header_ptr,
+            c.LLVMPointerType(c.LLVMInt32TypeInContext(self.base_codegen.context), 0),
+            "type_id_ptr"
+        );
+        
+        const type_id_offset_ptr = c.LLVMBuildGEP2(
+            self.base_codegen.builder,
+            c.LLVMInt32TypeInContext(self.base_codegen.context),
+            type_id_ptr,
+            &[_]c.LLVMValueRef{c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), 1, 0)},
+            1,
+            "type_id_offset_ptr"
+        );
+        
+        const actual_type = c.LLVMBuildLoad2(self.base_codegen.builder, c.LLVMInt32TypeInContext(self.base_codegen.context), type_id_offset_ptr, "actual_type");
+        const types_match = c.LLVMBuildICmp(self.base_codegen.builder, c.LLVMIntEQ, actual_type, expected_type, "types_match");
+        _ = c.LLVMBuildRet(self.base_codegen.builder, types_match);
+    }
+
+    /// Generate optimized switch dispatch tables for literal patterns
+    fn generateSwitchDispatchTables(self: *AdvancedCodeGen) CodeGenError!void {
+        // Generate jump table creator for integer patterns
+        const jump_table_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(self.base_codegen.context), // return void
+            &[_]c.LLVMTypeRef{
+                c.LLVMInt64TypeInContext(self.base_codegen.context), // switch_value
+                c.LLVMPointerType(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), 0), // jump_table
+                c.LLVMInt32TypeInContext(self.base_codegen.context), // table_size
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // default_label
+            },
+            4, // parameter count
+            0  // not variadic
+        );
+        
+        const jump_table_func = c.LLVMAddFunction(self.base_codegen.module, "pattern_jump_table_dispatch", jump_table_type);
+        try self.base_codegen.functions.put("pattern_jump_table_dispatch", jump_table_func);
+    }
+
+    /// Generate CURSED vibe_check statement with optimized pattern matching
+    pub fn generateVibeCheckStatement(self: *AdvancedCodeGen, vibe_check: ast.VibeCheckStatement) CodeGenError!void {
+        const discriminant_value = try self.generateExpression(vibe_check.discriminant);
+        
+        const current_func = self.current_function.?;
+        const merge_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "vibe_check_merge");
+        const default_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "vibe_check_default");
+        
+        // Analyze patterns for optimization
+        const optimization_result = try self.analyzePatternOptimization(vibe_check.cases.items);
+        
+        if (optimization_result.use_jump_table) {
+            // Generate optimized jump table for literal patterns
+            try self.generateJumpTableDispatch(discriminant_value, vibe_check.cases.items, merge_block, default_block);
+        } else {
+            // Generate sequential pattern matching
+            try self.generateSequentialPatternMatching(discriminant_value, vibe_check.cases.items, merge_block, default_block);
+        }
+        
+        // Generate default case if present
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, default_block);
+        if (vibe_check.default_case) |default_case| {
+            for (default_case.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+        }
+        
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.base_codegen.builder)) == null) {
+            _ = c.LLVMBuildBr(self.base_codegen.builder, merge_block);
+        }
+        
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, merge_block);
+    }
+
+    /// Generate CURSED match expression
+    pub fn generateMatchExpression(self: *AdvancedCodeGen, match_expr: ast.MatchExpression) CodeGenError!c.LLVMValueRef {
+        const discriminant_value = try self.generateExpression(match_expr.discriminant);
+        
+        const current_func = self.current_function.?;
+        const merge_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "match_merge");
+        
+        // Create PHI node for result value
+        const result_type = try self.inferMatchResultType(match_expr.cases.items);
+        const result_phi = c.LLVMBuildPhi(self.base_codegen.builder, result_type, "match_result");
+        
+        // Generate pattern matching cases
+        var phi_values = ArrayList(c.LLVMValueRef).init(self.base_codegen.allocator);
+        var phi_blocks = ArrayList(c.LLVMBasicBlockRef).init(self.base_codegen.allocator);
+        defer phi_values.deinit();
+        defer phi_blocks.deinit();
+        
+        for (match_expr.cases.items) |case| {
+            const case_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "match_case");
+            const next_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "match_next");
+            
+            // Generate pattern check
+            const pattern_matches = try self.generatePatternCheck(discriminant_value, case.pattern, case_block, next_block);
+            _ = pattern_matches;
+            
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, case_block);
+            const case_result = try self.generateExpression(case.result);
+            try phi_values.append(case_result);
+            try phi_blocks.append(c.LLVMGetInsertBlock(self.base_codegen.builder));
+            
+            if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.base_codegen.builder)) == null) {
+                _ = c.LLVMBuildBr(self.base_codegen.builder, merge_block);
+            }
+            
+            c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, next_block);
+        }
+        
+        // Generate final merge
+        _ = c.LLVMBuildBr(self.base_codegen.builder, merge_block);
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, merge_block);
+        
+        // Set PHI incoming values
+        c.LLVMAddIncoming(result_phi, phi_values.items.ptr, phi_blocks.items.ptr, @as(u32, @intCast(phi_values.items.len)));
+        
+        return result_phi;
+    }
+
+    /// Analyze patterns for optimization opportunities
+    fn analyzePatternOptimization(self: *AdvancedCodeGen, cases: []const ast.VibeCheckCase) CodeGenError!PatternOptimizationResult {
+        _ = self;
+        var literal_count: usize = 0;
+        var complex_count: usize = 0;
+        
+        for (cases) |case| {
+            if (case.pattern) |pattern| {
+                switch (pattern) {
+                    .Literal => literal_count += 1,
+                    else => complex_count += 1,
+                }
+            }
+        }
+        
+        return PatternOptimizationResult{
+            .use_jump_table = literal_count >= 8 and complex_count == 0,
+            .literal_pattern_count = literal_count,
+            .complex_pattern_count = complex_count,
+        };
+    }
+
+    /// Generate optimized jump table dispatch
+    fn generateJumpTableDispatch(self: *AdvancedCodeGen, discriminant: c.LLVMValueRef, cases: []const ast.VibeCheckCase, merge_block: c.LLVMBasicBlockRef, default_block: c.LLVMBasicBlockRef) CodeGenError!void {
+        const current_func = self.current_function.?;
+        
+        // Create switch instruction with jump table optimization hint
+        const switch_inst = c.LLVMBuildSwitch(self.base_codegen.builder, discriminant, default_block, @as(u32, @intCast(cases.len)));
+        
+        for (cases) |case| {
+            if (case.pattern) |pattern| {
+                switch (pattern) {
+                    .Literal => |literal| {
+                        const case_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "jump_case");
+                        
+                        // Add case to switch
+                        const case_value = try self.generateLiteralValue(literal);
+                        c.LLVMAddCase(switch_inst, case_value, case_block);
+                        
+                        // Generate case body
+                        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, case_block);
+                        for (case.body.items) |stmt| {
+                            try self.generateStatement(stmt);
+                        }
+                        
+                        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.base_codegen.builder)) == null) {
+                            _ = c.LLVMBuildBr(self.base_codegen.builder, merge_block);
+                        }
+                    },
+                    else => return error.NonLiteralInJumpTable,
+                }
+            }
+        }
+    }
+
+    /// Generate sequential pattern matching for complex patterns
+    fn generateSequentialPatternMatching(self: *AdvancedCodeGen, discriminant: c.LLVMValueRef, cases: []const ast.VibeCheckCase, merge_block: c.LLVMBasicBlockRef, default_block: c.LLVMBasicBlockRef) CodeGenError!void {
+        const current_func = self.current_function.?;
+        var next_case_block = default_block;
+        
+        // Generate cases in reverse order
+        for (0..cases.len) |i| {
+            const case_index = cases.len - 1 - i;
+            const case = cases[case_index];
+            
+            const case_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "seq_case");
+            const current_next = next_case_block;
+            next_case_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "seq_next");
+            
+            // Generate pattern check
+            if (case.pattern) |pattern| {
+                _ = try self.generatePatternCheck(discriminant, pattern, case_block, current_next);
+            }
+            
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, case_block);
+            for (case.body.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+            
+            if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.base_codegen.builder)) == null) {
+                _ = c.LLVMBuildBr(self.base_codegen.builder, merge_block);
+            }
+        }
+        
+        // Jump to first case
+        _ = c.LLVMBuildBr(self.base_codegen.builder, next_case_block);
+    }
+
+    /// Generate pattern check for various pattern types
+    fn generatePatternCheck(self: *AdvancedCodeGen, value: c.LLVMValueRef, pattern: ast.Pattern, success_block: c.LLVMBasicBlockRef, fail_block: c.LLVMBasicBlockRef) CodeGenError!c.LLVMValueRef {
+        switch (pattern) {
+            .Literal => |literal| {
+                return try self.generateLiteralPatternCheck(value, literal, success_block, fail_block);
+            },
+            .Variable => |variable| {
+                return try self.generateVariablePatternCheck(value, variable, success_block);
+            },
+            .Wildcard => {
+                _ = c.LLVMBuildBr(self.base_codegen.builder, success_block);
+                return value;
+            },
+            .Tuple => |tuple_patterns| {
+                return try self.generateTuplePatternCheck(value, tuple_patterns.items, success_block, fail_block);
+            },
+            .Struct => |struct_pattern| {
+                return try self.generateStructPatternCheck(value, struct_pattern, success_block, fail_block);
+            },
+            .Array => |array_patterns| {
+                return try self.generateArrayPatternCheck(value, array_patterns.items, success_block, fail_block);
+            },
+        }
+    }
+
+    /// Generate literal pattern check with type-specific optimization
+    fn generateLiteralPatternCheck(self: *AdvancedCodeGen, value: c.LLVMValueRef, literal: ast.Literal, success_block: c.LLVMBasicBlockRef, fail_block: c.LLVMBasicBlockRef) CodeGenError!c.LLVMValueRef {
+        const literal_value = try self.generateLiteralValue(literal);
+        
+        switch (literal) {
+            .Integer => {
+                const comparison = c.LLVMBuildICmp(self.base_codegen.builder, c.LLVMIntEQ, value, literal_value, "int_eq");
+                _ = c.LLVMBuildCondBr(self.base_codegen.builder, comparison, success_block, fail_block);
+                return comparison;
+            },
+            .Float => {
+                const comparison = c.LLVMBuildFCmp(self.base_codegen.builder, c.LLVMRealOEQ, value, literal_value, "float_eq");
+                _ = c.LLVMBuildCondBr(self.base_codegen.builder, comparison, success_block, fail_block);
+                return comparison;
+            },
+            .String => {
+                // Use string comparison helper
+                const string_compare_func = self.base_codegen.functions.get("pattern_string_compare").?;
+                const comparison = c.LLVMBuildCall2(
+                    self.base_codegen.builder,
+                    c.LLVMGetReturnType(c.LLVMGlobalGetValueType(string_compare_func)),
+                    string_compare_func,
+                    &[_]c.LLVMValueRef{ value, literal_value },
+                    2,
+                    "string_eq"
+                );
+                _ = c.LLVMBuildCondBr(self.base_codegen.builder, comparison, success_block, fail_block);
+                return comparison;
+            },
+            .Boolean => {
+                const comparison = c.LLVMBuildICmp(self.base_codegen.builder, c.LLVMIntEQ, value, literal_value, "bool_eq");
+                _ = c.LLVMBuildCondBr(self.base_codegen.builder, comparison, success_block, fail_block);
+                return comparison;
+            },
+        }
+    }
+
+    /// Generate variable pattern check (always succeeds, binds variable)
+    fn generateVariablePatternCheck(self: *AdvancedCodeGen, value: c.LLVMValueRef, variable_name: []const u8, success_block: c.LLVMBasicBlockRef) CodeGenError!c.LLVMValueRef {
+        // Store binding in current scope
+        try self.base_codegen.variables.put(variable_name, value);
+        _ = c.LLVMBuildBr(self.base_codegen.builder, success_block);
+        return value;
+    }
+
+    /// Generate tuple pattern check with destructuring
+    fn generateTuplePatternCheck(self: *AdvancedCodeGen, value: c.LLVMValueRef, patterns: []const ast.Pattern, success_block: c.LLVMBasicBlockRef, fail_block: c.LLVMBasicBlockRef) CodeGenError!c.LLVMValueRef {
+        // Check tuple length first
+        const tuple_length = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), @as(u64, @intCast(patterns.len)), 0);
+        const length_check_func = self.base_codegen.functions.get("pattern_array_length_check").?;
+        const length_matches = c.LLVMBuildCall2(
+            self.base_codegen.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(length_check_func)),
+            length_check_func,
+            &[_]c.LLVMValueRef{ value, tuple_length, c.LLVMConstInt(c.LLVMInt1TypeInContext(self.base_codegen.context), 1, 0) },
+            3,
+            "tuple_length_check"
+        );
+        
+        const length_ok_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, self.current_function.?, "tuple_length_ok");
+        _ = c.LLVMBuildCondBr(self.base_codegen.builder, length_matches, length_ok_block, fail_block);
+        
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, length_ok_block);
+        
+        // Match each tuple element
+        for (patterns, 0..) |pattern, i| {
+            const element_index = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), @as(u64, @intCast(i)), 0);
+            const tuple_access_func = self.base_codegen.functions.get("pattern_tuple_access").?;
+            const element_ptr = c.LLVMBuildCall2(
+                self.base_codegen.builder,
+                c.LLVMGetReturnType(c.LLVMGlobalGetValueType(tuple_access_func)),
+                tuple_access_func,
+                &[_]c.LLVMValueRef{ value, element_index },
+                2,
+                "tuple_element"
+            );
+            
+            const element_success = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, self.current_function.?, "element_success");
+            _ = try self.generatePatternCheck(element_ptr, pattern, element_success, fail_block);
+            c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, element_success);
+        }
+        
+        _ = c.LLVMBuildBr(self.base_codegen.builder, success_block);
+        return value;
+    }
+
+    /// Generate struct pattern check with field matching
+    fn generateStructPatternCheck(self: *AdvancedCodeGen, value: c.LLVMValueRef, struct_pattern: ast.StructPattern, success_block: c.LLVMBasicBlockRef, fail_block: c.LLVMBasicBlockRef) CodeGenError!c.LLVMValueRef {
+        // Type check first
+        const struct_info = self.struct_types.get(struct_pattern.name) orelse return error.UnknownStructType;
+        const type_id = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), @as(u64, @intCast(struct_info.type_id)), 0);
+        
+        const type_check_func = self.base_codegen.functions.get("pattern_type_check").?;
+        const type_matches = c.LLVMBuildCall2(
+            self.base_codegen.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(type_check_func)),
+            type_check_func,
+            &[_]c.LLVMValueRef{ value, type_id },
+            2,
+            "struct_type_check"
+        );
+        
+        const type_ok_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, self.current_function.?, "struct_type_ok");
+        _ = c.LLVMBuildCondBr(self.base_codegen.builder, type_matches, type_ok_block, fail_block);
+        
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, type_ok_block);
+        
+        // Match each field
+        for (struct_pattern.fields.items) |field_pattern| {
+            const field_index = self.getFieldIndex(struct_info, field_pattern.name) orelse return error.UnknownField;
+            const field_ptr = c.LLVMBuildStructGEP2(
+                self.base_codegen.builder,
+                struct_info.llvm_type.?,
+                value,
+                @as(u32, @intCast(field_index)),
+                "field_ptr"
+            );
+            
+            const field_success = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, self.current_function.?, "field_success");
+            _ = try self.generatePatternCheck(field_ptr, field_pattern.pattern, field_success, fail_block);
+            c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, field_success);
+        }
+        
+        _ = c.LLVMBuildBr(self.base_codegen.builder, success_block);
+        return value;
+    }
+
+    /// Generate array pattern check with rest elements support
+    fn generateArrayPatternCheck(self: *AdvancedCodeGen, value: c.LLVMValueRef, patterns: []const ast.Pattern, success_block: c.LLVMBasicBlockRef, fail_block: c.LLVMBasicBlockRef) CodeGenError!c.LLVMValueRef {
+        // Check array length
+        const required_length = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), @as(u64, @intCast(patterns.len)), 0);
+        const length_check_func = self.base_codegen.functions.get("pattern_array_length_check").?;
+        const length_matches = c.LLVMBuildCall2(
+            self.base_codegen.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(length_check_func)),
+            length_check_func,
+            &[_]c.LLVMValueRef{ value, required_length, c.LLVMConstInt(c.LLVMInt1TypeInContext(self.base_codegen.context), 1, 0) },
+            3,
+            "array_length_check"
+        );
+        
+        const length_ok_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, self.current_function.?, "array_length_ok");
+        _ = c.LLVMBuildCondBr(self.base_codegen.builder, length_matches, length_ok_block, fail_block);
+        
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, length_ok_block);
+        
+        // Match each array element
+        for (patterns, 0..) |pattern, i| {
+            const element_index = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), @as(u64, @intCast(i)), 0);
+            const element_ptr = c.LLVMBuildGEP2(
+                self.base_codegen.builder,
+                c.LLVMInt8TypeInContext(self.base_codegen.context),
+                value,
+                &[_]c.LLVMValueRef{element_index},
+                1,
+                "array_element"
+            );
+            
+            const element_success = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, self.current_function.?, "element_success");
+            _ = try self.generatePatternCheck(element_ptr, pattern, element_success, fail_block);
+            c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, element_success);
+        }
+        
+        _ = c.LLVMBuildBr(self.base_codegen.builder, success_block);
+        return value;
+    }
+
+    /// Helper functions for pattern matching
+    
+    const PatternOptimizationResult = struct {
+        use_jump_table: bool,
+        literal_pattern_count: usize,
+        complex_pattern_count: usize,
+    };
+
+    /// Helper to generate literal values for pattern matching
+    fn generateLiteralValue(self: *AdvancedCodeGen, literal: ast.Literal) CodeGenError!c.LLVMValueRef {
+        switch (literal) {
+            .Integer => |int_val| {
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.base_codegen.context), @as(u64, @bitCast(int_val)), 0);
+            },
+            .Float => |float_val| {
+                return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.base_codegen.context), float_val);
+            },
+            .String => |str_val| {
+                // Create global string constant
+                const string_type = c.LLVMArrayType(c.LLVMInt8TypeInContext(self.base_codegen.context), @as(u32, @intCast(str_val.len + 1)));
+                const string_global = c.LLVMAddGlobal(self.base_codegen.module, string_type, "str_const");
+                const string_init = c.LLVMConstStringInContext(self.base_codegen.context, str_val.ptr, @as(u32, @intCast(str_val.len)), 0);
+                c.LLVMSetInitializer(string_global, string_init);
+                c.LLVMSetLinkage(string_global, c.LLVMPrivateLinkage);
+                
+                // Return pointer to first element
+                const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), 0, 0);
+                return c.LLVMConstGEP2(string_type, string_global, &[_]c.LLVMValueRef{ zero, zero }, 2);
+            },
+            .Boolean => |bool_val| {
+                const bool_int = if (bool_val) @as(u64, 1) else @as(u64, 0);
+                return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.base_codegen.context), bool_int, 0);
+            },
+        }
+    }
+
+    /// Helper to infer match result type from cases
+    fn inferMatchResultType(self: *AdvancedCodeGen, cases: []const ast.MatchCase) CodeGenError!c.LLVMTypeRef {
+        _ = self;
+        _ = cases;
+        // For now, return i64 as default - should be properly inferred from case expressions
+        return c.LLVMInt64TypeInContext(self.base_codegen.context);
+    }
+
+    /// Helper to get field index in struct
+    fn getFieldIndex(self: *AdvancedCodeGen, struct_info: StructTypeInfo, field_name: []const u8) ?usize {
+        _ = self;
+        for (struct_info.field_names, 0..) |name, index| {
+            if (std.mem.eql(u8, name, field_name)) {
+                return index;
+            }
+        }
+        return null;
+    }
+
+    /// Helper to access base codegen functions
+    fn generateExpression(self: *AdvancedCodeGen, expr: ast.Expression) CodeGenError!c.LLVMValueRef {
+        // This should delegate to the base codegen's expression generation
+        // For now, return a placeholder
+        _ = self;
+        _ = expr;
+        return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.base_codegen.context), 0, 0);
+    }
+
+    fn generateStatement(self: *AdvancedCodeGen, stmt: ast.Statement) CodeGenError!void {
+        // This should delegate to the base codegen's statement generation
+        _ = self;
+        _ = stmt;
+    }
+
+    // Required additional type info fields that were referenced
+    const StructTypeInfo = struct {
+        name: []const u8,
+        field_types: []c.LLVMTypeRef,
+        field_names: [][]const u8,
+        llvm_type: ?c.LLVMTypeRef,
+        methods: ArrayList(MethodInfo),
+        is_generic: bool,
+        type_parameters: ArrayList([]const u8),
+        type_id: u32, // Added for pattern matching type checks
+    };
+
+    const InterfaceTypeInfo = struct {
+        name: []const u8,
+        methods: ArrayList(InterfaceMethodInfo),
+        vtable_type: ?c.LLVMTypeRef,
+        vtable_global: ?c.LLVMValueRef,
+        type_id: u32,
+    };
+
+    const InterfaceMethodInfo = struct {
+        name: []const u8,
+        signature: MethodSignature,
+        vtable_index: usize,
+    };
+
+    const MethodInfo = struct {
+        name: []const u8,
+        signature: MethodSignature,
+        llvm_function: ?c.LLVMValueRef,
+    };
+
+    const GenericInstance = struct {
+        name: []const u8,
+        type_args: ArrayList(Type),
+        instantiated_type: c.LLVMTypeRef,
+    };
+
+    const VTableInfo = struct {
+        interface_name: []const u8,
+        implementing_type: []const u8,
+        vtable_global: c.LLVMValueRef,
+        method_functions: ArrayList(c.LLVMValueRef),
+    };
+
+    // Required field to track current function
+    current_function: ?c.LLVMValueRef = null,
 
     /// Initialize memory management system
     fn initializeMemoryManagement(self: *AdvancedCodeGen) CodeGenError!void {
@@ -484,6 +1161,21 @@ pub const AdvancedCodeGen = struct {
                 continue;
             }
             
+            // Register interface with dispatcher
+            var method_signatures = ArrayList(interface_dispatch.MethodSignature).init(self.base_codegen.allocator);
+            defer method_signatures.deinit();
+            
+            for (interface_info.methods.items) |method| {
+                const signature = interface_dispatch.MethodSignature{
+                    .name = method.name,
+                    .parameter_types = &[_][]const u8{}, // TODO: Add proper type conversion
+                    .return_type = "void", // TODO: Add proper return type
+                };
+                try method_signatures.append(signature);
+            }
+            
+            try self.interface_dispatcher.registerInterface(interface_info.name, method_signatures.items);
+            
             // For each struct that implements this interface
             var struct_iterator = self.struct_types.iterator();
             while (struct_iterator.next()) |struct_entry| {
@@ -491,15 +1183,34 @@ pub const AdvancedCodeGen = struct {
                 
                 if (self.structImplementsInterface(struct_info, interface_info)) {
                     try self.generateVTableForImplementation(struct_info, interface_info);
+                    try self.registerStructImplementation(struct_info, interface_info);
                 }
             }
         }
     }
+    
+    /// Register struct implementation with interface dispatcher
+    fn registerStructImplementation(self: *AdvancedCodeGen, struct_info: *StructTypeInfo, interface_info: *InterfaceTypeInfo) CodeGenError!void {
+        var method_impls = ArrayList(interface_dispatch.MethodImpl).init(self.base_codegen.allocator);
+        defer method_impls.deinit();
+        
+        for (interface_info.methods.items) |interface_method| {
+            // Find corresponding method in struct
+            for (struct_info.methods.items) |struct_method| {
+                if (std.mem.eql(u8, interface_method.name, struct_method.name)) {
+                    // TODO: Create proper FunctionValue from struct method
+                    // This is a placeholder - real implementation would convert LLVM function to FunctionValue
+                    break;
+                }
+            }
+        }
+        
+        // TODO: Register implementation with interface dispatcher
+        // try self.interface_dispatcher.registerImplementation(struct_info.name, interface_info.name, method_impls.items);
+    }
 
     /// Check if a struct implements an interface
     fn structImplementsInterface(self: *AdvancedCodeGen, struct_info: *StructTypeInfo, interface_info: *InterfaceTypeInfo) bool {
-        _ = self;
-        
         // For each method in the interface
         for (interface_info.methods.items) |interface_method| {
             var found = false;
@@ -508,7 +1219,7 @@ pub const AdvancedCodeGen = struct {
             for (struct_info.methods.items) |struct_method| {
                 if (std.mem.eql(u8, interface_method.name, struct_method.name)) {
                     // Check function signature compatibility
-                    if (try self.compareMethodSignatures(interface_method, struct_method)) {
+                    if (self.compareMethodSignatures(interface_method.signature, struct_method.signature) catch false) {
                         found = true;
                         break;
                     }
@@ -592,25 +1303,24 @@ pub const AdvancedCodeGen = struct {
     }
 
     /// Process generic instantiations
-    fn processGenericInstantiations(self: *AdvancedCodeGen) CodeGenError!void {
-        // Process any pending generic instantiations
-        var instantiation_iterator = self.generic_instances.iterator();
-        while (instantiation_iterator.next()) |entry| {
-            const instance = entry.value_ptr;
-            
-            // Generate LLVM type for this specific instantiation
-            var instantiated_name = ArrayList(u8).init(self.base_codegen.allocator);
-            defer instantiated_name.deinit();
-            
-            try instantiated_name.appendSlice(instance.base_name);
-            for (instance.type_arguments) |type_arg| {
-                try instantiated_name.appendSlice("_");
-                try instantiated_name.appendSlice(type_arg);
-            }
-            
-            // Create specialized version
-            try self.generateSpecializedType(instance.base_name, instance.type_arguments, instantiated_name.items);
-        }
+    /// Register generic declaration with monomorphizer
+    pub fn registerGeneric(self: *AdvancedCodeGen, name: []const u8, declaration: generics.GenericDeclaration) !void {
+        try self.monomorphizer.registerGeneric(declaration);
+    }
+    
+    /// Request generic instantiation  
+    pub fn requestGenericInstantiation(self: *AdvancedCodeGen, generic_name: []const u8, type_arguments: []ast.Type, usage_location: []const u8) ![]const u8 {
+        return try self.monomorphizer.requestInstantiation(generic_name, type_arguments, usage_location);
+    }
+    
+    /// Get instantiated function
+    pub fn getInstantiatedFunction(self: *AdvancedCodeGen, specialized_name: []const u8) ?c.LLVMValueRef {
+        return self.monomorphizer.getInstantiatedFunction(specialized_name);
+    }
+    
+    /// Get instantiated type
+    pub fn getInstantiatedType(self: *AdvancedCodeGen, specialized_name: []const u8) ?c.LLVMTypeRef {
+        return self.monomorphizer.getInstantiatedType(specialized_name);
     }
 
     /// Generate specialized version of generic type
@@ -796,42 +1506,40 @@ pub const AdvancedCodeGen = struct {
             if (found) break;
         }
         
+        if (!found) {
+            return CodeGenError.UndefinedSymbol;
+        }
+        
         // Get method function pointer from vtable
-        const func_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0);
+        const func_ptr_type = c.LLVMPointerType(
+            c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(self.base_codegen.context), // return type (placeholder)
+                null, // parameters (placeholder)
+                0, // parameter count
+                0  // not variadic
+            ),
+            0
+        );
+        
         const method_ptr_ptr = c.LLVMBuildGEP2(
             self.base_codegen.builder,
-            func_ptr_type,
+            c.LLVMArrayType(func_ptr_type, 100), // vtable type (placeholder size)
             vtable_ptr,
-            &[_]c.LLVMValueRef{c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), method_index, 0)},
+            &[_]c.LLVMValueRef{
+                c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), method_index, 0)
+            },
             1,
             "method_ptr_ptr"
         );
         
-        const method_func = c.LLVMBuildLoad2(
+        const method_ptr = c.LLVMBuildLoad2(
             self.base_codegen.builder,
             func_ptr_type,
             method_ptr_ptr,
-            "method_func"
+            "method_ptr"
         );
         
-        // Create function type for the method call
-        // First parameter is always the self pointer (data_ptr)
-        var param_types = ArrayList(c.LLVMTypeRef).init(self.base_codegen.allocator);
-        defer param_types.deinit();
-        
-        try param_types.append(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0)); // self
-        for (args) |arg| {
-            try param_types.append(c.LLVMTypeOf(arg));
-        }
-        
-        const func_type = c.LLVMFunctionType(
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // return type (generic)
-            param_types.items.ptr,
-            @as(u32, @intCast(param_types.items.len)),
-            0
-        );
-        
-        // Build argument list including self pointer
+        // Prepare arguments (data pointer + original args)
         var call_args = ArrayList(c.LLVMValueRef).init(self.base_codegen.allocator);
         defer call_args.deinit();
         
@@ -840,15 +1548,22 @@ pub const AdvancedCodeGen = struct {
             try call_args.append(arg);
         }
         
-        // Call the method
-        return c.LLVMBuildCall2(
+        // Call the method through function pointer
+        const result = c.LLVMBuildCall2(
             self.base_codegen.builder,
-            func_type,
-            method_func,
+            c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(self.base_codegen.context), // return type (placeholder)
+                null, // parameters (placeholder) 
+                0, // parameter count
+                0  // not variadic
+            ),
+            method_ptr,
             call_args.items.ptr,
             @as(u32, @intCast(call_args.items.len)),
-            "method_call"
+            "interface_method_call"
         );
+        
+        return result;
     }
 
     /// Apply advanced optimization passes
@@ -1235,7 +1950,6 @@ const GenericInstance = struct {
     }
     
     fn typesAreEqual(self: *AdvancedCodeGen, type1: Type, type2: Type) CodeGenError!bool {
-        _ = self; // Parameter used for future extensions
         
         // Handle basic type comparisons
         switch (type1) {
@@ -1281,7 +1995,6 @@ const GenericInstance = struct {
             .Pointer => |ptr1| {
                 switch (type2) {
                     .Pointer => |ptr2| {
-                        if (ptr1.is_mutable != ptr2.is_mutable) return false;
                         return try self.typesAreEqual(ptr1.target_type.*, ptr2.target_type.*);
                     },
                     else => return false,
@@ -1292,7 +2005,6 @@ const GenericInstance = struct {
                     .Function => |func2| {
                         // Compare parameter counts
                         if (func1.parameters.items.len != func2.parameters.items.len) return false;
-                        if (func1.is_variadic != func2.is_variadic) return false;
                         
                         // Compare parameter types
                         for (func1.parameters.items, func2.parameters.items) |param1, param2| {
@@ -1371,7 +2083,7 @@ const GenericInstance = struct {
         
         for (interface_info.methods.items) |method| {
             if (std.mem.eql(u8, method.name, method_name)) {
-                return method;
+                return method.signature;
             }
         }
         
@@ -1422,7 +2134,6 @@ const GenericInstance = struct {
     
     // Convert LLVM type back to CURSED Type (utility function)
     fn llvmTypeToType(self: *AdvancedCodeGen, llvm_type: c.LLVMTypeRef) CodeGenError!Type {
-        _ = self; // Parameter for future extensions
         
         const type_kind = c.LLVMGetTypeKind(llvm_type);
         
@@ -1444,7 +2155,6 @@ const GenericInstance = struct {
                 const void_type = Type{ .Basic = .Normie };
                 const ptr_type = PointerType{
                     .target_type = self.base_codegen.allocator.create(Type) catch return CodeGenError.OutOfMemory,
-                    .is_mutable = true,
                 };
                 ptr_type.target_type.* = void_type;
                 return Type{ .Pointer = ptr_type };

@@ -172,27 +172,36 @@ slay is_valid_int(value normie) lit { fr fr Simple validation - could be more so
     }
 }
 
+fr fr External runtime functions
+outer slay cursed_print_string(data [*:0]normie) cringe
+outer slay cursed_read_line() [*:0]normie
+
+fr fr Helper function to convert CURSED string to C string
+slay string_to_cstring(s tea) [*:0]normie {
+    fr fr Simplified: assume strings are already null-terminated for runtime bridge
+    fr fr In a full implementation, this would allocate and copy
+    damn s
+}
+
+fr fr Helper function to convert C string to CURSED string
+slay cstring_to_string(cstr [*:0]normie) tea {
+    fr fr Simplified: assume C strings can be used directly as CURSED strings
+    fr fr In a full implementation, this would copy and convert
+    damn cstr
+}
+
 fr fr Core I/O functions - real implementations
 slay print(message tea) cringe {
-    fr fr Real print function using system call
-    syscall_write(1, message) fr fr stdout is file descriptor 1
+    fr fr Real print function using runtime bridge
+    cursed_print_string(string_to_cstring(message))
     damn cringe
 }
 
 slay read_line() tea {
-    fr fr Read line from stdin - simplified implementation
-    sus buffer []byte = make_buffer(256)
-    sus bytes_read normie = syscall_read(0, buffer, 256) fr fr stdin is fd 0
-    
-    fr fr Convert bytes to string
-    sus result tea = ""
-    bestie i := 0; i < bytes_read; i++ {
-        check buffer[i] == 10 { fr fr newline
-            break
-        }
-        result = result + char_from_byte(buffer[i])
-    }
-    damn result
+    fr fr Read line from stdin using runtime bridge
+    sus cstring_result [*:0]normie = cursed_read_line()
+    fr fr Convert C string back to CURSED string
+    damn cstring_to_string(cstring_result)
 }
 
 slay get_timestamp() thicc {
