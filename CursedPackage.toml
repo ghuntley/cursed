@@ -1,10 +1,4 @@
-name = "test-project"
+name = "new-cursed-package"
 version = "0.1.0"
-description = "A CURSED package"
+description = "A new CURSED package"
 authors = ["Your Name <your.email@example.com>"]
-keywords = []
-categories = []
-
-[dependencies]
-
-[dev_dependencies]

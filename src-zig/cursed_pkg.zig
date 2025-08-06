@@ -2,9 +2,7 @@
 // Standalone executable for package management operations
 
 const std = @import("std");
-const package_manager = @import("tools/package_manager_enhanced.zig");
-const production_manager = @import("tools/package_manager_production.zig");
-const build_integration = @import("build_integration.zig");
+const tools = @import("tools");
 
 const Command = enum {
     init,
@@ -182,7 +180,7 @@ fn cmdList(allocator: std.mem.Allocator, args: CliArgs) !void {
     std.debug.print("Installed packages:\n", .{});
     
     // Load manifest to get dependencies
-    var manifest = package_manager.PackageManifest.loadFromToml(allocator, "CursedPackage.toml") catch |err| switch (err) {
+    var manifest = tools.package_manager.PackageManifest.loadFromToml(allocator, "CursedPackage.toml") catch |err| switch (err) {
         error.FileNotFound => {
             std.debug.print("No CursedPackage.toml found in current directory\n", .{});
             return;
@@ -272,12 +270,8 @@ fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
         }
     }
     
-    // Initialize production package manager
-    production_manager.commands.init(allocator);
-    defer production_manager.commands.deinit();
-    
     switch (args.command) {
-        .init => try production_manager.commands.initProduction(allocator, args.packages),
+        .init => try tools.package_manager.commands.init(allocator, args.packages),
         .add => {
             // Handle package@version syntax
             if (args.packages.len > 0) {
@@ -287,18 +281,18 @@ fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
                     const version = pkg_spec[at_pos + 1 ..];
                     
                     var add_args_array = [_][]const u8{ pkg_name, version };
-                    try production_manager.commands.addProduction(allocator, add_args_array[0..]);
+                    try tools.package_manager.commands.add(allocator, add_args_array[0..]);
                     return;
                 }
             }
             
-            try production_manager.commands.addProduction(allocator, args.packages);
+            try tools.package_manager.commands.add(allocator, args.packages);
         },
-        .remove => try package_manager.commands.remove(allocator, args.packages),
-        .install => try package_manager.commands.install(allocator, args.packages),
-        .update => try production_manager.commands.updateProduction(allocator, args.packages),
-        .search => try package_manager.commands.search(allocator, args.packages),
-        .publish => try package_manager.commands.publish(allocator, args.packages),
+        .remove => try tools.package_manager.commands.remove(allocator, args.packages),
+        .install => try tools.package_manager.commands.install(allocator, args.packages),
+        .update => try tools.package_manager.commands.update(allocator, args.packages),
+        .search => try tools.package_manager.commands.search(allocator, args.packages),
+        .publish => try tools.package_manager.commands.publish(allocator, args.packages),
         .info => try cmdInfo(allocator, args),
         .list => try cmdList(allocator, args),
         .clean => try cmdClean(allocator, args),

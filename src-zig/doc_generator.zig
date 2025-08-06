@@ -6,10 +6,10 @@ const ArrayList = std.ArrayList;
 const HashMap = std.HashMap;
 const Allocator = std.mem.Allocator;
 
-// Import CURSED compiler components
-const lexer = @import("../lexer.zig");
-const parser = @import("../parser.zig");
-const ast = @import("../ast.zig");
+// Import CURSED compiler components using direct file imports
+const lexer = @import("lexer.zig");
+const parser = @import("parser.zig");
+const ast = @import("ast.zig");
 
 // Documentation Types
 pub const DocType = enum {
@@ -194,16 +194,14 @@ pub const DocGenerator = struct {
     fn extractDocumentation(self: *DocGenerator, file_path: []const u8, source: []const u8, module: *ModuleDoc) !void {
         // Tokenize source
         var token_lexer = lexer.Lexer.init(self.allocator, source);
-        defer token_lexer.deinit();
         
         const tokens = try token_lexer.tokenize();
         defer tokens.deinit();
         
         // Parse tokens
         var cursed_parser = parser.Parser.init(self.allocator, tokens.items);
-        defer cursed_parser.deinit();
         
-        const ast_tree = cursed_parser.parse() catch |err| {
+        const ast_tree = cursed_parser.parseProgram() catch |err| {
             std.log.warn("Failed to parse {s}: {}", .{ file_path, err });
             return;
         };
@@ -217,50 +215,51 @@ pub const DocGenerator = struct {
         // This would be a full AST traversal to find functions, structs, etc.
         
         // Example: Extract function documentation
-        for (ast_tree.nodes.items) |node| {
-            switch (node) {
-                .FunctionDeclaration => |func| {
-                    var doc_item = DocItem{
+        for (ast_tree.statements.items) |stmt_ptr| {
+            const statement: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            switch (statement.*) {
+                .Function => |func| {
+                    const doc_item = DocItem{
                         .name = try self.allocator.dupe(u8, func.name),
                         .type = .Function,
                         .signature = try self.buildFunctionSignature(func),
                         .file = try self.allocator.dupe(u8, file_path),
-                        .line = func.line,
+                        .line = 0, // TODO: Add source location tracking
                         .visibility = .Public,
                         .comment = DocComment.init(self.allocator),
                     };
                     
                     // Extract documentation comment
-                    try self.extractDocComment(&doc_item.comment, func.doc_comment);
+                    // TODO: Extract from func.comments if available
                     
                     try module.items.append(doc_item);
                 },
-                .StructDeclaration => |structure| {
-                    var doc_item = DocItem{
+                .Struct => |structure| {
+                    const doc_item = DocItem{
                         .name = try self.allocator.dupe(u8, structure.name),
                         .type = .Struct,
                         .signature = try self.buildStructSignature(structure),
                         .file = try self.allocator.dupe(u8, file_path),
-                        .line = structure.line,
+                        .line = 0, // TODO: Add source location tracking
                         .visibility = .Public,
                         .comment = DocComment.init(self.allocator),
                     };
                     
-                    try self.extractDocComment(&doc_item.comment, structure.doc_comment);
+                    // TODO: Extract from structure.comments if available
                     try module.items.append(doc_item);
                 },
-                .InterfaceDeclaration => |interface| {
-                    var doc_item = DocItem{
+                .Interface => |interface| {
+                    const doc_item = DocItem{
                         .name = try self.allocator.dupe(u8, interface.name),
                         .type = .Interface,
                         .signature = try self.buildInterfaceSignature(interface),
                         .file = try self.allocator.dupe(u8, file_path),
-                        .line = interface.line,
+                        .line = 0, // TODO: Add source location tracking
                         .visibility = .Public,
                         .comment = DocComment.init(self.allocator),
                     };
                     
-                    try self.extractDocComment(&doc_item.comment, interface.doc_comment);
+                    // TODO: Extract from interface.comments if available
                     try module.items.append(doc_item);
                 },
                 else => {},
@@ -340,7 +339,7 @@ pub const DocGenerator = struct {
         });
     }
     
-    fn buildFunctionSignature(self: *DocGenerator, func: ast.FunctionDeclaration) ![]const u8 {
+    fn buildFunctionSignature(self: *DocGenerator, func: ast.FunctionStatement) ![]const u8 {
         var signature = ArrayList(u8).init(self.allocator);
         defer signature.deinit();
         
@@ -348,24 +347,25 @@ pub const DocGenerator = struct {
         try signature.appendSlice(func.name);
         try signature.append('(');
         
-        for (func.parameters, 0..) |param, i| {
+        for (func.parameters.items, 0..) |param, i| {
             if (i > 0) try signature.appendSlice(", ");
             try signature.appendSlice(param.name);
             try signature.append(' ');
-            try signature.appendSlice(param.type);
+            // Note: param_type is a Type union, need to convert to string
+            try signature.appendSlice("Type"); // Placeholder for now
         }
         
         try signature.append(')');
         
-        if (func.return_type) |return_type| {
+        if (func.return_type) |_| {
             try signature.append(' ');
-            try signature.appendSlice(return_type);
+            try signature.appendSlice("ReturnType"); // Placeholder for now
         }
         
         return try signature.toOwnedSlice();
     }
     
-    fn buildStructSignature(self: *DocGenerator, structure: ast.StructDeclaration) ![]const u8 {
+    fn buildStructSignature(self: *DocGenerator, structure: ast.StructStatement) ![]const u8 {
         var signature = ArrayList(u8).init(self.allocator);
         defer signature.deinit();
         
@@ -375,7 +375,7 @@ pub const DocGenerator = struct {
         return try signature.toOwnedSlice();
     }
     
-    fn buildInterfaceSignature(self: *DocGenerator, interface: ast.InterfaceDeclaration) ![]const u8 {
+    fn buildInterfaceSignature(self: *DocGenerator, interface: ast.InterfaceStatement) ![]const u8 {
         var signature = ArrayList(u8).init(self.allocator);
         defer signature.deinit();
         

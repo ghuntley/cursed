@@ -468,23 +468,283 @@ fn executeFormat(allocator: Allocator, config: Config) !void {
 }
 
 fn executeTest(allocator: Allocator, config: Config) !void {
+    // Use arena allocator for better memory management in tests
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    const arena_allocator = arena.allocator();
+    
     if (config.verbose) {
         print("🧪 Running tests\n", .{});
     }
     
     if (config.source_file) |filename| {
         // Test specific file
-        try executeInterpret(allocator, Config{
-            .command = .interpret,
-            .backend = .script,
-            .source_file = filename,
-            .verbose = config.verbose,
-            .debug_mode = config.debug_mode,
-        });
+        if (config.verbose) {
+            print("🔍 Running single test file: {s}\n", .{filename});
+        }
+        
+        const result = runSingleTest(arena_allocator, filename, config.verbose, config.debug_mode);
+        if (result) |test_result| {
+            if (test_result.success) {
+                print("✅ Test file passed: {s}\n", .{filename});
+                if (config.verbose) {
+                    print("   Passed: {d} | Failed: {d} | Duration: {d}ms\n", .{ test_result.passed, test_result.failed, test_result.duration_ms });
+                }
+            } else {
+                print("❌ Test file failed: {s}\n", .{filename});
+                print("   Passed: {d} | Failed: {d} | Duration: {d}ms\n", .{ test_result.passed, test_result.failed, test_result.duration_ms });
+                if (test_result.error_message) |msg| {
+                    print("   Error: {s}\n", .{msg});
+                }
+                return error.TestFailed;
+            }
+        } else |err| {
+            print("❌ Error running test file {s}: {any}\n", .{ filename, err });
+            return err;
+        }
     } else {
         // Run test suite
-        print("❌ Test suite not yet implemented\n", .{});
-        return error.NotImplemented;
+        try runTestSuite(arena_allocator, config.verbose, config.debug_mode);
+    }
+}
+
+const TestResult = struct {
+    filename: []const u8,
+    passed: u32,
+    failed: u32,
+    duration_ms: u64,
+    success: bool,
+    error_message: ?[]const u8 = null,
+};
+
+fn runSingleTest(allocator: Allocator, filename: []const u8, verbose: bool, debug_mode: bool) !TestResult {
+    const start_time = std.time.milliTimestamp();
+    
+    if (verbose) {
+        print("   📄 Reading file: {s}\n", .{filename});
+    }
+    
+    // Read test file with better error handling
+    const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
+        const err_msg = switch (err) {
+            error.FileNotFound => "File not found",
+            error.AccessDenied => "Access denied", 
+            error.IsDir => "Is a directory",
+            else => "Failed to open file",
+        };
+        return TestResult{
+            .filename = filename,
+            .passed = 0,
+            .failed = 1,
+            .duration_ms = 0,
+            .success = false,
+            .error_message = err_msg,
+        };
+    };
+    defer file.close();
+    
+    const content = file.readToEndAlloc(allocator, 2 * 1024 * 1024) catch |err| { // Increased buffer size
+        const err_msg = switch (err) {
+            error.OutOfMemory => "Out of memory reading file",
+            error.InputOutput => "I/O error reading file",
+            else => "Failed to read file content",
+        };
+        return TestResult{
+            .filename = filename,
+            .passed = 0,
+            .failed = 1,
+            .duration_ms = 0,
+            .success = false,
+            .error_message = err_msg,
+        };
+    };
+    defer allocator.free(content);
+    
+    if (verbose) {
+        print("   🚀 Executing test ({} bytes)\n", .{content.len});
+    }
+    
+    // Execute the test by calling the interpreter directly
+    const interpret_config = Config{
+        .command = .interpret,
+        .backend = .script,
+        .source_file = filename,
+        .verbose = verbose and debug_mode, // Only show verbose output in debug mode
+        .debug_mode = debug_mode,
+    };
+    
+    // Try to execute the test with error capture
+    executeInterpret(allocator, interpret_config) catch {
+        return TestResult{
+            .filename = filename,
+            .passed = 0,
+            .failed = 1,
+            .duration_ms = @as(u64, @intCast(std.time.milliTimestamp() - start_time)),
+            .success = false,
+            .error_message = "Execution failed",
+        };
+    };
+    
+    const end_time = std.time.milliTimestamp();
+    const duration = @as(u64, @intCast(end_time - start_time));
+    
+    if (verbose) {
+        print("   ✨ Test execution completed in {d}ms\n", .{duration});
+    }
+    
+    // Parse test results from output (simplified - successful execution means test passed)
+    // In a more sophisticated implementation, this would parse testz framework output
+    const success = true; // If we got here, the test executed successfully
+    const passed: u32 = if (success) 1 else 0;
+    const failed: u32 = if (success) 0 else 1;
+    
+    return TestResult{
+        .filename = filename,
+        .passed = passed,
+        .failed = failed,
+        .duration_ms = duration,
+        .success = success,
+        .error_message = null,
+    };
+}
+
+fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
+    if (verbose) {
+        print("🔍 Discovering test files...\n", .{});
+    }
+    
+    // Discover test files using arena allocator (all memory cleaned up automatically)
+    var test_files = std.ArrayList([]const u8).init(allocator);
+    defer test_files.deinit();
+    
+    try discoverTestFiles(allocator, &test_files, "tests");
+    
+    if (test_files.items.len == 0) {
+        print("⚠️ No test files found in tests/ directory\n", .{});
+        return;
+    }
+    
+    if (verbose) {
+        print("📁 Found {d} test files\n", .{test_files.items.len});
+    }
+    
+    // Run all tests
+    var total_passed: u32 = 0;
+    var total_failed: u32 = 0;
+    var total_duration: u64 = 0;
+    var failed_tests = std.ArrayList([]const u8).init(allocator);
+    defer failed_tests.deinit();
+    
+    const suite_start_time = std.time.milliTimestamp();
+    
+    print("\n🧪 Running test suite...\n", .{});
+    print("═══════════════════════════════════\n", .{});
+    
+    for (test_files.items) |test_file| {
+        // Truncate long paths for cleaner output
+        const display_name = if (std.mem.lastIndexOf(u8, test_file, "/")) |idx| 
+            test_file[idx + 1..] 
+        else 
+            test_file;
+            
+        if (verbose) {
+            print("🔄 Running: {s}\n", .{display_name});
+        } else {
+            // Limit test name width to prevent output wrapping
+            const max_width = 50;
+            if (display_name.len > max_width) {
+                print("🔄 ...{s} ... ", .{display_name[display_name.len - max_width + 3..]});
+            } else {
+                print("🔄 {s:<50} ", .{display_name});
+            }
+        }
+        
+        const result = runSingleTest(allocator, test_file, verbose, debug_mode) catch |err| {
+            print("❌ ERROR ({any})\n", .{err});
+            total_failed += 1;
+            try failed_tests.append(test_file);
+            continue;
+        };
+        
+        total_passed += result.passed;
+        total_failed += result.failed;
+        total_duration += result.duration_ms;
+        
+        if (result.success) {
+            if (verbose) {
+                print("   ✅ PASS ({d}ms)\n", .{result.duration_ms});
+            } else {
+                print("✅ PASS\n", .{});
+            }
+        } else {
+            if (verbose) {
+                print("   ❌ FAIL ({d}ms)\n", .{result.duration_ms});
+                if (result.error_message) |msg| {
+                    print("      Error: {s}\n", .{msg});
+                }
+            } else {
+                print("❌ FAIL\n", .{});
+            }
+            try failed_tests.append(test_file);
+        }
+    }
+    
+    const suite_end_time = std.time.milliTimestamp();
+    const suite_duration = suite_end_time - suite_start_time;
+    
+    // Print summary
+    print("\n📊 Test Suite Summary\n", .{});
+    print("═══════════════════════════════════\n", .{});
+    print("Total tests:     {d}\n", .{test_files.items.len});
+    print("Passed:          {d} ✅\n", .{total_passed});
+    print("Failed:          {d} ❌\n", .{total_failed});
+    print("Success rate:    {d:.1}%\n", .{@as(f64, @floatFromInt(total_passed)) / @as(f64, @floatFromInt(test_files.items.len)) * 100.0});
+    print("Total duration:  {d}ms\n", .{suite_duration});
+    
+    if (failed_tests.items.len > 0) {
+        print("\n❌ Failed tests:\n", .{});
+        for (failed_tests.items) |failed_test| {
+            print("   • {s}\n", .{failed_test});
+        }
+        print("\n", .{});
+        return error.TestSuiteFailed;
+    } else {
+        print("\n🎉 All tests passed!\n\n", .{});
+    }
+}
+
+fn discoverTestFiles(allocator: Allocator, test_files: *std.ArrayList([]const u8), dir_path: []const u8) !void {
+    var dir = std.fs.cwd().openDir(dir_path, .{ .iterate = true }) catch |err| {
+        // If tests directory doesn't exist, that's okay
+        if (err == error.FileNotFound) {
+            return;
+        }
+        return err;
+    };
+    defer dir.close();
+    
+    var iterator = dir.iterate();
+    while (try iterator.next()) |entry| {
+        const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir_path, entry.name });
+        
+        switch (entry.kind) {
+            .file => {
+                // Check if it's a .csd file
+                if (std.mem.endsWith(u8, entry.name, ".csd")) {
+                    try test_files.append(full_path);
+                } else {
+                    allocator.free(full_path);
+                }
+            },
+            .directory => {
+                // Recursively search subdirectories
+                try discoverTestFiles(allocator, test_files, full_path);
+                allocator.free(full_path);
+            },
+            else => {
+                allocator.free(full_path);
+            },
+        }
     }
 }
 
@@ -617,8 +877,47 @@ fn interpretScript(allocator: Allocator, source: []const u8, config: Config) !vo
 }
 
 fn compileWithLLVM(allocator: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
-    // Use existing simple_compiler for LLVM compilation
-    try simple_compiler.compileProgramWithOutput(allocator, source, filename, config.output_file, config.optimization_level, config.verbose);
+    if (config.verbose) {
+        print("🚀 Using LLVM backend (enhanced) for compilation\n", .{});
+    }
+    
+    // Try using enhanced compiler if it compiles, fall back to simple_compiler
+    // Import the enhanced compiler with real LLVM backend
+    const enhanced_compiler = @import("enhanced_compiler.zig");
+    
+    // Determine output file
+    const output_file = if (config.output_file) |custom_output| 
+        custom_output
+    else if (std.mem.endsWith(u8, filename, ".csd"))
+        try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
+    else
+        try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});
+    defer if (config.output_file == null) allocator.free(output_file);
+    
+    if (config.verbose) {
+        print("📝 Compiling {s} to {s} with LLVM IR generation\n", .{ filename, output_file });
+    }
+    
+    // Use enhanced compiler for LLVM IR generation
+    const compiler_config = enhanced_compiler.CompilerConfig{
+        .backend = enhanced_compiler.CompilationBackend.LLVM_Backend,
+        .optimization_level = config.optimization_level,
+        .output_path = output_file,
+        .verbose = config.verbose,
+    };
+    
+    enhanced_compiler.compileProgram(allocator, source, filename, compiler_config) catch |err| {
+        print("❌ LLVM compilation failed: {any}\n", .{err});
+        print("🔄 Falling back to simple C transpilation...\n", .{});
+        return simple_compiler.compileProgramWithOutput(allocator, source, filename, config.output_file, config.optimization_level, config.verbose);
+    };
+    
+    if (config.verbose) {
+        print("✅ LLVM compilation successful!\n", .{});
+    }
+    
+    print("📦 Output executable: {s}\n", .{output_file});
+    print("🚀 Run with: ./{s}\n", .{output_file});
 }
 
 fn compileWithC(allocator: Allocator, source: []const u8, filename: []const u8, config: Config) !void {

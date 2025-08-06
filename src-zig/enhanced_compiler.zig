@@ -22,6 +22,11 @@ const VariableInfo = struct {
     var_type: []const u8, // "drip", "tea", "lit", "meal"
 };
 
+const LLVMVariableInfo = struct {
+    llvm_type: []const u8,
+    var_name: []const u8,
+};
+
 /// Compile CURSED source code to native executable using specified backend
 pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []const u8, config: CompilerConfig) !void {
     if (config.verbose) print("🔥 Compiling CURSED program to native executable...\n", .{});
@@ -124,22 +129,11 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     print("🚀 Run with: ./{s}\n", .{output_filename});
 }
 
-/// LLVM Backend compilation (new implementation)
+/// LLVM Backend compilation (proper LLVM IR generation)
 fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, config: CompilerConfig) !void {
-    // Step 1: Lexical Analysis
-    print("[1/6] Lexical Analysis...\n", .{});
-    var l = lexer.Lexer.init(allocator, source);
-    const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error during compilation: {}\n", .{err});
-        return;
-    };
-    defer tokens.deinit();
+    print("[1/4] Generating LLVM IR...\n", .{});
     
-    if (config.verbose) print("📝 Lexed {} tokens for LLVM compilation\n", .{tokens.items.len});
-    
-    // Step 2: Generate LLVM IR
-    print("[2/6] Generating LLVM IR...\n", .{});
-    
+    // Generate LLVM IR using text-based approach
     const ir_filename = try std.fmt.allocPrint(allocator, "{s}.ll", .{filename[0..filename.len - 4]});
     defer allocator.free(ir_filename);
     
@@ -151,25 +145,13 @@ fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []co
     
     const writer = ir_file.writer();
     
-    // Step 3: Enhanced CURSED-to-LLVM IR translation
-    print("[3/6] Translating CURSED to LLVM IR...\n", .{});
-    try generateLLVMHeader(writer);
-    try translateCursedToLLVM(allocator, source, writer, config.verbose);
-    try generateLLVMFooter(writer);
+    print("[2/4] Translating CURSED to LLVM IR...\n", .{});
+    try generateProperLLVMIR(allocator, source, writer, config.verbose);
     
     if (config.verbose) print("✅ Generated LLVM IR: {s}\n", .{ir_filename});
     
-    // Step 4: Optimize LLVM IR if requested
-    if (config.optimization_level > 0) {
-        print("[4/6] Optimizing LLVM IR...\n", .{});
-        try optimizeLLVMIR(allocator, ir_filename, config.optimization_level, config.verbose);
-    } else {
-        print("[4/6] Skipping optimization (O0)...\n", .{});
-    }
-    
-    // Step 5: Compile LLVM IR to executable
-    print("[5/6] Compiling LLVM IR to executable...\n", .{});
-    
+    // Step 3: Determine output filename
+    print("[3/4] Compiling to native executable...\n", .{});
     const output_filename = config.output_path orelse blk: {
         if (std.mem.endsWith(u8, filename, ".csd"))
             break :blk try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
@@ -178,84 +160,115 @@ fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []co
     };
     defer if (config.output_path == null) allocator.free(output_filename);
     
-    // Try clang first, fall back to converting IR to C
-    var use_fallback = false;
-    var child = std.process.Child.init(&[_][]const u8{ 
-        "clang", "-o", output_filename, ir_filename 
+    // Step 4: Compile LLVM IR to native executable using llc + gcc
+    // First try to compile LLVM IR to assembly using llc, then assemble with gcc
+    const asm_filename = try std.fmt.allocPrint(allocator, "{s}.s", .{filename[0..filename.len - 4]});
+    defer allocator.free(asm_filename);
+    
+    // Try llc first
+    var llc_child = std.process.Child.init(&[_][]const u8{
+        "llc-18",
+        "-o", asm_filename,
+        ir_filename,
     }, allocator);
-    child.stdout_behavior = .Pipe;
-    child.stderr_behavior = .Pipe;
     
-    child.spawn() catch |err| {
-        if (config.verbose) print("⚠️  clang not available, using fallback: {}\n", .{err});
-        use_fallback = true;
-    };
+    llc_child.stdout_behavior = .Pipe;
+    llc_child.stderr_behavior = .Pipe;
     
-    if (!use_fallback) {
-        if (child.wait()) |result| {
-            switch (result) {
-                .Exited => |code| {
-                    if (code != 0) {
-                        if (config.verbose) print("⚠️  clang failed with exit code {}, using fallback\n", .{code});
-                        use_fallback = true;
-                    }
-                },
-                else => {
-                    if (config.verbose) print("⚠️  clang terminated abnormally, using fallback\n", .{});
-                    use_fallback = true;
-                },
-            }
-        } else |err| {
-            if (config.verbose) print("⚠️  clang failed, using fallback: {}\n", .{err});
-            use_fallback = true;
-        }
-    }
-    
-    // Fallback: convert LLVM IR to C and compile with GCC
-    if (use_fallback) {
-        if (config.verbose) print("🔄 Converting LLVM IR to C and compiling with GCC...\n", .{});
+    const llc_result = llc_child.spawnAndWait() catch {
+        // llc not available, try gcc directly with LLVM IR
+        if (config.verbose) print("⚠️  llc not available, trying gcc directly with LLVM IR...\n", .{});
         
-        const c_filename = try std.fmt.allocPrint(allocator, "{s}.c", .{filename[0..filename.len - 4]});
-        defer allocator.free(c_filename);
-        
-        try convertLLVMIRToC(allocator, ir_filename, c_filename);
-        
-        var gcc_child = std.process.Child.init(&[_][]const u8{ 
-            "gcc", "-o", output_filename, c_filename 
+        var child = std.process.Child.init(&[_][]const u8{
+            "gcc",
+            "-o", output_filename,
+            ir_filename,
+            "-lm",
         }, allocator);
-        gcc_child.stdout_behavior = .Pipe;
-        gcc_child.stderr_behavior = .Pipe;
         
-        gcc_child.spawn() catch |err| {
-            print("❌ Error spawning GCC for LLVM fallback: {}\n", .{err});
+        child.stdout_behavior = .Pipe;
+        child.stderr_behavior = .Pipe;
+        
+        const result = child.spawnAndWait() catch |err| {
+            print("❌ Failed to spawn gcc: {}\n", .{err});
+            print("💡 Neither llc nor gcc can process LLVM IR\n", .{});
+            print("💡 You may need to install clang or llvm-tools\n", .{});
             return;
         };
         
-        const gcc_result = gcc_child.wait() catch |err| {
-            print("❌ Error waiting for GCC in LLVM fallback: {}\n", .{err});
-            return;
-        };
-        
-        switch (gcc_result) {
+        switch (result) {
             .Exited => |code| {
                 if (code != 0) {
-                    print("❌ GCC compilation failed with exit code: {}\n", .{code});
+                    print("❌ gcc compilation failed with exit code: {}\n", .{code});
+                    print("💡 Check LLVM IR file for errors: {s}\n", .{ir_filename});
+                    // Don't return yet, let user examine the IR
+                    print("📝 Generated LLVM IR file: {s}\n", .{ir_filename});
                     return;
                 }
             },
             else => {
-                print("❌ GCC compilation process terminated abnormally\n", .{});
+                print("❌ gcc process terminated abnormally\n", .{});
                 return;
             },
         }
         
-        // Cleanup intermediate C file
-        std.fs.cwd().deleteFile(c_filename) catch {};
+        // Success with gcc directly
+        std.fs.cwd().deleteFile(ir_filename) catch {};
+        print("✅ LLVM compilation successful!\n", .{});
+        print("📦 Output executable: {s}\n", .{output_filename});
+        print("🚀 Run with: ./{s}\n", .{output_filename});
+        return;
+    };
+    
+    // Handle llc compilation result
+    switch (llc_result) {
+        .Exited => |code| {
+            if (code != 0) {
+                print("❌ llc compilation failed with exit code: {}\n", .{code});
+                print("💡 Check LLVM IR file for errors: {s}\n", .{ir_filename});
+                return;
+            }
+        },
+        else => {
+            print("❌ llc process terminated abnormally\n", .{});
+            return;
+        },
     }
     
-    // Step 6: Cleanup
-    print("[6/6] Cleanup...\n", .{});
+    // Now assemble with gcc
+    var child = std.process.Child.init(&[_][]const u8{
+        "gcc",
+        "-no-pie",  // Disable PIE to avoid relocation issues
+        "-o", output_filename,
+        asm_filename,
+        "-lm",
+    }, allocator);
+    
+    child.stdout_behavior = .Pipe;
+    child.stderr_behavior = .Pipe;
+    
+    const result = child.spawnAndWait() catch |err| {
+        print("❌ Failed to spawn gcc for assembly: {}\n", .{err});
+        return;
+    };
+    
+    switch (result) {
+        .Exited => |code| {
+            if (code != 0) {
+                print("❌ gcc assembly compilation failed with exit code: {}\n", .{code});
+                print("💡 Check assembly file for errors: {s}\n", .{asm_filename});
+                return;
+            }
+        },
+        else => {
+            print("❌ gcc process terminated abnormally\n", .{});
+            return;
+        },
+    }
+    
+    // Cleanup temporary files
     std.fs.cwd().deleteFile(ir_filename) catch {};
+    std.fs.cwd().deleteFile(asm_filename) catch {};
     
     print("✅ LLVM compilation successful!\n", .{});
     print("📦 Output executable: {s}\n", .{output_filename});
@@ -627,6 +640,219 @@ fn optimizeLLVMIR(allocator: Allocator, ir_filename: []const u8, optimization_le
             std.fs.cwd().deleteFile(optimized_filename) catch {};
         },
     }
+}
+
+/// Generate proper LLVM IR using text-based approach (avoids LLVM C API linking issues)
+fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool) !void {
+    // Target and basic module setup
+    try writer.writeAll("; Generated LLVM IR for CURSED program\n");
+    try writer.writeAll("target triple = \"x86_64-pc-linux-gnu\"\n");
+    try writer.writeAll("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n\n");
+    
+    // External function declarations
+    try writer.writeAll("declare i32 @printf(i8*, ...)\n");
+    try writer.writeAll("declare i32 @puts(i8*)\n\n");
+    
+    // Collect string literals for global constants
+    var string_literals = std.ArrayList([]const u8).init(allocator);
+    defer {
+        for (string_literals.items) |str| {
+            allocator.free(str);
+        }
+        string_literals.deinit();
+    }
+    
+    try collectStringLiteralsForLLVM(source, &string_literals, allocator);
+    
+    // Generate global string constants
+    for (string_literals.items, 0..) |str_content, i| {
+        try writer.print("@.str.{} = private unnamed_addr constant [{} x i8] c\"{s}\\00\", align 1\n", 
+            .{ i, str_content.len + 1, str_content });
+    }
+    
+    // Format strings for various types
+    try writer.writeAll("@.int_fmt = private unnamed_addr constant [6 x i8] c\"%lld\\0A\\00\", align 1\n");
+    try writer.writeAll("@.float_fmt = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1\n");
+    try writer.writeAll("@.bool_true = private unnamed_addr constant [6 x i8] c\"based\\00\", align 1\n");
+    try writer.writeAll("@.bool_false = private unnamed_addr constant [7 x i8] c\"cringe\\00\", align 1\n\n");
+    
+    // Main function
+    try writer.writeAll("define i32 @main() {\n");
+    try writer.writeAll("entry:\n");
+    
+    // Parse and generate code from source
+    try generateLLVMStatementsFromSource(allocator, source, writer, &string_literals, verbose);
+    
+    // Return 0 from main
+    try writer.writeAll("  ret i32 0\n");
+    try writer.writeAll("}\n");
+}
+
+fn collectStringLiteralsForLLVM(source: []const u8, string_literals: *std.ArrayList([]const u8), allocator: Allocator) !void {
+    var lines = std.mem.splitScalar(u8, source, '\n');
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r\n");
+        
+        // Look for vibez.spill() with string literals
+        if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
+            if (std.mem.indexOf(u8, trimmed[start..], "(")) |paren_start| {
+                if (std.mem.lastIndexOf(u8, trimmed, ")")) |paren_end| {
+                    const content_start = start + paren_start + 1;
+                    const content = trimmed[content_start..paren_end];
+                    
+                    if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
+                        const string_content = content[1..content.len - 1];
+                        const string_copy = try allocator.dupe(u8, string_content);
+                        try string_literals.append(string_copy);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, writer: anytype, string_literals: *std.ArrayList([]const u8), verbose: bool) !void {
+    var variable_counter: u32 = 0;
+    var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    defer variables.deinit();
+    
+    var lines = std.mem.splitScalar(u8, source, '\n');
+    
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r\n");
+        
+        // Skip empty lines and comments
+        if (trimmed.len == 0 or std.mem.startsWith(u8, trimmed, "fr fr")) {
+            continue;
+        }
+        
+        // Skip imports
+        if (std.mem.startsWith(u8, trimmed, "yeet ")) {
+            continue;
+        }
+        
+        // Handle vibez.spill() statements
+        if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |_| {
+            try generateLLVMVibesSpill(trimmed, writer, string_literals, &variables, &variable_counter, verbose);
+        }
+        
+        // Handle variable declarations
+        if (std.mem.startsWith(u8, trimmed, "sus ")) {
+            try generateLLVMVariableDeclaration(trimmed, writer, &variables, &variable_counter, verbose);
+        }
+    }
+}
+
+fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *std.ArrayList([]const u8), variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), variable_counter: *u32, verbose: bool) !void {
+    if (std.mem.indexOf(u8, line, "vibez.spill(")) |start| {
+        if (std.mem.indexOf(u8, line[start..], "(")) |paren_start| {
+            if (std.mem.lastIndexOf(u8, line, ")")) |paren_end| {
+                const content_start = start + paren_start + 1;
+                const content = line[content_start..paren_end];
+                
+                if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
+                    // String literal
+                    const string_content = content[1..content.len - 1];
+                    
+                    // Find the string in our global constants
+                    var string_index: ?usize = null;
+                    for (string_literals.items, 0..) |str_const, i| {
+                        if (std.mem.eql(u8, str_const, string_content)) {
+                            string_index = i;
+                            break;
+                        }
+                    }
+                    
+                    if (string_index) |index| {
+                        if (verbose) try writer.print("  ; String literal: {s}\n", .{string_content});
+                        try writer.print("  %str_ptr.{} = getelementptr [{} x i8], [{} x i8]* @.str.{}, i32 0, i32 0\n", 
+                            .{ variable_counter.*, string_content.len + 1, string_content.len + 1, index });
+                        try writer.print("  call i32 @puts(i8* %str_ptr.{})\n", .{variable_counter.*});
+                        variable_counter.* += 1;
+                    }
+                } else {
+                    // Variable or numeric literal
+                    if (std.fmt.parseInt(i64, content, 10) catch null) |num| {
+                        // Integer literal
+                        if (verbose) try writer.print("  ; Integer literal: {}\n", .{num});
+                        try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                        try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 {})\n", .{ variable_counter.*, num });
+                        variable_counter.* += 1;
+                    } else if (std.fmt.parseFloat(f64, content) catch null) |num| {
+                        // Float literal  
+                        if (verbose) try writer.print("  ; Float literal: {}\n", .{num});
+                        try writer.print("  %fmt_ptr.{} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                        try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double {})\n", .{ variable_counter.*, num });
+                        variable_counter.* += 1;
+                    } else {
+                        // Variable reference
+                        if (variables.get(content)) |var_info| {
+                            if (verbose) try writer.print("  ; Variable: {s}\n", .{content});
+                            
+                            if (std.mem.eql(u8, var_info.llvm_type, "i64")) {
+                                try writer.print("  %loaded.{} = load i64, i64* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
+                                try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
+                            } else if (std.mem.eql(u8, var_info.llvm_type, "i1")) {
+                                try writer.print("  %loaded.{} = load i1, i1* %{s}, align 1\n", .{ variable_counter.*, var_info.var_name });
+                                try writer.print("  %select.{} = select i1 %loaded.{}, i8* getelementptr ([6 x i8], [6 x i8]* @.bool_true, i32 0, i32 0), i8* getelementptr ([7 x i8], [7 x i8]* @.bool_false, i32 0, i32 0)\n", .{ variable_counter.*, variable_counter.* });
+                                try writer.print("  call i32 @puts(i8* %select.{})\n", .{variable_counter.*});
+                            } else if (std.mem.eql(u8, var_info.llvm_type, "double")) {
+                                try writer.print("  %loaded.{} = load double, double* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
+                                try writer.print("  %fmt_ptr.{} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
+                            }
+                            variable_counter.* += 1;
+                        } else {
+                            if (verbose) try writer.print("  ; Unknown variable: {s}\n", .{content});
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), variable_counter: *u32, verbose: bool) !void {
+    var parts = std.mem.tokenizeScalar(u8, line, ' ');
+    _ = parts.next(); // skip "sus"
+    
+    const var_name = parts.next() orelse return;
+    const var_type = parts.next() orelse return;
+    const equals = parts.next() orelse return;
+    
+    if (!std.mem.eql(u8, equals, "=")) return;
+    
+    const value_str = parts.rest();
+    
+    if (verbose) try writer.print("  ; Variable: {s} {s} = {s}\n", .{ var_name, var_type, value_str });
+    
+    if (std.mem.eql(u8, var_type, "drip")) {
+        // Integer type
+        try writer.print("  %{s} = alloca i64, align 8\n", .{var_name});
+        if (std.fmt.parseInt(i64, value_str, 10) catch null) |num| {
+            try writer.print("  store i64 {}, i64* %{s}, align 8\n", .{ num, var_name });
+        } else {
+            try writer.print("  store i64 0, i64* %{s}, align 8\n", .{var_name});
+        }
+        try variables.put(var_name, .{ .llvm_type = "i64", .var_name = var_name });
+    } else if (std.mem.eql(u8, var_type, "lit")) {
+        // Boolean type
+        try writer.print("  %{s} = alloca i1, align 1\n", .{var_name});
+        const bool_value = if (std.mem.eql(u8, std.mem.trim(u8, value_str, " \t"), "based")) "true" else "false";
+        try writer.print("  store i1 {s}, i1* %{s}, align 1\n", .{ bool_value, var_name });
+        try variables.put(var_name, .{ .llvm_type = "i1", .var_name = var_name });
+    } else if (std.mem.eql(u8, var_type, "meal")) {
+        // Float type
+        try writer.print("  %{s} = alloca double, align 8\n", .{var_name});
+        if (std.fmt.parseFloat(f64, value_str) catch null) |num| {
+            try writer.print("  store double {}, double* %{s}, align 8\n", .{ num, var_name });
+        } else {
+            try writer.print("  store double 0.0, double* %{s}, align 8\n", .{var_name});
+        }
+        try variables.put(var_name, .{ .llvm_type = "double", .var_name = var_name });
+    }
+    variable_counter.* += 1;
 }
 
 /// Convert simple LLVM IR back to C code (fallback for when clang is not available)
