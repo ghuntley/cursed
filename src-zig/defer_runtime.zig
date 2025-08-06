@@ -76,8 +76,19 @@ pub fn executeAll() void {
         const entry = global_defer_stack[defer_stack_count];
         
         std.debug.print("Executing defer function\n");
-        entry.cleanup_func();
+        
+        // Execute cleanup function with error protection
+        entry.cleanup_func() catch |err| {
+            std.debug.print("Error in defer cleanup function: {}\n", .{err});
+            // Continue executing other defer functions even if one fails
+        };
     }
+}
+
+/// Execute defer functions during error unwinding
+pub fn executeOnError() void {
+    std.debug.print("Executing defer functions due to error unwinding\n");
+    executeAll();
 }
 
 /// Execute defer functions up to a specific count (for scoped cleanup)

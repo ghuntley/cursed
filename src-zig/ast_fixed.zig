@@ -311,13 +311,36 @@ pub const StructType = struct {
 
 pub const GenericType = struct {
     name: []const u8,
-    constraints: ArrayList(Type),
+    type_arguments: ArrayList(Type),
+    constraints: ArrayList(TypeConstraint),
 
     pub fn deinit(self: *GenericType, allocator: Allocator) void {
+        for (self.type_arguments.items) |*type_arg| {
+            type_arg.deinit(allocator);
+        }
+        self.type_arguments.deinit();
+        
         for (self.constraints.items) |*constraint| {
             constraint.deinit(allocator);
         }
         self.constraints.deinit();
+    }
+};
+
+/// Type constraints for generic parameters
+pub const TypeConstraint = union(enum) {
+    Interface: []const u8,
+    Trait: []const u8,
+    Numeric: void,
+    Comparable: void,
+    Ordered: void,
+    Sized: void,
+    Any: void,
+    
+    pub fn deinit(self: *TypeConstraint, allocator: Allocator) void {
+        _ = self;
+        _ = allocator;
+        // No cleanup needed for simple constraints
     }
 };
 
@@ -818,6 +841,40 @@ pub const TestResultCheckExpression = struct {
     pub fn deinit(self: *TestResultCheckExpression, allocator: Allocator) void {
         ast_types.expressionCast(self.expression).deinit(allocator);
         allocator.destroy(ast_types.expressionCast(self.expression));
+    }
+};
+
+// Additional declarations for generics support
+pub const InterfaceDeclaration = struct {
+    name: []const u8,
+    methods: ArrayList(InterfaceMethod),
+    type_parameters: ArrayList(TypeParameter),
+
+    pub fn deinit(self: *InterfaceDeclaration, allocator: Allocator) void {
+        for (self.methods.items) |*method| {
+            method.deinit(allocator);
+        }
+        self.methods.deinit();
+        for (self.type_parameters.items) |*param| {
+            param.deinit(allocator);
+        }
+        self.type_parameters.deinit();
+    }
+};
+
+pub const InterfaceMethod = struct {
+    name: []const u8,
+    parameters: ArrayList(Parameter),
+    return_type: ?Type,
+
+    pub fn deinit(self: *InterfaceMethod, allocator: Allocator) void {
+        for (self.parameters.items) |*param| {
+            param.param_type.deinit(allocator);
+        }
+        self.parameters.deinit();
+        if (self.return_type) |*ret_type| {
+            ret_type.deinit(allocator);
+        }
     }
 };
 

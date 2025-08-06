@@ -1268,9 +1268,16 @@ base_codegen: FinalWorkingCodeGen,
     }
 
     fn generateStatement(self: *AdvancedCodeGen, stmt: ast.Statement) CodeGenError!void {
-        // This should delegate to the base codegen's statement generation
-        _ = self;
-        _ = stmt;
+        switch (stmt) {
+            .Select => {
+                const select_stmt: *ast.SelectStatement = @ptrCast(@alignCast(stmt.data));
+                try self.generateAdvancedSelect(select_stmt.*);
+            },
+            else => {
+                // Delegate other statements to base codegen
+                try self.base_codegen.generateStatement(stmt);
+            },
+        }
     }
 
     // Required additional type info fields that were referenced
@@ -2493,19 +2500,120 @@ base_codegen: FinalWorkingCodeGen,
         return try self.base_codegen.generateGoroutineExpression(goroutine);
     }
     
-    /// Advanced error propagation
+    /// Advanced error propagation with stack trace capture
     fn generateAdvancedShook(self: *AdvancedCodeGen, shook: ast.ShookExpression) CodeGenError!c.LLVMValueRef {
-        return try self.base_codegen.generateShook(shook);
+        // Enhanced SHOOK with stack trace capture and context preservation
+        const error_codegen = @import("error_codegen_integration.zig");
+        var err_gen = error_codegen.ErrorCodeGen.init(
+            self.base_codegen.context,
+            self.base_codegen.module,
+            self.base_codegen.builder,
+            self.allocator
+        );
+        err_gen.setupRuntimeFunctions();
+        
+        // Generate the expression that might fail
+        const expr_value = try self.base_codegen.generateExpression(shook.expression);
+        
+        // Generate enhanced error propagation with stack trace
+        return err_gen.generateShook(expr_value);
     }
     
-    /// Advanced error creation
+    /// Advanced error creation with stack traces and context
     fn generateAdvancedYikes(self: *AdvancedCodeGen, yikes: ast.YikesExpression) CodeGenError!c.LLVMValueRef {
-        return try self.base_codegen.generateYikes(yikes);
+        const error_codegen = @import("error_codegen_integration.zig");
+        var err_gen = error_codegen.ErrorCodeGen.init(
+            self.base_codegen.context,
+            self.base_codegen.module,
+            self.base_codegen.builder,
+            self.allocator
+        );
+        err_gen.setupRuntimeFunctions();
+        
+        // Get error message
+        const message = if (yikes.message) |msg_expr| blk: {
+            const msg_value = try self.base_codegen.generateExpression(msg_expr);
+            // TODO: Extract string from LLVM value
+            break :blk "dynamic message";
+        } else "unknown error";
+        
+        // Get error code  
+        const code = if (yikes.code) |code_expr| blk: {
+            const code_value = try self.base_codegen.generateExpression(code_expr);
+            // TODO: Extract integer from LLVM value
+            break :blk 500;
+        } else 0;
+        
+        // Generate enhanced error with stack trace and source location
+        return err_gen.generateYikes(
+            message,
+            code,
+            0, // Runtime error type
+            self.base_codegen.current_file orelse "unknown",
+            self.base_codegen.current_line,
+            self.base_codegen.current_column
+        );
     }
     
-    /// Advanced panic recovery
+    /// Advanced panic recovery with defer integration
     fn generateAdvancedFam(self: *AdvancedCodeGen, fam: ast.FamExpression) CodeGenError!c.LLVMValueRef {
-        return try self.base_codegen.generateFam(fam);
+        const error_codegen = @import("error_codegen_integration.zig");
+        var err_gen = error_codegen.ErrorCodeGen.init(
+            self.base_codegen.context,
+            self.base_codegen.module,
+            self.base_codegen.builder,
+            self.allocator
+        );
+        err_gen.setupRuntimeFunctions();
+        
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.base_codegen.builder));
+        
+        // Create basic blocks for fam construct
+        const try_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "fam_try");
+        const catch_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "fam_catch");
+        const finally_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "fam_finally");
+        
+        // Position builder at try block
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, try_block);
+        
+        // Generate try body
+        if (fam.try_body) |try_body| {
+            for (try_body.items) |stmt| {
+                _ = try self.base_codegen.generateStatement(stmt);
+            }
+        }
+        
+        // Jump to finally block on success
+        _ = c.LLVMBuildBr(self.base_codegen.builder, finally_block);
+        
+        // Position builder at catch block
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, catch_block);
+        
+        // Generate catch body  
+        if (fam.catch_body) |catch_body| {
+            for (catch_body.items) |stmt| {
+                _ = try self.base_codegen.generateStatement(stmt);
+            }
+        }
+        
+        // Jump to finally block
+        _ = c.LLVMBuildBr(self.base_codegen.builder, finally_block);
+        
+        // Position builder at finally block
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, finally_block);
+        
+        // Generate cleanup code (execute defers)
+        err_gen.generateCleanup();
+        
+        // Generate finally body
+        if (fam.finally_body) |finally_body| {
+            for (finally_body.items) |stmt| {
+                _ = try self.base_codegen.generateStatement(stmt);
+            }
+        }
+        
+        // Generate complete fam construct
+        return err_gen.generateFam(try_block, catch_block, finally_block);
     }
     
     /// Advanced lambda compilation
@@ -2761,6 +2869,339 @@ base_codegen: FinalWorkingCodeGen,
     fn generateInterfaceMethodAccess(self: *AdvancedCodeGen, interface_ptr: c.LLVMValueRef, method_name: []const u8) CodeGenError!c.LLVMValueRef {
         _ = method_name;
         return interface_ptr; // TODO: Implement interface method access
+    }
+
+    /// Advanced select statement generation for CSP-style concurrency
+    fn generateAdvancedSelect(self: *AdvancedCodeGen, select_stmt: ast.SelectStatement) CodeGenError!void {
+        const current_func = self.base_codegen.current_function.?;
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        
+        // Generate runtime function declarations if not already done
+        try self.ensureSelectRuntimeFunctions();
+        
+        // Create select context for managing operations
+        const select_context_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0);
+        const select_begin_func = self.base_codegen.runtime_functions.get("cursed_select_begin").?;
+        const case_count = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(select_stmt.cases.items.len)), 0);
+        
+        const select_context = c.LLVMBuildCall2(
+            builder,
+            select_context_type,
+            select_begin_func,
+            &[_]c.LLVMValueRef{case_count},
+            1,
+            "select_ctx"
+        );
+
+        // Create operation descriptors for each case
+        var operation_values = std.ArrayList(c.LLVMValueRef).init(self.base_codegen.allocator);
+        defer operation_values.deinit();
+        
+        for (select_stmt.cases.items, 0..) |case_item, i| {
+            const case_index = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
+            
+            // Determine operation type and register channel
+            if (case_item.channel) |channel_expr| {
+                const channel_value = try self.base_codegen.generateExpression(channel_expr);
+                
+                // Add send operation
+                if (case_item.send_value) |send_value_expr| {
+                    const send_value = try self.base_codegen.generateExpression(send_value_expr);
+                    const add_send_func = self.base_codegen.runtime_functions.get("cursed_select_add_send").?;
+                    
+                    _ = c.LLVMBuildCall2(
+                        builder,
+                        c.LLVMVoidTypeInContext(context),
+                        add_send_func,
+                        &[_]c.LLVMValueRef{ select_context, channel_value, send_value, case_index },
+                        4,
+                        ""
+                    );
+                } else {
+                    // Add receive operation
+                    const add_recv_func = self.base_codegen.runtime_functions.get("cursed_select_add_recv").?;
+                    
+                    _ = c.LLVMBuildCall2(
+                        builder,
+                        c.LLVMVoidTypeInContext(context),
+                        add_recv_func,
+                        &[_]c.LLVMValueRef{ select_context, channel_value, case_index },
+                        3,
+                        ""
+                    );
+                }
+            } else {
+                // Default case
+                const add_default_func = self.base_codegen.runtime_functions.get("cursed_select_add_default").?;
+                
+                _ = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMVoidTypeInContext(context),
+                    add_default_func,
+                    &[_]c.LLVMValueRef{ select_context, case_index },
+                    2,
+                    ""
+                );
+            }
+        }
+
+        // Execute select operation (non-blocking by default)
+        const select_execute_func = self.base_codegen.runtime_functions.get("cursed_select_execute").?;
+        const ready_case_index = c.LLVMBuildCall2(
+            builder,
+            c.LLVMInt32TypeInContext(context),
+            select_execute_func,
+            &[_]c.LLVMValueRef{select_context},
+            1,
+            "ready_case"
+        );
+
+        // Create basic blocks for each case
+        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.base_codegen.allocator);
+        defer case_blocks.deinit();
+        
+        const merge_block = c.LLVMAppendBasicBlockInContext(context, current_func, "select_merge");
+        const no_case_ready_block = c.LLVMAppendBasicBlockInContext(context, current_func, "select_no_case");
+        
+        // Create switch instruction to jump to ready case
+        const switch_inst = c.LLVMBuildSwitch(builder, ready_case_index, no_case_ready_block, @as(u32, @intCast(select_stmt.cases.items.len)));
+
+        // Generate blocks for each case
+        for (select_stmt.cases.items, 0..) |case_item, i| {
+            const case_block = c.LLVMAppendBasicBlockInContext(context, current_func, 
+                try std.fmt.allocPrint(self.base_codegen.allocator, "select_case_{d}", .{i}).ptr);
+            try case_blocks.append(case_block);
+
+            // Add case to switch
+            const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
+            c.LLVMAddCase(switch_inst, case_value, case_block);
+
+            // Position builder in case block
+            c.LLVMPositionBuilderAtEnd(builder, case_block);
+            
+            // For receive operations, extract the received value
+            if (case_item.channel != null and case_item.send_value == null) {
+                const get_recv_value_func = self.base_codegen.runtime_functions.get("cursed_select_get_recv_value").?;
+                const received_value = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMInt64TypeInContext(context),
+                    get_recv_value_func,
+                    &[_]c.LLVMValueRef{ select_context, case_value },
+                    2,
+                    "recv_value"
+                );
+                
+                // Store in variable if case has variable binding
+                if (case_item.variable_name) |var_name| {
+                    // Create or update variable binding
+                    try self.base_codegen.setVariable(var_name, received_value);
+                }
+            }
+            
+            // Generate case body statements
+            for (case_item.body.items) |stmt| {
+                try self.base_codegen.generateStatement(stmt);
+            }
+            
+            // Branch to merge if no terminator
+            if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(builder)) == null) {
+                _ = c.LLVMBuildBr(builder, merge_block);
+            }
+        }
+
+        // Handle case where no operation is ready (should not happen with proper select)
+        c.LLVMPositionBuilderAtEnd(builder, no_case_ready_block);
+        _ = c.LLVMBuildBr(builder, merge_block);
+
+        // Continue in merge block
+        c.LLVMPositionBuilderAtEnd(builder, merge_block);
+        
+        // Cleanup select context
+        const select_cleanup_func = self.base_codegen.runtime_functions.get("cursed_select_cleanup").?;
+        _ = c.LLVMBuildCall2(
+            builder,
+            c.LLVMVoidTypeInContext(context),
+            select_cleanup_func,
+            &[_]c.LLVMValueRef{select_context},
+            1,
+            ""
+        );
+    }
+
+    /// Ensure select runtime functions are declared
+    fn ensureSelectRuntimeFunctions(self: *AdvancedCodeGen) CodeGenError!void {
+        const context = self.base_codegen.context;
+        const module = self.base_codegen.module;
+        
+        // Function types
+        const void_type = c.LLVMVoidTypeInContext(context);
+        const i32_type = c.LLVMInt32TypeInContext(context);
+        const i64_type = c.LLVMInt64TypeInContext(context);
+        const ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0);
+        
+        // cursed_select_begin(case_count: i32) -> select_context*
+        if (self.base_codegen.runtime_functions.get("cursed_select_begin") == null) {
+            const select_begin_type = c.LLVMFunctionType(ptr_type, &[_]c.LLVMTypeRef{i32_type}, 1, 0);
+            const select_begin_func = c.LLVMAddFunction(module, "cursed_select_begin", select_begin_type);
+            try self.base_codegen.runtime_functions.put("cursed_select_begin", select_begin_func);
+        }
+        
+        // cursed_select_add_send(ctx: select_context*, channel: i64, value: i64, case_index: i32) -> void
+        if (self.base_codegen.runtime_functions.get("cursed_select_add_send") == null) {
+            const add_send_type = c.LLVMFunctionType(void_type, &[_]c.LLVMTypeRef{ptr_type, i64_type, i64_type, i32_type}, 4, 0);
+            const add_send_func = c.LLVMAddFunction(module, "cursed_select_add_send", add_send_type);
+            try self.base_codegen.runtime_functions.put("cursed_select_add_send", add_send_func);
+        }
+        
+        // cursed_select_add_recv(ctx: select_context*, channel: i64, case_index: i32) -> void
+        if (self.base_codegen.runtime_functions.get("cursed_select_add_recv") == null) {
+            const add_recv_type = c.LLVMFunctionType(void_type, &[_]c.LLVMTypeRef{ptr_type, i64_type, i32_type}, 3, 0);
+            const add_recv_func = c.LLVMAddFunction(module, "cursed_select_add_recv", add_recv_type);
+            try self.base_codegen.runtime_functions.put("cursed_select_add_recv", add_recv_func);
+        }
+        
+        // cursed_select_add_default(ctx: select_context*, case_index: i32) -> void
+        if (self.base_codegen.runtime_functions.get("cursed_select_add_default") == null) {
+            const add_default_type = c.LLVMFunctionType(void_type, &[_]c.LLVMTypeRef{ptr_type, i32_type}, 2, 0);
+            const add_default_func = c.LLVMAddFunction(module, "cursed_select_add_default", add_default_type);
+            try self.base_codegen.runtime_functions.put("cursed_select_add_default", add_default_func);
+        }
+        
+        // cursed_select_execute(ctx: select_context*) -> i32 (ready case index)
+        if (self.base_codegen.runtime_functions.get("cursed_select_execute") == null) {
+            const execute_type = c.LLVMFunctionType(i32_type, &[_]c.LLVMTypeRef{ptr_type}, 1, 0);
+            const execute_func = c.LLVMAddFunction(module, "cursed_select_execute", execute_type);
+            try self.base_codegen.runtime_functions.put("cursed_select_execute", execute_func);
+        }
+        
+        // cursed_select_get_recv_value(ctx: select_context*, case_index: i32) -> i64
+        if (self.base_codegen.runtime_functions.get("cursed_select_get_recv_value") == null) {
+            const get_recv_type = c.LLVMFunctionType(i64_type, &[_]c.LLVMTypeRef{ptr_type, i32_type}, 2, 0);
+            const get_recv_func = c.LLVMAddFunction(module, "cursed_select_get_recv_value", get_recv_type);
+            try self.base_codegen.runtime_functions.put("cursed_select_get_recv_value", get_recv_func);
+        }
+        
+        // cursed_select_cleanup(ctx: select_context*) -> void
+        if (self.base_codegen.runtime_functions.get("cursed_select_cleanup") == null) {
+            const cleanup_type = c.LLVMFunctionType(void_type, &[_]c.LLVMTypeRef{ptr_type}, 1, 0);
+            const cleanup_func = c.LLVMAddFunction(module, "cursed_select_cleanup", cleanup_type);
+            try self.base_codegen.runtime_functions.put("cursed_select_cleanup", cleanup_func);
+        }
+        
+        // cursed_select_set_timeout(ctx: select_context*, timeout_ms: i64) -> void
+        if (self.base_codegen.runtime_functions.get("cursed_select_set_timeout") == null) {
+            const timeout_type = c.LLVMFunctionType(void_type, &[_]c.LLVMTypeRef{ptr_type, i64_type}, 2, 0);
+            const timeout_func = c.LLVMAddFunction(module, "cursed_select_set_timeout", timeout_type);
+            try self.base_codegen.runtime_functions.put("cursed_select_set_timeout", timeout_func);
+        }
+        
+        // Non-blocking channel operations
+        if (self.base_codegen.runtime_functions.get("cursed_channel_try_send") == null) {
+            const try_send_type = c.LLVMFunctionType(i32_type, &[_]c.LLVMTypeRef{i64_type, i64_type}, 2, 0);
+            const try_send_func = c.LLVMAddFunction(module, "cursed_channel_try_send", try_send_type);
+            try self.base_codegen.runtime_functions.put("cursed_channel_try_send", try_send_func);
+        }
+        
+        if (self.base_codegen.runtime_functions.get("cursed_channel_try_recv") == null) {
+            const try_recv_type = c.LLVMFunctionType(i64_type, &[_]c.LLVMTypeRef{i64_type}, 1, 0);
+            const try_recv_func = c.LLVMAddFunction(module, "cursed_channel_try_recv", try_recv_type);
+            try self.base_codegen.runtime_functions.put("cursed_channel_try_recv", try_recv_func);
+        }
+        
+        // Random number generation for fair selection
+        if (self.base_codegen.runtime_functions.get("cursed_runtime_random") == null) {
+            const rand_type = c.LLVMFunctionType(i32_type, null, 0, 0);
+            const rand_func = c.LLVMAddFunction(module, "cursed_runtime_random", rand_type);
+            try self.base_codegen.runtime_functions.put("cursed_runtime_random", rand_func);
+        }
+    }
+
+    /// Generate non-blocking channel operations for select
+    fn generateSelectChannelOp(self: *AdvancedCodeGen, operation: ast.SelectCaseOperation) CodeGenError!c.LLVMValueRef {
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        
+        switch (operation) {
+            .send => |send_op| {
+                const channel_value = try self.base_codegen.generateExpression(send_op.channel);
+                const send_value = try self.base_codegen.generateExpression(send_op.value);
+                
+                // Try non-blocking send
+                const try_send_func = self.base_codegen.runtime_functions.get("cursed_channel_try_send").?;
+                const send_result = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMInt32TypeInContext(context),
+                    try_send_func,
+                    &[_]c.LLVMValueRef{ channel_value, send_value },
+                    2,
+                    "send_result"
+                );
+                
+                return send_result;
+            },
+            .receive => |recv_op| {
+                const channel_value = try self.base_codegen.generateExpression(recv_op.channel);
+                
+                // Try non-blocking receive
+                const try_recv_func = self.base_codegen.runtime_functions.get("cursed_channel_try_recv").?;
+                const recv_result = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMInt64TypeInContext(context),
+                    try_recv_func,
+                    &[_]c.LLVMValueRef{channel_value},
+                    1,
+                    "recv_result"
+                );
+                
+                return recv_result;
+            },
+            .default => {
+                // Default case always returns success
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 1, 0);
+            },
+        }
+    }
+
+    /// Generate timeout handling for select statements
+    fn generateSelectTimeout(self: *AdvancedCodeGen, timeout_expr: ast.Expression, select_context: c.LLVMValueRef) CodeGenError!void {
+        const timeout_value = try self.base_codegen.generateExpression(timeout_expr);
+        const set_timeout_func = self.base_codegen.runtime_functions.get("cursed_select_set_timeout").?;
+        
+        _ = c.LLVMBuildCall2(
+            self.base_codegen.builder,
+            c.LLVMVoidTypeInContext(self.base_codegen.context),
+            set_timeout_func,
+            &[_]c.LLVMValueRef{ select_context, timeout_value },
+            2,
+            ""
+        );
+    }
+
+    /// Generate fair selection algorithm for multiple ready channels
+    fn generateFairSelection(self: *AdvancedCodeGen, ready_cases: []c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        
+        if (ready_cases.len == 1) {
+            return ready_cases[0];
+        }
+        
+        // Generate random selection for fairness
+        const rand_func = self.base_codegen.runtime_functions.get("cursed_runtime_random").?;
+        const random_value = c.LLVMBuildCall2(
+            builder,
+            c.LLVMInt32TypeInContext(context),
+            rand_func,
+            null,
+            0,
+            "rand_val"
+        );
+        
+        const case_count = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(ready_cases.len)), 0);
+        const selected_index = c.LLVMBuildURem(builder, random_value, case_count, "selected_case");
+        
+        return selected_index;
     }
 };
 

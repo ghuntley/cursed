@@ -6,6 +6,8 @@ const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const Atomic = std.atomic.Value;
 const Thread = std.Thread;
+const ArenaAllocator = @import("arena_allocator.zig").ArenaAllocator;
+const CursedArenaManager = @import("arena_allocator.zig").CursedArenaManager;
 
 /// Production-Ready Tri-Color Mark-and-Sweep Garbage Collector for CURSED
 /// Features:
@@ -136,6 +138,8 @@ pub const GCConfig = struct {
     enable_compaction: bool = true,
     /// Compaction trigger threshold (fragmentation percentage)
     compaction_threshold: f32 = 0.30,
+    /// Enable arena allocator integration
+    enable_arena_allocation: bool = true,
     
     pub fn default() GCConfig {
         return GCConfig{};
@@ -497,6 +501,221 @@ pub const GC = struct {
     /// Performance monitoring
     last_gc_time: std.time.Instant,
     
+    /// Arena allocator integration
+    arena_manager: ?*CursedArenaManager,
+    use_arena_allocation: bool,
+    
+    /// Enhanced stack scanning with conservative pointer detection
+    fn scanStackRootsEnhanced(self: *GC) void {
+        // Get current stack bounds
+        var stack_start: ?*anyopaque = null;
+        var stack_end: ?*anyopaque = null;
+        
+        // Platform-specific stack detection
+        if (builtin.os.tag == .linux) {
+            const pthread = std.c.pthread_self();
+            var attr: std.c.pthread_attr_t = undefined;
+            if (std.c.pthread_getattr_np(pthread, &attr) == 0) {
+                var stack_addr: ?*anyopaque = undefined;
+                var stack_size: usize = undefined;
+                if (std.c.pthread_attr_getstack(&attr, &stack_addr, &stack_size) == 0) {
+                    stack_start = stack_addr;
+                    stack_end = @as([*]u8, @ptrCast(stack_addr)) + stack_size;
+                }
+                _ = std.c.pthread_attr_destroy(&attr);
+            }
+        }
+        
+        // Fall back to current stack pointer if platform detection fails
+        if (stack_start == null) {
+            var dummy: usize = undefined;
+            stack_end = &dummy;
+            // Estimate stack start (this is conservative)
+            stack_start = @as([*]u8, @ptrCast(stack_end)) - self.config.stack_scan_depth;
+        }
+        
+        if (stack_start == null or stack_end == null) return;
+        
+        // Scan stack conservatively
+        const start_addr = @intFromPtr(stack_start);
+        const end_addr = @intFromPtr(stack_end);
+        const scan_start = @min(start_addr, end_addr);
+        const scan_end = @max(start_addr, end_addr);
+        
+        var scan_ptr = scan_start;
+        while (scan_ptr < scan_end) {
+            const potential_ptr = @as(*?*anyopaque, @ptrFromInt(scan_ptr)).*;
+            
+            if (potential_ptr) |ptr| {
+                if (self.isValidHeapPointer(ptr)) {
+                    const header = ObjectHeader.fromData(ptr);
+                    if (header.color == @intFromEnum(Color.White)) {
+                        header.color = @intFromEnum(Color.Gray);
+                        self.mark_stack.append(header) catch {};
+                    }
+                }
+            }
+            
+            scan_ptr += @sizeOf(*anyopaque);
+        }
+    }
+    
+    /// Enhanced memory pressure detection with adaptive thresholds
+    pub fn getMemoryPressure(self: *GC) PressureLevel {
+        const heap_usage_ratio = if (self.heap_size > 0) 
+            @as(f32, @floatFromInt(self.heap_used)) / @as(f32, @floatFromInt(self.heap_size))
+            else 0.0;
+        
+        // Update atomic memory pressure
+        self.memory_pressure.store(heap_usage_ratio, .release);
+        
+        // Adaptive thresholds based on allocation rate
+        const allocation_rate = self.stats.total_allocations / @max(1, self.stats.gc_cycles);
+        const pressure_multiplier: f32 = if (allocation_rate > 10000) 0.9 else 1.0; // Lower thresholds for high allocation rates
+        
+        if (heap_usage_ratio < 0.5 * pressure_multiplier) {
+            return .Low;
+        } else if (heap_usage_ratio < 0.8 * pressure_multiplier) {
+            return .Medium;
+        } else if (heap_usage_ratio < 0.95 * pressure_multiplier) {
+            return .High;
+        } else {
+            return .Critical;
+        }
+    }
+    
+    /// Enhanced memory leak detection with pattern analysis
+    pub fn detectMemoryLeaks(self: *GC) ![]LeakInfo {
+        return self.memory_tracker.detectLeaks(self.allocator);
+    }
+    
+    /// Get detailed memory usage statistics
+    pub fn getMemoryUsage(self: *GC) struct {
+        current_usage: usize,
+        peak_usage: usize,
+        total_allocated: usize,
+        total_freed: usize,
+        pressure: f32,
+        young_gen_usage: usize,
+        old_gen_usage: usize,
+        fragmentation: f32,
+    } {
+        const current_usage = self.memory_tracker.getCurrentUsage();
+        const peak_usage = self.memory_tracker.peak_usage.load(.acquire);
+        const total_allocated = self.memory_tracker.total_allocated.load(.acquire);
+        const total_freed = self.memory_tracker.total_freed.load(.acquire);
+        const pressure = self.memory_pressure.load(.acquire);
+        const fragmentation = self.calculateFragmentation();
+        
+        return .{
+            .current_usage = current_usage,
+            .peak_usage = peak_usage,
+            .total_allocated = total_allocated,
+            .total_freed = total_freed,
+            .pressure = pressure,
+            .young_gen_usage = self.young_heap_used,
+            .old_gen_usage = self.old_heap_used,
+            .fragmentation = fragmentation,
+        };
+    }
+    
+    /// Arena-aware allocation for different patterns
+    pub fn allocArena(self: *GC, size: usize, type_id: u16, pattern: ArenaAllocator.AllocationPattern) !*anyopaque {
+        if (self.arena_manager) |manager| {
+            const allocator = switch (pattern) {
+                .Sequential, .ASTNodes => manager.getASTAllocator(),
+                .Stack, .RuntimeValues => manager.getRuntimeAllocator(),
+                .StringIntern => manager.getStringAllocator(),
+                .Temporary => manager.getTemporaryAllocator(),
+                .Pool => manager.getRuntimeAllocator(), // Use runtime for pool pattern
+            };
+            
+            const slice = try allocator.alloc(u8, size);
+            
+            // Track allocation in GC for root scanning
+            const info = AllocationInfo.init(size, type_id, null);
+            try self.memory_tracker.trackAllocation(@intFromPtr(slice.ptr), info);
+            
+            return slice.ptr;
+        } else {
+            // Fall back to regular GC allocation
+            return self.alloc(size, type_id);
+        }
+    }
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    /// Push runtime stack frame (integrates with arena stack allocation)
+    pub fn pushRuntimeFrame(self: *GC) !void {
+        if (self.arena_manager) |manager| {
+            try manager.runtime_arena.pushStackFrame();
+        }
+    }
+    
+    /// Pop runtime stack frame (automatic cleanup of arena allocations)
+    pub fn popRuntimeFrame(self: *GC) void {
+        if (self.arena_manager) |manager| {
+            manager.runtime_arena.popStackFrame();
+        }
+    }
+    
+    /// Reset temporary allocations (called frequently during execution)
+    pub fn resetTemporaryAllocations(self: *GC) void {
+        if (self.arena_manager) |manager| {
+            manager.resetTemporary();
+        }
+    }
+    
+    /// Get comprehensive memory statistics including arena usage
+    pub fn getComprehensiveMemoryStats(self: *GC) struct {
+        gc_stats: GCStats,
+        memory_usage: @TypeOf(self.getMemoryUsage()),
+        arena_usage: ?@TypeOf(CursedArenaManager.getTotalUsage(undefined)),
+        pressure_level: PressureLevel,
+    } {
+        return .{
+            .gc_stats = self.getStats(),
+            .memory_usage = self.getMemoryUsage(),
+            .arena_usage = if (self.arena_manager) |manager| manager.getTotalUsage() else null,
+            .pressure_level = self.getMemoryPressure(),
+        };
+    }
+    
+
+    
+    /// Free object directly (bypasses normal collection)
+    fn freeObjectDirect(self: *GC, obj: *ObjectHeader) void {
+        // Remove from all_objects list
+        if (self.all_objects == obj) {
+            self.all_objects = obj.next;
+        } else {
+            var current = self.all_objects;
+            while (current) |curr| {
+                if (curr.next == obj) {
+                    curr.next = obj.next;
+                    break;
+                }
+                current = curr.next;
+            }
+        }
+        
+        // Add to free list
+        obj.next = self.free_list;
+        self.free_list = obj;
+        
+        // Update memory tracking
+        self.memory_tracker.trackDeallocation(@intFromPtr(obj));
+        self.heap_used -= obj.size;
+    }
+
     /// Initialize the garbage collector
     pub fn init(allocator: std.mem.Allocator, config: GCConfig) !*GC {
         const gc = try allocator.create(GC);
@@ -543,10 +762,18 @@ pub const GC = struct {
             .forwarding_table = HashMap(*u8, *u8, std.hash_map.AutoContext(*u8), std.hash_map.default_max_load_percentage).init(allocator),
             .pause_mutex = Mutex{},
             .last_gc_time = undefined,
+            .arena_manager = null,
+            .use_arena_allocation = config.enable_arena_allocation,
         };
         
         try gc.initializeHeap();
         try gc.startBackgroundThreads();
+        
+        // Initialize arena manager if enabled
+        if (gc.use_arena_allocation) {
+            gc.arena_manager = try allocator.create(CursedArenaManager);
+            gc.arena_manager.?.* = try CursedArenaManager.init(allocator);
+        }
         
         return gc;
     }
@@ -575,6 +802,12 @@ pub const GC = struct {
         self.weak_refs.deinit();
         self.heap_segments.deinit();
         self.forwarding_table.deinit();
+        
+        // Clean up arena manager
+        if (self.arena_manager) |manager| {
+            manager.deinit();
+            self.allocator.destroy(manager);
+        }
         
         self.allocator.destroy(self);
     }
@@ -781,14 +1014,7 @@ pub const GC = struct {
         }
     }
     
-    /// Get current memory pressure level
-    pub fn getMemoryPressure(self: *GC) PressureLevel {
-        const pressure = self.memory_pressure.load(.acquire);
-        if (pressure < 0.50) return .Low;
-        if (pressure < 0.80) return .Medium;
-        if (pressure < 0.95) return .High;
-        return .Critical;
-    }
+
     
     /// Force immediate deallocation (for reference counting)
     fn freeObjectImmediate(self: *GC, ptr: *anyopaque) void {
@@ -811,27 +1037,9 @@ pub const GC = struct {
         }
     }
     
-    /// Detect memory leaks
-    pub fn detectMemoryLeaks(self: *GC) ![]LeakInfo {
-        return self.memory_tracker.detectLeaks(self.allocator);
-    }
+
     
-    /// Get memory usage statistics  
-    pub fn getMemoryUsage(self: *GC) struct {
-        current_usage: usize,
-        peak_usage: usize,
-        total_allocated: usize,
-        total_freed: usize,
-        pressure: f32,
-    } {
-        return .{
-            .current_usage = self.memory_tracker.getCurrentUsage(),
-            .peak_usage = self.memory_tracker.peak_usage.load(.acquire),
-            .total_allocated = self.memory_tracker.total_allocated.load(.acquire),
-            .total_freed = self.memory_tracker.total_freed.load(.acquire),
-            .pressure = self.memory_pressure.load(.acquire),
-        };
-    }
+
     
     /// Allocate in specific generation
     fn allocateInGeneration(self: *GC, size: usize, generation: Generation) !*ObjectHeader {
@@ -1222,33 +1430,7 @@ pub const GC = struct {
         self.freeObjectDirect(obj);
     }
     
-    /// Free object memory
-    fn freeObjectDirect(self: *GC, obj: *ObjectHeader) void {
-        const generation = @as(Generation, @enumFromInt(obj.generation));
-        
-        switch (generation) {
-            .Young => {
-                // Young generation uses bump allocation, so we don't free individual objects
-                // They get freed en masse during collection
-            },
-            .Old => {
-                // For old generation, we could implement a free list
-                // For now, we'll just update the used counter
-                if (self.old_heap_used >= obj.size) {
-                    self.old_heap_used -= obj.size;
-                } else {
-                    self.old_heap_used = 0;
-                }
-            },
-        }
-        
-        if (self.heap_used >= obj.size) {
-            self.heap_used -= obj.size;
-        } else {
-            self.heap_used = 0;
-        }
-        self.stats.current_heap_size = self.heap_used;
-    }
+
     
     /// Promote surviving young objects to old generation
     fn promoteObjects(self: *GC) !void {
@@ -2033,4 +2215,101 @@ export fn cursed_gc_pool_free(gc: ?*GC, ptr: *anyopaque, size: usize) void {
     if (gc) |g| {
         g.memory_pools.deallocate(ptr, size) catch {};
     }
+}
+
+// Enhanced C API for arena allocator integration
+export fn cursed_gc_alloc_arena(gc: ?*GC, size: usize, type_id: u16, pattern: u8) ?*anyopaque {
+    if (gc) |g| {
+        const arena_pattern = switch (pattern) {
+            0 => ArenaAllocator.AllocationPattern.Sequential,
+            1 => ArenaAllocator.AllocationPattern.Stack,
+            2 => ArenaAllocator.AllocationPattern.Pool,
+            3 => ArenaAllocator.AllocationPattern.Temporary,
+            4 => ArenaAllocator.AllocationPattern.StringIntern,
+            5 => ArenaAllocator.AllocationPattern.ASTNodes,
+            6 => ArenaAllocator.AllocationPattern.RuntimeValues,
+            else => ArenaAllocator.AllocationPattern.Sequential,
+        };
+        return g.allocArena(size, type_id, arena_pattern) catch null;
+    }
+    return null;
+}
+
+export fn cursed_gc_push_runtime_frame(gc: ?*GC) void {
+    if (gc) |g| {
+        g.pushRuntimeFrame() catch {};
+    }
+}
+
+export fn cursed_gc_pop_runtime_frame(gc: ?*GC) void {
+    if (gc) |g| {
+        g.popRuntimeFrame();
+    }
+}
+
+export fn cursed_gc_reset_temporary(gc: ?*GC) void {
+    if (gc) |g| {
+        g.resetTemporaryAllocations();
+    }
+}
+
+// Define C-compatible comprehensive stats structure
+const CComprehensiveStats = extern struct {
+    // GC stats
+    total_allocations: u64,
+    total_bytes_allocated: u64,
+    gc_cycles: u64,
+    total_pause_time_us: u64,
+    max_pause_time_us: u64,
+    current_heap_size: u64,
+    peak_heap_size: u64,
+    
+    // Memory usage
+    current_usage: usize,
+    peak_usage: usize,
+    total_allocated: usize,
+    total_freed: usize,
+    pressure: f32,
+    young_gen_usage: usize,
+    old_gen_usage: usize,
+    fragmentation: f32,
+    
+    // Arena usage (if available)
+    arena_total_allocated: usize,
+    arena_total_used: usize,
+    
+    // Pressure level
+    pressure_level: u8, // 0=Low, 1=Medium, 2=High, 3=Critical
+};
+
+export fn cursed_gc_get_comprehensive_stats(gc: ?*GC) CComprehensiveStats {
+    if (gc) |g| {
+        const stats = g.getComprehensiveMemoryStats();
+        return CComprehensiveStats{
+            .total_allocations = stats.gc_stats.total_allocations,
+            .total_bytes_allocated = stats.gc_stats.total_bytes_allocated,
+            .gc_cycles = stats.gc_stats.gc_cycles,
+            .total_pause_time_us = stats.gc_stats.total_pause_time_us,
+            .max_pause_time_us = stats.gc_stats.max_pause_time_us,
+            .current_heap_size = stats.gc_stats.current_heap_size,
+            .peak_heap_size = stats.gc_stats.peak_heap_size,
+            .current_usage = stats.memory_usage.current_usage,
+            .peak_usage = stats.memory_usage.peak_usage,
+            .total_allocated = stats.memory_usage.total_allocated,
+            .total_freed = stats.memory_usage.total_freed,
+            .pressure = stats.memory_usage.pressure,
+            .young_gen_usage = stats.memory_usage.young_gen_usage,
+            .old_gen_usage = stats.memory_usage.old_gen_usage,
+            .fragmentation = stats.memory_usage.fragmentation,
+            .arena_total_allocated = if (stats.arena_usage) |usage| usage.total_allocated else 0,
+            .arena_total_used = if (stats.arena_usage) |usage| usage.total_used else 0,
+            .pressure_level = switch (stats.pressure_level) {
+                .Low => 0,
+                .Medium => 1,
+                .High => 2,
+                .Critical => 3,
+            },
+        };
+    }
+    return std.mem.zeroes(CComprehensiveStats);
 }

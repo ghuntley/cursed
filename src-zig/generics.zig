@@ -382,11 +382,74 @@ pub const Monomorphizer = struct {
     
     /// Check if type implements interface
     fn implementsInterface(self: *Monomorphizer, type_arg: ast.Type, interface_name: []const u8) !bool {
+        switch (type_arg) {
+            .Identifier => |type_name| {
+                // Check if type implements the interface
+                return self.checkTypeImplementsInterface(type_name, interface_name);
+            },
+            .Generic => |generic_type| {
+                // For generic types, check if constraints are satisfied
+                for (generic_type.constraints.items) |constraint| {
+                    switch (constraint) {
+                        .Interface => |constraint_interface| {
+                            if (std.mem.eql(u8, constraint_interface, interface_name)) {
+                                return true;
+                            }
+                        },
+                        else => {},
+                    }
+                }
+                return false;
+            },
+            else => return false,
+        }
+    }
+    
+    /// Check if a concrete type implements an interface
+    fn checkTypeImplementsInterface(self: *Monomorphizer, type_name: []const u8, interface_name: []const u8) !bool {
+        // Built-in type implementations
+        if (std.mem.eql(u8, interface_name, "Comparable")) {
+            return self.isBuiltinComparable(type_name);
+        }
+        if (std.mem.eql(u8, interface_name, "Numeric")) {
+            return self.isBuiltinNumeric(type_name);
+        }
+        if (std.mem.eql(u8, interface_name, "Ordered")) {
+            return self.isBuiltinOrdered(type_name);
+        }
+        
+        // TODO: Check user-defined interface implementations
+        // This would require integration with the interface registry
+        return true; // Assume true for now
+    }
+    
+    /// Check if type name represents a built-in comparable type
+    fn isBuiltinComparable(self: *Monomorphizer, type_name: []const u8) bool {
         _ = self;
-        _ = type_arg;
-        _ = interface_name;
-        // TODO: Implement interface checking
-        return true;
+        const comparable_types = [_][]const u8{
+            "normie", "drip", "smol", "thicc", "meal", "snack", "lit", "tea"
+        };
+        for (comparable_types) |ct| {
+            if (std.mem.eql(u8, type_name, ct)) return true;
+        }
+        return false;
+    }
+    
+    /// Check if type name represents a built-in numeric type
+    fn isBuiltinNumeric(self: *Monomorphizer, type_name: []const u8) bool {
+        _ = self;
+        const numeric_types = [_][]const u8{
+            "normie", "drip", "smol", "thicc", "meal", "snack"
+        };
+        for (numeric_types) |nt| {
+            if (std.mem.eql(u8, type_name, nt)) return true;
+        }
+        return false;
+    }
+    
+    /// Check if type name represents a built-in ordered type
+    fn isBuiltinOrdered(self: *Monomorphizer, type_name: []const u8) bool {
+        return self.isBuiltinNumeric(type_name);
     }
     
     /// Check if type has known size at compile time
@@ -478,11 +541,51 @@ pub const Monomorphizer = struct {
     
     /// Generate specialized interface (creates vtable)
     fn instantiateGenericInterface(self: *Monomorphizer, generic_decl: GenericDeclaration, type_arguments: []ast.Type) !void {
-        _ = self;
-        _ = generic_decl;
-        _ = type_arguments;
-        // TODO: Implement generic interface instantiation
-        std.log.warn("Generic interface instantiation not yet implemented", .{});
+        const interface_decl = generic_decl.ast_node.Interface;
+        
+        // Create substitution map
+        var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        defer substitution_map.deinit();
+        
+        for (generic_decl.type_parameters.items, 0..) |param, i| {
+            try substitution_map.put(param.name, type_arguments[i]);
+        }
+        
+        // Create specialized interface declaration
+        var specialized_interface = ast.InterfaceDeclaration{
+            .name = try self.generateSpecializedName(generic_decl.name, type_arguments),
+            .methods = ArrayList(ast.InterfaceMethod).init(self.allocator),
+        };
+        
+        // Substitute method types
+        for (interface_decl.methods.items) |method| {
+            var specialized_method = ast.InterfaceMethod{
+                .name = method.name,
+                .parameters = ArrayList(ast.Parameter).init(self.allocator),
+                .return_type = if (method.return_type) |rt| try self.substituteType(rt, &substitution_map) else null,
+            };
+            
+            // Substitute parameter types
+            for (method.parameters.items) |param| {
+                try specialized_method.parameters.append(ast.Parameter{
+                    .name = param.name,
+                    .param_type = try self.substituteType(param.param_type, &substitution_map),
+                });
+            }
+            
+            try specialized_interface.methods.append(specialized_method);
+        }
+        
+        // Generate LLVM vtable structure
+        try self.generateSpecializedVTable(&specialized_interface);
+        
+        // Mark instance as generated
+        const specialized_name = specialized_interface.name;
+        if (self.instances.getPtr(specialized_name)) |instance| {
+            instance.generated = true;
+        }
+        
+        std.log.info("Generated specialized interface: {s}", .{specialized_name});
     }
     
     /// Substitute type parameters in a type
@@ -676,6 +779,132 @@ pub const Monomorphizer = struct {
             return instance.generated;
         }
         return false;
+    }
+    
+    /// Generate LLVM vtable for specialized interface
+    fn generateSpecializedVTable(self: *Monomorphizer, interface_decl: *ast.InterfaceDeclaration) !void {
+        // Create vtable struct type
+        var method_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
+        defer method_types.deinit();
+        
+        // Add function pointer for each method
+        for (interface_decl.methods.items) |method| {
+            var param_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
+            defer param_types.deinit();
+            
+            // Add 'self' parameter (always a pointer)
+            try param_types.append(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+            
+            // Add method parameters
+            for (method.parameters.items) |param| {
+                try param_types.append(try self.typeToLLVMType(param.param_type));
+            }
+            
+            const return_type = if (method.return_type) |rt| 
+                try self.typeToLLVMType(rt) 
+            else 
+                c.LLVMVoidTypeInContext(self.context);
+                
+            const method_func_type = c.LLVMFunctionType(
+                return_type,
+                param_types.items.ptr,
+                @as(u32, @intCast(param_types.items.len)),
+                0
+            );
+            
+            try method_types.append(c.LLVMPointerType(method_func_type, 0));
+        }
+        
+        // Create vtable struct
+        const vtable_type = c.LLVMStructCreateNamed(self.context, interface_decl.name.ptr);
+        c.LLVMStructSetBody(
+            vtable_type,
+            method_types.items.ptr,
+            @as(u32, @intCast(method_types.items.len)),
+            0
+        );
+        
+        // Store vtable type
+        if (self.instances.getPtr(interface_decl.name)) |instance| {
+            instance.llvm_type = vtable_type;
+        }
+        
+        std.log.info("Generated vtable for interface: {s}", .{interface_decl.name});
+    }
+    
+    /// Validate variance constraints for generic type arguments
+    pub fn validateVariance(self: *Monomorphizer, generic_name: []const u8, type_arguments: []ast.Type) !bool {
+        const generic_decl = self.generic_declarations.get(generic_name) orelse {
+            return error.GenericNotFound;
+        };
+        
+        // Check each type parameter's variance
+        for (generic_decl.type_parameters.items, 0..) |param, i| {
+            if (i >= type_arguments.len) continue;
+            
+            const type_arg = type_arguments[i];
+            
+            // Validate variance rules
+            for (param.constraints.items) |constraint| {
+                switch (constraint.kind) {
+                    .Interface => {
+                        // Interfaces are generally contravariant in input positions
+                        // and covariant in output positions
+                        if (!try self.checkInterfaceVariance(type_arg, constraint.interface_name.?)) {
+                            return false;
+                        }
+                    },
+                    .Comparable, .Numeric, .Ordered => {
+                        // These constraints require exact type matching (invariant)
+                        if (!try self.checkConstraintCompatibility(type_arg, constraint.kind)) {
+                            return false;
+                        }
+                    },
+                    .Any, .Sized => {
+                        // These are always compatible (covariant)
+                        continue;
+                    },
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    /// Check interface variance compatibility
+    fn checkInterfaceVariance(self: *Monomorphizer, type_arg: ast.Type, interface_name: []const u8) !bool {
+        // For now, we use structural subtyping
+        // A type is compatible if it implements all required methods
+        return self.implementsInterface(type_arg, interface_name);
+    }
+    
+    /// Check constraint compatibility for invariant constraints
+    fn checkConstraintCompatibility(self: *Monomorphizer, type_arg: ast.Type, constraint_kind: Constraint.ConstraintKind) !bool {
+        return switch (constraint_kind) {
+            .Comparable => self.isComparable(type_arg),
+            .Numeric => self.isNumeric(type_arg),
+            .Ordered => self.isOrdered(type_arg),
+            else => true,
+        };
+    }
+    
+    /// Advanced monomorphization with dependency tracking
+    pub fn requestInstantiationWithDeps(self: *Monomorphizer, generic_name: []const u8, type_arguments: []ast.Type, dependencies: [][]const u8) ![]const u8 {
+        // Ensure all dependencies are instantiated first
+        for (dependencies) |dep_name| {
+            if (!self.isInstantiated(dep_name)) {
+                std.log.warn("Dependency not yet instantiated: {s}", .{dep_name});
+                return error.DependencyNotInstantiated;
+            }
+        }
+        
+        // Validate variance before instantiation
+        if (!try self.validateVariance(generic_name, type_arguments)) {
+            return error.VarianceViolation;
+        }
+        
+        // Proceed with normal instantiation
+        return self.requestInstantiation(generic_name, type_arguments, "dependency_based");
     }
 };
 

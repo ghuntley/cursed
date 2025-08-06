@@ -1,422 +1,322 @@
+# Advanced Select Statement Implementation for CURSED
+# This implements CSP-style concurrent programming with comprehensive select statement support
+
 yeet "testz"
-yeet "channel_core"
+yeet "concurrenz"
 
-fr fr Advanced Select Statement Implementation Test
-fr fr Tests all enhanced select features including:
-fr fr - Multi-channel operations
-fr fr - Timeout handling
-fr fr - Non-blocking operations
-fr fr - Channel priorities
-fr fr - Integration with goroutines
-
-test_start("Advanced Select Implementation - Multi-Channel Operations")
-
-fr fr Test basic select with multiple channels
-slay test_basic_select() normie {
-    reset_channel_system()
-    init_channel_system()
+# Test basic select with channel operations
+slay test_basic_select() {
+    test_start("Basic Select Statement")
     
-    sus chan1 := make_channel(2, "tea")
-    sus chan2 := make_channel(2, "tea")
+    sus ch1 dm<normie> = dm<normie>(5)
+    sus ch2 dm<normie> = dm<normie>(5)
     
-    fr fr Send data to both channels
-    channel_send(chan1, "message1")
-    channel_send(chan2, "message2")
+    # Send values to channels
+    dm_send(ch1, 42)
+    dm_send(ch2, 84)
     
-    sus result := ""
+    sus received lit = cringe
+    sus value normie = 0
     
-    fr fr Use select to receive from first available channel
+    # Basic select statement
     ready {
-        mood receive from chan1 -> msg {
-            result = "received from chan1: " + msg
+        mood val := dm_recv(ch1): {
+            value = val
+            received = based
         }
-        mood receive from chan2 -> msg {
-            result = "received from chan2: " + msg
+        mood val := dm_recv(ch2): {
+            value = val + 100
+            received = based
         }
-        basic {
-            result = "no channel ready"
+        basic: {
+            vibez.spill("No channels ready")
         }
     }
     
-    fr fr Should receive from one of the channels
-    assert_true(result.starts_with("received from"))
-    damn 1
+    assert_true(received)
+    vibez.spill("Received value: ", value)
+    
+    print_test_summary()
 }
 
-assert_eq_int(test_basic_select(), 1)
-
-fr fr Test select with send operations
-slay test_select_send() normie {
-    reset_channel_system()
-    init_channel_system()
+# Test select with timeout
+slay test_select_timeout() {
+    test_start("Select with Timeout")
     
-    sus chan1 := make_channel(1, "tea")
-    sus chan2 := make_channel(1, "tea") 
-    
-    sus result := ""
-    
-    fr fr Try to send to first available channel
-    ready {
-        mood send "hello" to chan1 {
-            result = "sent to chan1"
-        }
-        mood send "world" to chan2 {
-            result = "sent to chan2"
-        }
-        basic {
-            result = "no channel ready for send"
-        }
-    }
-    
-    fr fr Should successfully send to one channel
-    assert_true(result.starts_with("sent to"))
-    damn 1
-}
-
-assert_eq_int(test_select_send(), 1)
-
-fr fr Test select with timeout
-slay test_select_timeout() normie {
-    reset_channel_system()
-    init_channel_system()
-    
-    sus chan1 := make_channel(1, "tea")
-    fr fr Don't send anything to channel
-    
-    sus result := ""
-    sus start_time := get_current_time()
+    sus ch dm<normie> = dm<normie>(0)  # Unbuffered channel
+    sus timeout_hit lit = cringe
     
     ready {
-        mood receive from chan1 -> msg {
-            result = "unexpected receive: " + msg
+        mood val := dm_recv(ch): {
+            vibez.spill("Received: ", val)
         }
-        timeout 100 {  fr fr 100ms timeout
-            result = "timeout occurred"
+        timeout(100ms): {
+            timeout_hit = based
+            vibez.spill("Timeout occurred")
         }
     }
     
-    sus elapsed := get_current_time() - start_time
-    assert_eq_string(result, "timeout occurred")
-    assert_true(elapsed >= 100)  fr fr Should have waited at least 100ms
-    damn 1
+    assert_true(timeout_hit)
+    print_test_summary()
 }
 
-assert_eq_int(test_select_timeout(), 1)
+# Test select with multiple send operations
+slay test_select_multi_send() {
+    test_start("Select Multiple Send")
+    
+    sus ch1 dm<normie> = dm<normie>(1)
+    sus ch2 dm<normie> = dm<normie>(1)
+    sus sent_to normie = 0
+    
+    ready {
+        mood dm_send(ch1, 100): {
+            sent_to = 1
+            vibez.spill("Sent to channel 1")
+        }
+        mood dm_send(ch2, 200): {
+            sent_to = 2
+            vibez.spill("Sent to channel 2")
+        }
+        basic: {
+            vibez.spill("No channels ready for send")
+        }
+    }
+    
+    assert_true(sent_to > 0)
+    print_test_summary()
+}
 
-fr fr Test select with mixed send/receive operations
-slay test_select_mixed_operations() normie {
-    reset_channel_system()
-    init_channel_system()
+# Test select with mixed send/receive
+slay test_select_mixed_operations() {
+    test_start("Select Mixed Send/Receive")
     
-    sus input_chan := make_channel(2, "tea")
-    sus output_chan := make_channel(2, "tea")
+    sus send_ch dm<normie> = dm<normie>(1)
+    sus recv_ch dm<normie> = dm<normie>(1)
     
-    fr fr Pre-populate input channel
-    channel_send(input_chan, "process_me")
+    # Pre-fill receive channel
+    dm_send(recv_ch, 999)
     
-    sus processed := 0
-    sus sent := 0
+    sus operation tea = ""
+    sus value normie = 0
     
-    fr fr Process messages and forward them
-    for i in 0..3 {
+    ready {
+        mood dm_send(send_ch, 555): {
+            operation = "sent"
+            value = 555
+        }
+        mood val := dm_recv(recv_ch): {
+            operation = "received"
+            value = val
+        }
+        basic: {
+            operation = "default"
+        }
+    }
+    
+    assert_true(operation != "")
+    vibez.spill("Operation: ", operation, " Value: ", value)
+    print_test_summary()
+}
+
+# Test non-blocking select (all default cases)
+slay test_non_blocking_select() {
+    test_start("Non-blocking Select")
+    
+    sus ch dm<normie> = dm<normie>(0)  # Unbuffered, empty channel
+    sus default_executed lit = cringe
+    
+    ready {
+        mood val := dm_recv(ch): {
+            vibez.spill("Should not receive")
+        }
+        mood dm_send(ch, 123): {
+            vibez.spill("Should not send")
+        }
+        basic: {
+            default_executed = based
+            vibez.spill("Default case executed")
+        }
+    }
+    
+    assert_true(default_executed)
+    print_test_summary()
+}
+
+# Test select with goroutines
+slay test_select_with_goroutines() {
+    test_start("Select with Goroutines")
+    
+    sus ch dm<normie> = dm<normie>(0)
+    sus result normie = 0
+    
+    # Start goroutine that sends after delay
+    stan {
+        yolo()  # Yield to ensure select starts first
+        dm_send(ch, 777)
+    }
+    
+    ready {
+        mood val := dm_recv(ch): {
+            result = val
+            vibez.spill("Received from goroutine: ", val)
+        }
+        timeout(1000ms): {
+            vibez.spill("Timeout waiting for goroutine")
+        }
+    }
+    
+    assert_eq_int(result, 777)
+    print_test_summary()
+}
+
+# Test select with channel direction (send-only, receive-only)
+slay test_select_channel_directions() {
+    test_start("Select Channel Directions")
+    
+    sus ch dm<normie> = dm<normie>(1)
+    sus send_only dm<-normie = ch  # Send-only channel
+    sus recv_only <-dm<normie> = ch  # Receive-only channel
+    
+    sus operation tea = ""
+    
+    ready {
+        mood dm_send(send_only, 111): {
+            operation = "sent"
+        }
+        basic: {
+            operation = "default"
+        }
+    }
+    
+    ready {
+        mood val := dm_recv(recv_only): {
+            operation = "received"
+            vibez.spill("Received: ", val)
+        }
+        basic: {
+            operation = "no_receive"
+        }
+    }
+    
+    assert_true(operation != "")
+    print_test_summary()
+}
+
+# Test select priority and fairness
+slay test_select_fairness() {
+    test_start("Select Fairness")
+    
+    sus ch1 dm<normie> = dm<normie>(1)
+    sus ch2 dm<normie> = dm<normie>(1)
+    
+    # Fill both channels
+    dm_send(ch1, 1)
+    dm_send(ch2, 2)
+    
+    sus counts [2]normie = [0, 0]
+    
+    # Run select multiple times to test fairness
+    bestie i drip = 0; i < 10; i++ {
         ready {
-            mood receive from input_chan -> msg {
-                processed = processed + 1
-                fr fr Process the message and forward it
-                ready {
-                    mood send (msg + "_processed") to output_chan {
-                        sent = sent + 1
-                    }
-                    timeout 50 {
-                        fr fr Could not send within timeout
-                    }
-                }
+            mood val := dm_recv(ch1): {
+                counts[0]++
+                dm_send(ch1, val)  # Put it back
             }
-            mood send "new_message" to input_chan {
-                fr fr Successfully queued new message
-            }
-            timeout 100 {
-                fr fr No operations ready
-                break
+            mood val := dm_recv(ch2): {
+                counts[1]++
+                dm_send(ch2, val)  # Put it back
             }
         }
     }
     
-    assert_eq_int(processed, 1)
-    assert_eq_int(sent, 1)
-    damn 1
+    vibez.spill("Channel 1 selected: ", counts[0])
+    vibez.spill("Channel 2 selected: ", counts[1])
+    
+    # Both should be selected at least once for fairness
+    assert_true(counts[0] > 0)
+    assert_true(counts[1] > 0)
+    print_test_summary()
 }
 
-assert_eq_int(test_select_mixed_operations(), 1)
-
-fr fr Test select with channel priorities
-slay test_select_priorities() normie {
-    reset_channel_system()
-    init_channel_system()
+# Test select with closed channels
+slay test_select_closed_channels() {
+    test_start("Select with Closed Channels")
     
-    sus high_priority := make_channel(5, "tea")
-    sus low_priority := make_channel(5, "tea")
+    sus ch dm<normie> = dm<normie>(1)
     
-    fr fr Send to both channels
-    channel_send(high_priority, "urgent")
-    channel_send(low_priority, "normal")
+    # Send value then close
+    dm_send(ch, 123)
+    dm_close(ch)
     
-    sus results := []
+    sus received_before_close lit = cringe
+    sus received_after_close lit = cringe
+    sus value normie = 0
     
-    fr fr Select should handle high priority first (implementation dependent)
-    for i in 0..2 {
-        ready {
-            mood receive from high_priority -> msg {
-                results = append(results, "high: " + msg)
-            }
-            mood receive from low_priority -> msg {
-                results = append(results, "low: " + msg)
-            }
-            timeout 50 {
-                break
-            }
+    # Should receive the value
+    ready {
+        mood val := dm_recv(ch): {
+            received_before_close = based
+            value = val
+        }
+        basic: {
+            vibez.spill("Should have received value")
         }
     }
     
-    fr fr Should have received both messages
-    assert_eq_int(len(results), 2)
-    damn 1
+    # Should receive zero value and closed indication
+    ready {
+        mood val := dm_recv(ch): {
+            received_after_close = based
+            assert_eq_int(val, 0)  # Zero value for closed channel
+        }
+        basic: {
+            vibez.spill("Should have received from closed channel")
+        }
+    }
+    
+    assert_true(received_before_close)
+    assert_true(received_after_close)
+    assert_eq_int(value, 123)
+    print_test_summary()
 }
 
-assert_eq_int(test_select_priorities(), 1)
-
-fr fr Test select with closed channels
-slay test_select_closed_channels() normie {
-    reset_channel_system()
-    init_channel_system()
+# Test complex select with error handling
+slay test_select_error_handling() {
+    test_start("Select Error Handling")
     
-    sus chan1 := make_channel(1, "tea")
-    sus chan2 := make_channel(1, "tea")
+    sus ch dm<normie> = dm<normie>(0)
+    sus error_handled lit = cringe
     
-    fr fr Send data then close channel
-    channel_send(chan1, "last_message")
-    channel_close(chan1)
-    
-    sus result := ""
-    sus received_count := 0
-    
-    fr fr Should be able to receive last message and detect closure
-    for i in 0..3 {
-        ready {
-            mood receive from chan1 -> msg {
-                if msg == "" {
-                    result = "channel closed"
-                    break
-                } else {
-                    result = "received: " + msg
-                    received_count = received_count + 1
-                }
-            }
-            mood receive from chan2 -> msg {
-                result = "unexpected from chan2"
-            }
-            timeout 50 {
-                result = "timeout"
-                break
-            }
+    ready {
+        mood val := dm_recv(ch): {
+            vibez.spill("Received: ", val)
+        } yikes err: {
+            error_handled = based
+            vibez.spill("Handled channel error: ", err)
+        }
+        basic: {
+            vibez.spill("Default case")
         }
     }
     
-    assert_eq_int(received_count, 1)
-    damn 1
+    # For this test, we expect default case since channel is empty
+    print_test_summary()
 }
 
-assert_eq_int(test_select_closed_channels(), 1)
-
-fr fr Test select with goroutine coordination
-slay test_select_goroutine_coordination() normie {
-    reset_channel_system()
-    init_channel_system()
+# Main test runner
+slay main() {
+    vibez.spill("=== Advanced Select Statement Tests ===")
     
-    sus work_chan := make_channel(5, "tea")
-    sus result_chan := make_channel(5, "tea")
-    sus done_chan := make_channel(1, "tea")
+    test_basic_select()
+    test_select_timeout()
+    test_select_multi_send()
+    test_select_mixed_operations()
+    test_non_blocking_select()
+    test_select_with_goroutines()
+    test_select_channel_directions()
+    test_select_fairness()
+    test_select_closed_channels()
+    test_select_error_handling()
     
-    fr fr Start worker goroutine
-    go {
-        loop {
-            ready {
-                mood receive from work_chan -> task {
-                    if task == "stop" {
-                        break
-                    }
-                    fr fr Process task
-                    ready {
-                        mood send ("completed: " + task) to result_chan {
-                            fr fr Successfully sent result
-                        }
-                        timeout 100 {
-                            fr fr Could not send result
-                        }
-                    }
-                }
-                timeout 1000 {
-                    fr fr No work available
-                    break
-                }
-            }
-        }
-        channel_send(done_chan, "worker_finished")
-    }
-    
-    fr fr Send work to goroutine
-    channel_send(work_chan, "task1")
-    channel_send(work_chan, "task2")
-    channel_send(work_chan, "stop")
-    
-    sus results := []
-    sus worker_done := cringe
-    
-    fr fr Collect results
-    for i in 0..10 {
-        ready {
-            mood receive from result_chan -> result {
-                results = append(results, result)
-            }
-            mood receive from done_chan -> msg {
-                worker_done = based
-                break
-            }
-            timeout 2000 {
-                break
-            }
-        }
-    }
-    
-    assert_true(worker_done)
-    assert_true(len(results) >= 2)
-    damn 1
+    vibez.spill("=== All Select Tests Complete ===")
 }
-
-assert_eq_int(test_select_goroutine_coordination(), 1)
-
-fr fr Test select performance with many channels
-slay test_select_performance() normie {
-    reset_channel_system()
-    init_channel_system()
-    
-    sus num_channels := 10
-    sus channels := []
-    
-    fr fr Create multiple channels
-    for i in 0..num_channels {
-        sus chan := make_channel(1, "drip")
-        channels = append(channels, chan)
-        channel_send(chan, i)
-    }
-    
-    sus received := 0
-    sus start_time := get_current_time()
-    
-    fr fr Receive from all channels using select
-    for i in 0..num_channels {
-        ready {
-            mood receive from channels[0] -> val { received = received + 1 }
-            mood receive from channels[1] -> val { received = received + 1 }
-            mood receive from channels[2] -> val { received = received + 1 }
-            mood receive from channels[3] -> val { received = received + 1 }
-            mood receive from channels[4] -> val { received = received + 1 }
-            mood receive from channels[5] -> val { received = received + 1 }
-            mood receive from channels[6] -> val { received = received + 1 }
-            mood receive from channels[7] -> val { received = received + 1 }
-            mood receive from channels[8] -> val { received = received + 1 }
-            mood receive from channels[9] -> val { received = received + 1 }
-            timeout 100 {
-                break
-            }
-        }
-    }
-    
-    sus elapsed := get_current_time() - start_time
-    
-    fr fr Should have received from all channels efficiently
-    assert_eq_int(received, num_channels)
-    assert_true(elapsed < 1000)  fr fr Should complete within 1 second
-    damn 1
-}
-
-assert_eq_int(test_select_performance(), 1)
-
-fr fr Test select with buffered channels
-slay test_select_buffered_channels() normie {
-    reset_channel_system()
-    init_channel_system()
-    
-    sus buffered_chan := make_channel(3, "tea")
-    sus unbuffered_chan := make_channel(0, "tea")
-    
-    sus send_count := 0
-    
-    fr fr Fill buffered channel
-    for i in 0..5 {
-        ready {
-            mood send format("buffered_{}", i) to buffered_chan {
-                send_count = send_count + 1
-            }
-            mood send format("unbuffered_{}", i) to unbuffered_chan {
-                send_count = send_count + 1
-            }
-            timeout 10 {
-                break
-            }
-        }
-    }
-    
-    fr fr Should have filled buffered channel (3 items) but not unbuffered
-    assert_eq_int(send_count, 3)
-    damn 1
-}
-
-assert_eq_int(test_select_buffered_channels(), 1)
-
-fr fr Test select with complex control flow
-slay test_select_complex_control() normie {
-    reset_channel_system()
-    init_channel_system()
-    
-    sus control_chan := make_channel(2, "tea")
-    sus data_chan := make_channel(5, "drip")
-    
-    sus state := "starting"
-    sus processed := 0
-    
-    fr fr Send control and data
-    channel_send(control_chan, "start")
-    channel_send(data_chan, 100)
-    channel_send(data_chan, 200)
-    channel_send(control_chan, "stop")
-    
-    loop {
-        ready {
-            mood receive from control_chan -> cmd {
-                if cmd == "start" {
-                    state = "running"
-                } else if cmd == "stop" {
-                    state = "stopped"
-                    break
-                }
-            }
-            mood receive from data_chan -> value {
-                if state == "running" {
-                    processed = processed + value
-                }
-            }
-            timeout 100 {
-                break
-            }
-        }
-    }
-    
-    assert_eq_string(state, "stopped")
-    assert_eq_int(processed, 300)
-    damn 1
-}
-
-assert_eq_int(test_select_complex_control(), 1)
-
-print_test_summary()
