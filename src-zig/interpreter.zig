@@ -474,6 +474,7 @@ pub const Interpreter = struct {
             .Yikes => |yikes| return try self.evaluateYikes(yikes),
             .Shook => |shook| return try self.evaluateShook(shook),
             .Fam => |fam| return try self.evaluateFam(fam),
+            .StringInterpolation => |interpolation| return try self.evaluateStringInterpolation(interpolation),
             else => {
                 std.debug.print("Unsupported expression type in interpreter: {s}\n", .{@tagName(expr)});
                 return Value.Null;
@@ -1078,6 +1079,28 @@ pub const Interpreter = struct {
         // In real implementation, this would spawn actual goroutines
         // For now, return a simulated goroutine ID
         return 1;
+    }
+    
+    fn evaluateStringInterpolation(self: *Interpreter, interpolation: ast.StringInterpolationExpression) InterpreterError!Value {
+        var result = std.ArrayList(u8).init(self.allocator);
+        defer result.deinit();
+        
+        for (interpolation.parts.items) |part| {
+            if (part.expression) |expr_ptr| {
+                // Evaluate expression and convert to string
+                const expr: *Expression = @ptrCast(@alignCast(expr_ptr));
+                const value = try self.evaluateExpression(expr.*);
+                const str_value = try value.toString(self.allocator);
+                defer self.allocator.free(str_value);
+                try result.appendSlice(str_value);
+            } else {
+                // Literal text part
+                try result.appendSlice(part.text);
+            }
+        }
+        
+        const final_string = try self.allocator.dupe(u8, result.items);
+        return Value{ .String = final_string };
     }
 };
 

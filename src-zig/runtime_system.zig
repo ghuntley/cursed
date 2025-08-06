@@ -448,6 +448,93 @@ pub const RuntimeSystem = struct {
         const cmp_result = c.LLVMBuildCall2(builder, i32_type, strcmp_func, &[_]c.LLVMValueRef{str1_cmp_param, str2_cmp_param}, 2, "cmp_result");
         _ = c.LLVMBuildRet(builder, cmp_result);
         
+        // === 6. STRING FORMATTING FOR INTERPOLATION ===
+        const sprintf_type = c.LLVMFunctionType(i32_type, &[_]c.LLVMTypeRef{i8_ptr_type, i8_ptr_type}, 2, 1); // variadic
+        const sprintf_func = c.LLVMAddFunction(module, "sprintf", sprintf_type);
+        
+        // Format integer to string
+        const int_to_str_type = c.LLVMFunctionType(i8_ptr_type, &[_]c.LLVMTypeRef{i64_type}, 1, 0);
+        const int_to_str_func = c.LLVMAddFunction(module, "cursed_int_to_string", int_to_str_type);
+        
+        const int_to_str_entry = c.LLVMAppendBasicBlockInContext(context, int_to_str_func, "entry");
+        c.LLVMPositionBuilderAtEnd(builder, int_to_str_entry);
+        
+        const int_param = c.LLVMGetParam(int_to_str_func, 0);
+        
+        // Allocate buffer (max 21 bytes for i64)
+        const buffer_len = c.LLVMConstInt(i64_type, 21, 0);
+        const buffer_ptr = c.LLVMBuildCall2(
+            builder,
+            i8_ptr_type,
+            cursed_alloc,
+            &[_]c.LLVMValueRef{buffer_len, c.LLVMConstInt(i32_type, 3, 0)}, // string type_id = 3
+            2,
+            "int_str_buffer"
+        );
+        
+        // Create format string "%lld"
+        const fmt_str = c.LLVMConstStringInContext(context, "%lld", 4, 0);
+        const global_fmt = c.LLVMAddGlobal(module, c.LLVMTypeOf(fmt_str), "int_fmt");
+        c.LLVMSetInitializer(global_fmt, fmt_str);
+        c.LLVMSetGlobalConstant(global_fmt, 1);
+        
+        const zero = c.LLVMConstInt(i32_type, 0, 0);
+        const fmt_indices = [_]c.LLVMValueRef{zero, zero};
+        const fmt_ptr = c.LLVMConstGEP2(c.LLVMTypeOf(fmt_str), global_fmt, &fmt_indices, 2);
+        
+        // Call sprintf
+        _ = c.LLVMBuildCall2(
+            builder,
+            i32_type,
+            sprintf_func,
+            &[_]c.LLVMValueRef{buffer_ptr, fmt_ptr, int_param},
+            3,
+            ""
+        );
+        
+        _ = c.LLVMBuildRet(builder, buffer_ptr);
+        
+        // Format float to string
+        const float_to_str_type = c.LLVMFunctionType(i8_ptr_type, &[_]c.LLVMTypeRef{c.LLVMDoubleTypeInContext(context)}, 1, 0);
+        const float_to_str_func = c.LLVMAddFunction(module, "cursed_float_to_string", float_to_str_type);
+        
+        const float_to_str_entry = c.LLVMAppendBasicBlockInContext(context, float_to_str_func, "entry");
+        c.LLVMPositionBuilderAtEnd(builder, float_to_str_entry);
+        
+        const float_param = c.LLVMGetParam(float_to_str_func, 0);
+        
+        // Allocate buffer (max 32 bytes for double)
+        const float_buffer_len = c.LLVMConstInt(i64_type, 32, 0);
+        const float_buffer_ptr = c.LLVMBuildCall2(
+            builder,
+            i8_ptr_type,
+            cursed_alloc,
+            &[_]c.LLVMValueRef{float_buffer_len, c.LLVMConstInt(i32_type, 3, 0)},
+            2,
+            "float_str_buffer"
+        );
+        
+        // Create format string "%.6f"
+        const float_fmt_str = c.LLVMConstStringInContext(context, "%.6f", 5, 0);
+        const global_float_fmt = c.LLVMAddGlobal(module, c.LLVMTypeOf(float_fmt_str), "float_fmt");
+        c.LLVMSetInitializer(global_float_fmt, float_fmt_str);
+        c.LLVMSetGlobalConstant(global_float_fmt, 1);
+        
+        const float_fmt_indices = [_]c.LLVMValueRef{zero, zero};
+        const float_fmt_ptr = c.LLVMConstGEP2(c.LLVMTypeOf(float_fmt_str), global_float_fmt, &float_fmt_indices, 2);
+        
+        // Call sprintf
+        _ = c.LLVMBuildCall2(
+            builder,
+            i32_type,
+            sprintf_func,
+            &[_]c.LLVMValueRef{float_buffer_ptr, float_fmt_ptr, float_param},
+            3,
+            ""
+        );
+        
+        _ = c.LLVMBuildRet(builder, float_buffer_ptr);
+        
         // === 6. STRING SUBSTRING ===
         const substr_type = c.LLVMFunctionType(i8_ptr_type, &[_]c.LLVMTypeRef{i8_ptr_type, i32_type, i32_type}, 3, 0);
         const substr_func = c.LLVMAddFunction(module, "cursed_string_substring", substr_type);

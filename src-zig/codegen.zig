@@ -828,6 +828,9 @@ pub const CodeGen = struct {
             .TypeCast => |cast| {
                 return try self.generateTypeCast(cast);
             },
+            .StringInterpolation => |interpolation| {
+                return try self.generateStringInterpolation(interpolation);
+            },
             .Shook => |shook| {
                 return try self.generateShook(shook);
             },
@@ -3591,6 +3594,133 @@ pub const CodeGen = struct {
             &[_]c.LLVMValueRef{ dest, src_str, src_len },
             3,
             ""
+        );
+    }
+    
+    /// Generate LLVM IR for string interpolation expressions
+    fn generateStringInterpolation(self: *CodeGen, interpolation: ast.StringInterpolationExpression) CodeGenError!c.LLVMValueRef {
+        // Start with empty string
+        var result = try self.generateStringLiteral("");
+        
+        // Process each interpolation part
+        for (interpolation.parts.items) |part| {
+            var part_value: c.LLVMValueRef = undefined;
+            
+            if (part.expression) |expr_ptr| {
+                // Evaluate expression and convert to string
+                const expr: *ast.Expression = @ptrCast(@alignCast(expr_ptr));
+                const expr_value = try self.generateExpression(expr.*);
+                
+                // Convert expression result to string based on type
+                part_value = try self.generateValueToString(expr_value);
+            } else {
+                // Literal text part
+                part_value = try self.generateStringLiteral(part.text);
+            }
+            
+            // Concatenate with result
+            result = try self.generateStringConcatenation(result, part_value);
+        }
+        
+        return result;
+    }
+    
+    /// Convert any value to string representation
+    fn generateValueToString(self: *CodeGen, value: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        const value_type = c.LLVMTypeOf(value);
+        const type_kind = c.LLVMGetTypeKind(value_type);
+        
+        switch (type_kind) {
+            c.LLVMIntegerTypeKind => {
+                // Integer to string conversion
+                const int_to_str_func = self.runtime_functions.get("cursed_int_to_string") orelse blk: {
+                    const func_type = c.LLVMFunctionType(
+                        c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                        &[_]c.LLVMTypeRef{c.LLVMInt64TypeInContext(self.context)},
+                        1, 0
+                    );
+                    const func = c.LLVMAddFunction(self.module, "cursed_int_to_string", func_type);
+                    try self.runtime_functions.put("cursed_int_to_string", func);
+                    break :blk func;
+                };
+                
+                // Extend/truncate to i64 if needed
+                const i64_type = c.LLVMInt64TypeInContext(self.context);
+                var int_value = value;
+                const value_width = c.LLVMGetIntTypeWidth(value_type);
+                const target_width = c.LLVMGetIntTypeWidth(i64_type);
+                
+                if (value_width < target_width) {
+                    int_value = c.LLVMBuildSExt(self.builder, value, i64_type, "sext_to_i64");
+                } else if (value_width > target_width) {
+                    int_value = c.LLVMBuildTrunc(self.builder, value, i64_type, "trunc_to_i64");
+                }
+                
+                return c.LLVMBuildCall2(
+                    self.builder,
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                    int_to_str_func,
+                    &[_]c.LLVMValueRef{int_value},
+                    1,
+                    "int_to_str"
+                );
+            },
+            c.LLVMDoubleTypeKind => {
+                // Float to string conversion
+                const float_to_str_func = self.runtime_functions.get("cursed_float_to_string") orelse blk: {
+                    const func_type = c.LLVMFunctionType(
+                        c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                        &[_]c.LLVMTypeRef{c.LLVMDoubleTypeInContext(self.context)},
+                        1, 0
+                    );
+                    const func = c.LLVMAddFunction(self.module, "cursed_float_to_string", func_type);
+                    try self.runtime_functions.put("cursed_float_to_string", func);
+                    break :blk func;
+                };
+                
+                return c.LLVMBuildCall2(
+                    self.builder,
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                    float_to_str_func,
+                    &[_]c.LLVMValueRef{value},
+                    1,
+                    "float_to_str"
+                );
+            },
+            c.LLVMPointerTypeKind => {
+                // Assume it's already a string pointer
+                return value;
+            },
+            else => {
+                // For other types, return placeholder
+                return try self.generateStringLiteral("<unknown>");
+            }
+        }
+    }
+    
+    /// Generate string concatenation call
+    fn generateStringConcatenation(self: *CodeGen, str1: c.LLVMValueRef, str2: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        const strcat_func = self.runtime_functions.get("cursed_string_concat") orelse blk: {
+            const strcat_type = c.LLVMFunctionType(
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                &[_]c.LLVMTypeRef{
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)
+                },
+                2, 0
+            );
+            const func = c.LLVMAddFunction(self.module, "cursed_string_concat", strcat_type);
+            try self.runtime_functions.put("cursed_string_concat", func);
+            break :blk func;
+        };
+        
+        return c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            strcat_func,
+            &[_]c.LLVMValueRef{str1, str2},
+            2,
+            "str_concat"
         );
     }
 };

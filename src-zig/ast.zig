@@ -56,6 +56,7 @@ pub const Expression = union(enum) {
     RangeFor: RangeForExpression,
     Match: MatchExpression,
     TypeSwitch: TypeSwitchExpression,
+    StringInterpolation: StringInterpolationExpression,
 
     pub fn deinit(self: *Expression, allocator: Allocator) void {
         // Memory cleanup is now handled properly without circular dependencies
@@ -99,6 +100,16 @@ pub const Expression = union(enum) {
             .MethodCall => |method_call| {
                 allocator.destroy(method_call);
             },
+            .StringInterpolation => |interpolation| {
+                for (interpolation.parts.items) |part| {
+                    if (part.expression) |expr| {
+                        const expr_ptr: *Expression = @ptrCast(@alignCast(expr));
+                        expr_ptr.deinit(allocator);
+                        allocator.destroy(expr_ptr);
+                    }
+                }
+                interpolation.parts.deinit();
+            },
             else => {}, // Simple types don't need special cleanup
         }
     }
@@ -115,6 +126,18 @@ pub const Expression = union(enum) {
             .String => |str| print_fn("\"{s}\"", .{str}),
             .Boolean => |bool_val| print_fn("{}", .{bool_val}),
             .Character => |char| print_fn("'{c}'", .{char}),
+            .StringInterpolation => |interpolation| {
+                print_fn("StringInterpolation[", .{});
+                for (interpolation.parts.items, 0..) |part, i| {
+                    if (i > 0) print_fn(", ", .{});
+                    if (part.expression != null) {
+                        print_fn("${{}}", .{"expr"});
+                    } else {
+                        print_fn("\"{}\"", .{part.text});
+                    }
+                }
+                print_fn("]", .{});
+            },
             .Binary => |bin| {
                 try bin.left.print(0);
                 print_fn(" {s} ", .{bin.operator});
@@ -1058,6 +1081,34 @@ pub const TypeConstraint = union(enum) {
         type_parameter: []const u8,
         constraints: ArrayList(TypeConstraint),
     };
+};
+
+// String interpolation support
+pub const StringInterpolationExpression = struct {
+    parts: ArrayList(InterpolationPart),
+    
+    pub fn init(allocator: Allocator) StringInterpolationExpression {
+        return StringInterpolationExpression{
+            .parts = ArrayList(InterpolationPart).init(allocator),
+        };
+    }
+    
+    pub fn deinit(self: *StringInterpolationExpression, allocator: Allocator) void {
+        for (self.parts.items) |part| {
+            if (part.expression) |expr| {
+                const expr_ptr: *Expression = @ptrCast(@alignCast(expr));
+                expr_ptr.deinit(allocator);
+                allocator.destroy(expr_ptr);
+            }
+        }
+        self.parts.deinit();
+    }
+};
+
+pub const InterpolationPart = struct {
+    text: []const u8,        // Literal text part
+    expression: ?*anyopaque, // Expression to evaluate (null for literal parts)
+    format_spec: ?[]const u8, // Optional format specification
 };
 
 // AST type alias for tools

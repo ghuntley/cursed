@@ -1136,6 +1136,12 @@ pub const Parser = struct {
                                    token.lexeme[token.lexeme.len-1] == '"')
                                  token.lexeme[1..token.lexeme.len-1] // Remove quotes
                                  else token.lexeme;
+            
+            // Check for string interpolation patterns
+            if (std.mem.indexOf(u8, str_content, "${")) |_| {
+                return try self.parseStringInterpolation(str_content);
+            }
+            
             return Expression{ .String = str_content };
         }
         
@@ -2859,14 +2865,46 @@ pub const Parser = struct {
     }
     
     fn parseTypeConstraint(self: *Parser) ParserError!ast.TypeConstraint {
-        // Parse constraints like T: Drawable, T = String, T <: Number
+        // Parse constraints like T: Drawable, T: Numeric, T: Comparable & Sized
         if (self.match(.Colon)) {
-            // Interface constraint: T: InterfaceName
-            if (!self.check(.Identifier)) {
-                return ParserError.UnexpectedToken;
-            }
-            const interface_name = self.advance().lexeme;
-            return ast.TypeConstraint{ .Interface = interface_name };
+            return try self.parseConstraintExpression();
+        }
+        
+        return ast.TypeConstraint{ .Any = {} };
+    }
+    
+    fn parseConstraintExpression(self: *Parser) ParserError!ast.TypeConstraint {
+        // Parse constraint with potential combinations using &, |
+        const constraint = try self.parseBasicConstraint();
+        
+        while (self.match(.Ampersand) or self.match(.Pipe)) {
+            // For now, just take the first constraint
+            // TODO: Implement compound constraints
+            _ = try self.parseBasicConstraint();
+        }
+        
+        return constraint;
+    }
+    
+    fn parseBasicConstraint(self: *Parser) ParserError!ast.TypeConstraint {
+        if (!self.check(.Identifier)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        const constraint_name = self.advance().lexeme;
+        
+        // Built-in constraint types
+        if (std.mem.eql(u8, constraint_name, "Numeric")) {
+            return ast.TypeConstraint{ .Numeric = {} };
+        } else if (std.mem.eql(u8, constraint_name, "Comparable")) {
+            return ast.TypeConstraint{ .Comparable = {} };
+        } else if (std.mem.eql(u8, constraint_name, "Ordered")) {
+            return ast.TypeConstraint{ .Ordered = {} };
+        } else if (std.mem.eql(u8, constraint_name, "Sized")) {
+            return ast.TypeConstraint{ .Sized = {} };
+        } else {
+            // Interface constraint
+            return ast.TypeConstraint{ .Interface = constraint_name };
         }
         
         if (self.match(.Equal)) {
@@ -3091,6 +3129,60 @@ pub const Parser = struct {
         }
         
         return param;
+    }
+    
+    /// Parse string interpolation "Hello ${name}!" 
+    fn parseStringInterpolation(self: *Parser, str_content: []const u8) ParserError!Expression {
+        var interpolation = ast.StringInterpolationExpression.init(self.allocator);
+        
+        var pos: usize = 0;
+        while (pos < str_content.len) {
+            // Find next interpolation start
+            if (std.mem.indexOfPos(u8, str_content, pos, "${")) |start| {
+                // Add literal text before interpolation
+                if (start > pos) {
+                    const text_part = str_content[pos..start];
+                    try interpolation.parts.append(ast.InterpolationPart{
+                        .text = text_part,
+                        .expression = null,
+                        .format_spec = null,
+                    });
+                }
+                
+                // Find closing brace
+                const expr_start = start + 2; // Skip "${"
+                if (std.mem.indexOfPos(u8, str_content, expr_start, "}")) |end| {
+                    const expr_text = str_content[expr_start..end];
+                    
+                    // Parse expression from text (simplified for now)
+                    const expr_ptr = try self.allocator.create(Expression);
+                    expr_ptr.* = Expression{ .Identifier = expr_text };
+                    
+                    try interpolation.parts.append(ast.InterpolationPart{
+                        .text = "",
+                        .expression = @ptrCast(expr_ptr),
+                        .format_spec = null,
+                    });
+                    
+                    pos = end + 1;
+                } else {
+                    return ParserError.InvalidSyntax; // Unclosed interpolation
+                }
+            } else {
+                // Add remaining literal text
+                if (pos < str_content.len) {
+                    const text_part = str_content[pos..];
+                    try interpolation.parts.append(ast.InterpolationPart{
+                        .text = text_part,
+                        .expression = null,
+                        .format_spec = null,
+                    });
+                }
+                break;
+            }
+        }
+        
+        return Expression{ .StringInterpolation = interpolation };
     }
 };
 
