@@ -1,53 +1,86 @@
 {
     "name": "cursed-language-support",
     "displayName": "CURSED Language Support",
-    "description": "Language support for CURSED programming language",
+    "description": "Language support for CURSED programming language with Gen Z syntax",
     "version": "1.0.0",
     "publisher": "cursed-lang",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ghuntley/cursed"
+    },
     "engines": {
         "vscode": "^1.60.0"
     },
-    "categories": ["Programming Languages"],
-    "keywords": ["cursed", "gen-z", "programming", "language"],
+    "categories": [
+        "Programming Languages",
+        "Snippets",
+        "Formatters",
+        "Linters"
+    ],
+    "keywords": [
+        "cursed",
+        "programming language",
+        "gen z",
+        "syntax highlighting",
+        "language server"
+    ],
     "activationEvents": [
         "onLanguage:cursed"
     ],
     "main": "./out/extension.js",
     "contributes": {
-        "languages": [{
-            "id": "cursed",
-            "aliases": ["CURSED", "cursed"],
-            "extensions": [".csd"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "cursed",
-            "scopeName": "source.cursed",
-            "path": "./syntaxes/cursed.tmLanguage.json"
-        }],
+        "languages": [
+            {
+                "id": "cursed",
+                "aliases": ["CURSED", "cursed"],
+                "extensions": [".csd", ".cursed"],
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "./icons/cursed-light.svg",
+                    "dark": "./icons/cursed-dark.svg"
+                }
+            }
+        ],
+        "grammars": [
+            {
+                "language": "cursed",
+                "scopeName": "source.cursed",
+                "path": "./syntaxes/cursed.tmLanguage.json"
+            }
+        ],
         "configuration": {
             "type": "object",
-            "title": "CURSED",
+            "title": "CURSED Language Configuration",
             "properties": {
                 "cursed.lsp.enabled": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Enable CURSED language server"
+                    "description": "Enable/disable CURSED Language Server Protocol support"
                 },
                 "cursed.lsp.serverPath": {
                     "type": "string",
                     "default": "cursed-lsp",
-                    "description": "Path to CURSED language server executable"
+                    "description": "Path to the CURSED Language Server executable"
                 },
-                "cursed.format.onSave": {
+                "cursed.formatting.enabled": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Format CURSED files on save"
+                    "description": "Enable automatic code formatting"
                 },
                 "cursed.diagnostics.enabled": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Enable syntax and type diagnostics"
+                    "description": "Enable real-time error checking and diagnostics"
+                },
+                "cursed.completion.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable intelligent code completion"
+                },
+                "cursed.hover.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable hover information and documentation"
                 }
             }
         },
@@ -58,26 +91,49 @@
                 "category": "CURSED"
             },
             {
-                "command": "cursed.interpret",
-                "title": "Run CURSED File",
+                "command": "cursed.format",
+                "title": "Format CURSED Code",
                 "category": "CURSED"
             },
             {
-                "command": "cursed.check",
-                "title": "Type Check CURSED File",
+                "command": "cursed.lint",
+                "title": "Lint CURSED Code",
+                "category": "CURSED"
+            },
+            {
+                "command": "cursed.restart-lsp",
+                "title": "Restart Language Server",
                 "category": "CURSED"
             }
         ],
         "keybindings": [
             {
-                "command": "cursed.interpret",
-                "key": "ctrl+shift+r",
-                "when": "editorTextFocus && resourceExtname == .csd"
-            },
-            {
                 "command": "cursed.compile",
                 "key": "ctrl+shift+b",
-                "when": "editorTextFocus && resourceExtname == .csd"
+                "when": "editorLangId == cursed"
+            },
+            {
+                "command": "cursed.format",
+                "key": "shift+alt+f",
+                "when": "editorLangId == cursed"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "cursed",
+                "path": "./snippets/cursed.json"
+            }
+        ],
+        "themes": [
+            {
+                "label": "CURSED Gen Z Dark",
+                "uiTheme": "vs-dark",
+                "path": "./themes/cursed-dark-theme.json"
+            },
+            {
+                "label": "CURSED Gen Z Light",
+                "uiTheme": "vs",
+                "path": "./themes/cursed-light-theme.json"
             }
         ]
     },
@@ -87,28 +143,18 @@
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
-        "test": "node ./out/test/runTest.js",
-        "package": "vsce package"
+        "test": "node ./out/test/runTest.js"
     },
     "devDependencies": {
         "@types/vscode": "^1.60.0",
         "@types/node": "14.x",
-        "@typescript-eslint/eslint-plugin": "^4.31.1",
-        "@typescript-eslint/parser": "^4.31.1",
-        "eslint": "^7.32.0",
-        "typescript": "^4.4.3",
-        "vsce": "^2.6.7"
+        "@typescript-eslint/eslint-plugin": "^4.26.0",
+        "@typescript-eslint/parser": "^4.26.0",
+        "eslint": "^7.27.0",
+        "typescript": "^4.3.2",
+        "vscode-test": "^1.5.2"
     },
     "dependencies": {
         "vscode-languageclient": "^7.0.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/ghuntley/cursed"
-    },
-    "bugs": {
-        "url": "https://github.com/ghuntley/cursed/issues"
-    },
-    "homepage": "https://github.com/ghuntley/cursed#readme",
-    "license": "MIT"
+    }
 }

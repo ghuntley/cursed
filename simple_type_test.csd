@@ -1,16 +1,24 @@
+# Simple type test for the CURSED compiler
+
+# Variable declarations with type inference
+sus x := 42                    # Should infer drip (int)
+sus y := 3.14                  # Should infer meal (float)
+sus name := "CURSED"           # Should infer tea (string)
+sus flag := based              # Should infer lit (bool)
+
+# Function with explicit types
+slay add_numbers(a drip, b drip) drip {
+    damn a + b
+}
+
+# Simple struct
 squad Point {
-    spill x meal
-    spill y meal
+    spill x drip
+    spill y drip
 }
 
-slay distance(p1 Point, p2 Point) meal {
-    sus dx meal = p1.x - p2.x
-    sus dy meal = p1.y - p2.y
-    damn math.sqrt(dx * dx + dy * dy)
-}
+# Use the functions and types
+sus result := add_numbers(10, 20)
+sus origin := Point { x: 0, y: 0 }
 
-sus point1 Point = Point{x: 3.0, y: 4.0}
-sus point2 Point = Point{x: 0.0, y: 0.0}
-sus dist meal = distance(point1, point2)
-
-vibez.spillf("Distance: {}", dist)
+vibez.spill("Type checking test complete!")

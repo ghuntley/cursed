@@ -9,8 +9,8 @@ const Allocator = std.mem.Allocator;
 pub const lsp_server = @import("lsp_server.zig");
 pub const formatter = @import("formatter.zig");
 pub const linter = @import("linter.zig");
-pub const package_manager = @import("package_manager_enhanced.zig");
-pub const doc_generator = @import("doc_generator.zig");
+pub const package_manager = @import("package_manager_core.zig");
+pub const doc_generator = @import("simple_doc_generator.zig");
 
 // Tool Types
 pub const ToolType = enum {

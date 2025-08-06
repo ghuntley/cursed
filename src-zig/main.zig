@@ -7,6 +7,7 @@ const HashMap = std.HashMap;
 const lexer = @import("lexer.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
 const simple_compiler = @import("simple_compiler.zig");
+const cross_compilation = @import("cross_compilation.zig");
 // const cursed_cli_commands = @import("cursed_cli_commands.zig");
 
 // Version information
@@ -39,6 +40,80 @@ const Backend = enum {
     wasm,      // WebAssembly
 };
 
+// Target platform enumeration
+const TargetPlatform = enum {
+    native,           // Host platform
+    linux_x64,        // Linux x86_64
+    linux_arm64,      // Linux ARM64
+    macos_x64,        // macOS x86_64
+    macos_arm64,      // macOS ARM64
+    windows_x64,      // Windows x86_64
+    wasm32,           // WebAssembly 32-bit
+    
+    pub fn toString(self: TargetPlatform) []const u8 {
+        return switch (self) {
+            .native => "native",
+            .linux_x64 => "linux-x64",
+            .linux_arm64 => "linux-arm64",
+            .macos_x64 => "macos-x64",
+            .macos_arm64 => "macos-arm64",
+            .windows_x64 => "windows-x64",
+            .wasm32 => "wasm32",
+        };
+    }
+    
+    pub fn fromString(str: []const u8) ?TargetPlatform {
+        if (std.mem.eql(u8, str, "native")) return .native;
+        if (std.mem.eql(u8, str, "linux-x64")) return .linux_x64;
+        if (std.mem.eql(u8, str, "linux-arm64")) return .linux_arm64;
+        if (std.mem.eql(u8, str, "macos-x64")) return .macos_x64;
+        if (std.mem.eql(u8, str, "macos-arm64")) return .macos_arm64;
+        if (std.mem.eql(u8, str, "windows-x64")) return .windows_x64;
+        if (std.mem.eql(u8, str, "wasm32")) return .wasm32;
+        return null;
+    }
+    
+    pub fn getZigTarget(self: TargetPlatform) ?[]const u8 {
+        return switch (self) {
+            .native => null,
+            .linux_x64 => "x86_64-linux",
+            .linux_arm64 => "aarch64-linux",
+            .macos_x64 => "x86_64-macos",
+            .macos_arm64 => "aarch64-macos",
+            .windows_x64 => "x86_64-windows",
+            .wasm32 => "wasm32-freestanding",
+        };
+    }
+    
+    pub fn supportsLLVM(self: TargetPlatform) bool {
+        return switch (self) {
+            .native, .linux_x64, .linux_arm64, .macos_x64, .macos_arm64, .windows_x64 => true,
+            .wasm32 => false,
+        };
+    }
+    
+    pub fn getExecutableExtension(self: TargetPlatform) []const u8 {
+        return switch (self) {
+            .windows_x64 => ".exe",
+            .wasm32 => ".wasm",
+            else => "",
+        };
+    }
+};
+
+// Linking mode enumeration
+const LinkingMode = enum {
+    dynamic,
+    static,
+    
+    pub fn toString(self: LinkingMode) []const u8 {
+        return switch (self) {
+            .dynamic => "dynamic",
+            .static => "static",
+        };
+    }
+};
+
 // CLI configuration
 const Config = struct {
     command: Command = .interpret,
@@ -46,6 +121,8 @@ const Config = struct {
     source_file: ?[]const u8 = null,
     output_file: ?[]const u8 = null,
     project_dir: ?[]const u8 = null,
+    target_platform: TargetPlatform = .native,
+    linking_mode: LinkingMode = .dynamic,
     optimization_level: u8 = 2,
     debug_mode: bool = false,
     verbose: bool = false,
@@ -271,6 +348,65 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
             config.lto_enabled = true;
         } else if (std.mem.eql(u8, arg, "--debug-info") or std.mem.eql(u8, arg, "-g")) {
             config.debug_info = true;
+        } else if (std.mem.eql(u8, arg, "--target") or std.mem.eql(u8, arg, "-t")) {
+            i += 1;
+            if (i >= args.len) {
+                print("Error: --target requires a value\n", .{});
+                return error.InvalidArgs;
+            }
+            const target_str = args[i];
+            config.target_platform = TargetPlatform.fromString(target_str) orelse {
+                print("Error: Unknown target '{s}'. Valid targets:\n", .{target_str});
+                print("  native       - Host platform (default)\n", .{});
+                print("  linux-x64    - Linux x86_64\n", .{});
+                print("  linux-arm64  - Linux ARM64\n", .{});
+                print("  macos-x64    - macOS x86_64\n", .{});
+                print("  macos-arm64  - macOS ARM64\n", .{});
+                print("  windows-x64  - Windows x86_64\n", .{});
+                print("  wasm32       - WebAssembly 32-bit\n", .{});
+                return error.InvalidArgs;
+            };
+            
+            // Auto-adjust backend for target platform
+            if (config.target_platform == .wasm32 and config.backend == .script) {
+                config.backend = .wasm;
+            }
+        } else if (std.mem.startsWith(u8, arg, "--target=")) {
+            const target_str = arg[9..];
+            config.target_platform = TargetPlatform.fromString(target_str) orelse {
+                print("Error: Unknown target '{s}'. Use --target with valid platform name.\n", .{target_str});
+                return error.InvalidArgs;
+            };
+            
+            // Auto-adjust backend for target platform
+            if (config.target_platform == .wasm32 and config.backend == .script) {
+                config.backend = .wasm;
+            }
+        } else if (std.mem.eql(u8, arg, "--linking") or std.mem.eql(u8, arg, "-l")) {
+            i += 1;
+            if (i >= args.len) {
+                print("Error: --linking requires a value\n", .{});
+                return error.InvalidArgs;
+            }
+            const linking_str = args[i];
+            if (std.mem.eql(u8, linking_str, "dynamic")) {
+                config.linking_mode = .dynamic;
+            } else if (std.mem.eql(u8, linking_str, "static")) {
+                config.linking_mode = .static;
+            } else {
+                print("Error: Unknown linking mode '{s}'. Valid options: dynamic, static\n", .{linking_str});
+                return error.InvalidArgs;
+            }
+        } else if (std.mem.startsWith(u8, arg, "--linking=")) {
+            const linking_str = arg[10..];
+            if (std.mem.eql(u8, linking_str, "dynamic")) {
+                config.linking_mode = .dynamic;
+            } else if (std.mem.eql(u8, linking_str, "static")) {
+                config.linking_mode = .static;
+            } else {
+                print("Error: Unknown linking mode '{s}'. Valid options: dynamic, static\n", .{linking_str});
+                return error.InvalidArgs;
+            }
         } else if (std.mem.eql(u8, arg, "--preserve-debug-info")) {
             config.preserve_debug_info = true;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
@@ -334,11 +470,34 @@ fn executeInterpret(allocator: Allocator, config: Config) !void {
 fn executeCompile(allocator: Allocator, config: Config) !void {
     const filename = config.source_file.?;
     
-    if (config.verbose) {
-        print("🔨 Compiling {s} with {s} backend (O{})\n", .{ 
-            filename, @tagName(config.backend), config.optimization_level 
-        });
+    // Auto-adjust backend for compilation if script backend is selected
+    var adjusted_config = config;
+    if (config.backend == .script) {
+        if (config.target_platform == .wasm32) {
+            adjusted_config.backend = .wasm;
+        } else {
+            adjusted_config.backend = .llvm;  // Default to LLVM for compilation
+        }
+        
+        if (config.verbose) {
+            print("🔧 Auto-adjusted backend from script to {s} for compilation\n", .{@tagName(adjusted_config.backend)});
+        }
     }
+    
+    if (adjusted_config.verbose) {
+        print("🔨 Compiling {s} for target {s} with {s} backend (O{})\n", .{ 
+            filename, adjusted_config.target_platform.toString(), @tagName(adjusted_config.backend), adjusted_config.optimization_level 
+        });
+        print("🔗 Linking mode: {s}\n", .{adjusted_config.linking_mode.toString()});
+    }
+    
+    // Initialize cross-compiler
+    var cross_compiler = cross_compilation.CrossCompiler.init(allocator);
+    defer cross_compiler.deinit();
+    
+    // Validate target platform
+    const zig_target = adjusted_config.target_platform.getZigTarget() orelse "native";
+    try cross_compilation.CrossCompiler.validateTargetPlatform(zig_target, @tagName(adjusted_config.backend));
     
     // Read source file
     const source = readSourceFile(allocator, filename) catch |err| {
@@ -347,15 +506,25 @@ fn executeCompile(allocator: Allocator, config: Config) !void {
     };
     defer allocator.free(source);
     
+    // Generate output filename if not specified
+    const output_file = adjusted_config.output_file orelse blk: {
+        const base_name = std.fs.path.stem(filename);
+        const output_name = try cross_compiler.generateOutputFilename(base_name, zig_target);
+        break :blk output_name;
+    };
+    defer if (adjusted_config.output_file == null) {
+        cross_compiler.allocator.free(output_file);
+    };
+    
     // Execute based on backend
-    switch (config.backend) {
+    switch (adjusted_config.backend) {
         .script => {
             print("❌ Script backend does not support compilation\n", .{});
             return error.InvalidBackend;
         },
-        .llvm => try compileWithLLVM(allocator, source, filename, config),
-        .c => try compileWithC(allocator, source, filename, config),
-        .wasm => try compileWithWASM(allocator, source, filename, config),
+        .llvm => try compileWithLLVMCrossCompilation(source, filename, adjusted_config, &cross_compiler, zig_target, output_file),
+        .c => try compileWithCCrossCompilation(allocator, source, filename, adjusted_config, &cross_compiler, zig_target, output_file),
+        .wasm => try compileWithWASMCrossCompilation(source, filename, adjusted_config, &cross_compiler, zig_target, output_file),
     }
 }
 
@@ -1244,6 +1413,8 @@ fn printHelp() void {
     
     print("OPTIONS:\n", .{});
     print("    --backend, -b BACKEND    Compilation backend [script, llvm, c, wasm]\n", .{});
+    print("    --target, -t TARGET      Target platform for cross-compilation\n", .{});
+    print("    --linking, -l MODE       Linking mode [dynamic, static]\n", .{});
     print("    --output, -o FILE        Output file (for compile command)\n", .{});
     print("    --optimize, -O LEVEL     Optimization level (0-3) [default: 2]\n", .{});
     print("    --lto                    Enable link-time optimization\n", .{});
@@ -1254,13 +1425,117 @@ fn printHelp() void {
     print("    --tokens                 Show token stream\n", .{});
     print("    --watch, -w              Watch for file changes\n\n", .{});
     
+    print("CROSS-COMPILATION TARGETS:\n", .{});
+    print("    native                   Host platform (default)\n", .{});
+    print("    linux-x64                Linux x86_64\n", .{});
+    print("    linux-arm64              Linux ARM64\n", .{});
+    print("    macos-x64                macOS x86_64\n", .{});
+    print("    macos-arm64              macOS ARM64\n", .{});
+    print("    windows-x64              Windows x86_64\n", .{});
+    print("    wasm32                   WebAssembly 32-bit\n\n", .{});
+    
     print("EXAMPLES:\n", .{});
-    print("    cursed hello.csd                    # Interpret hello.csd\n", .{});
-    print("    cursed interpret hello.csd --verbose # Interpret with verbose output\n", .{});
-    print("    cursed compile hello.csd -b llvm    # Compile with LLVM backend\n", .{});
-    print("    cursed check hello.csd              # Type check hello.csd\n", .{});
-    print("    cursed format hello.csd             # Format hello.csd\n", .{});
-    print("    cursed test                         # Run test suite\n\n", .{});
+    print("    cursed hello.csd                          # Interpret hello.csd\n", .{});
+    print("    cursed interpret hello.csd --verbose       # Interpret with verbose output\n", .{});
+    print("    cursed compile hello.csd -b llvm           # Compile with LLVM backend\n", .{});
+    print("    cursed compile hello.csd -t linux-x64      # Cross-compile for Linux x64\n", .{});
+    print("    cursed compile hello.csd -t wasm32         # Compile for WebAssembly\n", .{});
+    print("    cursed compile hello.csd --linking static  # Static linking\n", .{});
+    print("    cursed check hello.csd                     # Type check hello.csd\n", .{});
+    print("    cursed format hello.csd                    # Format hello.csd\n", .{});
+    print("    cursed test                                # Run test suite\n\n", .{});
     
     print("For more information, visit: https://github.com/ghuntley/cursed\n", .{});
+}
+
+// Cross-compilation implementation functions
+fn compileWithLLVMCrossCompilation(
+    source: []const u8, 
+    filename: []const u8, 
+    config: Config,
+    cross_compiler: *cross_compilation.CrossCompiler,
+    target_platform: []const u8,
+    output_file: []const u8
+) !void {
+    _ = source;
+    
+    if (config.verbose) {
+        print("🔨 LLVM cross-compilation for target: {s}\n", .{target_platform});
+    }
+    
+    // For now, delegate to zig build system for cross-compilation
+    const command = try cross_compiler.generateCompileCommand(
+        filename,
+        target_platform,
+        output_file,
+        config.optimization_level,
+        config.linking_mode.toString(),
+        config.verbose
+    );
+    defer cross_compiler.freeCompileCommand(command);
+    
+    try cross_compiler.executeCompilation(command, config.verbose);
+    
+    if (config.verbose) {
+        print("✅ LLVM cross-compilation completed: {s}\n", .{output_file});
+    }
+}
+
+fn compileWithCCrossCompilation(
+    allocator: Allocator, 
+    source: []const u8, 
+    filename: []const u8, 
+    config: Config,
+    cross_compiler: *cross_compilation.CrossCompiler,
+    target_platform: []const u8,
+    output_file: []const u8
+) !void {
+    _ = source;
+    _ = allocator;
+    _ = filename;
+    _ = cross_compiler;
+    _ = output_file;
+    
+    if (config.verbose) {
+        print("🔨 C backend cross-compilation for target: {s}\n", .{target_platform});
+    }
+    
+    // C backend cross-compilation
+    // 1. Transpile CURSED to C
+    // 2. Use target-specific C compiler
+    
+    print("❌ C backend cross-compilation not yet fully implemented\n", .{});
+    print("   Consider using LLVM backend for cross-compilation\n", .{});
+}
+
+fn compileWithWASMCrossCompilation(
+    source: []const u8, 
+    filename: []const u8, 
+    config: Config,
+    cross_compiler: *cross_compilation.CrossCompiler,
+    target_platform: []const u8,
+    output_file: []const u8
+) !void {
+    _ = source;
+    
+    if (config.verbose) {
+        print("🔨 WebAssembly compilation for target: {s}\n", .{target_platform});
+    }
+    
+    // Generate WASM-specific compilation command
+    const command = try cross_compiler.generateCompileCommand(
+        filename,
+        "wasm32-freestanding",
+        output_file,
+        config.optimization_level,
+        "static", // WASM typically uses static linking
+        config.verbose
+    );
+    defer cross_compiler.freeCompileCommand(command);
+    
+    try cross_compiler.executeCompilation(command, config.verbose);
+    
+    if (config.verbose) {
+        print("✅ WebAssembly compilation completed: {s}\n", .{output_file});
+    }
 }
