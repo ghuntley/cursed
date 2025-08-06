@@ -9,11 +9,27 @@ fr fr Constants
 facts NANOS_PER_SECOND normie = 1000000000
 facts NANOS_PER_MILLI normie = 1000000
 facts NANOS_PER_MICRO normie = 1000
+facts SECONDS_PER_MINUTE normie = 60
+facts SECONDS_PER_HOUR normie = 3600
+facts SECONDS_PER_DAY normie = 86400
+facts SECONDS_PER_WEEK normie = 604800
 
 fr fr Get current time (simulated - returns current system time approximation)
 slay now() Time { fr fr Pure CURSED implementation - simulates system time fr fr In production, this would interface with system clock
     sus current_seconds normie = 1720857600 fr fr Base timestamp (July 2024)
     damn current_seconds.(Time)
+}
+
+fr fr Get current timestamp in milliseconds since epoch
+slay timestamp() normie {
+    sus current Time = now()
+    damn current.(normie) * 1000
+}
+
+fr fr Get current Unix timestamp in seconds
+slay unix_time() normie {
+    sus current Time = now()
+    damn current.(normie)
 }
 
 fr fr Create time from Unix timestamp
@@ -61,6 +77,30 @@ slay nanoseconds(ns normie) Duration {
     damn ns.(Duration)
 }
 
+fr fr Create duration from minutes
+slay minutes(m normie) Duration {
+    sus nanos normie = m * SECONDS_PER_MINUTE * NANOS_PER_SECOND
+    damn nanos.(Duration)
+}
+
+fr fr Create duration from hours
+slay hours(h normie) Duration {
+    sus nanos normie = h * SECONDS_PER_HOUR * NANOS_PER_SECOND
+    damn nanos.(Duration)
+}
+
+fr fr Create duration from days
+slay days(d normie) Duration {
+    sus nanos normie = d * SECONDS_PER_DAY * NANOS_PER_SECOND
+    damn nanos.(Duration)
+}
+
+fr fr Create duration from weeks
+slay weeks(w normie) Duration {
+    sus nanos normie = w * SECONDS_PER_WEEK * NANOS_PER_SECOND
+    damn nanos.(Duration)
+}
+
 fr fr Add duration to time
 slay add_duration(time Time, dur Duration) Time {
     sus time_seconds normie = time.(normie)
@@ -86,6 +126,44 @@ slay time_diff(t1 Time, t2 Time) Duration {
     damn diff_nanos.(Duration)
 }
 
+fr fr Convenient time arithmetic functions
+slay add_seconds(time Time, s normie) Time {
+    sus dur Duration = seconds(s)
+    damn add_duration(time, dur)
+}
+
+slay add_minutes(time Time, m normie) Time {
+    sus dur Duration = minutes(m)
+    damn add_duration(time, dur)
+}
+
+slay add_hours(time Time, h normie) Time {
+    sus dur Duration = hours(h)
+    damn add_duration(time, dur)
+}
+
+slay add_days(time Time, d normie) Time {
+    sus dur Duration = days(d)
+    damn add_duration(time, dur)
+}
+
+fr fr Duration calculation helpers
+slay diff_seconds(t1 Time, t2 Time) normie {
+    sus diff Duration = time_diff(t1, t2)
+    damn duration_seconds(diff)
+}
+
+slay diff_days(t1 Time, t2 Time) normie {
+    sus diff_secs normie = diff_seconds(t1, t2)
+    damn diff_secs / SECONDS_PER_DAY
+}
+
+fr fr Elapsed time since reference
+slay elapsed(reference Time) Duration {
+    sus current Time = now()
+    damn time_diff(reference, current)
+}
+
 fr fr Format time as RFC3339 string
 slay format_rfc3339(time Time) tea { fr fr Simplified RFC3339 formatting for pure CURSED implementation fr fr Returns ISO 8601 / RFC3339 compliant string
     sus timestamp normie = time.(normie) fr fr Basic formatting (would be expanded with proper date/time conversion) fr fr For demo: 2024-07-13T12:34:56Z format
@@ -103,6 +181,54 @@ slay format_human(time Time) tea { fr fr Human-readable format: July 13, 2024 12
     damn "July 13, 2024 12:34:56 UTC"
 }
 
+fr fr Format time as ISO8601 string
+slay iso8601(time Time) tea {
+    damn format_rfc3339(time) fr fr ISO8601 is equivalent to RFC3339
+}
+
+fr fr Advanced formatting functions
+slay format_time(time Time, format tea) tea {
+    fr fr Simplified format string handling
+    fr fr In full implementation would support %Y, %m, %d, %H, %M, %S patterns
+    lowkey format == "iso" {
+        damn iso8601(time)
+    } hit lowkey format == "unix" {
+        damn format_unix(time)
+    } hit lowkey format == "human" {
+        damn format_human(time)
+    } yikes {
+        damn format_rfc3339(time) fr fr default
+    }
+}
+
+fr fr Parse time from various formats
+slay parse_time(timestr tea, format tea) Time {
+    fr fr Simplified parsing for pure CURSED implementation
+    fr fr In full implementation would support multiple formats
+    lowkey format == "rfc3339" || format == "iso8601" {
+        damn parse_rfc3339(timestr)
+    } yikes {
+        damn unix(1720857600) fr fr default time if parsing fails
+    }
+}
+
+fr fr Timezone operations (simplified UTC-based implementation)
+slay to_utc(time Time) Time {
+    fr fr Already in UTC for this implementation
+    damn time
+}
+
+slay from_utc(time Time) Time {
+    fr fr Already in UTC for this implementation
+    damn time
+}
+
+fr fr Get timezone offset in seconds (simplified)
+slay timezone_offset() normie {
+    fr fr Return 0 for UTC (would calculate actual offset in full implementation)
+    damn 0
+}
+
 fr fr Sleep for specified duration (simulated)
 slay sleep(dur Duration) { fr fr Pure CURSED sleep simulation fr fr In production, would interface with system sleep
     sus nanos normie = dur.(normie)
@@ -111,6 +237,17 @@ slay sleep(dur Duration) { fr fr Pure CURSED sleep simulation fr fr In productio
     bestie i := 0; i < millis; i++ {
         counter = counter + 1
     }
+}
+
+fr fr Sleep for microseconds (simulated)
+slay usleep(microseconds normie) {
+    sus dur Duration = microseconds(microseconds)
+    sleep(dur)
+}
+
+fr fr Generic delay function
+slay delay(dur Duration) {
+    sleep(dur)
 }
 
 fr fr Check if t1 is before t2
@@ -154,6 +291,24 @@ slay duration_micros(dur Duration) normie {
 fr fr Duration to nanoseconds
 slay duration_nanos(dur Duration) normie {
     damn dur.(normie)
+}
+
+fr fr Duration to minutes conversion
+slay duration_minutes(dur Duration) normie {
+    sus secs normie = duration_seconds(dur)
+    damn secs / SECONDS_PER_MINUTE
+}
+
+fr fr Duration to hours conversion
+slay duration_hours(dur Duration) normie {
+    sus secs normie = duration_seconds(dur)
+    damn secs / SECONDS_PER_HOUR
+}
+
+fr fr Duration to days conversion
+slay duration_days(dur Duration) normie {
+    sus secs normie = duration_seconds(dur)
+    damn secs / SECONDS_PER_DAY
 }
 
 fr fr Add two durations

@@ -49,6 +49,8 @@ The `mathz` module provides comprehensive mathematical functions and constants f
 
 - `exp_meal(x meal)` - Exponential function (e^x)
 - `ln_meal(x meal)` - Natural logarithm using Taylor series
+- `log10_meal(x meal)` - Base-10 logarithm
+- `log2_meal(x meal)` - Base-2 logarithm
 
 ## Trigonometric Functions
 
@@ -58,6 +60,18 @@ The `mathz` module provides comprehensive mathematical functions and constants f
 - `sin_deg(degrees meal)` - Sine function (degrees)
 - `cos_deg(degrees meal)` - Cosine function (degrees)
 - `tan_deg(degrees meal)` - Tangent function (degrees)
+
+## Inverse Trigonometric Functions
+
+- `asin_meal(x meal)` - Arcsine function (returns radians)
+- `acos_meal(x meal)` - Arccosine function (returns radians)
+- `atan_meal(x meal)` - Arctangent function (returns radians)
+
+## Hyperbolic Functions
+
+- `sinh_meal(x meal)` - Hyperbolic sine
+- `cosh_meal(x meal)` - Hyperbolic cosine
+- `tanh_meal(x meal)` - Hyperbolic tangent
 
 ## Angle Utilities
 
@@ -72,6 +86,17 @@ The `mathz` module provides comprehensive mathematical functions and constants f
 - `is_negative_meal(x meal)` - Check if negative
 - `is_even(x normie)` - Check if integer is even
 - `is_odd(x normie)` - Check if integer is odd
+- `clamp_meal(value, min_val, max_val meal)` - Clamp value to range (floats)
+- `clamp_normie(value, min_val, max_val normie)` - Clamp value to range (integers)
+- `lerp_meal(a, b, t meal)` - Linear interpolation between a and b
+- `sign_meal(x meal)` - Sign function for floats (-1, 0, or 1)
+- `sign_normie(x normie)` - Sign function for integers (-1, 0, or 1)
+- `trunc_meal(x meal)` - Truncate towards zero
+- `frac_meal(x meal)` - Fractional part of a number
+- `fmod_meal(x, y meal)` - Floating-point modulo
+- `is_nan(x meal)` - Check if value is NaN
+- `is_infinite(x meal)` - Check if value is infinite
+- `is_finite(x meal)` - Check if value is finite
 
 ## Number Theory Functions
 
@@ -79,6 +104,7 @@ The `mathz` module provides comprehensive mathematical functions and constants f
 - `gcd(a, b normie)` - Greatest common divisor
 - `lcm(a, b normie)` - Least common multiple
 - `fibonacci(n normie)` - Fibonacci sequence
+- `is_prime(n normie)` - Check if number is prime
 
 ## Random Number Generation
 
@@ -86,6 +112,18 @@ The `mathz` module provides comprehensive mathematical functions and constants f
 - `random_int()` - Generate random integer
 - `random_meal()` - Generate random float [0, 1]
 - `random_range(min_val, max_val normie)` - Random integer in range
+- `random_meal_range(min_val, max_val meal)` - Random float in range
+- `random_gaussian()` - Generate Gaussian-distributed random number
+
+## Mathematical Series
+
+- `arithmetic_sum(first, last, count normie)` - Sum of arithmetic series
+- `geometric_sum(first, ratio meal, count normie)` - Sum of geometric series
+
+## Distance Functions
+
+- `distance_2d(x1, y1, x2, y2 meal)` - Euclidean distance in 2D
+- `distance_3d(x1, y1, z1, x2, y2, z2 meal)` - Euclidean distance in 3D
 
 ## Example Usage
 

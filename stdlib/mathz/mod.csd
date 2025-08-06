@@ -379,6 +379,244 @@ slay random_range(min_val normie, max_val normie) normie {
     damn min_val + (random_int() % range)
 }
 
+fr fr Logarithmic Functions
+slay log10_meal(x meal) meal {
+    lowkey x <= 0.0 {
+        damn 0.0 fr fr Safe fallback
+    }
+    damn ln_meal(x) / LN_10
+}
+
+slay log2_meal(x meal) meal {
+    lowkey x <= 0.0 {
+        damn 0.0 fr fr Safe fallback
+    }
+    damn ln_meal(x) / LN_2
+}
+
+fr fr Inverse Trigonometric Functions (using Taylor series)
+slay asin_meal(x meal) meal {
+    lowkey x < -1.0 || x > 1.0 {
+        damn 0.0 fr fr Invalid input, return 0
+    }
+    lowkey x == 0.0 {
+        damn 0.0
+    }
+    lowkey x == 1.0 {
+        damn PI / 2.0
+    }
+    lowkey x == -1.0 {
+        damn -PI / 2.0
+    }
+    
+    fr fr Use arcsin(x) = x + x³/6 + 3x⁵/40 + 5x⁷/112 + ...
+    sus result meal = x
+    sus x_squared meal = x * x
+    sus term meal = x
+    sus n normie = 1
+    
+    bestie n < 20 {
+        lowkey abs_meal(term) <= EPSILON {
+            ghosted
+        }
+        term = term * x_squared * (2.0 * n - 1.0) * (2.0 * n - 1.0) / ((2.0 * n) * (2.0 * n + 1.0))
+        result = result + term
+        n = n + 1
+    }
+    
+    damn result
+}
+
+slay acos_meal(x meal) meal {
+    lowkey x < -1.0 || x > 1.0 {
+        damn 0.0 fr fr Invalid input
+    }
+    damn PI / 2.0 - asin_meal(x)
+}
+
+slay atan_meal(x meal) meal {
+    lowkey x == 0.0 {
+        damn 0.0
+    }
+    lowkey x > 1.0 {
+        damn PI / 2.0 - atan_meal(1.0 / x)
+    }
+    lowkey x < -1.0 {
+        damn -PI / 2.0 - atan_meal(1.0 / x)
+    }
+    
+    fr fr Use arctan(x) = x - x³/3 + x⁵/5 - x⁷/7 + ...
+    sus result meal = x
+    sus x_squared meal = x * x
+    sus term meal = x
+    sus n normie = 1
+    sus sign normie = -1
+    
+    bestie n < 50 {
+        lowkey abs_meal(term) <= EPSILON {
+            ghosted
+        }
+        term = term * x_squared
+        result = result + sign * term / (2.0 * n + 1.0)
+        sign = -sign
+        n = n + 1
+    }
+    
+    damn result
+}
+
+fr fr Hyperbolic Functions
+slay sinh_meal(x meal) meal {
+    sus exp_pos meal = exp_meal(x)
+    sus exp_neg meal = exp_meal(-x)
+    damn (exp_pos - exp_neg) / 2.0
+}
+
+slay cosh_meal(x meal) meal {
+    sus exp_pos meal = exp_meal(x)
+    sus exp_neg meal = exp_meal(-x)
+    damn (exp_pos + exp_neg) / 2.0
+}
+
+slay tanh_meal(x meal) meal {
+    sus sinh_val meal = sinh_meal(x)
+    sus cosh_val meal = cosh_meal(x)
+    lowkey abs_meal(cosh_val) < EPSILON {
+        damn 0.0
+    }
+    damn sinh_val / cosh_val
+}
+
+fr fr Additional Utility Functions
+slay clamp_meal(value meal, min_val meal, max_val meal) meal {
+    lowkey value < min_val {
+        damn min_val
+    }
+    lowkey value > max_val {
+        damn max_val
+    }
+    damn value
+}
+
+slay clamp_normie(value normie, min_val normie, max_val normie) normie {
+    lowkey value < min_val {
+        damn min_val
+    }
+    lowkey value > max_val {
+        damn max_val
+    }
+    damn value
+}
+
+slay lerp_meal(a meal, b meal, t meal) meal {
+    damn a + t * (b - a)
+}
+
+slay sign_meal(x meal) meal {
+    lowkey x > 0.0 {
+        damn 1.0
+    }
+    lowkey x < 0.0 {
+        damn -1.0
+    }
+    damn 0.0
+}
+
+slay sign_normie(x normie) normie {
+    lowkey x > 0 {
+        damn 1
+    }
+    lowkey x < 0 {
+        damn -1
+    }
+    damn 0
+}
+
+fr fr Special Constants
+sus INFINITY meal = 1.0 / 0.0
+sus NAN meal = 0.0 / 0.0
+
+fr fr NaN and Infinity checks
+slay is_nan(x meal) lit {
+    damn x != x
+}
+
+slay is_infinite(x meal) lit {
+    damn x == INFINITY || x == -INFINITY
+}
+
+slay is_finite(x meal) lit {
+    damn !is_nan(x) && !is_infinite(x)
+}
+
+fr fr Truncation function
+slay trunc_meal(x meal) normie {
+    lowkey x >= 0.0 {
+        damn floor_meal(x)
+    } {
+        damn ceil_meal(x)
+    }
+}
+
+fr fr Fractional part
+slay frac_meal(x meal) meal {
+    damn x - trunc_meal(x)
+}
+
+fr fr Modulo for floats
+slay fmod_meal(x meal, y meal) meal {
+    lowkey y == 0.0 {
+        damn 0.0
+    }
+    sus quotient normie = trunc_meal(x / y)
+    damn x - quotient * y
+}
+
+fr fr Advanced Random Functions
+slay random_meal_range(min_val meal, max_val meal) meal {
+    lowkey min_val >= max_val {
+        damn min_val
+    }
+    sus range meal = max_val - min_val
+    damn min_val + random_meal() * range
+}
+
+slay random_gaussian() meal {
+    fr fr Box-Muller transform for Gaussian distribution
+    sus u1 meal = random_meal()
+    sus u2 meal = random_meal()
+    
+    lowkey u1 <= 0.0 {
+        u1 = EPSILON
+    }
+    
+    sus z0 meal = sqrt_meal(-2.0 * ln_meal(u1)) * cos_meal(TAU * u2)
+    damn z0
+}
+
+fr fr Prime checking
+slay is_prime(n normie) lit {
+    lowkey n <= 1 {
+        damn cringe
+    }
+    lowkey n <= 3 {
+        damn based
+    }
+    lowkey n % 2 == 0 || n % 3 == 0 {
+        damn cringe
+    }
+    
+    sus i normie = 5
+    bestie i * i <= n {
+        lowkey n % i == 0 || n % (i + 2) == 0 {
+            damn cringe
+        }
+        i = i + 6
+    }
+    
+    damn based
+}
+
 fr fr Advanced Mathematical Functions
 slay fibonacci(n normie) normie {
     lowkey n <= 1 {
@@ -395,4 +633,37 @@ slay fibonacci(n normie) normie {
     }
     
     damn b
+}
+
+fr fr Sum of arithmetic series
+slay arithmetic_sum(first normie, last normie, count normie) normie {
+    lowkey count <= 0 {
+        damn 0
+    }
+    damn count * (first + last) / 2
+}
+
+fr fr Sum of geometric series
+slay geometric_sum(first meal, ratio meal, count normie) meal {
+    lowkey count <= 0 {
+        damn 0.0
+    }
+    lowkey abs_meal(ratio - 1.0) < EPSILON {
+        damn first * count
+    }
+    damn first * (1.0 - pow_meal_meal(ratio, count)) / (1.0 - ratio)
+}
+
+fr fr Distance functions
+slay distance_2d(x1 meal, y1 meal, x2 meal, y2 meal) meal {
+    sus dx meal = x2 - x1
+    sus dy meal = y2 - y1
+    damn sqrt_meal(dx * dx + dy * dy)
+}
+
+slay distance_3d(x1 meal, y1 meal, z1 meal, x2 meal, y2 meal, z2 meal) meal {
+    sus dx meal = x2 - x1
+    sus dy meal = y2 - y1
+    sus dz meal = z2 - z1
+    damn sqrt_meal(dx * dx + dy * dy + dz * dz)
 }

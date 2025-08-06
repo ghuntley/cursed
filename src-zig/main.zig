@@ -41,6 +41,8 @@ const Config = struct {
     verbose: bool = false,
     show_tokens: bool = false,
     watch_mode: bool = false,
+    check_only: bool = false,
+    show_diff: bool = false,
     
     pub fn init() Config {
         return Config{};
@@ -202,6 +204,10 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
             config.show_tokens = true;
         } else if (std.mem.eql(u8, arg, "--watch") or std.mem.eql(u8, arg, "-w")) {
             config.watch_mode = true;
+        } else if (std.mem.eql(u8, arg, "--check")) {
+            config.check_only = true;
+        } else if (std.mem.eql(u8, arg, "--diff")) {
+            config.show_diff = true;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             // Assume it's a source file if no source file is set yet
             if (config.source_file == null) {
@@ -322,8 +328,74 @@ fn executeFormat(allocator: Allocator, config: Config) !void {
     };
     defer allocator.free(source);
     
-    // For now, just output the source as-is (formatting not implemented)
-    print("{s}", .{source});
+    // Import formatter
+    const formatter = @import("tools/formatter.zig");
+    
+    // Format the code
+    var fmt = formatter.Formatter.init(allocator, formatter.FormatterConfig{});
+    defer fmt.deinit();
+    
+    const formatted = fmt.format(source) catch |err| {
+        print("❌ Error formatting file {s}: {any}\n", .{ filename, err });
+        return;
+    };
+    defer allocator.free(formatted);
+    
+    if (config.check_only) {
+        // Check if source matches formatted output
+        if (std.mem.eql(u8, source, formatted)) {
+            if (config.verbose) {
+                print("✅ {s} is already formatted\n", .{filename});
+            }
+        } else {
+            print("❌ {s} needs formatting\n", .{filename});
+            std.process.exit(1);
+        }
+        return;
+    }
+    
+    if (config.show_diff) {
+        // Show differences between original and formatted
+        print("--- {s} (original)\n", .{filename});
+        print("+++ {s} (formatted)\n", .{filename});
+        // Simple line-by-line diff
+        var source_lines = std.mem.split(u8, source, "\n");
+        var formatted_lines = std.mem.split(u8, formatted, "\n");
+        var line_num: u32 = 1;
+        
+        while (true) {
+            const source_line = source_lines.next();
+            const formatted_line = formatted_lines.next();
+            
+            if (source_line == null and formatted_line == null) break;
+            
+            const src = source_line orelse "";
+            const fmt_line = formatted_line orelse "";
+            
+            if (!std.mem.eql(u8, src, fmt_line)) {
+                if (source_line != null) {
+                    print("-{}: {s}\n", .{ line_num, src });
+                }
+                if (formatted_line != null) {
+                    print("+{}: {s}\n", .{ line_num, fmt_line });
+                }
+            }
+            line_num += 1;
+        }
+        return;
+    }
+    
+    // Write back to file
+    const output_file = std.fs.cwd().createFile(filename, .{}) catch |err| {
+        print("❌ Error creating output file {s}: {any}\n", .{ filename, err });
+        return;
+    };
+    defer output_file.close();
+    
+    output_file.writeAll(formatted) catch |err| {
+        print("❌ Error writing formatted output to {s}: {any}\n", .{ filename, err });
+        return;
+    };
     
     if (config.verbose) {
         print("✅ Formatting completed\n", .{});

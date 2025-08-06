@@ -334,6 +334,89 @@ slay test_complex_json() {
     assert_true(json_tea.string_contains(mixed_result, "null"))
 }
 
+slay test_enhanced_parsing() {
+    test_start("Enhanced JSON Parsing") fr fr Test parse_json functions
+    sus parsed_string tea = json_tea.parse_json_string("\"hello\"")
+    assert_eq_string(parsed_string, "hello")
+    
+    sus parsed_number tea = json_tea.parse_json("42")
+    assert_eq_string(parsed_number, "42") fr fr Test parse_json_file (should return error in demo)
+    sus file_result tea = json_tea.parse_json_file("test.json")
+    assert_true(json_tea.string_starts_with(file_result, "ERROR"))
+}
+
+slay test_json_generation() {
+    test_start("JSON Generation") fr fr Test to_json function
+    sus to_json_result tea = json_tea.to_json("hello")
+    assert_eq_string(to_json_result, "\"hello\"") fr fr Test format_json function
+    sus format_result tea = json_tea.format_json("{\"name\": \"John\"}")
+    assert_true(json_tea.string_contains(format_result, "name"))
+    assert_true(json_tea.string_contains(format_result, "John"))
+}
+
+slay test_value_access() {
+    test_start("Value Access Functions") fr fr Test get_value function
+    sus json_obj tea = "{\"name\": \"John\", \"age\": 30}"
+    sus name_value tea = json_tea.get_value(json_obj, "name")
+    assert_eq_string(name_value, "John")
+    
+    sus age_value tea = json_tea.get_value(json_obj, "age")
+    assert_eq_string(age_value, "30") fr fr Test get_string function
+    sus string_value tea = json_tea.get_string(json_obj, "name")
+    assert_eq_string(string_value, "John") fr fr Test get_number function
+    sus number_value tea = json_tea.get_number(json_obj, "age")
+    assert_eq_string(number_value, "30") fr fr Test error cases
+    sus error_value tea = json_tea.get_value(json_obj, "missing")
+    assert_true(json_tea.string_starts_with(error_value, "ERROR"))
+}
+
+slay test_type_checking_functions() {
+    test_start("Type Checking Functions") fr fr Test is_string function
+    assert_true(json_tea.is_string("\"hello\""))
+    assert_false(json_tea.is_string("42")) fr fr Test is_number function
+    assert_true(json_tea.is_number("42"))
+    assert_true(json_tea.is_number("3.14"))
+    assert_false(json_tea.is_number("\"42\"")) fr fr Test is_boolean_value function
+    assert_true(json_tea.is_boolean_value("true"))
+    assert_true(json_tea.is_boolean_value("false"))
+    assert_false(json_tea.is_boolean_value("\"true\"")) fr fr Test is_array_value function
+    assert_true(json_tea.is_array_value("[1, 2, 3]"))
+    assert_false(json_tea.is_array_value("{\"key\": \"value\"}")) fr fr Test is_object_value function
+    assert_true(json_tea.is_object_value("{\"key\": \"value\"}"))
+    assert_false(json_tea.is_object_value("[1, 2, 3]")) fr fr Test is_null_value function
+    assert_true(json_tea.is_null_value("null"))
+    assert_false(json_tea.is_null_value("\"null\""))
+}
+
+slay test_manipulation_functions() {
+    test_start("JSON Manipulation Functions") fr fr Test set_value function
+    sus original_obj tea = "{\"name\": \"John\", \"age\": 30}"
+    sus modified_obj tea = json_tea.set_value(original_obj, "name", "Jane")
+    assert_true(json_tea.string_contains(modified_obj, "Jane")) fr fr Test add_to_array function
+    sus empty_array tea = "[]"
+    sus array_with_item tea = json_tea.add_to_array(empty_array, "hello")
+    assert_true(json_tea.string_contains(array_with_item, "hello"))
+    
+    sus existing_array tea = "[1, 2, 3]"
+    sus extended_array tea = json_tea.add_to_array(existing_array, "new")
+    assert_true(json_tea.string_contains(extended_array, "new")) fr fr Test merge_objects function
+    sus obj1 tea = "{\"name\": \"John\"}"
+    sus obj2 tea = "{\"age\": 30}"
+    sus merged tea = json_tea.merge_objects(obj1, obj2)
+    assert_true(json_tea.string_contains(merged, "name"))
+    assert_true(json_tea.string_contains(merged, "age"))
+}
+
+slay test_validation_functions() {
+    test_start("Enhanced Validation Functions") fr fr Test validate_json function
+    assert_true(json_tea.validate_json("{\"name\": \"John\"}"))
+    assert_true(json_tea.validate_json("[1, 2, 3]"))
+    assert_false(json_tea.validate_json("invalid")) fr fr Test validate_schema function
+    assert_true(json_tea.validate_schema("{\"key\": \"value\"}", "object"))
+    assert_true(json_tea.validate_schema("[1, 2, 3]", "array"))
+    assert_false(json_tea.validate_schema("\"string\"", "number"))
+}
+
 slay test_legacy_compatibility() {
     test_start("Legacy Compatibility") fr fr Test legacy marshal function
     sus legacy_marshal tea = json_tea.marshal("hello")
@@ -369,7 +452,7 @@ slay test_performance_basics() {
 slay run_all_json_tea_tests() {
     vibez.spill("🍵 Running CURSED JSON Tea Module Tests")
     vibez.spill("==========================================")
-    vibez.spill("Enhanced JSON Processing with Marshal/Unmarshal") fr fr Core Marshal/Unmarshal tests
+    vibez.spill("Enhanced JSON Processing with Comprehensive Functionality") fr fr Core Marshal/Unmarshal tests
     test_marshal_basic_types()
     test_unmarshal_basic_types()
     test_marshal_object()
@@ -379,9 +462,15 @@ slay run_all_json_tea_tests() {
     test_marshal_indent()
     test_marshal_compact()
     test_unmarshal_to_map()
-    test_unmarshal_to_slice() fr fr Validation tests
+    test_unmarshal_to_slice() fr fr Enhanced parsing and generation tests
+    test_enhanced_parsing()
+    test_json_generation() fr fr Value access and manipulation tests
+    test_value_access()
+    test_manipulation_functions() fr fr Type checking tests
+    test_type_checking_functions() fr fr Validation tests
     test_json_validation()
-    test_schema_validation() fr fr String processing tests
+    test_schema_validation()
+    test_validation_functions() fr fr String processing tests
     test_string_escaping()
     test_numeric_validation()
     test_json_number_validation() fr fr Type detection tests

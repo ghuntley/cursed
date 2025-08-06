@@ -178,4 +178,175 @@ assert_eq_int(fib3, 5)
 sus fib4 normie = mathz.fibonacci(10)
 assert_eq_int(fib4, 55)
 
+test_start("Logarithmic Functions")
+
+fr fr Test log10 function
+sus log10_1 meal = mathz.log10_meal(100.0)
+assert_true(log10_1 >= 1.9 && log10_1 <= 2.1)
+
+sus log10_2 meal = mathz.log10_meal(1.0)
+assert_true(log10_2 >= -0.1 && log10_2 <= 0.1)
+
+fr fr Test log2 function
+sus log2_1 meal = mathz.log2_meal(8.0)
+assert_true(log2_1 >= 2.9 && log2_1 <= 3.1)
+
+test_start("Inverse Trigonometric Functions")
+
+fr fr Test asin function
+sus asin_0 meal = mathz.asin_meal(0.0)
+assert_true(asin_0 >= -0.1 && asin_0 <= 0.1)
+
+sus asin_1 meal = mathz.asin_meal(1.0)
+assert_true(asin_1 >= 1.5 && asin_1 <= 1.6)
+
+fr fr Test acos function
+sus acos_0 meal = mathz.acos_meal(1.0)
+assert_true(acos_0 >= -0.1 && acos_0 <= 0.1)
+
+fr fr Test atan function
+sus atan_0 meal = mathz.atan_meal(0.0)
+assert_true(atan_0 >= -0.1 && atan_0 <= 0.1)
+
+sus atan_1 meal = mathz.atan_meal(1.0)
+assert_true(atan_1 >= 0.7 && atan_1 <= 0.8)
+
+test_start("Hyperbolic Functions")
+
+fr fr Test sinh function
+sus sinh_0 meal = mathz.sinh_meal(0.0)
+assert_true(sinh_0 >= -0.1 && sinh_0 <= 0.1)
+
+fr fr Test cosh function
+sus cosh_0 meal = mathz.cosh_meal(0.0)
+assert_true(cosh_0 >= 0.9 && cosh_0 <= 1.1)
+
+fr fr Test tanh function
+sus tanh_0 meal = mathz.tanh_meal(0.0)
+assert_true(tanh_0 >= -0.1 && tanh_0 <= 0.1)
+
+test_start("Clamp Functions")
+
+fr fr Test clamp for floats
+sus clamp1 meal = mathz.clamp_meal(5.0, 1.0, 10.0)
+assert_true(clamp1 == 5.0)
+
+sus clamp2 meal = mathz.clamp_meal(-5.0, 1.0, 10.0)
+assert_true(clamp2 == 1.0)
+
+sus clamp3 meal = mathz.clamp_meal(15.0, 1.0, 10.0)
+assert_true(clamp3 == 10.0)
+
+fr fr Test clamp for integers
+sus clamp4 normie = mathz.clamp_normie(5, 1, 10)
+assert_eq_int(clamp4, 5)
+
+sus clamp5 normie = mathz.clamp_normie(-5, 1, 10)
+assert_eq_int(clamp5, 1)
+
+test_start("Additional Utility Functions")
+
+fr fr Test linear interpolation
+sus lerp1 meal = mathz.lerp_meal(0.0, 10.0, 0.5)
+assert_true(lerp1 == 5.0)
+
+sus lerp2 meal = mathz.lerp_meal(2.0, 8.0, 0.25)
+assert_true(lerp2 == 3.5)
+
+fr fr Test sign functions
+sus sign1 meal = mathz.sign_meal(5.5)
+assert_true(sign1 == 1.0)
+
+sus sign2 meal = mathz.sign_meal(-3.2)
+assert_true(sign2 == -1.0)
+
+sus sign3 meal = mathz.sign_meal(0.0)
+assert_true(sign3 == 0.0)
+
+sus sign4 normie = mathz.sign_normie(42)
+assert_eq_int(sign4, 1)
+
+sus sign5 normie = mathz.sign_normie(-7)
+assert_eq_int(sign5, -1)
+
+test_start("Special Value Tests")
+
+fr fr Test NaN and infinity detection
+sus finite_val meal = 42.0
+assert_true(mathz.is_finite(finite_val))
+
+fr fr Test truncation and fractional parts
+sus trunc1 normie = mathz.trunc_meal(3.7)
+assert_eq_int(trunc1, 3)
+
+sus trunc2 normie = mathz.trunc_meal(-2.9)
+assert_eq_int(trunc2, -2)
+
+sus frac1 meal = mathz.frac_meal(3.7)
+assert_true(frac1 >= 0.6 && frac1 <= 0.8)
+
+test_start("Advanced Random Functions")
+
+fr fr Test random range for floats
+mathz.set_random_seed(54321)
+sus rand_range1 meal = mathz.random_meal_range(1.0, 5.0)
+assert_true(rand_range1 >= 1.0 && rand_range1 <= 5.0)
+
+fr fr Test Gaussian random (just ensure it generates values)
+sus gauss1 meal = mathz.random_gaussian()
+assert_true(gauss1 >= -10.0 && gauss1 <= 10.0) fr fr Reasonable range check
+
+test_start("Prime Number Testing")
+
+fr fr Test prime checking
+assert_true(mathz.is_prime(2))
+assert_true(mathz.is_prime(3))
+assert_true(mathz.is_prime(5))
+assert_true(mathz.is_prime(7))
+assert_true(mathz.is_prime(11))
+assert_true(mathz.is_prime(13))
+assert_true(mathz.is_prime(17))
+
+assert_false(mathz.is_prime(1))
+assert_false(mathz.is_prime(4))
+assert_false(mathz.is_prime(6))
+assert_false(mathz.is_prime(8))
+assert_false(mathz.is_prime(9))
+assert_false(mathz.is_prime(10))
+
+test_start("Mathematical Series")
+
+fr fr Test arithmetic series
+sus arith1 normie = mathz.arithmetic_sum(1, 10, 10)
+assert_eq_int(arith1, 55)
+
+sus arith2 normie = mathz.arithmetic_sum(2, 8, 4)
+assert_eq_int(arith2, 20)
+
+fr fr Test geometric series
+sus geom1 meal = mathz.geometric_sum(1.0, 2.0, 3)
+assert_true(geom1 >= 6.9 && geom1 <= 7.1) fr fr Should be 7.0
+
+test_start("Distance Functions")
+
+fr fr Test 2D distance
+sus dist2d1 meal = mathz.distance_2d(0.0, 0.0, 3.0, 4.0)
+assert_true(dist2d1 >= 4.9 && dist2d1 <= 5.1) fr fr Should be 5.0
+
+sus dist2d2 meal = mathz.distance_2d(1.0, 1.0, 1.0, 1.0)
+assert_true(dist2d2 >= -0.1 && dist2d2 <= 0.1) fr fr Should be 0.0
+
+fr fr Test 3D distance
+sus dist3d1 meal = mathz.distance_3d(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
+assert_true(dist3d1 >= 1.7 && dist3d1 <= 1.8) fr fr Should be sqrt(3)
+
+test_start("Float Modulo")
+
+fr fr Test floating point modulo
+sus fmod1 meal = mathz.fmod_meal(7.5, 2.5)
+assert_true(fmod1 >= 2.4 && fmod1 <= 2.6) fr fr Should be 2.5
+
+sus fmod2 meal = mathz.fmod_meal(10.0, 3.0)
+assert_true(fmod2 >= 0.9 && fmod2 <= 1.1) fr fr Should be 1.0
+
 print_test_summary()

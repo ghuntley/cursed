@@ -561,7 +561,7 @@ fn printIssuesJSON(allocator: Allocator, issues: []const LintIssue) !void {
     try stdout.writeAll("{\n  \"issues\": [\n");
     
     for (issues, 0..) |issue, i| {
-        try stdout.print("    {{\n");
+        try stdout.print("    {{\n", .{});
         try stdout.print("      \"rule_id\": \"{s}\",\n", .{issue.rule_id});
         try stdout.print("      \"severity\": \"{s}\",\n", .{issue.severity.toString()});
         try stdout.print("      \"category\": \"{s}\",\n", .{issue.category.toString()});

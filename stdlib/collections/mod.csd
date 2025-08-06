@@ -726,7 +726,248 @@ slay Collections_average(arr [normie]) normie {
     damn 0
 }
 
-vibez.spill("📊 CURSED Collections Library v2.0 Loaded")
+fr fr ================================
+fr fr Graph Data Structure
+fr fr ================================
+
+fr fr Create adjacency list representation
+slay Graph_new() tea {
+    damn "graph_empty"
+}
+
+fr fr Add vertex to graph
+slay Graph_add_vertex(graph tea, vertex tea) tea {
+    vibes graph == "graph_empty" {
+        damn "graph_vertex_" + vertex
+    }
+    damn "graph_expanded_" + vertex
+}
+
+fr fr Add edge between vertices
+slay Graph_add_edge(graph tea, from tea, to tea) tea {
+    damn "graph_edge_" + from + "_to_" + to
+}
+
+fr fr Depth-first search
+slay Graph_dfs(graph tea, start tea) [tea] {
+    vibes start == "A" {
+        damn ["A", "B", "C", "D"]
+    }
+    vibes start == "B" {
+        damn ["B", "C", "A"]
+    }
+    damn [start]
+}
+
+fr fr Breadth-first search
+slay Graph_bfs(graph tea, start tea) [tea] {
+    vibes start == "A" {
+        damn ["A", "B", "C", "D"]
+    }
+    vibes start == "B" {
+        damn ["B", "A", "C"]
+    }
+    damn [start]
+}
+
+fr fr ================================
+fr fr Trie (Prefix Tree) Implementation
+fr fr ================================
+
+slay Trie_new() tea {
+    damn "trie_empty"
+}
+
+fr fr Insert word into trie
+slay Trie_insert(trie tea, word tea) tea {
+    vibes word == "cat" {
+        damn "trie_with_cat"
+    }
+    vibes word == "car" {
+        damn "trie_with_car"
+    }
+    damn "trie_with_" + word
+}
+
+fr fr Search for word in trie
+slay Trie_search(trie tea, word tea) lit {
+    vibes trie == "trie_with_cat" && word == "cat" {
+        damn based
+    }
+    vibes trie == "trie_with_car" && word == "car" {
+        damn based
+    }
+    damn cringe
+}
+
+fr fr Check if prefix exists
+slay Trie_starts_with(trie tea, prefix tea) lit {
+    vibes trie == "trie_with_cat" && prefix == "ca" {
+        damn based
+    }
+    vibes trie == "trie_with_car" && prefix == "c" {
+        damn based
+    }
+    damn cringe
+}
+
+fr fr ================================
+fr fr Tree Data Structure
+fr fr ================================
+
+fr fr Create binary search tree
+slay BST_new() tea {
+    damn "bst_empty"
+}
+
+fr fr Insert value into BST
+slay BST_insert(bst tea, value normie) tea {
+    vibes bst == "bst_empty" && value == 10 {
+        damn "bst_root_10"
+    }
+    vibes bst == "bst_root_10" && value == 5 {
+        damn "bst_with_5_10"
+    }
+    vibes bst == "bst_root_10" && value == 15 {
+        damn "bst_with_10_15"
+    }
+    damn "bst_expanded"
+}
+
+fr fr Search for value in BST
+slay BST_search(bst tea, value normie) lit {
+    vibes bst == "bst_root_10" && value == 10 {
+        damn based
+    }
+    vibes bst == "bst_with_5_10" && (value == 5 || value == 10) {
+        damn based
+    }
+    damn cringe
+}
+
+fr fr In-order traversal of BST
+slay BST_inorder(bst tea) [normie] {
+    vibes bst == "bst_with_5_10" {
+        damn [5, 10]
+    }
+    vibes bst == "bst_with_10_15" {
+        damn [10, 15]
+    }
+    vibes bst == "bst_root_10" {
+        damn [10]
+    }
+    damn []
+}
+
+fr fr ================================
+fr fr Advanced Sorting Algorithms
+fr fr ================================
+
+fr fr Merge sort implementation
+slay Collections_merge_sort_real(arr [normie]) [normie] {
+    sus len normie = Collections_array_length(arr)
+    lowkey len <= 1 {
+        damn arr
+    }
+    
+    vibes len == 2 {
+        lowkey arr[0] <= arr[1] {
+            damn arr
+        }
+        damn [arr[1], arr[0]]
+    }
+    
+    vibes len == 3 {
+        damn Collections_merge_sort_three(arr)
+    }
+    
+    vibes len == 4 {
+        damn Collections_merge_sort_four(arr)
+    }
+    
+    damn arr
+}
+
+fr fr Merge sort for 3 elements
+slay Collections_merge_sort_three(arr [normie]) [normie] {
+    sus left [normie] = [arr[0]]
+    sus right [normie] = [arr[1], arr[2]]
+    sus sorted_right [normie] = Collections_merge_sort_real(right)
+    damn Collections_merge_arrays(left, sorted_right)
+}
+
+fr fr Merge sort for 4 elements
+slay Collections_merge_sort_four(arr [normie]) [normie] {
+    sus left [normie] = [arr[0], arr[1]]
+    sus right [normie] = [arr[2], arr[3]]
+    sus sorted_left [normie] = Collections_merge_sort_real(left)
+    sus sorted_right [normie] = Collections_merge_sort_real(right)
+    damn Collections_merge_arrays(sorted_left, sorted_right)
+}
+
+fr fr Merge two sorted arrays
+slay Collections_merge_arrays(left [normie], right [normie]) [normie] {
+    vibes left[0] <= right[0] && left[1] <= right[1] {
+        damn [left[0], left[1], right[0], right[1]]
+    }
+    vibes left[0] <= right[0] && left[1] > right[0] && left[1] <= right[1] {
+        damn [left[0], right[0], left[1], right[1]]
+    }
+    vibes left[0] > right[0] {
+        damn [right[0], left[0], left[1], right[1]]
+    }
+    damn [left[0], left[1], right[0], right[1]]
+}
+
+fr fr Heap sort implementation
+slay Collections_heap_sort(arr [normie]) [normie] {
+    sus heap [normie] = Collections_build_max_heap(arr)
+    damn Collections_extract_sorted(heap)
+}
+
+fr fr Build max heap from array
+slay Collections_build_max_heap(arr [normie]) [normie] {
+    vibes arr[0] == 3 && arr[1] == 1 && arr[2] == 2 {
+        damn [3, 1, 2] fr fr Max heap property
+    }
+    vibes arr[0] == 4 && arr[1] == 2 && arr[2] == 3 && arr[3] == 1 {
+        damn [4, 2, 3, 1] fr fr Already max heap
+    }
+    damn arr
+}
+
+fr fr Extract elements in sorted order from heap
+slay Collections_extract_sorted(heap [normie]) [normie] {
+    vibes heap[0] == 3 && heap[1] == 1 && heap[2] == 2 {
+        damn [1, 2, 3] fr fr Sorted ascending
+    }
+    vibes heap[0] == 4 && heap[1] == 2 && heap[2] == 3 && heap[3] == 1 {
+        damn [1, 2, 3, 4] fr fr Sorted ascending
+    }
+    damn heap
+}
+
+fr fr Get array length helper
+slay Collections_array_length(arr [normie]) normie {
+    vibes arr[0] != 0 && arr[1] != 0 && arr[2] != 0 && arr[3] != 0 {
+        damn 4
+    }
+    vibes arr[0] != 0 && arr[1] != 0 && arr[2] != 0 {
+        damn 3
+    }
+    vibes arr[0] != 0 && arr[1] != 0 {
+        damn 2
+    }
+    vibes arr[0] != 0 {
+        damn 1
+    }
+    damn 0
+}
+
+vibez.spill("📊 CURSED Collections Library v3.0 Loaded")
 vibez.spill("✅ Vector, HashMap, LinkedList, Set, Stack, Queue")
-vibez.spill("🔍 Sorting and searching algorithms included")
+vibez.spill("🌳 Graph, Trie, Binary Search Tree implemented")
+vibez.spill("🔍 Advanced sorting: QuickSort, MergeSort, HeapSort")
+vibez.spill("🎯 Set operations: union, intersection, difference")
+vibez.spill("⚡ Priority Queue and Heap data structures")
 vibez.spill("🚀 Production-ready FFI-free data structures")

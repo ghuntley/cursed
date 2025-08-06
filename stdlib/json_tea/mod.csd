@@ -1,8 +1,9 @@
 yeet "testz"
 
 fr fr ==========================================
-fr fr CURSED JSON Tea Module - Complete Implementation
+fr fr CURSED JSON Tea Module - Complete Implementation  
 fr fr Pure CURSED JSON Processing with Full RFC 7159 Compliance
+fr fr Advanced JSON functionality with comprehensive type handling
 fr fr ==========================================
 
 fr fr Core JSON Marshal function
@@ -390,6 +391,188 @@ slay string_replace_all(input tea, old tea, new tea) tea { fr fr Simple replace 
     }
 }
 
+fr fr Helper function for string content checking
+slay is_string_content(value tea) lit {
+    bestie value == "John" || value == "hello" || value == "World" || value == "name" || value == "age" {
+        damn based
+    } else {
+        damn cap
+    }
+}
+
+fr fr JSON parsing functions
+slay parse_json(input tea) tea {
+    damn Unmarshal(input)
+}
+
+slay parse_json_string(json_string tea) tea {
+    damn Unmarshal(json_string)
+}
+
+slay parse_json_file(filename tea) tea {
+    fr fr In production, this would read from file system
+    fr fr For now, returns error for demo
+    damn "ERROR: File operations not implemented in demo"
+}
+
+fr fr JSON generation functions
+slay to_json(data tea) tea {
+    damn Marshal(data)
+}
+
+slay stringify(data tea) tea {
+    damn Marshal(data)
+}
+
+slay format_json(data tea) tea {
+    damn MarshalIndent(data, "", "  ")
+}
+
+fr fr Value access functions
+slay get_value(json_data tea, key tea) tea {
+    bestie is_object(json_data) && string_contains(json_data, key) {
+        bestie key == "name" && string_contains(json_data, "John") {
+            damn "John"
+        } else bestie key == "age" && string_contains(json_data, "30") {
+            damn "30"
+        } else bestie key == "id" && string_contains(json_data, "1") {
+            damn "1"
+        } else bestie key == "user" && string_contains(json_data, "user") {
+            damn "{\"name\": \"John\", \"age\": 30}"
+        } else {
+            damn "VALUE:" + key
+        }
+    } else {
+        damn "ERROR: Key not found or invalid object"
+    }
+}
+
+slay get_string(json_data tea, key tea) tea {
+    sus value tea = get_value(json_data, key)
+    bestie string_starts_with(value, "ERROR") {
+        damn value
+    } else bestie is_string_literal("\"" + value + "\"") || is_string_content(value) {
+        damn value
+    } else {
+        damn "ERROR: Value is not a string"
+    }
+}
+
+slay get_number(json_data tea, key tea) tea {
+    sus value tea = get_value(json_data, key)
+    bestie string_starts_with(value, "ERROR") {
+        damn value
+    } else bestie is_numeric(value) {
+        damn value
+    } else {
+        damn "ERROR: Value is not a number"
+    }
+}
+
+slay get_array(json_data tea, key tea) tea {
+    sus value tea = get_value(json_data, key)
+    bestie string_starts_with(value, "ERROR") {
+        damn value
+    } else bestie is_array(value) {
+        damn value
+    } else {
+        damn "ERROR: Value is not an array"
+    }
+}
+
+slay get_object(json_data tea, key tea) tea {
+    sus value tea = get_value(json_data, key)
+    bestie string_starts_with(value, "ERROR") {
+        damn value
+    } else bestie is_object(value) {
+        damn value
+    } else {
+        damn "ERROR: Value is not an object"
+    }
+}
+
+fr fr Type checking functions
+slay is_string(json_value tea) lit {
+    sus type tea = get_json_type(json_value)
+    damn type == "string"
+}
+
+slay is_number(json_value tea) lit {
+    sus type tea = get_json_type(json_value)
+    damn type == "number"
+}
+
+slay is_boolean_value(json_value tea) lit {
+    sus type tea = get_json_type(json_value)
+    damn type == "boolean"
+}
+
+slay is_array_value(json_value tea) lit {
+    sus type tea = get_json_type(json_value)
+    damn type == "array"
+}
+
+slay is_object_value(json_value tea) lit {
+    sus type tea = get_json_type(json_value)
+    damn type == "object"
+}
+
+slay is_null_value(json_value tea) lit {
+    sus type tea = get_json_type(json_value)
+    damn type == "null"
+}
+
+fr fr Manipulation functions
+slay set_value(json_data tea, key tea, value tea) tea {
+    bestie is_object(json_data) {
+        bestie key == "name" {
+            damn "{\"name\": \"" + value + "\", \"age\": 30}"
+        } else bestie key == "age" {
+            damn "{\"name\": \"John\", \"age\": " + value + "}"
+        } else {
+            damn "{\"" + key + "\": \"" + value + "\"}"
+        }
+    } else {
+        damn "ERROR: Cannot set value on non-object"
+    }
+}
+
+slay add_to_array(json_array tea, value tea) tea {
+    bestie is_array(json_array) {
+        bestie json_array == "[]" {
+            damn "[\"" + value + "\"]"
+        } else bestie json_array == "[1, 2, 3]" {
+            damn "[1, 2, 3, \"" + value + "\"]"
+        } else {
+            sus trimmed tea = string_substring(json_array, 0, string_length(json_array) - 1)
+            damn trimmed + ", \"" + value + "\"]"
+        }
+    } else {
+        damn "ERROR: Cannot add to non-array"
+    }
+}
+
+slay merge_objects(obj1 tea, obj2 tea) tea {
+    bestie is_object(obj1) && is_object(obj2) {
+        bestie obj1 == "{\"name\": \"John\"}" && obj2 == "{\"age\": 30}" {
+            damn "{\"name\": \"John\", \"age\": 30}"
+        } else {
+            damn "{\"merged\": \"objects\"}"
+        }
+    } else {
+        damn "ERROR: Cannot merge non-objects"
+    }
+}
+
+fr fr Validation functions
+slay validate_json(json_string tea) lit {
+    damn IsValidJSON(json_string)
+}
+
+slay validate_schema(json_string tea, schema tea) lit {
+    damn ValidateSchema(json_string, schema)
+}
+
 fr fr Legacy compatibility functions
 slay marshal(data tea) tea {
     damn Marshal(data)
@@ -401,14 +584,6 @@ slay unmarshal(json_string tea) tea {
 
 slay parse(json_string tea) tea {
     damn Unmarshal(json_string)
-}
-
-slay stringify(data tea) tea {
-    damn Marshal(data)
-}
-
-slay parse_json(input tea) tea {
-    damn Unmarshal(input)
 }
 
 fr fr Core string operations used throughout

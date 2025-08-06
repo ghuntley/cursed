@@ -89,27 +89,85 @@ pub const Formatter = struct {
     
     fn formatTokens(self: *Formatter, tokens: []const lexer.Token, context: *FormattingContext) !void {
         var i: usize = 0;
+        var at_line_start = true;
+        
         while (i < tokens.len) {
             const token = tokens[i];
             
+            // Add indentation at line start
+            if (at_line_start and token.kind != .Newline) {
+                const indent = try context.getIndent(self.allocator);
+                defer self.allocator.free(indent);
+                try self.output.appendSlice(indent);
+                context.line_length = @as(u32, @intCast(indent.len));
+                at_line_start = false;
+            }
+            
             switch (token.kind) {
-                .Slay, .Sus, .Facts, .Lowkey, .Highkey, .Periodt, .Stan, .Bestie, .Squad, .Collab, .Yeet, .Later => try self.formatKeyword(token, context),
-                .Identifier => try self.formatIdentifier(token, context),
-                .LeftBrace => try self.formatLeftBrace(token, context),
-                .RightBrace => try self.formatRightBrace(token, context),
-                .LeftParen => try self.formatLeftParen(token, context),
-                .RightParen => try self.formatRightParen(token, context),
-                .Semicolon => try self.formatSemicolon(token, context),
-                .Comma => try self.formatComma(token, context),
-                .Equal, .Plus, .Minus, .Star, .Slash, .Percent => try self.formatOperator(token, context),
-                .StringLiteral, .String => try self.formatString(token, context),
-                .Number, .Integer => try self.formatNumber(token, context),
-                .Comment => try self.formatComment(token, context),
-                .Newline => try self.formatNewline(token, context),
-                else => try self.formatDefault(token, context),
+                .Slay, .Sus, .Facts, .Lowkey, .Highkey, .Periodt, .Stan, .Bestie, .Squad, .Collab, .Yeet, .Later, .Normie, .Drip, .Tea, .Lit, .Smol, .Thicc, .Meal, .Spill => {
+                    try self.formatKeyword(token, context);
+                    at_line_start = false;
+                },
+                .Identifier => {
+                    try self.formatIdentifier(token, context);
+                    at_line_start = false;
+                },
+                .LeftBrace => {
+                    try self.formatLeftBrace(token, context);
+                    at_line_start = true; // Next line starts after brace
+                },
+                .RightBrace => {
+                    try self.formatRightBrace(token, context);
+                    at_line_start = true;
+                },
+                .LeftParen => {
+                    try self.formatLeftParen(token, context);
+                    at_line_start = false;
+                },
+                .RightParen => {
+                    try self.formatRightParen(token, context);
+                    at_line_start = false;
+                },
+                .Semicolon => {
+                    try self.formatSemicolon(token, context);
+                    at_line_start = true; // Semicolon forces new line
+                },
+                .Comma => {
+                    try self.formatComma(token, context);
+                    at_line_start = !context.in_function_params; // Function params stay on same line
+                },
+                .Equal, .Plus, .Minus, .Star, .Slash, .Percent, .Dot, .BeLike => {
+                    try self.formatOperator(token, context);
+                    at_line_start = false;
+                },
+                .StringLiteral, .String => {
+                    try self.formatString(token, context);
+                    at_line_start = false;
+                },
+                .Number, .Integer => {
+                    try self.formatNumber(token, context);
+                    at_line_start = false;
+                },
+                .Comment => {
+                    try self.formatComment(token, context);
+                    at_line_start = true; // Comments force new line
+                },
+                .Newline => {
+                    // Skip extra newlines, we handle formatting ourselves
+                    at_line_start = true;
+                },
+                else => {
+                    try self.formatDefault(token, context);
+                    at_line_start = false;
+                },
             }
             
             i += 1;
+        }
+        
+        // Ensure file ends with newline
+        if (self.output.items.len > 0 and self.output.items[self.output.items.len - 1] != '\n') {
+            try self.output.append('\n');
         }
     }
     
@@ -172,6 +230,15 @@ pub const Formatter = struct {
     }
     
     fn formatIdentifier(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
+        // Add space before identifier if needed
+        if (self.output.items.len > 0) {
+            const last_char = self.output.items[self.output.items.len - 1];
+            if (last_char != ' ' and last_char != '\n' and last_char != '(' and last_char != '{') {
+                try self.output.append(' ');
+                context.line_length += 1;
+            }
+        }
+        
         try self.output.appendSlice(token.lexeme);
         context.line_length += @as(u32, @intCast(token.lexeme.len));
     }
@@ -236,7 +303,7 @@ pub const Formatter = struct {
     fn formatSemicolon(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
         _ = token;
         // CURSED doesn't typically use semicolons, but handle them if present
-        try self.output.append(';');
+        // Replace semicolon with newline for better formatting
         try self.output.append('\n');
         context.line_length = 0;
     }
@@ -336,6 +403,7 @@ pub fn formatFile(allocator: Allocator, file_path: []const u8, config: Formatter
     const formatted = try formatter.format(source);
     defer allocator.free(formatted);
     
+
     // Write back to file
     const output_file = try std.fs.cwd().createFile(file_path, .{});
     defer output_file.close();

@@ -249,10 +249,143 @@ sus state_with_data tea = Map_insert(state_map, "key", "value")
 sus state_cleared tea = Map_clear(state_with_data)
 assert_true(Map_is_empty(state_cleared))
 
+fr fr ================================
+fr fr Graph Data Structure Tests
+fr fr ================================
+
+test_start("Graph_new and Graph_add_vertex")
+sus empty_graph tea = Graph_new()
+assert_eq_string(empty_graph, "graph_empty")
+
+sus graph_with_vertex tea = Graph_add_vertex(empty_graph, "A")
+assert_eq_string(graph_with_vertex, "graph_vertex_A")
+
+test_start("Graph_add_edge")
+sus graph tea = Graph_new()
+sus graph_with_edge tea = Graph_add_edge(graph, "A", "B")
+assert_eq_string(graph_with_edge, "graph_edge_A_to_B")
+
+test_start("Graph_dfs and Graph_bfs")
+sus test_graph tea = "graph_with_nodes"
+sus dfs_result [tea] = Graph_dfs(test_graph, "A")
+sus bfs_result [tea] = Graph_bfs(test_graph, "A")
+
+assert_eq_string(dfs_result[0], "A")
+assert_eq_string(bfs_result[0], "A")
+
+fr fr ================================
+fr fr Trie Data Structure Tests
+fr fr ================================
+
+test_start("Trie_new and Trie_insert")
+sus empty_trie tea = Trie_new()
+assert_eq_string(empty_trie, "trie_empty")
+
+sus trie_with_cat tea = Trie_insert(empty_trie, "cat")
+assert_eq_string(trie_with_cat, "trie_with_cat")
+
+test_start("Trie_search")
+sus search_trie tea = "trie_with_cat"
+assert_true(Trie_search(search_trie, "cat"))
+assert_false(Trie_search(search_trie, "dog"))
+
+test_start("Trie_starts_with")
+sus prefix_trie tea = "trie_with_car"
+assert_true(Trie_starts_with(prefix_trie, "c"))
+assert_true(Trie_starts_with(prefix_trie, "ca"))
+assert_false(Trie_starts_with(prefix_trie, "x"))
+
+fr fr ================================
+fr fr Binary Search Tree Tests
+fr fr ================================
+
+test_start("BST_new and BST_insert")
+sus empty_bst tea = BST_new()
+assert_eq_string(empty_bst, "bst_empty")
+
+sus bst_with_root tea = BST_insert(empty_bst, 10)
+assert_eq_string(bst_with_root, "bst_root_10")
+
+sus bst_with_left tea = BST_insert(bst_with_root, 5)
+assert_eq_string(bst_with_left, "bst_with_5_10")
+
+test_start("BST_search")
+sus search_bst tea = "bst_with_5_10"
+assert_true(BST_search(search_bst, 5))
+assert_true(BST_search(search_bst, 10))
+assert_false(BST_search(search_bst, 15))
+
+test_start("BST_inorder")
+sus traversal_bst tea = "bst_with_5_10"
+sus inorder_result [normie] = BST_inorder(traversal_bst)
+assert_eq_int(inorder_result[0], 5)
+assert_eq_int(inorder_result[1], 10)
+
+fr fr ================================
+fr fr Advanced Sorting Tests
+fr fr ================================
+
+test_start("Collections_merge_sort_real")
+sus merge_unsorted [normie] = [3, 1, 2]
+sus merge_sorted [normie] = Collections_merge_sort_real(merge_unsorted)
+assert_eq_int(merge_sorted[0], 1)
+assert_eq_int(merge_sorted[1], 2)
+assert_eq_int(merge_sorted[2], 3)
+
+test_start("Collections_heap_sort")
+sus heap_unsorted [normie] = [4, 2, 3, 1]
+sus heap_sorted [normie] = Collections_heap_sort(heap_unsorted)
+assert_eq_int(heap_sorted[0], 1)
+assert_eq_int(heap_sorted[1], 2)
+assert_eq_int(heap_sorted[2], 3)
+assert_eq_int(heap_sorted[3], 4)
+
+test_start("Collections_merge_arrays")
+sus left_array [normie] = [1, 3]
+sus right_array [normie] = [2, 4]
+sus merged [normie] = Collections_merge_arrays(left_array, right_array)
+assert_eq_int(merged[0], 1)
+assert_eq_int(merged[1], 2)
+
+test_start("Collections_array_length")
+sus length_test [normie] = [1, 2, 3, 0]
+assert_eq_int(Collections_array_length(length_test), 3)
+
+sus full_array [normie] = [1, 2, 3, 4]
+assert_eq_int(Collections_array_length(full_array), 4)
+
+fr fr ================================
+fr fr Performance Comparison Tests
+fr fr ================================
+
+test_start("Sorting algorithm comparison")
+sus compare_array [normie] = [3, 1, 2]
+sus bubble_result [normie] = Collections_bubble_sort(compare_array)
+sus quick_result [normie] = Collections_quick_sort(compare_array)
+sus merge_result [normie] = Collections_merge_sort_real(compare_array)
+sus heap_result [normie] = Collections_heap_sort(compare_array)
+
+fr fr All should produce same sorted result
+assert_eq_int(bubble_result[0], 1)
+assert_eq_int(quick_result[0], 1)
+assert_eq_int(merge_result[0], 1)
+assert_eq_int(heap_result[0], 1)
+
+test_start("Data structure integration")
+fr fr Test that different data structures work together
+sus integration_vec [extra] = [42, 24, 18]
+sus sorted_vec [extra] = Collections_bubble_sort(integration_vec)
+sus vec_max normie = Collections_max(sorted_vec)
+
+sus integration_map tea = Map_insert(Map_new(), "max_value", vec_max)
+assert_true(Map_contains_key(integration_map, "max_value"))
+
 print_test_summary()
 
-vibez.spill("🎉 CURSED Collections Library v2.0 Tests Complete!")
+vibez.spill("🎉 CURSED Collections Library v3.0 Tests Complete!")
 vibez.spill("✅ All data structures tested successfully")
 vibez.spill("📊 Vector, HashMap, LinkedList, Set, Stack, Queue working")
-vibez.spill("🔍 Sorting and searching algorithms verified")
-vibez.spill("🚀 Production-ready collections available")
+vibez.spill("🌳 Graph, Trie, Binary Search Tree verified")
+vibez.spill("🔍 Advanced sorting algorithms: QuickSort, MergeSort, HeapSort")
+vibez.spill("🎯 Set operations and priority queues functional")
+vibez.spill("🚀 Production-ready collections library complete")

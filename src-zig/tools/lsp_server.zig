@@ -481,10 +481,20 @@ pub const LSPHandler = struct {
             return try self.handleHover(params, id);
         } else if (std.mem.eql(u8, method, "textDocument/definition")) {
             return try self.handleDefinition(params, id);
+        } else if (std.mem.eql(u8, method, "textDocument/references")) {
+            return try self.handleReferences(params, id);
         } else if (std.mem.eql(u8, method, "textDocument/documentSymbol")) {
             return try self.handleDocumentSymbol(params, id);
+        } else if (std.mem.eql(u8, method, "workspace/symbol")) {
+            return try self.handleWorkspaceSymbol(params, id);
+        } else if (std.mem.eql(u8, method, "textDocument/signatureHelp")) {
+            return try self.handleSignatureHelp(params, id);
         } else if (std.mem.eql(u8, method, "textDocument/formatting")) {
             return try self.handleFormatting(params, id);
+        } else if (std.mem.eql(u8, method, "textDocument/rangeFormatting")) {
+            return try self.handleRangeFormatting(params, id);
+        } else if (std.mem.eql(u8, method, "textDocument/rename")) {
+            return try self.handleRename(params, id);
         } else if (std.mem.eql(u8, method, "shutdown")) {
             return try self.handleShutdown(id);
         }
@@ -504,7 +514,7 @@ pub const LSPHandler = struct {
     fn handleNotification(self: *LSPHandler, method: []const u8, params: ?json.Value) !void {
         if (std.mem.eql(u8, method, "initialized")) {
             self.initialized = true;
-            std.log.info("LSP client initialized");
+            std.log.info("LSP client initialized", .{});
         } else if (std.mem.eql(u8, method, "textDocument/didOpen")) {
             try self.handleDidOpen(params);
         } else if (std.mem.eql(u8, method, "textDocument/didChange")) {
@@ -514,7 +524,7 @@ pub const LSPHandler = struct {
         } else if (std.mem.eql(u8, method, "textDocument/didClose")) {
             try self.handleDidClose(params);
         } else if (std.mem.eql(u8, method, "exit")) {
-            std.log.info("LSP client exiting");
+            std.log.info("LSP client exiting", .{});
         }
     }
 
@@ -539,11 +549,30 @@ pub const LSPHandler = struct {
         // Definition support
         try capabilities.put("definitionProvider", json.Value{ .Bool = true });
         
+        // References support
+        try capabilities.put("referencesProvider", json.Value{ .Bool = true });
+        
         // Document symbol support
         try capabilities.put("documentSymbolProvider", json.Value{ .Bool = true });
         
+        // Workspace symbol support
+        try capabilities.put("workspaceSymbolProvider", json.Value{ .Bool = true });
+        
+        // Signature help support
+        const signature_provider = json.ObjectMap.init(self.allocator);
+        defer signature_provider.deinit();
+        try signature_provider.put("triggerCharacters", json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, &[_]json.Value{json.Value{ .String = "(" }}) });
+        try capabilities.put("signatureHelpProvider", json.Value{ .Object = signature_provider });
+        
         // Formatting support
         try capabilities.put("documentFormattingProvider", json.Value{ .Bool = true });
+        try capabilities.put("documentRangeFormattingProvider", json.Value{ .Bool = true });
+        
+        // Rename support
+        const rename_provider = json.ObjectMap.init(self.allocator);
+        defer rename_provider.deinit();
+        try rename_provider.put("prepareProvider", json.Value{ .Bool = true });
+        try capabilities.put("renameProvider", json.Value{ .Object = rename_provider });
         
         // Diagnostics support
         try capabilities.put("publishDiagnostics", json.Value{ .Bool = true });
@@ -576,8 +605,8 @@ pub const LSPHandler = struct {
         const position = params_obj.get("position").?.Object;
         
         const uri = text_document.get("uri").?.String;
-        const line = @as(u32, @intCast(position.get("line").?.Integer));
-        const character = @as(u32, @intCast(position.get("character").?.Integer));
+        _ = @as(u32, @intCast(position.get("line").?.Integer));
+        _ = @as(u32, @intCast(position.get("character").?.Integer));
         
         var items = ArrayList(CompletionItem).init(self.allocator);
         defer items.deinit();
@@ -861,6 +890,329 @@ pub const LSPHandler = struct {
         return try json.stringify(response, .{}, self.allocator);
     }
 
+    fn handleReferences(self: *LSPHandler, params: ?json.Value, id: json.Value) ![]u8 {
+        if (params == null) {
+            return try self.createErrorResponse(id, -32602, "Invalid params");
+        }
+        
+        const params_obj = params.?.Object;
+        const text_document = params_obj.get("textDocument").?.Object;
+        const position = params_obj.get("position").?.Object;
+        
+        const uri = text_document.get("uri").?.String;
+        const line = @as(u32, @intCast(position.get("line").?.Integer));
+        const character = @as(u32, @intCast(position.get("character").?.Integer));
+        
+        if (self.documents.get(uri)) |doc| {
+            const word = try self.getWordAtPosition(doc.content, line, character);
+            defer self.allocator.free(word);
+            
+            var locations = ArrayList(json.Value).init(self.allocator);
+            defer locations.deinit();
+            
+            // Find all references to this word in the document
+            var current_line: u32 = 0;
+            var current_char: u32 = 0;
+            var i: usize = 0;
+            
+            while (i < doc.content.len) {
+                if (std.mem.startsWith(u8, doc.content[i..], word)) {
+                    // Found a match, create location
+                    const location_obj = json.ObjectMap.init(self.allocator);
+                    defer location_obj.deinit();
+                    
+                    try location_obj.put("uri", json.Value{ .String = uri });
+                    
+                    const range_obj = json.ObjectMap.init(self.allocator);
+                    defer range_obj.deinit();
+                    
+                    const start_obj = json.ObjectMap.init(self.allocator);
+                    defer start_obj.deinit();
+                    try start_obj.put("line", json.Value{ .Integer = @intCast(current_line) });
+                    try start_obj.put("character", json.Value{ .Integer = @intCast(current_char) });
+                    
+                    const end_obj = json.ObjectMap.init(self.allocator);
+                    defer end_obj.deinit();
+                    try end_obj.put("line", json.Value{ .Integer = @intCast(current_line) });
+                    try end_obj.put("character", json.Value{ .Integer = @intCast(current_char + word.len) });
+                    
+                    try range_obj.put("start", json.Value{ .Object = start_obj });
+                    try range_obj.put("end", json.Value{ .Object = end_obj });
+                    try location_obj.put("range", json.Value{ .Object = range_obj });
+                    
+                    try locations.append(json.Value{ .Object = location_obj });
+                    
+                    i += word.len;
+                    current_char += @intCast(word.len);
+                } else {
+                    if (doc.content[i] == '\n') {
+                        current_line += 1;
+                        current_char = 0;
+                    } else {
+                        current_char += 1;
+                    }
+                    i += 1;
+                }
+            }
+            
+            const response = LSPMessage{
+                .id = id,
+                .result = json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, try locations.toOwnedSlice()) },
+            };
+            
+            return try json.stringify(response, .{}, self.allocator);
+        }
+        
+        return try self.createErrorResponse(id, -32603, "Document not found");
+    }
+
+    fn handleWorkspaceSymbol(self: *LSPHandler, params: ?json.Value, id: json.Value) ![]u8 {
+        if (params == null) {
+            return try self.createErrorResponse(id, -32602, "Invalid params");
+        }
+        
+        const params_obj = params.?.Object;
+        const query = if (params_obj.get("query")) |q| q.String else "";
+        
+        var symbols = ArrayList(json.Value).init(self.allocator);
+        defer symbols.deinit();
+        
+        // Search through all documents
+        var doc_iterator = self.documents.iterator();
+        while (doc_iterator.next()) |entry| {
+            const doc = entry.value_ptr.*;
+            
+            for (doc.symbols.items) |symbol| {
+                // Simple query matching
+                if (query.len == 0 or std.mem.indexOf(u8, symbol.name, query) != null) {
+                    const symbol_obj = json.ObjectMap.init(self.allocator);
+                    defer symbol_obj.deinit();
+                    
+                    try symbol_obj.put("name", json.Value{ .String = symbol.name });
+                    try symbol_obj.put("kind", json.Value{ .Integer = @intFromEnum(symbol.kind) });
+                    
+                    const location_obj = json.ObjectMap.init(self.allocator);
+                    defer location_obj.deinit();
+                    try location_obj.put("uri", json.Value{ .String = doc.uri });
+                    
+                    const range_obj = json.ObjectMap.init(self.allocator);
+                    defer range_obj.deinit();
+                    
+                    const start_obj = json.ObjectMap.init(self.allocator);
+                    defer start_obj.deinit();
+                    try start_obj.put("line", json.Value{ .Integer = @intCast(symbol.range.start.line) });
+                    try start_obj.put("character", json.Value{ .Integer = @intCast(symbol.range.start.character) });
+                    
+                    const end_obj = json.ObjectMap.init(self.allocator);
+                    defer end_obj.deinit();
+                    try end_obj.put("line", json.Value{ .Integer = @intCast(symbol.range.end.line) });
+                    try end_obj.put("character", json.Value{ .Integer = @intCast(symbol.range.end.character) });
+                    
+                    try range_obj.put("start", json.Value{ .Object = start_obj });
+                    try range_obj.put("end", json.Value{ .Object = end_obj });
+                    try location_obj.put("range", json.Value{ .Object = range_obj });
+                    try symbol_obj.put("location", json.Value{ .Object = location_obj });
+                    
+                    try symbols.append(json.Value{ .Object = symbol_obj });
+                }
+            }
+        }
+        
+        const response = LSPMessage{
+            .id = id,
+            .result = json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, try symbols.toOwnedSlice()) },
+        };
+        
+        return try json.stringify(response, .{}, self.allocator);
+    }
+
+    fn handleSignatureHelp(self: *LSPHandler, params: ?json.Value, id: json.Value) ![]u8 {
+        if (params == null) {
+            return try self.createErrorResponse(id, -32602, "Invalid params");
+        }
+        
+        const params_obj = params.?.Object;
+        const text_document = params_obj.get("textDocument").?.Object;
+        const position = params_obj.get("position").?.Object;
+        
+        const uri = text_document.get("uri").?.String;
+        const line = @as(u32, @intCast(position.get("line").?.Integer));
+        const character = @as(u32, @intCast(position.get("character").?.Integer));
+        
+        if (self.documents.get(uri)) |doc| {
+            const word = try self.getWordAtPosition(doc.content, line, character);
+            defer self.allocator.free(word);
+            
+            // Find matching function signature
+            for (self.language_data.stdlib_functions) |func| {
+                if (std.mem.eql(u8, func.name, word)) {
+                    const signature_obj = json.ObjectMap.init(self.allocator);
+                    defer signature_obj.deinit();
+                    
+                    try signature_obj.put("label", json.Value{ .String = func.signature });
+                    try signature_obj.put("documentation", json.Value{ .String = func.description });
+                    
+                    const signatures = [_]json.Value{json.Value{ .Object = signature_obj }};
+                    
+                    const result_obj = json.ObjectMap.init(self.allocator);
+                    defer result_obj.deinit();
+                    try result_obj.put("signatures", json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, &signatures) });
+                    try result_obj.put("activeSignature", json.Value{ .Integer = 0 });
+                    try result_obj.put("activeParameter", json.Value{ .Integer = 0 });
+                    
+                    const response = LSPMessage{
+                        .id = id,
+                        .result = json.Value{ .Object = result_obj },
+                    };
+                    
+                    return try json.stringify(response, .{}, self.allocator);
+                }
+            }
+        }
+        
+        // No signature found
+        const response = LSPMessage{
+            .id = id,
+            .result = json.Value.Null,
+        };
+        
+        return try json.stringify(response, .{}, self.allocator);
+    }
+
+    fn handleRangeFormatting(self: *LSPHandler, params: ?json.Value, id: json.Value) ![]u8 {
+        if (params == null) {
+            return try self.createErrorResponse(id, -32602, "Invalid params");
+        }
+        
+        const params_obj = params.?.Object;
+        const text_document = params_obj.get("textDocument").?.Object;
+        const range = params_obj.get("range").?.Object;
+        
+        const uri = text_document.get("uri").?.String;
+        const start_line = @as(u32, @intCast(range.get("start").?.Object.get("line").?.Integer));
+        const end_line = @as(u32, @intCast(range.get("end").?.Object.get("line").?.Integer));
+        
+        if (self.documents.get(uri)) |doc| {
+            // Extract the range content and format it
+            var lines = std.mem.split(u8, doc.content, "\n");
+            var range_content = ArrayList(u8).init(self.allocator);
+            defer range_content.deinit();
+            
+            var current_line: u32 = 0;
+            while (lines.next()) |line| {
+                if (current_line >= start_line and current_line <= end_line) {
+                    try range_content.appendSlice(line);
+                    if (current_line < end_line) {
+                        try range_content.append('\n');
+                    }
+                }
+                current_line += 1;
+            }
+            
+            const formatted = try self.formatDocument(range_content.items);
+            defer self.allocator.free(formatted);
+            
+            const edit_obj = json.ObjectMap.init(self.allocator);
+            defer edit_obj.deinit();
+            try edit_obj.put("range", json.Value{ .Object = range.Object });
+            try edit_obj.put("newText", json.Value{ .String = formatted });
+            
+            const edits = [_]json.Value{json.Value{ .Object = edit_obj }};
+            
+            const response = LSPMessage{
+                .id = id,
+                .result = json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, &edits) },
+            };
+            
+            return try json.stringify(response, .{}, self.allocator);
+        }
+        
+        return try self.createErrorResponse(id, -32603, "Document not found");
+    }
+
+    fn handleRename(self: *LSPHandler, params: ?json.Value, id: json.Value) ![]u8 {
+        if (params == null) {
+            return try self.createErrorResponse(id, -32602, "Invalid params");
+        }
+        
+        const params_obj = params.?.Object;
+        const text_document = params_obj.get("textDocument").?.Object;
+        const position = params_obj.get("position").?.Object;
+        const new_name = params_obj.get("newName").?.String;
+        
+        const uri = text_document.get("uri").?.String;
+        const line = @as(u32, @intCast(position.get("line").?.Integer));
+        const character = @as(u32, @intCast(position.get("character").?.Integer));
+        
+        if (self.documents.get(uri)) |doc| {
+            const old_name = try self.getWordAtPosition(doc.content, line, character);
+            defer self.allocator.free(old_name);
+            
+            var edits = ArrayList(json.Value).init(self.allocator);
+            defer edits.deinit();
+            
+            // Find all occurrences and create edits
+            var current_line: u32 = 0;
+            var current_char: u32 = 0;
+            var i: usize = 0;
+            
+            while (i < doc.content.len) {
+                if (std.mem.startsWith(u8, doc.content[i..], old_name)) {
+                    const edit_obj = json.ObjectMap.init(self.allocator);
+                    defer edit_obj.deinit();
+                    
+                    const range_obj = json.ObjectMap.init(self.allocator);
+                    defer range_obj.deinit();
+                    
+                    const start_obj = json.ObjectMap.init(self.allocator);
+                    defer start_obj.deinit();
+                    try start_obj.put("line", json.Value{ .Integer = @intCast(current_line) });
+                    try start_obj.put("character", json.Value{ .Integer = @intCast(current_char) });
+                    
+                    const end_obj = json.ObjectMap.init(self.allocator);
+                    defer end_obj.deinit();
+                    try end_obj.put("line", json.Value{ .Integer = @intCast(current_line) });
+                    try end_obj.put("character", json.Value{ .Integer = @intCast(current_char + old_name.len) });
+                    
+                    try range_obj.put("start", json.Value{ .Object = start_obj });
+                    try range_obj.put("end", json.Value{ .Object = end_obj });
+                    try edit_obj.put("range", json.Value{ .Object = range_obj });
+                    try edit_obj.put("newText", json.Value{ .String = new_name });
+                    
+                    try edits.append(json.Value{ .Object = edit_obj });
+                    
+                    i += old_name.len;
+                    current_char += @intCast(old_name.len);
+                } else {
+                    if (doc.content[i] == '\n') {
+                        current_line += 1;
+                        current_char = 0;
+                    } else {
+                        current_char += 1;
+                    }
+                    i += 1;
+                }
+            }
+            
+            const changes_obj = json.ObjectMap.init(self.allocator);
+            defer changes_obj.deinit();
+            try changes_obj.put(uri, json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, try edits.toOwnedSlice()) });
+            
+            const result_obj = json.ObjectMap.init(self.allocator);
+            defer result_obj.deinit();
+            try result_obj.put("changes", json.Value{ .Object = changes_obj });
+            
+            const response = LSPMessage{
+                .id = id,
+                .result = json.Value{ .Object = result_obj },
+            };
+            
+            return try json.stringify(response, .{}, self.allocator);
+        }
+        
+        return try self.createErrorResponse(id, -32603, "Document not found");
+    }
+
     fn handleDidOpen(self: *LSPHandler, params: ?json.Value) !void {
         if (params == null) return;
         
@@ -909,6 +1261,7 @@ pub const LSPHandler = struct {
     }
 
     fn handleDidSave(self: *LSPHandler, params: ?json.Value) !void {
+        _ = self;
         if (params == null) return;
         
         const params_obj = params.?.Object;
@@ -1073,7 +1426,6 @@ pub const LSPHandler = struct {
     }
 
     fn symbolsToJson(self: *LSPHandler, symbols: []const DocumentSymbol) !json.Value {
-        _ = self;
         var json_symbols = ArrayList(json.Value).init(self.allocator);
         defer json_symbols.deinit();
         
@@ -1127,7 +1479,6 @@ pub const LSPHandler = struct {
     }
 
     fn diagnosticsToJson(self: *LSPHandler, diagnostics: []const Diagnostic) !json.Value {
-        _ = self;
         var json_diagnostics = ArrayList(json.Value).init(self.allocator);
         defer json_diagnostics.deinit();
         
@@ -1189,7 +1540,7 @@ pub fn main() !void {
     var handler = LSPHandler.init(allocator);
     defer handler.deinit();
 
-    std.log.info("CURSED Language Server starting...");
+    std.log.info("CURSED Language Server starting...", .{});
 
     const stdin = std.io.getStdIn().reader();
     const stdout = std.io.getStdOut().writer();
@@ -1227,7 +1578,7 @@ pub fn main() !void {
         }
     }
 
-    std.log.info("CURSED Language Server shutting down...");
+    std.log.info("CURSED Language Server shutting down...", .{});
 }
 
 // Test function for development
@@ -1266,5 +1617,5 @@ pub fn testLSP() !void {
         std.log.info("Completion response: {s}", .{response});
     }
 
-    std.log.info("LSP test completed successfully!");
+    std.log.info("LSP test completed successfully!", .{});
 }
