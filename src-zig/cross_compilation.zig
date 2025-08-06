@@ -70,6 +70,71 @@ pub const CrossCompiler = struct {
         return command_parts.toOwnedSlice();
     }
     
+    // Generate compilation command for LLVM IR files
+    pub fn generateLLVMIRCompileCommand(
+        self: *CrossCompiler,
+        ir_file: []const u8,
+        target_platform: []const u8,
+        output_file: ?[]const u8,
+        optimization_level: u8,
+        linking_mode: []const u8,
+        verbose: bool
+    ) ![][]const u8 {
+        var command_parts = ArrayList([]const u8).init(self.allocator);
+        
+        // Use llc to compile LLVM IR to object file, then link
+        if (std.mem.eql(u8, target_platform, "wasm32-freestanding")) {
+            // WebAssembly compilation
+            try command_parts.append("llc");
+            try command_parts.append(ir_file);
+            try command_parts.append("-march=wasm32");
+            try command_parts.append("-filetype=obj");
+            const obj_file = try std.fmt.allocPrint(self.allocator, "{s}.o", .{std.fs.path.stem(ir_file)});
+            const obj_arg = try std.fmt.allocPrint(self.allocator, "-o={s}", .{obj_file});
+            try command_parts.append(obj_arg);
+        } else {
+            // Native compilation using zig cc as a wrapper
+            try command_parts.append("zig");
+            try command_parts.append("cc");
+            try command_parts.append(ir_file);
+            
+            // Add target specification (skip for native)
+            if (!std.mem.eql(u8, target_platform, "native")) {
+                const target_arg = try std.fmt.allocPrint(self.allocator, "-target={s}", .{target_platform});
+                try command_parts.append(target_arg);
+            }
+            
+            // Add optimization level
+            const opt_arg = switch (optimization_level) {
+                0 => "-O0",
+                1 => "-O1", 
+                2 => "-O2",
+                3 => "-O3",
+                else => "-O2",
+            };
+            try command_parts.append(opt_arg);
+            
+            // Add linking mode for static linking
+            if (std.mem.eql(u8, linking_mode, "static")) {
+                try command_parts.append("-static");
+            }
+            
+            // Add output file specification
+            if (output_file) |output| {
+                try command_parts.append("-o");
+                try command_parts.append(output);
+            }
+        }
+        
+        if (verbose) {
+            const command_str = try std.mem.join(self.allocator, " ", command_parts.items);
+            defer self.allocator.free(command_str);
+            print("🔧 LLVM IR compilation command: {s}\n", .{command_str});
+        }
+        
+        return command_parts.toOwnedSlice();
+    }
+    
     // Free a command array returned by generateCompileCommand
     pub fn freeCompileCommand(self: *CrossCompiler, command: [][]const u8) void {
         for (command) |arg| {
