@@ -320,37 +320,37 @@ slay RuntimeStack_size<T>(stack RuntimeStack<T>) normie {
 fr fr Runtime utility functions
 slay make<T>(size normie) []T {
     fr fr Runtime-provided dynamic allocation
-    damn []T{} fr fr Placeholder implementation
+    damn runtime_make_slice<T>(size)
 }
 
 slay append<T>(slice []T, item T) []T {
     fr fr Runtime-provided dynamic append
-    damn slice fr fr Placeholder implementation
+    damn runtime_slice_append<T>(slice, item)
 }
 
 slay len(str tea) normie {
     fr fr Runtime-provided string length
-    damn 0 fr fr Placeholder implementation
+    damn runtime_string_length(str)
 }
 
 slay string(value normie) tea {
     fr fr Runtime-provided number to string conversion
-    damn "0" fr fr Placeholder implementation
+    damn runtime_int_to_string(value)
 }
 
 slay char_code_at(str tea, index normie) normie {
     fr fr Runtime-provided character code extraction
-    damn 0 fr fr Placeholder implementation
+    damn runtime_char_to_ascii(runtime_string_char_at(str, index))
 }
 
 slay string_format(template tea, arg tea) tea {
-    fr fr Runtime-provided string formatting
-    damn template fr fr Placeholder implementation
+    fr fr Runtime-provided string formatting  
+    damn runtime_string_format(template, arg)
 }
 
 slay string_format_three(template tea, arg1 tea, arg2 tea, arg3 tea, arg4 tea) tea {
     fr fr Runtime-provided string formatting with multiple args
-    damn template fr fr Placeholder implementation
+    damn runtime_string_format_multiple(template, arg1, arg2, arg3, arg4)
 }
 
 vibez.spill("🚀 CURSED Runtime Core Library v1.0 Loaded")

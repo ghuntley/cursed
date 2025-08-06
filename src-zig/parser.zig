@@ -2593,7 +2593,7 @@ pub const Parser = struct {
     
     fn parseComplexType(self: *Parser) ParserError!ast.Type {
         // Parse union types: Type1 | Type2 | Type3
-        var base_type = try self.parseBasicType();
+        const base_type = try self.parseBasicType();
         
         if (self.match(.Pipe)) {
             var union_types = ArrayList(ast.Type).init(self.allocator);

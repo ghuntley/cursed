@@ -63,11 +63,26 @@ pub fn build(b: *std.Build) void {
         optimized_exe.linkLibC();
     }
 
+    // Create syscall-enabled compiler with real file I/O, networking, and process management
+    const syscall_exe = b.addExecutable(.{
+        .name = "cursed-syscall",
+        .root_source_file = b.path("src-zig/main_unified.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    if (!is_wasm) {
+        syscall_exe.linkLibC();
+        syscall_exe.linkSystemLibrary("LLVM-18");
+        syscall_exe.addLibraryPath(.{ .cwd_relative = "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib" });
+        syscall_exe.addIncludePath(.{ .cwd_relative = "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include" });
+    }
+
     b.installArtifact(exe);
     b.installArtifact(minimal_exe);
     b.installArtifact(complete_exe);
     // b.installArtifact(enhanced_exe);  // Disabled due to API issues
     b.installArtifact(optimized_exe);
+    b.installArtifact(syscall_exe);
 
     // Create run step
     const run_cmd = b.addRunArtifact(exe);
@@ -140,16 +155,8 @@ pub fn build(b: *std.Build) void {
         concurrency_full_test_step.dependOn(&run_concurrency_test_exe.step);
     }
 
-    // Create stdlib tests
-    const stdlib_tests = b.addTest(.{
-        .root_source_file = b.path("stdlib-zig/testz.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const run_stdlib_tests = b.addRunArtifact(stdlib_tests);
-    const stdlib_test_step = b.step("test-stdlib", "Run stdlib tests");
-    stdlib_test_step.dependOn(&run_stdlib_tests.step);
+    // NOTE: Stdlib tests are now run via pure CURSED files in stdlib/ directory
+    // Use: ./zig-out/bin/cursed-zig stdlib/comprehensive_stdlib_test.csd
 
     // Create advanced parser tests
     const parser_tests = b.addTest(.{
@@ -162,12 +169,27 @@ pub fn build(b: *std.Build) void {
     const parser_test_step = b.step("test-parser", "Run advanced parser tests");
     parser_test_step.dependOn(&run_parser_tests.step);
 
+    // Create syscall interface tests
+    const syscall_tests = b.addTest(.{
+        .root_source_file = b.path("src-zig/syscall_interface.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    if (!is_wasm) {
+        syscall_tests.linkLibC();
+    }
+
+    const run_syscall_tests = b.addRunArtifact(syscall_tests);
+    const syscall_test_step = b.step("test-syscall", "Run syscall interface tests");
+    syscall_test_step.dependOn(&run_syscall_tests.step);
+
     // Create comprehensive test step that runs all tests
     const all_tests_step = b.step("test-all", "Run all test suites");
     all_tests_step.dependOn(&run_unit_tests.step);
     all_tests_step.dependOn(&run_concurrency_tests.step);
-    all_tests_step.dependOn(&run_stdlib_tests.step);
     all_tests_step.dependOn(&run_parser_tests.step);
+    all_tests_step.dependOn(&run_syscall_tests.step);
 
     // Self-hosting compilation targets
     const selfhost_stage2_step = b.step("selfhost-stage2", "Compile Stage 2 CURSED compiler using Zig compiler");

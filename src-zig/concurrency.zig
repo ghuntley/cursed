@@ -361,7 +361,7 @@ pub const Goroutine = struct {
         self.entry_fn(self.context);
 
         const end_time = std.time.milliTimestamp();
-        self.total_runtime += @as(u32, @intCast(end_time - start_time));
+        self.total_runtime += @as(u64, @intCast(@max(0, end_time - start_time)));
         self.setState(GoroutineState.completed);
     }
 };
@@ -506,7 +506,14 @@ pub const Worker = struct {
         const start_time = std.time.milliTimestamp();
         goroutine.execute();
         const end_time = std.time.milliTimestamp();
-        self.stats.busy_time += @as(u32, @intCast(end_time - start_time));
+        self.stats.busy_time += @as(u64, @intCast(@max(0, end_time - start_time)));
+        
+        // Clean up completed goroutine
+        if (goroutine.getState() == GoroutineState.completed) {
+            _ = self.scheduler.active_goroutines.fetchSub(1, .acq_rel);
+            self.scheduler.stats.total_completed += 1;
+            self.scheduler.allocator.destroy(goroutine);
+        }
     }
 
     fn stealWork(self: *Worker) ?*Goroutine {
@@ -590,8 +597,9 @@ pub const Scheduler = struct {
     stats: SchedulerStats,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator, config: SchedulerConfig) !Scheduler {
-        var scheduler = Scheduler{
+    pub fn init(allocator: Allocator, config: SchedulerConfig) !*Scheduler {
+        const scheduler = try allocator.create(Scheduler);
+        scheduler.* = Scheduler{
             .config = config,
             .workers = ArrayList(Worker).init(allocator),
             .global_queue = ArrayList(*Goroutine).init(allocator),
@@ -608,7 +616,7 @@ pub const Scheduler = struct {
         try scheduler.workers.ensureTotalCapacity(config.num_workers);
         for (0..config.num_workers) |_| {
             const worker_id = scheduler.next_worker_id.fetchAdd(1, .acq_rel);
-            const worker = Worker.init(allocator, worker_id, &scheduler);
+            const worker = Worker.init(allocator, worker_id, scheduler);
             try scheduler.workers.append(worker);
         }
 
@@ -880,8 +888,7 @@ pub fn initializeScheduler(allocator: Allocator, config: SchedulerConfig) !void 
         return; // Already initialized
     }
 
-    const scheduler = try allocator.create(Scheduler);
-    scheduler.* = try Scheduler.init(allocator, config);
+    const scheduler = try Scheduler.init(allocator, config);
     global_scheduler = scheduler;
     
     try scheduler.start();

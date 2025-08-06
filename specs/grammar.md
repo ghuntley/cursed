@@ -304,7 +304,7 @@ Example: `2 + 3 * 4` must parse as `2 + (3 * 4)`, not `(2 + 3) * 4`.
 ```
 Operand          = Literal | OperandName | "(" Expression ")" .
 Literal          = BasicLit | CompositeLit | FunctionLit .
-BasicLit         = int_lit | float_lit | string_lit .
+BasicLit         = int_lit | float_lit | string_lit | bool_lit | nil_lit | char_lit .
 OperandName      = identifier | QualifiedIdentifier .
 QualifiedIdentifier = identifier "." identifier .
 ```
@@ -381,10 +381,10 @@ dm_send(ch, value)                    // Send operation (blocking) - CANONICAL
 value := dm_recv(ch)                  // Receive operation (blocking) - CANONICAL  
 value, ok := dm_recv(ch)              // Receive with closed check - CANONICAL
 
-dm_close(ch)                          // Close channel
+dm_close(ch)                          // Close channel - CANONICAL
 
 // Legacy Go-style syntax (DEPRECATED - remove in future versions):
-// ch <- value, value := <-ch
+// ch <- value, value := <-ch, close(ch)
 // PARSER REQUIREMENT: New parsers SHOULD NOT implement legacy syntax.
 ```
 
