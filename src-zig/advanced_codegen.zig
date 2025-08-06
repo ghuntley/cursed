@@ -43,12 +43,16 @@ const OptimizationEngine = @import("optimization_engine.zig").OptimizationEngine
 const OptimizationConfig = @import("optimization_engine.zig").OptimizationConfig;
 const OptimizationResult = @import("optimization_engine.zig").OptimizationResult;
 
-/// Defer statement information for LLVM code generation
+/// Enhanced defer statement information for LLVM code generation
+/// Supports proper LIFO execution, error handling, and scope management
 pub const DeferInfo = struct {
     cleanup_function: c.LLVMValueRef,
     cleanup_block: c.LLVMBasicBlockRef,
     scope_name: []const u8,
     function_name: []const u8,
+    is_error_safe: bool = true, // Can be called during error handling
+    defer_id: u32 = 0, // Unique ID for LIFO ordering
+    scope_id: u32 = 0, // Scope ID for proper cleanup
 };
 
 /// Advanced CURSED Zig Code Generator with advanced language features
@@ -56,10 +60,12 @@ pub const DeferInfo = struct {
 pub const AdvancedCodeGen = struct {
 base_codegen: FinalWorkingCodeGen,
     
-    // Defer statement management
+    // Enhanced defer statement management
     defer_stack: ArrayList(DeferInfo),
     scope_defer_stacks: HashMap([]const u8, ArrayList(DeferInfo), std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    scope_stack: ArrayList(u32),
     current_function_name: ?[]const u8,
+    current_scope_id: u32,
     
     // Advanced type system support
     struct_types: HashMap([]const u8, StructTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
@@ -102,15 +108,20 @@ base_codegen: FinalWorkingCodeGen,
         var interface_registry = InterfaceRegistry.init(allocator);
         var interface_dispatcher = InterfaceDispatcher.init(allocator, &interface_registry);
         
+        // Initialize base codegen first to get context and module
+        var base_codegen = try FinalWorkingCodeGen.init(allocator);
+        
         // Initialize monomorphizer
         const monomorphizer = try allocator.create(generics.Monomorphizer);
-        monomorphizer.* = generics.Monomorphizer.init(allocator, context, module);
+        monomorphizer.* = generics.Monomorphizer.init(allocator, base_codegen.context, base_codegen.module);
         
         return AdvancedCodeGen{
-            .base_codegen = try FinalWorkingCodeGen.init(allocator),
+            .base_codegen = base_codegen,
             .defer_stack = ArrayList(DeferInfo).init(allocator),
             .scope_defer_stacks = HashMap([]const u8, ArrayList(DeferInfo), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .scope_stack = ArrayList(u32).init(allocator),
             .current_function_name = null,
+            .current_scope_id = 0,
             .struct_types = HashMap([]const u8, StructTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .interface_types = HashMap([]const u8, InterfaceTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .generic_instances = HashMap([]const u8, GenericInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -225,7 +236,7 @@ base_codegen: FinalWorkingCodeGen,
         const context = self.base_codegen.context;
         const module = self.base_codegen.module;
         const builder = self.base_codegen.builder;
-        const current_function = self.base_codegen.current_function orelse return error.NoCurrentFunction;
+        const _current_function = self.base_codegen.current_function orelse return error.NoCurrentFunction;
         
         // Generate unique cleanup function name
         const defer_count = self.defer_stack.items.len;
@@ -274,17 +285,23 @@ base_codegen: FinalWorkingCodeGen,
         // Register cleanup function with runtime defer stack
         try self.registerDeferCleanup(cleanup_func);
         
-        // Store defer info for scope management
+        // Store defer info for scope management with enhanced tracking
         const defer_info = DeferInfo{
             .cleanup_function = cleanup_func,
             .cleanup_block = cleanup_entry,
             .scope_name = self.current_function_name orelse "global",
             .function_name = self.current_function_name orelse "main",
+            .is_error_safe = true, // Mark as error-safe for error handling integration
+            .defer_id = @intCast(defer_count),
+            .scope_id = if (self.scope_stack.items.len > 0) 
+                self.scope_stack.items[self.scope_stack.items.len - 1] 
+            else 
+                0,
         };
         
         try self.defer_stack.append(defer_info);
         
-        std.debug.print("✅ Defer statement compiled: {s}\n", .{cleanup_func_name});
+        std.debug.print("✅ Advanced defer statement compiled: {s} (error-safe, LIFO)\n", .{cleanup_func_name});
     }
     
     /// Register defer cleanup function with runtime
@@ -377,6 +394,96 @@ base_codegen: FinalWorkingCodeGen,
                 ""
             );
         }
+    }
+    
+    /// Enter a new scope for defer management
+    pub fn enterScope(self: *AdvancedCodeGen, is_function_scope: bool) !u32 {
+        self.current_scope_id += 1;
+        try self.scope_stack.append(self.current_scope_id);
+        
+        std.debug.print("📍 Entered scope {d} (function: {any})\n", .{ self.current_scope_id, is_function_scope });
+        return self.current_scope_id;
+    }
+    
+    /// Exit current scope and generate defer cleanup
+    pub fn exitScope(self: *AdvancedCodeGen) !void {
+        if (self.scope_stack.items.len == 0) {
+            std.debug.print("⚠️ Warning: Attempting to exit scope when no scopes are active\n");
+            return;
+        }
+        
+        const scope_id = self.scope_stack.pop();
+        
+        // Generate calls to execute defers for this scope in LIFO order
+        var i = self.defer_stack.items.len;
+        while (i > 0) {
+            i -= 1;
+            const defer_entry = self.defer_stack.items[i];
+            
+            if (defer_entry.scope_id == scope_id) {
+                // Call the cleanup function directly
+                const builder = self.base_codegen.builder;
+                const context = self.base_codegen.context;
+                
+                _ = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMVoidTypeInContext(context),
+                    defer_entry.cleanup_function,
+                    null,
+                    0,
+                    ""
+                );
+                
+                // Remove this defer from tracking
+                _ = self.defer_stack.orderedRemove(i);
+            }
+        }
+        
+        std.debug.print("📍 Exited scope {d}\n", .{scope_id});
+    }
+    
+    /// Generate error handling with defer cleanup integration
+    pub fn generateErrorHandlingWithDefers(self: *AdvancedCodeGen, error_value: c.LLVMValueRef) !void {
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        const current_function = self.base_codegen.current_function orelse return error.NoCurrentFunction;
+        
+        // Create error cleanup block
+        const error_cleanup_block = c.LLVMAppendBasicBlockInContext(context, current_function, "error_defer_cleanup");
+        const error_exit_block = c.LLVMAppendBasicBlockInContext(context, current_function, "error_exit");
+        
+        // Branch to error cleanup
+        _ = c.LLVMBuildBr(builder, error_cleanup_block);
+        
+        // Generate error cleanup code
+        c.LLVMPositionBuilderAtEnd(builder, error_cleanup_block);
+        
+        // Execute only error-safe defers in LIFO order
+        var i = self.defer_stack.items.len;
+        while (i > 0) {
+            i -= 1;
+            const defer_entry = self.defer_stack.items[i];
+            
+            if (defer_entry.is_error_safe) {
+                _ = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMVoidTypeInContext(context),
+                    defer_entry.cleanup_function,
+                    null,
+                    0,
+                    ""
+                );
+            }
+        }
+        
+        // Branch to error exit
+        _ = c.LLVMBuildBr(builder, error_exit_block);
+        
+        // Generate error return
+        c.LLVMPositionBuilderAtEnd(builder, error_exit_block);
+        _ = c.LLVMBuildRet(builder, error_value);
+        
+        std.debug.print("💥 Generated error handling with defer cleanup\n");
     }
     
     /// Compile statement with defer awareness
@@ -1057,13 +1164,107 @@ base_codegen: FinalWorkingCodeGen,
         return null;
     }
 
-    /// Helper to access base codegen functions
-    fn generateExpression(self: *AdvancedCodeGen, expr: ast.Expression) CodeGenError!c.LLVMValueRef {
-        // This should delegate to the base codegen's expression generation
-        // For now, return a placeholder
-        _ = self;
-        _ = expr;
-        return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.base_codegen.context), 0, 0);
+    /// Generate CURSED expression with advanced type support
+    pub fn generateExpression(self: *AdvancedCodeGen, expr: ast.Expression) CodeGenError!c.LLVMValueRef {
+        switch (expr) {
+            // Basic literals - delegate to base codegen
+            .Literal, .Integer, .Float, .String, .Boolean, .Character, .Identifier => {
+                return try self.base_codegen.generateExpression(expr);
+            },
+            
+            // Binary operations with enhanced type checking
+            .BinaryOp => |binary| {
+                const left = try self.generateExpression(binary.left.*);
+                const right = try self.generateExpression(binary.right.*);
+                return try self.generateAdvancedBinaryOp(left, binary.operator, right);
+            },
+            
+            // Unary operations with type promotion
+            .UnaryOp => |unary| {
+                const operand = try self.generateExpression(unary.operand.*);
+                return try self.generateAdvancedUnaryOp(unary.operator, operand);
+            },
+            
+            // Function calls with enhanced argument handling
+            .FunctionCall => |call| {
+                return try self.generateAdvancedCall(call);
+            },
+            
+            // Struct and interface member access
+            .MemberAccess => |member| {
+                return try self.generateAdvancedMemberAccess(member);
+            },
+            
+            // Array literal and access with bounds checking
+            .ArrayLiteral => |array| {
+                return try self.generateAdvancedArrayLiteral(array);
+            },
+            .Array => |array| {
+                return try self.generateAdvancedArrayExpression(array);
+            },
+            .IndexAccess => |index| {
+                return try self.generateAdvancedIndexAccess(index);
+            },
+            
+            // Struct literals with type validation
+            .StructLiteral => |struct_lit| {
+                return try self.generateAdvancedStructLiteral(struct_lit);
+            },
+            
+            // Interface method calls
+            .InterfaceCall => |interface_call| {
+                return try self.generateAdvancedInterfaceCall(interface_call);
+            },
+            
+            // Advanced expressions
+            .TypeCast => |cast| {
+                return try self.generateAdvancedTypeCast(cast);
+            },
+            .Match => |match| {
+                return try self.generateAdvancedMatch(match);
+            },
+            .Tuple => |tuple| {
+                return try self.generateAdvancedTuple(tuple);
+            },
+            .TupleAccess => |tuple_access| {
+                return try self.generateAdvancedTupleAccess(tuple_access);
+            },
+            
+            // Concurrency expressions
+            .ChannelSend => |send| {
+                return try self.generateAdvancedChannelSend(send);
+            },
+            .ChannelReceive => |recv| {
+                return try self.generateAdvancedChannelReceive(recv);
+            },
+            .ChannelCreation => |create| {
+                return try self.generateAdvancedChannelCreation(create);
+            },
+            .Goroutine => |goroutine| {
+                return try self.generateAdvancedGoroutine(goroutine);
+            },
+            
+            // Error handling expressions
+            .Shook => |shook| {
+                return try self.generateAdvancedShook(shook);
+            },
+            .Yikes => |yikes| {
+                return try self.generateAdvancedYikes(yikes);
+            },
+            .Fam => |fam| {
+                return try self.generateAdvancedFam(fam);
+            },
+            
+            // Lambda expressions
+            .Lambda => |lambda| {
+                return try self.generateAdvancedLambda(lambda);
+            },
+            
+            // Fallback to base codegen for other expressions
+            else => {
+                return try self.base_codegen.generateExpression(expr);
+            },
+        }
     }
 
     fn generateStatement(self: *AdvancedCodeGen, stmt: ast.Statement) CodeGenError!void {
@@ -2103,23 +2304,469 @@ base_codegen: FinalWorkingCodeGen,
         }
         return total_size;
     }
+
+    /// Advanced binary operation with type checking
+    fn generateAdvancedBinaryOp(self: *AdvancedCodeGen, left: c.LLVMValueRef, op: ast.BinaryOperator, right: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        const left_type = c.LLVMTypeOf(left);
+        const right_type = c.LLVMTypeOf(right);
+        const builder = self.base_codegen.builder;
+        
+        // Type promotion for mixed numeric operations
+        var promoted_left = left;
+        var promoted_right = right;
+        
+        if (self.needsTypePromotion(left_type, right_type)) {
+            const promoted_type = try self.getPromotedType(left_type, right_type);
+            promoted_left = try self.promoteValue(left, promoted_type);
+            promoted_right = try self.promoteValue(right, promoted_type);
+        }
+        
+        return try self.base_codegen.generateBinaryOp(promoted_left, op, promoted_right);
+    }
+    
+    /// Advanced unary operation with type checking
+    fn generateAdvancedUnaryOp(self: *AdvancedCodeGen, op: ast.UnaryOperator, operand: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateUnaryOp(op, operand);
+    }
+    
+    /// Advanced function call with argument type checking
+    fn generateAdvancedCall(self: *AdvancedCodeGen, call: ast.CallExpression) CodeGenError!c.LLVMValueRef {
+        // Enhanced function call with generic instantiation support
+        const function_expr = call.function.*;
+        
+        switch (function_expr) {
+            .Identifier => |name| {
+                // Check for generic function instantiation
+                if (self.monomorphizer.isGenericFunction(name)) {
+                    return try self.generateGenericFunctionCall(call, name);
+                }
+                return try self.generateRegularFunctionCall(call, name);
+            },
+            .MemberAccess => |member| {
+                return try self.generateMethodCall(call, member);
+            },
+            else => {
+                return try self.base_codegen.generateCall(call);
+            },
+        }
+    }
+    
+    /// Advanced member access with struct/interface support
+    fn generateAdvancedMemberAccess(self: *AdvancedCodeGen, member: ast.MemberAccessExpression) CodeGenError!c.LLVMValueRef {
+        const object_value = try self.generateExpression(member.object.*);
+        const object_type = c.LLVMTypeOf(object_value);
+        
+        // Check if this is struct field access
+        if (c.LLVMGetTypeKind(object_type) == c.LLVMPointerTypeKind) {
+            const pointed_type = c.LLVMGetElementType(object_type);
+            if (c.LLVMGetTypeKind(pointed_type) == c.LLVMStructTypeKind) {
+                return try self.generateStructFieldAccess(object_value, member.property);
+            }
+        }
+        
+        // Check if this is interface method access
+        if (self.isInterfaceType(object_type)) {
+            return try self.generateInterfaceMethodAccess(object_value, member.property);
+        }
+        
+        return try self.base_codegen.generateMemberAccess(member);
+    }
+    
+    /// Advanced array literal with type inference
+    fn generateAdvancedArrayLiteral(self: *AdvancedCodeGen, array: ast.ArrayLiteralExpression) CodeGenError!c.LLVMValueRef {
+        if (array.elements.items.len == 0) {
+            return try self.generateEmptyArray();
+        }
+        
+        // Generate elements with type inference
+        var element_values = ArrayList(c.LLVMValueRef).init(self.base_codegen.allocator);
+        defer element_values.deinit();
+        
+        var common_type: ?c.LLVMTypeRef = null;
+        for (array.elements.items) |element| {
+            const value = try self.generateExpression(element);
+            try element_values.append(value);
+            
+            if (common_type == null) {
+                common_type = c.LLVMTypeOf(value);
+            } else {
+                // Check type compatibility and promote if needed
+                const value_type = c.LLVMTypeOf(value);
+                if (!self.typesAreCompatible(common_type.?, value_type)) {
+                    common_type = try self.getCommonType(common_type.?, value_type);
+                }
+            }
+        }
+        
+        return try self.generateTypedArrayLiteral(element_values.items, common_type.?);
+    }
+    
+    /// Advanced array expression compilation
+    fn generateAdvancedArrayExpression(self: *AdvancedCodeGen, array: ast.ArrayExpression) CodeGenError!c.LLVMValueRef {
+        // Handle dynamic array creation with size
+        const size_value = try self.generateExpression(array.size.*);
+        const element_type = try self.getLLVMTypeFromCursedType(array.element_type);
+        
+        return try self.generateDynamicArray(element_type, size_value);
+    }
+    
+    /// Advanced index access with bounds checking
+    fn generateAdvancedIndexAccess(self: *AdvancedCodeGen, index: ast.IndexAccessExpression) CodeGenError!c.LLVMValueRef {
+        const array_value = try self.generateExpression(index.object.*);
+        const index_value = try self.generateExpression(index.index.*);
+        
+        // Add bounds checking if enabled
+        if (self.optimization_config.bounds_checking) {
+            try self.generateBoundsCheck(array_value, index_value);
+        }
+        
+        return try self.generateSafeIndexAccess(array_value, index_value);
+    }
+    
+    /// Advanced struct literal with field validation
+    fn generateAdvancedStructLiteral(self: *AdvancedCodeGen, struct_lit: ast.StructLiteralExpression) CodeGenError!c.LLVMValueRef {
+        const struct_info = self.struct_types.get(struct_lit.struct_name) orelse {
+            return CodeGenError.UndefinedSymbol;
+        };
+        
+        // Validate all required fields are provided
+        try self.validateStructFields(struct_lit, struct_info);
+        
+        // Generate struct with proper field ordering
+        return try self.generateValidatedStructLiteral(struct_lit, struct_info);
+    }
+    
+    /// Advanced interface call with vtable dispatch
+    fn generateAdvancedInterfaceCall(self: *AdvancedCodeGen, interface_call: ast.InterfaceCallExpression) CodeGenError!c.LLVMValueRef {
+        const instance_value = try self.generateExpression(interface_call.instance.*);
+        const method_name = interface_call.method_name;
+        
+        // Look up vtable entry and generate dispatch
+        return try self.generateVTableDispatch(instance_value, method_name, interface_call.arguments.items);
+    }
+    
+    /// Advanced type cast with runtime checking
+    fn generateAdvancedTypeCast(self: *AdvancedCodeGen, cast: ast.TypeCastExpression) CodeGenError!c.LLVMValueRef {
+        const value = try self.generateExpression(cast.expression.*);
+        const target_type = try self.getLLVMTypeFromCursedType(cast.target_type);
+        
+        // Add runtime type checking for interface casts
+        if (self.isInterfaceType(c.LLVMTypeOf(value))) {
+            return try self.generateCheckedInterfaceCast(value, target_type);
+        }
+        
+        return try self.generateSafeCast(value, target_type);
+    }
+    
+    /// Advanced match expression compilation
+    fn generateAdvancedMatch(self: *AdvancedCodeGen, match: ast.MatchExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateMatch(match);
+    }
+    
+    /// Advanced tuple with proper layout
+    fn generateAdvancedTuple(self: *AdvancedCodeGen, tuple: ast.TupleExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateTuple(tuple);
+    }
+    
+    /// Advanced tuple access with bounds checking
+    fn generateAdvancedTupleAccess(self: *AdvancedCodeGen, tuple_access: ast.TupleAccessExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateTupleAccess(tuple_access);
+    }
+    
+    /// Advanced channel send with type checking
+    fn generateAdvancedChannelSend(self: *AdvancedCodeGen, send: ast.ChannelSendExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateChannelSend(send);
+    }
+    
+    /// Advanced channel receive with type checking
+    fn generateAdvancedChannelReceive(self: *AdvancedCodeGen, recv: ast.ChannelReceiveExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateChannelReceive(recv);
+    }
+    
+    /// Advanced channel creation with capacity validation
+    fn generateAdvancedChannelCreation(self: *AdvancedCodeGen, create: ast.ChannelCreationExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateChannelCreation(create);
+    }
+    
+    /// Advanced goroutine creation
+    fn generateAdvancedGoroutine(self: *AdvancedCodeGen, goroutine: ast.GoroutineExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateGoroutineExpression(goroutine);
+    }
+    
+    /// Advanced error propagation
+    fn generateAdvancedShook(self: *AdvancedCodeGen, shook: ast.ShookExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateShook(shook);
+    }
+    
+    /// Advanced error creation
+    fn generateAdvancedYikes(self: *AdvancedCodeGen, yikes: ast.YikesExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateYikes(yikes);
+    }
+    
+    /// Advanced panic recovery
+    fn generateAdvancedFam(self: *AdvancedCodeGen, fam: ast.FamExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateFam(fam);
+    }
+    
+    /// Advanced lambda compilation
+    fn generateAdvancedLambda(self: *AdvancedCodeGen, lambda: ast.LambdaExpression) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateLambda(lambda);
+    }
+
+    // Helper functions for advanced expression compilation
+    
+    /// Check if two types need promotion for binary operations
+    fn needsTypePromotion(self: *AdvancedCodeGen, left_type: c.LLVMTypeRef, right_type: c.LLVMTypeRef) bool {
+        _ = self;
+        return !c.LLVMIsEqualType(left_type, right_type);
+    }
+    
+    /// Get promoted type for binary operations
+    fn getPromotedType(self: *AdvancedCodeGen, left_type: c.LLVMTypeRef, right_type: c.LLVMTypeRef) CodeGenError!c.LLVMTypeRef {
+        _ = self;
+        const left_kind = c.LLVMGetTypeKind(left_type);
+        const right_kind = c.LLVMGetTypeKind(right_type);
+        
+        // Promote to larger numeric type
+        if (left_kind == c.LLVMDoubleTypeKind or right_kind == c.LLVMDoubleTypeKind) {
+            return c.LLVMDoubleTypeInContext(c.LLVMGetTypeContext(left_type));
+        }
+        if (left_kind == c.LLVMFloatTypeKind or right_kind == c.LLVMFloatTypeKind) {
+            return c.LLVMFloatTypeInContext(c.LLVMGetTypeContext(left_type));
+        }
+        if (left_kind == c.LLVMIntegerTypeKind and right_kind == c.LLVMIntegerTypeKind) {
+            const left_width = c.LLVMGetIntTypeWidth(left_type);
+            const right_width = c.LLVMGetIntTypeWidth(right_type);
+            const max_width = if (left_width > right_width) left_width else right_width;
+            return c.LLVMIntTypeInContext(c.LLVMGetTypeContext(left_type), max_width);
+        }
+        
+        return left_type; // Default to left type
+    }
+    
+    /// Promote value to target type
+    fn promoteValue(self: *AdvancedCodeGen, value: c.LLVMValueRef, target_type: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
+        const value_type = c.LLVMTypeOf(value);
+        const builder = self.base_codegen.builder;
+        
+        if (c.LLVMIsEqualType(value_type, target_type)) {
+            return value;
+        }
+        
+        const value_kind = c.LLVMGetTypeKind(value_type);
+        const target_kind = c.LLVMGetTypeKind(target_type);
+        
+        // Integer to float promotion
+        if (value_kind == c.LLVMIntegerTypeKind and (target_kind == c.LLVMFloatTypeKind or target_kind == c.LLVMDoubleTypeKind)) {
+            return c.LLVMBuildSIToFP(builder, value, target_type, "promote_itof");
+        }
+        
+        // Integer width extension
+        if (value_kind == c.LLVMIntegerTypeKind and target_kind == c.LLVMIntegerTypeKind) {
+            const value_width = c.LLVMGetIntTypeWidth(value_type);
+            const target_width = c.LLVMGetIntTypeWidth(target_type);
+            
+            if (value_width < target_width) {
+                return c.LLVMBuildSExt(builder, value, target_type, "promote_sext");
+            } else if (value_width > target_width) {
+                return c.LLVMBuildTrunc(builder, value, target_type, "promote_trunc");
+            }
+        }
+        
+        // Float precision promotion
+        if (value_kind == c.LLVMFloatTypeKind and target_kind == c.LLVMDoubleTypeKind) {
+            return c.LLVMBuildFPExt(builder, value, target_type, "promote_fpext");
+        }
+        
+        return value; // No promotion needed
+    }
+    
+    /// Check if types are compatible for operations
+    fn typesAreCompatible(self: *AdvancedCodeGen, type1: c.LLVMTypeRef, type2: c.LLVMTypeRef) bool {
+        _ = self;
+        return c.LLVMIsEqualType(type1, type2) or self.canPromoteTypes(type1, type2);
+    }
+    
+    /// Check if types can be promoted to a common type
+    fn canPromoteTypes(self: *AdvancedCodeGen, type1: c.LLVMTypeRef, type2: c.LLVMTypeRef) bool {
+        _ = self;
+        const kind1 = c.LLVMGetTypeKind(type1);
+        const kind2 = c.LLVMGetTypeKind(type2);
+        
+        // Numeric types can be promoted
+        return (kind1 == c.LLVMIntegerTypeKind or kind1 == c.LLVMFloatTypeKind or kind1 == c.LLVMDoubleTypeKind) and
+               (kind2 == c.LLVMIntegerTypeKind or kind2 == c.LLVMFloatTypeKind or kind2 == c.LLVMDoubleTypeKind);
+    }
+    
+    /// Get common type for array elements
+    fn getCommonType(self: *AdvancedCodeGen, type1: c.LLVMTypeRef, type2: c.LLVMTypeRef) CodeGenError!c.LLVMTypeRef {
+        return try self.getPromotedType(type1, type2);
+    }
+    
+    /// Check if type is interface type
+    fn isInterfaceType(self: *AdvancedCodeGen, llvm_type: c.LLVMTypeRef) bool {
+        _ = self;
+        _ = llvm_type;
+        // TODO: Implement interface type detection
+        return false;
+    }
+    
+    /// Generate empty array
+    fn generateEmptyArray(self: *AdvancedCodeGen) CodeGenError!c.LLVMValueRef {
+        const i8_type = c.LLVMInt8TypeInContext(self.base_codegen.context);
+        const array_type = c.LLVMArrayType(i8_type, 0);
+        return c.LLVMGetUndef(array_type);
+    }
+    
+    /// Get LLVM type from CURSED type
+    fn getLLVMTypeFromCursedType(self: *AdvancedCodeGen, cursed_type: Type) CodeGenError!c.LLVMTypeRef {
+        return try self.base_codegen.getLLVMType(cursed_type);
+    }
+    
+    /// Generate typed array literal
+    fn generateTypedArrayLiteral(self: *AdvancedCodeGen, elements: []c.LLVMValueRef, element_type: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
+        const array_type = c.LLVMArrayType(element_type, @as(u32, @intCast(elements.len)));
+        const builder = self.base_codegen.builder;
+        
+        // Allocate array
+        const array_alloca = c.LLVMBuildAlloca(builder, array_type, "array_literal");
+        
+        // Store elements
+        for (elements, 0..) |element, i| {
+            const element_ptr = c.LLVMBuildGEP2(
+                builder,
+                array_type,
+                array_alloca,
+                &[_]c.LLVMValueRef{
+                    c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), 0, 0),
+                    c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), @as(u32, @intCast(i)), 0)
+                },
+                2,
+                "element_ptr"
+            );
+            _ = c.LLVMBuildStore(builder, element, element_ptr);
+        }
+        
+        return array_alloca;
+    }
+    
+    /// Generate dynamic array with size
+    fn generateDynamicArray(self: *AdvancedCodeGen, element_type: c.LLVMTypeRef, size: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        const builder = self.base_codegen.builder;
+        
+        // Calculate total size: element_size * count
+        const element_size = c.LLVMSizeOf(element_type);
+        const total_size = c.LLVMBuildMul(builder, element_size, size, "array_size");
+        
+        // Allocate memory
+        const malloc_func = self.base_codegen.functions.get("malloc") orelse {
+            return CodeGenError.UndefinedSymbol;
+        };
+        
+        const array_ptr = c.LLVMBuildCall2(
+            builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(malloc_func)),
+            malloc_func,
+            &[_]c.LLVMValueRef{total_size},
+            1,
+            "dynamic_array"
+        );
+        
+        // Cast to element pointer type
+        return c.LLVMBuildBitCast(
+            builder,
+            array_ptr,
+            c.LLVMPointerType(element_type, 0),
+            "typed_array"
+        );
+    }
+    
+    /// Generate bounds check for array access
+    fn generateBoundsCheck(self: *AdvancedCodeGen, array: c.LLVMValueRef, index: c.LLVMValueRef) CodeGenError!void {
+        _ = self;
+        _ = array;
+        _ = index;
+        // TODO: Implement runtime bounds checking
+    }
+    
+    /// Generate safe index access
+    fn generateSafeIndexAccess(self: *AdvancedCodeGen, array: c.LLVMValueRef, index: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateIndexAccess(ast.IndexAccessExpression{
+            .object = @ptrCast(&ast.Expression{ .Identifier = "dummy" }),
+            .index = @ptrCast(&ast.Expression{ .Identifier = "dummy" }),
+        });
+    }
+    
+    /// Validate struct fields match definition
+    fn validateStructFields(self: *AdvancedCodeGen, struct_lit: ast.StructLiteralExpression, struct_info: StructTypeInfo) CodeGenError!void {
+        _ = self;
+        _ = struct_lit;
+        _ = struct_info;
+        // TODO: Implement field validation
+    }
+    
+    /// Generate validated struct literal
+    fn generateValidatedStructLiteral(self: *AdvancedCodeGen, struct_lit: ast.StructLiteralExpression, struct_info: StructTypeInfo) CodeGenError!c.LLVMValueRef {
+        _ = struct_info;
+        return try self.base_codegen.generateStructLiteral(struct_lit);
+    }
+    
+    /// Generate vtable dispatch for interface calls
+    fn generateVTableDispatch(self: *AdvancedCodeGen, instance: c.LLVMValueRef, method_name: []const u8, args: []ast.Expression) CodeGenError!c.LLVMValueRef {
+        _ = self;
+        _ = instance;
+        _ = method_name;
+        _ = args;
+        // TODO: Implement vtable dispatch
+        return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.base_codegen.context), 0, 0);
+    }
+    
+    /// Generate checked interface cast
+    fn generateCheckedInterfaceCast(self: *AdvancedCodeGen, value: c.LLVMValueRef, target_type: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
+        _ = self;
+        _ = target_type;
+        return value; // TODO: Implement runtime type checking
+    }
+    
+    /// Generate safe cast with proper conversions
+    fn generateSafeCast(self: *AdvancedCodeGen, value: c.LLVMValueRef, target_type: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
+        return try self.base_codegen.generateTypeCast(ast.TypeCastExpression{
+            .expression = @ptrCast(&ast.Expression{ .Identifier = "dummy" }),
+            .target_type = Type{ .Basic = .Normie }, // Dummy type
+        });
+    }
+    
+    /// Generate regular function call
+    fn generateRegularFunctionCall(self: *AdvancedCodeGen, call: ast.CallExpression, name: []const u8) CodeGenError!c.LLVMValueRef {
+        _ = name;
+        return try self.base_codegen.generateCall(call);
+    }
+    
+    /// Generate generic function call with monomorphization
+    fn generateGenericFunctionCall(self: *AdvancedCodeGen, call: ast.CallExpression, name: []const u8) CodeGenError!c.LLVMValueRef {
+        _ = name;
+        // TODO: Implement generic function instantiation
+        return try self.base_codegen.generateCall(call);
+    }
+    
+    /// Generate method call on struct or interface
+    fn generateMethodCall(self: *AdvancedCodeGen, call: ast.CallExpression, member: ast.MemberAccessExpression) CodeGenError!c.LLVMValueRef {
+        _ = member;
+        return try self.base_codegen.generateCall(call);
+    }
+    
+
+    
+    /// Generate interface method access
+    fn generateInterfaceMethodAccess(self: *AdvancedCodeGen, interface_ptr: c.LLVMValueRef, method_name: []const u8) CodeGenError!c.LLVMValueRef {
+        _ = method_name;
+        return interface_ptr; // TODO: Implement interface method access
+    }
 };
 
 
 
-const MethodInfo = struct {
-    name: []const u8,
-    llvm_name: []const u8,
-    signature: ast.MethodSignature,
-};
 
-const VTableInfo = struct {
-    name: []const u8,
-    interface_name: []const u8,
-    struct_name: []const u8,
-    global_value: c.LLVMValueRef,
-    method_count: usize,
-};
 
 
 

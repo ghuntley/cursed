@@ -299,86 +299,231 @@ pub const RuntimeSystem = struct {
         _ = c.LLVMBuildRetVoid(builder);
     }
     
-    /// Generate string runtime functions
+    /// Generate comprehensive string runtime functions
     fn generateStringRuntime(self: *RuntimeSystem, context: c.LLVMContextRef, module: c.LLVMModuleRef) RuntimeError!void {
         _ = self;
-        
-        // String concatenation function
-        const concat_type = c.LLVMFunctionType(
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0), // result string
-            &[_]c.LLVMTypeRef{
-                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0), // str1
-                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0), // str2
-            },
-            2, 0
-        );
-        const concat_func = c.LLVMAddFunction(module, "cursed_string_concat", concat_type);
         
         const builder = c.LLVMCreateBuilderInContext(context);
         defer c.LLVMDisposeBuilder(builder);
         
-        const concat_entry = c.LLVMAppendBasicBlockInContext(context, concat_func, "entry");
-        c.LLVMPositionBuilderAtEnd(builder, concat_entry);
+        // Common type declarations
+        const i8_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0);
+        const i8_type = c.LLVMInt8TypeInContext(context);
+        const i32_type = c.LLVMInt32TypeInContext(context);
+        const i64_type = c.LLVMInt64TypeInContext(context);
         
-        // Declare strlen and strcpy
-        const strlen_type = c.LLVMFunctionType(
-            c.LLVMInt64TypeInContext(context),
-            &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0)},
-            1, 0
-        );
+        // Declare C library functions
+        const strlen_type = c.LLVMFunctionType(i64_type, &[_]c.LLVMTypeRef{i8_ptr_type}, 1, 0);
         const strlen_func = c.LLVMAddFunction(module, "strlen", strlen_type);
         
-        const strcpy_type = c.LLVMFunctionType(
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
-            &[_]c.LLVMTypeRef{
-                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
-                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
-            },
-            2, 0
-        );
+        const strcpy_type = c.LLVMFunctionType(i8_ptr_type, &[_]c.LLVMTypeRef{i8_ptr_type, i8_ptr_type}, 2, 0);
         const strcpy_func = c.LLVMAddFunction(module, "strcpy", strcpy_type);
         
-        const strcat_type = c.LLVMFunctionType(
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
-            &[_]c.LLVMTypeRef{
-                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
-                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
-            },
-            2, 0
-        );
+        const strcat_type = c.LLVMFunctionType(i8_ptr_type, &[_]c.LLVMTypeRef{i8_ptr_type, i8_ptr_type}, 2, 0);
         const strcat_func = c.LLVMAddFunction(module, "strcat", strcat_type);
+        
+        // === 1. STRING CONCATENATION ===
+        const concat_type = c.LLVMFunctionType(i8_ptr_type, &[_]c.LLVMTypeRef{i8_ptr_type, i8_ptr_type}, 2, 0);
+        const concat_func = c.LLVMAddFunction(module, "cursed_string_concat", concat_type);
+        
+        const concat_entry = c.LLVMAppendBasicBlockInContext(context, concat_func, "entry");
+        c.LLVMPositionBuilderAtEnd(builder, concat_entry);
         
         const str1_param = c.LLVMGetParam(concat_func, 0);
         const str2_param = c.LLVMGetParam(concat_func, 1);
         
         // Get string lengths
-        const len1 = c.LLVMBuildCall2(builder, c.LLVMGetReturnType(c.LLVMGlobalGetValueType(strlen_func)), strlen_func, &[_]c.LLVMValueRef{str1_param}, 1, "len1");
-        const len2 = c.LLVMBuildCall2(builder, c.LLVMGetReturnType(c.LLVMGlobalGetValueType(strlen_func)), strlen_func, &[_]c.LLVMValueRef{str2_param}, 1, "len2");
+        const len1 = c.LLVMBuildCall2(builder, i64_type, strlen_func, &[_]c.LLVMValueRef{str1_param}, 1, "len1");
+        const len2 = c.LLVMBuildCall2(builder, i64_type, strlen_func, &[_]c.LLVMValueRef{str2_param}, 1, "len2");
         
         // Calculate total length (including null terminator)
-        const total_len = c.LLVMBuildAdd(builder, c.LLVMBuildAdd(builder, len1, len2, "temp_len"), c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 1, 0), "total_len");
+        const total_len = c.LLVMBuildAdd(builder, c.LLVMBuildAdd(builder, len1, len2, "temp_len"), c.LLVMConstInt(i64_type, 1, 0), "total_len");
         
         // Allocate memory for result
         const cursed_alloc = c.LLVMGetNamedFunction(module, "cursed_alloc");
         const result_ptr = c.LLVMBuildCall2(
             builder,
-            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(cursed_alloc)),
+            i8_ptr_type,
             cursed_alloc,
-            &[_]c.LLVMValueRef{
-                total_len,
-                c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 3, 0) // string type_id
-            },
+            &[_]c.LLVMTypeRef{total_len, c.LLVMConstInt(i32_type, 3, 0)}, // string type_id = 3
             2,
             "result_alloc"
         );
         
         // Copy first string
-        _ = c.LLVMBuildCall2(builder, c.LLVMGetReturnType(c.LLVMGlobalGetValueType(strcpy_func)), strcpy_func, &[_]c.LLVMValueRef{result_ptr, str1_param}, 2, "");
+        _ = c.LLVMBuildCall2(builder, i8_ptr_type, strcpy_func, &[_]c.LLVMValueRef{result_ptr, str1_param}, 2, "");
         
         // Concatenate second string
-        _ = c.LLVMBuildCall2(builder, c.LLVMGetReturnType(c.LLVMGlobalGetValueType(strcat_func)), strcat_func, &[_]c.LLVMValueRef{result_ptr, str2_param}, 2, "");
+        _ = c.LLVMBuildCall2(builder, i8_ptr_type, strcat_func, &[_]c.LLVMValueRef{result_ptr, str2_param}, 2, "");
         
         _ = c.LLVMBuildRet(builder, result_ptr);
+        
+        // === 2. STRING LENGTH ===
+        const length_type = c.LLVMFunctionType(i32_type, &[_]c.LLVMTypeRef{i8_ptr_type}, 1, 0);
+        const length_func = c.LLVMAddFunction(module, "cursed_string_length", length_type);
+        
+        const length_entry = c.LLVMAppendBasicBlockInContext(context, length_func, "entry");
+        c.LLVMPositionBuilderAtEnd(builder, length_entry);
+        
+        const str_param = c.LLVMGetParam(length_func, 0);
+        const str_len = c.LLVMBuildCall2(builder, i64_type, strlen_func, &[_]c.LLVMValueRef{str_param}, 1, "str_len");
+        const str_len_i32 = c.LLVMBuildTrunc(builder, str_len, i32_type, "str_len_i32");
+        
+        _ = c.LLVMBuildRet(builder, str_len_i32);
+        
+        // === 3. STRING CHARACTER ACCESS ===
+        const char_at_type = c.LLVMFunctionType(i8_type, &[_]c.LLVMTypeRef{i8_ptr_type, i32_type}, 2, 0);
+        const char_at_func = c.LLVMAddFunction(module, "runtime_string_char_at", char_at_type);
+        
+        const char_at_entry = c.LLVMAppendBasicBlockInContext(context, char_at_func, "entry");
+        c.LLVMPositionBuilderAtEnd(builder, char_at_entry);
+        
+        const str_at_param = c.LLVMGetParam(char_at_func, 0);
+        const index_param = c.LLVMGetParam(char_at_func, 1);
+        
+        // Bounds checking
+        const str_at_len = c.LLVMBuildCall2(builder, i64_type, strlen_func, &[_]c.LLVMValueRef{str_at_param}, 1, "str_at_len");
+        const str_at_len_i32 = c.LLVMBuildTrunc(builder, str_at_len, i32_type, "str_at_len_i32");
+        
+        const bounds_check = c.LLVMBuildICmp(builder, c.LLVMIntULT, index_param, str_at_len_i32, "bounds_check");
+        
+        const valid_bb = c.LLVMAppendBasicBlockInContext(context, char_at_func, "valid_index");
+        const invalid_bb = c.LLVMAppendBasicBlockInContext(context, char_at_func, "invalid_index");
+        
+        _ = c.LLVMBuildCondBr(builder, bounds_check, valid_bb, invalid_bb);
+        
+        // Valid index: return character
+        c.LLVMPositionBuilderAtEnd(builder, valid_bb);
+        const char_ptr = c.LLVMBuildGEP2(builder, i8_type, str_at_param, &[_]c.LLVMValueRef{index_param}, 1, "char_ptr");
+        const char_value = c.LLVMBuildLoad2(builder, i8_type, char_ptr, "char_value");
+        _ = c.LLVMBuildRet(builder, char_value);
+        
+        // Invalid index: return null character
+        c.LLVMPositionBuilderAtEnd(builder, invalid_bb);
+        const null_char = c.LLVMConstInt(i8_type, 0, 0);
+        _ = c.LLVMBuildRet(builder, null_char);
+        
+        // === 4. CHARACTER TO STRING CONVERSION ===
+        const char_to_string_type = c.LLVMFunctionType(i8_ptr_type, &[_]c.LLVMTypeRef{i8_type}, 1, 0);
+        const char_to_string_func = c.LLVMAddFunction(module, "runtime_char_to_string", char_to_string_type);
+        
+        const char_to_str_entry = c.LLVMAppendBasicBlockInContext(context, char_to_string_func, "entry");
+        c.LLVMPositionBuilderAtEnd(builder, char_to_str_entry);
+        
+        const char_param = c.LLVMGetParam(char_to_string_func, 0);
+        
+        // Allocate 2 bytes (character + null terminator)
+        const char_str_len = c.LLVMConstInt(i64_type, 2, 0);
+        const char_str_ptr = c.LLVMBuildCall2(
+            builder,
+            i8_ptr_type,
+            cursed_alloc,
+            &[_]c.LLVMValueRef{char_str_len, c.LLVMConstInt(i32_type, 3, 0)}, // string type_id = 3
+            2,
+            "char_str_alloc"
+        );
+        
+        // Store character and null terminator
+        const first_byte_ptr = c.LLVMBuildGEP2(builder, i8_type, char_str_ptr, &[_]c.LLVMValueRef{c.LLVMConstInt(i32_type, 0, 0)}, 1, "first_byte");
+        const second_byte_ptr = c.LLVMBuildGEP2(builder, i8_type, char_str_ptr, &[_]c.LLVMValueRef{c.LLVMConstInt(i32_type, 1, 0)}, 1, "second_byte");
+        
+        _ = c.LLVMBuildStore(builder, char_param, first_byte_ptr);
+        _ = c.LLVMBuildStore(builder, c.LLVMConstInt(i8_type, 0, 0), second_byte_ptr);
+        
+        _ = c.LLVMBuildRet(builder, char_str_ptr);
+        
+        // === 5. STRING COMPARISON ===
+        const str_cmp_type = c.LLVMFunctionType(i32_type, &[_]c.LLVMTypeRef{i8_ptr_type, i8_ptr_type}, 2, 0);
+        const str_cmp_func = c.LLVMAddFunction(module, "cursed_string_compare", str_cmp_type);
+        
+        const strcmp_type = c.LLVMFunctionType(i32_type, &[_]c.LLVMTypeRef{i8_ptr_type, i8_ptr_type}, 2, 0);
+        const strcmp_func = c.LLVMAddFunction(module, "strcmp", strcmp_type);
+        
+        const str_cmp_entry = c.LLVMAppendBasicBlockInContext(context, str_cmp_func, "entry");
+        c.LLVMPositionBuilderAtEnd(builder, str_cmp_entry);
+        
+        const str1_cmp_param = c.LLVMGetParam(str_cmp_func, 0);
+        const str2_cmp_param = c.LLVMGetParam(str_cmp_func, 1);
+        
+        const cmp_result = c.LLVMBuildCall2(builder, i32_type, strcmp_func, &[_]c.LLVMValueRef{str1_cmp_param, str2_cmp_param}, 2, "cmp_result");
+        _ = c.LLVMBuildRet(builder, cmp_result);
+        
+        // === 6. STRING SUBSTRING ===
+        const substr_type = c.LLVMFunctionType(i8_ptr_type, &[_]c.LLVMTypeRef{i8_ptr_type, i32_type, i32_type}, 3, 0);
+        const substr_func = c.LLVMAddFunction(module, "cursed_string_substring", substr_type);
+        
+        const substr_entry = c.LLVMAppendBasicBlockInContext(context, substr_func, "entry");
+        c.LLVMPositionBuilderAtEnd(builder, substr_entry);
+        
+        const str_substr_param = c.LLVMGetParam(substr_func, 0);
+        const start_param = c.LLVMGetParam(substr_func, 1);
+        const len_param = c.LLVMGetParam(substr_func, 2);
+        
+        // Bounds checking
+        const substr_str_len = c.LLVMBuildCall2(builder, i64_type, strlen_func, &[_]c.LLVMValueRef{str_substr_param}, 1, "substr_str_len");
+        const substr_str_len_i32 = c.LLVMBuildTrunc(builder, substr_str_len, i32_type, "substr_str_len_i32");
+        
+        const start_valid = c.LLVMBuildICmp(builder, c.LLVMIntULT, start_param, substr_str_len_i32, "start_valid");
+        const len_positive = c.LLVMBuildICmp(builder, c.LLVMIntSGT, len_param, c.LLVMConstInt(i32_type, 0, 0), "len_positive");
+        const bounds_valid = c.LLVMBuildAnd(builder, start_valid, len_positive, "bounds_valid");
+        
+        const substr_valid_bb = c.LLVMAppendBasicBlockInContext(context, substr_func, "valid_substr");
+        const substr_invalid_bb = c.LLVMAppendBasicBlockInContext(context, substr_func, "invalid_substr");
+        
+        _ = c.LLVMBuildCondBr(builder, bounds_valid, substr_valid_bb, substr_invalid_bb);
+        
+        // Valid substring
+        c.LLVMPositionBuilderAtEnd(builder, substr_valid_bb);
+        
+        // Calculate actual length (clamp to string boundaries)
+        const remaining_len = c.LLVMBuildSub(builder, substr_str_len_i32, start_param, "remaining_len");
+        const actual_len = c.LLVMBuildSelect(builder, 
+            c.LLVMBuildICmp(builder, c.LLVMIntULT, len_param, remaining_len, "len_fits"), 
+            len_param, remaining_len, "actual_len");
+        
+        // Allocate memory for result (actual_len + 1 for null terminator)
+        const result_len = c.LLVMBuildAdd(builder, actual_len, c.LLVMConstInt(i32_type, 1, 0), "result_len");
+        const result_len_i64 = c.LLVMBuildZExt(builder, result_len, i64_type, "result_len_i64");
+        
+        const substr_result_ptr = c.LLVMBuildCall2(
+            builder,
+            i8_ptr_type,
+            cursed_alloc,
+            &[_]c.LLVMValueRef{result_len_i64, c.LLVMConstInt(i32_type, 3, 0)}, // string type_id = 3
+            2,
+            "substr_result_alloc"
+        );
+        
+        // Copy substring using strncpy-like logic (manual copy with bounds)
+        const memcpy_type = c.LLVMFunctionType(i8_ptr_type, &[_]c.LLVMTypeRef{i8_ptr_type, i8_ptr_type, i64_type}, 3, 0);
+        const memcpy_func = c.LLVMAddFunction(module, "memcpy", memcpy_type);
+        
+        const src_ptr = c.LLVMBuildGEP2(builder, i8_type, str_substr_param, &[_]c.LLVMValueRef{start_param}, 1, "src_ptr");
+        const actual_len_i64 = c.LLVMBuildZExt(builder, actual_len, i64_type, "actual_len_i64");
+        
+        _ = c.LLVMBuildCall2(builder, i8_ptr_type, memcpy_func, &[_]c.LLVMValueRef{substr_result_ptr, src_ptr, actual_len_i64}, 3, "");
+        
+        // Add null terminator
+        const null_term_ptr = c.LLVMBuildGEP2(builder, i8_type, substr_result_ptr, &[_]c.LLVMValueRef{actual_len}, 1, "null_term_ptr");
+        _ = c.LLVMBuildStore(builder, c.LLVMConstInt(i8_type, 0, 0), null_term_ptr);
+        
+        _ = c.LLVMBuildRet(builder, substr_result_ptr);
+        
+        // Invalid substring: return empty string
+        c.LLVMPositionBuilderAtEnd(builder, substr_invalid_bb);
+        
+        const empty_str_len = c.LLVMConstInt(i64_type, 1, 0);
+        const empty_str_ptr = c.LLVMBuildCall2(
+            builder,
+            i8_ptr_type,
+            cursed_alloc,
+            &[_]c.LLVMValueRef{empty_str_len, c.LLVMConstInt(i32_type, 3, 0)}, // string type_id = 3
+            2,
+            "empty_str_alloc"
+        );
+        
+        _ = c.LLVMBuildStore(builder, c.LLVMConstInt(i8_type, 0, 0), empty_str_ptr);
+        _ = c.LLVMBuildRet(builder, empty_str_ptr);
     }
     
     /// Generate error handling runtime
