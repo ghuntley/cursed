@@ -116,11 +116,15 @@ pub const CodeGenerator = struct {
             .Function => |func| {
                 try self.generateFunction(func);
             },
-            .Variable => |var_decl| {
-                try self.generateVariable(var_decl);
+            .Let => |let_stmt| {
+                try self.generateLetStatement(let_stmt);
+            },
+            .Assignment => |assign_stmt| {
+                try self.generateAssignmentStatement(assign_stmt);
             },
             .Expression => |expr| {
-                _ = try self.generateExpression(expr);
+                const expr_ptr: *ast.Expression = @ptrCast(@alignCast(expr));
+                _ = try self.generateExpression(expr_ptr.*);
             },
             .If => |if_stmt| {
                 try self.generateIfStatement(if_stmt);
@@ -131,13 +135,17 @@ pub const CodeGenerator = struct {
             .For => |for_stmt| {
                 try self.generateForStatement(for_stmt);
             },
+            .ForIn => |for_in_stmt| {
+                try self.generateForInStatement(for_in_stmt);
+            },
             .Return => |return_stmt| {
                 try self.generateReturnStatement(return_stmt);
             },
-            .Block => |block| {
-                for (block.statements.items) |block_stmt| {
-                    try self.generateStatement(block_stmt.*);
-                }
+            .Switch => |switch_stmt| {
+                try self.generateSwitchStatement(switch_stmt);
+            },
+            .PatternSwitch => |pattern_stmt| {
+                try self.generatePatternSwitchStatement(pattern_stmt);
             },
             .Struct => |struct_stmt| {
                 try self.generateStructStatement(struct_stmt);
@@ -148,17 +156,17 @@ pub const CodeGenerator = struct {
             .Implementation => |impl_stmt| {
                 try self.generateImplementationStatement(impl_stmt);
             },
-            .Match => |match_stmt| {
-                try self.generateMatchStatement(match_stmt);
+            .TypeAlias => |type_alias| {
+                try self.generateTypeAliasStatement(type_alias);
             },
             .Defer => |defer_stmt| {
                 try self.generateDeferStatement(defer_stmt);
             },
-            .Try => |try_stmt| {
-                try self.generateTryStatement(try_stmt);
-            },
             .Goroutine => |goroutine_stmt| {
                 try self.generateGoroutineStatement(goroutine_stmt);
+            },
+            .Channel => |channel_stmt| {
+                try self.generateChannelStatement(channel_stmt);
             },
             .Select => |select_stmt| {
                 try self.generateSelectStatement(select_stmt);
@@ -169,17 +177,29 @@ pub const CodeGenerator = struct {
             .Continue => |continue_stmt| {
                 try self.generateContinueStatement(continue_stmt);
             },
-            .Constant => |const_stmt| {
-                try self.generateConstantStatement(const_stmt);
+            .Increment => |inc_stmt| {
+                try self.generateIncrementStatement(inc_stmt);
             },
-            .Type => |type_stmt| {
-                try self.generateTypeStatement(type_stmt);
+            .Decrement => |dec_stmt| {
+                try self.generateDecrementStatement(dec_stmt);
             },
-            .Import => {
-                // Import statements don't generate code
+            .ShortDeclaration => |short_decl| {
+                try self.generateShortDeclarationStatement(short_decl);
             },
-            else => {
-                std.debug.print("Warning: Unimplemented statement type in codegen\n", .{});
+            .Panic => |panic_stmt| {
+                try self.generatePanicStatement(panic_stmt);
+            },
+            .Catch => |catch_stmt| {
+                try self.generateCatchStatement(catch_stmt);
+            },
+            .Yikes => |yikes_stmt| {
+                try self.generateYikesStatement(yikes_stmt);
+            },
+            .Fam => |fam_stmt| {
+                try self.generateFamStatement(fam_stmt);
+            },
+            .Const => |const_decl| {
+                try self.generateConstStatement(const_decl);
             },
         }
     }
@@ -362,34 +382,59 @@ pub const CodeGenerator = struct {
                 return try self.generateLiteral(literal);
             },
             .Identifier => |identifier| {
-                return try self.generateIdentifier(identifier);
+                return try self.generateIdentifierExpression(identifier);
+            },
+            .Variable => |variable| {
+                return try self.generateVariableExpression(variable);
+            },
+            .Integer => |int_val| {
+                const int_type = c.LLVMInt32TypeInContext(self.context);
+                return c.LLVMConstInt(int_type, @intCast(int_val), 0);
+            },
+            .Float => |float_val| {
+                const float_type = c.LLVMDoubleTypeInContext(self.context);
+                return c.LLVMConstReal(float_type, float_val);
+            },
+            .String => |string_val| {
+                return try self.generateStringLiteral(string_val);
+            },
+            .Boolean => |bool_val| {
+                const bool_type = c.LLVMInt1TypeInContext(self.context);
+                return c.LLVMConstInt(bool_type, if (bool_val) 1 else 0, 0);
+            },
+            .Character => |char_val| {
+                const char_type = c.LLVMInt8TypeInContext(self.context);
+                return c.LLVMConstInt(char_type, char_val, 0);
             },
             .Binary => |binary| {
                 return try self.generateBinaryExpression(binary);
             },
             .Unary => |unary| {
-                return try self.generateUnaryExpression(unary);
+                return try self.generateUnaryExpression(unary.*);
             },
             .Call => |call| {
                 return try self.generateCallExpression(call);
             },
             .MemberAccess => |access| {
-                return try self.generateMemberAccessExpression(access);
+                return try self.generateMemberAccessExpression(access.*);
             },
             .ArrayAccess => |index| {
                 return try self.generateArrayAccessExpression(index);
             },
-            .Assignment => |assignment| {
-                return try self.generateAssignmentExpression(assignment);
+            .SliceAccess => |slice| {
+                return try self.generateSliceAccessExpression(slice);
             },
             .Array => |array| {
-                return try self.generateArrayExpression(array);
+                return try self.generateArrayExpression(array.*);
             },
             .Map => |map| {
-                return try self.generateMapExpression(map);
+                return try self.generateMapExpression(map.*);
             },
             .Tuple => |tuple| {
                 return try self.generateTupleExpression(tuple);
+            },
+            .TupleAccess => |tuple_access| {
+                return try self.generateTupleAccessExpression(tuple_access);
             },
             .TypeAssertion => |type_assertion| {
                 return try self.generateTypeAssertionExpression(type_assertion);
@@ -397,10 +442,62 @@ pub const CodeGenerator = struct {
             .Lambda => |lambda| {
                 return try self.generateLambdaExpression(lambda);
             },
-            else => {
-                std.debug.print("Warning: Unimplemented expression type in codegen\n", .{});
-                // Return a placeholder value for unimplemented expressions
-                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            .CompositeLiteral => |composite| {
+                return try self.generateCompositeLiteralExpression(composite);
+            },
+            .ChannelSend => |channel_send| {
+                return try self.generateChannelSendExpression(channel_send);
+            },
+            .ChannelReceive => |channel_recv| {
+                return try self.generateChannelReceiveExpression(channel_recv);
+            },
+            .ChannelCreation => |channel_create| {
+                return try self.generateChannelCreationExpression(channel_create);
+            },
+            .StructLiteral => |struct_lit| {
+                return try self.generateStructLiteralExpression(struct_lit);
+            },
+            .Increment => |increment| {
+                return try self.generateIncrementExpression(increment);
+            },
+            .Decrement => |decrement| {
+                return try self.generateDecrementExpression(decrement);
+            },
+            .Yikes => |yikes| {
+                return try self.generateYikesExpression(yikes);
+            },
+            .Shook => |shook| {
+                return try self.generateShookExpression(shook);
+            },
+            .Fam => |fam| {
+                return try self.generateFamExpression(fam);
+            },
+            .ErrorValue => |error_val| {
+                return try self.generateErrorValueExpression(error_val);
+            },
+            .StructuredError => |struct_err| {
+                return try self.generateStructuredErrorExpression(struct_err);
+            },
+            .Panic => |panic| {
+                return try self.generatePanicExpression(panic);
+            },
+            .Recover => |recover| {
+                return try self.generateRecoverExpression(recover);
+            },
+            .TestResult => |test_result| {
+                return try self.generateTestResultExpression(test_result);
+            },
+            .TestResultCheck => |test_check| {
+                return try self.generateTestResultCheckExpression(test_check);
+            },
+            .RangeFor => |range_for| {
+                return try self.generateRangeForExpression(range_for);
+            },
+            .Match => |match| {
+                return try self.generateMatchExpression(match);
+            },
+            .TypeSwitch => |type_switch| {
+                return try self.generateTypeSwitchExpression(type_switch);
             },
         }
     }
@@ -465,16 +562,21 @@ pub const CodeGenerator = struct {
     }
 
     /// Generate identifier access
-    fn generateIdentifier(self: *CodeGenerator, identifier: ast.Identifier) !c.LLVMValueRef {
-        if (self.variables.get(identifier.name)) |variable| {
+    fn generateIdentifierExpression(self: *CodeGenerator, identifier: []const u8) !c.LLVMValueRef {
+        if (self.variables.get(identifier)) |variable| {
             // Load the variable value
             const var_type = c.LLVMTypeOf(variable);
             const element_type = c.LLVMGetElementType(var_type);
-            return c.LLVMBuildLoad2(self.builder, element_type, variable, identifier.name.ptr);
+            return c.LLVMBuildLoad2(self.builder, element_type, variable, identifier.ptr);
         } else {
-            std.debug.print("Error: Undefined variable '{s}'\n", .{identifier.name});
+            std.debug.print("Error: Undefined variable '{s}'\n", .{identifier});
             return error.UndefinedSymbol;
         }
+    }
+    
+    /// Generate variable access
+    fn generateVariableExpression(self: *CodeGenerator, variable: []const u8) !c.LLVMValueRef {
+        return try self.generateIdentifierExpression(variable);
     }
 
     /// Generate binary expressions
@@ -482,64 +584,82 @@ pub const CodeGenerator = struct {
         const left = try self.generateExpression(binary.left.*);
         const right = try self.generateExpression(binary.right.*);
         
-        switch (binary.operator) {
-            .Add => return c.LLVMBuildAdd(self.builder, left, right, "add_tmp"),
-            .Subtract => return c.LLVMBuildSub(self.builder, left, right, "sub_tmp"),
-            .Multiply => return c.LLVMBuildMul(self.builder, left, right, "mul_tmp"),
-            .Divide => return c.LLVMBuildSDiv(self.builder, left, right, "div_tmp"),
-            .Modulo => return c.LLVMBuildSRem(self.builder, left, right, "mod_tmp"),
-            .Equal => return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp"),
-            .NotEqual => return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "neq_tmp"),
-            .LessThan => return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp"),
-            .LessThanOrEqual => return c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, left, right, "lte_tmp"),
-            .GreaterThan => return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp"),
-            .GreaterThanOrEqual => return c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, left, right, "gte_tmp"),
-            .LogicalAnd => {
-                // Short-circuit AND
-                const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
-                const and_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "and.rhs");
-                const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "and.end");
-                
-                _ = c.LLVMBuildCondBr(self.builder, left, and_block, merge_block);
-                
-                c.LLVMPositionBuilderAtEnd(self.builder, and_block);
-                _ = c.LLVMBuildBr(self.builder, merge_block);
-                
-                c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
-                const phi = c.LLVMBuildPhi(self.builder, c.LLVMInt1TypeInContext(self.context), "and_result");
-                
-                const false_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 0, 0);
-                const incoming_values = [_]c.LLVMValueRef{ false_val, right };
-                const incoming_blocks = [_]c.LLVMBasicBlockRef{ c.LLVMGetPreviousBasicBlock(and_block), and_block };
-                c.LLVMAddIncoming(phi, &incoming_values, &incoming_blocks, 2);
-                
-                return phi;
-            },
-            .LogicalOr => {
-                // Short-circuit OR
-                const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
-                const or_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "or.rhs");
-                const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "or.end");
-                
-                _ = c.LLVMBuildCondBr(self.builder, left, merge_block, or_block);
-                
-                c.LLVMPositionBuilderAtEnd(self.builder, or_block);
-                _ = c.LLVMBuildBr(self.builder, merge_block);
-                
-                c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
-                const phi = c.LLVMBuildPhi(self.builder, c.LLVMInt1TypeInContext(self.context), "or_result");
-                
-                const true_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
-                const incoming_values = [_]c.LLVMValueRef{ true_val, right };
-                const incoming_blocks = [_]c.LLVMBasicBlockRef{ c.LLVMGetPreviousBasicBlock(or_block), or_block };
-                c.LLVMAddIncoming(phi, &incoming_values, &incoming_blocks, 2);
-                
-                return phi;
-            },
-            else => {
-                std.debug.print("Warning: Unimplemented binary operator\n", .{});
-                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
-            },
+        // Handle string-based operators
+        if (std.mem.eql(u8, binary.operator, "+")) {
+            return c.LLVMBuildAdd(self.builder, left, right, "add_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "-")) {
+            return c.LLVMBuildSub(self.builder, left, right, "sub_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "*")) {
+            return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "/")) {
+            return c.LLVMBuildSDiv(self.builder, left, right, "div_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "%")) {
+            return c.LLVMBuildSRem(self.builder, left, right, "mod_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "==")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "!=")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "neq_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "<")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "<=")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, left, right, "lte_tmp");
+        } else if (std.mem.eql(u8, binary.operator, ">")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp");
+        } else if (std.mem.eql(u8, binary.operator, ">=")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, left, right, "gte_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "&")) {
+            return c.LLVMBuildAnd(self.builder, left, right, "and_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "|")) {
+            return c.LLVMBuildOr(self.builder, left, right, "or_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "^")) {
+            return c.LLVMBuildXor(self.builder, left, right, "xor_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "<<")) {
+            return c.LLVMBuildShl(self.builder, left, right, "shl_tmp");
+        } else if (std.mem.eql(u8, binary.operator, ">>")) {
+            return c.LLVMBuildAShr(self.builder, left, right, "shr_tmp");
+        } else if (std.mem.eql(u8, binary.operator, "&&")) {
+            // Short-circuit AND
+            const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+            const and_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "and.rhs");
+            const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "and.end");
+            
+            _ = c.LLVMBuildCondBr(self.builder, left, and_block, merge_block);
+            
+            c.LLVMPositionBuilderAtEnd(self.builder, and_block);
+            _ = c.LLVMBuildBr(self.builder, merge_block);
+            
+            c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+            const phi = c.LLVMBuildPhi(self.builder, c.LLVMInt1TypeInContext(self.context), "and_result");
+            
+            const false_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 0, 0);
+            const incoming_values = [_]c.LLVMValueRef{ false_val, right };
+            const incoming_blocks = [_]c.LLVMBasicBlockRef{ c.LLVMGetPreviousBasicBlock(and_block), and_block };
+            c.LLVMAddIncoming(phi, &incoming_values, &incoming_blocks, 2);
+            
+            return phi;
+        } else if (std.mem.eql(u8, binary.operator, "||")) {
+            // Short-circuit OR
+            const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+            const or_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "or.rhs");
+            const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "or.end");
+            
+            _ = c.LLVMBuildCondBr(self.builder, left, merge_block, or_block);
+            
+            c.LLVMPositionBuilderAtEnd(self.builder, or_block);
+            _ = c.LLVMBuildBr(self.builder, merge_block);
+            
+            c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+            const phi = c.LLVMBuildPhi(self.builder, c.LLVMInt1TypeInContext(self.context), "or_result");
+            
+            const true_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
+            const incoming_values = [_]c.LLVMValueRef{ true_val, right };
+            const incoming_blocks = [_]c.LLVMBasicBlockRef{ c.LLVMGetPreviousBasicBlock(or_block), or_block };
+            c.LLVMAddIncoming(phi, &incoming_values, &incoming_blocks, 2);
+            
+            return phi;
+        } else {
+            std.debug.print("Warning: Unimplemented binary operator: {s}\n", .{binary.operator});
+            return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
         }
     }
 
@@ -547,24 +667,33 @@ pub const CodeGenerator = struct {
     fn generateUnaryExpression(self: *CodeGenerator, unary: ast.UnaryExpression) !c.LLVMValueRef {
         const operand = try self.generateExpression(unary.operand.*);
         
-        switch (unary.operator) {
-            .Negate => return c.LLVMBuildNeg(self.builder, operand, "neg_tmp"),
-            .LogicalNot => return c.LLVMBuildNot(self.builder, operand, "not_tmp"),
-            .BitwiseNot => return c.LLVMBuildNot(self.builder, operand, "bnot_tmp"),
-            .AddressOf => {
-                // Return the address of the operand (if it's an lvalue)
-                std.debug.print("Warning: AddressOf operator not fully implemented\n", .{});
-                return operand;
-            },
-            .Dereference => {
-                // Dereference the pointer
-                const element_type = c.LLVMGetElementType(c.LLVMTypeOf(operand));
-                return c.LLVMBuildLoad2(self.builder, element_type, operand, "deref_tmp");
-            },
-            else => {
-                std.debug.print("Warning: Unimplemented unary operator\n", .{});
-                return operand;
-            },
+        // Handle string-based operators
+        if (std.mem.eql(u8, unary.operator, "-")) {
+            return c.LLVMBuildNeg(self.builder, operand, "neg_tmp");
+        } else if (std.mem.eql(u8, unary.operator, "!")) {
+            return c.LLVMBuildNot(self.builder, operand, "not_tmp");
+        } else if (std.mem.eql(u8, unary.operator, "~")) {
+            return c.LLVMBuildNot(self.builder, operand, "bnot_tmp");
+        } else if (std.mem.eql(u8, unary.operator, "&")) {
+            // Return the address of the operand (if it's an lvalue)
+            // For now, we'll assume operand is already an address
+            std.debug.print("Warning: AddressOf operator simplified implementation\n", .{});
+            return operand;
+        } else if (std.mem.eql(u8, unary.operator, "*")) {
+            // Dereference the pointer
+            const element_type = c.LLVMGetElementType(c.LLVMTypeOf(operand));
+            return c.LLVMBuildLoad2(self.builder, element_type, operand, "deref_tmp");
+        } else if (std.mem.eql(u8, unary.operator, "++")) {
+            // Pre-increment
+            const one = c.LLVMConstInt(c.LLVMTypeOf(operand), 1, 0);
+            return c.LLVMBuildAdd(self.builder, operand, one, "preinc_tmp");
+        } else if (std.mem.eql(u8, unary.operator, "--")) {
+            // Pre-decrement
+            const one = c.LLVMConstInt(c.LLVMTypeOf(operand), 1, 0);
+            return c.LLVMBuildSub(self.builder, operand, one, "predec_tmp");
+        } else {
+            std.debug.print("Warning: Unimplemented unary operator: {s}\n", .{unary.operator});
+            return operand;
         }
     }
 
@@ -828,7 +957,6 @@ pub const CodeGenerator = struct {
         if (array.elements.items.len == 0) {
             // Empty array
             const i32_type = c.LLVMInt32TypeInContext(self.context);
-            const array_type = c.LLVMArrayType(i32_type, 0);
             return c.LLVMConstArray(i32_type, null, 0);
         }
         
@@ -1107,6 +1235,7 @@ pub const CodeGenerator = struct {
     }
 
     fn getStructFieldIndex(self: *CodeGenerator, struct_type: c.LLVMTypeRef, field_name: []const u8) ?u32 {
+        _ = self;
         _ = struct_type;
         // This is a simplified implementation
         // In a full compiler, we'd maintain a mapping of struct names to field layouts
@@ -1445,12 +1574,13 @@ pub const CodeGenerator = struct {
     fn generateTryStatement(self: *CodeGenerator, try_stmt: ast.TryStatement) !void {
         // Try statements in CURSED are similar to try-catch blocks
         // They need exception handling support
+        _ = self;
+        _ = try_stmt;
         
         std.debug.print("⚠️  Try statement (exception handling placeholder)\n", .{});
         
         // For now, just generate the try block without error handling
         // In a full implementation, this would set up exception handling frames
-        _ = try_stmt;
     }
 
     /// Generate goroutine/async statements
@@ -1541,6 +1671,7 @@ pub const CodeGenerator = struct {
 
     /// Generate break statements
     fn generateBreakStatement(self: *CodeGenerator, break_stmt: ast.BreakStatement) !void {
+        _ = self;
         _ = break_stmt;
         // Break statements need to jump to the loop exit block
         // This requires maintaining a stack of loop exit blocks
@@ -1549,6 +1680,7 @@ pub const CodeGenerator = struct {
 
     /// Generate continue statements
     fn generateContinueStatement(self: *CodeGenerator, continue_stmt: ast.ContinueStatement) !void {
+        _ = self;
         _ = continue_stmt;
         // Continue statements need to jump to the loop header/update block
         // This requires maintaining a stack of loop continue blocks
@@ -1575,7 +1707,251 @@ pub const CodeGenerator = struct {
     /// Generate type alias statements
     fn generateTypeStatement(self: *CodeGenerator, type_stmt: ast.TypeStatement) !void {
         // Type aliases don't generate runtime code, but we store them for type checking
-        _ = type_stmt;
+        _ = self;
         std.debug.print("✅ Type alias '{s}' registered\n", .{type_stmt.name});
+    }
+
+    // Additional statement generation functions
+    fn generateLetStatement(self: *CodeGenerator, let_stmt: ast.LetStatement) !void {
+        const llvm_type = self.getLLVMType("normie"); // Default type for now
+        const alloca = c.LLVMBuildAlloca(self.builder, llvm_type, let_stmt.name.ptr);
+        
+        if (let_stmt.initializer) |initializer| {
+            const init_expr: *ast.Expression = @ptrCast(@alignCast(initializer));
+            const init_value = try self.generateExpression(init_expr.*);
+            _ = c.LLVMBuildStore(self.builder, init_value, alloca);
+        }
+        
+        try self.variables.put(let_stmt.name, alloca);
+        std.debug.print("✅ Let variable '{s}' declared\n", .{let_stmt.name});
+    }
+
+    fn generateAssignmentStatement(self: *CodeGenerator, assign_stmt: ast.AssignmentStatement) !void {
+        const target_expr: *ast.Expression = @ptrCast(@alignCast(assign_stmt.target));
+        const value_expr: *ast.Expression = @ptrCast(@alignCast(assign_stmt.value));
+        
+        if (target_expr.* == .Identifier) {
+            const var_name = target_expr.Identifier;
+            if (self.variables.get(var_name)) |variable| {
+                const value = try self.generateExpression(value_expr.*);
+                _ = c.LLVMBuildStore(self.builder, value, variable);
+            } else {
+                std.debug.print("Error: Undefined variable '{s}' in assignment\n", .{var_name});
+                return error.UndefinedSymbol;
+            }
+        }
+    }
+
+    fn generateForInStatement(self: *CodeGenerator, for_in_stmt: ast.ForInStatement) !void {
+        _ = self;
+        _ = for_in_stmt;
+        std.debug.print("⚠️ ForIn statement implementation placeholder\n", .{});
+    }
+
+    fn generateSwitchStatement(self: *CodeGenerator, switch_stmt: ast.SwitchStatement) !void {
+        _ = self;
+        _ = switch_stmt;
+        std.debug.print("⚠️ Switch statement implementation placeholder\n", .{});
+    }
+
+    fn generatePatternSwitchStatement(self: *CodeGenerator, pattern_stmt: ast.PatternSwitchStatement) !void {
+        _ = self;
+        _ = pattern_stmt;
+        std.debug.print("⚠️ Pattern switch statement implementation placeholder\n", .{});
+    }
+
+    fn generateTypeAliasStatement(self: *CodeGenerator, type_alias: ast.TypeAliasStatement) !void {
+        _ = self;
+        std.debug.print("✅ Type alias '{s}' defined\n", .{type_alias.name});
+    }
+
+    fn generateChannelStatement(self: *CodeGenerator, channel_stmt: ast.ChannelStatement) !void {
+        _ = self;
+        _ = channel_stmt;
+        std.debug.print("⚠️ Channel statement implementation placeholder\n", .{});
+    }
+
+    fn generateIncrementStatement(self: *CodeGenerator, inc_stmt: ast.IncrementStatement) !void {
+        _ = self;
+        _ = inc_stmt;
+        std.debug.print("⚠️ Increment statement implementation placeholder\n", .{});
+    }
+
+    fn generateDecrementStatement(self: *CodeGenerator, dec_stmt: ast.DecrementStatement) !void {
+        _ = self;
+        _ = dec_stmt;
+        std.debug.print("⚠️ Decrement statement implementation placeholder\n", .{});
+    }
+
+    fn generateShortDeclarationStatement(self: *CodeGenerator, short_decl: ast.ShortDeclarationStatement) !void {
+        _ = self;
+        _ = short_decl;
+        std.debug.print("⚠️ Short declaration statement implementation placeholder\n", .{});
+    }
+
+    fn generatePanicStatement(self: *CodeGenerator, panic_stmt: ast.PanicStatement) !void {
+        _ = self;
+        _ = panic_stmt;
+        std.debug.print("⚠️ Panic statement implementation placeholder\n", .{});
+    }
+
+    fn generateCatchStatement(self: *CodeGenerator, catch_stmt: ast.CatchStatement) !void {
+        _ = self;
+        _ = catch_stmt;
+        std.debug.print("⚠️ Catch statement implementation placeholder\n", .{});
+    }
+
+    fn generateYikesStatement(self: *CodeGenerator, yikes_stmt: ast.YikesStatement) !void {
+        _ = self;
+        _ = yikes_stmt;
+        std.debug.print("⚠️ Yikes statement implementation placeholder\n", .{});
+    }
+
+    fn generateFamStatement(self: *CodeGenerator, fam_stmt: ast.FamStatement) !void {
+        _ = self;
+        _ = fam_stmt;
+        std.debug.print("⚠️ Fam statement implementation placeholder\n", .{});
+    }
+
+    fn generateConstStatement(self: *CodeGenerator, const_decl: ast.ConstDecl) !void {
+        const value_expr: *ast.Expression = @ptrCast(@alignCast(const_decl.value));
+        const value = try self.generateExpression(value_expr.*);
+        
+        // Create a global constant
+        const const_type = c.LLVMTypeOf(value);
+        const global_const = c.LLVMAddGlobal(self.module, const_type, const_decl.name.ptr);
+        c.LLVMSetInitializer(global_const, value);
+        c.LLVMSetGlobalConstant(global_const, 1);
+        c.LLVMSetLinkage(global_const, c.LLVMPrivateLinkage);
+        
+        try self.variables.put(const_decl.name, global_const);
+        std.debug.print("✅ Constant '{s}' defined\n", .{const_decl.name});
+    }
+
+    // Expression generation functions for missing types
+    fn generateSliceAccessExpression(self: *CodeGenerator, slice: ast.SliceAccessExpression) !c.LLVMValueRef {
+        _ = slice;
+        std.debug.print("⚠️ Slice access expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateTupleAccessExpression(self: *CodeGenerator, tuple_access: ast.TupleAccessExpression) !c.LLVMValueRef {
+        _ = tuple_access;
+        std.debug.print("⚠️ Tuple access expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateCompositeLiteralExpression(self: *CodeGenerator, composite: ast.CompositeLiteralExpression) !c.LLVMValueRef {
+        _ = composite;
+        std.debug.print("⚠️ Composite literal expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateChannelSendExpression(self: *CodeGenerator, channel_send: ast.ChannelSendExpression) !c.LLVMValueRef {
+        _ = channel_send;
+        std.debug.print("⚠️ Channel send expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateChannelReceiveExpression(self: *CodeGenerator, channel_recv: ast.ChannelReceiveExpression) !c.LLVMValueRef {
+        _ = channel_recv;
+        std.debug.print("⚠️ Channel receive expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateChannelCreationExpression(self: *CodeGenerator, channel_create: ast.ChannelCreationExpression) !c.LLVMValueRef {
+        _ = channel_create;
+        std.debug.print("⚠️ Channel creation expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateStructLiteralExpression(self: *CodeGenerator, struct_lit: ast.StructLiteralExpression) !c.LLVMValueRef {
+        _ = struct_lit;
+        std.debug.print("⚠️ Struct literal expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateIncrementExpression(self: *CodeGenerator, increment: ast.IncrementExpression) !c.LLVMValueRef {
+        _ = increment;
+        std.debug.print("⚠️ Increment expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateDecrementExpression(self: *CodeGenerator, decrement: ast.DecrementExpression) !c.LLVMValueRef {
+        _ = decrement;
+        std.debug.print("⚠️ Decrement expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateYikesExpression(self: *CodeGenerator, yikes: ast.YikesExpression) !c.LLVMValueRef {
+        _ = yikes;
+        std.debug.print("⚠️ Yikes expression placeholder (error propagation)\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateShookExpression(self: *CodeGenerator, shook: ast.ShookExpression) !c.LLVMValueRef {
+        _ = shook;
+        std.debug.print("⚠️ Shook expression placeholder (error handling)\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateFamExpression(self: *CodeGenerator, fam: ast.FamExpression) !c.LLVMValueRef {
+        _ = fam;
+        std.debug.print("⚠️ Fam expression placeholder (error recovery)\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateErrorValueExpression(self: *CodeGenerator, error_val: ast.ErrorValueExpression) !c.LLVMValueRef {
+        _ = error_val;
+        std.debug.print("⚠️ Error value expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateStructuredErrorExpression(self: *CodeGenerator, struct_err: ast.StructuredErrorExpression) !c.LLVMValueRef {
+        _ = struct_err;
+        std.debug.print("⚠️ Structured error expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generatePanicExpression(self: *CodeGenerator, panic: ast.PanicExpression) !c.LLVMValueRef {
+        _ = panic;
+        std.debug.print("⚠️ Panic expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateRecoverExpression(self: *CodeGenerator, recover: ast.RecoverExpression) !c.LLVMValueRef {
+        _ = recover;
+        std.debug.print("⚠️ Recover expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateTestResultExpression(self: *CodeGenerator, test_result: ast.TestResultExpression) !c.LLVMValueRef {
+        _ = test_result;
+        std.debug.print("⚠️ Test result expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateTestResultCheckExpression(self: *CodeGenerator, test_check: ast.TestResultCheckExpression) !c.LLVMValueRef {
+        _ = test_check;
+        std.debug.print("⚠️ Test result check expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateRangeForExpression(self: *CodeGenerator, range_for: ast.RangeForExpression) !c.LLVMValueRef {
+        _ = range_for;
+        std.debug.print("⚠️ Range for expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateMatchExpression(self: *CodeGenerator, match: ast.MatchExpression) !c.LLVMValueRef {
+        _ = match;
+        std.debug.print("⚠️ Match expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+    }
+
+    fn generateTypeSwitchExpression(self: *CodeGenerator, type_switch: ast.TypeSwitchExpression) !c.LLVMValueRef {
+        _ = type_switch;
+        std.debug.print("⚠️ Type switch expression placeholder\n", .{});
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
     }
 };

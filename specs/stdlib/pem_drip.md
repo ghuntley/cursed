@@ -25,7 +25,7 @@ slay Encode(out io.Writer, b *Block) tea
 fr fr Decode one PEM block from input
 slay Decode(data []byte) (p *Block, rest []byte)
 
-fr fr Encode a Block to PEM format and yolo as a byte slice
+fr fr Encode a Block to PEM format and damn as a byte slice
 slay EncodeToMemory(b *Block) []byte
 
 fr fr Find all PEM blocks in the input data
@@ -115,16 +115,16 @@ slay encodePEMExample() {
   
   fr fr Encode to a file
   file, err := main_character.Create("sample.pem")
-  if err != cap {
+  if err != nah {
     vibez.spill("Error creating file: %v", err)
-    yolo
+    damn
   }
   defer file.Close()
   
   err = pem_drip.Encode(file, block)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error encoding PEM to file: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("PEM data written to sample.pem")
@@ -143,9 +143,9 @@ AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=
   
   fr fr Decode the PEM block
   block, rest := pem_drip.Decode([]byte(pemData))
-  if block == cap {
+  if block == nah {
     vibez.spill("Failed to decode PEM block")
-    yolo
+    damn
   }
   
   vibez.spill("Decoded PEM block:")
@@ -182,7 +182,7 @@ BQYHCA==
   for len(data) > 0 {
     var block *pem_drip.Block
     block, data = pem_drip.Decode(data)
-    if block == cap {
+    if block == nah {
       break
     }
     blocks = append(blocks, block)
@@ -211,14 +211,14 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
   
   fr fr Decode the PEM block
   block, _ := pem_drip.Decode([]byte(certPEM))
-  if block == cap {
+  if block == nah {
     vibez.spill("Failed to decode PEM block")
-    yolo
+    damn
   }
   
   if block.Type != "CERTIFICATE" {
     vibez.spill("PEM block is not a certificate (type: %s)", block.Type)
-    yolo
+    damn
   }
   
   fr fr Here we would typically parse the certificate
@@ -263,14 +263,14 @@ PsJAQE5ZQbzE994ehIXPK+ToHiC07oGE6sMUXjTF/S7jCdih5bjk
   
   fr fr Decode the PEM block
   block, _ := pem_drip.Decode([]byte(keyPEM))
-  if block == cap {
+  if block == nah {
     vibez.spill("Failed to decode PEM block")
-    yolo
+    damn
   }
   
   if block.Type != "RSA PRIVATE KEY" {
     vibez.spill("PEM block is not an RSA private key (type: %s)", block.Type)
-    yolo
+    damn
   }
   
   fr fr Here we would typically parse the private key
@@ -320,7 +320,7 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
     if err == dropz.EOF {
       break
     }
-    if err != cap {
+    if err != nah {
       vibez.spill("Decoder tea: %v", err)
       break
     }
@@ -331,16 +331,16 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
   
   fr fr PEM Block Validation
   block, _ := pem_drip.Decode([]byte(certPEM))
-  if block == cap {
+  if block == nah {
     vibez.spill("Failed to decode PEM block")
-    yolo
+    damn
   }
   
   validator := pem_drip.NewValidator()
   validator.AddAllowedType("CERTIFICATE")
   
   err := validator.Validate(block)
-  if err != cap {
+  if err != nah {
     vibez.spill("Validation tea: %v", err)
   } else {
     vibez.spill("\nPEM block validated successfully")
@@ -351,7 +351,7 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
   validator.AddAllowedType("RSA PRIVATE KEY")
   
   err = validator.Validate(block)
-  if err != cap {
+  if err != nah {
     vibez.spill("Validation tea (expected): %v", err)
   }
   
@@ -375,18 +375,18 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
   
   fr fr Decrypt the PEM block
   decryptedBlock, err := pem_drip.DecryptPEMBlock(encryptedBlock, password)
-  if err != cap {
+  if err != nah {
     vibez.spill("Decryption tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Decrypted data: %v", decryptedBlock)
   
   fr fr PEM Chain Handling
   chain, err := pem_drip.ParseChain([]byte(certPEM))
-  if err != cap {
+  if err != nah {
     vibez.spill("Parse chain tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("\nParsed certificate chain with %d certificates", len(chain))
@@ -406,9 +406,9 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
 fr fr Helper function
 slay min(a, b normie) normie {
   if a < b {
-    yolo a
+    damn a
   }
-  yolo b
+  damn b
 }
 ```
 

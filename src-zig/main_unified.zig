@@ -6,6 +6,7 @@ const HashMap = std.HashMap;
 
 const lexer = @import("lexer.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
+const simple_compiler = @import("simple_compiler.zig");
 
 // Simple variable store for runtime evaluation
 const Variable = union(enum) {
@@ -103,13 +104,14 @@ pub fn main() !void {
     }
 
     if (compile_mode) {
-        print("❌ Compilation mode not implemented in simple version\n", .{});
-        return;
+        // Real compilation mode implementation
+        try simple_compiler.compileProgram(allocator, source, filename, optimization_level, verbose);
     } else {
         // Simple interpretation mode with variable evaluation
         try interpretProgramWithVariables(allocator, source, verbose);
     }
 }
+
 
 fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbose: bool) !void {
     if (verbose) print("🚀 Interpreting CURSED program with variable evaluation...\n", .{});
@@ -322,9 +324,11 @@ fn printUsage() void {
     print("       cursed-unified-simple --version\n", .{});
     print("       cursed-unified-simple --help\n", .{});
     print("\nOptions:\n", .{});
+    print("  --compile          Compile to native executable\n", .{});
     print("  --debug            Enable all debug output (tokens, verbose)\n", .{});
     print("  --tokens           Show token stream\n", .{});
     print("  --verbose          Enable verbose output\n", .{});
+    print("  --optimize=LEVEL   Optimization level (0-3, default: 2)\n", .{});
     print("\nSupported Features:\n", .{});
     print("  • Variable declarations: sus varname type = value\n", .{});
     print("  • Types: drip (int), meal (float), tea (string), lit (bool)\n", .{});

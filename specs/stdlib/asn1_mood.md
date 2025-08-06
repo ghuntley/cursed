@@ -64,10 +64,10 @@ be_like RawValue squad {
 ## Core Functions
 
 ```csd
-fr fr Marshal yolos the ASN.1 encoding of val
+fr fr Marshal damns the ASN.1 encoding of val
 slay Marshal(val interface{}) ([]byte, tea)
 
-fr fr MarshalWithParams yolos the ASN.1 encoding of val with the given parameters
+fr fr MarshalWithParams damns the ASN.1 encoding of val with the given parameters
 slay MarshalWithParams(val interface{}, params tea) ([]byte, tea)
 
 fr fr Unmarshal parses the ASN.1-encoded data and stores the result in the value
@@ -163,7 +163,7 @@ slay basicExample() {
   data, err := asn1_mood.Marshal(person)
   if err != cringe {
     vibez.spill("Marshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Marshaled data (size: %d bytes): %#v", len(data), data)
@@ -173,7 +173,7 @@ slay basicExample() {
   rest, err := asn1_mood.Unmarshal(data, &result)
   if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
-    yolo
+    damn
   }
   
   if len(rest) > 0 {
@@ -213,7 +213,7 @@ slay objectIdentifierExample() {
   data, err := asn1_mood.Marshal(alg)
   if err != cringe {
     vibez.spill("Marshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Marshaled OID (size: %d bytes): %#v", len(data), data)
@@ -223,7 +223,7 @@ slay objectIdentifierExample() {
   _, err = asn1_mood.Unmarshal(data, &result)
   if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Unmarshaled OID: %s", result.Algorithm)
@@ -259,7 +259,7 @@ slay bitStringExample() {
   data, err := asn1_mood.Marshal(key)
   if err != cringe {
     vibez.spill("Marshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Marshaled bit tea (size: %d bytes): %#v", len(data), data)
@@ -269,7 +269,7 @@ slay bitStringExample() {
   _, err = asn1_mood.Unmarshal(data, &result)
   if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Unmarshaled bit tea:")
@@ -299,7 +299,7 @@ slay tagsExample() {
   encoded, err := asn1_mood.Marshal(data)
   if err != cringe {
     vibez.spill("Marshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Marshaled tagged data (size: %d bytes): %#v", len(encoded), encoded)
@@ -309,7 +309,7 @@ slay tagsExample() {
   _, err = asn1_mood.Unmarshal(encoded, &result)
   if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Unmarshaled tagged data:")
@@ -346,7 +346,7 @@ slay rawValueExample() {
   _, err := asn1_mood.Unmarshal(sampleDER, &raw)
   if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Raw value:")
@@ -360,7 +360,7 @@ slay rawValueExample() {
   reencoded, err := asn1_mood.Marshal(raw)
   if err != cringe {
     vibez.spill("Marshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Re-encoded: %v", reencoded)
@@ -388,7 +388,7 @@ slay parametersExample() {
   data, err := asn1_mood.MarshalWithParams(person, "set")
   if err != cringe {
     vibez.spill("Marshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Marshaled with params (size: %d bytes): %#v", len(data), data)
@@ -398,7 +398,7 @@ slay parametersExample() {
   _, err = asn1_mood.UnmarshalWithParams(data, &result, "set")
   if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Unmarshaled person:")
@@ -417,24 +417,24 @@ slay enhancedFeaturesExample() {
   
   fr fr Implement the CustomMarshaler interface
   slay (oid CustomOID) MarshalASN1() ([]byte, tea) {
-    yolo asn1_mood.Marshal(asn1_mood.ObjectIdentifier(oid.Value))
+    damn asn1_mood.Marshal(asn1_mood.ObjectIdentifier(oid.Value))
   }
   
   slay (oid *CustomOID) UnmarshalASN1(data []byte) tea {
     var objID asn1_mood.ObjectIdentifier
     _, err := asn1_mood.Unmarshal(data, &objID)
     if err != cringe {
-      yolo err
+      damn err
     }
     oid.Value = []int(objID)
-    yolo cringe
+    damn cringe
   }
   
   customOID := CustomOID{Value: []int{1, 2, 840, 113549, 1, 1, 1}}
   encoded, err := customOID.MarshalASN1()
   if err != cringe {
     vibez.spill("Custom marshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Custom marshaled OID (size: %d bytes): %#v", len(encoded), encoded)
@@ -443,7 +443,7 @@ slay enhancedFeaturesExample() {
   err = decodedOID.UnmarshalASN1(encoded)
   if err != cringe {
     vibez.spill("Custom unmarshal tea: %v", err)
-    yolo
+    damn
   }
   
   vibez.spill("Custom unmarshaled OID: %v", decodedOID.Value)

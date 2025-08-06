@@ -8,6 +8,7 @@ const testing = std.testing;
 const Allocator = std.mem.Allocator;
 
 const runtime = @import("../runtime_system.zig");
+const ast = @import("../ast.zig");
 
 // Stdlib module test definitions
 pub const StdlibTestSuite = struct {
@@ -43,6 +44,13 @@ pub const StdlibTestResult = struct {
     interpretation_error: ?[]const u8 = null,
     compilation_error: ?[]const u8 = null,
     execution_time_ms: u64,
+    
+    // Extended compilation details
+    lexer_passed: bool = false,
+    parser_passed: bool = false,
+    semantic_passed: bool = false,
+    codegen_passed: bool = false,
+    detailed_error: ?[]const u8 = null,
 };
 
 pub const StdlibTestRunner = struct {
@@ -69,11 +77,21 @@ pub const StdlibTestRunner = struct {
         std.debug.print("🧪 Testing CURSED Standard Library Modules\n");
         std.debug.print("=" ** 60 ++ "\n");
 
+        // Test individual modules
         for (stdlib_modules) |module_suite| {
             try self.testModule(module_suite);
         }
 
+        // Test stdlib module combinations
+        try self.testModuleCombinations();
+
+        // Test pure CURSED implementation validation
+        try self.validatePureCursedImplementations();
+
         self.printSummary();
+
+        // Generate comprehensive compilation report
+        try self.generateCompilationReport();
     }
 
     fn testModule(self: *StdlibTestRunner, module_suite: StdlibTestSuite) !void {
@@ -108,7 +126,7 @@ pub const StdlibTestRunner = struct {
 
         // Test compilation mode  
         std.debug.print("  • Compilation mode... ");
-        if (self.testCompilation(test_file_path)) |_| {
+        if (self.testCompilationDetailed(test_file_path, &result)) |_| {
             result.compilation_passed = true;
             std.debug.print("✅ PASS\n");
         } else |err| {
@@ -140,11 +158,383 @@ pub const StdlibTestRunner = struct {
         _ = result; // For now, just verify it doesn't crash
     }
 
-    fn testCompilation(self: *StdlibTestRunner, test_file_path: []const u8) !void {
-        // For now, skip compilation testing if interpreter works
-        // TODO: Implement actual compilation testing
-        _ = test_file_path;
-        _ = self;
+    fn testCompilationDetailed(self: *StdlibTestRunner, test_file_path: []const u8, result: *StdlibTestResult) !void {
+        // Read test file
+        const file_content = std.fs.cwd().readFileAlloc(
+            self.allocator, 
+            test_file_path, 
+            10 * 1024 * 1024 // 10MB max
+        ) catch |err| {
+            const error_msg = try std.fmt.allocPrint(self.allocator, "Failed to read test file for compilation: {}", .{err});
+            result.detailed_error = error_msg;
+            return err;
+        };
+        defer self.allocator.free(file_content);
+
+        // Test compilation pipeline with detailed reporting: Lexer → Parser → IR Generation
+        try self.validateCompilationPipelineDetailed(file_content, test_file_path, result);
+    }
+
+    fn validateCompilationPipelineDetailed(self: *StdlibTestRunner, source: []const u8, file_path: []const u8, result: *StdlibTestResult) !void {
+        const lexer_module = @import("../lexer.zig");
+        const parser_module = @import("../parser.zig");
+        const codegen_module = @import("../advanced_codegen.zig");
+
+        // Step 1: Lexical Analysis - Validate tokens can be generated
+        var l = lexer_module.Lexer.init(self.allocator, source);
+        const tokens = l.tokenize() catch |err| {
+            const error_msg = try std.fmt.allocPrint(self.allocator, "Lexical analysis failed: {}", .{err});
+            result.detailed_error = error_msg;
+            return error.LexicalError;
+        };
+        defer tokens.deinit();
+        result.lexer_passed = true;
+
+        if (tokens.items.len == 0) {
+            result.detailed_error = try self.allocator.dupe(u8, "Empty token stream generated");
+            return error.EmptyTokenStream;
+        }
+
+        // Step 2: Syntax Analysis - Validate AST can be generated
+        var parser = parser_module.Parser.initWithFile(self.allocator, tokens.items, file_path);
+        const program = parser.parseProgram() catch |err| {
+            const error_msg = try std.fmt.allocPrint(self.allocator, "Syntax analysis failed: {}", .{err});
+            result.detailed_error = error_msg;
+            return error.SyntaxError;
+        };
+        defer program.deinit();
+        result.parser_passed = true;
+
+        if (parser.had_error) {
+            result.detailed_error = try self.allocator.dupe(u8, "Parser encountered errors during parsing");
+            return error.ParseError;
+        }
+
+        // Step 3: Semantic Analysis - Basic validation
+        self.validateSemantics(program) catch |err| {
+            const error_msg = try std.fmt.allocPrint(self.allocator, "Semantic analysis failed: {}", .{err});
+            result.detailed_error = error_msg;
+            return err;
+        };
+        result.semantic_passed = true;
+
+        // Step 4: Code Generation - Validate IR can be generated  
+        var codegen = codegen_module.AdvancedCodeGenerator.init(self.allocator) catch |err| {
+            const error_msg = try std.fmt.allocPrint(self.allocator, "Code generator initialization failed: {}", .{err});
+            result.detailed_error = error_msg;
+            return error.CodeGenInitError;
+        };
+        defer codegen.deinit();
+
+        // Generate IR without full compilation to test syntax validity
+        codegen.generateAdvancedProgram(program) catch |err| {
+            const error_msg = try std.fmt.allocPrint(self.allocator, "IR generation failed: {}", .{err});
+            result.detailed_error = error_msg;
+            return error.IRGenerationError;
+        };
+
+        // Validate module is well-formed
+        if (!codegen.base_codegen.verifyModule()) {
+            result.detailed_error = try self.allocator.dupe(u8, "Generated LLVM module failed verification");
+            return error.InvalidIR;
+        }
+        result.codegen_passed = true;
+    }
+
+    fn validateCompilationPipeline(self: *StdlibTestRunner, source: []const u8, file_path: []const u8) !void {
+        const lexer_module = @import("../lexer.zig");
+        const parser_module = @import("../parser.zig");
+        const codegen_module = @import("../advanced_codegen.zig");
+
+        // Step 1: Lexical Analysis - Validate tokens can be generated
+        var l = lexer_module.Lexer.init(self.allocator, source);
+        const tokens = l.tokenize() catch |err| {
+            std.debug.print("Compilation failed at lexical analysis: {}\n", .{err});
+            return error.LexicalError;
+        };
+        defer tokens.deinit();
+
+        if (tokens.items.len == 0) {
+            return error.EmptyTokenStream;
+        }
+
+        // Step 2: Syntax Analysis - Validate AST can be generated
+        var parser = parser_module.Parser.initWithFile(self.allocator, tokens.items, file_path);
+        const program = parser.parseProgram() catch |err| {
+            std.debug.print("Compilation failed at syntax analysis: {}\n", .{err});
+            return error.SyntaxError;
+        };
+        defer program.deinit();
+
+        if (parser.had_error) {
+            return error.ParseError;
+        }
+
+        // Step 3: Semantic Analysis - Basic validation
+        try self.validateSemantics(program);
+
+        // Step 4: Code Generation - Validate IR can be generated  
+        var codegen = codegen_module.AdvancedCodeGenerator.init(self.allocator) catch |err| {
+            std.debug.print("Compilation failed to initialize code generator: {}\n", .{err});
+            return error.CodeGenInitError;
+        };
+        defer codegen.deinit();
+
+        // Generate IR without full compilation to test syntax validity
+        codegen.generateAdvancedProgram(program) catch |err| {
+            std.debug.print("Compilation failed at IR generation: {}\n", .{err});
+            return error.IRGenerationError;
+        };
+
+        // Validate module is well-formed
+        if (!codegen.base_codegen.verifyModule()) {
+            return error.InvalidIR;
+        }
+    }
+
+    fn validateSemantics(self: *StdlibTestRunner, program: ast.Program) !void {
+        
+        // Basic semantic validation
+        
+        // 1. Check for valid imports
+        for (program.imports.items) |import_stmt| {
+            if (import_stmt.module_name.len == 0) {
+                return error.InvalidImport;
+            }
+        }
+
+        // 2. Check for function validity
+        for (program.statements.items) |stmt| {
+            switch (stmt) {
+                .Function => |func| {
+                    if (func.name.len == 0) {
+                        return error.InvalidFunction;
+                    }
+                    // Validate function has a body
+                    if (func.body.len == 0) {
+                        return error.EmptyFunction;
+                    }
+                },
+                else => {},
+            }
+        }
+
+        // 3. Validate no duplicate function names
+        var function_names = std.StringHashMap(void).init(self.allocator);
+        defer function_names.deinit();
+
+        for (program.statements.items) |stmt| {
+            switch (stmt) {
+                .Function => |func| {
+                    if (function_names.contains(func.name)) {
+                        return error.DuplicateFunction;
+                    }
+                    try function_names.put(func.name, {});
+                },
+                else => {},
+            }
+        }
+    }
+
+    /// Test combinations of stdlib modules to ensure they work together
+    fn testModuleCombinations(self: *StdlibTestRunner) !void {
+        std.debug.print("\n🔗 Testing Standard Library Module Combinations\n");
+        std.debug.print("-" ** 50 ++ "\n");
+
+        const combinations = [_]struct { name: []const u8, modules: []const []const u8 }{
+            .{ .name = "Core Testing", .modules = &[_][]const u8{ "testz", "math", "string_simple" } },
+            .{ .name = "I/O & Collections", .modules = &[_][]const u8{ "io", "collections", "fs" } },
+            .{ .name = "Concurrency", .modules = &[_][]const u8{ "concurrenz", "atomic_drip", "error_drip" } },
+            .{ .name = "Web & Network", .modules = &[_][]const u8{ "web_vibez", "vibe_net", "serialization" } },
+            .{ .name = "Security", .modules = &[_][]const u8{ "cryptz", "serialization", "string_simple" } },
+            .{ .name = "Memory Management", .modules = &[_][]const u8{ "gc", "memory", "atomic_drip" } },
+        };
+
+        for (combinations) |combo| {
+            std.debug.print("  Testing combination: {s}... ", .{combo.name});
+            if (self.testModuleCombination(combo.modules)) |_| {
+                std.debug.print("✅ PASS\n");
+            } else |err| {
+                std.debug.print("❌ FAIL: {}\n", .{err});
+            }
+        }
+    }
+
+    fn testModuleCombination(self: *StdlibTestRunner, modules: []const []const u8) !void {
+        // Generate a combined test program that imports all modules
+        var test_program = std.ArrayList(u8).init(self.allocator);
+        defer test_program.deinit();
+
+        const writer = test_program.writer();
+        
+        // Add imports for all modules in combination
+        for (modules) |module_name| {
+            try writer.print("yeet \"{s}\"\n", .{module_name});
+        }
+        
+        // Add a basic test that uses multiple modules
+        try writer.writeAll("\n");
+        try writer.writeAll("fr fr Combined module test\n");
+        try writer.writeAll("vibez.spill(\"Testing module combination\")\n");
+        
+        // Test the combination compiles correctly
+        try self.validateCompilationPipeline(test_program.items, "module_combination_test");
+    }
+
+    /// Validate that all stdlib modules are pure CURSED implementations
+    fn validatePureCursedImplementations(self: *StdlibTestRunner) !void {
+        std.debug.print("\n🔍 Validating Pure CURSED Implementations\n");
+        std.debug.print("-" ** 50 ++ "\n");
+
+        const stdlib_dir = try std.fmt.allocPrint(self.allocator, "{s}/stdlib", .{self.workspace_root});
+        defer self.allocator.free(stdlib_dir);
+
+        var dir = std.fs.cwd().openIterableDir(stdlib_dir, .{}) catch |err| {
+            std.debug.print("❌ Cannot access stdlib directory: {}\n", .{err});
+            return;
+        };
+        defer dir.close();
+
+        var dir_iterator = dir.iterate();
+        while (try dir_iterator.next()) |entry| {
+            if (entry.kind == .Directory) {
+                try self.validateModulePurity(entry.name);
+            }
+        }
+    }
+
+    fn validateModulePurity(self: *StdlibTestRunner, module_name: []const u8) !void {
+        std.debug.print("  Checking module purity: {s}... ", .{module_name});
+        
+        const module_path = try std.fmt.allocPrint(
+            self.allocator, 
+            "{s}/stdlib/{s}/mod.csd", 
+            .{ self.workspace_root, module_name }
+        );
+        defer self.allocator.free(module_path);
+
+        // Check if module file exists
+        std.fs.cwd().access(module_path, .{}) catch {
+            std.debug.print("⚠️  No mod.csd found\n");
+            return;
+        };
+
+        // Read and validate module content
+        const content = std.fs.cwd().readFileAlloc(
+            self.allocator, 
+            module_path, 
+            1024 * 1024 // 1MB max
+        ) catch |err| {
+            std.debug.print("❌ Read error: {}\n", .{err});
+            return;
+        };
+        defer self.allocator.free(content);
+
+        // Check for FFI or non-CURSED code indicators
+        const forbidden_patterns = [_][]const u8{
+            "@import(",
+            "extern ",
+            "c.",
+            "ffi.",
+            "bindgen",
+            "#include",
+            "malloc(",
+            "free(",
+        };
+
+        for (forbidden_patterns) |pattern| {
+            if (std.mem.indexOf(u8, content, pattern) != null) {
+                std.debug.print("❌ Contains FFI: {s}\n", .{pattern});
+                return;
+            }
+        }
+
+        // Validate the module compiles as pure CURSED
+        self.validateCompilationPipeline(content, module_path) catch |err| {
+            std.debug.print("❌ Compilation failed: {}\n", .{err});
+            return;
+        };
+
+        std.debug.print("✅ Pure CURSED\n");
+    }
+
+    /// Generate comprehensive compilation report
+    pub fn generateCompilationReport(self: *StdlibTestRunner) !void {
+        const report_file_path = try std.fmt.allocPrint(self.allocator, "{s}/stdlib_compilation_report.md", .{self.workspace_root});
+        defer self.allocator.free(report_file_path);
+
+        const report_file = std.fs.cwd().createFile(report_file_path, .{}) catch |err| {
+            std.debug.print("Failed to create compilation report: {}\n", .{err});
+            return;
+        };
+        defer report_file.close();
+
+        const writer = report_file.writer();
+        
+        try writer.writeAll("# CURSED Standard Library Compilation Report\n\n");
+        try writer.print("Generated on: {}\n", .{std.time.timestamp()});
+        try writer.writeAll("Test Framework: stdlib_tests.zig\n\n");
+
+        try writer.writeAll("## Overview\n\n");
+        try writer.print("Total modules tested: {}\n", .{self.results.items.len});
+        
+        var total_passed = 0;
+        var compilation_passed = 0;
+        for (self.results.items) |result| {
+            if (result.interpretation_passed and result.compilation_passed) total_passed += 1;
+            if (result.compilation_passed) compilation_passed += 1;
+        }
+        
+        try writer.print("Fully functional modules: {}\n", .{total_passed});
+        try writer.print("Compilation successful: {}\n", .{compilation_passed});
+        try writer.writeAll("\n");
+
+        try writer.writeAll("## Detailed Results\n\n");
+        try writer.writeAll("| Module | Interpretation | Compilation | Lexer | Parser | Semantic | Codegen | Details |\n");
+        try writer.writeAll("|--------|---------------|-------------|--------|--------|----------|---------|----------|\n");
+
+        for (self.results.items) |result| {
+            const interp_status = if (result.interpretation_passed) "✅" else "❌";
+            const comp_status = if (result.compilation_passed) "✅" else "❌";
+            const lexer_status = if (result.lexer_passed) "✅" else "❌";
+            const parser_status = if (result.parser_passed) "✅" else "❌";
+            const semantic_status = if (result.semantic_passed) "✅" else "❌";
+            const codegen_status = if (result.codegen_passed) "✅" else "❌";
+            
+            const details = result.detailed_error orelse 
+                           result.compilation_error orelse 
+                           result.interpretation_error orelse 
+                           "OK";
+
+            try writer.print("| {s} | {s} | {s} | {s} | {s} | {s} | {s} | {s} |\n", .{
+                result.module_name, interp_status, comp_status,
+                lexer_status, parser_status, semantic_status, codegen_status, details
+            });
+        }
+
+        try writer.writeAll("\n## Failed Modules\n\n");
+        for (self.results.items) |result| {
+            if (!result.compilation_passed) {
+                try writer.print("### {s}\n\n", .{result.module_name});
+                if (result.detailed_error) |error_msg| {
+                    try writer.print("**Error:** {s}\n\n", .{error_msg});
+                }
+                try writer.print("**Pipeline Status:**\n");
+                try writer.print("- Lexer: {s}\n", .{if (result.lexer_passed) "✅ PASS" else "❌ FAIL"});
+                try writer.print("- Parser: {s}\n", .{if (result.parser_passed) "✅ PASS" else "❌ FAIL"});
+                try writer.print("- Semantic: {s}\n", .{if (result.semantic_passed) "✅ PASS" else "❌ FAIL"});
+                try writer.print("- Codegen: {s}\n", .{if (result.codegen_passed) "✅ PASS" else "❌ FAIL"});
+                try writer.writeAll("\n");
+            }
+        }
+
+        try writer.writeAll("\n## Recommendations\n\n");
+        try writer.writeAll("1. **Failed Modules:** Focus on fixing compilation errors in failed modules\n");
+        try writer.writeAll("2. **Syntax Issues:** Review parser and lexer implementations for syntax errors\n");
+        try writer.writeAll("3. **Semantic Issues:** Validate type checking and symbol resolution\n");
+        try writer.writeAll("4. **Code Generation:** Ensure LLVM IR generation is correct for all language constructs\n");
+        
+        std.debug.print("📄 Compilation report generated: {s}\n", .{report_file_path});
     }
 
     fn printSummary(self: *StdlibTestRunner) void {
@@ -165,11 +555,23 @@ pub const StdlibTestRunner = struct {
             const status = if (result.interpretation_passed and result.compilation_passed)
                 "✅ PASS"
             else if (result.interpretation_passed)
-                "⚠️  PARTIAL"
+                "⚠️  PARTIAL (compilation failed)"
             else
                 "❌ FAIL";
 
-            std.debug.print("  {s:<20} {s}\n", .{ result.module_name, status });
+            // Show detailed pipeline status for failed compilations
+            if (!result.compilation_passed and result.interpretation_passed) {
+                std.debug.print("  {s:<20} {s} [L:{s} P:{s} S:{s} C:{s}]\n", .{ 
+                    result.module_name, 
+                    status,
+                    if (result.lexer_passed) "✅" else "❌",
+                    if (result.parser_passed) "✅" else "❌", 
+                    if (result.semantic_passed) "✅" else "❌",
+                    if (result.codegen_passed) "✅" else "❌"
+                });
+            } else {
+                std.debug.print("  {s:<20} {s}\n", .{ result.module_name, status });
+            }
         }
 
         std.debug.print("\n");
@@ -210,7 +612,7 @@ pub const StdlibTestRunner = struct {
 
 // Generate CURSED test files for missing modules
 pub fn generateStdlibTestFiles(allocator: Allocator, workspace_root: []const u8) !void {
-    std.debug.print("🔧 Generating missing stdlib test files...\n");
+    std.debug.print("🔧 Generating missing stdlib test files...\n", .{});
 
     for (stdlib_modules) |module_suite| {
         const test_file_path = try std.fmt.allocPrint(
@@ -258,7 +660,10 @@ fn createTestFile(allocator: Allocator, file_path: []const u8, module_name: []co
     };
 
     // Write test file
-    try std.fs.cwd().writeFile(file_path, test_content);
+    try std.fs.cwd().writeFile(.{
+        .sub_path = file_path,
+        .data = test_content,
+    });
 }
 
 // Integration with main test runner
