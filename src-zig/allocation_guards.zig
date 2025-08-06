@@ -101,6 +101,8 @@ pub const ExpressionAllocator = struct {
     
     /// Create a binary expression with guaranteed cleanup on failure
     pub fn createBinaryExpression(self: *ExpressionAllocator, comptime ExprType: type, left_expr: ExprType, right_expr: ExprType) !struct { *ExprType, *ExprType } {
+        _ = left_expr;
+        _ = right_expr;
         return try self.guard.createPair(ExprType, ExprType);
     }
     

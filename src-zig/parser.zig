@@ -994,10 +994,37 @@ pub const Parser = struct {
                 }
                 const property = self.advance().lexeme;
                 
-                expr = Expression{ .MemberAccess = try self.allocateMemberAccess(ast.MemberAccessExpression{
-                    .object = try self.allocateExpression(expr),
-                    .property = property,
-                })};
+                // Check if this is a method call (identifier followed by parentheses)
+                if (self.check(.LeftParen)) {
+                    _ = self.advance(); // consume '('
+                    
+                    var arguments = ArrayList(*Expression).init(self.allocator);
+                    
+                    if (!self.check(.RightParen)) {
+                        while (true) {
+                            const arg = try self.parseExpression();
+                            const arg_ptr = try self.allocator.create(Expression);
+                            arg_ptr.* = arg;
+                            try arguments.append(arg_ptr);
+
+                            if (!self.match(.Comma)) break;
+                        }
+                    }
+
+                    _ = try self.consume(.RightParen, "Expected ')' after method arguments");
+
+                    expr = Expression{ .MethodCall = try self.allocateMethodCall(ast.MethodCallExpression{
+                        .object = try self.allocateExpression(expr),
+                        .method_name = property,
+                        .arguments = arguments,
+                    })};
+                } else {
+                    // Regular member access
+                    expr = Expression{ .MemberAccess = try self.allocateMemberAccess(ast.MemberAccessExpression{
+                        .object = try self.allocateExpression(expr),
+                        .property = property,
+                    })};
+                }
             } else if (self.match(.LeftBracket)) {
                 // Array/slice access expr[index] or expr[start:end]
                 const index = try self.parseExpression();
@@ -1294,7 +1321,8 @@ pub const Parser = struct {
     fn parseStructLiteral(self: *Parser, struct_name: []const u8) ParserError!Expression {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var fields = ArrayList(ast.StructFieldAssignment).init(self.allocator);
+        // Support both StructFieldAssignment (legacy) and FieldInitializer (new)
+        var fields = ArrayList(ast.FieldInitializer).init(self.allocator);
         
         if (!self.check(.RightBrace)) {
             while (true) {
@@ -1309,7 +1337,7 @@ pub const Parser = struct {
                 const value_ptr = try self.allocator.create(Expression);
                 value_ptr.* = value;
                 
-                try fields.append(ast.StructFieldAssignment{
+                try fields.append(ast.FieldInitializer{
                     .field_name = field_name,
                     .value = value_ptr,
                 });
@@ -1320,10 +1348,11 @@ pub const Parser = struct {
         
         _ = try self.consume(.RightBrace, "Expected '}'");
         
-        return Expression{ .StructLiteral = ast.StructLiteralExpression{
+        // Return the new StructExpression type
+        return Expression{ .Struct = try self.allocateStructExpression(ast.StructExpression{
             .struct_name = struct_name,
             .fields = fields,
-        }};
+        })};
     }
 
     fn parseMatchExpression(self: *Parser) ParserError!Expression {
@@ -2775,6 +2804,18 @@ pub const Parser = struct {
     fn allocateMapExpression(self: *Parser, map_expr: ast.MapExpression) ParserError!*ast.MapExpression {
         const ptr = self.allocator.create(ast.MapExpression) catch return ParserError.OutOfMemory;
         ptr.* = map_expr;
+        return ptr;
+    }
+
+    fn allocateMethodCall(self: *Parser, method_call: ast.MethodCallExpression) ParserError!*ast.MethodCallExpression {
+        const ptr = self.allocator.create(ast.MethodCallExpression) catch return ParserError.OutOfMemory;
+        ptr.* = method_call;
+        return ptr;
+    }
+
+    fn allocateStructExpression(self: *Parser, struct_expr: ast.StructExpression) ParserError!*ast.StructExpression {
+        const ptr = self.allocator.create(ast.StructExpression) catch return ParserError.OutOfMemory;
+        ptr.* = struct_expr;
         return ptr;
     }
 

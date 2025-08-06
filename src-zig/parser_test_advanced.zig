@@ -23,7 +23,7 @@ const Token = lexer_advanced.Token;
 
 /// Test helper to tokenize and parse code
 fn parseCode(allocator: std.mem.Allocator, code: []const u8) !ast_advanced.Program {
-    var lexer = AdvancedLexer.init(allocator, code);
+    var lexer = try AdvancedLexer.init(allocator, code);
     defer lexer.deinit();
     
     const tokens = try lexer.tokenize();
