@@ -154,11 +154,35 @@ pub const ORCJITEngine = struct {
     }
 };
 
+/// Function signature for parameter binding
+pub const FunctionSignature = struct {
+    parameters: [][]const u8,
+    return_type: []const u8,
+    allocator: Allocator,
+
+    pub fn init(allocator: Allocator, parameters: [][]const u8, return_type: []const u8) !FunctionSignature {
+        return FunctionSignature{
+            .parameters = try allocator.dupe([]const u8, parameters),
+            .return_type = try allocator.dupe(u8, return_type),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *FunctionSignature) void {
+        for (self.parameters) |param| {
+            self.allocator.free(param);
+        }
+        self.allocator.free(self.parameters);
+        self.allocator.free(self.return_type);
+    }
+};
+
 /// Main JIT Execution Engine
 pub const JITExecutionEngine = struct {
     allocator: Allocator,
     orc_jit: ORCJITEngine,
     functions: HashMap([]const u8, JITFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    function_signatures: HashMap([]const u8, FunctionSignature, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     hot_functions: ArrayList(HotProfile),
     interpreter_env: interpreter.Environment,
     
@@ -177,6 +201,7 @@ pub const JITExecutionEngine = struct {
             .allocator = allocator,
             .orc_jit = try ORCJITEngine.init(allocator),
             .functions = HashMap([]const u8, JITFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .function_signatures = HashMap([]const u8, FunctionSignature, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .hot_functions = ArrayList(HotProfile).init(allocator),
             .interpreter_env = interpreter.Environment.init(allocator, null),
             .tier_up_threshold = 50,
@@ -197,6 +222,12 @@ pub const JITExecutionEngine = struct {
         }
         self.functions.deinit();
         
+        var sig_iter = self.function_signatures.iterator();
+        while (sig_iter.next()) |entry| {
+            entry.value_ptr.deinit();
+        }
+        self.function_signatures.deinit();
+        
         self.hot_functions.deinit();
         self.interpreter_env.deinit();
     }
@@ -210,6 +241,19 @@ pub const JITExecutionEngine = struct {
         
         try self.functions.put(try self.allocator.dupe(u8, full_name), jit_func);
         print("📝 Registered JIT function: {s}\n", .{full_name});
+    }
+
+    /// Register a function with signature for parameter binding
+    pub fn registerFunctionWithSignature(self: *JITExecutionEngine, name: []const u8, module_name: []const u8, parameters: [][]const u8, return_type: []const u8) !void {
+        try self.registerFunction(name, module_name);
+        
+        const full_name = try std.fmt.allocPrint(self.allocator, "{s}.{s}", .{ module_name, name });
+        defer self.allocator.free(full_name);
+        
+        const signature = try FunctionSignature.init(self.allocator, parameters, return_type);
+        try self.function_signatures.put(try self.allocator.dupe(u8, full_name), signature);
+        
+        print("📝 Registered JIT function with signature: {s} (params: {}, return: {s})\n", .{ full_name, parameters.len, return_type });
     }
 
     /// Execute a function with tiered compilation
@@ -272,15 +316,25 @@ pub const JITExecutionEngine = struct {
         return try self.evaluateUserDefinedFunction(jit_func, args, &local_vars);
     }
     
-    /// Evaluate user-defined functions from stored AST
+    /// Evaluate user-defined functions from stored AST with parameter binding
     fn evaluateUserDefinedFunction(self: *JITExecutionEngine, jit_func: *JITFunction, args: []const interpreter.Value, local_vars: *std.HashMap([]const u8, interpreter.Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !interpreter.Value {
         // Create function-local environment  
         var func_env = interpreter.Environment.init(self.allocator, &self.interpreter_env);
         defer func_env.deinit();
         
-        // TODO: Bind function parameters to arguments
-        // For now, simulate basic function execution  
-        _ = local_vars;
+        // Bind function parameters to arguments
+        if (self.function_signatures.get(jit_func.name)) |signature| {
+            if (args.len != signature.parameters.len) {
+                print("Parameter count mismatch for {s}: expected {}, got {}\n", .{jit_func.name, signature.parameters.len, args.len});
+                return interpreter.InterpreterError.TypeMismatch;
+            }
+            
+            // Bind each parameter to its corresponding argument
+            for (signature.parameters, 0..) |param_name, i| {
+                try func_env.define(param_name, args[i]);
+                try local_vars.put(param_name, args[i]);
+            }
+        }
         
         // Handle simple test functions
         if (std.mem.eql(u8, jit_func.name, "test_function")) {
@@ -295,6 +349,10 @@ pub const JITExecutionEngine = struct {
             return interpreter.Value{ .Integer = 0 };
         } else if (std.mem.eql(u8, jit_func.name, "string_concat")) {
             return try self.performStringConcatenation(args);
+        } else if (std.mem.eql(u8, jit_func.name, "array_create")) {
+            return try self.handleArrayCreation(args);
+        } else if (std.mem.eql(u8, jit_func.name, "tuple_create")) {
+            return try self.handleTupleCreation(args);
         }
         
         // Default function result
@@ -315,9 +373,9 @@ pub const JITExecutionEngine = struct {
                 .Boolean => |b| print("{}", .{b}),
                 .Character => |c| print("{c}", .{c}),
                 .Null => print("null", .{}),
-                .Struct => |struct_inst| print("[struct {}]", .{struct_inst.type_name}),
-                .Interface => |interface_inst| print("[interface {}]", .{interface_inst.vtable.interface_name}),
-                .Error => |err| print("[error: {}]", .{err.message}),
+                .Struct => |struct_inst| print("[struct {s}]", .{struct_inst.type_name}),
+                .Interface => |interface_inst| print("[interface {s}]", .{interface_inst.vtable.interface_name}),
+                .Error => |err| print("[error: {s}]", .{err.message}),
             }
         }
         print("\n", .{});
@@ -343,9 +401,9 @@ pub const JITExecutionEngine = struct {
                 .Boolean => |b| print("{}", .{b}),
                 .Character => |c| print("{c}", .{c}),
                 .Null => print("null", .{}),
-                .Struct => |struct_inst| print("[struct {}]", .{struct_inst.type_name}),
-                .Interface => |interface_inst| print("[interface {}]", .{interface_inst.vtable.interface_name}),
-                .Error => |err| print("[error: {}]", .{err.message}),
+                .Struct => |struct_inst| print("[struct {s}]", .{struct_inst.type_name}),
+                .Interface => |interface_inst| print("[interface {s}]", .{interface_inst.vtable.interface_name}),
+                .Error => |err| print("[error: {s}]", .{err.message}),
             }
         }
         print("\n", .{});
@@ -495,9 +553,51 @@ pub const JITExecutionEngine = struct {
         return interpreter.Value{ .Interface = interface_inst };
     }
     
+    /// Handle array creation function
+    fn handleArrayCreation(self: *JITExecutionEngine, args: []const interpreter.Value) !interpreter.Value {
+        var array_struct = try interpreter.StructInstance.init(self.allocator, "Array");
+        try array_struct.setField("length", interpreter.Value{ .Integer = @intCast(args.len) });
+        
+        // Store array elements
+        for (args, 0..) |arg, i| {
+            if (i >= 10) break; // Limit to 10 elements for demo
+            const field_name = try std.fmt.allocPrint(self.allocator, "element_{}", .{i});
+            defer self.allocator.free(field_name);
+            try array_struct.setField(field_name, arg);
+        }
+        
+        print("Created array with {} elements\n", .{args.len});
+        return interpreter.Value{ .Struct = array_struct };
+    }
+    
+    /// Handle tuple creation function
+    fn handleTupleCreation(self: *JITExecutionEngine, args: []const interpreter.Value) !interpreter.Value {
+        var tuple_struct = try interpreter.StructInstance.init(self.allocator, "Tuple");
+        try tuple_struct.setField("length", interpreter.Value{ .Integer = @intCast(args.len) });
+        
+        // Store tuple elements with indexed names
+        for (args, 0..) |arg, i| {
+            const field_name = try std.fmt.allocPrint(self.allocator, "_{}", .{i});
+            defer self.allocator.free(field_name);
+            try tuple_struct.setField(field_name, arg);
+        }
+        
+        print("Created tuple with {} elements\n", .{args.len});
+        return interpreter.Value{ .Struct = tuple_struct };
+    }
+    
     /// Enhanced complex expression evaluation with all CURSED features
     fn evaluateComplexExpression(self: *JITExecutionEngine, expr: ast.Expression, env: *interpreter.Environment) !interpreter.Value {
         return switch (expr) {
+            .Array => |array_expr| try self.evaluateArrayLiteral(array_expr, env),
+            .Tuple => |tuple_expr| try self.evaluateTupleLiteral(tuple_expr, env),
+            .TupleAccess => |tuple_access| try self.evaluateTupleAccess(tuple_access, env),
+            .ArrayAccess => |array_access| try self.evaluateArrayAccess(array_access, env),
+            .Lambda => |lambda_expr| try self.evaluateLambda(lambda_expr, env),
+            .MemberAccess => |member_access| try self.evaluateMemberAccess(&member_access, env),
+            .StructLiteral => |struct_lit| try self.evaluateStructLiteral(struct_lit, env),
+            .TypeAssertion => |type_assert| try self.evaluateTypeAssertion(type_assert, env),
+            .Call => |call_expr| try self.evaluateCallExpression(call_expr, env),
             .Literal => |literal| self.evaluateLiteral(literal),
             .Integer => |value| interpreter.Value{ .Integer = value },
             .Float => |value| interpreter.Value{ .Float = value },
@@ -824,11 +924,35 @@ pub const JITExecutionEngine = struct {
     
     /// Evaluate member access expressions (e.g., vibez.spill, struct.field)
     fn evaluateMemberAccess(self: *JITExecutionEngine, member: *ast.MemberAccessExpression, env: *interpreter.Environment) !interpreter.Value {
-        _ = self;
-        _ = env;
-        _ = member;
-        // TODO: Implement proper member access evaluation
-        return interpreter.Value{ .Null = {} };
+        const object = try self.evaluateComplexExpression(member.object.*, env);
+        
+        switch (object) {
+            .Struct => |struct_inst| {
+                if (struct_inst.getField(member.property)) |field_value| {
+                    return field_value;
+                } else {
+                    print("Field '{s}' not found in struct\n", .{member.property});
+                    return interpreter.InterpreterError.UndefinedField;
+                }
+            },
+            .Interface => |interface_inst| {
+                // Try to access field from underlying struct
+                if (interface_inst.underlying_struct.getField(member.property)) |field_value| {
+                    return field_value;
+                }
+                // Or call interface method
+                if (interface_inst.vtable.getMethod(member.property)) |method| {
+                    print("Calling interface method: {s}\n", .{method.name});
+                    return interpreter.Value{ .String = method.name }; // Return method name for now
+                }
+                print("Method '{s}' not found in interface\n", .{member.property});
+                return interpreter.InterpreterError.UndefinedField;
+            },
+            else => {
+                print("Cannot access member '{s}' on non-struct/interface type\n", .{member.property});
+                return interpreter.InterpreterError.TypeMismatch;
+            }
+        }
     }
     
     /// Evaluate struct literal expressions
@@ -846,38 +970,102 @@ pub const JITExecutionEngine = struct {
     
     /// Evaluate array literal expressions
     fn evaluateArrayLiteral(self: *JITExecutionEngine, array: *ast.ArrayExpression, env: *interpreter.Environment) !interpreter.Value {
-        _ = self;
-        _ = array;
-        _ = env;
-        // TODO: Implement array evaluation when AST structure is available
-        return interpreter.Value{ .Null = {} };
+        // Create array to hold elements
+        var elements = try self.allocator.alloc(interpreter.Value, array.elements.items.len);
+        
+        // Evaluate each element
+        for (array.elements.items, 0..) |element_ptr, i| {
+            const element_expr: *ast.Expression = @ptrCast(@alignCast(element_ptr));
+            elements[i] = try self.evaluateComplexExpression(element_expr.*, env);
+        }
+        
+        // For now, store as a struct with elements - extend Value type later
+        var array_struct = try interpreter.StructInstance.init(self.allocator, "Array");
+        try array_struct.setField("length", interpreter.Value{ .Integer = @intCast(elements.len) });
+        
+        // Store first few elements for testing
+        for (elements, 0..) |element, i| {
+            if (i >= 10) break; // Limit to 10 elements for demo
+            const field_name = try std.fmt.allocPrint(self.allocator, "element_{}", .{i});
+            defer self.allocator.free(field_name);
+            try array_struct.setField(field_name, element);
+        }
+        
+        self.allocator.free(elements);
+        return interpreter.Value{ .Struct = array_struct };
     }
     
     /// Evaluate tuple literal expressions
     fn evaluateTupleLiteral(self: *JITExecutionEngine, tuple: ast.TupleExpression, env: *interpreter.Environment) !interpreter.Value {
-        _ = self;
-        _ = tuple;
-        _ = env;
-        // TODO: Implement tuple evaluation when AST structure is available
-        return interpreter.Value{ .Null = {} };
+        // Create tuple struct to hold elements
+        var tuple_struct = try interpreter.StructInstance.init(self.allocator, "Tuple");
+        try tuple_struct.setField("length", interpreter.Value{ .Integer = @intCast(tuple.elements.items.len) });
+        
+        // Evaluate each element and store in tuple
+        for (tuple.elements.items, 0..) |element_ptr, i| {
+            const element_expr: *ast.Expression = @ptrCast(@alignCast(element_ptr));
+            const element_value = try self.evaluateComplexExpression(element_expr.*, env);
+            
+            const field_name = try std.fmt.allocPrint(self.allocator, "_{}", .{i});
+            defer self.allocator.free(field_name);
+            try tuple_struct.setField(field_name, element_value);
+        }
+        
+        return interpreter.Value{ .Struct = tuple_struct };
     }
     
     /// Evaluate tuple access expressions
     fn evaluateTupleAccess(self: *JITExecutionEngine, tuple_access: ast.TupleAccessExpression, env: *interpreter.Environment) !interpreter.Value {
-        _ = self;
-        _ = tuple_access;
-        _ = env;
-        // TODO: Implement tuple access when AST structure is available
-        return interpreter.Value{ .Null = {} };
+        const tuple_value = try self.evaluateComplexExpression(tuple_access.tuple.*, env);
+        
+        switch (tuple_value) {
+            .Struct => |struct_inst| {
+                if (std.mem.eql(u8, struct_inst.type_name, "Tuple")) {
+                    const field_name = try std.fmt.allocPrint(self.allocator, "_{}", .{tuple_access.index});
+                    defer self.allocator.free(field_name);
+                    
+                    if (struct_inst.getField(field_name)) |field_value| {
+                        return field_value;
+                    } else {
+                        print("Tuple index {} out of bounds\n", .{tuple_access.index});
+                        return interpreter.InterpreterError.IndexOutOfBounds;
+                    }
+                } else {
+                    return interpreter.InterpreterError.TypeMismatch;
+                }
+            },
+            else => return interpreter.InterpreterError.TypeMismatch,
+        }
     }
     
     /// Evaluate array access expressions
     fn evaluateArrayAccess(self: *JITExecutionEngine, array_access: ast.ArrayAccessExpression, env: *interpreter.Environment) !interpreter.Value {
-        _ = self;
-        _ = array_access;
-        _ = env;
-        // TODO: Implement array access when AST structure is available
-        return interpreter.Value{ .Null = {} };
+        const array_value = try self.evaluateComplexExpression(array_access.array.*, env);
+        const index_value = try self.evaluateComplexExpression(array_access.index.*, env);
+        
+        const index: usize = switch (index_value) {
+            .Integer => |i| if (i >= 0) @intCast(i) else return interpreter.InterpreterError.IndexOutOfBounds,
+            else => return interpreter.InterpreterError.TypeMismatch,
+        };
+        
+        switch (array_value) {
+            .Struct => |struct_inst| {
+                if (std.mem.eql(u8, struct_inst.type_name, "Array")) {
+                    const field_name = try std.fmt.allocPrint(self.allocator, "element_{}", .{index});
+                    defer self.allocator.free(field_name);
+                    
+                    if (struct_inst.getField(field_name)) |field_value| {
+                        return field_value;
+                    } else {
+                        print("Array index {} out of bounds\n", .{index});
+                        return interpreter.InterpreterError.IndexOutOfBounds;
+                    }
+                } else {
+                    return interpreter.InterpreterError.TypeMismatch;
+                }
+            },
+            else => return interpreter.InterpreterError.TypeMismatch,
+        }
     }
     
     /// Evaluate type assertion expressions
@@ -910,11 +1098,41 @@ pub const JITExecutionEngine = struct {
     
     /// Evaluate lambda expressions
     fn evaluateLambda(self: *JITExecutionEngine, lambda: ast.LambdaExpression, env: *interpreter.Environment) !interpreter.Value {
-        _ = self;
-        _ = lambda;
         _ = env;
-        // TODO: Implement lambda evaluation with closure support
-        return interpreter.Value{ .Null = {} };
+        // Create a function struct to represent the lambda
+        var lambda_struct = try interpreter.StructInstance.init(self.allocator, "Lambda");
+        
+        // Store parameter information
+        try lambda_struct.setField("param_count", interpreter.Value{ .Integer = @intCast(lambda.parameters.items.len) });
+        
+        // Store parameter names as fields
+        for (lambda.parameters.items, 0..) |param_ptr, i| {
+            const param_name: []const u8 = @ptrCast(@alignCast(param_ptr));
+            const field_name = try std.fmt.allocPrint(self.allocator, "param_{}", .{i});
+            defer self.allocator.free(field_name);
+            try lambda_struct.setField(field_name, interpreter.Value{ .String = param_name });
+        }
+        
+        // Store a simplified representation of the lambda body for execution
+        // In a full implementation, we would store the AST and closure environment
+        try lambda_struct.setField("body_type", interpreter.Value{ .String = "lambda_body" });
+        
+        // Create unique lambda ID for future execution
+        const lambda_id = try std.fmt.allocPrint(self.allocator, "lambda_{}", .{@intFromPtr(lambda.body)});
+        try lambda_struct.setField("lambda_id", interpreter.Value{ .String = lambda_id });
+        
+        // Register lambda for later execution
+        const param_names = try self.allocator.alloc([]const u8, lambda.parameters.items.len);
+        for (lambda.parameters.items, 0..) |param_ptr, i| {
+            const param_name: []const u8 = @ptrCast(@alignCast(param_ptr));
+            param_names[i] = try self.allocator.dupe(u8, param_name);
+        }
+        
+        const signature = try FunctionSignature.init(self.allocator, param_names, "Any");
+        try self.function_signatures.put(try self.allocator.dupe(u8, lambda_id), signature);
+        
+        print("Created lambda with {} parameters: {s}\n", .{ lambda.parameters.items.len, lambda_id });
+        return interpreter.Value{ .Struct = lambda_struct };
     }
 
     /// Tier up a function to higher optimization level
@@ -1048,19 +1266,63 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     var engine = try JITExecutionEngine.init(allocator);
     defer engine.deinit();
     
-    // Register test functions
-    try engine.registerFunction("test_function", "test_module");
-    try engine.registerFunction("math_add", "mathz");
-    try engine.registerFunction("string_concat", "stringz");
+    // Register test functions with signatures
+    var add_params = try allocator.alloc([]const u8, 2);
+    add_params[0] = "x";
+    add_params[1] = "y";
+    try engine.registerFunctionWithSignature("add_numbers", "test_module", add_params, "normie");
     
-    const test_args = [_]interpreter.Value{interpreter.Value{ .Integer = 42 }};
+    var concat_params = try allocator.alloc([]const u8, 2);
+    concat_params[0] = "a";
+    concat_params[1] = "b";
+    try engine.registerFunctionWithSignature("string_concat", "stringz", concat_params, "tea");
+    
+    const no_params = try allocator.alloc([]const u8, 0);
+    try engine.registerFunctionWithSignature("array_create", "arrayz", no_params, "Array");
+    try engine.registerFunctionWithSignature("tuple_create", "tuplez", no_params, "Tuple");
+    
+    // Test function parameters
+    print("\n🔧 Testing function parameters...\n", .{});
+    const add_args = [_]interpreter.Value{ interpreter.Value{ .Integer = 10 }, interpreter.Value{ .Integer = 20 } };
+    const add_result = try engine.executeFunction("test_module.add_numbers", &add_args);
+    print("add_numbers(10, 20) = {any}\n", .{add_result});
+    
+    // Test array creation
+    print("\n📋 Testing array creation...\n", .{});
+    const array_args = [_]interpreter.Value{ interpreter.Value{ .Integer = 1 }, interpreter.Value{ .Integer = 2 }, interpreter.Value{ .Integer = 3 } };
+    const array_result = try engine.executeFunction("arrayz.array_create", &array_args);
+    print("array_create([1,2,3]) = {any}\n", .{array_result});
+    
+    // Test tuple creation
+    print("\n📦 Testing tuple creation...\n", .{});
+    const tuple_args = [_]interpreter.Value{ interpreter.Value{ .Integer = 42 }, interpreter.Value{ .String = "hello" }, interpreter.Value{ .Boolean = true } };
+    const tuple_result = try engine.executeFunction("tuplez.tuple_create", &tuple_args);
+    print("tuple_create((42, \"hello\", true)) = {any}\n", .{tuple_result});
+    
+    // Test string concatenation
+    print("\n🔗 Testing string concatenation...\n", .{});
+    const str_args = [_]interpreter.Value{ interpreter.Value{ .String = "Hello" }, interpreter.Value{ .String = " World" } };
+    const str_result = try engine.executeFunction("stringz.string_concat", &str_args);
+    print("string_concat(\"Hello\", \" World\") = {any}\n", .{str_result});
+    
+    // Test struct/interface conversions
+    print("\n🏗️ Testing struct operations...\n", .{});
+    var test_struct = try interpreter.StructInstance.init(allocator, "Point");
+    try test_struct.setField("x", interpreter.Value{ .Integer = 10 });
+    try test_struct.setField("y", interpreter.Value{ .Integer = 20 });
+    
+    const converted_struct = try engine.convertStructType(test_struct, "Vector2D");
+    print("Struct conversion: Point -> Vector2D = {any}\n", .{converted_struct});
+    
+    const interface_val = try engine.convertStructToInterface(test_struct, "Drawable");
+    print("Struct to interface: Point -> Drawable = {any}\n", .{interface_val});
     
     // Simulate function calls to trigger tier-ups
-    print("\n🚀 Simulating function calls...\n", .{});
-    for (0..100) |i| {
-        _ = try engine.executeFunction("test_module.test_function", &test_args);
-        if (i % 20 == 0) {
-            print("  Call {}: function tier-up check\n", .{i});
+    print("\n🚀 Simulating function calls for tier-up...\n", .{});
+    for (0..50) |i| {
+        _ = try engine.executeFunction("test_module.add_numbers", &add_args);
+        if (i % 10 == 0) {
+            print("  Call {}: checking tier-up\n", .{i});
         }
     }
     

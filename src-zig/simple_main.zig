@@ -4,24 +4,29 @@ const Allocator = std.mem.Allocator;
 
 const lexer = @import("lexer.zig");
 
-// Simple variable environment for storing values
+// Memory-safe variable environment using arena allocator
 const VariableEnvironment = struct {
     variables: std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
-    allocator: Allocator,
+    arena: std.heap.ArenaAllocator,
     
-    pub fn init(allocator: Allocator) VariableEnvironment {
+    pub fn init(backing_allocator: Allocator) VariableEnvironment {
+        var arena = std.heap.ArenaAllocator.init(backing_allocator);
+        const arena_allocator = arena.allocator();
+        
         return VariableEnvironment{
-            .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .allocator = allocator,
+            .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
+            .arena = arena,
         };
     }
     
     pub fn deinit(self: *VariableEnvironment) void {
-        self.variables.deinit();
+        // Arena allocator automatically cleans up all allocated strings
+        self.arena.deinit();
     }
     
     pub fn set(self: *VariableEnvironment, name: []const u8, value: i64) !void {
-        const name_copy = try self.allocator.dupe(u8, name);
+        const allocator = self.arena.allocator();
+        const name_copy = try allocator.dupe(u8, name);
         try self.variables.put(name_copy, value);
     }
     
@@ -85,14 +90,20 @@ pub fn main() !void {
 
     print("🚀 CURSED Compiler Processing: {s}\n", .{filename});
 
-    // Tokenize
+    // Tokenize with proper error handling
     var l = lexer.Lexer.init(allocator, source);
+    defer {
+        // Clean up lexer resources if it has a deinit method
+        if (@hasDecl(@TypeOf(l), "deinit")) {
+            l.deinit();
+        }
+    }
 
     const tokens = l.tokenize() catch |err| {
         print("Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit(); // CRITICAL FIX: Clean up tokens ArrayList
+    defer tokens.deinit(); // Memory-safe token cleanup
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -104,10 +115,16 @@ pub fn main() !void {
 
     if (compile_mode) {
         // Real compilation mode - generate C code
-        try compileToC(allocator, filename, tokens);
+        compileToC(allocator, filename, tokens) catch |err| {
+            print("Compilation error: {}\n", .{err});
+            return;
+        };
     } else {
         // Interpretation mode - simple line execution
-        try interpretProgram(allocator, source);
+        interpretProgram(allocator, source) catch |err| {
+            print("Interpretation error: {}\n", .{err});
+            return;
+        };
     }
 }
 

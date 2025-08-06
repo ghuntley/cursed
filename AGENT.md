@@ -355,3 +355,10 @@ stdlib/                    # Standard library (pure CURSED)
 - Security-critical modules need immediate attention (crypto)
 - Hardware atomics significantly outperform spinlock implementations
 
+### Build & Test Loop Optimization
+- Main `cursed-zig` executable works even when LLVM syscall linking fails
+- Test individual components with `zig-out/bin/*` executables when main build fails
+- LLVM-18 linking resolved through proper path detection in `build.zig`
+- Pure CURSED stdlib implementations eliminate FFI dependencies successfully
+- Use arena allocators for automatic memory cleanup - critical for safety
+

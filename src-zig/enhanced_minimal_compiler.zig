@@ -3,42 +3,78 @@ const print = std.debug.print;
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
-// Enhanced token types for CURSED language with error handling
+// Enhanced token types for CURSED language with comprehensive error handling
 const TokenType = enum {
     // Literals
     STRING,
     NUMBER,
     IDENTIFIER,
+    BOOLEAN,      // based/cringe
+    NULL,         // nah
     
     // Keywords
-    VIBEZ,    // vibez.spill
-    SPILL,    // spill
-    DOT,      // .
+    VIBEZ,        // vibez.spill
+    SPILL,        // spill
+    DOT,          // .
     
     // Error handling keywords
-    YIKES,    // yikes - error creation
-    SHOOK,    // shook - error propagation
-    FAM,      // fam - panic recovery
+    YIKES,        // yikes - error creation
+    SHOOK,        // shook - error propagation
+    FAM,          // fam - panic recovery
+    
+    // Function keywords
+    SLAY,         // slay - function definition
+    DAMN,         // damn - return statement
+    
+    // Variable keywords
+    SUS,          // sus - mutable variable
+    FACTS,        // facts - immutable variable
+    
+    // Control flow
+    LOWKEY,       // lowkey - if statement
+    HIGHKEY,      // highkey - else statement
+    BESTIE,       // bestie - for loop
+    PERIODT,      // periodt - while loop
+    VIBE_CHECK,   // vibe_check - switch statement
+    STAN,         // stan - goroutine
+    READY,        // ready - select statement
     
     // Operators
     PLUS,
     MINUS,
     MULTIPLY,
     DIVIDE,
-    EQUAL,    // =
+    EQUAL,        // =
+    COLON_EQUAL,  // :=
+    EQUAL_EQUAL,  // ==
+    NOT_EQUAL,    // !=
+    LESS,         // <
+    GREATER,      // >
+    LESS_EQUAL,   // <=
+    GREATER_EQUAL,// >=
+    LOGICAL_AND,  // &&
+    LOGICAL_OR,   // ||
+    QUESTION,     // ? (error propagation)
     
     // Delimiters
-    LPAREN,   // (
-    RPAREN,   // )
-    LBRACE,   // {
-    RBRACE,   // }
-    COMMA,    // ,
-    SEMICOLON, // ;
+    LPAREN,       // (
+    RPAREN,       // )
+    LBRACE,       // {
+    RBRACE,       // }
+    LBRACKET,     // [
+    RBRACKET,     // ]
+    COMMA,        // ,
+    SEMICOLON,    // ;
+    COLON,        // :
+    ARROW,        // ->
     
-    // Special
+    // Special tokens for error recovery
     EOF,
     NEWLINE,
+    UNTERMINATED_STRING,  // For error recovery
+    INVALID_NUMBER,       // For error recovery
     UNKNOWN,
+    ERROR_TOKEN,          // Generic error token
 };
 
 const Token = struct {
@@ -237,31 +273,58 @@ const Lexer = struct {
         self.advance(); // Skip opening quote
         
         while (self.position < self.input.len and self.input[self.position] != '"') {
+            // Handle escape sequences
+            if (self.input[self.position] == '\\' and self.position + 1 < self.input.len) {
+                self.advance(); // Skip escape character
+            }
             self.advance();
         }
         
         if (self.position < self.input.len) {
             self.advance(); // Skip closing quote
+            try tokens.append(Token{
+                .type = .STRING,
+                .value = self.input[start_pos..self.position],
+                .line = line,
+                .column = column,
+            });
+        } else {
+            // Unterminated string - error recovery
+            try tokens.append(Token{
+                .type = .UNTERMINATED_STRING,
+                .value = self.input[start_pos..self.position],
+                .line = line,
+                .column = column,
+            });
         }
-        
-        try tokens.append(Token{
-            .type = .STRING,
-            .value = self.input[start_pos..self.position],
-            .line = line,
-            .column = column,
-        });
     }
 
     fn readNumber(self: *Lexer, tokens: *ArrayList(Token), line: usize, column: usize) !void {
         const start_pos = self.position;
+        var has_dot = false;
+        var is_valid = true;
         
-        while (self.position < self.input.len and 
-               (std.ascii.isDigit(self.input[self.position]) or self.input[self.position] == '.')) {
-            self.advance();
+        while (self.position < self.input.len) {
+            const ch = self.input[self.position];
+            if (std.ascii.isDigit(ch)) {
+                self.advance();
+            } else if (ch == '.' and !has_dot) {
+                has_dot = true;
+                self.advance();
+                // Ensure there's a digit after the dot
+                if (self.position >= self.input.len or !std.ascii.isDigit(self.input[self.position])) {
+                    is_valid = false;
+                    break;
+                }
+            } else {
+                break;
+            }
         }
         
+        const token_type: TokenType = if (is_valid) .NUMBER else .INVALID_NUMBER;
+        
         try tokens.append(Token{
-            .type = .NUMBER,
+            .type = token_type,
             .value = self.input[start_pos..self.position],
             .line = line,
             .column = column,
@@ -298,30 +361,153 @@ const Lexer = struct {
     }
 };
 
-// Parser error types
+// Comprehensive parser error types
 const ParseError = error{
+    // Basic syntax errors
     ExpectedIdentifier,
     ExpectedLeftBrace,
+    ExpectedRightBrace,
+    ExpectedLeftParen,
+    ExpectedRightParen,
+    ExpectedSemicolon,
     UnexpectedToken,
+    UnexpectedEof,
+    
+    // Function-related errors
     NotAFunctionCall,
+    InvalidFunctionSignature,
+    InvalidReturnType,
+    
+    // Expression errors
+    InvalidExpression,
+    UnclosedParentheses,
+    InvalidBinaryOperator,
+    InvalidUnaryOperator,
+    
+    // Statement errors
+    InvalidStatement,
+    InvalidAssignment,
+    InvalidVariableDeclaration,
+    
+    // Error handling errors
+    InvalidErrorHandling,
+    InvalidYikesStatement,
+    InvalidShookExpression,
+    InvalidFamBlock,
+    
+    // Type errors
+    InvalidType,
+    UnknownType,
+    
+    // Memory errors
     OutOfMemory,
+    
+    // Recovery errors
+    TooManyErrors,
+    MaxRecoveryDepthExceeded,
 };
 
-// Enhanced parser with error handling support
+// Error recovery strategy
+const RecoveryStrategy = enum {
+    SkipToNext,
+    InsertToken,
+    ReplaceToken,
+    Backtrack,
+    UseDefault,
+    AbortScope,
+    SynchronizeToStatement,
+    SynchronizeToExpression,
+};
+
+// Enhanced error information with recovery context
+const ParseErrorInfo = struct {
+    error_type: ParseError,
+    token: Token,
+    message: []const u8,
+    suggestions: ArrayList([]const u8),
+    recovery_strategy: RecoveryStrategy,
+    severity: ErrorSeverity,
+    
+    const ErrorSeverity = enum {
+        Fatal,
+        Error,
+        Warning,
+        Note,
+        Help,
+    };
+};
+
+// Enhanced parser with comprehensive error recovery and PGO support
 const Parser = struct {
     tokens: []const Token,
     current: usize,
     allocator: Allocator,
+    
+    // Error recovery state
+    errors: ArrayList(ParseErrorInfo),
+    had_error: bool,
+    panic_mode: bool,
+    max_errors: usize,
+    recovery_depth: usize,
+    max_recovery_depth: usize,
+    
+    // Parsing context for better error messages
+    in_function: bool,
+    in_loop: bool,
+    in_match: bool,
+    scope_depth: usize,
+    
+    // Profile-guided optimization data
+    pgo_data: ?*ProfileGuidedOptimizer,
+    
+    // Recovery points for backtracking
+    recovery_points: ArrayList(RecoveryPoint),
+    
+    const RecoveryPoint = struct {
+        position: usize,
+        scope_depth: usize,
+        error_count: usize,
+    };
 
     pub fn init(allocator: Allocator, tokens: []const Token) Parser {
         return Parser{
             .tokens = tokens,
             .current = 0,
             .allocator = allocator,
+            .errors = ArrayList(ParseErrorInfo).init(allocator),
+            .had_error = false,
+            .panic_mode = false,
+            .max_errors = 100,
+            .recovery_depth = 0,
+            .max_recovery_depth = 10,
+            .in_function = false,
+            .in_loop = false,
+            .in_match = false,
+            .scope_depth = 0,
+            .pgo_data = null,
+            .recovery_points = ArrayList(RecoveryPoint).init(allocator),
         };
     }
+    
+    pub fn deinit(self: *Parser) void {
+        for (self.errors.items) |error_info| {
+            self.allocator.free(error_info.message);
+            error_info.suggestions.deinit();
+        }
+        self.errors.deinit();
+        self.recovery_points.deinit();
+    }
+    
+    pub fn setPGOData(self: *Parser, pgo_data: *ProfileGuidedOptimizer) void {
+        self.pgo_data = pgo_data;
+    }
 
+    /// Parse with comprehensive error recovery
     pub fn parse(self: *Parser) !ArrayList(ASTNode) {
+        return self.parseWithRecovery();
+    }
+    
+    pub fn parseWithRecovery(self: *Parser) !ArrayList(ASTNode) {
         var statements = ArrayList(ASTNode).init(self.allocator);
         errdefer {
             // Clean up any allocated AST nodes on error
@@ -338,19 +524,266 @@ const Parser = struct {
                 continue;
             }
             
-            const stmt = self.parseStatement() catch |err| {
-                // Clean up partial parsing
-                return err;
-            };
+            // Create recovery point before parsing statement
+            try self.createRecoveryPoint();
             
-            statements.append(stmt) catch |err| {
-                // Clean up the statement if append fails
-                self.freeASTNode(stmt);
-                return err;
-            };
+            // Parse statement with recovery
+            if (self.parseStatementWithRecovery()) |stmt| {
+                try statements.append(stmt);
+                self.removeLastRecoveryPoint();
+            } else |err| {
+                // Handle error with recovery strategies
+                if (!try self.handleParseError(err)) {
+                    // Too many errors or fatal error, abort
+                    return err;
+                }
+                // Continue parsing after recovery
+            }
+            
+            // Check if we've exceeded max errors
+            if (self.errors.items.len >= self.max_errors) {
+                self.reportError("Too many errors, aborting parse");
+                return ParseError.TooManyErrors;
+            }
+        }
+        
+        // Report errors if any
+        if (self.errors.items.len > 0) {
+            self.reportAllErrors();
         }
         
         return statements;
+    }
+    
+    /// Enhanced error recovery methods
+    fn createRecoveryPoint(self: *Parser) !void {
+        const point = RecoveryPoint{
+            .position = self.current,
+            .scope_depth = self.scope_depth,
+            .error_count = self.errors.items.len,
+        };
+        try self.recovery_points.append(point);
+    }
+    
+    fn removeLastRecoveryPoint(self: *Parser) void {
+        if (self.recovery_points.items.len > 0) {
+            _ = self.recovery_points.pop();
+        }
+    }
+    
+    fn recoverToPoint(self: *Parser, strategy: RecoveryStrategy) bool {
+        switch (strategy) {
+            .Backtrack => {
+                if (self.recovery_points.items.len > 0) {
+                    const point = self.recovery_points.pop();
+                    self.current = point.position;
+                    self.scope_depth = point.scope_depth;
+                    // Remove errors that occurred after this point
+                    while (self.errors.items.len > point.error_count) {
+                        const error_info = self.errors.pop();
+                        self.allocator.free(error_info.message);
+                        error_info.suggestions.deinit();
+                    }
+                    return true;
+                }
+            },
+            .SynchronizeToStatement => {
+                self.synchronizeToStatement();
+                return true;
+            },
+            .SynchronizeToExpression => {
+                self.synchronizeToExpression();
+                return true;
+            },
+            .SkipToNext => {
+                _ = self.advance();
+                return true;
+            },
+            else => {
+                return false;
+            },
+        }
+        return false;
+    }
+    
+    fn synchronizeToStatement(self: *Parser) void {
+        self.panic_mode = false;
+        
+        while (!self.isAtEnd()) {
+            if (self.previous().type == .SEMICOLON) return;
+            
+            switch (self.peek().type) {
+                .SLAY, .SUS, .FACTS, .LOWKEY, .BESTIE, .PERIODT,
+                .VIBE_CHECK, .STAN, .READY, .YIKES, .FAM => return,
+                else => {},
+            }
+            
+            _ = self.advance();
+        }
+    }
+    
+    fn synchronizeToExpression(self: *Parser) void {
+        while (!self.isAtEnd()) {
+            switch (self.peek().type) {
+                .SEMICOLON, .COMMA, .RPAREN, .RBRACE, .RBRACKET => return,
+                else => {},
+            }
+            _ = self.advance();
+        }
+    }
+    
+    fn handleParseError(self: *Parser, err: ParseError) !bool {
+        self.recovery_depth += 1;
+        defer self.recovery_depth -= 1;
+        
+        if (self.recovery_depth > self.max_recovery_depth) {
+            return false; // Max recovery depth exceeded
+        }
+        
+        // Create error info
+        const current_token = if (self.current < self.tokens.len) 
+            self.tokens[self.current] else 
+            Token{ .type = .EOF, .value = "", .line = 0, .column = 0 };
+            
+        const message = try self.createErrorMessage(err, current_token);
+        const suggestions = try self.generateSuggestions(err, current_token);
+        const strategy = self.selectRecoveryStrategy(err, current_token);
+        
+        const error_info = ParseErrorInfo{
+            .error_type = err,
+            .token = current_token,
+            .message = message,
+            .suggestions = suggestions,
+            .recovery_strategy = strategy,
+            .severity = self.getErrorSeverity(err),
+        };
+        
+        try self.errors.append(error_info);
+        
+        // Apply recovery strategy
+        return self.recoverToPoint(strategy);
+    }
+    
+    fn createErrorMessage(self: *Parser, err: ParseError, token: Token) ![]u8 {
+        const base_message = switch (err) {
+            ParseError.ExpectedIdentifier => "Expected identifier",
+            ParseError.ExpectedLeftBrace => "Expected '{'",
+            ParseError.ExpectedRightBrace => "Expected '}'",
+            ParseError.ExpectedLeftParen => "Expected '('",
+            ParseError.ExpectedRightParen => "Expected ')'",
+            ParseError.UnexpectedToken => "Unexpected token",
+            ParseError.UnexpectedEof => "Unexpected end of file",
+            ParseError.InvalidErrorHandling => "Invalid error handling syntax",
+            ParseError.InvalidYikesStatement => "Invalid 'yikes' statement",
+            ParseError.InvalidShookExpression => "Invalid 'shook' expression",
+            ParseError.InvalidFamBlock => "Invalid 'fam' block",
+            else => "Parse error",
+        };
+        
+        return std.fmt.allocPrint(self.allocator, "{s} at line {}, column {}, got '{s}'", 
+            .{ base_message, token.line, token.column, token.value });
+    }
+    
+    fn generateSuggestions(self: *Parser, err: ParseError, token: Token) !ArrayList([]const u8) {
+        var suggestions = ArrayList([]const u8).init(self.allocator);
+        
+        switch (err) {
+            ParseError.ExpectedIdentifier => {
+                try suggestions.append(try self.allocator.dupe(u8, "Try using a valid identifier name"));
+                if (self.isKeyword(token.value)) {
+                    try suggestions.append(try std.fmt.allocPrint(self.allocator, 
+                        "'{s}' is a keyword, use a different name", .{token.value}));
+                }
+            },
+            ParseError.ExpectedLeftBrace => {
+                try suggestions.append(try self.allocator.dupe(u8, "Add '{' to start a block"));
+            },
+            ParseError.ExpectedRightBrace => {
+                try suggestions.append(try self.allocator.dupe(u8, "Add '}' to close the block"));
+            },
+            ParseError.InvalidYikesStatement => {
+                try suggestions.append(try self.allocator.dupe(u8, "Use: yikes error_name = \"error message\""));
+            },
+            ParseError.InvalidShookExpression => {
+                try suggestions.append(try self.allocator.dupe(u8, "Use: shook expression"));
+            },
+            ParseError.InvalidFamBlock => {
+                try suggestions.append(try self.allocator.dupe(u8, "Use: fam { ... }"));
+            },
+            else => {},
+        }
+        
+        return suggestions;
+    }
+    
+    fn selectRecoveryStrategy(self: *Parser, err: ParseError, token: Token) RecoveryStrategy {
+        _ = token;
+        
+        return switch (err) {
+            ParseError.ExpectedLeftBrace, ParseError.ExpectedRightBrace => .SynchronizeToStatement,
+            ParseError.ExpectedLeftParen, ParseError.ExpectedRightParen => .SynchronizeToExpression,
+            ParseError.UnexpectedToken => .SkipToNext,
+            ParseError.UnexpectedEof => .UseDefault,
+            ParseError.InvalidErrorHandling => .SynchronizeToStatement,
+            else => .SynchronizeToStatement,
+        };
+    }
+    
+    fn getErrorSeverity(self: *Parser, err: ParseError) ParseErrorInfo.ErrorSeverity {
+        _ = self;
+        
+        return switch (err) {
+            ParseError.UnexpectedEof, ParseError.TooManyErrors => .Fatal,
+            ParseError.ExpectedIdentifier, ParseError.ExpectedLeftBrace, 
+            ParseError.UnexpectedToken => .Error,
+            ParseError.InvalidErrorHandling => .Warning,
+            else => .Error,
+        };
+    }
+    
+    fn isKeyword(self: *Parser, value: []const u8) bool {
+        _ = self;
+        
+        const keywords = [_][]const u8{
+            "vibez", "spill", "yikes", "shook", "fam", "slay", "damn",
+            "sus", "facts", "lowkey", "highkey", "bestie", "periodt",
+            "vibe_check", "stan", "ready", "based", "cringe", "nah"
+        };
+        
+        for (keywords) |keyword| {
+            if (std.mem.eql(u8, value, keyword)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    fn reportAllErrors(self: *Parser) void {
+        print("🚨 Parse completed with {} errors:\n", .{self.errors.items.len});
+        
+        for (self.errors.items, 0..) |error_info, i| {
+            const severity_icon = switch (error_info.severity) {
+                .Fatal => "💀",
+                .Error => "❌", 
+                .Warning => "⚠️",
+                .Note => "ℹ️",
+                .Help => "💡",
+            };
+            
+            print("{s} Error {}: {s}\n", .{ severity_icon, i + 1, error_info.message });
+            
+            if (error_info.suggestions.items.len > 0) {
+                print("   Suggestions:\n");
+                for (error_info.suggestions.items) |suggestion| {
+                    print("   - {s}\n", .{suggestion});
+                }
+            }
+        }
+    }
+    
+    fn parseStatementWithRecovery(self: *Parser) !ASTNode {
+        return self.parseStatement();
     }
 
     fn parseStatement(self: *Parser) !ASTNode {
@@ -674,22 +1107,262 @@ const Interpreter = struct {
         };
     }
 
-    fn printNode(self: *EnhancedMinimalCompiler, node: ASTNode) !void {
+    fn printNode(node: ASTNode) !void {
         switch (node) {
             .StringLiteral => |str| print("{s}", .{str}),
             .NumberLiteral => |num| print("{d}", .{num}),
-            .Identifier => |id| {
-                // Look up variable value instead of just printing the name
-                if (self.environment.get(id)) |value| {
-                    const str = try value.toString(self.allocator);
-                    defer self.allocator.free(str);
-                    print("{s}", .{str});
-                } else |_| {
-                    print("{s}", .{id}); // Fallback to identifier name
-                }
-            },
+            .Identifier => |id| print("{s}", .{id}),
             else => print("(complex expression)", .{}),
         }
+    }
+};
+
+// Profile-Guided Optimizer for advanced optimization
+const ProfileGuidedOptimizer = struct {
+    allocator: Allocator,
+    profile_data: ProfileData,
+    optimization_level: OptimizationLevel,
+    
+    const OptimizationLevel = enum {
+        Speed,
+        Size,
+        Balanced,
+        Custom,
+    };
+    
+    const ProfileData = struct {
+        function_counts: std.HashMap([]const u8, u64, std.hash_map.StringContext, 80),
+        basic_block_counts: std.HashMap([]const u8, u64, std.hash_map.StringContext, 80),
+        total_execution_time: u64, // nanoseconds
+        hot_functions: ArrayList([]const u8),
+        cold_functions: ArrayList([]const u8),
+        
+        pub fn init(allocator: Allocator) ProfileData {
+            return ProfileData{
+                .function_counts = std.HashMap([]const u8, u64, std.hash_map.StringContext, 80).init(allocator),
+                .basic_block_counts = std.HashMap([]const u8, u64, std.hash_map.StringContext, 80).init(allocator),
+                .total_execution_time = 0,
+                .hot_functions = ArrayList([]const u8).init(allocator),
+                .cold_functions = ArrayList([]const u8).init(allocator),
+            };
+        }
+        
+        pub fn deinit(self: *ProfileData) void {
+            self.function_counts.deinit();
+            self.basic_block_counts.deinit();
+            self.hot_functions.deinit();
+            self.cold_functions.deinit();
+        }
+    };
+    
+    pub fn init(allocator: Allocator) ProfileGuidedOptimizer {
+        return ProfileGuidedOptimizer{
+            .allocator = allocator,
+            .profile_data = ProfileData.init(allocator),
+            .optimization_level = .Balanced,
+        };
+    }
+    
+    pub fn deinit(self: *ProfileGuidedOptimizer) void {
+        self.profile_data.deinit();
+    }
+    
+    pub fn setOptimizationLevel(self: *ProfileGuidedOptimizer, level: OptimizationLevel) void {
+        self.optimization_level = level;
+    }
+    
+    pub fn recordFunctionCall(self: *ProfileGuidedOptimizer, function_name: []const u8) !void {
+        const result = try self.profile_data.function_counts.getOrPut(function_name);
+        if (!result.found_existing) {
+            result.value_ptr.* = 0;
+        }
+        result.value_ptr.* += 1;
+    }
+    
+    pub fn recordBasicBlockExecution(self: *ProfileGuidedOptimizer, block_name: []const u8) !void {
+        const result = try self.profile_data.basic_block_counts.getOrPut(block_name);
+        if (!result.found_existing) {
+            result.value_ptr.* = 0;
+        }
+        result.value_ptr.* += 1;
+    }
+    
+    pub fn analyzeHotColdFunctions(self: *ProfileGuidedOptimizer, hot_threshold: u64) !void {
+        var iterator = self.profile_data.function_counts.iterator();
+        
+        while (iterator.next()) |entry| {
+            if (entry.value_ptr.* >= hot_threshold) {
+                try self.profile_data.hot_functions.append(entry.key_ptr.*);
+            } else {
+                try self.profile_data.cold_functions.append(entry.key_ptr.*);
+            }
+        }
+    }
+    
+    pub fn shouldInlineFunction(self: *ProfileGuidedOptimizer, function_name: []const u8) bool {
+        if (self.profile_data.function_counts.get(function_name)) |count| {
+            return switch (self.optimization_level) {
+                .Speed => count > 1000,
+                .Size => count > 10000,
+                .Balanced => count > 5000,
+                .Custom => count > 2500,
+            };
+        }
+        return false;
+    }
+    
+    pub fn getOptimizationRecommendations(self: *ProfileGuidedOptimizer) ![]const u8 {
+        var recommendations = ArrayList(u8).init(self.allocator);
+        
+        try recommendations.appendSlice("PGO Optimization Recommendations:\n");
+        
+        if (self.profile_data.hot_functions.items.len > 0) {
+            try recommendations.appendSlice("Hot functions (consider inlining):\n");
+            for (self.profile_data.hot_functions.items) |func_name| {
+                try recommendations.appendSlice("  - ");
+                try recommendations.appendSlice(func_name);
+                try recommendations.appendSlice("\n");
+            }
+        }
+        
+        if (self.profile_data.cold_functions.items.len > 0) {
+            try recommendations.appendSlice("Cold functions (consider outlining):\n");
+            for (self.profile_data.cold_functions.items) |func_name| {
+                try recommendations.appendSlice("  - ");
+                try recommendations.appendSlice(func_name);
+                try recommendations.appendSlice("\n");
+            }
+        }
+        
+        return recommendations.toOwnedSlice();
+    }
+    
+    pub fn exportProfileData(self: *ProfileGuidedOptimizer, file_path: []const u8) !void {
+        const file = try std.fs.cwd().createFile(file_path, .{});
+        defer file.close();
+        
+        var buffered_writer = std.io.bufferedWriter(file.writer());
+        const writer = buffered_writer.writer();
+        
+        try writer.print("# CURSED Profile Data\n");
+        try writer.print("total_execution_time: {}\n", .{self.profile_data.total_execution_time});
+        try writer.print("\n[function_counts]\n");
+        
+        var iterator = self.profile_data.function_counts.iterator();
+        while (iterator.next()) |entry| {
+            try writer.print("{s}: {}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+        }
+        
+        try writer.print("\n[basic_block_counts]\n");
+        var bb_iterator = self.profile_data.basic_block_counts.iterator();
+        while (bb_iterator.next()) |entry| {
+            try writer.print("{s}: {}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+        }
+        
+        try buffered_writer.flush();
+    }
+    
+    pub fn importProfileData(self: *ProfileGuidedOptimizer, file_path: []const u8) !void {
+        const file_content = try std.fs.cwd().readFileAlloc(self.allocator, file_path, 1024 * 1024);
+        defer self.allocator.free(file_content);
+        
+        var lines = std.mem.split(u8, file_content, "\n");
+        var current_section: []const u8 = "";
+        
+        while (lines.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            if (trimmed.len == 0 or trimmed[0] == '#') continue;
+            
+            if (std.mem.startsWith(u8, trimmed, "[") and std.mem.endsWith(u8, trimmed, "]")) {
+                current_section = trimmed[1..trimmed.len-1];
+                continue;
+            }
+            
+            if (std.mem.indexOf(u8, trimmed, ":")) |colon_pos| {
+                const key = std.mem.trim(u8, trimmed[0..colon_pos], " \t");
+                const value_str = std.mem.trim(u8, trimmed[colon_pos+1..], " \t");
+                
+                if (std.mem.eql(u8, current_section, "function_counts")) {
+                    const count = std.fmt.parseInt(u64, value_str, 10) catch continue;
+                    try self.profile_data.function_counts.put(try self.allocator.dupe(u8, key), count);
+                } else if (std.mem.eql(u8, current_section, "basic_block_counts")) {
+                    const count = std.fmt.parseInt(u64, value_str, 10) catch continue;
+                    try self.profile_data.basic_block_counts.put(try self.allocator.dupe(u8, key), count);
+                } else if (std.mem.eql(u8, key, "total_execution_time")) {
+                    self.profile_data.total_execution_time = std.fmt.parseInt(u64, value_str, 10) catch 0;
+                }
+            }
+        }
+    }
+};
+
+// Incremental parser for handling large files and real-time parsing
+const IncrementalParser = struct {
+    allocator: Allocator,
+    cached_tokens: std.HashMap(usize, ArrayList(Token), std.hash_map.AutoContext(usize), 80),
+    cached_asts: std.HashMap(usize, ArrayList(ASTNode), std.hash_map.AutoContext(usize), 80),
+    file_fingerprints: std.HashMap([]const u8, u64, std.hash_map.StringContext, 80),
+    
+    pub fn init(allocator: Allocator) IncrementalParser {
+        return IncrementalParser{
+            .allocator = allocator,
+            .cached_tokens = std.HashMap(usize, ArrayList(Token), std.hash_map.AutoContext(usize), 80).init(allocator),
+            .cached_asts = std.HashMap(usize, ArrayList(ASTNode), std.hash_map.AutoContext(usize), 80).init(allocator),
+            .file_fingerprints = std.HashMap([]const u8, u64, std.hash_map.StringContext, 80).init(allocator),
+        };
+    }
+    
+    pub fn deinit(self: *IncrementalParser) void {
+        self.cached_tokens.deinit();
+        self.cached_asts.deinit();
+        self.file_fingerprints.deinit();
+    }
+    
+    pub fn parseIncremental(self: *IncrementalParser, file_path: []const u8, content: []const u8) !ArrayList(ASTNode) {
+        const fingerprint = self.calculateFingerprint(content);
+        
+        // Check if file has changed
+        if (self.file_fingerprints.get(file_path)) |cached_fingerprint| {
+            if (cached_fingerprint == fingerprint) {
+                // File unchanged, return cached AST
+                const cache_key = std.hash_map.hashString(file_path);
+                if (self.cached_asts.get(cache_key)) |cached_ast| {
+                    var result = ArrayList(ASTNode).init(self.allocator);
+                    try result.appendSlice(cached_ast.items);
+                    return result;
+                }
+            }
+        }
+        
+        // File changed or not cached, parse and cache
+        var lexer = Lexer.init(self.allocator, content);
+        const tokens = try lexer.tokenize();
+        defer tokens.deinit();
+        
+        var parser = Parser.init(self.allocator, tokens.items);
+        defer parser.deinit();
+        const ast = try parser.parseWithRecovery();
+        
+        // Cache results
+        const cache_key = std.hash_map.hashString(file_path);
+        try self.cached_asts.put(cache_key, ast);
+        try self.file_fingerprints.put(try self.allocator.dupe(u8, file_path), fingerprint);
+        
+        var result = ArrayList(ASTNode).init(self.allocator);
+        try result.appendSlice(ast.items);
+        return result;
+    }
+    
+    fn calculateFingerprint(self: *IncrementalParser, content: []const u8) u64 {
+        _ = self;
+        return std.hash_map.hashString(content);
+    }
+    
+    pub fn invalidateCache(self: *IncrementalParser, file_path: []const u8) void {
+        const cache_key = std.hash_map.hashString(file_path);
+        _ = self.cached_tokens.remove(cache_key);
+        _ = self.cached_asts.remove(cache_key);
+        _ = self.file_fingerprints.remove(file_path);
     }
 };
 

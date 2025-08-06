@@ -1,28 +1,29 @@
-squad Point {
-    spill x normie
-    spill y normie
-}
+# Advanced codegen test
+sus numbers = [1, 2, 3, 4, 5]
+sus point_data = (10, 20)
 
-collab Drawable {
-    slay draw()
-}
+facts MAX_SIZE = 100
 
-impl Point for Drawable {
-    slay draw() {
-        vibez.spill("Drawing point")
+slay process_number(num normie) normie {
+    lowkey num > 10 {
+        damn num * 2
+    } highkey {
+        damn num + 5
     }
 }
 
-slay add(a normie, b normie) normie {
-    damn a + b
-}
-
 slay main() normie {
-    sus p Point = { x: 10, y: 20 }
-    sus result normie = add(5, 3)
+    vibez.spill("Advanced codegen test")
     
-    vibez.spill("Advanced features test")
-    p.draw()
+    # Test array access
+    sus first = numbers[0]
     
-    damn result
+    # Test conditional processing  
+    sus result = process_number(15)
+    
+    # Test tuple access
+    sus x_coord = point_data.0
+    
+    vibez.spill("Test complete")
+    damn 0
 }
