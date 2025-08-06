@@ -1457,15 +1457,36 @@ fn compileWithLLVMCrossCompilation(
     target_platform: []const u8,
     output_file: []const u8
 ) !void {
-    _ = source;
-    
     if (config.verbose) {
         print("🔨 LLVM cross-compilation for target: {s}\n", .{target_platform});
     }
     
-    // For now, delegate to zig build system for cross-compilation
-    const command = try cross_compiler.generateCompileCommand(
-        filename,
+    // Step 1: Compile CURSED source to LLVM IR using enhanced compiler
+    const enhanced_compiler = @import("enhanced_compiler.zig");
+    
+    // Create a temporary allocator for compilation
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    
+    // Create temporary LLVM IR file
+    const ir_filename = try std.fmt.allocPrint(allocator, "{s}.ll", .{std.fs.path.stem(filename)});
+    defer allocator.free(ir_filename);
+    
+    if (config.verbose) {
+        print("🔄 Compiling CURSED to LLVM IR: {s} → {s}\n", .{ filename, ir_filename });
+    }
+    
+    // Compile CURSED source to LLVM IR
+    try enhanced_compiler.compileToLLVMBackend(allocator, source, filename, ir_filename, config.verbose);
+    
+    if (config.verbose) {
+        print("✅ LLVM IR generated successfully\n", .{});
+    }
+    
+    // Step 2: Compile LLVM IR to native executable using cross-compilation
+    const command = try cross_compiler.generateLLVMIRCompileCommand(
+        ir_filename,
         target_platform,
         output_file,
         config.optimization_level,
@@ -1475,6 +1496,17 @@ fn compileWithLLVMCrossCompilation(
     defer cross_compiler.freeCompileCommand(command);
     
     try cross_compiler.executeCompilation(command, config.verbose);
+    
+    // Clean up temporary IR file (only if not verbose)
+    if (!config.verbose) {
+        std.fs.cwd().deleteFile(ir_filename) catch |err| {
+            if (config.verbose) {
+                print("⚠️  Could not delete temporary IR file {s}: {any}\n", .{ ir_filename, err });
+            }
+        };
+    } else {
+        print("📝 LLVM IR file saved: {s}\n", .{ir_filename});
+    }
     
     if (config.verbose) {
         print("✅ LLVM cross-compilation completed: {s}\n", .{output_file});

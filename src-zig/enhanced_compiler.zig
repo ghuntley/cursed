@@ -33,7 +33,16 @@ pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []cons
     
     switch (config.backend) {
         .C_Backend => try compileToCBackend(allocator, source, filename, config),
-        .LLVM_Backend => try compileToLLVMBackend(allocator, source, filename, config),
+        .LLVM_Backend => {
+            const output_filename = config.output_path orelse blk: {
+                if (std.mem.endsWith(u8, filename, ".csd"))
+                    break :blk try std.fmt.allocPrint(allocator, "{s}.ll", .{filename[0..filename.len - 4]})
+                else
+                    break :blk try std.fmt.allocPrint(allocator, "{s}.ll", .{filename});
+            };
+            defer if (config.output_path == null) allocator.free(output_filename);
+            try compileToLLVMBackend(allocator, source, filename, output_filename, config.verbose);
+        },
     }
 }
 
@@ -130,14 +139,12 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
 }
 
 /// LLVM Backend compilation (proper LLVM IR generation)
-fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, config: CompilerConfig) !void {
-    print("[1/4] Generating LLVM IR...\n", .{});
+pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, output_filename: []const u8, verbose: bool) !void {
+    _ = filename;
+    if (verbose) print("[1/4] Generating LLVM IR...\n", .{});
     
-    // Generate LLVM IR using text-based approach
-    const ir_filename = try std.fmt.allocPrint(allocator, "{s}.ll", .{filename[0..filename.len - 4]});
-    defer allocator.free(ir_filename);
-    
-    const ir_file = std.fs.cwd().createFile(ir_filename, .{}) catch |err| {
+    // Create LLVM IR file with the specified output filename
+    const ir_file = std.fs.cwd().createFile(output_filename, .{}) catch |err| {
         print("❌ Error creating LLVM IR file: {}\n", .{err});
         return;
     };
@@ -145,134 +152,10 @@ fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []co
     
     const writer = ir_file.writer();
     
-    print("[2/4] Translating CURSED to LLVM IR...\n", .{});
-    try generateProperLLVMIR(allocator, source, writer, config.verbose);
+    if (verbose) print("[2/4] Translating CURSED to LLVM IR...\n", .{});
+    try generateProperLLVMIR(allocator, source, writer, verbose);
     
-    if (config.verbose) print("✅ Generated LLVM IR: {s}\n", .{ir_filename});
-    
-    // Step 3: Determine output filename
-    print("[3/4] Compiling to native executable...\n", .{});
-    const output_filename = config.output_path orelse blk: {
-        if (std.mem.endsWith(u8, filename, ".csd"))
-            break :blk try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
-        else
-            break :blk try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});
-    };
-    defer if (config.output_path == null) allocator.free(output_filename);
-    
-    // Step 4: Compile LLVM IR to native executable using llc + gcc
-    // First try to compile LLVM IR to assembly using llc, then assemble with gcc
-    const asm_filename = try std.fmt.allocPrint(allocator, "{s}.s", .{filename[0..filename.len - 4]});
-    defer allocator.free(asm_filename);
-    
-    // Try llc first
-    var llc_child = std.process.Child.init(&[_][]const u8{
-        "llc-18",
-        "-o", asm_filename,
-        ir_filename,
-    }, allocator);
-    
-    llc_child.stdout_behavior = .Pipe;
-    llc_child.stderr_behavior = .Pipe;
-    
-    const llc_result = llc_child.spawnAndWait() catch {
-        // llc not available, try gcc directly with LLVM IR
-        if (config.verbose) print("⚠️  llc not available, trying gcc directly with LLVM IR...\n", .{});
-        
-        var child = std.process.Child.init(&[_][]const u8{
-            "gcc",
-            "-o", output_filename,
-            ir_filename,
-            "-lm",
-        }, allocator);
-        
-        child.stdout_behavior = .Pipe;
-        child.stderr_behavior = .Pipe;
-        
-        const result = child.spawnAndWait() catch |err| {
-            print("❌ Failed to spawn gcc: {}\n", .{err});
-            print("💡 Neither llc nor gcc can process LLVM IR\n", .{});
-            print("💡 You may need to install clang or llvm-tools\n", .{});
-            return;
-        };
-        
-        switch (result) {
-            .Exited => |code| {
-                if (code != 0) {
-                    print("❌ gcc compilation failed with exit code: {}\n", .{code});
-                    print("💡 Check LLVM IR file for errors: {s}\n", .{ir_filename});
-                    // Don't return yet, let user examine the IR
-                    print("📝 Generated LLVM IR file: {s}\n", .{ir_filename});
-                    return;
-                }
-            },
-            else => {
-                print("❌ gcc process terminated abnormally\n", .{});
-                return;
-            },
-        }
-        
-        // Success with gcc directly
-        std.fs.cwd().deleteFile(ir_filename) catch {};
-        print("✅ LLVM compilation successful!\n", .{});
-        print("📦 Output executable: {s}\n", .{output_filename});
-        print("🚀 Run with: ./{s}\n", .{output_filename});
-        return;
-    };
-    
-    // Handle llc compilation result
-    switch (llc_result) {
-        .Exited => |code| {
-            if (code != 0) {
-                print("❌ llc compilation failed with exit code: {}\n", .{code});
-                print("💡 Check LLVM IR file for errors: {s}\n", .{ir_filename});
-                return;
-            }
-        },
-        else => {
-            print("❌ llc process terminated abnormally\n", .{});
-            return;
-        },
-    }
-    
-    // Now assemble with gcc
-    var child = std.process.Child.init(&[_][]const u8{
-        "gcc",
-        "-no-pie",  // Disable PIE to avoid relocation issues
-        "-o", output_filename,
-        asm_filename,
-        "-lm",
-    }, allocator);
-    
-    child.stdout_behavior = .Pipe;
-    child.stderr_behavior = .Pipe;
-    
-    const result = child.spawnAndWait() catch |err| {
-        print("❌ Failed to spawn gcc for assembly: {}\n", .{err});
-        return;
-    };
-    
-    switch (result) {
-        .Exited => |code| {
-            if (code != 0) {
-                print("❌ gcc assembly compilation failed with exit code: {}\n", .{code});
-                print("💡 Check assembly file for errors: {s}\n", .{asm_filename});
-                return;
-            }
-        },
-        else => {
-            print("❌ gcc process terminated abnormally\n", .{});
-            return;
-        },
-    }
-    
-    // Cleanup temporary files
-    std.fs.cwd().deleteFile(ir_filename) catch {};
-    std.fs.cwd().deleteFile(asm_filename) catch {};
-    
-    print("✅ LLVM compilation successful!\n", .{});
-    print("📦 Output executable: {s}\n", .{output_filename});
-    print("🚀 Run with: ./{s}\n", .{output_filename});
+    if (verbose) print("✅ Generated LLVM IR: {s}\n", .{output_filename});
 }
 
 /// Enhanced CURSED-to-C translation with better parsing
