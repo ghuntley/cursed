@@ -1,0 +1,102 @@
+# CURSED E2E Test Configuration
+
+# Test execution settings
+timeout: 30
+max_retries: 2
+parallel_jobs: 4
+
+# Binary paths (can be overridden by environment variables)
+binaries:
+  cursed_zig: "../../zig-out/bin/cursed-zig"
+  cursed_unified: "../../cursed-unified"
+  cursed_compile: "../../zig-out/bin/cursed-compile"
+
+# Test categories and their configurations
+categories:
+  basic:
+    description: "Basic language features (variables, functions, I/O)"
+    timeout: 10
+    required_features: ["variables", "functions", "basic_types"]
+    
+  control_flow:
+    description: "Control flow constructs (if/else, loops)"
+    timeout: 15
+    required_features: ["conditionals", "loops", "break_continue"]
+    
+  data_structures:
+    description: "Data structures (structs, arrays, maps)"
+    timeout: 20
+    required_features: ["structs", "arrays", "methods"]
+    
+  error_handling:
+    description: "Error handling (yikes, shook)"
+    timeout: 15
+    required_features: ["error_handling", "panic_recovery"]
+    
+  concurrency:
+    description: "Concurrency features (stan, dm channels)"
+    timeout: 25
+    required_features: ["goroutines", "channels", "synchronization"]
+    
+  stdlib:
+    description: "Standard library integration"
+    timeout: 20
+    required_features: ["testz", "vibez", "imports"]
+    
+  integration:
+    description: "Full integration scenarios"
+    timeout: 45
+    required_features: ["all"]
+
+# Test modes
+modes:
+  interpret:
+    description: "Interpretation mode"
+    command_template: "{binary} {file}"
+    
+  compile:
+    description: "Compilation mode"
+    command_template: "{binary} --compile {file}"
+    
+  debug:
+    description: "Debug mode"
+    command_template: "{binary} --debug {file}"
+
+# Expected output patterns for validation
+validation:
+  success_patterns:
+    - "All tests passed"
+    - "\\[PASS\\]"
+    - "test_summary"
+    
+  failure_patterns:
+    - "\\[FAIL\\]"
+    - "panic:"
+    - "error:"
+    - "SIGSEGV"
+    
+  ignore_patterns:
+    - "warning:"
+    - "note:"
+
+# Feature flags for conditional testing
+features:
+  variables: true
+  functions: true
+  basic_types: true
+  conditionals: true
+  loops: true
+  break_continue: false  # Not yet fully implemented
+  structs: true
+  arrays: true
+  methods: true
+  error_handling: true
+  panic_recovery: true
+  goroutines: true
+  channels: true
+  synchronization: false  # Basic implementation
+  testz: true
+  vibez: true
+  imports: true
+  generics: false  # Advanced feature
+  interfaces: false  # Advanced feature

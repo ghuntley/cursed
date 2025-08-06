@@ -25,6 +25,7 @@ const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const Atomic = std.atomic.Value;
 const Order = std.atomic.Ordering;
+const gc = @import("gc.zig");
 
 /// Goroutine identifier type
 pub const GoroutineId = u64;
@@ -474,6 +475,16 @@ pub const Worker = struct {
             self.thread = null;
         }
     }
+    
+    /// Register worker's stack and local objects with GC
+    pub fn registerWithGC(self: *Worker, gc_instance: *gc.GC) void {
+        // Register worker's deque contents as stack roots
+        for (self.deque.items.items) |goroutine| {
+            gc_instance.registerStackRoot(@ptrCast(goroutine)) catch {};
+        }
+        
+        std.log.debug("Worker {}: Registered {} objects with GC", .{self.id, self.deque.items.items.len});
+    }
 
     fn workerLoop(self: *Worker) void {
         while (self.running.load(.acquire)) {
@@ -596,6 +607,8 @@ pub const Scheduler = struct {
     running: Atomic(bool),
     stats: SchedulerStats,
     allocator: Allocator,
+    // GC integration for thread-safe operation
+    gc_instance: ?*gc.GC,
 
     pub fn init(allocator: Allocator, config: SchedulerConfig) !*Scheduler {
         const scheduler = try allocator.create(Scheduler);
@@ -610,6 +623,7 @@ pub const Scheduler = struct {
             .running = Atomic(bool).init(false),
             .stats = SchedulerStats.init(),
             .allocator = allocator,
+            .gc_instance = null,
         };
 
         // Initialize workers
@@ -621,6 +635,46 @@ pub const Scheduler = struct {
         }
 
         return scheduler;
+    }
+    
+    /// Initialize GC integration for thread-safe memory management
+    pub fn initGC(self: *Scheduler, gc_instance: *gc.GC) void {
+        self.gc_instance = gc_instance;
+        
+        // Register scheduler with GC for cooperative stack scanning
+        self.registerStackRoots();
+        
+        std.log.info("Scheduler: GC integration initialized", .{});
+    }
+    
+    /// Register stack roots with GC for all active goroutines
+    fn registerStackRoots(self: *Scheduler) void {
+        if (self.gc_instance) |gc_ref| {
+            // Register global queue objects
+            self.global_mutex.lock();
+            defer self.global_mutex.unlock();
+            
+            for (self.global_queue.items) |goroutine| {
+                gc_ref.registerStackRoot(@ptrCast(goroutine)) catch {};
+            }
+            
+            // Register worker-local objects
+            for (self.workers.items) |*worker| {
+                worker.registerWithGC(gc_ref);
+            }
+        }
+    }
+    
+    /// Trigger cooperative GC when creating new goroutines
+    fn cooperativeGCCheck(self: *Scheduler) void {
+        if (self.gc_instance) |gc_ref| {
+            const active_count = self.active_goroutines.load(.acquire);
+            
+            // Trigger young generation collection if many goroutines are active
+            if (active_count > self.config.max_goroutines / 2) {
+                gc_ref.triggerYoungCollection();
+            }
+        }
     }
 
     pub fn deinit(self: *Scheduler) void {

@@ -371,6 +371,7 @@ pub const Statement = union(enum) {
     Switch: SwitchStatement,
     PatternSwitch: PatternSwitchStatement,
     Goroutine: GoroutineStatement,
+    Stan: StanStatement,
     Channel: ChannelStatement,
     Select: SelectStatement,
     Struct: StructStatement,
@@ -403,6 +404,7 @@ pub const Statement = union(enum) {
             .While => |*while_stmt| while_stmt.deinit(allocator),
             .Interface => |*interface_stmt| interface_stmt.deinit(allocator),
             .Implementation => |*impl_stmt| impl_stmt.deinit(allocator),
+            .Stan => |*stan| stan.deinit(allocator),
             // Add more cases as needed
             else => {},
         }
@@ -605,6 +607,17 @@ pub const PatternSwitchStatement = struct {
 
 pub const GoroutineStatement = struct {
     call: CallExpression,
+};
+
+pub const StanStatement = struct {
+    body: ArrayList(Statement),
+    
+    pub fn deinit(self: *StanStatement, allocator: Allocator) void {
+        for (self.body.items) |*stmt| {
+            stmt.deinit(allocator);
+        }
+        self.body.deinit();
+    }
 };
 
 pub const ChannelStatement = struct {

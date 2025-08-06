@@ -9,7 +9,7 @@ const Allocator = std.mem.Allocator;
 pub const lsp_server = @import("lsp_server.zig");
 pub const formatter = @import("formatter.zig");
 pub const linter = @import("linter.zig");
-pub const package_manager = @import("package_manager.zig");
+pub const package_manager = @import("package_manager_enhanced.zig");
 pub const doc_generator = @import("doc_generator.zig");
 
 // Tool Types
@@ -137,21 +137,22 @@ pub const ToolRunner = struct {
         const args = config.input_files;
         
         if (std.mem.eql(u8, command, "init")) {
-            try package_manager.cmdInit(self.allocator, args);
+            try package_manager.commands.init(self.allocator, args);
         } else if (std.mem.eql(u8, command, "add")) {
-            try package_manager.cmdAdd(self.allocator, args);
+            try package_manager.commands.add(self.allocator, args);
         } else if (std.mem.eql(u8, command, "remove")) {
-            try package_manager.cmdRemove(self.allocator, args);
+            try package_manager.commands.remove(self.allocator, args);
         } else if (std.mem.eql(u8, command, "install")) {
-            try package_manager.cmdInstall(self.allocator, args);
+            try package_manager.commands.install(self.allocator, args);
         } else if (std.mem.eql(u8, command, "update")) {
-            try package_manager.cmdUpdate(self.allocator, args);
+            try package_manager.commands.update(self.allocator, args);
         } else if (std.mem.eql(u8, command, "search")) {
-            try package_manager.cmdSearch(self.allocator, args);
+            try package_manager.commands.search(self.allocator, args);
         } else if (std.mem.eql(u8, command, "publish")) {
-            try package_manager.cmdPublish(self.allocator, args);
+            try package_manager.commands.publish(self.allocator, args);
         } else {
             std.log.err("Unknown package manager command: {s}", .{command});
+            std.log.err("Available commands: init, add, remove, install, update, search, publish");
         }
     }
     

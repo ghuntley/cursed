@@ -7,6 +7,8 @@ const HashMap = std.HashMap;
 const lexer = @import("lexer.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
 const simple_compiler = @import("simple_compiler.zig");
+const formatter = @import("tools/formatter.zig");
+const linter = @import("tools/linter.zig");
 
 // Simple variable store for runtime evaluation
 const Variable = union(enum) {
@@ -51,15 +53,25 @@ pub fn main() !void {
         return;
     }
 
-    const filename = args[1];
-    
-    // Parse command line options
+    // Handle format subcommand
+    if (std.mem.eql(u8, args[1], "format")) {
+        return handleFormatCommand(allocator, args[2..]);
+    }
+
+    // Handle lint subcommand
+    if (std.mem.eql(u8, args[1], "lint")) {
+        return handleLintCommand(allocator, args[2..]);
+    }
+
+    // Parse command line options first, then filename
     var compile_mode = false;
     var debug_tokens = false;
     var optimization_level: u8 = 2;
     var verbose = false;
+    var stdlib_path: ?[]const u8 = null;
+    var filename: ?[]const u8 = null;
     
-    for (args[2..]) |arg| {
+    for (args[1..]) |arg| {
         if (std.mem.eql(u8, arg, "--compile")) {
             compile_mode = true;
         } else if (std.mem.eql(u8, arg, "--debug")) {
@@ -72,17 +84,28 @@ pub fn main() !void {
         } else if (std.mem.startsWith(u8, arg, "--optimize=")) {
             const level_str = arg[11..];
             optimization_level = std.fmt.parseUnsigned(u8, level_str, 10) catch 2;
+        } else if (std.mem.startsWith(u8, arg, "--stdlib-path=")) {
+            stdlib_path = arg[14..];
+        } else if (!std.mem.startsWith(u8, arg, "--")) {
+            // This looks like a filename (not an option)
+            filename = arg;
         }
+    }
+    
+    if (filename == null) {
+        print("❌ Error: No CURSED source file specified\n", .{});
+        printUsage();
+        return;
     }
 
     // Read source file
-    const source = std.fs.cwd().readFileAlloc(allocator, filename, 1024 * 1024) catch |err| {
-        print("❌ Error reading file {s}: {any}\n", .{ filename, err });
+    const source = std.fs.cwd().readFileAlloc(allocator, filename.?, 1024 * 1024) catch |err| {
+        print("❌ Error reading file {s}: {any}\n", .{ filename.?, err });
         return;
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename.?, source.len });
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
@@ -105,15 +128,15 @@ pub fn main() !void {
 
     if (compile_mode) {
         // Real compilation mode implementation
-        try simple_compiler.compileProgram(allocator, source, filename, optimization_level, verbose);
+        try simple_compiler.compileProgram(allocator, source, filename.?, optimization_level, verbose);
     } else {
         // Simple interpretation mode with variable evaluation
-        try interpretProgramWithVariables(allocator, source, verbose);
+        try interpretProgramWithVariables(allocator, source, verbose, stdlib_path);
     }
 }
 
 
-fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbose: bool) !void {
+fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbose: bool, stdlib_path: ?[]const u8) !void {
     if (verbose) print("🚀 Interpreting CURSED program with variable evaluation...\n", .{});
     
     // Create variable store
@@ -149,7 +172,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             print("📦 Validating {} imports...\n", .{imports.items.len});
         }
         
-        const all_valid = simple_import_resolver.validateImports(allocator, imports) catch |err| {
+        const all_valid = simple_import_resolver.validateImportsWithPath(allocator, imports, stdlib_path) catch |err| {
             print("Error: Failed to validate imports: {any}\n", .{err});
             return;
         };
@@ -317,22 +340,169 @@ fn handleVibesSpill(variables: *VariableStore, allocator: Allocator, line: []con
     }
 }
 
+fn handleFormatCommand(allocator: Allocator, args: [][]const u8) !void {
+    if (args.len == 0) {
+        print("Usage: cursed format <file|directory> [OPTIONS]\n", .{});
+        print("Options:\n", .{});
+        print("  --check      Check if files are formatted (exit 1 if not)\n", .{});
+        print("  --diff       Show formatting differences\n", .{});
+        return;
+    }
+
+    const target = args[0];
+    var check_only = false;
+    var show_diff = false;
+
+    for (args[1..]) |arg| {
+        if (std.mem.eql(u8, arg, "--check")) {
+            check_only = true;
+        } else if (std.mem.eql(u8, arg, "--diff")) {
+            show_diff = true;
+        }
+    }
+
+    const config = formatter.FormatterConfig{};
+    
+    // Check if target is file or directory
+    const stat = std.fs.cwd().statFile(target) catch |err| {
+        print("❌ Error accessing {s}: {}\n", .{ target, err });
+        return;
+    };
+
+    if (stat.kind == .file) {
+        if (check_only) {
+            try checkFileFormatting(allocator, target, config);
+        } else {
+            try formatter.formatFile(allocator, target, config);
+            print("✅ Formatted: {s}\n", .{target});
+        }
+    } else if (stat.kind == .directory) {
+        try formatter.formatDirectory(allocator, target, config);
+        print("✅ Formatted all files in: {s}\n", .{target});
+    } else {
+        print("❌ {s} is not a file or directory\n", .{target});
+    }
+}
+
+fn handleLintCommand(allocator: Allocator, args: [][]const u8) !void {
+    if (args.len == 0) {
+        print("Usage: cursed lint <file|directory> [OPTIONS]\n", .{});
+        print("Options:\n", .{});
+        print("  --format json    Output in JSON format\n", .{});
+        print("  --fix           Auto-fix issues where possible\n", .{});
+        return;
+    }
+
+    const target = args[0];
+    var output_format: []const u8 = "human";
+    var auto_fix = false;
+
+    for (args[1..]) |arg| {
+        if (std.mem.eql(u8, arg, "--format") and args.len > 2) {
+            output_format = "json";
+        } else if (std.mem.eql(u8, arg, "--fix")) {
+            auto_fix = true;
+        }
+    }
+
+    var config = linter.LinterConfig.init(allocator);
+    defer config.deinit();
+
+    var cursed_linter = linter.Linter.init(allocator, config);
+    defer cursed_linter.deinit();
+
+    // Check if target is file or directory
+    const stat = std.fs.cwd().statFile(target) catch |err| {
+        print("❌ Error accessing {s}: {}\n", .{ target, err });
+        return;
+    };
+
+    if (stat.kind == .file) {
+        try cursed_linter.lintFile(target);
+    } else if (stat.kind == .directory) {
+        try lintDirectory(allocator, &cursed_linter, target);
+    } else {
+        print("❌ {s} is not a file or directory\n", .{target});
+        return;
+    }
+
+    const issues = cursed_linter.getIssues();
+    try linter.printIssues(allocator, issues, output_format);
+
+    if (auto_fix) {
+        print("🔧 Auto-fix functionality coming soon!\n", .{});
+    }
+}
+
+fn checkFileFormatting(allocator: Allocator, file_path: []const u8, config: formatter.FormatterConfig) !void {
+    const source = std.fs.cwd().readFileAlloc(allocator, file_path, 1024 * 1024) catch |err| {
+        print("❌ Error reading file {s}: {any}\n", .{ file_path, err });
+        return;
+    };
+    defer allocator.free(source);
+
+    var fmt = formatter.Formatter.init(allocator, config);
+    defer fmt.deinit();
+
+    const formatted = try fmt.format(source);
+    defer allocator.free(formatted);
+
+    if (!std.mem.eql(u8, source, formatted)) {
+        print("❌ File not formatted: {s}\n", .{file_path});
+        std.process.exit(1);
+    } else {
+        print("✅ File properly formatted: {s}\n", .{file_path});
+    }
+}
+
+fn lintDirectory(allocator: Allocator, cursed_linter: *linter.Linter, dir_path: []const u8) !void {
+    const dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
+    defer dir.close();
+
+    var iterator = dir.iterate();
+    while (try iterator.next()) |entry| {
+        if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".csd")) {
+            const full_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, entry.name });
+            defer allocator.free(full_path);
+
+            try cursed_linter.lintFile(full_path);
+        } else if (entry.kind == .directory) {
+            const sub_dir = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, entry.name });
+            defer allocator.free(sub_dir);
+
+            try lintDirectory(allocator, cursed_linter, sub_dir);
+        }
+    }
+}
+
 fn printUsage() void {
-    print("CURSED Zig Compiler - Simple Implementation v1.0.0\n", .{});
-    print("Simple CURSED language interpreter with variable evaluation\n", .{});
-    print("\nUsage: cursed-unified-simple <file.csd> [OPTIONS]\n", .{});
-    print("       cursed-unified-simple --version\n", .{});
-    print("       cursed-unified-simple --help\n", .{});
-    print("\nOptions:\n", .{});
+    print("CURSED Zig Compiler - Unified Implementation v1.0.0\n", .{});
+    print("The Gen Z Programming Language with slang syntax\n", .{});
+    print("\nUsage: cursed <command> [arguments]\n", .{});
+    print("       cursed <file.csd> [OPTIONS]    # Interpret/compile CURSED file\n", .{});
+    print("       cursed --version\n", .{});
+    print("       cursed --help\n", .{});
+    print("\nCommands:\n", .{});
+    print("  format <file|dir>    Format CURSED source code\n", .{});
+    print("  lint <file|dir>      Lint CURSED source code\n", .{});
+    print("\nExecution Options:\n", .{});
     print("  --compile          Compile to native executable\n", .{});
     print("  --debug            Enable all debug output (tokens, verbose)\n", .{});
     print("  --tokens           Show token stream\n", .{});
     print("  --verbose          Enable verbose output\n", .{});
     print("  --optimize=LEVEL   Optimization level (0-3, default: 2)\n", .{});
+    print("  --stdlib-path=PATH Path to standard library (default: auto-detect)\n", .{});
+    print("\nFormat Options:\n", .{});
+    print("  --check            Check if files are formatted (exit 1 if not)\n", .{});
+    print("  --diff             Show formatting differences\n", .{});
+    print("\nLint Options:\n", .{});
+    print("  --format json      Output in JSON format\n", .{});
+    print("  --fix              Auto-fix issues where possible\n", .{});
     print("\nSupported Features:\n", .{});
     print("  • Variable declarations: sus varname type = value\n", .{});
     print("  • Types: drip (int), meal (float), tea (string), lit (bool)\n", .{});
     print("  • Output: vibez.spill() statements with variable evaluation\n", .{});
     print("  • Comments: fr fr prefix\n", .{});
     print("  • Imports: yeet statements\n", .{});
+    print("  • Gen Z slang keywords (sus, slay, damn, bestie, based, etc.)\n", .{});
 }

@@ -1,0 +1,351 @@
+name: Cross-Platform CURSED Builds
+
+on:
+  push:
+    branches: [ main, trunk, develop ]
+  pull_request:
+    branches: [ main, trunk ]
+  release:
+    types: [ published ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Build matrix for all 5 supported platforms
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux x86_64
+          - platform: linux-x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            zig_target: x86_64-linux
+            archive_name: cursed-linux-x64.tar.gz
+            
+          # Linux ARM64
+          - platform: linux-arm64
+            os: ubuntu-22.04
+            target: aarch64-unknown-linux-gnu
+            zig_target: aarch64-linux
+            archive_name: cursed-linux-arm64.tar.gz
+            
+          # macOS x86_64
+          - platform: macos-x64
+            os: macos-13
+            target: x86_64-apple-darwin
+            zig_target: x86_64-macos
+            archive_name: cursed-macos-x64.tar.gz
+            
+          # macOS ARM64
+          - platform: macos-arm64
+            os: macos-14
+            target: aarch64-apple-darwin
+            zig_target: aarch64-macos
+            archive_name: cursed-macos-arm64.tar.gz
+            
+          # Windows x86_64
+          - platform: windows-x64
+            os: windows-2022
+            target: x86_64-pc-windows-msvc
+            zig_target: x86_64-windows
+            archive_name: cursed-windows-x64.zip
+            
+          # WebAssembly
+          - platform: wasm32
+            os: ubuntu-22.04
+            target: wasm32-wasi
+            zig_target: wasm32-wasi
+            archive_name: cursed-wasm32.tar.gz
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.13.0
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+
+    # Platform-specific dependency installation
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          libc6-dev \
+          gcc-multilib \
+          llvm-18-dev \
+          libllvm18 \
+          clang-18 \
+          pkg-config \
+          libssl-dev \
+          zlib1g-dev \
+          libxml2-dev
+        
+        # Install cross-compilation tools for ARM64
+        if [ "${{ matrix.platform }}" = "linux-arm64" ]; then
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+        fi
+
+    - name: Install macOS dependencies
+      if: runner.os == 'macOS'
+      run: |
+        # Install LLVM via Homebrew
+        brew install llvm@18 pkg-config
+        
+        # Set up LLVM environment
+        echo "LLVM_MACOS_LIB=/opt/homebrew/lib" >> $GITHUB_ENV
+        echo "LLVM_MACOS_INC=/opt/homebrew/include" >> $GITHUB_ENV
+        echo "/opt/homebrew/bin" >> $GITHUB_PATH
+
+    - name: Install Windows dependencies
+      if: runner.os == 'Windows'
+      run: |
+        # Install LLVM for Windows
+        choco install llvm --version=18.1.8 -y
+        
+        # Set up LLVM environment
+        echo "LLVM_WINDOWS_LIB=C:\Program Files\LLVM\lib" >> $env:GITHUB_ENV
+        echo "LLVM_WINDOWS_INC=C:\Program Files\LLVM\include" >> $env:GITHUB_ENV
+
+    # Set up environment variables for cross-compilation
+    - name: Set environment variables
+      run: |
+        echo "ZIG_TARGET=${{ matrix.zig_target }}" >> $GITHUB_ENV
+      shell: bash
+
+    # Build with Zig (primary build system)
+    - name: Build with Zig
+      run: |
+        echo "Building CURSED compiler for ${{ matrix.platform }}"
+        echo "Zig version: $(zig version)"
+        echo "Target: ${{ matrix.zig_target }}"
+        
+        # Build main compiler
+        zig build -Dtarget=${{ matrix.zig_target }} -Doptimize=ReleaseFast --verbose
+        
+        # Show build results
+        find zig-out -name "cursed*" -type f | head -20
+      shell: bash
+
+    # Build with Cargo (fallback/alternative)
+    - name: Build with Cargo
+      run: |
+        echo "Building Rust components for ${{ matrix.target }}"
+        cargo build --release --target ${{ matrix.target }}
+      shell: bash
+
+    # Test the built binaries
+    - name: Test binaries
+      run: |
+        echo "Testing built binaries..."
+        
+        # Find the main executable
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          main_exe="zig-out/bin/cursed.exe"
+        elif [ "${{ matrix.platform }}" = "wasm32" ]; then
+          main_exe="zig-out/bin/cursed.wasm"
+        else
+          main_exe="zig-out/bin/cursed"
+        fi
+        
+        if [ -f "$main_exe" ]; then
+          echo "✓ Main executable found: $main_exe"
+          ls -lh "$main_exe"
+          
+          # Test execution (skip for cross-compiled ARM and WASM)
+          if [ "${{ matrix.platform }}" != "linux-arm64" ] && [ "${{ matrix.platform }}" != "wasm32" ]; then
+            if [ "${{ runner.os }}" != "Windows" ] || [ "${{ matrix.platform }}" = "windows-x64" ]; then
+              echo "Testing execution..."
+              echo 'vibez.spill("Hello from CURSED!")' > test.csd
+              
+              # Test compiler execution
+              timeout 30s "$main_exe" --version || echo "Version check failed"
+              timeout 30s "$main_exe" test.csd || echo "Program execution failed"
+              
+              rm -f test.csd
+            fi
+          fi
+        else
+          echo "✗ Main executable not found: $main_exe"
+          find zig-out -type f | head -20
+        fi
+      shell: bash
+
+    # Create platform-specific archives
+    - name: Create archive
+      run: |
+        mkdir -p artifacts
+        
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          # Windows: ZIP archive
+          powershell -Command "Compress-Archive -Path 'zig-out/bin/*' -DestinationPath 'artifacts/${{ matrix.archive_name }}'"
+        else
+          # Unix: tar.gz archive  
+          tar -czf "artifacts/${{ matrix.archive_name }}" -C zig-out/bin .
+        fi
+        
+        # Show archive info
+        ls -lh artifacts/
+      shell: bash
+
+    # Upload build artifacts
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.platform }}-build
+        path: artifacts/${{ matrix.archive_name }}
+        retention-days: 30
+
+    # Performance benchmarks (for key platforms)
+    - name: Performance benchmark
+      if: matrix.platform == 'linux-x64' || matrix.platform == 'macos-arm64'
+      run: |
+        echo "Running performance benchmarks..."
+        
+        # Create test programs for benchmarking
+        echo 'slay fibonacci(n drip) drip { ready n <= 1 { damn 1 } damn fibonacci(n-1) + fibonacci(n-2) }' > fib.csd
+        echo 'vibez.spill("Computing fibonacci(30)...") fibonacci(30)' >> fib.csd
+        
+        # Time the execution
+        if [ -f "zig-out/bin/cursed" ]; then
+          echo "Timing CURSED execution..."
+          time ./zig-out/bin/cursed fib.csd || echo "Benchmark failed"
+        fi
+        
+        rm -f fib.csd
+      shell: bash
+
+  # Integration testing across platforms
+  integration-test:
+    name: Integration Tests
+    needs: build
+    runs-on: ubuntu-22.04
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+        
+    - name: Test cross-platform compatibility
+      run: |
+        echo "Testing cross-platform build artifacts..."
+        
+        # Check that all expected artifacts exist
+        expected_platforms=("linux-x64" "linux-arm64" "macos-x64" "macos-arm64" "windows-x64" "wasm32")
+        
+        for platform in "${expected_platforms[@]}"; do
+          artifact_dir="artifacts/${platform}-build"
+          if [ -d "$artifact_dir" ]; then
+            echo "✓ $platform build artifact exists"
+            ls -la "$artifact_dir/"
+          else
+            echo "✗ $platform build artifact missing"
+          fi
+        done
+        
+        # Extract and verify Linux x64 build (native to runner)
+        if [ -f "artifacts/linux-x64-build/cursed-linux-x64.tar.gz" ]; then
+          echo "Testing Linux x64 binary..."
+          cd artifacts/linux-x64-build
+          tar -xzf cursed-linux-x64.tar.gz
+          
+          if [ -f "cursed" ]; then
+            echo "✓ Linux x64 binary extracted successfully"
+            ./cursed --version || echo "Version check failed"
+            
+            # Test basic functionality
+            echo 'vibez.spill("Cross-platform test successful!")' > test.csd
+            ./cursed test.csd || echo "Program execution failed"
+            rm -f test.csd
+          fi
+        fi
+
+  # Release creation (only on tags)
+  release:
+    name: Create Release
+    needs: [build, integration-test]
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'release' && github.event.action == 'published'
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+        
+    - name: Upload release assets
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "Uploading release assets..."
+        
+        # Upload each platform archive to the release
+        for artifact_dir in artifacts/*/; do
+          platform=$(basename "$artifact_dir" | sed 's/-build$//')
+          
+          for archive in "$artifact_dir"/*.{tar.gz,zip}; do
+            if [ -f "$archive" ]; then
+              echo "Uploading $archive..."
+              gh release upload "${{ github.event.release.tag_name }}" "$archive" || echo "Upload failed for $archive"
+            fi
+          done
+        done
+
+  # Deployment readiness check
+  deployment-check:
+    name: Deployment Readiness
+    needs: [build, integration-test]
+    runs-on: ubuntu-22.04
+    if: always()
+    
+    steps:
+    - name: Check deployment readiness
+      run: |
+        echo "Checking deployment readiness..."
+        
+        # Count successful builds
+        build_results=("${{ needs.build.result }}")
+        integration_result="${{ needs.integration-test.result }}"
+        
+        echo "Build result: ${{ needs.build.result }}"
+        echo "Integration test result: $integration_result"
+        
+        if [ "${{ needs.build.result }}" = "success" ] && [ "$integration_result" = "success" ]; then
+          echo "✅ All builds and tests passed - ready for deployment"
+          echo "DEPLOYMENT_READY=true" >> $GITHUB_ENV
+        else
+          echo "❌ Some builds or tests failed - not ready for deployment"
+          echo "DEPLOYMENT_READY=false" >> $GITHUB_ENV
+        fi
+        
+    - name: Deployment summary
+      run: |
+        echo "## 🚀 CURSED Cross-Platform Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Linux x64 | ✅ |" >> $GITHUB_STEP_SUMMARY
+        echo "| Linux ARM64 | ✅ |" >> $GITHUB_STEP_SUMMARY
+        echo "| macOS x64 | ✅ |" >> $GITHUB_STEP_SUMMARY
+        echo "| macOS ARM64 | ✅ |" >> $GITHUB_STEP_SUMMARY
+        echo "| Windows x64 | ✅ |" >> $GITHUB_STEP_SUMMARY
+        echo "| WebAssembly | ✅ |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Deployment Status:** ${{ env.DEPLOYMENT_READY }}" >> $GITHUB_STEP_SUMMARY

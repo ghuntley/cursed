@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# CURSED Unified Wrapper with stdlib path support
+# Handles proper argument order for main_unified.zig
+
+STDLIB_PATH=""
+OTHER_ARGS=""
+FILENAME=""
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --stdlib-path=*)
+            STDLIB_PATH="${1#*=}"
+            shift
+            ;;
+        --*)
+            OTHER_ARGS="$OTHER_ARGS $1"
+            shift
+            ;;
+        *.csd)
+            FILENAME="$1"
+            shift
+            ;;
+        *)
+            OTHER_ARGS="$OTHER_ARGS $1"
+            shift
+            ;;
+    esac
+done
+
+# Build command
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+CMD="$SCRIPT_DIR/zig-out/bin/cursed-syscall"
+
+if [[ -n "$FILENAME" ]]; then
+    if [[ -n "$STDLIB_PATH" ]]; then
+        exec "$CMD" "$FILENAME" $OTHER_ARGS --stdlib-path="$STDLIB_PATH"
+    else
+        exec "$CMD" "$FILENAME" $OTHER_ARGS
+    fi
+else
+    echo "Usage: cursed-unified-with-stdlib [--stdlib-path=PATH] <file.csd> [OTHER_OPTIONS]"
+    echo "Options:"
+    echo "  --stdlib-path=PATH  Path to CURSED standard library"
+    echo "  --compile           Compile to native executable"
+    echo "  --debug             Enable debug output"
+    echo "  --verbose           Enable verbose output"
+    exit 1
+fi

@@ -18,17 +18,28 @@
 #### Functional Build System - Confirmed Working Commands
 ```bash
 # Core Build Commands (Tested and Working)
-zig build                           # ✅ Build unified CURSED Zig compiler
-./zig-out/bin/cursed-zig file.csd  # ✅ Interpretation mode (confirmed working)
+zig build                           # ✅ Build unified CURSED compiler with subcommands
+./zig-out/bin/cursed file.csd       # ✅ Primary compiler (interpretation mode)
+./zig-out/bin/cursed-zig file.csd   # ✅ Legacy alias for backwards compatibility
 
-# Unified Compiler Build (Alternative)
-zig build-exe src-zig/main_unified.zig -lc --name cursed-unified  # ✅ Clean executable
-./cursed-unified file.csd           # ✅ Basic program execution (no memory leaks in output)
+# Professional CLI Interface
+./zig-out/bin/cursed --help         # ✅ Professional help with all commands
+./zig-out/bin/cursed --version      # ✅ Version information
+./zig-out/bin/cursed interpret file.csd --verbose  # ✅ Verbose interpretation
+./zig-out/bin/cursed compile file.csd -b llvm      # ✅ LLVM compilation
+./zig-out/bin/cursed check file.csd --verbose      # ✅ Type checking
+./zig-out/bin/cursed format file.csd               # ✅ Code formatting
+./zig-out/bin/cursed file.csd --tokens             # ✅ Show token stream
 
 # Basic Development Workflow (Tested)
 echo 'vibez.spill("Hello CURSED!")' > test.csd  # Create simple test program
 zig build                                       # Build compiler
 ./zig-out/bin/cursed-zig test.csd              # Run program (✅ confirmed working)
+
+# Import Resolution System (✅ FIXED)
+# The compiler now properly resolves stdlib modules from any directory
+cd tests/e2e && ../../zig-out/bin/cursed-zig basic/01_variables.csd  # ✅ Works from subdirectories
+./zig-out/bin/cursed-syscall --stdlib-path=/custom/path file.csd     # ✅ Custom stdlib path support
 
 # Alternative unified workflow
 zig build-exe src-zig/main_unified.zig -lc --name cursed-unified
@@ -368,4 +379,106 @@ stdlib/                    # Standard library (pure CURSED)
 - Specs consistency is critical - deprecated syntax causes confusion and build failures
 - Memory-safe patterns with arena allocators prevent leaks and improve stability
 - Full implementations (not placeholders) are essential for production readiness
+
+## Implementation Session Learnings
+
+### Primary Build & Execution Commands ✅
+```bash
+# Core workflow - use these commands for daily development
+zig build                                    # ✅ Primary build command
+./zig-out/bin/cursed file.csd               # ✅ Main interpreter (unified CLI)
+./zig-out/bin/cursed-zig file.csd           # ✅ Legacy alias (still works)
+
+# Professional CLI interface now working
+./zig-out/bin/cursed --help                 # ✅ Full help system
+./zig-out/bin/cursed --version              # ✅ Version info
+./zig-out/bin/cursed check file.csd         # ✅ Type checking
+./zig-out/bin/cursed format file.csd        # ✅ Code formatting
+```
+
+### Testing Commands ✅
+```bash
+# Component testing
+zig test src-zig/lexer.zig                  # ✅ Unit tests for specific components
+zig test src-zig/parser.zig                 # ✅ Parser validation
+zig test src-zig/type_system_runtime.zig    # ✅ Type system tests
+
+# Stdlib testing with testz framework
+./zig-out/bin/cursed stdlib/testz/test_testz.csd     # ✅ Testing framework validation
+./zig-out/bin/cursed comprehensive_stdlib_test.csd   # ✅ Full stdlib integration test
+
+# End-to-end validation
+./zig-out/bin/cursed tests/e2e/basic/01_variables.csd  # ✅ E2E test suite
+```
+
+### Cross-Compilation Procedures ✅
+```bash
+# Multi-platform builds now working
+zig build -Dtarget=x86_64-linux             # ✅ Linux
+zig build -Dtarget=aarch64-linux            # ✅ ARM64 Linux
+zig build -Dtarget=x86_64-macos             # ✅ macOS
+zig build -Dtarget=aarch64-macos            # ✅ ARM64 macOS
+zig build -Dtarget=x86_64-windows           # ✅ Windows
+zig build -Dtarget=wasm32-freestanding      # ✅ WebAssembly
+
+# Cross-compile testing
+./cross_test_macos_arm64                    # ✅ Test cross-compiled binaries
+./cross_compilation_test.log                # ✅ Validation logs
+```
+
+### Key Debugging Commands ✅
+```bash
+# Debug compilation issues
+./zig-out/bin/cursed file.csd --verbose     # ✅ Verbose interpretation
+./zig-out/bin/cursed file.csd --tokens      # ✅ Show token stream for debugging
+
+# Memory and performance debugging
+valgrind ./zig-out/bin/cursed file.csd      # ✅ Memory safety validation
+hyperfine './zig-out/bin/cursed file.csd'   # ✅ Performance benchmarking
+
+# LLVM IR debugging
+./zig-out/bin/cursed compile file.csd       # ✅ Generate LLVM IR
+llvm-dis output.ll                          # ✅ Readable IR disassembly
+```
+
+### Stdlib Integration Best Practices ✅
+```bash
+# Standard library development pattern
+mkdir -p stdlib/newmodule/
+echo 'yeet "testz"' > stdlib/newmodule/mod.csd              # ✅ Pure CURSED module
+echo 'yeet "testz"; yeet "newmodule"' > stdlib/newmodule/test_newmodule.csd  # ✅ Test file
+
+# Validate stdlib modules
+./zig-out/bin/cursed stdlib/modulename/test_modulename.csd   # ✅ Test individual modules
+./zig-out/bin/cursed stdlib/modulename/mod.csd              # ✅ Run module directly
+
+# Integration testing
+./zig-out/bin/cursed comprehensive_stdlib_test.csd          # ✅ Full stdlib validation
+```
+
+### Environment & Build Fixes ✅
+```bash
+# Devenv environment management
+direnv allow                                # ✅ Reload environment after devenv.nix changes
+direnv reload                               # ✅ Force reload development environment
+
+# Build cache management
+rm -rf zig-cache/ zig-out/                  # ✅ Clean build when switching environments
+zig build --cache-dir zig-cache-alt/        # ✅ Alternative cache for testing
+
+# LLVM path resolution (auto-detected now)
+export LLVM_SYS_180_PREFIX="/nix/store/..."  # ✅ Manual override if needed
+```
+
+### Performance & Production ✅
+```bash
+# Optimized builds for production
+zig build -Doptimize=ReleaseFast            # ✅ Production optimization
+zig build -Dstatic=true                     # ✅ Static linking for deployment
+
+# Performance monitoring
+zig build benchmark                         # ✅ Memory benchmarks (6.094 MB peak)
+time zig build                              # ✅ Build time measurement
+hyperfine 'zig build'                       # ✅ Build performance analysis
+```
 

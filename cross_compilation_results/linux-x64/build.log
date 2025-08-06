@@ -1,0 +1,72 @@
+Building for target: Linux x86_64 (linux-x64)
+Platform capabilities:
+  LLVM support: true
+  Threading: true
+  Networking: true
+Found LLVM lib path: /usr/lib/llvm-18/lib
+Found LLVM include path: /usr/include/llvm-18
+Found LLVM lib path: /usr/lib/llvm-18/lib
+Found LLVM include path: /usr/include/llvm-18
+Found LLVM lib path: /usr/lib/llvm-18/lib
+Found LLVM include path: /usr/include/llvm-18
+Added cross-compilation target: Linux ARM64
+Found LLVM lib path: /usr/local/lib
+Found LLVM include path: /usr/local/include
+Added cross-compilation target: macOS x86_64
+Found LLVM lib path: /usr/local/lib
+Found LLVM include path: /usr/local/include
+Added cross-compilation target: macOS ARM64
+Added cross-compilation target: Windows x86_64
+Added cross-compilation target: WebAssembly
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/simplified_optimized_main.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-optimized --listen=- 
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/concurrency_benchmark.zig --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-concurrency-benchmark --listen=- 
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/main.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-zig --listen=- 
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/main.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed --listen=- 
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/test_diagnostics_demo.zig --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-diagnostics-demo --listen=- 
+install
++- install cursed-concurrency-benchmark
+   +- zig build-exe cursed-concurrency-benchmark ReleaseFast x86_64-linux 1 errors
+src-zig/gc.zig:1295:13: error: pointless discard of function parameter
+src-zig/gc.zig:1302:29: note: used here
+error: the following command failed with 1 compilation errors:
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/concurrency_benchmark.zig --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-concurrency-benchmark --listen=- 
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/minimal_main.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-minimal --listen=- 
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/platform_test.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-platform-test --listen=- 
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/main_complete.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-complete --listen=- 
+install
++- install cursed-platform-test
+   +- zig build-exe cursed-platform-test ReleaseFast x86_64-linux 1 errors
+src-zig/platform_test.zig:10:14: error: expected 2 argument(s), found 1
+/opt/zig/lib/std/debug.zig:84:5: note: function declared here
+error: the following command failed with 1 compilation errors:
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/platform_test.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-platform-test --listen=- 
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/concurrency_test.zig --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-concurrency-test --listen=- 
+install
++- install cursed-concurrency-test
+   +- zig build-exe cursed-concurrency-test ReleaseFast x86_64-linux 1 errors
+src-zig/gc.zig:1295:13: error: pointless discard of function parameter
+src-zig/gc.zig:1302:29: note: used here
+error: the following command failed with 1 compilation errors:
+/opt/zig/zig build-exe -OReleaseFast -target x86_64-linux -mcpu baseline -Mroot=/home/ghuntley/cursed/src-zig/concurrency_test.zig --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-concurrency-test --listen=- 
+/opt/zig/zig build-exe -lLLVM-18 -lz -OReleaseFast -target x86_64-linux -mcpu baseline -I /usr/include/llvm-18 -L /usr/lib/llvm-18/lib -Mroot=/home/ghuntley/cursed/src-zig/main_unified.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-syscall --listen=- 
+install
++- install cursed-syscall
+   +- zig build-exe cursed-syscall ReleaseFast x86_64-linux failure
+error: error: unable to find dynamic system library 'z' using strategy 'paths_first'. searched paths:
+  /usr/lib/llvm-18/lib/libz.so
+  /usr/lib/llvm-18/lib/libz.a
+
+error: the following command exited with error code 1:
+/opt/zig/zig build-exe -lLLVM-18 -lz -OReleaseFast -target x86_64-linux -mcpu baseline -I /usr/include/llvm-18 -L /usr/lib/llvm-18/lib -Mroot=/home/ghuntley/cursed/src-zig/main_unified.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/cursed/cross_compilation_results/zig-cache --name cursed-syscall --listen=- 
+Build Summary: 12/21 steps succeeded; 4 failed (disable with --summary none)
+install transitive failure
++- install cursed-syscall transitive failure
+|  +- zig build-exe cursed-syscall ReleaseFast x86_64-linux failure
++- install cursed-concurrency-benchmark transitive failure
+|  +- zig build-exe cursed-concurrency-benchmark ReleaseFast x86_64-linux 1 errors
++- install cursed-concurrency-test transitive failure
+|  +- zig build-exe cursed-concurrency-test ReleaseFast x86_64-linux 1 errors
++- install cursed-platform-test transitive failure
+   +- zig build-exe cursed-platform-test ReleaseFast x86_64-linux 1 errors
+error: the following build command failed with exit code 1:
+/home/ghuntley/cursed/zig-cache/o/d7d57ac5a30d3c52b25fff2bced6e397/build /opt/zig/zig /home/ghuntley/cursed /home/ghuntley/cursed/zig-cache /home/ghuntley/cursed/cross_compilation_results/zig-cache --seed 0x5889a665 -Zb51fd44658022f7d -Dtarget=x86_64-linux -Doptimize=ReleaseFast --verbose

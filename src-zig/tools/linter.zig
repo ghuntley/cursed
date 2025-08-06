@@ -113,7 +113,6 @@ pub const Linter = struct {
     pub fn lintSource(self: *Linter, file_path: []const u8, source: []const u8) !void {
         // Tokenize source
         var token_lexer = lexer.Lexer.init(self.allocator, source);
-        defer token_lexer.deinit();
         
         const tokens = try token_lexer.tokenize();
         defer tokens.deinit();
@@ -123,6 +122,7 @@ pub const Linter = struct {
         defer cursed_parser.deinit();
         
         const ast_tree = cursed_parser.parse() catch |err| {
+            _ = err;
             try self.addIssue(LintIssue{
                 .rule_id = "parse-error",
                 .severity = .Error,
@@ -275,8 +275,8 @@ pub const Linter = struct {
     
     fn checkNamingConventions(self: *Linter, file_path: []const u8, tokens: []const lexer.Token) !void {
         for (tokens) |token| {
-            if (token.type == .Identifier) {
-                const name = token.value;
+            if (token.kind == .Identifier) {
+                const name = token.lexeme;
                 
                 // Check for snake_case in function names
                 if (self.isAfterKeyword(tokens, token, "slay")) {
@@ -287,8 +287,8 @@ pub const Linter = struct {
                             .category = .Style,
                             .message = "Function names should use snake_case",
                             .file = file_path,
-                            .line = token.line,
-                            .column = token.column,
+                            .line = @intCast(token.line),
+                            .column = @intCast(token.column),
                             .suggestion = try self.toSnakeCase(name),
                         });
                     }
@@ -303,8 +303,8 @@ pub const Linter = struct {
                             .category = .Style,
                             .message = "Struct names should use PascalCase",
                             .file = file_path,
-                            .line = token.line,
-                            .column = token.column,
+                            .line = @intCast(token.line),
+                            .column = @intCast(token.column),
                             .suggestion = try self.toPascalCase(name),
                         });
                     }
@@ -321,15 +321,24 @@ pub const Linter = struct {
     }
     
     fn checkUnusedVariables(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
+        _ = self;
+        _ = file_path;
+        _ = ast_tree;
         // Walk AST to find unused variables
         // This would be a full AST traversal implementation
     }
     
     fn checkInefficiientLoops(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
+        _ = self;
+        _ = file_path;
+        _ = ast_tree;
         // Check for common loop anti-patterns
     }
     
     fn checkStringConcatenation(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
+        _ = self;
+        _ = file_path;
+        _ = ast_tree;
         // Check for inefficient string concatenation patterns
     }
     
@@ -340,10 +349,16 @@ pub const Linter = struct {
     }
     
     fn checkHardcodedSecrets(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
+        _ = self;
+        _ = file_path;
+        _ = ast_tree;
         // Check for hardcoded passwords, API keys, etc.
     }
     
     fn checkUnsafeOperations(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
+        _ = self;
+        _ = file_path;
+        _ = ast_tree;
         // Check for potentially unsafe operations
     }
     
@@ -354,10 +369,16 @@ pub const Linter = struct {
     }
     
     fn checkUnreachableCode(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
+        _ = self;
+        _ = file_path;
+        _ = ast_tree;
         // Check for unreachable code after returns
     }
     
     fn checkInfiniteLoops(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
+        _ = self;
+        _ = file_path;
+        _ = ast_tree;
         // Check for potential infinite loops
     }
     
@@ -373,28 +394,27 @@ pub const Linter = struct {
         const deprecated_mappings = [_]struct { old: []const u8, new: []const u8 }{
             .{ .old = "function", .new = "slay" },
             .{ .old = "var", .new = "sus" },
-            .{ .old = "return", .new = "damn" },
-            .{ .old = "if", .new = "ready" },
+            .{ .old = "return", .new = "yolo" },
+            .{ .old = "if", .new = "lowkey" },
             .{ .old = "while", .new = "bestie" },
             .{ .old = "struct", .new = "squad" },
             .{ .old = "interface", .new = "collab" },
         };
         
         for (tokens) |token| {
-            if (token.type == .Keyword) {
-                for (deprecated_mappings) |mapping| {
-                    if (std.mem.eql(u8, token.value, mapping.old)) {
-                        try self.addIssue(LintIssue{
-                            .rule_id = "deprecated-keyword",
-                            .severity = .Warning,
-                            .category = .GenZSyntax,
-                            .message = try std.fmt.allocPrint(self.allocator, "Use '{}' instead of '{}'", .{ mapping.new, mapping.old }),
-                            .file = file_path,
-                            .line = token.line,
-                            .column = token.column,
-                            .suggestion = mapping.new,
-                        });
-                    }
+            // Check traditional keywords that should be converted
+            for (deprecated_mappings) |mapping| {
+                if (std.mem.eql(u8, token.lexeme, mapping.old)) {
+                    try self.addIssue(LintIssue{
+                        .rule_id = "deprecated-keyword",
+                        .severity = .Warning,
+                        .category = .GenZSyntax,
+                        .message = try std.fmt.allocPrint(self.allocator, "Use '{s}' instead of '{s}'", .{ mapping.new, mapping.old }),
+                        .file = file_path,
+                        .line = @intCast(token.line),
+                        .column = @intCast(token.column),
+                        .suggestion = mapping.new,
+                    });
                 }
             }
         }
@@ -406,22 +426,20 @@ pub const Linter = struct {
         var has_traditional: bool = false;
         
         for (tokens) |token| {
-            if (token.type == .Keyword) {
-                const gen_z_keywords = [_][]const u8{ "sus", "slay", "damn", "vibes", "bestie", "based", "cringe", "yeet", "stan" };
-                const traditional_keywords = [_][]const u8{ "var", "function", "return", "if", "while", "true", "false" };
-                
-                for (gen_z_keywords) |keyword| {
-                    if (std.mem.eql(u8, token.value, keyword)) {
-                        has_gen_z = true;
-                        break;
-                    }
+            const gen_z_keywords = [_][]const u8{ "sus", "slay", "yolo", "vibes", "bestie", "based", "cringe", "yeet", "stan" };
+            const traditional_keywords = [_][]const u8{ "var", "function", "return", "if", "while", "true", "false" };
+            
+            for (gen_z_keywords) |keyword| {
+                if (std.mem.eql(u8, token.lexeme, keyword)) {
+                    has_gen_z = true;
+                    break;
                 }
-                
-                for (traditional_keywords) |keyword| {
-                    if (std.mem.eql(u8, token.value, keyword)) {
-                        has_traditional = true;
-                        break;
-                    }
+            }
+            
+            for (traditional_keywords) |keyword| {
+                if (std.mem.eql(u8, token.lexeme, keyword)) {
+                    has_traditional = true;
+                    break;
                 }
             }
         }
@@ -442,9 +460,10 @@ pub const Linter = struct {
     
     // Helper Functions
     fn isAfterKeyword(self: *Linter, tokens: []const lexer.Token, current: lexer.Token, keyword: []const u8) bool {
+        _ = self;
         for (tokens, 0..) |token, i| {
-            if (std.mem.eql(u8, @as([*:0]const u8, @ptrCast(token.value.ptr))[0..token.value.len], @as([*:0]const u8, @ptrCast(current.value.ptr))[0..current.value.len])) {
-                if (i > 0 and std.mem.eql(u8, tokens[i - 1].value, keyword)) {
+            if (std.mem.eql(u8, token.lexeme, current.lexeme)) {
+                if (i > 0 and std.mem.eql(u8, tokens[i - 1].lexeme, keyword)) {
                     return true;
                 }
                 break;
@@ -454,6 +473,7 @@ pub const Linter = struct {
     }
     
     fn isSnakeCase(self: *Linter, name: []const u8) bool {
+        _ = self;
         for (name) |char| {
             if (char >= 'A' and char <= 'Z') return false;
         }
@@ -461,6 +481,7 @@ pub const Linter = struct {
     }
     
     fn isPascalCase(self: *Linter, name: []const u8) bool {
+        _ = self;
         if (name.len == 0) return false;
         return name[0] >= 'A' and name[0] <= 'Z';
     }
@@ -514,6 +535,7 @@ pub fn printIssues(allocator: Allocator, issues: []const LintIssue, format: []co
 }
 
 fn printIssuesHuman(allocator: Allocator, issues: []const LintIssue) !void {
+    _ = allocator;
     const stdout = std.io.getStdOut().writer();
     
     for (issues) |issue| {
@@ -535,6 +557,7 @@ fn printIssuesHuman(allocator: Allocator, issues: []const LintIssue) !void {
 }
 
 fn printIssuesJSON(allocator: Allocator, issues: []const LintIssue) !void {
+    _ = allocator;
     const stdout = std.io.getStdOut().writer();
     
     try stdout.writeAll("{\n  \"issues\": [\n");
@@ -573,7 +596,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
     
     if (args.len < 2) {
-        std.log.err("Usage: cursed-lint <file> [--format json]");
+        std.log.err("Usage: cursed-lint <file> [--format json]", .{});
         return;
     }
     
