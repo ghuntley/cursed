@@ -7,3 +7,6 @@
 4. ULTIMATE GOAL we want to achieve a zig compiler release and migrate away from rust.
 
 9999. Ensure you remove completed items from the @fix_plan.md and any status updates related to the completion
+
+
+99999. The package manager, linter, formatter and LSP server should be authored in cursed, not rust/zig.

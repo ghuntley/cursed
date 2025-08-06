@@ -71,6 +71,7 @@ pub const Parser = struct {
 
     pub fn parseProgram(self: *Parser) ParserError!Program {
         var program = Program.init(self.allocator);
+        errdefer program.deinit(self.allocator);
         
         while (!self.isAtEnd()) {
             // Skip newlines, semicolons, and comments
@@ -1492,11 +1493,7 @@ pub const Parser = struct {
 
     // Helper methods for parsing statements
     fn parseReturnStatement(self: *Parser) ParserError!Statement {
-        // SPEC CONFORMANCE: Only accept canonical "damn" return keyword
-        if (!self.matchIdentifier("damn")) {
-            return ParserError.UnexpectedToken;
-        }
-        
+        // SPEC CONFORMANCE: "damn" token has already been consumed by caller
         var return_stmt = ast.ReturnStatement{ .value = null };
         
         // Parse optional return value
@@ -3072,13 +3069,14 @@ test "parser basic program" {
     };
     
     var parser = Parser.init(allocator, &tokens);
-    const program = try parser.parseProgram();
+    var program = try parser.parseProgram();
     defer program.deinit(allocator);
     
     try std.testing.expect(program.statements.items.len == 1);
     
-    switch (program.statements.items[0]) {
-        .Function => |func| {
+    const stmt: *Statement = @ptrCast(@alignCast(program.statements.items[0]));
+    switch (stmt.*) {
+        .Function => |*func| {
             try std.testing.expect(std.mem.eql(u8, func.name, "main_character"));
         },
         else => try std.testing.expect(false),
@@ -3097,14 +3095,16 @@ test "parser expressions" {
     };
     
     var parser = Parser.init(allocator, &tokens);
-    const program = try parser.parseProgram();
+    var program = try parser.parseProgram();
     defer program.deinit(allocator);
     
     try std.testing.expect(program.statements.items.len == 1);
     
-    switch (program.statements.items[0]) {
+    const stmt: *Statement = @ptrCast(@alignCast(program.statements.items[0]));
+    switch (stmt.*) {
         .Expression => |expr| {
-            switch (expr) {
+            const typed_expr: *Expression = @ptrCast(@alignCast(expr));
+            switch (typed_expr.*) {
                 .Binary => |bin| {
                     try std.testing.expect(std.mem.eql(u8, bin.operator, "+"));
                 },
@@ -3133,13 +3133,14 @@ test "parser CURSED function" {
     };
     
     var parser = Parser.init(allocator, &tokens);
-    const program = try parser.parseProgram();
+    var program = try parser.parseProgram();
     defer program.deinit(allocator);
     
     try std.testing.expect(program.statements.items.len == 1);
     
-    switch (program.statements.items[0]) {
-        .Function => |func| {
+    const stmt: *Statement = @ptrCast(@alignCast(program.statements.items[0]));
+    switch (stmt.*) {
+        .Function => |*func| {
             try std.testing.expect(std.mem.eql(u8, func.name, "test"));
             try std.testing.expect(func.return_type != null);
             try std.testing.expect(func.body.items.len == 1);

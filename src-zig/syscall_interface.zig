@@ -34,6 +34,42 @@ var global_allocator: ?Allocator = null;
 var syscall_initialized: bool = false;
 var syscall_mutex: std.Thread.Mutex = std.Thread.Mutex{};
 
+/// Print string to stdout (core.print implementation)
+export fn cursed_print_string(data: [*:0]const u8) void {
+    const stdout = std.io.getStdOut().writer();
+    const len = std.mem.len(data);
+    stdout.writeAll(data[0..len]) catch |err| {
+        print("[PRINT] Error writing to stdout: {}\n", .{err});
+    };
+}
+
+// Static buffer for read_line to avoid memory allocation issues
+var read_line_buffer: [256:0]u8 = undefined;
+
+/// Read line from stdin (core.read_line implementation)
+export fn cursed_read_line() [*:0]const u8 {
+    const stdin = std.io.getStdIn().reader();
+    var temp_buffer: [256]u8 = undefined;
+    
+    if (stdin.readUntilDelimiterOrEof(temp_buffer[0..], '\n')) |maybe_line| {
+        if (maybe_line) |line| {
+            // Copy to persistent static buffer
+            if (line.len < 255) {
+                @memcpy(read_line_buffer[0..line.len], line);
+                read_line_buffer[line.len] = 0;
+                return &read_line_buffer;
+            } else {
+                return "ERROR: Line too long";
+            }
+        } else {
+            return ""; // EOF
+        }
+    } else |err| {
+        print("[READ_LINE] Error reading from stdin: {}\n", .{err});
+        return "ERROR: Read failed";
+    }
+}
+
 /// Initialize the syscall interface
 pub export fn cursed_syscall_init(allocator: *anyopaque) void {
     syscall_mutex.lock();

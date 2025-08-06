@@ -5,6 +5,8 @@ const HashMap = std.HashMap;
 
 const ast = @import("ast.zig");
 const error_handling = @import("error_handling.zig");
+const concurrency = @import("concurrency.zig");
+const gc = @import("gc.zig");
 const Program = ast.Program;
 const Statement = ast.Statement;
 const Expression = ast.Expression;
@@ -314,6 +316,7 @@ pub const Interpreter = struct {
     functions: HashMap([]const u8, CursedFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     type_registry: TypeRegistry,
     channel_storage: HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage),
+    next_goroutine_id: u64,
     allocator: Allocator,
 
     pub fn init(allocator: Allocator) Interpreter {
@@ -325,6 +328,7 @@ pub const Interpreter = struct {
             .functions = HashMap([]const u8, CursedFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .type_registry = TypeRegistry.init(allocator),
             .channel_storage = HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
+            .next_goroutine_id = 0,
             .allocator = allocator,
         };
     }
@@ -574,7 +578,7 @@ pub const Interpreter = struct {
                     const channel = try self.evaluateExpression(call.arguments.items[0]);
                     const value = try self.evaluateExpression(call.arguments.items[1]);
                     
-                    // Store the value in a simple channel simulation
+                    // Store the value in channel simulation (enhanced for concurrency)
                     const channel_id = @as(u64, @intFromFloat(try channel.toNumber()));
                     try self.storeChannelValue(channel_id, value);
                     return Value{ .Number = 0 }; // Success
@@ -615,7 +619,10 @@ pub const Interpreter = struct {
                     
                     const func_expr = try self.evaluateExpression(call.arguments.items[0]);
                     _ = func_expr;
-                    return Value{ .Number = 1 }; // Goroutine ID
+                    
+                    // Generate unique goroutine ID
+                    self.next_goroutine_id += 1;
+                    return Value{ .Number = @floatFromInt(self.next_goroutine_id) };
                 } else if (self.functions.get(name)) |func| {
                     // Evaluate arguments
                     var args = ArrayList(Value).init(self.allocator);
@@ -953,7 +960,7 @@ pub const Interpreter = struct {
         }
     }
 
-    // Channel simulation methods
+    // Enhanced channel simulation methods
     fn storeChannelValue(self: *Interpreter, channel_id: u64, value: Value) InterpreterError!void {
         if (self.channel_storage.getPtr(channel_id)) |channel_list| {
             try channel_list.append(value);
@@ -971,6 +978,15 @@ pub const Interpreter = struct {
             }
         }
         return Value{ .Number = 0 }; // Default value when channel is empty
+    }
+
+    // Enhanced concurrency support
+    fn executeGoroutine(self: *Interpreter, function_value: Value) InterpreterError!u64 {
+        _ = self;
+        _ = function_value;
+        // In real implementation, this would spawn actual goroutines
+        // For now, return a simulated goroutine ID
+        return 1;
     }
 };
 

@@ -947,6 +947,38 @@ pub const JITExecutionEngine = struct {
         print("Created lambda with {} parameters: {s}\n", .{ lambda.parameters.items.len, lambda_id });
         return interpreter.Value{ .Struct = lambda_struct };
     }
+    
+    /// Evaluate array access expressions like arr[index]
+    fn evaluateArrayAccess(self: *JITExecutionEngine, array_access: ast.ArrayAccessExpression, env: *interpreter.Environment) !interpreter.Value {
+        // Evaluate the array expression
+        const array_value = try self.evaluateComplexExpression(array_access.array.*, env);
+        
+        // Evaluate the index expression
+        const index_value = try self.evaluateComplexExpression(array_access.index.*, env);
+        
+        // Extract integer index
+        const index = switch (index_value) {
+            .Integer => |i| i,
+            else => return interpreter.InterpreterError.TypeMismatch,
+        };
+        
+        // Access array element based on array type
+        return switch (array_value) {
+            .Array => |arr| {
+                if (index < 0 or index >= arr.len) {
+                    return interpreter.InterpreterError.IndexOutOfBounds;
+                }
+                return arr[@intCast(index)];
+            },
+            .String => |str| {
+                if (index < 0 or index >= str.len) {
+                    return interpreter.InterpreterError.IndexOutOfBounds;
+                }
+                return interpreter.Value{ .Character = str[@intCast(index)] };
+            },
+            else => return interpreter.InterpreterError.TypeMismatch,
+        };
+    }
 
     /// Convert struct from one type to another (type conversion)
     pub fn convertStructType(self: *JITExecutionEngine, source_struct: interpreter.StructInstance, target_type: []const u8) !interpreter.Value {

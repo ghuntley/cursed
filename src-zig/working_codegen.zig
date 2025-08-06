@@ -241,6 +241,18 @@ pub const WorkingCodeGen = struct {
             .While => |while_stmt| {
                 try self.generateWhile(while_stmt);
             },
+            .ForIn => |for_in| {
+                try self.generateForIn(for_in);
+            },
+            .Switch => |switch_stmt| {
+                try self.generateSwitch(switch_stmt);
+            },
+            .Channel => |channel_stmt| {
+                try self.generateChannel(channel_stmt);
+            },
+            .Select => |select_stmt| {
+                try self.generateSelect(select_stmt);
+            },
             else => {
                 std.debug.print("Unsupported statement type: {s}\n", .{@tagName(stmt)});
             },
@@ -737,6 +749,242 @@ pub const WorkingCodeGen = struct {
             std.debug.print("{s}\n", .{ir_string});
             c.LLVMDisposeMessage(ir_string);
         }
+    }
+
+    /// Generate ForIn loop statement
+    fn generateForIn(self: *WorkingCodeGen, for_in: ast.ForInStatement) !void {
+        // Create basic blocks for loop
+        const current_function = c.LLVMGetInsertBlock(self.builder);
+        const function = c.LLVMGetBasicBlockParent(current_function);
+        
+        const loop_header = c.LLVMAppendBasicBlockInContext(self.context, function, "for_in_header");
+        const loop_body = c.LLVMAppendBasicBlockInContext(self.context, function, "for_in_body");
+        const loop_exit = c.LLVMAppendBasicBlockInContext(self.context, function, "for_in_exit");
+        
+        // Generate iterable expression
+        const iterable_value = try self.generateExpression(for_in.iterable.*);
+        
+        // Initialize loop counter
+        const i32_type = c.LLVMInt32TypeInContext(self.context);
+        const counter = c.LLVMBuildAlloca(self.builder, i32_type, "for_in_counter");
+        const zero = c.LLVMConstInt(i32_type, 0, 0);
+        _ = c.LLVMBuildStore(self.builder, zero, counter);
+        
+        // Get array/slice length (simplified - assumes array expression has length)
+        const length = c.LLVMConstInt(i32_type, 10, 0); // TODO: Get actual length from iterable
+        
+        // Branch to loop header
+        _ = c.LLVMBuildBr(self.builder, loop_header);
+        
+        // Generate loop header (condition check)
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_header);
+        const current_counter = c.LLVMBuildLoad2(self.builder, i32_type, counter, "current_counter");
+        const condition = c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, current_counter, length, "for_in_condition");
+        _ = c.LLVMBuildCondBr(self.builder, condition, loop_body, loop_exit);
+        
+        // Generate loop body
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_body);
+        
+        // Store current element in loop variable
+        const element_ptr = c.LLVMBuildGEP2(
+            self.builder,
+            c.LLVMInt32TypeInContext(self.context),
+            iterable_value,
+            &[_]c.LLVMValueRef{current_counter},
+            1,
+            "element_ptr"
+        );
+        const element_value = c.LLVMBuildLoad2(self.builder, i32_type, element_ptr, "element_value");
+        try self.variables.put(for_in.variable, for_in.variable);
+        
+        // Generate body statements
+        for (for_in.body.items) |stmt| {
+            try self.generateStatement(stmt.*);
+        }
+        
+        // Increment counter
+        const one = c.LLVMConstInt(i32_type, 1, 0);
+        const next_counter = c.LLVMBuildAdd(self.builder, current_counter, one, "next_counter");
+        _ = c.LLVMBuildStore(self.builder, next_counter, counter);
+        
+        // Branch back to header
+        _ = c.LLVMBuildBr(self.builder, loop_header);
+        
+        // Continue with exit block
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_exit);
+    }
+
+    /// Generate Switch statement
+    fn generateSwitch(self: *WorkingCodeGen, switch_stmt: ast.SwitchStatement) !void {
+        // Generate switch expression
+        const switch_value = try self.generateExpression(@as(*ast.Expression, @ptrCast(@alignCast(switch_stmt.expression))));
+        
+        const current_function = c.LLVMGetInsertBlock(self.builder);
+        const function = c.LLVMGetBasicBlockParent(current_function);
+        
+        // Create default and exit blocks
+        const default_block = c.LLVMAppendBasicBlockInContext(self.context, function, "switch_default");
+        const exit_block = c.LLVMAppendBasicBlockInContext(self.context, function, "switch_exit");
+        
+        // Create switch instruction
+        const switch_inst = c.LLVMBuildSwitch(self.builder, switch_value, default_block, @as(u32, @intCast(switch_stmt.cases.items.len)));
+        
+        // Generate case blocks
+        for (switch_stmt.cases.items) |case| {
+            const case_block = c.LLVMAppendBasicBlockInContext(self.context, function, "switch_case");
+            
+            // Get case value
+            const case_value = try self.generateExpression(@as(*ast.Expression, @ptrCast(@alignCast(case.value))));
+            c.LLVMAddCase(switch_inst, case_value, case_block);
+            
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.builder, case_block);
+            for (case.body.items) |stmt| {
+                try self.generateStatement(@as(*ast.Statement, @ptrCast(@alignCast(stmt))));
+            }
+            _ = c.LLVMBuildBr(self.builder, exit_block);
+        }
+        
+        // Generate default case
+        c.LLVMPositionBuilderAtEnd(self.builder, default_block);
+        if (switch_stmt.default_case) |default_case| {
+            for (default_case.items) |stmt| {
+                try self.generateStatement(@as(*ast.Statement, @ptrCast(@alignCast(stmt))));
+            }
+        }
+        _ = c.LLVMBuildBr(self.builder, exit_block);
+        
+        // Continue with exit block
+        c.LLVMPositionBuilderAtEnd(self.builder, exit_block);
+    }
+
+    /// Generate Channel declaration statement
+    fn generateChannel(self: *WorkingCodeGen, channel_stmt: ast.ChannelStatement) !void {
+        // Create channel type (simplified as pointer to struct)
+        const channel_struct_type = c.LLVMStructTypeInContext(
+            self.context,
+            &[_]c.LLVMTypeRef{
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // data buffer
+                c.LLVMInt32TypeInContext(self.context), // capacity
+                c.LLVMInt32TypeInContext(self.context), // size
+                c.LLVMInt32TypeInContext(self.context), // read_pos
+                c.LLVMInt32TypeInContext(self.context), // write_pos
+            },
+            5,
+            0
+        );
+        
+        const channel_type = c.LLVMPointerType(channel_struct_type, 0);
+        
+        // Allocate channel
+        const channel_alloca = c.LLVMBuildAlloca(self.builder, channel_type, channel_stmt.name.ptr);
+        
+        // Initialize channel with make_chan call (simplified)
+        const malloc_func = self.functions.get("malloc") orelse {
+            std.debug.print("malloc function not found\n");
+            return CodeGenError.UndefinedSymbol;
+        };
+        
+        const struct_size = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 32, 0); // Size of channel struct
+        const channel_ptr = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(malloc_func)),
+            malloc_func,
+            &[_]c.LLVMValueRef{struct_size},
+            1,
+            "channel_ptr"
+        );
+        
+        const typed_channel_ptr = c.LLVMBuildBitCast(self.builder, channel_ptr, channel_type, "typed_channel_ptr");
+        _ = c.LLVMBuildStore(self.builder, typed_channel_ptr, channel_alloca);
+        
+        // Store channel in variables map
+        try self.variables.put(channel_stmt.name, channel_stmt.name);
+        
+        std.debug.print("Generated channel declaration: {s}\n", .{channel_stmt.name});
+    }
+
+    /// Generate Select statement for channel operations
+    fn generateSelect(self: *WorkingCodeGen, select_stmt: ast.SelectStatement) !void {
+        const current_function = c.LLVMGetInsertBlock(self.builder);
+        const function = c.LLVMGetBasicBlockParent(current_function);
+        
+        // Create blocks for each case and default/exit
+        var case_blocks = ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        defer case_blocks.deinit();
+        
+        for (select_stmt.cases.items, 0..) |_, i| {
+            const case_name = try std.fmt.allocPrint(self.allocator, "select_case_{d}", .{i});
+            defer self.allocator.free(case_name);
+            const case_block = c.LLVMAppendBasicBlockInContext(self.context, function, case_name.ptr);
+            try case_blocks.append(case_block);
+        }
+        
+        const default_block = c.LLVMAppendBasicBlockInContext(self.context, function, "select_default");
+        const exit_block = c.LLVMAppendBasicBlockInContext(self.context, function, "select_exit");
+        
+        // For simplicity, implement as if-else chain (real implementation would use channel polling)
+        var current_block = c.LLVMGetInsertBlock(self.builder);
+        
+        for (select_stmt.cases.items, 0..) |case, i| {
+            const case_block = case_blocks.items[i];
+            const next_check_block = if (i < select_stmt.cases.items.len - 1)
+                c.LLVMAppendBasicBlockInContext(self.context, function, "select_next_check")
+            else
+                default_block;
+            
+            // Generate channel operation check (simplified)
+            const condition = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0); // Always true for now
+            _ = c.LLVMBuildCondBr(self.builder, condition, case_block, next_check_block);
+            
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.builder, case_block);
+            
+            // Handle channel operation
+            switch (case.channel_op) {
+                .Send => |send| {
+                    // Generate channel send operation
+                    const channel_expr = try self.generateExpression(send.channel);
+                    const value_expr = try self.generateExpression(send.value);
+                    
+                    // Call channel send function (simplified)
+                    std.debug.print("Generated channel send operation\n");
+                },
+                .Receive => |recv| {
+                    // Generate channel receive operation
+                    const channel_expr = try self.generateExpression(recv.channel);
+                    
+                    if (recv.variable) |var_name| {
+                        try self.variables.put(var_name, var_name);
+                    }
+                    
+                    std.debug.print("Generated channel receive operation\n");
+                },
+            }
+            
+            // Generate case statements
+            for (case.body.items) |stmt| {
+                try self.generateStatement(@as(*ast.Statement, @ptrCast(@alignCast(stmt))));
+            }
+            _ = c.LLVMBuildBr(self.builder, exit_block);
+            
+            if (i < select_stmt.cases.items.len - 1) {
+                c.LLVMPositionBuilderAtEnd(self.builder, next_check_block);
+                current_block = next_check_block;
+            }
+        }
+        
+        // Generate default case
+        c.LLVMPositionBuilderAtEnd(self.builder, default_block);
+        if (select_stmt.default_case) |default_case| {
+            for (default_case.items) |stmt| {
+                try self.generateStatement(@as(*ast.Statement, @ptrCast(@alignCast(stmt))));
+            }
+        }
+        _ = c.LLVMBuildBr(self.builder, exit_block);
+        
+        // Continue with exit block
+        c.LLVMPositionBuilderAtEnd(self.builder, exit_block);
     }
 };
 

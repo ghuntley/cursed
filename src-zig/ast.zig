@@ -143,6 +143,7 @@ pub const Program = struct {
         for (self.statements.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
             stmt_ptr.deinit(allocator);
+            allocator.destroy(stmt_ptr);
         }
         self.statements.deinit();
         
@@ -402,6 +403,7 @@ pub const Statement = union(enum) {
             .Expression => |expr| {
                 const expr_ptr: *Expression = @ptrCast(@alignCast(expr));
                 expr_ptr.deinit(allocator);
+                allocator.destroy(expr_ptr);
             },
             .Let => |*let| let.deinit(allocator),
             .Assignment => |*assign| assign.deinit(allocator),
