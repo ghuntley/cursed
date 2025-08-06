@@ -7,8 +7,8 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
-    std.debug.print("CURSED Platform Abstraction Test Suite\n");
-    std.debug.print("=====================================\n\n");
+    std.debug.print("CURSED Platform Abstraction Test Suite\n", .{});
+    std.debug.print("=====================================\n\n", .{});
     
     // Initialize platform (required for some platforms like Windows)
     platform.PlatformInit.init() catch |err| {
@@ -19,24 +19,24 @@ pub fn main() !void {
     
     // Test platform detection
     const current_platform = platform.Platform.current();
-    std.debug.print("Platform Detection:\n");
+    std.debug.print("Platform Detection:\n", .{});
     std.debug.print("  Current platform: {s}\n", .{current_platform.name()});
     std.debug.print("  Is Windows: {}\n", .{current_platform.isWindows()});
     std.debug.print("  Is Unix: {}\n", .{current_platform.isUnix()});
     std.debug.print("  Is WASM: {}\n", .{current_platform.isWasm()});
-    std.debug.print("\n");
+    std.debug.print("\n", .{});
     
     // Test platform capabilities
-    std.debug.print("Platform Capabilities:\n");
+    std.debug.print("Platform Capabilities:\n", .{});
     std.debug.print("  Threading: {}\n", .{platform.Capabilities.hasThreading()});
     std.debug.print("  Networking: {}\n", .{platform.Capabilities.hasNetworking()});
     std.debug.print("  File System: {}\n", .{platform.Capabilities.hasFileSystem()});
     std.debug.print("  Process Control: {}\n", .{platform.Capabilities.hasProcessControl()});
     std.debug.print("  High-res Timer: {}\n", .{platform.Capabilities.hasHighResTimer()});
-    std.debug.print("\n");
+    std.debug.print("\n", .{});
     
     // Test time operations
-    std.debug.print("Time Operations:\n");
+    std.debug.print("Time Operations:\n", .{});
     const time1 = platform.TimeOps.TimeStamp.now();
     platform.TimeOps.sleepMs(10);
     const time2 = platform.TimeOps.TimeStamp.now();
@@ -47,10 +47,10 @@ pub fn main() !void {
     
     const nano_time = platform.TimeOps.nanoTime();
     std.debug.print("  Nano time: {}\n", .{nano_time});
-    std.debug.print("\n");
+    std.debug.print("\n", .{});
     
     // Test path operations
-    std.debug.print("Path Operations:\n");
+    std.debug.print("Path Operations:\n", .{});
     std.debug.print("  Separator: '{s}'\n", .{platform.PathOps.separator()});
     
     const test_path = "/home/user/test.txt";
@@ -63,23 +63,23 @@ pub fn main() !void {
     // Test path joining
     const path_parts = [_][]const u8{ "home", "user", "documents", "file.txt" };
     const joined_path = platform.PathOps.join(allocator, &path_parts) catch {
-        std.debug.print("  Path join failed\n");
+        std.debug.print("  Path join failed\n", .{});
         return;
     };
     defer allocator.free(joined_path);
     std.debug.print("  Joined path: {s}\n", .{joined_path});
-    std.debug.print("\n");
+    std.debug.print("\n", .{});
     
     // Test process operations (if supported)
     if (platform.Capabilities.hasProcessControl()) {
-        std.debug.print("Process Operations:\n");
+        std.debug.print("Process Operations:\n", .{});
         
         // Test environment variables
         if (platform.ProcessOps.getEnv(allocator, "PATH")) |path_env| {
             defer allocator.free(path_env);
             std.debug.print("  PATH env var length: {}\n", .{path_env.len});
         } else {
-            std.debug.print("  PATH env var not found\n");
+            std.debug.print("  PATH env var not found\n", .{});
         }
         
         // Test current working directory
@@ -90,12 +90,12 @@ pub fn main() !void {
             std.debug.print("  Failed to get current directory: {}\n", .{err});
         }
         
-        std.debug.print("\n");
+        std.debug.print("\n", .{});
     }
     
     // Test file operations (if supported)
     if (platform.Capabilities.hasFileSystem()) {
-        std.debug.print("File Operations:\n");
+        std.debug.print("File Operations:\n", .{});
         
         // Test file writing and reading
         const test_file_path = "platform_test_file.txt";
@@ -136,12 +136,12 @@ pub fn main() !void {
         // Clean up test file
         std.fs.cwd().deleteFile(test_file_path) catch {};
         
-        std.debug.print("\n");
+        std.debug.print("\n", .{});
     }
     
     // Test networking operations (if supported)
     if (platform.Capabilities.hasNetworking()) {
-        std.debug.print("Network Operations:\n");
+        std.debug.print("Network Operations:\n", .{});
         
         // Test socket creation
         const socket = platform.NetworkOps.createSocket(.tcp) catch |err| {
@@ -149,7 +149,7 @@ pub fn main() !void {
             return;
         };
         
-        std.debug.print("  TCP socket created successfully\n");
+        std.debug.print("  TCP socket created successfully\n", .{});
         
         // Test socket binding (use high port to avoid permission issues)
         const test_port: u16 = 0; // Let OS choose port
@@ -159,14 +159,14 @@ pub fn main() !void {
             return;
         };
         
-        std.debug.print("  Socket bound successfully\n");
+        std.debug.print("  Socket bound successfully\n", .{});
         
         platform.NetworkOps.closeSocket(socket);
-        std.debug.print("  Socket closed\n");
+        std.debug.print("  Socket closed\n", .{});
         
-        std.debug.print("\n");
+        std.debug.print("\n", .{});
     }
     
-    std.debug.print("Platform Abstraction Test Suite Completed\n");
-    std.debug.print("=========================================\n");
+    std.debug.print("Platform Abstraction Test Suite Completed\n", .{});
+    std.debug.print("=========================================\n", .{});
 }

@@ -95,7 +95,9 @@ pub const Parser = struct {
 
             // Parse regular statements
             const stmt = try self.parseStatement();
-            try program.statements.append(stmt);
+            const stmt_ptr = try self.allocator.create(Statement);
+            stmt_ptr.* = stmt;
+            try program.statements.append(@ptrCast(stmt_ptr));
         }
 
         return program;
@@ -109,6 +111,7 @@ pub const Parser = struct {
                 .file = self.file_path,
                 .line = @intCast(token.line),
                 .column = @intCast(token.column),
+                .offset = @intCast(token.offset),
             };
         }
         return null;
@@ -119,6 +122,7 @@ pub const Parser = struct {
             .file = self.file_path,
             .line = @intCast(token.line),
             .column = @intCast(token.column),
+            .offset = @intCast(token.offset),
         };
     }
 
@@ -143,7 +147,7 @@ pub const Parser = struct {
 
     // Recovery parsing
     fn synchronize(self: *Parser) void {
-        self.advance();
+        _ = self.advance();
         
         while (!self.isAtEnd()) {
             if (self.previous().kind == .Semicolon) return;
@@ -153,7 +157,7 @@ pub const Parser = struct {
                 else => {},
             }
             
-            self.advance();
+        _ = self.advance();
         }
     }
 
@@ -162,7 +166,7 @@ pub const Parser = struct {
             for (target_tokens) |target| {
                 if (self.check(target)) return;
             }
-            self.advance();
+        _ = self.advance();
         }
     }
 
@@ -288,7 +292,9 @@ pub const Parser = struct {
         // Match expression (match)
         if (self.check(.Match)) {
             const match_expr = try self.parseMatchExpression();
-            return Statement{ .Expression = match_expr };
+            const expr_ptr = try self.allocator.create(Expression);
+            expr_ptr.* = match_expr;
+            return Statement{ .Expression = @ptrCast(expr_ptr) };
         }
 
         // Vibe check (switch)
@@ -327,11 +333,13 @@ pub const Parser = struct {
         
         // Expression statement
         const expr = try self.parseExpression();
-        return Statement{ .Expression = expr };
+        const expr_ptr = try self.allocator.create(Expression);
+        expr_ptr.* = expr;
+        return Statement{ .Expression = @ptrCast(expr_ptr) };
     }
 
     fn parseFunctionStatement(self: *Parser) ParserError!FunctionStatement {
-        try self.consume(.Slay, "Expected 'slay'");
+        _ = try self.consume(.Slay, "Expected 'slay'");
         
         if (!self.check(.Identifier)) {
             return ParserError.UnexpectedToken;
@@ -371,7 +379,7 @@ pub const Parser = struct {
         }
         
         // Parse parameters
-        try self.consume(.LeftParen, "Expected '(' after function name");
+        _ = try self.consume(.LeftParen, "Expected '(' after function name");
         
         if (!self.check(.RightParen)) {
             while (true) {
@@ -382,7 +390,7 @@ pub const Parser = struct {
             }
         }
         
-        try self.consume(.RightParen, "Expected ')' after parameters");
+        _ = try self.consume(.RightParen, "Expected ')' after parameters");
         
         // Parse return type
         if (!self.check(.LeftBrace)) {
@@ -390,7 +398,7 @@ pub const Parser = struct {
         }
         
         // Parse body
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
         self.in_function = true;
         defer { self.in_function = false; }
@@ -400,10 +408,10 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try func.body.append(stmt);
+            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try func.body.append(@ptrCast(stmt_ptr));
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
         return func;
     }
@@ -436,7 +444,10 @@ pub const Parser = struct {
         
         // Parse initializer
         if (self.match(.Equal) or self.match(.ColonEqual)) {
-            let_stmt.initializer = try self.parseExpression();
+            const init_expr = try self.parseExpression();
+            const init_ptr = try self.allocator.create(Expression);
+            init_ptr.* = init_expr;
+            let_stmt.initializer = @ptrCast(init_ptr);
         }
         
         return let_stmt;
@@ -461,7 +472,7 @@ pub const Parser = struct {
 
         // Parse default value
         if (self.match(.Equal)) {
-            param.default_value = try self.parseExpression();
+            const default_expr = try self.parseExpression(); const default_ptr = try self.allocator.create(Expression); default_ptr.* = default_expr; param.default_value = @ptrCast(default_ptr);
         }
         
         return param;
@@ -483,7 +494,7 @@ pub const Parser = struct {
                     }
                 }
                 
-                try self.consume(.RightBracket, "Expected ']'");
+        _ = try self.consume(.RightBracket, "Expected ']'");
                 
                 const element_type_ptr = try self.allocator.create(ast.Type);
                 element_type_ptr.* = base_type;
@@ -508,7 +519,7 @@ pub const Parser = struct {
                 }
             }
             
-            try self.consume(.RightBracket, "Expected ']'");
+        _ = try self.consume(.RightBracket, "Expected ']'");
             
             const element_type_ptr = try self.allocator.create(ast.Type);
             element_type_ptr.* = try self.parseType();
@@ -521,12 +532,12 @@ pub const Parser = struct {
 
         // Map types map[key_type]value_type
         if (self.matchIdentifier("map")) {
-            try self.consume(.LeftBracket, "Expected '[' after 'map'");
+        _ = try self.consume(.LeftBracket, "Expected '[' after 'map'");
             
             const key_type_ptr = try self.allocator.create(ast.Type);
             key_type_ptr.* = try self.parseType();
             
-            try self.consume(.RightBracket, "Expected ']'");
+        _ = try self.consume(.RightBracket, "Expected ']'");
             
             const value_type_ptr = try self.allocator.create(ast.Type);
             value_type_ptr.* = try self.parseType();
@@ -544,7 +555,7 @@ pub const Parser = struct {
                 const element_type_ptr = try self.allocator.create(ast.Type);
                 element_type_ptr.* = try self.parseType();
                 
-                try self.consume(.Greater, "Expected '>' after channel element type");
+        _ = try self.consume(.Greater, "Expected '>' after channel element type");
                 
                 return ast.Type{ .Channel = ast.ChannelType{
                     .element_type = element_type_ptr,
@@ -571,7 +582,7 @@ pub const Parser = struct {
                     }
                 }
                 
-                try self.consume(.RightParen, "Expected ')'");
+        _ = try self.consume(.RightParen, "Expected ')'");
                 
                 var return_type: ?*ast.Type = null;
                 if (self.match(.Arrow)) {
@@ -601,7 +612,7 @@ pub const Parser = struct {
                 }
             }
             
-            try self.consume(.RightParen, "Expected ')'");
+        _ = try self.consume(.RightParen, "Expected ')'");
             
             // Single element in parens is just grouped, not a tuple
             if (elements.items.len == 1) {
@@ -694,10 +705,10 @@ pub const Parser = struct {
             const value = try self.parseAssignment();
             
             // Convert to assignment expression (not statement)
-            return Expression{ .Binary = ast.BinaryExpression{
-                .left = try self.allocateExpression(expr),
+            return Expression{ .Binary = .{
+                .left = @ptrCast(try self.allocateExpression(expr)),
                 .operator = operator,
-                .right = try self.allocateExpression(value),
+                .right = @ptrCast(try self.allocateExpression(value)),
             }};
         }
 
@@ -807,7 +818,7 @@ pub const Parser = struct {
         return expr;
     }
 
-    fn isStringExpression(self: *Parser, expr: Expression) bool {
+    fn isStringExpression(_: *Parser, expr: Expression) bool {
         switch (expr) {
             .String => return true,
             .Identifier => return true, // Could be a string variable
@@ -888,7 +899,7 @@ pub const Parser = struct {
 
     fn parseFamBlock(self: *Parser) ParserError!Expression {
         // Parse fam { try_body } catch(error_var) { catch_body } finally { finally_body }
-        try self.consume(.LeftBrace, "Expected '{' after 'fam'");
+        _ = try self.consume(.LeftBrace, "Expected '{' after 'fam'");
         
         var try_body = ArrayList(*anyopaque).init(self.allocator);
         
@@ -902,22 +913,22 @@ pub const Parser = struct {
             try try_body.append(@ptrCast(stmt_ptr));
         }
         
-        try self.consume(.RightBrace, "Expected '}' after try body");
+        _ = try self.consume(.RightBrace, "Expected '}' after try body");
         
         var catch_handler: ?ast.FamExpression.CatchHandler = null;
         var finally_handler: ?ast.FamExpression.FinallyHandler = null;
         
         // Optional catch handler
         if (self.match(.Catch)) {
-            try self.consume(.LeftParen, "Expected '(' after 'catch'");
+        _ = try self.consume(.LeftParen, "Expected '(' after 'catch'");
             
             const error_variable = if (self.check(.Identifier))
                 self.advance().lexeme
             else
                 "error";
                 
-            try self.consume(.RightParen, "Expected ')' after error variable");
-            try self.consume(.LeftBrace, "Expected '{' for catch body");
+        _ = try self.consume(.RightParen, "Expected ')' after error variable");
+        _ = try self.consume(.LeftBrace, "Expected '{' for catch body");
             
             var catch_body = ArrayList(*anyopaque).init(self.allocator);
             
@@ -930,7 +941,7 @@ pub const Parser = struct {
                 try catch_body.append(@ptrCast(stmt_ptr));
             }
             
-            try self.consume(.RightBrace, "Expected '}' after catch body");
+        _ = try self.consume(.RightBrace, "Expected '}' after catch body");
             
             catch_handler = ast.FamExpression.CatchHandler{
                 .error_variable = error_variable,
@@ -940,7 +951,7 @@ pub const Parser = struct {
         
         // Optional finally handler
         if (self.matchKeyword("finally")) {
-            try self.consume(.LeftBrace, "Expected '{' for finally body");
+        _ = try self.consume(.LeftBrace, "Expected '{' for finally body");
             
             var finally_body = ArrayList(*anyopaque).init(self.allocator);
             
@@ -953,7 +964,7 @@ pub const Parser = struct {
                 try finally_body.append(@ptrCast(stmt_ptr));
             }
             
-            try self.consume(.RightBrace, "Expected '}' after finally body");
+        _ = try self.consume(.RightBrace, "Expected '}' after finally body");
             
             finally_handler = ast.FamExpression.FinallyHandler{
                 .finally_body = finally_body,
@@ -990,7 +1001,7 @@ pub const Parser = struct {
                 if (self.match(.Colon)) {
                     // Slice access expr[start:end]
                     const end = if (!self.check(.RightBracket)) try self.parseExpression() else null;
-                    try self.consume(.RightBracket, "Expected ']'");
+        _ = try self.consume(.RightBracket, "Expected ']'");
                     
                     expr = Expression{ .SliceAccess = ast.SliceAccessExpression{
                         .array = try self.allocateExpression(expr),
@@ -999,7 +1010,7 @@ pub const Parser = struct {
                     }};
                 } else {
                     // Array access expr[index]
-                    try self.consume(.RightBracket, "Expected ']'");
+        _ = try self.consume(.RightBracket, "Expected ']'");
                     
                     expr = Expression{ .ArrayAccess = ast.ArrayAccessExpression{
                         .array = try self.allocateExpression(expr),
@@ -1038,7 +1049,7 @@ pub const Parser = struct {
             }
         }
 
-        try self.consume(.RightParen, "Expected ')' after arguments");
+        _ = try self.consume(.RightParen, "Expected ')' after arguments");
 
         return Expression{ .Call = ast.CallExpression{
             .function = try self.allocateExpression(callee),
@@ -1122,7 +1133,7 @@ pub const Parser = struct {
                 }
             }
             
-            try self.consume(.RightBracket, "Expected ']'");
+        _ = try self.consume(.RightBracket, "Expected ']'");
             
             return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
                 .elements = try self.convertExpressionsToPointers(elements),
@@ -1156,7 +1167,7 @@ pub const Parser = struct {
                 }
             }
             
-            try self.consume(.RightParen, "Expected ')'");
+        _ = try self.consume(.RightParen, "Expected ')'");
             
             // Single element without comma is just grouped expression
             if (elements.items.len == 1 and !has_comma) {
@@ -1178,7 +1189,7 @@ pub const Parser = struct {
             if (!self.check(.RightBrace)) {
                 while (true) {
                     const key = try self.parseExpression();
-                    try self.consume(.Colon, "Expected ':' after map key");
+        _ = try self.consume(.Colon, "Expected ':' after map key");
                     const value = try self.parseExpression();
                     
                     try entries.append(ast.MapEntry{
@@ -1190,7 +1201,7 @@ pub const Parser = struct {
                 }
             }
             
-            try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
             
             return Expression{ .Map = try self.allocateMapExpression(ast.MapExpression{
                 .entries = entries,
@@ -1218,8 +1229,8 @@ pub const Parser = struct {
                 }
             }
             
-            try self.consume(.Pipe, "Expected '|' after lambda parameters");
-            try self.consume(.Arrow, "Expected '->' after lambda parameters");
+        _ = try self.consume(.Pipe, "Expected '|' after lambda parameters");
+        _ = try self.consume(.Arrow, "Expected '->' after lambda parameters");
             
             const body = try self.allocateExpression(try self.parseExpression());
             
@@ -1233,16 +1244,16 @@ pub const Parser = struct {
         if (self.matchIdentifier("make_channel")) {
             if (self.match(.Less) or self.match(.LeftAngle)) {
                 const element_type = try self.parseType();
-                try self.consume(.Greater, "Expected '>' after channel element type");
+        _ = try self.consume(.Greater, "Expected '>' after channel element type");
                 
-                try self.consume(.LeftParen, "Expected '(' after make_channel<T>");
+        _ = try self.consume(.LeftParen, "Expected '(' after make_channel<T>");
                 
                 var buffer_size: ?Expression = null;
                 if (!self.check(.RightParen)) {
                     buffer_size = try self.parseExpression();
                 }
                 
-                try self.consume(.RightParen, "Expected ')' after make_channel");
+        _ = try self.consume(.RightParen, "Expected ')' after make_channel");
                 
                 return Expression{ .ChannelCreation = ast.ChannelCreationExpression{
                     .element_type = element_type,
@@ -1267,7 +1278,7 @@ pub const Parser = struct {
     }
 
     fn parseStructLiteral(self: *Parser, struct_name: []const u8) ParserError!Expression {
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
         var fields = ArrayList(ast.StructFieldAssignment).init(self.allocator);
         
@@ -1278,7 +1289,7 @@ pub const Parser = struct {
                 }
                 
                 const field_name = self.advance().lexeme;
-                try self.consume(.Colon, "Expected ':' after field name");
+        _ = try self.consume(.Colon, "Expected ':' after field name");
                 const value = try self.parseExpression();
                 
                 try fields.append(ast.StructFieldAssignment{
@@ -1290,7 +1301,7 @@ pub const Parser = struct {
             }
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
         return Expression{ .StructLiteral = ast.StructLiteralExpression{
             .struct_name = struct_name,
@@ -1299,11 +1310,11 @@ pub const Parser = struct {
     }
 
     fn parseMatchExpression(self: *Parser) ParserError!Expression {
-        try self.consume(.Match, "Expected 'match'");
+        _ = try self.consume(.Match, "Expected 'match'");
         
         const value = try self.allocateExpression(try self.parseExpression());
         
-        try self.consume(.LeftBrace, "Expected '{' after match value");
+        _ = try self.consume(.LeftBrace, "Expected '{' after match value");
         
         var cases = ArrayList(ast.MatchCase).init(self.allocator);
         var default_case: ?*Expression = null;
@@ -1313,7 +1324,7 @@ pub const Parser = struct {
             
             // Check for default case
             if (self.match(.Basic) or self.matchIdentifier("_")) {
-                try self.consume(.Arrow, "Expected '->' after default pattern");
+        _ = try self.consume(.Arrow, "Expected '->' after default pattern");
                 default_case = try self.allocateExpression(try self.parseExpression());
                 _ = self.match(.Comma);
                 continue;
@@ -1328,19 +1339,29 @@ pub const Parser = struct {
                 guard = try self.parseExpression();
             }
             
-            try self.consume(.Arrow, "Expected '->' after pattern");
+        _ = try self.consume(.Arrow, "Expected '->' after pattern");
             const result = try self.parseExpression();
+            
+            var guard_ptr: ?*anyopaque = null;
+            if (guard) |g| {
+                const g_ptr = try self.allocator.create(Expression);
+                g_ptr.* = g;
+                guard_ptr = @ptrCast(g_ptr);
+            }
+            
+            const result_ptr = try self.allocator.create(Expression);
+            result_ptr.* = result;
             
             try cases.append(ast.MatchCase{
                 .pattern = pattern,
-                .guard = guard,
-                .result = result,
+                .guard = guard_ptr,
+                .result = @ptrCast(result_ptr),
             });
             
             _ = self.match(.Comma);
         }
         
-        try self.consume(.RightBrace, "Expected '}' after match cases");
+        _ = try self.consume(.RightBrace, "Expected '}' after match cases");
         
         return Expression{ .Match = ast.MatchExpression{
             .expression = value,
@@ -1409,7 +1430,7 @@ pub const Parser = struct {
                 }
             }
             
-            try self.consume(.RightParen, "Expected ')'");
+        _ = try self.consume(.RightParen, "Expected ')'");
             return ast.Pattern{ .Tuple = patterns };
         }
 
@@ -1427,7 +1448,7 @@ pub const Parser = struct {
                         }
                         
                         const field_name = self.advance().lexeme;
-                        try self.consume(.Colon, "Expected ':' after field name");
+        _ = try self.consume(.Colon, "Expected ':' after field name");
                         const pattern = try self.parsePattern();
                         
                         try fields.append(ast.FieldPattern{
@@ -1439,7 +1460,7 @@ pub const Parser = struct {
                     }
                 }
                 
-                try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
                 
                 return ast.Pattern{ .Struct = ast.StructPattern{
                     .name = struct_name,
@@ -1464,58 +1485,67 @@ pub const Parser = struct {
         
         // Parse optional return value
         if (!self.check(.Semicolon) and !self.check(.Newline) and !self.isAtEnd() and !self.check(.RightBrace)) {
-            return_stmt.value = try self.parseExpression();
+            const value_expr = try self.parseExpression();
+            const value_ptr = try self.allocator.create(Expression);
+            value_ptr.* = value_expr;
+            return_stmt.value = @ptrCast(value_ptr);
         }
         
         return Statement{ .Return = return_stmt };
     }
 
     fn parseIfStatement(self: *Parser) ParserError!ast.IfStatement {
-        try self.consume(.Lowkey, "Expected 'lowkey'");
+        _ = try self.consume(.Lowkey, "Expected 'lowkey'");
         
         const condition = try self.parseExpression();
         
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var then_branch = ArrayList(Statement).init(self.allocator);
+        var then_branch = ArrayList(*anyopaque).init(self.allocator);
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try then_branch.append(stmt);
+            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try then_branch.append(@ptrCast(stmt_ptr));
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
-        var else_branch: ?ArrayList(Statement) = null;
+        var else_branch: ?ArrayList(*anyopaque) = null;
         
         // Parse else clause (highkey)
         if (self.match(.Highkey)) {
-            var else_stmts = ArrayList(Statement).init(self.allocator);
+            var else_stmts = ArrayList(*anyopaque).init(self.allocator);
             
             if (self.check(.Lowkey)) {
                 // else if
                 const elif_stmt = try self.parseIfStatement();
-                try else_stmts.append(Statement{ .If = elif_stmt });
+                const if_stmt = Statement{ .If = elif_stmt };
+                const if_stmt_ptr = try self.allocator.create(Statement);
+                if_stmt_ptr.* = if_stmt;
+                try else_stmts.append(@ptrCast(if_stmt_ptr));
             } else {
                 // else block
-                try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
                 
                 while (!self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    try else_stmts.append(stmt);
+                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try else_stmts.append(@ptrCast(stmt_ptr));
                 }
                 
-                try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
             }
             
             else_branch = else_stmts;
         }
         
+        const condition_ptr = try self.allocator.create(Expression);
+        condition_ptr.* = condition;
+        
         return ast.IfStatement{
-            .condition = condition,
+            .condition = @ptrCast(condition_ptr),
             .then_branch = then_branch,
             .else_branch = else_branch,
         };
@@ -1526,9 +1556,9 @@ pub const Parser = struct {
         
         const condition = try self.parseExpression();
         
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = ArrayList(Statement).init(self.allocator);
+        var body = ArrayList(*anyopaque).init(self.allocator);
         self.in_loop = true;
         defer { self.in_loop = false; }
         
@@ -1536,19 +1566,22 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try body.append(stmt);
+            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
+        
+        const condition_ptr = try self.allocator.create(Expression);
+        condition_ptr.* = condition;
         
         return ast.WhileStatement{
-            .condition = condition,
+            .condition = @ptrCast(condition_ptr),
             .body = body,
         };
     }
 
     fn parseForStatement(self: *Parser) ParserError!Statement {
-        try self.consume(.Bestie, "Expected 'bestie'");
+        _ = try self.consume(.Bestie, "Expected 'bestie'");
         
         // Check for range-for loop (bestie var := flex ...)
         if (self.isRangeForLoop()) {
@@ -1564,9 +1597,9 @@ pub const Parser = struct {
                 condition = try self.parseExpression();
             }
             
-            try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
             
-            var body = ArrayList(Statement).init(self.allocator);
+            var body = ArrayList(*anyopaque).init(self.allocator);
             self.in_loop = true;
             defer { self.in_loop = false; }
             
@@ -1574,14 +1607,21 @@ pub const Parser = struct {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                try body.append(stmt);
+                const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
             }
             
-            try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
+            
+            var condition_ptr: ?*anyopaque = null;
+            if (condition) |cond| {
+                const cond_ptr = try self.allocator.create(Expression);
+                cond_ptr.* = cond;
+                condition_ptr = @ptrCast(cond_ptr);
+            }
             
             return Statement{ .For = ast.ForStatement{
                 .init = null,
-                .condition = condition,
+                .condition = condition_ptr,
                 .update = null,
                 .body = body,
             }};
@@ -1594,14 +1634,14 @@ pub const Parser = struct {
         if (!self.check(.Semicolon)) {
             init_stmt = try self.parseStatement();
         }
-        try self.consume(.Semicolon, "Expected ';' after for loop init");
+        _ = try self.consume(.Semicolon, "Expected ';' after for loop init");
         
         // Parse condition (optional)
         var condition: ?Expression = null;
         if (!self.check(.Semicolon)) {
             condition = try self.parseExpression();
         }
-        try self.consume(.Semicolon, "Expected ';' after for loop condition");
+        _ = try self.consume(.Semicolon, "Expected ';' after for loop condition");
         
         // Parse update statement (optional)
         var update: ?Statement = null;
@@ -1610,9 +1650,9 @@ pub const Parser = struct {
         }
         
         // Parse body
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = ArrayList(Statement).init(self.allocator);
+        var body = ArrayList(*anyopaque).init(self.allocator);
         self.in_loop = true;
         defer { self.in_loop = false; }
         
@@ -1620,10 +1660,10 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try body.append(stmt);
+            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
         return Statement{ .For = ast.ForStatement{
             .init = init_stmt,
@@ -1655,15 +1695,15 @@ pub const Parser = struct {
         }
         
         // Expect 'flex'
-        try self.consume(.Flex, "Expected 'flex' in range-for loop");
+        _ = try self.consume(.Flex, "Expected 'flex' in range-for loop");
         
         // Parse iterable expression
         const iterable = try self.parseExpression();
         
         // Parse body
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = ArrayList(Statement).init(self.allocator);
+        var body = ArrayList(*anyopaque).init(self.allocator);
         self.in_loop = true;
         defer { self.in_loop = false; }
         
@@ -1671,10 +1711,10 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try body.append(stmt);
+            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
         // Create ForIn statement
         return Statement{ .ForIn = ast.ForInStatement{
@@ -1727,7 +1767,7 @@ pub const Parser = struct {
         }
         
         // Expect '{'
-        try self.consume(.LeftBrace, "Expected '{' after struct name");
+        _ = try self.consume(.LeftBrace, "Expected '{' after struct name");
         
         // Parse fields
         var fields = ArrayList(ast.StructField).init(self.allocator);
@@ -1756,7 +1796,7 @@ pub const Parser = struct {
             _ = self.match(.Comma);
         }
         
-        try self.consume(.RightBrace, "Expected '}' after struct fields");
+        _ = try self.consume(.RightBrace, "Expected '}' after struct fields");
         
         return Statement{ .Struct = ast.StructStatement{
             .name = name,
@@ -1785,7 +1825,7 @@ pub const Parser = struct {
     }
 
     fn parseInterfaceStatement(self: *Parser) ParserError!Statement {
-        try self.consume(.Collab, "Expected 'collab'");
+        _ = try self.consume(.Collab, "Expected 'collab'");
         
         // Parse interface name
         if (!self.check(.Identifier)) {
@@ -1844,7 +1884,7 @@ pub const Parser = struct {
         }
         
         // Expect '{'
-        try self.consume(.LeftBrace, "Expected '{' after interface name");
+        _ = try self.consume(.LeftBrace, "Expected '{' after interface name");
         
         // Parse methods
         var methods = ArrayList(ast.MethodSignature).init(self.allocator);
@@ -1863,7 +1903,7 @@ pub const Parser = struct {
             _ = self.match(.Semicolon);
         }
         
-        try self.consume(.RightBrace, "Expected '}' after interface methods");
+        _ = try self.consume(.RightBrace, "Expected '}' after interface methods");
         
         return Statement{ .Interface = ast.InterfaceStatement{
             .name = name,
@@ -1877,7 +1917,7 @@ pub const Parser = struct {
 
     fn parseMethodSignature(self: *Parser) ParserError!ast.MethodSignature {
         // Expect 'slay' keyword
-        try self.consume(.Slay, "Expected 'slay' keyword for method");
+        _ = try self.consume(.Slay, "Expected 'slay' keyword for method");
         
         // Parse method name
         if (!self.check(.Identifier)) {
@@ -1887,7 +1927,7 @@ pub const Parser = struct {
         const name = self.advance().lexeme;
         
         // Parse parameters
-        try self.consume(.LeftParen, "Expected '('");
+        _ = try self.consume(.LeftParen, "Expected '('");
         
         var parameters = ArrayList(Parameter).init(self.allocator);
         
@@ -1900,7 +1940,7 @@ pub const Parser = struct {
             }
         }
         
-        try self.consume(.RightParen, "Expected ')'");
+        _ = try self.consume(.RightParen, "Expected ')'");
         
         // Parse return type (optional)
         var return_type: ?ast.Type = null;
@@ -1918,7 +1958,7 @@ pub const Parser = struct {
     // More advanced parsing methods continue...
     fn parseImplementationStatement(self: *Parser) ParserError!Statement {
         // Handle "impl TypeName for InterfaceName" syntax
-        try self.consume(.Impl, "Expected 'impl'");
+        _ = try self.consume(.Impl, "Expected 'impl'");
         
         // Parse implementing type
         if (!self.check(.Identifier)) {
@@ -1938,7 +1978,7 @@ pub const Parser = struct {
         const interface_name = self.advance().lexeme;
         
         // Parse implementation body
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
         var methods = ArrayList(ast.FunctionStatement).init(self.allocator);
         
@@ -1949,7 +1989,7 @@ pub const Parser = struct {
             try methods.append(method);
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
         return Statement{ .Implementation = ast.ImplementationStatement{
             .implementing_type = implementing_type,
@@ -1976,7 +2016,7 @@ pub const Parser = struct {
         const name = self.advance().lexeme;
         
         // Expect '='
-        try self.consume(.Equal, "Expected '=' after type alias name");
+        _ = try self.consume(.Equal, "Expected '=' after type alias name");
         
         // Parse target type
         const target_type = try self.parseType();
@@ -1989,20 +2029,20 @@ pub const Parser = struct {
     }
 
     fn parseStanStatement(self: *Parser) ParserError!Statement {
-        try self.consume(.Stan, "Expected 'stan'");
+        _ = try self.consume(.Stan, "Expected 'stan'");
         
         // Parse block: stan { ... }
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = ArrayList(Statement).init(self.allocator);
+        var body = ArrayList(*anyopaque).init(self.allocator);
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try body.append(stmt);
+            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
         return Statement{ .Stan = ast.StanStatement{
             .body = body,
@@ -2010,22 +2050,22 @@ pub const Parser = struct {
     }
 
     fn parseGoroutineStatement(self: *Parser) ParserError!Statement {
-        try self.consume(.Stan, "Expected 'stan'");
+        _ = try self.consume(.Stan, "Expected 'stan'");
         
         // Parse block or expression
         if (self.check(.LeftBrace)) {
             // Block form: stan { ... }
-            try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
             
-            var body = ArrayList(Statement).init(self.allocator);
+            var body = ArrayList(*anyopaque).init(self.allocator);
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                try body.append(stmt);
+                const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
             }
             
-            try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
             
             return Statement{ .Goroutine = ast.GoroutineStatement{
                 .call = Expression{ .Block = ast.BlockExpression{ .statements = body } },
@@ -2040,28 +2080,28 @@ pub const Parser = struct {
     }
 
     fn parseVibeCheckStatement(self: *Parser) ParserError!Statement {
-        try self.consume(.VibeCheck, "Expected 'vibe check'");
+        _ = try self.consume(.VibeCheck, "Expected 'vibe check'");
         
         const expression = try self.parseExpression();
         
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
         var patterns = ArrayList(ast.PatternCase).init(self.allocator);
-        var default_case: ?ArrayList(Statement) = null;
+        var default_case: ?ArrayList(*anyopaque) = null;
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
             // Check for default case
             if (self.match(.Basic)) {
-                try self.consume(.Colon, "Expected ':' after 'basic'");
+        _ = try self.consume(.Colon, "Expected ':' after 'basic'");
                 
-                var default_stmts = ArrayList(Statement).init(self.allocator);
+                var default_stmts = ArrayList(*anyopaque).init(self.allocator);
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    try default_stmts.append(stmt);
+                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try default_stmts.append(@ptrCast(stmt_ptr));
                 }
                 
                 default_case = default_stmts;
@@ -2077,14 +2117,14 @@ pub const Parser = struct {
                     guard = try self.parseExpression();
                 }
                 
-                try self.consume(.Colon, "Expected ':' after case pattern");
+        _ = try self.consume(.Colon, "Expected ':' after case pattern");
                 
-                var case_body = ArrayList(Statement).init(self.allocator);
+                var case_body = ArrayList(*anyopaque).init(self.allocator);
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    try case_body.append(stmt);
+                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try case_body.append(@ptrCast(stmt_ptr));
                 }
                 
                 try patterns.append(ast.PatternCase{
@@ -2095,7 +2135,7 @@ pub const Parser = struct {
             }
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
         return Statement{ .PatternSwitch = ast.PatternSwitchStatement{
             .expression = expression,
@@ -2113,24 +2153,24 @@ pub const Parser = struct {
             return ParserError.UnexpectedToken;
         }
         
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
         var cases = ArrayList(ast.SelectCase).init(self.allocator);
-        var default_case: ?ArrayList(Statement) = null;
+        var default_case: ?ArrayList(*anyopaque) = null;
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
             // Check for default case
             if (self.match(.Basic)) {
-                try self.consume(.Colon, "Expected ':' after 'basic'");
+        _ = try self.consume(.Colon, "Expected ':' after 'basic'");
                 
-                var default_stmts = ArrayList(Statement).init(self.allocator);
+                var default_stmts = ArrayList(*anyopaque).init(self.allocator);
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    try default_stmts.append(stmt);
+                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try default_stmts.append(@ptrCast(stmt_ptr));
                 }
                 
                 default_case = default_stmts;
@@ -2141,14 +2181,14 @@ pub const Parser = struct {
             if (self.match(.Mood)) {
                 const channel_op = try self.parseChannelOperation();
                 
-                try self.consume(.Colon, "Expected ':' after channel operation");
+        _ = try self.consume(.Colon, "Expected ':' after channel operation");
                 
-                var case_body = ArrayList(Statement).init(self.allocator);
+                var case_body = ArrayList(*anyopaque).init(self.allocator);
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    try case_body.append(stmt);
+                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try case_body.append(@ptrCast(stmt_ptr));
                 }
                 
                 try cases.append(ast.SelectCase{
@@ -2158,7 +2198,7 @@ pub const Parser = struct {
             }
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
         return Statement{ .Select = ast.SelectStatement{
             .cases = cases,
@@ -2194,7 +2234,7 @@ pub const Parser = struct {
                 }
                 
                 // Expect <- and then the actual channel
-                try self.consume(.LeftArrow, "Expected '<-'");
+        _ = try self.consume(.LeftArrow, "Expected '<-'");
                 const actual_channel = try self.parseExpression();
                 
                 return ast.ChannelOperation{ .Receive = .{
@@ -2212,7 +2252,7 @@ pub const Parser = struct {
     }
 
     fn parseDeferStatement(self: *Parser) ParserError!Statement {
-        try self.consume(.Later, "Expected 'later'");
+        _ = try self.consume(.Later, "Expected 'later'");
         
         const stmt_ptr = try self.allocator.create(Statement);
         stmt_ptr.* = try self.parseStatement();
@@ -2221,7 +2261,7 @@ pub const Parser = struct {
     }
 
     fn parseYikesStatement(self: *Parser) ParserError!ast.YikesStatement {
-        try self.consume(.Yikes, "Expected 'yikes'");
+        _ = try self.consume(.Yikes, "Expected 'yikes'");
         
         // Parse error name/identifier
         if (!self.check(.Identifier)) {
@@ -2230,7 +2270,7 @@ pub const Parser = struct {
         
         const name = self.advance().lexeme;
         var error_type: ?ast.Type = null;
-        var value: ?Expression = null;
+        var value: ?*anyopaque = null;
         
         // Optional error type annotation (yikes MyError tea)
         if (self.checkType()) {
@@ -2239,7 +2279,10 @@ pub const Parser = struct {
         
         // Optional error value assignment (yikes MyError = "something went wrong")
         if (self.match(.Equal)) {
-            value = try self.parseExpression();
+            const expr = try self.parseExpression();
+            const expr_ptr = try self.allocator.create(Expression);
+            expr_ptr.* = expr;
+            value = @ptrCast(expr_ptr);
         }
         
         return ast.YikesStatement{
@@ -2250,22 +2293,22 @@ pub const Parser = struct {
     }
 
     fn parseFamStatement(self: *Parser) ParserError!ast.FamStatement {
-        try self.consume(.Fam, "Expected 'fam'");
+        _ = try self.consume(.Fam, "Expected 'fam'");
         
         // Parse main body block
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = ArrayList(Statement).init(self.allocator);
+        var body = ArrayList(*anyopaque).init(self.allocator);
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try body.append(stmt);
+            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
-        var recovery_body: ?ArrayList(Statement) = null;
+        var recovery_body: ?ArrayList(*anyopaque) = null;
         var error_variable: ?[]const u8 = null;
         
         // Optional recovery block (fam { ... } catch(err) { ... })
@@ -2275,21 +2318,21 @@ pub const Parser = struct {
                 if (self.check(.Identifier)) {
                     error_variable = self.advance().lexeme;
                 }
-                try self.consume(.RightParen, "Expected ')'");
+        _ = try self.consume(.RightParen, "Expected ')'");
             }
             
             // Parse recovery body
-            try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
             
-            var recovery = ArrayList(Statement).init(self.allocator);
+            var recovery = ArrayList(*anyopaque).init(self.allocator);
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                try recovery.append(stmt);
+                const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try recovery.append(@ptrCast(stmt_ptr));
             }
             
-            try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
             recovery_body = recovery;
         }
         
@@ -2301,7 +2344,7 @@ pub const Parser = struct {
     }
 
     fn parseConstDeclaration(self: *Parser) ParserError!ast.ConstDecl {
-        try self.consume(.Facts, "Expected 'facts'");
+        _ = try self.consume(.Facts, "Expected 'facts'");
         
         if (!self.check(.Identifier)) {
             return ParserError.UnexpectedToken;
@@ -2314,14 +2357,16 @@ pub const Parser = struct {
             const_type = try self.parseType();
         }
         
-        try self.consume(.Equal, "Expected '=' after constant name");
+        _ = try self.consume(.Equal, "Expected '=' after constant name");
         
         const value = try self.parseExpression();
+        const value_ptr = try self.allocator.create(Expression);
+        value_ptr.* = value;
         
         return ast.ConstDecl{
             .name = name,
             .const_type = const_type,
-            .value = value,
+            .value = @ptrCast(value_ptr),
             .visibility = .Public,
         };
     }
@@ -2342,7 +2387,7 @@ pub const Parser = struct {
                 if (!self.match(.Comma)) break;
             }
             
-            try self.consume(.RightParen, "Expected ')'");
+        _ = try self.consume(.RightParen, "Expected ')'");
         } else {
             // Single variable or comma-separated: a, b := 1, 2
             if (!self.check(.Identifier)) {
@@ -2360,7 +2405,7 @@ pub const Parser = struct {
             }
         }
         
-        try self.consume(.ColonEqual, "Expected ':=' in short declaration");
+        _ = try self.consume(.ColonEqual, "Expected ':=' in short declaration");
         
         // Parse values
         var values = ArrayList(Expression).init(self.allocator);
@@ -2374,7 +2419,7 @@ pub const Parser = struct {
                 if (!self.match(.Comma)) break;
             }
             
-            try self.consume(.RightParen, "Expected ')'");
+        _ = try self.consume(.RightParen, "Expected ')'");
         } else {
             // Single value or comma-separated: 1, 2
             const value = try self.parseExpression();
@@ -2394,6 +2439,8 @@ pub const Parser = struct {
 
     fn parseAssignmentStatement(self: *Parser) ParserError!Statement {
         const target = try self.parseExpression();
+        const target_ptr = try self.allocator.create(Expression);
+        target_ptr.* = target;
         
         if (!self.match(.Equal) and !self.match(.PlusEqual) and !self.match(.MinusEqual) and
            !self.match(.StarEqual) and !self.match(.SlashEqual) and !self.match(.PercentEqual)) {
@@ -2402,10 +2449,12 @@ pub const Parser = struct {
         
         const operator = self.previous().lexeme;
         const value = try self.parseExpression();
+        const value_ptr = try self.allocator.create(Expression);
+        value_ptr.* = value;
         
         return Statement{ .Assignment = ast.AssignmentStatement{
-            .target = target,
-            .value = value,
+            .target = @ptrCast(target_ptr),
+            .value = @ptrCast(value_ptr),
             .operator = operator,
         }};
     }
@@ -2434,6 +2483,22 @@ pub const Parser = struct {
         if (self.check(.Identifier)) {
             const token = self.peek();
             return std.mem.eql(u8, token.lexeme, identifier);
+        }
+        return false;
+    }
+
+    fn matchKeyword(self: *Parser, keyword: []const u8) bool {
+        // Try matching as identifier first (for keywords like "finally")
+        if (self.matchIdentifier(keyword)) {
+            return true;
+        }
+        // Also check if it's a token type (for reserved keywords)
+        if (self.check(.Identifier)) {
+            const token = self.peek();
+            if (std.mem.eql(u8, token.lexeme, keyword)) {
+                _ = self.advance();
+                return true;
+            }
         }
         return false;
     }
@@ -2497,20 +2562,7 @@ pub const Parser = struct {
         return ParserError.UnexpectedToken;
     }
 
-    fn synchronize(self: *Parser) void {
-        _ = self.advance();
 
-        while (!self.isAtEnd()) {
-            if (self.previous().kind == .Semicolon) return;
-
-            switch (self.peek().kind) {
-                .Slay, .Sus, .Facts, .Lowkey, .Bestie, .Periodt, .Squad, .Collab => return,
-                else => {},
-            }
-
-            _ = self.advance();
-        }
-    }
 
     // Helper predicates
     fn isTopLevel(self: *Parser) bool {
@@ -2796,31 +2848,31 @@ pub const Parser = struct {
     fn parseBasicType(self: *Parser) ParserError!ast.Type {
         // CURSED type keywords
         if (self.match(.Drip)) {
-            return ast.Type.Integer;
+            return ast.Type{ .Basic = ast.BasicType.Drip };
         }
         
         if (self.match(.Tea)) {
-            return ast.Type.String;
+            return ast.Type{ .Basic = ast.BasicType.Tea };
         }
         
         if (self.match(.Lit)) {
-            return ast.Type.Boolean;
+            return ast.Type{ .Basic = ast.BasicType.Lit };
         }
         
         if (self.match(.Meal)) {
-            return ast.Type.Float;
+            return ast.Type{ .Basic = ast.BasicType.Meal };
         }
         
         if (self.match(.Smol)) {
-            return ast.Type{ .Custom = "smol" }; // Small integer
+            return ast.Type{ .Basic = ast.BasicType.Smol };
         }
         
         if (self.match(.Thicc)) {
-            return ast.Type{ .Custom = "thicc" }; // Large integer
+            return ast.Type{ .Basic = ast.BasicType.Thicc };
         }
         
         if (self.match(.Normie)) {
-            return ast.Type{ .Custom = "normie" }; // Regular integer
+            return ast.Type{ .Basic = ast.BasicType.Normie };
         }
         
         // Custom/identifier types
@@ -2839,7 +2891,7 @@ pub const Parser = struct {
     }
     
     fn parseAdvancedFunctionSignature(self: *Parser) ParserError!FunctionStatement {
-        try self.consume(.Slay, "Expected 'slay'");
+        _ = try self.consume(.Slay, "Expected 'slay'");
         
         if (!self.check(.Identifier)) {
             return ParserError.UnexpectedToken;
@@ -2893,7 +2945,7 @@ pub const Parser = struct {
         }
         
         // Parse parameters with complex types
-        try self.consume(.LeftParen, "Expected '(' after function name");
+        _ = try self.consume(.LeftParen, "Expected '(' after function name");
         
         if (!self.check(.RightParen)) {
             while (true) {
@@ -2904,7 +2956,7 @@ pub const Parser = struct {
             }
         }
         
-        try self.consume(.RightParen, "Expected ')' after parameters");
+        _ = try self.consume(.RightParen, "Expected ')' after parameters");
         
         // Parse return type (can be complex)
         if (!self.check(.LeftBrace)) {
@@ -2912,7 +2964,7 @@ pub const Parser = struct {
         }
         
         // Parse function body
-        try self.consume(.LeftBrace, "Expected '{'");
+        _ = try self.consume(.LeftBrace, "Expected '{'");
         
         self.in_function = true;
         defer { self.in_function = false; }
@@ -2921,10 +2973,10 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try func.body.append(stmt);
+            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try func.body.append(@ptrCast(stmt_ptr));
         }
         
-        try self.consume(.RightBrace, "Expected '}'");
+        _ = try self.consume(.RightBrace, "Expected '}'");
         
         return func;
     }
@@ -2948,7 +3000,7 @@ pub const Parser = struct {
 
         // Parse default value
         if (self.match(.Equal)) {
-            param.default_value = try self.parseExpression();
+            const default_expr = try self.parseExpression(); const default_ptr = try self.allocator.create(Expression); default_ptr.* = default_expr; param.default_value = @ptrCast(default_ptr);
         }
         
         return param;

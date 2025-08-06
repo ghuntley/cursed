@@ -9,6 +9,9 @@ const simple_import_resolver = @import("simple_import_resolver.zig");
 const simple_compiler = @import("simple_compiler.zig");
 const formatter = @import("tools/formatter.zig");
 const linter = @import("tools/linter.zig");
+const type_system = @import("type_system.zig");
+const ast = @import("ast.zig");
+const parser = @import("parser.zig");
 
 // Simple variable store for runtime evaluation
 const Variable = union(enum) {
@@ -61,6 +64,11 @@ pub fn main() !void {
     // Handle lint subcommand
     if (std.mem.eql(u8, args[1], "lint")) {
         return handleLintCommand(allocator, args[2..]);
+    }
+
+    // Handle check subcommand
+    if (std.mem.eql(u8, args[1], "check")) {
+        return handleCheckCommand(allocator, args[2..]);
     }
 
     // Parse command line options first, then filename
@@ -127,8 +135,15 @@ pub fn main() !void {
     }
 
     if (compile_mode) {
-        // Real compilation mode implementation
-        try simple_compiler.compileProgram(allocator, source, filename.?, optimization_level, verbose);
+        // Enhanced compilation mode implementation
+        const enhanced_compiler = @import("enhanced_compiler.zig");
+        const config = enhanced_compiler.CompilerConfig{
+            .backend = .C_Backend, // Default to C backend for compatibility
+            .optimization_level = optimization_level,
+            .verbose = verbose,
+            .output_path = null,
+        };
+        try enhanced_compiler.compileProgram(allocator, source, filename.?, config);
     } else {
         // Simple interpretation mode with variable evaluation
         try interpretProgramWithVariables(allocator, source, verbose, stdlib_path);
@@ -434,6 +449,70 @@ fn handleLintCommand(allocator: Allocator, args: [][]const u8) !void {
     }
 }
 
+fn handleCheckCommand(allocator: Allocator, args: [][]const u8) !void {
+    if (args.len == 0) {
+        print("Usage: cursed check <file.csd> [OPTIONS]\n", .{});
+        print("Options:\n", .{});
+        print("  --verbose        Show detailed type checking information\n", .{});
+        return;
+    }
+
+    const filename = args[0];
+    var verbose = false;
+
+    for (args[1..]) |arg| {
+        if (std.mem.eql(u8, arg, "--verbose")) {
+            verbose = true;
+        }
+    }
+
+    // Read source file
+    const source = std.fs.cwd().readFileAlloc(allocator, filename, 1024 * 1024) catch |err| {
+        print("❌ Error reading file {s}: {any}\n", .{ filename, err });
+        return;
+    };
+    defer allocator.free(source);
+
+    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+
+    // Tokenize
+    var l = lexer.Lexer.init(allocator, source);
+    const tokens = l.tokenize() catch |err| {
+        print("❌ Lexer error: {}\n", .{err});
+        return;
+    };
+    defer tokens.deinit();
+
+    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+
+    // Parse
+    var p = parser.Parser.init(allocator, tokens.items);
+    var program = p.parseProgram() catch |err| {
+        print("❌ Parser error: {}\n", .{err});
+        return;
+    };
+    defer program.deinit(allocator);
+
+    if (verbose) print("📊 Parsed {} statements\n", .{program.statements.items.len});
+
+    // Type check
+    var checker = type_system.TypeChecker.init(allocator) catch |err| {
+        print("❌ Type checker initialization error: {}\n", .{err});
+        return;
+    };
+    defer checker.deinit();
+
+    if (verbose) print("🔧 Type checker initialized\n", .{});
+
+    type_system.checkProgram(&checker, &program) catch |err| {
+        print("❌ Type checking error: {}\n", .{err});
+        return;
+    };
+
+    print("✅ Type checking passed for {s}\n", .{filename});
+    if (verbose) print("🎉 All types are valid and consistent!\n", .{});
+}
+
 fn checkFileFormatting(allocator: Allocator, file_path: []const u8, config: formatter.FormatterConfig) !void {
     const source = std.fs.cwd().readFileAlloc(allocator, file_path, 1024 * 1024) catch |err| {
         print("❌ Error reading file {s}: {any}\n", .{ file_path, err });
@@ -483,6 +562,7 @@ fn printUsage() void {
     print("       cursed --version\n", .{});
     print("       cursed --help\n", .{});
     print("\nCommands:\n", .{});
+    print("  check <file.csd>     Type check CURSED source code\n", .{});
     print("  format <file|dir>    Format CURSED source code\n", .{});
     print("  lint <file|dir>      Lint CURSED source code\n", .{});
     print("\nExecution Options:\n", .{});

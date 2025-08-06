@@ -115,7 +115,7 @@ pub const GCConfig = struct {
     /// Old GC trigger threshold (heap usage percentage) 
     old_gc_trigger_threshold: f32 = 0.85,
     /// Concurrent collection thread count
-    concurrent_threads: u32 = std.Thread.getCpuCount() catch 2,
+    concurrent_threads: u32 = 2,
     /// Maximum young GC pause time target in microseconds (5ms)
     max_young_pause_time_us: u64 = 5_000,
     /// Maximum old GC pause time target in microseconds (50ms)
@@ -146,7 +146,7 @@ pub const GCConfig = struct {
         config.young_gc_trigger_threshold = 0.90;
         config.old_gc_trigger_threshold = 0.95;
         config.enable_parallel_marking = true;
-        config.concurrent_threads = std.Thread.getCpuCount() catch 4;
+        config.concurrent_threads = 4;
         return config;
     }
     
@@ -303,12 +303,9 @@ pub const GC = struct {
             .weak_refs = ArrayList(*WeakRef).init(allocator),
             .weak_ref_mutex = Mutex{},
             .heap_segments = ArrayList(HeapSegment).init(allocator),
-            .forwarding_table = HashMap(*u8, *u8, std.HashMap.DefaultContext(u8), 80).init(allocator),
+            .forwarding_table = HashMap(*u8, *u8, std.hash_map.AutoContext(*u8), std.hash_map.default_max_load_percentage).init(allocator),
             .pause_mutex = Mutex{},
-            .last_gc_time = std.time.Instant.now() catch |err| blk: {
-                std.log.warn("Failed to get current time for GC: {}\n", .{err});
-                break :blk std.time.Instant{ .timestamp = 0 };
-            },
+            .last_gc_time = undefined,
         };
         
         try gc.initializeHeap();
@@ -366,14 +363,14 @@ pub const GC = struct {
         // Set up heap segments for compaction
         const young_segment = HeapSegment{
             .start = @as(*u8, @ptrCast(self.young_heap_start)),
-            .end = @as(*u8, @ptrCast(self.young_heap_start)) + young_gen_size,
+            .end = @as(*u8, @ptrFromInt(@intFromPtr(@as(*u8, @ptrCast(self.young_heap_start))) + young_gen_size)),
             .current = @as(*u8, @ptrCast(self.young_heap_start)),
             .generation = 0,
         };
         
         const old_segment = HeapSegment{
             .start = @as(*u8, @ptrCast(self.old_heap_start)),
-            .end = heap_bytes + self.heap_size,
+            .end = @as(*u8, @ptrFromInt(@intFromPtr(heap_bytes) + self.heap_size)),
             .current = @as(*u8, @ptrCast(self.old_heap_start)),
             .generation = 1,
         };
@@ -708,7 +705,7 @@ pub const GC = struct {
         
         // Process mark stack until empty
         while (self.mark_stack.items.len > 0) {
-            const obj = self.mark_stack.pop().?;
+            const obj = self.mark_stack.pop();
             
             // Mark object as black
             obj.color = @intFromEnum(Color.Black);
@@ -918,7 +915,7 @@ pub const GC = struct {
         const compact_start = std.time.nanoTimestamp();
         defer {
             const compact_time = std.time.nanoTimestamp() - compact_start;
-            self.stats.total_compact_time += @intCast(compact_time / 1000); // microseconds
+            self.stats.total_compact_time += @intCast(@divTrunc(compact_time, 1000)); // microseconds
             self.stats.compact_count += 1;
         }
         
@@ -940,7 +937,7 @@ pub const GC = struct {
         var scan_ptr = segment.start;
         var compact_ptr = segment.start;
         
-        while (scan_ptr < segment.current) {
+        while (@intFromPtr(scan_ptr) < @intFromPtr(segment.current)) {
             const header = @as(*ObjectHeader, @ptrCast(@alignCast(scan_ptr)));
             const obj_size = header.size;
             
@@ -958,10 +955,10 @@ pub const GC = struct {
                     moved_objects.* += 1;
                     bytes_moved.* += obj_size;
                 }
-                compact_ptr += obj_size;
+                compact_ptr = @as(*u8, @ptrFromInt(@intFromPtr(compact_ptr) + obj_size));
             }
             
-            scan_ptr += obj_size;
+            scan_ptr = @as(*u8, @ptrFromInt(@intFromPtr(scan_ptr) + obj_size));
         }
         
         // Update segment's current pointer
@@ -974,8 +971,10 @@ pub const GC = struct {
         defer self.roots_mutex.unlock();
         
         for (self.roots.items) |*root| {
-            if (self.forwarding_table.get(root.*)) |new_location| {
-                root.* = new_location;
+            if (root.ptr.*) |ptr| {
+                if (self.forwarding_table.get(@as(*u8, @ptrCast(ptr)))) |new_location| {
+                    root.ptr.* = @ptrCast(new_location);
+                }
             }
         }
         
@@ -983,7 +982,7 @@ pub const GC = struct {
         for (self.heap_segments.items) |segment| {
             var scan_ptr = segment.start;
             
-            while (scan_ptr < segment.current) {
+            while (@intFromPtr(scan_ptr) < @intFromPtr(segment.current)) {
                 const header = @as(*ObjectHeader, @ptrCast(@alignCast(scan_ptr)));
                 
                 if (header.color != @intFromEnum(Color.White)) {
@@ -991,7 +990,7 @@ pub const GC = struct {
                     self.updateObjectPointers(header);
                 }
                 
-                scan_ptr += header.size;
+                scan_ptr = @as(*u8, @ptrFromInt(@intFromPtr(scan_ptr) + header.size));
             }
         }
         
@@ -1120,7 +1119,7 @@ pub const GC = struct {
                     }
                 }
                 
-                scan_ptr += @sizeOf(*anyopaque);
+                scan_ptr = @as([*]u8, @ptrFromInt(@intFromPtr(scan_ptr) + @sizeOf(*anyopaque)));
             }
         }
     }
@@ -1144,7 +1143,7 @@ pub const GC = struct {
                 
                 const obj = self.mark_stack.pop();
                 obj.color = @intFromEnum(Color.Black);
-                try self.markObjectChildren(obj);
+                try self.markChildren(obj);
                 work_done += 1;
             }
             
@@ -1163,7 +1162,7 @@ pub const GC = struct {
         // Promote survivors if needed
         try self.promoteObjects();
         
-        const elapsed_us = @as(u64, @intCast((std.time.nanoTimestamp() - start_time) / 1000));
+        const elapsed_us = @as(u64, @intCast(@divTrunc(std.time.nanoTimestamp() - start_time, 1000)));
         self.stats.total_pause_time_us += elapsed_us;
         if (elapsed_us > self.stats.max_pause_time_us) {
             self.stats.max_pause_time_us = elapsed_us;
@@ -1195,7 +1194,7 @@ pub const GC = struct {
                     
                     const obj = self.mark_stack.pop();
                     obj.color = @intFromEnum(Color.Black);
-                    try self.markObjectChildren(obj);
+                    try self.markChildren(obj);
                     work_done += 1;
                 }
                 
@@ -1220,7 +1219,7 @@ pub const GC = struct {
             }
         }
         
-        const elapsed_us = @as(u64, @intCast((std.time.nanoTimestamp() - start_time) / 1000));
+        const elapsed_us = @as(u64, @intCast(@divTrunc(std.time.nanoTimestamp() - start_time, 1000)));
         self.stats.total_pause_time_us += elapsed_us;
         if (elapsed_us > self.stats.max_pause_time_us) {
             self.stats.max_pause_time_us = elapsed_us;
@@ -1261,7 +1260,7 @@ pub const GC = struct {
             
             const obj = gc.mark_stack.items[i];
             obj.color = @intFromEnum(Color.Black);
-            gc.markObjectChildren(obj) catch {};
+            gc.markChildren(obj) catch {};
         }
     }
     
