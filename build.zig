@@ -72,9 +72,12 @@ pub fn build(b: *std.Build) void {
     });
     if (!is_wasm) {
         syscall_exe.linkLibC();
-        syscall_exe.linkSystemLibrary("LLVM-18");
-        syscall_exe.addLibraryPath(.{ .cwd_relative = "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib" });
-        syscall_exe.addIncludePath(.{ .cwd_relative = "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include" });
+        // Only link LLVM for native Linux builds to avoid cross-compilation issues
+        if (resolved_target.result.os.tag == .linux and resolved_target.result.cpu.arch == std.Target.Cpu.Arch.x86_64) {
+            syscall_exe.linkSystemLibrary("LLVM-18");
+            syscall_exe.addLibraryPath(.{ .cwd_relative = "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib" });
+            syscall_exe.addIncludePath(.{ .cwd_relative = "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include" });
+        }
     }
 
     b.installArtifact(exe);

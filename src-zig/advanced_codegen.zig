@@ -875,7 +875,53 @@ pub const AdvancedCodeGen = struct {
         try report_path.appendSlice(base_path);
         try report_path.appendSlice(".opt_report");
         
-        // TODO: Generate detailed optimization report to report_path.items
+        // Generate detailed optimization report
+        const report_file = std.fs.cwd().createFile(report_path.items, .{}) catch |err| {
+            std.debug.print("Warning: Could not create optimization report file: {}\n", .{err});
+            return;
+        };
+        defer report_file.close();
+        
+        const writer = report_file.writer();
+        
+        try writer.print("CURSED Advanced Optimization Report\n");
+        try writer.print("====================================\n\n");
+        
+        const timestamp = std.fmt.allocPrint(self.base_codegen.allocator, "{}", .{std.time.timestamp()}) catch "unknown";
+        defer if (!std.mem.eql(u8, timestamp, "unknown")) self.base_codegen.allocator.free(timestamp);
+        
+        try writer.print("Generated: {s}\n", .{timestamp});
+        try writer.print("Source file: {s}\n\n", .{self.source_file orelse "unknown"});
+        
+        // Report on optimization passes applied
+        try writer.print("Optimization Passes Applied:\n");
+        for (self.optimization_passes.items) |pass| {
+            switch (pass) {
+                .FunctionInlining => try writer.print("  - Function Inlining\n"),
+                .DeadCodeElimination => try writer.print("  - Dead Code Elimination\n"),
+                .ConstantFolding => try writer.print("  - Constant Folding\n"),
+                .LoopOptimization => try writer.print("  - Loop Optimization\n"),
+                .InterfaceDevirtualization => try writer.print("  - Interface Devirtualization\n"),
+            }
+        }
+        
+        // Report on type system statistics
+        try writer.print("\nType System Statistics:\n");
+        try writer.print("  - Struct types: {d}\n", .{self.struct_types.count()});
+        try writer.print("  - Interface types: {d}\n", .{self.interface_types.count()});
+        try writer.print("  - Generic instances: {d}\n", .{self.generic_instances.count()});
+        try writer.print("  - VTables generated: {d}\n", .{self.vtables.count()});
+        
+        // Report on memory management
+        try writer.print("\nMemory Management:\n");
+        try writer.print("  - GC enabled: {s}\n", .{if (self.gc_enabled) "yes" else "no"});
+        
+        // Report on debug information
+        try writer.print("\nDebug Information:\n");
+        try writer.print("  - Debug enabled: {s}\n", .{if (self.debug_enabled) "yes" else "no"});
+        try writer.print("  - Source locations tracked: {d}\n", .{self.source_locations.count()});
+        
+        std.debug.print("✅ Optimization report written to: {s}\n", .{report_path.items});
     }
     
     /// Generate debug info for CURSED function

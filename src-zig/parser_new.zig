@@ -753,6 +753,40 @@ pub const Parser = struct {
         return self.peek().kind == .Eof;
     }
 
+    // Recovery parsing methods
+    fn synchronize(self: *Parser) void {
+        _ = self.advance();
+        
+        while (!self.isAtEnd()) {
+            if (self.previous().kind == .Semicolon) return;
+            
+            switch (self.peek().kind) {
+                .Slay, .Sus, .Facts, .Squad, .Collab, .Vibe, .Yeet => return,
+                else => {},
+            }
+            
+            _ = self.advance();
+        }
+    }
+
+    fn recoverToNext(self: *Parser, target_tokens: []const TokenKind) void {
+        while (!self.isAtEnd()) {
+            for (target_tokens) |target| {
+                if (self.check(target)) return;
+            }
+            _ = self.advance();
+        }
+    }
+
+    fn skipToStatementEnd(self: *Parser) void {
+        while (!self.isAtEnd() and !self.check(.Semicolon) and !self.check(.Newline)) {
+            _ = self.advance();
+        }
+        if (self.check(.Semicolon) or self.check(.Newline)) {
+            _ = self.advance();
+        }
+    }
+
     fn peek(self: *Parser) Token {
         return self.tokens[self.current];
     }
@@ -766,8 +800,10 @@ pub const Parser = struct {
             return self.advance();
         }
         
-        // TODO: Better error reporting
-        _ = message;
+        // Enhanced error reporting with location
+        const current_token = if (self.current < self.tokens.len) self.tokens[self.current] else Token.init(.EOF, "", 0, 0);
+        std.debug.print("Parse error at line {}, column {}: {s}. Expected {:?}, got {:?}\n", 
+            .{ current_token.line, current_token.column, message, token_type, current_token.kind });
         return ParserError.UnexpectedToken;
     }
 
@@ -793,25 +829,29 @@ pub const Parser = struct {
                     slice_type.element_type.* = base_type;
                     base_type = Type{ .Slice = slice_type };
                 } else {
-                    // Array type [N]T
-                    // For now, skip size expression parsing
-                    while (!self.check(.RightBracket) and !self.isAtEnd()) {
-                        _ = self.advance();
-                    }
+                    // Array type [N]T - parse size expression
+                    const size_expr = try self.parseExpression();
                     _ = try self.consume(.RightBracket, "Expected ']'");
                     
                     const array_type = ArrayType{
                         .element_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
-                        .size = null, // TODO: Parse size expression
+                        .size = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
                     };
                     array_type.element_type.* = base_type;
+                    array_type.size.?.* = size_expr;
                     base_type = Type{ .Array = array_type };
                 }
             } else if (self.match(.Asterisk)) {
-                // Pointer type *T
+                // Pointer type *T or *mut T
+                var is_mutable = false;
+                if (self.match(.Mut) or self.check(.Sus)) {
+                    is_mutable = true;
+                    if (self.check(.Sus)) _ = self.advance();
+                }
+                
                 const pointer_type = PointerType{
                     .target_type = self.allocator.create(Type) catch return ParserError.OutOfMemory,
-                    .is_mutable = true, // TODO: Parse mutability
+                    .is_mutable = is_mutable,
                 };
                 pointer_type.target_type.* = base_type;
                 base_type = Type{ .Pointer = pointer_type };

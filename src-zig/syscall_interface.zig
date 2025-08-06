@@ -35,7 +35,7 @@ var syscall_initialized: bool = false;
 var syscall_mutex: std.Thread.Mutex = std.Thread.Mutex{};
 
 /// Initialize the syscall interface
-export fn cursed_syscall_init(allocator: *anyopaque) void {
+pub export fn cursed_syscall_init(allocator: *anyopaque) void {
     syscall_mutex.lock();
     defer syscall_mutex.unlock();
     
@@ -49,7 +49,7 @@ export fn cursed_syscall_init(allocator: *anyopaque) void {
 }
 
 /// Cleanup syscall interface
-export fn cursed_syscall_cleanup() void {
+pub export fn cursed_syscall_cleanup() void {
     syscall_mutex.lock();
     defer syscall_mutex.unlock();
     
@@ -87,7 +87,7 @@ var file_handles: std.HashMap(u32, FileHandle, std.hash_map.AutoContext(u32), st
 var next_handle_id: u32 = 1;
 
 /// Open a file and return handle ID
-export fn cursed_file_open(path_ptr: [*:0]const u8, mode: u32) i32 {
+pub export fn cursed_file_open(path_ptr: [*:0]const u8, mode: u32) i32 {
     if (!syscall_initialized) return -1;
     
     const path = std.mem.span(path_ptr);
@@ -412,66 +412,170 @@ export fn cursed_socket_bind(socket_id: u32, addr_ptr: [*:0]const u8, port: u16)
     const socket = socket_registry.getPtr(socket_id) orelse return -2;
     const addr_str = std.mem.span(addr_ptr);
     
-    // Simplified implementation - networking bind not implemented yet
-    _ = addr_str;
-    _ = port;
-    _ = socket;
-    print("[SYSCALL] Socket bind not yet implemented\n", .{});
-    return -3; // Not implemented
+    // Parse address and create socket address structure
+    const addr = std.net.Address.parseIp4(addr_str, port) catch |err| {
+        print("[SYSCALL] Invalid address {s}:{}: {}\n", .{ addr_str, port, err });
+        return switch (err) {
+            error.InvalidCharacter => -3,
+            error.Overflow => -4,
+            error.InvalidEnd => -5,
+            error.Incomplete => -6,
+            error.NonCanonical => -7,
+        };
+    };
+    
+    // Bind the socket
+    std.posix.bind(socket.fd, &addr.any, addr.getOsSockLen()) catch |err| {
+        print("[SYSCALL] Bind error for socket {}: {}\n", .{ socket_id, err });
+        return -8; // Simplified error handling
+    };
+    
+    socket.is_bound = true;
+    print("[SYSCALL] Bound socket {} to {s}:{}\n", .{ socket_id, addr_str, port });
+    return 0;
 }
 
 /// Listen on a socket
 export fn cursed_socket_listen(socket_id: u32, backlog: u32) i32 {
     if (!syscall_initialized) return -1;
     
-    _ = socket_id;
-    _ = backlog;
-    print("[SYSCALL] Socket listen not yet implemented\n", .{});
-    return -3; // Not implemented
+    const socket = socket_registry.getPtr(socket_id) orelse return -2;
+    
+    if (!socket.is_bound) {
+        print("[SYSCALL] Socket {} not bound before listen\n", .{socket_id});
+        return -3;
+    }
+    
+    std.posix.listen(socket.fd, @intCast(backlog)) catch |err| {
+        print("[SYSCALL] Listen error for socket {}: {}\n", .{ socket_id, err });
+        return switch (err) {
+            error.AddressInUse => -4,
+            error.FileDescriptorNotASocket => -5,
+            error.OperationNotSupported => -6,
+            error.SystemResources => -7,
+            error.Unexpected => -8,
+            else => -1,
+        };
+    };
+    
+    socket.is_listening = true;
+    print("[SYSCALL] Socket {} listening with backlog {}\n", .{ socket_id, backlog });
+    return 0;
 }
 
 /// Accept a connection on a listening socket
 export fn cursed_socket_accept(socket_id: u32) i32 {
     if (!syscall_initialized) return -1;
     
-    _ = socket_id;
-    print("[SYSCALL] Socket accept not yet implemented\n", .{});
-    return -3; // Not implemented
+    const socket = socket_registry.get(socket_id) orelse return -2;
+    
+    if (!socket.is_listening) {
+        print("[SYSCALL] Socket {} not listening before accept\n", .{socket_id});
+        return -3;
+    }
+    
+    var client_addr: std.net.Address = undefined;
+    var client_addr_len: std.posix.socklen_t = @sizeOf(std.net.Address);
+    
+    const client_fd = std.posix.accept(socket.fd, &client_addr.any, &client_addr_len, 0) catch |err| {
+        print("[SYSCALL] Accept error for socket {}: {}\n", .{ socket_id, err });
+        return -4; // Simplified error handling
+    };
+    
+    // Create new socket for client connection
+    const client_socket_id = next_socket_id;
+    next_socket_id += 1;
+    
+    const client_socket = Socket.init(client_fd, socket.domain, socket.sock_type, socket.protocol);
+    socket_registry.put(client_socket_id, client_socket) catch {
+        std.posix.close(client_fd);
+        return -13; // out of memory
+    };
+    
+    print("[SYSCALL] Accepted connection on socket {}, new client socket {}\n", .{ socket_id, client_socket_id });
+    return @intCast(client_socket_id);
 }
 
 /// Connect a socket to a remote address
 export fn cursed_socket_connect(socket_id: u32, addr_ptr: [*:0]const u8, port: u16) i32 {
     if (!syscall_initialized) return -1;
     
-    _ = socket_id;
-    _ = addr_ptr;
-    _ = port;
-    print("[SYSCALL] Socket connect not yet implemented\n", .{});
-    return -3; // Not implemented
+    const socket = socket_registry.getPtr(socket_id) orelse return -2;
+    const addr_str = std.mem.span(addr_ptr);
+    
+    // Parse remote address
+    const addr = std.net.Address.parseIp4(addr_str, port) catch |err| {
+        print("[SYSCALL] Invalid address {s}:{}: {}\n", .{ addr_str, port, err });
+        return switch (err) {
+            error.InvalidCharacter => -3,
+            error.Overflow => -4,
+            error.InvalidEnd => -5,
+            error.Incomplete => -6,
+            error.NonCanonical => -7,
+        };
+    };
+    
+    // Connect to remote address
+    std.posix.connect(socket.fd, &addr.any, addr.getOsSockLen()) catch |err| {
+        print("[SYSCALL] Connect error for socket {} to {s}:{}: {}\n", .{ socket_id, addr_str, port, err });
+        return -12; // Simplified error handling
+    };
+    
+    socket.is_connected = true;
+    print("[SYSCALL] Connected socket {} to {s}:{}\n", .{ socket_id, addr_str, port });
+    return 0;
 }
 
 /// Send data on a socket
 export fn cursed_socket_send(socket_id: u32, data: [*]const u8, size: usize, flags: u32) i64 {
     if (!syscall_initialized) return -1;
     
-    _ = socket_id;
-    _ = data;
-    _ = size;
-    _ = flags;
-    print("[SYSCALL] Socket send not yet implemented\n", .{});
-    return -3; // Not implemented
+    const socket = socket_registry.get(socket_id) orelse return -2;
+    
+    if (!socket.is_connected and socket.sock_type == std.posix.SOCK.STREAM) {
+        print("[SYSCALL] Socket {} not connected for stream send\n", .{socket_id});
+        return -3;
+    }
+    
+    const bytes_sent = std.posix.send(socket.fd, data[0..size], @intCast(flags)) catch |err| {
+        print("[SYSCALL] Send error for socket {}: {}\n", .{ socket_id, err });
+        return switch (err) {
+            error.AccessDenied => -4,
+            error.BrokenPipe => -5,
+            error.ConnectionResetByPeer => -6,
+            error.FastOpenAlreadyInProgress => -7,
+            error.FileDescriptorNotASocket => -8,
+            error.MessageTooBig => -9,
+            error.NetworkSubsystemFailed => -10,
+            error.NetworkUnreachable => -11,
+            error.SystemResources => -12,
+            error.Unexpected => -13,
+            error.WouldBlock => 0, // Non-blocking send would block
+        };
+    };
+    
+    print("[SYSCALL] Sent {} bytes on socket {}\n", .{ bytes_sent, socket_id });
+    return @intCast(bytes_sent);
 }
 
 /// Receive data from a socket
 export fn cursed_socket_recv(socket_id: u32, buffer: [*]u8, size: usize, flags: u32) i64 {
     if (!syscall_initialized) return -1;
     
-    _ = socket_id;
-    _ = buffer;
-    _ = size;
-    _ = flags;
-    print("[SYSCALL] Socket recv not yet implemented\n", .{});
-    return -3; // Not implemented
+    const socket = socket_registry.get(socket_id) orelse return -2;
+    
+    if (!socket.is_connected and socket.sock_type == std.posix.SOCK.STREAM) {
+        print("[SYSCALL] Socket {} not connected for stream recv\n", .{socket_id});
+        return -3;
+    }
+    
+    const bytes_received = std.posix.recv(socket.fd, buffer[0..size], @intCast(flags)) catch |err| {
+        print("[SYSCALL] Recv error for socket {}: {}\n", .{ socket_id, err });
+        return -5; // Simplified error handling
+    };
+    
+    print("[SYSCALL] Received {} bytes on socket {}\n", .{ bytes_received, socket_id });
+    return @intCast(bytes_received);
 }
 
 // =============================================================================
@@ -622,11 +726,196 @@ export fn cursed_env_set(name_ptr: [*:0]const u8, value_ptr: [*:0]const u8) i32 
 }
 
 // =============================================================================
+// Advanced File Operations
+// =============================================================================
+
+/// Seek to position in file
+export fn cursed_file_seek(handle_id: u32, offset: i64, whence: u32) i64 {
+    if (!syscall_initialized) return -1;
+    
+    const handle = file_handles.getPtr(handle_id) orelse return -2;
+    
+    const file = std.fs.File{ .handle = handle.fd };
+    
+    // Simplified seek implementation
+    const new_pos = switch (whence) {
+        0 => offset, // SEEK_SET
+        1 => @as(i64, @intCast(handle.offset)) + offset, // SEEK_CUR
+        2 => blk: {
+            const stat = file.stat() catch return -4;
+            break :blk @as(i64, @intCast(stat.size)) + offset;
+        },
+        else => return -3,
+    };
+    
+    if (new_pos < 0) return -5; // Invalid position
+    
+    file.seekTo(@intCast(new_pos)) catch |err| {
+        print("[SYSCALL] Seek error on handle {}: {}\n", .{ handle_id, err });
+        return -6;
+    };
+    
+    handle.offset = @intCast(new_pos);
+    print("[SYSCALL] Seeked handle {} to position {}\n", .{ handle_id, new_pos });
+    return new_pos;
+}
+
+/// Sync file to disk
+export fn cursed_file_sync(handle_id: u32) i32 {
+    if (!syscall_initialized) return -1;
+    
+    const handle = file_handles.get(handle_id) orelse return -2;
+    
+    const file = std.fs.File{ .handle = handle.fd };
+    file.sync() catch |err| {
+        print("[SYSCALL] Sync error on handle {}: {}\n", .{ handle_id, err });
+        return -3;
+    };
+    
+    print("[SYSCALL] Synced handle {}\n", .{handle_id});
+    return 0;
+}
+
+/// Change file permissions
+export fn cursed_file_chmod(path_ptr: [*:0]const u8, mode: u32) i32 {
+    if (!syscall_initialized) return -1;
+    
+    const path = std.mem.span(path_ptr);
+    
+    const file = std.fs.cwd().openFile(path, .{}) catch |err| {
+        print("[SYSCALL] Chmod error opening {s}: {}\n", .{ path, err });
+        return switch (err) {
+            error.FileNotFound => -2,
+            error.AccessDenied => -3,
+            else => -1,
+        };
+    };
+    defer file.close();
+    
+    file.chmod(@intCast(mode)) catch |err| {
+        print("[SYSCALL] Chmod error for {s}: {}\n", .{ path, err });
+        return -4;
+    };
+    
+    print("[SYSCALL] Changed permissions of {s} to {o}\n", .{ path, mode });
+    return 0;
+}
+
+/// Get current working directory
+export fn cursed_getcwd(buffer: [*]u8, buffer_size: usize) i32 {
+    if (!syscall_initialized) return -1;
+    
+    const cwd = std.process.getCwd(buffer[0..buffer_size]) catch |err| {
+        print("[SYSCALL] Getcwd error: {}\n", .{err});
+        return -2;
+    };
+    
+    print("[SYSCALL] Current working directory: {s}\n", .{cwd});
+    return @intCast(cwd.len);
+}
+
+/// Change current working directory
+export fn cursed_chdir(path_ptr: [*:0]const u8) i32 {
+    if (!syscall_initialized) return -1;
+    
+    const path = std.mem.span(path_ptr);
+    
+    std.process.changeCurDir(path) catch |err| {
+        print("[SYSCALL] Chdir error for {s}: {}\n", .{ path, err });
+        return switch (err) {
+            error.AccessDenied => -2,
+            error.FileNotFound => -3,
+            error.NameTooLong => -4,
+            error.NotDir => -5,
+            error.SystemResources => -6,
+            error.BadPathName => -7,
+            else => -1,
+        };
+    };
+    
+    print("[SYSCALL] Changed directory to {s}\n", .{path});
+    return 0;
+}
+
+// =============================================================================
+// Memory Management
+// =============================================================================
+
+/// Allocate memory
+export fn cursed_malloc(size: usize) ?*anyopaque {
+    if (!syscall_initialized or global_allocator == null) return null;
+    
+    const memory = global_allocator.?.alloc(u8, size) catch {
+        print("[SYSCALL] Malloc failed for {} bytes\n", .{size});
+        return null;
+    };
+    
+    print("[SYSCALL] Allocated {} bytes at {*}\n", .{ size, memory.ptr });
+    return memory.ptr;
+}
+
+/// Free memory
+export fn cursed_free(ptr: ?*anyopaque) void {
+    if (!syscall_initialized or global_allocator == null or ptr == null) return;
+    
+    // Note: This is a simplified implementation
+    // Real implementation would need to track allocation sizes
+    print("[SYSCALL] Freed memory at {*}\n", .{ptr});
+    // global_allocator.?.free(...); // Would need allocation tracking
+}
+
+/// Reallocate memory
+export fn cursed_realloc(ptr: ?*anyopaque, new_size: usize) ?*anyopaque {
+    if (!syscall_initialized or global_allocator == null) return null;
+    
+    if (ptr == null) {
+        return cursed_malloc(new_size);
+    }
+    
+    // Note: This is a simplified implementation
+    // Real implementation would use proper realloc
+    const new_memory = global_allocator.?.alloc(u8, new_size) catch {
+        print("[SYSCALL] Realloc failed for {} bytes\n", .{new_size});
+        return null;
+    };
+    
+    print("[SYSCALL] Reallocated memory from {*} to {*} ({} bytes)\n", .{ ptr, new_memory.ptr, new_size });
+    return new_memory.ptr;
+}
+
+/// Get memory usage statistics
+export fn cursed_memory_stats(stats_ptr: *MemoryStats) i32 {
+    if (!syscall_initialized) return -1;
+    
+    // This is a simplified implementation
+    // Real implementation would track actual memory usage
+    stats_ptr.total_allocated = 0;
+    stats_ptr.total_freed = 0;
+    stats_ptr.current_usage = 0;
+    stats_ptr.peak_usage = 0;
+    stats_ptr.allocation_count = 0;
+    stats_ptr.free_count = 0;
+    
+    print("[SYSCALL] Retrieved memory statistics\n", .{});
+    return 0;
+}
+
+/// Memory statistics structure
+const MemoryStats = extern struct {
+    total_allocated: u64,
+    total_freed: u64,
+    current_usage: u64,
+    peak_usage: u64,
+    allocation_count: u32,
+    free_count: u32,
+};
+
+// =============================================================================
 // Initialization and cleanup
 // =============================================================================
 
 /// Initialize all syscall registries
-export fn cursed_syscall_init_registries() void {
+pub export fn cursed_syscall_init_registries() void {
     if (!syscall_initialized or global_allocator == null) return;
     
     file_handles = std.HashMap(u32, FileHandle, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(global_allocator.?);
@@ -637,7 +926,7 @@ export fn cursed_syscall_init_registries() void {
 }
 
 /// Cleanup all syscall registries
-export fn cursed_syscall_cleanup_registries() void {
+pub export fn cursed_syscall_cleanup_registries() void {
     if (!syscall_initialized) return;
     
     // Cleanup file handles

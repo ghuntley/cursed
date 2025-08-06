@@ -521,8 +521,8 @@ pub const ChannelType = struct {
 };
 
 pub const ArrayType = struct {
-    element_type: NodeIndex,
-    size: ?usize,
+    element_type: *Type,
+    size: ?*Expression,
 
     pub fn deinit(self: *ArrayType, allocator: Allocator, ast: *AST) void {
         _ = allocator;
@@ -532,7 +532,7 @@ pub const ArrayType = struct {
 };
 
 pub const SliceType = struct {
-    element_type: NodeIndex,
+    element_type: *Type,
 
     pub fn deinit(self: *SliceType, allocator: Allocator, ast: *AST) void {
         _ = allocator;
@@ -553,7 +553,8 @@ pub const MapType = struct {
 };
 
 pub const PointerType = struct {
-    target_type: NodeIndex,
+    target_type: *Type,
+    is_mutable: bool,
 
     pub fn deinit(self: *PointerType, allocator: Allocator, ast: *AST) void {
         _ = allocator;
