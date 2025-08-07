@@ -128,8 +128,10 @@ slay pow_meal(base meal, exp normie) meal {
     }
     
     sus result meal = 1.0
-    bestie i := 0; i < exp; i++ {
+    sus i normie = 0
+    bestie i < exp {
         result = result * base
+        i = i + 1
     }
     damn result
 }
@@ -327,8 +329,10 @@ slay factorial(n normie) normie {
         damn 1
     }
     sus result normie = 1
-    bestie i := 2; i <= n; i++ {
+    sus i normie = 2
+    bestie i <= n {
         result = result * i
+        i = i + 1
     }
     damn result
 }
@@ -626,10 +630,12 @@ slay fibonacci(n normie) normie {
     sus a normie = 0
     sus b normie = 1
     
-    bestie i := 2; i <= n; i++ {
+    sus i normie = 2
+    bestie i <= n {
         sus temp normie = a + b
         a = b
         b = temp
+        i = i + 1
     }
     
     damn b

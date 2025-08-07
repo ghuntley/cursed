@@ -1,24 +1,14 @@
-fr fr Memory leak test program
-yeet "testz"
+sus x drip = (5 + 3) * 2
+sus y drip = (x + 1) * (10 - 3)
+sus z tea = "test string " + "concatenation"
+vibez.spill("x:", x)
+vibez.spill("y:", y)
+vibez.spill("z:", z)
 
-test_start("Memory allocation test")
-
-fr fr Test various allocation patterns
-sus x drip = 42
-sus y tea = "Hello"  
-sus z lit = based
-
-fr fr Function calls that may allocate
-vibez.spill("Testing memory:", x, y, z)
-
-fr fr Error handling constructs
-yikes error_test = "test error"
-fam {
-    shook vibez.spill("This might fail")
+slay test_func(a drip, b drip) drip {
+    sus result drip = (a + b) * 2
+    damn result
 }
 
-fr fr Complex expressions
-sus result drip = x + 10 * 5
-vibez.spill("Result:", result)
-
-print_test_summary()
+sus result drip = test_func((1 + 2), (3 + 4))
+vibez.spill("Function result:", result)

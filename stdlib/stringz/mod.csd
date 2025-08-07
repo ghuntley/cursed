@@ -497,18 +497,11 @@ slay string_concat(a tea, b tea) tea {
 fr fr === RUNTIME HELPER FUNCTIONS ===
 
 slay runtime_string_char_at(s tea, index normie) sip {
-    fr fr Runtime implementation would access actual string memory
-    fr fr For testing with simple strings, provide basic character access
-    vibes index == 0 { damn 'h' }
-    vibes index == 1 { damn 'e' }
-    vibes index == 2 { damn 'l' }
-    vibes index == 3 { damn 'l' }
-    vibes index == 4 { damn 'o' }
-    damn '\0'
+    fr fr Runtime implementation calling core runtime functions
+    damn runtime_char_at_string(s, index)
 }
 
 slay runtime_char_to_string(c sip) tea {
-    fr fr Runtime implementation would convert character to string
-    fr fr For testing, provide basic conversion
-    damn "" + c
+    fr fr Runtime implementation calling core runtime functions
+    damn runtime_char_to_str(c)
 }

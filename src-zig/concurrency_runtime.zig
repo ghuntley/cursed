@@ -340,6 +340,20 @@ pub fn shutdownRuntime(allocator: Allocator) void {
 /// High-level API functions for CURSED integration
 
 /// Execute CURSED goroutine spawn statement
+/// Execute stan statement from interpreter (spawn goroutine with custom function)
+pub fn executeStanFromInterpreter(context: ?*anyopaque, entry_function: concurrency.GoroutineEntry) !concurrency.GoroutineId {
+    // Ensure scheduler is initialized
+    if (global_runtime == null) {
+        try initializeRuntime();
+    }
+    
+    // Spawn goroutine using the provided entry function
+    const goroutine_id = try concurrency.stan(entry_function, context);
+    
+    std.log.debug("Spawned goroutine {} from interpreter", .{goroutine_id});
+    return goroutine_id;
+}
+
 pub fn executeStan(function_ast: *ast.FunctionLiteral, context: ?*anyopaque) !concurrency.GoroutineId {
     const runtime = getRuntime() orelse return error.RuntimeNotInitialized;
     return runtime.spawnGoroutine(function_ast, context);

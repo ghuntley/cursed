@@ -5,6 +5,7 @@ const HashMap = std.HashMap;
 
 const ast = @import("ast.zig");
 const error_handling = @import("error_handling.zig");
+const cursed_error = @import("cursed_error_runtime.zig");
 const concurrency = @import("concurrency.zig");
 const gc = @import("gc.zig");
 const Program = ast.Program;
@@ -172,6 +173,7 @@ pub const Value = union(enum) {
     Struct: StructInstance,
     Interface: InterfaceInstance,
     Error: ErrorValue,
+    CursedError: *cursed_error.CursedError,
 
     pub fn toString(self: Value, allocator: Allocator) ![]u8 {
         switch (self) {
@@ -184,6 +186,7 @@ pub const Value = union(enum) {
             .Struct => |struct_inst| return std.fmt.allocPrint(allocator, "struct {s}", .{struct_inst.type_name}),
             .Interface => |interface_inst| return std.fmt.allocPrint(allocator, "interface {s}", .{interface_inst.vtable.interface_name}),
             .Error => |err| return std.fmt.allocPrint(allocator, "Error({s})", .{err.message}),
+            .CursedError => |cursed_err| return try cursed_err.toString(),
         }
     }
 
@@ -198,6 +201,7 @@ pub const Value = union(enum) {
             .Struct => return true,   // Structs are always truthy if they exist
             .Interface => return true, // Interfaces are always truthy if they exist
             .Error => return false,   // Errors are falsy
+            .CursedError => return false, // CursedErrors are falsy
         }
     }
 
@@ -324,6 +328,7 @@ pub const Interpreter = struct {
     channel_storage: HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage),
     next_goroutine_id: u64,
     defer_stack: ArrayList(DeferEntry),  // LIFO defer execution stack
+    error_handler: cursed_error.ErrorHandler,
     allocator: Allocator,
 
     pub fn init(allocator: Allocator) Interpreter {
@@ -337,6 +342,7 @@ pub const Interpreter = struct {
             .channel_storage = HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .next_goroutine_id = 0,
             .defer_stack = ArrayList(DeferEntry).init(allocator),
+            .error_handler = cursed_error.ErrorHandler.init(allocator, "main.csd"),
             .allocator = allocator,
         };
     }
@@ -349,6 +355,7 @@ pub const Interpreter = struct {
         self.functions.deinit();
         self.type_registry.deinit();
         self.defer_stack.deinit();
+        self.error_handler.deinit();
         
         // Clean up channel storage
         var channel_iterator = self.channel_storage.iterator();
@@ -375,6 +382,7 @@ pub const Interpreter = struct {
                 .Struct => {
                     if (stmt.data) |data| {
                         const struct_decl = @as(*ast.StructStatement, @ptrCast(@alignCast(data)));
+                        std.debug.print("DEBUG: Registering struct '{s}' with {d} methods\n", .{struct_decl.name, struct_decl.methods.items.len});
                         try self.type_registry.registerStruct(struct_decl.name, struct_decl.*);
                     }
                 },
@@ -405,6 +413,7 @@ pub const Interpreter = struct {
                 _ = try self.evaluateExpression(expr);
             },
             .Let => |let| try self.executeLetStatement(let),
+            .Assignment => |assign| try self.executeAssignmentStatement(assign),
             .Return => |ret| {
                 // Return statements are handled in function context
                 _ = ret;
@@ -415,6 +424,7 @@ pub const Interpreter = struct {
             .Function => {
                 // Functions are already collected, skip execution
             },
+            .Struct => |struct_stmt| try self.executeStructStatement(struct_stmt),
             .Stan => |stan| try self.executeStanStatement(stan),
             .Yikes => |yikes| try self.executeYikesStatement(yikes),
             .Fam => |fam| try self.executeFamStatement(fam),
@@ -434,6 +444,57 @@ pub const Interpreter = struct {
             Value.Null;
         
         try self.environment.define(let.name, value);
+    }
+    
+    fn executeAssignmentStatement(self: *Interpreter, assign: ast.AssignmentStatement) InterpreterError!void {
+        const target_expr: *Expression = @ptrCast(@alignCast(assign.target));
+        const value_expr: *Expression = @ptrCast(@alignCast(assign.value));
+        
+        const value = try self.evaluateExpression(value_expr);
+        
+        switch (target_expr.*) {
+            .Identifier => |name| {
+                // Simple variable assignment
+                try self.environment.assign(name, value);
+            },
+            .MemberAccess => |member| {
+                // Struct field assignment
+                try self.assignToMemberAccess(member, value);
+            },
+            else => {
+                std.debug.print("Unsupported assignment target: {s}\n", .{@tagName(target_expr.*)});
+                return InterpreterError.TypeMismatch;
+            }
+        }
+    }
+    
+    fn assignToMemberAccess(self: *Interpreter, member: *ast.MemberAccessExpression, value: Value) InterpreterError!void {
+        // For struct field assignment, we need to get the variable name and update it in the environment
+        switch (member.object.*) {
+            .Identifier => |obj_name| {
+                var object_value = try self.environment.get(obj_name);
+                switch (object_value) {
+                    .Struct => |*struct_inst| {
+                        try struct_inst.setField(member.property, value);
+                        // Update the struct instance in the environment
+                        try self.environment.assign(obj_name, object_value);
+                    },
+                    else => {
+                        std.debug.print("Cannot assign to field of non-struct type: {s}\n", .{@tagName(object_value)});
+                        return InterpreterError.TypeMismatch;
+                    }
+                }
+            },
+            else => {
+                std.debug.print("Complex member access assignment not yet supported\n", .{});
+                return InterpreterError.TypeMismatch;
+            }
+        }
+    }
+    
+    fn executeStructStatement(self: *Interpreter, struct_stmt: ast.StructStatement) InterpreterError!void {
+        // Register the struct type in the type registry
+        try self.type_registry.registerStruct(struct_stmt.name, struct_stmt);
     }
 
     fn executeIfStatement(self: *Interpreter, if_stmt: ast.IfStatement) InterpreterError!void {
@@ -473,6 +534,7 @@ pub const Interpreter = struct {
             .Call => |call| return try self.evaluateCall(call),
             .MemberAccess => |member| return try self.evaluateMemberAccess(member),
             .StructLiteral => |struct_lit| return try self.evaluateStructLiteral(struct_lit),
+            .Struct => |struct_expr| return try self.evaluateStructExpression(struct_expr),
             .Yikes => |yikes| return try self.evaluateYikes(yikes),
             .Shook => |shook| return try self.evaluateShook(shook),
             .Fam => |fam| return try self.evaluateFam(fam),
@@ -575,6 +637,9 @@ pub const Interpreter = struct {
                     }
                     std.debug.print("\n");
                     return Value.Null;
+                } else {
+                    // Handle method calls on objects (structs/interfaces)
+                    return try self.evaluateMethodCall(member, call.arguments.items);
                 }
             },
             .Identifier => |name| {
@@ -697,6 +762,88 @@ pub const Interpreter = struct {
             }
         }
     }
+
+    fn evaluateMethodCall(self: *Interpreter, member: ast.MemberAccessExpression, args: []ast.Expression) InterpreterError!Value {
+        const object = try self.evaluateExpression(member.object.*);
+        
+        switch (object) {
+            .Struct => |struct_inst| {
+                // Look for method in struct type definition
+                if (self.type_registry.getStruct(struct_inst.type_name)) |struct_decl| {
+                    // Check if struct has methods defined
+                    for (struct_decl.methods.items) |method| {
+                        if (std.mem.eql(u8, method.name, member.property)) {
+                            // Call the struct method
+                            var method_args = try std.ArrayList(Value).initCapacity(self.allocator, args.len + 1);
+                            defer method_args.deinit();
+                            
+                            // First argument is self (the struct instance)
+                            try method_args.append(Value{ .Struct = struct_inst });
+                            
+                            // Add other arguments
+                            for (args) |arg_expr| {
+                                const arg_val = try self.evaluateExpression(arg_expr);
+                                try method_args.append(arg_val);
+                            }
+                            
+                            // Execute method body
+                            return try self.executeMethodBody(method, method_args.items);
+                        }
+                    }
+                }
+                return InterpreterError.UndefinedMethod;
+            },
+            .Interface => {
+                // Use interface dispatch through vtable
+                var method_args = try std.ArrayList(Value).initCapacity(self.allocator, args.len);
+                defer method_args.deinit();
+                
+                for (args) |arg_expr| {
+                    const arg_val = try self.evaluateExpression(arg_expr);
+                    try method_args.append(arg_val);
+                }
+                
+                // TODO: Implement proper interface method dispatch
+                return Value.Null;
+            },
+            else => {
+                return InterpreterError.TypeMismatch;
+            }
+        }
+    }
+
+    fn executeMethodBody(self: *Interpreter, method: ast.FunctionStatement, args: []Value) InterpreterError!Value {
+        // Create new environment for method execution
+        var method_env = Environment.init(self.allocator);
+        defer method_env.deinit();
+        method_env.enclosing = self.environment;
+        
+        // Bind parameters to arguments
+        for (method.parameters.items, 0..) |param, i| {
+            if (i < args.len) {
+                try method_env.define(param.name, args[i]);
+            }
+        }
+        
+        // Save current environment
+        const previous_env = self.environment;
+        self.environment = &method_env;
+        defer self.environment = previous_env;
+        
+        // Execute method body
+        var result = Value.Null;
+        for (method.body.items) |stmt| {
+            result = try self.executeStatement(stmt);
+            
+            // Handle return statements
+            if (self.return_value) |return_val| {
+                self.return_value = null; // Clear the return flag
+                return return_val;
+            }
+        }
+        
+        return result;
+    }
     
     fn evaluateStructLiteral(self: *Interpreter, struct_lit: ast.StructLiteralExpression) InterpreterError!Value {
         // Check if struct type exists
@@ -711,6 +858,24 @@ pub const Interpreter = struct {
         for (struct_lit.fields.items) |field_assignment| {
             const field_value = try self.evaluateExpression(field_assignment.value);
             try struct_instance.setField(field_assignment.field_name, field_value);
+        }
+        
+        return Value{ .Struct = struct_instance };
+    }
+    
+    fn evaluateStructExpression(self: *Interpreter, struct_expr: *ast.StructExpression) InterpreterError!Value {
+        // Check if struct type exists
+        if (self.type_registry.getStruct(struct_expr.struct_name) == null) {
+            return InterpreterError.UndefinedStruct;
+        }
+        
+        // Create new struct instance
+        var struct_instance = try StructInstance.init(self.allocator, struct_expr.struct_name);
+        
+        // Initialize fields from literal
+        for (struct_expr.fields.items) |field_initializer| {
+            const field_value = try self.evaluateExpression(field_initializer.value);
+            try struct_instance.setField(field_initializer.field_name, field_value);
         }
         
         return Value{ .Struct = struct_instance };
@@ -819,16 +984,18 @@ pub const Interpreter = struct {
             else => "Unknown error",
         };
         
-        // Create error with optional type
-        const error_type = yikes.error_type orelse "RuntimeError";
+        // Create CURSED error with stack trace
+        const error_obj = try self.error_handler.yikes(
+            message,
+            .Runtime,
+            -1,
+            0, // TODO: Get actual line number from parser context
+            0  // TODO: Get actual column from parser context
+        );
         
-        // Create and throw the error
-        _ = try ErrorValue.init(self.allocator, message, -1);
-        
-        // In a full implementation, this would propagate the error up the call stack
-        // For now, print the error message
+        // Print the error with full context
         const stdout = std.io.getStdOut().writer();
-        try stdout.print("🚨 YIKES! {s}: {s}\n", .{ error_type, message });
+        try error_obj.format(stdout);
         
         return InterpreterError.RuntimeError;
     }
@@ -904,30 +1071,49 @@ pub const Interpreter = struct {
             };
         } else 0;
         
-        // Create error value
-        return Value{ .Error = try ErrorValue.init(self.allocator, message, code) };
+        // Create CURSED error with full context
+        const error_obj = try self.error_handler.yikes(
+            message,
+            .Runtime,
+            code,
+            0, // TODO: Get actual line number
+            0  // TODO: Get actual column
+        );
+        
+        return Value{ .CursedError = error_obj };
     }
 
     fn evaluateFam(self: *Interpreter, fam: ast.FamExpression) InterpreterError!Value {
         var last_result = Value.Null;
-        var error_occurred: ?ErrorValue = null;
+        var error_occurred: ?*cursed_error.CursedError = null;
         
         // Execute try body
         for (fam.try_body.items) |stmt_ptr| {
             const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
             const result = self.executeStatement(stmt.*) catch |err| {
-                error_occurred = ErrorValue.init(
-                    self.allocator,
+                error_occurred = try self.error_handler.yikes(
                     @errorName(err),
-                    @intFromError(err)
-                ) catch continue; // If we can't create error, continue execution
+                    .Runtime,
+                    @intFromError(err),
+                    0, 0
+                );
                 break;
             };
             
             if (result) |val| {
                 switch (val) {
                     .Error => |err| {
-                        error_occurred = err;
+                        // Convert old error to CURSED error
+                        error_occurred = try self.error_handler.yikes(
+                            err.message,
+                            .Runtime,
+                            err.code,
+                            0, 0
+                        );
+                        break;
+                    },
+                    .CursedError => |cursed_err| {
+                        error_occurred = cursed_err;
                         break;
                     },
                     else => last_result = val,
@@ -940,7 +1126,7 @@ pub const Interpreter = struct {
             const catch_handler = fam.catch_handler.?;
             
             // Set error variable in environment
-            try self.environment.define(catch_handler.error_variable, Value{ .Error = error_occurred.? });
+            try self.environment.define(catch_handler.error_variable, Value{ .CursedError = error_occurred.? });
             
             // Execute catch body
             for (catch_handler.handler_body.items) |stmt_ptr| {
@@ -973,22 +1159,56 @@ pub const Interpreter = struct {
     }
 
     fn executeStanStatement(self: *Interpreter, stan: ast.StanStatement) InterpreterError!void {
-        // Execute goroutine body in a separate context
-        // For now, we simulate goroutine execution by running the body immediately
-        // In a full implementation, this would spawn an actual goroutine
+        // Import concurrency runtime for goroutine spawning
+        const concurrency_runtime = @import("concurrency_runtime.zig");
         
-        // Create a new environment for the goroutine
-        var goroutine_env = Environment.init(self.allocator, self.environment);
-        defer goroutine_env.deinit();
+        // Create goroutine context
+        const GoroutineContext = struct {
+            interpreter: *Interpreter,
+            statements: @TypeOf(stan.body),
+            allocator: std.mem.Allocator,
+            
+            pub fn execute(ctx: ?*anyopaque) void {
+                const context: *@This() = @ptrCast(@alignCast(ctx.?));
+                
+                // Create a new environment for the goroutine
+                var goroutine_env = Environment.init(context.allocator, context.interpreter.environment) catch return;
+                defer goroutine_env.deinit();
+                
+                const old_env = context.interpreter.environment;
+                context.interpreter.environment = &goroutine_env;
+                defer context.interpreter.environment = old_env;
+                
+                // Execute all statements in the goroutine body
+                for (context.statements.items) |stmt| {
+                    context.interpreter.executeStatement(stmt) catch |err| {
+                        // Handle goroutine errors gracefully
+                        std.debug.print("Goroutine error: {}\n", .{err});
+                        return;
+                    };
+                }
+            }
+        };
         
-        const old_env = self.environment;
-        self.environment = &goroutine_env;
-        defer self.environment = old_env;
+        // Create context for the goroutine
+        const context = try self.allocator.create(GoroutineContext);
+        context.* = GoroutineContext{
+            .interpreter = self,
+            .statements = stan.body,
+            .allocator = self.allocator,
+        };
         
-        // Execute all statements in the goroutine body
-        for (stan.body.items) |stmt| {
-            try self.executeStatement(stmt);
-        }
+        // Spawn the goroutine
+        const goroutine_id = concurrency_runtime.executeStanFromInterpreter(context, GoroutineContext.execute) catch |err| {
+            std.debug.print("Failed to spawn goroutine: {}\n", .{err});
+            self.allocator.destroy(context);
+            return;
+        };
+        
+        std.debug.print("Spawned goroutine with ID: {}\n", .{goroutine_id});
+        
+        // Wait a bit longer for goroutine to execute
+        std.time.sleep(10_000_000); // 10ms
     }
     
     /// Execute basic switch statement (simple value matching)
@@ -1045,13 +1265,24 @@ pub const Interpreter = struct {
                 matched = true;
                 // Execute case body
                 for (case.body.items) |stmt| {
-                    try self.executeStatement(stmt);
+                    try self.executeStatement(stmt.*);
                 }
                 break; // Exit after first successful match
             }
         }
         
-        // Handle unmatched patterns
+        // Handle default case if no pattern matched
+        if (!matched and pattern_switch.default_case != null) {
+            const default_case = pattern_switch.default_case.?;
+            matched = true;
+            
+            // Execute default case body
+            for (default_case.items) |stmt| {
+                try self.executeStatement(stmt.*);
+            }
+        }
+        
+        // Handle unmatched patterns without default case
         if (!matched) {
             return InterpreterError.PatternMatchFailed;
         }
@@ -1101,16 +1332,18 @@ pub const Interpreter = struct {
     fn matchPattern(self: *Interpreter, pattern: ast.Pattern, value: Value) InterpreterError!bool {
         switch (pattern) {
             .Literal => |lit| {
-                return switch (lit.value) {
+                return switch (lit) {
                     .Integer => |i| value.equals(Value{ .Integer = i }),
                     .Float => |f| value.equals(Value{ .Float = f }),
                     .String => |s| value.equals(Value{ .String = s }),
                     .Boolean => |b| value.equals(Value{ .Boolean = b }),
+                    .Character => |c| value.equals(Value{ .Character = c }),
+                    .Null, .Nil => value.equals(Value.Null),
                 };
             },
-            .Variable => |var_pattern| {
+            .Variable => |var_name| {
                 // Bind variable to value
-                try self.environment.define(var_pattern.name, value);
+                try self.environment.define(var_name, value);
                 return true; // Variables always match
             },
             .Wildcard => {
@@ -1272,30 +1505,35 @@ pub const Interpreter = struct {
         // Evaluate the wrapped expression
         const result = self.evaluateExpression(shook.expression.*) catch |err| {
             // Convert caught error to CURSED error value
-            const error_value = ErrorValue.init(
-                self.allocator,
+            const error_obj = try self.error_handler.yikes(
                 @errorName(err),
-                @intFromError(err)
-            ) catch {
-                // If we can't create error value, return generic error
-                return Value{ .Error = ErrorValue{
-                    .message = "Unknown error",
-                    .code = -1,
-                    .context = null,
-                    .stack_trace = null,
-                    .allocator = self.allocator,
-                }};
-            };
-            return Value{ .Error = error_value };
+                .Runtime,
+                @intFromError(err),
+                0, // TODO: Get actual line number
+                0  // TODO: Get actual column
+            );
+            return Value{ .CursedError = error_obj };
         };
         
         // Check if result is already an error
         switch (result) {
             .Error => {
-                // Propagate error up the call stack
-                // In full implementation, would use proper error propagation mechanism
-                std.debug.print("Error propagated by shook: {s}\n", .{result.Error.message});
-                return result; // Return the error
+                // Convert old error to new CURSED error and propagate
+                const error_obj = try self.error_handler.yikes(
+                    result.Error.message,
+                    .Runtime,
+                    result.Error.code,
+                    0, 0
+                );
+                const propagated = try self.error_handler.shook(error_obj);
+                std.debug.print("Error propagated by shook: {s}\n", .{propagated.message});
+                return Value{ .CursedError = propagated };
+            },
+            .CursedError => |cursed_err| {
+                // Propagate CURSED error
+                const propagated = try self.error_handler.shook(cursed_err);
+                std.debug.print("CursedError propagated by shook: {s}\n", .{propagated.message});
+                return Value{ .CursedError = propagated };
             },
             else => {
                 // Normal value, return as-is

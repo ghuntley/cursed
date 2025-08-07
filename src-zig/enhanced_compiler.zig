@@ -29,6 +29,14 @@ const LLVMVariableInfo = struct {
     string_len: ?usize = null, // Only used for tea (string) types
 };
 
+const FunctionInfo = struct {
+    name: []const u8,
+    return_type: []const u8,
+    parameter_types: [][]const u8,
+    parameter_names: [][]const u8,
+    body: []const u8,
+};
+
 /// Compile CURSED source code to native executable using specified backend
 pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []const u8, config: CompilerConfig) !void {
     if (config.verbose) print("🔥 Compiling CURSED program to native executable...\n", .{});
@@ -775,12 +783,25 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     try writer.writeAll("@.bool_true = private unnamed_addr constant [6 x i8] c\"based\\00\", align 1\n");
     try writer.writeAll("@.bool_false = private unnamed_addr constant [7 x i8] c\"cringe\\00\", align 1\n\n");
     
+    // Parse statements first to extract function definitions
+    var temp_functions = std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    defer {
+        var iter = temp_functions.iterator();
+        while (iter.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+        }
+        temp_functions.deinit();
+    }
+    
+    // Parse source to get function definitions first
+    try extractAndGenerateFunctionDefinitions(allocator, source, writer, &temp_functions, verbose);
+    
     // Main function
     try writer.writeAll("define i32 @main() {\n");
     try writer.writeAll("entry:\n");
     
-    // Parse and generate code from source
-    try generateLLVMStatementsFromSource(allocator, source, writer, &string_literals, verbose);
+    // Parse and generate code from source (excluding function definitions)
+    try generateLLVMMainStatements(allocator, source, writer, &string_literals, &temp_functions, verbose);
     
     // Return 0 from main
     try writer.writeAll("  ret i32 0\n");
@@ -867,69 +888,89 @@ fn collectStringLiteralsForLLVM(source: []const u8, string_literals: *std.ArrayL
     }
 }
 
-fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, writer: anytype, string_literals: *std.ArrayList([]const u8), verbose: bool) !void {
-    var variable_counter: u32 = 0;
-    var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-    defer variables.deinit();
-    
-    // First, collect all statements by splitting on semicolons across lines
-    var statements = std.ArrayList([]const u8).init(allocator);
-    defer statements.deinit();
-    
+/// Extract and generate function definitions separately from main body
+fn extractAndGenerateFunctionDefinitions(
+    allocator: Allocator, 
+    source: []const u8, 
+    writer: anytype, 
+    functions: *std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), 
+    verbose: bool
+) !void {
+    // Parse statements to find function definitions
     var lines = std.mem.splitScalar(u8, source, '\n');
-    var current_line = std.ArrayList(u8).init(allocator);
-    defer current_line.deinit();
+    var statements = std.ArrayList([]const u8).init(allocator);
+    defer {
+        for (statements.items) |stmt| {
+            allocator.free(stmt);
+        }
+        statements.deinit();
+    }
     
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t\r\n");
         if (trimmed.len == 0) continue;
         
-        // Append to current line (handling multi-line statements)
-        if (current_line.items.len > 0) {
-            try current_line.append(' ');
-        }
-        try current_line.appendSlice(trimmed);
-        
-        // Split on semicolons to get individual statements
-        var semicolon_split = std.mem.splitScalar(u8, current_line.items, ';');
-        var stmt_index: usize = 0;
-        while (semicolon_split.next()) |stmt| {
-            const stmt_trimmed = std.mem.trim(u8, stmt, " \t\r\n");
-            if (stmt_trimmed.len > 0) {
-                if (semicolon_split.peek() != null or stmt_index > 0) {
-                    // This is a complete statement (not the last fragment)
-                    try statements.append(try allocator.dupe(u8, stmt_trimmed));
-                } else {
-                    // This is the last fragment, might be incomplete - save for next line
-                    const stmt_copy = try allocator.dupe(u8, stmt_trimmed);
-                    defer allocator.free(stmt_copy);
-                    current_line.clearRetainingCapacity();
-                    try current_line.appendSlice(stmt_copy);
-                }
+        // Split by semicolons for multiple statements per line
+        var parts = std.mem.splitScalar(u8, trimmed, ';');
+        while (parts.next()) |part| {
+            const stmt = std.mem.trim(u8, part, " \t\r\n");
+            if (stmt.len > 0) {
+                try statements.append(try allocator.dupe(u8, stmt));
             }
-            stmt_index += 1;
-        }
-        
-        // If we had complete statements, reset current line
-        if (stmt_index > 1) {
-            current_line.clearRetainingCapacity();
         }
     }
     
-    // Handle any remaining statement
-    if (current_line.items.len > 0) {
-        const final_stmt = std.mem.trim(u8, current_line.items, " \t\r\n");
-        if (final_stmt.len > 0) {
-            try statements.append(try allocator.dupe(u8, final_stmt));
-        }
-    }
-    
-    // Now process each statement
+    // Generate function definitions
     for (statements.items) |stmt| {
-        defer allocator.free(stmt);
+        if (std.mem.startsWith(u8, stmt, "slay ")) {
+            try parseFunctionDefinition(stmt, functions, allocator, writer, verbose);
+        }
+    }
+}
+
+/// Generate main function body statements (excluding function definitions)
+fn generateLLVMMainStatements(
+    allocator: Allocator, 
+    source: []const u8, 
+    writer: anytype, 
+    string_literals: *std.ArrayList([]const u8), 
+    functions: *std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), 
+    verbose: bool
+) !void {
+    var variable_counter: u32 = 0;
+    var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    defer variables.deinit();
+    
+    // Parse statements properly - each line can contain a complete statement
+    var lines = std.mem.splitScalar(u8, source, '\n');
+    var statements = std.ArrayList([]const u8).init(allocator);
+    defer {
+        for (statements.items) |stmt| {
+            allocator.free(stmt);
+        }
+        statements.deinit();
+    }
+    
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r\n");
+        if (trimmed.len == 0) continue;
         
-        // Skip comments and imports
-        if (std.mem.startsWith(u8, stmt, "fr fr") or std.mem.startsWith(u8, stmt, "yeet ")) {
+        // Split by semicolons for multiple statements per line
+        var parts = std.mem.splitScalar(u8, trimmed, ';');
+        while (parts.next()) |part| {
+            const stmt = std.mem.trim(u8, part, " \t\r\n");
+            if (stmt.len > 0) {
+                try statements.append(try allocator.dupe(u8, stmt));
+            }
+        }
+    }
+    
+    // Process statements (excluding function definitions)
+    for (statements.items) |stmt| {
+        // Skip comments, imports, and function definitions
+        if (std.mem.startsWith(u8, stmt, "fr fr") or 
+           std.mem.startsWith(u8, stmt, "yeet ") or 
+           std.mem.startsWith(u8, stmt, "slay ")) {
             continue;
         }
         
@@ -941,9 +982,78 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
         if (std.mem.indexOf(u8, stmt, "vibez.spill(")) |_| {
             try generateLLVMVibesSpill(stmt, writer, string_literals, &variables, &variable_counter, verbose);
         }
-        // Handle variable declarations
+        // Handle variable declarations (including those with function calls)
         else if (std.mem.startsWith(u8, stmt, "sus ")) {
-            try generateLLVMVariableDeclaration(stmt, writer, &variables, &variable_counter, verbose);
+            try generateLLVMVariableDeclarationWithFunctionCalls(stmt, writer, &variables, functions, &variable_counter, verbose);
+        }
+    }
+}
+
+fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, writer: anytype, string_literals: *std.ArrayList([]const u8), verbose: bool) !void {
+    var variable_counter: u32 = 0;
+    var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    defer variables.deinit();
+    
+    var functions = std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    defer {
+        var iter = functions.iterator();
+        while (iter.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+        }
+        functions.deinit();
+    }
+    
+    // Parse statements properly - each line can contain a complete statement
+    var lines = std.mem.splitScalar(u8, source, '\n');
+    var statements = std.ArrayList([]const u8).init(allocator);
+    defer {
+        for (statements.items) |stmt| {
+            allocator.free(stmt);
+        }
+        statements.deinit();
+    }
+    
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r\n");
+        if (trimmed.len == 0) continue;
+        
+        // Split by semicolons for multiple statements per line
+        var parts = std.mem.splitScalar(u8, trimmed, ';');
+        while (parts.next()) |part| {
+            const stmt = std.mem.trim(u8, part, " \t\r\n");
+            if (stmt.len > 0) {
+                try statements.append(try allocator.dupe(u8, stmt));
+            }
+        }
+    }
+    
+    // First pass: collect function definitions
+    for (statements.items) |stmt| {
+        if (std.mem.startsWith(u8, stmt, "slay ")) {
+            try parseFunctionDefinition(stmt, &functions, allocator, writer, verbose);
+        }
+    }
+    
+    // Second pass: process other statements
+    for (statements.items) |stmt| {
+        // Skip comments, imports, and function definitions
+        if (std.mem.startsWith(u8, stmt, "fr fr") or 
+           std.mem.startsWith(u8, stmt, "yeet ") or 
+           std.mem.startsWith(u8, stmt, "slay ")) {
+            continue;
+        }
+        
+        if (verbose) {
+            try writer.print("  ; Processing statement: {s}\n", .{stmt});
+        }
+        
+        // Handle vibez.spill() statements
+        if (std.mem.indexOf(u8, stmt, "vibez.spill(")) |_| {
+            try generateLLVMVibesSpill(stmt, writer, string_literals, &variables, &variable_counter, verbose);
+        }
+        // Handle variable declarations (including those with function calls)
+        else if (std.mem.startsWith(u8, stmt, "sus ")) {
+            try generateLLVMVariableDeclarationWithFunctionCalls(stmt, writer, &variables, &functions, &variable_counter, verbose);
         }
     }
 }
@@ -1129,6 +1239,341 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
         }
     }
     variable_counter.* += 1;
+}
+
+/// Parse function definition and add to functions map + generate LLVM function
+fn parseFunctionDefinition(stmt: []const u8, functions: *std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), allocator: Allocator, writer: anytype, verbose: bool) !void {
+    // Parse: slay test_func(x drip) drip { damn x * 2 }
+    if (verbose) try writer.print("  ; Parsing function definition: {s}\n", .{stmt});
+    
+    // Find function name
+    var parts = std.mem.tokenizeScalar(u8, stmt, ' ');
+    _ = parts.next(); // skip "slay"
+    
+    const func_name_with_params = parts.next() orelse return;
+    const paren_pos = std.mem.indexOf(u8, func_name_with_params, "(") orelse return;
+    const func_name = func_name_with_params[0..paren_pos];
+    
+    // Find the closing parenthesis and extract parameters
+    const close_paren_pos = std.mem.indexOf(u8, stmt, ")") orelse return;
+    const params_str = stmt[std.mem.indexOf(u8, stmt, "(").? + 1..close_paren_pos];
+    
+    // Extract return type (between ) and {)
+    const return_type_start = close_paren_pos + 1;
+    const brace_pos = std.mem.indexOf(u8, stmt[return_type_start..], "{") orelse return;
+    const return_type_str = std.mem.trim(u8, stmt[return_type_start..return_type_start + brace_pos], " \t");
+    
+    // Extract function body (between { and })
+    const body_start = std.mem.indexOf(u8, stmt, "{") orelse return;
+    const body_end = std.mem.lastIndexOf(u8, stmt, "}") orelse return;
+    const body_str = std.mem.trim(u8, stmt[body_start + 1..body_end], " \t");
+    
+    if (verbose) {
+        try writer.print("  ; Function: {s}, Return: {s}, Params: '{s}', Body: '{s}'\n", .{ func_name, return_type_str, params_str, body_str });
+    }
+    
+    // Parse parameters
+    var param_names = std.ArrayList([]const u8).init(allocator);
+    var param_types = std.ArrayList([]const u8).init(allocator);
+    defer param_names.deinit();
+    defer param_types.deinit();
+    
+    if (params_str.len > 0) {
+        // Handle comma-separated parameters: "a drip, b drip"
+        var param_groups = std.mem.splitScalar(u8, params_str, ',');
+        while (param_groups.next()) |param_group| {
+            const trimmed_group = std.mem.trim(u8, param_group, " \t");
+            var param_parts = std.mem.tokenizeScalar(u8, trimmed_group, ' ');
+            if (param_parts.next()) |param_name| {
+                if (param_parts.next()) |param_type| {
+                    try param_names.append(try allocator.dupe(u8, param_name));
+                    try param_types.append(try allocator.dupe(u8, param_type));
+                }
+            }
+        }
+    }
+    
+    // Convert CURSED types to LLVM types
+    const llvm_return_type = cursedTypeToLLVMType(return_type_str);
+    
+    // Generate LLVM function definition
+    try writer.print("define {s} @{s}(", .{ llvm_return_type, func_name });
+    
+    for (param_names.items, param_types.items, 0..) |param_name, param_type, i| {
+        if (i > 0) try writer.writeAll(", ");
+        const llvm_param_type = cursedTypeToLLVMType(param_type);
+        try writer.print("{s} %{s}", .{ llvm_param_type, param_name });
+    }
+    
+    try writer.writeAll(") {\n");
+    try writer.writeAll("entry:\n");
+    
+    // Generate function body
+    try generateFunctionBody(body_str, param_names.items, param_types.items, llvm_return_type, writer, allocator, verbose);
+    
+    try writer.writeAll("}\n\n");
+    
+    // Store function info
+    const func_info = FunctionInfo{
+        .name = try allocator.dupe(u8, func_name),
+        .return_type = try allocator.dupe(u8, return_type_str),
+        .parameter_types = try param_types.toOwnedSlice(),
+        .parameter_names = try param_names.toOwnedSlice(),
+        .body = try allocator.dupe(u8, body_str),
+    };
+    
+    const func_key = try allocator.dupe(u8, func_name);
+    try functions.put(func_key, func_info);
+    
+    if (verbose) {
+        try writer.print("  ; Stored function '{s}' with {d} parameters\n", .{ func_name, param_names.items.len });
+    }
+}
+
+/// Generate LLVM IR for function body
+fn generateFunctionBody(body: []const u8, param_names: [][]const u8, param_types: [][]const u8, return_type: []const u8, writer: anytype, allocator: Allocator, verbose: bool) !void {
+    if (verbose) try writer.print("  ; Generating body: {s}\n", .{body});
+    
+    // Handle "damn x * 2" pattern (return expression)
+    if (std.mem.startsWith(u8, body, "damn ")) {
+        const return_expr = std.mem.trim(u8, body[5..], " \t");
+        
+        // Parse the return expression for different operators
+        if (std.mem.indexOf(u8, return_expr, " + ")) |op_pos| {
+            const left = std.mem.trim(u8, return_expr[0..op_pos], " \t");
+            const right = std.mem.trim(u8, return_expr[op_pos + 3..], " \t");
+            
+            if (verbose) try writer.print("  ; Return expression: {s} + {s}\n", .{ left, right });
+            
+            try generateBinaryOperation(left, right, "+", param_names, param_types, return_type, writer, allocator, verbose);
+        } else if (std.mem.indexOf(u8, return_expr, " - ")) |op_pos| {
+            const left = std.mem.trim(u8, return_expr[0..op_pos], " \t");
+            const right = std.mem.trim(u8, return_expr[op_pos + 3..], " \t");
+            
+            if (verbose) try writer.print("  ; Return expression: {s} - {s}\n", .{ left, right });
+            
+            try generateBinaryOperation(left, right, "-", param_names, param_types, return_type, writer, allocator, verbose);
+        } else if (std.mem.indexOf(u8, return_expr, " * ")) |op_pos| {
+            const left = std.mem.trim(u8, return_expr[0..op_pos], " \t");
+            const right = std.mem.trim(u8, return_expr[op_pos + 3..], " \t");
+            
+            if (verbose) try writer.print("  ; Return expression: {s} * {s}\n", .{ left, right });
+            
+            try generateBinaryOperation(left, right, "*", param_names, param_types, return_type, writer, allocator, verbose);
+        } else if (std.mem.indexOf(u8, return_expr, " / ")) |op_pos| {
+            const left = std.mem.trim(u8, return_expr[0..op_pos], " \t");
+            const right = std.mem.trim(u8, return_expr[op_pos + 3..], " \t");
+            
+            if (verbose) try writer.print("  ; Return expression: {s} / {s}\n", .{ left, right });
+            
+            try generateBinaryOperation(left, right, "/", param_names, param_types, return_type, writer, allocator, verbose);
+        } else {
+            // Simple return value
+            if (std.fmt.parseInt(i64, return_expr, 10) catch null) |num| {
+                try writer.print("  ret {s} {}\n", .{ return_type, num });
+            } else {
+                // Try to find parameter
+                for (param_names) |param_name| {
+                    if (std.mem.eql(u8, param_name, return_expr)) {
+                        try writer.print("  ret {s} %{s}\n", .{ return_type, param_name });
+                        return;
+                    }
+                }
+                // Fallback
+                try writer.print("  ret {s} 0\n", .{return_type});
+            }
+        }
+    } else {
+        // No return statement, add default return
+        if (std.mem.eql(u8, return_type, "void")) {
+            try writer.writeAll("  ret void\n");
+        } else {
+            try writer.print("  ret {s} 0\n", .{return_type});
+        }
+    }
+}
+
+/// Generate binary operation (+ - * /) in function body
+fn generateBinaryOperation(
+    left: []const u8, 
+    right: []const u8, 
+    op: []const u8, 
+    param_names: [][]const u8, 
+    param_types: [][]const u8, 
+    return_type: []const u8, 
+    writer: anytype, 
+    allocator: Allocator, 
+    verbose: bool
+) !void {
+    _ = param_types; // Not used currently but kept for future expansion
+    
+    // Find parameter for left operand
+    var left_value: []const u8 = "";
+    var found_left_param = false;
+    for (param_names) |param_name| {
+        if (std.mem.eql(u8, param_name, left)) {
+            left_value = try std.fmt.allocPrint(allocator, "%{s}", .{param_name});
+            found_left_param = true;
+            break;
+        }
+    }
+    defer if (found_left_param) allocator.free(left_value);
+    
+    // Find parameter for right operand (or use literal)
+    var right_value: []const u8 = "";
+    var found_right_param = false;
+    var right_literal: ?i64 = null;
+    
+    // Check if right is a parameter
+    for (param_names) |param_name| {
+        if (std.mem.eql(u8, param_name, right)) {
+            right_value = try std.fmt.allocPrint(allocator, "%{s}", .{param_name});
+            found_right_param = true;
+            break;
+        }
+    }
+    
+    // If not a parameter, try parsing as literal
+    if (!found_right_param) {
+        right_literal = std.fmt.parseInt(i64, right, 10) catch null;
+    }
+    
+    defer if (found_right_param) allocator.free(right_value);
+    
+    if (verbose) {
+        try writer.print("  ; Binary operation: {s} {s} {s}\n", .{ left, op, right });
+    }
+    
+    // Generate LLVM instruction based on operator
+    const llvm_op = if (std.mem.eql(u8, op, "+")) 
+        "add" 
+    else if (std.mem.eql(u8, op, "*")) 
+        "mul" 
+    else if (std.mem.eql(u8, op, "-")) 
+        "sub" 
+    else if (std.mem.eql(u8, op, "/")) 
+        "sdiv" 
+    else 
+        "add"; // default
+    
+    if (found_left_param and found_right_param) {
+        // Both operands are parameters
+        try writer.print("  %result = {s} {s} {s}, {s}\n", .{ llvm_op, return_type, left_value, right_value });
+    } else if (found_left_param and right_literal != null) {
+        // Left is parameter, right is literal
+        try writer.print("  %result = {s} {s} {s}, {}\n", .{ llvm_op, return_type, left_value, right_literal.? });
+    } else {
+        // Fallback: return 0
+        try writer.print("  ; Warning: Unable to resolve operands\n", .{});
+        try writer.print("  %result = add {s} 0, 0\n", .{return_type});
+    }
+    
+    try writer.print("  ret {s} %result\n", .{return_type});
+}
+
+/// Enhanced variable declaration that handles function calls
+fn generateLLVMVariableDeclarationWithFunctionCalls(
+    line: []const u8, 
+    writer: anytype, 
+    variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), 
+    functions: *std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    variable_counter: *u32, 
+    verbose: bool
+) !void {
+    var parts = std.mem.tokenizeScalar(u8, line, ' ');
+    _ = parts.next(); // skip "sus"
+    
+    const var_name = parts.next() orelse return;
+    const var_type = parts.next() orelse return;
+    const equals = parts.next() orelse return;
+    
+    if (!std.mem.eql(u8, equals, "=")) return;
+    
+    const value_str = parts.rest();
+    
+    if (verbose) try writer.print("  ; Variable: {s} {s} = {s}\n", .{ var_name, var_type, value_str });
+    
+    // Check if the value is a function call
+    if (std.mem.indexOf(u8, value_str, "(")) |paren_pos| {
+        const func_name = std.mem.trim(u8, value_str[0..paren_pos], " \t");
+        
+        if (functions.get(func_name)) |func_info| {
+            // Parse function call arguments
+            const close_paren = std.mem.lastIndexOf(u8, value_str, ")") orelse return;
+            const args_str = std.mem.trim(u8, value_str[paren_pos + 1..close_paren], " \t");
+            
+            if (verbose) try writer.print("  ; Calling function: {s} with args: '{s}'\n", .{ func_name, args_str });
+            
+            // Allocate variable first
+            const llvm_type = cursedTypeToLLVMType(var_type);
+            try writer.print("  %{s} = alloca {s}, align {s}\n", .{ var_name, llvm_type, if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" });
+            
+            // Generate function call
+            const result_value = try std.fmt.allocPrint(variables.allocator, "%call_result.{d}", .{variable_counter.*});
+            defer variables.allocator.free(result_value);
+            try writer.print("  {s} = call {s} @{s}(", .{ result_value, cursedTypeToLLVMType(func_info.return_type), func_name });
+            
+            // Parse and pass arguments
+            if (args_str.len > 0) {
+                var args = std.mem.tokenizeScalar(u8, args_str, ',');
+                var arg_index: usize = 0;
+                while (args.next()) |arg| {
+                    const trimmed_arg = std.mem.trim(u8, arg, " \t");
+                    if (arg_index > 0) try writer.writeAll(", ");
+                    
+                    // Determine argument type and value
+                    if (std.fmt.parseInt(i64, trimmed_arg, 10) catch null) |num| {
+                        // Integer literal
+                        try writer.print("{s} {}", .{ llvm_type, num });
+                    } else if (variables.get(trimmed_arg)) |var_info| {
+                        // Variable reference - load it
+                        const load_result = try std.fmt.allocPrint(variables.allocator, "%arg_load.{d}", .{variable_counter.*});
+                        defer variables.allocator.free(load_result);
+                        try writer.print("  {s} = load {s}, {s}* %{s}, align {s}\n", .{ 
+                            load_result, var_info.llvm_type, var_info.llvm_type, var_info.var_name,
+                            if (std.mem.eql(u8, var_info.llvm_type, "i64")) "8" else "4"
+                        });
+                        try writer.print("{s} {s}", .{ var_info.llvm_type, load_result });
+                        variable_counter.* += 1;
+                    } else {
+                        // Unknown argument, pass as literal
+                        try writer.print("{s} {s}", .{ llvm_type, trimmed_arg });
+                    }
+                    arg_index += 1;
+                }
+            }
+            
+            try writer.writeAll(")\n");
+            
+            // Store result in variable
+            try writer.print("  store {s} {s}, {s}* %{s}, align {s}\n", .{ 
+                llvm_type, result_value, llvm_type, var_name,
+                if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4"
+            });
+            
+            // Register variable
+            const allocator = variables.allocator;
+            const var_name_copy = try allocator.dupe(u8, var_name);
+            const var_name_value_copy = try allocator.dupe(u8, var_name);
+            try variables.put(var_name_copy, .{ .llvm_type = llvm_type, .var_name = var_name_value_copy });
+            
+            variable_counter.* += 1;
+            return;
+        }
+    }
+    
+    // Fallback to regular variable declaration
+    try generateLLVMVariableDeclaration(line, writer, variables, variable_counter, verbose);
+}
+
+/// Convert CURSED types to LLVM types
+fn cursedTypeToLLVMType(cursed_type: []const u8) []const u8 {
+    if (std.mem.eql(u8, cursed_type, "drip")) return "i64";
+    if (std.mem.eql(u8, cursed_type, "normie")) return "i32";
+    if (std.mem.eql(u8, cursed_type, "lit")) return "i1";
+    if (std.mem.eql(u8, cursed_type, "meal")) return "double";
+    if (std.mem.eql(u8, cursed_type, "tea")) return "i8*";
+    return "i32"; // default
 }
 
 // Expression evaluation structures and functions

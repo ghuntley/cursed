@@ -1,0 +1,1 @@
+squad Circle { slay draw() { } }
