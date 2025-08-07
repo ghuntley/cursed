@@ -37,6 +37,7 @@ pub const CursedError = error{
     NullPointerDereference,
     IndexOutOfBounds,
     InvalidOperation,
+    PatternMatchFailed,
     
     // File/IO errors
     FileNotFound,
@@ -282,17 +283,21 @@ pub fn safePanic(comptime operation: anytype, args: anytype) CursedError!@TypeOf
     };
 }
 
-/// Error recovery mechanism
+/// Enhanced error recovery mechanism with runtime support
 pub const ErrorRecovery = struct {
     allocator: Allocator,
     errors: ArrayList(ErrorContext),
     max_errors: usize,
+    stack_traces: ArrayList([][]const u8),
+    current_function_stack: ArrayList([]const u8),
     
     pub fn init(allocator: Allocator, max_errors: usize) ErrorRecovery {
         return ErrorRecovery{
             .allocator = allocator,
             .errors = ArrayList(ErrorContext).init(allocator),
             .max_errors = max_errors,
+            .stack_traces = ArrayList([][]const u8).init(allocator),
+            .current_function_stack = ArrayList([]const u8).init(allocator),
         };
     }
     
@@ -301,13 +306,50 @@ pub const ErrorRecovery = struct {
             error_ctx.deinit();
         }
         self.errors.deinit();
+        
+        for (self.stack_traces.items) |trace| {
+            for (trace) |frame| {
+                self.allocator.free(frame);
+            }
+            self.allocator.free(trace);
+        }
+        self.stack_traces.deinit();
+        
+        for (self.current_function_stack.items) |func_name| {
+            self.allocator.free(func_name);
+        }
+        self.current_function_stack.deinit();
+    }
+    
+    pub fn pushFunction(self: *ErrorRecovery, function_name: []const u8) !void {
+        try self.current_function_stack.append(try self.allocator.dupe(u8, function_name));
+    }
+    
+    pub fn popFunction(self: *ErrorRecovery) void {
+        if (self.current_function_stack.items.len > 0) {
+            const func_name = self.current_function_stack.pop();
+            self.allocator.free(func_name);
+        }
+    }
+    
+    pub fn captureStackTrace(self: *ErrorRecovery) ![][]const u8 {
+        var trace = try self.allocator.alloc([]const u8, self.current_function_stack.items.len);
+        for (self.current_function_stack.items, 0..) |func_name, i| {
+            trace[i] = try self.allocator.dupe(u8, func_name);
+        }
+        return trace;
     }
     
     pub fn addError(self: *ErrorRecovery, error_ctx: ErrorContext) !void {
         if (self.errors.items.len >= self.max_errors) {
             return CursedError.SystemError;
         }
-        try self.errors.append(error_ctx);
+        
+        var ctx = error_ctx;
+        // Capture current stack trace
+        ctx.stack_trace = try self.captureStackTrace();
+        
+        try self.errors.append(ctx);
     }
     
     pub fn hasErrors(self: *ErrorRecovery) bool {
@@ -324,7 +366,214 @@ pub const ErrorRecovery = struct {
             try writer.print("\n");
         }
     }
+    
+    pub fn createYikesError(self: *ErrorRecovery, message: []const u8, line: u32, column: u32, file: []const u8) !ErrorContext {
+        const location = ErrorContext.SourceLocation{
+            .file = try self.allocator.dupe(u8, file),
+            .line = line,
+            .column = column,
+        };
+        
+        var ctx = try ErrorContext.initWithLocation(
+            self.allocator,
+            CursedError.RuntimeError,
+            message,
+            location
+        );
+        
+        // Capture stack trace
+        ctx.stack_trace = try self.captureStackTrace();
+        
+        return ctx;
+    }
 };
+
+/// LLVM IR generation for error handling
+pub const ErrorHandlingLLVM = struct {
+    allocator: Allocator,
+    
+    const Self = @This();
+    
+    pub fn init(allocator: Allocator) Self {
+        return Self{
+            .allocator = allocator,
+        };
+    }
+    
+    /// Generate LLVM IR for yikes (error creation) statement
+    pub fn generateYikesLLVM(self: *Self, context: c.LLVMContextRef, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef, message: []const u8) !c.LLVMValueRef {
+        _ = self;
+        
+        // Declare runtime error creation function
+        const create_error_func = c.LLVMGetNamedFunction(module, "cursed_create_error") orelse {
+            const func_type = c.LLVMFunctionType(
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+                &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0)},
+                1,
+                0
+            );
+            return c.LLVMAddFunction(module, "cursed_create_error", func_type);
+        };
+        
+        // Create string constant for error message
+        const message_str = c.LLVMBuildGlobalStringPtr(builder, message.ptr, "error_msg");
+        
+        // Call error creation function
+        const error_obj = c.LLVMBuildCall2(
+            builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+            create_error_func,
+            &[_]c.LLVMValueRef{message_str},
+            1,
+            "error_obj"
+        );
+        
+        return error_obj;
+    }
+    
+    /// Generate LLVM IR for shook (error propagation) expression
+    pub fn generateShookLLVM(self: *Self, context: c.LLVMContextRef, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef, value: c.LLVMValueRef) !c.LLVMValueRef {
+        _ = self;
+        
+        // Declare runtime error checking function
+        const is_error_func = c.LLVMGetNamedFunction(module, "cursed_is_error") orelse {
+            const func_type = c.LLVMFunctionType(
+                c.LLVMInt1TypeInContext(context),
+                &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0)},
+                1,
+                0
+            );
+            return c.LLVMAddFunction(module, "cursed_is_error", func_type);
+        };
+        
+        // Check if value is an error
+        const is_error = c.LLVMBuildCall2(
+            builder,
+            c.LLVMInt1TypeInContext(context),
+            is_error_func,
+            &[_]c.LLVMValueRef{value},
+            1,
+            "is_error"
+        );
+        
+        // Create blocks for error propagation and normal execution
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+        const error_block = c.LLVMAppendBasicBlockInContext(context, current_func, "error_propagate");
+        const normal_block = c.LLVMAppendBasicBlockInContext(context, current_func, "normal_continue");
+        
+        // Branch based on error check
+        _ = c.LLVMBuildCondBr(builder, is_error, error_block, normal_block);
+        
+        // Error propagation block
+        c.LLVMPositionBuilderAtEnd(builder, error_block);
+        
+        // Call error propagation function
+        const propagate_func = c.LLVMGetNamedFunction(module, "cursed_propagate_error") orelse {
+            const func_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0)},
+                1,
+                0
+            );
+            return c.LLVMAddFunction(module, "cursed_propagate_error", func_type);
+        };
+        
+        _ = c.LLVMBuildCall2(
+            builder,
+            c.LLVMVoidTypeInContext(context),
+            propagate_func,
+            &[_]c.LLVMValueRef{value},
+            1,
+            ""
+        );
+        
+        // Return error value
+        _ = c.LLVMBuildRet(builder, value);
+        
+        // Continue in normal block
+        c.LLVMPositionBuilderAtEnd(builder, normal_block);
+        
+        return value;
+    }
+    
+    /// Generate LLVM IR for fam (error recovery) block
+    pub fn generateFamLLVM(self: *Self, context: c.LLVMContextRef, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef) !struct { 
+        try_block: c.LLVMBasicBlockRef,
+        catch_block: c.LLVMBasicBlockRef,
+        end_block: c.LLVMBasicBlockRef,
+    } {
+        _ = self;
+        
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+        
+        // Create blocks for try/catch/end
+        const try_block = c.LLVMAppendBasicBlockInContext(context, current_func, "fam_try");
+        const catch_block = c.LLVMAppendBasicBlockInContext(context, current_func, "fam_catch");
+        const end_block = c.LLVMAppendBasicBlockInContext(context, current_func, "fam_end");
+        
+        // Declare runtime try begin function
+        const try_begin_func = c.LLVMGetNamedFunction(module, "cursed_try_begin") orelse {
+            const func_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                null,
+                0,
+                0
+            );
+            return c.LLVMAddFunction(module, "cursed_try_begin", func_type);
+        };
+        
+        // Start try block
+        _ = c.LLVMBuildCall2(
+            builder,
+            c.LLVMVoidTypeInContext(context),
+            try_begin_func,
+            null,
+            0,
+            ""
+        );
+        
+        // Branch to try block
+        _ = c.LLVMBuildBr(builder, try_block);
+        
+        return .{
+            .try_block = try_block,
+            .catch_block = catch_block,
+            .end_block = end_block,
+        };
+    }
+    
+    /// Generate stack trace capture
+    pub fn generateStackTraceLLVM(self: *Self, context: c.LLVMContextRef, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef, error_obj: c.LLVMValueRef) !void {
+        _ = self;
+        
+        // Declare runtime stack trace function
+        const capture_trace_func = c.LLVMGetNamedFunction(module, "cursed_capture_stack_trace") orelse {
+            const func_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0)},
+                1,
+                0
+            );
+            return c.LLVMAddFunction(module, "cursed_capture_stack_trace", func_type);
+        };
+        
+        // Call stack trace capture
+        _ = c.LLVMBuildCall2(
+            builder,
+            c.LLVMVoidTypeInContext(context),
+            capture_trace_func,
+            &[_]c.LLVMValueRef{error_obj},
+            1,
+            ""
+        );
+    }
+};
+
+// Import LLVM C headers
+const c = @cImport({
+    @cInclude("llvm-c/Core.h");
+    @cInclude("llvm-c/ExecutionEngine.h");
+});
 
 test "error handling system" {
     const allocator = std.testing.allocator;

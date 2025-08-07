@@ -2,12 +2,32 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
-/// Source location for error reporting and debugging
+/// Enhanced source location for error reporting and DWARF debug information
 pub const SourceLocation = struct {
     file: []const u8,
     line: u32,
     column: u32,
     offset: u32,
+    
+    /// Create a default source location
+    pub fn init(file: []const u8, line: u32, column: u32, offset: u32) SourceLocation {
+        return SourceLocation{
+            .file = file,
+            .line = line,
+            .column = column,
+            .offset = offset,
+        };
+    }
+    
+    /// Create unknown location for cases where source info is not available
+    pub fn unknown() SourceLocation {
+        return SourceLocation{
+            .file = "<unknown>",
+            .line = 0,
+            .column = 0,
+            .offset = 0,
+        };
+    }
 };
 
 // Forward declaration for Expression type
@@ -502,6 +522,7 @@ pub const LetStatement = struct {
     type_annotation: ?Type,
     initializer: ?*Expression,
     is_mutable: bool,
+    location: SourceLocation = SourceLocation.unknown(), // Debug location for DWARF
 
     pub fn deinit(self: *LetStatement, allocator: Allocator) void {
         if (self.var_type) |*var_type| {
@@ -573,6 +594,7 @@ pub const FunctionStatement = struct {
     is_async: bool,
     type_parameters: ArrayList(TypeParameter),
     comments: ArrayList(Comment),
+    location: SourceLocation = SourceLocation.unknown(), // Debug location for DWARF
 
     pub fn init(allocator: Allocator, name: []const u8) FunctionStatement {
         return FunctionStatement{
@@ -584,6 +606,7 @@ pub const FunctionStatement = struct {
             .is_async = false,
             .type_parameters = ArrayList(TypeParameter).init(allocator),
             .comments = ArrayList(Comment).init(allocator),
+            .location = SourceLocation.unknown(),
         };
     }
 

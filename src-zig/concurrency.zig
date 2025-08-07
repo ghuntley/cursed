@@ -27,6 +27,11 @@ const Atomic = std.atomic.Value;
 const Order = std.atomic.Ordering;
 const gc = @import("gc.zig");
 
+const c = @cImport({
+    @cInclude("llvm-c/Core.h");
+    @cInclude("llvm-c/ExecutionEngine.h");
+});
+
 /// Goroutine identifier type
 pub const GoroutineId = u64;
 
@@ -993,20 +998,186 @@ pub fn makeUnbufferedChannel(comptime T: type, allocator: Allocator) !*Channel(T
     return makeChannel(T, allocator, 0);
 }
 
+/// Channel registry for LLVM IR generation
+var channel_registry: ?std.HashMap(ChannelId, *anyopaque, std.hash_map.AutoContext(ChannelId), std.hash_map.default_max_load_percentage) = null;
+var channel_registry_mutex: Mutex = Mutex{};
+
+/// Initialize channel registry
+pub fn initChannelRegistry(allocator: Allocator) void {
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+    
+    if (channel_registry == null) {
+        channel_registry = std.HashMap(ChannelId, *anyopaque, std.hash_map.AutoContext(ChannelId), std.hash_map.default_max_load_percentage).init(allocator);
+    }
+}
+
+/// Register channel for LLVM operations
+pub fn registerChannelLLVM(channel_id: ChannelId, channel_ptr: *anyopaque) !void {
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+    
+    if (channel_registry) |*registry| {
+        try registry.put(channel_id, channel_ptr);
+    }
+}
+
+/// Generate LLVM IR for channel creation
+pub fn generateChannelCreateLLVM(_: Allocator, context: c.LLVMContextRef, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef, capacity: ?c.LLVMValueRef) !c.LLVMValueRef {
+    // Declare runtime channel creation function
+    const create_func = c.LLVMGetNamedFunction(module, "cursed_channel_create") orelse {
+        const func_type = c.LLVMFunctionType(
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+            &[_]c.LLVMTypeRef{c.LLVMInt64TypeInContext(context)},
+            1,
+            0
+        );
+        c.LLVMAddFunction(module, "cursed_channel_create", func_type);
+    };
+    
+    // Use provided capacity or default to 0 (unbuffered)
+    const cap_value = capacity orelse c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0, 0);
+    
+    // Call runtime function
+    const channel_ptr = c.LLVMBuildCall2(
+        builder,
+        c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+        create_func,
+        &[_]c.LLVMValueRef{cap_value},
+        1,
+        "channel_ptr"
+    );
+    
+    // Generate unique channel ID and register
+    const channel_id = generateChannelId();
+    registerChannelLLVM(channel_id, @ptrCast(channel_ptr)) catch {};
+    
+    return channel_ptr;
+}
+
+/// Generate LLVM IR for channel send operation
+pub fn generateChannelSendLLVM(context: c.LLVMContextRef, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef, channel: c.LLVMValueRef, value: c.LLVMValueRef) !c.LLVMValueRef {
+    // Declare runtime send function
+    const send_func = c.LLVMGetNamedFunction(module, "cursed_channel_send") orelse {
+        const func_type = c.LLVMFunctionType(
+            c.LLVMInt32TypeInContext(context),
+            &[_]c.LLVMTypeRef{
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+                c.LLVMInt64TypeInContext(context),
+            },
+            2,
+            0
+        );
+        c.LLVMAddFunction(module, "cursed_channel_send", func_type);
+    };
+    
+    // Convert value to i64 if needed
+    const value_i64 = if (c.LLVMGetTypeKind(c.LLVMTypeOf(value)) == c.LLVMIntegerTypeKind) 
+        value
+    else
+        c.LLVMBuildPtrToInt(builder, value, c.LLVMInt64TypeInContext(context), "value_as_i64");
+    
+    // Call runtime send function
+    const result = c.LLVMBuildCall2(
+        builder,
+        c.LLVMInt32TypeInContext(context),
+        send_func,
+        &[_]c.LLVMValueRef{ channel, value_i64 },
+        2,
+        "send_result"
+    );
+    
+    return result;
+}
+
+/// Generate LLVM IR for channel receive operation
+pub fn generateChannelReceiveLLVM(context: c.LLVMContextRef, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef, channel: c.LLVMValueRef) !c.LLVMValueRef {
+    // Declare runtime receive function
+    const recv_func = c.LLVMGetNamedFunction(module, "cursed_channel_receive") orelse {
+        const func_type = c.LLVMFunctionType(
+            c.LLVMInt32TypeInContext(context),
+            &[_]c.LLVMTypeRef{
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+                c.LLVMPointerType(c.LLVMInt64TypeInContext(context), 0),
+            },
+            2,
+            0
+        );
+        c.LLVMAddFunction(module, "cursed_channel_receive", func_type);
+    };
+    
+    // Allocate space for received value
+    const value_ptr = c.LLVMBuildAlloca(builder, c.LLVMInt64TypeInContext(context), "recv_value_ptr");
+    
+    // Call runtime receive function
+    const status = c.LLVMBuildCall2(
+        builder,
+        c.LLVMInt32TypeInContext(context),
+        recv_func,
+        &[_]c.LLVMValueRef{ channel, value_ptr },
+        2,
+        "recv_status"
+    );
+    
+    // Load the received value
+    const received_value = c.LLVMBuildLoad2(
+        builder,
+        c.LLVMInt64TypeInContext(context),
+        value_ptr,
+        "received_value"
+    );
+    
+    // Create a struct to return both status and value
+    const result_type = c.LLVMStructTypeInContext(
+        context,
+        &[_]c.LLVMTypeRef{
+            c.LLVMInt32TypeInContext(context),
+            c.LLVMInt64TypeInContext(context),
+        },
+        2,
+        0
+    );
+    
+    const result_alloca = c.LLVMBuildAlloca(builder, result_type, "recv_result");
+    
+    // Store status
+    const status_ptr = c.LLVMBuildStructGEP2(builder, result_type, result_alloca, 0, "status_ptr");
+    _ = c.LLVMBuildStore(builder, status, status_ptr);
+    
+    // Store value
+    const value_result_ptr = c.LLVMBuildStructGEP2(builder, result_type, result_alloca, 1, "value_ptr");
+    _ = c.LLVMBuildStore(builder, received_value, value_result_ptr);
+    
+    return c.LLVMBuildLoad2(builder, result_type, result_alloca, "recv_result_loaded");
+}
+
 /// Helper functions for select implementation
 fn canSendToChannel(channel_id: ChannelId) bool {
-    // In a real implementation, this would check the actual channel state
-    // For now, check basic channel availability
-    _ = channel_id;
-    // Assume channels are always available for sending unless blocked
-    return true;
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+    
+    if (channel_registry) |registry| {
+        if (registry.get(channel_id)) |_| {
+            // In a real implementation, check if channel has space
+            // For now, assume channels can always accept sends
+            return true;
+        }
+    }
+    return false;
 }
 
 fn canReceiveFromChannel(channel_id: ChannelId) bool {
-    // In a real implementation, this would check if there are messages available
-    // For now, assume channels have messages available
-    _ = channel_id;
-    return true;
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+    
+    if (channel_registry) |registry| {
+        if (registry.get(channel_id)) |_| {
+            // In a real implementation, check if channel has messages
+            // For now, assume channels always have messages available
+            return true;
+        }
+    }
+    return false;
 }
 
 // Tests

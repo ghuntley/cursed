@@ -2,18 +2,18 @@ const std = @import("std");
 const print = std.debug.print;
 const diagnostics = @import("error_diagnostics.zig");
 
-const DiagnosticEngine = diagnostics.DiagnosticEngine;
-const SourceSpan = diagnostics.SourceSpan;
-const ErrorCode = diagnostics.ErrorCode;
+const ErrorHandler = diagnostics.ErrorHandler;
+const ErrorDiagnostic = diagnostics.ErrorDiagnostic;
+const StackFrame = diagnostics.StackFrame;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
-    // Initialize diagnostic engine
-    var engine = DiagnosticEngine.init(allocator, 20);
-    defer engine.deinit();
+    // Initialize error handler
+    var handler = ErrorHandler.init(allocator);
+    defer handler.deinit();
     
     // Sample CURSED source code with errors
     const source_code = 

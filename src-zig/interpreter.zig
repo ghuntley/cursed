@@ -419,6 +419,8 @@ pub const Interpreter = struct {
             .Yikes => |yikes| try self.executeYikesStatement(yikes),
             .Fam => |fam| try self.executeFamStatement(fam),
             .Defer => |defer_stmt| try self.executeDeferStatement(defer_stmt),
+            .Switch => |switch_stmt| try self.executeSwitchStatement(switch_stmt),
+            .PatternSwitch => |pattern_switch| try self.executePatternSwitchStatement(pattern_switch),
             else => {
                 std.debug.print("Unsupported statement type in interpreter: {s}\n", .{@tagName(stmt)});
             },
@@ -475,6 +477,7 @@ pub const Interpreter = struct {
             .Shook => |shook| return try self.evaluateShook(shook),
             .Fam => |fam| return try self.evaluateFam(fam),
             .StringInterpolation => |interpolation| return try self.evaluateStringInterpolation(interpolation),
+            .Match => |match| return try self.evaluateMatch(match),
             else => {
                 std.debug.print("Unsupported expression type in interpreter: {s}\n", .{@tagName(expr)});
                 return Value.Null;
@@ -959,6 +962,218 @@ pub const Interpreter = struct {
         }
     }
     
+    /// Execute basic switch statement (simple value matching)
+    fn executeSwitchStatement(self: *Interpreter, switch_stmt: ast.SwitchStatement) InterpreterError!void {
+        const switch_value = try self.evaluateExpression(switch_stmt.expression);
+        
+        // Find matching case
+        var matched = false;
+        for (switch_stmt.cases.items) |case| {
+            const case_value = try self.evaluateExpression(case.value);
+            
+            if (switch_value.equals(case_value)) {
+                matched = true;
+                for (case.body.items) |stmt| {
+                    try self.executeStatement(stmt);
+                }
+                break; // Break after first match (no fallthrough)
+            }
+        }
+        
+        // Execute default case if no match
+        if (!matched and switch_stmt.default_case) |default_stmts| {
+            for (default_stmts.items) |stmt| {
+                try self.executeStatement(stmt);
+            }
+        }
+    }
+
+    /// Execute pattern switch statement (advanced pattern matching)
+    fn executePatternSwitchStatement(self: *Interpreter, pattern_switch: ast.PatternSwitchStatement) InterpreterError!void {
+        const switch_value = try self.evaluateExpression(pattern_switch.expression);
+        
+        // Try each pattern case
+        var matched = false;
+        for (pattern_switch.cases.items) |case| {
+            // Create new scope for pattern bindings
+            var pattern_env = Environment.init(self.allocator, self.environment);
+            defer pattern_env.deinit();
+            
+            const old_env = self.environment;
+            self.environment = &pattern_env;
+            defer self.environment = old_env;
+            
+            // Try to match pattern
+            if (try self.matchPattern(case.pattern, switch_value)) {
+                // Check guard condition if present
+                if (case.guard) |guard_expr| {
+                    const guard_value = try self.evaluateExpression(guard_expr.*);
+                    if (!guard_value.toBool()) {
+                        continue; // Guard failed, try next pattern
+                    }
+                }
+                
+                matched = true;
+                // Execute case body
+                for (case.body.items) |stmt| {
+                    try self.executeStatement(stmt);
+                }
+                break; // Exit after first successful match
+            }
+        }
+        
+        // Handle unmatched patterns
+        if (!matched) {
+            return InterpreterError.PatternMatchFailed;
+        }
+    }
+
+    /// Evaluate match expression with pattern matching
+    fn evaluateMatch(self: *Interpreter, match_expr: ast.MatchExpression) InterpreterError!Value {
+        const match_value = try self.evaluateExpression(match_expr.expression.*);
+        
+        // Try each pattern case
+        for (match_expr.cases.items) |case| {
+            // Create new scope for pattern bindings
+            var pattern_env = Environment.init(self.allocator, self.environment);
+            defer pattern_env.deinit();
+            
+            const old_env = self.environment;
+            self.environment = &pattern_env;
+            defer self.environment = old_env;
+            
+            // Try to match pattern
+            if (try self.matchPattern(case.pattern, match_value)) {
+                // Check guard condition if present
+                if (case.guard) |guard_expr| {
+                    const guard_value = try self.evaluateExpression(guard_expr.*);
+                    if (!guard_value.toBool()) {
+                        continue; // Guard failed, try next pattern
+                    }
+                }
+                
+                // Return the result expression value
+                const result_ptr: *Expression = @ptrCast(@alignCast(case.result));
+                return try self.evaluateExpression(result_ptr.*);
+            }
+        }
+        
+        // Check default case
+        if (match_expr.default_case) |default_expr| {
+            const default_ptr: *Expression = @ptrCast(@alignCast(default_expr));
+            return try self.evaluateExpression(default_ptr.*);
+        }
+        
+        // No pattern matched and no default
+        return InterpreterError.PatternMatchFailed;
+    }
+
+    /// Match a pattern against a value, binding variables as needed
+    fn matchPattern(self: *Interpreter, pattern: ast.Pattern, value: Value) InterpreterError!bool {
+        switch (pattern) {
+            .Literal => |lit| {
+                return switch (lit.value) {
+                    .Integer => |i| value.equals(Value{ .Integer = i }),
+                    .Float => |f| value.equals(Value{ .Float = f }),
+                    .String => |s| value.equals(Value{ .String = s }),
+                    .Boolean => |b| value.equals(Value{ .Boolean = b }),
+                };
+            },
+            .Variable => |var_pattern| {
+                // Bind variable to value
+                try self.environment.define(var_pattern.name, value);
+                return true; // Variables always match
+            },
+            .Wildcard => {
+                return true; // Wildcard matches anything
+            },
+            .Tuple => |tuple_pattern| {
+                if (value != .Array) return false;
+                const array_val = value.Array;
+                
+                if (array_val.items.len != tuple_pattern.patterns.len) {
+                    return false;
+                }
+                
+                // Match each element
+                for (tuple_pattern.patterns, 0..) |element_pattern, i| {
+                    if (!try self.matchPattern(element_pattern, array_val.items[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            },
+            .Array => |array_pattern| {
+                if (value != .Array) return false;
+                const array_val = value.Array;
+                
+                // For now, simple length-based matching
+                if (array_pattern.rest == null) {
+                    if (array_val.items.len != array_pattern.patterns.len) {
+                        return false;
+                    }
+                } else {
+                    if (array_val.items.len < array_pattern.patterns.len) {
+                        return false;
+                    }
+                }
+                
+                // Match each specified element
+                for (array_pattern.patterns, 0..) |element_pattern, i| {
+                    if (!try self.matchPattern(element_pattern, array_val.items[i])) {
+                        return false;
+                    }
+                }
+                
+                // Handle rest pattern
+                if (array_pattern.rest) |rest| {
+                    if (rest.name) |rest_name| {
+                        // Create rest array
+                        var rest_items = ArrayList(Value).init(self.allocator);
+                        const start_idx = array_pattern.patterns.len;
+                        for (array_val.items[start_idx..]) |item| {
+                            try rest_items.append(item);
+                        }
+                        try self.environment.define(rest_name, Value{ .Array = rest_items });
+                    }
+                }
+                
+                return true;
+            },
+            .Range => |range_pattern| {
+                const start_val = try self.evaluateExpression(range_pattern.start.*);
+                const end_val = try self.evaluateExpression(range_pattern.end.*);
+                
+                if (value == .Integer and start_val == .Integer and end_val == .Integer) {
+                    const val = value.Integer;
+                    const start = start_val.Integer;
+                    const end = end_val.Integer;
+                    
+                    if (range_pattern.is_inclusive) {
+                        return val >= start and val <= end;
+                    } else {
+                        return val >= start and val < end;
+                    }
+                }
+                return false;
+            },
+            .Guard => |guard_pattern| {
+                // First match the inner pattern
+                if (!try self.matchPattern(guard_pattern.pattern.*, value)) {
+                    return false;
+                }
+                
+                // Then check the guard condition
+                const guard_value = try self.evaluateExpression(guard_pattern.condition.*);
+                return guard_value.toBool();
+            },
+            else => {
+                std.debug.print("Unsupported pattern type: {s}\n", .{@tagName(pattern)});
+                return false;
+            },
+        }
+    }
+
     /// Execute defer statement by pushing it onto the defer stack
     fn executeDeferStatement(self: *Interpreter, defer_stmt: ast.DeferStatement) InterpreterError!void {
         // Get the deferred statement
@@ -990,7 +1205,7 @@ pub const Interpreter = struct {
             self.environment = defer_entry.environment;
             
             // Execute the deferred statement
-            std.debug.print("Executing deferred statement\n");
+            std.debug.print("Executing deferred statement\n", .{});
             self.executeStatement(defer_entry.statement) catch |err| {
                 std.debug.print("Error executing deferred statement: {}\n", .{err});
                 // Continue with other defers even if one fails

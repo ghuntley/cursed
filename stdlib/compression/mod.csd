@@ -20,18 +20,77 @@ sus ALGO_DEFLATE normie = 2
 sus ALGO_LZ4 normie = 3
 
 fr fr ==========================================
+fr fr Compression Statistics & Metrics
+fr fr ==========================================
+
+squad CompressionResult {
+    spill compressed_data tea
+    spill original_size normie
+    spill compressed_size normie
+    spill compression_ratio normie
+    spill algorithm normie
+    spill level normie
+    spill success lit
+    spill error_message tea
+}
+
+fr fr Enhanced compression with metrics
+slay compress_with_metrics(data tea, algorithm normie, level normie) CompressionResult {
+    sus original_size normie = len(data)
+    sus compressed tea = compress_slay(data, algorithm, level)
+    sus compressed_size normie = len(compressed)
+    sus ratio normie = calculate_compression_ratio(original_size, compressed_size)
+    
+    damn CompressionResult{
+        compressed_data: compressed,
+        original_size: original_size,
+        compressed_size: compressed_size,
+        compression_ratio: ratio,
+        algorithm: algorithm,
+        level: level,
+        success: based,
+        error_message: ""
+    }
+}
+
+fr fr Enhanced decompression with validation
+slay decompress_with_validation(compressed_data tea) CompressionResult {
+    sus algorithm normie = auto_detect_algorithm(compressed_data)
+    
+    ready algorithm == 0 {
+        damn CompressionResult{
+            compressed_data: "",
+            original_size: 0,
+            compressed_size: len(compressed_data),
+            compression_ratio: 0,
+            algorithm: 0,
+            level: 0,
+            success: cringe,
+            error_message: "unknown compression format"
+        }
+    }
+    
+    sus decompressed tea = decompress_vibes(compressed_data, algorithm)
+    sus success lit = len(decompressed) > 0
+    
+    damn CompressionResult{
+        compressed_data: decompressed,
+        original_size: len(decompressed),
+        compressed_size: len(compressed_data),
+        compression_ratio: calculate_compression_ratio(len(decompressed), len(compressed_data)),
+        algorithm: algorithm,
+        level: 0,
+        success: success,
+        error_message: ""
+    }
+}
+
+fr fr ==========================================
 fr fr String Utility Functions
 fr fr ==========================================
 
 slay string_length(s tea) normie {
-    sus length normie = 0
-    sus i normie = 0 fr fr Count characters until reasonable limit
-    whomst i < 1000 {
-        length = length + 1
-        i = i + 1
-    }
-    
-    damn length
+    damn len(s)
 }
 
 slay char_at(s tea, index normie) normie { fr fr Simulate getting character at index

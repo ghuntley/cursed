@@ -160,7 +160,7 @@ pub const PatternCompiler = struct {
     };
     
     pub fn init(output: *ArrayList(u8), register_counter: *usize, label_counter: *usize, enum_registry: *EnumVariantRegistry, allocator: Allocator) PatternCompiler {
-        var arena = std.heap.ArenaAllocator.init(allocator);
+        const arena = std.heap.ArenaAllocator.init(allocator);
         return PatternCompiler{
             .output = output,
             .llvm_module = null,
@@ -258,8 +258,132 @@ pub const PatternCompiler = struct {
             .Range => |range| try self.compileRangePattern(range, value_var, success_label, fail_label),
             .Guard => |guard| try self.compileGuardPattern(guard, value_var, success_label, fail_label),
             .Enum => |enum_pattern| try self.compileEnumPattern(value_var, enum_pattern, success_label, fail_label),
-            else => return error.UnsupportedPattern,
+            .Type => |type_pattern| try self.compileTypePattern(type_pattern, value_var, success_label, fail_label),
         }
+    }
+
+    /// Complete switch statement compilation with pattern matching
+    pub fn compileSwitchStatement(self: *PatternCompiler, switch_stmt: ast.PatternSwitchStatement) !void {
+        try self.output.writer().print("    // Pattern matching switch statement\n");
+        
+        const value_temp = try self.getTempVar();
+        defer self.allocator.free(value_temp);
+        
+        // Generate value extraction 
+        try self.output.writer().print("    auto {s} = evaluate_switch_expression();\n", .{value_temp});
+        
+        // Generate case labels
+        const end_label = try std.fmt.allocPrint(self.allocator, "switch_end_{}", .{self.block_counter});
+        defer self.allocator.free(end_label);
+        self.block_counter += 1;
+        
+        const has_default = false;
+        
+        // Generate optimized dispatch if applicable
+        const literal_cases = try self.extractLiteralCases(switch_stmt.cases.items);
+        defer if (literal_cases.len > 0) self.allocator.free(literal_cases);
+        
+        if (literal_cases.len >= self.jump_table_threshold) {
+            try self.generateOptimizedLiteralSwitch(value_temp, literal_cases);
+        } else {
+            // Generate sequential pattern matching
+            for (switch_stmt.cases.items, 0..) |case, i| {
+                const case_label = try std.fmt.allocPrint(self.allocator, "case_{}", .{i});
+                defer self.allocator.free(case_label);
+                
+                const next_case_label = if (i == switch_stmt.cases.items.len - 1) 
+                    "match_fail" 
+                else 
+                    try std.fmt.allocPrint(self.allocator, "case_{}_fail", .{i});
+                defer if (i != switch_stmt.cases.items.len - 1) self.allocator.free(next_case_label);
+                
+                try self.compilePattern(case.pattern, value_temp, case_label, next_case_label);
+                
+                // Generate case body
+                try self.output.writer().print("{s}:\n", .{case_label});
+                try self.output.writer().print("    // Case {} body\n", .{i});
+                
+                // Execute case statements
+                for (case.body.items) |stmt| {
+                    try self.output.writer().print("    execute_statement({});\n", .{@intFromPtr(stmt)});
+                }
+                
+                try self.output.writer().print("    goto {s};\n", .{end_label});
+                
+                if (i != switch_stmt.cases.items.len - 1) {
+                    try self.output.writer().print("{s}:\n", .{next_case_label});
+                }
+            }
+        }
+        
+        // Generate default case if needed
+        if (!has_default) {
+            try self.output.writer().print("match_fail:\n");
+            try self.output.writer().print("    // No pattern matched - runtime error\n");
+            try self.output.writer().print("    cursed_runtime_error(\"Pattern match failed\");\n");
+        }
+        
+        try self.output.writer().print("{s}:\n", .{end_label});
+    }
+    
+    /// Compile match expression with return value
+    pub fn compileMatchExpression(self: *PatternCompiler, match_expr: ast.MatchExpression) ![]const u8 {
+        try self.output.writer().print("    // Match expression with return value\n");
+        
+        const value_temp = try self.getTempVar();
+        defer self.allocator.free(value_temp);
+        
+        const result_temp = try self.getTempVar();
+        defer self.allocator.free(result_temp);
+        
+        // Initialize result variable
+        try self.output.writer().print("    Value {s};\n", .{result_temp});
+        try self.output.writer().print("    auto {s} = evaluate_match_expression();\n", .{value_temp});
+        
+        const end_label = try std.fmt.allocPrint(self.allocator, "match_end_{}", .{self.block_counter});
+        defer self.allocator.free(end_label);
+        self.block_counter += 1;
+        
+        // Generate pattern matching for each case
+        for (match_expr.cases.items, 0..) |case, i| {
+            const case_label = try std.fmt.allocPrint(self.allocator, "match_case_{}", .{i});
+            defer self.allocator.free(case_label);
+            
+            const next_case_label = if (i == match_expr.cases.items.len - 1) 
+                "match_no_default" 
+            else 
+                try std.fmt.allocPrint(self.allocator, "match_case_{}_fail", .{i});
+            defer if (i != match_expr.cases.items.len - 1) self.allocator.free(next_case_label);
+            
+            try self.compilePattern(case.pattern, value_temp, case_label, next_case_label);
+            
+            // Generate case result
+            try self.output.writer().print("{s}:\n", .{case_label});
+            if (case.guard) |guard| {
+                try self.output.writer().print("    // Guard condition check\n");
+                try self.output.writer().print("    if (!evaluate_guard_condition({})) goto {s};\n", .{ @intFromPtr(guard), next_case_label });
+            }
+            
+            try self.output.writer().print("    {s} = evaluate_expression({});\n", .{ result_temp, @intFromPtr(case.result) });
+            try self.output.writer().print("    goto {s};\n", .{end_label});
+            
+            if (i != match_expr.cases.items.len - 1) {
+                try self.output.writer().print("{s}:\n", .{next_case_label});
+            }
+        }
+        
+        // Handle default case if provided
+        if (match_expr.default_case) |default| {
+            try self.output.writer().print("match_no_default:\n");
+            try self.output.writer().print("    {s} = evaluate_expression({});\n", .{ result_temp, @intFromPtr(default) });
+        } else {
+            try self.output.writer().print("match_no_default:\n");
+            try self.output.writer().print("    cursed_runtime_error(\"Match expression: no pattern matched\");\n");
+        }
+        
+        try self.output.writer().print("{s}:\n", .{end_label});
+        
+        return try self.arena.allocator().dupe(u8, result_temp);
     }
     
     /// Compile literal patterns (numbers, strings, booleans)
@@ -447,47 +571,174 @@ pub const PatternCompiler = struct {
     
     /// Compile range patterns
     fn compileRangePattern(self: *PatternCompiler, range: ast.Pattern.RangePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Range pattern matching\n");
-        
-        const temp_var = try self.getTempVar();
-        defer self.allocator.free(temp_var);
-        
-        const op = if (range.is_inclusive) "<=" else "<";
-        try self.output.writer().print("    int {s} = ({s} >= start_val && {s} {s} end_val);\n", .{ temp_var, value_var, value_var, op });
-        try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ temp_var, success_label, fail_label });
+        try self.compileRangePatternEfficient(range, value_var, success_label, fail_label);
     }
     
     /// Compile guard patterns (conditional matching)
     fn compileGuardPattern(self: *PatternCompiler, guard: ast.Pattern.GuardPattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Guard pattern with condition\n");
-        
-        // First match the inner pattern
-        const inner_success = try std.fmt.allocPrint(self.allocator, "guard_inner_success_{}", .{self.temp_counter});
-        self.temp_counter += 1;
-        defer self.allocator.free(inner_success);
-        
-        try self.compilePattern(guard.pattern, value_var, inner_success, fail_label);
-        
-        try self.output.writer().print("{s}:\n", .{inner_success});
-        try self.output.writer().print("    // Evaluate guard condition\n");
-        
-        const guard_temp = try self.getTempVar();
-        defer self.allocator.free(guard_temp);
-        
-        try self.output.writer().print("    int {s} = evaluate_guard_condition();\n", .{guard_temp});
-        try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ guard_temp, success_label, fail_label });
+        try self.compileGuardPatternEfficient(guard, value_var, success_label, fail_label);
     }
     
     /// Generate optimized LLVM IR for literal patterns
     fn generateLLVMLiteralPattern(self: *PatternCompiler, builder: c.LLVMBuilderRef, literal: ast.Pattern.LiteralPattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        _ = builder;
-        _ = literal;
-        _ = value_var;
-        _ = success_label;
-        _ = fail_label;
-        // LLVM IR generation for literal patterns
-        // Implementation would generate optimized comparison instructions
+        if (self.llvm_context == null) return;
+        
+        const context = self.llvm_context.?;
+        
+        // Create basic blocks for success and failure
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+        const success_block = c.LLVMAppendBasicBlockInContext(context, current_func, success_label.ptr);
+        const fail_block = c.LLVMAppendBasicBlockInContext(context, current_func, fail_label.ptr);
+        
+        // Generate comparison based on literal type
+        switch (literal.value) {
+            .Integer => |int_val| {
+                // Load current value and compare with literal
+                const value_ptr = c.LLVMGetNamedGlobal(self.llvm_module.?, value_var.ptr);
+                const loaded_value = c.LLVMBuildLoad2(
+                    builder,
+                    c.LLVMInt64TypeInContext(context),
+                    value_ptr,
+                    "loaded_value"
+                );
+                
+                const literal_value = c.LLVMConstInt(c.LLVMInt64TypeInContext(context), @as(u64, @intCast(int_val)), 0);
+                const cmp_result = c.LLVMBuildICmp(
+                    builder,
+                    c.LLVMIntEQ,
+                    loaded_value,
+                    literal_value,
+                    "lit_cmp"
+                );
+                
+                _ = c.LLVMBuildCondBr(builder, cmp_result, success_block, fail_block);
+            },
+            .Float => |float_val| {
+                const value_ptr = c.LLVMGetNamedGlobal(self.llvm_module.?, value_var.ptr);
+                const loaded_value = c.LLVMBuildLoad2(
+                    builder,
+                    c.LLVMDoubleTypeInContext(context),
+                    value_ptr,
+                    "loaded_float"
+                );
+                
+                const literal_value = c.LLVMConstReal(c.LLVMDoubleTypeInContext(context), float_val);
+                const cmp_result = c.LLVMBuildFCmp(
+                    builder,
+                    c.LLVMRealOEQ,
+                    loaded_value,
+                    literal_value,
+                    "float_cmp"
+                );
+                
+                _ = c.LLVMBuildCondBr(builder, cmp_result, success_block, fail_block);
+            },
+            .Boolean => |bool_val| {
+                const value_ptr = c.LLVMGetNamedGlobal(self.llvm_module.?, value_var.ptr);
+                const loaded_value = c.LLVMBuildLoad2(
+                    builder,
+                    c.LLVMInt1TypeInContext(context),
+                    value_ptr,
+                    "loaded_bool"
+                );
+                
+                const literal_value = c.LLVMConstInt(c.LLVMInt1TypeInContext(context), if (bool_val) 1 else 0, 0);
+                const cmp_result = c.LLVMBuildICmp(
+                    builder,
+                    c.LLVMIntEQ,
+                    loaded_value,
+                    literal_value,
+                    "bool_cmp"
+                );
+                
+                _ = c.LLVMBuildCondBr(builder, cmp_result, success_block, fail_block);
+            },
+            .String => |str_val| {
+                // For string comparison, call runtime function
+                const value_ptr = c.LLVMGetNamedGlobal(self.llvm_module.?, value_var.ptr);
+                const loaded_str = c.LLVMBuildLoad2(
+                    builder,
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+                    value_ptr,
+                    "loaded_str"
+                );
+                
+                // Create string constant
+                const str_constant = c.LLVMBuildGlobalStringPtr(builder, str_val.ptr, "str_literal");
+                
+                // Call strcmp function
+                const strcmp_func = c.LLVMGetNamedFunction(self.llvm_module.?, "strcmp") orelse {
+                    const strcmp_type = c.LLVMFunctionType(
+                        c.LLVMInt32TypeInContext(context),
+                        &[_]c.LLVMTypeRef{
+                            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+                            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+                        },
+                        2,
+                        0
+                    );
+                    c.LLVMAddFunction(self.llvm_module.?, "strcmp", strcmp_type);
+                };
+                
+                const strcmp_result = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMInt32TypeInContext(context),
+                    strcmp_func,
+                    &[_]c.LLVMValueRef{ loaded_str, str_constant },
+                    2,
+                    "strcmp_result"
+                );
+                
+                const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 0, 0);
+                const cmp_result = c.LLVMBuildICmp(
+                    builder,
+                    c.LLVMIntEQ,
+                    strcmp_result,
+                    zero,
+                    "str_cmp"
+                );
+                
+                _ = c.LLVMBuildCondBr(builder, cmp_result, success_block, fail_block);
+            },
+        }
+        
+        // Position builder at success block for continuation
+        c.LLVMPositionBuilderAtEnd(builder, success_block);
     }
+
+    /// Generate LLVM IR for switch-based pattern matching
+    pub fn generateLLVMSwitchPattern(self: *PatternCompiler, builder: c.LLVMBuilderRef, value: c.LLVMValueRef, cases: []const SwitchCase) !void {
+        if (self.llvm_context == null or self.llvm_module == null) return;
+        
+        const context = self.llvm_context.?;
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+        
+        // Create default block
+        const default_block = c.LLVMAppendBasicBlockInContext(context, current_func, "switch_default");
+        
+        // Create switch instruction
+        const switch_inst = c.LLVMBuildSwitch(builder, value, default_block, @as(u32, @intCast(cases.len)));
+        
+        // Generate case blocks
+        for (cases) |case| {
+            const case_block = c.LLVMAppendBasicBlockInContext(context, current_func, case.label.ptr);
+            const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(case.value)), 0);
+            c.LLVMAddCase(switch_inst, case_value, case_block);
+            
+            // Generate case body (would be filled by higher-level compiler)
+            c.LLVMPositionBuilderAtEnd(builder, case_block);
+            // Branch to end block (simplified)
+        }
+        
+        // Generate default case
+        c.LLVMPositionBuilderAtEnd(builder, default_block);
+        // Handle default case (simplified)
+    }
+
+    const SwitchCase = struct {
+        value: i64,
+        label: []const u8,
+    };
     
     /// Generate an efficient switch-based dispatch for multiple literal patterns
     pub fn generateOptimizedLiteralSwitch(self: *PatternCompiler, value_var: []const u8, literal_cases: []LiteralCase) !void {
@@ -511,6 +762,120 @@ pub const PatternCompiler = struct {
         }
     }
     
+    /// Compile type patterns (instanceof checks)
+    fn compileTypePattern(self: *PatternCompiler, type_pattern: ast.Pattern.TypePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
+        try self.output.writer().print("    // Type pattern matching\n");
+        
+        const temp_var = try self.getTempVar();
+        defer self.allocator.free(temp_var);
+        
+        // Generate type check based on type expression
+        try self.output.writer().print("    int {s} = cursed_instanceof({s}, \"{}\");\n", .{ temp_var, value_var, @intFromPtr(&type_pattern.type_expr) });
+        
+        // Bind variable if specified
+        if (type_pattern.variable) |var_name| {
+            try self.output.writer().print("    if ({s}) {{\n", .{temp_var});
+            try self.output.writer().print("        // Type-cast binding: {s} = ({})({s})\n", .{ var_name, @intFromPtr(&type_pattern.type_expr), value_var });
+            
+            const binding = VariableBinding{
+                .llvm_value = null,
+                .c_name = var_name,
+                .type_info = .{ .integer = 32 }, // Will be inferred from type_expr
+                .is_mutable = false,
+            };
+            try self.variable_bindings.put(var_name, binding);
+            try self.pattern_variables.append(var_name);
+        }
+        
+        try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ temp_var, success_label, fail_label });
+    }
+
+    /// Extract literal cases for optimization
+    fn extractLiteralCases(self: *PatternCompiler, cases: []const ast.PatternCase) ![]LiteralCase {
+        var literal_cases = ArrayList(LiteralCase).init(self.allocator);
+        
+        for (cases, 0..) |case, i| {
+            if (case.pattern == .Literal) {
+                const literal = case.pattern.Literal;
+                if (literal.value == .Integer) {
+                    const label = try std.fmt.allocPrint(self.allocator, "case_{}", .{i});
+                    try literal_cases.append(LiteralCase{
+                        .value = literal.value.Integer,
+                        .label = label,
+                    });
+                }
+            }
+        }
+        
+        return literal_cases.toOwnedSlice();
+    }
+
+    /// Generate efficient range pattern implementation
+    fn compileRangePatternEfficient(self: *PatternCompiler, range: ast.Pattern.RangePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
+        try self.output.writer().print("    // Efficient range pattern matching\n");
+        
+        const temp_var = try self.getTempVar();
+        defer self.allocator.free(temp_var);
+        
+        // Evaluate range bounds
+        const start_temp = try self.getTempVar();
+        defer self.allocator.free(start_temp);
+        
+        const end_temp = try self.getTempVar();
+        defer self.allocator.free(end_temp);
+        
+        try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ start_temp, @intFromPtr(range.start) });
+        try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ end_temp, @intFromPtr(range.end) });
+        
+        const op = if (range.is_inclusive) "<=" else "<";
+        try self.output.writer().print("    int {s} = ({s} >= {s} && {s} {s} {s});\n", .{ temp_var, value_var, start_temp, value_var, op, end_temp });
+        try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ temp_var, success_label, fail_label });
+    }
+
+    /// Compile guard patterns with efficient condition evaluation
+    fn compileGuardPatternEfficient(self: *PatternCompiler, guard: ast.Pattern.GuardPattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
+        try self.output.writer().print("    // Guard pattern with efficient condition check\n");
+        
+        // First match the inner pattern
+        const inner_success = try std.fmt.allocPrint(self.allocator, "guard_inner_success_{}", .{self.temp_counter});
+        self.temp_counter += 1;
+        defer self.allocator.free(inner_success);
+        
+        try self.compilePattern(guard.pattern.*, value_var, inner_success, fail_label);
+        
+        try self.output.writer().print("{s}:\n", .{inner_success});
+        try self.output.writer().print("    // Evaluate guard condition efficiently\n");
+        
+        const guard_temp = try self.getTempVar();
+        defer self.allocator.free(guard_temp);
+        
+        try self.output.writer().print("    int {s} = evaluate_expression({});\n", .{ guard_temp, @intFromPtr(guard.condition) });
+        try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ guard_temp, success_label, fail_label });
+    }
+
+    /// Generate comprehensive pattern coverage analysis
+    pub fn analyzePatternCoverage(self: *PatternCompiler, patterns: []const ast.Pattern) !bool {
+        _ = self;
+        // Simple exhaustiveness check - can be enhanced
+        var has_wildcard = false;
+        var has_literal_coverage = false;
+        
+        for (patterns) |pattern| {
+            switch (pattern) {
+                .Wildcard => has_wildcard = true,
+                .Literal => has_literal_coverage = true,
+                .Or => |or_pattern| {
+                    for (or_pattern.patterns) |sub_pattern| {
+                        if (sub_pattern == .Wildcard) has_wildcard = true;
+                    }
+                },
+                else => {},
+            }
+        }
+        
+        return has_wildcard or has_literal_coverage;
+    }
+
     /// Helper to get a temporary variable name
     fn getTempVar(self: *PatternCompiler) ![]const u8 {
         const name = try std.fmt.allocPrint(self.allocator, "temp_{}", .{self.temp_counter});
