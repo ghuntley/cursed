@@ -707,11 +707,17 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
 }
 
 fn performBinaryOperation(left: Variable, right: Variable, op: []const u8, allocator: Allocator, verbose: bool) !Variable {
-    if (verbose) print("🔢 Performing operation: {any} {s} {any}\n", .{ left, op, right });
+    var l = left;
+    var r = right;
+    // Ensure any temporary-owned resources are freed after computing the result
+    defer l.deinit(allocator);
+    defer r.deinit(allocator);
+
+    if (verbose) print("🔢 Performing operation: {any} {s} {any}\n", .{ l, op, r });
     
-    switch (left) {
+    switch (l) {
         .Integer => |left_int| {
-            switch (right) {
+            switch (r) {
                 .Integer => |right_int| {
                     if (std.mem.eql(u8, op, "+")) {
                         return Variable{ .Integer = left_int + right_int };
@@ -756,7 +762,7 @@ fn performBinaryOperation(left: Variable, right: Variable, op: []const u8, alloc
             }
         },
         .Float => |left_float| {
-            switch (right) {
+            switch (r) {
                 .Integer => |right_int| {
                     const right_float = @as(f64, @floatFromInt(right_int));
                     if (std.mem.eql(u8, op, "+")) {
@@ -786,7 +792,7 @@ fn performBinaryOperation(left: Variable, right: Variable, op: []const u8, alloc
             }
         },
         .String => |left_str| {
-            switch (right) {
+            switch (r) {
                 .String => |right_str| {
                     if (std.mem.eql(u8, op, "+")) {
                         // String concatenation
@@ -838,11 +844,12 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
         return try variable.clone(allocator);
     }
     
-    // Try to parse as string literal
+    // Try to parse as string literal (return an owning copy to avoid ownership ambiguity)
     if (value_str.len >= 2 and value_str[0] == '"' and value_str[value_str.len - 1] == '"') {
         const string_value = value_str[1..value_str.len - 1];
         if (verbose) print("📊 Parsed as string: '{s}'\n", .{string_value});
-        return Variable{ .String = string_value };
+        const copy = try allocator.dupe(u8, string_value);
+        return Variable{ .String = copy };
     }
     
     // Try to parse as boolean
@@ -935,7 +942,9 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
             switch (result) {
                 .String => |str_val| {
                     const string_copy = try allocator.dupe(u8, str_val);
-                    // Avoid deinit here to prevent double-free of temporaries with unclear ownership
+                    // Temporary now always owns its memory; safe to deinit after duplicating
+                    var tmp_var = result;
+                    tmp_var.deinit(allocator);
                     break :blk Variable{ .String = string_copy };
                 },
                 else => {
