@@ -1,18 +1,23 @@
-sus x drip = 15
-sus y drip = x * 2 + 5
-vibez.spill("Values:", x, y)
+yeet "mathz"
+sus result drip = abs_normie(-42)
+vibez.spill("Absolute value:", result)
 
-lowkey x > 10 {
-    vibez.spill("x is greater than 10")
-    lowkey y > 30 {
-        vibez.spill("y is also greater than 30")
-    }
+yeet "stringz"  
+sus text tea = "hello world"
+sus length drip = len_str(text)
+vibez.spill("String length:", length)
+
+sus x drip = 10
+ready (x > 5) {
+    vibez.spill("x is greater than 5")
+} otherwise {
+    vibez.spill("x is not greater than 5")
 }
 
-sus sum drip = 0
-bestie i := 1; i <= 5; i++ {
-    sum = sum + i
-    vibez.spill("Step", i, "Sum:", sum)
+squad Point {
+    spill x drip
+    spill y drip
 }
-
-vibez.spill("Final sum:", sum)
+sus p Point = Point{x: 10, y: 20}
+sus test_x drip = p.x
+vibez.spill("Point x:", test_x)

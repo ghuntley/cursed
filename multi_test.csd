@@ -1,1 +1,3 @@
-vibez.spill("Hello CURSED!"); vibez.spill("This is working!"); vibez.spill(42)
+vibez.spill("Hello from LLVM backend!")
+sus x drip = 42
+vibez.spill("The answer is:", x)
