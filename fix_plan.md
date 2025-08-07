@@ -18,7 +18,8 @@ Updates 2025-08-08 (Amp)
   - `evaluateSingleValue` now returns owning copies for string literals (dup into allocator)
   - `performBinaryOperation` now `deinit`s both operands after computing the result, ensuring temps are freed (esp. string `+` concat)
   - In `handleVariableDeclaration` for `tea`, we dupe into the stored value and then `deinit` the temporary
-  - Verified: `./zig-out/bin/cursed stdlib/testz/test_testz.csd` no longer reports GPA leaks
+  - In `handleFunctionCall`, clone the function return value into the outer allocator so it outlives the function's arena allocator
+  - Verified: `./zig-out/bin/cursed stdlib/testz/test_testz.csd` no longer reports GPA leaks; `tests/e2e/basic/02_functions.csd --verbose` now passes without segfaults
 
 Notes on contradictions below
 - The section "Honest Assessment Summary -> What Needs Major Work" appears outdated (e.g., claims variable evaluation is broken). Our quick checks did not reproduce these specific failures. We will validate comprehensively and prune outdated claims after running the full suite.
