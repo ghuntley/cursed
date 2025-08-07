@@ -562,6 +562,9 @@ zig test src-zig/type_system_runtime.zig    # ✅ Type system tests
 ./zig-out/bin/cursed stdlib/testz/test_testz.csd     # ✅ Testing framework validation
 ./zig-out/bin/cursed comprehensive_stdlib_test.csd   # ✅ Full stdlib integration test
 
+# Quick leak check during development
+./zig-out/bin/cursed stdlib/testz/test_testz.csd --verbose  # Good at surfacing temp string ownership leaks
+
 # End-to-end validation
 ./zig-out/bin/cursed tests/e2e/basic/01_variables.csd  # ✅ E2E test suite
 ```
