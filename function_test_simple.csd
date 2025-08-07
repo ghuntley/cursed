@@ -3,3 +3,4 @@ slay greet(name tea) {
 }
 
 greet("Alice")
+greet("Bob")
