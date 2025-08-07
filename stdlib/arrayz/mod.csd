@@ -15,24 +15,30 @@ slay array_with_capacity(capacity normie) [tea] {
 
 slay array_from_slice(slice [tea]) [tea] {
     sus result [tea] = []
-    bestie i := 0; i < len(slice); i++ {
+    sus i normie = 0
+    bestie i < len(slice) {
         result = append(result, slice[i])
+        i = i + 1
     }
     damn result
 }
 
 slay array_fill(size normie, value tea) [tea] {
     sus result [tea] = []
-    bestie i := 0; i < size; i++ {
+    sus i normie = 0
+    bestie i < size {
         result = append(result, value)
+        i = i + 1
     }
     damn result
 }
 
 slay array_range(start normie, end normie) [normie] {
     sus result [normie] = []
-    bestie i := start; i < end; i++ {
+    sus i normie = start
+    bestie i < end {
         result = append(result, i)
+        i = i + 1
     }
     damn result
 }

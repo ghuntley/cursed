@@ -38,6 +38,14 @@ pub fn len_str(s: []const u8) i64 {
     return runtime_string_length(s);
 }
 
+pub fn runtime_char_at_string(s: []const u8, index: i64) u8 {
+    return runtime_string_char_at(s, index);
+}
+
+pub fn runtime_char_to_str(allocator: Allocator, c: u8) ![]u8 {
+    return runtime_char_to_string(allocator, c);
+}
+
 pub fn substring(allocator: Allocator, s: []const u8, start: i64, length: i64) ![]u8 {
     if (start < 0 or start >= s.len or length <= 0) {
         return allocator.dupe(u8, "");
@@ -107,6 +115,59 @@ pub fn array_pop(array: *ArrayList(Variable)) ?Variable {
 pub fn array_sort(allocator: Allocator, array: *ArrayList(Variable)) !void {
     // Simple sorting for integers and floats
     std.mem.sort(Variable, array.items, {}, compareVariables);
+}
+
+pub fn array_append(array: *ArrayList(Variable), item: Variable) !void {
+    try array.append(item);
+}
+
+pub fn array_contains(array: []const Variable, item: Variable) bool {
+    for (array) |elem| {
+        if (variablesEqual(elem, item)) return true;
+    }
+    return false;
+}
+
+pub fn array_find(array: []const Variable, item: Variable) i64 {
+    for (array, 0..) |elem, i| {
+        if (variablesEqual(elem, item)) return @intCast(i);
+    }
+    return -1;
+}
+
+pub fn array_slice(allocator: Allocator, array: []const Variable, start: i64, end: i64) !ArrayList(Variable) {
+    var result = ArrayList(Variable).init(allocator);
+    if (start < 0 or start >= array.len or end <= start) return result;
+    
+    const start_idx: usize = @intCast(start);
+    const end_idx = @min(@as(usize, @intCast(end)), array.len);
+    
+    for (array[start_idx..end_idx]) |item| {
+        try result.append(try item.clone(allocator));
+    }
+    return result;
+}
+
+fn variablesEqual(a: Variable, b: Variable) bool {
+    return switch (a) {
+        .Integer => |a_val| switch (b) {
+            .Integer => |b_val| a_val == b_val,
+            else => false,
+        },
+        .Float => |a_val| switch (b) {
+            .Float => |b_val| a_val == b_val,
+            else => false,
+        },
+        .String => |a_val| switch (b) {
+            .String => |b_val| std.mem.eql(u8, a_val, b_val),
+            else => false,
+        },
+        .Boolean => |a_val| switch (b) {
+            .Boolean => |b_val| a_val == b_val,
+            else => false,
+        },
+        .Array => false, // Array comparison not implemented
+    };
 }
 
 fn compareVariables(_: void, a: Variable, b: Variable) bool {

@@ -528,6 +528,15 @@ base_codegen: FinalWorkingCodeGen,
                 try self.generateFunctionExitWithDefers();
                 try self.compileReturnStatement(return_stmt);
             },
+            .If => |if_stmt| {
+                try self.compileIfStatement(if_stmt);
+            },
+            .While => |while_stmt| {
+                try self.compileWhileStatement(while_stmt);
+            },
+            .Select => |select_stmt| {
+                try self.compileSelectStatement(select_stmt);
+            },
             else => {
                 // Use base codegen for other statements
                 try self.base_codegen.generateStatement(&statement);
@@ -547,6 +556,263 @@ base_codegen: FinalWorkingCodeGen,
         } else {
             _ = c.LLVMBuildRetVoid(builder);
         }
+    }
+
+    /// Compile if statement with proper basic block management
+    /// Handles ready (if) statements with conditional branching and otherwise (else) clauses
+    fn compileIfStatement(self: *AdvancedCodeGen, if_stmt: ast.IfStatement) !void {
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        const current_function = self.base_codegen.current_function orelse return error.NoCurrentFunction;
+        
+        // Enter new scope for the if statement
+        _ = try self.enterScope(false);
+        defer self.exitScope() catch {};
+        
+        // Generate condition expression
+        const condition = try self.base_codegen.generateExpression(if_stmt.condition);
+        
+        // Create basic blocks for if statement control flow
+        const then_block = c.LLVMAppendBasicBlockInContext(context, current_function, "ready_then");
+        const else_block = c.LLVMAppendBasicBlockInContext(context, current_function, "otherwise_else");
+        const merge_block = c.LLVMAppendBasicBlockInContext(context, current_function, "if_merge");
+        
+        // Build conditional branch
+        _ = c.LLVMBuildCondBr(builder, condition, then_block, else_block);
+        
+        // Generate then branch (ready block)
+        c.LLVMPositionBuilderAtEnd(builder, then_block);
+        for (if_stmt.then_branch.items) |stmt| {
+            try self.compileStatement(stmt);
+        }
+        
+        // Add branch to merge block if no terminator exists
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(builder)) == null) {
+            _ = c.LLVMBuildBr(builder, merge_block);
+        }
+        
+        // Generate else branch (otherwise block)
+        c.LLVMPositionBuilderAtEnd(builder, else_block);
+        if (if_stmt.else_branch) |else_stmts| {
+            for (else_stmts.items) |stmt| {
+                try self.compileStatement(stmt);
+            }
+        }
+        
+        // Add branch to merge block if no terminator exists
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(builder)) == null) {
+            _ = c.LLVMBuildBr(builder, merge_block);
+        }
+        
+        // Continue building in merge block
+        c.LLVMPositionBuilderAtEnd(builder, merge_block);
+        
+        std.debug.print("✅ If statement (ready/otherwise) compiled with proper control flow\n", .{});
+    }
+
+    /// Compile while statement with proper loop structure
+    /// Handles bestie (while) loops with loop headers and exit conditions
+    fn compileWhileStatement(self: *AdvancedCodeGen, while_stmt: ast.WhileStatement) !void {
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        const current_function = self.base_codegen.current_function orelse return error.NoCurrentFunction;
+        
+        // Enter new scope for the loop
+        _ = try self.enterScope(false);
+        defer self.exitScope() catch {};
+        
+        // Create basic blocks for while loop control flow
+        const condition_block = c.LLVMAppendBasicBlockInContext(context, current_function, "bestie_condition");
+        const body_block = c.LLVMAppendBasicBlockInContext(context, current_function, "bestie_body");
+        const exit_block = c.LLVMAppendBasicBlockInContext(context, current_function, "bestie_exit");
+        
+        // Jump to condition block
+        _ = c.LLVMBuildBr(builder, condition_block);
+        
+        // Generate condition block
+        c.LLVMPositionBuilderAtEnd(builder, condition_block);
+        const condition = try self.base_codegen.generateExpression(while_stmt.condition);
+        _ = c.LLVMBuildCondBr(builder, condition, body_block, exit_block);
+        
+        // Generate body block
+        c.LLVMPositionBuilderAtEnd(builder, body_block);
+        for (while_stmt.body.items) |stmt| {
+            try self.compileStatement(stmt);
+        }
+        
+        // Add branch back to condition if no terminator exists
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(builder)) == null) {
+            _ = c.LLVMBuildBr(builder, condition_block);
+        }
+        
+        // Continue building in exit block
+        c.LLVMPositionBuilderAtEnd(builder, exit_block);
+        
+        std.debug.print("✅ While loop (bestie) compiled with proper control flow\n", .{});
+    }
+
+    /// Compile select statement for channel operations
+    /// Handles ready { case -> action } select statements
+    fn compileSelectStatement(self: *AdvancedCodeGen, select_stmt: ast.SelectStatement) !void {
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        const current_function = self.base_codegen.current_function orelse return error.NoCurrentFunction;
+        
+        // Enter new scope for the select statement
+        _ = try self.enterScope(false);
+        defer self.exitScope() catch {};
+        
+        // Ensure select runtime functions are declared
+        try self.ensureSelectRuntimeFunctions();
+        
+        // Create select context for runtime
+        const select_begin_func = self.base_codegen.runtime_functions.get("cursed_select_begin") orelse
+            return error.SelectRuntimeNotAvailable;
+        
+        const case_count = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(select_stmt.cases.items.len)), 0);
+        const select_context = c.LLVMBuildCall2(
+            builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+            select_begin_func,
+            &[_]c.LLVMValueRef{case_count},
+            1,
+            "select_ctx"
+        );
+        
+        // Register select operations with runtime
+        for (select_stmt.cases.items, 0..) |case_item, i| {
+            const case_index = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
+            
+            if (case_item.channel != null and case_item.send_value != null) {
+                // Send operation
+                const channel_value = try self.base_codegen.generateExpression(case_item.channel.?);
+                const send_value = try self.base_codegen.generateExpression(case_item.send_value.?);
+                
+                const add_send_func = self.base_codegen.runtime_functions.get("cursed_select_add_send").?;
+                _ = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMVoidTypeInContext(context),
+                    add_send_func,
+                    &[_]c.LLVMValueRef{ select_context, channel_value, send_value, case_index },
+                    4,
+                    ""
+                );
+            } else if (case_item.channel != null) {
+                // Receive operation
+                const channel_value = try self.base_codegen.generateExpression(case_item.channel.?);
+                
+                const add_recv_func = self.base_codegen.runtime_functions.get("cursed_select_add_recv").?;
+                _ = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMVoidTypeInContext(context),
+                    add_recv_func,
+                    &[_]c.LLVMValueRef{ select_context, channel_value, case_index },
+                    3,
+                    ""
+                );
+            } else {
+                // Default case
+                const add_default_func = self.base_codegen.runtime_functions.get("cursed_select_add_default").?;
+                _ = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMVoidTypeInContext(context),
+                    add_default_func,
+                    &[_]c.LLVMValueRef{ select_context, case_index },
+                    2,
+                    ""
+                );
+            }
+        }
+        
+        // Execute select and get ready case index
+        const select_execute_func = self.base_codegen.runtime_functions.get("cursed_select_execute").?;
+        const ready_case_index = c.LLVMBuildCall2(
+            builder,
+            c.LLVMInt32TypeInContext(context),
+            select_execute_func,
+            &[_]c.LLVMValueRef{select_context},
+            1,
+            "ready_case"
+        );
+        
+        // Create basic blocks for case handling
+        const merge_block = c.LLVMAppendBasicBlockInContext(context, current_function, "select_merge");
+        const no_case_ready_block = c.LLVMAppendBasicBlockInContext(context, current_function, "select_no_case");
+        
+        // Create switch instruction to jump to ready case
+        const switch_inst = c.LLVMBuildSwitch(builder, ready_case_index, no_case_ready_block, @as(u32, @intCast(select_stmt.cases.items.len)));
+        
+        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.base_codegen.allocator);
+        defer case_blocks.deinit();
+        
+        // Generate blocks for each case
+        for (select_stmt.cases.items, 0..) |case_item, i| {
+            const case_block = c.LLVMAppendBasicBlockInContext(context, current_function, 
+                try std.fmt.allocPrint(self.base_codegen.allocator, "select_case_{d}", .{i}).ptr);
+            try case_blocks.append(case_block);
+
+            // Add case to switch
+            const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
+            c.LLVMAddCase(switch_inst, case_value, case_block);
+
+            // Position builder in case block
+            c.LLVMPositionBuilderAtEnd(builder, case_block);
+            
+            // For receive operations, extract the received value
+            if (case_item.channel != null and case_item.send_value == null) {
+                const get_recv_value_func = self.base_codegen.runtime_functions.get("cursed_select_get_recv_value").?;
+                const received_value = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMInt64TypeInContext(context),
+                    get_recv_value_func,
+                    &[_]c.LLVMValueRef{ select_context, case_value },
+                    2,
+                    "recv_value"
+                );
+                
+                // Store in variable if case has variable binding
+                if (case_item.variable_name) |var_name| {
+                    // Create or update variable binding
+                    // Create alloca for the received value
+                    const var_type = c.LLVMInt64TypeInContext(context);
+                    const alloca = c.LLVMBuildAlloca(builder, var_type, var_name.ptr);
+                    _ = c.LLVMBuildStore(builder, received_value, alloca);
+                    
+                    // Store in variables map if available
+                    try self.base_codegen.variables.put(var_name, alloca);
+                }
+            }
+            
+            // Generate case body statements
+            for (case_item.body.items) |stmt| {
+                try self.compileStatement(stmt);
+            }
+            
+            // Branch to merge if no terminator
+            if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(builder)) == null) {
+                _ = c.LLVMBuildBr(builder, merge_block);
+            }
+        }
+
+        // Handle case where no operation is ready (should not happen with proper select)
+        c.LLVMPositionBuilderAtEnd(builder, no_case_ready_block);
+        _ = c.LLVMBuildBr(builder, merge_block);
+
+        // Continue in merge block
+        c.LLVMPositionBuilderAtEnd(builder, merge_block);
+        
+        // Cleanup select context
+        const select_cleanup_func = self.base_codegen.runtime_functions.get("cursed_select_cleanup").?;
+        _ = c.LLVMBuildCall2(
+            builder,
+            c.LLVMVoidTypeInContext(context),
+            select_cleanup_func,
+            &[_]c.LLVMValueRef{select_context},
+            1,
+            ""
+        );
+        
+        std.debug.print("✅ Select statement (ready) compiled with proper channel operations\n", .{});
     }
 
     /// Compile CURSED source code to executable
@@ -3165,7 +3431,13 @@ base_codegen: FinalWorkingCodeGen,
                 // Store in variable if case has variable binding
                 if (case_item.variable_name) |var_name| {
                     // Create or update variable binding
-                    try self.base_codegen.setVariable(var_name, received_value);
+                    // Create alloca for the received value
+                    const var_type = c.LLVMInt64TypeInContext(context);
+                    const alloca = c.LLVMBuildAlloca(builder, var_type, var_name.ptr);
+                    _ = c.LLVMBuildStore(builder, received_value, alloca);
+                    
+                    // Store in variables map if available
+                    try self.base_codegen.variables.put(var_name, alloca);
                 }
             }
             

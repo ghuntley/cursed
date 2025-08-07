@@ -267,6 +267,7 @@ pub const Parser = struct {
         
         // Struct declaration (squad)
         if (self.check(.Squad) or self.check(.Struct)) {
+            std.debug.print("DEBUG: Parsing struct statement\n", .{});
             return try self.parseStructStatement();
         }
         
@@ -922,17 +923,14 @@ pub const Parser = struct {
         var catch_handler: ?ast.FamExpression.CatchHandler = null;
         var finally_handler: ?ast.FamExpression.FinallyHandler = null;
         
-        // Optional catch handler
-        if (self.match(.Catch)) {
-        _ = try self.consume(.LeftParen, "Expected '(' after 'catch'");
-            
+        // Optional sus (catch) handler  
+        if (self.match(.Sus)) {
             const error_variable = if (self.check(.Identifier))
                 self.advance().lexeme
             else
                 "error";
                 
-        _ = try self.consume(.RightParen, "Expected ')' after error variable");
-        _ = try self.consume(.LeftBrace, "Expected '{' for catch body");
+        _ = try self.consume(.LeftBrace, "Expected '{' for sus catch body");
             
             var catch_body = ArrayList(*anyopaque).init(self.allocator);
             
@@ -945,7 +943,7 @@ pub const Parser = struct {
                 try catch_body.append(@ptrCast(stmt_ptr));
             }
             
-        _ = try self.consume(.RightBrace, "Expected '}' after catch body");
+        _ = try self.consume(.RightBrace, "Expected '}' after sus catch body");
             
             catch_handler = ast.FamExpression.CatchHandler{
                 .error_variable = error_variable,
@@ -1831,8 +1829,9 @@ pub const Parser = struct {
         // Expect '{'
         _ = try self.consume(.LeftBrace, "Expected '{' after struct name");
         
-        // Parse fields
+        // Parse fields and methods
         var fields = ArrayList(ast.StructField).init(self.allocator);
+        var methods = ArrayList(ast.FunctionStatement).init(self.allocator);
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             // Skip newlines
@@ -1840,7 +1839,14 @@ pub const Parser = struct {
                 continue;
             }
             
-            // Parse visibility modifier
+            // Check for method definition (slay keyword)
+            if (self.check(.Slay)) {
+                const method = try self.parseStructMethod();
+                try methods.append(method);
+                continue;
+            }
+            
+            // Parse visibility modifier for fields
             var visibility = ast.Visibility.Private;
             if (self.match(.Spill)) {
                 visibility = .Public;
@@ -1863,6 +1869,7 @@ pub const Parser = struct {
         return Statement{ .Struct = ast.StructStatement{
             .name = name,
             .fields = fields,
+            .methods = methods,
             .visibility = .Public,
             .type_parameters = type_parameters,
         }};
@@ -1883,6 +1890,68 @@ pub const Parser = struct {
             .name = name,
             .field_type = field_type,
             .visibility = visibility,
+        };
+    }
+
+    fn parseStructMethod(self: *Parser) ParserError!ast.FunctionStatement {
+        // Parse as a regular function, but it's a method
+        _ = try self.consume(.Slay, "Expected 'slay' keyword");
+        
+        // Parse method name
+        if (!self.check(.Identifier)) {
+            return ParserError.UnexpectedToken;
+        }
+        
+        const name = self.advance().lexeme;
+        
+        // Parse parameters
+        _ = try self.consume(.LeftParen, "Expected '(' after method name");
+        
+        var parameters = ArrayList(ast.Parameter).init(self.allocator);
+        
+        if (!self.check(.RightParen)) {
+            while (true) {
+                const param = try self.parseParameter();
+                try parameters.append(param);
+                
+                if (!self.match(.Comma)) break;
+            }
+        }
+        
+        _ = try self.consume(.RightParen, "Expected ')' after parameters");
+        
+        // Parse return type (optional)
+        var return_type: ?ast.Type = null;
+        if (!self.check(.LeftBrace)) {
+            return_type = try self.parseType();
+        }
+        
+        // Parse method body
+        _ = try self.consume(.LeftBrace, "Expected '{' before method body");
+        
+        var body = ArrayList(*Statement).init(self.allocator);
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            if (self.match(.Newline)) {
+                continue;
+            }
+            
+            const stmt = try self.parseStatement();
+            const stmt_ptr = try self.allocator.create(Statement);
+            stmt_ptr.* = stmt;
+            try body.append(stmt_ptr);
+        }
+        
+        _ = try self.consume(.RightBrace, "Expected '}' after method body");
+        
+        return ast.FunctionStatement{
+            .name = name,
+            .parameters = parameters,
+            .return_type = return_type,
+            .body = body,
+            .visibility = .Public,
+            .is_async = false,
+            .type_parameters = ArrayList(ast.TypeParameter).init(self.allocator),
+            .comments = ArrayList(ast.Comment).init(self.allocator),
         };
     }
 

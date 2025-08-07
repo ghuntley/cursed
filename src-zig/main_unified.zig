@@ -554,7 +554,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         try source_lines.append(line);
     }
     
-    // Line-by-line interpretation with variable support
+    // Statement-by-statement interpretation with proper control flow
     var line_index: usize = 0;
     
     while (line_index < source_lines.items.len) {
@@ -569,7 +569,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             continue;
         }
         
-        // Skip import statements during execution
+        // Handle import statements: yeet "module"
         if (std.mem.startsWith(u8, trimmed, "yeet ")) {
             if (verbose) print("📦 Import: {s}\n", .{trimmed});
             line_index += 1;
@@ -579,77 +579,40 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         // Handle function declarations: slay funcname(params) { ... }
         if (std.mem.startsWith(u8, trimmed, "slay ")) {
             if (verbose) print("🔍 Processing function declaration: {s}\n", .{trimmed});
-            const lines_consumed = try handleFunctionDeclaration(&functions, allocator, source_lines, line_index, verbose);
-            line_index += lines_consumed;
-            continue;
-        }
-        
-        // Handle variable declarations: sus varname type = value
-        if (std.mem.startsWith(u8, trimmed, "sus ")) {
-            if (verbose) print("🔍 Processing variable declaration: {s}\n", .{trimmed});
-            try handleVariableDeclaration(&variables, &functions, allocator, variable_allocator, trimmed, verbose);
-            line_index += 1;
-            continue;
-        }
-        
-        // Handle variable assignments: varname = function_call()
-        if (std.mem.indexOf(u8, trimmed, "=")) |equals_pos| {
-            const var_name = std.mem.trim(u8, trimmed[0..equals_pos], " \t");
-            const value_expr = std.mem.trim(u8, trimmed[equals_pos + 1..], " \t");
             
-            // Check if the variable already exists (for assignment)
-            if (variables.get(var_name)) |_| {
-                if (verbose) print("🔍 Processing variable assignment: {s} = {s}\n", .{ var_name, value_expr });
+            // Check if this is a single-line function with multiple statements
+            if (std.mem.indexOf(u8, trimmed, ";")) |semicolon_pos| {
+                // Single-line function with more statements
+                const func_part = std.mem.trim(u8, trimmed[0..semicolon_pos], " \t");
+                const remaining_part = std.mem.trim(u8, trimmed[semicolon_pos + 1..], " \t");
                 
-                // Evaluate the expression (could be a function call)
-                if (evaluateExpression(&variables, &functions, allocator, value_expr, verbose)) |result| {
-                    try variables.put(var_name, result);
-                    if (verbose) print("✅ Variable {s} assigned value: {any}\n", .{ var_name, result });
-                } else |err| {
-                    if (verbose) print("❌ Failed to evaluate assignment expression: {any}\n", .{err});
+                if (verbose) print("🔍 Single-line function detected. Function: '{s}', Remaining: '{s}'\n", .{ func_part, remaining_part });
+                
+                // Create a temporary source_lines with just the function part
+                var temp_source_lines = ArrayList([]const u8).init(allocator);
+                defer temp_source_lines.deinit();
+                
+                // Copy the function part as a new line
+                const func_part_copy = try allocator.dupe(u8, func_part);
+                defer allocator.free(func_part_copy);
+                try temp_source_lines.append(func_part_copy);
+                
+                // Process the function declaration
+                _ = try handleFunctionDeclaration(&functions, allocator, temp_source_lines, 0, verbose);
+                
+                // Now process the remaining statements by parsing them as a new line
+                if (remaining_part.len > 0) {
+                    try processStatements(&variables, &functions, allocator, variable_allocator, remaining_part, verbose);
                 }
+                
                 line_index += 1;
                 continue;
-            }
-        }
-        
-        // Handle stdlib function calls
-        if (std.mem.indexOf(u8, trimmed, ".")) |dot_pos| {
-            const module_part = trimmed[0..dot_pos];
-            const remaining = trimmed[dot_pos + 1..];
-            
-            // Check if this is a stdlib module call
-            if (isStdlibModule(module_part)) {
-                try handleStdlibFunctionCall(allocator, &variables, module_part, remaining, verbose);
-                line_index += 1;
+            } else {
+                // Multi-line function declaration
+                const lines_consumed = try handleFunctionDeclaration(&functions, allocator, source_lines, line_index, verbose);
+                line_index += lines_consumed;
                 continue;
             }
-        }
-        
-        // Handle test_start() function calls
-        if (std.mem.indexOf(u8, trimmed, "test_start(")) |start| {
-            if (std.mem.indexOf(u8, trimmed[start..], "(")) |paren_start| {
-                if (std.mem.lastIndexOf(u8, trimmed, ")")) |paren_end| {
-                    const content_start = start + paren_start + 1;
-                    const content = trimmed[content_start..paren_end];
-                    
-                    // Remove quotes if present
-                    if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
-                        print("🧪 Starting test: {s}\n", .{content[1..content.len - 1]});
-                    } else {
-                        print("🧪 Starting test: {s}\n", .{content});
-                    }
-                }
-            }
-            line_index += 1;
-            continue;
-        }
-        
-        // Handle print_test_summary() function calls
-        if (std.mem.indexOf(u8, trimmed, "print_test_summary()") != null) {
-            print("📊 Test Summary\nTotal tests: 1\nPassed: 1\nFailed: 0\n", .{});
-            line_index += 1;
-            continue;
         }
         
         // Handle yikes error creation: yikes "message"
@@ -708,31 +671,35 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             continue;
         }
         
-        // Handle function calls: funcname(args)
-        if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
-            const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
-            if (functions.get(func_name)) |_| {
-                if (verbose) print("🔍 Found function call: {s}\n", .{func_name});
-                _ = try handleFunctionCall(&functions, &variables, allocator, trimmed, verbose);
-                line_index += 1;
-                continue;
+        // Handle test_start() function calls
+        if (std.mem.indexOf(u8, trimmed, "test_start(")) |start| {
+            if (std.mem.indexOf(u8, trimmed[start..], "(")) |paren_start| {
+                if (std.mem.lastIndexOf(u8, trimmed, ")")) |paren_end| {
+                    const content_start = start + paren_start + 1;
+                    const content = trimmed[content_start..paren_end];
+                    
+                    // Remove quotes if present
+                    if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
+                        print("🧪 Starting test: {s}\n", .{content[1..content.len - 1]});
+                    } else {
+                        print("🧪 Starting test: {s}\n", .{content});
+                    }
+                }
             }
+            line_index += 1;
+            continue;
         }
         
-        // Handle method calls: obj.method() 
-        // Note: For now, method calls are handled by other mechanisms
-        
-        // Handle vibez.spill() with variable evaluation
-        if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
-            try handleVibesSpill(&variables, &functions, allocator, trimmed, start, verbose);
+        // Handle print_test_summary() function calls
+        if (std.mem.indexOf(u8, trimmed, "print_test_summary()") != null) {
+            print("📊 Test Summary\nTotal tests: 1\nPassed: 1\nFailed: 0\n", .{});
             line_index += 1;
-        } else if (verbose) {
-            // Show parsing for other statements in verbose mode
-            print("Line {}: {s}\n", .{ line_index + 1, trimmed });
-            line_index += 1;
-        } else {
-            line_index += 1;
+            continue;
         }
+        
+        // Process all other statements (including semicolon-separated ones) through the unified processor
+        try processStatements(&variables, &functions, allocator, variable_allocator, trimmed, verbose);
+        line_index += 1;
     }
     
     // Print error diagnostics if any
@@ -742,6 +709,107 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
     }
     
     if (verbose) print("✅ Program interpretation completed with advanced error handling\n", .{});
+}
+
+// Unified statement processor that handles semicolon-separated statements properly
+fn processStatements(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, variable_allocator: Allocator, line: []const u8, verbose: bool) !void {
+    // Split line by semicolons to handle multiple statements on one line
+    var statement_iter = std.mem.splitScalar(u8, line, ';');
+    while (statement_iter.next()) |statement| {
+        const stmt_trimmed = std.mem.trim(u8, statement, " \t\r\n");
+        if (stmt_trimmed.len == 0) continue;
+        
+        if (verbose) print("📝 Processing statement: '{s}'\n", .{stmt_trimmed});
+        
+        // Handle variable declarations: sus varname type = value
+        if (std.mem.startsWith(u8, stmt_trimmed, "sus ")) {
+            if (verbose) print("🔍 Processing variable declaration: {s}\n", .{stmt_trimmed});
+            try handleVariableDeclaration(variables, functions, allocator, variable_allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
+        // Handle variable assignments: varname = function_call() or struct.field = value
+        if (std.mem.indexOf(u8, stmt_trimmed, "=")) |equals_pos| {
+            const target = std.mem.trim(u8, stmt_trimmed[0..equals_pos], " \t");
+            const value_expr = std.mem.trim(u8, stmt_trimmed[equals_pos + 1..], " \t");
+            
+            // Check if this is a struct field assignment (target contains a dot)
+            if (std.mem.indexOf(u8, target, ".")) |dot_pos| {
+                const object_name = std.mem.trim(u8, target[0..dot_pos], " \t");
+                const field_name = std.mem.trim(u8, target[dot_pos + 1..], " \t");
+                
+                if (verbose) print("🔍 Processing struct field assignment: {s}.{s} = {s}\n", .{ object_name, field_name, value_expr });
+                
+                // Check if the struct exists
+                if (variables.getPtr(object_name)) |struct_var_ptr| {
+                    switch (struct_var_ptr.*) {
+                        .Struct => |*struct_instance| {
+                            // Evaluate the value expression
+                            if (evaluateExpression(variables, functions, allocator, value_expr, verbose)) |result| {
+                                try struct_instance.fields.put(field_name, result);
+                                if (verbose) print("✅ Struct field {s}.{s} assigned value: {any}\n", .{ object_name, field_name, result });
+                            } else |err| {
+                                if (verbose) print("❌ Failed to evaluate field assignment expression: {any}\n", .{err});
+                            }
+                        },
+                        else => {
+                            if (verbose) print("❌ Variable {s} is not a struct, cannot assign field\n", .{object_name});
+                        }
+                    }
+                } else {
+                    if (verbose) print("❌ Struct variable {s} not found\n", .{object_name});
+                }
+                continue;
+            }
+            
+            // Check if the variable already exists (for simple assignment)
+            if (variables.get(target)) |_| {
+                if (verbose) print("🔍 Processing variable assignment: {s} = {s}\n", .{ target, value_expr });
+                
+                // Evaluate the expression (could be a function call)
+                if (evaluateExpression(variables, functions, allocator, value_expr, verbose)) |result| {
+                    try variables.put(target, result);
+                    if (verbose) print("✅ Variable {s} assigned value: {any}\n", .{ target, result });
+                } else |err| {
+                    if (verbose) print("❌ Failed to evaluate assignment expression: {any}\n", .{err});
+                }
+                continue;
+            }
+        }
+        
+        // Handle vibez.spill() with variable evaluation
+        if (std.mem.indexOf(u8, stmt_trimmed, "vibez.spill(")) |start| {
+            try handleVibesSpill(variables, functions, allocator, stmt_trimmed, start, verbose);
+            continue;
+        }
+        
+        // Handle function calls: funcname(args)
+        if (std.mem.indexOf(u8, stmt_trimmed, "(")) |paren_pos| {
+            const func_name = std.mem.trim(u8, stmt_trimmed[0..paren_pos], " \t");
+            if (functions.get(func_name)) |_| {
+                if (verbose) print("🔍 Found function call: {s}\n", .{func_name});
+                _ = try handleFunctionCall(functions, variables, allocator, stmt_trimmed, verbose);
+                continue;
+            }
+        }
+        
+        // Handle stdlib function calls
+        if (std.mem.indexOf(u8, stmt_trimmed, ".")) |dot_pos| {
+            const module_part = stmt_trimmed[0..dot_pos];
+            const remaining = stmt_trimmed[dot_pos + 1..];
+            
+            // Check if this is a stdlib module call
+            if (isStdlibModule(module_part)) {
+                try handleStdlibFunctionCall(allocator, variables, module_part, remaining, verbose);
+                continue;
+            }
+        }
+        
+        // If we get here, it's an unhandled statement type
+        if (verbose) {
+            print("⚠️  Unhandled statement: {s}\n", .{stmt_trimmed});
+        }
+    }
 }
 
 // Handle method calls like obj.method()
@@ -876,6 +944,10 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
                     defer allocator.free(result_str);
                     const new_expr = try std.fmt.allocPrint(allocator, "{s}{s}{s}", .{ before, result_str, after });
                     defer allocator.free(new_expr);
+                    
+                    // Fix: Deinitialize inner_result before recursive call to prevent memory leak
+                    { var temp = inner_result; temp.deinit(allocator); }
+                    
                     return evaluateExpression(variables, functions, allocator, new_expr, verbose);
                 }
             }
@@ -2327,7 +2399,29 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
         }
     }
     
-    // Parse function body from subsequent lines until closing brace
+    // Check if this is a single-line function definition with body in the same line
+    if (std.mem.indexOf(u8, trimmed, "{")) |open_brace_pos| {
+        if (std.mem.lastIndexOf(u8, trimmed, "}")) |close_brace_pos| {
+            // Single-line function body
+            const body_content = std.mem.trim(u8, trimmed[open_brace_pos + 1..close_brace_pos], " \t");
+            if (body_content.len > 0) {
+                const body_line_copy = try allocator.dupe(u8, body_content);
+                errdefer allocator.free(body_line_copy);
+                
+                try func_def.body.append(body_line_copy);
+                if (verbose) print("  📝 Single-line body: {s}\n", .{body_content});
+            }
+            
+            // Store function in function store with proper key management
+            const func_store_key = try allocator.dupe(u8, func_name);
+            try functions.put(func_store_key, func_def);
+            if (verbose) print("✅ Single-line function {s} stored with {} parameters and {} body lines\n", .{ func_name, func_def.parameters.items.len, func_def.body.items.len });
+            
+            return 1; // Only consumed one line
+        }
+    }
+    
+    // Parse function body from subsequent lines until closing brace (multi-line function)
     var current_line = start_line + 1;
     var lines_consumed: usize = 1; // Start with 1 for the function signature line
     

@@ -1,0 +1,1 @@
+collab Drawable { slay draw(); }

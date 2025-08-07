@@ -712,8 +712,17 @@ pub const SelectStatement = struct {
 pub const StructStatement = struct {
     name: []const u8,
     fields: ArrayList(StructField),
+    methods: ArrayList(FunctionStatement),
     visibility: Visibility,
     type_parameters: ArrayList(TypeParameter),
+    
+    pub fn deinit(self: *StructStatement, allocator: Allocator) void {
+        for (self.methods.items) |*method| {
+            method.deinit(allocator);
+        }
+        self.methods.deinit();
+        self.type_parameters.deinit();
+    }
 };
 
 pub const InterfaceStatement = struct {
