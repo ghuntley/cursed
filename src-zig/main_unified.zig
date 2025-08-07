@@ -1980,8 +1980,9 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
                 error.FunctionReturn => {
                     // Extract return value if available
                     if (local_variables.get("__return_value__")) |ret_val| {
-                        return_value = ret_val;
-                        if (verbose) print("  ↩️ Function returned: {any}\n", .{ret_val});
+                        // Clone the return value into the outer allocator to outlive the arena
+                        return_value = try ret_val.clone(allocator);
+                        if (verbose) print("  ↩️ Function returned: {any}\n", .{return_value.?});
                     }
                     break;
                 },
