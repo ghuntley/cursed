@@ -300,9 +300,217 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
     if (verbose) print("✅ Program interpretation completed with variables\n", .{});
 }
 
+// Expression evaluation function
+fn evaluateExpression(variables: *VariableStore, allocator: Allocator, expr_str: []const u8, verbose: bool) !Variable {
+    const trimmed = std.mem.trim(u8, expr_str, " \t");
+    
+    if (verbose) print("🧮 EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
+    
+    // Handle parentheses first with proper matching
+    if (std.mem.indexOf(u8, trimmed, "(")) |start_paren| {
+        // Find the matching closing parenthesis
+        var paren_count: i32 = 0;
+        var end_paren: ?usize = null;
+        
+        for (trimmed[start_paren..], start_paren..) |char, i| {
+            if (char == '(') {
+                paren_count += 1;
+            } else if (char == ')') {
+                paren_count -= 1;
+                if (paren_count == 0) {
+                    end_paren = i;
+                    break;
+                }
+            }
+        }
+        
+        if (end_paren) |end_pos| {
+            if (start_paren < end_pos) {
+                const inner_expr = trimmed[start_paren + 1..end_pos];
+                const inner_result = try evaluateExpression(variables, allocator, inner_expr, verbose);
+                
+                // Replace the parentheses expression with its result
+                const before = trimmed[0..start_paren];
+                const after = trimmed[end_pos + 1..];
+                
+                if (before.len == 0 and after.len == 0) {
+                    // Just parentheses around the whole expression
+                    return inner_result;
+                } else {
+                    // Replace and re-evaluate
+                    const result_str = try inner_result.toString(allocator);
+                    defer allocator.free(result_str);
+                    const new_expr = try std.fmt.allocPrint(allocator, "{s}{s}{s}", .{ before, result_str, after });
+                    defer allocator.free(new_expr);
+                    return evaluateExpression(variables, allocator, new_expr, verbose);
+                }
+            }
+        }
+    }
+    
+    // Look for binary operators in correct precedence order (lowest to highest)
+    // + and - (lowest precedence, evaluated last)
+    const low_ops = [_][]const u8{ "+", "-" };
+    for (low_ops) |op| {
+        if (std.mem.lastIndexOf(u8, trimmed, op)) |op_pos| {
+            // Skip if operator is at the beginning (unary minus)
+            if (op_pos == 0 and std.mem.eql(u8, op, "-")) continue;
+            
+            const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+            const right_str = std.mem.trim(u8, trimmed[op_pos + op.len..], " \t");
+            
+            if (left_str.len == 0 or right_str.len == 0) continue;
+            
+            if (verbose) print("🔍 Found operator '{s}': left='{s}', right='{s}'\n", .{ op, left_str, right_str });
+            
+            const left = try evaluateExpression(variables, allocator, left_str, verbose);
+            const right = try evaluateExpression(variables, allocator, right_str, verbose);
+            
+            return try performBinaryOperation(left, right, op, verbose);
+        }
+    }
+    
+    // *, /, % (higher precedence, evaluated first)
+    const high_ops = [_][]const u8{ "*", "/", "%" };
+    for (high_ops) |op| {
+        if (std.mem.lastIndexOf(u8, trimmed, op)) |op_pos| {
+            const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+            const right_str = std.mem.trim(u8, trimmed[op_pos + op.len..], " \t");
+            
+            if (left_str.len == 0 or right_str.len == 0) continue;
+            
+            if (verbose) print("🔍 Found operator '{s}': left='{s}', right='{s}'\n", .{ op, left_str, right_str });
+            
+            const left = try evaluateExpression(variables, allocator, left_str, verbose);
+            const right = try evaluateExpression(variables, allocator, right_str, verbose);
+            
+            return try performBinaryOperation(left, right, op, verbose);
+        }
+    }
+    
+    // No operators found - evaluate as single value
+    return try evaluateSingleValue(variables, allocator, trimmed, verbose);
+}
+
+fn performBinaryOperation(left: Variable, right: Variable, op: []const u8, verbose: bool) !Variable {
+    if (verbose) print("🔢 Performing operation: {any} {s} {any}\n", .{ left, op, right });
+    
+    switch (left) {
+        .Integer => |left_int| {
+            switch (right) {
+                .Integer => |right_int| {
+                    if (std.mem.eql(u8, op, "+")) {
+                        return Variable{ .Integer = left_int + right_int };
+                    } else if (std.mem.eql(u8, op, "-")) {
+                        return Variable{ .Integer = left_int - right_int };
+                    } else if (std.mem.eql(u8, op, "*")) {
+                        return Variable{ .Integer = left_int * right_int };
+                    } else if (std.mem.eql(u8, op, "/")) {
+                        if (right_int == 0) return error.DivisionByZero;
+                        return Variable{ .Integer = @divTrunc(left_int, right_int) };
+                    } else if (std.mem.eql(u8, op, "%")) {
+                        if (right_int == 0) return error.DivisionByZero;
+                        return Variable{ .Integer = @rem(left_int, right_int) };
+                    }
+                },
+                .Float => |right_float| {
+                    const left_float = @as(f64, @floatFromInt(left_int));
+                    if (std.mem.eql(u8, op, "+")) {
+                        return Variable{ .Float = left_float + right_float };
+                    } else if (std.mem.eql(u8, op, "-")) {
+                        return Variable{ .Float = left_float - right_float };
+                    } else if (std.mem.eql(u8, op, "*")) {
+                        return Variable{ .Float = left_float * right_float };
+                    } else if (std.mem.eql(u8, op, "/")) {
+                        if (right_float == 0.0) return error.DivisionByZero;
+                        return Variable{ .Float = left_float / right_float };
+                    }
+                },
+                else => return error.InvalidOperation,
+            }
+        },
+        .Float => |left_float| {
+            switch (right) {
+                .Integer => |right_int| {
+                    const right_float = @as(f64, @floatFromInt(right_int));
+                    if (std.mem.eql(u8, op, "+")) {
+                        return Variable{ .Float = left_float + right_float };
+                    } else if (std.mem.eql(u8, op, "-")) {
+                        return Variable{ .Float = left_float - right_float };
+                    } else if (std.mem.eql(u8, op, "*")) {
+                        return Variable{ .Float = left_float * right_float };
+                    } else if (std.mem.eql(u8, op, "/")) {
+                        if (right_float == 0.0) return error.DivisionByZero;
+                        return Variable{ .Float = left_float / right_float };
+                    }
+                },
+                .Float => |right_float| {
+                    if (std.mem.eql(u8, op, "+")) {
+                        return Variable{ .Float = left_float + right_float };
+                    } else if (std.mem.eql(u8, op, "-")) {
+                        return Variable{ .Float = left_float - right_float };
+                    } else if (std.mem.eql(u8, op, "*")) {
+                        return Variable{ .Float = left_float * right_float };
+                    } else if (std.mem.eql(u8, op, "/")) {
+                        if (right_float == 0.0) return error.DivisionByZero;
+                        return Variable{ .Float = left_float / right_float };
+                    }
+                },
+                else => return error.InvalidOperation,
+            }
+        },
+        else => return error.InvalidOperation,
+    }
+    
+    return error.InvalidOperation;
+}
+
+fn evaluateSingleValue(variables: *VariableStore, allocator: Allocator, value_str: []const u8, verbose: bool) !Variable {
+    _ = allocator; // suppress unused parameter warning
+    
+    // Try to parse as integer
+    if (std.fmt.parseInt(i64, value_str, 10)) |int_val| {
+        if (verbose) print("📊 Parsed as integer: {}\n", .{int_val});
+        return Variable{ .Integer = int_val };
+    } else |_| {}
+    
+    // Try to parse as float
+    if (std.fmt.parseFloat(f64, value_str)) |float_val| {
+        if (verbose) print("📊 Parsed as float: {d}\n", .{float_val});
+        return Variable{ .Float = float_val };
+    } else |_| {}
+    
+    // Try to resolve as variable
+    if (variables.get(value_str)) |variable| {
+        if (verbose) print("📊 Resolved variable '{s}': {any}\n", .{ value_str, variable });
+        return variable;
+    }
+    
+    // Try to parse as string literal
+    if (value_str.len >= 2 and value_str[0] == '"' and value_str[value_str.len - 1] == '"') {
+        const string_value = value_str[1..value_str.len - 1];
+        if (verbose) print("📊 Parsed as string: '{s}'\n", .{string_value});
+        return Variable{ .String = string_value };
+    }
+    
+    // Try to parse as boolean
+    if (std.mem.eql(u8, value_str, "based")) {
+        if (verbose) print("📊 Parsed as boolean: true\n", .{});
+        return Variable{ .Boolean = true };
+    } else if (std.mem.eql(u8, value_str, "cringe")) {
+        if (verbose) print("📊 Parsed as boolean: false\n", .{});
+        return Variable{ .Boolean = false };
+    }
+    
+    if (verbose) print("❌ Could not evaluate '{s}' as any known type\n", .{value_str});
+    return error.UnknownIdentifier;
+}
+
 fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
     // Parse: sus varname type = value
     // Examples: sus x drip = 42, sus numbers [normie] = [10, 20, 30]
+    
+    if (verbose) print("🐛 DEBUG: handleVariableDeclaration called with line: '{s}'\n", .{line});
     
     // Find the equals sign to split the declaration
     const equals_pos = std.mem.indexOf(u8, line, "=") orelse return;
@@ -319,22 +527,37 @@ fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, li
     const remaining = parts.rest();
     const var_type = if (remaining.len > 0) remaining else return;
     
-    if (verbose) print("🔧 Declaring variable: {s} (type: {s}) = {s}\n", .{ var_name, var_type, value_str });
+    if (verbose) print("🔧 NEW_DEBUG: Declaring variable: {s} (type: {s}) = {s}\n", .{ var_name, var_type, value_str });
     
     // Parse value based on type
     const variable_value = if (std.mem.eql(u8, var_type, "drip") or std.mem.eql(u8, var_type, "normie")) blk: {
         // Integer type (both drip and normie are integers)
-        if (std.fmt.parseInt(i64, std.mem.trim(u8, value_str, " \t"), 10)) |parsed_int| {
-            break :blk Variable{ .Integer = parsed_int };
+        // Try to evaluate as expression first
+        if (verbose) print("📝 About to call evaluateExpression for: '{s}'\n", .{value_str});
+        if (evaluateExpression(variables, allocator, value_str, verbose)) |result| {
+            switch (result) {
+                .Integer => |int_val| break :blk Variable{ .Integer = int_val },
+                .Float => |float_val| break :blk Variable{ .Integer = @as(i64, @intFromFloat(float_val)) },
+                else => {
+                    if (verbose) print("❌ Expression '{s}' did not evaluate to numeric type\n", .{value_str});
+                    return;
+                }
+            }
         } else |_| {
-            // If not a literal, check if it's a module function call
-            if (std.mem.indexOf(u8, value_str, ".")) |_| {
-                // For now, return a placeholder value for module function calls
-                if (verbose) print("📦 Module function call detected: {s} (returning placeholder 0)\n", .{value_str});
-                break :blk Variable{ .Integer = 0 };
-            } else {
-                if (verbose) print("❌ Error parsing integer '{s}': not a valid number or function call\n", .{value_str});
-                return;
+            // Fallback to literal parsing
+            if (std.fmt.parseFloat(f64, std.mem.trim(u8, value_str, " \t"))) |parsed_float| {
+                const int_val = @as(i64, @intFromFloat(parsed_float));
+                break :blk Variable{ .Integer = int_val };
+            } else |_| {
+                // If not a literal, check if it's a module function call (but not decimal numbers)
+                if (std.mem.indexOf(u8, value_str, ".") != null and std.mem.indexOf(u8, value_str, "(") != null) {
+                    // Only treat as module function if it has both "." and "(" 
+                    if (verbose) print("📦 Module function call detected: {s} (returning placeholder 0)\n", .{value_str});
+                    break :blk Variable{ .Integer = 0 };
+                } else {
+                    if (verbose) print("❌ Error parsing integer '{s}': not a valid number or function call\n", .{value_str});
+                    return;
+                }
             }
         }
     } else if (std.mem.eql(u8, var_type, "meal")) blk: {
@@ -364,6 +587,14 @@ fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, li
         // Boolean type
         const bool_val = std.mem.eql(u8, std.mem.trim(u8, value_str, " \t"), "based");
         break :blk Variable{ .Boolean = bool_val };
+    } else if (std.mem.eql(u8, var_type, "sip")) blk: {
+        // Character type - treat as single character string
+        var trimmed_value = std.mem.trim(u8, value_str, " \t");
+        if (trimmed_value.len >= 2 and trimmed_value[0] == '\'' and trimmed_value[trimmed_value.len - 1] == '\'') {
+            trimmed_value = trimmed_value[1..trimmed_value.len - 1];
+        }
+        const string_copy = try allocator.dupe(u8, trimmed_value);
+        break :blk Variable{ .String = string_copy };
     } else if (std.mem.startsWith(u8, var_type, "[") and std.mem.endsWith(u8, var_type, "]")) blk: {
         // Array type like [normie]
         const element_type = var_type[1..var_type.len - 1];
@@ -416,92 +647,180 @@ fn handleVibesSpill(variables: *VariableStore, allocator: Allocator, line: []con
             const trimmed_content = std.mem.trim(u8, content, " \t");
             
             if (verbose) print("🔍 Evaluating vibez.spill argument: '{s}'\n", .{trimmed_content});
+            if (verbose) print("🔍 About to check comma\n", .{});
             
-            // Check if it's a string literal
-            if (trimmed_content.len >= 2 and trimmed_content[0] == '"' and trimmed_content[trimmed_content.len - 1] == '"') {
-                print("{s}\n", .{trimmed_content[1..trimmed_content.len - 1]});
-            } else if (std.mem.indexOf(u8, trimmed_content, "[")) |bracket_pos| {
-                // Array access expression like numbers[i]
-                const array_name = trimmed_content[0..bracket_pos];
-                if (std.mem.indexOf(u8, trimmed_content[bracket_pos..], "]")) |end_bracket| {
-                    const index_expr = trimmed_content[bracket_pos + 1..bracket_pos + end_bracket];
+            // Temporarily hardcode comma detection for debugging
+            const has_comma = std.mem.indexOf(u8, trimmed_content, ",") != null;
+            if (verbose) print("🔍 Simple comma check: '{}'\n", .{has_comma});
+            
+            // Check if there are multiple arguments separated by commas (but not inside quotes)
+            if (has_comma) {
+                // Handle multiple arguments - need to parse them properly respecting quotes
+                var args = try parseArguments(allocator, trimmed_content);
+                defer args.deinit();
+                
+                var first_arg = true;
+                for (args.items) |arg| {
+                    if (!first_arg) print(" ", .{});
+                    first_arg = false;
                     
-                    if (verbose) print("🔍 Array access: {s}[{s}]\n", .{ array_name, index_expr });
-                    
-                    if (variables.get(array_name)) |array_var| {
-                        switch (array_var) {
-                            .Array => |array| {
-                                // Parse index
-                                if (std.fmt.parseInt(i64, index_expr, 10)) |index| {
-                                    if (index >= 0 and index < array.items.len) {
-                                        const element_str = try array.items[@intCast(index)].toString(allocator);
-                                        defer allocator.free(element_str);
-                                        print("{s}\n", .{element_str});
-                                        if (verbose) print("✅ Array access {s}[{}] = {s}\n", .{ array_name, index, element_str });
-                                    } else {
-                                        print("undefined\n", .{});
-                                        if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
-                                    }
-                                } else |_| {
-                                    // Try to resolve index as a variable
-                                    if (variables.get(index_expr)) |index_var| {
-                                        switch (index_var) {
-                                            .Integer => |index| {
-                                                if (index >= 0 and index < array.items.len) {
-                                                    const element_str = try array.items[@intCast(index)].toString(allocator);
-                                                    defer allocator.free(element_str);
-                                                    print("{s}\n", .{element_str});
-                                                    if (verbose) print("✅ Array access {s}[{s}={}] = {s}\n", .{ array_name, index_expr, index, element_str });
-                                                } else {
-                                                    print("undefined\n", .{});
-                                                    if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
-                                                }
-                                            },
-                                            else => {
-                                                print("{s}\n", .{trimmed_content});
-                                                if (verbose) print("⚠️  Index variable {s} is not an integer\n", .{index_expr});
-                                            },
-                                        }
-                                    } else {
-                                        print("{s}\n", .{trimmed_content});
-                                        if (verbose) print("⚠️  Index variable {s} not found\n", .{index_expr});
-                                    }
-                                }
-                            },
-                            else => {
-                                print("{s}\n", .{trimmed_content});
-                                if (verbose) print("⚠️  Variable {s} is not an array\n", .{array_name});
-                            },
-                        }
-                    } else {
-                        print("{s}\n", .{trimmed_content});
-                        if (verbose) print("⚠️  Array not found: {s}\n", .{array_name});
-                    }
-                } else {
-                    print("{s}\n", .{trimmed_content});
+                    try evaluateAndPrintArgument(variables, allocator, arg, verbose, false); // no newline for multi-args
                 }
-            } else if (variables.get(trimmed_content)) |variable| {
-                // Variable reference - evaluate and print
-                const var_str = try variable.toString(allocator);
-                defer allocator.free(var_str);
-                print("{s}\n", .{var_str});
-                if (verbose) print("✅ Resolved variable {s} to: {s}\n", .{ trimmed_content, var_str });
+                print("\n", .{});
+                return;
+            }
+            
+            // Single argument - evaluate and print with newline
+            try evaluateAndPrintArgument(variables, allocator, trimmed_content, verbose, true);
+        }
+    }
+}
+
+fn evaluateAndPrintArgument(variables: *VariableStore, allocator: Allocator, trimmed_content: []const u8, verbose: bool, add_newline: bool) !void {
+    // Check if it's a string literal
+    if (trimmed_content.len >= 2 and trimmed_content[0] == '"' and trimmed_content[trimmed_content.len - 1] == '"') {
+        print("{s}", .{trimmed_content[1..trimmed_content.len - 1]});
+        if (add_newline) print("\n", .{});
+    } else if (std.mem.indexOf(u8, trimmed_content, "[")) |bracket_pos| {
+        // Array access expression like numbers[i]
+        const array_name = trimmed_content[0..bracket_pos];
+        if (std.mem.indexOf(u8, trimmed_content[bracket_pos..], "]")) |end_bracket| {
+            const index_expr = trimmed_content[bracket_pos + 1..bracket_pos + end_bracket];
+            
+            if (verbose) print("🔍 Array access: {s}[{s}]\n", .{ array_name, index_expr });
+            
+            if (variables.get(array_name)) |array_var| {
+                switch (array_var) {
+                    .Array => |array| {
+                        // Parse index
+                        if (std.fmt.parseInt(i64, index_expr, 10)) |index| {
+                            if (index >= 0 and index < array.items.len) {
+                                const element_str = try array.items[@intCast(index)].toString(allocator);
+                                defer allocator.free(element_str);
+                                print("{s}", .{element_str});
+                                if (add_newline) print("\n", .{});
+                                if (verbose) print("✅ Array access {s}[{}] = {s}\n", .{ array_name, index, element_str });
+                            } else {
+                                print("undefined", .{});
+                                if (add_newline) print("\n", .{});
+                                if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
+                            }
+                        } else |_| {
+                            // Try to resolve index as a variable
+                            if (variables.get(index_expr)) |index_var| {
+                                switch (index_var) {
+                                    .Integer => |index| {
+                                        if (index >= 0 and index < array.items.len) {
+                                            const element_str = try array.items[@intCast(index)].toString(allocator);
+                                            defer allocator.free(element_str);
+                                            print("{s}", .{element_str});
+                                            if (add_newline) print("\n", .{});
+                                            if (verbose) print("✅ Array access {s}[{s}={}] = {s}\n", .{ array_name, index_expr, index, element_str });
+                                        } else {
+                                            print("undefined", .{});
+                                            if (add_newline) print("\n", .{});
+                                            if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
+                                        }
+                                    },
+                                    else => {
+                                        print("{s}", .{trimmed_content});
+                                        if (add_newline) print("\n", .{});
+                                        if (verbose) print("⚠️  Index variable {s} is not an integer\n", .{index_expr});
+                                    },
+                                }
+                            } else {
+                                print("{s}", .{trimmed_content});
+                                if (add_newline) print("\n", .{});
+                                if (verbose) print("⚠️  Index variable {s} not found\n", .{index_expr});
+                            }
+                        }
+                    },
+                    else => {
+                        print("{s}", .{trimmed_content});
+                        if (add_newline) print("\n", .{});
+                        if (verbose) print("⚠️  Variable {s} is not an array\n", .{array_name});
+                    },
+                }
             } else {
-                // Try to parse as literal value
-                if (std.fmt.parseInt(i64, trimmed_content, 10)) |int_val| {
-                    print("{}\n", .{int_val});
+                print("{s}", .{trimmed_content});
+                if (add_newline) print("\n", .{});
+                if (verbose) print("⚠️  Array not found: {s}\n", .{array_name});
+            }
+        } else {
+            print("{s}", .{trimmed_content});
+            if (add_newline) print("\n", .{});
+        }
+    } else if (variables.get(trimmed_content)) |variable| {
+        // Variable reference - evaluate and print
+        if (verbose) print("🔍 Found variable '{s}' in store\n", .{trimmed_content});
+        const var_str = try variable.toString(allocator);
+        defer allocator.free(var_str);
+        print("{s}", .{var_str});
+        if (add_newline) print("\n", .{});
+        if (verbose) print("✅ Resolved variable {s} to: {s}\n", .{ trimmed_content, var_str });
+    } else {
+        if (verbose) print("🔍 '{s}' not found as variable, trying as expression\n", .{trimmed_content});
+        // Try to evaluate as expression
+        if (verbose) print("🧮 Attempting to evaluate '{s}' as expression...\n", .{trimmed_content});
+        if (evaluateExpression(variables, allocator, trimmed_content, verbose)) |result| {
+            const result_str = try result.toString(allocator);
+            defer allocator.free(result_str);
+            print("{s}", .{result_str});
+            if (add_newline) print("\n", .{});
+            if (verbose) print("✅ Evaluated expression '{s}' to: {s}\n", .{ trimmed_content, result_str });
+        } else |err| {
+            if (verbose) print("❌ Expression evaluation failed: {any}\n", .{err});
+            // Fallback to literal value parsing
+            if (std.fmt.parseInt(i64, trimmed_content, 10)) |int_val| {
+                print("{}", .{int_val});
+                if (add_newline) print("\n", .{});
+            } else |_| {
+                if (std.fmt.parseFloat(f64, trimmed_content)) |float_val| {
+                    print("{d}", .{float_val});
+                    if (add_newline) print("\n", .{});
                 } else |_| {
-                    if (std.fmt.parseFloat(f64, trimmed_content)) |float_val| {
-                        print("{d}\n", .{float_val});
-                    } else |_| {
-                        // Unknown identifier
-                        print("{s}\n", .{trimmed_content});
-                        if (verbose) print("⚠️  Unknown variable: {s}\n", .{trimmed_content});
-                    }
+                    // Unknown identifier
+                    print("{s}", .{trimmed_content});
+                    if (add_newline) print("\n", .{});
+                    if (verbose) print("⚠️  Unknown variable or expression: {s}\n", .{trimmed_content});
                 }
             }
         }
     }
+}
+
+fn hasCommaOutsideQuotes(text: []const u8) bool {
+    var in_quotes = false;
+    for (text) |char| {
+        if (char == '"') {
+            in_quotes = !in_quotes;
+        } else if (char == ',' and !in_quotes) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8) {
+    var args = ArrayList([]const u8).init(allocator);
+    var start: usize = 0;
+    var in_quotes = false;
+    
+    for (text, 0..) |char, i| {
+        if (char == '"') {
+            in_quotes = !in_quotes;
+        } else if (char == ',' and !in_quotes) {
+            const arg = std.mem.trim(u8, text[start..i], " \t");
+            try args.append(arg);
+            start = i + 1;
+        }
+    }
+    
+    // Add the last argument
+    const arg = std.mem.trim(u8, text[start..], " \t");
+    try args.append(arg);
+    
+    return args;
 }
 
 fn handleFormatCommand(allocator: Allocator, args: [][]const u8) !void {

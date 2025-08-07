@@ -1,1 +1,1 @@
-slay main() { vibez.spill("Hello from function") }
+slay test_function() { vibez.spill("Function works!") }; test_function()

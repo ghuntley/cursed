@@ -1,1 +1,4 @@
-slay test_func() { vibez.spill("test") }
+slay greet() {
+    vibez.spill("Hello")
+}
+greet()

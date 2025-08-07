@@ -1,3 +1,3 @@
-sus x normie = 42
-sus y tea = "test"
-vibez.spillf("Complex: {} {}", x, y)
+sus x drip = 42
+sus y meal = 3.14
+vibez.spill("x is ", x, " and y is ", y)

@@ -573,21 +573,76 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
 }
 
 fn collectStringLiteralsForLLVM(source: []const u8, string_literals: *std.ArrayList([]const u8), allocator: Allocator) !void {
+    // Use the same statement splitting logic as the main parser
+    var statements = std.ArrayList([]const u8).init(allocator);
+    defer statements.deinit();
+    
     var lines = std.mem.splitScalar(u8, source, '\n');
+    var current_line = std.ArrayList(u8).init(allocator);
+    defer current_line.deinit();
+    
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t\r\n");
+        if (trimmed.len == 0) continue;
+        
+        // Append to current line (handling multi-line statements)
+        if (current_line.items.len > 0) {
+            try current_line.append(' ');
+        }
+        try current_line.appendSlice(trimmed);
+        
+        // Split on semicolons to get individual statements
+        var semicolon_split = std.mem.splitScalar(u8, current_line.items, ';');
+        var stmt_index: usize = 0;
+        while (semicolon_split.next()) |stmt| {
+            const stmt_trimmed = std.mem.trim(u8, stmt, " \t\r\n");
+            if (stmt_trimmed.len > 0) {
+                if (semicolon_split.peek() != null or stmt_index > 0) {
+                    // This is a complete statement
+                    try statements.append(try allocator.dupe(u8, stmt_trimmed));
+                } else {
+                    // This is the last fragment, might be incomplete - save for next line
+                    current_line.clearRetainingCapacity();
+                    try current_line.appendSlice(stmt_trimmed);
+                }
+            }
+            stmt_index += 1;
+        }
+        
+        // If we had complete statements, reset current line
+        if (stmt_index > 1) {
+            current_line.clearRetainingCapacity();
+        }
+    }
+    
+    // Handle any remaining statement
+    if (current_line.items.len > 0) {
+        const final_stmt = std.mem.trim(u8, current_line.items, " \t\r\n");
+        if (final_stmt.len > 0) {
+            try statements.append(try allocator.dupe(u8, final_stmt));
+        }
+    }
+    
+    // Now process each statement for string literals
+    for (statements.items) |stmt| {
+        defer allocator.free(stmt);
         
         // Look for vibez.spill() with string literals
-        if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
-            if (std.mem.indexOf(u8, trimmed[start..], "(")) |paren_start| {
-                if (std.mem.lastIndexOf(u8, trimmed, ")")) |paren_end| {
+        if (std.mem.indexOf(u8, stmt, "vibez.spill(")) |start| {
+            if (std.mem.indexOf(u8, stmt[start..], "(")) |paren_start| {
+                if (std.mem.lastIndexOf(u8, stmt, ")")) |paren_end| {
                     const content_start = start + paren_start + 1;
-                    const content = trimmed[content_start..paren_end];
+                    const content = stmt[content_start..paren_end];
                     
-                    if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
-                        const string_content = content[1..content.len - 1];
-                        const string_copy = try allocator.dupe(u8, string_content);
-                        try string_literals.append(string_copy);
+                    // Handle multiple arguments separated by commas
+                    var args = std.mem.splitScalar(u8, content, ',');
+                    while (args.next()) |arg| {
+                        const trimmed_arg = std.mem.trim(u8, arg, " \t\r\n");
+                        if (trimmed_arg.len >= 2 and trimmed_arg[0] == '"' and trimmed_arg[trimmed_arg.len - 1] == '"') {
+                            const string_content = trimmed_arg[1..trimmed_arg.len - 1];
+                            const string_copy = try allocator.dupe(u8, string_content);
+                            try string_literals.append(string_copy);
+                        }
                     }
                 }
             }
@@ -600,29 +655,76 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
     var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
     defer variables.deinit();
     
+    // First, collect all statements by splitting on semicolons across lines
+    var statements = std.ArrayList([]const u8).init(allocator);
+    defer statements.deinit();
+    
     var lines = std.mem.splitScalar(u8, source, '\n');
+    var current_line = std.ArrayList(u8).init(allocator);
+    defer current_line.deinit();
     
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t\r\n");
+        if (trimmed.len == 0) continue;
         
-        // Skip empty lines and comments
-        if (trimmed.len == 0 or std.mem.startsWith(u8, trimmed, "fr fr")) {
+        // Append to current line (handling multi-line statements)
+        if (current_line.items.len > 0) {
+            try current_line.append(' ');
+        }
+        try current_line.appendSlice(trimmed);
+        
+        // Split on semicolons to get individual statements
+        var semicolon_split = std.mem.splitScalar(u8, current_line.items, ';');
+        var stmt_index: usize = 0;
+        while (semicolon_split.next()) |stmt| {
+            const stmt_trimmed = std.mem.trim(u8, stmt, " \t\r\n");
+            if (stmt_trimmed.len > 0) {
+                if (semicolon_split.peek() != null or stmt_index > 0) {
+                    // This is a complete statement (not the last fragment)
+                    try statements.append(try allocator.dupe(u8, stmt_trimmed));
+                } else {
+                    // This is the last fragment, might be incomplete - save for next line
+                    current_line.clearRetainingCapacity();
+                    try current_line.appendSlice(stmt_trimmed);
+                }
+            }
+            stmt_index += 1;
+        }
+        
+        // If we had complete statements, reset current line
+        if (stmt_index > 1) {
+            current_line.clearRetainingCapacity();
+        }
+    }
+    
+    // Handle any remaining statement
+    if (current_line.items.len > 0) {
+        const final_stmt = std.mem.trim(u8, current_line.items, " \t\r\n");
+        if (final_stmt.len > 0) {
+            try statements.append(try allocator.dupe(u8, final_stmt));
+        }
+    }
+    
+    // Now process each statement
+    for (statements.items) |stmt| {
+        defer allocator.free(stmt);
+        
+        // Skip comments and imports
+        if (std.mem.startsWith(u8, stmt, "fr fr") or std.mem.startsWith(u8, stmt, "yeet ")) {
             continue;
         }
         
-        // Skip imports
-        if (std.mem.startsWith(u8, trimmed, "yeet ")) {
-            continue;
+        if (verbose) {
+            try writer.print("  ; Processing statement: {s}\n", .{stmt});
         }
         
         // Handle vibez.spill() statements
-        if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |_| {
-            try generateLLVMVibesSpill(trimmed, writer, string_literals, &variables, &variable_counter, verbose);
+        if (std.mem.indexOf(u8, stmt, "vibez.spill(")) |_| {
+            try generateLLVMVibesSpill(stmt, writer, string_literals, &variables, &variable_counter, verbose);
         }
-        
         // Handle variable declarations
-        if (std.mem.startsWith(u8, trimmed, "sus ")) {
-            try generateLLVMVariableDeclaration(trimmed, writer, &variables, &variable_counter, verbose);
+        else if (std.mem.startsWith(u8, stmt, "sus ")) {
+            try generateLLVMVariableDeclaration(stmt, writer, &variables, &variable_counter, verbose);
         }
     }
 }
@@ -634,76 +736,84 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                 const content_start = start + paren_start + 1;
                 const content = line[content_start..paren_end];
                 
-                if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
-                    // String literal
-                    const string_content = content[1..content.len - 1];
+                // Handle multiple arguments separated by commas
+                var args = std.mem.splitScalar(u8, content, ',');
+                while (args.next()) |arg| {
+                    const trimmed_arg = std.mem.trim(u8, arg, " \t\r\n");
+                    if (trimmed_arg.len == 0) continue;
                     
-                    // Find the string in our global constants
-                    var string_index: ?usize = null;
-                    for (string_literals.items, 0..) |str_const, i| {
-                        if (std.mem.eql(u8, str_const, string_content)) {
-                            string_index = i;
-                            break;
-                        }
-                    }
-                    
-                    if (string_index) |index| {
-                        if (verbose) try writer.print("  ; String literal: {s}\n", .{string_content});
-                        try writer.print("  %str_ptr.{} = getelementptr [{} x i8], [{} x i8]* @.str.{}, i32 0, i32 0\n", 
-                            .{ variable_counter.*, string_content.len + 1, string_content.len + 1, index });
-                        try writer.print("  call i32 @puts(i8* %str_ptr.{})\n", .{variable_counter.*});
-                        variable_counter.* += 1;
-                    }
-                } else {
-                    // Variable or numeric literal
-                    if (std.fmt.parseInt(i64, content, 10) catch null) |num| {
-                        // Integer literal
-                        if (verbose) try writer.print("  ; Integer literal: {}\n", .{num});
-                        try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                        try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 {})\n", .{ variable_counter.*, num });
-                        variable_counter.* += 1;
-                    } else if (std.fmt.parseFloat(f64, content) catch null) |num| {
-                        // Float literal  
-                        if (verbose) try writer.print("  ; Float literal: {}\n", .{num});
-                        try writer.print("  %fmt_ptr.{} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                        try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double {})\n", .{ variable_counter.*, num });
-                        variable_counter.* += 1;
-                    } else {
-                        // Variable reference
-                        if (variables.get(content)) |var_info| {
-                            if (verbose) try writer.print("  ; Variable: {s}\n", .{content});
-                            
-                            if (std.mem.eql(u8, var_info.llvm_type, "i64")) {
-                                try writer.print("  %loaded.{} = load i64, i64* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
-                                try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                                try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
-                            } else if (std.mem.eql(u8, var_info.llvm_type, "i32")) {
-                                try writer.print("  %loaded.{} = load i32, i32* %{s}, align 4\n", .{ variable_counter.*, var_info.var_name });
-                                // Cast i32 to i64 for printf
-                                try writer.print("  %extended.{} = sext i32 %loaded.{} to i64\n", .{ variable_counter.*, variable_counter.* });
-                                try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                                try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", .{ variable_counter.*, variable_counter.* });
-                            } else if (std.mem.eql(u8, var_info.llvm_type, "i1")) {
-                                try writer.print("  %loaded.{} = load i1, i1* %{s}, align 1\n", .{ variable_counter.*, var_info.var_name });
-                                try writer.print("  %select.{} = select i1 %loaded.{}, i8* getelementptr ([6 x i8], [6 x i8]* @.bool_true, i32 0, i32 0), i8* getelementptr ([7 x i8], [7 x i8]* @.bool_false, i32 0, i32 0)\n", .{ variable_counter.*, variable_counter.* });
-                                try writer.print("  call i32 @puts(i8* %select.{})\n", .{variable_counter.*});
-                            } else if (std.mem.eql(u8, var_info.llvm_type, "double")) {
-                                try writer.print("  %loaded.{} = load double, double* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
-                                try writer.print("  %fmt_ptr.{} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                                try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
-                            } else if (std.mem.eql(u8, var_info.llvm_type, "tea")) {
-                                // String variable - get pointer to first character and print
-                                if (var_info.string_len) |len| {
-                                    try writer.print("  %str_ptr.{} = getelementptr [{} x i8], [{} x i8]* %{s}, i32 0, i32 0\n", 
-                                        .{ variable_counter.*, len, len, var_info.var_name });
-                                } else {
-                                    try writer.print("  %str_ptr.{} = load i8*, i8** %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
-                                }
-                                try writer.print("  call i32 @puts(i8* %str_ptr.{})\n", .{variable_counter.*});
+                    if (trimmed_arg.len >= 2 and trimmed_arg[0] == '"' and trimmed_arg[trimmed_arg.len - 1] == '"') {
+                        // String literal
+                        const string_content = trimmed_arg[1..trimmed_arg.len - 1];
+                        
+                        // Find the string in our global constants
+                        var string_index: ?usize = null;
+                        for (string_literals.items, 0..) |str_const, i| {
+                            if (std.mem.eql(u8, str_const, string_content)) {
+                                string_index = i;
+                                break;
                             }
+                        }
+                        
+                        if (string_index) |index| {
+                            if (verbose) try writer.print("  ; String literal: {s}\n", .{string_content});
+                            try writer.print("  %str_ptr.{} = getelementptr [{} x i8], [{} x i8]* @.str.{}, i32 0, i32 0\n", 
+                                .{ variable_counter.*, string_content.len + 1, string_content.len + 1, index });
+                            try writer.print("  call i32 @puts(i8* %str_ptr.{})\n", .{variable_counter.*});
+                            variable_counter.* += 1;
+                        }
+                    } else {
+                        // Variable or numeric literal
+                        if (std.fmt.parseInt(i64, trimmed_arg, 10) catch null) |num| {
+                            // Integer literal
+                            if (verbose) try writer.print("  ; Integer literal: {}\n", .{num});
+                            try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                            try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 {})\n", .{ variable_counter.*, num });
+                            variable_counter.* += 1;
+                        } else if (std.fmt.parseFloat(f64, trimmed_arg) catch null) |num| {
+                            // Float literal  
+                            if (verbose) try writer.print("  ; Float literal: {}\n", .{num});
+                            try writer.print("  %fmt_ptr.{} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                            try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double {})\n", .{ variable_counter.*, num });
                             variable_counter.* += 1;
                         } else {
-                            if (verbose) try writer.print("  ; Unknown variable: {s}\n", .{content});
+                            // Variable reference
+                            if (verbose) try writer.print("  ; Looking for variable: '{s}'\n", .{trimmed_arg});
+                            if (variables.get(trimmed_arg)) |var_info| {
+                                if (verbose) try writer.print("  ; Found variable: {s} (type: {s})\n", .{ trimmed_arg, var_info.llvm_type });
+                                
+                                if (std.mem.eql(u8, var_info.llvm_type, "i64")) {
+                                    try writer.print("  %loaded.{} = load i64, i64* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
+                                    try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
+                                } else if (std.mem.eql(u8, var_info.llvm_type, "i32")) {
+                                    try writer.print("  %loaded.{} = load i32, i32* %{s}, align 4\n", .{ variable_counter.*, var_info.var_name });
+                                    // Cast i32 to i64 for printf
+                                    try writer.print("  %extended.{} = sext i32 %loaded.{} to i64\n", .{ variable_counter.*, variable_counter.* });
+                                    try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", .{ variable_counter.*, variable_counter.* });
+                                } else if (std.mem.eql(u8, var_info.llvm_type, "i1")) {
+                                    try writer.print("  %loaded.{} = load i1, i1* %{s}, align 1\n", .{ variable_counter.*, var_info.var_name });
+                                    try writer.print("  %select.{} = select i1 %loaded.{}, i8* getelementptr ([6 x i8], [6 x i8]* @.bool_true, i32 0, i32 0), i8* getelementptr ([7 x i8], [7 x i8]* @.bool_false, i32 0, i32 0)\n", .{ variable_counter.*, variable_counter.* });
+                                    try writer.print("  call i32 @puts(i8* %select.{})\n", .{variable_counter.*});
+                                } else if (std.mem.eql(u8, var_info.llvm_type, "double")) {
+                                    try writer.print("  %loaded.{} = load double, double* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
+                                    try writer.print("  %fmt_ptr.{} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
+                                } else if (std.mem.eql(u8, var_info.llvm_type, "tea")) {
+                                    // String variable - get pointer to first character and print
+                                    if (var_info.string_len) |len| {
+                                        try writer.print("  %str_ptr.{} = getelementptr [{} x i8], [{} x i8]* %{s}, i32 0, i32 0\n", 
+                                            .{ variable_counter.*, len, len, var_info.var_name });
+                                    } else {
+                                        try writer.print("  %str_ptr.{} = load i8*, i8** %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
+                                    }
+                                    try writer.print("  call i32 @puts(i8* %str_ptr.{})\n", .{variable_counter.*});
+                                }
+                                variable_counter.* += 1;
+                            } else {
+                                if (verbose) try writer.print("  ; Unknown variable: {s}\n", .{trimmed_arg});
+                            }
                         }
                     }
                 }
@@ -743,13 +853,22 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
             try generateArithmeticLLVM(value_str, variables, writer, variable_counter, llvm_type, var_name);
         }
         
-        try variables.put(var_name, .{ .llvm_type = llvm_type, .var_name = var_name });
+        // Duplicate the variable name for the hashmap key to ensure it persists
+        const allocator = variables.allocator;
+        const var_name_copy = try allocator.dupe(u8, var_name);
+        const var_name_value_copy = try allocator.dupe(u8, var_name);
+        try variables.put(var_name_copy, .{ .llvm_type = llvm_type, .var_name = var_name_value_copy });
+        if (verbose) try writer.print("  ; Stored variable '{s}' with type '{s}'\n", .{ var_name_copy, llvm_type });
     } else if (std.mem.eql(u8, var_type, "lit")) {
         // Boolean type
         try writer.print("  %{s} = alloca i1, align 1\n", .{var_name});
         const bool_value = if (std.mem.eql(u8, std.mem.trim(u8, value_str, " \t"), "based")) "true" else "false";
         try writer.print("  store i1 {s}, i1* %{s}, align 1\n", .{ bool_value, var_name });
-        try variables.put(var_name, .{ .llvm_type = "i1", .var_name = var_name });
+        const allocator = variables.allocator;
+        const var_name_copy = try allocator.dupe(u8, var_name);
+        const var_name_value_copy = try allocator.dupe(u8, var_name);
+        try variables.put(var_name_copy, .{ .llvm_type = "i1", .var_name = var_name_value_copy });
+        if (verbose) try writer.print("  ; Stored variable '{s}' with type 'i1'\n", .{var_name_copy});
     } else if (std.mem.eql(u8, var_type, "meal")) {
         // Float type
         try writer.print("  %{s} = alloca double, align 8\n", .{var_name});
@@ -758,7 +877,11 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
         } else {
             try writer.print("  store double 0.0, double* %{s}, align 8\n", .{var_name});
         }
-        try variables.put(var_name, .{ .llvm_type = "double", .var_name = var_name });
+        const allocator = variables.allocator;
+        const var_name_copy = try allocator.dupe(u8, var_name);
+        const var_name_value_copy = try allocator.dupe(u8, var_name);
+        try variables.put(var_name_copy, .{ .llvm_type = "double", .var_name = var_name_value_copy });
+        if (verbose) try writer.print("  ; Stored variable '{s}' with type 'double'\n", .{var_name_copy});
     } else if (std.mem.eql(u8, var_type, "tea")) {
         // String type
         if (value_str.len >= 2 and value_str[0] == '"' and value_str[value_str.len - 1] == '"') {
