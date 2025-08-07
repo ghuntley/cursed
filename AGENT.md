@@ -1081,3 +1081,7 @@ zig build test                                           # Run tests without spe
 mv specs_backup/ specs/                                  # Restore specs/ directory
 ```
 
+
+### Notes (2025-08-08)
+- Memory leak debugging: if `valgrind` or the runtime reports leaks from `std.fmt.allocPrint` in expression evaluation, ensure temporary `Variable` values are deinitialized. Pattern used: add `Variable.deinit(allocator)` and call it for temporaries returned from `evaluateExpression` when not stored.
+- Quick stdlib smoke test: `./zig-out/bin/cursed stdlib/testz/test_testz.csd` exercises assertions and surfaces leaks early.
