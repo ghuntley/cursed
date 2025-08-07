@@ -2338,83 +2338,98 @@ pub const Parser = struct {
     fn parseYikesStatement(self: *Parser) ParserError!ast.YikesStatement {
         _ = try self.consume(.Yikes, "Expected 'yikes'");
         
-        // Parse error name/identifier
-        if (!self.check(.Identifier)) {
-            return ParserError.UnexpectedToken;
-        }
+        // Parse error message expression
+        const message_expr = try self.parseExpression();
+        const message_ptr = try self.allocator.create(Expression);
+        message_ptr.* = message_expr;
         
-        const name = self.advance().lexeme;
-        var error_type: ?ast.Type = null;
-        var value: ?*anyopaque = null;
-        
-        // Optional error type annotation (yikes MyError tea)
-        if (self.checkType()) {
-            error_type = try self.parseType();
-        }
-        
-        // Optional error value assignment (yikes MyError = "something went wrong")
-        if (self.match(.Equal)) {
-            const expr = try self.parseExpression();
-            const expr_ptr = try self.allocator.create(Expression);
-            expr_ptr.* = expr;
-            value = @ptrCast(expr_ptr);
+        // Optional error type annotation (yikes "message" as RuntimeError)
+        var error_type: ?[]const u8 = null;
+        if (self.match(.As)) {
+            if (!self.check(.Identifier)) {
+                return ParserError.UnexpectedToken;
+            }
+            error_type = self.advance().lexeme;
         }
         
         return ast.YikesStatement{
-            .name = name,
+            .message = message_ptr,
             .error_type = error_type,
-            .value = value,
+            .location = null,  // TODO: Set from current token location
         };
     }
 
     fn parseFamStatement(self: *Parser) ParserError!ast.FamStatement {
         _ = try self.consume(.Fam, "Expected 'fam'");
         
-        // Parse main body block
+        // Parse try body block
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = ArrayList(*anyopaque).init(self.allocator);
+        var try_body = ArrayList(Statement).init(self.allocator);
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
+            try try_body.append(stmt);
         }
-        
         _ = try self.consume(.RightBrace, "Expected '}'");
         
-        var recovery_body: ?ArrayList(*anyopaque) = null;
-        var error_variable: ?[]const u8 = null;
-        
-        // Optional recovery block (fam { ... } catch(err) { ... })
-        if (self.match(.Catch)) {
-            // Parse error variable in catch block
-            if (self.match(.LeftParen)) {
-                if (self.check(.Identifier)) {
-                    error_variable = self.advance().lexeme;
-                }
-        _ = try self.consume(.RightParen, "Expected ')'");
+        // Parse catch blocks
+        var catch_blocks = ArrayList(ast.FamStatement.CatchBlock).init(self.allocator);
+        while (self.match(.Shook)) {
+            var error_variable: ?[]const u8 = null;
+            var error_type: ?[]const u8 = null;
+            
+            // Parse error variable (shook error)
+            if (self.check(.Identifier)) {
+                error_variable = self.advance().lexeme;
             }
             
-            // Parse recovery body
-        _ = try self.consume(.LeftBrace, "Expected '{'");
+            // Optional type constraint (shook error: RuntimeError)
+            if (self.match(.Colon)) {
+                if (!self.check(.Identifier)) {
+                    return ParserError.UnexpectedToken;
+                }
+                error_type = self.advance().lexeme;
+            }
             
-            var recovery = ArrayList(*anyopaque).init(self.allocator);
+            // Parse catch body
+            _ = try self.consume(.LeftBrace, "Expected '{'");
+            var catch_body = ArrayList(Statement).init(self.allocator);
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try recovery.append(@ptrCast(stmt_ptr));
+                try catch_body.append(stmt);
             }
+            _ = try self.consume(.RightBrace, "Expected '}'");
             
-        _ = try self.consume(.RightBrace, "Expected '}'");
-            recovery_body = recovery;
+            try catch_blocks.append(ast.FamStatement.CatchBlock{
+                .error_variable = error_variable,
+                .error_type = error_type,
+                .body = catch_body,
+            });
         }
         
+        // Optional finally block (not supported by basic lexer yet)
+        const finally_block: ?ArrayList(Statement) = null;
+        // TODO: Enable when Finally token is added to lexer.zig
+        // if (self.match(.Finally)) {
+        //     _ = try self.consume(.LeftBrace, "Expected '{'");
+        //     finally_block = ArrayList(Statement).init(self.allocator);
+        //     while (!self.check(.RightBrace) and !self.isAtEnd()) {
+        //         if (self.match(.Newline)) continue;
+        //         
+        //         const stmt = try self.parseStatement();
+        //         try finally_block.?.append(stmt);
+        //     }
+        //     _ = try self.consume(.RightBrace, "Expected '}'");
+        // }
+        
         return ast.FamStatement{
-            .body = body,
-            .recovery_body = recovery_body,
-            .error_variable = error_variable,
+            .try_body = try_body,
+            .catch_blocks = catch_blocks,
+            .finally_block = finally_block,
         };
     }
 

@@ -1,10 +1,17 @@
-fr fr Simple Interface Test
-yeet "testz"
+vibez.spill("Test start")
 
 collab Drawable {
     slay draw()
 }
 
-test_start("Interface parsing test")
-assert_true(based)
-print_test_summary()
+squad Circle {
+    slay draw() {
+        vibez.spill("Drawing a circle")
+    }
+}
+
+sus obj Drawable = Circle{}
+vibez.spill("Created object:", obj)
+obj.draw()
+
+vibez.spill("Test end")

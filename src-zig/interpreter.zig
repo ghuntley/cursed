@@ -812,26 +812,33 @@ pub const Interpreter = struct {
     // CURSED Error Handling System Interpreter Implementation
     
     fn executeYikesStatement(self: *Interpreter, yikes: ast.YikesStatement) InterpreterError!void {
-        // Create error value with initial value if provided
-        const error_value = if (yikes.value) |value_expr| blk: {
-            const initial_value = try self.evaluateExpression(value_expr);
-            break :blk switch (initial_value) {
-                .String => |msg| try ErrorValue.init(self.allocator, msg, 0),
-                .Integer => |code| try ErrorValue.init(self.allocator, "Custom error", code),
-                else => try ErrorValue.init(self.allocator, "Unknown error", -1),
-            };
-        } else try ErrorValue.init(self.allocator, "Default error", -1);
+        // Evaluate the error message expression
+        const message_value = try self.evaluateExpression(yikes.message.*);
+        const message = switch (message_value) {
+            .String => |s| s,
+            else => "Unknown error",
+        };
         
-        // Register the error type in environment
-        try self.environment.define(yikes.name, Value{ .Error = error_value });
+        // Create error with optional type
+        const error_type = yikes.error_type orelse "RuntimeError";
+        
+        // Create and throw the error
+        _ = try ErrorValue.init(self.allocator, message, -1);
+        
+        // In a full implementation, this would propagate the error up the call stack
+        // For now, print the error message
+        const stdout = std.io.getStdOut().writer();
+        try stdout.print("🚨 YIKES! {s}: {s}\n", .{ error_type, message });
+        
+        return InterpreterError.RuntimeError;
     }
 
     fn executeFamStatement(self: *Interpreter, fam: ast.FamStatement) InterpreterError!void {
-        // Implement panic recovery using Zig's error handling
+        // Implement try-catch-finally error handling
         var error_occurred: ?ErrorValue = null;
         
-        // Execute main body with error catching
-        for (fam.body.items) |stmt| {
+        // Execute try body with error catching
+        for (fam.try_body.items) |stmt| {
             // Execute statement and catch any errors
             self.executeStatement(stmt) catch |err| {
                 // Convert interpreter error to CURSED error
@@ -844,22 +851,39 @@ pub const Interpreter = struct {
             };
         }
         
-        // If error occurred and recovery body exists, execute it
-        if (error_occurred != null and fam.recovery_body != null) {
-            const recovery = fam.recovery_body.?;
+        // Handle errors with catch blocks
+        if (error_occurred != null) {
+            var handled = false;
             
-            // Bind error variable if specified
-            if (fam.error_variable) |error_var| {
-                try self.environment.define(error_var, Value{ .Error = error_occurred.? });
+            for (fam.catch_blocks.items) |catch_block| {
+                // Check if this catch block matches the error type (if specified)
+                if (catch_block.error_type == null or true) { // TODO: implement type matching
+                    // Bind error variable if specified
+                    if (catch_block.error_variable) |error_var| {
+                        try self.environment.define(error_var, Value{ .Error = error_occurred.? });
+                    }
+                    
+                    // Execute catch block code
+                    for (catch_block.body.items) |stmt| {
+                        try self.executeStatement(stmt);
+                    }
+                    
+                    handled = true;
+                    break;
+                }
             }
             
-            // Execute recovery code
-            for (recovery.items) |stmt| {
+            if (!handled) {
+                // No matching catch block, propagate the error
+                std.debug.print("Unhandled error in fam block: {s}\n", .{error_occurred.?.message});
+            }
+        }
+        
+        // Execute finally block if it exists
+        if (fam.finally_block) |finally_stmts| {
+            for (finally_stmts.items) |stmt| {
                 try self.executeStatement(stmt);
             }
-        } else if (error_occurred != null) {
-            // No recovery block, propagate the error
-            std.debug.print("Unhandled error in fam block: {s}\n", .{error_occurred.?.message});
         }
     }
 

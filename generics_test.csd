@@ -1,9 +1,13 @@
-slay generic_test(value normie) normie {
+slay generic_function<T>(value T) T {
     damn value
 }
 
-slay main() normie {
-    sus result normie = generic_test(42)
-    vibez.spill(result)
-    damn 0
+sus result drip = generic_function<drip>(42)
+vibez.spill("Generic result:", result)
+
+slay identity<T>(x T) T {
+    damn x
 }
+
+sus str_result tea = identity<tea>("hello")
+vibez.spill("String result:", str_result)

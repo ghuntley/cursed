@@ -76,6 +76,7 @@ pub const Expression = union(enum) {
     }
 
     pub fn print(self: Expression, indent: usize) !void {
+        _ = indent; // Mark unused parameter
         const print_fn = std.debug.print;
         
         switch (self) {
@@ -462,8 +463,8 @@ pub const Statement = union(enum) {
             .Interface => |*interface| interface.deinit(allocator),
             .TypeAlias => |*type_alias| type_alias.deinit(allocator),
             .Panic => |*panic| panic.deinit(allocator),
-            .Catch => |*catch| catch.deinit(allocator),
-            .Defer => |*defer| defer.deinit(allocator),
+            .Catch => |*catch_stmt| catch_stmt.deinit(allocator),
+            .Defer => |*defer_stmt| defer_stmt.deinit(allocator),
             .Increment => |*inc| inc.deinit(allocator),
             .Decrement => |*dec| dec.deinit(allocator),
             .ShortDeclaration => |*short_decl| short_decl.deinit(allocator),
