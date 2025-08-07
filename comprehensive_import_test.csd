@@ -1,42 +1,26 @@
-yeet "testz"
-yeet "vibez"
-yeet "cryptz" 
-yeet "mathz"
-yeet "concurrenz"
 yeet "stringz"
-yeet "arrayz"
-yeet "hashz"
+yeet "mathz"
 
-test_start("Comprehensive Module Import Test")
+fr fr Test string functions
+sus text tea = "Hello CURSED"
+sus length_result drip = string_length(text)
 
-// Test basic I/O module
-vibez.spill("✅ vibez module working")
+fr fr Test math functions
+sus negative drip = -123
+sus abs_result drip = abs_normie(negative)
 
-// Test testing framework
-assert_true(based)
-vibez.spill("✅ testz module working")
+sus float_negative meal = -3.14
+sus abs_float_result meal = abs_meal(float_negative)
 
-// Test math functions
-sus result drip = mathz.abs(-42)
-vibez.spill("✅ mathz module working: " + result.tea())
+sus a drip = 10
+sus b drip = 5
+sus max_result drip = max_normie(a, b)
 
-// Test string operations  
-sus greeting tea = "Hello"
-sus processed tea = stringz.upper(greeting)
-vibez.spill("✅ stringz module working: " + processed)
+vibez.spill("String Tests:")
+vibez.spill("Text:", text)
+vibez.spill("Length:", length_result)
 
-// Test array operations
-sus arr arrayz = [1, 2, 3]
-sus length drip = arrayz.len(arr)
-vibez.spill("✅ arrayz module working: length = " + length.tea())
-
-// Test hash functions
-sus hash tea = hashz.md5("test")
-vibez.spill("✅ hashz module working: " + hash)
-
-// Test crypto functions
-sus encrypted tea = cryptz.sha256("sensitive")
-vibez.spill("✅ cryptz module working: " + encrypted)
-
-vibez.spill("🎉 All stdlib modules imported and working successfully!")
-print_test_summary()
+vibez.spill("Math Tests:")
+vibez.spill("Absolute of", negative, "is", abs_result)
+vibez.spill("Absolute of", float_negative, "is", abs_float_result)
+vibez.spill("Max of", a, "and", b, "is", max_result)
