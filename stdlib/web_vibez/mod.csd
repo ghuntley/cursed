@@ -230,7 +230,7 @@ slay http_request(method tea, url tea, data tea, headers tea) tea {
     } elif method == "PATCH" {
         damn http_patch(url, data)
     } else {
-        damn "Error: Method not implemented"
+        damn "Error: Unsupported HTTP method: " + method
     }
 }
 

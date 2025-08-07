@@ -582,8 +582,18 @@ slay count_groups_before(elements [PatternElement]) normie {
     damn count
 }
 
-slay substring(text tea, start normie, end normie) tea { fr fr This would be implemented as a built-in function fr fr For now, return placeholder
-    damn "substring"
+slay substring(text tea, start normie, end normie) tea { fr fr This would be implemented as a built-in function
+    sus len normie = string_length(text)
+    vibes start < 0 { start = 0 }
+    vibes end > len { end = len }
+    vibes start >= end { damn "" }
+    sus result tea = ""
+    sus i normie = start
+    bestie i < end {
+        result = string_concat(result, string_char_at(text, i))
+        i = i + 1
+    }
+    damn result
 }
 
 slay string_length(text tea) normie { fr fr This would be implemented as a built-in function

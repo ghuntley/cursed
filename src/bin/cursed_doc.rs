@@ -777,24 +777,152 @@ fn generate_json_docs(doc_index: &DocumentationIndex, output: &str) -> Result<()
 }
 
 fn serve_docs(docs_dir: &str, port: u16) -> Result<(), Box<dyn std::error::Error>> {
+    use std::net::{TcpListener, TcpStream};
+    use std::io::{prelude::*, BufReader};
+    use std::thread;
+    use std::time::Duration;
+    
     println!("{} Starting documentation server...", "→".cyan());
     println!("Serving {} on http://localhost:{}", docs_dir, port);
     println!("Press Ctrl+C to stop");
     
-    // Simple HTTP server using warp
-    use warp::Filter;
+    let docs_path = Path::new(docs_dir);
+    if !docs_path.exists() {
+        println!("❌ Documentation directory '{}' does not exist", docs_dir);
+        println!("💡 Run 'cursed-doc generate' first to create documentation");
+        return Ok(());
+    }
     
-    let docs = warp::fs::dir(docs_dir.to_string());
-    let routes = docs.or(warp::path::end().and(warp::fs::file(format!("{}/index.html", docs_dir))));
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", port))?;
+    println!("✅ Server running at http://localhost:{}", port);
+    println!("📁 Serving files from: {}", docs_path.display());
     
-    let rt = tokio::runtime::Runtime::new()?;
-    rt.block_on(async {
-        warp::serve(routes)
-            .run(([127, 0, 0, 1], port))
-            .await;
+    // Start file watcher in background thread for hot reload
+    let docs_dir_clone = docs_dir.to_string();
+    thread::spawn(move || {
+        watch_for_changes(&docs_dir_clone);
     });
     
+    // Handle incoming connections
+    for stream in listener.incoming() {
+        match stream {
+            Ok(stream) => {
+                let docs_dir_clone = docs_dir.to_string();
+                thread::spawn(move || {
+                    handle_connection(stream, &docs_dir_clone);
+                });
+            }
+            Err(e) => {
+                eprintln!("Connection failed: {}", e);
+            }
+        }
+    }
+    
     Ok(())
+}
+
+fn handle_connection(mut stream: TcpStream, docs_dir: &str) {
+    let buf_reader = BufReader::new(&mut stream);
+    let request_line = buf_reader.lines().next().unwrap().unwrap();
+    
+    // Parse the request path
+    let mut path = "/index.html";
+    if let Some(request_parts) = request_line.split_whitespace().nth(1) {
+        if request_parts != "/" {
+            path = request_parts;
+        }
+    }
+    
+    // Remove leading slash and construct file path
+    let file_path = if path.starts_with('/') {
+        format!("{}{}", docs_dir, path)
+    } else {
+        format!("{}/{}", docs_dir, path)
+    };
+    
+    let file_path = Path::new(&file_path);
+    
+    // Serve the file or show 404
+    if file_path.exists() && file_path.is_file() {
+        serve_file(&mut stream, file_path);
+    } else {
+        // Try to serve index.html for directory requests
+        let index_path = if file_path.is_dir() {
+            file_path.join("index.html")
+        } else {
+            Path::new(docs_dir).join("index.html")
+        };
+        
+        if index_path.exists() {
+            serve_file(&mut stream, &index_path);
+        } else {
+            serve_404(&mut stream);
+        }
+    }
+}
+
+fn serve_file(stream: &mut TcpStream, file_path: &Path) {
+    match fs::read_to_string(file_path) {
+        Ok(contents) => {
+            let content_type = get_content_type(file_path);
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}",
+                content_type,
+                contents.len(),
+                contents
+            );
+            let _ = stream.write_all(response.as_bytes());
+        }
+        Err(_) => {
+            serve_404(stream);
+        }
+    }
+}
+
+fn serve_404(stream: &mut TcpStream) {
+    let response = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n\
+        <html><body><h1>404 - Not Found</h1><p>The requested file was not found.</p></body></html>";
+    let _ = stream.write_all(response.as_bytes());
+}
+
+fn get_content_type(file_path: &Path) -> &'static str {
+    match file_path.extension().and_then(|ext| ext.to_str()) {
+        Some("html") => "text/html; charset=utf-8",
+        Some("css") => "text/css",
+        Some("js") => "application/javascript",
+        Some("json") => "application/json",
+        Some("png") => "image/png",
+        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("gif") => "image/gif",
+        Some("svg") => "image/svg+xml",
+        Some("pdf") => "application/pdf",
+        _ => "text/plain",
+    }
+}
+
+fn watch_for_changes(docs_dir: &str) {
+    // Simple file watcher - check for changes every 2 seconds
+    let mut last_modified = get_directory_modified_time(docs_dir);
+    
+    loop {
+        thread::sleep(Duration::from_secs(2));
+        
+        let current_modified = get_directory_modified_time(docs_dir);
+        if current_modified > last_modified {
+            println!("🔄 Documentation files changed - hot reload triggered");
+            last_modified = current_modified;
+            // In a full implementation, we would trigger a rebuild here
+            // For now, just notify that changes were detected
+        }
+    }
+}
+
+fn get_directory_modified_time(dir_path: &str) -> std::time::SystemTime {
+    if let Ok(metadata) = fs::metadata(dir_path) {
+        metadata.modified().unwrap_or(std::time::UNIX_EPOCH)
+    } else {
+        std::time::UNIX_EPOCH
+    }
 }
 
 fn init_docs_config() -> Result<(), Box<dyn std::error::Error>> {

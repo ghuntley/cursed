@@ -1,53 +1,40 @@
-sus global_counter drip = 0
+fr fr CURSED Debug Information Test
+fr fr This program tests DWARF debug generation for GDB/LLDB support
 
-squad Point {
-    spill x normie
-    spill y normie
-}
-
-slay add_numbers(first normie, second normie) normie {
-    sus local_sum normie = first + second
-    sus debug_point Point = Point{ x: local_sum, y: 42 }
+slay debug_test_function(param1 normie, param2 tea) {
+    vibez.spill("Function called with parameters")
+    vibez.spill(param1)
+    vibez.spill(param2)
     
-    sus loop_counter drip = 0
-    bestie (loop_counter < 3) {
-        sus inner_val normie = loop_counter.(normie)
-        local_sum = local_sum + inner_val
-        loop_counter = loop_counter + 1
+    fr fr Local variables for debugging
+    sus drip_value drip = 42
+    sus normie_value normie = 123
+    sus meal_value meal = 3.14159
+    sus tea_value tea = "Hello Debug!"
+    sus lit_value lit = based
+    
+    vibez.spill("drip_value:")
+    vibez.spill(drip_value)
+    vibez.spill("normie_value:")
+    vibez.spill(normie_value)
+    vibez.spill("meal_value:")
+    vibez.spill(meal_value)
+    vibez.spill("tea_value:")
+    vibez.spill(tea_value)
+    vibez.spill("lit_value:")
+    vibez.spill(lit_value)
+    
+    fr fr Nested scope for testing debug info
+    {
+        sus scoped_var normie = 999
+        vibez.spill("scoped_var:")
+        vibez.spill(scoped_var)
     }
-    
-    damn local_sum
 }
 
-slay string_operations(input tea) tea {
-    sus local_string tea = input + " processed"
-    sus char_count normie = local_string.len()
+slay main_character() {
+    vibez.spill("CURSED Debug Information Test")
+    vibez.spill("This tests GDB/LLDB compatibility")
     
-    match char_count {
-        case 0:
-            damn "empty"
-        case 1..10:
-            damn "short"
-        default:
-            damn local_string
-    }
-}
-
-slay main() {
-    sus x normie = 10
-    sus y normie = 20
-    sus result normie = add_numbers(x, y)
-    
-    vibez.spill("Result: ")
-    vibez.spill(result)
-    
-    sus text tea = "hello"
-    sus processed tea = string_operations(text)
-    vibez.spill(processed)
-    
-    sus point Point = Point{ x: result, y: 100 }
-    vibez.spill("Point x: ")
-    vibez.spill(point.x)
-    
-    global_counter = global_counter + 1
+    debug_test_function(42, "test_string")
 }

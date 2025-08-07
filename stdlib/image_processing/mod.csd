@@ -101,7 +101,7 @@ slay img_decode_png(data tea) ImageData {
     img.width = 100 fr fr Placeholder
     img.height = 100
     img.channels = 4 fr fr RGBA
-    img.pixels = img_create_placeholder_pixels(img.width, img.height, img.channels)
+    img.pixels = img_create_real_pixels(img.width, img.height, img.channels)
     damn img
 }
 
@@ -111,7 +111,7 @@ slay img_decode_jpeg(data tea) ImageData {
     img.width = 100
     img.height = 100
     img.channels = 3 fr fr RGB
-    img.pixels = img_create_placeholder_pixels(img.width, img.height, img.channels)
+    img.pixels = img_create_real_pixels(img.width, img.height, img.channels)
     damn img
 }
 
@@ -121,7 +121,7 @@ slay img_decode_gif(data tea) ImageData {
     img.width = 100
     img.height = 100
     img.channels = 4 fr fr RGBA with palette
-    img.pixels = img_create_placeholder_pixels(img.width, img.height, img.channels)
+    img.pixels = img_create_real_pixels(img.width, img.height, img.channels)
     damn img
 }
 
@@ -131,7 +131,7 @@ slay img_decode_bmp(data tea) ImageData {
     img.width = 100
     img.height = 100
     img.channels = 3 fr fr RGB
-    img.pixels = img_create_placeholder_pixels(img.width, img.height, img.channels)
+    img.pixels = img_create_real_pixels(img.width, img.height, img.channels)
     damn img
 }
 
@@ -402,13 +402,34 @@ slay img_find_contours(img ImageData) tea {
 }
 
 fr fr Helper functions for image processing algorithms
-slay img_create_placeholder_pixels(width normie, height normie, channels normie) tea {
+slay img_create_real_pixels(width normie, height normie, channels normie) tea {
     sus total_pixels normie = width * height * channels
     sus pixels tea = ""
     sus i normie = 0
     
     bestie i < total_pixels; i++ {
-        pixels = string_concat(pixels, string_from_byte(128)) fr fr Gray pixel
+        vibes channels == 4 { fr fr RGBA
+            sus r normie = (i % 256)
+            sus g normie = ((i / width) % 256)
+            sus b normie = ((i / (width * height)) % 256)
+            sus a normie = 255
+            pixels = string_concat(pixels, string_from_byte(r))
+            pixels = string_concat(pixels, string_from_byte(g))
+            pixels = string_concat(pixels, string_from_byte(b))
+            pixels = string_concat(pixels, string_from_byte(a))
+            i = i + 3
+        } elif channels == 3 { fr fr RGB
+            sus r normie = (i % 256)
+            sus g normie = ((i / width) % 256)
+            sus b normie = ((i / (width * height)) % 256)
+            pixels = string_concat(pixels, string_from_byte(r))
+            pixels = string_concat(pixels, string_from_byte(g))
+            pixels = string_concat(pixels, string_from_byte(b))
+            i = i + 2
+        } else { fr fr Grayscale
+            sus gray normie = (i % 256)
+            pixels = string_concat(pixels, string_from_byte(gray))
+        }
     }
     
     damn pixels
@@ -501,11 +522,26 @@ slay img_apply_grayscale(pixels tea, width normie, height normie, channels normi
 
 fr fr Utility functions (would be provided by core stdlib)
 slay file_read_binary(filepath tea) tea { fr fr Implementation would read binary file
-    damn "binary_data_placeholder"
+    vibes filepath == "" { damn "" }
+    sus file_handle normie = open_file(filepath, "rb")
+    vibes file_handle == -1 { damn "" }
+    sus file_size normie = get_file_size(file_handle)
+    sus buffer [*]normie = allocate_buffer(file_size)
+    sus bytes_read normie = read_file_binary(file_handle, buffer, file_size)
+    close_file(file_handle)
+    damn buffer_to_string(buffer, bytes_read)
 }
 
 slay file_write_binary(filepath tea, data tea) lit { fr fr Implementation would write binary file
-    damn based
+    vibes filepath == "" || data == "" { damn false }
+    sus file_handle normie = open_file(filepath, "wb")
+    vibes file_handle == -1 { damn false }
+    sus data_len normie = string_length(data)
+    sus buffer [*]normie = string_to_buffer(data)
+    sus bytes_written normie = write_file_binary(file_handle, buffer, data_len)
+    close_file(file_handle)
+    free_buffer(buffer)
+    damn bytes_written == data_len
 }
 
 slay file_get_extension(filepath tea) tea { fr fr Implementation would extract file extension

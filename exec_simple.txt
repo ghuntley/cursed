@@ -1,3 +1,0 @@
-Running /home/ghuntley/code/cursed/test_simple_output.csd
-[2025-07-12T10:47:52Z INFO  cursed::execution] 🚀 Executing CURSED code with advanced features
-[2025-07-12T10:47:52Z INFO  cursed::execution] 🔄 Interpreted execution

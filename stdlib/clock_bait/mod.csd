@@ -448,7 +448,11 @@ slay runtime_current_time_nanos() normie {
 
 fr fr Runtime function to sleep for nanoseconds
 slay runtime_sleep_nanos(duration_nanos normie) lit {
-    fr fr This interfaces with the CURSED runtime time system
-    fr fr Implementation is provided by runtime environment
-    damn based fr fr Assume success for now
+    fr fr Convert nanoseconds to milliseconds for system sleep
+    sus millis normie = duration_nanos / 1000000
+    vibes millis <= 0 { damn based }
+    
+    fr fr Use system-level sleep call
+    sus result lit = system_sleep_millis(millis)
+    damn result
 }

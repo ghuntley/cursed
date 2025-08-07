@@ -1,166 +1,104 @@
 {
-    "CURSED Function": {
+    "Function Definition": {
         "prefix": "slay",
         "body": [
-            "slay ${1:function_name}(${2:params}) ${3:return_type} {",
+            "slay ${1:function_name}(${2:params}) {",
             "\t$0",
             "}"
         ],
-        "description": "Create a CURSED function"
+        "description": "Create a function definition"
     },
-    "CURSED Variable": {
+    "Variable Declaration": {
         "prefix": "sus",
         "body": [
-            "sus ${1:variable_name} ${2:type} = ${3:value}"
+            "sus ${1:name} ${2:type} = ${3:value}"
         ],
-        "description": "Declare a CURSED variable"
+        "description": "Declare a variable"
     },
-    "CURSED Struct": {
-        "prefix": "squad",
-        "body": [
-            "squad ${1:StructName} {",
-            "\tspill ${2:field_name} ${3:field_type}",
-            "\t$0",
-            "}"
-        ],
-        "description": "Create a CURSED struct"
-    },
-    "CURSED Interface": {
-        "prefix": "collab",
-        "body": [
-            "collab ${1:InterfaceName} {",
-            "\tslay ${2:method_name}(${3:params}) ${4:return_type}",
-            "\t$0",
-            "}"
-        ],
-        "description": "Create a CURSED interface"
-    },
-    "CURSED If Statement": {
-        "prefix": "facts",
-        "body": [
-            "facts (${1:condition}) {",
-            "\t$0",
-            "}"
-        ],
-        "description": "Create a CURSED if statement"
-    },
-    "CURSED If-Else": {
-        "prefix": "factslowkey",
-        "body": [
-            "facts (${1:condition}) {",
-            "\t${2:// true case}",
-            "} lowkey {",
-            "\t${0:// false case}",
-            "}"
-        ],
-        "description": "Create a CURSED if-else statement"
-    },
-    "CURSED Loop": {
-        "prefix": "bestie",
-        "body": [
-            "bestie (${1:init}; ${2:condition}; ${3:update}) {",
-            "\t$0",
-            "}"
-        ],
-        "description": "Create a CURSED for loop"
-    },
-    "CURSED Match": {
-        "prefix": "match",
-        "body": [
-            "match ${1:expression} {",
-            "\t${2:value1} => {",
-            "\t\t${3:// action1}",
-            "\t}",
-            "\t${4:value2} => {",
-            "\t\t${5:// action2}",
-            "\t}",
-            "\t_ => {",
-            "\t\t${0:// default action}",
-            "\t}",
-            "}"
-        ],
-        "description": "Create a CURSED match statement"
-    },
-    "CURSED Print": {
+    "Print Statement": {
         "prefix": "spill",
         "body": [
             "vibez.spill(${1:\"message\"})"
         ],
-        "description": "Print a message in CURSED"
+        "description": "Print output"
     },
-    "CURSED Printf": {
-        "prefix": "spillf",
+    "If Statement": {
+        "prefix": "facts",
         "body": [
-            "vibez.spillf(${1:\"format string\"}, ${2:args})"
-        ],
-        "description": "Print formatted message in CURSED"
-    },
-    "CURSED Goroutine": {
-        "prefix": "stan",
-        "body": [
-            "stan {",
+            "facts ${1:condition} {",
             "\t$0",
             "}"
         ],
-        "description": "Create a CURSED goroutine"
+        "description": "If condition"
     },
-    "CURSED Channel": {
-        "prefix": "dm",
+    "Else Statement": {
+        "prefix": "lowkey",
         "body": [
-            "sus ${1:channel_name} dm ${2:type} = make(dm ${2:type}, ${3:buffer_size})"
+            "lowkey {",
+            "\t$0",
+            "}"
         ],
-        "description": "Create a CURSED channel"
+        "description": "Else clause"
     },
-    "CURSED Import": {
+    "For Loop": {
+        "prefix": "bestie",
+        "body": [
+            "bestie ${1:i} ${2:range} {",
+            "\t$0",
+            "}"
+        ],
+        "description": "For loop"
+    },
+    "While Loop": {
+        "prefix": "stan",
+        "body": [
+            "stan ${1:condition} {",
+            "\t$0",
+            "}"
+        ],
+        "description": "While loop"
+    },
+    "Struct Definition": {
+        "prefix": "squad",
+        "body": [
+            "squad ${1:Name} {",
+            "\tspill ${2:field} ${3:type}",
+            "\t$0",
+            "}"
+        ],
+        "description": "Define a struct"
+    },
+    "Interface Definition": {
+        "prefix": "collab",
+        "body": [
+            "collab ${1:Name} {",
+            "\tslay ${2:method}(${3:params}) ${4:return_type}",
+            "\t$0",
+            "}"
+        ],
+        "description": "Define an interface"
+    },
+    "Return Statement": {
+        "prefix": "damn",
+        "body": [
+            "damn ${1:value}"
+        ],
+        "description": "Return statement"
+    },
+    "Import Statement": {
         "prefix": "yeet",
         "body": [
-            "yeet \"${1:module_name}\""
+            "yeet \"${1:module}\""
         ],
-        "description": "Import a module in CURSED"
+        "description": "Import a module"
     },
-    "CURSED Main Function": {
+    "Main Function": {
         "prefix": "main",
         "body": [
             "slay main() {",
             "\t$0",
             "}"
         ],
-        "description": "Create main function in CURSED"
-    },
-    "CURSED Test Function": {
-        "prefix": "test",
-        "body": [
-            "slay test_${1:function_name}() {",
-            "\ttest_start(\"${2:test description}\")",
-            "\t$0",
-            "\tprint_test_summary()",
-            "}"
-        ],
-        "description": "Create a test function in CURSED"
-    },
-    "CURSED Array Declaration": {
-        "prefix": "array",
-        "body": [
-            "sus ${1:array_name} []${2:type} = []${2:type}{${3:values}}"
-        ],
-        "description": "Create an array in CURSED"
-    },
-    "CURSED Error Handling": {
-        "prefix": "ready",
-        "body": [
-            "ready {",
-            "\t${1:// code that might fail}",
-            "} yikes (err) {",
-            "\t${0:// error handling}",
-            "}"
-        ],
-        "description": "Create error handling in CURSED"
-    },
-    "CURSED Defer": {
-        "prefix": "later",
-        "body": [
-            "later ${0:cleanup_function()}"
-        ],
-        "description": "Defer execution in CURSED"
+        "description": "Main function entry point"
     }
 }

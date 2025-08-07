@@ -818,11 +818,190 @@ impl DocGenerator {
 
     /// Generate PDF documentation
     fn generate_pdf(&self, documentation: &Documentation) -> Result<(), Box<dyn std::error::Error>> {
-        // This would require a PDF generation library like wkhtmltopdf
-        // For now, generate HTML and provide conversion instructions
+        // Generate HTML first
         self.generate_html(documentation)?;
         
-        println!("✅ PDF documentation prepared (convert HTML to PDF using wkhtmltopdf)");
+        let pdf_dir = self.output_dir.join("pdf");
+        fs::create_dir_all(&pdf_dir)?;
+        
+        // Try to generate PDF using wkhtmltopdf
+        if self.generate_pdf_with_wkhtmltopdf(documentation, &pdf_dir).is_ok() {
+            println!("✅ PDF documentation generated using wkhtmltopdf");
+        } else {
+            // Fallback: Generate LaTeX and provide conversion instructions
+            self.generate_latex(documentation)?;
+            println!("✅ PDF documentation prepared");
+            println!("💡 To generate PDF, install wkhtmltopdf and run:");
+            println!("   wkhtmltopdf html/index.html pdf/documentation.pdf");
+            println!("   Or use LaTeX: pdflatex documentation.tex");
+        }
+        
+        Ok(())
+    }
+    
+    /// Attempt PDF generation using wkhtmltopdf
+    fn generate_pdf_with_wkhtmltopdf(&self, documentation: &Documentation, pdf_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        use std::process::Command;
+        
+        let html_file = self.output_dir.join("html").join("index.html");
+        let pdf_file = pdf_dir.join("documentation.pdf");
+        
+        // Check if wkhtmltopdf is available
+        let output = Command::new("wkhtmltopdf")
+            .arg("--version")
+            .output();
+            
+        if output.is_err() {
+            return Err("wkhtmltopdf not found".into());
+        }
+        
+        // Generate PDF
+        let result = Command::new("wkhtmltopdf")
+            .arg("--page-size")
+            .arg("A4")
+            .arg("--orientation")
+            .arg("Portrait")
+            .arg("--margin-top")
+            .arg("0.75in")
+            .arg("--margin-right")
+            .arg("0.75in")
+            .arg("--margin-bottom")
+            .arg("0.75in")
+            .arg("--margin-left")
+            .arg("0.75in")
+            .arg("--encoding")
+            .arg("UTF-8")
+            .arg("--print-media-type")
+            .arg("--enable-local-file-access")
+            .arg(html_file.to_string_lossy().as_ref())
+            .arg(pdf_file.to_string_lossy().as_ref())
+            .output()?;
+            
+        if !result.status.success() {
+            let error_msg = String::from_utf8_lossy(&result.stderr);
+            return Err(format!("wkhtmltopdf failed: {}", error_msg).into());
+        }
+        
+        // Generate individual module PDFs
+        for module in &documentation.modules {
+            let module_html = self.output_dir.join("html").join("modules").join(format!("{}.html", module.name));
+            let module_pdf = pdf_dir.join(format!("{}.pdf", module.name));
+            
+            if module_html.exists() {
+                let _ = Command::new("wkhtmltopdf")
+                    .arg("--page-size").arg("A4")
+                    .arg("--margin-top").arg("0.75in")
+                    .arg("--margin-right").arg("0.75in")
+                    .arg("--margin-bottom").arg("0.75in")
+                    .arg("--margin-left").arg("0.75in")
+                    .arg("--encoding").arg("UTF-8")
+                    .arg("--print-media-type")
+                    .arg("--enable-local-file-access")
+                    .arg(module_html.to_string_lossy().as_ref())
+                    .arg(module_pdf.to_string_lossy().as_ref())
+                    .output();
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// Generate LaTeX documentation as PDF fallback
+    fn generate_latex(&self, documentation: &Documentation) -> Result<(), Box<dyn std::error::Error>> {
+        let latex_dir = self.output_dir.join("latex");
+        fs::create_dir_all(&latex_dir)?;
+        
+        let mut latex_content = String::new();
+        
+        // LaTeX preamble
+        latex_content.push_str(r#"\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{tocloft}
+
+\geometry{margin=1in}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{CURSED Documentation}}
+\fancyhead[R]{\thepage}
+
+\lstdefinelanguage{CURSED}{
+  keywords={slay, sus, damn, yeet, squad, collab, bestie, lit, drip, tea, based, cringe},
+  sensitive=true,
+  comment=[l]{\#},
+  commentstyle=\color{gray},
+  keywordstyle=\color{blue}\bfseries,
+  stringstyle=\color{red},
+}
+
+\lstset{
+  language=CURSED,
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+}
+
+"#);
+        
+        // Title page
+        latex_content.push_str(&format!(r#"\title{{{title}}}
+\author{{{author}}}
+\date{{{version}}}
+
+\begin{{{document}}}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{{Overview}}
+{description}
+
+"#, 
+            title = documentation.config.title,
+            author = documentation.config.author,
+            version = documentation.config.version,
+            description = documentation.config.description,
+            document = "document"
+        ));
+        
+        // Modules section
+        latex_content.push_str(r#"\section{Modules}
+"#);
+        
+        for module in &documentation.modules {
+            latex_content.push_str(&format!(r#"\subsection{{{name}}}
+{description}
+
+\subsubsection{{Functions}}
+"#, name = module.name, description = module.description));
+            
+            for function in &module.functions {
+                latex_content.push_str(&format!(r#"\paragraph{{{name}}} {description}
+
+\begin{{lstlisting}}
+{signature}
+\end{{lstlisting}}
+
+"#, 
+                    name = function.name,
+                    description = function.description,
+                    signature = function.signature
+                ));
+            }
+        }
+        
+        latex_content.push_str(r#"\end{document}"#);
+        
+        fs::write(latex_dir.join("documentation.tex"), latex_content)?;
+        
+        println!("✅ LaTeX documentation generated");
         Ok(())
     }
 
