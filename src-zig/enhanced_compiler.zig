@@ -15,6 +15,7 @@ pub const CompilerConfig = struct {
     optimization_level: u8 = 2,
     verbose: bool = false,
     output_path: ?[]const u8 = null,
+    debug_info: bool = false, // Enable DWARF debug information generation
 };
 
 const VariableInfo = struct {
@@ -42,7 +43,7 @@ pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []cons
                     break :blk try std.fmt.allocPrint(allocator, "{s}.ll", .{filename});
             };
             defer if (config.output_path == null) allocator.free(output_filename);
-            try compileToLLVMBackend(allocator, source, filename, output_filename, config.verbose);
+            try compileToLLVMBackend(allocator, source, filename, output_filename, config.verbose, config.debug_info);
         },
     }
 }
@@ -140,9 +141,8 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
 }
 
 /// LLVM Backend compilation (proper LLVM IR generation)
-pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, output_filename: []const u8, verbose: bool) !void {
-    _ = filename;
-    if (verbose) print("[1/4] Generating LLVM IR...\n", .{});
+pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, output_filename: []const u8, verbose: bool, debug_info: bool) !void {
+    if (verbose) print("[1/4] Generating LLVM IR with debug info: {any}...\n", .{debug_info});
     
     // Create LLVM IR file with the specified output filename
     const ir_file = std.fs.cwd().createFile(output_filename, .{}) catch |err| {
@@ -154,7 +154,7 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: 
     const writer = ir_file.writer();
     
     if (verbose) print("[2/4] Translating CURSED to LLVM IR...\n", .{});
-    try generateProperLLVMIR(allocator, source, writer, verbose);
+    try generateProperLLVMIR(allocator, source, writer, verbose, filename, debug_info);
     
     if (verbose) print("✅ Generated LLVM IR: {s}\n", .{output_filename});
 }
@@ -527,11 +527,40 @@ fn optimizeLLVMIR(allocator: Allocator, ir_filename: []const u8, optimization_le
 }
 
 /// Generate proper LLVM IR using text-based approach (avoids LLVM C API linking issues)
-fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool) !void {
+fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool, filename: []const u8, debug_info: bool) !void {
     // Target and basic module setup
     try writer.writeAll("; Generated LLVM IR for CURSED program\n");
     try writer.writeAll("target triple = \"x86_64-pc-linux-gnu\"\n");
     try writer.writeAll("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n\n");
+    
+    // Add debug metadata if enabled
+    if (debug_info) {
+        try writer.writeAll("; Debug Information\n");
+        const directory = std.fs.path.dirname(filename) orelse ".";
+        const basename = std.fs.path.basename(filename);
+        
+        try writer.print("!llvm.dbg.cu = !{{!0}}\n", .{});
+        try writer.print("!llvm.module.flags = !{{!1, !2, !3}}\n", .{});
+        try writer.print("!llvm.ident = !{{!4}}\n\n", .{});
+        
+        // Debug compile unit
+        try writer.writeAll("!0 = distinct !DICompileUnit(language: DW_LANG_C, file: !5, producer: \"CURSED Compiler v1.0\", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)\n");
+        
+        // Module flags
+        try writer.print("!1 = !{{i32 7, !\"Dwarf Version\", i32 4}}\n", .{});
+        try writer.print("!2 = !{{i32 2, !\"Debug Info Version\", i32 3}}\n", .{});
+        try writer.print("!3 = !{{i32 1, !\"wchar_size\", i32 4}}\n", .{});
+        try writer.print("!4 = !{{!\"CURSED Compiler v1.0 with DWARF debug info\"}}\n", .{});
+        
+        // File debug info
+        try writer.print("!5 = !DIFile(filename: \"{s}\", directory: \"{s}\")\n", .{ basename, directory });
+        
+        if (verbose) {
+            print("🔍 Added DWARF debug metadata for {s}\n", .{filename});
+        }
+        
+        try writer.writeAll("\n");
+    }
     
     // External function declarations
     try writer.writeAll("declare i32 @printf(i8*, ...)\n");

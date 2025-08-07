@@ -1,0 +1,21 @@
+Successfully integrated 0 package dependencies
+install
++- install cursed
+   +- zig build-exe cursed Debug native 1 errors
+src-zig/main_unified.zig:1650:11: error: unused local constant
+error: the following command failed with 1 compilation errors:
+/opt/zig/zig build-exe -ODebug -Mroot=/home/ghuntley/cursed/src-zig/main_unified.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed --listen=- 
+install
++- install cursed-syscall
+   +- zig build-exe cursed-syscall Debug native 1 errors
+src-zig/main_unified.zig:1650:11: error: unused local constant
+error: the following command failed with 1 compilation errors:
+/opt/zig/zig build-exe -lLLVM-18 -lz -ODebug -I /usr/include/llvm-18 -L /usr/lib/llvm-18/lib -L /usr/lib/x86_64-linux-gnu -L /lib/x86_64-linux-gnu -Mroot=/home/ghuntley/cursed/src-zig/main_unified.zig -lc --cache-dir /home/ghuntley/cursed/zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-syscall --listen=- 
+Build Summary: 20/25 steps succeeded; 2 failed (disable with --summary none)
+install transitive failure
++- install cursed transitive failure
+|  +- zig build-exe cursed Debug native 1 errors
++- install cursed-syscall transitive failure
+   +- zig build-exe cursed-syscall Debug native 1 errors
+error: the following build command failed with exit code 1:
+/home/ghuntley/cursed/zig-cache/o/e44e8e42e6fad500ebce93c1f2cc966b/build /opt/zig/zig /home/ghuntley/cursed /home/ghuntley/cursed/zig-cache /home/ghuntley/.cache/zig --seed 0xaf3f029 -Z297fa2b17e3726d2

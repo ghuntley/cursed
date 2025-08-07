@@ -186,7 +186,7 @@ const AllocationInfo = struct {
             .size = size,
             .type_id = type_id,
             .timestamp = @as(u64, @intCast(std.time.microTimestamp())),
-            .thread_id = if (builtin.single_threaded) 0 else std.Thread.getCurrentId(),
+            .thread_id = if (builtin.single_threaded) 0 else @as(u32, @truncate(std.Thread.getCurrentId())),
             .source_location = source_location,
             .ref_count = Atomic(u32).init(1),
         };

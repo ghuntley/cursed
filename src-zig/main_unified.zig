@@ -12,14 +12,55 @@ const linter = @import("tools/linter.zig");
 const type_system = @import("type_system.zig");
 const ast = @import("ast.zig");
 const parser = @import("parser.zig");
+const error_handling = @import("error_handling.zig");
+const error_diagnostics = @import("error_diagnostics.zig");
 
-// Simple variable store for runtime evaluation
+// Error type for CURSED runtime
+const YikesError = struct {
+    message: []const u8,
+    code: i64,
+    line: u32,
+    column: u32,
+    file: []const u8,
+    stack_trace: ?[][]const u8,
+    
+    pub fn init(allocator: Allocator, message: []const u8, code: i64, line: u32, col: u32, file: []const u8) !YikesError {
+        return YikesError{
+            .message = try allocator.dupe(u8, message),
+            .code = code,
+            .line = line,
+            .column = col,
+            .file = try allocator.dupe(u8, file),
+            .stack_trace = null,
+        };
+    }
+    
+    pub fn deinit(self: *YikesError, allocator: Allocator) void {
+        allocator.free(self.message);
+        allocator.free(self.file);
+        if (self.stack_trace) |trace| {
+            for (trace) |frame| {
+                allocator.free(frame);
+            }
+            allocator.free(trace);
+        }
+    }
+    
+    pub fn toString(self: YikesError, allocator: Allocator) ![]u8 {
+        return std.fmt.allocPrint(allocator, "yikes: {s} (code: {}) at {s}:{}:{}", .{ 
+            self.message, self.code, self.file, self.line, self.column 
+        });
+    }
+};
+
+// Simple variable store for runtime evaluation with error handling
 const Variable = union(enum) {
     Integer: i64,
     Float: f64,
     String: []const u8,
     Boolean: bool,
     Array: ArrayList(Variable),
+    YikesError: YikesError,  // Error values for error handling
     
     pub fn toString(self: Variable, allocator: Allocator) ![]u8 {
         switch (self) {
@@ -27,13 +68,25 @@ const Variable = union(enum) {
             .Float => |float| return std.fmt.allocPrint(allocator, "{d}", .{float}),
             .String => |str| return allocator.dupe(u8, str),
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
+            .YikesError => |err| {
+                return std.fmt.allocPrint(allocator, "yikes: {s} (code: {}) at {s}:{}:{}", .{ 
+                    err.message, err.code, err.file, err.line, err.column 
+                });
+            },
             .Array => |arr| {
+                // Use arena allocator for temporary strings to avoid leaks on errors
+                var arena = std.heap.ArenaAllocator.init(allocator);
+                defer arena.deinit();
+                const arena_allocator = arena.allocator();
+                
                 var result = std.ArrayList(u8).init(allocator);
+                errdefer result.deinit();
+                
                 try result.append('[');
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");
-                    const item_str = try item.toString(allocator);
-                    defer allocator.free(item_str);
+                    // Use arena allocator for temporary item strings - automatically cleaned up
+                    const item_str = try item.toString(arena_allocator);
                     try result.appendSlice(item_str);
                 }
                 try result.append(']');
@@ -207,6 +260,7 @@ pub fn main() !void {
             .optimization_level = if (debug_info_enabled) 0 else optimization_level,
             .verbose = verbose,
             .output_path = null,
+            .debug_info = debug_info_enabled,
         };
         
         if (debug_info_enabled) {
@@ -222,17 +276,33 @@ pub fn main() !void {
 
 
 fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbose: bool, stdlib_path: ?[]const u8) !void {
-    if (verbose) print("🚀 Interpreting CURSED program with variable evaluation...\n", .{});
+    if (verbose) print("🚀 Interpreting CURSED program with advanced error handling...\n", .{});
+    
+    // Create enhanced error handling system
+    var error_handler = error_diagnostics.ErrorHandler.init(allocator, 100);
+    defer error_handler.deinit();
+    
+    var error_recovery = error_handling.ErrorRecovery.init(allocator, 50);
+    defer error_recovery.deinit();
+    
+    // Set current file for error reporting
+    try error_handler.setCurrentFile("main.csd", source);
+    
+    // Create arena for variable names and temporary allocations
+    var variable_arena = std.heap.ArenaAllocator.init(allocator);
+    defer variable_arena.deinit();
+    const variable_allocator = variable_arena.allocator();
     
     // Create variable store
     var variables = VariableStore.init(allocator);
     defer {
-        // Clean up variable names and string values
+        // Clean up string values and arrays (variable names handled by arena)
         var iterator = variables.iterator();
         while (iterator.next()) |entry| {
-            allocator.free(entry.key_ptr.*);  // Free variable name
             switch (entry.value_ptr.*) {
                 .String => |str| allocator.free(str),  // Free string values
+                .Array => |arr| arr.deinit(),  // Free array allocations
+                .YikesError => |*err| err.deinit(allocator),  // Free error data
                 else => {},
             }
         }
@@ -245,6 +315,9 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         // Clean up function names and definitions
         var func_iterator = functions.iterator();
         while (func_iterator.next()) |entry| {
+            // Free the key that was allocated with dupe()
+            allocator.free(entry.key_ptr.*);
+            // Free the function definition
             var func_def = entry.value_ptr;
             func_def.deinit(allocator);
         }
@@ -331,7 +404,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         // Handle variable declarations: sus varname type = value
         if (std.mem.startsWith(u8, trimmed, "sus ")) {
             if (verbose) print("🔍 Processing variable declaration: {s}\n", .{trimmed});
-            try handleVariableDeclaration(&variables, &functions, allocator, trimmed, verbose);
+            try handleVariableDeclaration(&variables, &functions, allocator, variable_allocator, trimmed, verbose);
             line_index += 1;
             continue;
         }
@@ -396,6 +469,22 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             continue;
         }
         
+        // Handle yikes error creation: yikes "message"
+        if (std.mem.startsWith(u8, trimmed, "yikes ")) {
+            if (verbose) print("🔍 Processing yikes error: {s}\n", .{trimmed});
+            try handleYikesStatement(&variables, &error_handler, &error_recovery, allocator, trimmed, @intCast(line_index + 1), verbose);
+            line_index += 1;
+            continue;
+        }
+        
+        // Handle shook error propagation: shook { ... } fam err { ... }
+        if (std.mem.startsWith(u8, trimmed, "shook ")) {
+            if (verbose) print("🔍 Processing shook/fam block: {s}\n", .{trimmed});
+            const lines_consumed = try handleShookFamBlock(&variables, &functions, &error_handler, &error_recovery, allocator, source_lines, line_index, verbose);
+            line_index += lines_consumed;
+            continue;
+        }
+        
         // Handle function calls: funcname(args)
         if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
             const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
@@ -420,7 +509,13 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         }
     }
     
-    if (verbose) print("✅ Program interpretation completed with variables\n", .{});
+    // Print error diagnostics if any
+    if (error_handler.hasErrors() or error_handler.hasWarnings()) {
+        if (verbose) print("\n📋 Error Diagnostics:\n", .{});
+        try error_handler.printAllDiagnostics();
+    }
+    
+    if (verbose) print("✅ Program interpretation completed with advanced error handling\n", .{});
 }
 
 // Expression evaluation function
@@ -715,7 +810,7 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
     return error.UnknownIdentifier;
 }
 
-fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, variable_allocator: Allocator, line: []const u8, verbose: bool) !void {
     // Parse: sus varname type = value
     // Examples: sus x drip = 42, sus numbers [normie] = [10, 20, 30]
     
@@ -724,7 +819,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
     // Find the equals sign to split the declaration
     const equals_pos = std.mem.indexOf(u8, line, "=") orelse return;
     const decl_part = std.mem.trim(u8, line[0..equals_pos], " \t");
-    const value_str = std.mem.trim(u8, line[equals_pos + 1..], " \t");
+    var value_part = std.mem.trim(u8, line[equals_pos + 1..], " \t"); if (std.mem.indexOf(u8, value_part, ";")) |semicolon_pos| { value_part = std.mem.trim(u8, value_part[0..semicolon_pos], " \t"); } const value_str = value_part;
     
     // Parse declaration part: "sus varname type" 
     var parts = std.mem.tokenizeScalar(u8, decl_part, ' ');
@@ -866,8 +961,8 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
         return;
     };
     
-    // Store variable (copy name for hash map key)
-    const name_copy = try allocator.dupe(u8, var_name);
+    // Store variable (copy name for hash map key using arena allocator)
+    const name_copy = try variable_allocator.dupe(u8, var_name);
     try variables.put(name_copy, variable_value);
     
     if (verbose) print("✅ Variable {s} stored successfully\n", .{var_name});
@@ -1602,6 +1697,13 @@ fn handleVibezSpill(allocator: Allocator, variables: *VariableStore, args: []con
                     defer allocator.free(array_str);
                     try output.appendSlice(array_str);
                 },
+                .YikesError => |err| {
+                    const error_str = try std.fmt.allocPrint(allocator, "yikes: {s} (code: {}) at {s}:{}:{}", .{ 
+                        err.message, err.code, err.file, err.line, err.column 
+                    });
+                    defer allocator.free(error_str);
+                    try output.appendSlice(error_str);
+                },
             }
         }
         // Literal text
@@ -1644,6 +1746,10 @@ fn handleTestzFunction(allocator: Allocator, variables: *VariableStore, function
 fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, source_lines: ArrayList([]const u8), start_line: usize, verbose: bool) !usize {
     if (start_line >= source_lines.items.len) return 1;
     
+    // Create arena allocator for function parsing - ensures cleanup on error
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    
     // Get the current line (function signature)
     const line = source_lines.items[start_line];
     const trimmed = std.mem.trim(u8, line, " \t\r\n");
@@ -1658,8 +1764,12 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     
     if (verbose) print("🔍 Parsing function: {s}\n", .{func_name});
     
-    // Create function definition
-    var func_def = FunctionDefinition.init(allocator, try allocator.dupe(u8, func_name));
+    // Create function definition with proper memory management
+    const func_name_copy = try allocator.dupe(u8, func_name);
+    errdefer allocator.free(func_name_copy);
+    
+    var func_def = FunctionDefinition.init(allocator, func_name_copy);
+    errdefer func_def.deinit(allocator);
     
     // Parse parameters
     const params_start = paren_pos + 1;
@@ -1678,9 +1788,16 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
                 const param_name = param_parts.next() orelse continue;
                 const param_type = param_parts.next() orelse "tea"; // default type
                 
+                // Use main allocator for persistent storage with error cleanup
+                const param_name_copy = try allocator.dupe(u8, param_name);
+                errdefer allocator.free(param_name_copy);
+                
+                const param_type_copy = try allocator.dupe(u8, param_type);
+                errdefer allocator.free(param_type_copy);
+                
                 const parameter = FunctionParameter{
-                    .name = try allocator.dupe(u8, param_name),
-                    .param_type = try allocator.dupe(u8, param_type),
+                    .name = param_name_copy,
+                    .param_type = param_type_copy,
                 };
                 
                 try func_def.parameters.append(parameter);
@@ -1704,15 +1821,19 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
         }
         
         if (body_trimmed.len > 0 and !std.mem.eql(u8, body_trimmed, "{")) {
-            try func_def.body.append(try allocator.dupe(u8, body_trimmed));
+            const body_line_copy = try allocator.dupe(u8, body_trimmed);
+            errdefer allocator.free(body_line_copy);
+            
+            try func_def.body.append(body_line_copy);
             if (verbose) print("  📝 Body line: {s}\n", .{body_trimmed});
         }
         
         current_line += 1;
     }
     
-    // Store function in function store
-    try functions.put(try allocator.dupe(u8, func_name), func_def);
+    // Store function in function store with proper key management
+    const func_store_key = try allocator.dupe(u8, func_name);
+    try functions.put(func_store_key, func_def);
     if (verbose) print("✅ Function {s} stored with {} parameters and {} body lines\n", .{ func_name, func_def.parameters.items.len, func_def.body.items.len });
     
     return lines_consumed;
@@ -1831,7 +1952,7 @@ fn executeFunctionBodyLine(variables: *VariableStore, functions: *FunctionStore,
     // Handle variable declarations in function body: sus varname type = value
     if (std.mem.startsWith(u8, trimmed, "sus ")) {
         if (verbose) print("  🔍 Processing local variable declaration: {s}\n", .{trimmed});
-        try handleVariableDeclaration(variables, functions, allocator, trimmed, verbose);
+        try handleVariableDeclaration(variables, functions, allocator, allocator, trimmed, verbose);
         return;
     }
     
@@ -1841,4 +1962,246 @@ fn executeFunctionBodyLine(variables: *VariableStore, functions: *FunctionStore,
     } else if (verbose) {
         print("  📝 Function body line: {s}\n", .{trimmed});
     }
+}
+
+// Advanced Error Handling Implementation
+
+/// Handle yikes error creation statements
+fn handleYikesStatement(
+    variables: *VariableStore,
+    error_handler: *error_diagnostics.ErrorHandler, 
+    error_recovery: *error_handling.ErrorRecovery,
+    allocator: Allocator,
+    line: []const u8,
+    line_number: u32,
+    verbose: bool
+) !void {
+    _ = error_recovery; // Not used in this simple implementation
+    
+    // Parse: yikes "error message"
+    const message_start = std.mem.indexOf(u8, line, "\"");
+    if (message_start == null) {
+        try error_handler.reportYikesError("yikes statement requires a string message", line_number, 1);
+        return;
+    }
+    
+    const start_idx = message_start.? + 1;
+    const message_end = std.mem.lastIndexOf(u8, line, "\"");
+    if (message_end == null or message_end.? <= start_idx) {
+        try error_handler.reportYikesError("yikes statement has unterminated string", line_number, @intCast(start_idx));
+        return;
+    }
+    
+    const error_message = line[start_idx..message_end.?];
+    
+    if (verbose) print("⚡ Creating yikes error: {s}\n", .{error_message});
+    
+    // Create YikesError and store it
+    const yikes_error = try YikesError.init(allocator, error_message, 1, line_number, 1, "main.csd");
+    const error_variable = Variable{ .YikesError = yikes_error };
+    
+    // Store in variables as __last_error__ for error propagation
+    try variables.put("__last_error__", error_variable);
+    
+    // Report to error handler
+    try error_handler.reportYikesError(error_message, line_number, 1);
+    
+    if (verbose) print("🚨 Error created and propagated\n", .{});
+}
+
+/// Handle shook/fam error blocks  
+fn handleShookFamBlock(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    error_handler: *error_diagnostics.ErrorHandler,
+    error_recovery: *error_handling.ErrorRecovery,
+    allocator: Allocator,
+    source_lines: ArrayList([]const u8),
+    start_line_index: usize,
+    verbose: bool
+) !usize {
+    if (verbose) print("🔄 Processing shook/fam error handling block\n", .{});
+    
+    var line_index = start_line_index;
+    var lines_consumed: usize = 1;
+    var in_shook_block = false;
+    var in_fam_block = false;
+    var brace_depth: i32 = 0;
+    var shook_start_line: usize = 0;
+    var fam_start_line: usize = 0;
+    var error_variable_name: ?[]const u8 = null;
+    
+    // Find the shook block
+    while (line_index < source_lines.items.len) {
+        const line = std.mem.trim(u8, source_lines.items[line_index], " \t\r\n");
+        
+        if (std.mem.indexOf(u8, line, "{")) |_| {
+            if (!in_shook_block) {
+                in_shook_block = true;
+                shook_start_line = line_index + 1;
+                if (verbose) print("📍 Shook block starts at line {}\n", .{shook_start_line});
+            }
+            brace_depth += 1;
+        }
+        
+        if (std.mem.indexOf(u8, line, "}")) |_| {
+            // Special case: check if this is a } fam line before adjusting brace depth
+            const is_fam_line = std.mem.indexOf(u8, line, "} fam ") != null;
+            
+            brace_depth -= 1;
+            if (verbose) print("🔧 Found '}}' at line {d}, brace_depth now: {d}, in_shook_block: {}, is_fam_line: {}\n", .{line_index + 1, brace_depth, in_shook_block, is_fam_line});
+            
+            // Handle fam line that starts immediately after shook block
+            if (is_fam_line and in_shook_block) {
+                in_shook_block = false;
+                if (verbose) print("📍 Shook block ends with fam at line {}: '{s}'\n", .{line_index + 1, line});
+                
+                // Parse error variable: } fam err {
+                if (std.mem.indexOf(u8, line, "fam ")) |fam_pos| {
+                    const after_fam = line[fam_pos + 4..];
+                    if (std.mem.indexOf(u8, after_fam, " {")) |var_end| {
+                        error_variable_name = std.mem.trim(u8, after_fam[0..var_end], " \t");
+                        if (verbose) print("📍 Fam error variable: {s}\n", .{error_variable_name.?});
+                    }
+                }
+                fam_start_line = line_index + 1;
+                in_fam_block = true;
+                // Don't break, continue to count opening brace if present
+            } else if (brace_depth == 0 and in_shook_block) {
+                in_shook_block = false;
+                if (verbose) print("📍 Shook block ends at line {}: '{s}'\n", .{line_index + 1, line});
+                break;
+            }
+        }
+        
+        line_index += 1;
+        lines_consumed += 1;
+    }
+    
+    // Continue processing fam block if it was detected inline
+    if (in_fam_block and fam_start_line > 0) {
+        if (verbose) print("📍 Processing fam block body starting at line {}\n", .{fam_start_line});
+        
+        while (line_index < source_lines.items.len and brace_depth > 0) {
+            line_index += 1;
+            lines_consumed += 1;
+            if (line_index >= source_lines.items.len) break;
+            
+            const line = std.mem.trim(u8, source_lines.items[line_index], " \t\r\n");
+            
+            if (std.mem.indexOf(u8, line, "{")) |_| brace_depth += 1;
+            if (std.mem.indexOf(u8, line, "}")) |_| {
+                brace_depth -= 1;
+                if (brace_depth == 0) {
+                    if (verbose) print("📍 Fam block ends at line {}\n", .{line_index + 1});
+                    break;
+                }
+            }
+        }
+    } else {
+        // Look for fam block on next line (old logic for separate line case)
+        line_index += 1;
+        lines_consumed += 1;
+        
+        if (line_index < source_lines.items.len) {
+            const next_line = std.mem.trim(u8, source_lines.items[line_index], " \t\r\n");
+            if (std.mem.indexOf(u8, next_line, "} fam ") != null or std.mem.indexOf(u8, next_line, "}fam ") != null) {
+                // Parse error variable: } fam err {
+                if (std.mem.indexOf(u8, next_line, "fam ")) |fam_pos| {
+                    const after_fam = next_line[fam_pos + 4..];
+                    if (std.mem.indexOf(u8, after_fam, " {")) |var_end| {
+                        error_variable_name = std.mem.trim(u8, after_fam[0..var_end], " \t");
+                    }
+                }
+                
+                if (verbose) print("📍 Fam block starts with error variable: {s}\n", .{error_variable_name orelse "unknown"});
+                
+                // Process fam block
+                line_index += 1;
+                lines_consumed += 1;
+                fam_start_line = line_index;
+                brace_depth = 1;
+                in_fam_block = true;
+                
+                while (line_index < source_lines.items.len and brace_depth > 0) {
+                    const line = std.mem.trim(u8, source_lines.items[line_index], " \t\r\n");
+                    
+                    if (std.mem.indexOf(u8, line, "{")) |_| brace_depth += 1;
+                    if (std.mem.indexOf(u8, line, "}")) |_| {
+                        brace_depth -= 1;
+                        if (brace_depth == 0) {
+                            if (verbose) print("📍 Fam block ends at line {}\n", .{line_index + 1});
+                            break;
+                        }
+                    }
+                    
+                    line_index += 1;
+                    lines_consumed += 1;
+                }
+            }
+        }
+    }
+    
+    // Execute shook block and handle errors
+    try error_recovery.pushFunction("shook_block");
+    defer error_recovery.popFunction();
+    
+    var error_occurred = false;
+    
+    // Execute shook block lines
+    for (shook_start_line..shook_start_line + (line_index - shook_start_line)) |exec_line_idx| {
+        if (exec_line_idx >= source_lines.items.len) break;
+        
+        const exec_line = std.mem.trim(u8, source_lines.items[exec_line_idx], " \t\r\n");
+        if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
+        
+        if (verbose) print("  🔍 Executing in shook block: {s}\n", .{exec_line});
+        
+        // Check for yikes statements in shook block
+        if (std.mem.startsWith(u8, exec_line, "yikes ")) {
+            error_occurred = true;
+            try handleYikesStatement(variables, error_handler, error_recovery, allocator, exec_line, @intCast(exec_line_idx + 1), verbose);
+            if (verbose) print("🚨 Error occurred in shook block, jumping to fam\n", .{});
+            break;
+        }
+        
+        // Execute other statements
+        if (std.mem.indexOf(u8, exec_line, "vibez.spill(")) |start| {
+            try handleVibesSpill(variables, functions, allocator, exec_line, start, verbose);
+        } else if (std.mem.startsWith(u8, exec_line, "sus ")) {
+            try handleVariableDeclaration(variables, functions, allocator, allocator, exec_line, verbose);
+        }
+    }
+    
+    // If error occurred and we have a fam block, execute it
+    if (error_occurred and fam_start_line > 0) {
+        if (verbose) print("🔧 Executing fam error recovery block\n", .{});
+        
+        // Set error variable if specified
+        if (error_variable_name) |err_var| {
+            if (variables.get("__last_error__")) |last_error| {
+                try variables.put(err_var, last_error);
+                if (verbose) print("  📌 Set error variable {s}\n", .{err_var});
+            }
+        }
+        
+        // Execute fam block lines
+        for (fam_start_line..line_index) |exec_line_idx| {
+            if (exec_line_idx >= source_lines.items.len) break;
+            
+            const exec_line = std.mem.trim(u8, source_lines.items[exec_line_idx], " \t\r\n");
+            if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
+            
+            if (verbose) print("  🔧 Executing in fam block: {s}\n", .{exec_line});
+            
+            if (std.mem.indexOf(u8, exec_line, "vibez.spill(")) |start| {
+                try handleVibesSpill(variables, functions, allocator, exec_line, start, verbose);
+            } else if (std.mem.startsWith(u8, exec_line, "sus ")) {
+                try handleVariableDeclaration(variables, functions, allocator, allocator, exec_line, verbose);
+            }
+        }
+    }
+    
+    if (verbose) print("✅ Shook/fam block processed, consumed {} lines\n", .{lines_consumed});
+    return lines_consumed;
 }

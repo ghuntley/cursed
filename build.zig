@@ -192,9 +192,19 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
                 exe.linkSystemLibrary("pthread");
                 exe.linkSystemLibrary("dl");
                 exe.linkSystemLibrary("m");
-                // Use system library paths for zlib
-                exe.addLibraryPath(.{ .path = "/usr/lib/x86_64-linux-gnu" });
-                exe.addLibraryPath(.{ .path = "/lib/x86_64-linux-gnu" });
+                
+                // Architecture-specific library paths
+                switch (target.result.cpu.arch) {
+                    .x86_64 => {
+                        exe.addLibraryPath(.{ .path = "/usr/lib/x86_64-linux-gnu" });
+                        exe.addLibraryPath(.{ .path = "/lib/x86_64-linux-gnu" });
+                    },
+                    .aarch64 => {
+                        exe.addLibraryPath(.{ .path = "/usr/lib/aarch64-linux-gnu" });
+                        exe.addLibraryPath(.{ .path = "/lib/aarch64-linux-gnu" });
+                    },
+                    else => {},
+                }
                 exe.linkSystemLibrary("z");
             }
         },
@@ -286,20 +296,35 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             
             // Link LLVM and Windows system libraries
             if (llvm_lib_found) {
-                exe.linkSystemLibrary("LLVM-18");
-                exe.linkSystemLibrary("z");
-                exe.linkSystemLibrary("xml2");
+                // Try multiple LLVM library names for Windows
+                const llvm_libs = [_][]const u8{ "LLVM-18", "LLVM", "libLLVM-18", "libLLVM" };
+                var llvm_linked = false;
+                for (llvm_libs) |lib_name| {
+                    exe.linkSystemLibrary(lib_name);
+                    llvm_linked = true;
+                    break;
+                }
+                
+                if (llvm_linked) {
+                    exe.linkSystemLibrary("zlib");
+                    exe.linkSystemLibrary("libxml2");
+                }
             }
             
-            // Always link required Windows system libraries
-            exe.linkSystemLibrary("psapi");
-            exe.linkSystemLibrary("bcrypt");
-            exe.linkSystemLibrary("ws2_32");
+            // Windows system libraries for networking and crypto
+            exe.linkSystemLibrary("ws2_32");    // Winsock
+            exe.linkSystemLibrary("bcrypt");    // Crypto
+            exe.linkSystemLibrary("crypt32");   // Crypto certificates
+            exe.linkSystemLibrary("secur32");   // Security
+            
+            // Core Windows libraries
             exe.linkSystemLibrary("kernel32");
             exe.linkSystemLibrary("user32");
             exe.linkSystemLibrary("shell32");
             exe.linkSystemLibrary("ole32");
+            exe.linkSystemLibrary("oleaut32");
             exe.linkSystemLibrary("advapi32");
+            exe.linkSystemLibrary("psapi");     // Process info
         },
         else => {
             // Unknown platform - no LLVM linking
@@ -317,6 +342,10 @@ pub fn build(b: *std.Build) void {
     const config = TargetConfig.forTarget(resolved_target);
     const is_wasm = resolved_target.result.cpu.arch == .wasm32;
     
+    // Detect cross-compilation early
+    const is_cross_compile = resolved_target.result.cpu.arch != @import("builtin").target.cpu.arch or
+                            resolved_target.result.os.tag != @import("builtin").target.os.tag;
+    
     // Debug info: print target info in verbose mode
     if (b.verbose) {
         std.debug.print("Building for target: {s} ({s})\n", .{
@@ -327,6 +356,9 @@ pub fn build(b: *std.Build) void {
         std.debug.print("  LLVM support: {}\n", .{config.supports_llvm});
         std.debug.print("  Threading: {}\n", .{config.supports_threading});
         std.debug.print("  Networking: {}\n", .{config.supports_networking});
+        std.debug.print("  Target CPU: {s}\n", .{@tagName(resolved_target.result.cpu.arch)});
+        std.debug.print("  Target OS: {s}\n", .{@tagName(resolved_target.result.os.tag)});
+        std.debug.print("  Cross-compiling: {}\n", .{is_cross_compile});
     }
 
     // Create the CURSED compiler executable - unified main with subcommands
@@ -423,8 +455,6 @@ pub fn build(b: *std.Build) void {
 
     // Create syscall-enabled compiler with real file I/O, networking, and process management
     // Only build for native target to avoid cross-compilation LLVM issues
-    const is_cross_compile = resolved_target.result.cpu.arch != @import("builtin").target.cpu.arch or
-                           resolved_target.result.os.tag != @import("builtin").target.os.tag;
 
     b.installArtifact(exe);
     
@@ -659,7 +689,7 @@ b.installArtifact(complete_exe);
     // Create diagnostic demo executable
     const diagnostics_demo = b.addExecutable(.{
         .name = "cursed-diagnostics-demo",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/test_diagnostics_demo.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/test_diagnostics_demo_simple.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -760,7 +790,7 @@ b.installArtifact(complete_exe);
             .root_source_file = if (query.cpu_arch == .wasm32) 
                 b.path("src-zig/wasm_pure.zig") 
             else 
-                b.path("src-zig/main.zig"),
+                b.path("src-zig/main_unified.zig"),
             .target = cross_target,
             .optimize = optimize,
         });
@@ -769,9 +799,11 @@ b.installArtifact(complete_exe);
         if (query.cpu_arch != .wasm32) {
             cross_exe.linkLibC();
             
-            // Only add LLVM for targets that support it and have libraries available
+            // Skip LLVM for cross-compilation to avoid library dependency issues
+            // Only add LLVM when compiling for the exact same target as the host
             if (cross_config.supports_llvm and 
-                (query.os_tag == .linux or cross_target.result.os.tag == resolved_target.result.os.tag)) {
+                query.os_tag == resolved_target.result.os.tag and
+                query.cpu_arch == resolved_target.result.cpu.arch) {
                 addLlvm(b, cross_exe, cross_target);
             }
         }

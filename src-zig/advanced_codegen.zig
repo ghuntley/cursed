@@ -2194,6 +2194,145 @@ base_codegen: FinalWorkingCodeGen,
         // Create local variable debug info
         try debug_gen.createLocalVariable(name, line, di_type, alloca);
     }
+
+    /// Compile function statement with comprehensive debug information
+    pub fn compileFunctionWithDebugInfo(self: *AdvancedCodeGen, func_stmt: ast.FunctionStatement) !c.LLVMValueRef {
+        const context = self.base_codegen.context;
+        const module = self.base_codegen.module;
+        const builder = self.base_codegen.builder;
+        
+        // Create function type
+        var param_types = ArrayList(c.LLVMTypeRef).init(self.base_codegen.allocator);
+        defer param_types.deinit();
+        
+        for (func_stmt.parameters.items) |param| {
+            const param_type = self.base_codegen.convertType(param.param_type) catch c.LLVMInt64TypeInContext(context);
+            try param_types.append(param_type);
+        }
+        
+        const return_type = if (func_stmt.return_type) |ret_type|
+            self.base_codegen.convertType(ret_type) catch c.LLVMVoidTypeInContext(context)
+        else
+            c.LLVMVoidTypeInContext(context);
+        
+        const function_type = c.LLVMFunctionType(
+            return_type,
+            param_types.items.ptr,
+            @intCast(param_types.items.len),
+            0
+        );
+        
+        // Create function
+        const function = c.LLVMAddFunction(module, func_stmt.name.ptr, function_type);
+        
+        // Generate debug information if enabled
+        if (self.debug_enabled and self.debug_generator != null) {
+            var debug_gen = &self.debug_generator.?;
+            
+            // Create debug types for parameters
+            var debug_param_types = ArrayList(c.LLVMMetadataRef).init(self.base_codegen.allocator);
+            defer debug_param_types.deinit();
+            
+            for (func_stmt.parameters.items) |param| {
+                const debug_type = try self.getCursedDebugType("drip"); // Default to drip for now
+                try debug_param_types.append(debug_type);
+            }
+            
+            // Create debug type for return value
+            const debug_return_type = try self.getCursedDebugType("void");
+            
+            // Generate function debug info
+            const di_function = try self.generateFunctionDebugInfo(
+                function,
+                func_stmt.name,
+                func_stmt.location.line,
+                debug_param_types.items,
+                debug_return_type
+            );
+            
+            // Set debug location for function entry
+            debug_gen.setCurrentLocation(func_stmt.location.line, func_stmt.location.column);
+        }
+        
+        // Create entry block
+        const entry_block = c.LLVMAppendBasicBlockInContext(context, function, "entry");
+        c.LLVMPositionBuilderAtEnd(builder, entry_block);
+        
+        // Set current function context
+        const saved_function = self.base_codegen.current_function;
+        self.base_codegen.current_function = function;
+        self.current_function_name = func_stmt.name;
+        
+        // Enter function scope
+        _ = try self.enterScope(true);
+        
+        // Create allocas for parameters with debug info
+        var param_index: u32 = 0;
+        for (func_stmt.parameters.items) |param| {
+            const param_alloca = c.LLVMBuildAlloca(builder, param_types.items[param_index], param.name.ptr);
+            
+            // Store parameter value
+            const param_value = c.LLVMGetParam(function, param_index);
+            _ = c.LLVMBuildStore(builder, param_value, param_alloca);
+            
+            // Generate debug info for parameter
+            if (self.debug_enabled and self.debug_generator != null) {
+                var debug_gen = &self.debug_generator.?;
+                const debug_type = try self.getCursedDebugType("drip"); // Default type
+                try debug_gen.createParameterVariable(param.name, param_index + 1, func_stmt.location.line, debug_type, param_alloca);
+            }
+            
+            param_index += 1;
+        }
+        
+        // Compile function body
+        for (func_stmt.body.items) |statement| {
+            try self.compileStatement(statement.*);
+        }
+        
+        // Exit function scope and cleanup defers
+        try self.exitScope();
+        
+        // Add return if missing
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(builder)) == null) {
+            if (func_stmt.return_type == null or std.mem.eql(u8, "void", "void")) {
+                _ = c.LLVMBuildRetVoid(builder);
+            } else {
+                // Return default value
+                const default_value = c.LLVMConstInt(return_type, 0, 0);
+                _ = c.LLVMBuildRet(builder, default_value);
+            }
+        }
+        
+        // Restore previous function context
+        self.base_codegen.current_function = saved_function;
+        self.current_function_name = null;
+        
+        return function;
+    }
+
+    /// Get CURSED debug type by name
+    fn getCursedDebugType(self: *AdvancedCodeGen, type_name: []const u8) !c.LLVMMetadataRef {
+        if (!self.debug_enabled or self.debug_generator == null) {
+            return error.DebugDisabled;
+        }
+        
+        var debug_gen = &self.debug_generator.?;
+        const types = debug_gen.cursed_debug_types orelse return error.TypesNotInitialized;
+        
+        if (std.mem.eql(u8, type_name, "normie")) return types.normie_type;
+        if (std.mem.eql(u8, type_name, "tea")) return types.tea_type;
+        if (std.mem.eql(u8, type_name, "drip")) return types.drip_type;
+        if (std.mem.eql(u8, type_name, "lit")) return types.lit_type;
+        if (std.mem.eql(u8, type_name, "meal")) return types.meal_type;
+        if (std.mem.eql(u8, type_name, "smol")) return types.smol_type;
+        if (std.mem.eql(u8, type_name, "thicc")) return types.thicc_type;
+        if (std.mem.eql(u8, type_name, "sip")) return types.sip_type;
+        if (std.mem.eql(u8, type_name, "void")) return types.void_type;
+        
+        // Default to normie for unknown types
+        return types.normie_type;
+    }
     
     /// Generate debug info for CURSED struct
     pub fn generateStructDebugInfo(self: *AdvancedCodeGen, struct_name: []const u8, field_names: [][]const u8, field_types: [][]const u8) !c.LLVMMetadataRef {
