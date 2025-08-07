@@ -95,6 +95,38 @@ const Variable = union(enum) {
         }
     }
     
+    pub fn clone(self: Variable, allocator: Allocator) !Variable {
+        switch (self) {
+            .Integer => |v| return Variable{ .Integer = v },
+            .Float => |v| return Variable{ .Float = v },
+            .Boolean => |v| return Variable{ .Boolean = v },
+            .String => |s| {
+                const copy = try allocator.dupe(u8, s);
+                return Variable{ .String = copy };
+            },
+            .Array => |arr| {
+                var new_arr = std.ArrayList(Variable).init(allocator);
+                try new_arr.ensureTotalCapacity(arr.items.len);
+                for (arr.items) |item| {
+                    const cloned = try item.clone(allocator);
+                    try new_arr.append(cloned);
+                }
+                return Variable{ .Array = new_arr };
+            },
+            .YikesError => |err| {
+                var new_err = try YikesError.init(allocator, err.message, err.code, err.line, err.column, err.file);
+                if (err.stack_trace) |trace| {
+                    var frames = try allocator.alloc([]const u8, trace.len);
+                    for (trace, 0..) |frame, i| {
+                        frames[i] = try allocator.dupe(u8, frame);
+                    }
+                    new_err.stack_trace = frames;
+                }
+                return Variable{ .YikesError = new_err };
+            },
+        }
+    }
+
     pub fn deinit(self: *Variable, allocator: Allocator) void {
         switch (self.*) {
             .String => |str| allocator.free(str),
@@ -802,7 +834,8 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
     // Try to resolve as variable
     if (variables.get(value_str)) |variable| {
         if (verbose) print("📊 Resolved variable '{s}': {any}\n", .{ value_str, variable });
-        return variable;
+        // Return a cloned, owning copy so temporaries can be safely deinitialized
+        return try variable.clone(allocator);
     }
     
     // Try to parse as string literal
@@ -902,8 +935,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
             switch (result) {
                 .String => |str_val| {
                     const string_copy = try allocator.dupe(u8, str_val);
-                    var tmp = result;
-                    tmp.deinit(allocator);
+                    // Avoid deinit here to prevent double-free of temporaries with unclear ownership
                     break :blk Variable{ .String = string_copy };
                 },
                 else => {

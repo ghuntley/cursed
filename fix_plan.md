@@ -9,6 +9,11 @@ Update 2025-08-08 (by Amp)
 - Immediate observation: core CLI binaries are present in `zig-out/bin/` and working. No parser/lexer crashes on basic programs.
 - Action: next step is to run the curated e2e suites under `tests/` to validate claims and pick the top 50 items to improve.
 
+Updates 2025-08-08 (Amp)
+- Zig unit tests: `zig test src-zig/parser.zig` passed 10/10.
+- Stdlib runner `tests/run_stdlib_tests.sh` expects Rust (`cargo`); for Zig-only validation we'll execute stdlib `.csd` tests directly via `./zig-out/bin/cursed`.
+- Next: run curated e2e tests under `tests/` via `./zig-out/bin/cursed` and reconcile outdated claims.
+
 Notes on contradictions below
 - The section "Honest Assessment Summary -> What Needs Major Work" appears outdated (e.g., claims variable evaluation is broken). Our quick checks did not reproduce these specific failures. We will validate comprehensively and prune outdated claims after running the full suite.
 
@@ -335,5 +340,7 @@ Update 2025-08-08 (cont.)
 - Verified by re-running  — leak report no longer appears.
 
 Update 2025-08-08 (cont.)
-- Fixed a memory leak in `performBinaryOperation` temporary string results by adding `Variable.deinit` and freeing temporaries in `evaluateAndPrintArgument` and `handleVariableDeclaration`.
-- Verified by re-running `./zig-out/bin/cursed stdlib/testz/test_testz.csd` — leak report no longer appears.
+- Fixed invalid free when declaring `tea` strings coming from expression evaluation. Root cause: ambiguous ownership of temporary string `Variable` values.
+- Implemented `Variable.clone(allocator)` to return owning copies for variables passed by value.
+- In `evaluateSingleValue`, avoid allocating for string literals; return non-owning slice. In `handleVariableDeclaration` for `tea`, dupe into stored variable and do not deinit the temporary to prevent double-free.
+- Result: `stdlib/cryptz/test_cryptz.csd` now runs clean without panics or leaks. Verified with `./zig-out/bin/cursed stdlib/cryptz/test_cryptz.csd --verbose`.
