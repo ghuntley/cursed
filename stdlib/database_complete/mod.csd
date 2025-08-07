@@ -408,7 +408,7 @@ fr fr Format SQL Query with Parameters
 slay format_query(template tea, params [tea]) tea {
     sus formatted tea = template
     
-    bestie i := 0; i < stringz.length(params); i++ {
+    bestie i := 0; i < params.length; i++ {
         sus placeholder tea = stringz.concat("$", stringz.from_int(i + 1))
         sus escaped_param tea = escape_sql_string(params[i])
         formatted = stringz.replace_all(formatted, placeholder, escaped_param)

@@ -410,15 +410,20 @@ fr fr ================================
 
 fr fr Convert CURSED string to C-style null-terminated string
 slay string_to_cstring(s tea) [*:0]normie {
-    fr fr This would need proper implementation in the runtime
-    fr fr For now, assume it's handled by the compiler/runtime
-    damn nil fr fr Placeholder
+    sus len normie = string_length(s)
+    sus buffer [*:0]normie = runtime_alloc(len + 1)
+    sus i normie = 0
+    bestie i < len {
+        buffer[i] = string_char_code_at(s, i)
+        i = i + 1
+    }
+    buffer[len] = 0 fr fr Null terminator
+    damn buffer
 }
 
 fr fr Allocate buffer for file operations
 slay allocate_buffer(size normie) [*]normie {
-    fr fr Would use CURSED memory allocation
-    damn nil fr fr Placeholder
+    damn runtime_alloc(size)
 }
 
 fr fr Free allocated buffer
@@ -428,36 +433,65 @@ slay free_buffer(buffer [*]normie) {
 
 fr fr Convert buffer to string
 slay buffer_to_string(buffer [*]normie, size thicc) tea {
-    fr fr Would convert raw bytes to CURSED string
-    damn "" fr fr Placeholder
+    sus result tea = ""
+    sus i thicc = 0
+    bestie i < size {
+        result = string_concat(result, char_from_code(buffer[i]))
+        i = i + 1
+    }
+    damn result
 }
 
 fr fr Convert string to buffer
 slay string_to_buffer(s tea) [*]normie {
-    fr fr Would convert CURSED string to raw bytes
-    damn nil fr fr Placeholder
+    sus len normie = string_length(s)
+    sus buffer [*]normie = runtime_alloc(len)
+    sus i normie = 0
+    bestie i < len {
+        buffer[i] = string_char_code_at(s, i)
+        i = i + 1
+    }
+    damn buffer
 }
 
 fr fr Get string length
 slay string_length(s tea) normie {
-    fr fr Would get actual string length from CURSED runtime
-    damn 0 fr fr Placeholder
+    damn runtime_string_length(s)
 }
 
 fr fr String manipulation functions
 slay ends_with(s tea, suffix tea) lit {
-    fr fr Would check if string ends with suffix
-    damn false fr fr Placeholder
+    sus s_len normie = string_length(s)
+    sus suffix_len normie = string_length(suffix)
+    vibes suffix_len > s_len { damn false }
+    sus start_pos normie = s_len - suffix_len
+    damn substring(s, start_pos, s_len) == suffix
 }
 
 slay last_index_of(s tea, sub tea) normie {
-    fr fr Would find last occurrence of substring
-    damn -1 fr fr Placeholder
+    sus s_len normie = string_length(s)
+    sus sub_len normie = string_length(sub)
+    vibes sub_len > s_len { damn -1 }
+    sus i normie = s_len - sub_len
+    bestie i >= 0 {
+        vibes substring(s, i, i + sub_len) == sub { damn i }
+        i = i - 1
+    }
+    damn -1
 }
 
 slay substring(s tea, start normie, end normie) tea {
-    fr fr Would extract substring
-    damn "" fr fr Placeholder
+    sus len normie = string_length(s)
+    vibes start < 0 { start = 0 }
+    vibes end > len { end = len }
+    vibes start >= end { damn "" }
+    sus result tea = ""
+    sus i normie = start
+    bestie i < end {
+        result = string_concat(result, string_char_at(s, i))
+        i = i + 1
+    }
+    damn result
 }
 
 fr fr ================================

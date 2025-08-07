@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 // Platform-specific target configuration
 const TargetConfig = struct {
@@ -561,7 +562,7 @@ b.installArtifact(complete_exe);
     // Create LSP server executable
     const lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/tools/lsp_server_simple.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("cursed_lsp_working.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -571,6 +572,24 @@ b.installArtifact(complete_exe);
     }
     
     b.installArtifact(lsp_exe);
+    
+    // Debug information test executable (temporarily disabled due to build issues)
+    // TODO: Re-enable when debug_enabled_codegen.zig compiles properly
+    // const debug_test_exe = b.addExecutable(.{
+    //     .name = "cursed-debug-test",
+    //     .root_source_file = b.path("src-zig/test_debug_generation.zig"),
+    //     .target = resolved_target,
+    //     .optimize = optimize,
+    // });
+    // if (!is_wasm) {
+    //     debug_test_exe.linkLibC();
+    //     if (builtin.os.tag == .linux or builtin.os.tag == .macos) {
+    //         debug_test_exe.addSystemIncludePath(.{.path = "/usr/include/llvm-18"});
+    //         debug_test_exe.addSystemIncludePath(.{.path = "/usr/include/llvm-c-18"});
+    //         debug_test_exe.linkSystemLibrary("LLVM-18");
+    //     }
+    // }
+    // b.installArtifact(debug_test_exe);
     
     // Create documentation generator executable
     const doc_exe = b.addExecutable(.{

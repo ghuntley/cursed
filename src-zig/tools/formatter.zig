@@ -74,10 +74,21 @@ pub const Formatter = struct {
         // Clear previous output
         self.output.clearRetainingCapacity();
         
-        // Tokenize source
+        // Tokenize source with error recovery
         var token_lexer = lexer.Lexer.init(self.allocator, source);
         
-        const tokens = try token_lexer.tokenize();
+        const tokens = token_lexer.tokenize() catch |err| {
+            // Attempt error recovery for common syntax errors
+            switch (err) {
+                error.UnexpectedCharacter, 
+                error.UnterminatedString, 
+                error.UnterminatedChar, 
+                error.UnterminatedBlockComment => {
+                    return self.formatWithErrorRecovery(source, err);
+                },
+                else => return err,
+            }
+        };
         defer tokens.deinit();
         
         // Format tokens
@@ -384,6 +395,90 @@ pub const Formatter = struct {
     fn needsLineBreak(self: *Formatter, context: *FormattingContext) bool {
         _ = self;
         return context.line_length > context.config.max_line_length;
+    }
+    
+    // Error recovery formatting - attempt to format malformed code
+    fn formatWithErrorRecovery(self: *Formatter, source: []const u8, original_error: anyerror) ![]const u8 {
+        // Clear output for recovery attempt
+        self.output.clearRetainingCapacity();
+        
+        // Add error comment at the top
+        try self.output.appendSlice("# CURSED Formatter: Partial formatting due to syntax errors\n");
+        try self.output.appendSlice("# Original error: ");
+        try self.output.appendSlice(@errorName(original_error));
+        try self.output.appendSlice("\n\n");
+        
+        // Attempt line-by-line formatting for recoverable content
+        var lines = std.mem.split(u8, source, "\n");
+        var line_num: usize = 0;
+        
+        while (lines.next()) |line| {
+            line_num += 1;
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            
+            if (trimmed.len == 0) {
+                // Preserve empty lines
+                try self.output.append('\n');
+                continue;
+            }
+            
+            // Try to format individual lines that look like valid CURSED syntax
+            if (self.isLineFormattable(trimmed)) {
+                try self.formatSingleLine(trimmed);
+            } else {
+                // Preserve problematic lines with a comment
+                try self.output.appendSlice("# Line ");
+                const line_str = try std.fmt.allocPrint(self.allocator, "{d}", .{line_num});
+                defer self.allocator.free(line_str);
+                try self.output.appendSlice(line_str);
+                try self.output.appendSlice(" - formatting skipped due to syntax error\n");
+                try self.output.appendSlice(line);
+            }
+            try self.output.append('\n');
+        }
+        
+        // Add footer comment
+        try self.output.appendSlice("\n# End of partial formatting\n");
+        try self.output.appendSlice("# Please fix syntax errors and re-run formatter\n");
+        
+        return try self.output.toOwnedSlice();
+    }
+    
+    // Check if a line can be safely formatted
+    fn isLineFormattable(self: *Formatter, line: []const u8) bool {
+        _ = self;
+        
+        // Skip lines that are likely to cause parsing errors
+        if (std.mem.indexOf(u8, line, "\"") != null and std.mem.count(u8, line, "\"") % 2 != 0) {
+            return false; // Unterminated string
+        }
+        
+        if (std.mem.indexOf(u8, line, "'") != null and std.mem.count(u8, line, "'") % 2 != 0) {
+            return false; // Unterminated char
+        }
+        
+        // Allow comments and basic statements
+        return std.mem.startsWith(u8, line, "#") or 
+               std.mem.startsWith(u8, line, "//") or
+               std.mem.startsWith(u8, line, "fr fr") or
+               std.mem.startsWith(u8, line, "sus") or
+               std.mem.startsWith(u8, line, "slay") or
+               std.mem.startsWith(u8, line, "yeet") or
+               std.mem.startsWith(u8, line, "squad") or
+               std.mem.startsWith(u8, line, "collab");
+    }
+    
+    // Format a single line with basic indentation
+    fn formatSingleLine(self: *Formatter, line: []const u8) !void {
+        // Basic formatting: trim whitespace and add proper spacing
+        const trimmed = std.mem.trim(u8, line, " \t");
+        
+        // Add basic indentation for certain keywords
+        if (std.mem.indexOf(u8, trimmed, "{") != null) {
+            try self.output.appendSlice("    "); // 4-space indent
+        }
+        
+        try self.output.appendSlice(trimmed);
     }
 };
 

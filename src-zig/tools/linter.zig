@@ -27,6 +27,15 @@ pub const Severity = enum {
     }
 };
 
+// Variable tracking for unused variable detection
+const VariableInfo = struct {
+    name: []const u8,
+    line: u32,
+    column: u32,
+    used: bool = false,
+    is_parameter: bool = false,
+};
+
 // Lint Rule Categories
 pub const RuleCategory = enum {
     Style,
@@ -47,6 +56,8 @@ pub const RuleCategory = enum {
         };
     }
 };
+
+
 
 // Lint Issue
 pub const LintIssue = struct {
@@ -319,25 +330,74 @@ pub const Linter = struct {
     }
     
     fn checkUnusedVariables(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
-        _ = self;
-        _ = file_path;
-        _ = ast_tree;
-        // Walk AST to find unused variables
-        // This would be a full AST traversal implementation
+        _ = ast_tree; // TODO: Use this when implementing proper AST traversal
+        var declared_vars = std.StringHashMap(VariableInfo).init(self.allocator);
+        defer declared_vars.deinit();
+        
+        // TODO: Implement proper AST traversal with new structure
+        // First pass: collect all variable declarations  
+        // for (ast_tree.statements.items) |stmt_ptr| {
+        //     const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+        //     try self.collectVariableDeclarations(&declared_vars, stmt);
+        // }
+        
+        // Second pass: mark variables as used
+        // for (ast_tree.statements.items) |stmt_ptr| {
+        //     const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+        //     // Need to traverse expressions within statements
+        // }
+        
+        // Report unused variables
+        var iterator = declared_vars.iterator();
+        while (iterator.next()) |entry| {
+            const var_name = entry.key_ptr.*;
+            const var_info = entry.value_ptr.*;
+            
+            if (!var_info.used) {
+                const message = try std.fmt.allocPrint(self.allocator, "Variable '{s}' is declared but never used", .{var_name});
+                defer self.allocator.free(message);
+                
+                try self.addIssue(LintIssue{
+                    .rule_id = "unused-variable",
+                    .severity = .Warning,
+                    .category = .Performance,
+                    .message = message,
+                    .file = file_path,
+                    .line = var_info.line,
+                    .column = var_info.column,
+                    .suggestion = "Remove unused variable or prefix with '_' if intentional",
+                });
+            }
+        }
     }
     
     fn checkInefficiientLoops(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
         _ = self;
-        _ = file_path;
+        _ = file_path; 
         _ = ast_tree;
-        // Check for common loop anti-patterns
+        // TODO: Implement with new AST structure
+    }
+    
+    // TODO: Reimplement visitor functions with new AST structure  
+    fn visitLoops(self: *Linter, stmt: *ast.Statement, file_path: []const u8) !void {
+        _ = self;
+        _ = stmt;
+        _ = file_path;
+        // Placeholder implementation
     }
     
     fn checkStringConcatenation(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
         _ = self;
         _ = file_path;
         _ = ast_tree;
-        // Check for inefficient string concatenation patterns
+        // TODO: Implement with new AST structure
+    }
+    
+    fn visitStringOperations(self: *Linter, stmt: *ast.Statement, file_path: []const u8) !void {
+        _ = self;
+        _ = stmt;
+        _ = file_path;
+        // Placeholder implementation
     }
     
     // Security Rules
@@ -349,8 +409,15 @@ pub const Linter = struct {
     fn checkHardcodedSecrets(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
         _ = self;
         _ = file_path;
-        _ = ast_tree;
-        // Check for hardcoded passwords, API keys, etc.
+        _ = ast_tree; 
+        // TODO: Implement with new AST structure
+    }
+    
+    fn visitForSecrets(self: *Linter, stmt: *ast.Statement, file_path: []const u8) !void {
+        _ = self;
+        _ = stmt; 
+        _ = file_path;
+        // Placeholder implementation
     }
     
     fn checkUnsafeOperations(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
@@ -474,6 +541,163 @@ pub const Linter = struct {
         _ = self;
         for (name) |char| {
             if (char >= 'A' and char <= 'Z') return false;
+        }
+        return true;
+    }
+    
+    // Helper methods for AST analysis
+    fn collectVariableDeclarations(self: *Linter, vars: *std.StringHashMap(VariableInfo), stmt: *ast.Statement) !void {
+        _ = self; // Mark unused parameter
+        switch (stmt.*) {
+            .Let => |let_stmt| {
+                try vars.put(let_stmt.name, VariableInfo{
+                    .name = let_stmt.name,
+                    .line = 0, // TODO: Add source location to Statement
+                    .column = 0,
+                    .used = false,
+                    .is_parameter = false,
+                });
+            },
+            .ShortDeclaration => |short_decl| {
+                for (short_decl.names.items) |name| {
+                    try vars.put(name, VariableInfo{
+                        .name = name,
+                        .line = 0, // TODO: Add source location to Statement
+                        .column = 0,
+                        .used = false,
+                        .is_parameter = false,
+                    });
+                }
+            },
+            .Function => |func_stmt| {
+                // Collect function parameters
+                for (func_stmt.parameters.items) |param| {
+                    try vars.put(param.name, VariableInfo{
+                        .name = param.name,
+                        .line = 0, // TODO: Add source location to Statement
+                        .column = 0,
+                        .used = false,
+                        .is_parameter = true,
+                    });
+                }
+            },
+            else => {},
+        }
+    }
+    
+    fn markVariableUsage(self: *Linter, vars: *std.StringHashMap(VariableInfo), expr: *ast.Expression) !void {
+        _ = self; // Mark unused parameter
+        switch (expr.*) {
+            .Identifier => |identifier| {
+                if (vars.getPtr(identifier)) |var_info| {
+                    var_info.used = true;
+                }
+            },
+            .Variable => |variable| {
+                if (vars.getPtr(variable)) |var_info| {
+                    var_info.used = true;
+                }
+            },
+            else => {
+                // TODO: Recursively analyze other expression types
+            },
+        }
+    }
+    
+    fn isInfiniteLoop(self: *Linter, condition: *ast.Expression) bool {
+        _ = self;
+        switch (condition.*) {
+            .Boolean => |bool_val| {
+                return bool_val == true;
+            },
+            .Integer => |int_val| {
+                return int_val != 0;
+            },
+            else => return false,
+        }
+    }
+    
+    // TODO: Fix these functions to use new AST structure
+    fn hasInefficiientStringOperation(self: *Linter, node: *ast.Expression) bool {
+        _ = self;
+        _ = node;
+        return false; // Placeholder implementation
+    }
+    
+    // TODO: Reimplement these functions with new AST structure
+    fn checkForLoopEfficiency(self: *Linter, for_loop: ast.ForLoop, file_path: []const u8, node: *ast.Expression) !void {
+        _ = self;
+        _ = for_loop;
+        _ = file_path;
+        _ = node;
+        // Placeholder implementation
+    }
+    
+    fn hasArrayLengthInCondition(self: *Linter, condition: *ast.Expression) bool {
+        _ = self;
+        _ = condition;
+        return false; // Placeholder implementation
+    }
+    
+    fn isStringType(_: *Linter, node: *ast.Expression) bool {
+        _ = node;
+        return false; // Placeholder implementation
+    }
+    
+    fn isInLoop(_: *Linter, node: *ast.Expression) bool {
+        _ = node;
+        return false; // Placeholder implementation
+    }
+    
+    fn countStringConcatenations(self: *Linter, node: *ast.Expression) u32 {
+        _ = self;
+        _ = node;
+        return 0; // Placeholder implementation
+    }
+    
+    // Security pattern detection
+    fn looksLikeApiKey(self: *Linter, value: []const u8) bool {
+        if (value.len < 16) return false;
+        
+        // Check for common API key patterns
+        const api_prefixes = [_][]const u8{ "sk_", "pk_", "ak_", "key_", "api_", "token_" };
+        for (api_prefixes) |prefix| {
+            if (std.mem.startsWith(u8, value, prefix)) {
+                return true;
+            }
+        }
+        
+        // Check for long alphanumeric strings (likely API keys)
+        if (value.len > 20 and self.isAlphanumeric(value)) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    fn looksLikePassword(self: *Linter, value: []const u8) bool {
+        const password_patterns = [_][]const u8{ "password", "passwd", "pwd", "secret", "pass" };
+        const lower_value = std.ascii.allocLowerString(self.allocator, value) catch return false;
+        defer self.allocator.free(lower_value);
+        
+        for (password_patterns) |pattern| {
+            if (std.mem.indexOf(u8, lower_value, pattern) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    fn looksLikePrivateKey(_: *Linter, value: []const u8) bool {
+        return std.mem.indexOf(u8, value, "-----BEGIN") != null and 
+               std.mem.indexOf(u8, value, "PRIVATE KEY") != null;
+    }
+    
+    fn isAlphanumeric(_: *Linter, value: []const u8) bool {
+        for (value) |char| {
+            if (!std.ascii.isAlphanumeric(char)) {
+                return false;
+            }
         }
         return true;
     }

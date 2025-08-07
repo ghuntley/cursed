@@ -87,6 +87,7 @@ pub fn main() !void {
     // Parse command line options first, then filename
     var compile_mode = false;
     var debug_tokens = false;
+    var debug_info_enabled = false;
     var optimization_level: u8 = 2;
     var verbose = false;
     var stdlib_path: ?[]const u8 = null;
@@ -97,6 +98,9 @@ pub fn main() !void {
             compile_mode = true;
         } else if (std.mem.eql(u8, arg, "--debug")) {
             debug_tokens = true;
+            verbose = true;
+        } else if (std.mem.eql(u8, arg, "--debug-info")) {
+            debug_info_enabled = true;
             verbose = true;
         } else if (std.mem.eql(u8, arg, "--tokens")) {
             debug_tokens = true;
@@ -151,11 +155,16 @@ pub fn main() !void {
         // Enhanced compilation mode implementation
         const enhanced_compiler = @import("enhanced_compiler.zig");
         const config = enhanced_compiler.CompilerConfig{
-            .backend = .C_Backend, // Default to C backend for compatibility
-            .optimization_level = optimization_level,
+            .backend = if (debug_info_enabled) .LLVM_Backend else .C_Backend,
+            .optimization_level = if (debug_info_enabled) 0 else optimization_level,
             .verbose = verbose,
             .output_path = null,
         };
+        
+        if (debug_info_enabled) {
+            print("🔍 Debug information enabled - using LLVM backend with DWARF\n", .{});
+        }
+        
         try enhanced_compiler.compileProgram(allocator, source, filename.?, config);
     } else {
         // Simple interpretation mode with variable evaluation
@@ -526,14 +535,23 @@ fn handleFormatCommand(allocator: Allocator, args: [][]const u8) !void {
 
     if (stat.kind == .file) {
         if (check_only) {
-            try checkFileFormatting(allocator, target, config);
+            checkFileFormatting(allocator, target, config) catch |err| {
+                handleFormatterError(err, target);
+                return;
+            };
         } else {
             print("📝 Formatting {s}\n", .{target});
-            try formatter.formatFile(allocator, target, config);
+            formatter.formatFile(allocator, target, config) catch |err| {
+                handleFormatterError(err, target);
+                return;
+            };
             print("✅ Formatted: {s}\n", .{target});
         }
     } else if (stat.kind == .directory) {
-        try formatter.formatDirectory(allocator, target, config);
+        formatter.formatDirectory(allocator, target, config) catch |err| {
+            handleFormatterError(err, target);
+            return;
+        };
         print("✅ Formatted all files in: {s}\n", .{target});
     } else {
         print("❌ {s} is not a file or directory\n", .{target});
@@ -675,6 +693,49 @@ fn checkFileFormatting(allocator: Allocator, file_path: []const u8, config: form
     }
 }
 
+fn handleFormatterError(err: anyerror, file_path: []const u8) void {
+    switch (err) {
+        error.UnexpectedCharacter => {
+            print("❌ Syntax Error in {s}: Unexpected character found\n", .{file_path});
+            print("💡 The file contains invalid characters that cannot be formatted.\n", .{});
+            print("   Please check for special characters or encoding issues.\n", .{});
+        },
+        error.UnterminatedString => {
+            print("❌ Syntax Error in {s}: Unterminated string literal\n", .{file_path});
+            print("💡 Found a string that doesn't have a closing quote.\n", .{});
+            print("   Please add the missing closing quote (\").\n", .{});
+        },
+        error.UnterminatedChar => {
+            print("❌ Syntax Error in {s}: Unterminated character literal\n", .{file_path});
+            print("💡 Found a character literal that doesn't have a closing quote.\n", .{});
+            print("   Please add the missing closing quote (').\n", .{});
+        },
+        error.UnterminatedBlockComment => {
+            print("❌ Syntax Error in {s}: Unterminated block comment\n", .{file_path});
+            print("💡 Found a block comment that doesn't have a closing tag.\n", .{});
+            print("   Please add the missing comment closer.\n", .{});
+        },
+        error.OutOfMemory => {
+            print("❌ Memory Error: File {s} is too large to format\n", .{file_path});
+            print("💡 Try formatting smaller files or increase available memory.\n", .{});
+        },
+        error.FileNotFound => {
+            print("❌ File Error: Cannot find file {s}\n", .{file_path});
+            print("💡 Please check the file path and permissions.\n", .{});
+        },
+        error.AccessDenied => {
+            print("❌ Permission Error: Cannot access file {s}\n", .{file_path});
+            print("💡 Please check file permissions.\n", .{});
+        },
+        else => {
+            print("❌ Formatting Error in {s}: {any}\n", .{ file_path, err });
+            print("💡 The file contains syntax errors that prevent formatting.\n", .{});
+            print("   Please fix the syntax errors first, then try formatting again.\n", .{});
+            print("   You can use 'cursed check {s}' to see detailed error information.\n", .{file_path});
+        }
+    }
+}
+
 fn lintDirectory(allocator: Allocator, cursed_linter: *linter.Linter, dir_path: []const u8) !void {
     var dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
     defer dir.close();
@@ -709,6 +770,7 @@ fn printUsage() void {
     print("\nExecution Options:\n", .{});
     print("  --compile          Compile to native executable\n", .{});
     print("  --debug            Enable all debug output (tokens, verbose)\n", .{});
+    print("  --debug-info       Enable DWARF debug information for GDB/LLDB\n", .{});
     print("  --tokens           Show token stream\n", .{});
     print("  --verbose          Enable verbose output\n", .{});
     print("  --optimize=LEVEL   Optimization level (0-3, default: 2)\n", .{});
