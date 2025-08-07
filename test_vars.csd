@@ -1,1 +1,1 @@
-sus x drip = 42; vibez.spill("x =", x)
+sus count drip = 42; vibez.spill(count)

@@ -553,16 +553,24 @@ pub const Interpreter = struct {
         switch (call.function.*) {
             .MemberAccess => |member| {
                 if (std.mem.eql(u8, member.property, "spill")) {
-                    // vibez.spill - print function
-                    if (call.arguments.items.len != 1) {
-                        return InterpreterError.TypeMismatch;
+                    // vibez.spill - print function (can handle multiple arguments)
+                    if (call.arguments.items.len == 0) {
+                        std.debug.print("\n");
+                        return Value.Null;
                     }
                     
-                    const arg = try self.evaluateExpression(call.arguments.items[0]);
-                    const str = try arg.toString(self.allocator);
-                    defer self.allocator.free(str);
-                    
-                    std.debug.print("{s}\n", .{str});
+                    // Print all arguments separated by spaces
+                    for (call.arguments.items, 0..) |arg_expr, i| {
+                        const arg = try self.evaluateExpression(arg_expr);
+                        const str = try arg.toString(self.allocator);
+                        defer self.allocator.free(str);
+                        
+                        if (i > 0) {
+                            std.debug.print(" ");
+                        }
+                        std.debug.print("{s}", .{str});
+                    }
+                    std.debug.print("\n");
                     return Value.Null;
                 }
             },

@@ -332,7 +332,7 @@ pub fn build(b: *std.Build) void {
     // Create the CURSED compiler executable - unified main with subcommands
     const exe = b.addExecutable(.{
         .name = "cursed", 
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/main_unified.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });

@@ -1,2 +1,1 @@
-sus message tea = "Hello from CURSED string!"
-vibez.spill(message)
+sus name tea = "World"; vibez.spill("Hello", name)
