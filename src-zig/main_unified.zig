@@ -94,6 +94,21 @@ const Variable = union(enum) {
             },
         }
     }
+    
+    pub fn deinit(self: *Variable, allocator: Allocator) void {
+        switch (self.*) {
+            .String => |str| allocator.free(str),
+            .Array => |*arr| {
+                // Recursively clean up any nested heap data
+                for (arr.items) |*item| item.deinit(allocator);
+                arr.deinit();
+            },
+            .YikesError => |*err| err.deinit(allocator),
+            else => {},
+        }
+        // Optionally reset to a safe state
+        self.* = Variable{ .Integer = 0 };
+    }
 };
 
 // Function parameter definition
@@ -844,6 +859,8 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                 .Float => |float_val| break :blk Variable{ .Integer = @as(i64, @intFromFloat(float_val)) },
                 else => {
                     if (verbose) print("❌ Expression '{s}' did not evaluate to numeric type\n", .{value_str});
+                    var tmp = result;
+                    tmp.deinit(allocator);
                     return;
                 }
             }
@@ -885,10 +902,14 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
             switch (result) {
                 .String => |str_val| {
                     const string_copy = try allocator.dupe(u8, str_val);
+                    var tmp = result;
+                    tmp.deinit(allocator);
                     break :blk Variable{ .String = string_copy };
                 },
                 else => {
                     if (verbose) print("❌ Expression '{s}' did not evaluate to string type\n", .{value_str});
+                    var tmp = result;
+                    tmp.deinit(allocator);
                     return;
                 }
             }
@@ -1097,6 +1118,9 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
             print("{s}", .{result_str});
             if (add_newline) print("\n", .{});
             if (verbose) print("✅ Evaluated expression '{s}' to: {s}\n", .{ trimmed_content, result_str });
+            // Free any heap data held by the temporary result (e.g., concatenated strings)
+            var tmp = result;
+            tmp.deinit(allocator);
         } else |err| {
             if (verbose) print("❌ Expression evaluation failed: {any}\n", .{err});
             // Fallback to literal value parsing
