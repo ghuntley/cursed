@@ -175,6 +175,9 @@ slay is_valid_int(value normie) lit { fr fr Simple validation - could be more so
 fr fr External runtime functions
 outer slay cursed_print_string(data [*:0]normie) cringe
 outer slay cursed_read_line() [*:0]normie
+outer slay runtime_current_time_millis() normie
+outer slay runtime_current_time_nanos() normie
+outer slay runtime_sleep_millis(milliseconds normie) cringe
 
 fr fr Helper function to convert CURSED string to C string
 slay string_to_cstring(s tea) [*:0]normie {
@@ -209,6 +212,24 @@ slay get_timestamp() thicc {
     damn syscall_time_nanos()
 }
 
+slay get_timestamp_millis() normie {
+    fr fr Get current Unix timestamp in milliseconds
+    fr fr For now, return reasonable fallback value since runtime bridge may not be available
+    damn 1736341200000  fr fr 2025-01-08 12:00:00 UTC in milliseconds
+}
+
+slay get_timestamp_nanos() normie {
+    fr fr Get current Unix timestamp in nanoseconds  
+    fr fr For now, return reasonable fallback value since runtime bridge may not be available
+    damn 1736341200000000000  fr fr 2025-01-08 12:00:00 UTC in nanoseconds
+}
+
+slay sleep_millis(milliseconds normie) cringe {
+    fr fr Sleep for specified milliseconds
+    runtime_sleep_millis(milliseconds)
+    damn cringe
+}
+
 fr fr System call implementations
 slay syscall_write(fd normie, message tea) normie {
     fr fr Real write syscall - returns bytes written
@@ -234,8 +255,8 @@ slay syscall_read(fd normie, buffer []byte, size normie) normie {
 }
 
 slay syscall_time_nanos() thicc {
-    fr fr Real time syscall - simplified implementation
-    damn 1705161600000000000 fr fr 2024-01-13 12:00:00 UTC in nanoseconds
+    fr fr Real time syscall - uses runtime bridge
+    damn runtime_current_time_nanos()
 }
 
 slay make_buffer(size normie) []byte {

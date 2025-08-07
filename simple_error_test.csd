@@ -1,3 +1,5 @@
-vibez.spill("Testing yikes error creation...")
-yikes "Simple test error"
-vibez.spill("Program completed!")
+yeet "vibez"
+
+yikes "Test error message"
+
+vibez.spill("This line should not be reached if error propagation works")

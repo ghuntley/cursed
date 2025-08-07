@@ -269,7 +269,7 @@ pub const InterfaceDispatcher = struct {
                     0,
                     0
                 );
-                c.LLVMAddFunction(module, method_name.ptr, method_func_type)
+                c.LLVMAddFunction(module, method_name.ptr, method_func_type);
             };
             
             method_values[i] = func;
@@ -284,6 +284,9 @@ pub const InterfaceDispatcher = struct {
 
     /// Generate LLVM IR for interface method dispatch
     pub fn generateMethodDispatchLLVM(self: *Self, module: c.LLVMModuleRef, context: c.LLVMContextRef, builder: c.LLVMBuilderRef, interface_instance: c.LLVMValueRef, method_name: []const u8, args: []c.LLVMValueRef) !c.LLVMValueRef {
+        _ = self; // Mark unused parameter
+        _ = module; // Mark unused parameter
+        _ = method_name; // Mark unused parameter
         // Extract vtable pointer from interface instance
         const vtable_ptr = c.LLVMBuildStructGEP2(
             builder,
@@ -335,6 +338,7 @@ pub const InterfaceDispatcher = struct {
 
     /// Create interface instance value in LLVM
     pub fn createInterfaceInstanceLLVM(self: *Self, context: c.LLVMContextRef, builder: c.LLVMBuilderRef, vtable: c.LLVMValueRef, data_ptr: c.LLVMValueRef) !c.LLVMValueRef {
+        _ = self; // Mark unused parameter
         // Interface structure: { vtable_ptr, data_ptr, type_info }
         const interface_type = c.LLVMStructTypeInContext(
             context,

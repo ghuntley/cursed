@@ -785,15 +785,21 @@ pub const ShortDeclarationStatement = struct {
 };
 
 pub const YikesStatement = struct {
-    name: []const u8,
-    error_type: ?Type,
-    value: ?*anyopaque,
+    message: *Expression,  // Error message expression
+    error_type: ?[]const u8,  // Optional error type
+    location: ?SourceLocation,
 };
 
 pub const FamStatement = struct {
-    body: ArrayList(*anyopaque),
-    recovery_body: ?ArrayList(*anyopaque),
-    error_variable: ?[]const u8,
+    try_body: ArrayList(Statement),  // Code to try
+    catch_blocks: ArrayList(CatchBlock),  // Catch handlers
+    finally_block: ?ArrayList(Statement),  // Finally block
+    
+    pub const CatchBlock = struct {
+        error_variable: ?[]const u8,  // Variable to bind error to
+        error_type: ?[]const u8,  // Type of error to catch (optional)
+        body: ArrayList(Statement),  // Handler code
+    };
 };
 
 pub const ConstDecl = struct {

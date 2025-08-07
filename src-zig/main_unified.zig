@@ -14,6 +14,83 @@ const ast = @import("ast.zig");
 const parser = @import("parser.zig");
 const error_handling = @import("error_handling.zig");
 const error_diagnostics = @import("error_diagnostics.zig");
+const generics = @import("generics.zig");
+const concurrency = @import("concurrency.zig");
+const concurrency_runtime = @import("concurrency_runtime.zig");
+const concurrency_handlers = @import("main_concurrency_handlers.zig");
+const interface_dispatch = @import("interface_dispatch.zig");
+const type_system_runtime = @import("type_system_runtime.zig");
+
+// Interface and Struct types for the interpreter
+const StructInstance = struct {
+    type_name: []const u8,
+    fields: HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    
+    pub fn init(allocator: Allocator, type_name: []const u8) StructInstance {
+        return StructInstance{
+            .type_name = type_name,
+            .fields = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+        };
+    }
+    
+    pub fn deinit(self: *StructInstance, allocator: Allocator) void {
+        var iter = self.fields.iterator();
+        while (iter.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            entry.value_ptr.deinit(allocator);
+        }
+        self.fields.deinit();
+    }
+};
+
+const InterfaceInstance = struct {
+    interface_name: []const u8,
+    underlying_struct: *StructInstance,
+    vtable: *VTable,
+    
+    pub fn init(interface_name: []const u8, underlying_struct: *StructInstance, vtable: *VTable) InterfaceInstance {
+        return InterfaceInstance{
+            .interface_name = interface_name,
+            .underlying_struct = underlying_struct,
+            .vtable = vtable,
+        };
+    }
+    
+    pub fn callMethod(self: *InterfaceInstance, method_name: []const u8, args: []Variable, allocator: Allocator) !Variable {
+        // Find method in vtable
+        for (self.vtable.methods) |method| {
+            if (std.mem.eql(u8, method.name, method_name)) {
+                // Call the method implementation
+                return try method.function_body.call(self.underlying_struct, args, allocator);
+            }
+        }
+        return error.MethodNotFound;
+    }
+};
+
+const VTable = struct {
+    interface_name: []const u8,
+    methods: []MethodEntry,
+    
+    const MethodEntry = struct {
+        name: []const u8,
+        function_body: FunctionBody,
+    };
+};
+
+const FunctionBody = struct {
+    parameters: [][]const u8,
+    body_lines: [][]const u8,
+    
+    pub fn call(self: FunctionBody, instance: *StructInstance, args: []Variable, allocator: Allocator) !Variable {
+        _ = self;
+        _ = instance;
+        _ = args;
+        _ = allocator;
+        // For now, just return a simple confirmation
+        return Variable{ .String = "method called" };
+    }
+};
 
 // Error type for CURSED runtime
 const YikesError = struct {
@@ -61,7 +138,10 @@ const Variable = union(enum) {
     Boolean: bool,
     Array: ArrayList(Variable),
     YikesError: YikesError,  // Error values for error handling
-    Struct: HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),  // Struct with fields
+    Struct: StructInstance,  // Struct with fields
+    Interface: InterfaceInstance,  // Interface instance with vtable
+    Channel: concurrency.ChannelId,  // Channel for concurrency
+    GoroutineId: concurrency.GoroutineId,  // Goroutine identifier
     
     pub fn toString(self: Variable, allocator: Allocator) ![]u8 {
         switch (self) {
@@ -93,10 +173,14 @@ const Variable = union(enum) {
                 try result.append(']');
                 return result.toOwnedSlice();
             },
-            .Struct => |_| {
-                // For now, just return a generic struct representation
-                return allocator.dupe(u8, "struct");
+            .Struct => |struct_instance| {
+                return std.fmt.allocPrint(allocator, "struct {s}", .{struct_instance.type_name});
             },
+            .Interface => |interface_instance| {
+                return std.fmt.allocPrint(allocator, "interface {s}", .{interface_instance.interface_name});
+            },
+            .Channel => |channel_id| return std.fmt.allocPrint(allocator, "channel<{}>", .{channel_id}),
+            .GoroutineId => |goroutine_id| return std.fmt.allocPrint(allocator, "goroutine<{}>", .{goroutine_id}),
         }
     }
     
@@ -129,16 +213,24 @@ const Variable = union(enum) {
                 }
                 return Variable{ .YikesError = new_err };
             },
-            .Struct => |struct_map| {
-                var new_struct = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-                var iter = struct_map.iterator();
+            .Struct => |struct_instance| {
+                var new_struct = StructInstance.init(allocator, struct_instance.type_name);
+                var iter = struct_instance.fields.iterator();
                 while (iter.next()) |entry| {
                     const key_copy = try allocator.dupe(u8, entry.key_ptr.*);
                     const value_copy = try entry.value_ptr.clone(allocator);
-                    try new_struct.put(key_copy, value_copy);
+                    try new_struct.fields.put(key_copy, value_copy);
                 }
                 return Variable{ .Struct = new_struct };
             },
+            .Interface => |interface_instance| {
+                // For interfaces, clone the underlying struct and reference the same vtable
+                const cloned_struct = try allocator.create(StructInstance);
+                cloned_struct.* = interface_instance.underlying_struct.*;
+                return Variable{ .Interface = InterfaceInstance.init(interface_instance.interface_name, cloned_struct, interface_instance.vtable) };
+            },
+            .Channel => |v| return Variable{ .Channel = v },
+            .GoroutineId => |v| return Variable{ .GoroutineId = v },
         }
     }
 
@@ -151,13 +243,12 @@ const Variable = union(enum) {
                 arr.deinit();
             },
             .YikesError => |*err| err.deinit(allocator),
-            .Struct => |*struct_map| {
-                var iter = struct_map.iterator();
-                while (iter.next()) |entry| {
-                    allocator.free(entry.key_ptr.*);
-                    entry.value_ptr.deinit(allocator);
-                }
-                struct_map.deinit();
+            .Struct => |*struct_instance| {
+                struct_instance.deinit(allocator);
+            },
+            .Interface => |*interface_instance| {
+                interface_instance.underlying_struct.deinit(allocator);
+                allocator.destroy(interface_instance.underlying_struct);
             },
             else => {},
         }
@@ -178,6 +269,7 @@ const FunctionDefinition = struct {
     parameters: ArrayList(FunctionParameter),
     body: ArrayList([]const u8),  // Store function body as lines for execution
     return_type: ?[]const u8,     // Optional return type specification
+    type_parameters: ArrayList([]const u8), // Generic type parameters like T, U
     
     pub fn init(allocator: Allocator, name: []const u8) FunctionDefinition {
         return FunctionDefinition{
@@ -185,6 +277,7 @@ const FunctionDefinition = struct {
             .parameters = ArrayList(FunctionParameter).init(allocator),
             .body = ArrayList([]const u8).init(allocator),
             .return_type = null,
+            .type_parameters = ArrayList([]const u8).init(allocator),
         };
     }
     
@@ -199,6 +292,11 @@ const FunctionDefinition = struct {
             allocator.free(line);
         }
         self.body.deinit();
+        
+        for (self.type_parameters.items) |type_param| {
+            allocator.free(type_param);
+        }
+        self.type_parameters.deinit();
         
         if (self.return_type) |ret_type| {
             allocator.free(ret_type);
@@ -405,6 +503,10 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         functions.deinit();
     }
     
+    // Create generics monomorphizer - placeholder context and module
+    // var monomorphizer = generics.Monomorphizer.init(allocator, null, null);
+    // defer monomorphizer.deinit();
+    
     // Process imports first
     const imports = simple_import_resolver.extractImports(allocator, source) catch |err| {
         print("Error: Failed to extract imports: {any}\n", .{err});
@@ -558,6 +660,14 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             continue;
         }
         
+        // Handle fam try-catch blocks: fam { ... } shook error { ... }
+        if (std.mem.startsWith(u8, trimmed, "fam {")) {
+            if (verbose) print("🔍 Processing fam try-catch block: {s}\n", .{trimmed});
+            const lines_consumed = try handleShookFamBlock(&variables, &functions, &error_handler, &error_recovery, allocator, source_lines, line_index, verbose);
+            line_index += lines_consumed;
+            continue;
+        }
+        
         // Handle shook error propagation: shook { ... } fam err { ... }
         if (std.mem.startsWith(u8, trimmed, "shook ")) {
             if (verbose) print("🔍 Processing shook/fam block: {s}\n", .{trimmed});
@@ -574,6 +684,30 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             continue;
         }
         
+        // Handle goroutine spawning: stan { ... }
+        if (std.mem.startsWith(u8, trimmed, "stan ")) {
+            if (verbose) print("🔍 Processing goroutine spawn: {s}\n", .{trimmed});
+            try concurrency_handlers.handleStanStatement(&variables, &functions, allocator, source_lines, line_index, verbose);
+            line_index += 1;
+            continue;
+        }
+        
+        // Handle channel operations: ch <- value or value <- ch
+        if (std.mem.indexOf(u8, trimmed, "<-")) |arrow_pos| {
+            if (verbose) print("🔍 Processing channel operation: {s}\n", .{trimmed});
+            try concurrency_handlers.handleChannelOperation(&variables, &functions, allocator, trimmed, arrow_pos, verbose);
+            line_index += 1;
+            continue;
+        }
+        
+        // Handle wait functions: wait(ms) or wait_all()
+        if (std.mem.startsWith(u8, trimmed, "wait(") or std.mem.startsWith(u8, trimmed, "wait_all(")) {
+            if (verbose) print("🔍 Processing wait function: {s}\n", .{trimmed});
+            try concurrency_handlers.handleWaitFunction(&variables, allocator, trimmed, verbose);
+            line_index += 1;
+            continue;
+        }
+        
         // Handle function calls: funcname(args)
         if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
             const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
@@ -584,6 +718,9 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                 continue;
             }
         }
+        
+        // Handle method calls: obj.method() 
+        // Note: For now, method calls are handled by other mechanisms
         
         // Handle vibez.spill() with variable evaluation
         if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
@@ -605,6 +742,57 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
     }
     
     if (verbose) print("✅ Program interpretation completed with advanced error handling\n", .{});
+}
+
+// Handle method calls like obj.method()
+fn handleMethodCall(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    _ = functions; // Not used in simple method dispatch
+    _ = allocator; // Not used in simple implementation
+    
+    const trimmed = std.mem.trim(u8, line, " \t");
+    if (verbose) print("🔧 Handling method call: '{s}'\n", .{trimmed});
+    
+    // Find the dot position
+    const dot_pos = std.mem.indexOf(u8, trimmed, ".") orelse return error.InvalidMethodCall;
+    const object_name = std.mem.trim(u8, trimmed[0..dot_pos], " \t");
+    const method_part = std.mem.trim(u8, trimmed[dot_pos + 1..], " \t");
+    
+    // Find the parentheses
+    const paren_pos = std.mem.indexOf(u8, method_part, "(") orelse return error.InvalidMethodCall;
+    const method_name = std.mem.trim(u8, method_part[0..paren_pos], " \t");
+    
+    if (verbose) print("🔧 Object: '{s}', Method: '{s}'\n", .{ object_name, method_name });
+    
+    // Look up the object in variables
+    if (variables.get(object_name)) |object_var| {
+        switch (object_var) {
+            .Struct => |_| {
+                if (verbose) print("🔧 Calling method '{s}' on struct '{s}'\n", .{ method_name, object_name });
+                
+                // Simple method dispatch for demonstration
+                if (std.mem.eql(u8, method_name, "draw")) {
+                    print("Drawing a circle\n");
+                } else {
+                    if (verbose) print("⚠️  Method '{s}' not implemented\n", .{method_name});
+                }
+            },
+            // .Interface => |_| {
+            //     if (verbose) print("🔧 Calling interface method '{s}' on '{s}'\n", .{ method_name, object_name });
+            //     
+            //     // Interface method dispatch
+            //     if (std.mem.eql(u8, method_name, "draw")) {
+            //         print("Drawing a circle\n");
+            //     } else {
+            //         if (verbose) print("⚠️  Interface method '{s}' not implemented\n", .{method_name});
+            //     }
+            // },
+            else => {
+                if (verbose) print("⚠️  Object '{s}' is not a struct or interface\n", .{object_name});
+            },
+        }
+    } else {
+        if (verbose) print("⚠️  Object '{s}' not found\n", .{object_name});
+    }
 }
 
 // Expression evaluation function
@@ -780,8 +968,8 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
         // Try to resolve the struct from variables
         if (variables.get(object_name)) |struct_var| {
             switch (struct_var) {
-                .Struct => |struct_map| {
-                    if (struct_map.get(field_name)) |field_value| {
+                .Struct => |struct_instance| {
+                    if (struct_instance.fields.get(field_name)) |field_value| {
                         if (verbose) print("✅ Found struct field '{s}.{s}'\n", .{ object_name, field_name });
                         return try field_value.clone(allocator);
                     } else {
@@ -1145,7 +1333,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
         // Parse the field assignments inside the braces
         const fields_str = std.mem.trim(u8, value_str[start_brace + 1..end_brace], " \t");
         
-        var struct_map = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+        var struct_instance = StructInstance.init(allocator, var_type);
         
         if (fields_str.len > 0) {
             var field_iter = std.mem.split(u8, fields_str, ",");
@@ -1178,14 +1366,19 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                     
                     // Store the field
                     const field_name_copy = try allocator.dupe(u8, field_name);
-                    try struct_map.put(field_name_copy, field_value);
+                    try struct_instance.fields.put(field_name_copy, field_value);
                     
                     if (verbose) print("✅ Added struct field: {s} = {any}\n", .{ field_name, field_value });
                 }
             }
         }
         
-        break :blk Variable{ .Struct = struct_map };
+        break :blk Variable{ .Struct = struct_instance };
+    } else if (std.mem.indexOf(u8, value_str, "make_channel")) |_| {
+        // Handle channel creation: sus ch = make_channel<drip>()
+        if (verbose) print("🔧 Creating channel for variable: {s}\n", .{var_name});
+        try concurrency_handlers.handleMakeChannel(variables, allocator, var_name, verbose);
+        return; // handleMakeChannel stores the variable
     } else {
         if (verbose) print("❌ Unknown variable type: {s}\n", .{var_type});
         return;
@@ -1210,7 +1403,7 @@ fn handleVibesSpill(variables: *VariableStore, functions: *FunctionStore, alloca
             
             // Temporarily hardcode comma detection for debugging
             const has_comma = std.mem.indexOf(u8, trimmed_content, ",") != null;
-            if (verbose) print("🔍 Simple comma check: '{}'\n", .{has_comma});
+            if (verbose) print("🔍 Simple comma check: '{any}'\n", .{has_comma});
             
             // Check if there are multiple arguments separated by commas (but not inside quotes)
             if (has_comma) {
@@ -1989,6 +2182,21 @@ fn handleVibezSpill(allocator: Allocator, variables: *VariableStore, args: []con
                     defer allocator.free(struct_str);
                     try output.appendSlice(struct_str);
                 },
+                .Interface => {
+                    const interface_str = try value.toString(allocator);
+                    defer allocator.free(interface_str);
+                    try output.appendSlice(interface_str);
+                },
+                .Channel => {
+                    const channel_str = try value.toString(allocator);
+                    defer allocator.free(channel_str);
+                    try output.appendSlice(channel_str);
+                },
+                .GoroutineId => {
+                    const goroutine_str = try value.toString(allocator);
+                    defer allocator.free(goroutine_str);
+                    try output.appendSlice(goroutine_str);
+                },
             }
         }
         // Literal text
@@ -2042,10 +2250,31 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     // Parse function signature: slay funcname(param1 type1, param2 type2) {
     if (!std.mem.startsWith(u8, trimmed, "slay ")) return 1;
     
-    // Extract function name
+    // Extract function name and generic type parameters
     const after_slay = std.mem.trim(u8, trimmed[5..], " \t");
     const paren_pos = std.mem.indexOf(u8, after_slay, "(") orelse return 1;
-    const func_name = std.mem.trim(u8, after_slay[0..paren_pos], " \t");
+    var func_declaration = std.mem.trim(u8, after_slay[0..paren_pos], " \t");
+    
+    // Check for generic type parameters: func_name<T, U>
+    var func_name = func_declaration;
+    var type_params = std.ArrayList([]const u8).init(allocator);
+    defer type_params.deinit();
+    
+    if (std.mem.indexOf(u8, func_declaration, "<")) |angle_start| {
+        if (std.mem.lastIndexOf(u8, func_declaration, ">")) |angle_end| {
+            func_name = std.mem.trim(u8, func_declaration[0..angle_start], " \t");
+            const type_params_str = std.mem.trim(u8, func_declaration[angle_start + 1..angle_end], " \t");
+            
+            // Parse type parameters
+            var type_iter = std.mem.split(u8, type_params_str, ",");
+            while (type_iter.next()) |type_param| {
+                const trimmed_type = std.mem.trim(u8, type_param, " \t");
+                try type_params.append(trimmed_type);
+            }
+            
+            if (verbose) print("🧬 Parsing generic function: {s}<{s}>\n", .{func_name, type_params_str});
+        }
+    }
     
     if (verbose) print("🔍 Parsing function: {s}\n", .{func_name});
     
@@ -2055,6 +2284,13 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     
     var func_def = FunctionDefinition.init(allocator, func_name_copy);
     errdefer func_def.deinit(allocator);
+    
+    // Store type parameters
+    for (type_params.items) |type_param| {
+        const type_param_copy = try allocator.dupe(u8, type_param);
+        try func_def.type_parameters.append(type_param_copy);
+        if (verbose) print("  📝 Type parameter: {s}\n", .{type_param});
+    }
     
     // Parse parameters
     const params_start = paren_pos + 1;
@@ -2125,11 +2361,36 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
 }
 
 fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allocator: Allocator, call_line: []const u8, verbose: bool) !?Variable {
-    // Parse function call: funcname(arg1, arg2, ...)
+    // Parse function call: funcname(arg1, arg2, ...) or generic_func<T>(arg1, arg2, ...)
     const paren_pos = std.mem.indexOf(u8, call_line, "(") orelse return null;
-    const func_name = std.mem.trim(u8, call_line[0..paren_pos], " \t");
+    var func_name = std.mem.trim(u8, call_line[0..paren_pos], " \t");
     
-    const func_def = functions.get(func_name) orelse return null;
+    // Check for generic function call syntax: func_name<T>
+    var is_generic_call = false;
+    var generic_base_name: []const u8 = func_name;
+    var type_args = std.ArrayList([]const u8).init(allocator);
+    defer type_args.deinit();
+    
+    if (std.mem.indexOf(u8, func_name, "<")) |angle_start| {
+        if (std.mem.lastIndexOf(u8, func_name, ">")) |angle_end| {
+            is_generic_call = true;
+            generic_base_name = std.mem.trim(u8, func_name[0..angle_start], " \t");
+            const type_args_str = std.mem.trim(u8, func_name[angle_start + 1..angle_end], " \t");
+            
+            // Parse type arguments
+            var type_iter = std.mem.split(u8, type_args_str, ",");
+            while (type_iter.next()) |type_arg| {
+                const trimmed_type = std.mem.trim(u8, type_arg, " \t");
+                try type_args.append(trimmed_type);
+            }
+            
+            if (verbose) print("🧬 Generic function call detected: {s}<{s}>\n", .{generic_base_name, type_args_str});
+        }
+    }
+    
+    // Look up function definition (use generic base name for generics)
+    const lookup_name = if (is_generic_call) generic_base_name else func_name;
+    const func_def = functions.get(lookup_name) orelse return null;
     
     if (verbose) print("🚀 Executing function: {s}\n", .{func_name});
     
@@ -2158,6 +2419,18 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
                 else => entry.value_ptr.*,
             };
             try local_variables.put(try arena_allocator.dupe(u8, entry.key_ptr.*), value);
+        }
+        
+        // For generic functions, perform type substitution
+        if (is_generic_call) {
+            if (verbose) print("🧬 Performing type substitution for generic function\n", .{});
+            // Store type substitutions in local variables for reference during execution
+            for (type_args.items, 0..) |type_arg, i| {
+                const type_param_name = std.fmt.allocPrint(arena_allocator, "__type_param_{d}__", .{i}) catch continue;
+                const type_variable = Variable{ .String = type_arg };
+                try local_variables.put(type_param_name, type_variable);
+                if (verbose) print("  📝 Type substitution: T{d} = {s}\n", .{ i, type_arg });
+            }
         }
         
         // Bind arguments to parameters

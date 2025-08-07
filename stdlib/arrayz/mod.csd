@@ -69,6 +69,21 @@ slay array_set(arr [tea], index normie, value tea) [tea] {
     damn result
 }
 
+slay array_set_numbers(arr [normie], index normie, value normie) [normie] {
+    lowkey index < 0 || index >= len(arr) {
+        damn arr
+    }
+    sus result [normie] = []
+    bestie i := 0; i < len(arr); i++ {
+        lowkey i == index {
+            result = append(result, value)
+        } nah {
+            result = append(result, arr[i])
+        }
+    }
+    damn result
+}
+
 slay array_push(arr [tea], value tea) [tea] {
     damn append(arr, value)
 }
@@ -233,6 +248,10 @@ slay array_reduce(arr [tea], initial tea, reducer slay(tea, tea) tea) tea {
 
 fr fr === SORTING OPERATIONS ===
 
+slay array_sort(arr [tea]) [tea] {
+    damn array_sort_strings(arr)
+}
+
 slay array_sort_strings(arr [tea]) [tea] {
     lowkey len(arr) <= 1 {
         damn arr
@@ -272,8 +291,9 @@ slay array_sort_numbers(arr [normie]) [normie] {
         bestie j := 0; j < len(result) - 1 - i; j++ {
             lowkey result[j] > result[j + 1] {
                 sus temp normie = result[j]
-                result[j] = result[j + 1]
-                result[j + 1] = temp
+                sus val_j_plus_1 normie = result[j + 1]
+                result = array_set_numbers(result, j, val_j_plus_1)
+                result = array_set_numbers(result, j + 1, temp)
             }
         }
     }
