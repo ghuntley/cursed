@@ -14,6 +14,11 @@ Updates 2025-08-08 (Amp)
 - Stdlib runner `tests/run_stdlib_tests.sh` expects Rust (`cargo`); for Zig-only validation we'll execute stdlib `.csd` tests directly via `./zig-out/bin/cursed`.
 - Next: run curated e2e tests under `tests/` via `./zig-out/bin/cursed` and reconcile outdated claims.
 - Fixed GPA leak after stdlib imports by avoiding stub function allocations in `loadModuleFunctions` for stdlib modules (vibez/stringz/mathz/cryptz). Verified `tests/stdlib_test.csd` now exits cleanly.
+- Fixed temporary string lifetime leaks in `src-zig/main_unified.zig`:
+  - `evaluateSingleValue` now returns owning copies for string literals (dup into allocator)
+  - `performBinaryOperation` now `deinit`s both operands after computing the result, ensuring temps are freed (esp. string `+` concat)
+  - In `handleVariableDeclaration` for `tea`, we dupe into the stored value and then `deinit` the temporary
+  - Verified: `./zig-out/bin/cursed stdlib/testz/test_testz.csd` no longer reports GPA leaks
 
 Notes on contradictions below
 - The section "Honest Assessment Summary -> What Needs Major Work" appears outdated (e.g., claims variable evaluation is broken). Our quick checks did not reproduce these specific failures. We will validate comprehensively and prune outdated claims after running the full suite.
