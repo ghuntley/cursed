@@ -673,8 +673,10 @@ pub const Interpreter = struct {
         switch (object) {
             .Struct => |struct_inst| {
                 if (struct_inst.getField(member.property)) |field_value| {
+                    std.debug.print("DEBUG: Found field '{s}' with value type: {s}\n", .{member.property, @tagName(field_value)});
                     return field_value;
                 } else {
+                    std.debug.print("DEBUG: Field '{s}' not found in struct\n", .{member.property});
                     return InterpreterError.UndefinedField;
                 }
             },
@@ -689,7 +691,10 @@ pub const Interpreter = struct {
                 }
                 return InterpreterError.UndefinedField;
             },
-            else => return InterpreterError.TypeMismatch,
+            else => {
+                std.debug.print("DEBUG: Member access on non-struct type: {s}\n", .{@tagName(object)});
+                return InterpreterError.TypeMismatch;
+            }
         }
     }
     

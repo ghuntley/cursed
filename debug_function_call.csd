@@ -1,4 +1,3 @@
-yeet "stringz"
-
-sus len drip = string_length("test")
-vibez.spill("Length:", len)
+yeet "mathz"
+sus result drip = abs_normie(-42)
+vibez.spill("Absolute value:", result)

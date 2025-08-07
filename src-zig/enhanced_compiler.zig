@@ -38,9 +38,9 @@ pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []cons
         .LLVM_Backend => {
             const output_filename = config.output_path orelse blk: {
                 if (std.mem.endsWith(u8, filename, ".csd"))
-                    break :blk try std.fmt.allocPrint(allocator, "{s}.ll", .{filename[0..filename.len - 4]})
+                    break :blk try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
                 else
-                    break :blk try std.fmt.allocPrint(allocator, "{s}.ll", .{filename});
+                    break :blk try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});
             };
             defer if (config.output_path == null) allocator.free(output_filename);
             try compileToLLVMBackend(allocator, source, filename, output_filename, config.verbose, config.debug_info);
@@ -140,12 +140,19 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     print("🚀 Run with: ./{s}\n", .{output_filename});
 }
 
-/// LLVM Backend compilation (proper LLVM IR generation)
+/// LLVM Backend compilation (proper LLVM IR generation + native compilation)
 pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, output_filename: []const u8, verbose: bool, debug_info: bool) !void {
-    if (verbose) print("[1/4] Generating LLVM IR with debug info: {any}...\n", .{debug_info});
+    print("[1/5] Generating LLVM IR...\n", .{});
     
-    // Create LLVM IR file with the specified output filename
-    const ir_file = std.fs.cwd().createFile(output_filename, .{}) catch |err| {
+    // Generate IR filename - if output is .ll, use it, otherwise create one
+    const ir_filename = if (std.mem.endsWith(u8, output_filename, ".ll")) 
+        output_filename 
+    else 
+        try std.fmt.allocPrint(allocator, "{s}.ll", .{output_filename});
+    defer if (!std.mem.endsWith(u8, output_filename, ".ll")) allocator.free(ir_filename);
+    
+    // Create LLVM IR file
+    const ir_file = std.fs.cwd().createFile(ir_filename, .{}) catch |err| {
         print("❌ Error creating LLVM IR file: {}\n", .{err});
         return;
     };
@@ -153,10 +160,189 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: 
     
     const writer = ir_file.writer();
     
-    if (verbose) print("[2/4] Translating CURSED to LLVM IR...\n", .{});
+    print("[2/5] Translating CURSED to LLVM IR...\n", .{});
     try generateProperLLVMIR(allocator, source, writer, verbose, filename, debug_info);
     
-    if (verbose) print("✅ Generated LLVM IR: {s}\n", .{output_filename});
+    if (verbose) print("✅ Generated LLVM IR: {s}\n", .{ir_filename});
+    
+    // If output_filename ends with .ll, we only wanted IR generation
+    if (std.mem.endsWith(u8, output_filename, ".ll")) {
+        print("✅ LLVM IR generation complete: {s}\n", .{output_filename});
+        return;
+    }
+    
+    // Otherwise, compile IR to native executable
+    print("[3/5] Optimizing LLVM IR...\n", .{});
+    
+    const executable_name = if (std.mem.endsWith(u8, filename, ".csd"))
+        try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
+    else
+        try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});
+    defer allocator.free(executable_name);
+    
+    print("[4/5] Compiling LLVM IR to native executable...\n", .{});
+    
+    // Try to compile with clang first, then fall back to llc + clang
+    const compile_result = compileLLVMIRToExecutable(allocator, ir_filename, executable_name, debug_info, verbose);
+    
+    if (compile_result) |_| {
+        print("[5/5] Compilation successful!\n", .{});
+        print("✅ Native executable created: {s}\n", .{executable_name});
+        print("🚀 Run with: ./{s}\n", .{executable_name});
+        
+        // Clean up IR file if successful
+        if (!verbose) {
+            std.fs.cwd().deleteFile(ir_filename) catch {};
+        }
+    } else |err| {
+        print("❌ LLVM compilation failed: {any}\n", .{err});
+        print("💡 LLVM IR available at: {s}\n", .{ir_filename});
+        return err;
+    }
+}
+
+/// Compile LLVM IR to native executable using clang
+fn compileLLVMIRToExecutable(allocator: Allocator, ir_filename: []const u8, executable_name: []const u8, debug_info: bool, verbose: bool) !void {
+    // First try with clang directly on LLVM IR
+    var compile_args = std.ArrayList([]const u8).init(allocator);
+    defer compile_args.deinit();
+    
+    try compile_args.append("clang");
+    if (debug_info) {
+        try compile_args.append("-g");
+        try compile_args.append("-O0");
+    } else {
+        try compile_args.append("-O2");
+    }
+    try compile_args.append("-o");
+    try compile_args.append(executable_name);
+    try compile_args.append(ir_filename);
+    
+    if (verbose) {
+        print("🔧 Compiling with: ", .{});
+        for (compile_args.items) |arg| {
+            print("{s} ", .{arg});
+        }
+        print("\n", .{});
+    }
+    
+    // Execute clang
+    var clang_process = std.ChildProcess.init(compile_args.items, allocator);
+    clang_process.stdout_behavior = if (verbose) .Inherit else .Ignore;
+    clang_process.stderr_behavior = if (verbose) .Inherit else .Pipe;
+    
+    const clang_result = clang_process.spawnAndWait() catch |err| {
+        if (verbose) print("⚠️ Clang not available, trying alternative approach: {any}\n", .{err});
+        return compileWithLLCAndGCC(allocator, ir_filename, executable_name, debug_info, verbose);
+    };
+    
+    switch (clang_result) {
+        .Exited => |code| {
+            if (code == 0) {
+                return; // Success
+            } else {
+                if (verbose) print("⚠️ Clang failed with exit code {}, trying alternative approach\n", .{code});
+                return compileWithLLCAndGCC(allocator, ir_filename, executable_name, debug_info, verbose);
+            }
+        },
+        else => {
+            if (verbose) print("⚠️ Clang process error, trying alternative approach\n", .{});
+            return compileWithLLCAndGCC(allocator, ir_filename, executable_name, debug_info, verbose);
+        },
+    }
+}
+
+/// Alternative compilation using llc + gcc
+fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executable_name: []const u8, debug_info: bool, verbose: bool) !void {
+    // Step 1: Use llc to compile IR to object file
+    const obj_filename = try std.fmt.allocPrint(allocator, "{s}.o", .{executable_name});
+    defer allocator.free(obj_filename);
+    
+    var llc_args = std.ArrayList([]const u8).init(allocator);
+    defer llc_args.deinit();
+    
+    try llc_args.append("llc-18");
+    if (!debug_info) {
+        try llc_args.append("-O2");
+    }
+    try llc_args.append("-filetype=obj");
+    try llc_args.append("-o");
+    try llc_args.append(obj_filename);
+    try llc_args.append(ir_filename);
+    
+    if (verbose) {
+        print("🔧 Step 1 - LLC: ", .{});
+        for (llc_args.items) |arg| {
+            print("{s} ", .{arg});
+        }
+        print("\n", .{});
+    }
+    
+    var llc_process = std.ChildProcess.init(llc_args.items, allocator);
+    llc_process.stdout_behavior = if (verbose) .Inherit else .Ignore;
+    llc_process.stderr_behavior = if (verbose) .Inherit else .Pipe;
+    
+    const llc_result = llc_process.spawnAndWait() catch |err| {
+        return err;
+    };
+    
+    switch (llc_result) {
+        .Exited => |code| {
+            if (code != 0) {
+                print("❌ LLC compilation failed with exit code {}\n", .{code});
+                return error.LLCCompilationFailed;
+            }
+        },
+        else => {
+            print("❌ LLC process error\n", .{});
+            return error.LLCProcessError;
+        },
+    }
+    
+    // Step 2: Use gcc to link object file to executable
+    var gcc_args = std.ArrayList([]const u8).init(allocator);
+    defer gcc_args.deinit();
+    
+    try gcc_args.append("gcc");
+    if (debug_info) {
+        try gcc_args.append("-g");
+    }
+    try gcc_args.append("-no-pie");  // Disable PIE to avoid relocation issues
+    try gcc_args.append("-o");
+    try gcc_args.append(executable_name);
+    try gcc_args.append(obj_filename);
+    
+    if (verbose) {
+        print("🔧 Step 2 - GCC: {s}", .{""});
+        for (gcc_args.items) |arg| {
+            print("{s} ", .{arg});
+        }
+        print("\n", .{});
+    }
+    
+    var gcc_process = std.ChildProcess.init(gcc_args.items, allocator);
+    gcc_process.stdout_behavior = if (verbose) .Inherit else .Ignore;
+    gcc_process.stderr_behavior = if (verbose) .Inherit else .Pipe;
+    
+    const gcc_result = gcc_process.spawnAndWait() catch |err| {
+        return err;
+    };
+    
+    switch (gcc_result) {
+        .Exited => |code| {
+            if (code != 0) {
+                print("❌ GCC linking failed with exit code {}\n", .{code});
+                return error.GCCLinkingFailed;
+            }
+        },
+        else => {
+            print("❌ GCC process error\n", .{});
+            return error.GCCProcessError;
+        },
+    }
+    
+    // Clean up object file
+    std.fs.cwd().deleteFile(obj_filename) catch {};
 }
 
 /// Enhanced CURSED-to-C translation with better parsing
@@ -631,8 +817,10 @@ fn collectStringLiteralsForLLVM(source: []const u8, string_literals: *std.ArrayL
                     try statements.append(try allocator.dupe(u8, stmt_trimmed));
                 } else {
                     // This is the last fragment, might be incomplete - save for next line
+                    const stmt_copy = try allocator.dupe(u8, stmt_trimmed);
+                    defer allocator.free(stmt_copy);
                     current_line.clearRetainingCapacity();
-                    try current_line.appendSlice(stmt_trimmed);
+                    try current_line.appendSlice(stmt_copy);
                 }
             }
             stmt_index += 1;
@@ -713,8 +901,10 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
                     try statements.append(try allocator.dupe(u8, stmt_trimmed));
                 } else {
                     // This is the last fragment, might be incomplete - save for next line
+                    const stmt_copy = try allocator.dupe(u8, stmt_trimmed);
+                    defer allocator.free(stmt_copy);
                     current_line.clearRetainingCapacity();
-                    try current_line.appendSlice(stmt_trimmed);
+                    try current_line.appendSlice(stmt_copy);
                 }
             }
             stmt_index += 1;
