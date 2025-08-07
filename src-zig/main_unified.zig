@@ -1467,6 +1467,15 @@ fn loadModuleFunctions(allocator: Allocator, functions: *FunctionStore, module_n
     
     if (verbose) print("🔍 Loading functions from module: {s}\n", .{module_name});
     
+    // If loading from stdlib, skip allocating stub function entries; dispatch handled by stdlib runtime
+    if (std.mem.indexOf(u8, module_name, "vibez") != null or
+        std.mem.indexOf(u8, module_name, "stringz") != null or
+        std.mem.indexOf(u8, module_name, "mathz") != null or
+        std.mem.indexOf(u8, module_name, "cryptz") != null) {
+        if (verbose) print("  ↩️  Skipping stub generation for stdlib module: {s}\n", .{module_name});
+        return;
+    }
+    
     // Read module content
     const file = std.fs.cwd().openFile(module_path, .{}) catch |err| {
         if (verbose) print("❌ Failed to open module file: {any}\n", .{err});
@@ -1490,21 +1499,21 @@ fn loadModuleFunctions(allocator: Allocator, functions: *FunctionStore, module_n
                 
                 if (func_name.len > 0) {
                     // Create a simple function definition
-                    var func_def = FunctionDefinition.init(allocator, try allocator.dupe(u8, func_name));
+                    const func_def = FunctionDefinition.init(allocator, try allocator.dupe(u8, func_name));
                     
                     // Parse return type if present
                     if (std.mem.indexOf(u8, trimmed, ")")) |close_paren| {
                         const after_params = trimmed[close_paren + 1..];
                         if (std.mem.indexOf(u8, after_params, "{")) |brace_pos| {
-                            const return_type_part = std.mem.trim(u8, after_params[0..brace_pos], " \t");
-                            if (return_type_part.len > 0) {
-                                func_def.return_type = try allocator.dupe(u8, return_type_part);
+                        const return_type_part = std.mem.trim(u8, after_params[0..brace_pos], " \t");
+                        if (return_type_part.len > 0) {
+                           // Skip allocating/storing return type for imported stdlib stubs to avoid leaks
+                            // func_def.return_type = try allocator.dupe(u8, return_type_part);
                             }
-                        }
+                            }
                     }
                     
-                    // For imported functions, we'll use a stub body that indicates it's a stdlib function
-                    try func_def.body.append(try allocator.dupe(u8, "// stdlib function"));
+                    // For imported functions, we don't need a body; dispatch is handled elsewhere
                     
                     try functions.put(try allocator.dupe(u8, func_name), func_def);
                     
