@@ -31,10 +31,7 @@ pub fn resolveStdlibImportWithPath(allocator: Allocator, module_name: []const u8
         return false;
     };
     
-    defer {
-        var spec = import_spec;
-        spec.deinit(allocator);
-    }
+    // Note: import_spec is a safe copy that doesn't own memory, so no need to deinit
     
     // Check if it resolved to a stdlib module
     return import_spec.module_type == .stdlib or import_spec.resolved_path != null;
@@ -143,8 +140,13 @@ pub fn extractImports(allocator: Allocator, source: []const u8) !ArrayList([]con
     };
     defer {
         for (import_specs.items) |*spec| {
-            var import_spec = spec;
-            import_spec.deinit(allocator);
+            const import_spec = spec;
+            // Only free raw_path and source_file since these are allocated in parseImportStatement
+            allocator.free(import_spec.raw_path);
+            allocator.free(import_spec.source_file);
+            if (import_spec.alias) |alias| {
+                allocator.free(alias);
+            }
         }
         import_specs.deinit();
     }
@@ -209,10 +211,7 @@ pub fn validateImportsWithPath(allocator: Allocator, imports: ArrayList([]const 
             continue;
         };
         
-        defer {
-            var spec = import_spec;
-            spec.deinit(allocator);
-        }
+        // Note: import_spec is a safe copy that doesn't own memory, so no need to deinit
         
         if (import_spec.resolved_path) |path| {
             print("✅ Module '{s}' found at: {s} (type: {s})\n", .{ 

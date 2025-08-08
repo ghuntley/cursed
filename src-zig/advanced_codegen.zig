@@ -2717,28 +2717,7 @@ pub const AdvancedCodeGen = struct {
         return function;
     }
 
-    /// Get CURSED debug type by name
-    fn getCursedDebugType(self: *AdvancedCodeGen, type_name: []const u8) !c.LLVMMetadataRef {
-        if (!self.debug_enabled or self.debug_generator == null) {
-            return error.DebugDisabled;
-        }
-        
-        var debug_gen = &self.debug_generator.?;
-        const types = debug_gen.cursed_debug_types orelse return error.TypesNotInitialized;
-        
-        if (std.mem.eql(u8, type_name, "normie")) return types.normie_type;
-        if (std.mem.eql(u8, type_name, "tea")) return types.tea_type;
-        if (std.mem.eql(u8, type_name, "drip")) return types.drip_type;
-        if (std.mem.eql(u8, type_name, "lit")) return types.lit_type;
-        if (std.mem.eql(u8, type_name, "meal")) return types.meal_type;
-        if (std.mem.eql(u8, type_name, "smol")) return types.smol_type;
-        if (std.mem.eql(u8, type_name, "thicc")) return types.thicc_type;
-        if (std.mem.eql(u8, type_name, "sip")) return types.sip_type;
-        if (std.mem.eql(u8, type_name, "void")) return types.void_type;
-        
-        // Default to normie for unknown types
-        return types.normie_type;
-    }
+
     
     /// Generate debug info for CURSED struct
     pub fn generateStructDebugInfo(self: *AdvancedCodeGen, struct_name: []const u8, field_names: [][]const u8, field_types: [][]const u8) !c.LLVMMetadataRef {
@@ -3306,33 +3285,6 @@ pub const AdvancedCodeGen = struct {
         );
         
         return c.LLVMAddFunction(self.base_codegen.module, func_name, func_type);
-    }
-        
-        // Generate catch body  
-        if (fam.catch_body) |catch_body| {
-            for (catch_body.items) |stmt| {
-                _ = try self.base_codegen.generateStatement(stmt);
-            }
-        }
-        
-        // Jump to finally block
-        _ = c.LLVMBuildBr(self.base_codegen.builder, finally_block);
-        
-        // Position builder at finally block
-        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, finally_block);
-        
-        // Generate cleanup code (execute defers)
-        err_gen.generateCleanup();
-        
-        // Generate finally body
-        if (fam.finally_body) |finally_body| {
-            for (finally_body.items) |stmt| {
-                _ = try self.base_codegen.generateStatement(stmt);
-            }
-        }
-        
-        // Generate complete fam construct
-        return err_gen.generateFam(try_block, catch_block, finally_block);
     }
     
     /// Advanced lambda compilation
