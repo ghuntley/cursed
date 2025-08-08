@@ -1,0 +1,206 @@
+{
+  "name": "cursed-language-support",
+  "displayName": "CURSED Language Support",
+  "description": "Comprehensive language support for the CURSED programming language",
+  "version": "1.0.0",
+  "publisher": "cursed-lang",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters",
+    "Other"
+  ],
+  "keywords": [
+    "cursed",
+    "gen-z",
+    "programming",
+    "language",
+    "syntax",
+    "highlighting"
+  ],
+  "activationEvents": [
+    "onLanguage:cursed"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "cursed",
+        "aliases": ["CURSED", "cursed"],
+        "extensions": [".csd"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/cursed-light.svg",
+          "dark": "./icons/cursed-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cursed",
+        "scopeName": "source.cursed",
+        "path": "./syntaxes/cursed.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "CURSED Language Server",
+      "properties": {
+        "cursed.lsp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CURSED Language Server Protocol support"
+        },
+        "cursed.lsp.serverPath": {
+          "type": "string",
+          "default": "cursed-lsp-enhanced",
+          "description": "Path to the CURSED LSP server executable"
+        },
+        "cursed.lsp.args": {
+          "type": "array",
+          "default": ["--stdio", "--log-level", "info"],
+          "description": "Arguments passed to the LSP server"
+        },
+        "cursed.lsp.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Trace communication between VS Code and LSP server"
+        },
+        "cursed.formatter.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic code formatting"
+        },
+        "cursed.formatter.formatOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Format code on save"
+        },
+        "cursed.linter.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time linting"
+        },
+        "cursed.linter.securityOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run only security analysis"
+        },
+        "cursed.linter.failOn": {
+          "type": "string",
+          "enum": ["critical", "error", "warning", "info"],
+          "default": "error",
+          "description": "Minimum severity level to show in Problems panel"
+        },
+        "cursed.completion.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto-completion suggestions"
+        },
+        "cursed.completion.snippets": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable code snippets in completion"
+        },
+        "cursed.hover.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable hover information"
+        },
+        "cursed.diagnostics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time diagnostics"
+        },
+        "cursed.diagnostics.maxPerFile": {
+          "type": "number",
+          "default": 100,
+          "description": "Maximum number of diagnostics per file"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "cursed.formatDocument",
+        "title": "Format Document",
+        "category": "CURSED"
+      },
+      {
+        "command": "cursed.lintDocument",
+        "title": "Lint Document",
+        "category": "CURSED"
+      },
+      {
+        "command": "cursed.restartLSP",
+        "title": "Restart Language Server",
+        "category": "CURSED"
+      },
+      {
+        "command": "cursed.showOutputChannel",
+        "title": "Show Output Channel",
+        "category": "CURSED"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceExtname == .csd",
+          "command": "cursed.formatDocument",
+          "group": "1_modification"
+        },
+        {
+          "when": "resourceExtname == .csd",
+          "command": "cursed.lintDocument",
+          "group": "1_modification"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "cursed.formatDocument",
+          "when": "resourceExtname == .csd"
+        },
+        {
+          "command": "cursed.lintDocument",
+          "when": "resourceExtname == .csd"
+        },
+        {
+          "command": "cursed.restartLSP"
+        },
+        {
+          "command": "cursed.showOutputChannel"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "cursed.formatDocument",
+        "key": "shift+alt+f",
+        "when": "resourceExtname == .csd"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "cursed",
+        "path": "./snippets/cursed.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^4.9.4"
+  }
+}

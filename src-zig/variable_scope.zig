@@ -142,7 +142,7 @@ pub const VariableScopeManager = struct {
         }
         return 0;
     }
-}
+};
 
 /// Convert CURSED types to LLVM types
 pub fn cursedTypeToLLVMType(context: c.LLVMContextRef, cursed_type: []const u8) c.LLVMTypeRef {
