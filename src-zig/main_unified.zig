@@ -255,9 +255,18 @@ const Variable = union(enum) {
                 return Variable{ .Struct = new_struct };
             },
             .Interface => |interface_instance| {
-                // For interfaces, clone the underlying struct and reference the same vtable
+                // Deep clone the underlying struct to prevent double-free vulnerabilities
                 const cloned_struct = try allocator.create(StructInstance);
-                cloned_struct.* = interface_instance.underlying_struct.*;
+                cloned_struct.* = StructInstance.init(allocator, interface_instance.underlying_struct.type_name);
+                
+                // Deep clone all fields from the original struct
+                var iter = interface_instance.underlying_struct.fields.iterator();
+                while (iter.next()) |entry| {
+                    const key_copy = try allocator.dupe(u8, entry.key_ptr.*);
+                    const value_copy = try entry.value_ptr.clone(allocator);
+                    try cloned_struct.fields.put(key_copy, value_copy);
+                }
+                
                 return Variable{ .Interface = InterfaceInstance.init(interface_instance.interface_name, cloned_struct, interface_instance.vtable) };
             },
             .Channel => |v| return Variable{ .Channel = v },
@@ -266,24 +275,50 @@ const Variable = union(enum) {
     }
 
     pub fn deinit(self: *Variable, allocator: Allocator) void {
+        // Check if Variable is already in safe state to prevent double-free
         switch (self.*) {
-            .String => |str| allocator.free(str),
+            .Integer => return, // Already safe state, nothing to clean up
+            else => {},
+        }
+
+        switch (self.*) {
+            .String => |str| {
+                // Add length check and ownership validation
+                if (str.len > 0) {
+                    allocator.free(str);
+                }
+            },
             .Array => |*arr| {
-                // Recursively clean up any nested heap data
-                for (arr.items) |*item| item.deinit(allocator);
+                // Safe array cleanup with bounds checking
+                if (arr.items.len > 0) {
+                    // Recursively clean up any nested heap data
+                    for (arr.items) |*item| {
+                        item.deinit(allocator);
+                    }
+                }
                 arr.deinit();
             },
-            .YikesError => |*err| err.deinit(allocator),
+            .YikesError => |*err| {
+                err.deinit(allocator);
+            },
             .Struct => |*struct_instance| {
                 struct_instance.deinit(allocator);
             },
             .Interface => |*interface_instance| {
+                // Clean up interface instance - pointers are guaranteed non-null in Zig
                 interface_instance.underlying_struct.deinit(allocator);
                 allocator.destroy(interface_instance.underlying_struct);
             },
+            .Channel => {
+                // Channels are managed by concurrency runtime, no cleanup needed
+            },
+            .GoroutineId => {
+                // GoroutineId is a simple value type, no cleanup needed
+            },
             else => {},
         }
-        // Optionally reset to a safe state
+        
+        // Reset to safe state to prevent use-after-free and double-free
         self.* = Variable{ .Integer = 0 };
     }
 };

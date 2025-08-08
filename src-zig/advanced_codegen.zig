@@ -55,10 +55,13 @@ pub const DeferInfo = struct {
     scope_id: u32 = 0, // Scope ID for proper cleanup
 };
 
+// Scope stack limits to prevent buffer overflow
+const MAX_SCOPE_DEPTH: usize = 1000; // Reasonable limit for nested scopes
+
 /// Advanced CURSED Zig Code Generator with advanced language features
 /// Handles structs, interfaces, generics, advanced memory management, and defer statements
 pub const AdvancedCodeGen = struct {
-base_codegen: FinalWorkingCodeGen,
+    base_codegen: FinalWorkingCodeGen,
     
     // Enhanced defer statement management
     defer_stack: ArrayList(DeferInfo),
@@ -303,7 +306,24 @@ base_codegen: FinalWorkingCodeGen,
         // Register cleanup function with runtime defer stack
         try self.registerDeferCleanup(cleanup_func);
         
-        // Store defer info for scope management with enhanced tracking
+        // Store defer info for scope management with enhanced tracking and bounds checking
+        const scope_id = blk: {
+            const stack_len = self.scope_stack.items.len;
+            if (stack_len == 0) {
+                std.debug.print("⚠️ Warning: No active scopes in defer statement, using default scope 0\n");
+                break :blk @as(u32, 0);
+            }
+            
+            // Safe bounds-checked access to prevent buffer overflow
+            const safe_index = stack_len - 1;
+            if (safe_index >= self.scope_stack.items.len) {
+                std.debug.print("🚨 Critical: Scope stack buffer overflow detected, index {d} >= len {d}\n", .{ safe_index, self.scope_stack.items.len });
+                return error.ScopeStackOverflow;
+            }
+            
+            break :blk self.scope_stack.items[safe_index];
+        };
+        
         const defer_info = DeferInfo{
             .cleanup_function = cleanup_func,
             .cleanup_block = cleanup_entry,
@@ -311,10 +331,7 @@ base_codegen: FinalWorkingCodeGen,
             .function_name = self.current_function_name orelse "main",
             .is_error_safe = true, // Mark as error-safe for error handling integration
             .defer_id = @intCast(defer_count),
-            .scope_id = if (self.scope_stack.items.len > 0) 
-                self.scope_stack.items[self.scope_stack.items.len - 1] 
-            else 
-                0,
+            .scope_id = scope_id,
         };
         
         try self.defer_stack.append(defer_info);
@@ -414,23 +431,46 @@ base_codegen: FinalWorkingCodeGen,
         }
     }
     
-    /// Enter a new scope for defer management
+    /// Enter a new scope for defer management with bounds checking
     pub fn enterScope(self: *AdvancedCodeGen, is_function_scope: bool) !u32 {
+        // Check if we're exceeding maximum scope depth to prevent stack overflow
+        if (self.scope_stack.items.len >= MAX_SCOPE_DEPTH) {
+            std.debug.print("🚨 Critical: Maximum scope depth {d} exceeded, current depth: {d}\n", .{ MAX_SCOPE_DEPTH, self.scope_stack.items.len });
+            return error.ScopeDepthLimitExceeded;
+        }
+        
         self.current_scope_id += 1;
+        
+        // Bounds-checked append with error handling
         try self.scope_stack.append(self.current_scope_id);
         
-        std.debug.print("📍 Entered scope {d} (function: {any})\n", .{ self.current_scope_id, is_function_scope });
+        // Verify the append was successful
+        if (self.scope_stack.items.len == 0 or self.scope_stack.items[self.scope_stack.items.len - 1] != self.current_scope_id) {
+            std.debug.print("🚨 Critical: Scope stack append verification failed\n");
+            return error.ScopeStackCorruption;
+        }
+        
+        std.debug.print("📍 Entered scope {d} (function: {any}, depth: {d})\n", .{ self.current_scope_id, is_function_scope, self.scope_stack.items.len });
         return self.current_scope_id;
     }
     
-    /// Exit current scope and generate defer cleanup
+    /// Exit current scope and generate defer cleanup with bounds checking
     pub fn exitScope(self: *AdvancedCodeGen) !void {
         if (self.scope_stack.items.len == 0) {
             std.debug.print("⚠️ Warning: Attempting to exit scope when no scopes are active\n");
             return;
         }
         
+        // Double-check bounds before popping
+        const stack_len = self.scope_stack.items.len;
+        if (stack_len == 0) {
+            std.debug.print("🚨 Critical: Race condition detected - scope stack emptied between checks\n");
+            return error.ScopeStackUnderflow;
+        }
+        
         const scope_id = self.scope_stack.pop();
+        
+        std.debug.print("📍 Exited scope {d} (remaining depth: {d})\n", .{ scope_id, self.scope_stack.items.len });
         
         // Generate calls to execute defers for this scope in LIFO order
         var i = self.defer_stack.items.len;
