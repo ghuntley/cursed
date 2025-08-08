@@ -1,6 +1,1 @@
-sus i drip = 0
-bestie i < 5 {
-    vibez.spill("Loop iteration:", i)
-    i = i + 1
-}
-vibez.spill("Loop complete")
+sus i drip = 0; bestie (i < 3) { vibez.spill("Loop:", i); i = i + 1 }

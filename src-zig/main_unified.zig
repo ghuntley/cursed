@@ -1012,6 +1012,74 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
         }
     }
     
+    // Check for array indexing (high precedence - before binary operators)
+    if (std.mem.indexOf(u8, trimmed, "[")) |bracket_start| {
+        if (std.mem.lastIndexOf(u8, trimmed, "]")) |bracket_end| {
+            if (bracket_end > bracket_start) {
+                // Make sure this is not inside parentheses
+                var paren_count: i32 = 0;
+                var is_top_level = true;
+                for (trimmed[0..bracket_start]) |char| {
+                    if (char == '(') {
+                        paren_count += 1;
+                    } else if (char == ')') {
+                        paren_count -= 1;
+                    }
+                }
+                if (paren_count > 0) is_top_level = false;
+                
+                if (is_top_level) {
+                    const array_name = std.mem.trim(u8, trimmed[0..bracket_start], " \t");
+                    const index_expr = std.mem.trim(u8, trimmed[bracket_start + 1..bracket_end], " \t");
+                    
+                    if (verbose) print("🔍 Found array indexing: array='{s}', index='{s}'\n", .{ array_name, index_expr });
+                    
+                    // Get the array variable
+                    if (variables.get(array_name)) |array_var| {
+                        switch (array_var) {
+                            .Array => |array_list| {
+                                // Evaluate the index expression to get the numeric index
+                                const index_result = try evaluateExpression(variables, functions, allocator, index_expr, verbose);
+                                defer { var idx = index_result; idx.deinit(allocator); }
+                                
+                                switch (index_result) {
+                                    .Integer => |index_int| {
+                                        // Bounds checking for safety
+                                        if (index_int < 0) {
+                                            if (verbose) print("❌ Array index {d} is negative\n", .{index_int});
+                                            return error.IndexOutOfBounds;
+                                        }
+                                        
+                                        const index = @as(usize, @intCast(index_int));
+                                        if (index >= array_list.items.len) {
+                                            if (verbose) print("❌ Array index {d} is out of bounds (array length: {d})\n", .{ index, array_list.items.len });
+                                            return error.IndexOutOfBounds;
+                                        }
+                                        
+                                        // Return a clone of the element at the specified index
+                                        if (verbose) print("✅ Accessing array element {s}[{d}]\n", .{ array_name, index });
+                                        return try array_list.items[index].clone(allocator);
+                                    },
+                                    else => {
+                                        if (verbose) print("❌ Array index must be an integer, got: {any}\n", .{index_result});
+                                        return error.InvalidArrayIndex;
+                                    }
+                                }
+                            },
+                            else => {
+                                if (verbose) print("❌ Variable '{s}' is not an array\n", .{array_name});
+                                return error.NotAnArray;
+                            }
+                        }
+                    } else {
+                        if (verbose) print("❌ Array variable '{s}' not found\n", .{array_name});
+                        return error.UnknownIdentifier;
+                    }
+                }
+            }
+        }
+    }
+    
     // Handle unary operators first (highest precedence)
     if (std.mem.startsWith(u8, trimmed, "-") and trimmed.len > 1) {
         // Unary minus operator
@@ -1648,9 +1716,13 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
         }
         const string_copy = try allocator.dupe(u8, trimmed_value);
         break :blk Variable{ .String = string_copy };
-    } else if (std.mem.startsWith(u8, var_type, "[") and std.mem.endsWith(u8, var_type, "]")) blk: {
-        // Array type like [normie]
-        const element_type = var_type[1..var_type.len - 1];
+    } else if ((std.mem.startsWith(u8, var_type, "[") and std.mem.endsWith(u8, var_type, "]")) or 
+               std.mem.startsWith(u8, var_type, "[]")) blk: {
+        // Array type like [normie], [drip], []drip, []tea, etc.
+        const element_type = if (std.mem.startsWith(u8, var_type, "[]")) 
+            var_type[2..] // For []drip syntax
+        else 
+            var_type[1..var_type.len - 1]; // For [drip] syntax
         const trimmed_val = std.mem.trim(u8, value_str, " \t");
         
         if (trimmed_val.len >= 2 and trimmed_val[0] == '[' and trimmed_val[trimmed_val.len - 1] == ']') {
@@ -1663,12 +1735,29 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                 while (elements.next()) |element| {
                     const trimmed_element = std.mem.trim(u8, element, " \t");
                     
-                    if (std.mem.eql(u8, element_type, "normie")) {
+                    if (std.mem.eql(u8, element_type, "normie") or std.mem.eql(u8, element_type, "drip")) {
                         const int_val = std.fmt.parseInt(i64, trimmed_element, 10) catch {
                             if (verbose) print("❌ Error parsing array element '{s}'\n", .{trimmed_element});
                             continue;
                         };
                         try array.append(Variable{ .Integer = int_val });
+                    } else if (std.mem.eql(u8, element_type, "tea")) {
+                        // String elements - handle quoted strings
+                        var clean_element = trimmed_element;
+                        if (clean_element.len >= 2 and clean_element[0] == '"' and clean_element[clean_element.len - 1] == '"') {
+                            clean_element = clean_element[1..clean_element.len - 1];
+                        }
+                        const string_copy = try allocator.dupe(u8, clean_element);
+                        try array.append(Variable{ .String = string_copy });
+                    } else if (std.mem.eql(u8, element_type, "meal")) {
+                        const float_val = std.fmt.parseFloat(f64, trimmed_element) catch {
+                            if (verbose) print("❌ Error parsing float array element '{s}'\n", .{trimmed_element});
+                            continue;
+                        };
+                        try array.append(Variable{ .Float = float_val });
+                    } else if (std.mem.eql(u8, element_type, "lit")) {
+                        const bool_val = std.mem.eql(u8, trimmed_element, "based");
+                        try array.append(Variable{ .Boolean = bool_val });
                     } else {
                         if (verbose) print("❌ Unsupported array element type: {s}\n", .{element_type});
                     }
@@ -1806,47 +1895,33 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
             if (variables.get(array_name)) |array_var| {
                 switch (array_var) {
                     .Array => |array| {
-                        // Parse index
-                        if (std.fmt.parseInt(i64, index_expr, 10)) |index| {
-                            if (index >= 0 and index < array.items.len) {
-                                const element_str = try array.items[@intCast(index)].toString(allocator);
-                                defer allocator.free(element_str);
-                                print("{s}", .{element_str});
-                                if (add_newline) print("\n", .{});
-                                if (verbose) print("✅ Array access {s}[{}] = {s}\n", .{ array_name, index, element_str });
-                            } else {
-                                print("undefined", .{});
-                                if (add_newline) print("\n", .{});
-                                if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
+                        // Evaluate index expression
+                        if (evaluateExpression(variables, functions, allocator, index_expr, verbose)) |index_result| {
+                            defer { var idx = index_result; idx.deinit(allocator); }
+                            switch (index_result) {
+                                .Integer => |index| {
+                                    if (index >= 0 and index < array.items.len) {
+                                        const element_str = try array.items[@intCast(index)].toString(allocator);
+                                        defer allocator.free(element_str);
+                                        print("{s}", .{element_str});
+                                        if (add_newline) print("\n", .{});
+                                        if (verbose) print("✅ Array access {s}[{s}={}] = {s}\n", .{ array_name, index_expr, index, element_str });
+                                    } else {
+                                        print("undefined", .{});
+                                        if (add_newline) print("\n", .{});
+                                        if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
+                                    }
+                                },
+                                else => {
+                                    print("{s}", .{trimmed_content});
+                                    if (add_newline) print("\n", .{});
+                                    if (verbose) print("⚠️  Index expression '{s}' does not evaluate to an integer\n", .{index_expr});
+                                }
                             }
                         } else |_| {
-                            // Try to resolve index as a variable
-                            if (variables.get(index_expr)) |index_var| {
-                                switch (index_var) {
-                                    .Integer => |index| {
-                                        if (index >= 0 and index < array.items.len) {
-                                            const element_str = try array.items[@intCast(index)].toString(allocator);
-                                            defer allocator.free(element_str);
-                                            print("{s}", .{element_str});
-                                            if (add_newline) print("\n", .{});
-                                            if (verbose) print("✅ Array access {s}[{s}={}] = {s}\n", .{ array_name, index_expr, index, element_str });
-                                        } else {
-                                            print("undefined", .{});
-                                            if (add_newline) print("\n", .{});
-                                            if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
-                                        }
-                                    },
-                                    else => {
-                                        print("{s}", .{trimmed_content});
-                                        if (add_newline) print("\n", .{});
-                                        if (verbose) print("⚠️  Index variable {s} is not an integer\n", .{index_expr});
-                                    },
-                                }
-                            } else {
-                                print("{s}", .{trimmed_content});
-                                if (add_newline) print("\n", .{});
-                                if (verbose) print("⚠️  Index variable {s} not found\n", .{index_expr});
-                            }
+                            print("{s}", .{trimmed_content});
+                            if (add_newline) print("\n", .{});
+                            if (verbose) print("⚠️  Could not evaluate index expression '{s}'\n", .{index_expr});
                         }
                     },
                     else => {
@@ -2329,6 +2404,22 @@ fn handleStdlibFunction(variables: *VariableStore, allocator: Allocator, call_li
                         const contains = std.mem.indexOf(u8, arg1_value.String, arg2_value.String) != null;
                         return Variable{ .Boolean = contains };
                     }
+                }
+            }
+        }
+        
+        // Length function - handles both arrays and strings
+        else if (std.mem.eql(u8, func_name, "len") or std.mem.eql(u8, func_name, "length")) {
+            if (args_str.len > 0) {
+                const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
+                switch (arg_value) {
+                    .String => |str| {
+                        return Variable{ .Integer = @intCast(str.len) };
+                    },
+                    .Array => |arr| {
+                        return Variable{ .Integer = @intCast(arr.items.len) };
+                    },
+                    else => if (verbose) print("❌ len() expects string or array argument\n", .{}),
                 }
             }
         }
