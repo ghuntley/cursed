@@ -1357,7 +1357,7 @@ pub const CodeGenerator = struct {
         }
 
         // Execute linker
-        var child = std.ChildProcess.init(link_args.items, allocator);
+        var child = std.process.Child.init(link_args.items, allocator);
         child.stdout_behavior = .Pipe;
         child.stderr_behavior = .Pipe;
         

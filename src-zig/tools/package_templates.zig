@@ -14,7 +14,7 @@ pub const TemplateType = enum {
     testing_framework,
     
     pub fn fromString(str: []const u8) ?TemplateType {
-        const template_map = std.ComptimeStringMap(TemplateType, .{
+        const template_map = std.StaticStringMap(TemplateType).initComptime(.{
             .{ "lib", .library },
             .{ "library", .library },
             .{ "bin", .binary },
@@ -1952,14 +1952,14 @@ pub fn createFromTemplate(allocator: Allocator, template_type: TemplateType, pro
             project_dir.makePath(dir) catch {}; // Ignore if already exists
         }
         
-        try project_dir.writeFile(file_template.path, file_template.content);
+        try project_dir.writeFile(.{ .sub_path = file_template.path, .data = file_template.content });
         std.debug.print("  📄 Created {s}\n", .{file_template.path});
     }
     
     // Create package manifest
     const manifest_content = try createManifestContent(allocator, project_name, template);
     defer allocator.free(manifest_content);
-    try project_dir.writeFile("CursedPackage.toml", manifest_content);
+    try project_dir.writeFile(.{ .sub_path = "CursedPackage.toml", .data = manifest_content });
     
     std.debug.print("✅ Project '{s}' created successfully\n", .{project_name});
     std.debug.print("📁 Change to directory: cd {s}\n", .{project_name});

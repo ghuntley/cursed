@@ -649,6 +649,14 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             continue;
         }
         
+        // Handle while loop statements: bestie (condition) { ... }
+        if (std.mem.startsWith(u8, trimmed, "bestie ")) {
+            if (verbose) print("🔍 Processing bestie while loop: {s}\n", .{trimmed});
+            const lines_consumed = try handleBestieLoop(&variables, &functions, allocator, source_lines, line_index, verbose);
+            line_index += lines_consumed;
+            continue;
+        }
+        
         // Handle goroutine spawning: stan { ... }
         if (std.mem.startsWith(u8, trimmed, "stan ")) {
             if (verbose) print("🔍 Processing goroutine spawn: {s}\n", .{trimmed});
@@ -1731,7 +1739,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
             const content = trimmed_val[1..trimmed_val.len - 1];
             
             if (content.len > 0) {
-                var elements = std.mem.split(u8, content, ",");
+                var elements = std.mem.splitScalar(u8, content, ',');
                 while (elements.next()) |element| {
                     const trimmed_element = std.mem.trim(u8, element, " \t");
                     
@@ -1787,7 +1795,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
         var struct_instance = StructInstance.init(allocator, var_type);
         
         if (fields_str.len > 0) {
-            var field_iter = std.mem.split(u8, fields_str, ",");
+            var field_iter = std.mem.splitScalar(u8, fields_str, ',');
             while (field_iter.next()) |field_assignment| {
                 const trimmed_assignment = std.mem.trim(u8, field_assignment, " \t");
                 
@@ -1997,14 +2005,21 @@ fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8)
     var args = ArrayList([]const u8).init(allocator);
     var start: usize = 0;
     var in_quotes = false;
+    var paren_depth: usize = 0;
     
     for (text, 0..) |char, i| {
-        if (char == '"') {
+        if (char == '"' and paren_depth == 0) {
             in_quotes = !in_quotes;
-        } else if (char == ',' and !in_quotes) {
-            const arg = std.mem.trim(u8, text[start..i], " \t");
-            try args.append(arg);
-            start = i + 1;
+        } else if (!in_quotes) {
+            if (char == '(') {
+                paren_depth += 1;
+            } else if (char == ')') {
+                if (paren_depth > 0) paren_depth -= 1;
+            } else if (char == ',' and paren_depth == 0) {
+                const arg = std.mem.trim(u8, text[start..i], " \t");
+                try args.append(arg);
+                start = i + 1;
+            }
         }
     }
     
@@ -2015,7 +2030,7 @@ fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8)
     return args;
 }
 
-fn handleFormatCommand(allocator: Allocator, args: [][]const u8) !void {
+fn handleFormatCommand(allocator: Allocator, args: [][:0]u8) !void {
     if (args.len == 0) {
         print("Usage: cursed format <file|directory> [OPTIONS]\n", .{});
         print("Options:\n", .{});
@@ -2069,7 +2084,7 @@ fn handleFormatCommand(allocator: Allocator, args: [][]const u8) !void {
     }
 }
 
-fn handleLintCommand(allocator: Allocator, args: [][]const u8) !void {
+fn handleLintCommand(allocator: Allocator, args: [][:0]u8) !void {
     if (args.len == 0) {
         print("Usage: cursed lint <file|directory> [OPTIONS]\n", .{});
         print("Options:\n", .{});
@@ -2119,7 +2134,7 @@ fn handleLintCommand(allocator: Allocator, args: [][]const u8) !void {
     }
 }
 
-fn handleCheckCommand(allocator: Allocator, args: [][]const u8) !void {
+fn handleCheckCommand(allocator: Allocator, args: [][:0]u8) !void {
     if (args.len == 0) {
         print("Usage: cursed check <file.csd> [OPTIONS]\n", .{});
         print("Options:\n", .{});
@@ -2628,7 +2643,7 @@ fn handleVibezSpill(allocator: Allocator, variables: *VariableStore, args: []con
     defer output.deinit();
     
     // Split by commas and process each argument
-    var arg_iter = std.mem.split(u8, args, ",");
+    var arg_iter = std.mem.splitScalar(u8, args, ',');
     var first = true;
     
     while (arg_iter.next()) |arg| {
@@ -2758,7 +2773,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
             const type_params_str = std.mem.trim(u8, func_declaration[angle_start + 1..angle_end], " \t");
             
             // Parse type parameters
-            var type_iter = std.mem.split(u8, type_params_str, ",");
+            var type_iter = std.mem.splitScalar(u8, type_params_str, ',');
             while (type_iter.next()) |type_param| {
                 const trimmed_type = std.mem.trim(u8, type_param, " \t");
                 try type_params.append(trimmed_type);
@@ -2791,13 +2806,13 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
         const params_str = std.mem.trim(u8, after_slay[params_start..params_end], " \t");
         
         if (params_str.len > 0) {
-            var param_iter = std.mem.split(u8, params_str, ",");
+            var param_iter = std.mem.splitScalar(u8, params_str, ',');
             while (param_iter.next()) |param_str| {
                 const trimmed_param = std.mem.trim(u8, param_str, " \t");
                 if (trimmed_param.len == 0) continue;
                 
                 // Parse param: "name type"
-                var param_parts = std.mem.split(u8, trimmed_param, " ");
+                var param_parts = std.mem.splitScalar(u8, trimmed_param, ' ');
                 const param_name = param_parts.next() orelse continue;
                 const param_type = param_parts.next() orelse "tea"; // default type
                 
@@ -2892,7 +2907,7 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
             const type_args_str = std.mem.trim(u8, func_name[angle_start + 1..angle_end], " \t");
             
             // Parse type arguments
-            var type_iter = std.mem.split(u8, type_args_str, ",");
+            var type_iter = std.mem.splitScalar(u8, type_args_str, ',');
             while (type_iter.next()) |type_arg| {
                 const trimmed_type = std.mem.trim(u8, type_arg, " \t");
                 try type_args.append(trimmed_type);
@@ -2952,7 +2967,7 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
         
         // Bind arguments to parameters
         if (args_str.len > 0) {
-            var arg_iter = std.mem.split(u8, args_str, ",");
+            var arg_iter = std.mem.splitScalar(u8, args_str, ',');
             var param_index: usize = 0;
             
             while (arg_iter.next()) |arg_str| {
@@ -3007,6 +3022,46 @@ fn evaluateArgument(variables: *VariableStore, functions: *FunctionStore, alloca
     }
 }
 
+fn executeReadyStatement(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) (FunctionReturnError || anyerror)!void {
+    // Handle single-line ready statements like: ready (n <= 0) { damn 0 }
+    const trimmed = std.mem.trim(u8, line, " \t");
+    
+    // Extract condition and body
+    if (std.mem.indexOf(u8, trimmed, "(")) |start_paren| {
+        if (std.mem.lastIndexOf(u8, trimmed, ")")) |end_paren| {
+            if (std.mem.indexOf(u8, trimmed[end_paren..], "{")) |brace_start| {
+                if (std.mem.lastIndexOf(u8, trimmed, "}")) |brace_end| {
+                    const condition_str = std.mem.trim(u8, trimmed[start_paren + 1..end_paren], " \t");
+                    const body_str = std.mem.trim(u8, trimmed[end_paren + brace_start + 1..brace_end], " \t");
+                    
+                    if (verbose) print("    📊 Condition: '{s}', Body: '{s}'\n", .{ condition_str, body_str });
+                    
+                    // Evaluate condition
+                    const condition_result = try evaluateExpression(variables, functions, allocator, condition_str, verbose);
+                    defer { var cond = condition_result; cond.deinit(allocator); }
+                    
+                    var should_execute = false;
+                    switch (condition_result) {
+                        .Boolean => |val| should_execute = val,
+                        .Integer => |val| should_execute = val != 0,
+                        else => should_execute = false,
+                    }
+                    
+                    if (should_execute) {
+                        if (verbose) print("    ✅ Condition true, executing body\n", .{});
+                        try executeFunctionBodyLine(variables, functions, allocator, body_str, verbose);
+                    } else {
+                        if (verbose) print("    ❌ Condition false, skipping body\n", .{});
+                    }
+                    return;
+                }
+            }
+        }
+    }
+    
+    if (verbose) print("    ⚠️ Could not parse ready statement: {s}\n", .{trimmed});
+}
+
 fn executeFunctionBodyLine(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) (FunctionReturnError || anyerror)!void {
     const trimmed = std.mem.trim(u8, line, " \t");
     
@@ -3054,6 +3109,14 @@ fn executeFunctionBodyLine(variables: *VariableStore, functions: *FunctionStore,
                 return;
             }
         }
+    }
+    
+    // Handle ready/otherwise control flow in function body
+    if (std.mem.startsWith(u8, trimmed, "ready ")) {
+        if (verbose) print("  🔍 Processing ready statement in function: {s}\n", .{trimmed});
+        // Execute the ready statement - need to handle single-line if statements
+        try executeReadyStatement(variables, functions, allocator, trimmed, verbose);
+        return;
     }
     
     // Handle function calls in function body
@@ -3327,23 +3390,46 @@ fn handleReadyOtherwiseBlock(
     
     const start_line = std.mem.trim(u8, source_lines.items[start_line_index], " \t\r\n");
     
-    // Parse the condition from "ready (condition) {"
-    const condition_start = std.mem.indexOf(u8, start_line, "(");
-    const condition_end = std.mem.lastIndexOf(u8, start_line, ")");
+    // Parse the condition from "ready (condition) {" - be more flexible with parentheses
+    var condition_start: ?usize = null;
+    var condition_end: ?usize = null;
+    var has_opening_brace = false;
     
-    if (condition_start == null or condition_end == null or condition_end.? <= condition_start.?) {
-        if (verbose) print("❌ Invalid ready statement syntax\n", .{});
+    // Find the condition part more carefully
+    if (std.mem.indexOf(u8, start_line, "(")) |paren_start| {
+        condition_start = paren_start;
+        // Look for matching closing parenthesis
+        var paren_count: i32 = 0;
+        for (start_line[paren_start..], paren_start..) |char, idx| {
+            if (char == '(') {
+                paren_count += 1;
+            } else if (char == ')') {
+                paren_count -= 1;
+                if (paren_count == 0) {
+                    condition_end = idx;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Check for opening brace on the same line
+    has_opening_brace = std.mem.indexOf(u8, start_line, "{") != null;
+    
+    if (condition_start == null or condition_end == null) {
+        if (verbose) print("❌ Invalid ready statement syntax - could not find condition parentheses\n", .{});
         return 1; // Skip just this line
     }
     
     const condition_expr = std.mem.trim(u8, start_line[condition_start.? + 1..condition_end.?], " \t");
     if (verbose) print("🧮 Evaluating condition: '{s}'\n", .{condition_expr});
     
-    // Evaluate the condition
+    // Evaluate the condition with proper cleanup
     const condition_result = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
         if (verbose) print("❌ Failed to evaluate condition: {any}\n", .{err});
         return 1;
     };
+    defer { var temp_result = condition_result; temp_result.deinit(allocator); }
     
     // Convert result to boolean
     const condition_is_true = switch (condition_result) {
@@ -3356,7 +3442,7 @@ fn handleReadyOtherwiseBlock(
     
     if (verbose) print("✅ Condition evaluated to: {}\n", .{condition_is_true});
     
-    // Find the if block and else block
+    // Find block boundaries with improved logic
     var current_line = start_line_index;
     var brace_count: i32 = 0;
     var if_block_start: usize = 0;
@@ -3364,86 +3450,77 @@ fn handleReadyOtherwiseBlock(
     var else_block_start: ?usize = null;
     var else_block_end: ?usize = null;
     
-    // Check if the opening brace is on the same line as ready
-    if (std.mem.indexOf(u8, start_line, "{")) |_| {
-        // Brace is on the same line, if block starts on next line
+    // Set initial state based on whether opening brace is on same line
+    if (has_opening_brace) {
         if_block_start = start_line_index + 1;
         brace_count = 1;
         current_line = start_line_index + 1;
     } else {
-        // Look for opening brace on the next line
+        // Look for opening brace on next line
         current_line = start_line_index + 1;
+        if (current_line < source_lines.items.len) {
+            const next_line = std.mem.trim(u8, source_lines.items[current_line], " \t\r\n");
+            if (std.mem.eql(u8, next_line, "{")) {
+                if_block_start = current_line + 1;
+                brace_count = 1;
+                current_line += 1;
+            }
+        }
     }
     
-    // Find if block
-    while (current_line < source_lines.items.len) {
+    // Find the end of the if block
+    while (current_line < source_lines.items.len and brace_count > 0) {
         const line = std.mem.trim(u8, source_lines.items[current_line], " \t\r\n");
         
-        if (std.mem.eql(u8, line, "{")) {
-            if (brace_count == 0) {
-                if_block_start = current_line + 1;
+        // Count braces more carefully
+        for (line) |char| {
+            if (char == '{') brace_count += 1;
+            if (char == '}') brace_count -= 1;
+        }
+        
+        // Check for "} otherwise {" pattern
+        if (brace_count == 0 or std.mem.indexOf(u8, line, "} otherwise {") != null) {
+            if_block_end = current_line;
+            
+            // Check if this line contains "otherwise"
+            if (std.mem.indexOf(u8, line, "otherwise")) |_| {
+                // Otherwise block starts on next line or after the { on this line
+                if (std.mem.indexOf(u8, line, "otherwise {")) |_| {
+                    else_block_start = current_line + 1;
+                    brace_count = 1; // Reset for else block
+                } else {
+                    // Look for { on next line
+                    current_line += 1;
+                    if (current_line < source_lines.items.len) {
+                        const next_line = std.mem.trim(u8, source_lines.items[current_line], " \t\r\n");
+                        if (std.mem.eql(u8, next_line, "{")) {
+                            else_block_start = current_line + 1;
+                            brace_count = 1;
+                        }
+                    }
+                }
             }
-            brace_count += 1;
-        } else if (std.mem.eql(u8, line, "}") or std.mem.indexOf(u8, line, "} otherwise {") != null) {
-            brace_count -= 1;
-            if (brace_count == 0) {
-                if_block_end = current_line;
-                break;
-            }
+            break;
         }
         current_line += 1;
     }
     
-    // Look for otherwise block - check the line with the closing brace first
-    const if_end_line = if (if_block_end < source_lines.items.len) 
-        std.mem.trim(u8, source_lines.items[if_block_end], " \t\r\n") 
-        else "";
-    
-    if (std.mem.indexOf(u8, if_end_line, "} otherwise {")) |_| {
-        // Otherwise is on the same line as the closing brace
-        else_block_start = if_block_end + 1;
-        current_line = if_block_end + 1;
-        brace_count = 1; // Already inside the else block
-        
+    // If we found an else block, find its end
+    if (else_block_start != null) {
+        current_line = else_block_start.?;
         while (current_line < source_lines.items.len and brace_count > 0) {
             const line = std.mem.trim(u8, source_lines.items[current_line], " \t\r\n");
             
-            if (std.mem.eql(u8, line, "{")) {
-                brace_count += 1;
-            } else if (std.mem.eql(u8, line, "}")) {
-                brace_count -= 1;
-                if (brace_count == 0) {
-                    else_block_end = current_line;
-                    break;
-                }
+            for (line) |char| {
+                if (char == '{') brace_count += 1;
+                if (char == '}') brace_count -= 1;
+            }
+            
+            if (brace_count == 0) {
+                else_block_end = current_line;
+                break;
             }
             current_line += 1;
-        }
-    } else {
-        // Look for otherwise block on the next line
-        current_line = if_block_end + 1;
-        if (current_line < source_lines.items.len) {
-            const next_line = std.mem.trim(u8, source_lines.items[current_line], " \t\r\n");
-            if (std.mem.eql(u8, next_line, "otherwise {")) {
-                current_line += 1; // Skip the "otherwise {" line
-                else_block_start = current_line;
-                
-                brace_count = 1; // Already inside the else block
-                while (current_line < source_lines.items.len and brace_count > 0) {
-                    const line = std.mem.trim(u8, source_lines.items[current_line], " \t\r\n");
-                    
-                    if (std.mem.eql(u8, line, "{")) {
-                        brace_count += 1;
-                    } else if (std.mem.eql(u8, line, "}")) {
-                        brace_count -= 1;
-                        if (brace_count == 0) {
-                            else_block_end = current_line;
-                            break;
-                        }
-                    }
-                    current_line += 1;
-                }
-            }
         }
     }
     
@@ -3453,7 +3530,7 @@ fn handleReadyOtherwiseBlock(
         for (if_block_start..if_block_end) |line_idx| {
             if (line_idx >= source_lines.items.len) break;
             const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
-            if (exec_line.len == 0) continue;
+            if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
             
             if (verbose) print("  🔧 Executing: {s}\n", .{exec_line});
             try executeBlockLine(variables, functions, allocator, exec_line, verbose);
@@ -3463,7 +3540,7 @@ fn handleReadyOtherwiseBlock(
         for (else_block_start.?..else_block_end.?) |line_idx| {
             if (line_idx >= source_lines.items.len) break;
             const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
-            if (exec_line.len == 0) continue;
+            if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
             
             if (verbose) print("  🔧 Executing: {s}\n", .{exec_line});
             try executeBlockLine(variables, functions, allocator, exec_line, verbose);
@@ -3472,39 +3549,228 @@ fn handleReadyOtherwiseBlock(
         print("🔴 Condition false, no else block found\n", .{});
     }
     
-    const total_lines_consumed = if (else_block_end) |end| (end + 1) - start_line_index else (if_block_end + 1) - start_line_index;
+    // Calculate total lines consumed more accurately
+    const total_lines_consumed = if (else_block_end) |end| 
+        (end + 1) - start_line_index 
+    else 
+        (if_block_end + 1) - start_line_index;
+        
     if (verbose) print("✅ Ready/otherwise block processed, consumed {} lines\n", .{total_lines_consumed});
+    return total_lines_consumed;
+}
+
+/// Handle bestie (while loop) control flow blocks
+fn handleBestieLoop(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: Allocator,
+    source_lines: std.ArrayList([]const u8),
+    start_line_index: usize,
+    verbose: bool
+) !usize {
+    if (verbose) print("🔍 Starting bestie loop parsing at line {}\n", .{start_line_index + 1});
+    
+    const start_line = std.mem.trim(u8, source_lines.items[start_line_index], " \t\r\n");
+    
+    // Parse the condition from "bestie (condition) {"
+    var condition_start: ?usize = null;
+    var condition_end: ?usize = null;
+    var has_opening_brace = false;
+    
+    // Find the condition part
+    if (std.mem.indexOf(u8, start_line, "(")) |paren_start| {
+        condition_start = paren_start;
+        // Look for matching closing parenthesis
+        var paren_count: i32 = 0;
+        for (start_line[paren_start..], paren_start..) |char, idx| {
+            if (char == '(') {
+                paren_count += 1;
+            } else if (char == ')') {
+                paren_count -= 1;
+                if (paren_count == 0) {
+                    condition_end = idx;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Check for opening brace on the same line
+    has_opening_brace = std.mem.indexOf(u8, start_line, "{") != null;
+    
+    if (condition_start == null or condition_end == null) {
+        if (verbose) print("❌ Invalid bestie statement syntax - could not find condition parentheses\n", .{});
+        return 1; // Skip just this line
+    }
+    
+    const condition_expr = std.mem.trim(u8, start_line[condition_start.? + 1..condition_end.?], " \t");
+    if (verbose) print("🔄 Loop condition: '{s}'\n", .{condition_expr});
+    
+    // Find loop body boundaries
+    var current_line = start_line_index;
+    var brace_count: i32 = 0;
+    var loop_body_start: usize = 0;
+    var loop_body_end: usize = 0;
+    
+    // Set initial state based on whether opening brace is on same line
+    if (has_opening_brace) {
+        loop_body_start = start_line_index + 1;
+        brace_count = 1;
+        current_line = start_line_index + 1;
+    } else {
+        // Look for opening brace on next line
+        current_line = start_line_index + 1;
+        if (current_line < source_lines.items.len) {
+            const next_line = std.mem.trim(u8, source_lines.items[current_line], " \t\r\n");
+            if (std.mem.eql(u8, next_line, "{")) {
+                loop_body_start = current_line + 1;
+                brace_count = 1;
+                current_line += 1;
+            }
+        }
+    }
+    
+    // Find the end of the loop body
+    while (current_line < source_lines.items.len and brace_count > 0) {
+        const line = std.mem.trim(u8, source_lines.items[current_line], " \t\r\n");
+        
+        // Count braces
+        for (line) |char| {
+            if (char == '{') brace_count += 1;
+            if (char == '}') brace_count -= 1;
+        }
+        
+        if (brace_count == 0) {
+            loop_body_end = current_line;
+            break;
+        }
+        current_line += 1;
+    }
+    
+    if (verbose) print("🔄 Loop body: lines {}-{}\n", .{ loop_body_start + 1, loop_body_end });
+    
+    // Execute the loop with safety limit
+    const max_iterations = 10000; // Prevent infinite loops
+    var iteration_count: usize = 0;
+    
+    while (iteration_count < max_iterations) {
+        // Evaluate the condition
+        const condition_result = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
+            if (verbose) print("❌ Failed to evaluate loop condition: {any}\n", .{err});
+            break;
+        };
+        defer { var temp_result = condition_result; temp_result.deinit(allocator); }
+        
+        // Convert result to boolean
+        const condition_is_true = switch (condition_result) {
+            .Boolean => |b| b,
+            .Integer => |i| i != 0,
+            .Float => |f| f != 0.0,
+            .String => |s| s.len > 0,
+            else => false,
+        };
+        
+        if (!condition_is_true) {
+            if (verbose) print("🔄 Loop condition false, exiting loop\n", .{});
+            break;
+        }
+        
+        if (verbose and iteration_count == 0) print("🔄 Starting loop execution\n", .{});
+        
+        // Execute loop body
+        for (loop_body_start..loop_body_end) |line_idx| {
+            if (line_idx >= source_lines.items.len) break;
+            const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
+            if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
+            
+            try executeBlockLine(variables, functions, allocator, exec_line, verbose);
+        }
+        
+        iteration_count += 1;
+    }
+    
+    if (iteration_count >= max_iterations) {
+        if (verbose) print("⚠️  Loop terminated after {} iterations (safety limit)\n", .{max_iterations});
+    } else if (verbose) {
+        print("✅ Loop completed after {} iterations\n", .{iteration_count});
+    }
+    
+    const total_lines_consumed = (loop_body_end + 1) - start_line_index;
+    if (verbose) print("✅ Bestie loop processed, consumed {} lines\n", .{total_lines_consumed});
     return total_lines_consumed;
 }
 
 /// Execute a single line within a control flow block
 fn executeBlockLine(
-variables: *VariableStore,
-functions: *FunctionStore,
-allocator: Allocator,
-line: []const u8,
-verbose: bool
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: Allocator,
+    line: []const u8,
+    verbose: bool
 ) !void {
-const trimmed = std.mem.trim(u8, line, " \t\r\n");
-
-// Handle vibez.spill() calls
-if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
-try handleVibesSpill(variables, functions, allocator, trimmed, start, verbose);
-}
-// Handle variable declarations
-else if (std.mem.startsWith(u8, trimmed, "sus ")) {
-try handleVariableDeclaration(variables, functions, allocator, allocator, trimmed, verbose);
-}
-// Handle function calls
-else if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
-const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
-if (functions.get(func_name)) |_| {
-_ = try handleFunctionCall(functions, variables, allocator, trimmed, verbose);
-}
-}
-else if (verbose) {
-print("  📝 Block line: {s}\n", .{trimmed});
-}
+    const trimmed = std.mem.trim(u8, line, " \t\r\n");
+    
+    // Skip empty lines and braces
+    if (trimmed.len == 0 or std.mem.eql(u8, trimmed, "{") or std.mem.eql(u8, trimmed, "}")) {
+        return;
+    }
+    
+    // Handle vibez.spill() calls
+    if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
+        try handleVibesSpill(variables, functions, allocator, trimmed, start, verbose);
+        return;
+    }
+    
+    // Handle variable declarations
+    if (std.mem.startsWith(u8, trimmed, "sus ")) {
+        try handleVariableDeclaration(variables, functions, allocator, allocator, trimmed, verbose);
+        return;
+    }
+    
+    // Handle variable assignments
+    if (std.mem.indexOf(u8, trimmed, "=")) |equals_pos| {
+        // Make sure it's not inside quotes
+        var in_quotes = false;
+        for (trimmed[0..equals_pos]) |char| {
+            if (char == '"') in_quotes = !in_quotes;
+        }
+        
+        if (!in_quotes) {
+            const target = std.mem.trim(u8, trimmed[0..equals_pos], " \t");
+            const value_expr = std.mem.trim(u8, trimmed[equals_pos + 1..], " \t");
+            
+            if (variables.get(target)) |_| {
+                if (evaluateExpression(variables, functions, allocator, value_expr, verbose)) |result| {
+                    try variables.put(target, result);
+                    if (verbose) print("  ✅ Variable assignment: {s} = {any}\n", .{ target, result });
+                } else |err| {
+                    if (verbose) print("  ❌ Failed to evaluate assignment: {any}\n", .{err});
+                }
+                return;
+            }
+        }
+    }
+    
+    // Handle function calls
+    if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
+        const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
+        if (functions.get(func_name)) |_| {
+            _ = try handleFunctionCall(functions, variables, allocator, trimmed, verbose);
+            return;
+        }
+    }
+    
+    // Handle nested control structures
+    if (std.mem.startsWith(u8, trimmed, "ready ")) {
+        if (verbose) print("  🔍 Nested ready statement found: {s}\n", .{trimmed});
+        // For now, just log - nested control structures need special handling
+        return;
+    }
+    
+    // Default: try to process as a statement
+    if (verbose) {
+        print("  📝 Block line (unhandled): {s}\n", .{trimmed});
+    }
 }
 
 /// Handle interface definitions: collab InterfaceName { method declarations }

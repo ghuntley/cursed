@@ -321,7 +321,7 @@ const MemoryPool = struct {
             try self.addChunk();
         }
         
-        return self.free_blocks.pop();
+        return self.free_blocks.pop() orelse error.OutOfMemory;
     }
     
     pub fn deallocate(self: *MemoryPool, ptr: *anyopaque) !void {
@@ -1277,10 +1277,10 @@ pub const GC = struct {
         
         // Process mark stack until empty
         while (self.mark_stack.items.len > 0) {
-            const obj = self.mark_stack.pop();
+            const obj = self.mark_stack.orderedRemove(self.mark_stack.items.len - 1);
             
             // Mark object as black
-            obj.*.color = @intFromEnum(Color.Black);
+            obj.color = @intFromEnum(Color.Black);
             
             // Mark children as gray
             try self.markChildren(obj);
@@ -1687,7 +1687,7 @@ pub const GC = struct {
             for (0..work_chunk) |_| {
                 if (self.mark_stack.items.len == 0) break;
                 
-                const obj = self.mark_stack.pop();
+                const obj = self.mark_stack.orderedRemove(self.mark_stack.items.len - 1);
                 obj.color = @intFromEnum(Color.Black);
                 try self.markChildren(obj);
                 work_done += 1;
@@ -1738,7 +1738,7 @@ pub const GC = struct {
                 for (0..work_chunk) |_| {
                     if (self.mark_stack.items.len == 0) break;
                     
-                    const obj = self.mark_stack.pop();
+                    const obj = self.mark_stack.orderedRemove(self.mark_stack.items.len - 1);
                     obj.color = @intFromEnum(Color.Black);
                     try self.markChildren(obj);
                     work_done += 1;

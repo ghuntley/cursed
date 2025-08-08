@@ -270,7 +270,7 @@ fn handleCompile(allocator: Allocator, args: [][]const u8) !void {
     try compile_args.append("cursed-compile");
     
     // Execute compilation
-    const result = try std.ChildProcess.exec(.{
+    const result = try std.process.Child.run(.{
         .allocator = allocator,
         .argv = compile_args.items,
         .cwd = project_dir,
@@ -331,7 +331,7 @@ fn handleRun(allocator: Allocator, args: [][]const u8) !void {
         try exec_args.append(arg);
     }
     
-    const result = try std.ChildProcess.exec(.{
+    const result = try std.process.Child.run(.{
         .allocator = allocator,
         .argv = exec_args.items,
         .cwd = project_dir,
@@ -373,7 +373,7 @@ fn handleTest(allocator: Allocator, args: [][]const u8) !void {
     
     print("Running tests for CURSED project in {s}...\n", .{project_dir});
     
-    const result = try std.ChildProcess.exec(.{
+    const result = try std.process.Child.run(.{
         .allocator = allocator,
         .argv = &[_][]const u8{ "zig", "build", "cursed-test" },
         .cwd = project_dir,
@@ -413,7 +413,7 @@ fn handleClean(allocator: Allocator, args: [][]const u8) !void {
     
     print("Cleaning build artifacts in {s}...\n", .{project_dir});
     
-    const result = try std.ChildProcess.exec(.{
+    const result = try std.process.Child.run(.{
         .allocator = allocator,
         .argv = &[_][]const u8{ "zig", "build", "cursed-clean" },
         .cwd = project_dir,
@@ -543,7 +543,7 @@ fn handleBuild(allocator: Allocator, args: [][]const u8) !void {
         try exec_args.append(arg);
     }
     
-    const result = try std.ChildProcess.exec(.{
+    const result = try std.process.Child.run(.{
         .allocator = allocator,
         .argv = exec_args.items,
         .cwd = project_dir,

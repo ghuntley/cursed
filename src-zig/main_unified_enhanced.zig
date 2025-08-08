@@ -180,7 +180,7 @@ fn compileToExecutable(allocator: Allocator, program: anytype, filename: []const
     
     if (verbose) print("🔨 Compiling: {s}\n", .{gcc_cmd});
     
-    const result = try std.ChildProcess.exec(.{
+    const result = try std.process.Child.run(.{
         .allocator = allocator,
         .argv = &[_][]const u8{ "gcc", "-o", executable_name, c_filename },
     });

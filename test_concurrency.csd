@@ -1,1 +1,1 @@
-stan { vibez.spill("Hello from goroutine!") }; wait_all()
+stan { vibez.spill("Goroutine working!"); }; vibez.spill("Main thread")

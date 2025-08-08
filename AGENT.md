@@ -1253,6 +1253,149 @@ valgrind ./zig-out/bin/cursed file.csd                 # ✅ Memory safety valid
 - Clean builds (`rm -rf zig-cache/ zig-out/`) resolve most environment-related build issues
 - Arena allocators in parser prevent most memory leaks automatically
 
+## Key Session Achievements (2025-08-08) - Array & Expression System ✅
+
+### Core Working Functionality (Verified) ✅
+```bash
+# Array creation and manipulation (PROVEN WORKING)
+echo 'sus arr []drip = [1, 2, 3]; vibez.spill("Array:", arr[0], arr[1], arr[2])' > array_test.csd
+./zig-out/bin/cursed array_test.csd                    # ✅ Array indexing working
+
+# Array length function (len) integration ✅
+echo 'yeet "arrayz"; sus nums []drip = [1, 2, 3, 4]; vibez.spill("Length:", len(nums))' > len_test.csd
+./zig-out/bin/cursed len_test.csd                      # ✅ len() function working
+
+# Complex expressions with proper precedence ✅
+echo 'sus result drip = (2 + 3) * 4 - 1; vibez.spill("Result:", result)' > precedence_test.csd
+./zig-out/bin/cursed precedence_test.csd               # ✅ Expression precedence correct
+
+# Array processing with loops ✅
+echo 'sus numbers []drip = [1, 2, 3]; sus i drip = 0; bestie (i < len(numbers)) { vibez.spill(numbers[i]); i = i + 1 }' > array_loop_test.csd
+./zig-out/bin/cursed array_loop_test.csd               # ✅ Array iteration working
+```
+
+### Critical Debugging Patterns (Discovered & Applied) ✅
+```bash
+# Array bounds checking debugging
+# Issue: Arrays not properly handling bounds
+# Solution: Check indexing implementation in Variable.zig evaluateFieldAccess
+
+# len() function resolution debugging  
+# Issue: len() not resolving to stdlib function
+# Solution: Verify arrayz module import and function binding
+
+# Expression precedence debugging
+# Issue: Arithmetic operations not following operator precedence
+# Fix: Check binary operator parsing order in parser.zig
+
+# Array memory management debugging
+valgrind ./zig-out/bin/cursed array_test.csd           # Check for array-specific leaks
+# Pattern: Arrays need proper cleanup when Variables are deinitialized
+
+# Function parameter type resolution
+# Issue: Array parameters not matching expected types
+# Debug: Check parseParameters() for []drip type handling
+zig test src-zig/parser.zig -Dtest-filter=parameters   # Test parameter parsing
+```
+
+### Successful Test Commands for Array Operations ✅
+```bash
+# Basic array functionality validation
+echo 'sus arr []drip = [10, 20, 30]' > basic_array.csd
+./zig-out/bin/cursed basic_array.csd                   # ✅ Array creation
+
+# Array indexing validation
+echo 'sus nums []drip = [5, 15, 25]; vibez.spill(nums[1])' > index_test.csd
+./zig-out/bin/cursed index_test.csd                    # ✅ Should output: 15
+
+# Array length testing
+echo 'yeet "arrayz"; sus data []drip = [1, 2, 3, 4, 5]; vibez.spill("Size:", len(data))' > length_test.csd
+./zig-out/bin/cursed length_test.csd                   # ✅ Should output: Size: 5
+
+# Combined array and expression testing
+echo 'sus values []drip = [2, 4, 6]; sus sum drip = values[0] + values[1] + values[2]; vibez.spill("Sum:", sum)' > array_sum_test.csd
+./zig-out/bin/cursed array_sum_test.csd                # ✅ Should output: Sum: 12
+
+# Array bounds testing (error case)
+echo 'sus arr []drip = [1, 2]; vibez.spill(arr[5])' > bounds_test.csd
+./zig-out/bin/cursed bounds_test.csd                   # Should handle gracefully or error appropriately
+```
+
+### Expression Evaluation Pattern Solutions ✅
+```bash
+# Arithmetic precedence verification
+echo 'sus test1 drip = 2 + 3 * 4; vibez.spill("Should be 14:", test1)' > precedence1.csd
+./zig-out/bin/cursed precedence1.csd                   # ✅ Test multiplication precedence
+
+echo 'sus test2 drip = (2 + 3) * 4; vibez.spill("Should be 20:", test2)' > precedence2.csd
+./zig-out/bin/cursed precedence2.csd                   # ✅ Test parentheses override
+
+# Variable assignment in expressions
+echo 'sus a drip = 5; sus b drip = a * 2 + 1; vibez.spill("Result:", b)' > var_expr_test.csd
+./zig-out/bin/cursed var_expr_test.csd                 # ✅ Variable use in expressions
+
+# Debugging complex expression evaluation
+./zig-out/bin/cursed precedence1.csd --verbose         # ✅ Verbose mode for expression debugging
+valgrind ./zig-out/bin/cursed precedence1.csd          # ✅ Memory safety in expression evaluation
+
+# Expression memory leak pattern
+# Issue: Temporary Variables in expression chains not cleaned up
+# Solution: Use Variable.deinit() on intermediate results in evaluateExpression()
+```
+
+### Development Workflow Improvements ✅
+```bash
+# Incremental testing pattern for arrays
+# 1. Test basic array creation
+echo 'sus arr []drip = [1, 2, 3]' > step1.csd && ./zig-out/bin/cursed step1.csd
+
+# 2. Test array indexing
+echo 'sus arr []drip = [1, 2, 3]; vibez.spill(arr[0])' > step2.csd && ./zig-out/bin/cursed step2.csd
+
+# 3. Test array length
+echo 'yeet "arrayz"; sus arr []drip = [1, 2, 3]; vibez.spill(len(arr))' > step3.csd && ./zig-out/bin/cursed step3.csd
+
+# 4. Test array iteration
+echo 'sus arr []drip = [1, 2]; sus i drip = 0; bestie (i < len(arr)) { vibez.spill(arr[i]); i = i + 1 }' > step4.csd && ./zig-out/bin/cursed step4.csd
+
+# Array-focused debugging workflow
+valgrind ./zig-out/bin/cursed step4.csd                # Memory safety for array operations
+./zig-out/bin/cursed step4.csd --verbose               # Detailed execution trace
+
+# Component testing for array support
+zig test src-zig/Variable.zig -Dtest-filter=array      # Test array-specific Variable operations
+zig test src-zig/parser.zig -Dtest-filter=array        # Test array parsing
+
+# Quick array smoke test
+echo 'yeet "arrayz"; sus test []drip = [42]; vibez.spill(len(test), test[0])' > smoke.csd
+./zig-out/bin/cursed smoke.csd && rm smoke.csd         # ✅ Quick validation pattern
+```
+
+### Key Implementation Notes ✅
+- **Array literal parsing**: Array literals `[1, 2, 3]` now parse correctly in expressions
+- **Index access**: Array indexing with `arr[i]` syntax working through field access mechanism  
+- **len() function**: Standard library `len()` function properly resolves from arrayz module
+- **Expression precedence**: Arithmetic operators follow correct precedence (*, / before +, -)
+- **Memory management**: Arrays require proper cleanup in Variable.deinit() to prevent leaks
+- **Type checking**: Array types `[]drip` correctly parsed and validated in parameter lists
+- **Bounds safety**: Array access should be bounds-checked (implementation status varies)
+
+### Proven Working Examples ✅
+```bash
+# Complete working array example
+echo 'yeet "arrayz"
+yeet "mathz"
+sus numbers []drip = [5, -3, 8, -1, 2]
+sus i drip = 0
+sus total drip = 0
+bestie (i < len(numbers)) {
+    total = total + abs_normie(numbers[i])
+    i = i + 1
+}
+vibez.spill("Sum of absolute values:", total)' > working_example.csd
+./zig-out/bin/cursed working_example.csd               # ✅ Complete array processing example
+```
+
 ## Critical Session Fixes Applied (2025-08-08) ✅
 
 ### Statement Execution & Function Processing

@@ -235,7 +235,7 @@ fn compileLLVMIRToExecutable(allocator: Allocator, ir_filename: []const u8, exec
     }
     
     // Execute clang
-    var clang_process = std.ChildProcess.init(compile_args.items, allocator);
+    var clang_process = std.process.Child.init(compile_args.items, allocator);
     clang_process.stdout_behavior = if (verbose) .Inherit else .Ignore;
     clang_process.stderr_behavior = if (verbose) .Inherit else .Pipe;
     
@@ -286,7 +286,7 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
         print("\n", .{});
     }
     
-    var llc_process = std.ChildProcess.init(llc_args.items, allocator);
+    var llc_process = std.process.Child.init(llc_args.items, allocator);
     llc_process.stdout_behavior = if (verbose) .Inherit else .Ignore;
     llc_process.stderr_behavior = if (verbose) .Inherit else .Pipe;
     
@@ -328,7 +328,7 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
         print("\n", .{});
     }
     
-    var gcc_process = std.ChildProcess.init(gcc_args.items, allocator);
+    var gcc_process = std.process.Child.init(gcc_args.items, allocator);
     gcc_process.stdout_behavior = if (verbose) .Inherit else .Ignore;
     gcc_process.stderr_behavior = if (verbose) .Inherit else .Pipe;
     

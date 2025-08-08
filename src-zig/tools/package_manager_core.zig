@@ -297,7 +297,7 @@ pub const PackageManifest = struct {
         var manifest = PackageManifest.init(allocator);
         
         // Simple TOML parser - parse line by line
-        var lines = std.mem.split(u8, content, "\n");
+        var lines = std.mem.splitScalar(u8, content, '\n');
         var current_section: []const u8 = "";
         
         while (lines.next()) |line| {
@@ -355,7 +355,7 @@ pub const PackageManifest = struct {
         }
         
         const inner = array_str[1..array_str.len - 1];
-        var items = std.mem.split(u8, inner, ",");
+        var items = std.mem.splitScalar(u8, inner, ',');
         
         while (items.next()) |item| {
             var trimmed = std.mem.trim(u8, item, " \t");
@@ -385,7 +385,7 @@ pub const PackageManifest = struct {
         const content = try self.toTomlString();
         defer self.allocator.free(content);
         
-        try std.fs.cwd().writeFile(file_path, content);
+        try std.fs.cwd().writeFile(.{ .sub_path = file_path, .data = content });
     }
     
     pub fn toTomlString(self: *const PackageManifest) ![]const u8 {
@@ -589,7 +589,7 @@ pub const commands = struct {
         const package_file = try std.fmt.allocPrint(allocator, "{s}/mod.csd", .{cache_path});
         defer allocator.free(package_file);
         
-        try std.fs.cwd().writeFile(package_file, mock_content);
+        try std.fs.cwd().writeFile(.{ .sub_path = package_file, .data = mock_content });
     }
     
     fn generateLockFile(allocator: Allocator, manifest: *const PackageManifest) !void {
@@ -620,7 +620,7 @@ pub const commands = struct {
             try writer.print("checksum = \"{s}\"\n", .{checksum});
         }
         
-        try std.fs.cwd().writeFile("CursedPackage.lock", content.items);
+        try std.fs.cwd().writeFile(.{ .sub_path = "CursedPackage.lock", .data = content.items });
     }
     
     fn generateMockChecksum(allocator: Allocator, name: []const u8) ![]const u8 {
@@ -664,7 +664,7 @@ pub const commands = struct {
         }
         try writer.writeAll("};\n");
         
-        try std.fs.cwd().writeFile("build_generated.zig", content.items);
+        try std.fs.cwd().writeFile(.{ .sub_path = "build_generated.zig", .data = content.items });
     }
     
     pub fn update(allocator: Allocator, args: [][]const u8) !void {
@@ -861,7 +861,7 @@ pub const commands = struct {
         // Copy manifest
         const manifest_content = try manifest.toTomlString();
         defer allocator.free(manifest_content);
-        try std.fs.cwd().writeFile(".cursed-pkg/CursedPackage.toml", manifest_content);
+        try std.fs.cwd().writeFile(.{ .sub_path = ".cursed-pkg/CursedPackage.toml", .data = manifest_content });
         
         // Copy README if exists
         std.fs.cwd().copyFile("README.md", std.fs.cwd(), ".cursed-pkg/README.md", .{}) catch {};

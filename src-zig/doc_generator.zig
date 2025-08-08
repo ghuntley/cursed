@@ -271,7 +271,7 @@ pub const DocGenerator = struct {
         if (comment_text == null) return;
         
         const text = comment_text.?;
-        var lines = std.mem.split(u8, text, "\n");
+        var lines = std.mem.splitScalar(u8, text, '\n');
         
         var current_section: ?[]const u8 = null;
         var description_lines = ArrayList(u8).init(self.allocator);
@@ -319,7 +319,7 @@ pub const DocGenerator = struct {
     
     fn parseParamTag(self: *DocGenerator, doc_comment: *DocComment, param_text: []const u8) !void {
         // Parse "@param name type description" format
-        var parts = std.mem.split(u8, std.mem.trim(u8, param_text, " \t"), " ");
+        var parts = std.mem.splitScalar(u8, std.mem.trim(u8, param_text, " \t"), ' ');
         
         const name = parts.next() orelse return;
         const param_type = parts.next() orelse "";

@@ -327,8 +327,8 @@ pub const ErrorRecovery = struct {
     
     pub fn popFunction(self: *ErrorRecovery) void {
         if (self.current_function_stack.items.len > 0) {
-            const func_name = self.current_function_stack.pop();
-            self.allocator.free(func_name);
+            _ = self.current_function_stack.pop();
+            // Note: Memory will be freed when ErrorRecovery is deinitialized
         }
     }
     

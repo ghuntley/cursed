@@ -409,7 +409,7 @@ pub const Formatter = struct {
         try self.output.appendSlice("\n\n");
         
         // Attempt line-by-line formatting for recoverable content
-        var lines = std.mem.split(u8, source, "\n");
+        var lines = std.mem.splitScalar(u8, source, '\n');
         var line_num: usize = 0;
         
         while (lines.next()) |line| {

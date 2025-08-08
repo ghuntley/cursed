@@ -157,7 +157,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             for (llvm_paths.linux_lib_paths) |path| {
                 var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
                 dir.close();
-                exe.addLibraryPath(.{ .path = path });
+                exe.addLibraryPath(.{ .cwd_relative = path });
                 llvm_lib_found = true;
                 if (b.verbose) {
                     std.debug.print("Found LLVM lib path: {s}\n", .{path});
@@ -167,7 +167,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             
             // Environment variable override
             if (env.get("LLVM_LINUX_LIB")) |lib_path| {
-                exe.addLibraryPath(.{ .path = lib_path });
+                exe.addLibraryPath(.{ .cwd_relative = lib_path });
                 llvm_lib_found = true;
             }
             
@@ -175,7 +175,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             for (llvm_paths.linux_inc_paths) |path| {
                 var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
                 dir.close();
-                exe.addIncludePath(.{ .path = path });
+                exe.addIncludePath(.{ .cwd_relative = path });
                 if (b.verbose) {
                     std.debug.print("Found LLVM include path: {s}\n", .{path});
                 }
@@ -183,7 +183,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             }
             
             if (env.get("LLVM_LINUX_INC")) |inc_path| {
-                exe.addIncludePath(.{ .path = inc_path });
+                exe.addIncludePath(.{ .cwd_relative = inc_path });
             }
             
             // Link LLVM and system libraries
@@ -196,12 +196,12 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
                 // Architecture-specific library paths
                 switch (target.result.cpu.arch) {
                     .x86_64 => {
-                        exe.addLibraryPath(.{ .path = "/usr/lib/x86_64-linux-gnu" });
-                        exe.addLibraryPath(.{ .path = "/lib/x86_64-linux-gnu" });
+                        exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/x86_64-linux-gnu" });
+                        exe.addLibraryPath(.{ .cwd_relative = "/lib/x86_64-linux-gnu" });
                     },
                     .aarch64 => {
-                        exe.addLibraryPath(.{ .path = "/usr/lib/aarch64-linux-gnu" });
-                        exe.addLibraryPath(.{ .path = "/lib/aarch64-linux-gnu" });
+                        exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/aarch64-linux-gnu" });
+                        exe.addLibraryPath(.{ .cwd_relative = "/lib/aarch64-linux-gnu" });
                     },
                     else => {},
                 }
@@ -214,7 +214,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             for (llvm_paths.macos_lib_paths) |path| {
                 var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
                 dir.close();
-                exe.addLibraryPath(.{ .path = path });
+                exe.addLibraryPath(.{ .cwd_relative = path });
                 llvm_lib_found = true;
                 if (b.verbose) {
                     std.debug.print("Found LLVM lib path: {s}\n", .{path});
@@ -224,7 +224,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             
             // Environment variable override
             if (env.get("LLVM_MACOS_LIB")) |lib_path| {
-                exe.addLibraryPath(.{ .path = lib_path });
+                exe.addLibraryPath(.{ .cwd_relative = lib_path });
                 llvm_lib_found = true;
             }
             
@@ -232,7 +232,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             for (llvm_paths.macos_inc_paths) |path| {
                 var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
                 dir.close();
-                exe.addIncludePath(.{ .path = path });
+                exe.addIncludePath(.{ .cwd_relative = path });
                 if (b.verbose) {
                     std.debug.print("Found LLVM include path: {s}\n", .{path});
                 }
@@ -240,7 +240,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             }
             
             if (env.get("LLVM_MACOS_INC")) |inc_path| {
-                exe.addIncludePath(.{ .path = inc_path });
+                exe.addIncludePath(.{ .cwd_relative = inc_path });
             }
             
             // Link LLVM and macOS frameworks
@@ -261,7 +261,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
                 if (std.fs.path.isAbsolute(path)) {
                     var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
                     dir.close();
-                    exe.addLibraryPath(.{ .path = path });
+                    exe.addLibraryPath(.{ .cwd_relative = path });
                     llvm_lib_found = true;
                     if (b.verbose) {
                         std.debug.print("Found LLVM lib path: {s}\n", .{path});
@@ -272,7 +272,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             
             // Environment variable override
             if (env.get("LLVM_WINDOWS_LIB")) |lib_path| {
-                exe.addLibraryPath(.{ .path = lib_path });
+                exe.addLibraryPath(.{ .cwd_relative = lib_path });
                 llvm_lib_found = true;
             }
             
@@ -282,7 +282,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
                 if (std.fs.path.isAbsolute(path)) {
                     var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
                     dir.close();
-                    exe.addIncludePath(.{ .path = path });
+                    exe.addIncludePath(.{ .cwd_relative = path });
                     if (b.verbose) {
                         std.debug.print("Found LLVM include path: {s}\n", .{path});
                     }
@@ -291,7 +291,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
             }
             
             if (env.get("LLVM_WINDOWS_INC")) |inc_path| {
-                exe.addIncludePath(.{ .path = inc_path });
+                exe.addIncludePath(.{ .cwd_relative = inc_path });
             }
             
             // Link LLVM and Windows system libraries
