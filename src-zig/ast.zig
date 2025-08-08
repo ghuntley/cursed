@@ -1113,9 +1113,9 @@ pub const TypeConstraint = union(enum) {
     Equality: Type,
     Subtype: Type,
     Supertype: Type,
-    WhereClause: []WhereClause,
+    WhereClause: []WhereClauseData,
     
-    pub const WhereClause = struct {
+    pub const WhereClauseData = struct {
         type_parameter: []const u8,
         constraints: ArrayList(TypeConstraint),
     };

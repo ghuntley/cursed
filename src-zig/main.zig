@@ -206,7 +206,7 @@ pub fn main() !void {
     }
 }
 
-fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
+fn parseArgs(allocator: Allocator, args: [][:0]u8) !Config {
     _ = allocator;
     var config = Config.init();
     
@@ -604,8 +604,8 @@ fn executeFormat(allocator: Allocator, config: Config) !void {
         print("--- {s} (original)\n", .{filename});
         print("+++ {s} (formatted)\n", .{filename});
         // Simple line-by-line diff
-        var source_lines = std.mem.split(u8, source, "\n");
-        var formatted_lines = std.mem.split(u8, formatted, "\n");
+        var source_lines = std.mem.splitScalar(u8, source, '\n');
+        var formatted_lines = std.mem.splitScalar(u8, formatted, '\n');
         var line_num: u32 = 1;
         
         while (true) {
@@ -1324,7 +1324,7 @@ fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, li
             const content = trimmed_val[1..trimmed_val.len - 1];
             
             if (content.len > 0) {
-                var elements = std.mem.split(u8, content, ",");
+                var elements = std.mem.splitScalar(u8, content, ',');
                 while (elements.next()) |element| {
                     const trimmed_element = std.mem.trim(u8, element, " \t");
                     

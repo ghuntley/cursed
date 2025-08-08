@@ -287,7 +287,7 @@ pub const ErrorHandler = struct {
         }
         
         self.source_lines = ArrayList([]const u8).init(self.allocator);
-        var lines = std.mem.split(u8, source, "\n");
+        var lines = std.mem.splitScalar(u8, source, '\n');
         while (lines.next()) |line| {
             try self.source_lines.?.append(try self.allocator.dupe(u8, line));
         }

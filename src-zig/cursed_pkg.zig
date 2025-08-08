@@ -18,7 +18,7 @@ const Command = enum {
     help,
     
     pub fn fromString(str: []const u8) ?Command {
-        const commands = std.ComptimeStringMap(Command, .{
+        const commands = std.StaticStringMap(Command).initComptime(.{
             .{ "init", .init },
             .{ "add", .add },
             .{ "remove", .remove },
@@ -37,7 +37,7 @@ const Command = enum {
 
 const CliArgs = struct {
     command: Command,
-    packages: [][]const u8,
+    packages: [][:0]const u8,
     options: std.StringHashMap([]const u8),
     verbose: bool = false,
     dry_run: bool = false,
@@ -46,7 +46,7 @@ const CliArgs = struct {
     pub fn init(allocator: std.mem.Allocator) CliArgs {
         return CliArgs{
             .command = .help,
-            .packages = &[_][]const u8{},
+            .packages = &[_][:0]const u8{},
             .options = std.StringHashMap([]const u8).init(allocator),
         };
     }
@@ -56,7 +56,7 @@ const CliArgs = struct {
     }
 };
 
-fn parseArgs(allocator: std.mem.Allocator, args: [][]const u8) !CliArgs {
+fn parseArgs(allocator: std.mem.Allocator, args: [][:0]u8) !CliArgs {
     var cli_args = CliArgs.init(allocator);
     
     if (args.len < 2) {
@@ -65,7 +65,7 @@ fn parseArgs(allocator: std.mem.Allocator, args: [][]const u8) !CliArgs {
     
     cli_args.command = Command.fromString(args[1]) orelse .help;
     
-    var packages = std.ArrayList([]const u8).init(allocator);
+    var packages = std.ArrayList([:0]const u8).init(allocator);
     defer packages.deinit();
     
     var i: usize = 2;
@@ -262,6 +262,16 @@ fn cmdClean(allocator: std.mem.Allocator, args: CliArgs) !void {
     _ = allocator;
 }
 
+// Convert null-terminated string array to regular string array
+fn convertArgs(allocator: std.mem.Allocator, null_terminated_args: [][:0]const u8) ![][]const u8 {
+    const converted = try allocator.alloc([]const u8, null_terminated_args.len);
+    for (null_terminated_args, 0..) |arg, i| {
+        // Convert null-terminated string to regular string slice
+        converted[i] = std.mem.sliceTo(arg, 0);
+    }
+    return converted;
+}
+
 fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
     if (args.verbose) {
         std.debug.print("Running command: {s}\n", .{@tagName(args.command)});
@@ -270,15 +280,20 @@ fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
         }
     }
     
+    // Convert args.packages to regular string array
+    const converted_packages = try convertArgs(allocator, args.packages);
+    defer allocator.free(converted_packages);
+    
     switch (args.command) {
-        .init => try tools.package_manager.commands.init(allocator, args.packages),
+        .init => try tools.package_manager.commands.init(allocator, converted_packages),
         .add => {
             // Handle package@version syntax
             if (args.packages.len > 0) {
                 const pkg_spec = args.packages[0];
-                if (std.mem.indexOf(u8, pkg_spec, "@")) |at_pos| {
-                    const pkg_name = pkg_spec[0..at_pos];
-                    const version = pkg_spec[at_pos + 1 ..];
+                const pkg_spec_str = std.mem.sliceTo(pkg_spec, 0);
+                if (std.mem.indexOf(u8, pkg_spec_str, "@")) |at_pos| {
+                    const pkg_name = pkg_spec_str[0..at_pos];
+                    const version = pkg_spec_str[at_pos + 1 ..];
                     
                     var add_args_array = [_][]const u8{ pkg_name, version };
                     try tools.package_manager.commands.add(allocator, add_args_array[0..]);
@@ -286,13 +301,13 @@ fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
                 }
             }
             
-            try tools.package_manager.commands.add(allocator, args.packages);
+            try tools.package_manager.commands.add(allocator, converted_packages);
         },
-        .remove => try tools.package_manager.commands.remove(allocator, args.packages),
-        .install => try tools.package_manager.commands.install(allocator, args.packages),
-        .update => try tools.package_manager.commands.update(allocator, args.packages),
-        .search => try tools.package_manager.commands.search(allocator, args.packages),
-        .publish => try tools.package_manager.commands.publish(allocator, args.packages),
+        .remove => try tools.package_manager.commands.remove(allocator, converted_packages),
+        .install => try tools.package_manager.commands.install(allocator, converted_packages),
+        .update => try tools.package_manager.commands.update(allocator, converted_packages),
+        .search => try tools.package_manager.commands.search(allocator, converted_packages),
+        .publish => try tools.package_manager.commands.publish(allocator, converted_packages),
         .info => try cmdInfo(allocator, args),
         .list => try cmdList(allocator, args),
         .clean => try cmdClean(allocator, args),
@@ -330,7 +345,7 @@ test "command parsing" {
 test "argument parsing" {
     const allocator = std.testing.allocator;
     
-    const test_args = [_][]const u8{ "cursed-pkg", "add", "json", "--verbose", "--cache-dir=/tmp/cache" };
+    const test_args = [_][:0]const u8{ "cursed-pkg", "add", "json", "--verbose", "--cache-dir=/tmp/cache" };
     
     var cli_args = try parseArgs(allocator, &test_args);
     defer cli_args.deinit();

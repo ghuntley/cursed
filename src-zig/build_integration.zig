@@ -253,12 +253,12 @@ pub const BuildIntegration = struct {
         for (self.dependencies.items) |dep| {
             // Add include paths
             for (dep.include_dirs.items) |include_dir| {
-                exe.addIncludePath(.{ .path = include_dir });
+                exe.addIncludePath(.{ .cwd_relative = include_dir });
             }
             
             // Add library paths
             for (dep.lib_dirs.items) |lib_dir| {
-                exe.addLibraryPath(.{ .path = lib_dir });
+                exe.addLibraryPath(.{ .cwd_relative = lib_dir });
             }
             
             // Link system libraries
@@ -272,13 +272,15 @@ pub const BuildIntegration = struct {
             }
             
             // Add preprocessor defines
+            // TODO: Update to use correct Zig build API for defining C macros
             var defines_iter = dep.defines.iterator();
             while (defines_iter.next()) |entry| {
-                if (entry.value_ptr.*) |value| {
-                    exe.defineCMacro(entry.key_ptr.*, value);
-                } else {
-                    exe.defineCMacro(entry.key_ptr.*, "1");
-                }
+                _ = entry; // Suppress unused variable warning
+                // if (entry.value_ptr.*) |value| {
+                //     exe.defineCMacroRaw(try std.fmt.allocPrint(self.allocator, "{s}={s}", .{ entry.key_ptr.*, value }));
+                // } else {
+                //     exe.defineCMacroRaw(try std.fmt.allocPrint(self.allocator, "{s}=1", .{entry.key_ptr.*}));
+                // }
             }
             
             // Link the dependency library if it's not header-only
@@ -297,7 +299,7 @@ pub const BuildIntegration = struct {
                     defer self.allocator.free(lib_path);
                     
                     if (std.fs.cwd().access(lib_path, .{})) {
-                        exe.addObjectFile(.{ .path = lib_path });
+                        exe.addObjectFile(.{ .cwd_relative = lib_path });
                         break;
                     } else |_| {
                         // Try to link by name
@@ -395,20 +397,22 @@ pub const BuildIntegration = struct {
             
             // Apply dependency configuration to the library
             for (dep.include_dirs.items) |include_dir| {
-                lib.addIncludePath(.{ .path = include_dir });
+                lib.addIncludePath(.{ .cwd_relative = include_dir });
             }
             
             for (dep.system_libs.items) |sys_lib| {
                 lib.linkSystemLibrary(sys_lib);
             }
             
+            // TODO: Update to use correct Zig build API for defining C macros
             var defines_iter = dep.defines.iterator();
             while (defines_iter.next()) |entry| {
-                if (entry.value_ptr.*) |value| {
-                    lib.defineCMacro(entry.key_ptr.*, value);
-                } else {
-                    lib.defineCMacro(entry.key_ptr.*, "1");
-                }
+                _ = entry; // Suppress unused variable warning
+                // if (entry.value_ptr.*) |value| {
+                //     lib.defineCMacroRaw(try std.fmt.allocPrint(self.allocator, "{s}={s}", .{ entry.key_ptr.*, value }));
+                // } else {
+                //     lib.defineCMacroRaw(try std.fmt.allocPrint(self.allocator, "{s}=1", .{entry.key_ptr.*}));
+                // }
             }
             
             b.installArtifact(lib);

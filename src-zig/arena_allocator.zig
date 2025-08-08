@@ -486,22 +486,23 @@ pub const ArenaAllocator = struct {
                 .alloc = allocFn,
                 .resize = resizeFn,
                 .free = freeFn,
+                .remap = std.mem.Allocator.noRemap,
             },
         };
     }
     
-    fn allocFn(ptr: *anyopaque, len: usize, log2_align: u8, _: usize) ?[*]u8 {
+    fn allocFn(ptr: *anyopaque, len: usize, alignment: std.mem.Alignment, _: usize) ?[*]u8 {
         const self: *ArenaAllocator = @ptrCast(@alignCast(ptr));
-        const alignment = @as(u29, 1) << @as(u5, @intCast(log2_align));
-        const slice = self.allocAligned(len, alignment) catch return null;
+        const alignment_value = @as(u29, @intCast(alignment.toByteUnits()));
+        const slice = self.allocAligned(len, alignment_value) catch return null;
         return slice.ptr;
     }
     
-    fn resizeFn(_: *anyopaque, _: []u8, _: u8, _: usize, _: usize) bool {
+    fn resizeFn(_: *anyopaque, _: []u8, _: std.mem.Alignment, _: usize, _: usize) bool {
         return false; // Arena allocator doesn't support resize
     }
     
-    fn freeFn(ptr: *anyopaque, buf: []u8, _: u8, _: usize) void {
+    fn freeFn(ptr: *anyopaque, buf: []u8, _: std.mem.Alignment, _: usize) void {
         const self: *ArenaAllocator = @ptrCast(@alignCast(ptr));
         self.free(buf);
     }

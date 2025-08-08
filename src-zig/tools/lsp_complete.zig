@@ -596,7 +596,7 @@ pub const CursedLSP = struct {
 
     fn getSymbolInfo(self: *CursedLSP, symbol: []const u8) ![]u8 {
         // CURSED keyword documentation
-        const docs = std.ComptimeStringMap([]const u8, .{
+        const docs = std.StaticStringMap([]const u8).initComptime(.{
             .{ "slay", "**Function Declaration**\n\nDefines a function that slays (executes).\n\n```cursed\nslay function_name(params) {\n    // function body\n}\n```" },
             .{ "sus", "**Variable Declaration**\n\nCreates a suspicious (mutable) variable.\n\n```cursed\nsus variable_name type = value\n```" },
             .{ "damn", "**Return Statement**\n\nReturns a value from a function.\n\n```cursed\ndamn expression\n```" },

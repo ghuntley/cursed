@@ -459,7 +459,7 @@ pub const ProcessOps = struct {
     else if (builtin.target.os.tag == .windows) 
         std.os.windows.HANDLE 
     else 
-        std.ChildProcess.Id;
+        std.process.Child.Id;
     
     // Process error types
     pub const ProcessError = error{

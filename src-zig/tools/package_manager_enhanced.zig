@@ -1205,7 +1205,7 @@ pub const PackageCache = struct {
             try args.appendSlice(&[_][]const u8{ "--branch", tag });
         }
         
-        const result = try std.ChildProcess.run(.{
+        const result = try std.process.Child.run(.{
             .allocator = self.allocator,
             .argv = args.items,
         });
