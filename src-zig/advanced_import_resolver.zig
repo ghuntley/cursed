@@ -36,13 +36,35 @@ pub const ImportSpec = struct {
     line: u32,
     column: u32,
     
+    // Flag to track ownership of resolved_path to prevent double-free
+    owns_resolved_path: bool = true,
+    
     pub fn deinit(self: *ImportSpec, allocator: Allocator) void {
-        if (self.resolved_path) |path| {
-            allocator.free(path);
+        if (self.owns_resolved_path) {
+            if (self.resolved_path) |path| {
+                allocator.free(path);
+                self.resolved_path = null;
+            }
         }
         if (self.alias) |alias| {
             allocator.free(alias);
+            self.alias = null;
         }
+    }
+    
+    // Create a safe copy that doesn't own the memory
+    pub fn copyForReturn(self: *const ImportSpec) ImportSpec {
+        return ImportSpec{
+            .raw_path = self.raw_path,
+            .resolved_path = self.resolved_path,
+            .module_type = self.module_type,
+            .version_req = self.version_req,
+            .alias = self.alias,
+            .source_file = self.source_file,
+            .line = self.line,
+            .column = self.column,
+            .owns_resolved_path = false,  // Copy doesn't own the memory
+        };
     }
 };
 
@@ -90,7 +112,11 @@ pub const ModuleCache = struct {
         // Clean up import graph
         var graph_iter = self.import_graph.iterator();
         while (graph_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            var deps = entry.value_ptr;
+            for (deps.items) |dep| {
+                self.allocator.free(dep);
+            }
+            deps.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
         self.import_graph.deinit();
@@ -343,7 +369,7 @@ pub const AdvancedImportResolver = struct {
         defer self.allocator.free(cache_key);
         
         if (self.module_cache.resolved_modules.get(cache_key)) |cached| {
-            return cached;
+            return cached.copyForReturn();
         }
         
         // Parse the import statement to extract details

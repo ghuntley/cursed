@@ -1096,6 +1096,10 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
             try writer.print("  ; Processing statement: {s}\n", .{stmt});
         }
         
+        // Handle if/else statements (ready/otherwise) - TODO: implement
+        // if (std.mem.startsWith(u8, stmt, "ready ")) {
+        //     try generateLLVMIfStatement(stmt, writer, string_literals, &variables, &variable_counter, verbose);
+        // }
         // Handle vibez.spill() statements
         if (std.mem.indexOf(u8, stmt, "vibez.spill(")) |_| {
             try generateLLVMVibesSpill(stmt, writer, string_literals, &variables, &variable_counter, verbose);
@@ -1155,9 +1159,17 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                             try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double {})\n", .{ variable_counter.*, num });
                             variable_counter.* += 1;
                         } else {
-                            // Variable reference
-                            if (verbose) try writer.print("  ; Looking for variable: '{s}'\n", .{trimmed_arg});
-                            if (variables.get(trimmed_arg)) |var_info| {
+                            // Check for function call pattern
+                            if (std.mem.indexOf(u8, trimmed_arg, "(") != null and std.mem.indexOf(u8, trimmed_arg, ")") != null) {
+                                try generateFunctionCall(trimmed_arg, writer, variables, variable_counter, verbose);
+                            }
+                            // Check for array access pattern
+                            else if (std.mem.indexOf(u8, trimmed_arg, "[") != null and std.mem.indexOf(u8, trimmed_arg, "]") != null) {
+                                try generateArrayAccess(trimmed_arg, writer, variables, variable_counter, verbose);
+                            } else {
+                                // Variable reference
+                                if (verbose) try writer.print("  ; Looking for variable: '{s}'\n", .{trimmed_arg});
+                                if (variables.get(trimmed_arg)) |var_info| {
                                 if (verbose) try writer.print("  ; Found variable: {s} (type: {s})\n", .{ trimmed_arg, var_info.llvm_type });
                                 
                                 if (std.mem.eql(u8, var_info.llvm_type, "i64")) {
@@ -1192,9 +1204,131 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                             } else {
                                 if (verbose) try writer.print("  ; Unknown variable: {s}\n", .{trimmed_arg});
                             }
+                            }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/// Generate LLVM IR for array access (e.g., arr[0])
+fn generateArrayAccess(expr: []const u8, writer: anytype, variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), variable_counter: *u32, verbose: bool) !void {
+    // Parse arr[index] pattern
+    if (std.mem.indexOf(u8, expr, "[")) |bracket_start| {
+        if (std.mem.indexOf(u8, expr, "]")) |bracket_end| {
+            const array_name = expr[0..bracket_start];
+            const index_str = expr[bracket_start + 1..bracket_end];
+            
+            if (verbose) try writer.print("  ; Array access: {s}[{s}]\n", .{ array_name, index_str });
+            
+            // Get array variable info
+            if (variables.get(array_name)) |array_info| {
+                if (verbose) try writer.print("  ; Found array: {s} (type: {s})\n", .{ array_name, array_info.llvm_type });
+                
+                // Parse index (could be integer literal or variable)
+                var index_value: []const u8 = undefined;
+                if (std.fmt.parseInt(i32, index_str, 10) catch null) |index_num| {
+                    // Integer literal index
+                    try writer.print("  %index.{} = add i32 0, {}\n", .{ variable_counter.*, index_num });
+                    variable_counter.* += 1;
+                    index_value = try std.fmt.allocPrint(std.heap.page_allocator, "%index.{}", .{variable_counter.* - 1});
+                } else {
+                    // Variable index
+                    if (variables.get(index_str)) |index_var| {
+                        try writer.print("  %index.{} = load i32, i32* %{s}, align 4\n", .{ variable_counter.*, index_var.var_name });
+                        variable_counter.* += 1;
+                        index_value = try std.fmt.allocPrint(std.heap.page_allocator, "%index.{}", .{variable_counter.* - 1});
+                    } else {
+                        if (verbose) try writer.print("  ; Index variable not found: {s}\n", .{index_str});
+                        return;
+                    }
+                }
+                
+                // Generate array element access
+                if (std.mem.startsWith(u8, array_info.llvm_type, "[") and std.mem.endsWith(u8, array_info.llvm_type, " x i32]")) {
+                    // Dynamic array type - access element from array
+                    try writer.print("  %element_ptr.{} = getelementptr {s}, {s}* %{s}, i32 0, i32 {s}\n", 
+                        .{ variable_counter.*, array_info.llvm_type, array_info.llvm_type, array_info.var_name, index_value });
+                    try writer.print("  %element.{} = load i32, i32* %element_ptr.{}, align 4\n", 
+                        .{ variable_counter.*, variable_counter.* });
+                    // Cast to i64 for printf
+                    try writer.print("  %extended.{} = sext i32 %element.{} to i64\n", 
+                        .{ variable_counter.*, variable_counter.* });
+                    try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", 
+                        .{ variable_counter.*, variable_counter.* });
+                    variable_counter.* += 1;
+                } else {
+                    if (verbose) try writer.print("  ; Unsupported array type: {s}\n", .{array_info.llvm_type});
+                }
+            } else {
+                if (verbose) try writer.print("  ; Array not found: {s}\n", .{array_name});
+            }
+        }
+    }
+}
+
+/// Generate LLVM IR for function calls (e.g., abs_normie(-5))
+fn generateFunctionCall(expr: []const u8, writer: anytype, variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), variable_counter: *u32, verbose: bool) !void {
+    // Parse function_name(arg) pattern
+    if (std.mem.indexOf(u8, expr, "(")) |paren_start| {
+        if (std.mem.indexOf(u8, expr, ")")) |paren_end| {
+            const func_name = expr[0..paren_start];
+            const args_str = expr[paren_start + 1..paren_end];
+            
+            if (verbose) try writer.print("  ; Function call: {s}({s})\n", .{ func_name, args_str });
+            
+            // Handle standard library functions
+            if (std.mem.eql(u8, func_name, "abs_normie")) {
+                // Parse argument
+                if (std.fmt.parseInt(i32, args_str, 10)) |arg_value| {
+                    // Call abs function on literal
+                    const abs_result = if (arg_value < 0) -arg_value else arg_value;
+                    try writer.print("  %func_result.{} = add i32 0, {}\n", .{ variable_counter.*, abs_result });
+                    // Cast to i64 for printf
+                    try writer.print("  %extended.{} = sext i32 %func_result.{} to i64\n", 
+                        .{ variable_counter.*, variable_counter.* });
+                    try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", 
+                        .{ variable_counter.*, variable_counter.* });
+                    variable_counter.* += 1;
+                } else |_| {
+                    // Variable argument - TODO: implement variable lookup
+                    if (verbose) try writer.print("  ; Function call with variable argument not implemented: {s}\n", .{args_str});
+                }
+            } else if (std.mem.eql(u8, func_name, "len")) {
+                // Handle len() function for arrays
+                if (variables.get(args_str)) |var_info| {
+                    if (std.mem.startsWith(u8, var_info.llvm_type, "[") and std.mem.endsWith(u8, var_info.llvm_type, " x i32]")) {
+                        // Extract array size from type [3 x i32]
+                        const type_str = var_info.llvm_type;
+                        if (std.mem.indexOf(u8, type_str, "[")) |_| {
+                            if (std.mem.indexOf(u8, type_str, " x")) |space_pos| {
+                            const size_str = type_str[1..space_pos];
+                            if (std.fmt.parseInt(i32, size_str, 10)) |array_size| {
+                                try writer.print("  %len_result.{} = add i32 0, {}\n", .{ variable_counter.*, array_size });
+                                // Cast to i64 for printf
+                                try writer.print("  %extended.{} = sext i32 %len_result.{} to i64\n", 
+                                    .{ variable_counter.*, variable_counter.* });
+                                try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", 
+                                    .{ variable_counter.*, variable_counter.* });
+                                variable_counter.* += 1;
+                            } else |_| {
+                                if (verbose) try writer.print("  ; Failed to parse array size from type: {s}\n", .{type_str});
+                            }
+                            }
+                        }
+                    } else {
+                        if (verbose) try writer.print("  ; len() called on non-array type: {s}\n", .{var_info.llvm_type});
+                    }
+                } else {
+                    if (verbose) try writer.print("  ; len() called on unknown variable: {s}\n", .{args_str});
+                }
+            } else {
+                if (verbose) try writer.print("  ; Unknown function: {s}\n", .{func_name});
             }
         }
     }
@@ -1214,7 +1348,51 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
     
     if (verbose) try writer.print("  ; Variable: {s} {s} = {s}\n", .{ var_name, var_type, value_str });
     
-    if (std.mem.eql(u8, var_type, "drip") or std.mem.eql(u8, var_type, "normie")) {
+    if (std.mem.eql(u8, var_type, "[]drip")) {
+        // Array of integers
+        if (std.mem.indexOf(u8, value_str, "[") != null and std.mem.indexOf(u8, value_str, "]") != null) {
+            // Parse array literal [1, 2, 3]
+            const start = std.mem.indexOf(u8, value_str, "[").? + 1;
+            const end = std.mem.indexOf(u8, value_str, "]").?;
+            const elements_str = value_str[start..end];
+            
+            // Count elements
+            var element_count: u32 = 1;
+            for (elements_str) |char| {
+                if (char == ',') element_count += 1;
+            }
+            
+            if (verbose) try writer.print("  ; Array with {} elements\n", .{element_count});
+            
+            // Allocate array
+            try writer.print("  %{s} = alloca [{} x i32], align 16\n", .{ var_name, element_count });
+            
+            // Initialize array elements
+            var elements = std.mem.splitScalar(u8, elements_str, ',');
+            var index: u32 = 0;
+            while (elements.next()) |element| {
+                const trimmed = std.mem.trim(u8, element, " \t");
+                if (std.fmt.parseInt(i32, trimmed, 10)) |value| {
+                    try writer.print("  %element_ptr.{}.{} = getelementptr [{} x i32], [{} x i32]* %{s}, i32 0, i32 {}\n", 
+                        .{ variable_counter.*, index, element_count, element_count, var_name, index });
+                    try writer.print("  store i32 {}, i32* %element_ptr.{}.{}, align 4\n", 
+                        .{ value, variable_counter.*, index });
+                    index += 1;
+                } else |_| {
+                    if (verbose) try writer.print("  ; Error parsing array element: {s}\n", .{trimmed});
+                }
+            }
+            variable_counter.* += 1;
+            
+            // Store variable info
+            const allocator = variables.allocator;
+            const var_name_copy = try allocator.dupe(u8, var_name);
+            const var_name_value_copy = try allocator.dupe(u8, var_name);
+            const array_type = try std.fmt.allocPrint(allocator, "[{} x i32]", .{element_count});
+            try variables.put(var_name_copy, .{ .llvm_type = array_type, .var_name = var_name_value_copy });
+            if (verbose) try writer.print("  ; Stored array variable '{s}' with type '{s}'\n", .{ var_name_copy, array_type });
+        }
+    } else if (std.mem.eql(u8, var_type, "drip") or std.mem.eql(u8, var_type, "normie")) {
         // Integer type (both drip and normie)
         const llvm_type = if (std.mem.eql(u8, var_type, "drip")) "i64" else "i32";
         try writer.print("  %{s} = alloca {s}, align {s}\n", .{ var_name, llvm_type, if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" });
