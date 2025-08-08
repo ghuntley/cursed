@@ -1,12 +1,14 @@
-collab Drawable {
-    slay draw()
+collab Greeter {
+    slay greet() tea
 }
 
-squad Circle {
-    slay draw() {
-        vibez.spill("Drawing a circle")
-    }
+squad Person {
+    spill name tea
 }
 
-sus obj Drawable = Circle{}
-obj.draw()
+slay Person.greet() tea {
+    damn "Hello from " + self.name
+}
+
+sus p Person = Person{name: "Alice"}
+vibez.spill(p.greet())

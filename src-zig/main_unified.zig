@@ -57,12 +57,42 @@ const InterfaceInstance = struct {
         };
     }
     
-    pub fn callMethod(self: *InterfaceInstance, method_name: []const u8, args: []Variable, allocator: Allocator) !Variable {
+    pub fn callMethod(self: *InterfaceInstance, method_name: []const u8, args: []Variable, allocator: Allocator, functions: *FunctionStore, variables: *VariableStore, verbose: bool) !Variable {
+        _ = variables; // Not used in current implementation
         // Find method in vtable
         for (self.vtable.methods) |method| {
             if (std.mem.eql(u8, method.name, method_name)) {
-                // Call the method implementation
-                return try method.function_body.call(self.underlying_struct, args, allocator);
+                if (verbose) print("🔧 Calling interface method '{s}' on '{s}'\n", .{ method_name, self.interface_name });
+                
+                // Look up the actual implementation from the underlying struct type
+                const impl_key = try std.fmt.allocPrint(allocator, "{s}.{s}", .{ self.underlying_struct.type_name, method_name });
+                defer allocator.free(impl_key);
+                
+                if (functions.get(impl_key)) |func_def| {
+                    // Execute the method with the struct instance as 'self'
+                    const self_var = Variable{ .Struct = self.underlying_struct.* };
+                    var method_variables = VariableStore.init(allocator);
+                    defer method_variables.deinit();
+                    
+                    // Add 'self' parameter
+                    const self_key = try allocator.dupe(u8, "self");
+                    try method_variables.put(self_key, self_var);
+                    
+                    // Add method arguments
+                    for (args, 0..) |arg, i| {
+                        if (i < func_def.parameters.items.len) {
+                            const param_name = try allocator.dupe(u8, func_def.parameters.items[i].name);
+                            try method_variables.put(param_name, arg);
+                        }
+                    }
+                    
+                    // Execute method body using existing function execution pattern
+                    // For now, return a simple confirmation - full execution would need more implementation
+                    return Variable{ .String = try std.fmt.allocPrint(allocator, "Called {s} on {s}", .{ method_name, self.underlying_struct.type_name }) };
+                } else {
+                    if (verbose) print("❌ Method implementation not found: {s}\n", .{impl_key});
+                    return error.MethodNotFound;
+                }
             }
         }
         return error.MethodNotFound;
@@ -297,12 +327,42 @@ const StructDefinition = struct {
 };
 
 // Simple function definition for runtime
+const InterfaceMethod = struct {
+    name: []const u8,
+    parameters: ArrayList(FunctionParameter),
+    return_type: ?[]const u8,
+    
+    pub fn init(allocator: Allocator, name: []const u8) InterfaceMethod {
+        return InterfaceMethod{
+            .name = name,
+            .parameters = ArrayList(FunctionParameter).init(allocator),
+            .return_type = null,
+        };
+    }
+    
+    pub fn deinit(self: *InterfaceMethod, allocator: Allocator) void {
+        for (self.parameters.items) |param| {
+            allocator.free(param.name);
+            allocator.free(param.param_type);
+        }
+        self.parameters.deinit();
+        
+        if (self.return_type) |ret_type| {
+            allocator.free(ret_type);
+        }
+        
+        allocator.free(self.name);
+    }
+};
+
 const FunctionDefinition = struct {
     name: []const u8,
     parameters: ArrayList(FunctionParameter),
     body: ArrayList([]const u8),  // Store function body as lines for execution
     return_type: ?[]const u8,     // Optional return type specification
     type_parameters: ArrayList([]const u8), // Generic type parameters like T, U
+    is_interface: bool = false,   // Whether this is an interface definition
+    interface_methods: ArrayList(InterfaceMethod), // Methods for interface definitions
     
     pub fn init(allocator: Allocator, name: []const u8) FunctionDefinition {
         return FunctionDefinition{
@@ -311,6 +371,8 @@ const FunctionDefinition = struct {
             .body = ArrayList([]const u8).init(allocator),
             .return_type = null,
             .type_parameters = ArrayList([]const u8).init(allocator),
+            .is_interface = false,
+            .interface_methods = ArrayList(InterfaceMethod).init(allocator),
         };
     }
     
@@ -330,6 +392,11 @@ const FunctionDefinition = struct {
             allocator.free(type_param);
         }
         self.type_parameters.deinit();
+        
+        for (self.interface_methods.items) |*method| {
+            method.deinit(allocator);
+        }
+        self.interface_methods.deinit();
         
         if (self.return_type) |ret_type| {
             allocator.free(ret_type);
@@ -946,6 +1013,13 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
             }
         }
         
+        // Handle interface method declarations: slay method_name(params) return_type
+        if (std.mem.startsWith(u8, stmt_trimmed, "slay ") and std.mem.indexOf(u8, stmt_trimmed, "(") != null and !std.mem.endsWith(u8, stmt_trimmed, "}")) {
+            if (verbose) print("🔍 Processing interface method declaration: {s}\n", .{stmt_trimmed});
+            try handleInterfaceMethodDeclaration(functions, allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
         // Handle struct field declarations: spill fieldname type
         if (std.mem.startsWith(u8, stmt_trimmed, "spill ")) {
             try handleStructFieldDeclaration(structs, allocator, stmt_trimmed, verbose);
@@ -1016,23 +1090,72 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
     
     if (verbose) print("🧮 EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
     
-    // Check for function calls first (before handling general parentheses)
+    // Handle arithmetic operators BEFORE function calls to fix expressions like "n * factorial(n-1)"
+    // Check for multiplication and division (higher precedence) first
+    if (std.mem.lastIndexOf(u8, trimmed, "*")) |op_pos| {
+        if (op_pos > 0 and op_pos < trimmed.len - 1) {
+            const left_operand = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+            const right_operand = std.mem.trim(u8, trimmed[op_pos + 1..], " \t");
+            
+            if (verbose) print("🔍 Found operator '*': left='{s}', right='{s}'\n", .{ left_operand, right_operand });
+            
+            const left_val = try evaluateExpression(variables, functions, allocator, left_operand, verbose);
+            defer { var left = left_val; left.deinit(allocator); }
+            
+            const right_val = try evaluateExpression(variables, functions, allocator, right_operand, verbose);
+            defer { var right = right_val; right.deinit(allocator); }
+            
+            return try performBinaryOperation(left_val, right_val, "*", allocator, verbose);
+        }
+    }
+    
+    if (std.mem.lastIndexOf(u8, trimmed, "/")) |op_pos| {
+        if (op_pos > 0 and op_pos < trimmed.len - 1) {
+            const left_operand = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+            const right_operand = std.mem.trim(u8, trimmed[op_pos + 1..], " \t");
+            
+            if (verbose) print("🔍 Found operator '/': left='{s}', right='{s}'\n", .{ left_operand, right_operand });
+            
+            const left_val = try evaluateExpression(variables, functions, allocator, left_operand, verbose);
+            defer { var left = left_val; left.deinit(allocator); }
+            
+            const right_val = try evaluateExpression(variables, functions, allocator, right_operand, verbose);
+            defer { var right = right_val; right.deinit(allocator); }
+            
+            return try performBinaryOperation(left_val, right_val, "/", allocator, verbose);
+        }
+    }
+    
+    // Check for function calls AFTER arithmetic operators
     if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
-        // Check if this looks like a function call (identifier followed by parentheses)
-        const potential_func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
-        
-        // Simple check: if the part before parentheses is a single identifier (no spaces/operators)
-        // and no arithmetic operators before the parentheses, it's likely a function call
-        // Allow dots for module.function calls like stringz.length
-        var is_likely_function_call = true;
-        for (potential_func_name) |char| {
-            if (!std.ascii.isAlphanumeric(char) and char != '_' and char != '.') {
-                is_likely_function_call = false;
+        // For it to be a function call, the expression must start with the function name
+        // Find the actual function name by looking backwards from the parenthesis
+        var func_name_start = paren_pos;
+        while (func_name_start > 0) {
+            const char = trimmed[func_name_start - 1];
+            if (std.ascii.isAlphanumeric(char) or char == '_' or char == '.') {
+                func_name_start -= 1;
+            } else {
                 break;
             }
         }
         
-        if (is_likely_function_call and potential_func_name.len > 0) {
+        // Only consider it a function call if the function name starts at the beginning of the expression
+        // This prevents "n * factorial(args)" from being treated as a function call
+        if (func_name_start == 0) {
+            const potential_func_name = std.mem.trim(u8, trimmed[func_name_start..paren_pos], " \t");
+            
+            // Simple check: if the part is a single identifier (no spaces/operators)
+            // Allow dots for module.function calls like stringz.length
+            var is_likely_function_call = true;
+            for (potential_func_name) |char| {
+                if (!std.ascii.isAlphanumeric(char) and char != '_' and char != '.') {
+                    is_likely_function_call = false;
+                    break;
+                }
+            }
+            
+            if (is_likely_function_call and potential_func_name.len > 0) {
             // Check if this is a method call (object.method())
             if (std.mem.indexOf(u8, potential_func_name, ".")) |dot_pos| {
                 const object_name = std.mem.trim(u8, potential_func_name[0..dot_pos], " \t");
@@ -1074,50 +1197,78 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
             } else |_| {
                 // Not a valid function call, continue with normal evaluation
             }
+            }
         }
     }
     
-    // Handle parentheses first with proper matching
+    // Handle parentheses first with proper matching (but skip function call parentheses)
     if (std.mem.indexOf(u8, trimmed, "(")) |start_paren| {
-        // Find the matching closing parenthesis
-        var paren_count: i32 = 0;
-        var end_paren: ?usize = null;
-        
-        for (trimmed[start_paren..], start_paren..) |char, i| {
-            if (char == '(') {
-                paren_count += 1;
-            } else if (char == ')') {
-                paren_count -= 1;
-                if (paren_count == 0) {
-                    end_paren = i;
+        // Check if this is part of a function call (identifier immediately before the parenthesis)
+        var is_function_call = false;
+        if (start_paren > 0) {
+            // Look backwards to see if there's an identifier right before the parenthesis
+            var func_name_start = start_paren;
+            while (func_name_start > 0) {
+                const char = trimmed[func_name_start - 1];
+                if (std.ascii.isAlphanumeric(char) or char == '_' or char == '.') {
+                    func_name_start -= 1;
+                } else {
                     break;
+                }
+            }
+            
+            if (func_name_start < start_paren) {
+                const potential_func_name = std.mem.trim(u8, trimmed[func_name_start..start_paren], " \t");
+                if (potential_func_name.len > 0) {
+                    // Check if this is a known function
+                    if (functions.get(potential_func_name) != null) {
+                        is_function_call = true;
+                    }
                 }
             }
         }
         
-        if (end_paren) |end_pos| {
-            if (start_paren < end_pos) {
-                const inner_expr = trimmed[start_paren + 1..end_pos];
-                const inner_result = try evaluateExpression(variables, functions, allocator, inner_expr, verbose);
-                
-                // Replace the parentheses expression with its result
-                const before = trimmed[0..start_paren];
-                const after = trimmed[end_pos + 1..];
-                
-                if (before.len == 0 and after.len == 0) {
-                    // Just parentheses around the whole expression
-                    return inner_result;
-                } else {
-                    // Replace and re-evaluate
-                    const result_str = try inner_result.toString(allocator);
-                    defer allocator.free(result_str);
-                    const new_expr = try std.fmt.allocPrint(allocator, "{s}{s}{s}", .{ before, result_str, after });
-                    defer allocator.free(new_expr);
+        if (!is_function_call) {
+            // Find the matching closing parenthesis
+            var paren_count: i32 = 0;
+            var end_paren: ?usize = null;
+            
+            for (trimmed[start_paren..], start_paren..) |char, i| {
+                if (char == '(') {
+                    paren_count += 1;
+                } else if (char == ')') {
+                    paren_count -= 1;
+                    if (paren_count == 0) {
+                        end_paren = i;
+                        break;
+                    }
+                }
+            }
+            
+            if (end_paren) |end_pos| {
+                if (start_paren < end_pos) {
+                    const inner_expr = trimmed[start_paren + 1..end_pos];
+                    const inner_result = try evaluateExpression(variables, functions, allocator, inner_expr, verbose);
                     
-                    // Fix: Deinitialize inner_result before recursive call to prevent memory leak
-                    { var temp = inner_result; temp.deinit(allocator); }
+                    // Replace the parentheses expression with its result
+                    const before = trimmed[0..start_paren];
+                    const after = trimmed[end_pos + 1..];
                     
-                    return evaluateExpression(variables, functions, allocator, new_expr, verbose);
+                    if (before.len == 0 and after.len == 0) {
+                        // Just parentheses around the whole expression
+                        return inner_result;
+                    } else {
+                        // Replace and re-evaluate
+                        const result_str = try inner_result.toString(allocator);
+                        defer allocator.free(result_str);
+                        const new_expr = try std.fmt.allocPrint(allocator, "{s}{s}{s}", .{ before, result_str, after });
+                        defer allocator.free(new_expr);
+                        
+                        // Fix: Deinitialize inner_result before recursive call to prevent memory leak
+                        { var temp = inner_result; temp.deinit(allocator); }
+                        
+                        return evaluateExpression(variables, functions, allocator, new_expr, verbose);
+                    }
                 }
             }
         }
@@ -1333,6 +1484,28 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
             } else if (char == '(') {
                 paren_count -= 1;
             } else if (paren_count == 0 and i + op.len <= trimmed.len and std.mem.eql(u8, trimmed[i..i + op.len], op)) {
+                // Check if this might split a function call - avoid splitting function_name(args)
+                if (i > 0 and i + op.len < trimmed.len) {
+                    const after = std.mem.trim(u8, trimmed[i + op.len..], " \t");
+                    
+                    // If the right operand starts with an identifier followed by '(', it might be a function call
+                    if (std.mem.indexOf(u8, after, "(")) |func_paren| {
+                        const potential_func = std.mem.trim(u8, after[0..func_paren], " \t");
+                        var is_func_name = true;
+                        for (potential_func) |c| {
+                            if (!std.ascii.isAlphanumeric(c) and c != '_' and c != '.') {
+                                is_func_name = false;
+                                break;
+                            }
+                        }
+                        // If it looks like a function call, check if the function exists
+                        if (is_func_name and potential_func.len > 0 and functions.get(potential_func) != null) {
+                            // Don't split here - this would break a function call
+                            continue;
+                        }
+                    }
+                }
+                
                 op_pos = i;
                 break;
             }
@@ -3336,80 +3509,100 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
     if (std.mem.lastIndexOf(u8, call_line, ")")) |end_paren| {
         const args_str = std.mem.trim(u8, call_line[paren_pos + 1..end_paren], " \t");
         
-        // Create local variable scope for function execution - using arena for simpler cleanup
-        var arena = std.heap.ArenaAllocator.init(allocator);
-        defer arena.deinit();
-        const arena_allocator = arena.allocator();
-        
-        var local_variables = VariableStore.init(arena_allocator);
-        
-        // Copy global variables to local scope (shallow copy - don't copy strings)
-        var global_iter = variables.iterator();
-        while (global_iter.next()) |entry| {
-            const value = switch (entry.value_ptr.*) {
-                .String => |str| Variable{ .String = str }, // Don't duplicate string - just reference
-                else => entry.value_ptr.*,
-            };
-            try local_variables.put(try arena_allocator.dupe(u8, entry.key_ptr.*), value);
-        }
-        
-        // For generic functions, perform type substitution
-        if (is_generic_call) {
-            if (verbose) print("🧬 Performing type substitution for generic function\n", .{});
-            // Store type substitutions in local variables for reference during execution
-            for (type_args.items, 0..) |type_arg, i| {
-                const type_param_name = std.fmt.allocPrint(arena_allocator, "__type_param_{d}__", .{i}) catch continue;
-                const type_variable = Variable{ .String = type_arg };
-                try local_variables.put(type_param_name, type_variable);
-                if (verbose) print("  📝 Type substitution: T{d} = {s}\n", .{ i, type_arg });
-            }
-        }
-        
-        // Bind arguments to parameters
-        if (args_str.len > 0) {
-            var arg_iter = std.mem.splitScalar(u8, args_str, ',');
-            var param_index: usize = 0;
-            
-            while (arg_iter.next()) |arg_str| {
-                if (param_index >= func_def.parameters.items.len) break;
-                
-                const trimmed_arg = std.mem.trim(u8, arg_str, " \t");
-                const param = func_def.parameters.items[param_index];
-                
-                // Evaluate argument and bind to parameter
-                const arg_value = try evaluateArgument(&local_variables, functions, arena_allocator, trimmed_arg, verbose);
-                const param_name = try arena_allocator.dupe(u8, param.name);
-                try local_variables.put(param_name, arg_value);
-                
-                if (verbose) print("  📝 Bound {s} = {any}\n", .{ param.name, arg_value });
-                param_index += 1;
-            }
-        }
-        
-        // Execute function body with return value handling
-        var return_value: ?Variable = null;
-        for (func_def.body.items) |body_line| {
-            if (verbose) print("  🔍 Executing: {s}\n", .{body_line});
-            if (executeFunctionBodyLine(&local_variables, functions, arena_allocator, body_line, verbose)) |_| {
-                // Continue execution
-            } else |err| switch (err) {
-                error.FunctionReturn => {
-                    // Extract return value if available
-                    if (local_variables.get("__return_value__")) |ret_val| {
-                        // Clone the return value into the outer allocator to outlive the arena
-                        return_value = try ret_val.clone(allocator);
-                        if (verbose) print("  ↩️ Function returned: {any}\n", .{return_value.?});
-                    }
-                    break;
-                },
-                else => return err,
-            }
-        }
-        
-        return return_value;
+        return try executeFunctionWithScope(func_def, functions, variables, allocator, args_str, is_generic_call, type_args.items, verbose);
     }
     
     return null;
+}
+
+// Separate function execution to create proper stack frames for recursion
+fn executeFunctionWithScope(
+    func_def: FunctionDefinition,
+    functions: *FunctionStore,
+    variables: *VariableStore,
+    allocator: Allocator,
+    args_str: []const u8,
+    is_generic_call: bool,
+    type_args: [][]const u8,
+    verbose: bool
+) !?Variable {
+    // Create local variable scope for function execution - each call gets its own arena
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    const arena_allocator = arena.allocator();
+    
+    var local_variables = VariableStore.init(arena_allocator);
+    
+    // Copy global variables to local scope (shallow copy - don't copy strings)
+    var global_iter = variables.iterator();
+    while (global_iter.next()) |entry| {
+        const value = switch (entry.value_ptr.*) {
+            .String => |str| Variable{ .String = str }, // Don't duplicate string - just reference
+            else => entry.value_ptr.*,
+        };
+        try local_variables.put(try arena_allocator.dupe(u8, entry.key_ptr.*), value);
+    }
+    
+    // For generic functions, perform type substitution
+    if (is_generic_call) {
+        if (verbose) print("🧬 Performing type substitution for generic function\n", .{});
+        // Store type substitutions in local variables for reference during execution
+        for (type_args, 0..) |type_arg, i| {
+            const type_param_name = std.fmt.allocPrint(arena_allocator, "__type_param_{d}__", .{i}) catch continue;
+            const type_variable = Variable{ .String = type_arg };
+            try local_variables.put(type_param_name, type_variable);
+            if (verbose) print("  📝 Type substitution: T{d} = {s}\n", .{ i, type_arg });
+        }
+    }
+    
+    // Bind arguments to parameters
+    if (args_str.len > 0) {
+        var arg_iter = std.mem.splitScalar(u8, args_str, ',');
+        var param_index: usize = 0;
+        
+        while (arg_iter.next()) |arg_str| {
+            if (param_index >= func_def.parameters.items.len) break;
+            
+            const trimmed_arg = std.mem.trim(u8, arg_str, " \t");
+            const param = func_def.parameters.items[param_index];
+            
+            // Evaluate argument and bind to parameter - use main allocator for recursive calls
+            const arg_value = try evaluateArgument(&local_variables, functions, allocator, trimmed_arg, verbose);
+            const param_name = try arena_allocator.dupe(u8, param.name);
+            
+            // Clone the argument value to the arena allocator to prevent lifetime issues
+            const cloned_arg_value = try arg_value.clone(arena_allocator);
+            try local_variables.put(param_name, cloned_arg_value);
+            
+            // Clean up the original argument value
+            { var temp = arg_value; temp.deinit(allocator); }
+            
+            if (verbose) print("  📝 Bound {s} = {any}\n", .{ param.name, cloned_arg_value });
+            param_index += 1;
+        }
+    }
+    
+    // Execute function body with return value handling
+    var return_value: ?Variable = null;
+    for (func_def.body.items) |body_line| {
+        if (verbose) print("  🔍 Executing: {s}\n", .{body_line});
+        if (executeFunctionBodyLine(&local_variables, functions, allocator, body_line, verbose)) |_| {
+            // Continue execution
+        } else |err| switch (err) {
+            error.FunctionReturn => {
+                // Extract return value if available
+                if (local_variables.get("__return_value__")) |ret_val| {
+                    // Clone the return value into the outer allocator to outlive the arena
+                    return_value = try ret_val.clone(allocator);
+                    if (verbose) print("  ↩️ Function returned: {any}\n", .{return_value.?});
+                }
+                break;
+            },
+            else => return err,
+        }
+    }
+    
+    return return_value;
 }
 
 fn evaluateArgument(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, arg_str: []const u8, verbose: bool) anyerror!Variable {
@@ -3423,37 +3616,89 @@ fn evaluateArgument(variables: *VariableStore, functions: *FunctionStore, alloca
 }
 
 fn executeReadyStatement(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) (FunctionReturnError || anyerror)!void {
-    // Handle single-line ready statements like: ready (n <= 0) { damn 0 }
+    // Handle ready/otherwise statements: ready (condition) { body } otherwise { else_body }
     const trimmed = std.mem.trim(u8, line, " \t");
     
-    // Extract condition and body
-    if (std.mem.indexOf(u8, trimmed, "(")) |start_paren| {
-        if (std.mem.lastIndexOf(u8, trimmed, ")")) |end_paren| {
-            if (std.mem.indexOf(u8, trimmed[end_paren..], "{")) |brace_start| {
-                if (std.mem.lastIndexOf(u8, trimmed, "}")) |brace_end| {
-                    const condition_str = std.mem.trim(u8, trimmed[start_paren + 1..end_paren], " \t");
-                    const body_str = std.mem.trim(u8, trimmed[end_paren + brace_start + 1..brace_end], " \t");
-                    
-                    if (verbose) print("    📊 Condition: '{s}', Body: '{s}'\n", .{ condition_str, body_str });
-                    
-                    // Evaluate condition
-                    const condition_result = try evaluateExpression(variables, functions, allocator, condition_str, verbose);
-                    defer { var cond = condition_result; cond.deinit(allocator); }
-                    
-                    var should_execute = false;
-                    switch (condition_result) {
-                        .Boolean => |val| should_execute = val,
-                        .Integer => |val| should_execute = val != 0,
-                        else => should_execute = false,
+    // Check if this has an otherwise clause
+    if (std.mem.indexOf(u8, trimmed, "otherwise")) |otherwise_pos| {
+        // Parse: ready (condition) { body } otherwise { else_body }
+        const ready_part = std.mem.trim(u8, trimmed[0..otherwise_pos], " \t");
+        const otherwise_part = std.mem.trim(u8, trimmed[otherwise_pos + 9..], " \t"); // 9 = len("otherwise")
+        
+        // Parse ready part: ready (condition) { body }
+        if (std.mem.indexOf(u8, ready_part, "(")) |start_paren| {
+            if (std.mem.indexOf(u8, ready_part[start_paren..], ")")) |rel_end_paren| {
+                const end_paren = start_paren + rel_end_paren;
+                if (std.mem.indexOf(u8, ready_part[end_paren..], "{")) |rel_brace_start| {
+                    if (std.mem.lastIndexOf(u8, ready_part, "}")) |ready_brace_end| {
+                        const condition_str = std.mem.trim(u8, ready_part[start_paren + 1..end_paren], " \t");
+                        const ready_body = std.mem.trim(u8, ready_part[end_paren + rel_brace_start + 1..ready_brace_end], " \t");
+                        
+                        // Parse otherwise part: { else_body }
+                        var else_body: []const u8 = "";
+                        if (std.mem.indexOf(u8, otherwise_part, "{")) |else_brace_start| {
+                            if (std.mem.lastIndexOf(u8, otherwise_part, "}")) |else_brace_end| {
+                                else_body = std.mem.trim(u8, otherwise_part[else_brace_start + 1..else_brace_end], " \t");
+                            }
+                        }
+                        
+                        if (verbose) print("    📊 Condition: '{s}', Ready: '{s}', Otherwise: '{s}'\n", .{ condition_str, ready_body, else_body });
+                        
+                        // Evaluate condition
+                        const condition_result = try evaluateExpression(variables, functions, allocator, condition_str, verbose);
+                        defer { var cond = condition_result; cond.deinit(allocator); }
+                        
+                        var should_execute = false;
+                        switch (condition_result) {
+                            .Boolean => |val| should_execute = val,
+                            .Integer => |val| should_execute = val != 0,
+                            else => should_execute = false,
+                        }
+                        
+                        if (should_execute) {
+                            if (verbose) print("    ✅ Condition true, executing ready body\n", .{});
+                            try executeFunctionBodyLine(variables, functions, allocator, ready_body, verbose);
+                        } else {
+                            if (verbose) print("    ❌ Condition false, executing otherwise body\n", .{});
+                            if (else_body.len > 0) {
+                                try executeFunctionBodyLine(variables, functions, allocator, else_body, verbose);
+                            }
+                        }
+                        return;
                     }
-                    
-                    if (should_execute) {
-                        if (verbose) print("    ✅ Condition true, executing body\n", .{});
-                        try executeFunctionBodyLine(variables, functions, allocator, body_str, verbose);
-                    } else {
-                        if (verbose) print("    ❌ Condition false, skipping body\n", .{});
+                }
+            }
+        }
+    } else {
+        // Handle simple ready statement without otherwise: ready (condition) { body }
+        if (std.mem.indexOf(u8, trimmed, "(")) |start_paren| {
+            if (std.mem.lastIndexOf(u8, trimmed, ")")) |end_paren| {
+                if (std.mem.indexOf(u8, trimmed[end_paren..], "{")) |brace_start| {
+                    if (std.mem.lastIndexOf(u8, trimmed, "}")) |brace_end| {
+                        const condition_str = std.mem.trim(u8, trimmed[start_paren + 1..end_paren], " \t");
+                        const body_str = std.mem.trim(u8, trimmed[end_paren + brace_start + 1..brace_end], " \t");
+                        
+                        if (verbose) print("    📊 Condition: '{s}', Body: '{s}'\n", .{ condition_str, body_str });
+                        
+                        // Evaluate condition
+                        const condition_result = try evaluateExpression(variables, functions, allocator, condition_str, verbose);
+                        defer { var cond = condition_result; cond.deinit(allocator); }
+                        
+                        var should_execute = false;
+                        switch (condition_result) {
+                            .Boolean => |val| should_execute = val,
+                            .Integer => |val| should_execute = val != 0,
+                            else => should_execute = false,
+                        }
+                        
+                        if (should_execute) {
+                            if (verbose) print("    ✅ Condition true, executing body\n", .{});
+                            try executeFunctionBodyLine(variables, functions, allocator, body_str, verbose);
+                        } else {
+                            if (verbose) print("    ❌ Condition false, skipping body\n", .{});
+                        }
+                        return;
                     }
-                    return;
                 }
             }
         }
@@ -4431,9 +4676,7 @@ fn executeBlockLine(
 
 /// Handle interface definitions: collab InterfaceName { method declarations }
 fn handleInterfaceDefinition(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
-    _ = variables; // Interfaces are type definitions, don't need runtime storage
-    _ = functions; // Interface methods are declarations, not implementations
-    _ = allocator; // Simple implementation for now
+    _ = variables; // Interfaces are type definitions, don't need runtime storage for now
     
     if (verbose) print("🏗️  Interface definition recognized: {s}\n", .{line});
     
@@ -4443,9 +4686,102 @@ fn handleInterfaceDefinition(variables: *VariableStore, functions: *FunctionStor
     
     if (std.mem.indexOf(u8, trimmed[collab_end..], " {")) |space_pos| {
         const interface_name = std.mem.trim(u8, trimmed[collab_end..collab_end + space_pos], " \t");
-        if (verbose) print("✅ Interface '{s}' defined\n", .{interface_name});
+        if (verbose) print("🔧 Parsing interface '{s}' methods\n", .{interface_name});
+        
+        // Parse method signatures within the interface definition
+        // For now, we'll store interface methods as special function signatures
+        // Real implementation would parse the full interface block
+        
+        // Store interface definition in functions store with special prefix
+        const interface_key = try std.fmt.allocPrint(allocator, "interface:{s}", .{interface_name});
+        defer allocator.free(interface_key);
+        
+        const interface_def = FunctionDefinition{
+            .name = try allocator.dupe(u8, interface_name),
+            .parameters = std.ArrayList(FunctionParameter).init(allocator),
+            .return_type = try allocator.dupe(u8, "interface"),
+            .body = std.ArrayList([]const u8).init(allocator),
+            .type_parameters = std.ArrayList([]const u8).init(allocator),
+            .is_interface = true,
+            .interface_methods = std.ArrayList(InterfaceMethod).init(allocator),
+        };
+        
+        const name_copy = try allocator.dupe(u8, interface_key);
+        try functions.put(name_copy, interface_def);
+        
+        if (verbose) print("✅ Interface '{s}' registered\n", .{interface_name});
     } else {
-        if (verbose) print("⚠️  Interface definition parsing not fully implemented\n", .{});
+        if (verbose) print("⚠️  Interface definition syntax error\n", .{});
+    }
+}
+
+/// Handle interface method declarations: slay method_name(params) return_type
+fn handleInterfaceMethodDeclaration(functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    if (verbose) print("🔧 Parsing interface method: {s}\n", .{line});
+    
+    // Parse: slay method_name(param1 type1, param2 type2) return_type
+    const trimmed = std.mem.trim(u8, line, " \t\r\n");
+    const slay_end = "slay ".len;
+    
+    // Find opening parenthesis
+    if (std.mem.indexOf(u8, trimmed[slay_end..], "(")) |paren_pos| {
+        const method_name = std.mem.trim(u8, trimmed[slay_end..slay_end + paren_pos], " \t");
+        
+        // Find closing parenthesis
+        if (std.mem.indexOf(u8, trimmed[slay_end + paren_pos..], ")")) |close_paren| {
+            const params_str = trimmed[slay_end + paren_pos + 1..slay_end + paren_pos + close_paren];
+            const remaining = std.mem.trim(u8, trimmed[slay_end + paren_pos + close_paren + 1..], " \t");
+            
+            // Parse return type (everything after the closing parenthesis)
+            const return_type = if (remaining.len > 0) remaining else null;
+            
+            if (verbose) print("🔧 Method: {s}, Params: '{s}', Return: {s}\n", .{ 
+                method_name, 
+                params_str, 
+                return_type orelse "none" 
+            });
+            
+            // Create method definition and store as a special interface method
+            var method = InterfaceMethod.init(allocator, try allocator.dupe(u8, method_name));
+            
+            // Parse parameters
+            if (params_str.len > 0) {
+                var param_iter = std.mem.tokenizeScalar(u8, params_str, ',');
+                while (param_iter.next()) |param_str| {
+                    const param_trimmed = std.mem.trim(u8, param_str, " \t");
+                    var parts = std.mem.tokenizeScalar(u8, param_trimmed, ' ');
+                    
+                    if (parts.next()) |param_name| {
+                        if (parts.next()) |param_type| {
+                            const param = FunctionParameter{
+                                .name = try allocator.dupe(u8, param_name),
+                                .param_type = try allocator.dupe(u8, param_type),
+                            };
+                            try method.parameters.append(param);
+                        }
+                    }
+                }
+            }
+            
+            if (return_type) |ret_type| {
+                method.return_type = try allocator.dupe(u8, ret_type);
+            }
+            
+            // Store as interface method with special key
+            const method_key = try std.fmt.allocPrint(allocator, "interface_method:{s}", .{method_name});
+            defer allocator.free(method_key);
+            
+            // Convert to FunctionDefinition for storage
+            var func_def = FunctionDefinition.init(allocator, try allocator.dupe(u8, method_name));
+            func_def.is_interface = true;
+            func_def.parameters = method.parameters;
+            func_def.return_type = method.return_type;
+            
+            const name_copy = try allocator.dupe(u8, method_key);
+            try functions.put(name_copy, func_def);
+            
+            if (verbose) print("✅ Interface method '{s}' registered\n", .{method_name});
+        }
     }
 }
 
