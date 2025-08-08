@@ -382,6 +382,216 @@ pub const TypeChecker = struct {
             return self.checkInterfaceImplementation(source_type_id, target_type_id);
         }
 
+        // CURSED type compatibility rules (numeric type coercion)
+        if (source_type.kind == .Basic and target_type.kind == .Basic) {
+            return self.checkNumericCompatibility(source_type.type_name, target_type.type_name);
+        }
+
         return false;
     }
+
+    pub fn checkNumericCompatibility(self: *TypeChecker, source_name: []const u8, target_name: []const u8) bool {
+        _ = self;
+        
+        // CURSED numeric type hierarchy:
+        // drip (int) <-> normie (int) <-> thicc (big int)
+        // smol (i8) <-> mid (i16) <-> normie (i32)
+        // snack (f32) <-> meal (f64)
+        
+        if (std.mem.eql(u8, source_name, target_name)) return true;
+        
+        const numeric_groups = [_][]const []const u8{
+            &[_][]const u8{ "drip", "normie", "thicc" },
+            &[_][]const u8{ "smol", "mid", "normie" },
+            &[_][]const u8{ "snack", "meal" },
+        };
+        
+        for (numeric_groups) |group| {
+            var source_in_group = false;
+            var target_in_group = false;
+            
+            for (group) |type_name| {
+                if (std.mem.eql(u8, source_name, type_name)) source_in_group = true;
+                if (std.mem.eql(u8, target_name, type_name)) target_in_group = true;
+            }
+            
+            if (source_in_group and target_in_group) return true;
+        }
+        
+        return false;
+    }
+
+    pub fn validateFunctionCall(self: *TypeChecker, function_type_id: u32, arg_types: []const u32) !bool {
+        const func_type = self.gc_registry.getType(function_type_id) orelse return error.UnknownType;
+        
+        if (func_type.kind != .Function) return error.NotAFunction;
+        
+        // Check parameter count (simplified - would need method info in real implementation)
+        return arg_types.len > 0; // Basic validation
+    }
+
+    pub fn validateArrayAccess(self: *TypeChecker, array_type_id: u32, index_type_id: u32) !u32 {
+        const array_type = self.gc_registry.getType(array_type_id) orelse return error.UnknownType;
+        const index_type = self.gc_registry.getType(index_type_id) orelse return error.UnknownType;
+        
+        if (array_type.kind != .Array) return error.NotAnArray;
+        
+        // Check index is numeric
+        const numeric_types = [_][]const u8{ "drip", "normie", "thicc", "smol", "mid" };
+        var is_numeric = false;
+        for (numeric_types) |numeric_type| {
+            if (std.mem.eql(u8, index_type.type_name, numeric_type)) {
+                is_numeric = true;
+                break;
+            }
+        }
+        
+        if (!is_numeric) return error.NonNumericIndex;
+        
+        // Return element type (simplified - would need actual element type tracking)
+        return 1; // Placeholder element type ID
+    }
+
+    pub fn validateStructFieldAccess(self: *TypeChecker, struct_type_id: u32, field_name: []const u8) !u32 {
+        const struct_type = self.gc_registry.getType(struct_type_id) orelse return error.UnknownType;
+        
+        if (struct_type.kind != .Struct) return error.NotAStruct;
+        
+        const field = struct_type.getField(field_name) orelse return error.FieldNotFound;
+        
+        return field.field_type;
+    }
 };
+
+// Runtime type checking integration
+pub const RuntimeChecker = struct {
+    type_checker: TypeChecker,
+    allocator: Allocator,
+
+    pub fn init(allocator: Allocator, gc_registry: *GCTypeRegistry, interface_registry: *InterfaceRegistry) RuntimeChecker {
+        return RuntimeChecker{
+            .type_checker = TypeChecker.init(gc_registry, interface_registry),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn checkExpressionType(self: *RuntimeChecker, expression_kind: ExpressionKind, operand_types: []const u32) !u32 {
+        switch (expression_kind) {
+            .BinaryArithmetic => {
+                if (operand_types.len != 2) return error.InvalidOperandCount;
+                
+                const left_type = operand_types[0];
+                const right_type = operand_types[1];
+                
+                if (self.type_checker.areTypesCompatible(left_type, right_type)) {
+                    return left_type; // Return left type for binary arithmetic
+                } else {
+                    return error.IncompatibleTypes;
+                }
+            },
+            .BinaryComparison => {
+                if (operand_types.len != 2) return error.InvalidOperandCount;
+                
+                const left_type = operand_types[0];
+                const right_type = operand_types[1];
+                
+                if (self.type_checker.areTypesCompatible(left_type, right_type)) {
+                    // Return boolean type ID (would need registry lookup)
+                    return 999; // Placeholder for boolean type ID
+                } else {
+                    return error.IncompatibleTypes;
+                }
+            },
+            .FunctionCall => {
+                if (operand_types.len == 0) return error.InvalidOperandCount;
+                
+                const function_type = operand_types[0];
+                const arg_types = operand_types[1..];
+                
+                if (try self.type_checker.validateFunctionCall(function_type, arg_types)) {
+                    // Return function return type (simplified)
+                    return 1; // Placeholder return type
+                } else {
+                    return error.InvalidFunctionCall;
+                }
+            },
+            .ArrayAccess => {
+                if (operand_types.len != 2) return error.InvalidOperandCount;
+                
+                const array_type = operand_types[0];
+                const index_type = operand_types[1];
+                
+                return self.type_checker.validateArrayAccess(array_type, index_type);
+            },
+            .FieldAccess => {
+                // Field access requires additional context (field name)
+                // This would be handled with more context in a real implementation
+                return error.NotImplemented;
+            },
+        }
+    }
+
+    pub const ExpressionKind = enum {
+        BinaryArithmetic,
+        BinaryComparison,
+        FunctionCall,
+        ArrayAccess,
+        FieldAccess,
+    };
+};
+
+// Type registration helpers for built-in CURSED types
+pub fn registerBuiltinTypes(gc_registry: *GCTypeRegistry) !void {
+    // Register primitive types
+    _ = try gc_registry.registerType("lit", .Basic);      // boolean
+    _ = try gc_registry.registerType("drip", .Basic);     // integer
+    _ = try gc_registry.registerType("normie", .Basic);   // integer
+    _ = try gc_registry.registerType("thicc", .Basic);    // big integer
+    _ = try gc_registry.registerType("smol", .Basic);     // small integer
+    _ = try gc_registry.registerType("mid", .Basic);      // medium integer
+    _ = try gc_registry.registerType("tea", .Basic);      // string
+    _ = try gc_registry.registerType("sip", .Basic);      // character
+    _ = try gc_registry.registerType("snack", .Basic);    // float
+    _ = try gc_registry.registerType("meal", .Basic);     // double
+    _ = try gc_registry.registerType("cap", .Basic);      // void/unit
+}
+
+// Test helper functions
+test "runtime type checking" {
+    const allocator = std.testing.allocator;
+    var gc_registry = GCTypeRegistry.init(allocator);
+    defer gc_registry.deinit();
+    
+    var interface_registry = InterfaceRegistry.init(allocator);
+    defer interface_registry.deinit();
+    
+    // Register built-in types
+    try registerBuiltinTypes(&gc_registry);
+    
+    var checker = TypeChecker.init(&gc_registry, &interface_registry);
+    
+    // Test numeric compatibility
+    const drip_type = gc_registry.findTypeByName("drip").?;
+    const normie_type = gc_registry.findTypeByName("normie").?;
+    
+    try std.testing.expect(checker.areTypesCompatible(drip_type.type_id, normie_type.type_id));
+}
+
+test "runtime expression checking" {
+    const allocator = std.testing.allocator;
+    var gc_registry = GCTypeRegistry.init(allocator);
+    defer gc_registry.deinit();
+    
+    var interface_registry = InterfaceRegistry.init(allocator);
+    defer interface_registry.deinit();
+    
+    try registerBuiltinTypes(&gc_registry);
+    
+    var runtime_checker = RuntimeChecker.init(allocator, &gc_registry, &interface_registry);
+    
+    const drip_type_id = gc_registry.findTypeByName("drip").?.type_id;
+    const operand_types = [_]u32{ drip_type_id, drip_type_id };
+    
+    const result_type = try runtime_checker.checkExpressionType(.BinaryArithmetic, &operand_types);
+    try std.testing.expect(result_type == drip_type_id);
+}

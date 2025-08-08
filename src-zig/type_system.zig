@@ -78,7 +78,9 @@ pub const TypeExpression = struct {
 
     pub fn array(allocator: Allocator, element_type: TypeExpression) !TypeExpression {
         var arr_type = TypeExpression.init(allocator, .Array, "Array");
-        try arr_type.parameters.append(element_type);
+        // Make a copy of the element type to avoid double free
+        const element_copy = TypeExpression.init(allocator, element_type.kind, element_type.name);
+        try arr_type.parameters.append(element_copy);
         return arr_type;
     }
 
@@ -473,8 +475,10 @@ pub const TypeChecker = struct {
     pub fn checkExpression(self: *TypeChecker, expr: *const ast.Expression) !TypeExpression {
         return switch (expr.*) {
             .Integer => TypeExpression.named(self.allocator, "drip"),
+            .Float => TypeExpression.named(self.allocator, "snack"),
             .String => TypeExpression.named(self.allocator, "tea"),
             .Boolean => TypeExpression.named(self.allocator, "lit"),
+            .Character => TypeExpression.named(self.allocator, "sip"),
             .Identifier => |name| {
                 if (self.getVariable(name)) |var_info| {
                     return var_info.type_expr;
@@ -482,6 +486,13 @@ pub const TypeChecker = struct {
                     return TypeExpression.named(self.allocator, name);
                 } else {
                     return error.UnknownIdentifier;
+                }
+            },
+            .Variable => |name| {
+                if (self.getVariable(name)) |var_info| {
+                    return var_info.type_expr;
+                } else {
+                    return error.UnknownVariable;
                 }
             },
             .MemberAccess => |member_access| {
@@ -496,15 +507,26 @@ pub const TypeChecker = struct {
             .Unary => |unary| {
                 return self.checkUnaryOperation(unary);
             },
+            .Array => |array_expr| {
+                return self.checkArrayExpression(array_expr);
+            },
             .Tuple => |tuple_expr| {
-                var element_types = ArrayList(TypeExpression).init(self.allocator);
-                defer element_types.deinit();
-                
-                for (tuple_expr.elements.items) |element| {
-                    try element_types.append(try self.checkExpression(element));
-                }
-                
-                return TypeExpression.tuple(self.allocator, element_types.items);
+                return self.checkTupleExpression(&tuple_expr);
+            },
+            .StructLiteral => |struct_literal| {
+                return self.checkStructLiteral(&struct_literal);
+            },
+            .ArrayAccess => |array_access| {
+                return self.checkArrayAccess(&array_access);
+            },
+            .MethodCall => |method_call| {
+                return self.checkMethodCall(method_call);
+            },
+            .TypeAssertion => |type_assertion| {
+                return self.checkTypeAssertion(&type_assertion);
+            },
+            .Lambda => |lambda| {
+                return self.checkLambdaExpression(&lambda);
             },
             else => TypeExpression.named(self.allocator, "unknown"),
         };
@@ -628,6 +650,138 @@ pub const TypeChecker = struct {
         }
     }
 
+    // Additional expression checking helpers
+    fn checkArrayExpression(self: *TypeChecker, array_expr: *const ast.ArrayExpression) !TypeExpression {
+        if (array_expr.elements.items.len == 0) {
+            return TypeExpression.array(self.allocator, TypeExpression.named(self.allocator, "unknown"));
+        }
+        
+        const first_type = try self.checkExpression(array_expr.elements.items[0]);
+        
+        // Check all elements have compatible types
+        for (array_expr.elements.items[1..]) |element| {
+            const element_type = try self.checkExpression(element);
+            if (!self.typesCompatible(&first_type, &element_type)) {
+                return error.ArrayElementTypeMismatch;
+            }
+        }
+        
+        return TypeExpression.array(self.allocator, first_type);
+    }
+
+    fn checkTupleExpression(self: *TypeChecker, tuple_expr: *const ast.TupleExpression) !TypeExpression {
+        var element_types = ArrayList(TypeExpression).init(self.allocator);
+        defer element_types.deinit();
+        
+        for (tuple_expr.elements.items) |element| {
+            try element_types.append(try self.checkExpression(element));
+        }
+        
+        return TypeExpression.tuple(self.allocator, element_types.items);
+    }
+
+    fn checkStructLiteral(self: *TypeChecker, struct_literal: *const ast.StructLiteralExpression) !TypeExpression {
+        // Check if the struct type exists
+        if (!self.environment.hasType(struct_literal.type_name)) {
+            return error.UnknownStructType;
+        }
+        
+        // TODO: Validate field types match the struct definition
+        // For now, return the struct type
+        return TypeExpression.named(self.allocator, struct_literal.type_name);
+    }
+
+    fn checkArrayAccess(self: *TypeChecker, array_access: *const ast.ArrayAccessExpression) !TypeExpression {
+        const array_type = try self.checkExpression(array_access.array);
+        const index_type = try self.checkExpression(array_access.index);
+        
+        // Index must be numeric
+        if (!index_type.isNumeric()) {
+            return error.NonNumericArrayIndex;
+        }
+        
+        // Array type must be an array
+        if (array_type.kind != .Array or array_type.parameters.items.len == 0) {
+            return error.IndexingNonArray;
+        }
+        
+        return array_type.parameters.items[0];
+    }
+
+    fn checkMethodCall(self: *TypeChecker, method_call: *const ast.MethodCallExpression) !TypeExpression {
+        const receiver_type = try self.checkExpression(method_call.receiver);
+        
+        if (receiver_type.name) |type_name| {
+            if (self.environment.getType(type_name)) |type_def| {
+                if (type_def.getMethod(method_call.method_name)) |method| {
+                    // Check argument types
+                    if (method_call.arguments.items.len != method.parameters.items.len) {
+                        return error.ArgumentCountMismatch;
+                    }
+                    
+                    for (method_call.arguments.items, 0..) |*arg, i| {
+                        const arg_type = try self.checkExpression(arg.*);
+                        const expected_type = &method.parameters.items[i];
+                        if (!self.typesCompatible(&arg_type, expected_type)) {
+                            return error.TypeMismatch;
+                        }
+                    }
+                    
+                    if (method.return_type) |ret_type| {
+                        return ret_type;
+                    } else {
+                        return TypeExpression.named(self.allocator, "cap");
+                    }
+                }
+            }
+        }
+        
+        return error.UnknownMethod;
+    }
+
+    fn checkTypeAssertion(self: *TypeChecker, type_assertion: *const ast.TypeAssertionExpression) !TypeExpression {
+        const expr_type = try self.checkExpression(type_assertion.expression);
+        const target_type = try self.astTypeToTypeExpression(&type_assertion.target_type);
+        
+        // Check if the type assertion is valid
+        if (!self.typesCompatible(&expr_type, &target_type)) {
+            return error.InvalidTypeAssertion;
+        }
+        
+        return target_type;
+    }
+
+    fn checkLambdaExpression(self: *TypeChecker, lambda: *const ast.LambdaExpression) !TypeExpression {
+        // Create function scope
+        try self.enterScope();
+        defer self.exitScope();
+        
+        var param_types = ArrayList(TypeExpression).init(self.allocator);
+        defer param_types.deinit();
+        
+        // Add parameters to scope
+        for (lambda.parameters.items) |*param| {
+            const param_type = if (param.type_annotation) |type_annotation|
+                try self.astTypeToTypeExpression(type_annotation)
+            else
+                TypeExpression.named(self.allocator, "unknown");
+            
+            try param_types.append(param_type);
+            try self.addVariable(param.name, param_type, false);
+        }
+        
+        // Check body expression
+        const return_type = try self.checkExpression(lambda.body);
+        
+        // Create function type
+        var func_type = TypeExpression.init(self.allocator, .Function, "function");
+        try func_type.parameters.appendSlice(param_types.items);
+        func_type.return_type = try self.allocator.create(TypeExpression);
+        func_type.return_type.?.* = return_type;
+        
+        return func_type;
+    }
+
     // Check statement type correctness
     pub fn checkStatement(self: *TypeChecker, stmt: *const ast.Statement) !void {
         switch (stmt.*) {
@@ -651,6 +805,27 @@ pub const TypeChecker = struct {
             },
             .Expression => |expr| {
                 _ = try self.checkExpression(@ptrCast(@alignCast(expr)));
+            },
+            .Function => |func_decl| {
+                _ = try self.checkFunctionDeclaration(func_decl);
+            },
+            .Struct => |struct_decl| {
+                _ = try self.checkStructDeclaration(struct_decl);
+            },
+            .Interface => |interface_decl| {
+                _ = try self.checkInterfaceDeclaration(interface_decl);
+            },
+            .If => |if_stmt| {
+                try self.checkIfStatement(if_stmt);
+            },
+            .While => |while_stmt| {
+                try self.checkWhileStatement(while_stmt);
+            },
+            .Return => |return_stmt| {
+                try self.checkReturnStatement(return_stmt);
+            },
+            .Assignment => |assignment| {
+                try self.checkAssignment(assignment);
             },
             // Note: Block statements handled at higher level
             else => {
@@ -684,6 +859,155 @@ pub const TypeChecker = struct {
         return false;
     }
 
+    // Statement checking methods
+    fn checkFunctionDeclaration(self: *TypeChecker, func_decl: *const ast.FunctionDeclaration) !TypeExpression {
+        try self.enterScope();
+        defer self.exitScope();
+        
+        var param_types = ArrayList(TypeExpression).init(self.allocator);
+        defer param_types.deinit();
+        
+        // Add parameters to scope and collect their types
+        for (func_decl.parameters.items) |*param| {
+            const param_type = if (param.type_annotation) |type_annotation|
+                try self.astTypeToTypeExpression(type_annotation)
+            else
+                TypeExpression.named(self.allocator, "unknown");
+            
+            try param_types.append(param_type);
+            try self.addVariable(param.name, param_type, false);
+        }
+        
+        // Determine return type
+        const return_type = if (func_decl.return_type) |return_type_annotation|
+            try self.astTypeToTypeExpression(return_type_annotation)
+        else
+            TypeExpression.named(self.allocator, "cap");
+        
+        // Check function body if present
+        if (func_decl.body) |body| {
+            for (body.items) |statement| {
+                try self.checkStatement(statement);
+            }
+        }
+        
+        // Create function type
+        var func_type = TypeExpression.init(self.allocator, .Function, func_decl.name);
+        try func_type.parameters.appendSlice(param_types.items);
+        func_type.return_type = try self.allocator.create(TypeExpression);
+        func_type.return_type.?.* = return_type;
+        
+        // Add function to current scope
+        try self.addVariable(func_decl.name, func_type, false);
+        
+        return func_type;
+    }
+
+    fn checkStructDeclaration(self: *TypeChecker, struct_decl: *const ast.StructDeclaration) !TypeExpression {
+        // Validate field types
+        for (struct_decl.fields.items) |*field| {
+            if (field.field_type) |field_type| {
+                const field_type_expr = try self.astTypeToTypeExpression(field_type);
+                _ = field_type_expr; // Validate type exists
+            }
+        }
+        
+        // Create struct type definition
+        const struct_type_def = TypeDefinition.init(self.allocator, struct_decl.name, .Struct);
+        
+        // TODO: Add field information to struct definition
+        
+        // Add struct type to environment
+        try self.environment.addTypeDefinition(struct_type_def);
+        
+        return TypeExpression.named(self.allocator, struct_decl.name);
+    }
+
+    fn checkInterfaceDeclaration(self: *TypeChecker, interface_decl: *const ast.InterfaceDeclaration) !TypeExpression {
+        // Validate method signatures
+        for (interface_decl.methods.items) |*method| {
+            // Check parameter types
+            for (method.parameters.items) |*param| {
+                if (param.type_annotation) |param_type| {
+                    _ = try self.astTypeToTypeExpression(param_type);
+                }
+            }
+            
+            // Check return type
+            if (method.return_type) |return_type| {
+                _ = try self.astTypeToTypeExpression(return_type);
+            }
+        }
+        
+        // Create interface type definition
+        const interface_type_def = TypeDefinition.init(self.allocator, interface_decl.name, .Interface);
+        
+        // TODO: Add method signatures to interface definition
+        
+        // Add interface type to environment
+        try self.environment.addTypeDefinition(interface_type_def);
+        
+        return TypeExpression.named(self.allocator, interface_decl.name);
+    }
+
+    fn checkIfStatement(self: *TypeChecker, if_stmt: *const ast.IfStatement) !void {
+        // Check condition
+        const condition_type = try self.checkExpression(if_stmt.condition);
+        if (!condition_type.isBoolean()) {
+            return error.NonBooleanCondition;
+        }
+        
+        // Check then branch
+        try self.enterScope();
+        defer self.exitScope();
+        for (if_stmt.then_branch.items) |statement| {
+            try self.checkStatement(statement);
+        }
+        
+        // Check else branch if present
+        if (if_stmt.else_branch) |else_branch| {
+            try self.enterScope();
+            defer self.exitScope();
+            for (else_branch.items) |statement| {
+                try self.checkStatement(statement);
+            }
+        }
+    }
+
+    fn checkWhileStatement(self: *TypeChecker, while_stmt: *const ast.WhileStatement) !void {
+        // Check condition
+        const condition_type = try self.checkExpression(while_stmt.condition);
+        if (!condition_type.isBoolean()) {
+            return error.NonBooleanCondition;
+        }
+        
+        // Check body
+        try self.enterScope();
+        defer self.exitScope();
+        for (while_stmt.body.items) |statement| {
+            try self.checkStatement(statement);
+        }
+    }
+
+    fn checkReturnStatement(self: *TypeChecker, return_stmt: *const ast.ReturnStatement) !void {
+        const return_type = if (return_stmt.value) |value|
+            try self.checkExpression(value)
+        else
+            TypeExpression.named(self.allocator, "cap");
+        
+        // TODO: Check against current function's return type
+        _ = return_type;
+    }
+
+    fn checkAssignment(self: *TypeChecker, assignment: *const ast.AssignmentStatement) !void {
+        const lhs_type = try self.checkExpression(assignment.target);
+        const rhs_type = try self.checkExpression(assignment.value);
+        
+        if (!self.typesCompatible(&lhs_type, &rhs_type)) {
+            return error.AssignmentTypeMismatch;
+        }
+    }
+
     // Check function signatures
     pub fn checkFunctionSignature(self: *TypeChecker, func_decl: *const ast.FunctionDeclaration) !TypeExpression {
         try self.enterScope();
@@ -699,7 +1023,9 @@ pub const TypeChecker = struct {
         
         // Check function body if present
         if (func_decl.body) |body| {
-            try self.checkStatement(body);
+            for (body.items) |statement| {
+                try self.checkStatement(statement);
+            }
         }
         
         // Return function type
@@ -750,7 +1076,8 @@ test "variable type checking" {
     defer checker.deinit();
     
     // Test variable addition and lookup
-    const var_type = TypeExpression.named(allocator, "drip");
+    var var_type = TypeExpression.named(allocator, "drip");
+    defer var_type.deinit();
     try checker.addVariable("x", var_type, false);
     
     const retrieved = checker.getVariable("x");
@@ -763,9 +1090,12 @@ test "type compatibility" {
     var checker = try TypeChecker.init(allocator);
     defer checker.deinit();
     
-    const drip_type = TypeExpression.named(allocator, "drip");
-    const normie_type = TypeExpression.named(allocator, "normie");
-    const tea_type = TypeExpression.named(allocator, "tea");
+    var drip_type = TypeExpression.named(allocator, "drip");
+    defer drip_type.deinit();
+    var normie_type = TypeExpression.named(allocator, "normie");
+    defer normie_type.deinit();
+    var tea_type = TypeExpression.named(allocator, "tea");
+    defer tea_type.deinit();
     
     // Test numeric type compatibility
     try std.testing.expect(checker.typesCompatible(&drip_type, &normie_type));
