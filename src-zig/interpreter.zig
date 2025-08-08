@@ -601,7 +601,29 @@ pub const Interpreter = struct {
             .String => |str| return Value{ .String = str },
             .Boolean => |bool_val| return Value{ .Boolean = bool_val },
             .Character => |char| return Value{ .Character = char },
-            .Identifier => |name| return try self.environment.get(name),
+            .Identifier => |name| {
+                // Try to find in current environment first
+                if (self.environment.get(name)) |value| {
+                    return value;
+                } else |_| {
+                    // If not found, check if this might be a field access on 'self'
+                    // Look for 'self' in the current environment (first parameter in methods)
+                    if (self.environment.get("self")) |self_value| {
+                        switch (self_value) {
+                            .Struct => |struct_inst| {
+                                if (struct_inst.getField(name)) |field_value| {
+                                    std.debug.print("DEBUG: Implicit field access for '{s}' resolved to: {s}\n", .{name, @tagName(field_value)});
+                                    return field_value;
+                                }
+                            },
+                            else => {}
+                        }
+                    } else |_| {}
+                    
+                    // If not found anywhere, return undefined variable error
+                    return InterpreterError.UndefinedVariable;
+                }
+            },
             .Binary => |bin| return try self.evaluateBinary(bin),
             .Call => |call| return try self.evaluateCall(call),
             .MemberAccess => |member| return try self.evaluateMemberAccess(member),
@@ -887,7 +909,9 @@ pub const Interpreter = struct {
     }
 
     fn evaluateMethodCall(self: *Interpreter, member: ast.MemberAccessExpression, args: []ast.Expression) InterpreterError!Value {
+        std.debug.print("DEBUG: Method call - evaluating object for '{s}' method\n", .{member.property});
         const object = try self.evaluateExpression(member.object.*);
+        std.debug.print("DEBUG: Object evaluated to type: {s}\n", .{@tagName(object)});
         
         switch (object) {
             .Struct => |struct_inst| {
@@ -941,10 +965,16 @@ pub const Interpreter = struct {
         defer method_env.deinit();
         method_env.enclosing = self.environment;
         
-        // Bind parameters to arguments
+        // First argument is always 'self' (the struct instance)
+        if (args.len > 0) {
+            try method_env.define("self", args[0]);
+        }
+        
+        // Bind other parameters to remaining arguments (skipping self)
         for (method.parameters.items, 0..) |param, i| {
-            if (i < args.len) {
-                try method_env.define(param.name, args[i]);
+            const arg_index = i + 1; // Skip self argument
+            if (arg_index < args.len) {
+                try method_env.define(param.name, args[arg_index]);
             }
         }
         

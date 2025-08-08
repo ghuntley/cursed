@@ -177,11 +177,11 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, _: []const
     defer if (!std.mem.endsWith(u8, output_filename, ".ll")) allocator.free(ir_filename);
     
     // Use minimal LLVM backend to avoid C import issues
-    const llvm_backend_minimal = @import("llvm_backend_minimal.zig");
+    const llvm_backend_fixed = @import("llvm_backend_fixed.zig");
     
-    // Generate LLVM IR using minimal backend
-    print("[2/6] Generating LLVM IR using minimal backend...\n", .{});
-    try llvm_backend_minimal.compileToLLVM(allocator, source, ir_filename);
+    // Generate LLVM IR using fixed backend (athlon-xp issue resolved)
+    print("[2/6] Generating LLVM IR using full backend...\n", .{});
+    try llvm_backend_fixed.compileToLLVM(allocator, source, ir_filename);
     
     if (config.verbose) print("✅ Generated LLVM IR: {s}\n", .{ir_filename});
     
@@ -193,7 +193,7 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, _: []const
     
     // Compile IR to native executable
     print("[3/6] Compiling IR to native executable...\n", .{});
-    try llvm_backend_minimal.compileIRToNative(allocator, ir_filename, output_filename);
+    try llvm_backend_fixed.compileIRToNative(allocator, ir_filename, output_filename);
     
     // Clean up IR file if successful and not in verbose mode
     if (!config.verbose and !config.emit_llvm) {

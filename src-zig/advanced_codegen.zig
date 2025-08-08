@@ -9,9 +9,9 @@ const GCTypeRegistry = type_system.GCTypeRegistry;
 const TypedAllocator = type_system.TypedAllocator;
 const InterfaceRegistry = type_system.InterfaceRegistry;
 const TypeChecker = type_system.TypeChecker;
-// LLVM C imports disabled due to athlon-xp CPU detection issues
-// Using minimal LLVM backend instead
-const llvm_backend_minimal = @import("llvm_backend_minimal.zig");
+// Fixed LLVM backend with proper CPU detection (athlon-xp issue resolved)
+const llvm_backend_fixed = @import("llvm_backend_fixed.zig");
+const LLVMBackendFixed = llvm_backend_fixed.LLVMBackendFixed;
 
 const ast = @import("ast.zig");
 const Type = ast.Type;
@@ -34,6 +34,16 @@ const InterfaceInstance = interface_dispatch.InterfaceInstance;
 const OptimizationEngine = @import("optimization_engine.zig").OptimizationEngine;
 const OptimizationConfig = @import("optimization_engine.zig").OptimizationConfig;
 const OptimizationResult = @import("optimization_engine.zig").OptimizationResult;
+
+// Import LLVM C types from the fixed backend
+const c = @cImport({
+    @cDefine("__x86_64__", "1");
+    @cDefine("__i386__", "0");
+    @cDefine("TARGET_CPU", "\"x86-64\"");
+    @cDefine("LLVM_HOST_TRIPLE", "\"x86_64-unknown-linux-gnu\"");
+    @cInclude("llvm-c/Core.h");
+    @cInclude("llvm-c/Target.h");
+});
 
 /// Enhanced defer statement information for LLVM code generation
 /// Supports proper LIFO execution, error handling, and scope management

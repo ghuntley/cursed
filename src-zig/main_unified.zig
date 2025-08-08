@@ -1751,11 +1751,42 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
         if (variables.get(object_name)) |struct_var| {
             switch (struct_var) {
                 .Struct => |struct_instance| {
-                    if (struct_instance.fields.get(field_name)) |field_value| {
-                        if (verbose) print("✅ Found struct field '{s}.{s}'\n", .{ object_name, field_name });
-                        return try field_value.clone(allocator);
+                    // Check if field_name contains more dots (nested access)
+                    if (std.mem.indexOf(u8, field_name, ".")) |nested_dot_pos| {
+                        // This is nested access like person.location.x
+                        const first_field = std.mem.trim(u8, field_name[0..nested_dot_pos], " \t");
+                        const remaining_path = std.mem.trim(u8, field_name[nested_dot_pos + 1..], " \t");
+                        
+                        if (verbose) print("🔍 Nested access: first_field='{s}', remaining='{s}'\n", .{ first_field, remaining_path });
+                        
+                        if (struct_instance.fields.get(first_field)) |nested_struct_value| {
+                            switch (nested_struct_value) {
+                                .Struct => |_| {
+                                    // Recursively evaluate the remaining path
+                                    const nested_expression = try std.fmt.allocPrint(allocator, "{s}.{s}", .{ first_field, remaining_path });
+                                    defer allocator.free(nested_expression);
+                                    
+                                    // Create a temporary variable store with the nested struct
+                                    var temp_vars = VariableStore.init(allocator);
+                                    defer temp_vars.deinit();
+                                    try temp_vars.put(first_field, nested_struct_value);
+                                    
+                                    if (verbose) print("🔍 Evaluating nested: '{s}'\n", .{nested_expression});
+                                    return evaluateExpression(&temp_vars, functions, allocator, nested_expression, verbose);
+                                },
+                                else => {
+                                    if (verbose) print("⚠️  Field '{s}' is not a struct for nested access\n", .{first_field});
+                                }
+                            }
+                        }
                     } else {
-                        if (verbose) print("⚠️  Field '{s}' not found in struct '{s}'\n", .{ field_name, object_name });
+                        // Simple field access
+                        if (struct_instance.fields.get(field_name)) |field_value| {
+                            if (verbose) print("✅ Found struct field '{s}.{s}'\n", .{ object_name, field_name });
+                            return try field_value.clone(allocator);
+                        } else {
+                            if (verbose) print("⚠️  Field '{s}' not found in struct '{s}'\n", .{ field_name, object_name });
+                        }
                     }
                 },
                 else => {
@@ -2337,8 +2368,14 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                                 const str_copy = try allocator.dupe(u8, str_val);
                                 field_value = Variable{ .String = ManagedString.fromOwned(str_copy) };
                             } else {
-                                if (verbose) print("❌ Could not parse field value: {s}\n", .{field_value_str});
-                                continue;
+                                // Try as variable reference
+                                if (variables.get(field_value_str)) |var_ref| {
+                                    field_value = try var_ref.clone(allocator);
+                                    if (verbose) print("✅ Found variable reference '{s}' for field '{s}'\n", .{ field_value_str, field_name });
+                                } else {
+                                    if (verbose) print("❌ Could not parse field value: {s}\n", .{field_value_str});
+                                    continue;
+                                }
                             }
                         }
                     }
