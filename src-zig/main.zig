@@ -1630,7 +1630,11 @@ fn compileWithLLVMCrossCompilation(
     
     // Compile CURSED source to LLVM IR using enhanced compiler
     const enhanced_compiler = @import("enhanced_compiler.zig");
-    try enhanced_compiler.compileToLLVMBackend(allocator, source, filename, ir_filename, config.verbose, false);
+    const compiler_config = enhanced_compiler.CompilerConfig{
+        .verbose = config.verbose,
+        .debug_info = false,
+    };
+    try enhanced_compiler.compileToLLVMBackend(allocator, source, filename, ir_filename, compiler_config);
     
     if (config.verbose) {
         print("✅ LLVM IR generated successfully\n", .{});

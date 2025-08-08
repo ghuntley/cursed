@@ -66,6 +66,7 @@ pub fn main() !void {
         print("Lexer error: {}\n", .{err});
         return;
     };
+    defer tokens.deinit();
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});

@@ -724,13 +724,13 @@ pub const CodeGen = struct {
         c.LLVMPositionBuilderAtEnd(self.builder, continue_block);
         
         // If error variable specified, create it
-        if (fam.error_variable) |error_var| {
+        if (fam.error_variable) |catch_error_var| {
             // Create error value (simplified)
             const error_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
-            const error_alloca = c.LLVMBuildAlloca(self.builder, error_type, error_var.ptr);
+            const error_alloca = c.LLVMBuildAlloca(self.builder, error_type, catch_error_var.ptr);
             const error_msg = c.LLVMBuildGlobalStringPtr(self.builder, "error", "error_msg");
             _ = c.LLVMBuildStore(self.builder, error_msg, error_alloca);
-            try self.variables.put(error_var, error_alloca);
+            try self.variables.put(catch_error_var, error_alloca);
         }
         
         // Execute recovery code
@@ -1586,13 +1586,20 @@ pub const CodeGen = struct {
         return CodeGenError.LLVMError;
     }
 
-    /// Generate array literal
+    /// Generate array literal with dynamic length calculation
     fn generateArrayLiteral(self: *CodeGen, array: ast.ArrayLiteralExpression) CodeGenError!c.LLVMValueRef {
+        const array_runtime = @import("array_runtime.zig");
+        
         if (array.elements.items.len == 0) {
-            // Empty array
+            // Empty array with proper metadata
+            var generator = array_runtime.ArrayLiteralGenerator.init(
+                self.context,
+                self.builder,
+                self.module,
+                self.allocator,
+            );
             const i8_type = c.LLVMInt8TypeInContext(self.context);
-            const array_type = c.LLVMArrayType(i8_type, 0);
-            return c.LLVMGetUndef(array_type);
+            return generator.generateArrayLiteral(&[_]c.LLVMValueRef{}, i8_type);
         }
 
         // Generate all elements first to determine array type
@@ -1609,55 +1616,49 @@ pub const CodeGen = struct {
             }
         }
 
-        // Create array type
-        const array_type = c.LLVMArrayType(element_type.?, @as(u32, @intCast(element_values.items.len)));
+        // Use enhanced array literal generator with proper length tracking
+        var generator = array_runtime.ArrayLiteralGenerator.init(
+            self.context,
+            self.builder,
+            self.module,
+            self.allocator,
+        );
         
-        // Allocate array on heap
-        const array_size = c.LLVMSizeOf(array_type);
-        const malloc_func = self.functions.get("malloc").?;
-        const array_ptr = c.LLVMBuildCall2(
-            self.builder,
-            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(malloc_func)),
-            malloc_func,
-            &[_]c.LLVMValueRef{array_size},
-            1,
-            "array_alloc"
-        );
-
-        // Cast to proper array pointer type
-        const typed_array_ptr = c.LLVMBuildBitCast(
-            self.builder,
-            array_ptr,
-            c.LLVMPointerType(array_type, 0),
-            "array_ptr"
-        );
-
-        // Initialize array elements
-        for (element_values.items, 0..) |value, i| {
-            const element_ptr = c.LLVMBuildGEP2(
-                self.builder,
-                array_type,
-                typed_array_ptr,
-                &[_]c.LLVMValueRef{
-                    c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0),
-                    c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @as(u32, @intCast(i)), 0)
-                },
-                2,
-                "element_ptr"
-            );
-            _ = c.LLVMBuildStore(self.builder, value, element_ptr);
-        }
-
-        return typed_array_ptr;
+        return generator.generateArrayLiteral(element_values.items, element_type.?);
     }
 
-    /// Generate array index access
+    /// Generate array index access with proper bounds checking
     fn generateIndexAccess(self: *CodeGen, index: ast.IndexAccessExpression) CodeGenError!c.LLVMValueRef {
+        const array_runtime = @import("array_runtime.zig");
+        
         const array_value = try self.generateExpression(index.object.*);
         const index_value = try self.generateExpression(index.index.*);
 
-        // Get array type from pointer
+        // Try to determine element type from array structure
         const array_ptr_type = c.LLVMTypeOf(array_value);
+        
+        // Check if this is our new array structure format
+        if (c.LLVMGetTypeKind(array_ptr_type) == c.LLVMPointerTypeKind) {
+            const pointed_type = c.LLVMGetElementType(array_ptr_type);
+            if (c.LLVMGetTypeKind(pointed_type) == c.LLVMStructTypeKind) {
+                // This is likely our array struct { length, data }
+                // Extract element type from the data array field (index 1)
+                const data_array_type = c.LLVMStructGetTypeAtIndex(pointed_type, 1);
+                const element_type = c.LLVMGetElementType(data_array_type);
+                
+                // Use enhanced array access with bounds checking
+                return array_runtime.ArrayMetadata.generateArrayAccess(
+                    self.context,
+                    self.builder,
+                    array_value,
+                    index_value,
+                    element_type,
+                    true, // Enable bounds checking
+                );
+            }
+        }
+        
+        // Fallback to old method for legacy arrays
         const array_type = c.LLVMGetElementType(array_ptr_type);
         const element_type = c.LLVMGetElementType(array_type);
 
@@ -3239,7 +3240,6 @@ pub const CodeGen = struct {
         }
         
         // Create array constant
-        const array_type = c.LLVMArrayType(c.LLVMTypeOf(element_values.items[0]), @as(u32, @intCast(element_values.items.len)));
         return c.LLVMConstArray(c.LLVMTypeOf(element_values.items[0]), element_values.items.ptr, @as(u32, @intCast(element_values.items.len)));
     }
 
@@ -3312,26 +3312,7 @@ pub const CodeGen = struct {
     }
 
     /// Generate channel creation expression
-    fn generateChannelCreation(self: *CodeGen, create: ast.ChannelCreationExpression) CodeGenError!c.LLVMValueRef {
-        // Get channel capacity (buffer size)
-        const capacity = if (create.capacity) |cap|
-            try self.generateExpression(cap.*)
-        else
-            c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0); // Unbuffered channel
-        
-        // Call runtime channel creation function
-        const channel_create_func = self.runtime_functions.get("cursed_channel_create").?;
-        const channel = c.LLVMBuildCall2(
-            self.builder,
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-            channel_create_func,
-            &[_]c.LLVMValueRef{capacity},
-            1,
-            "channel"
-        );
-        
-        return channel;
-    }
+
 
     // ===== ENHANCED VARIABLE AND EXPRESSION HELPERS =====
 
@@ -3453,300 +3434,6 @@ pub const CodeGen = struct {
             c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
             strcat_func,
             &[_]c.LLVMValueRef{ left, right },
-            2,
-            "str_concat"
-        );
-    }
-
-    /// Enhanced type casting with proper CURSED type system support
-    fn generateTypeCast(self: *CodeGen, cast: ast.TypeCastExpression) CodeGenError!c.LLVMValueRef {
-        const source_value = try self.generateExpression(cast.expression.*);
-        const source_type = c.LLVMTypeOf(source_value);
-        const target_type = try self.getCursedLLVMType(cast.target_type);
-        
-        const source_kind = c.LLVMGetTypeKind(source_type);
-        const target_kind = c.LLVMGetTypeKind(target_type);
-        
-        // Integer to float conversion (drip -> meal)
-        if (source_kind == c.LLVMIntegerTypeKind and 
-            (target_kind == c.LLVMFloatTypeKind or target_kind == c.LLVMDoubleTypeKind)) {
-            return c.LLVMBuildSIToFP(self.builder, source_value, target_type, "int_to_float");
-        }
-        
-        // Float to integer conversion (meal -> drip)
-        if ((source_kind == c.LLVMFloatTypeKind or source_kind == c.LLVMDoubleTypeKind) and 
-            target_kind == c.LLVMIntegerTypeKind) {
-            return c.LLVMBuildFPToSI(self.builder, source_value, target_type, "float_to_int");
-        }
-        
-        // Integer to integer conversion (size changes)
-        if (source_kind == c.LLVMIntegerTypeKind and target_kind == c.LLVMIntegerTypeKind) {
-            const source_width = c.LLVMGetIntTypeWidth(source_type);
-            const target_width = c.LLVMGetIntTypeWidth(target_type);
-            
-            if (source_width > target_width) {
-                return c.LLVMBuildTrunc(self.builder, source_value, target_type, "trunc");
-            } else if (source_width < target_width) {
-                return c.LLVMBuildSExt(self.builder, source_value, target_type, "sext");
-            }
-        }
-        
-        // Pointer bitcast
-        if (source_kind == c.LLVMPointerTypeKind and target_kind == c.LLVMPointerTypeKind) {
-            return c.LLVMBuildBitCast(self.builder, source_value, target_type, "ptr_cast");
-        }
-        
-        // Default: bitcast (unsafe but preserves bit pattern)
-        return c.LLVMBuildBitCast(self.builder, source_value, target_type, "cast");
-    }
-
-    /// Get LLVM type for CURSED type
-    fn getCursedLLVMType(self: *CodeGen, cursed_type: []const u8) CodeGenError!c.LLVMTypeRef {
-        if (std.mem.eql(u8, cursed_type, "drip")) {
-            return c.LLVMInt64TypeInContext(self.context);
-        } else if (std.mem.eql(u8, cursed_type, "normie")) {
-            return c.LLVMInt32TypeInContext(self.context);
-        } else if (std.mem.eql(u8, cursed_type, "smol")) {
-            return c.LLVMInt8TypeInContext(self.context);
-        } else if (std.mem.eql(u8, cursed_type, "thicc")) {
-            return c.LLVMInt64TypeInContext(self.context);
-        } else if (std.mem.eql(u8, cursed_type, "meal")) {
-            return c.LLVMDoubleTypeInContext(self.context);
-        } else if (std.mem.eql(u8, cursed_type, "snack")) {
-            return c.LLVMFloatTypeInContext(self.context);
-        } else if (std.mem.eql(u8, cursed_type, "lit")) {
-            return c.LLVMInt1TypeInContext(self.context);
-        } else if (std.mem.eql(u8, cursed_type, "tea")) {
-            return c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
-        } else if (std.mem.eql(u8, cursed_type, "sip")) {
-            return c.LLVMInt8TypeInContext(self.context);
-        } else {
-            return CodeGenError.InvalidType;
-        }
-    }
-
-    /// Enhanced variable assignment with proper memory management
-    fn generateAssignment(self: *CodeGen, assign: ast.AssignmentStatement) CodeGenError!void {
-        const value = try self.generateExpression(assign.value);
-        
-        if (self.variables.get(assign.variable)) |alloca| {
-            const var_type = c.LLVMGetAllocatedType(alloca);
-            const value_type = c.LLVMTypeOf(value);
-            
-            // Type-compatible assignment
-            var final_value = value;
-            if (var_type != value_type) {
-                // Attempt automatic type conversion
-                final_value = try self.generateImplicitConversion(value, var_type);
-            }
-            
-            _ = c.LLVMBuildStore(self.builder, final_value, alloca);
-            
-            // Add GC tracking if enabled
-            if (self.runtime_functions.get("cursed_gc_track_assignment")) |gc_track| {
-                _ = c.LLVMBuildCall2(
-                    self.builder,
-                    c.LLVMVoidTypeInContext(self.context),
-                    gc_track,
-                    &[_]c.LLVMValueRef{alloca, final_value},
-                    2,
-                    ""
-                );
-            }
-        } else {
-            return CodeGenError.UndefinedSymbol;
-        }
-    }
-
-    /// Implicit type conversion for compatible types
-    fn generateImplicitConversion(self: *CodeGen, value: c.LLVMValueRef, target_type: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
-        const source_type = c.LLVMTypeOf(value);
-        const source_kind = c.LLVMGetTypeKind(source_type);
-        const target_kind = c.LLVMGetTypeKind(target_type);
-        
-        // Same type - no conversion needed
-        if (source_type == target_type) {
-            return value;
-        }
-        
-        // Integer to integer conversion
-        if (source_kind == c.LLVMIntegerTypeKind and target_kind == c.LLVMIntegerTypeKind) {
-            const source_width = c.LLVMGetIntTypeWidth(source_type);
-            const target_width = c.LLVMGetIntTypeWidth(target_type);
-            
-            if (source_width > target_width) {
-                return c.LLVMBuildTrunc(self.builder, value, target_type, "implicit_trunc");
-            } else if (source_width < target_width) {
-                return c.LLVMBuildSExt(self.builder, value, target_type, "implicit_sext");
-            }
-        }
-        
-        // Integer to float promotion
-        if (source_kind == c.LLVMIntegerTypeKind and 
-            (target_kind == c.LLVMFloatTypeKind or target_kind == c.LLVMDoubleTypeKind)) {
-            return c.LLVMBuildSIToFP(self.builder, value, target_type, "implicit_int_to_float");
-        }
-        
-        // Unsafe but sometimes necessary: bitcast
-        return c.LLVMBuildBitCast(self.builder, value, target_type, "implicit_cast");
-    }
-
-    /// Memory copy helper for string operations
-    fn generateMemoryCopy(self: *CodeGen, dest: c.LLVMValueRef, src: []const u8) CodeGenError!void {
-        // Get or declare memcpy function
-        const memcpy_func = self.runtime_functions.get("memcpy") orelse blk: {
-            const memcpy_type = c.LLVMFunctionType(
-                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // returns void*
-                &[_]c.LLVMTypeRef{
-                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // dest
-                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // src
-                    c.LLVMInt64TypeInContext(self.context), // size
-                },
-                3,
-                0
-            );
-            const func = c.LLVMAddFunction(self.module, "memcpy", memcpy_type);
-            try self.runtime_functions.put("memcpy", func);
-            break :blk func;
-        };
-        
-        // Create source string constant
-        const src_str = c.LLVMBuildGlobalStringPtr(self.builder, src.ptr, "src_str");
-        const src_len = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), src.len, 0);
-        
-        // Call memcpy
-        _ = c.LLVMBuildCall2(
-            self.builder,
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-            memcpy_func,
-            &[_]c.LLVMValueRef{ dest, src_str, src_len },
-            3,
-            ""
-        );
-    }
-    
-    /// Generate LLVM IR for string interpolation expressions
-    fn generateStringInterpolation(self: *CodeGen, interpolation: ast.StringInterpolationExpression) CodeGenError!c.LLVMValueRef {
-        // Start with empty string
-        var result = try self.generateStringLiteral("");
-        
-        // Process each interpolation part
-        for (interpolation.parts.items) |part| {
-            var part_value: c.LLVMValueRef = undefined;
-            
-            if (part.expression) |expr_ptr| {
-                // Evaluate expression and convert to string
-                const expr: *ast.Expression = @ptrCast(@alignCast(expr_ptr));
-                const expr_value = try self.generateExpression(expr.*);
-                
-                // Convert expression result to string based on type
-                part_value = try self.generateValueToString(expr_value);
-            } else {
-                // Literal text part
-                part_value = try self.generateStringLiteral(part.text);
-            }
-            
-            // Concatenate with result
-            result = try self.generateStringConcatenation(result, part_value);
-        }
-        
-        return result;
-    }
-    
-    /// Convert any value to string representation
-    fn generateValueToString(self: *CodeGen, value: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
-        const value_type = c.LLVMTypeOf(value);
-        const type_kind = c.LLVMGetTypeKind(value_type);
-        
-        switch (type_kind) {
-            c.LLVMIntegerTypeKind => {
-                // Integer to string conversion
-                const int_to_str_func = self.runtime_functions.get("cursed_int_to_string") orelse blk: {
-                    const func_type = c.LLVMFunctionType(
-                        c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-                        &[_]c.LLVMTypeRef{c.LLVMInt64TypeInContext(self.context)},
-                        1, 0
-                    );
-                    const func = c.LLVMAddFunction(self.module, "cursed_int_to_string", func_type);
-                    try self.runtime_functions.put("cursed_int_to_string", func);
-                    break :blk func;
-                };
-                
-                // Extend/truncate to i64 if needed
-                const i64_type = c.LLVMInt64TypeInContext(self.context);
-                var int_value = value;
-                const value_width = c.LLVMGetIntTypeWidth(value_type);
-                const target_width = c.LLVMGetIntTypeWidth(i64_type);
-                
-                if (value_width < target_width) {
-                    int_value = c.LLVMBuildSExt(self.builder, value, i64_type, "sext_to_i64");
-                } else if (value_width > target_width) {
-                    int_value = c.LLVMBuildTrunc(self.builder, value, i64_type, "trunc_to_i64");
-                }
-                
-                return c.LLVMBuildCall2(
-                    self.builder,
-                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-                    int_to_str_func,
-                    &[_]c.LLVMValueRef{int_value},
-                    1,
-                    "int_to_str"
-                );
-            },
-            c.LLVMDoubleTypeKind => {
-                // Float to string conversion
-                const float_to_str_func = self.runtime_functions.get("cursed_float_to_string") orelse blk: {
-                    const func_type = c.LLVMFunctionType(
-                        c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-                        &[_]c.LLVMTypeRef{c.LLVMDoubleTypeInContext(self.context)},
-                        1, 0
-                    );
-                    const func = c.LLVMAddFunction(self.module, "cursed_float_to_string", func_type);
-                    try self.runtime_functions.put("cursed_float_to_string", func);
-                    break :blk func;
-                };
-                
-                return c.LLVMBuildCall2(
-                    self.builder,
-                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-                    float_to_str_func,
-                    &[_]c.LLVMValueRef{value},
-                    1,
-                    "float_to_str"
-                );
-            },
-            c.LLVMPointerTypeKind => {
-                // Assume it's already a string pointer
-                return value;
-            },
-            else => {
-                // For other types, return placeholder
-                return try self.generateStringLiteral("<unknown>");
-            }
-        }
-    }
-    
-    /// Generate string concatenation call
-    fn generateStringConcatenation(self: *CodeGen, str1: c.LLVMValueRef, str2: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
-        const strcat_func = self.runtime_functions.get("cursed_string_concat") orelse blk: {
-            const strcat_type = c.LLVMFunctionType(
-                c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-                &[_]c.LLVMTypeRef{
-                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-                    c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)
-                },
-                2, 0
-            );
-            const func = c.LLVMAddFunction(self.module, "cursed_string_concat", strcat_type);
-            try self.runtime_functions.put("cursed_string_concat", func);
-            break :blk func;
-        };
-        
-        return c.LLVMBuildCall2(
-            self.builder,
-            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-            strcat_func,
-            &[_]c.LLVMValueRef{str1, str2},
             2,
             "str_concat"
         );

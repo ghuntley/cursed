@@ -228,7 +228,7 @@ const Variable = union(enum) {
                 const arena_allocator = arena.allocator();
                 
                 var result = std.ArrayList(u8).init(allocator);
-                errdefer result.deinit();
+                errdefer result.deinit(); // Clean up on error
                 
                 try result.append('[');
                 for (arr.items, 0..) |item, i| {
@@ -544,6 +544,13 @@ pub fn main() !void {
     var static_link = false;
     var inline_threshold: ?u32 = null;
     var no_inline = false;
+    var lto_enabled = false;
+    var pgo_enabled = false;
+    var pgo_profile_path: ?[]const u8 = null;
+    var size_optimization = false;
+    var vectorization_enabled = true;
+    var target_cpu: ?[]const u8 = null;
+    var target_features: ?[]const u8 = null;
     
     for (args[1..]) |arg| {
         if (std.mem.eql(u8, arg, "--compile")) {
@@ -578,6 +585,23 @@ pub fn main() !void {
             inline_threshold = std.fmt.parseUnsigned(u32, threshold_str, 10) catch null;
         } else if (std.mem.eql(u8, arg, "--no-inline")) {
             no_inline = true;
+        } else if (std.mem.eql(u8, arg, "--enable-lto")) {
+            lto_enabled = true;
+        } else if (std.mem.eql(u8, arg, "--enable-pgo")) {
+            pgo_enabled = true;
+        } else if (std.mem.startsWith(u8, arg, "--pgo-profile=")) {
+            pgo_profile_path = arg[14..];
+            pgo_enabled = true;
+        } else if (std.mem.eql(u8, arg, "--size-opt")) {
+            size_optimization = true;
+        } else if (std.mem.eql(u8, arg, "--vectorize")) {
+            vectorization_enabled = true;
+        } else if (std.mem.eql(u8, arg, "--no-vectorize")) {
+            vectorization_enabled = false;
+        } else if (std.mem.startsWith(u8, arg, "--target-cpu=")) {
+            target_cpu = arg[12..];
+        } else if (std.mem.startsWith(u8, arg, "--target-features=")) {
+            target_features = arg[17..];
         } else if (!std.mem.startsWith(u8, arg, "--")) {
             // This looks like a filename (not an option)
             filename = arg;
@@ -632,6 +656,13 @@ pub fn main() !void {
             .static_link = static_link,
             .inline_threshold = inline_threshold,
             .no_inline = no_inline,
+            .lto_enabled = lto_enabled,
+            .pgo_enabled = pgo_enabled,
+            .pgo_profile_path = pgo_profile_path,
+            .size_optimization = size_optimization,
+            .vectorization_enabled = vectorization_enabled,
+            .target_cpu = target_cpu,
+            .target_features = target_features,
         };
         
         if (verbose) {
@@ -3275,6 +3306,14 @@ fn printUsage() void {
     print("  --static           Static linking for deployment\n", .{});
     print("  --inline-threshold=N  Inlining threshold (default: auto)\n", .{});
     print("  --no-inline        Disable function inlining\n", .{});
+    print("  --enable-lto       Enable Link-Time Optimization\n", .{});
+    print("  --enable-pgo       Enable Profile-Guided Optimization\n", .{});
+    print("  --pgo-profile=FILE Load PGO profile data from file\n", .{});
+    print("  --size-opt         Optimize for size instead of speed\n", .{});
+    print("  --vectorize        Enable auto-vectorization (default)\n", .{});
+    print("  --no-vectorize     Disable auto-vectorization\n", .{});
+    print("  --target-cpu=CPU   Target CPU for optimization\n", .{});
+    print("  --target-features=FEATURES  Target feature flags\n", .{});
     print("\nFormat Options:\n", .{});
     print("  --check            Check if files are formatted (exit 1 if not)\n", .{});
     print("  --diff             Show formatting differences\n", .{});

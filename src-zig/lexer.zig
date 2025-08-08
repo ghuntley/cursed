@@ -229,6 +229,7 @@ pub const Lexer = struct {
 
     pub fn tokenize(self: *Lexer) !ArrayList(Token) {
         var tokens = ArrayList(Token).init(self.allocator);
+        errdefer tokens.deinit(); // Clean up on error
         
         while (!self.isAtEnd()) {
             const token = try self.nextToken();

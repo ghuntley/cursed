@@ -112,7 +112,7 @@ pub const CursedError = struct {
         }
         
         if (self.inner_error) |inner| {
-            try writer.print("  Caused by:\n");
+            try writer.print("  Caused by:\n", .{});
             try inner.format(writer);
         }
     }
@@ -308,7 +308,7 @@ pub const ErrorHandler = struct {
         const stdout = std.io.getStdOut().writer();
         for (self.error_stack.items) |error_obj| {
             try error_obj.format(stdout);
-            try stdout.print("\n");
+            try stdout.print("\n", .{});
         }
     }
 };

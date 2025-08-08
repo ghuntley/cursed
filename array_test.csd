@@ -1,2 +1,4 @@
+yeet "arrayz"
 sus arr []drip = [1, 2, 3]
-vibez.spill("Array values:", arr[0], arr[1], arr[2])
+vibez.spill("Array length:", len(arr))
+vibez.spill("First element:", arr[0])

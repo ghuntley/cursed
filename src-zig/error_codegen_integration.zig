@@ -412,7 +412,7 @@ pub const ErrorCodeGen = struct {
         const context_alloca = c.LLVMBuildAlloca(self.builder, context_type, "error_context");
         
         // Initialize context fields
-        const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        _ = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
         
         // Set function name
         const func_name_gep = c.LLVMBuildStructGEP2(self.builder, context_type, context_alloca, 0, "func_name_ptr");
@@ -436,7 +436,6 @@ pub const ErrorCodeGen = struct {
     }
 };
 
-/// Integration tests for error code generation
 test "error codegen integration" {
     const allocator = std.testing.allocator;
     

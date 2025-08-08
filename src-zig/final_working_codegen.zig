@@ -1,6 +1,15 @@
 const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
+const ast = @import("ast.zig");
+
+const c = @cImport({
+    @cInclude("llvm-c/Core.h");
+    @cInclude("llvm-c/ExecutionEngine.h");
+    @cInclude("llvm-c/Target.h");
+    @cInclude("llvm-c/Analysis.h");
+    @cInclude("llvm-c/BitWriter.h");
+});
 
 /// Working LLVM Code Generator for CURSED that generates actual executable code
 /// This implementation bypasses the complex LLVM API and generates IR directly as text
@@ -10,12 +19,32 @@ pub const FinalWorkingCodeGen = struct {
     string_constants: ArrayList([]const u8),
     variables: std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
+    // LLVM API fields for compatibility with advanced_codegen
+    context: c.LLVMContextRef,
+    module: c.LLVMModuleRef,
+    builder: c.LLVMBuilderRef,
+    current_function: ?c.LLVMValueRef,
+    
     pub fn init(allocator: Allocator) !FinalWorkingCodeGen {
+        // Initialize LLVM core
+        c.LLVMInitializeCore(c.LLVMGetGlobalPassRegistry());
+        c.LLVMInitializeNativeTarget();
+        c.LLVMInitializeNativeAsmPrinter();
+        
+        // Create LLVM context, module and builder
+        const context = c.LLVMContextCreate();
+        const module = c.LLVMModuleCreateWithNameInContext("cursed_module", context);
+        const builder = c.LLVMCreateBuilderInContext(context);
+        
         return FinalWorkingCodeGen{
             .allocator = allocator,
             .ir_buffer = ArrayList(u8).init(allocator),
             .string_constants = ArrayList([]const u8).init(allocator),
             .variables = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .context = context,
+            .module = module,
+            .builder = builder,
+            .current_function = null,
         };
     }
 
@@ -23,6 +52,11 @@ pub const FinalWorkingCodeGen = struct {
         self.ir_buffer.deinit();
         self.string_constants.deinit();
         self.variables.deinit();
+        
+        // Cleanup LLVM resources
+        c.LLVMDisposeBuilder(self.builder);
+        c.LLVMDisposeModule(self.module);
+        c.LLVMContextDispose(self.context);
     }
 
     /// Compile CURSED source code to LLVM IR
@@ -181,6 +215,31 @@ pub const FinalWorkingCodeGen = struct {
         try self.ir_buffer.appendSlice("entry:\n");
         try self.ir_buffer.appendSlice(body);
         try self.ir_buffer.appendSlice("}\n\n");
+    }
+
+    /// Generate statement for compatibility with advanced_codegen
+    pub fn generateStatement(self: *FinalWorkingCodeGen, stmt: *ast.Statement) !void {
+        // Delegate to llvm_fixes for statement generation
+        const llvm_fixes = @import("llvm_fixes.zig");
+        
+        switch (stmt.*) {
+            .Let => |let_stmt| {
+                try llvm_fixes.generateLetStatement(self.context, self.builder, let_stmt);
+            },
+            .Expression => |expr| {
+                _ = try llvm_fixes.generateExpressionValue(self.context, self.builder, expr);
+            },
+            else => {
+                // Handle other statement types as needed
+                std.debug.print("Statement type not yet implemented in generateStatement\n", .{});
+            },
+        }
+    }
+
+    /// Generate expression for compatibility
+    pub fn generateExpression(self: *FinalWorkingCodeGen, expr: ast.Expression) !c.LLVMValueRef {
+        const llvm_fixes = @import("llvm_fixes.zig");
+        return try llvm_fixes.generateExpressionValue(self.context, self.builder, expr);
     }
 };
 

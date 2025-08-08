@@ -8,572 +8,614 @@ const c = @cImport({
     @cInclude("llvm-c/Analysis.h");
 });
 
-/// Advanced constant folding and propagation engine
-/// Performs compile-time evaluation of constants and simplifies expressions
+/// Constant folding optimization engine
 pub const ConstantFolder = struct {
     allocator: Allocator,
     
-    // Constant value cache
-    constant_cache: HashMap(c.LLVMValueRef, c.LLVMValueRef, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage),
-    
-    // Expression simplification cache
-    expression_cache: HashMap(ExpressionKey, c.LLVMValueRef, ExpressionContext, std.hash_map.default_max_load_percentage),
-    
-    // Configuration
-    config: ConstantFoldingConfig,
-    
     // Statistics
-    stats: ConstantFoldingStats,
+    constants_folded: u32 = 0,
+    expressions_simplified: u32 = 0,
+    instructions_analyzed: u32 = 0,
 
     pub fn init(allocator: Allocator) !ConstantFolder {
         return ConstantFolder{
             .allocator = allocator,
-            .constant_cache = HashMap(c.LLVMValueRef, c.LLVMValueRef, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage).init(allocator),
-            .expression_cache = HashMap(ExpressionKey, c.LLVMValueRef, ExpressionContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .config = ConstantFoldingConfig.default(),
-            .stats = ConstantFoldingStats.init(),
         };
     }
 
     pub fn deinit(self: *ConstantFolder) void {
-        self.constant_cache.deinit();
-        self.expression_cache.deinit();
+        _ = self;
     }
 
-    /// Fold constants throughout the module
+    /// Fold constants in the entire module
     pub fn foldConstants(self: *ConstantFolder, module: c.LLVMModuleRef) !u32 {
-        const start_time = std.time.nanoTimestamp();
+        var total_folded: u32 = 0;
         
-        var folded_count: u32 = 0;
-        
-        // Process all functions
+        // Iterate through all functions
         var function = c.LLVMGetFirstFunction(module);
         while (function != null) {
-            folded_count += try self.foldConstantsInFunction(function.?);
+            total_folded += try self.foldConstantsInFunction(function.?);
             function = c.LLVMGetNextFunction(function.?);
         }
         
-        // Process global variables
-        folded_count += try self.foldGlobalConstants(module);
+        self.constants_folded = total_folded;
         
-        const end_time = std.time.nanoTimestamp();
-        self.stats.folding_time_ns = end_time - start_time;
-        self.stats.constants_folded = folded_count;
+        std.debug.print("✅ Constant folding: {} constants folded, {} expressions simplified\n",
+                       .{ self.constants_folded, self.expressions_simplified });
         
-        std.debug.print("✅ Constant folding: {} constants folded\n", .{folded_count});
-        
-        return folded_count;
+        return total_folded;
     }
 
     /// Fold constants in a specific function
     fn foldConstantsInFunction(self: *ConstantFolder, function: c.LLVMValueRef) !u32 {
         var folded_count: u32 = 0;
         
-        var basic_block = c.LLVMGetFirstBasicBlock(function);
-        while (basic_block != null) {
-            var instruction = c.LLVMGetFirstInstruction(basic_block.?);
-            
-            while (instruction != null) {
-                const next_instruction = c.LLVMGetNextInstruction(instruction.?);
-                
-                if (try self.foldConstantInstruction(instruction.?)) {
-                    folded_count += 1;
-                }
-                
-                instruction = next_instruction;
-            }
-            
-            basic_block = c.LLVMGetNextBasicBlock(basic_block.?);
+        var bb = c.LLVMGetFirstBasicBlock(function);
+        while (bb != null) {
+            folded_count += try self.foldConstantsInBasicBlock(bb.?);
+            bb = c.LLVMGetNextBasicBlock(bb.?);
         }
         
         return folded_count;
     }
 
-    /// Fold constants in global variables
-    fn foldGlobalConstants(self: *ConstantFolder, module: c.LLVMModuleRef) !u32 {
+    /// Fold constants in a basic block
+    fn foldConstantsInBasicBlock(self: *ConstantFolder, bb: c.LLVMBasicBlockRef) !u32 {
         var folded_count: u32 = 0;
+        var instruction = c.LLVMGetFirstInstruction(bb);
         
-        var global = c.LLVMGetFirstGlobal(module);
-        while (global != null) {
-            if (try self.foldGlobalConstant(global.?)) {
+        while (instruction != null) {
+            self.instructions_analyzed += 1;
+            
+            const next_instruction = c.LLVMGetNextInstruction(instruction.?);
+            
+            if (try self.tryFoldInstruction(instruction.?)) {
                 folded_count += 1;
             }
-            global = c.LLVMGetNextGlobal(global.?);
+            
+            instruction = next_instruction;
         }
         
         return folded_count;
     }
 
-    /// Attempt to fold a constant instruction
-    fn foldConstantInstruction(self: *ConstantFolder, instruction: c.LLVMValueRef) !bool {
-        // Check if instruction can be folded
-        if (!self.canFoldInstruction(instruction)) {
+    /// Try to fold a specific instruction
+    fn tryFoldInstruction(self: *ConstantFolder, instruction: c.LLVMValueRef) !bool {
+        const opcode = c.LLVMGetInstructionOpcode(instruction);
+        
+        switch (opcode) {
+            c.LLVMAdd => return self.foldBinaryOperation(instruction, .add),
+            c.LLVMFAdd => return self.foldBinaryOperation(instruction, .fadd),
+            c.LLVMSub => return self.foldBinaryOperation(instruction, .sub),
+            c.LLVMFSub => return self.foldBinaryOperation(instruction, .fsub),
+            c.LLVMMul => return self.foldBinaryOperation(instruction, .mul),
+            c.LLVMFMul => return self.foldBinaryOperation(instruction, .fmul),
+            c.LLVMUDiv => return self.foldBinaryOperation(instruction, .udiv),
+            c.LLVMSDiv => return self.foldBinaryOperation(instruction, .sdiv),
+            c.LLVMFDiv => return self.foldBinaryOperation(instruction, .fdiv),
+            c.LLVMURem => return self.foldBinaryOperation(instruction, .urem),
+            c.LLVMSRem => return self.foldBinaryOperation(instruction, .srem),
+            c.LLVMFRem => return self.foldBinaryOperation(instruction, .frem),
+            c.LLVMShl => return self.foldBinaryOperation(instruction, .shl),
+            c.LLVMLShr => return self.foldBinaryOperation(instruction, .lshr),
+            c.LLVMAShr => return self.foldBinaryOperation(instruction, .ashr),
+            c.LLVMAnd => return self.foldBinaryOperation(instruction, .and_op),
+            c.LLVMOr => return self.foldBinaryOperation(instruction, .or_op),
+            c.LLVMXor => return self.foldBinaryOperation(instruction, .xor),
+            c.LLVMICmp => return self.foldComparisonOperation(instruction),
+            c.LLVMFCmp => return self.foldFloatComparisonOperation(instruction),
+            c.LLVMSelect => return self.foldSelectOperation(instruction),
+            c.LLVMPHI => return self.foldPhiOperation(instruction),
+            c.LLVMTrunc, c.LLVMZExt, c.LLVMSExt => return self.foldCastOperation(instruction),
+            c.LLVMFPTrunc, c.LLVMFPExt => return self.foldFloatCastOperation(instruction),
+            c.LLVMFPToUI, c.LLVMFPToSI => return self.foldFloatToIntCast(instruction),
+            c.LLVMUIToFP, c.LLVMSIToFP => return self.foldIntToFloatCast(instruction),
+            c.LLVMGetElementPtr => return self.foldGEPOperation(instruction),
+            else => return false,
+        }
+    }
+
+    /// Fold binary operations with constant operands
+    fn foldBinaryOperation(self: *ConstantFolder, instruction: c.LLVMValueRef, op: BinaryOp) bool {
+        _ = self;
+        
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
+        
+        // Check if both operands are constants
+        if (c.LLVMIsConstant(left) == 0 or c.LLVMIsConstant(right) == 0) {
             return false;
         }
         
-        // Check cache first
-        if (self.constant_cache.get(instruction)) |cached_constant| {
-            self.replaceInstruction(instruction, cached_constant);
-            return true;
-        }
-        
-        // Attempt to fold based on instruction type
-        const opcode = c.LLVMGetInstructionOpcode(instruction);
-        
-        const folded_value = switch (opcode) {
-            c.LLVMAdd => try self.foldBinaryArithmetic(instruction, .Add),
-            c.LLVMSub => try self.foldBinaryArithmetic(instruction, .Sub),
-            c.LLVMMul => try self.foldBinaryArithmetic(instruction, .Mul),
-            c.LLVMUDiv, c.LLVMSDiv => try self.foldBinaryArithmetic(instruction, .Div),
-            c.LLVMURem, c.LLVMSRem => try self.foldBinaryArithmetic(instruction, .Rem),
-            c.LLVMAnd => try self.foldBinaryArithmetic(instruction, .And),
-            c.LLVMOr => try self.foldBinaryArithmetic(instruction, .Or),
-            c.LLVMXor => try self.foldBinaryArithmetic(instruction, .Xor),
-            c.LLVMShl => try self.foldBinaryArithmetic(instruction, .Shl),
-            c.LLVMLShr, c.LLVMAShr => try self.foldBinaryArithmetic(instruction, .Shr),
-            c.LLVMFAdd => try self.foldFloatingPointArithmetic(instruction, .FAdd),
-            c.LLVMFSub => try self.foldFloatingPointArithmetic(instruction, .FSub),
-            c.LLVMFMul => try self.foldFloatingPointArithmetic(instruction, .FMul),
-            c.LLVMFDiv => try self.foldFloatingPointArithmetic(instruction, .FDiv),
-            c.LLVMFRem => try self.foldFloatingPointArithmetic(instruction, .FRem),
-            c.LLVMICmp => try self.foldIntegerComparison(instruction),
-            c.LLVMFCmp => try self.foldFloatingPointComparison(instruction),
-            c.LLVMSelect => try self.foldSelectInstruction(instruction),
-            c.LLVMZExt, c.LLVMSExt, c.LLVMTrunc => try self.foldCastInstruction(instruction),
-            c.LLVMBitCast => try self.foldBitCastInstruction(instruction),
-            c.LLVMGetElementPtr => try self.foldGEPInstruction(instruction),
-            else => null,
+        // Perform constant folding based on operation type
+        const result = switch (op) {
+            .add => c.LLVMConstAdd(left, right),
+            .fadd => c.LLVMConstFAdd(left, right),
+            .sub => c.LLVMConstSub(left, right),
+            .fsub => c.LLVMConstFSub(left, right),
+            .mul => c.LLVMConstMul(left, right),
+            .fmul => c.LLVMConstFMul(left, right),
+            .udiv => c.LLVMConstUDiv(left, right),
+            .sdiv => c.LLVMConstSDiv(left, right),
+            .fdiv => c.LLVMConstFDiv(left, right),
+            .urem => c.LLVMConstURem(left, right),
+            .srem => c.LLVMConstSRem(left, right),
+            .frem => c.LLVMConstFRem(left, right),
+            .shl => c.LLVMConstShl(left, right),
+            .lshr => c.LLVMConstLShr(left, right),
+            .ashr => c.LLVMConstAShr(left, right),
+            .and_op => c.LLVMConstAnd(left, right),
+            .or_op => c.LLVMConstOr(left, right),
+            .xor => c.LLVMConstXor(left, right),
         };
         
-        if (folded_value) |constant| {
-            // Cache the result
-            try self.constant_cache.put(instruction, constant);
-            
-            // Replace the instruction
-            self.replaceInstruction(instruction, constant);
-            
-            self.stats.instruction_eliminations += 1;
+        if (result != null) {
+            c.LLVMReplaceAllUsesWith(instruction, result.?);
             return true;
         }
         
         return false;
     }
 
-    /// Fold binary arithmetic operations
-    fn foldBinaryArithmetic(self: *ConstantFolder, instruction: c.LLVMValueRef, operation: ArithmeticOperation) !?c.LLVMValueRef {
-        const lhs = c.LLVMGetOperand(instruction, 0);
-        const rhs = c.LLVMGetOperand(instruction, 1);
-        
-        // Both operands must be constants
-        if (!c.LLVMIsConstant(lhs) or !c.LLVMIsConstant(rhs)) {
-            return try self.foldPartiallyConstantArithmetic(instruction, lhs, rhs, operation);
-        }
-        
-        // Get integer values
-        const lhs_int = c.LLVMConstIntGetSExtValue(lhs);
-        const rhs_int = c.LLVMConstIntGetSExtValue(rhs);
-        
-        const result_int = switch (operation) {
-            .Add => lhs_int +% rhs_int,
-            .Sub => lhs_int -% rhs_int,
-            .Mul => lhs_int *% rhs_int,
-            .Div => if (rhs_int != 0) @divTrunc(lhs_int, rhs_int) else return null,
-            .Rem => if (rhs_int != 0) @rem(lhs_int, rhs_int) else return null,
-            .And => lhs_int & rhs_int,
-            .Or => lhs_int | rhs_int,
-            .Xor => lhs_int ^ rhs_int,
-            .Shl => lhs_int << @as(u6, @intCast(@mod(rhs_int, 64))),
-            .Shr => lhs_int >> @as(u6, @intCast(@mod(rhs_int, 64))),
-            else => return null,
-        };
-        
-        // Create constant result
-        const result_type = c.LLVMTypeOf(instruction);
-        const result_constant = c.LLVMConstInt(result_type, @as(u64, @bitCast(result_int)), 1);
-        
-        return result_constant;
-    }
-
-    /// Fold floating-point arithmetic operations
-    fn foldFloatingPointArithmetic(self: *ConstantFolder, instruction: c.LLVMValueRef, operation: FloatOperation) !?c.LLVMValueRef {
+    /// Fold comparison operations
+    fn foldComparisonOperation(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
         _ = self;
         
-        const lhs = c.LLVMGetOperand(instruction, 0);
-        const rhs = c.LLVMGetOperand(instruction, 1);
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
         
-        // Both operands must be constants
-        if (!c.LLVMIsConstant(lhs) or !c.LLVMIsConstant(rhs)) {
-            return null;
+        if (c.LLVMIsConstant(left) == 0 or c.LLVMIsConstant(right) == 0) {
+            return false;
         }
         
-        // Get floating-point values
-        const lhs_float = c.LLVMConstRealGetDouble(lhs, null);
-        const rhs_float = c.LLVMConstRealGetDouble(rhs, null);
-        
-        const result_float = switch (operation) {
-            .FAdd => lhs_float + rhs_float,
-            .FSub => lhs_float - rhs_float,
-            .FMul => lhs_float * rhs_float,
-            .FDiv => if (rhs_float != 0.0) lhs_float / rhs_float else return null,
-            .FRem => if (rhs_float != 0.0) @mod(lhs_float, rhs_float) else return null,
-        };
-        
-        // Create constant result
-        const result_type = c.LLVMTypeOf(instruction);
-        const result_constant = c.LLVMConstReal(result_type, result_float);
-        
-        return result_constant;
-    }
-
-    /// Fold integer comparison operations
-    fn foldIntegerComparison(self: *ConstantFolder, instruction: c.LLVMValueRef) !?c.LLVMValueRef {
-        _ = self;
-        
-        const lhs = c.LLVMGetOperand(instruction, 0);
-        const rhs = c.LLVMGetOperand(instruction, 1);
-        
-        if (!c.LLVMIsConstant(lhs) or !c.LLVMIsConstant(rhs)) {
-            return null;
-        }
-        
-        const lhs_int = c.LLVMConstIntGetSExtValue(lhs);
-        const rhs_int = c.LLVMConstIntGetSExtValue(rhs);
         const predicate = c.LLVMGetICmpPredicate(instruction);
+        const result = c.LLVMConstICmp(predicate, left, right);
         
-        const result_bool = switch (predicate) {
-            c.LLVMIntEQ => lhs_int == rhs_int,
-            c.LLVMIntNE => lhs_int != rhs_int,
-            c.LLVMIntSLT => lhs_int < rhs_int,
-            c.LLVMIntSLE => lhs_int <= rhs_int,
-            c.LLVMIntSGT => lhs_int > rhs_int,
-            c.LLVMIntSGE => lhs_int >= rhs_int,
-            c.LLVMIntULT => @as(u64, @bitCast(lhs_int)) < @as(u64, @bitCast(rhs_int)),
-            c.LLVMIntULE => @as(u64, @bitCast(lhs_int)) <= @as(u64, @bitCast(rhs_int)),
-            c.LLVMIntUGT => @as(u64, @bitCast(lhs_int)) > @as(u64, @bitCast(rhs_int)),
-            c.LLVMIntUGE => @as(u64, @bitCast(lhs_int)) >= @as(u64, @bitCast(rhs_int)),
-            else => return null,
-        };
+        if (result != null) {
+            c.LLVMReplaceAllUsesWith(instruction, result.?);
+            return true;
+        }
         
-        // Create boolean constant
-        const i1_type = c.LLVMInt1Type();
-        const result_constant = c.LLVMConstInt(i1_type, if (result_bool) 1 else 0, 0);
-        
-        return result_constant;
+        return false;
     }
 
     /// Fold floating-point comparison operations
-    fn foldFloatingPointComparison(self: *ConstantFolder, instruction: c.LLVMValueRef) !?c.LLVMValueRef {
+    fn foldFloatComparisonOperation(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
         _ = self;
         
-        const lhs = c.LLVMGetOperand(instruction, 0);
-        const rhs = c.LLVMGetOperand(instruction, 1);
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
         
-        if (!c.LLVMIsConstant(lhs) or !c.LLVMIsConstant(rhs)) {
-            return null;
+        if (c.LLVMIsConstant(left) == 0 or c.LLVMIsConstant(right) == 0) {
+            return false;
         }
         
-        const lhs_float = c.LLVMConstRealGetDouble(lhs, null);
-        const rhs_float = c.LLVMConstRealGetDouble(rhs, null);
         const predicate = c.LLVMGetFCmpPredicate(instruction);
+        const result = c.LLVMConstFCmp(predicate, left, right);
         
-        const result_bool = switch (predicate) {
-            c.LLVMRealOEQ => lhs_float == rhs_float,
-            c.LLVMRealONE => lhs_float != rhs_float,
-            c.LLVMRealOLT => lhs_float < rhs_float,
-            c.LLVMRealOLE => lhs_float <= rhs_float,
-            c.LLVMRealOGT => lhs_float > rhs_float,
-            c.LLVMRealOGE => lhs_float >= rhs_float,
-            else => return null, // Unordered comparisons are complex
-        };
+        if (result != null) {
+            c.LLVMReplaceAllUsesWith(instruction, result.?);
+            return true;
+        }
         
-        // Create boolean constant
-        const i1_type = c.LLVMInt1Type();
-        const result_constant = c.LLVMConstInt(i1_type, if (result_bool) 1 else 0, 0);
-        
-        return result_constant;
+        return false;
     }
 
-    /// Fold select instructions (ternary operator)
-    fn foldSelectInstruction(self: *ConstantFolder, instruction: c.LLVMValueRef) !?c.LLVMValueRef {
+    /// Fold select operations with constant condition
+    fn foldSelectOperation(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
         _ = self;
         
         const condition = c.LLVMGetOperand(instruction, 0);
         const true_value = c.LLVMGetOperand(instruction, 1);
         const false_value = c.LLVMGetOperand(instruction, 2);
         
-        // If condition is constant, select the appropriate value
-        if (c.LLVMIsConstant(condition)) {
-            const condition_int = c.LLVMConstIntGetZExtValue(condition);
-            return if (condition_int != 0) true_value else false_value;
-        }
-        
-        // If both values are the same, return that value
-        if (true_value == false_value) {
-            return true_value;
-        }
-        
-        return null;
-    }
-
-    /// Fold cast instructions
-    fn foldCastInstruction(self: *ConstantFolder, instruction: c.LLVMValueRef) !?c.LLVMValueRef {
-        _ = self;
-        
-        const operand = c.LLVMGetOperand(instruction, 0);
-        
-        if (!c.LLVMIsConstant(operand)) {
-            return null;
-        }
-        
-        const dest_type = c.LLVMTypeOf(instruction);
-        const opcode = c.LLVMGetInstructionOpcode(instruction);
-        
-        switch (opcode) {
-            c.LLVMZExt => return c.LLVMConstZExt(operand, dest_type),
-            c.LLVMSExt => return c.LLVMConstSExt(operand, dest_type),
-            c.LLVMTrunc => return c.LLVMConstTrunc(operand, dest_type),
-            else => return null,
-        }
-    }
-
-    /// Fold bitcast instructions
-    fn foldBitCastInstruction(self: *ConstantFolder, instruction: c.LLVMValueRef) !?c.LLVMValueRef {
-        _ = self;
-        
-        const operand = c.LLVMGetOperand(instruction, 0);
-        
-        if (!c.LLVMIsConstant(operand)) {
-            return null;
-        }
-        
-        const dest_type = c.LLVMTypeOf(instruction);
-        return c.LLVMConstBitCast(operand, dest_type);
-    }
-
-    /// Fold GetElementPtr instructions
-    fn foldGEPInstruction(self: *ConstantFolder, instruction: c.LLVMValueRef) !?c.LLVMValueRef {
-        _ = self;
-        
-        // Check if all operands are constants
-        const num_operands = c.LLVMGetNumOperands(instruction);
-        var i: u32 = 0;
-        while (i < num_operands) {
-            const operand = c.LLVMGetOperand(instruction, i);
-            if (!c.LLVMIsConstant(operand)) {
-                return null;
-            }
-            i += 1;
-        }
-        
-        // If all operands are constants, use LLVM's constant GEP
-        const base_ptr = c.LLVMGetOperand(instruction, 0);
-        const base_type = c.LLVMGetGEPSourceElementType(instruction);
-        
-        // Collect indices
-        var indices = std.ArrayList(c.LLVMValueRef).init(self.allocator);
-        defer indices.deinit();
-        
-        i = 1;
-        while (i < num_operands) {
-            try indices.append(c.LLVMGetOperand(instruction, i));
-            i += 1;
-        }
-        
-        return c.LLVMConstInBoundsGEP2(base_type, base_ptr, indices.items.ptr, @as(u32, @intCast(indices.items.len)));
-    }
-
-    /// Fold partially constant arithmetic (one operand is constant)
-    fn foldPartiallyConstantArithmetic(self: *ConstantFolder, instruction: c.LLVMValueRef, lhs: c.LLVMValueRef, rhs: c.LLVMValueRef, operation: ArithmeticOperation) !?c.LLVMValueRef {
-        _ = self;
-        
-        // Handle identity operations
-        if (c.LLVMIsConstant(rhs)) {
-            const rhs_int = c.LLVMConstIntGetSExtValue(rhs);
-            
-            switch (operation) {
-                .Add => if (rhs_int == 0) return lhs, // x + 0 = x
-                .Sub => if (rhs_int == 0) return lhs, // x - 0 = x
-                .Mul => {
-                    if (rhs_int == 0) {
-                        // x * 0 = 0
-                        const result_type = c.LLVMTypeOf(instruction);
-                        return c.LLVMConstInt(result_type, 0, 0);
-                    }
-                    if (rhs_int == 1) return lhs; // x * 1 = x
-                },
-                .Or => if (rhs_int == 0) return lhs, // x | 0 = x
-                .And => {
-                    if (rhs_int == 0) {
-                        // x & 0 = 0
-                        const result_type = c.LLVMTypeOf(instruction);
-                        return c.LLVMConstInt(result_type, 0, 0);
-                    }
-                },
-                .Xor => if (rhs_int == 0) return lhs, // x ^ 0 = x
-                else => {},
-            }
-        }
-        
-        if (c.LLVMIsConstant(lhs)) {
-            const lhs_int = c.LLVMConstIntGetSExtValue(lhs);
-            
-            switch (operation) {
-                .Add => if (lhs_int == 0) return rhs, // 0 + x = x
-                .Mul => {
-                    if (lhs_int == 0) {
-                        // 0 * x = 0
-                        const result_type = c.LLVMTypeOf(instruction);
-                        return c.LLVMConstInt(result_type, 0, 0);
-                    }
-                    if (lhs_int == 1) return rhs; // 1 * x = x
-                },
-                .Or => if (lhs_int == 0) return rhs, // 0 | x = x
-                .And => {
-                    if (lhs_int == 0) {
-                        // 0 & x = 0
-                        const result_type = c.LLVMTypeOf(instruction);
-                        return c.LLVMConstInt(result_type, 0, 0);
-                    }
-                },
-                else => {},
-            }
-        }
-        
-        return null;
-    }
-
-    /// Fold a global constant
-    fn foldGlobalConstant(self: *ConstantFolder, global: c.LLVMValueRef) !bool {
-        _ = self;
-        
-        const initializer = c.LLVMGetInitializer(global);
-        if (initializer == null) {
+        if (c.LLVMIsConstant(condition) == 0) {
             return false;
         }
         
-        // For now, just check if the initializer is already a constant
-        // More sophisticated global constant folding could be implemented here
-        return c.LLVMIsConstant(initializer.?) != 0;
+        // Check if condition is true or false
+        const result = c.LLVMConstSelect(condition, true_value, false_value);
+        
+        if (result != null) {
+            c.LLVMReplaceAllUsesWith(instruction, result.?);
+            return true;
+        }
+        
+        return false;
     }
 
-    /// Check if an instruction can be folded
-    fn canFoldInstruction(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+    /// Fold PHI operations with all constant inputs
+    fn foldPhiOperation(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
         _ = self;
         
+        const num_incoming = c.LLVMCountIncoming(instruction);
+        if (num_incoming == 0) return false;
+        
+        // Check if all incoming values are the same constant
+        const first_value = c.LLVMGetIncomingValue(instruction, 0);
+        if (c.LLVMIsConstant(first_value) == 0) return false;
+        
+        var i: u32 = 1;
+        while (i < num_incoming) {
+            const value = c.LLVMGetIncomingValue(instruction, i);
+            if (c.LLVMIsConstant(value) == 0 or value != first_value) {
+                return false;
+            }
+            i += 1;
+        }
+        
+        // All incoming values are the same constant
+        c.LLVMReplaceAllUsesWith(instruction, first_value);
+        return true;
+    }
+
+    /// Fold cast operations
+    fn foldCastOperation(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        _ = self;
+        
+        const operand = c.LLVMGetOperand(instruction, 0);
+        if (c.LLVMIsConstant(operand) == 0) return false;
+        
+        const dest_type = c.LLVMTypeOf(instruction);
         const opcode = c.LLVMGetInstructionOpcode(instruction);
         
-        // List of opcodes that can be folded
+        const result = switch (opcode) {
+            c.LLVMTrunc => c.LLVMConstTrunc(operand, dest_type),
+            c.LLVMZExt => c.LLVMConstZExt(operand, dest_type),
+            c.LLVMSExt => c.LLVMConstSExt(operand, dest_type),
+            else => null,
+        };
+        
+        if (result != null) {
+            c.LLVMReplaceAllUsesWith(instruction, result.?);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /// Fold floating-point cast operations
+    fn foldFloatCastOperation(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        _ = self;
+        
+        const operand = c.LLVMGetOperand(instruction, 0);
+        if (c.LLVMIsConstant(operand) == 0) return false;
+        
+        const dest_type = c.LLVMTypeOf(instruction);
+        const opcode = c.LLVMGetInstructionOpcode(instruction);
+        
+        const result = switch (opcode) {
+            c.LLVMFPTrunc => c.LLVMConstFPTrunc(operand, dest_type),
+            c.LLVMFPExt => c.LLVMConstFPExt(operand, dest_type),
+            else => null,
+        };
+        
+        if (result != null) {
+            c.LLVMReplaceAllUsesWith(instruction, result.?);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /// Fold float-to-integer cast operations
+    fn foldFloatToIntCast(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        _ = self;
+        
+        const operand = c.LLVMGetOperand(instruction, 0);
+        if (c.LLVMIsConstant(operand) == 0) return false;
+        
+        const dest_type = c.LLVMTypeOf(instruction);
+        const opcode = c.LLVMGetInstructionOpcode(instruction);
+        
+        const result = switch (opcode) {
+            c.LLVMFPToUI => c.LLVMConstFPToUI(operand, dest_type),
+            c.LLVMFPToSI => c.LLVMConstFPToSI(operand, dest_type),
+            else => null,
+        };
+        
+        if (result != null) {
+            c.LLVMReplaceAllUsesWith(instruction, result.?);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /// Fold integer-to-float cast operations
+    fn foldIntToFloatCast(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        _ = self;
+        
+        const operand = c.LLVMGetOperand(instruction, 0);
+        if (c.LLVMIsConstant(operand) == 0) return false;
+        
+        const dest_type = c.LLVMTypeOf(instruction);
+        const opcode = c.LLVMGetInstructionOpcode(instruction);
+        
+        const result = switch (opcode) {
+            c.LLVMUIToFP => c.LLVMConstUIToFP(operand, dest_type),
+            c.LLVMSIToFP => c.LLVMConstSIToFP(operand, dest_type),
+            else => null,
+        };
+        
+        if (result != null) {
+            c.LLVMReplaceAllUsesWith(instruction, result.?);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /// Fold GEP operations with constant indices
+    fn foldGEPOperation(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        _ = self;
+        
+        const num_operands = c.LLVMGetNumOperands(instruction);
+        if (num_operands < 2) return false;
+        
+        // Check if all indices are constant
+        var i: u32 = 1; // Skip the pointer operand
+        while (i < num_operands) {
+            const operand = c.LLVMGetOperand(instruction, i);
+            if (c.LLVMIsConstant(operand) == 0) return false;
+            i += 1;
+        }
+        
+        // All indices are constant - LLVM should handle this automatically
+        // We could implement more sophisticated GEP folding here
+        return false;
+    }
+
+    /// Perform algebraic simplifications
+    pub fn performAlgebraicSimplifications(self: *ConstantFolder, module: c.LLVMModuleRef) !u32 {
+        var simplifications: u32 = 0;
+        
+        var function = c.LLVMGetFirstFunction(module);
+        while (function != null) {
+            simplifications += try self.simplifyAlgebraInFunction(function.?);
+            function = c.LLVMGetNextFunction(function.?);
+        }
+        
+        self.expressions_simplified = simplifications;
+        
+        return simplifications;
+    }
+
+    /// Simplify algebraic expressions in a function
+    fn simplifyAlgebraInFunction(self: *ConstantFolder, function: c.LLVMValueRef) !u32 {
+        var simplifications: u32 = 0;
+        
+        var bb = c.LLVMGetFirstBasicBlock(function);
+        while (bb != null) {
+            simplifications += try self.simplifyAlgebraInBasicBlock(bb.?);
+            bb = c.LLVMGetNextBasicBlock(bb.?);
+        }
+        
+        return simplifications;
+    }
+
+    /// Simplify algebraic expressions in a basic block
+    fn simplifyAlgebraInBasicBlock(self: *ConstantFolder, bb: c.LLVMBasicBlockRef) !u32 {
+        var simplifications: u32 = 0;
+        var instruction = c.LLVMGetFirstInstruction(bb);
+        
+        while (instruction != null) {
+            const next_instruction = c.LLVMGetNextInstruction(instruction.?);
+            
+            // Implement algebraic simplifications
+            // Examples: x + 0 = x, x * 1 = x, x * 0 = 0, etc.
+            if (self.tryAlgebraicSimplification(instruction.?)) {
+                simplifications += 1;
+            }
+            
+            instruction = next_instruction;
+        }
+        
+        return simplifications;
+    }
+
+    /// Try algebraic simplification on an instruction
+    fn tryAlgebraicSimplification(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        const opcode = c.LLVMGetInstructionOpcode(instruction);
+        
         switch (opcode) {
-            c.LLVMAdd, c.LLVMSub, c.LLVMMul, c.LLVMUDiv, c.LLVMSDiv,
-            c.LLVMURem, c.LLVMSRem, c.LLVMAnd, c.LLVMOr, c.LLVMXor,
-            c.LLVMShl, c.LLVMLShr, c.LLVMAShr,
-            c.LLVMFAdd, c.LLVMFSub, c.LLVMFMul, c.LLVMFDiv, c.LLVMFRem,
-            c.LLVMICmp, c.LLVMFCmp, c.LLVMSelect,
-            c.LLVMZExt, c.LLVMSExt, c.LLVMTrunc, c.LLVMBitCast,
-            c.LLVMGetElementPtr => return true,
+            c.LLVMAdd => return self.simplifyAddition(instruction),
+            c.LLVMMul => return self.simplifyMultiplication(instruction),
+            c.LLVMSub => return self.simplifySubtraction(instruction),
+            c.LLVMUDiv, c.LLVMSDiv => return self.simplifyDivision(instruction),
+            c.LLVMAnd => return self.simplifyAnd(instruction),
+            c.LLVMOr => return self.simplifyOr(instruction),
+            c.LLVMXor => return self.simplifyXor(instruction),
             else => return false,
         }
     }
 
-    /// Replace an instruction with a constant
-    fn replaceInstruction(self: *ConstantFolder, instruction: c.LLVMValueRef, constant: c.LLVMValueRef) void {
+    /// Simplify addition operations (x + 0 = x)
+    fn simplifyAddition(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
         _ = self;
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
         
-        c.LLVMReplaceAllUsesWith(instruction, constant);
-        c.LLVMInstructionEraseFromParent(instruction);
+        // Check for x + 0 = x
+        if (c.LLVMIsConstant(right) != 0 and c.LLVMConstIntGetZExtValue(right) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, left);
+            return true;
+        }
+        
+        // Check for 0 + x = x
+        if (c.LLVMIsConstant(left) != 0 and c.LLVMConstIntGetZExtValue(left) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, right);
+            return true;
+        }
+        
+        return false;
     }
-};
 
-/// Arithmetic operations for folding
-const ArithmeticOperation = enum {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    And,
-    Or,
-    Xor,
-    Shl,
-    Shr,
-};
-
-/// Floating-point operations for folding
-const FloatOperation = enum {
-    FAdd,
-    FSub,
-    FMul,
-    FDiv,
-    FRem,
-};
-
-/// Expression key for caching
-const ExpressionKey = struct {
-    opcode: c.LLVMOpcode,
-    operand1: c.LLVMValueRef,
-    operand2: c.LLVMValueRef,
-    extra_data: u64, // For additional context like comparison predicates
-};
-
-/// Expression context for HashMap
-const ExpressionContext = struct {
-    pub fn hash(self: @This(), key: ExpressionKey) u64 {
+    /// Simplify multiplication operations (x * 1 = x, x * 0 = 0)
+    fn simplifyMultiplication(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
         _ = self;
-        var hasher = std.hash_map.DefaultHasher.init();
-        hasher.update(std.mem.asBytes(&key.opcode));
-        hasher.update(std.mem.asBytes(&key.operand1));
-        hasher.update(std.mem.asBytes(&key.operand2));
-        hasher.update(std.mem.asBytes(&key.extra_data));
-        return hasher.final();
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
+        
+        // Check for x * 1 = x
+        if (c.LLVMIsConstant(right) != 0 and c.LLVMConstIntGetZExtValue(right) == 1) {
+            c.LLVMReplaceAllUsesWith(instruction, left);
+            return true;
+        }
+        
+        // Check for 1 * x = x
+        if (c.LLVMIsConstant(left) != 0 and c.LLVMConstIntGetZExtValue(left) == 1) {
+            c.LLVMReplaceAllUsesWith(instruction, right);
+            return true;
+        }
+        
+        // Check for x * 0 = 0
+        if (c.LLVMIsConstant(right) != 0 and c.LLVMConstIntGetZExtValue(right) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, right);
+            return true;
+        }
+        
+        // Check for 0 * x = 0
+        if (c.LLVMIsConstant(left) != 0 and c.LLVMConstIntGetZExtValue(left) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, left);
+            return true;
+        }
+        
+        return false;
     }
-    
-    pub fn eql(self: @This(), a: ExpressionKey, b: ExpressionKey) bool {
+
+    /// Simplify subtraction operations (x - 0 = x, x - x = 0)
+    fn simplifySubtraction(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
         _ = self;
-        return a.opcode == b.opcode and 
-               a.operand1 == b.operand1 and 
-               a.operand2 == b.operand2 and 
-               a.extra_data == b.extra_data;
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
+        
+        // Check for x - 0 = x
+        if (c.LLVMIsConstant(right) != 0 and c.LLVMConstIntGetZExtValue(right) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, left);
+            return true;
+        }
+        
+        // Check for x - x = 0 (same value)
+        if (left == right) {
+            _ = c.LLVMGetModuleContext(c.LLVMGetGlobalParent(instruction));
+            const int_type = c.LLVMTypeOf(left);
+            const zero = c.LLVMConstInt(int_type, 0, 0);
+            c.LLVMReplaceAllUsesWith(instruction, zero);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /// Simplify division operations (x / 1 = x)
+    fn simplifyDivision(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        _ = self;
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
+        
+        // Check for x / 1 = x
+        if (c.LLVMIsConstant(right) != 0 and c.LLVMConstIntGetZExtValue(right) == 1) {
+            c.LLVMReplaceAllUsesWith(instruction, left);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /// Simplify AND operations (x & 0 = 0, x & -1 = x)
+    fn simplifyAnd(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        _ = self;
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
+        
+        // Check for x & 0 = 0
+        if (c.LLVMIsConstant(right) != 0 and c.LLVMConstIntGetZExtValue(right) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, right);
+            return true;
+        }
+        
+        // Check for 0 & x = 0
+        if (c.LLVMIsConstant(left) != 0 and c.LLVMConstIntGetZExtValue(left) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, left);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /// Simplify OR operations (x | 0 = x)
+    fn simplifyOr(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        _ = self;
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
+        
+        // Check for x | 0 = x
+        if (c.LLVMIsConstant(right) != 0 and c.LLVMConstIntGetZExtValue(right) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, left);
+            return true;
+        }
+        
+        // Check for 0 | x = x
+        if (c.LLVMIsConstant(left) != 0 and c.LLVMConstIntGetZExtValue(left) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, right);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /// Simplify XOR operations (x ^ 0 = x, x ^ x = 0)
+    fn simplifyXor(self: *ConstantFolder, instruction: c.LLVMValueRef) bool {
+        _ = self;
+        const left = c.LLVMGetOperand(instruction, 0);
+        const right = c.LLVMGetOperand(instruction, 1);
+        
+        // Check for x ^ 0 = x
+        if (c.LLVMIsConstant(right) != 0 and c.LLVMConstIntGetZExtValue(right) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, left);
+            return true;
+        }
+        
+        // Check for 0 ^ x = x
+        if (c.LLVMIsConstant(left) != 0 and c.LLVMConstIntGetZExtValue(left) == 0) {
+            c.LLVMReplaceAllUsesWith(instruction, right);
+            return true;
+        }
+        
+        // Check for x ^ x = 0 (same value)
+        if (left == right) {
+            _ = c.LLVMGetModuleContext(c.LLVMGetGlobalParent(instruction));
+            const int_type = c.LLVMTypeOf(left);
+            const zero = c.LLVMConstInt(int_type, 0, 0);
+            c.LLVMReplaceAllUsesWith(instruction, zero);
+            return true;
+        }
+        
+        return false;
     }
 };
 
-/// Constant folding configuration
-const ConstantFoldingConfig = struct {
-    fold_arithmetic: bool = true,
-    fold_comparisons: bool = true,
-    fold_casts: bool = true,
-    fold_gep: bool = true,
-    fold_select: bool = true,
-    enable_algebraic_simplification: bool = true,
-    max_folding_depth: u32 = 10,
-    
-    pub fn default() ConstantFoldingConfig {
-        return ConstantFoldingConfig{};
-    }
-    
-    pub fn aggressive() ConstantFoldingConfig {
-        return ConstantFoldingConfig{
-            .max_folding_depth = 20,
-        };
-    }
-    
-    pub fn conservative() ConstantFoldingConfig {
-        return ConstantFoldingConfig{
-            .enable_algebraic_simplification = false,
-            .max_folding_depth = 5,
-        };
-    }
-};
-
-/// Constant folding statistics
-const ConstantFoldingStats = struct {
-    constants_folded: u32 = 0,
-    instruction_eliminations: u32 = 0,
-    expression_simplifications: u32 = 0,
-    folding_time_ns: i64 = 0,
-    
-    pub fn init() ConstantFoldingStats {
-        return ConstantFoldingStats{};
-    }
+/// Binary operation types for constant folding
+const BinaryOp = enum {
+    add,
+    fadd,
+    sub,
+    fsub,
+    mul,
+    fmul,
+    udiv,
+    sdiv,
+    fdiv,
+    urem,
+    srem,
+    frem,
+    shl,
+    lshr,
+    ashr,
+    and_op,
+    or_op,
+    xor,
 };
 
 test "constant folder initialization" {
@@ -582,16 +624,6 @@ test "constant folder initialization" {
     var folder = try ConstantFolder.init(allocator);
     defer folder.deinit();
     
-    try std.testing.expect(folder.config.fold_arithmetic == true);
-    try std.testing.expect(folder.constant_cache.count() == 0);
-}
-
-test "constant folding config variations" {
-    const default_config = ConstantFoldingConfig.default();
-    const aggressive_config = ConstantFoldingConfig.aggressive();
-    const conservative_config = ConstantFoldingConfig.conservative();
-    
-    try std.testing.expect(default_config.fold_arithmetic == true);
-    try std.testing.expect(aggressive_config.max_folding_depth > default_config.max_folding_depth);
-    try std.testing.expect(conservative_config.enable_algebraic_simplification == false);
+    try std.testing.expect(folder.constants_folded == 0);
+    try std.testing.expect(folder.expressions_simplified == 0);
 }

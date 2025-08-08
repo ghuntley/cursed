@@ -908,7 +908,7 @@ pub const WorkingCodeGen = struct {
             1,
             "element_ptr"
         );
-        const element_value = c.LLVMBuildLoad2(self.builder, i32_type, element_ptr, "element_value");
+        _ = c.LLVMBuildLoad2(self.builder, i32_type, element_ptr, "element_value");
         try self.variables.put(for_in.variable, for_in.variable);
         
         // Generate body statements
@@ -1058,15 +1058,15 @@ pub const WorkingCodeGen = struct {
             switch (case.channel_op) {
                 .Send => |send| {
                     // Generate channel send operation
-                    const channel_expr = try self.generateExpression(send.channel);
-                    const value_expr = try self.generateExpression(send.value);
+                    _ = try self.generateExpression(send.channel);
+                    _ = try self.generateExpression(send.value);
                     
                     // Call channel send function (simplified)
                     std.debug.print("Generated channel send operation\n");
                 },
                 .Receive => |recv| {
                     // Generate channel receive operation
-                    const channel_expr = try self.generateExpression(recv.channel);
+                    _ = try self.generateExpression(recv.channel);
                     
                     if (recv.variable) |var_name| {
                         try self.variables.put(var_name, var_name);

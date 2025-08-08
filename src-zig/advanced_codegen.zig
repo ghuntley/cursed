@@ -114,6 +114,10 @@ pub const AdvancedCodeGen = struct {
         // Initialize base codegen first to get context and module
         var base_codegen = try FinalWorkingCodeGen.init(allocator);
         
+        // Initialize variable scope system for LLVM compilation
+        const llvm_fixes = @import("llvm_fixes.zig");
+        try llvm_fixes.initializeVariableScope(allocator);
+        
         // Initialize monomorphizer
         const monomorphizer = try allocator.create(generics.Monomorphizer);
         monomorphizer.* = generics.Monomorphizer.init(allocator, base_codegen.context, base_codegen.module);
@@ -151,6 +155,10 @@ pub const AdvancedCodeGen = struct {
     }
 
     pub fn deinit(self: *AdvancedCodeGen) void {
+        // Cleanup variable scope system
+        const llvm_fixes = @import("llvm_fixes.zig");
+        llvm_fixes.deinitializeVariableScope(self.base_codegen.allocator);
+        
         self.base_codegen.deinit();
         self.defer_stack.deinit();
         
@@ -1495,15 +1503,13 @@ pub const AdvancedCodeGen = struct {
 
     /// Helper to infer match result type from cases
     fn inferMatchResultType(self: *AdvancedCodeGen, cases: []const ast.MatchCase) CodeGenError!c.LLVMTypeRef {
-        _ = self;
         _ = cases;
         // For now, return i64 as default - should be properly inferred from case expressions
         return c.LLVMInt64TypeInContext(self.base_codegen.context);
     }
 
     /// Helper to get field index in struct
-    fn getFieldIndex(self: *AdvancedCodeGen, struct_info: StructTypeInfo, field_name: []const u8) ?usize {
-        _ = self;
+    fn getFieldIndex(_: *AdvancedCodeGen, struct_info: StructTypeInfo, field_name: []const u8) ?usize {
         for (struct_info.field_names, 0..) |name, index| {
             if (std.mem.eql(u8, name, field_name)) {
                 return index;
@@ -3362,7 +3368,6 @@ pub const AdvancedCodeGen = struct {
     
     /// Check if types are compatible for operations
     fn typesAreCompatible(self: *AdvancedCodeGen, type1: c.LLVMTypeRef, type2: c.LLVMTypeRef) bool {
-        _ = self;
         return c.LLVMIsEqualType(type1, type2) or self.canPromoteTypes(type1, type2);
     }
     
