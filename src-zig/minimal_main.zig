@@ -6,6 +6,7 @@ const HashMap = std.HashMap;
 const lexer = @import("lexer.zig");
 const module_loader = @import("module_loader.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
+const llvm_backend_minimal = @import("llvm_backend_minimal.zig");
 
 // Simple variable storage
 const Variable = union(enum) {
@@ -97,12 +98,30 @@ pub fn main() !void {
     }
 
     if (compile_mode) {
-        // Real compilation mode - generate C code
-        try compileToC(allocator, filename, source, tokens);
+        // LLVM compilation mode instead of C
+        try compileToLLVM(allocator, filename, source);
     } else {
         // Interpretation mode - simple line execution
         try interpretProgram(allocator, source);
     }
+}
+
+fn compileToLLVM(allocator: Allocator, filename: []const u8, source: []const u8) !void {
+    print("🔥 Compiling CURSED program to native executable using LLVM...\n", .{});
+    
+    const output_name = try getOutputName(allocator, filename);
+    defer allocator.free(output_name);
+    
+    const ir_filename = try std.fmt.allocPrint(allocator, "{s}.ll", .{output_name});
+    defer allocator.free(ir_filename);
+    
+    // Use minimal LLVM backend
+    try llvm_backend_minimal.compileToLLVM(allocator, source, ir_filename);
+    
+    // Compile IR to native executable
+    try llvm_backend_minimal.compileIRToNative(allocator, ir_filename, output_name);
+    
+    print("✅ LLVM compilation complete! Run with: ./{s}\n", .{output_name});
 }
 
 fn compileToC(allocator: Allocator, filename: []const u8, source: []const u8, tokens: std.ArrayList(lexer.Token)) !void {
@@ -355,6 +374,53 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
     print("✅ Program interpretation completed\n", .{});
 }
 
+fn evaluateIntegerExpression(variables: *VariableStore, expr: []const u8) !i64 {
+    const trimmed = std.mem.trim(u8, expr, " \t");
+    
+    // Check for binary operators (addition and subtraction for now)
+    if (std.mem.indexOf(u8, trimmed, " + ")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 3..], " \t");
+        
+        const left_val = try evaluateIntegerTerm(variables, left_str);
+        const right_val = try evaluateIntegerTerm(variables, right_str);
+        
+        return left_val + right_val;
+    }
+    
+    if (std.mem.indexOf(u8, trimmed, " - ")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 3..], " \t");
+        
+        const left_val = try evaluateIntegerTerm(variables, left_str);
+        const right_val = try evaluateIntegerTerm(variables, right_str);
+        
+        return left_val - right_val;
+    }
+    
+    // No operators found, evaluate as single term
+    return try evaluateIntegerTerm(variables, trimmed);
+}
+
+fn evaluateIntegerTerm(variables: *VariableStore, term: []const u8) !i64 {
+    const trimmed = std.mem.trim(u8, term, " \t");
+    
+    // Try to parse as literal integer
+    if (std.fmt.parseInt(i64, trimmed, 10)) |int_val| {
+        return int_val;
+    } else |_| {}
+    
+    // Try to resolve as variable
+    if (variables.get(trimmed)) |variable| {
+        switch (variable) {
+            .Integer => |int_val| return int_val,
+            else => return error.NotAnInteger,
+        }
+    }
+    
+    return error.UnknownIdentifier;
+}
+
 fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, line: []const u8) !void {
     // Parse: sus varname type = value
     const equals_pos = std.mem.indexOf(u8, line, "=") orelse return;
@@ -370,9 +436,14 @@ fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, li
     
     // Parse value based on type
     const variable_value = if (std.mem.eql(u8, var_type, "drip")) blk: {
-        // Integer type
-        const int_val = std.fmt.parseInt(i64, value_str, 10) catch return;
-        break :blk Variable{ .Integer = int_val };
+        // Integer type - try expression evaluation first, then literal parsing
+        if (evaluateIntegerExpression(variables, value_str)) |int_val| {
+            break :blk Variable{ .Integer = int_val };
+        } else |_| {
+            // Fallback to literal parsing
+            const int_val = std.fmt.parseInt(i64, value_str, 10) catch return;
+            break :blk Variable{ .Integer = int_val };
+        }
     } else if (std.mem.eql(u8, var_type, "tea")) blk: {
         // String type
         var trimmed_value = std.mem.trim(u8, value_str, " \t");

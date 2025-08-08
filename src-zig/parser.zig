@@ -739,6 +739,37 @@ pub const Parser = struct {
             }};
         }
 
+        // Function types with slay keyword
+        if (self.match(.Slay)) {
+            // Parse function type: slay() return_type or slay(param_types) return_type
+            _ = try self.consume(.LeftParen, "Expected '(' after 'slay'");
+            
+            var param_types = ArrayList(ast.Type).init(self.allocator);
+            
+            // Parse parameter types
+            while (!self.check(.RightParen) and !self.isAtEnd()) {
+                const param_type = try self.parseType();
+                try param_types.append(param_type);
+                
+                if (!self.match(.Comma)) break;
+            }
+            
+            _ = try self.consume(.RightParen, "Expected ')' after function parameters");
+            
+            // Parse return type (optional)
+            var return_type: ?*ast.Type = null;
+            if (!self.check(.Newline) and !self.check(.Semicolon) and !self.isAtEnd()) {
+                return_type = try self.allocator.create(ast.Type);
+                errdefer self.allocator.destroy(return_type.?);
+                return_type.?.* = try self.parseType();
+            }
+            
+            return ast.Type{ .Function = ast.FunctionType{
+                .parameters = param_types,
+                .return_type = return_type,
+            }};
+        }
+
         // Basic types using keywords
         if (self.match(.Normie)) return ast.Type{ .Basic = .Normie };
         if (self.match(.Tea)) return ast.Type{ .Basic = .Tea };
@@ -3188,6 +3219,37 @@ pub const Parser = struct {
         
         if (self.match(.Cap)) {
             return ast.Type{ .Basic = ast.BasicType.Cap };
+        }
+        
+        // Function types with slay keyword
+        if (self.match(.Slay)) {
+            // Parse function type: slay() return_type or slay(param_types) return_type
+            _ = try self.consume(.LeftParen, "Expected '(' after 'slay'");
+            
+            var param_types = ArrayList(ast.Type).init(self.allocator);
+            
+            // Parse parameter types
+            while (!self.check(.RightParen) and !self.isAtEnd()) {
+                const param_type = try self.parseType();
+                try param_types.append(param_type);
+                
+                if (!self.match(.Comma)) break;
+            }
+            
+            _ = try self.consume(.RightParen, "Expected ')' after function parameters");
+            
+            // Parse return type (optional)
+            var return_type: ?*ast.Type = null;
+            if (!self.check(.Newline) and !self.check(.Semicolon) and !self.isAtEnd() and !self.check(.RightBrace)) {
+                return_type = try self.allocator.create(ast.Type);
+                errdefer self.allocator.destroy(return_type.?);
+                return_type.?.* = try self.parseType();
+            }
+            
+            return ast.Type{ .Function = ast.FunctionType{
+                .parameters = param_types,
+                .return_type = return_type,
+            }};
         }
         
         // Custom/identifier types

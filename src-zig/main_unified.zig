@@ -3,6 +3,7 @@ const print = std.debug.print;
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 const HashMap = std.HashMap;
+const memory_safety = @import("memory_safety_runtime.zig");
 
 const lexer = @import("lexer.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
@@ -818,17 +819,60 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                     
                     // Copy function parameters
                     for (func.parameters.items) |param| {
-                        const param_copy = ast.Parameter{
-                            .name = try allocator.dupe(u8, param.name),
-                            .type_annotation = if (param.type_annotation) |t| try copyType(allocator, t) else null,
-                        };
-                        try func_def.parameters.append(param_copy);
+                        // Simple type conversion - for now just use "drip" as default
+                        const type_str = switch (param.param_type) {
+                            .Basic => |basic| switch (basic) {
+                                   .Normie => "normie",
+                                   .Drip => "drip",
+                                   .Tea => "tea", 
+                                   .Txt => "tea",
+                                   .Thicc => "drip",
+                                   .Smol => "drip",
+                                   .Mid => "drip",
+                                   .Snack => "normie",
+                                   .Meal => "normie",
+                                   .Sip => "sip",
+                     .Byte => "byte",
+                     .Rune => "rune",
+                     .Extra => "extra",
+                     .Lit => "lit",
+                     .Cap => "cap",
+                             },
+                    .Custom => |name| name,
+                    else => "drip", // Default fallback
+                    };
+                    const param_copy = FunctionParameter{
+                    .name = try allocator.dupe(u8, param.name),
+                    .param_type = try allocator.dupe(u8, type_str),
+                    };
+                    try func_def.parameters.append(param_copy);
                     }
                     
                     // Set return type if available
                     if (func.return_type) |ret_type| {
-                        func_def.return_type = try allocator.dupe(u8, ret_type.toString(allocator));
-                    }
+                    const return_type_str = switch (ret_type) {
+                    .Basic => |basic| switch (basic) {
+                    .Normie => "normie",
+                    .Drip => "drip",
+                    .Tea => "tea", 
+                    .Txt => "tea",
+                    .Thicc => "drip",
+                    .Smol => "drip",
+                    .Mid => "drip",
+                    .Snack => "normie",
+                    .Meal => "normie",
+                    .Sip => "sip",
+                     .Byte => "byte",
+                     .Rune => "rune",
+                     .Extra => "extra",
+                     .Lit => "lit",
+                     .Cap => "cap",
+                             },
+                             .Custom => |name| name,
+                             else => "drip", // Default fallback
+                         };
+                         func_def.return_type = try allocator.dupe(u8, return_type_str);
+                     }
                     
                     // Store the function by name (this makes it available in current scope)
                     const func_key = try allocator.dupe(u8, func.name);
@@ -1276,6 +1320,9 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
     
     if (verbose) print("🧮 EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
     
+    // DEBUG: Always show expression evaluation for debugging  
+    print("🐛 DEBUG EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
+    
     // Handle arithmetic operators BEFORE function calls to fix expressions like "n * factorial(n-1)"
     // Check for multiplication and division (higher precedence) first
     if (std.mem.lastIndexOf(u8, trimmed, "*")) |op_pos| {
@@ -1492,21 +1539,18 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
                                 
                                 switch (index_result) {
                                     .Integer => |index_int| {
-                                        // Bounds checking for safety
-                                        if (index_int < 0) {
-                                            if (verbose) print("❌ Array index {d} is negative\n", .{index_int});
-                                            return error.IndexOutOfBounds;
-                                        }
-                                        
-                                        const index = @as(usize, @intCast(index_int));
-                                        if (index >= array_list.items.len) {
-                                            if (verbose) print("❌ Array index {d} is out of bounds (array length: {d})\n", .{ index, array_list.items.len });
-                                            return error.IndexOutOfBounds;
-                                        }
-                                        
-                                        // Return a clone of the element at the specified index
-                                        if (verbose) print("✅ Accessing array element {s}[{d}]\n", .{ array_name, index });
-                                        return try array_list.items[index].clone(allocator);
+                                    // Use comprehensive memory safety runtime bounds checking
+                                    memory_safety.checkArrayBounds(index_int, array_list.items.len) catch |err| {
+                                    print("❌ RUNTIME ERROR: {}\n", .{err});
+                                    print("❌ Array index {d} out of bounds for array '{s}' (length: {d})\n", .{ index_int, array_name, array_list.items.len });
+                                        if (verbose) print("❌ Bounds check failed: index {d} for array {s} with length {d}\n", .{ index_int, array_name, array_list.items.len });
+                                        return error.IndexOutOfBounds;
+                                    };
+                                    
+                                    // Safe access within bounds (guaranteed safe after bounds check)
+                                    const index = @as(usize, @intCast(index_int));
+                                    if (verbose) print("✅ Accessing array element {s}[{d}]\n", .{ array_name, index });
+                                    return try array_list.items[index].clone(allocator);
                                     },
                                     else => {
                                         if (verbose) print("❌ Array index must be an integer, got: {any}\n", .{index_result});
@@ -1609,6 +1653,7 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
     
     // + and - (lowest precedence, evaluated last)
     // Find rightmost + or - operator that's not part of a parenthetical expression
+    print("🐛 DEBUG: Checking for + and - operators in: '{s}'\n", .{trimmed});
     const low_ops = [_][]const u8{ "+", "-" };
     for (low_ops) |op| {
         var op_pos: ?usize = null;
@@ -1763,6 +1808,7 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
     }
 
     // No operators found - evaluate as single value
+    print("🐛 DEBUG: No operators found, falling back to evaluateSingleValue for: '{s}'\n", .{trimmed});
     return try evaluateSingleValue(variables, functions, allocator, trimmed, verbose);
 }
 
@@ -2411,17 +2457,20 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
                             defer { var idx = index_result; idx.deinit(allocator); }
                             switch (index_result) {
                                 .Integer => |index| {
-                                    if (index >= 0 and index < array.items.len) {
-                                        const element_str = try array.items[@intCast(index)].toString(allocator);
-                                        defer allocator.free(element_str);
-                                        print("{s}", .{element_str});
-                                        if (add_newline) print("\n", .{});
-                                        if (verbose) print("✅ Array access {s}[{s}={}] = {s}\n", .{ array_name, index_expr, index, element_str });
-                                    } else {
-                                        print("undefined", .{});
-                                        if (add_newline) print("\n", .{});
-                                        if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
-                                    }
+                                // Use comprehensive memory safety runtime bounds checking
+                                memory_safety.checkArrayBounds(index, array.items.len) catch |err| {
+                                print("❌ RUNTIME ERROR: {}\n", .{err});
+                                print("❌ Array index {d} out of bounds for array '{s}' (length: {d})\n", .{ index, array_name, array.items.len });
+                                if (verbose) print("❌ Bounds check failed: index {d} for array {s} with length {d}\n", .{ index, array_name, array.items.len });
+                                    return error.IndexOutOfBounds;
+                                };
+                                
+                                // Safe access within bounds (guaranteed safe after bounds check)
+                                const element_str = try array.items[@intCast(index)].toString(allocator);
+                                defer allocator.free(element_str);
+                                print("{s}", .{element_str});
+                                if (add_newline) print("\n", .{});
+                                if (verbose) print("✅ Array access {s}[{s}={}] = {s}\n", .{ array_name, index_expr, index, element_str });
                                 },
                                 else => {
                                     print("{s}", .{trimmed_content});
