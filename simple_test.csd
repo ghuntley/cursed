@@ -1,1 +1,2 @@
-sus test tea = "hello"
+yeet "testz"
+test_start("basic_test")

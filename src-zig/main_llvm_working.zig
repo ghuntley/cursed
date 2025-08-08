@@ -204,7 +204,7 @@ fn generateSimpleLLVMIR(allocator: Allocator, source: []const u8, module: ?*anyo
     
     // Create main function
     const int32_type = llvm_int32_type(context);
-    const main_type = llvm_function_type(int32_type, null, 0, 0);
+    const main_type = llvm_function_type(int32_type, undefined, 0, 0);
     const main_func = llvm_add_function(module, "main", main_type);
     
     // Create basic block

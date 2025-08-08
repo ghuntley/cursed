@@ -128,7 +128,6 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
     exe.root_module.addCMacro("LLVM_TARGET_CPU", b.fmt("\"{s}\"", .{cpu_name}));
     
     // Force specific target to avoid unknown CPU errors
-    exe.root_module.addCMacro("__GNUC__", "1");
     exe.root_module.addCMacro("__x86_64__", "1");
     exe.root_module.addCMacro("_GNU_SOURCE", "1");
     
@@ -413,21 +412,38 @@ b.installArtifact(complete_exe);
     // Create syscall-enabled compiler with real file I/O, networking, and process management
     // Only build for native target to avoid cross-compilation LLVM issues
     const syscall_exe = if (!is_cross_compile and config.supports_llvm) blk: {
+        // Override the CPU target to avoid athlon-xp detection issue
+        const syscall_target_query = std.Target.Query{
+            .cpu_arch = resolved_target.result.cpu.arch,
+            .os_tag = resolved_target.result.os.tag,
+            .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
+        };
+        const syscall_target = b.resolveTargetQuery(syscall_target_query);
+        
         const exe_syscall = b.addExecutable(.{
             .name = "cursed-syscall",
             .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main_llvm_working.zig"),
-            .target = resolved_target,
+            .target = syscall_target,
             .optimize = optimize,
         });
         
         if (!is_wasm) {
             exe_syscall.linkLibC();
-            addLlvm(b, exe_syscall, resolved_target);
+            addLlvm(b, exe_syscall, syscall_target);
             
-            // Add LLVM wrapper C source file with explicit CPU target
+            // Add LLVM wrapper C source file with explicit CPU target to avoid athlon-xp
             exe_syscall.addCSourceFile(.{
                 .file = b.path("src-zig/llvm_wrapper.c"),
-                .flags = &[_][]const u8{"-std=c99", "-O2", "-march=x86-64", "-mtune=generic"},
+                .flags = &[_][]const u8{
+                    "-std=c99", 
+                    "-O2", 
+                    "-march=x86-64", 
+                    "-mtune=generic",
+                    "-DLLVM_HOST_TRIPLE=\"x86_64-unknown-linux-gnu\"",
+                    "-D__i386__=0",
+                    "-DTARGET_CPU_DEFAULT=TARGET_CPU_generic",
+                    "-DTARGET_CPU=\"x86-64\"",
+                },
             });
         }
         

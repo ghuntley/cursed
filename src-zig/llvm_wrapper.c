@@ -1,7 +1,15 @@
-// Explicitly set target before including LLVM headers
+// Explicitly set target before including LLVM headers to avoid athlon-xp detection
 #define __x86_64__ 1
+#define __i386__ 0
 #define _GNU_SOURCE 1
 #define LLVM_DEFAULT_TARGET_TRIPLE "x86_64-unknown-linux-gnu"
+#define LLVM_HOST_TRIPLE "x86_64-unknown-linux-gnu"
+#define TARGET_CPU "x86-64"
+
+// Override any CPU auto-detection that might default to athlon-xp
+#ifndef TARGET_CPU_DEFAULT
+#define TARGET_CPU_DEFAULT TARGET_CPU_generic
+#endif
 
 #include <llvm-c/Core.h>
 #include <llvm-c/ExecutionEngine.h>
@@ -14,9 +22,10 @@
 // Wrapper functions for LLVM C API to avoid Zig @cImport issues
 
 void llvm_initialize_core() {
-    LLVMInitializeCore(LLVMGetGlobalPassRegistry());
+    // Initialize core LLVM components
     LLVMInitializeNativeTarget();
     LLVMInitializeNativeAsmPrinter();
+    LLVMInitializeNativeAsmParser();
 }
 
 void* llvm_create_context() {

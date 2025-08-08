@@ -6,6 +6,7 @@ const HashMap = std.HashMap;
 
 const lexer = @import("lexer.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
+const module_loader = @import("module_loader.zig");
 const simple_compiler = @import("simple_compiler.zig");
 const formatter = @import("tools/formatter.zig");
 const linter = @import("tools/linter.zig");
@@ -484,6 +485,47 @@ const FunctionReturnError = error{
     FunctionReturn,
 };
 
+// Helper function to copy a type annotation
+fn copyType(allocator: Allocator, original: ast.Type) !ast.Type {
+    switch (original) {
+        .Basic => |basic| {
+            return ast.Type{ .Basic = try allocator.dupe(u8, basic) };
+        },
+        .Array => |array| {
+            const element_type = try allocator.create(ast.Type);
+            element_type.* = try copyType(allocator, array.element_type.*);
+            return ast.Type{ .Array = ast.ArrayType{ .element_type = element_type } };
+        },
+        .Function => |func| {
+            var new_params = ArrayList(ast.Type).init(allocator);
+            for (func.parameters.items) |param| {
+                try new_params.append(try copyType(allocator, param));
+            }
+            const return_type = try allocator.create(ast.Type);
+            return_type.* = try copyType(allocator, func.return_type.*);
+            return ast.Type{ .Function = ast.FunctionType{ 
+                .parameters = new_params,
+                .return_type = return_type 
+            } };
+        },
+        .Generic => |generic| {
+            return ast.Type{ .Generic = try allocator.dupe(u8, generic) };
+        },
+        .Optional => |optional| {
+            const inner_type = try allocator.create(ast.Type);
+            inner_type.* = try copyType(allocator, optional.inner_type.*);
+            return ast.Type{ .Optional = ast.OptionalType{ .inner_type = inner_type } };
+        },
+        .Union => |union_type| {
+            var new_types = ArrayList(ast.Type).init(allocator);
+            for (union_type.types.items) |t| {
+                try new_types.append(try copyType(allocator, t));
+            }
+            return ast.Type{ .Union = ast.UnionType{ .types = new_types } };
+        },
+    }
+}
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{
         .stack_trace_frames = 0, // Disable stack traces to avoid msync issues
@@ -681,7 +723,7 @@ pub fn main() !void {
 
 
 
-fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbose: bool, stdlib_path: ?[]const u8) !void {
+fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbose: bool, _: ?[]const u8) !void {
     if (verbose) print("🚀 Interpreting CURSED program with advanced error handling...\n", .{});
     
     // Create enhanced error handling system
@@ -745,13 +787,13 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         structs.deinit();
     }
     
-    // Create generics monomorphizer - placeholder context and module
-    // var monomorphizer = generics.Monomorphizer.init(allocator, null, null);
-    // defer monomorphizer.deinit();
+    // Initialize module loader for module imports
+    var simple_loader = module_loader.ModuleLoader.init(allocator, verbose);
+    defer simple_loader.deinit();
     
     // Process imports first
     const imports = simple_import_resolver.extractImports(allocator, source) catch |err| {
-        print("Error: Failed to extract imports: {any}\n", .{err});
+        if (verbose) print("Error: Failed to extract imports: {any}\n", .{err});
         return;
     };
     defer {
@@ -761,31 +803,50 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         imports.deinit();
     }
     
-    // Validate all imported modules
+    // Load functions from imported modules using the new module loader
     if (imports.items.len > 0) {
         if (verbose) {
-            print("📦 Validating {} imports...\n", .{imports.items.len});
+            print("📦 Loading {} modules...\n", .{imports.items.len});
         }
         
-        const all_valid = simple_import_resolver.validateImportsWithPath(allocator, imports, stdlib_path) catch |err| {
-            print("Error: Failed to validate imports: {any}\n", .{err});
-            return;
-        };
-        
-        if (!all_valid) {
-            print("❌ Some imports could not be resolved\n", .{});
-            return;
+        for (imports.items) |module_name| {
+            if (try simple_loader.loadModule(module_name)) |module_functions| {
+                // Add functions to the function store
+                for (module_functions) |func| {
+                    // Create function definition for the imported function
+                    var func_def = FunctionDefinition.init(allocator, try allocator.dupe(u8, func.name));
+                    
+                    // Copy function parameters
+                    for (func.parameters.items) |param| {
+                        const param_copy = ast.Parameter{
+                            .name = try allocator.dupe(u8, param.name),
+                            .type_annotation = if (param.type_annotation) |t| try copyType(allocator, t) else null,
+                        };
+                        try func_def.parameters.append(param_copy);
+                    }
+                    
+                    // Set return type if available
+                    if (func.return_type) |ret_type| {
+                        func_def.return_type = try allocator.dupe(u8, ret_type.toString(allocator));
+                    }
+                    
+                    // Store the function by name (this makes it available in current scope)
+                    const func_key = try allocator.dupe(u8, func.name);
+                    try functions.put(func_key, func_def);
+                    
+                    if (verbose) print("  ✅ Loaded function: {s} from module {s}\n", .{ func.name, module_name });
+                }
+            } else {
+                if (verbose) print("❌ Failed to load module: {s}\n", .{module_name});
+            }
         }
         
         if (verbose) {
-            print("✅ All imports validated successfully\n", .{});
-        }
-        
-        // Load functions from imported modules
-        for (imports.items) |module_name| {
-            try loadModuleFunctions(allocator, &functions, module_name, stdlib_path, verbose);
+            print("✅ All modules loaded successfully\n", .{});
         }
     }
+    
+
     
     // Split source into lines for processing
     var source_lines = std.ArrayList([]const u8).init(allocator);
