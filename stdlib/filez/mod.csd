@@ -214,57 +214,57 @@ fr fr Runtime bridge functions - these will be implemented in Zig
 fr fr These are placeholder signatures that the Zig runtime will provide
 
 slay runtime_read_file(filename tea) (tea, tea) {
-    fr fr Placeholder - Zig runtime implementation needed
-    fr fr This will use: fopen, fread, fclose
-    damn ("RUNTIME_BRIDGE_NEEDED", "Not implemented")
+    fr fr Implemented in src-zig/runtime_functions.zig
+    fr fr Runtime bridge will bind this function automatically
+    damn ("", "Runtime binding required")
 }
 
 slay runtime_write_file(filename tea, content tea) tea {
-    fr fr Placeholder - Zig runtime implementation needed
-    fr fr This will use: fopen, fwrite, fclose
-    damn "RUNTIME_BRIDGE_NEEDED"
+    fr fr Implemented in src-zig/runtime_functions.zig
+    fr fr Runtime bridge will bind this function automatically
+    damn "Runtime binding required"
 }
 
 slay runtime_file_exists(filename tea) lit {
-    fr fr Placeholder - Zig runtime implementation needed
-    fr fr This will use: access or stat
+    fr fr Implemented in src-zig/runtime_functions.zig
+    fr fr Runtime bridge will bind this function automatically
     damn cap
 }
 
 slay runtime_file_size(filename tea) (normie, tea) {
-    fr fr Placeholder - Zig runtime implementation needed
-    fr fr This will use: stat
-    damn (0, "RUNTIME_BRIDGE_NEEDED")
+    fr fr Implemented in src-zig/runtime_functions.zig
+    fr fr Runtime bridge will bind this function automatically
+    damn (0, "Runtime binding required")
 }
 
 slay runtime_delete_file(filename tea) tea {
-    fr fr Placeholder - Zig runtime implementation needed
-    fr fr This will use: unlink or remove
-    damn "RUNTIME_BRIDGE_NEEDED"
+    fr fr Implemented in src-zig/runtime_functions.zig
+    fr fr Runtime bridge will bind this function automatically
+    damn "Runtime binding required"
 }
 
 slay runtime_append_file(filename tea, content tea) tea {
-    fr fr Placeholder - Zig runtime implementation needed
-    fr fr This will use: fopen with "a" mode
-    damn "RUNTIME_BRIDGE_NEEDED"
+    fr fr Implemented in src-zig/runtime_functions.zig
+    fr fr Runtime bridge will bind this function automatically
+    damn "Runtime binding required"
 }
 
 slay runtime_file_permissions(filename tea) (tea, tea) {
-    fr fr Placeholder - Zig runtime implementation needed
-    fr fr This will use: stat to get st_mode
-    damn ("", "RUNTIME_BRIDGE_NEEDED")
+    fr fr Implemented in src-zig/runtime_functions.zig
+    fr fr Runtime bridge will bind this function automatically
+    damn ("", "Runtime binding required")
 }
 
 slay runtime_set_file_permissions(filename tea, permissions tea) tea {
-    fr fr Placeholder - Zig runtime implementation needed
-    fr fr This will use: chmod
-    damn "RUNTIME_BRIDGE_NEEDED"
+    fr fr Implemented in src-zig/runtime_functions.zig
+    fr fr Runtime bridge will bind this function automatically
+    damn "Runtime binding required"
 }
 
 slay runtime_rename_file(old_name tea, new_name tea) tea {
-    fr fr Placeholder - Zig runtime implementation needed
-    fr fr This will use: rename
-    damn "RUNTIME_BRIDGE_NEEDED"
+    fr fr Implemented in src-zig/runtime_functions.zig
+    fr fr Runtime bridge will bind this function automatically
+    damn "Runtime binding required"
 }
 
 fr fr Utility functions for filename validation

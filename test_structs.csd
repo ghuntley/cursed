@@ -1,7 +1,0 @@
-squad Point {
-    spill x drip
-    spill y drip
-}
-sus p Point = Point{x: 10, y: 20}
-vibez.spill("Point x:", p.x)
-vibez.spill("Point y:", p.y)
