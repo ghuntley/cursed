@@ -2,6 +2,7 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 const HashMap = std.HashMap;
+const atomic = std.atomic;
 
 const ast = @import("ast.zig");
 const interpreter = @import("interpreter.zig");
@@ -128,13 +129,13 @@ pub const RuntimeTypeInfo = struct {
 
 // Enhanced garbage collector integration
 pub const GCTypeRegistry = struct {
-    types: HashMap(u32, RuntimeTypeInfo, std.hash_map.DefaultHashContext(u32), std.hash_map.default_max_load_percentage),
+    types: std.HashMap(u32, RuntimeTypeInfo, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
     type_id_counter: u32,
     allocator: Allocator,
 
     pub fn init(allocator: Allocator) GCTypeRegistry {
         return GCTypeRegistry{
-            .types = HashMap(u32, RuntimeTypeInfo, std.hash_map.DefaultHashContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
+            .types = std.HashMap(u32, RuntimeTypeInfo, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
             .type_id_counter = 1,
             .allocator = allocator,
         };
@@ -181,16 +182,16 @@ pub const TypedAllocator = struct {
     pub const TypedObject = struct {
         data: []u8,
         type_id: u32,
-        ref_count: u32,
-        mark: bool, // for GC marking
+        ref_count: atomic.Value(u32),
+        mark: atomic.Value(bool), // for GC marking
 
         pub fn init(allocator: Allocator, type_id: u32, size: usize) !*TypedObject {
             const object = try allocator.create(TypedObject);
             object.* = TypedObject{
                 .data = try allocator.alloc(u8, size),
                 .type_id = type_id,
-                .ref_count = 1,
-                .mark = false,
+                .ref_count = atomic.Value(u32).init(1),
+                .mark = atomic.Value(bool).init(false),
             };
             return object;
         }
@@ -201,14 +202,36 @@ pub const TypedAllocator = struct {
         }
 
         pub fn retain(self: *TypedObject) void {
-            self.ref_count += 1;
+            // Atomic increment with acquire-release ordering for thread safety
+            const old_count = self.ref_count.fetchAdd(1, .acq_rel);
+            
+            // Validate reference count consistency
+            if (old_count == 0) {
+                @panic("Attempted to retain object with zero reference count");
+            }
+            if (old_count >= std.math.maxInt(u32) - 1) {
+                @panic("Reference count overflow");
+            }
         }
 
         pub fn release(self: *TypedObject, allocator: Allocator) void {
-            self.ref_count -= 1;
-            if (self.ref_count == 0) {
+            // Atomic decrement with acquire-release ordering
+            const old_count = self.ref_count.fetchSub(1, .acq_rel);
+            
+            // Validate reference count consistency  
+            if (old_count == 0) {
+                @panic("Attempted to release object with zero reference count (double-free)");
+            }
+            
+            // Only deallocate if this was the last reference
+            if (old_count == 1) {
                 self.deinit(allocator);
             }
+        }
+
+        // Helper method to get current reference count (for debugging)
+        pub fn getRefCount(self: *TypedObject) u32 {
+            return self.ref_count.load(.acquire);
         }
     };
 
@@ -243,16 +266,17 @@ pub const TypedAllocator = struct {
     }
 
     pub fn collectGarbage(self: *TypedAllocator) !void {
-        // Mark phase
+        // Mark phase - use atomic operations for thread safety
         for (self.allocated_objects.items) |object| {
-            object.mark = false;
+            object.mark.store(false, .release);
         }
 
-        // Simple sweep phase - remove unreferenced objects
+        // Simple sweep phase - remove unreferenced objects  
         var i: usize = 0;
         while (i < self.allocated_objects.items.len) {
             const object = self.allocated_objects.items[i];
-            if (object.ref_count == 0) {
+            // Atomically check reference count
+            if (object.ref_count.load(.acquire) == 0) {
                 object.deinit(self.allocator);
                 _ = self.allocated_objects.swapRemove(i);
             } else {

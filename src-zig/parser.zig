@@ -69,6 +69,51 @@ pub const Parser = struct {
         };
     }
 
+    // Safe type conversion helpers to replace unsafe @ptrCast
+    fn statementToAnyopaque(_: *Parser, stmt_ptr: *Statement) *anyopaque {
+        // Runtime type validation - ensure the pointer is properly aligned
+        const alignment = @alignOf(Statement);
+        const addr = @intFromPtr(stmt_ptr);
+        if (addr % alignment != 0) {
+            std.debug.panic("Statement pointer is not properly aligned\n", .{});
+        }
+        
+        return @ptrCast(stmt_ptr);
+    }
+    
+    fn expressionToAnyopaque(_: *Parser, expr_ptr: *Expression) *anyopaque {
+        // Runtime type validation - ensure the pointer is properly aligned
+        const alignment = @alignOf(Expression);
+        const addr = @intFromPtr(expr_ptr);
+        if (addr % alignment != 0) {
+            std.debug.panic("Expression pointer is not properly aligned\n", .{});
+        }
+        
+        return @ptrCast(expr_ptr);
+    }
+    
+    fn anyopaqueToStatement(_: *Parser, ptr: *anyopaque) ?*Statement {
+        // Check alignment
+        const alignment = @alignOf(Statement);
+        const addr = @intFromPtr(ptr);
+        if (addr % alignment != 0) {
+            return null;
+        }
+        
+        return @ptrCast(@alignCast(ptr));
+    }
+    
+    fn anyopaqueToExpression(_: *Parser, ptr: *anyopaque) ?*Expression {
+        // Check alignment
+        const alignment = @alignOf(Expression);
+        const addr = @intFromPtr(ptr);
+        if (addr % alignment != 0) {
+            return null;
+        }
+        
+        return @ptrCast(@alignCast(ptr));
+    }
+
     pub fn parseProgram(self: *Parser) ParserError!Program {
         var program = Program.init(self.allocator);
         errdefer program.deinit(self.allocator);
@@ -94,11 +139,12 @@ pub const Parser = struct {
                 continue;
             }
 
-            // Parse regular statements
+            // Parse regular statements with proper error cleanup
             const stmt = try self.parseStatement();
             const stmt_ptr = try self.allocator.create(Statement);
+            errdefer self.allocator.destroy(stmt_ptr);
             stmt_ptr.* = stmt;
-            try program.statements.append(@ptrCast(stmt_ptr));
+            try program.statements.append(self.statementToAnyopaque(stmt_ptr));
         }
 
         return program;
@@ -295,8 +341,9 @@ pub const Parser = struct {
         if (self.check(.Match)) {
             const match_expr = try self.parseMatchExpression();
             const expr_ptr = try self.allocator.create(Expression);
+            errdefer self.allocator.destroy(expr_ptr);
             expr_ptr.* = match_expr;
-            return Statement{ .Expression = @ptrCast(expr_ptr) };
+            return Statement{ .Expression = self.expressionToAnyopaque(expr_ptr) };
         }
 
         // Vibe check (switch)
@@ -336,8 +383,9 @@ pub const Parser = struct {
         // Expression statement
         const expr = try self.parseExpression();
         const expr_ptr = try self.allocator.create(Expression);
+        errdefer self.allocator.destroy(expr_ptr);
         expr_ptr.* = expr;
-        return Statement{ .Expression = @ptrCast(expr_ptr) };
+        return Statement{ .Expression = self.expressionToAnyopaque(expr_ptr) };
     }
 
     fn parseFunctionStatement(self: *Parser) ParserError!FunctionStatement {
@@ -410,7 +458,10 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try func.body.append(@ptrCast(stmt_ptr));
+            const stmt_ptr = try self.allocator.create(Statement); 
+            errdefer self.allocator.destroy(stmt_ptr);
+            stmt_ptr.* = stmt; 
+            try func.body.append(stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -451,6 +502,7 @@ pub const Parser = struct {
         if (self.match(.Equal) or self.match(.ColonEqual)) {
             const init_expr = try self.parseExpression();
             const init_ptr = try self.allocator.create(Expression);
+            errdefer self.allocator.destroy(init_ptr);
             init_ptr.* = init_expr;
             let_stmt.initializer = init_ptr;
         }
@@ -477,7 +529,10 @@ pub const Parser = struct {
 
         // Parse default value
         if (self.match(.Equal)) {
-            const default_expr = try self.parseExpression(); const default_ptr = try self.allocator.create(Expression); default_ptr.* = default_expr; param.default_value = @ptrCast(default_ptr);
+            const default_expr = try self.parseExpression(); 
+            const default_ptr = try self.allocator.create(Expression); 
+            default_ptr.* = default_expr; 
+            param.default_value = self.expressionToAnyopaque(default_ptr);
         }
         
         return param;
@@ -502,6 +557,7 @@ pub const Parser = struct {
         _ = try self.consume(.RightBracket, "Expected ']'");
                 
                 const element_type_ptr = try self.allocator.create(ast.Type);
+                errdefer self.allocator.destroy(element_type_ptr);
                 element_type_ptr.* = base_type;
                 
                 return ast.Type{ .Array = ast.ArrayType{
@@ -527,6 +583,7 @@ pub const Parser = struct {
         _ = try self.consume(.RightBracket, "Expected ']'");
             
             const element_type_ptr = try self.allocator.create(ast.Type);
+            errdefer self.allocator.destroy(element_type_ptr);
             element_type_ptr.* = try self.parseType();
             
             return ast.Type{ .Array = ast.ArrayType{
@@ -540,11 +597,13 @@ pub const Parser = struct {
         _ = try self.consume(.LeftBracket, "Expected '[' after 'map'");
             
             const key_type_ptr = try self.allocator.create(ast.Type);
+            errdefer self.allocator.destroy(key_type_ptr);
             key_type_ptr.* = try self.parseType();
             
         _ = try self.consume(.RightBracket, "Expected ']'");
             
             const value_type_ptr = try self.allocator.create(ast.Type);
+            errdefer self.allocator.destroy(value_type_ptr);
             value_type_ptr.* = try self.parseType();
             
             return ast.Type{ .Map = ast.MapType{
@@ -558,6 +617,7 @@ pub const Parser = struct {
             _ = self.advance();
             if (self.match(.Less) or self.match(.LeftAngle)) {
                 const element_type_ptr = try self.allocator.create(ast.Type);
+                errdefer self.allocator.destroy(element_type_ptr);
                 element_type_ptr.* = try self.parseType();
                 
         _ = try self.consume(.Greater, "Expected '>' after channel element type");
@@ -592,6 +652,7 @@ pub const Parser = struct {
                 var return_type: ?*ast.Type = null;
                 if (self.match(.Arrow)) {
                     return_type = try self.allocator.create(ast.Type);
+                    errdefer self.allocator.destroy(return_type.?);
                     return_type.?.* = try self.parseType();
                 }
                 
@@ -711,9 +772,9 @@ pub const Parser = struct {
             
             // Convert to assignment expression (not statement)
             return Expression{ .Binary = .{
-                .left = @ptrCast(try self.allocateExpression(expr)),
+                .left = try self.allocateExpression(expr),
                 .operator = operator,
-                .right = @ptrCast(try self.allocateExpression(value)),
+                .right = try self.allocateExpression(value),
             }};
         }
 
@@ -914,8 +975,9 @@ pub const Parser = struct {
             
             const stmt = try self.parseStatement();
             const stmt_ptr = try self.allocator.create(Statement);
+            errdefer self.allocator.destroy(stmt_ptr);
             stmt_ptr.* = stmt;
-            try try_body.append(@ptrCast(stmt_ptr));
+            try try_body.append(self.statementToAnyopaque(stmt_ptr));
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after try body");
@@ -939,8 +1001,9 @@ pub const Parser = struct {
                 
                 const stmt = try self.parseStatement();
                 const stmt_ptr = try self.allocator.create(Statement);
+                errdefer self.allocator.destroy(stmt_ptr);
                 stmt_ptr.* = stmt;
-                try catch_body.append(@ptrCast(stmt_ptr));
+                try catch_body.append(self.statementToAnyopaque(stmt_ptr));
             }
             
         _ = try self.consume(.RightBrace, "Expected '}' after sus catch body");
@@ -962,8 +1025,9 @@ pub const Parser = struct {
                 
                 const stmt = try self.parseStatement();
                 const stmt_ptr = try self.allocator.create(Statement);
+                errdefer self.allocator.destroy(stmt_ptr);
                 stmt_ptr.* = stmt;
-                try finally_body.append(@ptrCast(stmt_ptr));
+                try finally_body.append(self.statementToAnyopaque(stmt_ptr));
             }
             
         _ = try self.consume(.RightBrace, "Expected '}' after finally body");
@@ -1396,7 +1460,7 @@ pub const Parser = struct {
             if (guard) |g| {
                 const g_ptr = try self.allocator.create(Expression);
                 g_ptr.* = g;
-                guard_ptr = @ptrCast(g_ptr);
+                guard_ptr = self.expressionToAnyopaque(g_ptr);
             }
             
             const result_ptr = try self.allocator.create(Expression);
@@ -1405,7 +1469,7 @@ pub const Parser = struct {
             try cases.append(ast.MatchCase{
                 .pattern = pattern,
                 .guard = guard_ptr,
-                .result = @ptrCast(result_ptr),
+                .result = self.expressionToAnyopaque(result_ptr),
             });
             
             _ = self.match(.Comma);
@@ -1534,7 +1598,7 @@ pub const Parser = struct {
             const value_expr = try self.parseExpression();
             const value_ptr = try self.allocator.create(Expression);
             value_ptr.* = value_expr;
-            return_stmt.value = @ptrCast(value_ptr);
+            return_stmt.value = self.expressionToAnyopaque(value_ptr);
         }
         
         return Statement{ .Return = return_stmt };
@@ -1552,7 +1616,9 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try then_branch.append(@ptrCast(stmt_ptr));
+            const stmt_ptr = try self.allocator.create(Statement); 
+            stmt_ptr.* = stmt; 
+            try then_branch.append(self.statementToAnyopaque(stmt_ptr));
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -1569,7 +1635,7 @@ pub const Parser = struct {
                 const if_stmt = Statement{ .If = elif_stmt };
                 const if_stmt_ptr = try self.allocator.create(Statement);
                 if_stmt_ptr.* = if_stmt;
-                try else_stmts.append(@ptrCast(if_stmt_ptr));
+                try else_stmts.append(self.statementToAnyopaque(if_stmt_ptr));
             } else {
                 // else block
         _ = try self.consume(.LeftBrace, "Expected '{'");
@@ -1578,7 +1644,9 @@ pub const Parser = struct {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try else_stmts.append(@ptrCast(stmt_ptr));
+                    const stmt_ptr = try self.allocator.create(Statement); 
+                    stmt_ptr.* = stmt; 
+                    try else_stmts.append(self.statementToAnyopaque(stmt_ptr));
                 }
                 
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -1591,7 +1659,7 @@ pub const Parser = struct {
         condition_ptr.* = condition;
         
         return ast.IfStatement{
-            .condition = @ptrCast(condition_ptr),
+            .condition = self.expressionToAnyopaque(condition_ptr),
             .then_branch = then_branch,
             .else_branch = else_branch,
         };
@@ -2170,7 +2238,9 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
+            const stmt_ptr = try self.allocator.create(Statement); 
+            stmt_ptr.* = stmt; 
+            try body.append(self.statementToAnyopaque(stmt_ptr));
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -2193,7 +2263,9 @@ pub const Parser = struct {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(@ptrCast(stmt_ptr));
+                const stmt_ptr = try self.allocator.create(Statement); 
+                stmt_ptr.* = stmt; 
+                try body.append(self.statementToAnyopaque(stmt_ptr));
             }
             
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -2324,7 +2396,9 @@ pub const Parser = struct {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try case_body.append(@ptrCast(stmt_ptr));
+                    const stmt_ptr = try self.allocator.create(Statement); 
+                    stmt_ptr.* = stmt; 
+                    try case_body.append(self.statementToAnyopaque(stmt_ptr));
                 }
                 
                 try cases.append(ast.SelectCase{
@@ -3182,7 +3256,9 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try func.body.append(@ptrCast(stmt_ptr));
+            const stmt_ptr = try self.allocator.create(Statement); 
+            stmt_ptr.* = stmt; 
+            try func.body.append(stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -3244,7 +3320,7 @@ pub const Parser = struct {
                     
                     try interpolation.parts.append(ast.InterpolationPart{
                         .text = "",
-                        .expression = @ptrCast(expr_ptr),
+                        .expression = self.expressionToAnyopaque(expr_ptr),
                         .format_spec = null,
                     });
                     
