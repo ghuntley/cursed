@@ -1,3 +1,6 @@
-yeet "mathz"
-sus result drip = abs_normie(-42)
-vibez.spill("Absolute value:", result)
+slay test_func() drip {
+    damn 42
+}
+
+sus x drip = test_func()
+vibez.spill(x)

@@ -1,4 +1,6 @@
-slay greet() {
-    vibez.spill("Hello")
+slay simple_add(a drip, b drip) drip {
+    damn a + b
 }
-greet()
+
+sus result drip = simple_add(2, 3)
+vibez.spill(result)
