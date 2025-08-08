@@ -174,6 +174,27 @@ pub const Value = union(enum) {
     Interface: InterfaceInstance,
     Error: ErrorValue,
     CursedError: *cursed_error.CursedError,
+    Tuple: ArrayList(Value),
+
+    pub fn deinit(self: *Value, allocator: Allocator) void {
+        switch (self.*) {
+            .String => |str| allocator.free(str),
+            .Tuple => |*tuple| {
+                for (tuple.items) |*item| {
+                    item.deinit(allocator);
+                }
+                tuple.deinit();
+            },
+            .Error => |*err| err.deinit(),
+            .Struct => |*struct_inst| struct_inst.deinit(),
+            .Interface => |*interface_inst| interface_inst.deinit(),
+            .CursedError => |cursed_err| {
+                cursed_err.deinit();
+                allocator.destroy(cursed_err);
+            },
+            else => {}, // Other types don't need cleanup
+        }
+    }
 
     pub fn toString(self: Value, allocator: Allocator) ![]u8 {
         switch (self) {
@@ -183,6 +204,19 @@ pub const Value = union(enum) {
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
             .Character => |char| return std.fmt.allocPrint(allocator, "{c}", .{char}),
             .Null => return allocator.dupe(u8, "cap"),
+            .Tuple => |tuple| {
+                var result = std.ArrayList(u8).init(allocator);
+                defer result.deinit();
+                try result.append('(');
+                for (tuple.items, 0..) |item, i| {
+                    if (i > 0) try result.appendSlice(", ");
+                    const item_str = try item.toString(allocator);
+                    defer allocator.free(item_str);
+                    try result.appendSlice(item_str);
+                }
+                try result.append(')');
+                return try allocator.dupe(u8, result.items);
+            },
             .Struct => |struct_inst| return std.fmt.allocPrint(allocator, "struct {s}", .{struct_inst.type_name}),
             .Interface => |interface_inst| return std.fmt.allocPrint(allocator, "interface {s}", .{interface_inst.vtable.interface_name}),
             .Error => |err| return std.fmt.allocPrint(allocator, "Error({s})", .{err.message}),
@@ -202,6 +236,7 @@ pub const Value = union(enum) {
             .Interface => return true, // Interfaces are always truthy if they exist
             .Error => return false,   // Errors are falsy
             .CursedError => return false, // CursedErrors are falsy
+            .Tuple => |tuple| return tuple.items.len > 0, // Tuples are truthy if non-empty
         }
     }
 
@@ -376,7 +411,8 @@ pub const Interpreter = struct {
                             .declaration = func.*,
                             .closure = self.environment,
                         };
-                        try self.functions.put(func.name, cursed_func);
+                        std.debug.print("DEBUG: Registering function '{s}'\n", .{func.name});
+                         try self.functions.put(func.name, cursed_func);
                     }
                 },
                 .Struct => {
@@ -443,7 +479,43 @@ pub const Interpreter = struct {
         else
             Value.Null;
         
-        try self.environment.define(let.name, value);
+        // Check if we're trying to destructure a tuple by looking for comma in name
+        // This is a workaround until parser supports multiple names
+        if (std.mem.indexOf(u8, let.name, ",")) |_| {
+            // Handle tuple destructuring: "result, err"
+            var name_iter = std.mem.split(u8, let.name, ",");
+            var name_index: usize = 0;
+            
+            switch (value) {
+                .Tuple => |tuple| {
+                    while (name_iter.next()) |raw_name| {
+                        const trimmed_name = std.mem.trim(u8, raw_name, " \t");
+                        if (name_index < tuple.items.len) {
+                            try self.environment.define(trimmed_name, tuple.items[name_index]);
+                        } else {
+                            try self.environment.define(trimmed_name, Value.Null);
+                        }
+                        name_index += 1;
+                    }
+                },
+                else => {
+                    // Single value assigned to first variable, rest get null
+                    var first = true;
+                    while (name_iter.next()) |raw_name| {
+                        const trimmed_name = std.mem.trim(u8, raw_name, " \t");
+                        if (first) {
+                            try self.environment.define(trimmed_name, value);
+                            first = false;
+                        } else {
+                            try self.environment.define(trimmed_name, Value.Null);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Regular single variable assignment
+            try self.environment.define(let.name, value);
+        }
     }
     
     fn executeAssignmentStatement(self: *Interpreter, assign: ast.AssignmentStatement) InterpreterError!void {
@@ -540,6 +612,7 @@ pub const Interpreter = struct {
             .Fam => |fam| return try self.evaluateFam(fam),
             .StringInterpolation => |interpolation| return try self.evaluateStringInterpolation(interpolation),
             .Match => |match| return try self.evaluateMatch(match),
+            .Tuple => |tuple| return try self.evaluateTuple(tuple),
             else => {
                 std.debug.print("Unsupported expression type in interpreter: {s}\n", .{@tagName(expr)});
                 return Value.Null;
@@ -714,6 +787,7 @@ pub const Interpreter = struct {
                     self.next_goroutine_id += 1;
                     return Value{ .Number = @floatFromInt(self.next_goroutine_id) };
                 } else if (self.functions.get(name)) |func| {
+                    std.debug.print("DEBUG: Calling user function '{s}'\n", .{name});
                     // Evaluate arguments
                     var args = ArrayList(Value).init(self.allocator);
                     defer args.deinit();
@@ -724,6 +798,9 @@ pub const Interpreter = struct {
                     }
                     
                     return try self.callFunction(func, args.items);
+                } else {
+                    std.debug.print("DEBUG: Function '{s}' not found\n", .{name});
+                    return InterpreterError.UndefinedFunction;
                 }
             },
             else => {},
@@ -910,11 +987,26 @@ pub const Interpreter = struct {
         var return_value: Value = Value.Null;
         var has_returned = false;
         
+        // Track multiple return values for tuple returns
+        var return_values = ArrayList(Value).init(self.allocator);
+        defer return_values.deinit();
+        
         for (func.declaration.body.items) |stmt| {
             switch (stmt) {
                 .Return => |ret| {
                     if (ret.value) |value| {
-                        return_value = try self.evaluateExpression(value);
+                        const result = try self.evaluateExpression(value);
+                        // Check if this is a tuple expression (multiple values)
+                        switch (result) {
+                            .Tuple => |_| {
+                                // Return multiple values as tuple
+                                return_value = result;
+                            },
+                            else => {
+                                // Single value return
+                                return_value = result;
+                            }
+                        }
                     } else {
                         return_value = Value.Null;
                     }
@@ -1571,6 +1663,17 @@ pub const Interpreter = struct {
         return 1;
     }
     
+    fn evaluateTuple(self: *Interpreter, tuple: ast.TupleExpression) InterpreterError!Value {
+        var tuple_values = ArrayList(Value).init(self.allocator);
+        
+        for (tuple.elements.items) |element_expr| {
+            const element_value = try self.evaluateExpression(element_expr);
+            try tuple_values.append(element_value);
+        }
+        
+        return Value{ .Tuple = tuple_values };
+    }
+
     fn evaluateStringInterpolation(self: *Interpreter, interpolation: ast.StringInterpolationExpression) InterpreterError!Value {
         var result = std.ArrayList(u8).init(self.allocator);
         defer result.deinit();

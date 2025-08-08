@@ -315,7 +315,9 @@ pub const WorkingCodeGen = struct {
         }
         
         // Generate function body
-        try self.generateStatement(func.body);
+        for (func.body.items) |stmt| {
+            try self.generateStatement(stmt.*);
+        }
         
         // Add return if needed
         const last_block = c.LLVMGetInsertBlock(self.builder);
@@ -497,12 +499,53 @@ pub const WorkingCodeGen = struct {
             .MemberAccess => |member| {
                 // Handle vibez.spill
                 if (std.mem.eql(u8, member.property, "spill")) {
-                    if (call.arguments.items.len != 1) {
-                        return CodeGenError.TypeMismatch;
+                    if (call.arguments.items.len == 0) {
+                        // Empty print - just print newline
+                        const puts_func = self.functions.get("puts").?;
+                        const empty_str = c.LLVMBuildGlobalStringPtr(self.builder, "", "empty");
+                        return c.LLVMBuildCall2(
+                            self.builder,
+                            c.LLVMGetReturnType(c.LLVMGlobalGetValueType(puts_func)),
+                            puts_func,
+                            &[_]c.LLVMValueRef{empty_str},
+                            1,
+                            "puts_call"
+                        );
                     }
                     
-                    const arg = try self.generateExpression(call.arguments.items[0]);
-                    return try self.generatePrint(arg);
+                    // Handle multiple arguments by printing them with spaces
+                    var last_result: c.LLVMValueRef = undefined;
+                    for (call.arguments.items, 0..) |arg_expr, i| {
+                        const arg = try self.generateExpression(arg_expr);
+                        
+                        if (i > 0) {
+                            // Print space before each argument after the first
+                            const puts_func = self.functions.get("puts").?;
+                            const space_str = c.LLVMBuildGlobalStringPtr(self.builder, " ", "space");
+                            _ = c.LLVMBuildCall2(
+                                self.builder,
+                                c.LLVMGetReturnType(c.LLVMGlobalGetValueType(puts_func)),
+                                puts_func,
+                                &[_]c.LLVMValueRef{space_str},
+                                1,
+                                "space_call"
+                            );
+                        }
+                        
+                        last_result = try self.generatePrintNoNewline(arg);
+                    }
+                    
+                    // Print final newline
+                    const puts_func = self.functions.get("puts").?;
+                    const newline_str = c.LLVMBuildGlobalStringPtr(self.builder, "", "newline");
+                    return c.LLVMBuildCall2(
+                        self.builder,
+                        c.LLVMGetReturnType(c.LLVMGlobalGetValueType(puts_func)),
+                        puts_func,
+                        &[_]c.LLVMValueRef{newline_str},
+                        1,
+                        "newline_call"
+                    );
                 }
             },
             .Identifier => |name| {
@@ -619,6 +662,77 @@ pub const WorkingCodeGen = struct {
         } else {
             // Default - print as pointer
             const format = c.LLVMBuildGlobalStringPtr(self.builder, "%p\n", "ptr_fmt");
+            return c.LLVMBuildCall2(
+                self.builder,
+                c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)),
+                printf_func,
+                &[_]c.LLVMValueRef{ format, arg },
+                2,
+                "printf_call"
+            );
+        }
+    }
+
+    /// Generate print call without newline (for multiple arguments)
+    fn generatePrintNoNewline(self: *WorkingCodeGen, arg: c.LLVMValueRef) !c.LLVMValueRef {
+        const arg_type = c.LLVMTypeOf(arg);
+        const type_kind = c.LLVMGetTypeKind(arg_type);
+        
+        const printf_func = self.functions.get("printf").?;
+        
+        if (type_kind == c.LLVMIntegerTypeKind) {
+            const bit_width = c.LLVMGetIntTypeWidth(arg_type);
+            if (bit_width == 1) {
+                // Boolean - convert to string
+                const true_str = c.LLVMBuildGlobalStringPtr(self.builder, "true", "true_str");
+                const false_str = c.LLVMBuildGlobalStringPtr(self.builder, "false", "false_str");
+                const result_str = c.LLVMBuildSelect(self.builder, arg, true_str, false_str, "bool_str");
+                const format = c.LLVMBuildGlobalStringPtr(self.builder, "%s", "str_fmt");
+                return c.LLVMBuildCall2(
+                    self.builder,
+                    c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)),
+                    printf_func,
+                    &[_]c.LLVMValueRef{ format, result_str },
+                    2,
+                    "printf_call"
+                );
+            } else {
+                // Integer
+                const format = c.LLVMBuildGlobalStringPtr(self.builder, "%d", "int_fmt");
+                return c.LLVMBuildCall2(
+                    self.builder,
+                    c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)),
+                    printf_func,
+                    &[_]c.LLVMValueRef{ format, arg },
+                    2,
+                    "printf_call"
+                );
+            }
+        } else if (type_kind == c.LLVMDoubleTypeKind or type_kind == c.LLVMFloatTypeKind) {
+            // Float
+            const format = c.LLVMBuildGlobalStringPtr(self.builder, "%f", "float_fmt");
+            return c.LLVMBuildCall2(
+                self.builder,
+                c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)),
+                printf_func,
+                &[_]c.LLVMValueRef{ format, arg },
+                2,
+                "printf_call"
+            );
+        } else if (type_kind == c.LLVMPointerTypeKind) {
+            // String - use printf without newline
+            const format = c.LLVMBuildGlobalStringPtr(self.builder, "%s", "str_fmt");
+            return c.LLVMBuildCall2(
+                self.builder,
+                c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)),
+                printf_func,
+                &[_]c.LLVMValueRef{ format, arg },
+                2,
+                "printf_call"
+            );
+        } else {
+            // Default - print as pointer
+            const format = c.LLVMBuildGlobalStringPtr(self.builder, "%p", "ptr_fmt");
             return c.LLVMBuildCall2(
                 self.builder,
                 c.LLVMGetReturnType(c.LLVMGlobalGetValueType(printf_func)),

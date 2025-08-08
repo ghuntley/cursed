@@ -896,8 +896,7 @@ fn extractAndGenerateFunctionDefinitions(
     functions: *std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), 
     verbose: bool
 ) !void {
-    // Parse statements to find function definitions
-    var lines = std.mem.splitScalar(u8, source, '\n');
+    // Parse statements to find function definitions, handling multi-line functions
     var statements = std.ArrayList([]const u8).init(allocator);
     defer {
         for (statements.items) |stmt| {
@@ -906,17 +905,47 @@ fn extractAndGenerateFunctionDefinitions(
         statements.deinit();
     }
     
-    while (lines.next()) |line| {
-        const trimmed = std.mem.trim(u8, line, " \t\r\n");
-        if (trimmed.len == 0) continue;
+    // Process the source to extract complete function definitions
+    var i: usize = 0;
+    while (i < source.len) {
+        // Skip whitespace
+        while (i < source.len and (source[i] == ' ' or source[i] == '\t' or source[i] == '\n' or source[i] == '\r')) {
+            i += 1;
+        }
         
-        // Split by semicolons for multiple statements per line
-        var parts = std.mem.splitScalar(u8, trimmed, ';');
-        while (parts.next()) |part| {
-            const stmt = std.mem.trim(u8, part, " \t\r\n");
-            if (stmt.len > 0) {
-                try statements.append(try allocator.dupe(u8, stmt));
+        if (i >= source.len) break;
+        
+        // Check if this is a function definition starting with "slay "
+        if (i + 5 <= source.len and std.mem.eql(u8, source[i..i+5], "slay ")) {
+            // Find the complete function definition by looking for the closing brace
+            const start = i;
+            var brace_count: u32 = 0;
+            var found_opening_brace = false;
+            
+            while (i < source.len) {
+                if (source[i] == '{') {
+                    brace_count += 1;
+                    found_opening_brace = true;
+                } else if (source[i] == '}') {
+                    brace_count -= 1;
+                    if (found_opening_brace and brace_count == 0) {
+                        i += 1; // Include the closing brace
+                        break;
+                    }
+                }
+                i += 1;
             }
+            
+            if (found_opening_brace and brace_count == 0) {
+                const func_def = std.mem.trim(u8, source[start..i], " \t\r\n");
+                try statements.append(try allocator.dupe(u8, func_def));
+            }
+        } else {
+            // Skip to next line for non-function content
+            while (i < source.len and source[i] != '\n') {
+                i += 1;
+            }
+            if (i < source.len) i += 1; // Skip the newline
         }
     }
     
@@ -1244,7 +1273,13 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
 /// Parse function definition and add to functions map + generate LLVM function
 fn parseFunctionDefinition(stmt: []const u8, functions: *std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), allocator: Allocator, writer: anytype, verbose: bool) !void {
     // Parse: slay test_func(x drip) drip { damn x * 2 }
-    if (verbose) try writer.print("  ; Parsing function definition: {s}\n", .{stmt});
+    if (verbose) {
+        // Create a single-line summary of the function definition
+        const func_start = std.mem.indexOf(u8, stmt, "slay ") orelse 0;
+        const brace_pos = std.mem.indexOf(u8, stmt, "{") orelse stmt.len;
+        const signature = std.mem.trim(u8, stmt[func_start..@min(brace_pos, stmt.len)], " \t\r\n");
+        try writer.print("  ; Parsing function definition: {s}...\n", .{signature});
+    }
     
     // Find function name
     var parts = std.mem.tokenizeScalar(u8, stmt, ' ');
@@ -1266,7 +1301,7 @@ fn parseFunctionDefinition(stmt: []const u8, functions: *std.HashMap([]const u8,
     // Extract function body (between { and })
     const body_start = std.mem.indexOf(u8, stmt, "{") orelse return;
     const body_end = std.mem.lastIndexOf(u8, stmt, "}") orelse return;
-    const body_str = std.mem.trim(u8, stmt[body_start + 1..body_end], " \t");
+    const body_str = std.mem.trim(u8, stmt[body_start + 1..body_end], " \t\r\n");
     
     if (verbose) {
         try writer.print("  ; Function: {s}, Return: {s}, Params: '{s}', Body: '{s}'\n", .{ func_name, return_type_str, params_str, body_str });
