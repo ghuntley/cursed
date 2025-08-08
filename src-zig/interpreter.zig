@@ -527,7 +527,7 @@ pub const Interpreter = struct {
         switch (target_expr.*) {
             .Identifier => |name| {
                 // Simple variable assignment
-                try self.environment.assign(name, value);
+                try self.environment.set(name, value);
             },
             .MemberAccess => |member| {
                 // Struct field assignment
@@ -549,7 +549,7 @@ pub const Interpreter = struct {
                     .Struct => |*struct_inst| {
                         try struct_inst.setField(member.property, value);
                         // Update the struct instance in the environment
-                        try self.environment.assign(obj_name, object_value);
+                        try self.environment.set(obj_name, object_value);
                     },
                     else => {
                         std.debug.print("Cannot assign to field of non-struct type: {s}\n", .{@tagName(object_value)});

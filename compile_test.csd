@@ -1,1 +1,1 @@
-sus x drip = 10; vibez.spill(x + 5)
+sus x drip = 42; vibez.spill("Answer:", x)

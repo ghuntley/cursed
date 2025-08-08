@@ -1111,8 +1111,40 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
     }
     
     // Split line by semicolons to handle multiple statements on one line
-    var statement_iter = std.mem.splitScalar(u8, line, ';');
-    while (statement_iter.next()) |statement| {
+    // But be careful not to split inside braces
+    var statements = std.ArrayList([]const u8).init(allocator);
+    defer statements.deinit();
+    
+    var start: usize = 0;
+    var brace_count: i32 = 0;
+    var in_quotes = false;
+    
+    for (line, 0..) |char, i| {
+        if (char == '"' and (i == 0 or line[i-1] != '\\')) {
+            in_quotes = !in_quotes;
+        } else if (!in_quotes) {
+            if (char == '{') {
+                brace_count += 1;
+            } else if (char == '}') {
+                brace_count -= 1;
+            } else if (char == ';' and brace_count == 0) {
+                // Found a semicolon outside of braces, split here
+                const statement = std.mem.trim(u8, line[start..i], " \t\r\n");
+                if (statement.len > 0) {
+                    try statements.append(statement);
+                }
+                start = i + 1;
+            }
+        }
+    }
+    
+    // Add the final statement
+    const final_statement = std.mem.trim(u8, line[start..], " \t\r\n");
+    if (final_statement.len > 0) {
+        try statements.append(final_statement);
+    }
+    
+    for (statements.items) |statement| {
         const stmt_trimmed = std.mem.trim(u8, statement, " \t\r\n");
         if (stmt_trimmed.len == 0) continue;
         
@@ -1139,6 +1171,13 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
             continue;
         }
         
+        // Handle while loop statements: bestie (condition) { ... }
+        if (std.mem.startsWith(u8, stmt_trimmed, "bestie ")) {
+            if (verbose) print("🔍 Processing bestie while loop (inline): {s}\n", .{stmt_trimmed});
+            try handleInlineBestieLoop(variables, functions, allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
         // Handle goroutine spawning: stan { ... } or stan function_call()
         if (std.mem.startsWith(u8, stmt_trimmed, "stan ")) {
             if (verbose) print("🔍 Processing goroutine spawn: {s}\n", .{stmt_trimmed});
@@ -1147,8 +1186,8 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
         }
         
         // Handle vibez.spill() BEFORE assignment checks to avoid conflicts with strings containing =
-        if (std.mem.indexOf(u8, stmt_trimmed, "vibez.spill(")) |start| {
-            try handleVibesSpill(variables, functions, allocator, stmt_trimmed, start, verbose);
+        if (std.mem.indexOf(u8, stmt_trimmed, "vibez.spill(")) |vibez_start| {
+            try handleVibesSpill(variables, functions, allocator, stmt_trimmed, vibez_start, verbose);
             continue;
         }
         
@@ -4951,6 +4990,176 @@ fn executeSingleLineBlock(
         if (verbose) print("  🔧 Executing block statement: '{s}'\n", .{stmt_trimmed});
         try executeBlockLine(variables, functions, allocator, stmt_trimmed, verbose);
     }
+}
+
+/// Handle inline bestie (while loop) statements
+fn handleInlineBestieLoop(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: Allocator,
+    statement: []const u8,
+    verbose: bool
+) !void {
+    if (verbose) print("🔄 Processing inline bestie loop: {s}\n", .{statement});
+    
+    // Parse: bestie (condition) { body_statements }
+    var condition_start: ?usize = null;
+    var condition_end: ?usize = null;
+    var body_start: ?usize = null;
+    var body_end: ?usize = null;
+    
+    // Find condition in parentheses
+    if (std.mem.indexOf(u8, statement, "(")) |paren_start| {
+        condition_start = paren_start;
+        var paren_count: i32 = 0;
+        for (statement[paren_start..], paren_start..) |char, idx| {
+            if (char == '(') {
+                paren_count += 1;
+            } else if (char == ')') {
+                paren_count -= 1;
+                if (paren_count == 0) {
+                    condition_end = idx;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Find body in braces
+    if (std.mem.indexOf(u8, statement, "{")) |brace_start| {
+        body_start = brace_start;
+        var brace_count: i32 = 0;
+        for (statement[brace_start..], brace_start..) |char, idx| {
+            if (char == '{') {
+                brace_count += 1;
+            } else if (char == '}') {
+                brace_count -= 1;
+                if (brace_count == 0) {
+                    body_end = idx;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (condition_start == null or condition_end == null or body_start == null or body_end == null) {
+        if (verbose) print("❌ Invalid inline bestie syntax\n", .{});
+        return;
+    }
+    
+    const condition_expr = std.mem.trim(u8, statement[condition_start.? + 1..condition_end.?], " \t");
+    const body_text = std.mem.trim(u8, statement[body_start.? + 1..body_end.?], " \t");
+    
+    if (verbose) print("🔄 Loop condition: '{s}'\n", .{condition_expr});
+    if (verbose) print("🔄 Loop body: '{s}'\n", .{body_text});
+    
+    // Execute the loop with safety limit
+    const max_iterations = 10000;
+    var iteration_count: usize = 0;
+    
+    while (iteration_count < max_iterations) {
+        // Evaluate the condition
+        const condition_result = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
+            if (verbose) print("❌ Failed to evaluate loop condition: {any}\n", .{err});
+            break;
+        };
+        defer { var temp_result = condition_result; temp_result.deinit(allocator); }
+        
+        // Convert result to boolean
+        const condition_is_true = switch (condition_result) {
+            .Boolean => |b| b,
+            .Integer => |i| i != 0,
+            .Float => |f| f != 0.0,
+            .String => |s| s.data.len > 0,
+            else => false,
+        };
+        
+        if (!condition_is_true) {
+            if (verbose) print("🔄 Loop condition false, exiting loop\n", .{});
+            break;
+        }
+        
+        if (verbose and iteration_count == 0) print("🔄 Starting loop execution\n", .{});
+        
+        // Execute loop body - split by semicolons and process each statement
+        // Parse body statements manually to avoid circular dependency
+        var body_statements = std.ArrayList([]const u8).init(allocator);
+        defer body_statements.deinit();
+        
+        var start: usize = 0;
+        var brace_count: i32 = 0;
+        var in_quotes = false;
+        
+        for (body_text, 0..) |char, i| {
+            if (char == '"' and (i == 0 or body_text[i-1] != '\\')) {
+                in_quotes = !in_quotes;
+            } else if (!in_quotes) {
+                if (char == '{') {
+                    brace_count += 1;
+                } else if (char == '}') {
+                    brace_count -= 1;
+                } else if (char == ';' and brace_count == 0) {
+                    const stmt = std.mem.trim(u8, body_text[start..i], " \t\r\n");
+                    if (stmt.len > 0) {
+                        try body_statements.append(stmt);
+                    }
+                    start = i + 1;
+                }
+            }
+        }
+        
+        // Add the final statement
+        const final_stmt = std.mem.trim(u8, body_text[start..], " \t\r\n");
+        if (final_stmt.len > 0) {
+            try body_statements.append(final_stmt);
+        }
+        
+        // Execute each statement
+        for (body_statements.items) |stmt| {
+            if (verbose) print("🔄 Executing loop body statement: {s}\n", .{stmt});
+            try executeSimpleStatement(variables, functions, allocator, stmt, verbose);
+        }
+        
+        iteration_count += 1;
+    }
+    
+    if (iteration_count >= max_iterations) {
+        if (verbose) print("⚠️  Loop terminated after {} iterations (safety limit)\n", .{max_iterations});
+    } else if (verbose) {
+        print("✅ Loop completed after {} iterations\n", .{iteration_count});
+    }
+}
+
+/// Execute a simple statement (for use in inline loops)
+fn executeSimpleStatement(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: Allocator,
+    statement: []const u8,
+    verbose: bool
+) !void {
+    const stmt = std.mem.trim(u8, statement, " \t\r\n");
+    if (stmt.len == 0) return;
+    
+    // Handle vibez.spill() calls
+    if (std.mem.indexOf(u8, stmt, "vibez.spill(")) |vibez_start| {
+        try handleVibesSpill(variables, functions, allocator, stmt, vibez_start, verbose);
+        return;
+    }
+    
+    // Handle variable assignments: varname = value
+    if (std.mem.indexOf(u8, stmt, "=")) |equals_pos| {
+        try executeAssignmentStatement(variables, functions, allocator, stmt, equals_pos, verbose);
+        return;
+    }
+    
+    // Handle function calls
+    if (std.mem.indexOf(u8, stmt, "(")) |paren_pos| {
+        try executeFunctionCallStatement(variables, functions, allocator, stmt, paren_pos, verbose);
+        return;
+    }
+    
+    if (verbose) print("⚠️  Unhandled simple statement: {s}\n", .{stmt});
 }
 
 /// Handle bestie (while loop) control flow blocks

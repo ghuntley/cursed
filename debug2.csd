@@ -1,1 +1,1 @@
-sus x drip = 10; sus y drip = 20; vibez.spill("x:", x); vibez.spill("y:", y)
+yeet "arrayz"; vibez.spill("Calling function"); vibez.spill(array_length_func("test"))

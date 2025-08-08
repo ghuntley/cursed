@@ -1,1 +1,3 @@
-sus arr []drip = [1, 2, 3]; vibez.spill(arr[0])
+yeet "arrayz"
+sus nums [drip] = [1, 2, 3]
+vibez.spill("Length:", len(nums))

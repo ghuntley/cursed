@@ -96,7 +96,16 @@ void* llvm_get_named_function(void* module, const char* name) {
     return LLVMGetNamedFunction((LLVMModuleRef)module, name);
 }
 
+void* llvm_get_function_type(void* function) {
+    if (!function) return NULL;
+    return LLVMGlobalGetValueType((LLVMValueRef)function);
+}
+
 void* llvm_build_call2(void* builder, void* function_type, void* function, void** args, int arg_count, const char* name) {
+    // Add null pointer validation to prevent segfaults
+    if (!builder || !function_type || !function) return NULL;
+    if (arg_count > 0 && !args) return NULL;
+    
     return LLVMBuildCall2((LLVMBuilderRef)builder, (LLVMTypeRef)function_type, (LLVMValueRef)function, (LLVMValueRef*)args, arg_count, name);
 }
 

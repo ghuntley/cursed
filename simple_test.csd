@@ -1,2 +1,1 @@
-yeet "testz"
-test_start("basic_test")
+sus nums normie = 123; vibez.spill("Test:", nums)
