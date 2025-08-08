@@ -1,0 +1,156 @@
+{
+  "Variable Declaration": {
+    "prefix": ["sus", "var"],
+    "body": [
+      "sus ${1:name} ${2:drip} = ${3:value};"
+    ],
+    "description": "Declare a new variable"
+  },
+  "Function Declaration": {
+    "prefix": ["slay", "func"],
+    "body": [
+      "slay ${1:name}(${2:params}) ${3:return_type} {",
+      "    ${4:// body}",
+      "    damn ${5:return_value}",
+      "}"
+    ],
+    "description": "Declare a new function"
+  },
+  "If Statement": {
+    "prefix": ["ready", "if"],
+    "body": [
+      "ready (${1:condition}) {",
+      "    ${2:// body}",
+      "}"
+    ],
+    "description": "If statement"
+  },
+  "If-Else Statement": {
+    "prefix": ["readyelse", "ifelse"],
+    "body": [
+      "ready (${1:condition}) {",
+      "    ${2:// if body}",
+      "} otherwise {",
+      "    ${3:// else body}",
+      "}"
+    ],
+    "description": "If-else statement"
+  },
+  "While Loop": {
+    "prefix": ["bestie", "while"],
+    "body": [
+      "bestie (${1:condition}) {",
+      "    ${2:// body}",
+      "}"
+    ],
+    "description": "While loop"
+  },
+  "Struct Definition": {
+    "prefix": ["squad", "struct"],
+    "body": [
+      "squad ${1:Name} {",
+      "    spill ${2:field} ${3:type}",
+      "}"
+    ],
+    "description": "Struct definition"
+  },
+  "Interface Definition": {
+    "prefix": ["collab", "interface"],
+    "body": [
+      "collab ${1:Name} {",
+      "    slay ${2:method}(${3:params}) ${4:return_type}",
+      "}"
+    ],
+    "description": "Interface definition"
+  },
+  "Import Module": {
+    "prefix": ["yeet", "import"],
+    "body": [
+      "yeet \"${1:module}\""
+    ],
+    "description": "Import a module"
+  },
+  "Goroutine": {
+    "prefix": ["stan", "go"],
+    "body": [
+      "stan {",
+      "    ${1:// goroutine body}",
+      "}"
+    ],
+    "description": "Start a goroutine"
+  },
+  "Print Statement": {
+    "prefix": ["vibez.spill", "print"],
+    "body": [
+      "vibez.spill(${1:value});"
+    ],
+    "description": "Print to console"
+  },
+  "Array Declaration": {
+    "prefix": ["array", "arr"],
+    "body": [
+      "sus ${1:name} []${2:drip} = [${3:values}];"
+    ],
+    "description": "Declare an array"
+  },
+  "For Loop Pattern": {
+    "prefix": ["forloop", "iterate"],
+    "body": [
+      "sus ${1:i} drip = 0;",
+      "bestie (${1:i} < ${2:length}) {",
+      "    ${3:// body}",
+      "    ${1:i} = ${1:i} + 1;",
+      "}"
+    ],
+    "description": "For loop pattern"
+  },
+  "Error Handling": {
+    "prefix": ["error", "err"],
+    "body": [
+      "sus ${1:result}, ${2:err} = ${3:function_call};",
+      "ready (${2:err} != \"\") {",
+      "    ${4:// handle error}",
+      "}"
+    ],
+    "description": "Error handling pattern"
+  },
+  "Main Function": {
+    "prefix": ["main"],
+    "body": [
+      "slay main() {",
+      "    ${1:// main function body}",
+      "}"
+    ],
+    "description": "Main function"
+  },
+  "Boolean True": {
+    "prefix": ["based", "true"],
+    "body": ["based"],
+    "description": "Boolean true value"
+  },
+  "Boolean False": {
+    "prefix": ["cringe", "false"],
+    "body": ["cringe"],
+    "description": "Boolean false value"
+  },
+  "String Type": {
+    "prefix": ["tea"],
+    "body": ["tea"],
+    "description": "String type"
+  },
+  "Integer Type": {
+    "prefix": ["drip"],
+    "body": ["drip"],
+    "description": "Integer type"
+  },
+  "Boolean Type": {
+    "prefix": ["lit"],
+    "body": ["lit"],
+    "description": "Boolean type"
+  },
+  "Return Statement": {
+    "prefix": ["damn", "return"],
+    "body": ["damn ${1:value};"],
+    "description": "Return statement"
+  }
+}

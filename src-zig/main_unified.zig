@@ -198,7 +198,7 @@ const ManagedString = struct {
     }
 };
 
-const Variable = union(enum) {
+pub const Variable = union(enum) {
     Integer: i64,
     Float: f64,
     String: ManagedString,

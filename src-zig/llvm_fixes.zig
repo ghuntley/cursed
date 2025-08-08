@@ -57,9 +57,9 @@ pub fn generateEnhancedFunctionCall(
 /// Generate array length function call (len function)
 fn generateArrayLengthCall(
     context: c.LLVMContextRef,
-    builder: c.LLVMBuilderRef,
+    _: c.LLVMBuilderRef,
     call: ast.CallExpression,
-    allocator: std.mem.Allocator,
+    _: std.mem.Allocator,
 ) !c.LLVMValueRef {
     if (call.arguments.items.len != 1) {
         return error.InvalidArgumentCount;
@@ -255,7 +255,6 @@ fn generateRecursiveFunctionCall(
     call: ast.CallExpression,
 ) !c.LLVMValueRef {
     // This is a simplified version - in production would need full function resolution
-    _ = context;
     _ = builder;
     _ = call;
     
@@ -265,7 +264,7 @@ fn generateRecursiveFunctionCall(
 
 /// Enhanced struct field access generation
 pub fn generateStructFieldAccess(
-    context: c.LLVMContextRef,
+    _: c.LLVMContextRef,
     builder: c.LLVMBuilderRef,
     struct_value: c.LLVMValueRef,
     field_name: []const u8,
@@ -493,7 +492,7 @@ pub fn registerVariable(
 ) !c.LLVMValueRef {
     if (global_scope_manager) |scope_manager| {
         const llvm_type = variable_scope.cursedTypeToLLVMType(context, cursed_type);
-        const alignment = variable_scope.getLLVMTypeAlignment(llvm_type);
+        _ = variable_scope.getLLVMTypeAlignment(llvm_type);
         
         // Create alloca for the variable
         const alloca = c.LLVMBuildAlloca(builder, llvm_type, name.ptr);

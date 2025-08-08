@@ -109,10 +109,10 @@ pub const AdvancedCodeGen = struct {
     pub fn init(allocator: Allocator) !AdvancedCodeGen {
         var gc_registry = GCTypeRegistry.init(allocator);
         var interface_registry = InterfaceRegistry.init(allocator);
-        var interface_dispatcher = InterfaceDispatcher.init(allocator, &interface_registry);
+        const interface_dispatcher = InterfaceDispatcher.init(allocator, &interface_registry);
         
         // Initialize base codegen first to get context and module
-        var base_codegen = try FinalWorkingCodeGen.init(allocator);
+        const base_codegen = try FinalWorkingCodeGen.init(allocator);
         
         // Initialize variable scope system for LLVM compilation
         const llvm_fixes = @import("llvm_fixes.zig");
@@ -265,7 +265,7 @@ pub const AdvancedCodeGen = struct {
         const context = self.base_codegen.context;
         const module = self.base_codegen.module;
         const builder = self.base_codegen.builder;
-        const _current_function = self.base_codegen.current_function orelse return error.NoCurrentFunction;
+        _ = self.base_codegen.current_function orelse return error.NoCurrentFunction;
         
         // Generate unique cleanup function name
         const defer_count = self.defer_stack.items.len;
@@ -379,6 +379,65 @@ pub const AdvancedCodeGen = struct {
         );
     }
     
+    /// Generate function entry with defer scope initialization
+    pub fn generateFunctionEntryWithDefers(self: *AdvancedCodeGen, function_name: []const u8) !void {
+        const context = self.base_codegen.context;
+        const builder = self.base_codegen.builder;
+        
+        // Ensure runtime functions are declared
+        try self.declareDeferRuntimeFunctions();
+        
+        // Enter function scope
+        if (self.base_codegen.runtime_functions.get("cursed_defer_enter_scope")) |enter_scope_func| {
+            const scope_id = c.LLVMBuildCall2(
+                builder,
+                c.LLVMInt32TypeInContext(context),
+                enter_scope_func,
+                null,
+                0,
+                "function_scope_id"
+            );
+            
+            // Mark as function scope if available
+            if (self.base_codegen.runtime_functions.get("cursed_defer_enter_function_scope")) |mark_func_scope| {
+                _ = c.LLVMBuildCall2(
+                    builder,
+                    c.LLVMVoidTypeInContext(context),
+                    mark_func_scope,
+                    null,
+                    0,
+                    ""
+                );
+            }
+            
+            std.debug.print("🚪 Function entry: {s} with defer scope\n", .{function_name});
+            _ = scope_id;
+        }
+    }
+    
+    /// Generate error handling with defer cleanup integration
+    pub fn generateErrorHandlingWithDefers(self: *AdvancedCodeGen) !void {
+        const context = self.base_codegen.context;
+        const builder = self.base_codegen.builder;
+        
+        // Ensure runtime functions are declared
+        try self.declareDeferRuntimeFunctions();
+        
+        // Execute error-safe defers
+        if (self.base_codegen.runtime_functions.get("cursed_defer_execute_on_error")) |error_defer_func| {
+            _ = c.LLVMBuildCall2(
+                builder,
+                c.LLVMVoidTypeInContext(context),
+                error_defer_func,
+                null,
+                0,
+                ""
+            );
+            
+            std.debug.print("💥 Generated error handling with defer cleanup\n");
+        }
+    }
+    
     /// Declare defer runtime functions
     fn declareDeferRuntimeFunctions(self: *AdvancedCodeGen) !void {
         const context = self.base_codegen.context;
@@ -418,7 +477,69 @@ pub const AdvancedCodeGen = struct {
             );
             const defer_exec_func = c.LLVMAddFunction(module, "cursed_defer_execute_all", defer_exec_type);
             try self.base_codegen.runtime_functions.put("cursed_defer_execute_all", defer_exec_func);
+            }
+                
+        // cursed_defer_enter_scope() -> uint32_t
+        if (self.base_codegen.runtime_functions.get("cursed_defer_enter_scope") == null) {
+            const enter_scope_type = c.LLVMFunctionType(
+                c.LLVMInt32TypeInContext(context),
+                null,
+                0,
+                0
+            );
+            const enter_scope_func = c.LLVMAddFunction(module, "cursed_defer_enter_scope", enter_scope_type);
+            try self.base_codegen.runtime_functions.put("cursed_defer_enter_scope", enter_scope_func);
         }
+        
+        // cursed_defer_exit_scope(uint32_t scope_id)
+        if (self.base_codegen.runtime_functions.get("cursed_defer_exit_scope") == null) {
+            const exit_scope_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                &[_]c.LLVMTypeRef{c.LLVMInt32TypeInContext(context)},
+                1,
+                0
+            );
+            const exit_scope_func = c.LLVMAddFunction(module, "cursed_defer_exit_scope", exit_scope_type);
+            try self.base_codegen.runtime_functions.put("cursed_defer_exit_scope", exit_scope_func);
+        }
+        
+        // cursed_defer_execute_on_error()
+        if (self.base_codegen.runtime_functions.get("cursed_defer_execute_on_error") == null) {
+            const error_defer_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                null,
+                0,
+                0
+            );
+            const error_defer_func = c.LLVMAddFunction(module, "cursed_defer_execute_on_error", error_defer_type);
+            try self.base_codegen.runtime_functions.put("cursed_defer_execute_on_error", error_defer_func);
+        }
+        
+        // cursed_defer_enter_function_scope()
+        if (self.base_codegen.runtime_functions.get("cursed_defer_enter_function_scope") == null) {
+            const func_scope_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                null,
+                0,
+                0
+            );
+            const func_scope_func = c.LLVMAddFunction(module, "cursed_defer_enter_function_scope", func_scope_type);
+            try self.base_codegen.runtime_functions.put("cursed_defer_enter_function_scope", func_scope_func);
+        }
+        
+        // cursed_defer_init()
+        if (self.base_codegen.runtime_functions.get("cursed_defer_init") == null) {
+            const init_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(context),
+                null,
+                0,
+                0
+            );
+            const init_func = c.LLVMAddFunction(module, "cursed_defer_init", init_type);
+            try self.base_codegen.runtime_functions.put("cursed_defer_init", init_func);
+        }
+        
+        std.debug.print("✅ All defer runtime functions declared\n");
     }
     
     /// Generate function exit with defer cleanup
@@ -509,7 +630,7 @@ pub const AdvancedCodeGen = struct {
     }
     
     /// Generate error handling with defer cleanup integration
-    pub fn generateErrorHandlingWithDefers(self: *AdvancedCodeGen, error_value: c.LLVMValueRef) !void {
+    pub fn generateErrorHandlingWithDefersAndValue(self: *AdvancedCodeGen, error_value: c.LLVMValueRef) !void {
         const builder = self.base_codegen.builder;
         const context = self.base_codegen.context;
         const current_function = self.base_codegen.current_function orelse return error.NoCurrentFunction;
@@ -595,7 +716,7 @@ pub const AdvancedCodeGen = struct {
     /// Compile return statement  
     fn compileReturnStatement(self: *AdvancedCodeGen, return_stmt: ast.ReturnStatement) !void {
         const builder = self.base_codegen.builder;
-        const context = self.base_codegen.context;
+        _ = self.base_codegen.context;
         
         if (return_stmt.expression) |expr_ptr| {
             const expr: *ast.Expression = @ptrCast(@alignCast(expr_ptr));
@@ -2086,7 +2207,7 @@ pub const AdvancedCodeGen = struct {
 
     /// Process generic instantiations
     /// Register generic declaration with monomorphizer
-    pub fn registerGeneric(self: *AdvancedCodeGen, name: []const u8, declaration: generics.GenericDeclaration) !void {
+    pub fn registerGeneric(self: *AdvancedCodeGen, _: []const u8, declaration: generics.GenericDeclaration) !void {
         try self.monomorphizer.registerGeneric(declaration);
     }
     
@@ -2645,7 +2766,7 @@ pub const AdvancedCodeGen = struct {
             var debug_param_types = ArrayList(c.LLVMMetadataRef).init(self.base_codegen.allocator);
             defer debug_param_types.deinit();
             
-            for (func_stmt.parameters.items) |param| {
+            for (func_stmt.parameters.items) |_| {
                 const debug_type = try self.getCursedDebugType("drip"); // Default to drip for now
                 try debug_param_types.append(debug_type);
             }
@@ -2654,7 +2775,7 @@ pub const AdvancedCodeGen = struct {
             const debug_return_type = try self.getCursedDebugType("void");
             
             // Generate function debug info
-            const di_function = try self.generateFunctionDebugInfo(
+            _ = try self.generateFunctionDebugInfo(
                 function,
                 func_stmt.name,
                 func_stmt.location.line,
@@ -2675,8 +2796,11 @@ pub const AdvancedCodeGen = struct {
         self.base_codegen.current_function = function;
         self.current_function_name = func_stmt.name;
         
-        // Enter function scope
+        // Enter function scope with defer support
         _ = try self.enterScope(true);
+        
+        // Initialize defer support for this function
+        try self.generateFunctionEntryWithDefers(func_stmt.name);
         
         // Create allocas for parameters with debug info
         var param_index: u32 = 0;
@@ -2703,6 +2827,7 @@ pub const AdvancedCodeGen = struct {
         }
         
         // Exit function scope and cleanup defers
+        try self.generateFunctionExitWithDefers();
         try self.exitScope();
         
         // Add return if missing
@@ -2877,7 +3002,7 @@ pub const AdvancedCodeGen = struct {
     fn generateAdvancedBinaryOp(self: *AdvancedCodeGen, left: c.LLVMValueRef, op: ast.BinaryOperator, right: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
         const left_type = c.LLVMTypeOf(left);
         const right_type = c.LLVMTypeOf(right);
-        const builder = self.base_codegen.builder;
+        _ = self.base_codegen.builder;
         
         // Type promotion for mixed numeric operations
         var promoted_left = left;
@@ -3097,14 +3222,14 @@ pub const AdvancedCodeGen = struct {
         
         // Get error message
         const message = if (yikes.message) |msg_expr| blk: {
-            const msg_value = try self.base_codegen.generateExpression(msg_expr);
+            _ = try self.base_codegen.generateExpression(msg_expr);
             // TODO: Extract string from LLVM value
             break :blk "dynamic message";
         } else "unknown error";
         
         // Get error code  
         const code = if (yikes.code) |code_expr| blk: {
-            const code_value = try self.base_codegen.generateExpression(code_expr);
+            _ = try self.base_codegen.generateExpression(code_expr);
             // TODO: Extract integer from LLVM value
             break :blk 500;
         } else 0;
@@ -3204,7 +3329,7 @@ pub const AdvancedCodeGen = struct {
         
         // Generate try body
         c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, try_block);
-        var try_result = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.base_codegen.context), 0, 0);
+        const try_result = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.base_codegen.context), 0, 0);
         
         if (fam.try_body) |try_body| {
             for (try_body.items) |stmt| {
@@ -3396,7 +3521,7 @@ pub const AdvancedCodeGen = struct {
             const element_count = c.LLVMCountStructElementTypes(llvm_type);
             if (element_count >= 2) {
                 // Get the first element type (should be vtable pointer for interfaces)
-                var element_types = self.base_codegen.allocator.alloc(c.LLVMTypeRef, element_count) catch return false;
+                const element_types = self.base_codegen.allocator.alloc(c.LLVMTypeRef, element_count) catch return false;
                 defer self.base_codegen.allocator.free(element_types);
                 
                 c.LLVMGetStructElementTypes(llvm_type, element_types.ptr);
@@ -3493,7 +3618,7 @@ pub const AdvancedCodeGen = struct {
     fn generateBoundsCheck(self: *AdvancedCodeGen, array: c.LLVMValueRef, index: c.LLVMValueRef) CodeGenError!void {
         const builder = self.base_codegen.builder;
         const context = self.base_codegen.context;
-        const module = self.base_codegen.module;
+        _ = self.base_codegen.module;
         
         // Get array length - for static arrays, this is known at compile time
         // For dynamic arrays, we need to track length separately
@@ -3503,7 +3628,7 @@ pub const AdvancedCodeGen = struct {
         if (c.LLVMGetTypeKind(array_type) == c.LLVMArrayTypeKind) {
             // Static array - get length from type
             const length = c.LLVMGetArrayLength(array_type);
-            array_length = c.LLVMConstInt(c.LLVMInt64TypeInContext(context), length, 0);
+            array_length = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), length, 0);
         } else {
             // Dynamic array or pointer - assume we have a runtime length mechanism
             // For now, we'll use a simple heuristic or require length to be passed separately
@@ -3641,7 +3766,7 @@ pub const AdvancedCodeGen = struct {
     }
     
     /// Generate safe index access
-    fn generateSafeIndexAccess(self: *AdvancedCodeGen, array: c.LLVMValueRef, index: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+    fn generateSafeIndexAccess(self: *AdvancedCodeGen, _: c.LLVMValueRef, _: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
         return try self.base_codegen.generateIndexAccess(ast.IndexAccessExpression{
             .object = @ptrCast(&ast.Expression{ .Identifier = "dummy" }),
             .index = @ptrCast(&ast.Expression{ .Identifier = "dummy" }),
@@ -3873,7 +3998,7 @@ pub const AdvancedCodeGen = struct {
     }
     
     /// Generate safe cast with proper conversions
-    fn generateSafeCast(self: *AdvancedCodeGen, value: c.LLVMValueRef, target_type: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
+    fn generateSafeCast(self: *AdvancedCodeGen, _: c.LLVMValueRef, _: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
         return try self.base_codegen.generateTypeCast(ast.TypeCastExpression{
             .expression = @ptrCast(&ast.Expression{ .Identifier = "dummy" }),
             .target_type = Type{ .Basic = .Normie }, // Dummy type
@@ -3884,7 +4009,7 @@ pub const AdvancedCodeGen = struct {
     fn generateRegularFunctionCall(self: *AdvancedCodeGen, call: ast.CallExpression, name: []const u8) CodeGenError!c.LLVMValueRef {
         const context = self.base_codegen.context;
         const module = self.base_codegen.module;
-        const builder = self.base_codegen.builder;
+        _ = self.base_codegen.builder;
         
         // Handle built-in stdlib functions
         if (std.mem.eql(u8, name, "len")) {
@@ -3916,8 +4041,8 @@ pub const AdvancedCodeGen = struct {
     
     /// Generate generic function call with monomorphization
     fn generateGenericFunctionCall(self: *AdvancedCodeGen, call: ast.CallExpression, name: []const u8) CodeGenError!c.LLVMValueRef {
-        const context = self.base_codegen.context;
-        const module = self.base_codegen.module;
+        _ = self.base_codegen.context;
+        _ = self.base_codegen.module;
         
         // Extract type arguments from call if available
         var type_args = std.ArrayList(Type).init(self.base_codegen.allocator);

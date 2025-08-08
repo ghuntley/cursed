@@ -72,6 +72,16 @@ pub const CodeGenerator = struct {
         var free_params = [_]c.LLVMTypeRef{i8_ptr_type};
         const free_type = c.LLVMFunctionType(c.LLVMVoidTypeInContext(self.context), &free_params, 1, 0);
         _ = c.LLVMAddFunction(self.module, "free", free_type);
+        
+        // exit function declaration
+        var exit_params = [_]c.LLVMTypeRef{i32_type};
+        const exit_type = c.LLVMFunctionType(c.LLVMVoidTypeInContext(self.context), &exit_params, 1, 0);
+        _ = c.LLVMAddFunction(self.module, "exit", exit_type);
+        
+        // strcmp function declaration
+        var strcmp_params = [_]c.LLVMTypeRef{ i8_ptr_type, i8_ptr_type };
+        const strcmp_type = c.LLVMFunctionType(i32_type, &strcmp_params, 2, 0);
+        _ = c.LLVMAddFunction(self.module, "strcmp", strcmp_type);
     }
 
     pub fn deinit(self: *CodeGenerator) void {
@@ -1743,21 +1753,413 @@ pub const CodeGenerator = struct {
     }
 
     fn generateForInStatement(self: *CodeGenerator, for_in_stmt: ast.ForInStatement) !void {
-        _ = self;
-        _ = for_in_stmt;
-        std.debug.print("⚠️ ForIn statement implementation placeholder\n", .{});
+        // Generate ForIn loop: bestie item in array { ... }
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        
+        // Get the iterable value (array/collection)
+        const iterable_value = try self.generateExpression(for_in_stmt.iterable.*);
+        
+        // Create basic blocks for the loop
+        const loop_init = c.LLVMAppendBasicBlockInContext(self.context, current_func, "forin.init");
+        const loop_condition = c.LLVMAppendBasicBlockInContext(self.context, current_func, "forin.condition");
+        const loop_body = c.LLVMAppendBasicBlockInContext(self.context, current_func, "forin.body");
+        const loop_increment = c.LLVMAppendBasicBlockInContext(self.context, current_func, "forin.increment");
+        const loop_exit = c.LLVMAppendBasicBlockInContext(self.context, current_func, "forin.exit");
+        
+        // Jump to initialization
+        _ = c.LLVMBuildBr(self.builder, loop_init);
+        
+        // Initialize loop counter
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_init);
+        const i32_type = c.LLVMInt32TypeInContext(self.context);
+        const index_alloca = c.LLVMBuildAlloca(self.builder, i32_type, "forin_index");
+        const zero = c.LLVMConstInt(i32_type, 0, 0);
+        _ = c.LLVMBuildStore(self.builder, zero, index_alloca);
+        
+        // Get array length (assuming array has a length field or we compute it)
+        // For simplicity, assume we have a function to get length
+        const array_length = try self.getArrayLength(iterable_value);
+        _ = c.LLVMBuildBr(self.builder, loop_condition);
+        
+        // Check loop condition: index < array_length
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_condition);
+        const current_index = c.LLVMBuildLoad2(self.builder, i32_type, index_alloca, "current_index");
+        const condition = c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, current_index, array_length, "condition");
+        _ = c.LLVMBuildCondBr(self.builder, condition, loop_body, loop_exit);
+        
+        // Generate loop body
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_body);
+        
+        // Get current array element and bind to loop variable
+        const element_ptr = c.LLVMBuildGEP2(
+            self.builder,
+            c.LLVMInt64TypeInContext(self.context), // Element type (simplified)
+            iterable_value,
+            &[_]c.LLVMValueRef{current_index},
+            1,
+            "element_ptr"
+        );
+        const element_value = c.LLVMBuildLoad2(
+            self.builder,
+            c.LLVMInt64TypeInContext(self.context),
+            element_ptr,
+            "element_value"
+        );
+        
+        // Create loop variable
+        const loop_var_alloca = c.LLVMBuildAlloca(
+            self.builder, 
+            c.LLVMInt64TypeInContext(self.context), 
+            for_in_stmt.variable.ptr
+        );
+        _ = c.LLVMBuildStore(self.builder, element_value, loop_var_alloca);
+        try self.variables.put(for_in_stmt.variable, loop_var_alloca);
+        
+        // Generate body statements
+        for (for_in_stmt.body.items) |stmt| {
+            try self.generateStatement(stmt.*);
+        }
+        
+        if (!c.LLVMGetBasicBlockTerminator(loop_body)) {
+            _ = c.LLVMBuildBr(self.builder, loop_increment);
+        }
+        
+        // Increment index
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_increment);
+        const one = c.LLVMConstInt(i32_type, 1, 0);
+        const next_index = c.LLVMBuildAdd(self.builder, current_index, one, "next_index");
+        _ = c.LLVMBuildStore(self.builder, next_index, index_alloca);
+        _ = c.LLVMBuildBr(self.builder, loop_condition);
+        
+        // Continue with exit block
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_exit);
+        
+        std.debug.print("✅ ForIn statement compiled for variable '{s}'\n", .{for_in_stmt.variable});
     }
 
     fn generateSwitchStatement(self: *CodeGenerator, switch_stmt: ast.SwitchStatement) !void {
-        _ = self;
-        _ = switch_stmt;
-        std.debug.print("⚠️ Switch statement implementation placeholder\n", .{});
+        // Generate switch statement: vibe_check value { mood 1: ...; mood 2: ...; basic: ... }
+        const switch_expr: *ast.Expression = @ptrCast(@alignCast(switch_stmt.expression));
+        const switch_value = try self.generateExpression(switch_expr.*);
+        
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        
+        // Create basic blocks
+        const default_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "switch.default");
+        const end_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "switch.end");
+        
+        // Create switch instruction
+        const switch_inst = c.LLVMBuildSwitch(self.builder, switch_value, default_block, @intCast(switch_stmt.cases.items.len));
+        
+        // Generate case blocks
+        for (switch_stmt.cases.items, 0..) |case_item, i| {
+            const case_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, 
+                try std.fmt.allocPrintZ(self.allocator, "switch.case_{}", .{i}).?);
+            
+            // Get case value and add to switch
+            const case_value_expr: *ast.Expression = @ptrCast(@alignCast(case_item.value));
+            const case_value = try self.generateExpression(case_value_expr.*);
+            c.LLVMAddCase(switch_inst, case_value, case_block);
+            
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.builder, case_block);
+            const case_body_stmts: []const *ast.Statement = @ptrCast(@alignCast(case_item.body.items));
+            for (case_body_stmts) |stmt| {
+                try self.generateStatement(stmt.*);
+            }
+            
+            // Jump to end (no fallthrough by default)
+            if (!c.LLVMGetBasicBlockTerminator(case_block)) {
+                _ = c.LLVMBuildBr(self.builder, end_block);
+            }
+        }
+        
+        // Generate default case
+        c.LLVMPositionBuilderAtEnd(self.builder, default_block);
+        if (switch_stmt.default_case) |default_stmts| {
+            const default_body_stmts: []const *ast.Statement = @ptrCast(@alignCast(default_stmts.items));
+            for (default_body_stmts) |stmt| {
+                try self.generateStatement(stmt.*);
+            }
+        }
+        
+        if (!c.LLVMGetBasicBlockTerminator(default_block)) {
+            _ = c.LLVMBuildBr(self.builder, end_block);
+        }
+        
+        // Continue with end block
+        c.LLVMPositionBuilderAtEnd(self.builder, end_block);
+        
+        std.debug.print("✅ Switch statement compiled with {} cases\n", .{switch_stmt.cases.items.len});
     }
 
     fn generatePatternSwitchStatement(self: *CodeGenerator, pattern_stmt: ast.PatternSwitchStatement) !void {
-        _ = self;
-        _ = pattern_stmt;
-        std.debug.print("⚠️ Pattern switch statement implementation placeholder\n", .{});
+        // Generate the expression to match against
+        const match_value = try self.generateExpression(pattern_stmt.expression.*);
+        
+        // Get current function for creating basic blocks
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        
+        // Create basic blocks for pattern matching
+        const end_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "pattern_end");
+        const default_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "pattern_default");
+        
+        // Track all case blocks for cleanup
+        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        defer case_blocks.deinit();
+        
+        // Generate comparison chains for each pattern
+        var current_block = c.LLVMGetInsertBlock(self.builder);
+        
+        for (pattern_stmt.patterns.items, 0..) |pattern_case, i| {
+            const case_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, 
+                try std.fmt.allocPrintZ(self.allocator, "pattern_case_{}", .{i}).?);
+            const next_test_block = if (i == pattern_stmt.patterns.items.len - 1) 
+                default_block 
+            else 
+                c.LLVMAppendBasicBlockInContext(self.context, current_func, 
+                    try std.fmt.allocPrintZ(self.allocator, "pattern_test_{}", .{i + 1}).?);
+            
+            try case_blocks.append(case_block);
+            
+            // Position builder for pattern test
+            c.LLVMPositionBuilderAtEnd(self.builder, current_block);
+            
+            // Generate pattern matching logic
+            try self.generatePatternTest(pattern_case.pattern, match_value, case_block, next_test_block);
+            
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.builder, case_block);
+            
+            // Generate guard condition if present
+            if (pattern_case.guard) |guard| {
+                const guard_value = try self.generateExpression(guard.*);
+                const guard_true_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, 
+                    try std.fmt.allocPrintZ(self.allocator, "guard_true_{}", .{i}).?);
+                _ = c.LLVMBuildCondBr(self.builder, guard_value, guard_true_block, next_test_block);
+                c.LLVMPositionBuilderAtEnd(self.builder, guard_true_block);
+            }
+            
+            // Generate statements for this case
+            for (pattern_case.body.items) |stmt| {
+                try self.generateStatement(stmt.*);
+            }
+            
+            // Jump to end after executing case
+            _ = c.LLVMBuildBr(self.builder, end_block);
+            
+            current_block = next_test_block;
+        }
+        
+        // Generate default case
+        c.LLVMPositionBuilderAtEnd(self.builder, default_block);
+        if (pattern_stmt.default_case) |default_stmts| {
+            for (default_stmts.items) |stmt| {
+                try self.generateStatement(stmt.*);
+            }
+        } else {
+            // No default case - generate runtime error
+            try self.generateRuntimeError("Pattern match failed: no matching case");
+        }
+        _ = c.LLVMBuildBr(self.builder, end_block);
+        
+        // Position builder at end block for continuation
+        c.LLVMPositionBuilderAtEnd(self.builder, end_block);
+        
+        std.debug.print("✅ Pattern switch statement compiled with {} cases\n", .{pattern_stmt.patterns.items.len});
+    }
+
+    /// Generate pattern matching test logic for different pattern types
+    fn generatePatternTest(self: *CodeGenerator, pattern: ast.Pattern, match_value: c.LLVMValueRef, success_block: c.LLVMBasicBlockRef, failure_block: c.LLVMBasicBlockRef) !void {
+        switch (pattern) {
+            .Wildcard => {
+                // Wildcard always matches - jump directly to success
+                _ = c.LLVMBuildBr(self.builder, success_block);
+            },
+            .Literal => |literal| {
+                // Generate comparison for literal values
+                const cmp_result = try self.generateLiteralComparison(literal, match_value);
+                _ = c.LLVMBuildCondBr(self.builder, cmp_result, success_block, failure_block);
+            },
+            .Variable => |var_name| {
+                // Variable pattern always matches and binds the value
+                const var_alloca = try self.createVariable(var_name, c.LLVMTypeOf(match_value));
+                _ = c.LLVMBuildStore(self.builder, match_value, var_alloca);
+                _ = c.LLVMBuildBr(self.builder, success_block);
+            },
+            .Tuple => |tuple_patterns| {
+                // Tuple destructuring (simplified implementation)
+                for (tuple_patterns.items, 0..) |sub_pattern, i| {
+                    const element_ptr = c.LLVMBuildStructGEP2(
+                        self.builder,
+                        c.LLVMTypeOf(match_value),
+                        match_value,
+                        @intCast(i),
+                        try std.fmt.allocPrintZ(self.allocator, "tuple_elem_{}", .{i}).?
+                    );
+                    const element_value = c.LLVMBuildLoad2(
+                        self.builder,
+                        c.LLVMInt64TypeInContext(self.context),
+                        element_ptr,
+                        try std.fmt.allocPrintZ(self.allocator, "tuple_val_{}", .{i}).?
+                    );
+                    try self.generatePatternTest(sub_pattern, element_value, success_block, failure_block);
+                }
+            },
+            .Struct => |struct_pattern| {
+                // Struct pattern matching (simplified)
+                for (struct_pattern.fields.items) |field_pattern| {
+                    // This would need proper struct field access implementation
+                    _ = field_pattern;
+                    // Placeholder: assume match for now
+                    _ = c.LLVMBuildBr(self.builder, success_block);
+                    return;
+                }
+            },
+            .Array => |array_patterns| {
+                // Array pattern matching (simplified)
+                for (array_patterns.items, 0..) |sub_pattern, i| {
+                    // Get array element at index i
+                    const index_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), i, 0);
+                    const element_ptr = c.LLVMBuildGEP2(
+                        self.builder,
+                        c.LLVMInt64TypeInContext(self.context),
+                        match_value,
+                        &[_]c.LLVMValueRef{index_value},
+                        1,
+                        try std.fmt.allocPrintZ(self.allocator, "array_elem_{}", .{i}).?
+                    );
+                    const element_value = c.LLVMBuildLoad2(
+                        self.builder,
+                        c.LLVMInt64TypeInContext(self.context),
+                        element_ptr,
+                        try std.fmt.allocPrintZ(self.allocator, "array_val_{}", .{i}).?
+                    );
+                    try self.generatePatternTest(sub_pattern, element_value, success_block, failure_block);
+                }
+            },
+        }
+    }
+
+    /// Generate comparison for literal patterns
+    fn generateLiteralComparison(self: *CodeGenerator, literal: ast.Literal, match_value: c.LLVMValueRef) !c.LLVMValueRef {
+        switch (literal) {
+            .Integer => |int_val| {
+                const literal_value = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @bitCast(int_val), 0);
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, match_value, literal_value, "int_cmp");
+            },
+            .Float => |float_val| {
+                const literal_value = c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float_val);
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, match_value, literal_value, "float_cmp");
+            },
+            .Boolean => |bool_val| {
+                const literal_value = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, match_value, literal_value, "bool_cmp");
+            },
+            .String => |str_val| {
+                // For string comparison, we need to call strcmp or similar
+                const str_constant = c.LLVMBuildGlobalStringPtr(self.builder, str_val.ptr, "str_literal");
+                
+                // Get or create strcmp function
+                const strcmp_func = c.LLVMGetNamedFunction(self.module, "strcmp") orelse {
+                    const i8_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+                    const strcmp_type = c.LLVMFunctionType(
+                        c.LLVMInt32TypeInContext(self.context),
+                        &[_]c.LLVMTypeRef{ i8_ptr_type, i8_ptr_type },
+                        2,
+                        0
+                    );
+                    c.LLVMAddFunction(self.module, "strcmp", strcmp_type);
+                };
+                
+                const strcmp_result = c.LLVMBuildCall2(
+                    self.builder,
+                    c.LLVMInt32TypeInContext(self.context),
+                    strcmp_func,
+                    &[_]c.LLVMValueRef{ match_value, str_constant },
+                    2,
+                    "strcmp_result"
+                );
+                
+                const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, strcmp_result, zero, "str_cmp");
+            },
+        }
+    }
+
+    /// Generate runtime error with message
+    fn generateRuntimeError(self: *CodeGenerator, message: []const u8) !void {
+        // Get or create printf function for error reporting
+        const printf_func = c.LLVMGetNamedFunction(self.module, "printf") orelse {
+            return CodeGenError.LLVMError;
+        };
+        
+        // Create error message string
+        const error_format = c.LLVMBuildGlobalStringPtr(self.builder, "Runtime Error: %s\n", "error_fmt");
+        const error_msg = c.LLVMBuildGlobalStringPtr(self.builder, message.ptr, "error_msg");
+        
+        // Call printf with error message
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMInt32TypeInContext(self.context),
+            printf_func,
+            &[_]c.LLVMValueRef{ error_format, error_msg },
+            2,
+            "printf_result"
+        );
+        
+        // Generate exit call
+        const exit_func = c.LLVMGetNamedFunction(self.module, "exit") orelse {
+            const exit_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(self.context),
+                &[_]c.LLVMTypeRef{c.LLVMInt32TypeInContext(self.context)},
+                1,
+                0
+            );
+            c.LLVMAddFunction(self.module, "exit", exit_type);
+        };
+        
+        const exit_code = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 1, 0);
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMVoidTypeInContext(self.context),
+            exit_func,
+            &[_]c.LLVMValueRef{exit_code},
+            1,
+            "exit_call"
+        );
+        
+        // This is unreachable, but LLVM requires a terminator
+        _ = c.LLVMBuildUnreachable(self.builder);
+    }
+
+    /// Helper to create a variable allocation
+    fn createVariable(self: *CodeGenerator, name: []const u8, var_type: c.LLVMTypeRef) !c.LLVMValueRef {
+        const var_alloca = c.LLVMBuildAlloca(self.builder, var_type, name.ptr);
+        
+        // Store in variables map for later lookup
+        const name_copy = try self.allocator.dupe(u8, name);
+        try self.variables.put(name_copy, var_alloca);
+        
+        return var_alloca;
+    }
+
+    /// Helper to get array length for ForIn loops
+    fn getArrayLength(self: *CodeGenerator, array_value: c.LLVMValueRef) !c.LLVMValueRef {
+        // For now, return a constant length (this should be enhanced for dynamic arrays)
+        // In a real implementation, this would extract the length from the array structure
+        const array_type = c.LLVMTypeOf(array_value);
+        
+        if (c.LLVMGetTypeKind(array_type) == c.LLVMArrayTypeKind) {
+            // Static array - get length from type
+            const length = c.LLVMGetArrayLength(array_type);
+            return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), length, 0);
+        } else {
+            // Dynamic array - would need to access length field
+            // For now, return a default length
+            std.debug.print("⚠️ Using default array length for dynamic array\n", .{});
+            return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 10, 0);
+        }
     }
 
     fn generateTypeAliasStatement(self: *CodeGenerator, type_alias: ast.TypeAliasStatement) !void {
@@ -1772,21 +2174,103 @@ pub const CodeGenerator = struct {
     }
 
     fn generateIncrementStatement(self: *CodeGenerator, inc_stmt: ast.IncrementStatement) !void {
-        _ = self;
-        _ = inc_stmt;
-        std.debug.print("⚠️ Increment statement implementation placeholder\n", .{});
+        // Generate increment statement: variable++
+        const var_expr: *ast.Expression = @ptrCast(@alignCast(inc_stmt.variable));
+        
+        if (var_expr.* == .Identifier) {
+            const var_name = var_expr.Identifier;
+            if (self.variables.get(var_name)) |variable| {
+                // Load current value
+                const var_type = c.LLVMGetElementType(c.LLVMTypeOf(variable));
+                const current_value = c.LLVMBuildLoad2(self.builder, var_type, variable, "current_value");
+                
+                // Add 1 to the value
+                const one = if (c.LLVMGetTypeKind(var_type) == c.LLVMIntegerTypeKind) 
+                    c.LLVMConstInt(var_type, 1, 0)
+                else 
+                    c.LLVMConstReal(var_type, 1.0);
+                
+                const incremented_value = if (c.LLVMGetTypeKind(var_type) == c.LLVMIntegerTypeKind)
+                    c.LLVMBuildAdd(self.builder, current_value, one, "incremented")
+                else
+                    c.LLVMBuildFAdd(self.builder, current_value, one, "incremented");
+                
+                // Store back to variable
+                _ = c.LLVMBuildStore(self.builder, incremented_value, variable);
+                
+                std.debug.print("✅ Increment statement compiled for variable '{s}'\n", .{var_name});
+            } else {
+                std.debug.print("Error: Undefined variable '{s}' in increment\n", .{var_name});
+                return error.UndefinedSymbol;
+            }
+        } else {
+            std.debug.print("Error: Increment target must be a variable identifier\n", .{});
+            return error.InvalidOperation;
+        }
     }
 
     fn generateDecrementStatement(self: *CodeGenerator, dec_stmt: ast.DecrementStatement) !void {
-        _ = self;
-        _ = dec_stmt;
-        std.debug.print("⚠️ Decrement statement implementation placeholder\n", .{});
+        // Generate decrement statement: variable--
+        const var_expr: *ast.Expression = @ptrCast(@alignCast(dec_stmt.variable));
+        
+        if (var_expr.* == .Identifier) {
+            const var_name = var_expr.Identifier;
+            if (self.variables.get(var_name)) |variable| {
+                // Load current value
+                const var_type = c.LLVMGetElementType(c.LLVMTypeOf(variable));
+                const current_value = c.LLVMBuildLoad2(self.builder, var_type, variable, "current_value");
+                
+                // Subtract 1 from the value
+                const one = if (c.LLVMGetTypeKind(var_type) == c.LLVMIntegerTypeKind) 
+                    c.LLVMConstInt(var_type, 1, 0)
+                else 
+                    c.LLVMConstReal(var_type, 1.0);
+                
+                const decremented_value = if (c.LLVMGetTypeKind(var_type) == c.LLVMIntegerTypeKind)
+                    c.LLVMBuildSub(self.builder, current_value, one, "decremented")
+                else
+                    c.LLVMBuildFSub(self.builder, current_value, one, "decremented");
+                
+                // Store back to variable
+                _ = c.LLVMBuildStore(self.builder, decremented_value, variable);
+                
+                std.debug.print("✅ Decrement statement compiled for variable '{s}'\n", .{var_name});
+            } else {
+                std.debug.print("Error: Undefined variable '{s}' in decrement\n", .{var_name});
+                return error.UndefinedSymbol;
+            }
+        } else {
+            std.debug.print("Error: Decrement target must be a variable identifier\n", .{});
+            return error.InvalidOperation;
+        }
     }
 
     fn generateShortDeclarationStatement(self: *CodeGenerator, short_decl: ast.ShortDeclarationStatement) !void {
-        _ = self;
-        _ = short_decl;
-        std.debug.print("⚠️ Short declaration statement implementation placeholder\n", .{});
+        // Generate short declaration: name := value
+        if (short_decl.names.items.len != short_decl.values.items.len) {
+            std.debug.print("Error: Names and values count mismatch in short declaration\n", .{});
+            return error.TypeMismatch;
+        }
+        
+        // Process each name-value pair
+        for (short_decl.names.items, short_decl.values.items) |name, value| {
+            // Generate the value expression
+            const init_value = try self.generateExpression(value.*);
+            
+            // Infer type from the value
+            const var_type = c.LLVMTypeOf(init_value);
+            
+            // Create variable allocation
+            const var_alloca = c.LLVMBuildAlloca(self.builder, var_type, name.ptr);
+            
+            // Store the initial value
+            _ = c.LLVMBuildStore(self.builder, init_value, var_alloca);
+            
+            // Add to variables map
+            try self.variables.put(name, var_alloca);
+            
+            std.debug.print("✅ Short declaration compiled for variable '{s}'\n", .{name});
+        }
     }
 
     fn generatePanicStatement(self: *CodeGenerator, panic_stmt: ast.PanicStatement) !void {

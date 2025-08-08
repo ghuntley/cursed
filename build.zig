@@ -151,9 +151,11 @@ pub fn build(b: *std.Build) void {
         };
         exe.root_module.addCMacro("TARGET_CPU", b.fmt("\"{s}\"", .{cpu_name}));
         
-        // Add defer runtime C source (temporarily disabled for build compatibility)
+        // C imports disabled to avoid CPU target issues temporarily
+        
+        // Add defer runtime C source for complete defer statement support (temporarily disabled)
         // exe.addCSourceFile(.{
-        //     .file = b.path("src-zig/defer_runtime.c"),
+        //     .file = b.path("src-zig/defer_runtime_complete.c"),
         //     .flags = &[_][]const u8{"-std=c99", "-O2"},
         // });
         

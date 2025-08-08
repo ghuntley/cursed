@@ -229,11 +229,272 @@ pub const FinalWorkingCodeGen = struct {
             .Expression => |expr| {
                 _ = try llvm_fixes.generateExpressionValue(self.context, self.builder, expr);
             },
+            .PatternSwitch => |pattern_stmt| {
+                try self.generatePatternSwitchStatement(pattern_stmt);
+            },
             else => {
                 // Handle other statement types as needed
                 std.debug.print("Statement type not yet implemented in generateStatement\n", .{});
             },
         }
+    }
+
+    /// Generate pattern switch statement with LLVM IR
+    fn generatePatternSwitchStatement(self: *FinalWorkingCodeGen, pattern_stmt: ast.PatternSwitchStatement) !void {
+        // Generate the expression to match against
+        const match_value = try self.generateExpression(pattern_stmt.expression.*);
+        
+        // Get current function for creating basic blocks
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        
+        // Create basic blocks for pattern matching
+        const end_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "pattern_end");
+        const default_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "pattern_default");
+        
+        // Generate comparison chains for each pattern
+        var current_block = c.LLVMGetInsertBlock(self.builder);
+        
+        for (pattern_stmt.patterns.items, 0..) |pattern_case, i| {
+            const case_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, 
+                try std.fmt.allocPrintZ(self.allocator, "pattern_case_{}", .{i}).?);
+            const next_test_block = if (i == pattern_stmt.patterns.items.len - 1) 
+                default_block 
+            else 
+                c.LLVMAppendBasicBlockInContext(self.context, current_func, 
+                    try std.fmt.allocPrintZ(self.allocator, "pattern_test_{}", .{i + 1}).?);
+            
+            // Position builder for pattern test
+            c.LLVMPositionBuilderAtEnd(self.builder, current_block);
+            
+            // Generate pattern matching logic
+            try self.generatePatternTest(pattern_case.pattern, match_value, case_block, next_test_block);
+            
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.builder, case_block);
+            
+            // Generate guard condition if present
+            if (pattern_case.guard) |guard| {
+                const guard_value = try self.generateExpression(guard.*);
+                const guard_true_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, 
+                    try std.fmt.allocPrintZ(self.allocator, "guard_true_{}", .{i}).?);
+                _ = c.LLVMBuildCondBr(self.builder, guard_value, guard_true_block, next_test_block);
+                c.LLVMPositionBuilderAtEnd(self.builder, guard_true_block);
+            }
+            
+            // Generate statements for this case
+            for (pattern_case.body.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+            
+            // Jump to end after executing case
+            _ = c.LLVMBuildBr(self.builder, end_block);
+            
+            current_block = next_test_block;
+        }
+        
+        // Generate default case
+        c.LLVMPositionBuilderAtEnd(self.builder, default_block);
+        if (pattern_stmt.default_case) |default_stmts| {
+            for (default_stmts.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+        } else {
+            // No default case - generate runtime error
+            try self.generateRuntimeError("Pattern match failed: no matching case");
+        }
+        _ = c.LLVMBuildBr(self.builder, end_block);
+        
+        // Position builder at end block for continuation
+        c.LLVMPositionBuilderAtEnd(self.builder, end_block);
+        
+        std.debug.print("✅ Pattern switch statement compiled with {} cases\n", .{pattern_stmt.patterns.items.len});
+    }
+
+    /// Generate pattern matching test logic for different pattern types
+    fn generatePatternTest(self: *FinalWorkingCodeGen, pattern: ast.Pattern, match_value: c.LLVMValueRef, success_block: c.LLVMBasicBlockRef, failure_block: c.LLVMBasicBlockRef) !void {
+        switch (pattern) {
+            .Wildcard => {
+                // Wildcard always matches - jump directly to success
+                _ = c.LLVMBuildBr(self.builder, success_block);
+            },
+            .Literal => |literal| {
+                // Generate comparison for literal values
+                const cmp_result = try self.generateLiteralComparison(literal, match_value);
+                _ = c.LLVMBuildCondBr(self.builder, cmp_result, success_block, failure_block);
+            },
+            .Variable => |var_name| {
+                // Variable pattern always matches and binds the value
+                const var_alloca = try self.createVariable(var_name, c.LLVMTypeOf(match_value));
+                _ = c.LLVMBuildStore(self.builder, match_value, var_alloca);
+                _ = c.LLVMBuildBr(self.builder, success_block);
+            },
+            .Tuple => |tuple_patterns| {
+                // Tuple destructuring (simplified implementation)
+                for (tuple_patterns.items, 0..) |sub_pattern, i| {
+                    const element_ptr = c.LLVMBuildStructGEP2(
+                        self.builder,
+                        c.LLVMTypeOf(match_value),
+                        match_value,
+                        @intCast(i),
+                        try std.fmt.allocPrintZ(self.allocator, "tuple_elem_{}", .{i}).?
+                    );
+                    const element_value = c.LLVMBuildLoad2(
+                        self.builder,
+                        c.LLVMInt64TypeInContext(self.context),
+                        element_ptr,
+                        try std.fmt.allocPrintZ(self.allocator, "tuple_val_{}", .{i}).?
+                    );
+                    try self.generatePatternTest(sub_pattern, element_value, success_block, failure_block);
+                }
+            },
+            .Struct => |struct_pattern| {
+                // Struct pattern matching (simplified)
+                for (struct_pattern.fields.items) |field_pattern| {
+                    // This would need proper struct field access implementation
+                    _ = field_pattern;
+                    // Placeholder: assume match for now
+                    _ = c.LLVMBuildBr(self.builder, success_block);
+                    return;
+                }
+            },
+            .Array => |array_patterns| {
+                // Array pattern matching (simplified)
+                for (array_patterns.items, 0..) |sub_pattern, i| {
+                    // Get array element at index i
+                    const index_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), i, 0);
+                    const element_ptr = c.LLVMBuildGEP2(
+                        self.builder,
+                        c.LLVMInt64TypeInContext(self.context),
+                        match_value,
+                        &[_]c.LLVMValueRef{index_value},
+                        1,
+                        try std.fmt.allocPrintZ(self.allocator, "array_elem_{}", .{i}).?
+                    );
+                    const element_value = c.LLVMBuildLoad2(
+                        self.builder,
+                        c.LLVMInt64TypeInContext(self.context),
+                        element_ptr,
+                        try std.fmt.allocPrintZ(self.allocator, "array_val_{}", .{i}).?
+                    );
+                    try self.generatePatternTest(sub_pattern, element_value, success_block, failure_block);
+                }
+            },
+        }
+    }
+
+    /// Generate comparison for literal patterns
+    fn generateLiteralComparison(self: *FinalWorkingCodeGen, literal: ast.Literal, match_value: c.LLVMValueRef) !c.LLVMValueRef {
+        switch (literal) {
+            .Integer => |int_val| {
+                const literal_value = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @bitCast(int_val), 0);
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, match_value, literal_value, "int_cmp");
+            },
+            .Float => |float_val| {
+                const literal_value = c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float_val);
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, match_value, literal_value, "float_cmp");
+            },
+            .Boolean => |bool_val| {
+                const literal_value = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, match_value, literal_value, "bool_cmp");
+            },
+            .String => |str_val| {
+                // For string comparison, we need to call strcmp or similar
+                const str_constant = c.LLVMBuildGlobalStringPtr(self.builder, str_val.ptr, "str_literal");
+                
+                // Get or create strcmp function
+                const strcmp_func = c.LLVMGetNamedFunction(self.module, "strcmp") orelse {
+                    const i8_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+                    const strcmp_type = c.LLVMFunctionType(
+                        c.LLVMInt32TypeInContext(self.context),
+                        &[_]c.LLVMTypeRef{ i8_ptr_type, i8_ptr_type },
+                        2,
+                        0
+                    );
+                    c.LLVMAddFunction(self.module, "strcmp", strcmp_type);
+                };
+                
+                const strcmp_result = c.LLVMBuildCall2(
+                    self.builder,
+                    c.LLVMInt32TypeInContext(self.context),
+                    strcmp_func,
+                    &[_]c.LLVMValueRef{ match_value, str_constant },
+                    2,
+                    "strcmp_result"
+                );
+                
+                const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, strcmp_result, zero, "str_cmp");
+            },
+            .Nil => {
+                // Compare with null pointer
+                const null_ptr = c.LLVMConstNull(c.LLVMTypeOf(match_value));
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, match_value, null_ptr, "nil_cmp");
+            },
+        }
+    }
+
+    /// Generate runtime error with message
+    fn generateRuntimeError(self: *FinalWorkingCodeGen, message: []const u8) !void {
+        // Get or create printf function for error reporting
+        const printf_func = c.LLVMGetNamedFunction(self.module, "printf") orelse {
+            const i8_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+            const printf_type = c.LLVMFunctionType(
+                c.LLVMInt32TypeInContext(self.context),
+                &[_]c.LLVMTypeRef{i8_ptr_type},
+                1,
+                1 // variadic
+            );
+            c.LLVMAddFunction(self.module, "printf", printf_type);
+        };
+        
+        // Create error message string
+        const error_format = c.LLVMBuildGlobalStringPtr(self.builder, "Runtime Error: %s\n", "error_fmt");
+        const error_msg = c.LLVMBuildGlobalStringPtr(self.builder, message.ptr, "error_msg");
+        
+        // Call printf with error message
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMInt32TypeInContext(self.context),
+            printf_func,
+            &[_]c.LLVMValueRef{ error_format, error_msg },
+            2,
+            "printf_result"
+        );
+        
+        // Generate exit call
+        const exit_func = c.LLVMGetNamedFunction(self.module, "exit") orelse {
+            const exit_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(self.context),
+                &[_]c.LLVMTypeRef{c.LLVMInt32TypeInContext(self.context)},
+                1,
+                0
+            );
+            c.LLVMAddFunction(self.module, "exit", exit_type);
+        };
+        
+        const exit_code = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 1, 0);
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMVoidTypeInContext(self.context),
+            exit_func,
+            &[_]c.LLVMValueRef{exit_code},
+            1,
+            "exit_call"
+        );
+        
+        // This is unreachable, but LLVM requires a terminator
+        _ = c.LLVMBuildUnreachable(self.builder);
+    }
+
+    /// Helper to create a variable allocation
+    fn createVariable(self: *FinalWorkingCodeGen, name: []const u8, var_type: c.LLVMTypeRef) !c.LLVMValueRef {
+        const var_alloca = c.LLVMBuildAlloca(self.builder, var_type, name.ptr);
+        
+        // Store in variables map for later lookup
+        const name_copy = try self.allocator.dupe(u8, name);
+        try self.variables.put(name_copy, var_alloca);
+        
+        return var_alloca;
     }
 
     /// Generate expression for compatibility
