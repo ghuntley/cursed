@@ -259,14 +259,14 @@ slay stringify_int(value normie) tea {
 
 fr fr Array utilities
 
-slay len(arr []normie) normie {
-    fr fr Get array length (built-in equivalent)
-    damn 0  fr fr Placeholder - would use actual array length
+slay reflect_array_len(arr []normie) normie {
+    fr fr Get array length using reflection
+    damn len(arr)  fr fr Use built-in len function
 }
 
-slay append(arr []normie, item normie) []normie {
-    fr fr Append item to array (built-in equivalent)
-    damn arr  fr fr Placeholder - would create new array with item
+slay reflect_array_append(arr []normie, item normie) []normie {
+    fr fr Append item to array using reflection
+    damn append(arr, item)  fr fr Use built-in append function
 }
 
 fr fr Advanced reflection capabilities

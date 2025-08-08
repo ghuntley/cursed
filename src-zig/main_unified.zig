@@ -3781,10 +3781,15 @@ fn evaluateArgument(variables: *VariableStore, functions: *FunctionStore, alloca
 }
 
 fn executeReadyStatement(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) (FunctionReturnError || anyerror)!void {
-    // Handle ready/otherwise statements: ready (condition) { body } otherwise { else_body }
+    // Handle ready pattern matching: ready (value) { pattern => action; ... }
     const trimmed = std.mem.trim(u8, line, " \t");
     
-    // Check if this has an otherwise clause
+    // Check if this has pattern matching with => arrows
+    if (std.mem.indexOf(u8, trimmed, "=>")) |_| {
+        return try executePatternMatchingFixed(variables, functions, allocator, trimmed, verbose);
+    }
+    
+    // Check if this has an otherwise clause (traditional if-else)
     if (std.mem.indexOf(u8, trimmed, "otherwise")) |otherwise_pos| {
         // Parse: ready (condition) { body } otherwise { else_body }
         const ready_part = std.mem.trim(u8, trimmed[0..otherwise_pos], " \t");
@@ -3870,6 +3875,38 @@ fn executeReadyStatement(variables: *VariableStore, functions: *FunctionStore, a
     }
     
     if (verbose) print("    ⚠️ Could not parse ready statement: {s}\n", .{trimmed});
+}
+
+fn executePatternMatchingFixed(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) (FunctionReturnError || anyerror)!void {
+    // Parse pattern matching: ready (value) { pattern1 => action1; pattern2 => action2; _ => default }
+    const trimmed = std.mem.trim(u8, line, " \t");
+    
+    if (verbose) print("    🎯 Executing pattern matching: {s}\n", .{trimmed});
+    
+    // Extract value to match against: ready (value) { ... }
+    if (std.mem.indexOf(u8, trimmed, "(")) |start_paren| {
+        if (std.mem.indexOf(u8, trimmed[start_paren..], ")")) |rel_end_paren| {
+            const end_paren = start_paren + rel_end_paren;
+            if (std.mem.indexOf(u8, trimmed[end_paren..], "{")) |rel_brace_start| {
+                if (std.mem.lastIndexOf(u8, trimmed, "}")) |brace_end| {
+                    const value_str = std.mem.trim(u8, trimmed[start_paren + 1..end_paren], " \t");
+                    const patterns_str = std.mem.trim(u8, trimmed[end_paren + rel_brace_start + 1..brace_end], " \t");
+                    
+                    if (verbose) print("    📊 Matching value: '{s}', Patterns: '{s}'\n", .{ value_str, patterns_str });
+                    
+                    // Evaluate the value to match
+                    const match_value = try evaluateExpression(variables, functions, allocator, value_str, verbose);
+                    defer { var val = match_value; val.deinit(allocator); }
+                    
+                    // Use the existing pattern matching function
+                    try executePatternMatching(variables, functions, allocator, match_value, patterns_str, verbose);
+                    return;
+                }
+            }
+        }
+    }
+    
+    if (verbose) print("    ⚠️ Could not parse pattern matching statement: {s}\n", .{trimmed});
 }
 
 fn executeFunctionBodyLine(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) (FunctionReturnError || anyerror)!void {
@@ -4340,29 +4377,64 @@ fn handleReadyOtherwiseBlock(
         }
     }
     
-    // Execute the appropriate block
-    if (condition_is_true) {
-        if (verbose) print("🟢 Executing if block (lines {}-{})\n", .{ if_block_start + 1, if_block_end });
-        for (if_block_start..if_block_end) |line_idx| {
-            if (line_idx >= source_lines.items.len) break;
-            const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
-            if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
-            
-            if (verbose) print("  🔧 Executing: {s}\n", .{exec_line});
-            try executeBlockLine(variables, functions, allocator, exec_line, verbose);
+    // First, collect all lines to check if this is pattern matching
+    var block_content = std.ArrayList(u8).init(allocator);
+    defer block_content.deinit();
+    
+    var has_pattern_matching = false;
+    for (if_block_start..if_block_end) |line_idx| {
+        if (line_idx >= source_lines.items.len) break;
+        const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
+        if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
+        
+        // Check if any line contains pattern matching syntax
+        if (std.mem.indexOf(u8, exec_line, "=>") != null) {
+            has_pattern_matching = true;
         }
-    } else if (else_block_start != null and else_block_end != null) {
-        if (verbose) print("🔴 Executing else block (lines {}-{})\n", .{ else_block_start.? + 1, else_block_end.? });
-        for (else_block_start.?..else_block_end.?) |line_idx| {
-            if (line_idx >= source_lines.items.len) break;
-            const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
-            if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
+        
+        try block_content.appendSlice(exec_line);
+        try block_content.append(';');
+    }
+    
+    if (has_pattern_matching) {
+        // Execute as pattern matching - extract the value being matched from the condition
+        if (verbose) print("🎯 Detected pattern matching in block\n", .{});
+        
+        // Parse the condition to get the variable being matched
+        const match_value = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
+            if (verbose) print("❌ Failed to evaluate match value: {any}\n", .{err});
+            return if_block_end + 1; // Return to skip this block
+        };
+        defer { var temp_match = match_value; temp_match.deinit(allocator); }
+        
+        try executePatternMatching(variables, functions, allocator, match_value, block_content.items, verbose);
+    } else {
+        // Execute the appropriate block based on condition (traditional if/else)
+        if (condition_is_true) {
+            if (verbose) print("🟢 Executing if block (lines {}-{})\n", .{ if_block_start + 1, if_block_end });
             
-            if (verbose) print("  🔧 Executing: {s}\n", .{exec_line});
-            try executeBlockLine(variables, functions, allocator, exec_line, verbose);
+            // Execute as regular statements
+            for (if_block_start..if_block_end) |line_idx| {
+                if (line_idx >= source_lines.items.len) break;
+                const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
+                if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
+                
+                if (verbose) print("  🔧 Executing: {s}\n", .{exec_line});
+                try executeBlockLine(variables, functions, allocator, exec_line, verbose);
+            }
+        } else if (else_block_start != null and else_block_end != null) {
+            if (verbose) print("🔴 Executing else block (lines {}-{})\n", .{ else_block_start.? + 1, else_block_end.? });
+            for (else_block_start.?..else_block_end.?) |line_idx| {
+                if (line_idx >= source_lines.items.len) break;
+                const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
+                if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
+                
+                if (verbose) print("  🔧 Executing: {s}\n", .{exec_line});
+                try executeBlockLine(variables, functions, allocator, exec_line, verbose);
+            }
+        } else if (verbose) {
+            print("🔴 Condition false, no else block found\n", .{});
         }
-    } else if (verbose) {
-        print("🔴 Condition false, no else block found\n", .{});
     }
     
     // Calculate total lines consumed more accurately
@@ -4719,7 +4791,15 @@ fn handleSingleLineReady(
     // Check if this is pattern matching (contains => patterns)
     if (std.mem.indexOf(u8, if_content, "=>") != null) {
         if (verbose) print("🎯 Detected pattern matching syntax in ready block\n", .{});
-        try executePatternMatching(variables, functions, allocator, condition_result, if_content, verbose);
+        
+        // Parse the condition to get the variable being matched
+        const match_value = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
+            if (verbose) print("❌ Failed to evaluate match value: {any}\n", .{err});
+            return;
+        };
+        defer { var temp_match = match_value; temp_match.deinit(allocator); }
+        
+        try executePatternMatching(variables, functions, allocator, match_value, if_content, verbose);
     } else {
         // Execute as regular if/else block
         if (condition_is_true) {

@@ -316,6 +316,7 @@ pub const Lexer = struct {
             },
             '=' => {
                 if (self.match('=')) return self.makeToken(.EqualEqual, start_line, start_column);
+                if (self.match('>')) return self.makeToken(.Arrow, start_line, start_column);
                 return self.makeToken(.Equal, start_line, start_column);
             },
             '!' => {

@@ -3,12 +3,9 @@ const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 const ast = @import("ast.zig");
 
+// LLVM C imports with proper CPU target configuration
 const c = @cImport({
-    @cInclude("llvm-c/Core.h");
-    @cInclude("llvm-c/ExecutionEngine.h");
-    @cInclude("llvm-c/Target.h");
-    @cInclude("llvm-c/Analysis.h");
-    @cInclude("llvm-c/BitWriter.h");
+    @cInclude("llvm_c_bindings.h");
 });
 
 /// Working LLVM Code Generator for CURSED that generates actual executable code
@@ -28,8 +25,8 @@ pub const FinalWorkingCodeGen = struct {
     pub fn init(allocator: Allocator) !FinalWorkingCodeGen {
         // Initialize LLVM core
         c.LLVMInitializeCore(c.LLVMGetGlobalPassRegistry());
-        c.LLVMInitializeNativeTarget();
-        c.LLVMInitializeNativeAsmPrinter();
+        _ = c.LLVMInitializeNativeTarget();
+        _ = c.LLVMInitializeNativeAsmPrinter();
         
         // Create LLVM context, module and builder
         const context = c.LLVMContextCreate();

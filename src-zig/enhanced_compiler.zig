@@ -1003,6 +1003,38 @@ fn countActualStringBytes(input: []const u8) usize {
     return count;
 }
 
+/// Safe counter for brace tracking with overflow protection
+const SafeBraceCounter = struct {
+    count: i64,
+    const MAX_NESTING = 10000; // Reasonable limit for function nesting
+    
+    fn init() SafeBraceCounter {
+        return SafeBraceCounter{ .count = 0 };
+    }
+    
+    fn increment(self: *SafeBraceCounter) !void {
+        if (self.count >= MAX_NESTING) {
+            return error.BraceNestingOverflow;
+        }
+        self.count += 1;
+    }
+    
+    fn decrement(self: *SafeBraceCounter) !void {
+        if (self.count <= 0) {
+            return error.BraceCountUnderflow;
+        }
+        self.count -= 1;
+    }
+    
+    fn isZero(self: *const SafeBraceCounter) bool {
+        return self.count == 0;
+    }
+    
+    fn isPositive(self: *const SafeBraceCounter) bool {
+        return self.count > 0;
+    }
+};
+
 /// Extract and generate function definitions separately from main body
 fn extractAndGenerateFunctionDefinitions(
     allocator: Allocator, 
@@ -1023,6 +1055,11 @@ fn extractAndGenerateFunctionDefinitions(
     // Process the source to extract complete function definitions
     var i: usize = 0;
     while (i < source.len) {
+        // Check for reasonable source length to prevent overflow
+        if (source.len > 100 * 1024 * 1024) { // 100MB limit
+            return error.SourceFileTooLarge;
+        }
+        
         // Skip whitespace
         while (i < source.len and (source[i] == ' ' or source[i] == '\t' or source[i] == '\n' or source[i] == '\r')) {
             i += 1;
@@ -1034,19 +1071,25 @@ fn extractAndGenerateFunctionDefinitions(
         if (i + 5 <= source.len and std.mem.eql(u8, source[i..i+5], "slay ")) {
             // Find the complete function definition by looking for the closing brace
             const start = i;
-            var brace_count: i32 = 0; // Changed to signed to prevent underflow
+            var brace_counter = SafeBraceCounter.init();
             var found_opening_brace = false;
             
             while (i < source.len) {
                 if (source[i] == '{') {
-                    brace_count += 1;
+                    brace_counter.increment() catch |err| {
+                        if (verbose) print("❌ Brace nesting too deep: {}\n", .{err});
+                        return err;
+                    };
                     found_opening_brace = true;
                 } else if (source[i] == '}') {
                     // Only decrement if we have positive count to prevent underflow
-                    if (brace_count > 0) {
-                        brace_count -= 1;
+                    if (brace_counter.isPositive()) {
+                        brace_counter.decrement() catch |err| {
+                            if (verbose) print("❌ Brace count underflow: {}\n", .{err});
+                            return err;
+                        };
                     }
-                    if (found_opening_brace and brace_count == 0) {
+                    if (found_opening_brace and brace_counter.isZero()) {
                         i += 1; // Include the closing brace
                         break;
                     }
@@ -1054,7 +1097,14 @@ fn extractAndGenerateFunctionDefinitions(
                 i += 1;
             }
             
-            if (found_opening_brace and brace_count == 0) {
+            if (found_opening_brace and brace_counter.isZero()) {
+                // Additional safety check for function definition length
+                const func_def_len = i - start;
+                if (func_def_len > 64 * 1024) { // 64KB limit per function
+                    if (verbose) print("⚠️ Function definition too large, skipping\n", .{});
+                    continue;
+                }
+                
                 const func_def = std.mem.trim(u8, source[start..i], " \t\r\n");
                 try statements.append(try allocator.dupe(u8, func_def));
             }

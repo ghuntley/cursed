@@ -1,1 +1,1 @@
-vibez.spill("Basic Test")
+sus x drip = 42; vibez.spill("Hello CURSED:", x)

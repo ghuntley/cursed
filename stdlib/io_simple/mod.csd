@@ -105,6 +105,9 @@ fr fr ================================
 fr fr Helper Functions
 fr fr ================================
 
-slay io_get_current_timestamp() normie { fr fr Return current timestamp (would interface with runtime)
-    damn 1640995200 fr fr Placeholder timestamp
+slay io_get_current_timestamp() normie { 
+    fr fr Get current timestamp using runtime interface
+    fr fr Uses system time in seconds since epoch
+    sus current_time normie = runtime_get_timestamp()
+    damn current_time
 }
