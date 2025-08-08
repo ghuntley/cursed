@@ -2748,7 +2748,7 @@ pub const Parser = struct {
     }
 
     fn checkType(self: *Parser) bool {
-        return self.check(.Normie) or self.check(.Tea) or self.check(.Txt) or
+        return self.check(.Normie) or self.check(.Drip) or self.check(.Tea) or self.check(.Txt) or
                self.check(.Sip) or self.check(.Smol) or self.check(.Mid) or
                self.check(.Thicc) or self.check(.Snack) or self.check(.Meal) or
                self.check(.Byte) or self.check(.Rune) or self.check(.Extra) or
@@ -3129,7 +3129,11 @@ pub const Parser = struct {
     }
     
     fn parseBasicType(self: *Parser) ParserError!ast.Type {
-        // CURSED type keywords
+        // CURSED type keywords - complete support for all BasicType variants
+        if (self.match(.Normie)) {
+            return ast.Type{ .Basic = ast.BasicType.Normie };
+        }
+        
         if (self.match(.Drip)) {
             return ast.Type{ .Basic = ast.BasicType.Drip };
         }
@@ -3138,24 +3142,52 @@ pub const Parser = struct {
             return ast.Type{ .Basic = ast.BasicType.Tea };
         }
         
-        if (self.match(.Lit)) {
-            return ast.Type{ .Basic = ast.BasicType.Lit };
+        if (self.match(.Txt)) {
+            return ast.Type{ .Basic = ast.BasicType.Txt };
         }
         
-        if (self.match(.Meal)) {
-            return ast.Type{ .Basic = ast.BasicType.Meal };
+        if (self.match(.Sip)) {
+            return ast.Type{ .Basic = ast.BasicType.Sip };
         }
         
         if (self.match(.Smol)) {
             return ast.Type{ .Basic = ast.BasicType.Smol };
         }
         
+        if (self.match(.Mid)) {
+            return ast.Type{ .Basic = ast.BasicType.Mid };
+        }
+        
         if (self.match(.Thicc)) {
             return ast.Type{ .Basic = ast.BasicType.Thicc };
         }
         
-        if (self.match(.Normie)) {
-            return ast.Type{ .Basic = ast.BasicType.Normie };
+        if (self.match(.Snack)) {
+            return ast.Type{ .Basic = ast.BasicType.Snack };
+        }
+        
+        if (self.match(.Meal)) {
+            return ast.Type{ .Basic = ast.BasicType.Meal };
+        }
+        
+        if (self.match(.Byte)) {
+            return ast.Type{ .Basic = ast.BasicType.Byte };
+        }
+        
+        if (self.match(.Rune)) {
+            return ast.Type{ .Basic = ast.BasicType.Rune };
+        }
+        
+        if (self.match(.Extra)) {
+            return ast.Type{ .Basic = ast.BasicType.Extra };
+        }
+        
+        if (self.match(.Lit)) {
+            return ast.Type{ .Basic = ast.BasicType.Lit };
+        }
+        
+        if (self.match(.Cap)) {
+            return ast.Type{ .Basic = ast.BasicType.Cap };
         }
         
         // Custom/identifier types

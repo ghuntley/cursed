@@ -7,6 +7,23 @@ const lexer = @import("lexer.zig");
 const module_loader = @import("module_loader.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
 
+// Simple variable storage
+const Variable = union(enum) {
+    Integer: i64,
+    String: []const u8,
+    Boolean: bool,
+    
+    fn toString(self: Variable, allocator: Allocator) ![]const u8 {
+        return switch (self) {
+            .Integer => |i| try std.fmt.allocPrint(allocator, "{}", .{i}),
+            .String => |s| try allocator.dupe(u8, s),
+            .Boolean => |b| try allocator.dupe(u8, if (b) "based" else "cringe"),
+        };
+    }
+};
+
+const VariableStore = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -195,6 +212,20 @@ const FunctionInfo = struct {
 fn interpretProgram(allocator: Allocator, source: []const u8) !void {
     print("🚀 Interpreting CURSED program...\n", .{});
     
+    // Create variable store
+    var variables = VariableStore.init(allocator);
+    defer {
+        var iter = variables.iterator();
+        while (iter.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            switch (entry.value_ptr.*) {
+                .String => |s| allocator.free(s),
+                else => {},
+            }
+        }
+        variables.deinit();
+    }
+    
     // Create simple function store for imported functions
     var loaded_functions = HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
     defer {
@@ -254,28 +285,31 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             continue;
         }
         
-        // Simple interpretation of vibez.spill()
-        if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
-            if (std.mem.indexOf(u8, trimmed[start..], "(")) |paren_start| {
-                if (std.mem.lastIndexOf(u8, trimmed, ")")) |paren_end| {
-                    const content_start = start + paren_start + 1;
-                    const content = trimmed[content_start..paren_end];
-                    
-                    // Remove quotes if present
-                    if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
-                        print("{s}\n", .{content[1..content.len - 1]});
-                    } else {
-                        print("{s}\n", .{content});
-                    }
-                }
+        // Split line by semicolons to handle multiple statements
+        var statements = std.mem.splitScalar(u8, trimmed, ';');
+        
+        while (statements.next()) |stmt| {
+            const stmt_trimmed = std.mem.trim(u8, stmt, " \t");
+            if (stmt_trimmed.len == 0) continue;
+            
+            // Handle variable declarations: sus varname type = value
+            if (std.mem.startsWith(u8, stmt_trimmed, "sus ")) {
+                try handleVariableDeclaration(&variables, allocator, stmt_trimmed);
+                continue;
             }
-        } else {
+            
+            // Simple interpretation of vibez.spill()
+            if (std.mem.indexOf(u8, stmt_trimmed, "vibez.spill(")) |start| {
+                try handleVibesSpill(&variables, allocator, stmt_trimmed, start);
+                continue;
+            }
+            
             // Check if this is a function call from an imported module
             var found_function = false;
             
             // Look for function calls like test_start(), assert_true(), etc.
-            if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
-                const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
+            if (std.mem.indexOf(u8, stmt_trimmed, "(")) |paren_pos| {
+                const func_name = std.mem.trim(u8, stmt_trimmed[0..paren_pos], " \t");
                 
                 if (loaded_functions.get(func_name)) |func_info| {
                     if (func_info.available) {
@@ -283,9 +317,9 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
                         
                         // Handle basic testz functions
                         if (std.mem.eql(u8, func_name, "test_start")) {
-                            if (std.mem.indexOf(u8, trimmed, "(")) |start| {
-                                if (std.mem.lastIndexOf(u8, trimmed, ")")) |end| {
-                                    const args = trimmed[start + 1..end];
+                            if (std.mem.indexOf(u8, stmt_trimmed, "(")) |start| {
+                                if (std.mem.lastIndexOf(u8, stmt_trimmed, ")")) |end| {
+                                    const args = stmt_trimmed[start + 1..end];
                                     // Remove quotes if present
                                     if (args.len >= 2 and args[0] == '"' and args[args.len - 1] == '"') {
                                         print("🧪 Starting test: {s}\n", .{args[1..args.len - 1]});
@@ -313,12 +347,104 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             
             if (!found_function) {
                 // Show parsing for other statements
-                print("Line {}: {s}\n", .{ line_number, trimmed });
+                print("Line {}: {s}\n", .{ line_number, stmt_trimmed });
             }
         }
     }
     
     print("✅ Program interpretation completed\n", .{});
+}
+
+fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, line: []const u8) !void {
+    // Parse: sus varname type = value
+    const equals_pos = std.mem.indexOf(u8, line, "=") orelse return;
+    const decl_part = std.mem.trim(u8, line[0..equals_pos], " \t");
+    const value_str = std.mem.trim(u8, line[equals_pos + 1..], " \t");
+    
+    // Parse declaration part: "sus varname type" 
+    var parts = std.mem.tokenizeScalar(u8, decl_part, ' ');
+    _ = parts.next(); // skip "sus"
+    
+    const var_name = parts.next() orelse return;
+    const var_type = parts.next() orelse return;
+    
+    // Parse value based on type
+    const variable_value = if (std.mem.eql(u8, var_type, "drip")) blk: {
+        // Integer type
+        const int_val = std.fmt.parseInt(i64, value_str, 10) catch return;
+        break :blk Variable{ .Integer = int_val };
+    } else if (std.mem.eql(u8, var_type, "tea")) blk: {
+        // String type
+        var trimmed_value = std.mem.trim(u8, value_str, " \t");
+        if (trimmed_value.len >= 2 and trimmed_value[0] == '"' and trimmed_value[trimmed_value.len - 1] == '"') {
+            trimmed_value = trimmed_value[1..trimmed_value.len - 1];
+        }
+        const string_copy = try allocator.dupe(u8, trimmed_value);
+        break :blk Variable{ .String = string_copy };
+    } else if (std.mem.eql(u8, var_type, "lit")) blk: {
+        // Boolean type
+        const bool_val = std.mem.eql(u8, std.mem.trim(u8, value_str, " \t"), "based");
+        break :blk Variable{ .Boolean = bool_val };
+    } else {
+        return; // Unknown type
+    };
+    
+    // Store variable
+    const name_copy = try allocator.dupe(u8, var_name);
+    try variables.put(name_copy, variable_value);
+}
+
+fn handleVibesSpill(variables: *VariableStore, allocator: Allocator, line: []const u8, start: usize) !void {
+    if (std.mem.indexOf(u8, line[start..], "(")) |paren_start| {
+        if (std.mem.lastIndexOf(u8, line, ")")) |paren_end| {
+            const content_start = start + paren_start + 1;
+            const content = line[content_start..paren_end];
+            const trimmed_content = std.mem.trim(u8, content, " \t");
+            
+            // Check if there are multiple arguments separated by commas
+            if (std.mem.indexOf(u8, trimmed_content, ",")) |_| {
+                // Handle multiple arguments
+                var args = std.mem.splitScalar(u8, trimmed_content, ',');
+                var first_arg = true;
+                
+                while (args.next()) |arg| {
+                    if (!first_arg) print(" ", .{});
+                    first_arg = false;
+                    
+                    const trimmed_arg = std.mem.trim(u8, arg, " \t");
+                    try evaluateAndPrintArgument(variables, allocator, trimmed_arg, false);
+                }
+                print("\n", .{});
+            } else {
+                // Single argument
+                try evaluateAndPrintArgument(variables, allocator, trimmed_content, true);
+            }
+        }
+    }
+}
+
+fn evaluateAndPrintArgument(variables: *VariableStore, allocator: Allocator, trimmed_content: []const u8, add_newline: bool) !void {
+    // Check if it's a string literal
+    if (trimmed_content.len >= 2 and trimmed_content[0] == '"' and trimmed_content[trimmed_content.len - 1] == '"') {
+        print("{s}", .{trimmed_content[1..trimmed_content.len - 1]});
+        if (add_newline) print("\n", .{});
+    } else if (variables.get(trimmed_content)) |variable| {
+        // Variable reference - evaluate and print
+        const var_str = try variable.toString(allocator);
+        defer allocator.free(var_str);
+        print("{s}", .{var_str});
+        if (add_newline) print("\n", .{});
+    } else {
+        // Try to parse as literal value
+        if (std.fmt.parseInt(i64, trimmed_content, 10)) |int_val| {
+            print("{}", .{int_val});
+            if (add_newline) print("\n", .{});
+        } else |_| {
+            // Unknown identifier - print as is
+            print("{s}", .{trimmed_content});
+            if (add_newline) print("\n", .{});
+        }
+    }
 }
 
 fn printUsage() void {

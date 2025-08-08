@@ -19,6 +19,9 @@ pub const TomlValue = union(enum) {
 
     pub fn deinit(self: *TomlValue, allocator: Allocator) void {
         switch (self.*) {
+            .string => |str| {
+                allocator.free(str);
+            },
             .array => |*arr| {
                 for (arr.items) |*item| {
                     item.deinit(allocator);
@@ -28,6 +31,9 @@ pub const TomlValue = union(enum) {
             .table => |*table| {
                 var iterator = table.iterator();
                 while (iterator.next()) |entry| {
+                    // Free the key (allocated string)
+                    allocator.free(entry.key_ptr.*);
+                    // Free the value
                     entry.value_ptr.deinit(allocator);
                 }
                 table.deinit();
@@ -53,6 +59,7 @@ pub const TomlParser = struct {
     pub fn parse(self: *TomlParser) !TomlValue {
         var root = HashMap([]const u8, TomlValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
         var current_section: ?[]const u8 = null;
+        defer if (current_section) |section| self.allocator.free(section);
 
         while (self.pos < self.content.len) {
             self.skipWhitespace();
@@ -66,6 +73,8 @@ pub const TomlParser = struct {
             }
 
             if (char == '[') {
+                // Free previous section before setting new one
+                if (current_section) |section| self.allocator.free(section);
                 current_section = try self.parseSection();
                 continue;
             }
@@ -78,6 +87,8 @@ pub const TomlParser = struct {
                     try self.allocator.dupe(u8, key_value.key);
 
                 try root.put(section_key, key_value.value);
+                // Free the original key since we're using section_key instead
+                self.allocator.free(key_value.key);
                 continue;
             }
 
@@ -266,6 +277,17 @@ pub const Version = struct {
     pre_release: ?[]const u8 = null,
     build_metadata: ?[]const u8 = null,
 
+    pub fn deinit(self: *Version, allocator: Allocator) void {
+        if (self.pre_release) |pr| {
+            allocator.free(pr);
+            self.pre_release = null;
+        }
+        if (self.build_metadata) |bm| {
+            allocator.free(bm);
+            self.build_metadata = null;
+        }
+    }
+
     pub fn parse(allocator: Allocator, version_str: []const u8) !Version {
         var parts = std.mem.splitScalar(u8, version_str, '.');
         const major_str = parts.next() orelse return error.InvalidVersion;
@@ -336,6 +358,19 @@ pub const VersionRequirement = struct {
             minor: ?u32,
         },
     };
+
+    pub fn deinit(self: *VersionRequirement, allocator: Allocator) void {
+        switch (self.constraint) {
+            .exact => |*v| v.deinit(allocator),
+            .caret => |*v| v.deinit(allocator),
+            .tilde => |*v| v.deinit(allocator),
+            .greater => |*v| v.deinit(allocator),
+            .greater_eq => |*v| v.deinit(allocator),
+            .less => |*v| v.deinit(allocator),
+            .less_eq => |*v| v.deinit(allocator),
+            .wildcard => {}, // No allocated memory
+        }
+    }
 
     pub fn parse(allocator: Allocator, requirement_str: []const u8) !VersionRequirement {
         const trimmed = std.mem.trim(u8, requirement_str, " \t\n\r");
@@ -523,9 +558,55 @@ pub const PackageManifest = struct {
         };
     }
 
-    pub fn deinit(self: *PackageManifest) void {
+    pub fn deinit(self: *PackageManifest, allocator: Allocator) void {
+        // Free allocated string fields
+        if (!std.mem.eql(u8, self.name, "")) {
+            allocator.free(self.name);
+        }
+        if (self.description) |desc| {
+            allocator.free(desc);
+        }
+        if (self.license) |license| {
+            allocator.free(license);
+        }
+        if (self.homepage) |homepage| {
+            allocator.free(homepage);
+        }
+        if (self.repository) |repo| {
+            allocator.free(repo);
+        }
+        if (self.documentation) |docs| {
+            allocator.free(docs);
+        }
+        if (self.readme) |readme| {
+            allocator.free(readme);
+        }
+        if (self.build_script) |script| {
+            allocator.free(script);
+        }
+        if (self.links) |links| {
+            allocator.free(links);
+        }
+        
+        // Free version pre_release if allocated
+        self.version.deinit(allocator);
+        
+        // Free authors array contents
+        for (self.authors.items) |author| {
+            allocator.free(author);
+        }
         self.authors.deinit();
+        
+        // Free keywords array contents
+        for (self.keywords.items) |keyword| {
+            allocator.free(keyword);
+        }
         self.keywords.deinit();
+        
+        // Free categories array contents
+        for (self.categories.items) |category| {
+            allocator.free(category);
+        }
         self.categories.deinit();
         
         var dep_iter = self.dependencies.iterator();
@@ -1412,7 +1493,7 @@ pub fn cmdInit(allocator: Allocator, args: [][]const u8) !void {
     _ = args;
     
     var manifest = PackageManifest.init(allocator);
-    defer manifest.deinit();
+    defer manifest.deinit(allocator);
     
     manifest.name = "new-cursed-package";
     manifest.version = Version{ .major = 0, .minor = 1, .patch = 0 };
@@ -1479,7 +1560,7 @@ pub fn cmdAdd(allocator: Allocator, args: [][]const u8) !void {
         },
         else => return err,
     };
-    defer manifest.deinit();
+    defer manifest.deinit(allocator);
     
     // Parse version requirement
     const version_req = try VersionRequirement.parse(allocator, version_req_str);
@@ -1513,7 +1594,7 @@ pub fn cmdInstall(allocator: Allocator, args: [][]const u8) !void {
         },
         else => return err,
     };
-    defer manifest.deinit();
+    defer manifest.deinit(allocator);
     
     // Initialize build integration
     var build_integration = BuildIntegration.init(allocator, ".cursed/cache");
@@ -1580,23 +1661,29 @@ pub fn cmdRemove(allocator: Allocator, args: [][]const u8) !void {
     
     // Load manifest
     var manifest = PackageManifest.loadFromToml(allocator, "CursedPackage.toml") catch |err| switch (err) {
-        error.FileNotFound => {
-            print("No CursedPackage.toml found.\n", .{});
-            return;
-        },
-        else => return err,
+    error.FileNotFound => {
+    print("No CursedPackage.toml found.\n", .{});
+    return;
+    },
+    else => return err,
     };
-    defer manifest.deinit();
+    defer manifest.deinit(allocator);
     
     // Remove from dependencies
-    if (manifest.dependencies.remove(package_name)) {
+    if (manifest.dependencies.fetchRemove(package_name)) |removed_entry| {
+    var removed_dep = removed_entry.value;
+        removed_dep.deinit();
+    allocator.free(removed_entry.key);
         print("Removed dependency: {s}\n", .{package_name});
-    } else if (manifest.dev_dependencies.remove(package_name)) {
-        print("Removed dev dependency: {s}\n", .{package_name});
-    } else {
-        print("Package '{s}' not found in dependencies\n", .{package_name});
-        return;
-    }
+    } else if (manifest.dev_dependencies.fetchRemove(package_name)) |removed_entry| {
+    var removed_dep = removed_entry.value;
+        removed_dep.deinit();
+                allocator.free(removed_entry.key);
+                print("Removed dev dependency: {s}\n", .{package_name});
+            } else {
+                print("Package '{s}' not found in dependencies\n", .{package_name});
+                return;
+            }
     
     // Save updated manifest
     try manifest.saveToToml(allocator, "CursedPackage.toml");
@@ -1644,7 +1731,7 @@ pub fn cmdPublish(allocator: Allocator, args: [][]const u8) !void {
         },
         else => return err,
     };
-    defer manifest.deinit();
+    defer manifest.deinit(allocator);
     
     const version_str = manifest.version.toString(allocator) catch "unknown";
     defer if (!std.mem.eql(u8, version_str, "unknown")) allocator.free(version_str);
@@ -1745,7 +1832,7 @@ test "package manifest loading" {
     try temp_file.writeAll(manifest_content);
     
     var manifest = try PackageManifest.loadFromToml(allocator, "test_manifest.toml");
-    defer manifest.deinit();
+    defer manifest.deinit(allocator);
     
     try std.testing.expectEqualStrings("test-package", manifest.name);
     try std.testing.expect(manifest.version.major == 0);

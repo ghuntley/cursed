@@ -93,7 +93,7 @@ pub const BuildIntegration = struct {
         self.dependencies.deinit();
         
         if (self.manifest) |*manifest| {
-            manifest.deinit();
+            manifest.deinit(self.allocator);
         }
         
         if (self.lock_file) |*lock_file| {

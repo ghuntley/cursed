@@ -212,7 +212,7 @@ fn generateSimpleLLVMIR(allocator: Allocator, source: []const u8, module: ?*anyo
     llvm_position_builder_at_end(builder, entry_block);
     
     // Look for vibez.spill statements and generate printf calls
-    var lines = std.mem.split(u8, source, "\n");
+    var lines = std.mem.splitScalar(u8, source, '\n');
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t");
         if (std.mem.startsWith(u8, trimmed, "vibez.spill(")) {
@@ -271,7 +271,7 @@ fn interpretSimple(allocator: Allocator, source: []const u8, verbose: bool) !voi
         print("🚀 Interpreting CURSED program...\n", .{});
     }
     
-    var lines = std.mem.split(u8, source, "\n");
+    var lines = std.mem.splitScalar(u8, source, '\n');
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t");
         if (std.mem.startsWith(u8, trimmed, "vibez.spill(")) {

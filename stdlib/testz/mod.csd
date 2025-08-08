@@ -1,16 +1,5 @@
 fr fr CURSED Testing Framework (testz) - Production-Ready Version
 
-sus total_test_count normie = 0
-sus pass_test_count normie = 0
-sus fail_test_count normie = 0
-sus current_test_name tea = ""
-sus test_groups []tea = []
-sus current_group tea = ""
-sus benchmark_results []BenchmarkResult = []
-sus start_time normie = 0
-sus covered_lines normie = 0
-sus total_lines normie = 0
-
 squad BenchmarkResult {
     spill name tea
     spill duration_ns normie
@@ -40,6 +29,17 @@ squad TestDiscoveryResult {
     spill modules_with_tests normie
     spill coverage_percentage meal
 }
+
+sus total_test_count normie = 0
+sus pass_test_count normie = 0
+sus fail_test_count normie = 0
+sus current_test_name tea = ""
+sus test_groups []tea = []
+sus current_group tea = ""
+sus benchmark_results []BenchmarkResult = []
+sus start_time normie = 0
+sus covered_lines normie = 0
+sus total_lines normie = 0
 
 fr fr Core testing functions
 slay test_start(name tea) lit {
