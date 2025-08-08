@@ -4399,6 +4399,144 @@ fn handleSingleLineReadyInContext(
     try handleSingleLineReady(variables, functions, allocator, ready_part, verbose);
 }
 
+/// Execute pattern matching for ready statements with => syntax
+fn executePatternMatching(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: Allocator,
+    match_value: Variable,
+    patterns_content: []const u8,
+    verbose: bool
+) !void {
+    if (verbose) print("🎯 Executing pattern matching against value: {any}\n", .{match_value});
+    
+    // Split patterns by semicolon and process each pattern => action pair
+    var pattern_iter = std.mem.splitScalar(u8, patterns_content, ';');
+    while (pattern_iter.next()) |pattern_line| {
+        const trimmed_pattern = std.mem.trim(u8, pattern_line, " \t\r\n");
+        if (trimmed_pattern.len == 0) continue;
+        
+        // Find the => separator
+        if (std.mem.indexOf(u8, trimmed_pattern, "=>")) |arrow_pos| {
+            const pattern_part = std.mem.trim(u8, trimmed_pattern[0..arrow_pos], " \t");
+            const action_part = std.mem.trim(u8, trimmed_pattern[arrow_pos + 2..], " \t");
+            
+            if (verbose) print("🔍 Checking pattern: '{s}' => '{s}'\n", .{ pattern_part, action_part });
+            
+            // Check if pattern matches
+            const pattern_matches = try matchesPattern(match_value, pattern_part, allocator, verbose);
+            
+            if (pattern_matches) {
+                if (verbose) print("✅ Pattern '{s}' matches! Executing: '{s}'\n", .{ pattern_part, action_part });
+                try executeBlockLine(variables, functions, allocator, action_part, verbose);
+                return; // First match wins
+            } else if (verbose) {
+                print("❌ Pattern '{s}' does not match\n", .{pattern_part});
+            }
+        } else if (verbose) {
+            print("⚠️ Ignoring line without => arrow: '{s}'\n", .{trimmed_pattern});
+        }
+    }
+    
+    if (verbose) print("⚠️ No patterns matched, no action executed\n", .{});
+}
+
+/// Check if a value matches a pattern
+fn matchesPattern(
+    value: Variable,
+    pattern: []const u8,
+    allocator: Allocator,
+    verbose: bool
+) !bool {
+    _ = allocator; // Suppress unused parameter warning
+    if (verbose) print("🔍 Matching pattern '{s}' against value\n", .{pattern});
+    
+    // Handle wildcard pattern
+    if (std.mem.eql(u8, pattern, "_")) {
+        if (verbose) print("🌟 Wildcard pattern '_' always matches\n", .{});
+        return true;
+    }
+    
+    // Handle literal patterns (numbers, strings, booleans)
+    switch (value) {
+        .Integer => |int_val| {
+            // Try to parse pattern as integer
+            if (std.fmt.parseInt(i64, pattern, 10)) |pattern_int| {
+                const matches = int_val == pattern_int;
+                if (verbose) print("🔢 Integer pattern: {} == {} -> {}\n", .{ int_val, pattern_int, matches });
+                return matches;
+            } else |_| {
+                if (verbose) print("❌ Could not parse pattern '{s}' as integer\n", .{pattern});
+                return false;
+            }
+        },
+        .Float => |float_val| {
+            // Try to parse pattern as float
+            if (std.fmt.parseFloat(f64, pattern)) |pattern_float| {
+                const matches = float_val == pattern_float;
+                if (verbose) print("🔢 Float pattern: {d} == {d} -> {}\n", .{ float_val, pattern_float, matches });
+                return matches;
+            } else |_| {
+                if (verbose) print("❌ Could not parse pattern '{s}' as float\n", .{pattern});
+                return false;
+            }
+        },
+        .Boolean => |bool_val| {
+            // Handle boolean patterns
+            if (std.mem.eql(u8, pattern, "based")) {
+                const matches = bool_val == true;
+                if (verbose) print("🔘 Boolean pattern: based -> {}\n", .{matches});
+                return matches;
+            } else if (std.mem.eql(u8, pattern, "cringe")) {
+                const matches = bool_val == false;
+                if (verbose) print("🔘 Boolean pattern: cringe -> {}\n", .{matches});
+                return matches;
+            } else {
+                if (verbose) print("❌ Unknown boolean pattern: '{s}'\n", .{pattern});
+                return false;
+            }
+        },
+        .String => |str_val| {
+            // Handle string patterns (quoted strings)
+            if (pattern.len >= 2 and pattern[0] == '"' and pattern[pattern.len - 1] == '"') {
+                const pattern_str = pattern[1..pattern.len - 1];
+                const matches = std.mem.eql(u8, str_val.data, pattern_str);
+                if (verbose) print("📝 String pattern: '{s}' == '{s}' -> {}\n", .{ str_val.data, pattern_str, matches });
+                return matches;
+            } else {
+                // Direct string comparison without quotes
+                const matches = std.mem.eql(u8, str_val.data, pattern);
+                if (verbose) print("📝 Direct string pattern: '{s}' == '{s}' -> {}\n", .{ str_val.data, pattern, matches });
+                return matches;
+            }
+        },
+        .Array => {
+            if (verbose) print("❌ Array pattern matching not yet implemented\n", .{});
+            return false;
+        },
+        .Struct => {
+            if (verbose) print("❌ Struct pattern matching not yet implemented\n", .{});
+            return false;
+        },
+        .YikesError => {
+            if (verbose) print("❌ Error pattern matching not supported\n", .{});
+            return false;
+        },
+        .Interface => {
+            if (verbose) print("❌ Interface pattern matching not yet implemented\n", .{});
+            return false;
+        },
+        .Channel => {
+            if (verbose) print("❌ Channel pattern matching not supported\n", .{});
+            return false;
+        },
+        .GoroutineId => {
+            if (verbose) print("❌ GoroutineId pattern matching not supported\n", .{});
+            return false;
+        }
+    }
+}
+
 /// Handle single-line ready/otherwise control structures
 fn handleSingleLineReady(
     variables: *VariableStore,
@@ -4539,15 +4677,21 @@ fn handleSingleLineReady(
         }
     }
     
-    // Execute the appropriate block
-    if (condition_is_true) {
-        if (verbose) print("🟢 Executing if block: '{s}'\n", .{if_content});
-        try executeSingleLineBlock(variables, functions, allocator, if_content, verbose);
-    } else if (else_content) |else_block| {
-        if (verbose) print("🔴 Executing else block: '{s}'\n", .{else_block});
-        try executeSingleLineBlock(variables, functions, allocator, else_block, verbose);
-    } else if (verbose) {
-        print("🔴 Condition false, no else block found\n", .{});
+    // Check if this is pattern matching (contains => patterns)
+    if (std.mem.indexOf(u8, if_content, "=>") != null) {
+        if (verbose) print("🎯 Detected pattern matching syntax in ready block\n", .{});
+        try executePatternMatching(variables, functions, allocator, condition_result, if_content, verbose);
+    } else {
+        // Execute as regular if/else block
+        if (condition_is_true) {
+            if (verbose) print("🟢 Executing if block: '{s}'\n", .{if_content});
+            try executeSingleLineBlock(variables, functions, allocator, if_content, verbose);
+        } else if (else_content) |else_block| {
+            if (verbose) print("🔴 Executing else block: '{s}'\n", .{else_block});
+            try executeSingleLineBlock(variables, functions, allocator, else_block, verbose);
+        } else if (verbose) {
+            print("🔴 Condition false, no else block found\n", .{});
+        }
     }
     
     if (verbose) print("✅ Single-line ready/otherwise processed\n", .{});

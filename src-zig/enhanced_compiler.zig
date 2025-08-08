@@ -2,6 +2,11 @@ const std = @import("std");
 const print = std.debug.print;
 const Allocator = std.mem.Allocator;
 
+const StringLiteralInfo = struct {
+    content: []const u8,
+    actual_size: usize,
+};
+
 const lexer = @import("lexer.zig");
 
 /// Enhanced CURSED compiler that supports both C backend and LLVM backend compilation
@@ -766,10 +771,10 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     try writer.writeAll("declare i32 @puts(i8*)\n\n");
     
     // Collect string literals for global constants
-    var string_literals = std.ArrayList([]const u8).init(allocator);
+    var string_literals = std.ArrayList(StringLiteralInfo).init(allocator);
     defer {
-        for (string_literals.items) |str| {
-            allocator.free(str);
+        for (string_literals.items) |str_info| {
+            allocator.free(str_info.content);
         }
         string_literals.deinit();
     }
@@ -777,9 +782,11 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     try collectStringLiteralsForLLVM(source, &string_literals, allocator);
     
     // Generate global string constants
-    for (string_literals.items, 0..) |str_content, i| {
+    for (string_literals.items, 0..) |str_info, i| {
+        const escaped_content = try escapeLLVMString(str_info.content, allocator);
+        defer allocator.free(escaped_content);
         try writer.print("@.str.{} = private unnamed_addr constant [{} x i8] c\"{s}\\00\", align 1\n", 
-            .{ i, str_content.len + 1, str_content });
+            .{ i, str_info.actual_size, escaped_content });
     }
     
     // Format strings for various types
@@ -813,84 +820,121 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     try writer.writeAll("}\n");
 }
 
-fn collectStringLiteralsForLLVM(source: []const u8, string_literals: *std.ArrayList([]const u8), allocator: Allocator) !void {
-    // Use the same statement splitting logic as the main parser
-    var statements = std.ArrayList([]const u8).init(allocator);
-    defer statements.deinit();
-    
-    var lines = std.mem.splitScalar(u8, source, '\n');
-    var current_line = std.ArrayList(u8).init(allocator);
-    defer current_line.deinit();
-    
-    while (lines.next()) |line| {
-        const trimmed = std.mem.trim(u8, line, " \t\r\n");
-        if (trimmed.len == 0) continue;
-        
-        // Append to current line (handling multi-line statements)
-        if (current_line.items.len > 0) {
-            try current_line.append(' ');
-        }
-        try current_line.appendSlice(trimmed);
-        
-        // Split on semicolons to get individual statements
-        var semicolon_split = std.mem.splitScalar(u8, current_line.items, ';');
-        var stmt_index: usize = 0;
-        while (semicolon_split.next()) |stmt| {
-            const stmt_trimmed = std.mem.trim(u8, stmt, " \t\r\n");
-            if (stmt_trimmed.len > 0) {
-                if (semicolon_split.peek() != null or stmt_index > 0) {
-                    // This is a complete statement
-                    try statements.append(try allocator.dupe(u8, stmt_trimmed));
-                } else {
-                    // This is the last fragment, might be incomplete - save for next line
-                    const stmt_copy = try allocator.dupe(u8, stmt_trimmed);
-                    defer allocator.free(stmt_copy);
-                    current_line.clearRetainingCapacity();
-                    try current_line.appendSlice(stmt_copy);
-                }
-            }
-            stmt_index += 1;
-        }
-        
-        // If we had complete statements, reset current line
-        if (stmt_index > 1) {
-            current_line.clearRetainingCapacity();
-        }
-    }
-    
-    // Handle any remaining statement
-    if (current_line.items.len > 0) {
-        const final_stmt = std.mem.trim(u8, current_line.items, " \t\r\n");
-        if (final_stmt.len > 0) {
-            try statements.append(try allocator.dupe(u8, final_stmt));
-        }
-    }
-    
-    // Now process each statement for string literals
-    for (statements.items) |stmt| {
-        defer allocator.free(stmt);
-        
-        // Look for vibez.spill() with string literals
-        if (std.mem.indexOf(u8, stmt, "vibez.spill(")) |start| {
-            if (std.mem.indexOf(u8, stmt[start..], "(")) |paren_start| {
-                if (std.mem.lastIndexOf(u8, stmt, ")")) |paren_end| {
-                    const content_start = start + paren_start + 1;
-                    const content = stmt[content_start..paren_end];
-                    
-                    // Handle multiple arguments separated by commas
-                    var args = std.mem.splitScalar(u8, content, ',');
-                    while (args.next()) |arg| {
-                        const trimmed_arg = std.mem.trim(u8, arg, " \t\r\n");
-                        if (trimmed_arg.len >= 2 and trimmed_arg[0] == '"' and trimmed_arg[trimmed_arg.len - 1] == '"') {
-                            const string_content = trimmed_arg[1..trimmed_arg.len - 1];
-                            const string_copy = try allocator.dupe(u8, string_content);
-                            try string_literals.append(string_copy);
-                        }
+fn collectStringLiteralsForLLVM(source: []const u8, string_literals: *std.ArrayList(StringLiteralInfo), allocator: Allocator) !void {
+    // Simple approach: find all "vibez.spill(" and extract string literals
+    var i: usize = 0;
+    while (i < source.len) {
+        if (std.mem.indexOf(u8, source[i..], "vibez.spill(")) |pos| {
+            const start = i + pos + "vibez.spill(".len;
+            
+            // Find the matching closing parenthesis by counting parentheses
+            var paren_count: i32 = 1;
+            var j = start;
+            var end: ?usize = null;
+            
+            while (j < source.len and paren_count > 0) {
+                if (source[j] == '(') {
+                    paren_count += 1;
+                } else if (source[j] == ')') {
+                    paren_count -= 1;
+                    if (paren_count == 0) {
+                        end = j;
+                        break;
                     }
                 }
+                j += 1;
             }
+            
+            if (end) |end_pos| {
+                const args = source[start..end_pos];
+                try extractStringLiteralsSimple(args, string_literals, allocator);
+                i = end_pos + 1;
+            } else {
+                i += 1;
+            }
+        } else {
+            break;
         }
     }
+}
+
+fn extractStringLiteralsSimple(args: []const u8, string_literals: *std.ArrayList(StringLiteralInfo), allocator: Allocator) !void {
+    // Look for string literals in quotes
+    var i: usize = 0;
+    while (i < args.len) {
+        if (args[i] == '"') {
+            const start = i + 1;
+            var end: ?usize = null;
+            i += 1;
+            
+            // Find closing quote
+            while (i < args.len) {
+                if (args[i] == '"') {
+                    end = i;
+                    break;
+                } else if (args[i] == '\\' and i + 1 < args.len) {
+                    i += 2; // Skip escaped character
+                } else {
+                    i += 1;
+                }
+            }
+            
+            if (end) |end_pos| {
+                const string_content = args[start..end_pos];
+                const string_copy = try allocator.dupe(u8, string_content);
+                const actual_size = countActualStringBytes(string_content) + 1; // +1 for null terminator
+                try string_literals.append(StringLiteralInfo{
+                    .content = string_copy,
+                    .actual_size = actual_size,
+                });
+            }
+        }
+        i += 1;
+    }
+}
+
+fn escapeLLVMString(input: []const u8, allocator: Allocator) ![]u8 {
+    var result = std.ArrayList(u8).init(allocator);
+    defer result.deinit();
+    
+    for (input) |char| {
+        switch (char) {
+            '"' => try result.appendSlice("\\\""),
+            '\\' => try result.appendSlice("\\\\"),
+            '\n' => try result.appendSlice("\\n"),
+            '\r' => try result.appendSlice("\\r"),
+            '\t' => try result.appendSlice("\\t"),
+            else => try result.append(char),
+        }
+    }
+    
+    return result.toOwnedSlice();
+}
+
+fn countActualStringBytes(input: []const u8) usize {
+    var count: usize = 0;
+    var i: usize = 0;
+    
+    while (i < input.len) {
+        if (input[i] == '\\' and i + 1 < input.len) {
+            // Handle escape sequences - they become single bytes
+            switch (input[i + 1]) {
+                '"', '\\', 'n', 'r', 't' => {
+                    count += 1;
+                    i += 2;
+                },
+                else => {
+                    count += 1;
+                    i += 1;
+                }
+            }
+        } else {
+            count += 1;
+            i += 1;
+        }
+    }
+    
+    return count;
 }
 
 /// Extract and generate function definitions separately from main body
@@ -970,7 +1014,7 @@ fn generateLLVMMainStatements(
     allocator: Allocator, 
     source: []const u8, 
     writer: anytype, 
-    string_literals: *std.ArrayList([]const u8), 
+    string_literals: *std.ArrayList(StringLiteralInfo), 
     functions: *std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), 
     verbose: bool
 ) !void {
@@ -1111,7 +1155,7 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
     }
 }
 
-fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *std.ArrayList([]const u8), variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), variable_counter: *u32, verbose: bool) !void {
+fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *std.ArrayList(StringLiteralInfo), variables: *std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), variable_counter: *u32, verbose: bool) !void {
     if (std.mem.indexOf(u8, line, "vibez.spill(")) |start| {
         if (std.mem.indexOf(u8, line[start..], "(")) |paren_start| {
             if (std.mem.lastIndexOf(u8, line, ")")) |paren_end| {
@@ -1130,8 +1174,8 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                         
                         // Find the string in our global constants
                         var string_index: ?usize = null;
-                        for (string_literals.items, 0..) |str_const, i| {
-                            if (std.mem.eql(u8, str_const, string_content)) {
+                        for (string_literals.items, 0..) |str_info, i| {
+                            if (std.mem.eql(u8, str_info.content, string_content)) {
                                 string_index = i;
                                 break;
                             }
@@ -1139,8 +1183,10 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                         
                         if (string_index) |index| {
                             if (verbose) try writer.print("  ; String literal: {s}\n", .{string_content});
+                            // Find the actual size for this string
+                            const str_info = string_literals.items[index];
                             try writer.print("  %str_ptr.{} = getelementptr [{} x i8], [{} x i8]* @.str.{}, i32 0, i32 0\n", 
-                                .{ variable_counter.*, string_content.len + 1, string_content.len + 1, index });
+                                .{ variable_counter.*, str_info.actual_size, str_info.actual_size, index });
                             try writer.print("  call i32 @puts(i8* %str_ptr.{})\n", .{variable_counter.*});
                             variable_counter.* += 1;
                         }

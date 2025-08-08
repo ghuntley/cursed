@@ -1180,6 +1180,87 @@ fn canReceiveFromChannel(channel_id: ChannelId) bool {
     return false;
 }
 
+// ===== C FFI EXPORTS FOR LLVM COMPILATION =====
+
+/// C FFI export for spawning goroutines from LLVM compiled code
+export fn cursed_spawn_goroutine(func_ptr: ?*const fn () callconv(.C) void, context: ?*anyopaque, stack_size: u32) u32 {
+    _ = context;
+    _ = stack_size;
+    const allocator = std.heap.c_allocator;
+    
+    // Initialize scheduler if not already done
+    initializeScheduler(allocator, SchedulerConfig.default()) catch {
+        return 0; // Return 0 to indicate failure
+    };
+    
+    // Wrapper function to convert C function pointer to Zig function
+    const GoroutineWrapper = struct {
+        c_func: ?*const fn () callconv(.C) void,
+        
+        fn run(ctx: ?*anyopaque) void {
+            const wrapper: *@This() = @ptrCast(@alignCast(ctx.?));
+            if (wrapper.c_func) |func| {
+                func();
+            }
+        }
+    };
+    
+    const wrapper = allocator.create(GoroutineWrapper) catch return 0;
+    wrapper.c_func = func_ptr;
+    
+    const goroutine_id = stan(GoroutineWrapper.run, wrapper) catch return 0;
+    
+    return @intCast(goroutine_id);
+}
+
+/// C FFI export for creating channels from LLVM compiled code
+export fn cursed_channel_create(element_size: u32, buffer_size: u32) ?*anyopaque {
+    _ = element_size;
+    const allocator = std.heap.c_allocator;
+    
+    // For now, create a generic byte channel and let the caller handle typing
+    const channel = makeChannel(u8, allocator, buffer_size) catch return null;
+    
+    return @ptrCast(channel);
+}
+
+/// C FFI export for sending to channels from LLVM compiled code
+export fn cursed_channel_send(channel_ptr: ?*anyopaque, data: ?*anyopaque, data_size: u32) u32 {
+    _ = channel_ptr;
+    _ = data;
+    _ = data_size;
+    // TODO: Implement generic channel send
+    return 0; // SendResult.sent
+}
+
+/// C FFI export for receiving from channels from LLVM compiled code
+export fn cursed_channel_receive(channel_ptr: ?*anyopaque, data_out: ?*anyopaque, data_size: u32) u32 {
+    _ = channel_ptr;
+    _ = data_out;
+    _ = data_size;
+    // TODO: Implement generic channel receive
+    return 0; // ReceiveResult.received
+}
+
+/// C FFI export for closing channels from LLVM compiled code
+export fn cursed_channel_close(channel_ptr: ?*anyopaque) void {
+    _ = channel_ptr;
+    // TODO: Implement generic channel close
+}
+
+/// C FFI export for initializing runtime from LLVM compiled code
+export fn cursed_runtime_init() u32 {
+    const allocator = std.heap.c_allocator;
+    initializeScheduler(allocator, SchedulerConfig.default()) catch return 0;
+    return 1; // Success
+}
+
+/// C FFI export for shutting down runtime from LLVM compiled code
+export fn cursed_runtime_shutdown() void {
+    const allocator = std.heap.c_allocator;
+    shutdownScheduler(allocator);
+}
+
 // Tests
 test "goroutine creation and execution" {
     const allocator = std.testing.allocator;

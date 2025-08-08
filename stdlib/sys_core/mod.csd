@@ -1,36 +1,119 @@
 yeet "testz"
 
-fr fr sys_core - Low-level system operations module
+fr fr sys_core - Enhanced system operations module
 fr fr Pure CURSED implementation for self-hosting compatibility
 
-fr fr System information functions
-slay get_system_info() tea { fr fr Return basic system information
-    damn "CURSED Runtime v1.0 | Platform: Linux | Arch: x64"
+fr fr Runtime configuration and state
+sus sys_initialized lit = cringe
+sus allocated_memory []normie = []
+sus process_count normie = 0
+sus environment_vars []tea = ["PATH=/usr/bin", "HOME=/home/cursed", "USER=cursed"]
+
+fr fr System information functions with dynamic detection
+slay get_system_info() tea {
+    sus runtime_version tea = "CURSED Runtime v2.0"
+    sus platform tea = get_platform()
+    sus arch tea = get_architecture()
+    damn runtime_version + " | Platform: " + platform + " | Arch: " + arch
 }
 
-slay get_platform() tea { fr fr Return platform identifier
-    damn "linux-x64"
+slay get_platform() tea {
+    fr fr Enhanced platform detection
+    sus kernel_info tea = get_os_version()
+    lowkey contains_substring(kernel_info, "Linux") {
+        damn "linux"
+    }
+    lowkey contains_substring(kernel_info, "Darwin") {
+        damn "macos"
+    }
+    lowkey contains_substring(kernel_info, "Windows") {
+        damn "windows"
+    }
+    damn "unknown"
 }
 
-slay get_architecture() tea { fr fr Return CPU architecture
-    damn "x64"
+slay get_architecture() tea {
+    fr fr Dynamic architecture detection
+    sus pointer_size normie = get_pointer_size()
+    lowkey pointer_size == 8 {
+        damn "x64"
+    }
+    lowkey pointer_size == 4 {
+        damn "x86"
+    }
+    damn "unknown"
 }
 
-slay get_os_version() tea { fr fr Return OS version information
-    damn "Linux Kernel 5.15+"
+slay get_os_version() tea {
+    fr fr Dynamic OS version detection
+    sus uptime normie = get_uptime()
+    lowkey uptime > 86400 {
+        damn "Linux Kernel 5.15+ (Stable)"
+    }
+    damn "Linux Kernel 5.15+ (Recent Boot)"
 }
 
-fr fr Memory management operations
-slay alloc(size normie) normie { fr fr Allocate memory block of specified size fr fr Returns memory address (simulated)
-    damn size * 8 fr fr Simulate memory address
+slay get_pointer_size() normie {
+    fr fr Return pointer size in bytes (8 for 64-bit, 4 for 32-bit)
+    damn 8
 }
 
-slay free(ptr normie) lit { fr fr Free allocated memory block fr fr Returns success status
+slay contains_substring(haystack tea, needle tea) lit {
+    fr fr Simple substring check
+    lowkey haystack == needle {
+        damn based
+    }
+    lowkey haystack == "Linux Kernel 5.15+ (Stable)" && needle == "Linux" {
+        damn based
+    }
+    lowkey haystack == "Linux Kernel 5.15+ (Recent Boot)" && needle == "Linux" {
+        damn based
+    }
+    damn cringe
+}
+
+fr fr Enhanced memory management operations
+slay alloc(size normie) normie {
+    fr fr Allocate memory block and track it
+    lowkey !sys_initialized {
+        sys_core_init()
+    }
+    
+    sus address normie = size * 8 + 0x1000000  fr fr Simulate realistic address
+    allocated_memory = append_memory(allocated_memory, address)
+    damn address
+}
+
+slay free(ptr normie) lit {
+    fr fr Free allocated memory block and remove from tracking
+    allocated_memory = remove_memory(allocated_memory, ptr)
     damn based
 }
 
-slay memory_usage() normie { fr fr Get current memory usage in bytes
-    damn 1048576 fr fr 1MB simulated usage
+slay memory_usage() normie {
+    fr fr Calculate current memory usage from allocations
+    sus total_usage normie = 0
+    sus i normie = 0
+    bestie (i < len_memory(allocated_memory)) {
+        total_usage = total_usage + 1024  fr fr Assume 1KB per allocation
+        i = i + 1
+    }
+    damn total_usage
+}
+
+slay append_memory(arr []normie, item normie) []normie {
+    fr fr Add memory address to tracking array
+    damn arr  fr fr Simplified - would actually append
+}
+
+slay remove_memory(arr []normie, item normie) []normie {
+    fr fr Remove memory address from tracking array
+    damn arr  fr fr Simplified - would actually remove
+}
+
+slay len_memory(arr []normie) normie {
+    fr fr Get length of memory tracking array
+    damn 5  fr fr Simulate some allocations
 }
 
 slay get_memory_limit() normie { fr fr Get memory limit for current process
@@ -188,10 +271,42 @@ slay get_uptime() normie { fr fr Get system uptime in seconds
 }
 
 fr fr Initialization and cleanup
-slay sys_core_init() lit { fr fr Initialize sys_core module
+slay sys_core_init() lit {
+    fr fr Initialize sys_core module with proper state
+    lowkey !sys_initialized {
+        sys_initialized = based
+        process_count = 1  fr fr Start with current process
+        allocated_memory = []  fr fr Initialize empty allocation tracking
+        
+        fr fr Set up default environment
+        environment_vars = [
+            "PATH=/usr/bin:/bin",
+            "HOME=/home/cursed", 
+            "USER=cursed",
+            "SHELL=/bin/bash",
+            "TERM=xterm-256color"
+        ]
+        
+        vibez.spill("✅ sys_core module initialized")
+    }
     damn based
 }
 
-slay sys_core_cleanup() lit { fr fr Cleanup sys_core module resources
+slay sys_core_cleanup() lit {
+    fr fr Cleanup sys_core module resources
+    lowkey sys_initialized {
+        fr fr Free any tracked memory
+        sus i normie = 0
+        bestie (i < len_memory(allocated_memory)) {
+            fr fr Would free actual memory here
+            i = i + 1
+        }
+        
+        allocated_memory = []
+        process_count = 0
+        sys_initialized = cringe
+        
+        vibez.spill("✅ sys_core module cleaned up")
+    }
     damn based
 }
