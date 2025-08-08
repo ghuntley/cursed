@@ -1,1 +1,5 @@
-collab Drawable { slay draw(); }; squad Circle { slay draw() { vibez.spill("Drawing circle") } }; sus c Circle = Circle{}; c.draw()
+collab Greeter { slay greet(name tea) tea }
+squad Person { spill name tea }
+sus p Person = Person{name: "Alice"}
+vibez.spill("Interface defined successfully")
+vibez.spill("Person:", p.name)
