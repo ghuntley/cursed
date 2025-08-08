@@ -110,8 +110,9 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
     exe.linkSystemLibrary("LLVM-18");
     
     // Add LLVM include directories using LazyPath.cwd_relative for absolute paths
-    exe.addSystemIncludePath(.{ .cwd_relative = "/usr/lib/llvm-18/include" });
-    exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/llvm-18/lib" });
+    exe.addSystemIncludePath(.{ .cwd_relative = "/usr/include/llvm-18" });
+    exe.addSystemIncludePath(.{ .cwd_relative = "/usr/include/llvm-c-18" });
+    exe.addLibraryPath(.{ .cwd_relative = "/lib/x86_64-linux-gnu" });
     
     // Set LLVM C macro definitions for proper integration
     exe.root_module.addCMacro("LLVM_VERSION_MAJOR", "18");
@@ -127,9 +128,12 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
     };
     exe.root_module.addCMacro("LLVM_TARGET_CPU", b.fmt("\"{s}\"", .{cpu_name}));
     
-    // Force specific target to avoid unknown CPU errors
+    // Force specific target to avoid unknown CPU errors and athlon-xp detection
     exe.root_module.addCMacro("__x86_64__", "1");
+    exe.root_module.addCMacro("__i386__", "0");
     exe.root_module.addCMacro("_GNU_SOURCE", "1");
+    exe.root_module.addCMacro("TARGET_CPU", "\"x86-64\"");
+    exe.root_module.addCMacro("LLVM_HOST_TRIPLE", "\"x86_64-unknown-linux-gnu\"");
     
     // Enable debug information support
     if (b.verbose) {
