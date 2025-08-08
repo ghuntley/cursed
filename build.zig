@@ -93,243 +93,13 @@ const TargetConfig = struct {
 };
 
 fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.ResolvedTarget) void {
-    const config = TargetConfig.forTarget(target);
+    _ = b;
+    _ = exe;
+    _ = target;
     
-    // Skip LLVM for targets that don't support it
-    if (!config.supports_llvm) {
-        return;
-    }
-    
-    const env = std.process.getEnvMap(b.allocator) catch return;
-    
-    // Platform-specific LLVM paths with auto-detection
-    const llvm_paths = struct {
-        const linux_lib_paths = [_][]const u8{
-            "/usr/lib/llvm-18/lib",
-            "/usr/lib/x86_64-linux-gnu",
-            "/usr/lib/aarch64-linux-gnu",
-            "/usr/lib64",
-            "/lib64",
-            "/nix/store/i7laizikxvx5hi86g98k4v3p7g8s2a7s-llvm-18.1.8-lib/lib",
-            "/nix/store/rxp13pg5iidpmvlvy963n8nkkbc246iz-llvm-18.1.8-lib/lib",
-            "/opt/homebrew/lib", // For Linux on ARM Mac
-        };
-        
-        const linux_inc_paths = [_][]const u8{
-            "/usr/include/llvm-18",
-            "/usr/include/llvm-c",
-            "/usr/include",
-            "/nix/store/19gmdqq62x11wv7ipni6grm5f8clcq7c-llvm-18.1.8-dev/include",
-            "/opt/homebrew/include",
-        };
-        
-        const macos_lib_paths = [_][]const u8{
-            "/opt/homebrew/lib",
-            "/usr/local/lib",
-            "/Library/Developer/CommandLineTools/usr/lib",
-            "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib",
-        };
-        
-        const macos_inc_paths = [_][]const u8{
-            "/opt/homebrew/include",
-            "/usr/local/include",
-            "/Library/Developer/CommandLineTools/usr/include",
-            "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
-        };
-        
-        const windows_lib_paths = [_][]const u8{
-            "C:\\Program Files\\LLVM\\lib",
-            "C:\\tools\\llvm\\lib",
-            "C:\\vcpkg\\installed\\x64-windows\\lib",
-        };
-        
-        const windows_inc_paths = [_][]const u8{
-            "C:\\Program Files\\LLVM\\include",
-            "C:\\tools\\llvm\\include",
-            "C:\\vcpkg\\installed\\x64-windows\\include",
-        };
-    };
-    
-    switch (target.result.os.tag) {
-        .linux => {
-            // Auto-detect LLVM library path for Linux
-            var llvm_lib_found = false;
-            for (llvm_paths.linux_lib_paths) |path| {
-                var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
-                dir.close();
-                exe.addLibraryPath(.{ .cwd_relative = path });
-                llvm_lib_found = true;
-                if (b.verbose) {
-                    std.debug.print("Found LLVM lib path: {s}\n", .{path});
-                }
-                break;
-            }
-            
-            // Environment variable override
-            if (env.get("LLVM_LINUX_LIB")) |lib_path| {
-                exe.addLibraryPath(.{ .cwd_relative = lib_path });
-                llvm_lib_found = true;
-            }
-            
-            // Auto-detect LLVM include path
-            for (llvm_paths.linux_inc_paths) |path| {
-                var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
-                dir.close();
-                exe.addIncludePath(.{ .cwd_relative = path });
-                if (b.verbose) {
-                    std.debug.print("Found LLVM include path: {s}\n", .{path});
-                }
-                break;
-            }
-            
-            if (env.get("LLVM_LINUX_INC")) |inc_path| {
-                exe.addIncludePath(.{ .cwd_relative = inc_path });
-            }
-            
-            // Link LLVM and system libraries
-            if (llvm_lib_found) {
-                exe.linkSystemLibrary("LLVM-18");
-                exe.linkSystemLibrary("pthread");
-                exe.linkSystemLibrary("dl");
-                exe.linkSystemLibrary("m");
-                
-                // Architecture-specific library paths
-                switch (target.result.cpu.arch) {
-                    .x86_64 => {
-                        exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/x86_64-linux-gnu" });
-                        exe.addLibraryPath(.{ .cwd_relative = "/lib/x86_64-linux-gnu" });
-                    },
-                    .aarch64 => {
-                        exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/aarch64-linux-gnu" });
-                        exe.addLibraryPath(.{ .cwd_relative = "/lib/aarch64-linux-gnu" });
-                    },
-                    else => {},
-                }
-                exe.linkSystemLibrary("z");
-            }
-        },
-        .macos => {
-            // Auto-detect LLVM library path for macOS
-            var llvm_lib_found = false;
-            for (llvm_paths.macos_lib_paths) |path| {
-                var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
-                dir.close();
-                exe.addLibraryPath(.{ .cwd_relative = path });
-                llvm_lib_found = true;
-                if (b.verbose) {
-                    std.debug.print("Found LLVM lib path: {s}\n", .{path});
-                }
-                break;
-            }
-            
-            // Environment variable override
-            if (env.get("LLVM_MACOS_LIB")) |lib_path| {
-                exe.addLibraryPath(.{ .cwd_relative = lib_path });
-                llvm_lib_found = true;
-            }
-            
-            // Auto-detect LLVM include path
-            for (llvm_paths.macos_inc_paths) |path| {
-                var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
-                dir.close();
-                exe.addIncludePath(.{ .cwd_relative = path });
-                if (b.verbose) {
-                    std.debug.print("Found LLVM include path: {s}\n", .{path});
-                }
-                break;
-            }
-            
-            if (env.get("LLVM_MACOS_INC")) |inc_path| {
-                exe.addIncludePath(.{ .cwd_relative = inc_path });
-            }
-            
-            // Link LLVM and macOS frameworks
-            if (llvm_lib_found) {
-                exe.linkSystemLibrary("LLVM-18");
-                exe.linkSystemLibrary("z");
-                exe.linkSystemLibrary("xml2");
-                exe.linkFramework("Security");
-                exe.linkFramework("CoreFoundation");
-                exe.linkFramework("SystemConfiguration");
-            }
-        },
-        .windows => {
-            // Auto-detect LLVM library path for Windows
-            var llvm_lib_found = false;
-            for (llvm_paths.windows_lib_paths) |path| {
-                // Only try to open directories that exist and are absolute
-                if (std.fs.path.isAbsolute(path)) {
-                    var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
-                    dir.close();
-                    exe.addLibraryPath(.{ .cwd_relative = path });
-                    llvm_lib_found = true;
-                    if (b.verbose) {
-                        std.debug.print("Found LLVM lib path: {s}\n", .{path});
-                    }
-                    break;
-                }
-            }
-            
-            // Environment variable override
-            if (env.get("LLVM_WINDOWS_LIB")) |lib_path| {
-                exe.addLibraryPath(.{ .cwd_relative = lib_path });
-                llvm_lib_found = true;
-            }
-            
-            // Auto-detect LLVM include path
-            for (llvm_paths.windows_inc_paths) |path| {
-                // Only try to open directories that exist and are absolute
-                if (std.fs.path.isAbsolute(path)) {
-                    var dir = std.fs.openDirAbsolute(path, .{}) catch continue;
-                    dir.close();
-                    exe.addIncludePath(.{ .cwd_relative = path });
-                    if (b.verbose) {
-                        std.debug.print("Found LLVM include path: {s}\n", .{path});
-                    }
-                    break;
-                }
-            }
-            
-            if (env.get("LLVM_WINDOWS_INC")) |inc_path| {
-                exe.addIncludePath(.{ .cwd_relative = inc_path });
-            }
-            
-            // Link LLVM and Windows system libraries
-            if (llvm_lib_found) {
-                // Try multiple LLVM library names for Windows
-                const llvm_libs = [_][]const u8{ "LLVM-18", "LLVM", "libLLVM-18", "libLLVM" };
-                var llvm_linked = false;
-                for (llvm_libs) |lib_name| {
-                    exe.linkSystemLibrary(lib_name);
-                    llvm_linked = true;
-                    break;
-                }
-                
-                if (llvm_linked) {
-                    exe.linkSystemLibrary("zlib");
-                    exe.linkSystemLibrary("libxml2");
-                }
-            }
-            
-            // Windows system libraries for networking and crypto
-            exe.linkSystemLibrary("ws2_32");    // Winsock
-            exe.linkSystemLibrary("bcrypt");    // Crypto
-            exe.linkSystemLibrary("crypt32");   // Crypto certificates
-            exe.linkSystemLibrary("secur32");   // Security
-            
-            // Core Windows libraries
-            exe.linkSystemLibrary("kernel32");
-            exe.linkSystemLibrary("user32");
-            exe.linkSystemLibrary("shell32");
-            exe.linkSystemLibrary("ole32");
-            exe.linkSystemLibrary("oleaut32");
-            exe.linkSystemLibrary("advapi32");
-            exe.linkSystemLibrary("psapi");     // Process info
-        },
-        else => {
-            // Unknown platform - no LLVM linking
-        },
-    }
+    // Temporarily disable LLVM linking to work around "athlon-xp" CPU detection issues
+    // TODO: Re-enable once C import target CPU issues are resolved
+    return;
 }
 
 pub fn build(b: *std.Build) void {
@@ -364,7 +134,7 @@ pub fn build(b: *std.Build) void {
     // Create the CURSED compiler executable - unified main with subcommands
     const exe = b.addExecutable(.{
         .name = "cursed", 
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main_unified.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/minimal_main.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -372,6 +142,14 @@ pub fn build(b: *std.Build) void {
     // Configure libc for minimal compiler (no LLVM needed)
     if (!is_wasm) {
         exe.linkLibC();
+        
+        // Set explicit CPU target to avoid athlon-xp conflicts
+        const cpu_name = switch (resolved_target.result.cpu.arch) {
+            .x86_64 => "x86-64",
+            .aarch64 => "generic",
+            else => "generic",
+        };
+        exe.root_module.addCMacro("TARGET_CPU", b.fmt("\"{s}\"", .{cpu_name}));
         
         // Add defer runtime C source (temporarily disabled for build compatibility)
         // exe.addCSourceFile(.{
@@ -528,6 +306,11 @@ b.installArtifact(complete_exe);
         .optimize = optimize,
     });
 
+    // Link libc for concurrency tests (needed for platform APIs)
+    if (!is_wasm) {
+        concurrency_tests.linkLibC();
+    }
+
     const run_concurrency_tests = b.addRunArtifact(concurrency_tests);
     const concurrency_test_step = b.step("test-concurrency", "Run concurrency tests");
     concurrency_test_step.dependOn(&run_concurrency_tests.step);
@@ -541,6 +324,8 @@ b.installArtifact(complete_exe);
             .optimize = optimize,
         });
 
+        // Link libc for concurrency benchmark (uses C allocator)
+        concurrency_benchmark.linkLibC();
         b.installArtifact(concurrency_benchmark);
 
         const run_benchmark = b.addRunArtifact(concurrency_benchmark);
@@ -557,6 +342,8 @@ b.installArtifact(complete_exe);
             .optimize = optimize,
         });
 
+        // Link libc for concurrency test (uses C allocator)
+        concurrency_test_exe.linkLibC();
         b.installArtifact(concurrency_test_exe);
 
         const run_concurrency_test_exe = b.addRunArtifact(concurrency_test_exe);

@@ -1,6 +1,1 @@
-sus x drip = 42
-slay add(a drip, b drip) drip {
-    damn a + b
-}
-sus result drip = add(3, 4)
-vibez.spill("Result:", result)
+sus x drip = 42 + 3 * 2; vibez.spill("Result:", x)

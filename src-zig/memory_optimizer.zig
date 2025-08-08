@@ -162,7 +162,6 @@ pub const MemoryOptimizer = struct {
 
     /// Check if an instruction is a memory allocation
     fn isAllocationInstruction(self: *MemoryOptimizer, instruction: c.LLVMValueRef) bool {
-        _ = self;
         
         const opcode = c.LLVMGetInstructionOpcode(instruction);
         
@@ -211,7 +210,7 @@ pub const MemoryOptimizer = struct {
     fn analyzeAllocation(self: *MemoryOptimizer, allocation: c.LLVMValueRef) !AllocationInfo {
         const opcode = c.LLVMGetInstructionOpcode(allocation);
         
-        var allocation_info = AllocationInfo{
+        const allocation_info = AllocationInfo{
             .instruction = allocation,
             .allocation_type = if (opcode == c.LLVMAlloca) .Stack else .Heap,
             .size_info = try self.analyzeAllocationSize(allocation),
@@ -376,7 +375,6 @@ pub const MemoryOptimizer = struct {
 
     /// Analyze how a use might cause an allocation to escape
     fn analyzeEscapeUse(self: *MemoryOptimizer, user: c.LLVMValueRef, allocation: c.LLVMValueRef) EscapeType {
-        _ = self;
         
         const opcode = c.LLVMGetInstructionOpcode(user);
         
@@ -597,7 +595,6 @@ pub const MemoryOptimizer = struct {
 
     /// Check if two allocations can be coalesced
     fn canCoalesceAllocations(self: *MemoryOptimizer, alloc1: AllocationInfo, alloc2: AllocationInfo) bool {
-        _ = self;
         
         // Both must be stack allocations
         if (alloc1.allocation_type != .Stack or alloc2.allocation_type != .Stack) {

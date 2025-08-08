@@ -1,5 +1,9 @@
 const std = @import("std");
 const ast = @import("ast.zig");
+const variable_scope = @import("variable_scope.zig");
+const VariableScopeManager = variable_scope.VariableScopeManager;
+const VariableInfo = variable_scope.VariableInfo;
+
 const c = @cImport({
     @cInclude("llvm-c/Core.h");
     @cInclude("llvm-c/ExecutionEngine.h");
@@ -7,6 +11,10 @@ const c = @cImport({
     @cInclude("llvm-c/Analysis.h");
     @cInclude("llvm-c/BitWriter.h");
 });
+
+// Global scope manager for variable resolution
+// In production, this would be passed as context
+var global_scope_manager: ?*VariableScopeManager = null;
 
 /// Enhanced function call generation with recursive support
 pub fn generateEnhancedFunctionCall(
@@ -66,13 +74,20 @@ fn generateArrayLengthCall(
             return c.LLVMConstInt(c.LLVMInt64TypeInContext(context), @intCast(len_value), 0);
         },
         .Identifier => |var_name| {
-            // For array variables, we need to store length metadata
-            // This is a simplified implementation - in production would use array metadata
-            const len_var_name = try std.fmt.allocPrint(allocator, "{s}_length", .{var_name});
-            defer allocator.free(len_var_name);
+            // For array variables, we need to extract length from array metadata
+            // This requires the array value to be passed, which requires a codegen instance
+            // For now, we'll return a dynamic length extraction approach
             
-            // Return placeholder - in full implementation would look up stored length
-            return c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 5, 0); // Placeholder
+            // This is a simplified implementation - in production would:
+            // 1. Look up the array value from the variable name
+            // 2. Extract element type from array structure  
+            // 3. Use ArrayMetadata.getArrayLength() to get the runtime length
+            
+            // Since we don't have access to the full codegen context here,
+            // we'll need to handle this at a higher level in the call chain
+            // For backward compatibility, we'll keep this placeholder but mark it clearly
+            std.log.warn("len() called on variable '{s}' - requires dynamic length extraction", .{var_name});
+            return c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0, 0); // Marked as 0 to indicate need for proper implementation
         },
         else => {
             return error.UnsupportedArrayType;
@@ -80,7 +95,7 @@ fn generateArrayLengthCall(
     }
 }
 
-/// Generate user-defined function call with full argument evaluation
+/// Generate user-defined function call with full argument evaluation including variable resolution
 fn generateUserFunctionCall(
     context: c.LLVMContextRef,
     builder: c.LLVMBuilderRef,
@@ -90,7 +105,7 @@ fn generateUserFunctionCall(
 ) !c.LLVMValueRef {
     _ = allocator;
     
-    // Generate arguments
+    // Generate arguments with proper variable resolution
     var args = std.ArrayList(c.LLVMValueRef).init(std.heap.page_allocator);
     defer args.deinit();
     
@@ -199,10 +214,11 @@ fn generateExpressionValue(
             return try generateRecursiveFunctionCall(context, builder, call);
         },
         .Identifier => |name| {
-            // For now, return a placeholder for variable references
-            // In full implementation, would look up variable in scope
-            _ = name;
-            return c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0, 0);
+            // Look up variable in scope and load its value
+            return lookupAndLoadVariable(context, builder, name) catch |err| {
+                std.debug.print("Variable lookup error for '{s}': {}\n", .{ name, err });
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0, 0);
+            };
         },
         else => {
             return c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0, 0);
@@ -397,15 +413,34 @@ fn generateLetStatement(
     builder: c.LLVMBuilderRef,
     let_stmt: ast.LetStatement,
 ) !void {
-    const var_type = c.LLVMInt64TypeInContext(context); // Default to i64
-    const alloca = c.LLVMBuildAlloca(builder, var_type, let_stmt.name.ptr);
+    // Determine CURSED type - for now default to "drip"
+    const cursed_type = if (let_stmt.type_annotation) |type_info| 
+        getCursedTypeFromAnnotation(type_info) 
+    else 
+        "drip";
     
+    var initial_value: ?c.LLVMValueRef = null;
     if (let_stmt.initializer) |init_expr| {
-        const init_value = try generateExpressionValue(context, builder, init_expr);
-        _ = c.LLVMBuildStore(builder, init_value, alloca);
+        initial_value = try generateExpressionValue(context, builder, init_expr);
     }
     
-    // TODO: Store in variable map for later lookup
+    // Register the variable in scope
+    _ = try registerVariable(context, builder, let_stmt.name, cursed_type, initial_value);
+}
+
+/// Extract CURSED type from AST type annotation
+fn getCursedTypeFromAnnotation(type_annotation: ast.Type) []const u8 {
+    switch (type_annotation) {
+        .Basic => |basic| {
+            if (std.mem.eql(u8, basic, "drip")) return "drip";
+            if (std.mem.eql(u8, basic, "normie")) return "normie";
+            if (std.mem.eql(u8, basic, "lit")) return "lit";
+            if (std.mem.eql(u8, basic, "meal")) return "meal";
+            if (std.mem.eql(u8, basic, "tea")) return "tea";
+        },
+        else => {},
+    }
+    return "drip"; // Default type
 }
 
 /// Struct type information for field access
@@ -414,3 +449,125 @@ pub const StructTypeInfo = struct {
     field_types: []c.LLVMTypeRef,
     llvm_type: c.LLVMTypeRef,
 };
+
+/// Initialize the global scope manager for variable resolution
+pub fn initializeVariableScope(allocator: std.mem.Allocator) !void {
+    const scope_manager = try allocator.create(VariableScopeManager);
+    scope_manager.* = VariableScopeManager.init(allocator);
+    global_scope_manager = scope_manager;
+    
+    // Create global scope
+    _ = try scope_manager.enterScope();
+}
+
+/// Cleanup the global scope manager
+pub fn deinitializeVariableScope(allocator: std.mem.Allocator) void {
+    if (global_scope_manager) |scope_manager| {
+        scope_manager.deinit();
+        allocator.destroy(scope_manager);
+        global_scope_manager = null;
+    }
+}
+
+/// Enter a new scope for variable resolution
+pub fn enterVariableScope() !void {
+    if (global_scope_manager) |scope_manager| {
+        _ = try scope_manager.enterScope();
+    }
+}
+
+/// Exit the current variable scope
+pub fn exitVariableScope() void {
+    if (global_scope_manager) |scope_manager| {
+        scope_manager.exitScope();
+    }
+}
+
+/// Register a variable in the current scope
+pub fn registerVariable(
+    context: c.LLVMContextRef,
+    builder: c.LLVMBuilderRef,
+    name: []const u8,
+    cursed_type: []const u8,
+    initial_value: ?c.LLVMValueRef,
+) !c.LLVMValueRef {
+    if (global_scope_manager) |scope_manager| {
+        const llvm_type = variable_scope.cursedTypeToLLVMType(context, cursed_type);
+        const alignment = variable_scope.getLLVMTypeAlignment(llvm_type);
+        
+        // Create alloca for the variable
+        const alloca = c.LLVMBuildAlloca(builder, llvm_type, name.ptr);
+        
+        // Store initial value if provided
+        if (initial_value) |value| {
+            _ = c.LLVMBuildStore(builder, value, alloca);
+        }
+        
+        // Register in scope
+        const var_info = VariableInfo{
+            .name = name,
+            .llvm_value = alloca,
+            .llvm_type = llvm_type,
+            .cursed_type = cursed_type,
+            .is_parameter = false,
+            .scope_id = scope_manager.getCurrentScopeId(),
+        };
+        
+        try scope_manager.define(name, var_info);
+        
+        std.debug.print("✅ Registered variable '{s}' of type '{s}' in scope {}\n", .{ name, cursed_type, var_info.scope_id });
+        return alloca;
+    }
+    
+    return error.NoScopeManager;
+}
+
+/// Look up and load a variable value
+pub fn lookupAndLoadVariable(
+    context: c.LLVMContextRef,
+    builder: c.LLVMBuilderRef,
+    name: []const u8,
+) !c.LLVMValueRef {
+    _ = context;
+    
+    if (global_scope_manager) |scope_manager| {
+        if (scope_manager.lookup(name)) |var_info| {
+            // Load the value from the alloca
+            const load_name = try std.fmt.allocPrint(std.heap.page_allocator, "{s}_load", .{name});
+            defer std.heap.page_allocator.free(load_name);
+            
+            const loaded_value = c.LLVMBuildLoad2(builder, var_info.llvm_type, var_info.llvm_value, load_name.ptr);
+            
+            std.debug.print("✅ Loaded variable '{s}' from scope {}\n", .{ name, var_info.scope_id });
+            return loaded_value;
+        } else {
+            std.debug.print("❌ Variable '{s}' not found in any scope\n", .{name});
+            return error.VariableNotFound;
+        }
+    }
+    
+    return error.NoScopeManager;
+}
+
+/// Register a function parameter as a variable
+pub fn registerParameter(
+    name: []const u8,
+    cursed_type: []const u8,
+    llvm_value: c.LLVMValueRef,
+    llvm_type: c.LLVMTypeRef,
+) !void {
+    if (global_scope_manager) |scope_manager| {
+        const var_info = VariableInfo{
+            .name = name,
+            .llvm_value = llvm_value,
+            .llvm_type = llvm_type,
+            .cursed_type = cursed_type,
+            .is_parameter = true,
+            .scope_id = scope_manager.getCurrentScopeId(),
+        };
+        
+        try scope_manager.define(name, var_info);
+        
+        std.debug.print("✅ Registered parameter '{s}' of type '{s}'\n", .{ name, cursed_type });
+    }
+}

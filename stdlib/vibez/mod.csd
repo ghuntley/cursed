@@ -1,237 +1,265 @@
-fr fr vibez module - Core I/O operations for CURSED
-fr fr Complete implementation with advanced formatting and I/O
-
-fr fr Enhanced formatting implementations integrated directly
+fr fr Enhanced VIBEZ Module - Complete I/O Operations for CURSED
+fr fr Production-ready implementation with comprehensive functionality
 
 fr fr ===== CORE OUTPUT FUNCTIONS =====
 
-fr fr Basic print function - outputs text to console
+fr fr Basic print function - outputs text to console with enhanced formatting
 slay spill(message tea) lit {
-    runtime_print_string(message)
+    check message != "" {
+        runtime_print_string(message)
+    }
     damn based
 }
 
-fr fr Formatted print function with placeholder replacement
-slay spillf(format tea, args ...tea) lit {
-    sus formatted tea = format_string_enhanced(format, args...)
-    spill(formatted)
+fr fr Enhanced print function with multiple arguments
+slay spill_multi(args ...tea) lit {
+    sus output tea = ""
+    sus i normie = 0
+    bestie i < len_args(args) {
+        check i > 0 {
+            output = output + " "
+        }
+        output = output + args[i]
+        i = i + 1
+    }
+    spill(output)
     damn based
-}
-
-fr fr String formatting function with full placeholder support
-slay spillstr(format tea, args ...tea) tea {
-    damn format_string_enhanced(format, args...)
 }
 
 fr fr Print with newline
 slay spillln(message tea) lit {
-    spill(message + "\n")
-    damn based
-}
-
-fr fr Print formatted with newline
-slay spillfln(format tea, args ...tea) lit {
-    spillf(format, args...)
+    spill(message)
     spill("\n")
     damn based
 }
 
-fr fr ===== ADVANCED FORMATTING FUNCTIONS =====
+fr fr Enhanced formatted print with proper placeholder replacement
+slay spillf(format tea, args ...tea) lit {
+    sus formatted tea = format_string_advanced(format, args)
+    spill(formatted)
+    damn based
+}
 
-fr fr Core string formatting with %s, %d, %f placeholders
-fr fr Enhanced string formatting with improved placeholder parsing
-slay format_string_enhanced(format tea, args ...tea) tea {
-    lowkey format == "" {
+fr fr Formatted print with newline
+slay spillfln(format tea, args ...tea) lit {
+    spillf(format, args)
+    spill("\n")
+    damn based
+}
+
+fr fr ===== ADVANCED STRING FORMATTING =====
+
+fr fr Advanced string formatting with comprehensive placeholder support
+slay format_string_advanced(format tea, args ...tea) tea {
+    check format == "" {
         damn ""
     }
-    lowkey !string_contains(format, "%") {
+    
+    check !string_contains(format, "%") {
         damn format
     }
-    lowkey format == "Hello %s" && len(args) > 0 {
-        damn "Hello " + args[0]
-    } elseif format == "User: %s, ID: %d" && len(args) > 1 {
-        damn "User: " + args[0] + ", ID: " + args[1]
-    } elseif format == "Name: %s, Age: %d" && len(args) > 1 {
-        damn "Name: " + args[0] + ", Age: " + args[1]
-    } elseif format == "%s %s %s" && len(args) > 2 {
-        damn args[0] + " " + args[1] + " " + args[2]
-    } elseif format == "%s: %s" && len(args) > 1 {
-        damn args[0] + ": " + args[1]
-    } elseif format == "Error: %s" && len(args) > 0 {
-        damn "Error: " + args[0]
-    } elseif format == "Result: %s" && len(args) > 0 {
-        damn "Result: " + args[0]
-    } elseif format == "%d" && len(args) > 0 {
-        damn format_number_enhanced(args[0])
-    } elseif format == "%s" && len(args) > 0 {
-        damn args[0]
-    } nah {
-        lowkey len(args) > 0 {
-            damn format + " " + args[0]
+    
+    sus result tea = format
+    sus arg_index normie = 0
+    sus format_index normie = 0
+    
+    bestie format_index < string_length(format) {
+        check string_char_at(format, format_index) == 37 { fr fr ASCII for '%'
+            check format_index + 1 < string_length(format) {
+                sus format_char normie = string_char_at(format, format_index + 1)
+                check format_char == 115 { fr fr 's' for string
+                    check arg_index < len_args(args) {
+                        result = string_replace_at(result, format_index, 2, args[arg_index])
+                        arg_index = arg_index + 1
+                    }
+                } highkey format_char == 100 { fr fr 'd' for decimal
+                    check arg_index < len_args(args) {
+                        sus num_str tea = int_to_string_safe(args[arg_index])
+                        result = string_replace_at(result, format_index, 2, num_str)
+                        arg_index = arg_index + 1
+                    }
+                } highkey format_char == 102 { fr fr 'f' for float
+                    check arg_index < len_args(args) {
+                        sus float_str tea = float_to_string_safe(args[arg_index])
+                        result = string_replace_at(result, format_index, 2, float_str)
+                        arg_index = arg_index + 1
+                    }
+                }
+            }
         }
-        damn format
+        format_index = format_index + 1
     }
+    
+    damn result
 }
 
-fr fr Keep original function for backward compatibility
-slay format_string(format tea, args ...tea) tea {
-    damn format_string_enhanced(format, args...)
-}
-
-fr fr Multiple value printing with spaces
-slay spill_values(values ...tea) lit {
-    sus result tea = ""
-    bestie i := 0; i < len(values); i++ {
-        lowkey i > 0 {
-            result = result + " "
-        }
-        result = result + values[i]
+fr fr Enhanced integer to string conversion with error handling
+slay int_to_string_safe(value tea) tea {
+    check is_numeric_string(value) {
+        sus num normie = string_to_int_safe(value)
+        damn convert_int_to_string(num)
     }
-    spill(result)
-    damn based
+    damn value
 }
 
-fr fr Multiple value printing with newline
-slay spill_values_ln(values ...tea) lit {
-    spill_values(values...)
-    spill("\n")
-    damn based
-}
-
-fr fr Print with custom separator
-slay spill_sep(separator tea, values ...tea) lit {
-    sus result tea = ""
-    bestie i := 0; i < len(values); i++ {
-        lowkey i > 0 {
-            result = result + separator
-        }
-        result = result + values[i]
+fr fr Enhanced float to string conversion
+slay float_to_string_safe(value tea) tea {
+    check is_float_string(value) {
+        sus num meal = string_to_float_safe(value)
+        damn convert_float_to_string(num)
     }
-    spill(result)
-    damn based
-}
-
-fr fr ===== SPECIALIZED OUTPUT FUNCTIONS =====
-
-fr fr Print error message to stderr
-slay spill_error(message tea) lit {
-    spill("Error: " + message)
-    damn based
-}
-
-fr fr Print warning message
-slay spill_warning(message tea) lit {
-    spill("Warning: " + message)
-    damn based
-}
-
-fr fr Print debug message
-slay spill_debug(message tea) lit {
-    spill("Debug: " + message)
-    damn based
-}
-
-fr fr Print message with timestamp
-slay spill_with_time(message tea) lit {
-    sus timestamp tea = get_current_timestamp()
-    spill(timestamp + " - " + message)
-    damn based
+    damn value
 }
 
 fr fr ===== INPUT FUNCTIONS =====
 
-fr fr Read input from console until whitespace
-slay scan() tea {
+fr fr Read a single line from input with enhanced error handling
+slay read_line() tea {
     sus input tea = ""
     sus char normie = 0
+    sus byte_count normie = 0
     
-    bestie based {
-        char = read_single_char()
-        lowkey char == 32 || char == 10 || char == 13 || char == 0 {
+    bestie byte_count < 1024 { fr fr Prevent infinite loops
+        char = runtime_read_char()
+        check char == 10 || char == 13 || char == 0 { fr fr newline, carriage return, or null
             ghosted
         }
-        input = input + string_from_char(char)
+        input = input + char_to_string(char)
+        byte_count = byte_count + 1
     }
     
     damn input
 }
 
-fr fr Read full line from console
-slay scanln() tea {
-    sus line tea = ""
-    sus char normie = 0
-    
-    bestie based {
-        char = read_single_char()
-        lowkey char == 10 || char == 13 || char == 0 {
-            ghosted
+fr fr Read line with custom prompt
+slay read_line_prompt(prompt tea) tea {
+    spill(prompt)
+    damn read_line()
+}
+
+fr fr Read integer with validation
+slay read_int(prompt tea) normie {
+    sus input tea = read_line_prompt(prompt)
+    check is_numeric_string(input) {
+        damn string_to_int_safe(input)
+    }
+    damn 0
+}
+
+fr fr Read float with validation
+slay read_float(prompt tea) meal {
+    sus input tea = read_line_prompt(prompt)
+    check is_float_string(input) {
+        damn string_to_float_safe(input)
+    }
+    damn 0.0
+}
+
+fr fr Read boolean with enhanced parsing
+slay read_bool(prompt tea) lit {
+    sus input tea = read_line_prompt(prompt)
+    sus lower tea = string_to_lower(input)
+    check lower == "true" || lower == "yes" || lower == "1" || lower == "based" {
+        damn based
+    }
+    damn cringe
+}
+
+fr fr ===== FILE OPERATIONS =====
+
+fr fr Read entire file with error handling
+slay read_file_safe(filename tea) (tea, tea) {
+    check file_exists_safe(filename) {
+        sus content tea = runtime_read_file_content(filename)
+        sus error tea = get_last_error()
+        check error == "" {
+            damn (content, "")
         }
-        line = line + string_from_char(char)
+        damn ("", error)
+    }
+    damn ("", "File not found")
+}
+
+fr fr Write file with comprehensive error handling
+slay write_file_safe(filename tea, content tea) (lit, tea) {
+    clear_last_error()
+    sus success lit = runtime_write_file_content(filename, content)
+    sus error tea = get_last_error()
+    damn (success, error)
+}
+
+fr fr Append to file with safety checks
+slay append_file_safe(filename tea, content tea) (lit, tea) {
+    sus existing_content tea = ""
+    sus error tea = ""
+    
+    check file_exists_safe(filename) {
+        (existing_content, error) = read_file_safe(filename)
+        check error != "" {
+            damn (cringe, error)
+        }
     }
     
-    damn line
+    sus new_content tea = existing_content + content
+    damn write_file_safe(filename, new_content)
 }
 
-fr fr Formatted input scanning
-slay scanf(format tea) tea {
-    sus input tea = scanln()
-    damn parse_input(input, format)
-}
+fr fr ===== DIRECTORY OPERATIONS =====
 
-fr fr Parse input according to format
-slay parse_input(input tea, format tea) tea { fr fr Simple parsing for basic formats
-    lowkey format == "%s" {
-        damn input
-    } elseif format == "%d" {
-        damn input fr fr Would convert to number in full implementation
-    } nah {
-        damn input
+fr fr List directory with enhanced error handling
+slay list_directory_safe(path tea) ([]tea, tea) {
+    check directory_exists_safe(path) {
+        sus files []tea = runtime_list_directory_files(path)
+        sus error tea = get_last_error()
+        damn (files, error)
     }
+    damn ([], "Directory not found")
 }
 
-fr fr ===== FORMATTING HELPER FUNCTIONS =====
-
-fr fr Real number formatting function for string inputs
-slay format_number_enhanced(input tea) tea {
-    fr fr Parse and format any integer input using real conversion
-    sus number normie = core.string_to_int(input)
-    damn core.int_to_string(number)
+fr fr Create directory with parent creation
+slay create_directory_recursive(path tea) (lit, tea) {
+    clear_last_error()
+    sus success lit = runtime_create_directory_all(path)
+    sus error tea = get_last_error()
+    damn (success, error)
 }
 
-fr fr Real number formatting for integer inputs
-slay format_number(num normie) tea {
-    fr fr Convert any integer to string using real core function
-    damn core.int_to_string(num)
+fr fr ===== CONSOLE FORMATTING =====
+
+fr fr Set console text color with comprehensive color support
+slay set_text_color(color tea) lit {
+    check color == "black" { spill("\033[30m") }
+    highkey color == "red" { spill("\033[31m") }
+    highkey color == "green" { spill("\033[32m") }
+    highkey color == "yellow" { spill("\033[33m") }
+    highkey color == "blue" { spill("\033[34m") }
+    highkey color == "magenta" { spill("\033[35m") }
+    highkey color == "cyan" { spill("\033[36m") }
+    highkey color == "white" { spill("\033[37m") }
+    highkey color == "reset" { spill("\033[0m") }
+    damn based
 }
 
-fr fr Direct integer to string conversion for external use
-slay int_to_string(num normie) tea {
-    fr fr Convert integer to string using core function
-    damn core.int_to_string(num)
+fr fr Set background color
+slay set_background_color(color tea) lit {
+    check color == "black" { spill("\033[40m") }
+    highkey color == "red" { spill("\033[41m") }
+    highkey color == "green" { spill("\033[42m") }
+    highkey color == "yellow" { spill("\033[43m") }
+    highkey color == "blue" { spill("\033[44m") }
+    highkey color == "magenta" { spill("\033[45m") }
+    highkey color == "cyan" { spill("\033[46m") }
+    highkey color == "white" { spill("\033[47m") }
+    damn based
 }
 
-fr fr Real float formatting
-slay format_float(value meal) tea {
-    fr fr Convert any float to string using real core function
-    damn core.float_to_string(value)
+fr fr Print colored text with automatic reset
+slay spill_colored(text tea, color tea) lit {
+    set_text_color(color)
+    spill(text)
+    set_text_color("reset")
+    damn based
 }
-
-fr fr Direct float to string conversion for external use
-slay float_to_string(value meal) tea {
-    fr fr Convert float to string using core function
-    damn core.float_to_string(value)
-}
-
-fr fr Format boolean to string
-slay format_bool(value lit) tea {
-    lowkey value {
-        damn "true"
-    } nah {
-        damn "false"
-    }
-}
-
-fr fr ===== CONSOLE CONTROL FUNCTIONS =====
 
 fr fr Clear console screen
 slay clear_screen() lit {
@@ -239,465 +267,373 @@ slay clear_screen() lit {
     damn based
 }
 
-fr fr Set text color (ANSI escape codes)
-slay set_color(color tea) lit {
-    lowkey color == "red" {
-        spill("\033[31m")
-    } elseif color == "green" {
-        spill("\033[32m")
-    } elseif color == "blue" {
-        spill("\033[34m")
-    } elseif color == "reset" {
-        spill("\033[0m")
-    }
+fr fr Move cursor to position
+slay move_cursor(row normie, col normie) lit {
+    spillf("\033[%d;%dH", [int_to_string_safe(row), int_to_string_safe(col)])
     damn based
 }
 
-fr fr Print colored text
-slay spill_colored(message tea, color tea) lit {
-    set_color(color)
-    spill(message)
-    set_color("reset")
+fr fr ===== ERROR AND LOGGING =====
+
+fr fr Enhanced error printing with severity levels
+slay log_error(message tea) lit {
+    spill_colored("[ERROR] ", "red")
+    spillln(message)
     damn based
 }
 
-fr fr ===== FILE OPERATIONS =====
+slay log_warning(message tea) lit {
+    spill_colored("[WARNING] ", "yellow")
+    spillln(message)
+    damn based
+}
 
-fr fr Read entire file content
-slay read_file(filename tea) tea {
-    check file_exists(filename) {
-        sus content tea = runtime_read_file(filename)
-        damn content
-    } nah {
-        damn ""
+slay log_info(message tea) lit {
+    spill_colored("[INFO] ", "green")
+    spillln(message)
+    damn based
+}
+
+slay log_debug(message tea) lit {
+    spill_colored("[DEBUG] ", "cyan")
+    spillln(message)
+    damn based
+}
+
+fr fr Timestamped logging
+slay log_with_timestamp(level tea, message tea) lit {
+    sus timestamp tea = get_current_timestamp()
+    spillf("[%s] %s: %s\n", [timestamp, level, message])
+    damn based
+}
+
+fr fr ===== STRING UTILITY FUNCTIONS =====
+
+fr fr Get character at index in string
+slay string_char_at(text tea, index normie) normie {
+    check index >= 0 && index < string_length(text) {
+        damn runtime_get_char_at_index(text, index)
     }
+    damn 0
 }
 
-fr fr Write content to file (overwrite)
-slay write_file(filename tea, content tea) lit {
-    sus success lit = runtime_write_file(filename, content)
-    damn success
-}
-
-fr fr Append content to file
-slay append_file(filename tea, content tea) lit {
-    check file_exists(filename) {
-        sus existing tea = read_file(filename)
-        sus new_content tea = existing + content
-        damn write_file(filename, new_content)
-    } nah {
-        damn write_file(filename, content)
+fr fr Replace substring at specific position
+slay string_replace_at(text tea, start normie, length normie, replacement tea) tea {
+    check start >= 0 && start < string_length(text) {
+        sus before tea = string_substring_safe(text, 0, start)
+        sus after tea = string_substring_safe(text, start + length, string_length(text))
+        damn before + replacement + after
     }
+    damn text
 }
 
-fr fr Check if file exists
-slay file_exists(filename tea) lit {
-    damn runtime_file_exists(filename)
-}
-
-fr fr Delete file
-slay delete_file(filename tea) lit {
-    damn runtime_delete_file(filename)
-}
-
-fr fr Get file size in bytes
-slay file_size(filename tea) normie {
-    check file_exists(filename) {
-        damn runtime_file_size(filename)
-    } nah {
-        damn 0
+fr fr Safe substring extraction
+slay string_substring_safe(text tea, start normie, end normie) tea {
+    check start >= 0 && end >= start && end <= string_length(text) {
+        damn runtime_substring(text, start, end)
     }
+    damn ""
 }
 
-fr fr ===== DIRECTORY OPERATIONS =====
-
-fr fr List directory contents
-slay list_dir(directory tea) [tea] {
-    check dir_exists(directory) {
-        damn runtime_list_directory(directory)
-    } nah {
-        damn []
+fr fr Convert string to lowercase
+slay string_to_lower(text tea) tea {
+    sus result tea = ""
+    sus i normie = 0
+    bestie i < string_length(text) {
+        sus char normie = string_char_at(text, i)
+        check char >= 65 && char <= 90 { fr fr A-Z
+            char = char + 32 fr fr Convert to lowercase
+        }
+        result = result + char_to_string(char)
+        i = i + 1
     }
-}
-
-fr fr Create directory
-slay create_dir(directory tea) lit {
-    damn runtime_create_directory(directory)
-}
-
-fr fr Check if directory exists
-slay dir_exists(directory tea) lit {
-    damn runtime_directory_exists(directory)
-}
-
-fr fr Remove directory (if empty)
-slay remove_dir(directory tea) lit {
-    damn runtime_remove_directory(directory)
-}
-
-fr fr Create directory with parent directories
-slay create_dir_all(directory tea) lit {
-    damn runtime_create_directory_all(directory)
-}
-
-fr fr ===== ENHANCED INPUT OPERATIONS =====
-
-fr fr Read line with prompt
-slay read_line(prompt tea) tea {
-    spill(prompt)
-    damn scanln()
-}
-
-fr fr Read integer input with prompt
-slay read_int(prompt tea) normie {
-    sus input tea = read_line(prompt)
-    damn parse_int(input)
-}
-
-fr fr Read float input with prompt
-slay read_float(prompt tea) meal {
-    sus input tea = read_line(prompt)
-    damn parse_float(input)
-}
-
-fr fr Read boolean input with prompt
-slay read_bool(prompt tea) lit {
-    sus input tea = read_line(prompt)
-    damn parse_bool(input)
-}
-
-fr fr Parse integer from string - Enhanced Implementation
-slay parse_int(input tea) normie {
-    fr fr Use core string to int conversion
-    sus result normie = core.string_to_int(input)
     damn result
 }
 
-fr fr Parse float from string - Enhanced Implementation
-slay parse_float(input tea) meal {
-    fr fr Enhanced float parsing with more cases
-    lowkey input == "3.14" { damn 3.14 }
-    elseif input == "2.5" { damn 2.5 }
-    elseif input == "0.0" { damn 0.0 }
-    elseif input == "1.0" { damn 1.0 }
-    elseif input == "42.0" { damn 42.0 }
-    elseif input == "123.45" { damn 123.45 }
-    elseif input == "-1.5" { damn -1.5 }
-    else { damn 0.0 } fr fr Default for unparseable input
-}
-
-fr fr Parse boolean from string - Enhanced Implementation
-slay parse_bool(input tea) lit {
-    fr fr Enhanced boolean parsing with more cases and proper logic
-    lowkey input == "true" || input == "yes" || input == "1" || input == "based" || input == "TRUE" || input == "YES" || input == "True" {
-        damn based
-    } elseif input == "false" || input == "no" || input == "0" || input == "cap" || input == "FALSE" || input == "NO" || input == "False" {
-        damn cap
-    } else {
-        damn cap fr fr Default to false for invalid input
+fr fr Convert string to uppercase
+slay string_to_upper(text tea) tea {
+    sus result tea = ""
+    sus i normie = 0
+    bestie i < string_length(text) {
+        sus char normie = string_char_at(text, i)
+        check char >= 97 && char <= 122 { fr fr a-z
+            char = char - 32 fr fr Convert to uppercase
+        }
+        result = result + char_to_string(char)
+        i = i + 1
     }
+    damn result
 }
 
-fr fr ===== ERROR HANDLING FOR I/O =====
-
-fr fr IO Error types
-slay get_last_io_error() tea {
-    damn runtime_get_last_error()
-}
-
-fr fr Clear last IO error
-slay clear_io_error() cringe {
-    runtime_clear_error()
+fr fr Check if string contains substring
+slay string_contains(text tea, substring tea) lit {
+    check substring == "" {
+        damn based
+    }
+    check string_length(substring) > string_length(text) {
+        damn cringe
+    }
+    
+    sus i normie = 0
+    bestie i <= string_length(text) - string_length(substring) {
+        sus match lit = based
+        sus j normie = 0
+        bestie j < string_length(substring) {
+            check string_char_at(text, i + j) != string_char_at(substring, j) {
+                match = cringe
+                ghosted
+            }
+            j = j + 1
+        }
+        check match {
+            damn based
+        }
+        i = i + 1
+    }
     damn cringe
 }
 
-fr fr Check if last operation had error
-slay has_io_error() lit {
-    sus error tea = get_last_io_error()
-    damn error != ""
-}
+fr fr ===== VALIDATION FUNCTIONS =====
 
-fr fr Safe file read with error handling
-slay safe_read_file(filename tea) (tea, tea) {
-    clear_io_error()
-    sus content tea = read_file(filename)
-    sus error tea = get_last_io_error()
-    damn (content, error)
-}
-
-fr fr Safe file write with error handling
-slay safe_write_file(filename tea, content tea) (lit, tea) {
-    clear_io_error()
-    sus success lit = write_file(filename, content)
-    sus error tea = get_last_io_error()
-    damn (success, error)
-}
-
-fr fr ===== UTILITY FUNCTIONS =====
-
-fr fr Get current timestamp - Enhanced Implementation
-slay get_current_timestamp() tea {
-    fr fr Get timestamp using core runtime
-    sus timestamp thicc = core.get_timestamp()
-    fr fr Format as ISO-8601 timestamp string
-    damn "2025-08-08T12:30:00Z" fr fr Enhanced formatted timestamp
-}
-
-fr fr Check if path is absolute
-slay is_absolute_path(path tea) lit {
-    fr fr Check for common absolute path patterns
-    lowkey string_starts_with(path, "/") { damn based } fr fr Unix absolute path
-    elseif string_starts_with(path, "C:") { damn based } fr fr Windows absolute path
-    elseif string_starts_with(path, "\\") { damn based } fr fr Windows UNC path
-    else { damn cap }
-}
-
-fr fr Get file extension
-slay get_file_extension(filename tea) tea {
-    fr fr Extract file extension from filename
-    lowkey string_ends_with(filename, ".txt") { damn ".txt" }
-    elseif string_ends_with(filename, ".csd") { damn ".csd" }
-    elseif string_ends_with(filename, ".md") { damn ".md" }
-    elseif string_ends_with(filename, ".log") { damn ".log" }
-    elseif string_ends_with(filename, ".json") { damn ".json" }
-    else { damn "" }
-}
-
-fr fr Get filename without extension
-slay get_filename_without_extension(filename tea) tea {
-    fr fr Remove file extension from filename
-    lowkey string_ends_with(filename, ".txt") {
-        damn string_substring(filename, 0, string_length(filename) - 4)
-    } elseif string_ends_with(filename, ".csd") {
-        damn string_substring(filename, 0, string_length(filename) - 4)
-    } elseif string_ends_with(filename, ".md") {
-        damn string_substring(filename, 0, string_length(filename) - 3)
-    } else {
-        damn filename fr fr No extension found
+fr fr Check if string represents a number
+slay is_numeric_string(text tea) lit {
+    check text == "" {
+        damn cringe
     }
-}
-
-fr fr Check if string starts with prefix
-slay string_starts_with(text tea, prefix tea) lit {
-    lowkey prefix == "" { damn based } fr fr Empty prefix always matches
-    elseif text == prefix { damn based } fr fr Exact match
-    elseif prefix == "/" && string_contains(text, "/") { damn based }
-    elseif prefix == "C:" && string_contains(text, "C:") { damn based }
-    elseif prefix == "\\" && string_contains(text, "\\") { damn based }
-    else { damn cap }
-}
-
-fr fr Check if string ends with suffix
-slay string_ends_with(text tea, suffix tea) lit {
-    lowkey suffix == "" { damn based } fr fr Empty suffix always matches
-    elseif text == suffix { damn based } fr fr Exact match
-    elseif suffix == ".txt" && string_contains(text, ".txt") { damn based }
-    elseif suffix == ".csd" && string_contains(text, ".csd") { damn based }
-    elseif suffix == ".md" && string_contains(text, ".md") { damn based }
-    elseif suffix == ".log" && string_contains(text, ".log") { damn based }
-    elseif suffix == ".json" && string_contains(text, ".json") { damn based }
-    else { damn cap }
-}
-
-fr fr Extract substring from text
-slay string_substring(text tea, start normie, end normie) tea {
-    fr fr Simplified substring extraction
-    lowkey start == 0 && end >= string_length(text) { damn text }
-    elseif text == "hello.txt" && start == 0 && end == 5 { damn "hello" }
-    elseif text == "test.csd" && start == 0 && end == 4 { damn "test" }
-    elseif text == "file.md" && start == 0 && end == 4 { damn "file" }
-    else { damn text } fr fr Return original if no match
-}
-
-fr fr Helper function to read a single character from input
-slay read_single_char() normie {
-    damn runtime_read_char()
-}
-
-fr fr Helper function to convert ASCII code to string
-slay string_from_char(ascii_code normie) tea {
-    lowkey ascii_code == 65 {
-        damn "A"
-    } elseif ascii_code == 32 {
-        damn " "
-    } elseif ascii_code == 10 {
-        damn "\n"
-    } elseif ascii_code == 13 {
-        damn "\r"
-    } nah {
-        damn "?"
+    
+    sus i normie = 0
+    sus start normie = 0
+    
+    fr fr Check for leading minus sign
+    check string_char_at(text, 0) == 45 { fr fr '-'
+        start = 1
+        check string_length(text) == 1 {
+            damn cringe
+        }
     }
+    
+    i = start
+    bestie i < string_length(text) {
+        sus char normie = string_char_at(text, i)
+        check char < 48 || char > 57 { fr fr Not 0-9
+            damn cringe
+        }
+        i = i + 1
+    }
+    
+    damn based
 }
 
-fr fr Check if string contains substring - Enhanced Implementation
-slay string_contains(text tea, substring tea) lit {
-    fr fr Enhanced substring detection with more cases
-    lowkey text == "Hello %s" && substring == "%" { damn based }
-    elseif text == "User: %s, ID: %d" && substring == "%" { damn based }
-    elseif text == "Name: %s, Age: %d" && substring == "%" { damn based }
-    elseif text == "%s %s %s" && substring == "%" { damn based }
-    elseif text == "%s: %s" && substring == "%" { damn based }
-    elseif text == "Error: %s" && substring == "%" { damn based }
-    elseif text == "Result: %s" && substring == "%" { damn based }
-    elseif text == "%d" && substring == "%" { damn based }
-    elseif text == "%s" && substring == "%" { damn based }
-    elseif substring == "" { damn based } fr fr Empty substring is always found
-    elseif text == substring { damn based } fr fr Exact match
-    else { damn cap }
+fr fr Check if string represents a float
+slay is_float_string(text tea) lit {
+    check text == "" {
+        damn cringe
+    }
+    
+    sus decimal_count normie = 0
+    sus i normie = 0
+    sus start normie = 0
+    
+    fr fr Check for leading minus sign
+    check string_char_at(text, 0) == 45 { fr fr '-'
+        start = 1
+        check string_length(text) == 1 {
+            damn cringe
+        }
+    }
+    
+    i = start
+    bestie i < string_length(text) {
+        sus char normie = string_char_at(text, i)
+        check char == 46 { fr fr '.'
+            decimal_count = decimal_count + 1
+            check decimal_count > 1 {
+                damn cringe
+            }
+        } highkey char < 48 || char > 57 { fr fr Not 0-9
+            damn cringe
+        }
+        i = i + 1
+    }
+    
+    damn based
+}
+
+fr fr ===== CONVERSION FUNCTIONS =====
+
+fr fr Convert ASCII code to character string
+slay char_to_string(ascii_code normie) tea {
+    check ascii_code >= 32 && ascii_code <= 126 { fr fr Printable ASCII
+        damn runtime_char_to_string(ascii_code)
+    }
+    damn ""
+}
+
+fr fr Safe string to integer conversion
+slay string_to_int_safe(text tea) normie {
+    check is_numeric_string(text) {
+        damn runtime_string_to_int(text)
+    }
+    damn 0
+}
+
+fr fr Safe string to float conversion
+slay string_to_float_safe(text tea) meal {
+    check is_float_string(text) {
+        damn runtime_string_to_float(text)
+    }
+    damn 0.0
+}
+
+fr fr Convert integer to string with bounds checking
+slay convert_int_to_string(value normie) tea {
+    damn runtime_int_to_string(value)
+}
+
+fr fr Convert float to string with precision control
+slay convert_float_to_string(value meal) tea {
+    damn runtime_float_to_string(value)
+}
+
+fr fr ===== HELPER FUNCTIONS =====
+
+fr fr Get length of string
+slay string_length(text tea) normie {
+    damn runtime_string_length(text)
 }
 
 fr fr Get length of variadic arguments
-slay len(args ...tea) normie { fr fr Would return actual argument count in full implementation
-    damn 1 fr fr Simplified
+slay len_args(args ...tea) normie {
+    damn runtime_get_arg_count(args)
+}
+
+fr fr Get current timestamp in ISO format
+slay get_current_timestamp() tea {
+    damn runtime_get_current_time_iso()
+}
+
+fr fr Check if file exists
+slay file_exists_safe(filename tea) lit {
+    damn runtime_file_exists(filename)
+}
+
+fr fr Check if directory exists
+slay directory_exists_safe(path tea) lit {
+    damn runtime_directory_exists(path)
+}
+
+fr fr Get last error message
+slay get_last_error() tea {
+    damn runtime_get_last_error()
+}
+
+fr fr Clear last error
+slay clear_last_error() cringe {
+    runtime_clear_last_error()
+    damn cringe
 }
 
 fr fr ===== RUNTIME INTERFACE FUNCTIONS =====
 
-fr fr Runtime function to print string to console - Real Implementation
+fr fr Core runtime functions that interface with the Zig runtime
 slay runtime_print_string(message tea) cringe {
-    fr fr Real implementation using core.print
+    fr fr Implemented in Zig runtime
     core.print(message)
     damn cringe
 }
 
-fr fr Runtime function to read a character from input - Real Implementation
 slay runtime_read_char() normie {
-    fr fr Real implementation using syscall
-    sus input_line tea = core.read_line()
-    check string_length(input_line) > 0 {
-        damn byte_at_string(input_line, 0)
-    }
-    damn 10 fr fr Return newline as default
+    fr fr Implemented in Zig runtime  
+    damn core.read_char()
 }
 
-fr fr Runtime function to get current time in nanoseconds - Real Implementation
-slay runtime_current_time_nanos() normie {
-    fr fr Real implementation using core.get_timestamp
-    sus timestamp thicc = core.get_timestamp()
-    damn timestamp.(normie) fr fr Convert to normie type
+slay runtime_get_char_at_index(text tea, index normie) normie {
+    fr fr Implemented in Zig runtime
+    damn core.get_char_at(text, index)
 }
 
-fr fr Helper functions for real implementations
-slay string_length(s tea) normie {
-    fr fr Calculate string length - Enhanced Implementation
-    lowkey s == "" { damn 0 }
-    elseif s == "hello" { damn 5 }
-    elseif s == "world" { damn 5 }
-    elseif s == "test" { damn 4 }
-    elseif s == "Hello" { damn 5 }
-    elseif s == "World" { damn 5 }
-    elseif s == "42" { damn 2 }
-    elseif s == "123" { damn 3 }
-    elseif s == "true" { damn 4 }
-    elseif s == "false" { damn 5 }
-    elseif s == "based" { damn 5 }
-    elseif s == "cap" { damn 3 }
-    else {
-        fr fr For unknown strings, use core calculation
-        sus length normie = 0
-        bestie i := 0; i < 1000; i++ { fr fr reasonable limit
-            lowkey byte_at_string(s, i) == 0 {
-                ghosted
-            }
-            length = length + 1
-        }
-        damn length
-    }
+slay runtime_substring(text tea, start normie, end normie) tea {
+    fr fr Implemented in Zig runtime
+    damn core.substring(text, start, end)
 }
 
-slay byte_at_string(s tea, index normie) normie {
-    fr fr Get byte at index in string - simplified
-    check index == 0 { damn 104 } fr fr 'h' for "hello"
-    check index == 1 { damn 101 } fr fr 'e'
-    damn 0 fr fr null terminator
+slay runtime_string_length(text tea) normie {
+    fr fr Implemented in Zig runtime
+    damn core.string_length(text)
 }
 
-fr fr ===== RUNTIME INTERFACE FOR FILE OPERATIONS =====
-
-fr fr Runtime file reading function
-slay runtime_read_file(filename tea) tea {
-    fr fr Real implementation using core file operations
-    sus content tea = core.read_file_content(filename)
-    damn content
+slay runtime_char_to_string(ascii_code normie) tea {
+    fr fr Implemented in Zig runtime
+    damn core.char_to_string(ascii_code)
 }
 
-fr fr Runtime file writing function
-slay runtime_write_file(filename tea, content tea) lit {
-    fr fr Real implementation using core file operations
-    sus success lit = core.write_file_content(filename, content)
-    damn success
+slay runtime_string_to_int(text tea) normie {
+    fr fr Implemented in Zig runtime
+    damn core.string_to_int(text)
 }
 
-fr fr Runtime file existence check
+slay runtime_string_to_float(text tea) meal {
+    fr fr Implemented in Zig runtime
+    damn core.string_to_float(text)
+}
+
+slay runtime_int_to_string(value normie) tea {
+    fr fr Implemented in Zig runtime
+    damn core.int_to_string(value)
+}
+
+slay runtime_float_to_string(value meal) tea {
+    fr fr Implemented in Zig runtime
+    damn core.float_to_string(value)
+}
+
+slay runtime_get_arg_count(args ...tea) normie {
+    fr fr Implemented in Zig runtime
+    damn core.get_variadic_count(args)
+}
+
+slay runtime_get_current_time_iso() tea {
+    fr fr Implemented in Zig runtime
+    damn core.get_current_time_iso()
+}
+
+slay runtime_read_file_content(filename tea) tea {
+    fr fr Implemented in Zig runtime
+    damn core.read_file(filename)
+}
+
+slay runtime_write_file_content(filename tea, content tea) lit {
+    fr fr Implemented in Zig runtime
+    damn core.write_file(filename, content)
+}
+
 slay runtime_file_exists(filename tea) lit {
-    fr fr Real implementation using core file operations
-    sus exists lit = core.file_exists(filename)
-    damn exists
+    fr fr Implemented in Zig runtime
+    damn core.file_exists(filename)
 }
 
-fr fr Runtime file deletion
-slay runtime_delete_file(filename tea) lit {
-    fr fr Real implementation using core file operations
-    sus deleted lit = core.delete_file(filename)
-    damn deleted
+slay runtime_directory_exists(path tea) lit {
+    fr fr Implemented in Zig runtime
+    damn core.directory_exists(path)
 }
 
-fr fr Runtime file size check
-slay runtime_file_size(filename tea) normie {
-    fr fr Real implementation using core file operations
-    sus size thicc = core.get_file_size(filename)
-    damn size.(normie)
+slay runtime_list_directory_files(path tea) []tea {
+    fr fr Implemented in Zig runtime
+    damn core.list_directory(path)
 }
 
-fr fr ===== RUNTIME INTERFACE FOR DIRECTORY OPERATIONS =====
-
-fr fr Runtime directory listing
-slay runtime_list_directory(directory tea) [tea] {
-    fr fr Real implementation using core directory operations
-    sus files [tea] = core.list_directory_files(directory)
-    damn files
+slay runtime_create_directory_all(path tea) lit {
+    fr fr Implemented in Zig runtime
+    damn core.create_directory_recursive(path)
 }
 
-fr fr Runtime directory creation
-slay runtime_create_directory(directory tea) lit {
-    fr fr Real implementation using core directory operations
-    sus created lit = core.create_directory(directory)
-    damn created
-}
-
-fr fr Runtime directory existence check
-slay runtime_directory_exists(directory tea) lit {
-    fr fr Real implementation using core directory operations
-    sus exists lit = core.directory_exists(directory)
-    damn exists
-}
-
-fr fr Runtime directory removal
-slay runtime_remove_directory(directory tea) lit {
-    fr fr Real implementation using core directory operations
-    sus removed lit = core.remove_directory(directory)
-    damn removed
-}
-
-fr fr Runtime directory creation with parents
-slay runtime_create_directory_all(directory tea) lit {
-    fr fr Real implementation using core directory operations
-    sus created lit = core.create_directory_recursive(directory)
-    damn created
-}
-
-fr fr ===== RUNTIME INTERFACE FOR ERROR HANDLING =====
-
-fr fr Runtime error retrieval
 slay runtime_get_last_error() tea {
-    fr fr Real implementation using core error system
-    sus error tea = core.get_last_error_message()
-    damn error
+    fr fr Implemented in Zig runtime
+    damn core.get_last_error()
 }
 
-fr fr Runtime error clearing
-slay runtime_clear_error() cringe {
-    fr fr Real implementation using core error system
+slay runtime_clear_last_error() cringe {
+    fr fr Implemented in Zig runtime
     core.clear_last_error()
     damn cringe
 }

@@ -135,6 +135,17 @@ pub fn Channel(comptime T: type) type {
 
         pub fn deinit(self: *Self) void {
             self.close();
+            
+            // Clean up buffer contents with GC integration
+            for (self.buffer.items) |item| {
+                // If T is a GC-managed type, unregister from GC
+                if (@TypeOf(item) == @import("main_unified.zig").Variable) {
+                    if (@hasDecl(@import("gc.zig"), "unregisterStackRoot")) {
+                        @import("gc.zig").unregisterStackRoot(@ptrCast(&item)) catch {};
+                    }
+                }
+            }
+            
             self.buffer.deinit();
         }
 
@@ -998,6 +1009,142 @@ pub fn makeUnbufferedChannel(comptime T: type, allocator: Allocator) !*Channel(T
     return makeChannel(T, allocator, 0);
 }
 
+// ===== CURSED LANGUAGE CHANNEL API =====
+
+/// CURSED dm_send function - Send to channel with CURSED Variable integration
+pub fn dm_send(channel_id: ChannelId, value: anytype, allocator: Allocator) !SendResult {
+    _ = allocator; // Reserved for future Variable type integration
+    
+    // Type erasure for generic channel operations
+    const T = @TypeOf(value);
+    
+    // Look up channel in registry
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+    
+    if (channel_registry) |registry| {
+        if (registry.get(channel_id)) |channel_ptr| {
+            // Cast to typed channel based on the value type
+            const channel: *Channel(T) = @ptrCast(@alignCast(channel_ptr));
+            return channel.send(value);
+        }
+    }
+    
+    return ConcurrencyError.InvalidChannel;
+}
+
+/// CURSED dm_recv function - Receive from channel with CURSED Variable integration
+pub fn dm_recv(comptime T: type, channel_id: ChannelId, allocator: Allocator) !?T {
+    _ = allocator; // For future use with complex types
+    
+    // Look up channel in registry
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+    
+    if (channel_registry) |registry| {
+        if (registry.get(channel_id)) |channel_ptr| {
+            // Cast to typed channel
+            const channel: *Channel(T) = @ptrCast(@alignCast(channel_ptr));
+            return channel.receive();
+        }
+    }
+    
+    return null;
+}
+
+/// CURSED dm_close function - Close channel
+pub fn dm_close(channel_id: ChannelId) !void {
+    // Look up channel in registry
+    channel_registry_mutex.lock();
+    defer channel_registry_mutex.unlock();
+    
+    if (channel_registry) |registry| {
+        if (registry.get(channel_id)) |channel_ptr| {
+            // Cast to generic channel for closing
+            const channel: *Channel(u8) = @ptrCast(@alignCast(channel_ptr));
+            channel.close();
+            return;
+        }
+    }
+    
+    return ConcurrencyError.InvalidChannel;
+}
+
+/// Create typed channel with dm<T> syntax support  
+pub fn dm_create(comptime T: type, allocator: Allocator, capacity: usize) !ChannelId {
+    const channel = try makeChannel(T, allocator, capacity);
+    const channel_id = channel.id;
+    
+    // Register channel for CURSED operations
+    try registerChannelLLVM(channel_id, @ptrCast(channel));
+    
+    return channel_id;
+}
+
+/// Variable-aware channel operations for GC integration
+pub const VariableChannel = struct {
+    const Self = @This();
+    const Variable = @import("main_unified.zig").Variable;
+    
+    channel: *Channel(Variable),
+    allocator: Allocator,
+    
+    pub fn init(allocator: Allocator, capacity: usize) !Self {
+        const channel = try makeChannel(Variable, allocator, capacity);
+        
+        return Self{
+            .channel = channel,
+            .allocator = allocator,
+        };
+    }
+    
+    pub fn deinit(self: *Self) void {
+        // Clean up Variable references in the channel buffer
+        for (self.channel.buffer.items) |*variable| {
+            variable.deinit(self.allocator);
+        }
+        
+        self.channel.deinit();
+        self.allocator.destroy(self.channel);
+    }
+    
+    /// Send Variable to channel with GC registration
+    pub fn sendVariable(self: *Self, variable: Variable) !SendResult {
+        // Register Variable with GC before adding to channel
+        if (@hasDecl(@import("gc.zig"), "registerStackRoot")) {
+            @import("gc.zig").registerStackRoot(@ptrCast(&variable)) catch {};
+        }
+        
+        return self.channel.send(variable);
+    }
+    
+    /// Receive Variable from channel with GC cleanup
+    pub fn receiveVariable(self: *Self) !?Variable {
+        const result = try self.channel.receive();
+        
+        if (result) |variable| {
+            // Unregister from GC since we're transferring ownership
+            if (@hasDecl(@import("gc.zig"), "unregisterStackRoot")) {
+                @import("gc.zig").unregisterStackRoot(@ptrCast(&variable)) catch {};
+            }
+        }
+        
+        return result;
+    }
+    
+    pub fn close(self: *Self) void {
+        self.channel.close();
+    }
+    
+    pub fn isClosed(self: *Self) bool {
+        return self.channel.isClosed();
+    }
+    
+    pub fn getId(self: *Self) ChannelId {
+        return self.channel.id;
+    }
+};
+
 /// Channel registry for LLVM IR generation
 var channel_registry: ?std.HashMap(ChannelId, *anyopaque, std.hash_map.AutoContext(ChannelId), std.hash_map.default_max_load_percentage) = null;
 var channel_registry_mutex: Mutex = Mutex{};
@@ -1226,26 +1373,60 @@ export fn cursed_channel_create(element_size: u32, buffer_size: u32) ?*anyopaque
 
 /// C FFI export for sending to channels from LLVM compiled code
 export fn cursed_channel_send(channel_ptr: ?*anyopaque, data: ?*anyopaque, data_size: u32) u32 {
-    _ = channel_ptr;
-    _ = data;
-    _ = data_size;
-    // TODO: Implement generic channel send
-    return 0; // SendResult.sent
+    if (channel_ptr == null or data == null) {
+        return @intFromEnum(SendResult.closed);
+    }
+    
+    // Cast to generic byte channel for now
+    const channel: *Channel(u8) = @ptrCast(@alignCast(channel_ptr.?));
+    
+    // For now, handle data as a stream of bytes
+    const data_bytes: [*]u8 = @ptrCast(data.?);
+    
+    // Send each byte to the channel
+    var i: u32 = 0;
+    while (i < data_size) : (i += 1) {
+        const result = channel.send(data_bytes[i]) catch return @intFromEnum(SendResult.closed);
+        if (result != SendResult.sent) {
+            return @intFromEnum(result);
+        }
+    }
+    
+    return @intFromEnum(SendResult.sent);
 }
 
 /// C FFI export for receiving from channels from LLVM compiled code
 export fn cursed_channel_receive(channel_ptr: ?*anyopaque, data_out: ?*anyopaque, data_size: u32) u32 {
-    _ = channel_ptr;
-    _ = data_out;
-    _ = data_size;
-    // TODO: Implement generic channel receive
-    return 0; // ReceiveResult.received
+    if (channel_ptr == null or data_out == null) {
+        return @intFromEnum(ReceiveResult.closed);
+    }
+    
+    // Cast to generic byte channel for now
+    const channel: *Channel(u8) = @ptrCast(@alignCast(channel_ptr.?));
+    const data_bytes: [*]u8 = @ptrCast(data_out.?);
+    
+    // Receive bytes from the channel
+    var i: u32 = 0;
+    while (i < data_size) : (i += 1) {
+        const result = channel.receive() catch return @intFromEnum(ReceiveResult.closed);
+        if (result) |byte| {
+            data_bytes[i] = byte;
+        } else {
+            // Channel closed or no more data
+            return @intFromEnum(ReceiveResult.closed);
+        }
+    }
+    
+    return @intFromEnum(ReceiveResult.received);
 }
 
 /// C FFI export for closing channels from LLVM compiled code
 export fn cursed_channel_close(channel_ptr: ?*anyopaque) void {
-    _ = channel_ptr;
-    // TODO: Implement generic channel close
+    if (channel_ptr == null) return;
+    
+    // Cast to generic byte channel for now
+    const channel: *Channel(u8) = @ptrCast(@alignCast(channel_ptr.?));
+    channel.close();
 }
 
 /// C FFI export for initializing runtime from LLVM compiled code
@@ -1359,4 +1540,98 @@ test "work-stealing deque" {
     const popped = deque.popBottom();
     try std.testing.expect(popped == &goroutine);
     try std.testing.expect(deque.isEmpty());
+}
+
+test "CURSED channel operations - dm_send and dm_recv" {
+    const allocator = std.testing.allocator;
+    
+    // Initialize channel registry
+    initChannelRegistry(allocator);
+    
+    // Create a channel using CURSED API
+    const channel_id = try dm_create(i32, allocator, 3);
+    
+    // Test dm_send
+    const send_result = try dm_send(channel_id, @as(i32, 42), allocator);
+    try std.testing.expect(send_result == SendResult.sent);
+    
+    // Test dm_recv
+    const received = try dm_recv(i32, channel_id, allocator);
+    try std.testing.expect(received.? == 42);
+    
+    // Test dm_close
+    try dm_close(channel_id);
+    
+    // Try sending to closed channel
+    const send_result_closed = try dm_send(channel_id, @as(i32, 43), allocator);
+    try std.testing.expect(send_result_closed == SendResult.closed);
+}
+
+test "Variable channel with GC integration" {
+    const allocator = std.testing.allocator;
+    
+    var var_channel = try VariableChannel.init(allocator, 2);
+    defer var_channel.deinit();
+    
+    // Create test Variables
+    const Variable = @import("main_unified.zig").Variable;
+    const var1 = Variable{ .Integer = 123 };
+    const var2 = Variable{ .Integer = 456 };
+    
+    // Test sending Variables
+    try std.testing.expect(try var_channel.sendVariable(var1) == SendResult.sent);
+    try std.testing.expect(try var_channel.sendVariable(var2) == SendResult.sent);
+    
+    // Test receiving Variables
+    const received1 = try var_channel.receiveVariable();
+    try std.testing.expect(received1 != null);
+    if (received1) |received_var| {
+        try std.testing.expect(received_var.Integer == 123);
+    }
+    
+    const received2 = try var_channel.receiveVariable();
+    try std.testing.expect(received2 != null);
+    if (received2) |received_var2| {
+        try std.testing.expect(received_var2.Integer == 456);
+    }
+    
+    // Test channel close
+    var_channel.close();
+    try std.testing.expect(var_channel.isClosed());
+}
+
+test "Channel type system integration" {
+    const allocator = std.testing.allocator;
+    
+    // Initialize scheduler for full system integration
+    const config = SchedulerConfig.default();
+    try initializeScheduler(allocator, config);
+    defer shutdownScheduler(allocator);
+    
+    initChannelRegistry(allocator);
+    
+    // Create channels of different types
+    const int_channel = try dm_create(i32, allocator, 1);
+    const float_channel = try dm_create(f64, allocator, 1);
+    const bool_channel = try dm_create(bool, allocator, 1);
+    
+    // Test type-safe operations
+    try std.testing.expect(try dm_send(int_channel, @as(i32, 100), allocator) == SendResult.sent);
+    try std.testing.expect(try dm_send(float_channel, @as(f64, 3.14), allocator) == SendResult.sent);
+    try std.testing.expect(try dm_send(bool_channel, true, allocator) == SendResult.sent);
+    
+    // Test receiving with correct types
+    const int_result = try dm_recv(i32, int_channel, allocator);
+    try std.testing.expect(int_result.? == 100);
+    
+    const float_result = try dm_recv(f64, float_channel, allocator);
+    try std.testing.expect(float_result.? == 3.14);
+    
+    const bool_result = try dm_recv(bool, bool_channel, allocator);
+    try std.testing.expect(bool_result.? == true);
+    
+    // Clean up
+    try dm_close(int_channel);
+    try dm_close(float_channel);
+    try dm_close(bool_channel);
 }

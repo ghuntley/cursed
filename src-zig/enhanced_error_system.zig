@@ -121,7 +121,7 @@ pub const StackTrace = struct {
         const num_addresses = if (@hasDecl(std.c, "backtrace")) std.c.backtrace(addresses[0..]) else 0;
         
         for (addresses[0..@intCast(num_addresses)]) |addr| {
-            if (addr) |address| {
+            if (addr) |_| {
                 // Create frame from address (simplified)
                 const frame = try StackFrame.init(
                     trace.allocator,
@@ -382,7 +382,7 @@ pub const ShookResult = union(enum) {
         return !self.isOk();
     }
 
-    pub fn propagate(self: ShookResult, allocator: Allocator, current_function: []const u8) !Value {
+    pub fn propagate(self: ShookResult, _: Allocator, current_function: []const u8) !Value {
         return switch (self) {
             .Ok => |value| value,
             .Error => |error_value| {

@@ -26,6 +26,13 @@ pub const CompilerConfig = struct {
     static_link: bool = false, // Static linking
     inline_threshold: ?u32 = null, // Function inlining threshold
     no_inline: bool = false, // Disable inlining
+    lto_enabled: bool = false, // Link-Time Optimization
+    pgo_enabled: bool = false, // Profile-Guided Optimization
+    pgo_profile_path: ?[]const u8 = null, // PGO profile data file
+    size_optimization: bool = false, // Optimize for size
+    vectorization_enabled: bool = true, // Auto-vectorization
+    target_cpu: ?[]const u8 = null, // Target CPU
+    target_features: ?[]const u8 = null, // Target features
 };
 
 const VariableInfo = struct {
@@ -61,7 +68,7 @@ pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []cons
                     break :blk try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});
             };
             defer if (config.output_path == null) allocator.free(output_filename);
-            try compileToLLVMBackend(allocator, source, filename, output_filename, config.verbose, config.debug_info);
+            try compileToLLVMBackend(allocator, source, filename, output_filename, config);
         },
     }
 }
@@ -158,9 +165,9 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     print("🚀 Run with: ./{s}\n", .{output_filename});
 }
 
-/// LLVM Backend compilation (proper LLVM IR generation + native compilation)
-pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, output_filename: []const u8, verbose: bool, debug_info: bool) !void {
-    print("[1/5] Generating LLVM IR...\n", .{});
+/// LLVM Backend compilation with advanced optimization
+pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, output_filename: []const u8, config: CompilerConfig) !void {
+    print("[1/6] Generating LLVM IR...\n", .{});
     
     // Generate IR filename - if output is .ll, use it, otherwise create one
     const ir_filename = if (std.mem.endsWith(u8, output_filename, ".ll")) 
@@ -168,6 +175,23 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: 
     else 
         try std.fmt.allocPrint(allocator, "{s}.ll", .{output_filename});
     defer if (!std.mem.endsWith(u8, output_filename, ".ll")) allocator.free(ir_filename);
+    
+    // Initialize advanced code generator
+    const AdvancedCodeGen = @import("advanced_codegen.zig").AdvancedCodeGen;
+    var advanced_codegen = try AdvancedCodeGen.init(allocator);
+    defer advanced_codegen.deinit();
+    
+    // Use advanced LLVM compiler
+    const advanced_llvm = @import("advanced_llvm_compiler.zig");
+    
+    // Configure optimization engine
+    try advanced_llvm.configureAdvancedOptimizations(&advanced_codegen, config);
+    
+    // Enable debug information if requested
+    if (config.debug_info) {
+        try advanced_codegen.enableDebugInfo(filename);
+        if (config.verbose) print("✅ DWARF debug information enabled\n", .{});
+    }
     
     // Create LLVM IR file
     const ir_file = std.fs.cwd().createFile(ir_filename, .{}) catch |err| {
@@ -178,44 +202,86 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: 
     
     const writer = ir_file.writer();
     
-    print("[2/5] Translating CURSED to LLVM IR...\n", .{});
-    try generateProperLLVMIR(allocator, source, writer, verbose, filename, debug_info);
+    print("[2/6] Parsing and analyzing source code...\n", .{});
     
-    if (verbose) print("✅ Generated LLVM IR: {s}\n", .{ir_filename});
+    // Parse source code using existing parser
+    const parser_module = @import("parser.zig");
+    var cursed_parser = parser_module.Parser.init(allocator);
+    defer cursed_parser.deinit();
+    
+    // Tokenize first
+    const lexer_module = @import("lexer.zig");
+    var l = lexer_module.Lexer.init(allocator, source);
+    const tokens = l.tokenize() catch |err| {
+        print("❌ Lexer error during LLVM compilation: {}\n", .{err});
+        return;
+    };
+    defer tokens.deinit();
+    
+    if (config.verbose) print("📝 Lexed {} tokens for LLVM compilation\n", .{tokens.items.len});
+    
+    // Parse tokens to AST
+    const ast_result = cursed_parser.parseTokens(tokens.items) catch |err| {
+        print("❌ Parser error during LLVM compilation: {}\n", .{err});
+        return;
+    };
+    defer cursed_parser.deinitStatements(ast_result);
+    
+    if (config.verbose) print("🌳 Parsed {} statements for LLVM compilation\n", .{ast_result.len});
+    
+    print("[3/6] Generating optimized LLVM IR...\n", .{});
+    
+    // Generate LLVM IR using advanced codegen
+    for (ast_result) |stmt| {
+        try advanced_codegen.compileStatement(stmt);
+    }
+    
+    print("[4/6] Running optimization passes...\n", .{});
+    
+    // Run optimization passes
+    if (advanced_codegen.optimization_engine) |*engine| {
+        const optimization_result = try engine.runOptimizations();
+        
+        if (config.verbose) {
+            print("✅ Optimization complete:\n", .{});
+            print("   - Functions optimized: {}\n", .{optimization_result.functions_optimized});
+            print("   - Instructions eliminated: {}\n", .{optimization_result.instructions_eliminated});
+            print("   - Constants folded: {}\n", .{optimization_result.constants_folded});
+            print("   - Functions inlined: {}\n", .{optimization_result.functions_inlined});
+            print("   - Loops optimized: {}\n", .{optimization_result.loops_optimized});
+            print("   - Estimated performance improvement: {d:.2}x\n", .{optimization_result.estimated_performance_improvement});
+        }
+        
+        // Generate optimization report if verbose
+        if (config.verbose) {
+            const report_filename = try std.fmt.allocPrint(allocator, "{s}_optimization_report.txt", .{output_filename});
+            defer allocator.free(report_filename);
+            try engine.generateReport(report_filename);
+        }
+    }
+    
+    // Write optimized LLVM IR to file
+    try advanced_llvm.writeOptimizedLLVMIR(&advanced_codegen, writer, filename);
+    
+    if (config.verbose) print("✅ Generated optimized LLVM IR: {s}\n", .{ir_filename});
     
     // If output_filename ends with .ll, we only wanted IR generation
     if (std.mem.endsWith(u8, output_filename, ".ll")) {
-        print("✅ LLVM IR generation complete: {s}\n", .{output_filename});
+        print("✅ Advanced LLVM IR generation complete: {s}\n", .{output_filename});
         return;
     }
     
-    // Otherwise, compile IR to native executable
-    print("[3/5] Optimizing LLVM IR...\n", .{});
+    // Compile optimized IR to native executable
+    try advanced_llvm.compileOptimizedLLVMToNative(allocator, ir_filename, output_filename, config);
     
-    const executable_name = if (std.mem.endsWith(u8, filename, ".csd"))
-        try std.fmt.allocPrint(allocator, "{s}", .{filename[0..filename.len - 4]})
-    else
-        try std.fmt.allocPrint(allocator, "{s}_compiled", .{filename});
-    defer allocator.free(executable_name);
+    // Generate performance benchmark if verbose
+    if (config.verbose) {
+        try advanced_llvm.generatePerformanceBenchmark(allocator, output_filename, config);
+    }
     
-    print("[4/5] Compiling LLVM IR to native executable...\n", .{});
-    
-    // Try to compile with clang first, then fall back to llc + clang
-    const compile_result = compileLLVMIRToExecutable(allocator, ir_filename, executable_name, debug_info, verbose);
-    
-    if (compile_result) |_| {
-        print("[5/5] Compilation successful!\n", .{});
-        print("✅ Native executable created: {s}\n", .{executable_name});
-        print("🚀 Run with: ./{s}\n", .{executable_name});
-        
-        // Clean up IR file if successful
-        if (!verbose) {
-            std.fs.cwd().deleteFile(ir_filename) catch {};
-        }
-    } else |err| {
-        print("❌ LLVM compilation failed: {any}\n", .{err});
-        print("💡 LLVM IR available at: {s}\n", .{ir_filename});
-        return err;
+    // Clean up IR file if successful and not in verbose mode
+    if (!config.verbose and !config.emit_llvm) {
+        std.fs.cwd().deleteFile(ir_filename) catch {};
     }
 }
 
@@ -1528,15 +1594,32 @@ fn generateLenFunctionCall(
     
     // Parse pattern: sus count drip = len(array_name)
     if (std.mem.indexOf(u8, stmt, "len([")) |_| {
-        // Array literal - count elements
-        const len_value = 5; // Placeholder - would parse actual array literal
-        try writer.print("  %count = alloca i64, align 8\n", .{});
-        try writer.print("  store i64 {}, i64* %count, align 8\n", .{len_value});
-        variable_counter.* += 1;
+        // Array literal - parse and count elements dynamically
+        // Extract array literal content between [ and ]
+        const start = std.mem.indexOf(u8, stmt, "[") orelse 0;
+        const end = std.mem.lastIndexOf(u8, stmt, "]") orelse stmt.len;
+        if (end > start) {
+            const array_content = stmt[start + 1..end];
+            // Count commas + 1 for element count (simple heuristic)
+            var element_count: u32 = 1;
+            if (array_content.len > 0) {
+                for (array_content) |char| {
+                    if (char == ',') element_count += 1;
+                }
+            } else {
+                element_count = 0; // Empty array
+            }
+            
+            try writer.print("  %count = alloca i64, align 8\n", .{});
+            try writer.print("  store i64 {}, i64* %count, align 8  ; dynamic array literal length\n", .{element_count});
+            variable_counter.* += 1;
+        }
     } else {
-        // Variable array - use stored length or return constant
+        // Variable array - generate call to extract length from metadata
         try writer.print("  %count = alloca i64, align 8\n", .{});
-        try writer.print("  store i64 5, i64* %count, align 8  ; placeholder array length\n", .{});
+        try writer.print("  ; TODO: Extract dynamic length from array metadata structure\n", .{});
+        try writer.print("  ; Current limitation: requires integration with array_runtime.zig\n", .{});
+        try writer.print("  store i64 0, i64* %count, align 8  ; placeholder - needs dynamic extraction\n", .{});
         variable_counter.* += 1;
     }
 }

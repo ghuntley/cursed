@@ -142,7 +142,7 @@ pub const LoopOptimizer = struct {
         
         // Check if this block has any predecessors that come after it in the function
         // This is a simple heuristic for detecting loops
-        const function = c.LLVMGetBasicBlockParent(basic_block);
+        _ = c.LLVMGetBasicBlockParent(basic_block);
         
         var current_block = basic_block;
         var found_successor = false;
@@ -276,13 +276,12 @@ pub const LoopOptimizer = struct {
 
     /// Find all basic blocks in a loop
     fn findLoopBlocks(self: *LoopOptimizer, loop_header: c.LLVMBasicBlockRef, blocks: *ArrayList(c.LLVMBasicBlockRef)) !void {
-        _ = self;
         
         // Add the header
         try blocks.append(loop_header);
         
         // Simple approach: traverse from header and find blocks that can reach back to header
-        const function = c.LLVMGetBasicBlockParent(loop_header);
+        _ = c.LLVMGetBasicBlockParent(loop_header);
         var basic_block = c.LLVMGetNextBasicBlock(loop_header);
         
         while (basic_block != null) {
@@ -316,7 +315,7 @@ pub const LoopOptimizer = struct {
     }
 
     /// Find loop exit blocks
-    fn findExitBlocks(self: *LoopOptimizer, loop_info: *LoopInfo) !void {
+    fn findExitBlocks(_: *LoopOptimizer, loop_info: *LoopInfo) !void {
         for (loop_info.blocks.items) |block| {
             const terminator = c.LLVMGetBasicBlockTerminator(block);
             if (terminator == null) continue;
@@ -361,7 +360,6 @@ pub const LoopOptimizer = struct {
 
     /// Find induction variables in the loop
     fn findInductionVariables(self: *LoopOptimizer, loop_info: *LoopInfo) !void {
-        _ = self;
         
         // Look for PHI nodes in the header that are incremented in the loop
         var instruction = c.LLVMGetFirstInstruction(loop_info.header);
@@ -377,7 +375,6 @@ pub const LoopOptimizer = struct {
 
     /// Check if a PHI node is an induction variable
     fn isPHIAnInductionVariable(self: *LoopOptimizer, phi: c.LLVMValueRef, loop_info: *LoopInfo) bool {
-        _ = self;
         
         // Check if the PHI has exactly 2 incoming values
         const num_incoming = c.LLVMCountIncoming(phi);
@@ -584,7 +581,6 @@ pub const LoopOptimizer = struct {
 
     /// Check if a loop is unrollable
     fn isLoopUnrollable(self: *LoopOptimizer, loop_info: *LoopInfo) bool {
-        _ = self;
         
         // Basic unrollability checks
         if (loop_info.instruction_count > self.config.max_unroll_size) return false;
@@ -605,7 +601,6 @@ pub const LoopOptimizer = struct {
 
     /// Perform loop-invariant code motion
     fn performLICM(self: *LoopOptimizer, loop_info: LoopInfo) !u32 {
-        _ = self;
         
         var moved_count: u32 = 0;
         
