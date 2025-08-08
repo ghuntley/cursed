@@ -24,6 +24,7 @@ extern fn llvm_build_global_string_ptr(builder: ?*anyopaque, str: [*c]const u8, 
 extern fn llvm_const_int(int_type: ?*anyopaque, value: c_ulonglong) ?*anyopaque;
 extern fn llvm_build_ret(builder: ?*anyopaque, value: ?*anyopaque) ?*anyopaque;
 extern fn llvm_get_named_function(module: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
+extern fn llvm_get_function_type(function: ?*anyopaque) ?*anyopaque;
 extern fn llvm_build_call2(builder: ?*anyopaque, function_type: ?*anyopaque, function: ?*anyopaque, args: [*]?*anyopaque, arg_count: c_int, name: [*c]const u8) ?*anyopaque;
 extern fn llvm_verify_module(module: ?*anyopaque) c_int;
 extern fn llvm_print_module_to_string(module: ?*anyopaque) [*c]u8;
@@ -124,11 +125,23 @@ pub const LLVMBackendFixed = struct {
     }
     
     pub fn buildCall(self: *LLVMBackendFixed, function: LLVMValueRef, args: []LLVMValueRef, name: []const u8) !LLVMValueRef {
+        // Validate input parameters
+        if (self.builder == null) return error.InvalidBuilder;
+        if (function == null) return error.InvalidFunction;
+        
         const name_cstr = try self.allocator.dupeZ(u8, name);
         defer self.allocator.free(name_cstr);
         
-        // For simplified version, use function directly (no type check)
-        return llvm_build_call2(self.builder, null, function, args.ptr, @intCast(args.len), name_cstr.ptr);
+        // Get the function type from the function value - this is critical for LLVM
+        const function_type = llvm_get_function_type(function);
+        if (function_type == null) return error.InvalidFunctionType;
+        
+        // Validate args - no need to check ptr directly since it's part of the slice
+        
+        const call_result = llvm_build_call2(self.builder, function_type, function, args.ptr, @intCast(args.len), name_cstr.ptr);
+        if (call_result == null) return error.CallBuildFailed;
+        
+        return call_result;
     }
     
     pub fn buildRet(self: *LLVMBackendFixed, value: ?LLVMValueRef) LLVMValueRef {
@@ -291,32 +304,44 @@ pub fn compileToLLVM(allocator: Allocator, source: []const u8, output_file: []co
 pub fn compileIRToNative(allocator: Allocator, ir_file: []const u8, output_file: []const u8) !void {
     print("[LLVM] Compiling IR to native executable...\n", .{});
     
-    // Use clang to compile LLVM IR to native executable
-    const clang_args = [_][]const u8{
-        "clang",
-        "-O2",
-        "-o", output_file,
-        ir_file,
-    };
+    // Try multiple compilers in order of preference
+    const compilers = [_][]const u8{ "clang", "clang-18", "gcc" };
     
-    var process = std.process.Child.init(&clang_args, allocator);
-    process.stdout_behavior = .Ignore;
-    process.stderr_behavior = .Ignore;
-    
-    const result = try process.spawnAndWait();
-    
-    switch (result) {
-        .Exited => |code| {
-            if (code == 0) {
-                print("✅ Native executable created: {s}\n", .{output_file});
-            } else {
-                print("❌ clang compilation failed with code: {d}\n", .{code});
-                return error.CompilationFailed;
+    for (compilers) |compiler| {
+        const compile_args = [_][]const u8{
+            compiler,
+            "-O2",
+            "-o", output_file,
+            ir_file,
+        };
+        
+        var process = std.process.Child.init(&compile_args, allocator);
+        process.stdout_behavior = .Ignore;
+        process.stderr_behavior = .Ignore;
+        
+        if (process.spawnAndWait()) |result| {
+            switch (result) {
+                .Exited => |code| {
+                    if (code == 0) {
+                        print("✅ Native executable created with {s}: {s}\n", .{ compiler, output_file });
+                        return;
+                    } else {
+                        print("⚠️  {s} compilation failed with code: {d}, trying next compiler...\n", .{ compiler, code });
+                    }
+                },
+                else => {
+                    print("⚠️  {s} process failed, trying next compiler...\n", .{compiler});
+                },
             }
-        },
-        else => {
-            print("❌ clang process failed\n", .{});
-            return error.CompilationFailed;
-        },
+        } else |err| {
+            if (err == error.FileNotFound) {
+                print("⚠️  {s} not found, trying next compiler...\n", .{compiler});
+            } else {
+                print("⚠️  Error with {s}: {}, trying next compiler...\n", .{ compiler, err });
+            }
+        }
     }
+    
+    print("❌ All compilers failed or not found\n", .{});
+    return error.CompilationFailed;
 }

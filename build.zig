@@ -106,13 +106,16 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
         return;
     }
     
-    // Add LLVM system library and include paths
+    // Add LLVM system library and correct library path
     exe.linkSystemLibrary("LLVM-18");
+    exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/llvm-18/lib" });
     
-    // Add LLVM include directories using LazyPath.cwd_relative for absolute paths
+    // Add LLVM include directories - fix the include path
     exe.addSystemIncludePath(.{ .cwd_relative = "/usr/include/llvm-18" });
     exe.addSystemIncludePath(.{ .cwd_relative = "/usr/include/llvm-c-18" });
-    exe.addLibraryPath(.{ .cwd_relative = "/lib/x86_64-linux-gnu" });
+    
+    // Add the pre-compiled LLVM wrapper object file to avoid Zig C compilation issues
+    exe.addObjectFile(b.path("llvm_wrapper.o"));
     
     // Set LLVM C macro definitions for proper integration
     exe.root_module.addCMacro("LLVM_VERSION_MAJOR", "18");
@@ -435,20 +438,7 @@ b.installArtifact(complete_exe);
             exe_syscall.linkLibC();
             addLlvm(b, exe_syscall, syscall_target);
             
-            // Add LLVM wrapper C source file with explicit CPU target to avoid athlon-xp
-            exe_syscall.addCSourceFile(.{
-                .file = b.path("src-zig/llvm_wrapper.c"),
-                .flags = &[_][]const u8{
-                    "-std=c99", 
-                    "-O2", 
-                    "-march=x86-64", 
-                    "-mtune=generic",
-                    "-DLLVM_HOST_TRIPLE=\"x86_64-unknown-linux-gnu\"",
-                    "-D__i386__=0",
-                    "-DTARGET_CPU_DEFAULT=TARGET_CPU_generic",
-                    "-DTARGET_CPU=\"x86-64\"",
-                },
-            });
+            // LLVM wrapper now added via addLlvm function
         }
         
         break :blk exe_syscall;
