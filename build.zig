@@ -166,10 +166,10 @@ pub fn build(b: *std.Build) void {
         std.debug.print("  Cross-compiling: {}\n", .{is_cross_compile});
     }
 
-    // Create the CURSED compiler executable - minimal working version to fix build
+    // Create the CURSED compiler executable - use unified main with proper CLI parsing
     const exe = b.addExecutable(.{
         .name = "cursed", 
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/minimal_main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main_unified.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });

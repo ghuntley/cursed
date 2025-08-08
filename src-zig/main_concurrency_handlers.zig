@@ -25,7 +25,7 @@ pub fn initGlobalConcurrency(allocator: Allocator) void {
     defer global_concurrency_mutex.unlock();
     
     // Second check under lock to prevent race condition
-    if (global_concurrency_initialized.load(.relaxed)) return;
+    if (global_concurrency_initialized.load(.acquire)) return;
     
     // Safe to initialize - we have exclusive access
     global_channels = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
@@ -289,10 +289,10 @@ pub fn handleWaitFunction(variables: *anyopaque, allocator: Allocator, line: []c
                 const wait_ms = std.fmt.parseInt(u64, time_str, 10) catch 100;
                 
                 // Bounds check to prevent excessive waits
-                const bounded_wait = std.math.min(wait_ms, 10000); // Max 10 seconds
+                const bounded_wait = @min(wait_ms, 10000); // Max 10 seconds
                 
                 if (verbose) print("⏳ Waiting for {}ms (race-safe)...\n", .{bounded_wait});
-                std.time.sleep(bounded_wait * 1_000_000); // Convert ms to ns
+                std.time.sleep(@as(u64, bounded_wait) * 1_000_000); // Convert ms to ns
                 if (verbose) print("✅ Wait completed (race-safe)\n", .{});
             }
         }

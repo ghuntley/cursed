@@ -280,19 +280,14 @@ pub const Parser = struct {
             return try self.parseReturnStatement();
         }
         
-        // If statement (lowkey)
-        if (self.check(.Lowkey)) {
+        // If statement (lowkey/ready)
+        if (self.check(.Lowkey) or self.check(.Ready)) {
             return Statement{ .If = try self.parseIfStatement() };
         }
         
-        // While statement (periodt/flex)
-        if (self.check(.Periodt) or self.check(.Flex)) {
+        // While statement (periodt/flex/bestie)
+        if (self.check(.Periodt) or self.check(.Flex) or self.check(.Bestie)) {
             return Statement{ .While = try self.parseWhileStatement() };
-        }
-        
-        // For statement (bestie)
-        if (self.check(.Bestie)) {
-            return try self.parseForStatement();
         }
         
         // Break/continue
@@ -1636,9 +1631,16 @@ pub const Parser = struct {
     }
 
     fn parseIfStatement(self: *Parser) ParserError!ast.IfStatement {
-        _ = try self.consume(.Lowkey, "Expected 'lowkey'");
+        // Handle both 'ready' and 'lowkey' keywords
+        if (self.check(.Ready)) {
+            _ = self.advance(); // consume 'ready'
+        } else {
+            _ = try self.consume(.Lowkey, "Expected 'lowkey' or 'ready'");
+        }
         
+        _ = try self.consume(.LeftParen, "Expected '(' after if keyword");
         const condition = try self.parseExpression();
+        _ = try self.consume(.RightParen, "Expected ')' after condition");
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
@@ -1656,11 +1658,11 @@ pub const Parser = struct {
         
         var else_branch: ?ArrayList(*anyopaque) = null;
         
-        // Parse else clause (highkey)
-        if (self.match(.Highkey)) {
+        // Parse else clause (highkey/otherwise)
+        if (self.match(.Highkey) or self.match(.Otherwise)) {
             var else_stmts = ArrayList(*anyopaque).init(self.allocator);
             
-            if (self.check(.Lowkey)) {
+            if (self.check(.Lowkey) or self.check(.Ready)) {
                 // else if
                 const elif_stmt = try self.parseIfStatement();
                 const if_stmt = Statement{ .If = elif_stmt };
@@ -1697,9 +1699,11 @@ pub const Parser = struct {
     }
 
     fn parseWhileStatement(self: *Parser) ParserError!ast.WhileStatement {
-        _ = self.advance(); // consume periodt/flex
+        _ = self.advance(); // consume periodt/flex/bestie
         
+        _ = try self.consume(.LeftParen, "Expected '(' after while keyword");
         const condition = try self.parseExpression();
+        _ = try self.consume(.RightParen, "Expected ')' after condition");
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         

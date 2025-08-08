@@ -34,6 +34,7 @@ pub const TokenKind = enum {
     Facts, // immutable constant
     Lowkey, // if statement
     Highkey, // else statement
+    Otherwise, // else clause for ready statements
     Periodt, // while loop
     Stan, // goroutine
     Bestie, // for loop
@@ -666,6 +667,7 @@ pub const Lexer = struct {
         // Control flow
         if (std.mem.eql(u8, text, "select")) return .Select;
         if (std.mem.eql(u8, text, "ready")) return .Ready;
+        if (std.mem.eql(u8, text, "otherwise")) return .Otherwise;
 
         // Traditional keywords (for compatibility)
         if (std.mem.eql(u8, text, "let")) return .Let;
