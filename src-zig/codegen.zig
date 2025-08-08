@@ -423,9 +423,33 @@ pub const CodeGen = struct {
         const entry_block = c.LLVMAppendBasicBlockInContext(self.context, main_function, "entry");
         c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
         
+        // Initialize CURSED runtime for concurrency support
+        if (self.runtime_functions.get("cursed_runtime_init")) |init_func| {
+            _ = c.LLVMBuildCall2(
+                self.builder, 
+                c.LLVMGetReturnType(c.LLVMGlobalGetValueType(init_func)), 
+                init_func, 
+                null, 
+                0, 
+                "runtime_init_result"
+            );
+        }
+        
         // Call main_character if it exists
         if (self.functions.get("main_character")) |main_char_func| {
             _ = c.LLVMBuildCall2(self.builder, c.LLVMGetReturnType(c.LLVMGlobalGetValueType(main_char_func)), main_char_func, null, 0, "");
+        }
+        
+        // Shutdown CURSED runtime before exit
+        if (self.runtime_functions.get("cursed_runtime_shutdown")) |shutdown_func| {
+            _ = c.LLVMBuildCall2(
+                self.builder, 
+                c.LLVMGetReturnType(c.LLVMGlobalGetValueType(shutdown_func)), 
+                shutdown_func, 
+                null, 
+                0, 
+                ""
+            );
         }
         
         // Return 0
@@ -1878,6 +1902,10 @@ pub const CodeGen = struct {
         try self.declareRuntimeFunction("cursed_channel_close", &[_]c.LLVMTypeRef{
             c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // channel
         }, c.LLVMVoidTypeInContext(self.context));
+
+        // Runtime initialization functions
+        try self.declareRuntimeFunction("cursed_runtime_init", &[_]c.LLVMTypeRef{}, c.LLVMInt32TypeInContext(self.context));
+        try self.declareRuntimeFunction("cursed_runtime_shutdown", &[_]c.LLVMTypeRef{}, c.LLVMVoidTypeInContext(self.context));
 
         // Select runtime functions
         try self.declareRuntimeFunction("cursed_select_begin", &[_]c.LLVMTypeRef{
