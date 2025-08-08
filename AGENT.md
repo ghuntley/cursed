@@ -1385,3 +1385,170 @@ done                                                           # ✅ Batch stdli
 # Production readiness validation ✅
 ./zig-out/bin/cursed --compile hello.csd && ./hello && rm hello  # ✅ End-to-end test
 ```
+
+## Latest Session Successful Command Patterns (2025-08-08)
+
+### Reliable Build and Test Commands
+```bash
+# Core development commands that work consistently
+zig build                                                   # Primary build (0.1-0.2s typical)
+./zig-out/bin/cursed file.csd                              # Main interpreter
+./zig-out/bin/cursed check file.csd                        # Type checking only
+./zig-out/bin/cursed --compile file.csd                    # LLVM compilation
+
+# Clean build when environment issues occur
+rm -rf zig-cache/ zig-out/ && zig build                    # Full clean rebuild
+zig build -Dtarget=native                                   # Force native target
+
+# Alternative executables for specific issues
+./zig-out/bin/cursed-syscall file.csd                      # When main binary cross-compiled
+./zig-out/bin/cursed-zig file.csd                          # Legacy compatibility
+./cursed-unified file.csd                                  # Alternative unified build
+```
+
+### Memory Testing Commands with Valgrind
+```bash
+# Essential memory testing patterns
+valgrind ./zig-out/bin/cursed file.csd                     # Basic leak detection
+valgrind --leak-check=full ./zig-out/bin/cursed file.csd   # Detailed leak analysis
+valgrind --error-exitcode=1 ./zig-out/bin/cursed file.csd  # Fail on memory errors
+
+# Advanced memory profiling
+valgrind --tool=massif ./zig-out/bin/cursed file.csd       # Memory usage over time
+valgrind --tool=cachegrind ./zig-out/bin/cursed file.csd   # Cache performance analysis
+
+# Quick memory smoke test (surfaces issues early)
+valgrind ./zig-out/bin/cursed stdlib/testz/test_testz.csd  # Test framework memory validation
+```
+
+### Feature-Specific Testing Patterns
+```bash
+# LLVM compilation testing
+./zig-out/bin/cursed --compile program.csd                 # Generate native binary
+./program                                                  # Execute compiled binary
+llvm-dis program.bc && cat program.ll | head -20          # Inspect generated IR
+./zig-out/bin/cursed --compile --debug program.csd        # Generate debug symbols
+gdb ./program                                              # Debug compiled binary
+
+# String function testing
+echo 'yeet "stringz"; vibez.spill(len_str("test"))' > string_test.csd
+./zig-out/bin/cursed string_test.csd                       # Test string operations
+
+# Function parameter and return testing
+echo 'slay add(x drip, y drip) drip { damn x + y }; vibez.spill(add(3, 4))' > func_test.csd
+./zig-out/bin/cursed func_test.csd                         # Test function execution
+
+# Complex expression evaluation
+echo 'sus result drip = (5 + 3) * 2; vibez.spill(result)' > expr_test.csd
+./zig-out/bin/cursed expr_test.csd                         # Test arithmetic expressions
+
+# Struct and interface testing
+echo 'squad Point { spill x drip; spill y drip }; sus p Point = Point{x: 1, y: 2}' > struct_test.csd
+./zig-out/bin/cursed struct_test.csd                       # Test struct operations
+
+# Concurrency testing
+echo 'stan { vibez.spill("Goroutine!") }; vibez.spill("Main")' > concur_test.csd
+./zig-out/bin/cursed concur_test.csd                       # Test goroutines
+```
+
+### Key Debugging Patterns Discovered
+```bash
+# Memory leak debugging for Variable system
+# Pattern: Check for std.fmt.allocPrint leaks in expression evaluation
+# Fix: Add Variable.deinit(allocator) calls for temporaries
+
+# Double execution debugging
+# Pattern: Check for duplicate executeStatements calls
+# Fix: Ensure statements execute exactly once
+
+# Cross-compilation architecture conflicts
+file ./zig-out/bin/cursed                                  # Verify binary architecture
+zig build -Dtarget=native                                  # Force correct target
+
+# LLVM register allocation debugging
+echo 'sus x drip = value; vibez.spill(x)' > debug_reg.csd
+./zig-out/bin/cursed --compile debug_reg.csd               # Test register consistency
+
+# Environment debugging
+direnv reload                                              # Reload development environment
+zig build --verbose                                        # Verbose build for troubleshooting
+export LLVM_SYS_180_PREFIX="/nix/store/..."               # Manual LLVM override
+```
+
+### Complex Functionality Testing Examples
+```bash
+# Recursive function testing
+echo 'slay factorial(n drip) drip { ready (n <= 1) { damn 1 } damn n * factorial(n-1) }
+vibez.spill(factorial(5))' > recursion_test.csd
+./zig-out/bin/cursed recursion_test.csd                    # Test recursive functions
+
+# Pattern matching testing
+echo 'sus x drip = 5; ready (x) { 1 => vibez.spill("one"); _ => vibez.spill("other") }' > pattern_test.csd
+./zig-out/bin/cursed pattern_test.csd                      # Test pattern matching
+
+# Error handling testing
+echo 'slay risky() (drip, tea) { damn 42, "" }
+sus val, err = risky()
+ready (err == "") { vibez.spill("Success:", val) }' > error_test.csd
+./zig-out/bin/cursed error_test.csd                        # Test error propagation
+
+# Comprehensive stdlib integration testing
+echo 'yeet "mathz"; yeet "stringz"; yeet "arrayz"
+sus nums []drip = [1, -2, 3]
+sus total drip = 0
+sus i drip = 0
+bestie (i < len(nums)) {
+    total = total + abs_normie(nums[i])
+    i = i + 1
+}
+vibez.spill("Sum:", total)' > integration_test.csd
+./zig-out/bin/cursed integration_test.csd                  # Test multiple modules together
+```
+
+### Performance Verification Commands
+```bash
+# Build performance monitoring
+time zig build                                             # Measure build time
+hyperfine 'zig build'                                      # Benchmark build performance
+
+# Runtime performance testing
+hyperfine './zig-out/bin/cursed program.csd'               # Benchmark interpretation
+hyperfine './compiled_program'                             # Benchmark compiled execution
+
+# Memory performance validation
+zig build benchmark                                        # Memory usage benchmarks
+valgrind --tool=massif ./zig-out/bin/cursed program.csd    # Memory usage profiling
+
+# Optimization level comparison
+./zig-out/bin/cursed --compile -O0 program.csd             # No optimization
+./zig-out/bin/cursed --compile -O2 program.csd             # Standard optimization
+./zig-out/bin/cursed --compile -O3 program.csd             # Aggressive optimization
+
+# Cross-platform performance validation
+zig build -Dtarget=x86_64-linux                            # Linux build performance
+zig build -Dtarget=aarch64-macos                           # ARM64 build performance
+```
+
+### Quick Development Workflow Commands
+```bash
+# Fast iterative development cycle
+zig build && ./zig-out/bin/cursed stdlib/testz/test_testz.csd  # Quick smoke test
+
+# Component validation pipeline
+zig test src-zig/lexer.zig && echo "Lexer OK"              # Individual component testing
+zig test src-zig/parser.zig && echo "Parser OK"
+zig test src-zig/advanced_codegen.zig && echo "Codegen OK"
+
+# Batch stdlib testing
+for module in testz vibez mathz stringz arrayz; do
+  ./zig-out/bin/cursed stdlib/$module/test_$module.csd || break
+done                                                       # Test multiple stdlib modules
+
+# End-to-end validation
+./zig-out/bin/cursed --compile hello.csd && ./hello && rm hello  # Complete pipeline test
+
+# Multi-session development pattern
+# Terminal 1: zig build --watch                            # Continuous compilation
+# Terminal 2: watch -n 2 './zig-out/bin/cursed test.csd'   # Continuous testing
+# Terminal 3: valgrind ./zig-out/bin/cursed file.csd       # Memory monitoring
+```
