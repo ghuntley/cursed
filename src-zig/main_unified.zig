@@ -88,7 +88,8 @@ const InterfaceInstance = struct {
                     
                     // Execute method body using existing function execution pattern
                     // For now, return a simple confirmation - full execution would need more implementation
-                    return Variable{ .String = try std.fmt.allocPrint(allocator, "Called {s} on {s}", .{ method_name, self.underlying_struct.type_name }) };
+                    const result_str = try std.fmt.allocPrint(allocator, "Called {s} on {s}", .{ method_name, self.underlying_struct.type_name });
+                    return Variable{ .String = ManagedString.fromOwned(result_str) };
                 } else {
                     if (verbose) print("❌ Method implementation not found: {s}\n", .{impl_key});
                     return error.MethodNotFound;
@@ -119,7 +120,7 @@ const FunctionBody = struct {
         _ = args;
         _ = allocator;
         // For now, just return a simple confirmation
-        return Variable{ .String = "method called" };
+        return Variable{ .String = ManagedString.fromLiteral("method called") };
     }
 };
 
@@ -162,10 +163,45 @@ const YikesError = struct {
 };
 
 // Simple variable store for runtime evaluation with error handling
+// String ownership tracking to prevent segfaults in deinit
+const ManagedString = struct {
+    data: []const u8,
+    owned: bool,  // true if allocated and needs to be freed
+    
+    pub fn fromOwned(data: []u8) ManagedString {
+        return ManagedString{ .data = data, .owned = true };
+    }
+    
+    pub fn fromLiteral(data: []const u8) ManagedString {
+        return ManagedString{ .data = data, .owned = false };
+    }
+    
+    pub fn deinit(self: ManagedString, allocator: Allocator) void {
+        if (self.owned and self.data.len > 0) {
+            // Validate pointer before freeing
+            if (@intFromPtr(self.data.ptr) != 0) {
+                allocator.free(self.data);
+            }
+        }
+    }
+    
+    // Enable string formatting for print statements
+    pub fn format(
+        self: ManagedString,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        _ = options;
+        try writer.print("{s}", .{self.data});
+    }
+};
+
 const Variable = union(enum) {
     Integer: i64,
     Float: f64,
-    String: []const u8,
+    String: ManagedString,
     Boolean: bool,
     Array: ArrayList(Variable),
     YikesError: YikesError,  // Error values for error handling
@@ -178,7 +214,7 @@ const Variable = union(enum) {
         switch (self) {
             .Integer => |int| return std.fmt.allocPrint(allocator, "{}", .{int}),
             .Float => |float| return std.fmt.allocPrint(allocator, "{d}", .{float}),
-            .String => |str| return allocator.dupe(u8, str),
+            .String => |str| return allocator.dupe(u8, str.data),
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
             .YikesError => |err| {
                 return std.fmt.allocPrint(allocator, "yikes: {s} (code: {}) at {s}:{}:{}", .{ 
@@ -221,8 +257,8 @@ const Variable = union(enum) {
             .Float => |v| return Variable{ .Float = v },
             .Boolean => |v| return Variable{ .Boolean = v },
             .String => |s| {
-                const copy = try allocator.dupe(u8, s);
-                return Variable{ .String = copy };
+                const copy = try allocator.dupe(u8, s.data);
+                return Variable{ .String = ManagedString.fromOwned(copy) };
             },
             .Array => |arr| {
                 var new_arr = std.ArrayList(Variable).init(allocator);
@@ -283,10 +319,8 @@ const Variable = union(enum) {
 
         switch (self.*) {
             .String => |str| {
-                // Add length check and ownership validation
-                if (str.len > 0) {
-                    allocator.free(str);
-                }
+                // Use ManagedString's safe deinit
+                str.deinit(allocator);
             },
             .Array => |*arr| {
                 // Safe array cleanup with bounds checking
@@ -641,7 +675,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         var iterator = variables.iterator();
         while (iterator.next()) |entry| {
             switch (entry.value_ptr.*) {
-                .String => |str| allocator.free(str),  // Free string values
+                .String => |str| str.deinit(allocator),  // Free string values with ownership tracking
                 .Array => |arr| arr.deinit(),  // Free array allocations
                 .YikesError => |*err| err.deinit(allocator),  // Free error data
                 else => {},
@@ -1773,8 +1807,8 @@ fn performBinaryOperation(left: Variable, right: Variable, op: []const u8, alloc
                 .String => |right_str| {
                     if (std.mem.eql(u8, op, "+")) {
                         // String concatenation
-                        const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ left_str, right_str });
-                        return Variable{ .String = result };
+                        const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ left_str.data, right_str.data });
+                        return Variable{ .String = ManagedString.fromOwned(result) };
                     }
                 },
                 else => return error.InvalidOperation,
@@ -1847,7 +1881,7 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
             // Could be a variable reference - check variables directly
             if (variables.get(message_part)) |var_val| {
                 switch (var_val) {
-                    .String => |str| error_message = str,
+                    .String => |str| error_message = str.data,
                     else => {
                         const msg_str = try var_val.toString(allocator);
                         defer allocator.free(msg_str);
@@ -1870,7 +1904,7 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
         const string_value = value_str[1..value_str.len - 1];
         if (verbose) print("📊 Parsed as string: '{s}'\n", .{string_value});
         const copy = try allocator.dupe(u8, string_value);
-        return Variable{ .String = copy };
+        return Variable{ .String = ManagedString.fromOwned(copy) };
     }
     
     // Try to parse as boolean
@@ -2050,11 +2084,11 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
         if (evaluateExpression(variables, functions, allocator, value_str, verbose)) |result| {
             switch (result) {
                 .String => |str_val| {
-                    const string_copy = try allocator.dupe(u8, str_val);
+                    const string_copy = try allocator.dupe(u8, str_val.data);
                     // Temporary now always owns its memory; safe to deinit after duplicating
                     var tmp_var = result;
                     tmp_var.deinit(allocator);
-                    break :blk Variable{ .String = string_copy };
+                    break :blk Variable{ .String = ManagedString.fromOwned(string_copy) };
                 },
                 else => {
                     if (verbose) print("❌ Expression '{s}' did not evaluate to string type\n", .{value_str});
@@ -2070,7 +2104,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                 trimmed_value = trimmed_value[1..trimmed_value.len - 1];
             }
             const string_copy = try allocator.dupe(u8, trimmed_value);
-            break :blk Variable{ .String = string_copy };
+            break :blk Variable{ .String = ManagedString.fromOwned(string_copy) };
         }
     } else if (std.mem.eql(u8, var_type, "lit")) blk: {
         // Boolean type - try to evaluate as expression first
@@ -2094,7 +2128,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
             trimmed_value = trimmed_value[1..trimmed_value.len - 1];
         }
         const string_copy = try allocator.dupe(u8, trimmed_value);
-        break :blk Variable{ .String = string_copy };
+        break :blk Variable{ .String = ManagedString.fromOwned(string_copy) };
     } else if ((std.mem.startsWith(u8, var_type, "[") and std.mem.endsWith(u8, var_type, "]")) or 
                std.mem.startsWith(u8, var_type, "[]")) blk: {
         // Array type like [normie], [drip], []drip, []tea, etc.
@@ -2127,7 +2161,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                             clean_element = clean_element[1..clean_element.len - 1];
                         }
                         const string_copy = try allocator.dupe(u8, clean_element);
-                        try array.append(Variable{ .String = string_copy });
+                        try array.append(Variable{ .String = ManagedString.fromOwned(string_copy) });
                     } else if (std.mem.eql(u8, element_type, "meal")) {
                         const float_val = std.fmt.parseFloat(f64, trimmed_element) catch {
                             if (verbose) print("❌ Error parsing float array element '{s}'\n", .{trimmed_element});
@@ -2192,7 +2226,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                             if (field_value_str.len >= 2 and field_value_str[0] == '"' and field_value_str[field_value_str.len - 1] == '"') {
                                 const str_val = field_value_str[1..field_value_str.len - 1];
                                 const str_copy = try allocator.dupe(u8, str_val);
-                                field_value = Variable{ .String = str_copy };
+                                field_value = Variable{ .String = ManagedString.fromOwned(str_copy) };
                             } else {
                                 if (verbose) print("❌ Could not parse field value: {s}\n", .{field_value_str});
                                 continue;
@@ -3022,7 +3056,7 @@ fn handleStdlibFunction(variables: *VariableStore, allocator: Allocator, call_li
                 const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
                 switch (arg_value) {
                     .String => |str| {
-                        return Variable{ .Integer = @intCast(str.len) };
+                        return Variable{ .Integer = @intCast(str.data.len) };
                     },
                     else => if (verbose) print("❌ string_length expects string argument\n", .{}),
                 }
@@ -3042,8 +3076,8 @@ fn handleStdlibFunction(variables: *VariableStore, allocator: Allocator, call_li
                     const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
                     
                     if (arg1_value == .String and arg2_value == .String) {
-                        const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ arg1_value.String, arg2_value.String });
-                        return Variable{ .String = result };
+                        const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ arg1_value.String.data, arg2_value.String.data });
+                        return Variable{ .String = ManagedString.fromOwned(result) };
                     }
                 }
             }
@@ -3061,7 +3095,7 @@ fn handleStdlibFunction(variables: *VariableStore, allocator: Allocator, call_li
                     const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
                     
                     if (arg1_value == .String and arg2_value == .String) {
-                        const contains = std.mem.indexOf(u8, arg1_value.String, arg2_value.String) != null;
+                        const contains = std.mem.indexOf(u8, arg1_value.String.data, arg2_value.String.data) != null;
                         return Variable{ .Boolean = contains };
                     }
                 }
@@ -3074,7 +3108,7 @@ fn handleStdlibFunction(variables: *VariableStore, allocator: Allocator, call_li
                 const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
                 switch (arg_value) {
                     .String => |str| {
-                        return Variable{ .Integer = @intCast(str.len) };
+                        return Variable{ .Integer = @intCast(str.data.len) };
                     },
                     .Array => |arr| {
                         return Variable{ .Integer = @intCast(arr.items.len) };
@@ -3198,7 +3232,8 @@ fn evaluateStdlibArgument(variables: *VariableStore, allocator: Allocator, arg_s
     // Handle string literals
     if (trimmed.len >= 2 and trimmed[0] == '"' and trimmed[trimmed.len - 1] == '"') {
         const string_content = trimmed[1..trimmed.len - 1];
-        return Variable{ .String = try allocator.dupe(u8, string_content) };
+        const str_copy = try allocator.dupe(u8, string_content);
+        return Variable{ .String = ManagedString.fromOwned(str_copy) };
     }
     
     // Handle boolean literals
@@ -3209,7 +3244,8 @@ fn evaluateStdlibArgument(variables: *VariableStore, allocator: Allocator, arg_s
     }
     
     if (verbose) print("❌ Unable to evaluate stdlib argument: '{s}'\n", .{trimmed});
-    return Variable{ .String = try allocator.dupe(u8, trimmed) };
+    const str_copy = try allocator.dupe(u8, trimmed);
+    return Variable{ .String = ManagedString.fromOwned(str_copy) };
 }
 
 fn printUsage() void {
@@ -3313,7 +3349,7 @@ fn handleVibezSpill(allocator: Allocator, variables: *VariableStore, args: []con
         // Check if it's a variable reference
         else if (variables.get(trimmed_arg)) |value| {
             switch (value) {
-                .String => |s| try output.appendSlice(s),
+                .String => |s| try output.appendSlice(s.data),
                 .Integer => |i| {
                     const int_str = try std.fmt.allocPrint(allocator, "{}", .{i});
                     defer allocator.free(int_str);
@@ -3629,7 +3665,7 @@ fn executeFunctionWithScope(
         // Store type substitutions in local variables for reference during execution
         for (type_args, 0..) |type_arg, i| {
             const type_param_name = std.fmt.allocPrint(arena_allocator, "__type_param_{d}__", .{i}) catch continue;
-            const type_variable = Variable{ .String = type_arg };
+            const type_variable = Variable{ .String = ManagedString.fromLiteral(type_arg) };
             try local_variables.put(type_param_name, type_variable);
             if (verbose) print("  📝 Type substitution: T{d} = {s}\n", .{ i, type_arg });
         }
@@ -3701,7 +3737,7 @@ fn evaluateArgument(variables: *VariableStore, functions: *FunctionStore, alloca
         return result;
     } else |_| {
         // Fallback to literal parsing
-        return evaluateSingleValue(variables, functions, allocator, arg_str, verbose) catch Variable{ .String = arg_str };
+        return evaluateSingleValue(variables, functions, allocator, arg_str, verbose) catch Variable{ .String = ManagedString.fromLiteral(arg_str) };
     }
 }
 
@@ -4177,7 +4213,7 @@ fn handleReadyOtherwiseBlock(
         .Boolean => |b| b,
         .Integer => |i| i != 0,
         .Float => |f| f != 0.0,
-        .String => |s| s.len > 0,
+        .String => |s| s.data.len > 0,
         else => false,
     };
     
@@ -4415,7 +4451,7 @@ fn handleSingleLineReady(
         .Boolean => |b| b,
         .Integer => |i| i != 0,
         .Float => |f| f != 0.0,
-        .String => |s| s.len > 0,
+        .String => |s| s.data.len > 0,
         else => false,
     };
     
@@ -4643,7 +4679,7 @@ fn handleBestieLoop(
             .Boolean => |b| b,
             .Integer => |i| i != 0,
             .Float => |f| f != 0.0,
-            .String => |s| s.len > 0,
+            .String => |s| s.data.len > 0,
             else => false,
         };
         
@@ -5013,7 +5049,7 @@ fn handleMethodCallExpression(variables: *VariableStore, functions: *FunctionSto
                     } else {
                         print("Drawing {s}\n", .{struct_instance.type_name});
                     }
-                    return Variable{ .String = "drawn" };
+                    return Variable{ .String = ManagedString.fromLiteral("drawn") };
                 } else {
                     // Try to execute the method function if it exists
                     if (functions.get(method_name)) |method_function| {
@@ -5050,7 +5086,7 @@ fn handleMethodCallExpression(variables: *VariableStore, functions: *FunctionSto
                 
                 if (std.mem.eql(u8, method_name, "draw")) {
                     print("Drawing {s}\n", .{struct_instance.type_name});
-                    return Variable{ .String = "drawn" };
+                    return Variable{ .String = ManagedString.fromLiteral("drawn") };
                 } else {
                     return error.MethodNotFound;
                 }
@@ -5090,7 +5126,7 @@ fn executeMethodFunction(variables: *VariableStore, functions: *FunctionStore, a
     }
     
     // If no return statement found, return void/null
-    return Variable{ .String = "" };
+    return Variable{ .String = ManagedString.fromLiteral("") };
 }
 
 /// Basic syntax validation for CURSED statements

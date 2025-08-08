@@ -3370,10 +3370,153 @@ pub const AdvancedCodeGen = struct {
     
     /// Generate bounds check for array access
     fn generateBoundsCheck(self: *AdvancedCodeGen, array: c.LLVMValueRef, index: c.LLVMValueRef) CodeGenError!void {
-        _ = self;
-        _ = array;
-        _ = index;
-        // TODO: Implement runtime bounds checking
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        const module = self.base_codegen.module;
+        
+        // Get array length - for static arrays, this is known at compile time
+        // For dynamic arrays, we need to track length separately
+        const array_type = c.LLVMTypeOf(array);
+        var array_length: c.LLVMValueRef = undefined;
+        
+        if (c.LLVMGetTypeKind(array_type) == c.LLVMArrayTypeKind) {
+            // Static array - get length from type
+            const length = c.LLVMGetArrayLength(array_type);
+            array_length = c.LLVMConstInt(c.LLVMInt64TypeInContext(context), length, 0);
+        } else {
+            // Dynamic array or pointer - assume we have a runtime length mechanism
+            // For now, we'll use a simple heuristic or require length to be passed separately
+            // This is a limitation that should be addressed with proper array metadata
+            return; // Skip bounds checking for dynamic arrays for now
+        }
+        
+        // Convert index to i64 for comparison if needed
+        var index_i64 = index;
+        const index_type = c.LLVMTypeOf(index);
+        if (c.LLVMGetIntTypeWidth(index_type) != 64) {
+            index_i64 = c.LLVMBuildSExt(builder, index, c.LLVMInt64TypeInContext(context), "index_i64");
+        }
+        
+        // Check if index >= 0 (for signed indices)
+        const zero = c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0, 0);
+        const is_negative = c.LLVMBuildICmp(builder, c.LLVMIntSLT, index_i64, zero, "is_negative");
+        
+        // Check if index >= array_length
+        const is_out_of_bounds = c.LLVMBuildICmp(builder, c.LLVMIntUGE, index_i64, array_length, "is_out_of_bounds");
+        
+        // Combine both conditions: is_negative OR is_out_of_bounds
+        const bounds_violation = c.LLVMBuildOr(builder, is_negative, is_out_of_bounds, "bounds_violation");
+        
+        // Create basic blocks for bounds check
+        const current_function = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+        const bounds_error_block = c.LLVMAppendBasicBlockInContext(context, current_function, "bounds_error");
+        const bounds_ok_block = c.LLVMAppendBasicBlockInContext(context, current_function, "bounds_ok");
+        
+        // Branch based on bounds check
+        _ = c.LLVMBuildCondBr(builder, bounds_violation, bounds_error_block, bounds_ok_block);
+        
+        // Bounds error block - call panic or abort
+        c.LLVMPositionBuilderAtEnd(builder, bounds_error_block);
+        
+        // Get or create bounds error function
+        const bounds_error_func = try self.getOrCreateBoundsErrorFunction();
+        
+        // Call bounds error function with index and array length
+        const error_args = [_]c.LLVMValueRef{ index_i64, array_length };
+        _ = c.LLVMBuildCall2(
+            builder,
+            c.LLVMGlobalGetValueType(bounds_error_func),
+            bounds_error_func,
+            @ptrCast(error_args.ptr),
+            error_args.len,
+            ""
+        );
+        
+        // Unreachable after error
+        _ = c.LLVMBuildUnreachable(builder);
+        
+        // Continue with normal execution
+        c.LLVMPositionBuilderAtEnd(builder, bounds_ok_block);
+    }
+    
+    /// Get or create the bounds error function
+    fn getOrCreateBoundsErrorFunction(self: *AdvancedCodeGen) CodeGenError!c.LLVMValueRef {
+        const module = self.base_codegen.module;
+        const context = self.base_codegen.context;
+        
+        // Check if function already exists
+        if (c.LLVMGetNamedFunction(module, "cursed_bounds_error")) |existing| {
+            return existing;
+        }
+        
+        // Create function signature: void cursed_bounds_error(i64 index, i64 array_length)
+        const i64_type = c.LLVMInt64TypeInContext(context);
+        const void_type = c.LLVMVoidTypeInContext(context);
+        const param_types = [_]c.LLVMTypeRef{ i64_type, i64_type };
+        const function_type = c.LLVMFunctionType(
+            void_type,
+            @ptrCast(param_types.ptr),
+            param_types.len,
+            0 // not variadic
+        );
+        
+        // Create function
+        const function = c.LLVMAddFunction(module, "cursed_bounds_error", function_type);
+        
+        // Set function attributes (noreturn)
+        const noreturn_attr = c.LLVMCreateEnumAttribute(context, c.LLVMGetEnumAttributeKindForName("noreturn", 8), 0);
+        c.LLVMAddAttributeAtIndex(function, c.LLVMAttributeFunctionIndex, noreturn_attr);
+        
+        // Create function body
+        const entry_block = c.LLVMAppendBasicBlockInContext(context, function, "entry");
+        const builder = c.LLVMCreateBuilderInContext(context);
+        defer c.LLVMDisposeBuilder(builder);
+        
+        c.LLVMPositionBuilderAtEnd(builder, entry_block);
+        
+        // Get parameters
+        const index_param = c.LLVMGetParam(function, 0);
+        const length_param = c.LLVMGetParam(function, 1);
+        c.LLVMSetValueName2(index_param, "index", 5);
+        c.LLVMSetValueName2(length_param, "array_length", 12);
+        
+        // For now, just call abort() or create a simple error message
+        // In a full implementation, this could print an error message
+        const abort_func = try self.getOrCreateAbortFunction();
+        _ = c.LLVMBuildCall2(
+            builder,
+            c.LLVMGlobalGetValueType(abort_func),
+            abort_func,
+            null,
+            0,
+            ""
+        );
+        
+        _ = c.LLVMBuildUnreachable(builder);
+        
+        return function;
+    }
+    
+    /// Get or create abort function
+    fn getOrCreateAbortFunction(self: *AdvancedCodeGen) CodeGenError!c.LLVMValueRef {
+        const module = self.base_codegen.module;
+        const context = self.base_codegen.context;
+        
+        // Check if function already exists
+        if (c.LLVMGetNamedFunction(module, "abort")) |existing| {
+            return existing;
+        }
+        
+        // Create abort function: void abort()
+        const void_type = c.LLVMVoidTypeInContext(context);
+        const function_type = c.LLVMFunctionType(void_type, null, 0, 0);
+        const function = c.LLVMAddFunction(module, "abort", function_type);
+        
+        // Set function attributes (noreturn)
+        const noreturn_attr = c.LLVMCreateEnumAttribute(context, c.LLVMGetEnumAttributeKindForName("noreturn", 8), 0);
+        c.LLVMAddAttributeAtIndex(function, c.LLVMAttributeFunctionIndex, noreturn_attr);
+        
+        return function;
     }
     
     /// Generate safe index access

@@ -235,7 +235,7 @@ pub const TypeConstraint = struct {
 // Enhanced type environment with scoping and inference
 pub const TypeEnvironment = struct {
     scopes: ArrayList(Scope),
-    type_vars: HashMap(u32, CursedType, std.hash_map.DefaultHashContext(u32), std.hash_map.default_max_load_percentage),
+    type_vars: HashMap(u32, CursedType, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
     constraints: ArrayList(TypeConstraintSet),
     next_type_var_id: u32,
     allocator: Allocator,
@@ -271,7 +271,7 @@ pub const TypeEnvironment = struct {
     pub fn init(allocator: Allocator) !TypeEnvironment {
         var env = TypeEnvironment{
             .scopes = ArrayList(Scope).init(allocator),
-            .type_vars = HashMap(u32, CursedType, std.hash_map.DefaultHashContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
+            .type_vars = HashMap(u32, CursedType, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
             .constraints = ArrayList(TypeConstraintSet).init(allocator),
             .next_type_var_id = 1,
             .allocator = allocator,
@@ -310,15 +310,421 @@ pub const TypeEnvironment = struct {
         return id;
     }
     
+    // Enhanced unification with occurs check and constraint validation
+    pub fn unifyTypes(self: *TypeEnvironment, type1: CursedType, type2: CursedType) !void {
+        const resolved1 = self.resolveTypeRecursive(type1);
+        const resolved2 = self.resolveTypeRecursive(type2);
+        
+        if (self.typesEqual(resolved1, resolved2)) return;
+        
+        switch (resolved1) {
+            .Unknown => |var_id1| {
+                switch (resolved2) {
+                    .Unknown => |var_id2| {
+                        if (var_id1 != var_id2) {
+                            try self.type_vars.put(var_id1, resolved2);
+                        }
+                    },
+                    else => {
+                        // Occurs check to prevent infinite types
+                        if (self.occursCheck(var_id1, resolved2)) {
+                            return error.InfiniteTypeError;
+                        }
+                        try self.validateConstraints(var_id1, resolved2);
+                        try self.type_vars.put(var_id1, resolved2);
+                    }
+                }
+            },
+            else => {
+                switch (resolved2) {
+                    .Unknown => |var_id2| {
+                        if (self.occursCheck(var_id2, resolved1)) {
+                            return error.InfiniteTypeError;
+                        }
+                        try self.validateConstraints(var_id2, resolved1);
+                        try self.type_vars.put(var_id2, resolved1);
+                    },
+                    else => {
+                        if (!self.areTypesCompatible(resolved1, resolved2)) {
+                            return error.TypeUnificationError;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     pub fn unifyTypeVar(self: *TypeEnvironment, var_id: u32, concrete_type: CursedType) !void {
-        try self.type_vars.put(var_id, concrete_type);
+        const resolved_type = self.resolveTypeRecursive(concrete_type);
+        
+        // Occurs check to prevent infinite types like T = List[T]
+        if (self.occursCheck(var_id, resolved_type)) {
+            return error.InfiniteTypeError;
+        }
+        
+        // Validate constraints on the type variable
+        try self.validateConstraints(var_id, resolved_type);
+        
+        try self.type_vars.put(var_id, resolved_type);
+    }
+    
+    // Occurs check to prevent infinite types
+    fn occursCheck(self: *TypeEnvironment, var_id: u32, cursed_type: CursedType) bool {
+        return switch (cursed_type) {
+            .Unknown => |id| id == var_id,
+            .Array => |arr| self.occursCheck(var_id, arr.element_type.*),
+            .Slice => |slice| self.occursCheck(var_id, slice.element_type.*),
+            .Channel => |ch| self.occursCheck(var_id, ch.element_type.*),
+            .Function => |func| {
+                for (func.parameters.items) |param_type| {
+                    if (self.occursCheck(var_id, param_type)) return true;
+                }
+                if (func.return_type) |ret_type| {
+                    return self.occursCheck(var_id, ret_type.*);
+                }
+                return false;
+            },
+            .Generic => |gen| {
+                if (self.occursCheck(var_id, gen.base_type.*)) return true;
+                for (gen.type_args.items) |arg_type| {
+                    if (self.occursCheck(var_id, arg_type)) return true;
+                }
+                return false;
+            },
+            .Tuple => |tuple| {
+                for (tuple.elements.items) |elem_type| {
+                    if (self.occursCheck(var_id, elem_type)) return true;
+                }
+                return false;
+            },
+            else => false,
+        };
+    }
+    
+    // Validate constraints on type variables
+    fn validateConstraints(self: *TypeEnvironment, var_id: u32, concrete_type: CursedType) !void {
+        for (self.constraints.items) |constraint_set| {
+            if (constraint_set.type_var == var_id) {
+                for (constraint_set.constraints.items) |constraint| {
+                    if (!self.satisfiesConstraint(concrete_type, constraint)) {
+                        return error.ConstraintViolationError;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Check if a type satisfies a constraint
+    fn satisfiesConstraint(self: *TypeEnvironment, cursed_type: CursedType, constraint: TypeConstraint) bool {
+        return switch (constraint.kind) {
+            .Numeric => cursed_type.isNumeric(),
+            .Comparable => self.isComparable(cursed_type),
+            .Sized => self.isSized(cursed_type),
+            .Send => self.isSend(cursed_type),
+            .Sync => self.isSync(cursed_type),
+            .Implements => if (constraint.bound) |interface_type| 
+                self.implementsInterface(cursed_type, interface_type) else false,
+            .Extends => if (constraint.bound) |base_type| 
+                self.extendsType(cursed_type, base_type) else false,
+        };
+    }
+    
+    // Recursive type resolution to handle chains of type variables
+    pub fn resolveTypeRecursive(self: *TypeEnvironment, cursed_type: CursedType) CursedType {
+        var current_type = cursed_type;
+        var visited = std.AutoHashMap(u32, void).init(self.allocator);
+        defer visited.deinit();
+        
+        while (true) {
+            switch (current_type) {
+                .Unknown => |var_id| {
+                    if (visited.contains(var_id)) {
+                        // Cycle detected, return unresolved type variable
+                        return current_type;
+                    }
+                    visited.put(var_id, {}) catch return current_type;
+                    
+                    if (self.type_vars.get(var_id)) |resolved| {
+                        current_type = resolved;
+                    } else {
+                        return current_type;
+                    }
+                },
+                else => return current_type,
+            }
+        }
     }
     
     pub fn resolveType(self: *TypeEnvironment, cursed_type: CursedType) CursedType {
-        return switch (cursed_type) {
-            .Unknown => |var_id| self.type_vars.get(var_id) orelse cursed_type,
-            else => cursed_type,
+        return self.resolveTypeRecursive(cursed_type);
+    }
+    
+    // Comprehensive validation before codegen
+    pub fn validateAllTypesResolved(self: *TypeEnvironment, ast_node: *ast.ASTNode) !void {
+        var unresolved_vars = std.ArrayList(u32).init(self.allocator);
+        defer unresolved_vars.deinit();
+        
+        self.collectUnresolvedTypeVars(ast_node, &unresolved_vars);
+        
+        if (unresolved_vars.items.len > 0) {
+            std.log.err("Found {} unresolved type variables before codegen:", .{unresolved_vars.items.len});
+            for (unresolved_vars.items) |var_id| {
+                std.log.err("  Unresolved type variable: T{}", .{var_id});
+            }
+            return error.UnresolvedTypeVariables;
+        }
+    }
+    
+    fn collectUnresolvedTypeVars(self: *TypeEnvironment, ast_node: *ast.ASTNode, unresolved: *std.ArrayList(u32)) void {
+        switch (ast_node.node_type) {
+            .Expression => |expr| {
+                self.collectUnresolvedFromExpression(expr, unresolved);
+            },
+            .Statement => |stmt| {
+                switch (stmt) {
+                    .VarDecl => |var_decl| {
+                        self.collectUnresolvedFromType(var_decl.var_type, unresolved);
+                        if (var_decl.init_expr) |init_expr| {
+                            self.collectUnresolvedFromExpression(init_expr, unresolved);
+                        }
+                    },
+                    .FunctionDecl => |func_decl| {
+                        for (func_decl.parameters.items) |param| {
+                            self.collectUnresolvedFromType(param.param_type, unresolved);
+                        }
+                        if (func_decl.return_type) |ret_type| {
+                            self.collectUnresolvedFromType(ret_type, unresolved);
+                        }
+                        for (func_decl.body.items) |body_stmt| {
+                            self.collectUnresolvedTypeVars(body_stmt, unresolved);
+                        }
+                    },
+                    else => {},
+                }
+            },
+            else => {},
+        }
+    }
+    
+    fn collectUnresolvedFromExpression(self: *TypeEnvironment, expr: *ast.Expression, unresolved: *std.ArrayList(u32)) void {
+        switch (expr.expr_type) {
+            .BinaryOp => |binop| {
+                self.collectUnresolvedFromExpression(binop.left, unresolved);
+                self.collectUnresolvedFromExpression(binop.right, unresolved);
+            },
+            .UnaryOp => |unop| {
+                self.collectUnresolvedFromExpression(unop.operand, unresolved);
+            },
+            .FunctionCall => |func_call| {
+                self.collectUnresolvedFromExpression(func_call.callee, unresolved);
+                for (func_call.arguments.items) |arg| {
+                    self.collectUnresolvedFromExpression(arg, unresolved);
+                }
+            },
+            .ArrayAccess => |arr_access| {
+                self.collectUnresolvedFromExpression(arr_access.array, unresolved);
+                self.collectUnresolvedFromExpression(arr_access.index, unresolved);
+            },
+            .FieldAccess => |field_access| {
+                self.collectUnresolvedFromExpression(field_access.object, unresolved);
+            },
+            .ArrayLiteral => |arr_lit| {
+                for (arr_lit.elements.items) |elem| {
+                    self.collectUnresolvedFromExpression(elem, unresolved);
+                }
+            },
+            else => {},
+        }
+    }
+    
+    fn collectUnresolvedFromType(self: *TypeEnvironment, cursed_type: CursedType, unresolved: *std.ArrayList(u32)) void {
+        const resolved = self.resolveTypeRecursive(cursed_type);
+        switch (resolved) {
+            .Unknown => |var_id| {
+                unresolved.append(var_id) catch {};
+            },
+            .Array => |arr| {
+                self.collectUnresolvedFromType(arr.element_type.*, unresolved);
+            },
+            .Slice => |slice| {
+                self.collectUnresolvedFromType(slice.element_type.*, unresolved);
+            },
+            .Function => |func| {
+                for (func.parameters.items) |param_type| {
+                    self.collectUnresolvedFromType(param_type, unresolved);
+                }
+                if (func.return_type) |ret_type| {
+                    self.collectUnresolvedFromType(ret_type.*, unresolved);
+                }
+            },
+            .Channel => |ch| {
+                self.collectUnresolvedFromType(ch.element_type.*, unresolved);
+            },
+            .Generic => |gen| {
+                self.collectUnresolvedFromType(gen.base_type.*, unresolved);
+                for (gen.type_args.items) |arg_type| {
+                    self.collectUnresolvedFromType(arg_type, unresolved);
+                }
+            },
+            .Tuple => |tuple| {
+                for (tuple.elements.items) |elem_type| {
+                    self.collectUnresolvedFromType(elem_type, unresolved);
+                }
+            },
+            else => {},
+        }
+    }
+    
+    // Helper functions for type checking and constraint satisfaction
+    pub fn typesEqual(self: *TypeEnvironment, type1: CursedType, type2: CursedType) bool {
+        const resolved1 = self.resolveTypeRecursive(type1);
+        const resolved2 = self.resolveTypeRecursive(type2);
+        
+        return switch (resolved1) {
+            .Drip => switch (resolved2) { .Drip => true, else => false },
+            .Normie => switch (resolved2) { .Normie => true, else => false },
+            .Smol => switch (resolved2) { .Smol => true, else => false },
+            .Thicc => switch (resolved2) { .Thicc => true, else => false },
+            .Meal => switch (resolved2) { .Meal => true, else => false },
+            .Snack => switch (resolved2) { .Snack => true, else => false },
+            .Tea => switch (resolved2) { .Tea => true, else => false },
+            .Lit => switch (resolved2) { .Lit => true, else => false },
+            .Sip => switch (resolved2) { .Sip => true, else => false },
+            .Vibes => switch (resolved2) { .Vibes => true, else => false },
+            .Array => |arr1| switch (resolved2) {
+                .Array => |arr2| self.typesEqual(arr1.element_type.*, arr2.element_type.*),
+                else => false,
+            },
+            .Slice => |slice1| switch (resolved2) {
+                .Slice => |slice2| self.typesEqual(slice1.element_type.*, slice2.element_type.*),
+                else => false,
+            },
+            .Function => |func1| switch (resolved2) {
+                .Function => |func2| {
+                    if (func1.parameters.items.len != func2.parameters.items.len) return false;
+                    for (func1.parameters.items, func2.parameters.items) |p1, p2| {
+                        if (!self.typesEqual(p1, p2)) return false;
+                    }
+                    if (func1.return_type) |ret1| {
+                        if (func2.return_type) |ret2| {
+                            return self.typesEqual(ret1.*, ret2.*);
+                        } else {
+                            return self.typesEqual(ret1.*, CursedType.Vibes);
+                        }
+                    } else {
+                        if (func2.return_type) |ret2| {
+                            return self.typesEqual(CursedType.Vibes, ret2.*);
+                        } else {
+                            return true; // Both void
+                        }
+                    }
+                },
+                else => false,
+            },
+            .Unknown => |id1| switch (resolved2) {
+                .Unknown => |id2| id1 == id2,
+                else => false,
+            },
+            else => false,
         };
+    }
+    
+    pub fn areTypesCompatible(self: *TypeEnvironment, type1: CursedType, type2: CursedType) bool {
+        const resolved1 = self.resolveTypeRecursive(type1);
+        const resolved2 = self.resolveTypeRecursive(type2);
+        
+        // Same type
+        if (self.typesEqual(resolved1, resolved2)) return true;
+        
+        // Numeric type compatibility
+        if (resolved1.isNumeric() and resolved2.isNumeric()) {
+            return true; // Allow numeric conversions
+        }
+        
+        // Interface compatibility
+        switch (resolved1) {
+            .Interface => {
+                return self.implementsInterface(resolved2, resolved1);
+            },
+            else => {}
+        }
+        
+        switch (resolved2) {
+            .Interface => {
+                return self.implementsInterface(resolved1, resolved2);
+            },
+            else => {}
+        }
+        
+        return false;
+    }
+    
+    fn isComparable(self: *TypeEnvironment, cursed_type: CursedType) bool {
+        _ = self;
+        return switch (cursed_type) {
+            .Drip, .Normie, .Smol, .Thicc, .Meal, .Snack, .Tea, .Lit, .Sip => true,
+            else => false,
+        };
+    }
+    
+    fn isSized(self: *TypeEnvironment, cursed_type: CursedType) bool {
+        _ = self;
+        return switch (cursed_type) {
+            .Drip, .Normie, .Smol, .Thicc, .Meal, .Snack, .Tea, .Lit, .Sip => true,
+            .Array, .Slice, .Struct, .Tuple => true,
+            .Function, .Interface => false,
+            else => false,
+        };
+    }
+    
+    fn isSend(self: *TypeEnvironment, cursed_type: CursedType) bool {
+        return switch (cursed_type) {
+            .Drip, .Normie, .Smol, .Thicc, .Meal, .Snack, .Tea, .Lit, .Sip => true,
+            .Array => |arr| self.isSend(arr.element_type.*),
+            .Slice => |slice| self.isSend(slice.element_type.*),
+            .Struct => true, // Most structs are Send
+            .Tuple => |tuple| {
+                for (tuple.elements.items) |elem_type| {
+                    if (!self.isSend(elem_type)) return false;
+                }
+                return true;
+            },
+            .Channel => false, // Channels are not Send by default
+            else => false,
+        };
+    }
+    
+    fn isSync(self: *TypeEnvironment, cursed_type: CursedType) bool {
+        return switch (cursed_type) {
+            .Drip, .Normie, .Smol, .Thicc, .Meal, .Snack, .Tea, .Lit, .Sip => true,
+            .Array => |arr| self.isSync(arr.element_type.*),
+            .Slice => |slice| self.isSync(slice.element_type.*),
+            .Struct => true, // Most structs are Sync
+            .Tuple => |tuple| {
+                for (tuple.elements.items) |elem_type| {
+                    if (!self.isSync(elem_type)) return false;
+                }
+                return true;
+            },
+            .Channel => false, // Channels are not Sync by default
+            else => false,
+        };
+    }
+    
+    fn implementsInterface(self: *TypeEnvironment, impl_type: CursedType, interface_type: CursedType) bool {
+        _ = self;
+        _ = impl_type;
+        _ = interface_type;
+        // TODO: Implement interface checking based on method signatures
+        return false;
+    }
+    
+    fn extendsType(self: *TypeEnvironment, child_type: CursedType, parent_type: CursedType) bool {
+        _ = self;
+        _ = child_type;
+        _ = parent_type;
+        // TODO: Implement type extension checking
+        return false;
     }
     
     pub fn addVariable(self: *TypeEnvironment, name: []const u8, var_type: CursedType, is_mutable: bool) !void {
@@ -1152,7 +1558,7 @@ pub const ComprehensiveTypeChecker = struct {
     
     pub fn init(allocator: Allocator) !ComprehensiveTypeChecker {
         var environment = try TypeEnvironment.init(allocator);
-        var inference_engine = TypeInferenceEngine.init(allocator, &environment);
+        const inference_engine = TypeInferenceEngine.init(allocator, &environment);
         
         return ComprehensiveTypeChecker{
             .environment = environment,

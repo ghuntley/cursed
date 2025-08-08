@@ -693,6 +693,7 @@ pub const OptimizationConfig = struct {
     shared_library: bool = false,
     target_cpu: []const u8 = "generic",
     target_features: []const u8 = "",
+    bounds_checking: bool = true,
     
     pub fn default() OptimizationConfig {
         return OptimizationConfig{};
