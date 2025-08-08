@@ -1,1 +1,0 @@
-vibez.spill("SSA test")

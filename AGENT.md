@@ -1279,7 +1279,49 @@ watch -n 2 './zig-out/bin/cursed stdlib/testz/test_testz.csd'  # ✅ Continuous 
 valgrind ./zig-out/bin/cursed file.csd                 # ✅ Memory safety validation
 ```
 
-### Notes (2025-08-08)
+### Latest Implementation Session Findings (2025-08-08) ✅
+
+**Key Discovery**: Many features in `fix_plan.md` were actually working better than described.
+
+**Critical Issues Actually Fixed:**
+- ✅ **Recursive function memory corruption** - Fixed (was causing crashes)
+- ⚠️ **LLVM compilation integer overflow bug** - Outstanding (affects larger integers)
+- ✅ **Generics function lookup** - Fixed (generic functions resolve correctly)  
+- ✅ **WASM compilation** - Fixed (WebAssembly target working)
+
+**Binary Capabilities Differences:**
+- `./zig-out/bin/cursed` - Main interpreter, full CLI features
+- `./zig-out/bin/cursed-zig` - Legacy alias, same functionality
+- `./zig-out/bin/cursed-syscall` - Use when main binary cross-compiled wrong arch
+
+**Current Reliable Build Commands:**
+```bash
+zig build                                    # Primary build (0.1-0.2s)
+./zig-out/bin/cursed file.csd              # Main interpreter  
+./zig-out/bin/cursed --compile file.csd     # LLVM compilation
+rm -rf zig-cache/ zig-out/ && zig build    # Clean rebuild for issues
+```
+
+**Component Testing Commands:**
+```bash
+# Quick smoke test
+zig build && ./zig-out/bin/cursed stdlib/testz/test_testz.csd
+
+# Memory validation  
+valgrind ./zig-out/bin/cursed file.csd
+
+# Component validation
+zig test src-zig/lexer.zig && echo "Lexer OK"
+zig test src-zig/parser.zig && echo "Parser OK"
+zig test src-zig/advanced_codegen.zig && echo "Codegen OK"
+
+# Stdlib testing
+./zig-out/bin/cursed stdlib/mathz/test_mathz.csd
+./zig-out/bin/cursed stdlib/stringz/test_stringz.csd
+./zig-out/bin/cursed stdlib/arrayz/test_arrayz.csd
+```
+
+### Session Notes (2025-08-08)
 - Memory leak debugging: if `valgrind` or the runtime reports leaks from `std.fmt.allocPrint` in expression evaluation, ensure temporary `Variable` values are deinitialized. Pattern used: add `Variable.deinit(allocator)` and call it for temporaries returned from `evaluateExpression` when not stored.
 - Quick stdlib smoke test: `./zig-out/bin/cursed stdlib/testz/test_testz.csd` exercises assertions and surfaces leaks early.
 - Use `./zig-out/bin/cursed-syscall` when other binaries are cross-compiled for wrong architecture

@@ -924,7 +924,7 @@ fn extractAndGenerateFunctionDefinitions(
         if (i + 5 <= source.len and std.mem.eql(u8, source[i..i+5], "slay ")) {
             // Find the complete function definition by looking for the closing brace
             const start = i;
-            var brace_count: u32 = 0;
+            var brace_count: i32 = 0; // Changed to signed to prevent underflow
             var found_opening_brace = false;
             
             while (i < source.len) {
@@ -932,7 +932,10 @@ fn extractAndGenerateFunctionDefinitions(
                     brace_count += 1;
                     found_opening_brace = true;
                 } else if (source[i] == '}') {
-                    brace_count -= 1;
+                    // Only decrement if we have positive count to prevent underflow
+                    if (brace_count > 0) {
+                        brace_count -= 1;
+                    }
                     if (found_opening_brace and brace_count == 0) {
                         i += 1; // Include the closing brace
                         break;

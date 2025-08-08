@@ -1,1 +1,0 @@
-stan { vibez.spill("test") }

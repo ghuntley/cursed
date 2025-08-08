@@ -669,7 +669,11 @@ base_codegen: FinalWorkingCodeGen,
         const select_begin_func = self.base_codegen.runtime_functions.get("cursed_select_begin") orelse
             return error.SelectRuntimeNotAvailable;
         
-        const case_count = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(select_stmt.cases.items.len)), 0);
+        // Safe cast with bounds checking to prevent overflow
+        if (select_stmt.cases.items.len > std.math.maxInt(u32)) {
+            return error.TooManyCases;
+        }
+        const case_count = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @truncate(select_stmt.cases.items.len)), 0);
         const select_context = c.LLVMBuildCall2(
             builder,
             c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
@@ -681,7 +685,11 @@ base_codegen: FinalWorkingCodeGen,
         
         // Register select operations with runtime
         for (select_stmt.cases.items, 0..) |case_item, i| {
-            const case_index = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
+            // Safe case index conversion to prevent overflow
+            if (i > std.math.maxInt(u32)) {
+                return error.CaseIndexTooLarge;
+            }
+            const case_index = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @truncate(i)), 0);
             
             if (case_item.channel != null and case_item.send_value != null) {
                 // Send operation
@@ -739,8 +747,11 @@ base_codegen: FinalWorkingCodeGen,
         const merge_block = c.LLVMAppendBasicBlockInContext(context, current_function, "select_merge");
         const no_case_ready_block = c.LLVMAppendBasicBlockInContext(context, current_function, "select_no_case");
         
-        // Create switch instruction to jump to ready case
-        const switch_inst = c.LLVMBuildSwitch(builder, ready_case_index, no_case_ready_block, @as(u32, @intCast(select_stmt.cases.items.len)));
+        // Create switch instruction to jump to ready case (safe from overflow)
+        if (select_stmt.cases.items.len > std.math.maxInt(u32)) {
+            return error.TooManySwitchCases;
+        }
+        const switch_inst = c.LLVMBuildSwitch(builder, ready_case_index, no_case_ready_block, @as(u32, @truncate(select_stmt.cases.items.len)));
         
         var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.base_codegen.allocator);
         defer case_blocks.deinit();
