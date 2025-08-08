@@ -3,13 +3,12 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const HashMap = std.HashMap;
 const Allocator = std.mem.Allocator;
+// LLVM C imports with proper CPU target configuration
 const c = @cImport({
-    @cInclude("llvm-c/Core.h");
-    @cInclude("llvm-c/Types.h");
-    @cInclude("llvm-c/Target.h");
+    @cInclude("llvm_c_bindings.h");
 });
 
-const ast = @import("ast_fixed.zig");
+const ast = @import("ast.zig");
 const type_system = @import("type_system_runtime.zig");
 
 /// Generic type parameter with constraints
@@ -77,9 +76,9 @@ pub const GenericDeclaration = struct {
     };
     
     pub const ASTNode = union(DeclarationKind) {
-        Function: *ast.FunctionDeclaration,
-        Struct: *ast.StructDeclaration,  
-        Interface: *ast.InterfaceDeclaration,
+        Function: *ast.FunctionStatement,
+        Struct: *ast.StructStatement,  
+        Interface: *ast.InterfaceStatement,
     };
     
     pub fn init(allocator: Allocator, name: []const u8, kind: DeclarationKind) GenericDeclaration {

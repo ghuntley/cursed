@@ -806,45 +806,55 @@ slay string_ends_with(input tea, suffix tea) lit {
 }
 
 fr fr ==========================================
-fr fr Array Helper Functions (Placeholders)
+fr fr Array Helper Functions (Pure CURSED)
 fr fr ==========================================
 
 slay array_push(arr []tea, value tea) normie {
-    fr fr Placeholder for array push operation
-    fr fr In a real implementation, this would modify the array
-    damn len(arr) + 1
+    fr fr Use CURSED append to add to array
+    sus new_arr []tea = append(arr, value)
+    damn len(new_arr)
 }
 
-slay len(arr []tea) normie {
-    fr fr Placeholder for array length
-    fr fr In a real implementation, this would return actual length
-    damn 0
+slay json_array_length(arr []tea) normie {
+    fr fr Return actual array length
+    damn len(arr)
 }
 
 fr fr ==========================================
-fr fr String Functions (Placeholders)
+fr fr String Functions (Pure CURSED)
 fr fr ==========================================
 
 slay string_length(str tea) normie {
-    fr fr Placeholder for string length
-    fr fr Implementation depends on runtime
-    damn 0
+    fr fr Count characters in string
+    sus count normie = 0
+    sus i normie = 0
+    bestie runtime_string_char_at(str, i) != '\0' {
+        count = count + 1
+        i = i + 1
+    }
+    damn count
 }
 
 slay string_char_at(str tea, index normie) sip {
-    fr fr Placeholder for character access
-    fr fr Implementation depends on runtime
-    damn '\0'
+    fr fr Get character at index using runtime
+    damn runtime_string_char_at(str, index)
 }
 
 slay string_from_char(char sip) tea {
-    fr fr Placeholder for character to string conversion
-    fr fr Implementation depends on runtime
-    damn ""
+    fr fr Convert character to string using runtime
+    damn runtime_char_to_string(char)
 }
 
 slay string_substring(str tea, start normie, length normie) tea {
-    fr fr Placeholder for substring operation
-    fr fr Implementation depends on runtime
-    damn ""
+    fr fr Extract substring using pure CURSED
+    sus result tea = ""
+    sus i normie = start
+    sus end_pos normie = start + length
+    bestie i < end_pos {
+        sus c sip = runtime_string_char_at(str, i)
+        lowkey c == '\0' { break }
+        result = result + runtime_char_to_string(c)
+        i = i + 1
+    }
+    damn result
 }

@@ -1,1 +1,1 @@
-slay add(a drip, b drip) drip { damn a + b }; vibez.spill("Function test:", add(10, 15))
+slay add(a drip, b drip) drip { damn a + b }; vibez.spill(add(3, 4))

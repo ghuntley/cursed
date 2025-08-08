@@ -1,1 +1,7 @@
-sus x drip = 1; vibe_check (x) { mood 1: vibez.spill("matched one"); basic: vibez.spill("default") }
+sus x drip = 5
+ready (x) {
+    1 => vibez.spill("one")
+    5 => vibez.spill("five")  
+    _ => vibez.spill("other")
+}
+vibez.spill("Pattern test complete")
