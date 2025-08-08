@@ -2296,27 +2296,245 @@ pub const CodeGenerator = struct {
     }
 
     fn generatePanicStatement(self: *CodeGenerator, panic_stmt: ast.PanicStatement) !void {
-        _ = self;
-        _ = panic_stmt;
-        std.debug.print("⚠️ Panic statement implementation placeholder\n", .{});
+        // Declare cursed_panic runtime function if not already declared
+        const cursed_panic_func = c.LLVMGetNamedFunction(self.module, "cursed_panic") orelse blk: {
+            var params = [_]c.LLVMTypeRef{c.LLVMPointerTypeInContext(self.context, 0)}; // const char* message
+            const func_type = c.LLVMFunctionType(c.LLVMVoidTypeInContext(self.context), &params, 1, 0);
+            break :blk c.LLVMAddFunction(self.module, "cursed_panic", func_type);
+        };
+        
+        // Generate the panic message expression
+        const message_expr: *ast.Expression = @ptrCast(@alignCast(panic_stmt.message));
+        const message_value = try self.generateExpression(message_expr.*);
+        
+        // Call cursed_panic with the message
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMVoidTypeInContext(self.context),
+            cursed_panic_func,
+            &[_]c.LLVMValueRef{message_value},
+            1,
+            ""
+        );
+        
+        // Add unreachable instruction since panic never returns
+        _ = c.LLVMBuildUnreachable(self.builder);
+        
+        std.debug.print("✅ Panic statement compiled\n", .{});
     }
 
     fn generateCatchStatement(self: *CodeGenerator, catch_stmt: ast.CatchStatement) !void {
-        _ = self;
-        _ = catch_stmt;
-        std.debug.print("⚠️ Catch statement implementation placeholder\n", .{});
+        // Declare cursed_error_create runtime function if not already declared
+        const cursed_error_create_func = c.LLVMGetNamedFunction(self.module, "cursed_create_error") orelse blk: {
+            var params = [_]c.LLVMTypeRef{ 
+                c.LLVMPointerTypeInContext(self.context, 0), // const char* message
+                c.LLVMInt32TypeInContext(self.context),      // int32_t code
+                c.LLVMPointerTypeInContext(self.context, 0)  // const char* source_location
+            };
+            const func_type = c.LLVMFunctionType(c.LLVMPointerTypeInContext(self.context, 0), &params, 3, 0);
+            break :blk c.LLVMAddFunction(self.module, "cursed_create_error", func_type);
+        };
+        
+        // Create error handling block
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        const catch_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "catch_block");
+        const after_catch_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "after_catch");
+        
+        // Jump to catch block
+        _ = c.LLVMBuildBr(self.builder, catch_block);
+        
+        // Generate catch block body
+        c.LLVMPositionBuilderAtEnd(self.builder, catch_block);
+        
+        // If there's an error variable, allocate and store it
+        if (catch_stmt.error_variable) |error_var| {
+            const error_ptr_type = c.LLVMPointerTypeInContext(self.context, 0);
+            const error_alloca = c.LLVMBuildAlloca(self.builder, error_ptr_type, error_var.ptr);
+            try self.variables.put(error_var, error_alloca);
+            
+            // Initialize with current error (placeholder - would be set by exception mechanism)
+            const null_value = c.LLVMConstNull(error_ptr_type);
+            _ = c.LLVMBuildStore(self.builder, null_value, error_alloca);
+        }
+        
+        // Generate catch body statements
+        var stmt_iter = catch_stmt.body.iterator();
+        while (stmt_iter.next()) |stmt_ptr| {
+            const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            try self.generateStatement(stmt.*);
+        }
+        
+        // Jump to after catch block
+        _ = c.LLVMBuildBr(self.builder, after_catch_block);
+        c.LLVMPositionBuilderAtEnd(self.builder, after_catch_block);
+        
+        std.debug.print("✅ Catch statement compiled\n", .{});
     }
 
     fn generateYikesStatement(self: *CodeGenerator, yikes_stmt: ast.YikesStatement) !void {
-        _ = self;
-        _ = yikes_stmt;
-        std.debug.print("⚠️ Yikes statement implementation placeholder\n", .{});
+        // Declare cursed_create_error and cursed_panic_with_error functions
+        const cursed_create_error_func = c.LLVMGetNamedFunction(self.module, "cursed_create_error") orelse blk: {
+            var params = [_]c.LLVMTypeRef{ 
+                c.LLVMPointerTypeInContext(self.context, 0), // const char* message
+                c.LLVMInt32TypeInContext(self.context),      // int32_t code
+                c.LLVMPointerTypeInContext(self.context, 0)  // const char* source_location
+            };
+            const func_type = c.LLVMFunctionType(c.LLVMPointerTypeInContext(self.context, 0), &params, 3, 0);
+            break :blk c.LLVMAddFunction(self.module, "cursed_create_error", func_type);
+        };
+        
+        const cursed_panic_with_error_func = c.LLVMGetNamedFunction(self.module, "cursed_panic_with_error") orelse blk: {
+            var params = [_]c.LLVMTypeRef{c.LLVMPointerTypeInContext(self.context, 0)}; // CursedError* error
+            const func_type = c.LLVMFunctionType(c.LLVMVoidTypeInContext(self.context), &params, 1, 0);
+            break :blk c.LLVMAddFunction(self.module, "cursed_panic_with_error", func_type);
+        };
+        
+        // Generate the error message expression
+        const message_value = try self.generateExpression(yikes_stmt.message.*);
+        
+        // Create error code (default to -1)
+        const error_code = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @bitCast(@as(i32, -1)), 1);
+        
+        // Create source location string (placeholder)
+        const location_str = if (yikes_stmt.location) |loc| 
+            try self.createGlobalString("yikes statement")
+        else 
+            try self.createGlobalString("unknown location");
+        
+        // Call cursed_create_error
+        const error_obj = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMPointerTypeInContext(self.context, 0),
+            cursed_create_error_func,
+            &[_]c.LLVMValueRef{ message_value, error_code, location_str },
+            3,
+            "yikes_error"
+        );
+        
+        // Call cursed_panic_with_error
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMVoidTypeInContext(self.context),
+            cursed_panic_with_error_func,
+            &[_]c.LLVMValueRef{error_obj},
+            1,
+            ""
+        );
+        
+        // Add unreachable instruction since yikes never returns
+        _ = c.LLVMBuildUnreachable(self.builder);
+        
+        std.debug.print("✅ Yikes statement compiled\n", .{});
     }
 
     fn generateFamStatement(self: *CodeGenerator, fam_stmt: ast.FamStatement) !void {
-        _ = self;
-        _ = fam_stmt;
-        std.debug.print("⚠️ Fam statement implementation placeholder\n", .{});
+        // Declare setjmp/longjmp for exception handling
+        const setjmp_func = c.LLVMGetNamedFunction(self.module, "setjmp") orelse blk: {
+            var params = [_]c.LLVMTypeRef{c.LLVMPointerTypeInContext(self.context, 0)}; // jmp_buf*
+            const func_type = c.LLVMFunctionType(c.LLVMInt32TypeInContext(self.context), &params, 1, 0);
+            break :blk c.LLVMAddFunction(self.module, "setjmp", func_type);
+        };
+        
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        
+        // Create basic blocks for control flow
+        const try_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_try");
+        const catch_dispatch_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_catch_dispatch");
+        const finally_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "fam_finally");
+        const after_fam_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "after_fam");
+        
+        // Allocate jmp_buf for exception handling
+        const jmp_buf_size = 64; // Standard jmp_buf size on most platforms
+        const jmp_buf_type = c.LLVMArrayType(c.LLVMInt8TypeInContext(self.context), jmp_buf_size);
+        const jmp_buf_alloca = c.LLVMBuildAlloca(self.builder, jmp_buf_type, "jmp_buf");
+        
+        // Call setjmp to establish exception handling point
+        const setjmp_result = c.LLVMBuildCall2(
+            self.builder,
+            c.LLVMInt32TypeInContext(self.context),
+            setjmp_func,
+            &[_]c.LLVMValueRef{jmp_buf_alloca},
+            1,
+            "setjmp_result"
+        );
+        
+        // Check setjmp return value (0 = normal execution, non-zero = exception)
+        const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        const is_exception = c.LLVMBuildICmp(self.builder, c.LLVMIntNE, setjmp_result, zero, "is_exception");
+        
+        // Branch based on setjmp result
+        _ = c.LLVMBuildCondBr(self.builder, is_exception, catch_dispatch_block, try_block);
+        
+        // Generate try block
+        c.LLVMPositionBuilderAtEnd(self.builder, try_block);
+        
+        // Execute try body statements
+        for (fam_stmt.try_body.items) |stmt| {
+            try self.generateStatement(stmt);
+        }
+        
+        // If no exception, jump to finally block
+        _ = c.LLVMBuildBr(self.builder, finally_block);
+        
+        // Generate catch dispatch block
+        c.LLVMPositionBuilderAtEnd(self.builder, catch_dispatch_block);
+        
+        // Generate catch blocks
+        for (fam_stmt.catch_blocks.items) |catch_block| {
+            const catch_handler_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "catch_handler");
+            const next_catch_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "next_catch");
+            
+            // TODO: Add error type checking here for specific catch blocks
+            _ = c.LLVMBuildBr(self.builder, catch_handler_block);
+            
+            // Generate catch handler
+            c.LLVMPositionBuilderAtEnd(self.builder, catch_handler_block);
+            
+            // If there's an error variable, allocate and store it
+            if (catch_block.error_variable) |error_var| {
+                const error_ptr_type = c.LLVMPointerTypeInContext(self.context, 0);
+                const error_alloca = c.LLVMBuildAlloca(self.builder, error_ptr_type, error_var.ptr);
+                try self.variables.put(error_var, error_alloca);
+                
+                // Store current error (placeholder implementation)
+                const null_value = c.LLVMConstNull(error_ptr_type);
+                _ = c.LLVMBuildStore(self.builder, null_value, error_alloca);
+            }
+            
+            // Execute catch body
+            for (catch_block.body.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+            
+            // Jump to finally block after catch
+            _ = c.LLVMBuildBr(self.builder, finally_block);
+            
+            c.LLVMPositionBuilderAtEnd(self.builder, next_catch_block);
+        }
+        
+        // If no catch block matches, jump to finally
+        _ = c.LLVMBuildBr(self.builder, finally_block);
+        
+        // Generate finally block
+        c.LLVMPositionBuilderAtEnd(self.builder, finally_block);
+        
+        // Execute finally block if present
+        if (fam_stmt.finally_block) |finally_stmts| {
+            for (finally_stmts.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+        }
+        
+        // Jump to after fam block
+        _ = c.LLVMBuildBr(self.builder, after_fam_block);
+        c.LLVMPositionBuilderAtEnd(self.builder, after_fam_block);
+        
+        std.debug.print("✅ Fam statement compiled\n", .{});
+    }
+
+    /// Helper function to create a global string constant
+    fn createGlobalString(self: *CodeGenerator, str: []const u8) !c.LLVMValueRef {
+        return c.LLVMBuildGlobalStringPtr(self.builder, str.ptr, "str_const");
     }
 
     fn generateConstStatement(self: *CodeGenerator, const_decl: ast.ConstDecl) !void {

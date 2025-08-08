@@ -153,7 +153,7 @@ pub const GCTypeRegistry = struct {
         const type_id = self.type_id_counter;
         self.type_id_counter += 1;
 
-        const type_info = RuntimeTypeInfo.init(self.allocator, type_id, name, kind);
+        const type_info = try RuntimeTypeInfo.init(self.allocator, type_id, name, kind);
         try self.types.put(type_id, type_info);
         return type_id;
     }
@@ -201,26 +201,29 @@ pub const TypedAllocator = struct {
             allocator.destroy(self);
         }
 
-        pub fn retain(self: *TypedObject) void {
+        pub fn retain(self: *TypedObject) CursedError!void {
             // Atomic increment with acquire-release ordering for thread safety
             const old_count = self.ref_count.fetchAdd(1, .acq_rel);
             
             // Validate reference count consistency
             if (old_count == 0) {
-                @panic("Attempted to retain object with zero reference count");
+                std.log.err("Attempted to retain object with zero reference count", .{});
+                return CursedError.MemoryCorruption;
             }
             if (old_count >= std.math.maxInt(u32) - 1) {
-                @panic("Reference count overflow");
+                std.log.err("Reference count overflow: {}", .{old_count});
+                return CursedError.MemoryCorruption;
             }
         }
 
-        pub fn release(self: *TypedObject, allocator: Allocator) void {
+        pub fn release(self: *TypedObject, allocator: Allocator) CursedError!void {
             // Atomic decrement with acquire-release ordering
             const old_count = self.ref_count.fetchSub(1, .acq_rel);
             
             // Validate reference count consistency  
             if (old_count == 0) {
-                @panic("Attempted to release object with zero reference count (double-free)");
+                std.log.err("Attempted to release object with zero reference count (double-free)", .{});
+                return CursedError.MemoryCorruption;
             }
             
             // Only deallocate if this was the last reference

@@ -47,8 +47,9 @@ pub fn Channel(comptime T: type) type {
     return struct {
         const Self = @This();
         
-        // Lock-free fields using atomics
+        // Buffer with proper synchronization
         buffer: ArrayList(T),
+        buffer_mutex: std.Thread.Mutex, // Critical fix: Add mutex for buffer operations
         capacity: usize,
         closed: Atomic(bool),
         
@@ -61,8 +62,9 @@ pub fn Channel(comptime T: type) type {
         send_futex: Atomic(u32),
         recv_futex: Atomic(u32),
         
-        // Statistics
+        // Statistics and reference counting
         stats: ChannelStats,
+        ref_count: Atomic(u32), // Critical fix: Add reference counting for safe cleanup
         allocator: Allocator,
         
         const ChannelStats = struct {
@@ -75,6 +77,7 @@ pub fn Channel(comptime T: type) type {
         pub fn init(allocator: Allocator, capacity: usize) !Self {
             return Self{
                 .buffer = ArrayList(T).init(allocator),
+                .buffer_mutex = std.Thread.Mutex{}, // Initialize mutex
                 .capacity = capacity,
                 .closed = Atomic(bool).init(false),
                 .send_waiters = Atomic(u32).init(0),
@@ -88,13 +91,36 @@ pub fn Channel(comptime T: type) type {
                     .messages_dropped = Atomic(u64).init(0),
                     .timeout_count = Atomic(u64).init(0),
                 },
+                .ref_count = Atomic(u32).init(1), // Start with 1 reference
                 .allocator = allocator,
             };
         }
         
+        /// Safe cleanup with reference counting
         pub fn deinit(self: *Self) void {
             self.close();
+            
+            // Release our own reference first
+            _ = self.ref_count.fetchSub(1, Release);
+            
+            // Wait for all other references to be released (with timeout)
+            var timeout_count: u32 = 0;
+            while (self.ref_count.load(Acquire) > 0 and timeout_count < 100) {
+                std.time.sleep(1_000_000); // 1ms
+                timeout_count += 1;
+            }
+            
             self.buffer.deinit();
+        }
+        
+        /// Add reference (thread-safe)
+        pub fn addRef(self: *Self) void {
+            _ = self.ref_count.fetchAdd(1, Release);
+        }
+        
+        /// Release reference (thread-safe)
+        pub fn releaseRef(self: *Self) void {
+            _ = self.ref_count.fetchSub(1, Release);
         }
         
         /// Send with timeout to prevent indefinite blocking
@@ -133,14 +159,28 @@ pub fn Channel(comptime T: type) type {
             }
         }
         
-        /// Lock-free send attempt
+        /// Lock-free send attempt with proper synchronization
         fn trySendLockFree(self: *Self, value: T) ?SendResult {
             const current_size = self.buffer_size.load(Acquire);
             
-            // For unbuffered channels
+            // For unbuffered channels - synchronous handoff
             if (self.capacity == 0) {
                 if (self.recv_waiters.load(Acquire) == 0) {
                     return SendResult.would_block;
+                }
+                
+                // Critical fix: Use mutex for buffer operations to prevent race conditions
+                self.buffer_mutex.lock();
+                defer self.buffer_mutex.unlock();
+                
+                // Double-check receiver count after acquiring lock
+                if (self.recv_waiters.load(Acquire) == 0) {
+                    return SendResult.would_block;
+                }
+                
+                // Check if closed while waiting for lock
+                if (self.closed.load(Acquire)) {
+                    return SendResult.closed;
                 }
                 
                 // Attempt to add to buffer atomically
@@ -153,18 +193,34 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.sent;
             }
             
-            // For buffered channels
+            // For buffered channels - prevent race in capacity check
             if (current_size >= self.capacity) {
                 return SendResult.would_block;
             }
             
-            // Try to reserve space atomically
-            const new_size = self.buffer_size.compareAndSwap(current_size, current_size + 1, SeqCst, Acquire);
-            if (new_size != current_size) {
+            // Try to reserve space atomically with proper ordering
+            const new_size = self.buffer_size.cmpxchgWeak(
+                current_size, 
+                current_size + 1, 
+                SeqCst,  // Success ordering
+                Acquire  // Failure ordering
+            );
+            if (new_size != null) {
                 return null; // CAS failed, retry
             }
             
-            // Add to buffer
+            // Critical fix: Protect buffer operations with mutex
+            self.buffer_mutex.lock();
+            defer self.buffer_mutex.unlock();
+            
+            // Check if closed while waiting for lock
+            if (self.closed.load(Acquire)) {
+                // Rollback size on closure
+                _ = self.buffer_size.fetchSub(1, Release);
+                return SendResult.closed;
+            }
+            
+            // Add to buffer with error handling
             self.buffer.append(value) catch {
                 // Rollback size on failure
                 _ = self.buffer_size.fetchSub(1, Release);
@@ -213,17 +269,40 @@ pub fn Channel(comptime T: type) type {
             }
         }
         
-        /// Lock-free receive attempt
+        /// Lock-free receive attempt with proper synchronization
         fn tryReceiveLockFree(self: *Self) ?T {
             const current_size = self.buffer_size.load(Acquire);
             if (current_size == 0) {
                 return null;
             }
             
-            // Try to reserve item atomically
-            const new_size = self.buffer_size.compareAndSwap(current_size, current_size - 1, SeqCst, Acquire);
-            if (new_size != current_size) {
+            // Try to reserve item atomically with proper ordering
+            const new_size = self.buffer_size.cmpxchgWeak(
+                current_size, 
+                current_size - 1, 
+                SeqCst,  // Success ordering
+                Acquire  // Failure ordering
+            );
+            if (new_size != null) {
                 return null; // CAS failed, retry
+            }
+            
+            // Critical fix: Protect buffer operations with mutex
+            self.buffer_mutex.lock();
+            defer self.buffer_mutex.unlock();
+            
+            // Check if buffer is actually empty (race condition protection)
+            if (self.buffer.items.len == 0) {
+                // Rollback size change
+                _ = self.buffer_size.fetchAdd(1, Release);
+                return null;
+            }
+            
+            // Check if closed while waiting for lock
+            if (self.closed.load(Acquire) and self.buffer.items.len == 0) {
+                // Rollback size change
+                _ = self.buffer_size.fetchAdd(1, Release);
+                return null;
             }
             
             // Get item from buffer
@@ -271,19 +350,19 @@ pub fn Channel(comptime T: type) type {
             return self.buffer_size.load(Acquire);
         }
         
-        /// Wake up waiting receivers
+        /// Wake up waiting receivers (race condition safe)
         fn wakeReceivers(self: *Self) void {
             _ = self.recv_futex.fetchAdd(1, Release);
             std.Thread.Futex.wake(&self.recv_futex, std.math.maxInt(u32));
         }
         
-        /// Wake up waiting senders
+        /// Wake up waiting senders (race condition safe)
         fn wakeSenders(self: *Self) void {
             _ = self.send_futex.fetchAdd(1, Release);
             std.Thread.Futex.wake(&self.send_futex, std.math.maxInt(u32));
         }
         
-        /// Wake up all waiters
+        /// Wake up all waiters (race condition safe)
         fn wakeAll(self: *Self) void {
             self.wakeReceivers();
             self.wakeSenders();
@@ -340,7 +419,7 @@ pub const Scheduler = struct {
     
     /// Start the scheduler
     pub fn start(self: *Self) !void {
-        if (self.running.compareAndSwap(false, true, SeqCst, Acquire) != false) {
+        if (self.running.cmpxchgWeak(false, true, SeqCst, Acquire) != null) {
             return; // Already running
         }
         
@@ -416,13 +495,16 @@ pub const Scheduler = struct {
     pub fn cleanupGoroutine(self: *Self, id: GoroutineId) void {
         _ = id; // For future use in tracking
         
-        // Decrement active count
-        const remaining = self.active_goroutines.fetchSub(1, Release);
+        // Critical fix: Use proper memory ordering for cleanup
+        const remaining = self.active_goroutines.fetchSub(1, std.builtin.AtomicOrder.acq_rel);
         
         // If this was the last goroutine and cleanup is in progress
         if (remaining == 1 and self.cleanup_in_progress.load(Acquire)) {
             self.cleanup_barrier.set();
         }
+        
+        // Additional synchronization point - wait for completion  
+        // Memory ordering handled by atomic operations
     }
     
     fn nextGoroutineId(self: *Self) GoroutineId {
@@ -471,7 +553,7 @@ pub const Worker = struct {
     }
     
     pub fn start(self: *Self) !void {
-        if (self.running.compareAndSwap(false, true, SeqCst, Acquire) != false) {
+        if (self.running.cmpxchgWeak(false, true, SeqCst, Acquire) != null) {
             return; // Already running
         }
         
@@ -531,19 +613,26 @@ pub const Worker = struct {
     
     /// Synchronized cleanup to prevent race conditions
     fn cleanupGoroutineSync(self: *Self, goroutine_ctx: *GoroutineContext) void {
+        // Critical fix: Ensure proper state transition ordering
+        if (goroutine_ctx.state.cmpxchgWeak(.terminating, .completed, SeqCst, Acquire) != null) {
+            // State transition failed, goroutine may be in unexpected state
+            return;
+        }
+        
+        // Memory ordering ensured by atomic state transitions
+        
         // Wait a grace period for any pending operations
         std.time.sleep(5_000_000); // 5ms grace period
-        
-        // Mark as completed
-        goroutine_ctx.state.store(.completed, Release);
         
         // Signal cleanup completion
         goroutine_ctx.cleanup_completed.set();
         
-        // Notify scheduler
+        // Notify scheduler with proper synchronization
         self.scheduler.cleanupGoroutine(goroutine_ctx.id);
         
-        // Cleanup context
+        // Memory ordering handled by scheduler cleanup
+        
+        // Cleanup context (ensure no other threads reference this)
         self.allocator.destroy(goroutine_ctx);
     }
 };

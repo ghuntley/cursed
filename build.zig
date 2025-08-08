@@ -93,13 +93,49 @@ const TargetConfig = struct {
 };
 
 fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.ResolvedTarget) void {
-    // LLVM linking function - temporarily disabled to avoid build API issues
-    _ = b;
-    _ = exe;
-    _ = target;
+    // LLVM integration for advanced code generation and compilation
+    const config = TargetConfig.forTarget(target);
     
-    // LLVM support will be re-enabled after proper header configuration
-    return;
+    // Only add LLVM for supported targets
+    if (!config.supports_llvm) {
+        return;
+    }
+    
+    // Skip LLVM for WASM target 
+    if (target.result.cpu.arch == .wasm32) {
+        return;
+    }
+    
+    // Add LLVM system library and include paths
+    exe.linkSystemLibrary("LLVM-18");
+    
+    // Add LLVM include directories using LazyPath.cwd_relative for absolute paths
+    exe.addSystemIncludePath(.{ .cwd_relative = "/usr/lib/llvm-18/include" });
+    exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/llvm-18/lib" });
+    
+    // Set LLVM C macro definitions for proper integration
+    exe.root_module.addCMacro("LLVM_VERSION_MAJOR", "18");
+    exe.root_module.addCMacro("LLVM_VERSION_MINOR", "1");
+    exe.root_module.addCMacro("LLVM_DEFAULT_TARGET_TRIPLE", "\"x86_64-unknown-linux-gnu\"");
+    exe.root_module.addCMacro("LLVM_HOST_TARGET", "\"x86-64\"");
+    
+    // Configure CPU target to avoid athlon-xp conflicts
+    const cpu_name = switch (target.result.cpu.arch) {
+        .x86_64 => "x86-64",
+        .aarch64 => "generic",
+        else => "generic",
+    };
+    exe.root_module.addCMacro("LLVM_TARGET_CPU", b.fmt("\"{s}\"", .{cpu_name}));
+    
+    // Force specific target to avoid unknown CPU errors
+    exe.root_module.addCMacro("__GNUC__", "1");
+    exe.root_module.addCMacro("__x86_64__", "1");
+    exe.root_module.addCMacro("_GNU_SOURCE", "1");
+    
+    // Enable debug information support
+    if (b.verbose) {
+        std.debug.print("✅ LLVM-18 integration enabled for target: {s}\n", .{config.description});
+    }
 }
 
 pub fn build(b: *std.Build) void {
@@ -139,9 +175,17 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // Configure libc for minimal compiler (no LLVM needed)
+    // Configure libc and LLVM support for main compiler
     if (!is_wasm) {
         exe.linkLibC();
+        
+        // Add LLVM support for native targets
+        if (config.supports_llvm and !is_cross_compile) {
+            addLlvm(b, exe, resolved_target);
+            exe.root_module.addCMacro("CURSED_ENABLE_LLVM", "1");
+        } else {
+            exe.root_module.addCMacro("CURSED_DISABLE_LLVM", "1");
+        }
         
         // Set explicit CPU target to avoid athlon-xp conflicts
         const cpu_name = switch (resolved_target.result.cpu.arch) {
@@ -150,9 +194,6 @@ pub fn build(b: *std.Build) void {
             else => "generic",
         };
         exe.root_module.addCMacro("TARGET_CPU", b.fmt("\"{s}\"", .{cpu_name}));
-        
-        // Configure C import target to avoid unknown CPU errors
-        exe.root_module.addCMacro("CURSED_DISABLE_LLVM", "1");
         
         // C imports disabled to avoid CPU target issues temporarily
         
@@ -214,6 +255,10 @@ pub fn build(b: *std.Build) void {
     });
     if (!is_wasm) {
         complete_exe.linkLibC();
+        // Add LLVM support to complete compiler
+        if (config.supports_llvm and !is_cross_compile) {
+            addLlvm(b, complete_exe, resolved_target);
+        }
     }
 
     // Enhanced compiler with improved error reporting and debugging (disabled due to API issues)
@@ -297,8 +342,13 @@ b.installArtifact(complete_exe);
         .optimize = optimize,
     });
 
-    unit_tests.linkLibC();
-    addLlvm(b, unit_tests, resolved_target);
+    if (!is_wasm) {
+        unit_tests.linkLibC();
+        // Add LLVM support for tests if available
+        if (config.supports_llvm and !is_cross_compile) {
+            addLlvm(b, unit_tests, resolved_target);
+        }
+    }
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test", "Run unit tests");
@@ -362,8 +412,27 @@ b.installArtifact(complete_exe);
     
     // Create syscall-enabled compiler with real file I/O, networking, and process management
     // Only build for native target to avoid cross-compilation LLVM issues
-    // Temporarily disabled due to LLVM header configuration issues
-    const syscall_exe: ?*std.Build.Step.Compile = null;
+    const syscall_exe = if (!is_cross_compile and config.supports_llvm) blk: {
+        const exe_syscall = b.addExecutable(.{
+            .name = "cursed-syscall",
+            .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main_llvm_working.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        });
+        
+        if (!is_wasm) {
+            exe_syscall.linkLibC();
+            addLlvm(b, exe_syscall, resolved_target);
+            
+            // Add LLVM wrapper C source file with explicit CPU target
+            exe_syscall.addCSourceFile(.{
+                .file = b.path("src-zig/llvm_wrapper.c"),
+                .flags = &[_][]const u8{"-std=c99", "-O2", "-march=x86-64", "-mtune=generic"},
+            });
+        }
+        
+        break :blk exe_syscall;
+    } else null;
     
     if (syscall_exe) |syscall| {
         b.installArtifact(syscall);
