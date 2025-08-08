@@ -1,1 +1,5 @@
-squad Point { spill x drip; spill y drip }; sus p Point = Point{x: 10, y: 20}; vibez.spill("Point x:", p.x)
+squad Person { spill name tea; spill age drip }
+sus p Person = Person{name: "Alice", age: 30}
+vibez.spill("Name:", p.name, "Age:", p.age)
+p.age = 31
+vibez.spill("Updated age:", p.age)

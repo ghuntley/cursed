@@ -3,66 +3,99 @@
 - IMPORTANT: NEVER EVER DELETE "specs/" or "benchmark/" (case insentive and including files in the folder)
 - IMPORTANT: NEVER EVER DELETE ANY FILE NAMED "PROMPT*.MD" (case insensitive)
 
-## 🎉 HISTORIC ACHIEVEMENT: 100% PRODUCTION-READY COMPLETION
+## 🔧 CURSED COMPILER BUILD & TEST GUIDE (2025-08-08)
 
-**🏆 CURSED COMPILER IS NOW PRODUCTION READY** - Complete Rust-to-Zig transformation achieved with full feature parity and enterprise-grade quality.
+**Current Reality**: Basic Zig-based interpreter working with core features functional.
 
-### Production Deployment Guidance ✅ (100% Complete)
-- **Build**: `zig build -Doptimize=ReleaseFast` (Production-optimized builds)
-- **Cross-compile**: Use `zig build -Dtarget=<platform>` (25/25 platforms - 100% success)
-- **Memory profiling**: `valgrind ./cursed-unified` (Zero memory leaks verified)
-- **Static linking**: `zig build -Dstatic` (Production deployment ready)
-- **Performance**: Complete PGO/LTO optimization pipeline operational
-- **Security**: Full cryptographic suite with constant-time implementations
-- **Monitoring**: Complete performance and memory monitoring integrated
+### Working Build Commands ✅
+```bash
+# Primary build (fast, reliable)
+zig build                                    # ✅ Builds successfully (0.1-0.2s)
+./zig-out/bin/cursed file.csd              # ✅ Main interpreter
+
+# Alternative executables when needed
+./zig-out/bin/cursed-zig file.csd          # ✅ Legacy alias
+./zig-out/bin/cursed-syscall file.csd      # ✅ When main binary cross-compiled
+
+# Clean rebuild (fixes most issues)
+rm -rf zig-cache/ zig-out/ && zig build    # ✅ Full clean rebuild
+```
+
+### What Actually Works ✅
+```bash
+# Basic CURSED programs (verified working)
+echo 'vibez.spill("Hello!")' > test.csd && ./zig-out/bin/cursed test.csd
+echo 'sus x drip = 42; vibez.spill(x)' > var_test.csd && ./zig-out/bin/cursed var_test.csd
+echo 'slay add(a drip, b drip) drip { damn a + b }; vibez.spill(add(3, 4))' > func_test.csd && ./zig-out/bin/cursed func_test.csd
+
+# Arrays & expressions (confirmed working)
+echo 'sus arr []drip = [1, 2, 3]; vibez.spill(arr[0])' > array_test.csd && ./zig-out/bin/cursed array_test.csd
+echo 'yeet "arrayz"; sus nums []drip = [1, 2]; vibez.spill(len(nums))' > len_test.csd && ./zig-out/bin/cursed len_test.csd
+
+# Stdlib modules (basic functionality working)
+echo 'yeet "mathz"; vibez.spill(abs_normie(-5))' > math_test.csd && ./zig-out/bin/cursed math_test.csd
+```
+
+### What Doesn't Work / Is Limited ❌
+- Advanced CLI flags (`--help`, `--version`, complex compilation modes) are incomplete
+- Cross-compilation may produce wrong architecture binaries  
+- Some advanced stdlib modules have placeholder implementations
+- LLVM compilation mode is experimental
+- Self-hosting claims are aspirational
 
 ## Key Commands for Development:
 
-### Zig Development Commands (Primary) ✅ WORKING
-
-#### Production-Ready Build System - All Commands Working
+### Essential Testing Commands ✅
 ```bash
-# Core Build Commands (Production Ready)
-zig build                           # ✅ Build complete CURSED compiler with all features
-./zig-out/bin/cursed file.csd       # ✅ Primary compiler (interpretation + compilation)
-./zig-out/bin/cursed-zig file.csd   # ✅ Legacy alias (100% backwards compatible)
+# Quick development validation 
+zig build && ./zig-out/bin/cursed stdlib/testz/test_testz.csd   # Fast smoke test
+zig test src-zig/lexer.zig && echo "Lexer OK"                   # Component testing
+zig test src-zig/parser.zig && echo "Parser OK"
 
-# Complete Professional CLI Interface
-./zig-out/bin/cursed --help         # ✅ Complete help system with all commands
-./zig-out/bin/cursed --version      # ✅ Full version information and build details
-./zig-out/bin/cursed interpret file.csd --verbose  # ✅ Advanced verbose interpretation
-./zig-out/bin/cursed compile file.csd -b llvm      # ✅ Production LLVM IR generation
-./zig-out/bin/cursed test           # ✅ Complete test discovery and parallel execution
-./zig-out/bin/cursed check file.csd --verbose      # ✅ Advanced type checking with diagnostics
-./zig-out/bin/cursed format file.csd               # ✅ Production code formatting with validation
-./zig-out/bin/cursed file.csd --tokens             # ✅ Complete token stream analysis
+# Memory testing with valgrind
+valgrind ./zig-out/bin/cursed file.csd                          # Basic leak detection  
+valgrind --leak-check=full ./zig-out/bin/cursed file.csd        # Detailed analysis
+valgrind --error-exitcode=1 ./zig-out/bin/cursed file.csd       # Fail on memory errors
 
-# Complete Production Tooling Ecosystem
-./zig-out/bin/cursed-pkg            # ✅ Full package manager with registry integration
-./zig-out/bin/cursed-doc            # ✅ Complete documentation generator with PDF export
-./zig-out/bin/cursed-lsp            # ✅ Language server for complete IDE integration
-./zig-out/bin/cursed-fmt            # ✅ Advanced formatter with style validation
-./zig-out/bin/cursed-lint           # ✅ Static analysis with security checks
-
-# Basic Development Workflow (Tested)
-echo 'vibez.spill("Hello CURSED!")' > test.csd  # Create simple test program
-zig build                                       # Build compiler
-./zig-out/bin/cursed-zig test.csd              # Run program (✅ confirmed working)
-
-# Import Resolution System (✅ FIXED)
-# The compiler now properly resolves stdlib modules from any directory
-cd tests/e2e && ../../zig-out/bin/cursed-zig basic/01_variables.csd  # ✅ Works from subdirectories
-./zig-out/bin/cursed-syscall --stdlib-path=/custom/path file.csd     # ✅ Custom stdlib path support
-
-# Alternative unified workflow
-zig build-exe src-zig/main_unified.zig -lc --name cursed-unified
-./cursed-unified test.csd           # ✅ Clean execution without memory leak warnings
-
-# Status of advanced features (IMPLEMENTED)
-./zig-out/bin/cursed compile program.csd               # ✅ LLVM compilation mode working
-./zig-out/bin/cursed program.csd --debug               # ✅ Debug output implemented
-./zig-out/bin/cursed program.csd --verbose             # ✅ Verbose execution working
+# Stdlib module testing
+./zig-out/bin/cursed stdlib/mathz/test_mathz.csd                # Math functions
+./zig-out/bin/cursed stdlib/stringz/test_stringz.csd            # String operations
+./zig-out/bin/cursed stdlib/arrayz/test_arrayz.csd              # Array functions
 ```
+
+### Common Testing Patterns for New Features ✅
+```bash
+# Incremental feature testing workflow
+echo 'new_feature_code' > feature_test.csd                      # Create test
+./zig-out/bin/cursed feature_test.csd                           # Basic execution
+valgrind ./zig-out/bin/cursed feature_test.csd                  # Memory safety
+./zig-out/bin/cursed feature_test.csd --verbose                 # Debug output
+
+# Testing expressions and variables
+echo 'sus x drip = value; vibez.spill(x)' > var_test.csd
+echo 'sus result drip = (2 + 3) * 4; vibez.spill(result)' > expr_test.csd
+
+# Testing control structures  
+echo 'sus i drip = 0; bestie (i < 3) { vibez.spill(i); i = i + 1 }' > loop_test.csd
+echo 'ready (based) { vibez.spill("true branch") }' > if_test.csd
+
+# Testing functions
+echo 'slay test_func(a drip) drip { damn a * 2 }; vibez.spill(test_func(5))' > func_test.csd
+```
+
+### Reality vs Previous Claims ⚠️
+**Previous documentation claimed "100% production ready" - this is NOT accurate.**
+
+**Current actual status:**
+- ✅ **Working**: Basic interpreter, variables, functions, arrays, some stdlib modules
+- ❌ **Not working**: Advanced CLI, full cross-compilation, complete stdlib, self-hosting
+- ⚠️ **Experimental**: LLVM compilation, complex type system features
+
+**Key differences from documentation claims:**
+- Most "✅ Complete" features are actually basic/experimental implementations
+- Cross-compilation success rate is much lower than claimed
+- Many stdlib modules have placeholder functions, not full implementations
+- CLI help/version/advanced flags are incomplete or missing
 
 #### Core Systems Status ✅
 ```bash
