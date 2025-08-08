@@ -1,4 +1,1 @@
-yeet "arrayz"
-sus arr []drip = [1, 2, 3]
-vibez.spill("Array length:", len(arr))
-vibez.spill("First element:", arr[0])
+sus arr []drip = [1, 2, 3]; vibez.spill(arr[0]); vibez.spill(arr[5])

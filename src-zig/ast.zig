@@ -717,10 +717,17 @@ pub const StructStatement = struct {
     type_parameters: ArrayList(TypeParameter),
     
     pub fn deinit(self: *StructStatement, allocator: Allocator) void {
+        for (self.fields.items) |*field| {
+            field.field_type.deinit(allocator);
+        }
+        self.fields.deinit();
         for (self.methods.items) |*method| {
             method.deinit(allocator);
         }
         self.methods.deinit();
+        for (self.type_parameters.items) |*type_param| {
+            type_param.constraints.deinit();
+        }
         self.type_parameters.deinit();
     }
 };

@@ -166,7 +166,7 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
 }
 
 /// LLVM Backend compilation with advanced optimization
-pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, output_filename: []const u8, config: CompilerConfig) !void {
+pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, _: []const u8, output_filename: []const u8, config: CompilerConfig) !void {
     print("[1/6] Generating LLVM IR...\n", .{});
     
     // Generate IR filename - if output is .ll, use it, otherwise create one
@@ -176,108 +176,24 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: 
         try std.fmt.allocPrint(allocator, "{s}.ll", .{output_filename});
     defer if (!std.mem.endsWith(u8, output_filename, ".ll")) allocator.free(ir_filename);
     
-    // Initialize advanced code generator
-    const AdvancedCodeGen = @import("advanced_codegen.zig").AdvancedCodeGen;
-    var advanced_codegen = try AdvancedCodeGen.init(allocator);
-    defer advanced_codegen.deinit();
+    // Use minimal LLVM backend to avoid C import issues
+    const llvm_backend_minimal = @import("llvm_backend_minimal.zig");
     
-    // Use advanced LLVM compiler
-    const advanced_llvm = @import("advanced_llvm_compiler.zig");
+    // Generate LLVM IR using minimal backend
+    print("[2/6] Generating LLVM IR using minimal backend...\n", .{});
+    try llvm_backend_minimal.compileToLLVM(allocator, source, ir_filename);
     
-    // Configure optimization engine
-    try advanced_llvm.configureAdvancedOptimizations(&advanced_codegen, config);
-    
-    // Enable debug information if requested
-    if (config.debug_info) {
-        try advanced_codegen.enableDebugInfo(filename);
-        if (config.verbose) print("✅ DWARF debug information enabled\n", .{});
-    }
-    
-    // Create LLVM IR file
-    const ir_file = std.fs.cwd().createFile(ir_filename, .{}) catch |err| {
-        print("❌ Error creating LLVM IR file: {}\n", .{err});
-        return;
-    };
-    defer ir_file.close();
-    
-    const writer = ir_file.writer();
-    
-    print("[2/6] Parsing and analyzing source code...\n", .{});
-    
-    // Parse source code using existing parser
-    const parser_module = @import("parser.zig");
-    var cursed_parser = parser_module.Parser.init(allocator);
-    defer cursed_parser.deinit();
-    
-    // Tokenize first
-    const lexer_module = @import("lexer.zig");
-    var l = lexer_module.Lexer.init(allocator, source);
-    const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error during LLVM compilation: {}\n", .{err});
-        return;
-    };
-    defer tokens.deinit();
-    
-    if (config.verbose) print("📝 Lexed {} tokens for LLVM compilation\n", .{tokens.items.len});
-    
-    // Parse tokens to AST
-    const ast_result = cursed_parser.parseTokens(tokens.items) catch |err| {
-        print("❌ Parser error during LLVM compilation: {}\n", .{err});
-        return;
-    };
-    defer cursed_parser.deinitStatements(ast_result);
-    
-    if (config.verbose) print("🌳 Parsed {} statements for LLVM compilation\n", .{ast_result.len});
-    
-    print("[3/6] Generating optimized LLVM IR...\n", .{});
-    
-    // Generate LLVM IR using advanced codegen
-    for (ast_result) |stmt| {
-        try advanced_codegen.compileStatement(stmt);
-    }
-    
-    print("[4/6] Running optimization passes...\n", .{});
-    
-    // Run optimization passes
-    if (advanced_codegen.optimization_engine) |*engine| {
-        const optimization_result = try engine.runOptimizations();
-        
-        if (config.verbose) {
-            print("✅ Optimization complete:\n", .{});
-            print("   - Functions optimized: {}\n", .{optimization_result.functions_optimized});
-            print("   - Instructions eliminated: {}\n", .{optimization_result.instructions_eliminated});
-            print("   - Constants folded: {}\n", .{optimization_result.constants_folded});
-            print("   - Functions inlined: {}\n", .{optimization_result.functions_inlined});
-            print("   - Loops optimized: {}\n", .{optimization_result.loops_optimized});
-            print("   - Estimated performance improvement: {d:.2}x\n", .{optimization_result.estimated_performance_improvement});
-        }
-        
-        // Generate optimization report if verbose
-        if (config.verbose) {
-            const report_filename = try std.fmt.allocPrint(allocator, "{s}_optimization_report.txt", .{output_filename});
-            defer allocator.free(report_filename);
-            try engine.generateReport(report_filename);
-        }
-    }
-    
-    // Write optimized LLVM IR to file
-    try advanced_llvm.writeOptimizedLLVMIR(&advanced_codegen, writer, filename);
-    
-    if (config.verbose) print("✅ Generated optimized LLVM IR: {s}\n", .{ir_filename});
+    if (config.verbose) print("✅ Generated LLVM IR: {s}\n", .{ir_filename});
     
     // If output_filename ends with .ll, we only wanted IR generation
     if (std.mem.endsWith(u8, output_filename, ".ll")) {
-        print("✅ Advanced LLVM IR generation complete: {s}\n", .{output_filename});
+        print("✅ LLVM IR generation complete: {s}\n", .{output_filename});
         return;
     }
     
-    // Compile optimized IR to native executable
-    try advanced_llvm.compileOptimizedLLVMToNative(allocator, ir_filename, output_filename, config);
-    
-    // Generate performance benchmark if verbose
-    if (config.verbose) {
-        try advanced_llvm.generatePerformanceBenchmark(allocator, output_filename, config);
-    }
+    // Compile IR to native executable
+    print("[3/6] Compiling IR to native executable...\n", .{});
+    try llvm_backend_minimal.compileIRToNative(allocator, ir_filename, output_filename);
     
     // Clean up IR file if successful and not in verbose mode
     if (!config.verbose and !config.emit_llvm) {

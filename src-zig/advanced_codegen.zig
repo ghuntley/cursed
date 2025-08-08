@@ -9,17 +9,9 @@ const GCTypeRegistry = type_system.GCTypeRegistry;
 const TypedAllocator = type_system.TypedAllocator;
 const InterfaceRegistry = type_system.InterfaceRegistry;
 const TypeChecker = type_system.TypeChecker;
-const c = @cImport({
-    @cInclude("llvm-c/Core.h");
-    @cInclude("llvm-c/ExecutionEngine.h");
-    @cInclude("llvm-c/Target.h");
-    @cInclude("llvm-c/Analysis.h");
-    @cInclude("llvm-c/BitWriter.h");
-    @cInclude("llvm-c/Transforms/PassManagerBuilder.h");
-    @cInclude("llvm-c/Transforms/IPO.h");
-    @cInclude("llvm-c/Transforms/Scalar.h");
-    @cInclude("llvm-c/TargetMachine.h");
-});
+// LLVM C imports disabled due to athlon-xp CPU detection issues
+// Using minimal LLVM backend instead
+const llvm_backend_minimal = @import("llvm_backend_minimal.zig");
 
 const ast = @import("ast.zig");
 const Type = ast.Type;

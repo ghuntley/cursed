@@ -1,1 +1,1 @@
-sus x drip = 42 + 3 * 2; vibez.spill("Result:", x)
+sus x drip = 100; sus y drip = x + 23; vibez.spill("Result:", y)
