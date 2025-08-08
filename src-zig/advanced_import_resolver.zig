@@ -50,6 +50,14 @@ pub const ImportSpec = struct {
             allocator.free(alias);
             self.alias = null;
         }
+        // Clean up raw_path (always owned)
+        allocator.free(self.raw_path);
+        // Clean up source_file (always owned)
+        allocator.free(self.source_file);
+        // Clean up version requirement if present
+        if (self.version_req) |*version_req| {
+            version_req.deinit(allocator);
+        }
     }
     
     // Create a safe copy that doesn't own the memory
@@ -123,11 +131,11 @@ pub const ModuleCache = struct {
     }
     
     pub fn addToGraph(self: *ModuleCache, from_module: []const u8, to_module: []const u8) !void {
-        const from_key = try self.allocator.dupe(u8, from_module);
-        
-        if (self.import_graph.getPtr(from_key)) |dependencies| {
+        // Check if key already exists to avoid duplicating it
+        if (self.import_graph.getPtr(from_module)) |dependencies| {
             try dependencies.append(try self.allocator.dupe(u8, to_module));
         } else {
+            const from_key = try self.allocator.dupe(u8, from_module);
             var new_deps = ArrayList([]const u8).init(self.allocator);
             try new_deps.append(try self.allocator.dupe(u8, to_module));
             try self.import_graph.put(from_key, new_deps);
@@ -225,7 +233,7 @@ pub const AdvancedImportResolver = struct {
         
         // Clean up package manifest
         if (self.package_manifest) |*manifest| {
-            manifest.deinit();
+            manifest.deinit(self.allocator);
         }
     }
     
@@ -404,6 +412,8 @@ pub const AdvancedImportResolver = struct {
                     print("  {s} -> \n", .{module});
                 }
             }
+            // Clean up allocated memory in import_spec before returning error
+            import_spec.deinit(self.allocator);
             return error.ImportCycle;
         }
         
@@ -431,7 +441,11 @@ pub const AdvancedImportResolver = struct {
             
             self.allocator.free(import_spec.raw_path);
             import_spec.raw_path = try self.allocator.dupe(u8, module_name);
-            import_spec.version_req = try VersionRequirement.parse(self.allocator, version_spec);
+            import_spec.version_req = VersionRequirement.parse(self.allocator, version_spec) catch |err| {
+                // Clean up on error
+                import_spec.deinit(self.allocator);
+                return err;
+            };
         }
         
         return import_spec;

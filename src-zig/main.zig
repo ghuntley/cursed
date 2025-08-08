@@ -1033,6 +1033,8 @@ fn interpretScript(allocator: Allocator, source: []const u8, config: Config) !vo
             continue;
         }
         
+        if (config.verbose) print("🔍 Processing line: '{s}' (len: {})\n", .{ trimmed, trimmed.len });
+        
         // Skip import statements during execution
         if (std.mem.startsWith(u8, trimmed, "yeet ")) {
             if (config.verbose) print("📦 Import: {s}\n", .{trimmed});
@@ -1041,6 +1043,7 @@ fn interpretScript(allocator: Allocator, source: []const u8, config: Config) !vo
         
         // Handle variable declarations: sus varname type = value
         if (std.mem.startsWith(u8, trimmed, "sus ")) {
+            if (config.verbose) print("🔍 Detected sus statement: {s}\n", .{trimmed});
             try handleVariableDeclaration(&variables, allocator, trimmed, config.verbose);
             continue;
         }
@@ -1243,20 +1246,33 @@ fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, li
     // Parse: sus varname type = value
     // Examples: sus x drip = 42, sus numbers [normie] = [10, 20, 30]
     
+    if (verbose) print("🔧 Processing variable declaration: {s}\n", .{line});
+    
     // Find the equals sign to split the declaration
-    const equals_pos = std.mem.indexOf(u8, line, "=") orelse return;
+    const equals_pos = std.mem.indexOf(u8, line, "=") orelse {
+        if (verbose) print("❌ No equals sign found in variable declaration\n", .{});
+        return;
+    };
     const decl_part = std.mem.trim(u8, line[0..equals_pos], " \t");
     const value_str = std.mem.trim(u8, line[equals_pos + 1..], " \t");
+    
+    if (verbose) print("🔧 Declaration part: '{s}' = '{s}'\n", .{ decl_part, value_str });
     
     // Parse declaration part: "sus varname type" 
     var parts = std.mem.tokenizeScalar(u8, decl_part, ' ');
     _ = parts.next(); // skip "sus"
     
-    const var_name = parts.next() orelse return;
+    const var_name = parts.next() orelse {
+        if (verbose) print("❌ No variable name found\n", .{});
+        return;
+    };
     
     // The type might be compound like [normie], so get the rest
     const remaining = parts.rest();
-    const var_type = if (remaining.len > 0) remaining else return;
+    const var_type = if (remaining.len > 0) remaining else {
+        if (verbose) print("❌ No variable type found\n", .{});
+        return;
+    };
     
     if (verbose) print("🔧 Declaring variable: {s} (type: {s}) = {s}\n", .{ var_name, var_type, value_str });
     

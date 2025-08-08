@@ -1,110 +1,77 @@
-fr fr Simplified CURSED Testing Framework (testz)
-fr fr Basic testing utilities for stdlib development
+fr fr Simple CURSED Testing Framework (testz) - Basic Version for Testing
 
-fr fr Global test state
-sus test_count normie = 0
-sus pass_count normie = 0
-sus fail_count normie = 0
+sus total_test_count normie = 0
+sus pass_test_count normie = 0
+sus fail_test_count normie = 0
 sus current_test_name tea = ""
 
-fr fr Core Test Management Functions
+fr fr Core testing functions
 slay test_start(name tea) lit {
     current_test_name = name
-    test_count = test_count + 1
+    total_test_count = total_test_count + 1
+    vibez.spill("🧪 Starting test: ", name)
     damn based
 }
 
-fr fr Basic Assertion Functions
-slay assert_eq_int(actual normie, expected normie) lit {
-    lowkey actual == expected {
-        pass_count = pass_count + 1
-    } highkey {
-        fail_count = fail_count + 1
-        vibez.spill("FAIL: Expected ", expected, ", got ", actual)
-        vibez.spill("Test: ", current_test_name)
-    }
-    damn based
-}
-
-slay assert_eq_string(actual tea, expected tea) lit {
-    lowkey actual == expected {
-        pass_count = pass_count + 1
-    } highkey {
-        fail_count = fail_count + 1
-        vibez.spill("FAIL: Expected \"", expected, "\", got \"", actual, "\"")
-        vibez.spill("Test: ", current_test_name)
-    }
-    damn based
-}
-
+fr fr Basic assertions
 slay assert_true(condition lit) lit {
     lowkey condition == based {
-        pass_count = pass_count + 1
+        vibez.spill("✅ PASS: assert_true")
+        pass_test_count = pass_test_count + 1
     } highkey {
-        fail_count = fail_count + 1
-        vibez.spill("FAIL: Expected true, got false")
-        vibez.spill("Test: ", current_test_name)
+        vibez.spill("❌ FAIL: assert_true - Expected: based, Got: cringe")
+        fail_test_count = fail_test_count + 1
     }
     damn based
 }
 
 slay assert_false(condition lit) lit {
     lowkey condition == cringe {
-        pass_count = pass_count + 1
+        vibez.spill("✅ PASS: assert_false")
+        pass_test_count = pass_test_count + 1
     } highkey {
-        fail_count = fail_count + 1
-        vibez.spill("FAIL: Expected false, got true")
-        vibez.spill("Test: ", current_test_name)
+        vibez.spill("❌ FAIL: assert_false - Expected: cringe, Got: based")
+        fail_test_count = fail_test_count + 1
     }
     damn based
 }
 
-fr fr State Accessors
-slay get_pass_count() normie {
-    damn pass_count
+slay assert_eq_int(actual normie, expected normie) lit {
+    lowkey actual == expected {
+        vibez.spill("✅ PASS: assert_eq_int")
+        pass_test_count = pass_test_count + 1
+    } highkey {
+        vibez.spill("❌ FAIL: assert_eq_int - Expected: ", expected, ", Got: ", actual)
+        fail_test_count = fail_test_count + 1
+    }
+    damn based
 }
 
-slay get_fail_count() normie {
-    damn fail_count
+slay assert_eq_string(actual tea, expected tea) lit {
+    lowkey actual == expected {
+        vibez.spill("✅ PASS: assert_eq_string")
+        pass_test_count = pass_test_count + 1
+    } highkey {
+        vibez.spill("❌ FAIL: assert_eq_string - Expected: '", expected, "', Got: '", actual, "'")
+        fail_test_count = fail_test_count + 1
+    }
+    damn based
 }
 
-slay get_total_count() normie {
-    damn test_count
-}
-
-fr fr Test Reporting
+fr fr Summary function
 slay print_test_summary() lit {
-    sus total_assertions normie = pass_count + fail_count
-    sus success_rate normie = 0
+    vibez.spill("\n📊 Test Summary")
+    vibez.spill("═══════════════════════════════════")
+    vibez.spill("Total tests: ", total_test_count)
+    vibez.spill("Passed: ", pass_test_count, " ✅")
+    vibez.spill("Failed: ", fail_test_count, " ❌")
     
-    lowkey total_assertions > 0 {
-        success_rate = (pass_count * 100) / total_assertions
-    }
-    
-    vibez.spill("")
-    vibez.spill("TEST REPORT")
-    vibez.spill("===========")
-    vibez.spill("Tests Run: ", test_count)
-    vibez.spill("Assertions: ", total_assertions)
-    vibez.spill("Pass: ", pass_count)
-    vibez.spill("Fail: ", fail_count)
-    vibez.spill("Success Rate: ", success_rate, "%")
-    vibez.spill("===========")
-    
-    lowkey fail_count == 0 {
-        vibez.spill("ALL TESTS PASSED!")
+    lowkey fail_test_count == 0 {
+        vibez.spill("🎉 All tests passed!")
     } highkey {
-        vibez.spill(fail_count, " TEST(S) FAILED")
+        sus pass_rate meal = pass_test_count / total_test_count
+        vibez.spill("📈 Pass rate: ", pass_rate)
     }
-    vibez.spill("")
-    damn based
-}
-
-fr fr Reset function
-slay reset_test_state() lit {
-    test_count = 0
-    pass_count = 0
-    fail_count = 0
-    current_test_name = ""
+    
     damn based
 }

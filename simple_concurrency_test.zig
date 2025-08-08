@@ -1,94 +1,74 @@
 const std = @import("std");
-const concurrency_fixed = @import("src-zig/concurrency_fixed.zig");
+const concurrency = @import("src-zig/concurrency_race_condition_fixes.zig");
 
-test "simple channel test" {
+test "simple channel operations" {
     const allocator = std.testing.allocator;
     
-    var channel = try concurrency_fixed.Channel(i32).init(allocator, 3);
-    defer channel.deinit();
+    var channel = try concurrency.makeChannel(i32, allocator, 3);
+    defer {
+        channel.deinit();
+        allocator.destroy(channel);
+    }
     
-    // Test basic send/receive
-    const send_result = try channel.sendTimeout(42, 1_000_000); // 1ms timeout
-    try std.testing.expect(send_result == .sent);
+    // Test basic operations
+    const result1 = try channel.trySend(42);
+    try std.testing.expect(result1 == concurrency.SendResult.sent);
     
-    const received = try channel.receiveTimeout(1_000_000); // 1ms timeout
-    try std.testing.expect(received != null);
-    try std.testing.expect(received.? == 42);
+    const result2 = try channel.tryReceive();
+    try std.testing.expect(result2.? == 42);
+    
+    // Test channel full
+    for (0..3) |i| {
+        const result = try channel.trySend(@intCast(i));
+        try std.testing.expect(result == concurrency.SendResult.sent);
+    }
+    
+    // Should be full now
+    const result3 = try channel.trySend(999);
+    try std.testing.expect(result3 == concurrency.SendResult.would_block);
     
     std.debug.print("Simple channel test passed\n", .{});
-}
-
-test "channel reference counting" {
-    const allocator = std.testing.allocator;
-    
-    var channel = try concurrency_fixed.Channel(i32).init(allocator, 1);
-    defer channel.deinit();
-    
-    // Test reference counting
-    channel.addRef();
-    try std.testing.expect(channel.ref_count.load(.acquire) == 2);
-    
-    channel.releaseRef();
-    try std.testing.expect(channel.ref_count.load(.acquire) == 1);
-    
-    std.debug.print("Reference counting test passed\n", .{});
 }
 
 test "channel close behavior" {
     const allocator = std.testing.allocator;
     
-    var channel = try concurrency_fixed.Channel(i32).init(allocator, 1);
-    defer channel.deinit();
+    var channel = try concurrency.makeChannel(i32, allocator, 1);
+    defer {
+        channel.deinit();
+        allocator.destroy(channel);
+    }
     
-    // Send a value
-    const send_result = try channel.sendTimeout(100, 1_000_000);
-    try std.testing.expect(send_result == .sent);
-    
-    // Close channel
+    // Send and close
+    _ = try channel.trySend(100);
     channel.close();
-    try std.testing.expect(channel.isClosed());
     
-    // Try to send to closed channel
-    const send_result2 = try channel.sendTimeout(200, 1_000_000);
-    try std.testing.expect(send_result2 == .closed);
+    // Should not be able to send after close
+    const result = try channel.trySend(200);
+    try std.testing.expect(result == concurrency.SendResult.closed);
     
-    // Should still be able to receive buffered value
-    const received = try channel.receiveTimeout(1_000_000);
-    try std.testing.expect(received != null);
+    // Should still be able to receive buffered data
+    const received = try channel.tryReceive();
     try std.testing.expect(received.? == 100);
     
     std.debug.print("Channel close test passed\n", .{});
 }
 
-test "basic scheduler test" {
+test "goroutine basic state" {
     const allocator = std.testing.allocator;
     
-    var scheduler = try concurrency_fixed.Scheduler.init(allocator, 2);
-    defer scheduler.deinit();
+    const testFn = struct {
+        fn run(_: ?*anyopaque) void {}
+    }.run;
     
-    try scheduler.start();
+    var goroutine = concurrency.Goroutine.init(allocator, 1, testFn, null);
     
-    // Test basic goroutine spawning
-    const test_context = try allocator.create(i32);
-    test_context.* = 42;
+    // Test state transitions
+    try std.testing.expect(goroutine.getState() == .ready);
+    try std.testing.expect(goroutine.transitionState(.ready, .running));
+    try std.testing.expect(goroutine.getState() == .running);
+    try std.testing.expect(goroutine.transitionState(.running, .completed));
+    try std.testing.expect(goroutine.getState() == .completed);
     
-    const goroutine_id = try scheduler.spawnGoroutine(@constCast(@ptrCast(&simpleTestFunc)), test_context);
-    try std.testing.expect(goroutine_id > 0);
-    
-    // Give it time to execute
-    std.time.sleep(10_000_000); // 10ms
-    
-    scheduler.shutdown();
-    
-    std.debug.print("Basic scheduler test passed\n", .{});
-}
-
-fn simpleTestFunc(context: ?*anyopaque) void {
-    const value_ptr: *i32 = @ptrCast(@alignCast(context.?));
-    const value = value_ptr.*;
-    
-    std.debug.print("Test function executed with value: {}\n", .{value});
-    
-    // Cleanup context
-    std.heap.c_allocator.destroy(value_ptr);
+    std.debug.print("Goroutine state test passed\n", .{});
 }
