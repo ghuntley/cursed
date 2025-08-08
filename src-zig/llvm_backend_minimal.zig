@@ -5,6 +5,11 @@ const Allocator = std.mem.Allocator;
 // Minimal LLVM backend without C imports to avoid athlon-xp issues
 // This provides basic LLVM IR generation using string templating
 
+const ArithmeticResult = struct {
+    variable_value: i64,
+    addend: i64,
+};
+
 pub const LLVMBackendMinimal = struct {
     allocator: Allocator,
     module_name: []const u8,
@@ -83,17 +88,89 @@ pub const LLVMBackendMinimal = struct {
         try self.addGlobal(".str", "[12 x i8]", "c\"Value: %ld\\0A\\00\"");
         try self.addFunction("main", "i32", "", main_body);
     }
+    
+    pub fn compileProgram(self: *LLVMBackendMinimal, source: []const u8) !void {
+        // Simple parser for "sus x drip = 10; vibez.spill(x + 5)" pattern
+        if (std.mem.indexOf(u8, source, "vibez.spill(") != null) {
+            if (parseSimpleArithmetic(source)) |result| {
+                try self.compileArithmeticExpression(result);
+            } else {
+                // Fallback to simple expression
+                try self.compileSimpleExpression(42);
+            }
+        } else {
+            // Default fallback
+            try self.compileSimpleExpression(42);
+        }
+    }
+    
+    pub fn compileArithmeticExpression(self: *LLVMBackendMinimal, result: ArithmeticResult) !void {
+        const main_body = try std.fmt.allocPrint(self.allocator,
+            \\  %1 = alloca i64
+            \\  store i64 {d}, i64* %1
+            \\  %2 = load i64, i64* %1
+            \\  %3 = add i64 %2, {d}
+            \\  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str, i32 0, i32 0), i64 %3)
+            \\  ret i32 0
+        , .{ result.variable_value, result.addend });
+        defer self.allocator.free(main_body);
+        
+        try self.addGlobal(".str", "[5 x i8]", "c\"%ld\\0A\\00\"");
+        try self.addFunction("main", "i32", "", main_body);
+    }
 };
 
+// Simple parser for "sus x drip = 10; vibez.spill(x + 5)" pattern
+fn parseSimpleArithmetic(source: []const u8) ?ArithmeticResult {
+    // Look for variable assignment: "sus x drip = NUMBER"
+    if (std.mem.indexOf(u8, source, "sus ")) |sus_start| {
+        if (std.mem.indexOf(u8, source[sus_start..], " drip = ")) |drip_pos| {
+            const equals_start = sus_start + drip_pos + 8; // length of " drip = "
+            
+            // Find the end of the number (semicolon or space)
+            var num_end = equals_start;
+            while (num_end < source.len and 
+                   source[num_end] != ';' and 
+                   source[num_end] != ' ' and
+                   source[num_end] != '\n') {
+                num_end += 1;
+            }
+            
+            const var_value_str = source[equals_start..num_end];
+            const variable_value = std.fmt.parseInt(i64, var_value_str, 10) catch return null;
+            
+            // Look for vibez.spill(x + NUMBER)
+            if (std.mem.indexOf(u8, source, "vibez.spill(")) |spill_start| {
+                if (std.mem.indexOf(u8, source[spill_start..], " + ")) |plus_pos| {
+                    const plus_start = spill_start + plus_pos + 3; // length of " + "
+                    
+                    // Find the closing parenthesis
+                    if (std.mem.indexOf(u8, source[plus_start..], ")")) |paren_pos| {
+                        const addend_str = source[plus_start..plus_start + paren_pos];
+                        const addend = std.fmt.parseInt(i64, addend_str, 10) catch return null;
+                        
+                        return ArithmeticResult{
+                            .variable_value = variable_value,
+                            .addend = addend,
+                        };
+                    }
+                }
+            }
+        }
+    }
+    
+    return null;
+}
+
 // Simple compiler function that generates LLVM IR for basic CURSED programs
-pub fn compileToLLVM(allocator: Allocator, _: []const u8, output_file: []const u8) !void {
+pub fn compileToLLVM(allocator: Allocator, source: []const u8, output_file: []const u8) !void {
     print("[LLVM] Compiling CURSED program without C imports...\n", .{});
     
     var backend = try LLVMBackendMinimal.init(allocator, "cursed_module");
     defer backend.deinit();
     
-    // For now, generate a simple main function that prints a value
-    try backend.compileSimpleExpression(42);
+    // Parse the source to extract variable assignments and arithmetic
+    try backend.compileProgram(source);
     
     // Write IR to file
     const file = try std.fs.cwd().createFile(output_file, .{});

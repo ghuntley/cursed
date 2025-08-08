@@ -1321,43 +1321,11 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
     if (verbose) print("🧮 EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
     
     // DEBUG: Always show expression evaluation for debugging  
-    print("🐛 DEBUG EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
+    if (verbose) print("🐛 DEBUG EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
     
-    // Handle arithmetic operators BEFORE function calls to fix expressions like "n * factorial(n-1)"
-    // Check for multiplication and division (higher precedence) first
-    if (std.mem.lastIndexOf(u8, trimmed, "*")) |op_pos| {
-        if (op_pos > 0 and op_pos < trimmed.len - 1) {
-            const left_operand = std.mem.trim(u8, trimmed[0..op_pos], " \t");
-            const right_operand = std.mem.trim(u8, trimmed[op_pos + 1..], " \t");
-            
-            if (verbose) print("🔍 Found operator '*': left='{s}', right='{s}'\n", .{ left_operand, right_operand });
-            
-            const left_val = try evaluateExpression(variables, functions, allocator, left_operand, verbose);
-            defer { var left = left_val; left.deinit(allocator); }
-            
-            const right_val = try evaluateExpression(variables, functions, allocator, right_operand, verbose);
-            defer { var right = right_val; right.deinit(allocator); }
-            
-            return try performBinaryOperation(left_val, right_val, "*", allocator, verbose);
-        }
-    }
-    
-    if (std.mem.lastIndexOf(u8, trimmed, "/")) |op_pos| {
-        if (op_pos > 0 and op_pos < trimmed.len - 1) {
-            const left_operand = std.mem.trim(u8, trimmed[0..op_pos], " \t");
-            const right_operand = std.mem.trim(u8, trimmed[op_pos + 1..], " \t");
-            
-            if (verbose) print("🔍 Found operator '/': left='{s}', right='{s}'\n", .{ left_operand, right_operand });
-            
-            const left_val = try evaluateExpression(variables, functions, allocator, left_operand, verbose);
-            defer { var left = left_val; left.deinit(allocator); }
-            
-            const right_val = try evaluateExpression(variables, functions, allocator, right_operand, verbose);
-            defer { var right = right_val; right.deinit(allocator); }
-            
-            return try performBinaryOperation(left_val, right_val, "/", allocator, verbose);
-        }
-    }
+    // REMOVED: Old arithmetic operator handling that interfered with precedence
+    // This was causing expressions like "2 + 3 * 4" to be evaluated as "(2 + 3) * 4" instead of "2 + (3 * 4)"
+    // The proper precedence-ordered operator handling is implemented later in this function
     
     // Check for function calls AFTER arithmetic operators
     if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
@@ -1607,7 +1575,10 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
         }
     }
     
-    // Look for binary operators in correct precedence order (lowest to highest)
+    // Look for binary operators in correct precedence order (lowest to highest precedence)
+    // We need to find the lowest precedence operator first to split correctly
+    // For "2 + 3 * 4", we want to split on "+" first: 2 + (3 * 4), not (* 4): (2 + 3) * 4
+    
     // Comparison operators (lowest precedence) - check longer operators first to avoid conflicts
     const comparison_ops = [_][]const u8{ ">=", "<=", "==", "!=", ">", "<" };
     for (comparison_ops) |op| {
@@ -1651,11 +1622,11 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
         }
     }
     
-    // + and - (lowest precedence, evaluated last)
+    // + and - (medium precedence)
     // Find rightmost + or - operator that's not part of a parenthetical expression
-    print("🐛 DEBUG: Checking for + and - operators in: '{s}'\n", .{trimmed});
-    const low_ops = [_][]const u8{ "+", "-" };
-    for (low_ops) |op| {
+    if (verbose) print("🐛 DEBUG: Checking for + and - operators in: '{s}'\n", .{trimmed});
+    const medium_ops = [_][]const u8{ "+", "-" };
+    for (medium_ops) |op| {
         var op_pos: ?usize = null;
         var paren_count: i32 = 0;
         
@@ -1683,7 +1654,7 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
             
             if (left_str.len == 0 or right_str.len == 0) continue;
             
-            if (verbose) print("🔍 Found operator '{s}': left='{s}', right='{s}'\n", .{ op, left_str, right_str });
+            if (verbose) print("🔍 Found medium precedence operator '{s}': left='{s}', right='{s}'\n", .{ op, left_str, right_str });
             
             const left = try evaluateExpression(variables, functions, allocator, left_str, verbose);
             errdefer { var l = left; l.deinit(allocator); }
@@ -1698,7 +1669,7 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
         }
     }
     
-    // *, /, % (higher precedence, evaluated first)
+    // *, /, % (highest precedence, evaluated first)
     const high_ops = [_][]const u8{ "*", "/", "%" };
     for (high_ops) |op| {
         var op_pos: ?usize = null;
@@ -1748,7 +1719,7 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
             
             if (left_str.len == 0 or right_str.len == 0) continue;
             
-            if (verbose) print("🔍 Found operator '{s}': left='{s}', right='{s}'\n", .{ op, left_str, right_str });
+            if (verbose) print("🔍 Found high precedence operator '{s}': left='{s}', right='{s}'\n", .{ op, left_str, right_str });
             
             const left = try evaluateExpression(variables, functions, allocator, left_str, verbose);
             errdefer { var l = left; l.deinit(allocator); }
@@ -1808,7 +1779,7 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
     }
 
     // No operators found - evaluate as single value
-    print("🐛 DEBUG: No operators found, falling back to evaluateSingleValue for: '{s}'\n", .{trimmed});
+    if (verbose) print("🐛 DEBUG: No operators found, falling back to evaluateSingleValue for: '{s}'\n", .{trimmed});
     return try evaluateSingleValue(variables, functions, allocator, trimmed, verbose);
 }
 
