@@ -633,6 +633,15 @@ b.installArtifact(complete_exe);
         // Doc generator uses direct file imports to avoid module conflicts
         doc_exe.linkLibC();
         b.installArtifact(doc_exe);
+
+        // Import resolver CLI tool (disabled due to dependency issues)
+        // const import_resolver_cli = b.addExecutable(.{
+        //     .name = "cursed-import-resolver",
+        //     .root_source_file = b.path("src-zig/tools/import_resolver_cli.zig"),
+        //     .target = resolved_target,
+        //     .optimize = optimize,
+        // });
+        // b.installArtifact(import_resolver_cli);
     }
     
     const run_lsp = b.addRunArtifact(lsp_exe);

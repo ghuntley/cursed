@@ -3100,14 +3100,15 @@ pub const AdvancedCodeGen = struct {
     
     /// Advanced error creation with stack traces and context
     fn generateAdvancedYikes(self: *AdvancedCodeGen, yikes: ast.YikesExpression) CodeGenError!c.LLVMValueRef {
-        const error_codegen = @import("error_codegen_integration.zig");
-        var err_gen = error_codegen.ErrorCodeGen.init(
+        const error_prop = @import("error_propagation.zig");
+        
+        // Initialize error propagation LLVM codegen
+        var error_llvm = error_prop.ErrorPropagationLLVM.init(
+            self.allocator,
             self.base_codegen.context,
             self.base_codegen.module,
-            self.base_codegen.builder,
-            self.allocator
+            self.base_codegen.builder
         );
-        err_gen.setupRuntimeFunctions();
         
         // Get error message
         const message = if (yikes.message) |msg_expr| blk: {
@@ -3123,50 +3124,189 @@ pub const AdvancedCodeGen = struct {
             break :blk 500;
         } else 0;
         
-        // Generate enhanced error with stack trace and source location
-        return err_gen.generateYikes(
-            message,
-            code,
-            0, // Runtime error type
-            self.base_codegen.current_file orelse "unknown",
-            self.base_codegen.current_line,
-            self.base_codegen.current_column
+        // Create error object using runtime function
+        const create_error_func = try self.getOrCreateErrorCreateFunction();
+        const message_str = c.LLVMBuildGlobalStringPtr(self.base_codegen.builder, message.ptr, "error_msg");
+        const code_val = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.base_codegen.context), @intCast(code), 0);
+        
+        // Call error creation function
+        const error_obj = c.LLVMBuildCall2(
+            self.base_codegen.builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0),
+            create_error_func,
+            &[_]c.LLVMValueRef{ message_str, code_val },
+            2,
+            "yikes_error"
         );
+        
+        // Throw/propagate the error immediately
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.base_codegen.builder));
+        return try error_llvm.generateShookPropagation(error_obj, current_func);
+    }
+    
+    /// Get or create error creation function
+    fn getOrCreateErrorCreateFunction(self: *AdvancedCodeGen) CodeGenError!c.LLVMValueRef {
+        const func_name = "cursed_create_yikes_error";
+        
+        if (c.LLVMGetNamedFunction(self.base_codegen.module, func_name)) |existing| {
+            return existing;
+        }
+        
+        const param_types = [_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0), // message
+            c.LLVMInt64TypeInContext(self.base_codegen.context), // code
+        };
+        
+        const func_type = c.LLVMFunctionType(
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0),
+            &param_types,
+            2,
+            0
+        );
+        
+        return c.LLVMAddFunction(self.base_codegen.module, func_name, func_type);
     }
     
     /// Advanced panic recovery with defer integration
     fn generateAdvancedFam(self: *AdvancedCodeGen, fam: ast.FamExpression) CodeGenError!c.LLVMValueRef {
-        const error_codegen = @import("error_codegen_integration.zig");
-        var err_gen = error_codegen.ErrorCodeGen.init(
+        const error_prop = @import("error_propagation.zig");
+        
+        // Initialize error propagation LLVM codegen
+        var error_llvm = error_prop.ErrorPropagationLLVM.init(
+            self.allocator,
             self.base_codegen.context,
             self.base_codegen.module,
-            self.base_codegen.builder,
-            self.allocator
+            self.base_codegen.builder
         );
-        err_gen.setupRuntimeFunctions();
         
         const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.base_codegen.builder));
         
-        // Create basic blocks for fam construct
+        // Create try body generation function
+        const TryBodyFn = struct {
+            fn generate() CodeGenError!c.LLVMValueRef {
+                // This is a placeholder - in real implementation, we'd capture the context
+                // and generate the try body here
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(std.testing.allocator), 0, 0);
+            }
+        };
+        
+        // Generate complete try-catch-finally block using error propagation system
+        const result = try error_llvm.generateFamTryCatch(
+            TryBodyFn.generate,
+            if (fam.catch_body) |_| &[_]ast.FamStatement.CatchBlock{} else &[_]ast.FamStatement.CatchBlock{}, // TODO: Convert from FamExpression
+            current_func
+        );
+        
+        // Generate actual try body with proper context
         const try_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "fam_try");
         const catch_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "fam_catch");
         const finally_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "fam_finally");
+        const end_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "fam_end");
         
-        // Position builder at try block
-        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, try_block);
+        // Setup exception handling
+        const try_begin_func = try self.getOrCreateTryBeginFunction();
+        _ = c.LLVMBuildCall2(
+            self.base_codegen.builder,
+            c.LLVMVoidTypeInContext(self.base_codegen.context),
+            try_begin_func,
+            null,
+            0,
+            ""
+        );
+        
+        // Jump to try block
+        _ = c.LLVMBuildBr(self.base_codegen.builder, try_block);
         
         // Generate try body
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, try_block);
+        var try_result = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.base_codegen.context), 0, 0);
+        
         if (fam.try_body) |try_body| {
             for (try_body.items) |stmt| {
                 _ = try self.base_codegen.generateStatement(stmt);
             }
         }
         
-        // Jump to finally block on success
+        // Check for errors and branch appropriately
+        const error_check_func = try self.getOrCreateErrorCheckFunction();
+        const has_error = c.LLVMBuildCall2(
+            self.base_codegen.builder,
+            c.LLVMInt1TypeInContext(self.base_codegen.context),
+            error_check_func,
+            &[_]c.LLVMValueRef{try_result},
+            1,
+            "has_error"
+        );
+        
+        _ = c.LLVMBuildCondBr(self.base_codegen.builder, has_error, catch_block, finally_block);
+        
+        // Generate catch block
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, catch_block);
+        
+        if (fam.catch_body) |catch_body| {
+            for (catch_body.items) |stmt| {
+                _ = try self.base_codegen.generateStatement(stmt);
+            }
+        }
+        
         _ = c.LLVMBuildBr(self.base_codegen.builder, finally_block);
         
-        // Position builder at catch block
-        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, catch_block);
+        // Generate finally block
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, finally_block);
+        
+        if (fam.finally_body) |finally_body| {
+            for (finally_body.items) |stmt| {
+                _ = try self.base_codegen.generateStatement(stmt);
+            }
+        }
+        
+        _ = c.LLVMBuildBr(self.base_codegen.builder, end_block);
+        
+        // End block
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, end_block);
+        
+        return result;
+    }
+    
+    /// Get or create try begin function
+    fn getOrCreateTryBeginFunction(self: *AdvancedCodeGen) CodeGenError!c.LLVMValueRef {
+        const func_name = "cursed_try_begin";
+        
+        if (c.LLVMGetNamedFunction(self.base_codegen.module, func_name)) |existing| {
+            return existing;
+        }
+        
+        const func_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(self.base_codegen.context),
+            null,
+            0,
+            0
+        );
+        
+        return c.LLVMAddFunction(self.base_codegen.module, func_name, func_type);
+    }
+    
+    /// Get or create error check function
+    fn getOrCreateErrorCheckFunction(self: *AdvancedCodeGen) CodeGenError!c.LLVMValueRef {
+        const func_name = "cursed_is_error";
+        
+        if (c.LLVMGetNamedFunction(self.base_codegen.module, func_name)) |existing| {
+            return existing;
+        }
+        
+        const param_types = [_]c.LLVMTypeRef{
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.base_codegen.context), 0)
+        };
+        
+        const func_type = c.LLVMFunctionType(
+            c.LLVMInt1TypeInContext(self.base_codegen.context),
+            &param_types,
+            1,
+            0
+        );
+        
+        return c.LLVMAddFunction(self.base_codegen.module, func_name, func_type);
+    }
         
         // Generate catch body  
         if (fam.catch_body) |catch_body| {
@@ -3292,9 +3432,33 @@ pub const AdvancedCodeGen = struct {
     
     /// Check if type is interface type
     fn isInterfaceType(self: *AdvancedCodeGen, llvm_type: c.LLVMTypeRef) bool {
-        _ = self;
-        _ = llvm_type;
-        // TODO: Implement interface type detection
+        const type_kind = c.LLVMGetTypeKind(llvm_type);
+        
+        // Interface types are represented as structs with vtable pointers
+        if (type_kind == c.LLVMStructTypeKind) {
+            const element_count = c.LLVMCountStructElementTypes(llvm_type);
+            if (element_count >= 2) {
+                // Get the first element type (should be vtable pointer for interfaces)
+                var element_types = self.base_codegen.allocator.alloc(c.LLVMTypeRef, element_count) catch return false;
+                defer self.base_codegen.allocator.free(element_types);
+                
+                c.LLVMGetStructElementTypes(llvm_type, element_types.ptr);
+                
+                // Check if first element is a pointer (vtable)
+                if (c.LLVMGetTypeKind(element_types[0]) == c.LLVMPointerTypeKind) {
+                    // Check our interface types registry to confirm
+                    var iter = self.interface_types.iterator();
+                    while (iter.next()) |entry| {
+                        if (entry.value_ptr.llvm_type) |iface_type| {
+                            if (c.LLVMTypeOf(iface_type) == llvm_type) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         return false;
     }
     
@@ -3529,10 +3693,49 @@ pub const AdvancedCodeGen = struct {
     
     /// Validate struct fields match definition
     fn validateStructFields(self: *AdvancedCodeGen, struct_lit: ast.StructLiteralExpression, struct_info: StructTypeInfo) CodeGenError!void {
-        _ = self;
-        _ = struct_lit;
-        _ = struct_info;
-        // TODO: Implement field validation
+        // Check that all provided fields exist in the struct definition
+        for (struct_lit.fields) |field| {
+            var field_exists = false;
+            for (struct_info.field_names) |struct_field_name| {
+                if (std.mem.eql(u8, field.field_name, struct_field_name)) {
+                    field_exists = true;
+                    break;
+                }
+            }
+            
+            if (!field_exists) {
+                std.debug.print("❌ Struct field validation failed: field '{s}' not found in struct '{s}'\n", 
+                    .{ field.field_name, struct_lit.struct_name });
+                return CodeGenError.UndefinedSymbol;
+            }
+        }
+        
+        // Check for required fields (if we track them)
+        // For now, we assume all fields are optional
+        
+        // Validate field types match expected types
+        for (struct_lit.fields) |field| {
+            // Find the field in struct definition
+            for (struct_info.field_names, struct_info.field_types.items, 0..) |struct_field_name, expected_llvm_type, field_index| {
+                if (std.mem.eql(u8, field.field_name, struct_field_name)) {
+                    // Generate the field value expression to validate its type
+                    const field_value = self.base_codegen.generateExpression(field.value) catch {
+                        std.debug.print("❌ Failed to generate expression for struct field '{s}'\n", .{field.field_name});
+                        return CodeGenError.InvalidExpression;
+                    };
+                    
+                    const actual_type = c.LLVMTypeOf(field_value);
+                    
+                    // Check type compatibility (basic check for now)
+                    if (!self.areTypesCompatible(actual_type, expected_llvm_type)) {
+                        std.debug.print("❌ Type mismatch for field '{s}': expected compatible with field type {d}\n", 
+                            .{ field.field_name, field_index });
+                        // Don't fail on type mismatch for now, just warn
+                    }
+                    break;
+                }
+            }
+        }
     }
     
     /// Generate validated struct literal
@@ -3543,19 +3746,173 @@ pub const AdvancedCodeGen = struct {
     
     /// Generate vtable dispatch for interface calls
     fn generateVTableDispatch(self: *AdvancedCodeGen, instance: c.LLVMValueRef, method_name: []const u8, args: []ast.Expression) CodeGenError!c.LLVMValueRef {
-        _ = self;
-        _ = instance;
-        _ = method_name;
-        _ = args;
-        // TODO: Implement vtable dispatch
-        return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.base_codegen.context), 0, 0);
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        
+        // Load vtable pointer from interface instance (first field)
+        const vtable_ptr_ptr = c.LLVMBuildStructGEP2(
+            builder,
+            c.LLVMTypeOf(instance),
+            instance,
+            0, // First field is vtable pointer
+            "vtable_ptr_ptr"
+        );
+        
+        const vtable_ptr = c.LLVMBuildLoad2(
+            builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+            vtable_ptr_ptr,
+            "vtable_ptr"
+        );
+        
+        // Generate method index lookup
+        const method_index = try self.getMethodIndexForVTable(method_name, instance);
+        
+        // Generate function pointer lookup in vtable
+        const func_ptr_ptr = c.LLVMBuildGEP2(
+            builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+            vtable_ptr,
+            &[_]c.LLVMValueRef{method_index},
+            1,
+            "func_ptr_ptr"
+        );
+        
+        const func_ptr = c.LLVMBuildLoad2(
+            builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+            func_ptr_ptr,
+            "method_func_ptr"
+        );
+        
+        // Generate method call arguments
+        var llvm_args = std.ArrayList(c.LLVMValueRef).init(self.base_codegen.allocator);
+        defer llvm_args.deinit();
+        
+        // First argument is 'self' (the instance)
+        try llvm_args.append(instance);
+        
+        // Add other arguments
+        for (args) |arg| {
+            const arg_value = try self.base_codegen.generateExpression(arg);
+            try llvm_args.append(arg_value);
+        }
+        
+        // Create function type for the method call
+        var param_types = std.ArrayList(c.LLVMTypeRef).init(self.base_codegen.allocator);
+        defer param_types.deinit();
+        
+        for (llvm_args.items) |arg| {
+            try param_types.append(c.LLVMTypeOf(arg));
+        }
+        
+        const return_type = c.LLVMInt64TypeInContext(context); // Default return type
+        const func_type = c.LLVMFunctionType(
+            return_type,
+            param_types.items.ptr,
+            @intCast(param_types.items.len),
+            0
+        );
+        
+        // Cast function pointer to correct type
+        const typed_func_ptr = c.LLVMBuildBitCast(
+            builder,
+            func_ptr,
+            c.LLVMPointerType(func_type, 0),
+            "typed_method_ptr"
+        );
+        
+        // Make the method call
+        const result = c.LLVMBuildCall2(
+            builder,
+            func_type,
+            typed_func_ptr,
+            llvm_args.items.ptr,
+            @intCast(llvm_args.items.len),
+            "method_call_result"
+        );
+        
+        return result;
     }
     
     /// Generate checked interface cast
     fn generateCheckedInterfaceCast(self: *AdvancedCodeGen, value: c.LLVMValueRef, target_type: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
-        _ = self;
-        _ = target_type;
-        return value; // TODO: Implement runtime type checking
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        
+        // Generate runtime type checking
+        const value_type = c.LLVMTypeOf(value);
+        
+        // Check if source and target are both interface types
+        if (self.isInterfaceType(value_type) and self.isInterfaceType(target_type)) {
+            // Interface to interface cast - check vtable compatibility
+            
+            // Load source vtable
+            const src_vtable_ptr = c.LLVMBuildStructGEP2(
+                builder,
+                value_type,
+                value,
+                0,
+                "src_vtable_ptr_ptr"
+            );
+            
+            const src_vtable = c.LLVMBuildLoad2(
+                builder,
+                c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+                src_vtable_ptr,
+                "src_vtable"
+            );
+            
+            // Generate runtime type check call
+            const type_check_func = try self.ensureRuntimeFunction("cursed_interface_type_check",
+                c.LLVMInt1TypeInContext(context),
+                &[_]c.LLVMTypeRef{
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0), // source vtable
+                    c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0)  // target type info
+                });
+            
+            // Get target type info (placeholder for now)
+            const target_type_info = c.LLVMConstNull(c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0));
+            
+            const type_check_result = c.LLVMBuildCall2(
+                builder,
+                c.LLVMInt1TypeInContext(context),
+                type_check_func,
+                &[_]c.LLVMValueRef{ src_vtable, target_type_info },
+                2,
+                "type_check_result"
+            );
+            
+            // Create basic blocks for success and failure paths
+            const success_block = c.LLVMAppendBasicBlockInContext(context, self.current_function.?, "cast_success");
+            const failure_block = c.LLVMAppendBasicBlockInContext(context, self.current_function.?, "cast_failure");
+            const continue_block = c.LLVMAppendBasicBlockInContext(context, self.current_function.?, "cast_continue");
+            
+            // Branch based on type check result
+            _ = c.LLVMBuildCondBr(builder, type_check_result, success_block, failure_block);
+            
+            // Success path - perform the cast
+            c.LLVMPositionBuilderAtEnd(builder, success_block);
+            const cast_result = c.LLVMBuildBitCast(builder, value, target_type, "interface_cast");
+            _ = c.LLVMBuildBr(builder, continue_block);
+            
+            // Failure path - generate runtime error
+            c.LLVMPositionBuilderAtEnd(builder, failure_block);
+            const panic_func = try self.ensureRuntimeFunction("cursed_interface_cast_panic",
+                c.LLVMVoidTypeInContext(context), &[_]c.LLVMTypeRef{});
+            _ = c.LLVMBuildCall2(builder, c.LLVMVoidTypeInContext(context), panic_func, null, 0, "");
+            _ = c.LLVMBuildUnreachable(builder);
+            
+            // Continue block with PHI for result
+            c.LLVMPositionBuilderAtEnd(builder, continue_block);
+            const phi_result = c.LLVMBuildPhi(builder, target_type, "cast_phi_result");
+            c.LLVMAddIncoming(phi_result, &[_]c.LLVMValueRef{cast_result}, &[_]c.LLVMBasicBlockRef{success_block}, 1);
+            
+            return phi_result;
+        } else {
+            // Simple cast without runtime checking
+            return c.LLVMBuildBitCast(builder, value, target_type, "simple_cast");
+        }
     }
     
     /// Generate safe cast with proper conversions
@@ -3602,9 +3959,40 @@ pub const AdvancedCodeGen = struct {
     
     /// Generate generic function call with monomorphization
     fn generateGenericFunctionCall(self: *AdvancedCodeGen, call: ast.CallExpression, name: []const u8) CodeGenError!c.LLVMValueRef {
-        _ = name;
-        // TODO: Implement generic function instantiation
-        return try self.base_codegen.generateCall(call);
+        const context = self.base_codegen.context;
+        const module = self.base_codegen.module;
+        
+        // Extract type arguments from call if available
+        var type_args = std.ArrayList(Type).init(self.base_codegen.allocator);
+        defer type_args.deinit();
+        
+        // For now, infer types from arguments since CURSED uses type inference
+        for (call.arguments) |arg| {
+            const arg_type = try self.inferExpressionType(arg);
+            try type_args.append(arg_type);
+        }
+        
+        // Create mangled name for the instantiated function
+        const mangled_name = try self.createMangledGenericName(name, type_args.items);
+        defer self.base_codegen.allocator.free(mangled_name);
+        
+        // Check if this instantiation already exists
+        if (self.base_codegen.functions.get(mangled_name)) |existing_func| {
+            return try self.generateEnhancedUserFunctionCall(existing_func, call);
+        }
+        
+        // Generate monomorphized function using the monomorphizer
+        const instantiated_func = self.monomorphizer.instantiateGenericFunction(name, type_args.items) catch {
+            // Fall back to basic function call if monomorphization fails
+            std.debug.print("⚠️ Monomorphization failed for generic function '{s}', falling back to basic call\n", .{name});
+            return try self.base_codegen.generateCall(call);
+        };
+        
+        // Store the instantiated function
+        const name_copy = try self.base_codegen.allocator.dupe(u8, mangled_name);
+        try self.base_codegen.functions.put(name_copy, instantiated_func);
+        
+        return try self.generateEnhancedUserFunctionCall(instantiated_func, call);
     }
     
     /// Generate method call on struct or interface
@@ -3809,8 +4197,180 @@ pub const AdvancedCodeGen = struct {
     
     /// Generate interface method access
     fn generateInterfaceMethodAccess(self: *AdvancedCodeGen, interface_ptr: c.LLVMValueRef, method_name: []const u8) CodeGenError!c.LLVMValueRef {
-        _ = method_name;
-        return interface_ptr; // TODO: Implement interface method access
+        const builder = self.base_codegen.builder;
+        const context = self.base_codegen.context;
+        
+        // Load vtable from interface instance
+        const vtable_ptr_ptr = c.LLVMBuildStructGEP2(
+            builder,
+            c.LLVMTypeOf(interface_ptr),
+            interface_ptr,
+            0, // First field is vtable pointer
+            "vtable_ptr_ptr"
+        );
+        
+        const vtable_ptr = c.LLVMBuildLoad2(
+            builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+            vtable_ptr_ptr,
+            "interface_vtable"
+        );
+        
+        // Generate method index lookup based on method name
+        const method_index = try self.getMethodIndexForInterface(method_name, interface_ptr);
+        
+        // Get function pointer from vtable
+        const func_ptr_ptr = c.LLVMBuildGEP2(
+            builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+            vtable_ptr,
+            &[_]c.LLVMValueRef{method_index},
+            1,
+            "method_func_ptr_ptr"
+        );
+        
+        const method_func_ptr = c.LLVMBuildLoad2(
+            builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0),
+            func_ptr_ptr,
+            "method_func_ptr"
+        );
+        
+        // Create a bound method representation (function pointer + instance)
+        // For simplicity, return the function pointer directly
+        // In a full implementation, we'd create a closure or method object
+        return method_func_ptr;
+    }
+
+    /// Get method index for vtable lookup
+    fn getMethodIndexForVTable(self: *AdvancedCodeGen, method_name: []const u8, instance: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        _ = instance; // For now, we don't use the instance to determine vtable layout
+        
+        // For simplicity, hash the method name to get an index
+        // In a real implementation, this would be looked up from vtable metadata
+        var hash: u32 = 0;
+        for (method_name) |char| {
+            hash = hash *% 31 +% char;
+        }
+        
+        const method_index = hash % 16; // Assume max 16 methods per vtable
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), method_index, 0);
+    }
+    
+    /// Get method index for interface lookup
+    fn getMethodIndexForInterface(self: *AdvancedCodeGen, method_name: []const u8, interface_ptr: c.LLVMValueRef) CodeGenError!c.LLVMValueRef {
+        _ = interface_ptr; // For now, we don't use the interface to determine method layout
+        
+        // For simplicity, hash the method name to get an index
+        // In a real implementation, this would look up the method in interface metadata
+        var hash: u32 = 0;
+        for (method_name) |char| {
+            hash = hash *% 31 +% char;
+        }
+        
+        const method_index = hash % 8; // Assume max 8 methods per interface
+        return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), method_index, 0);
+    }
+    
+    /// Ensure runtime function exists and return it
+    fn ensureRuntimeFunction(self: *AdvancedCodeGen, name: []const u8, return_type: c.LLVMTypeRef, param_types: []const c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
+        const module = self.base_codegen.module;
+        
+        // Check if function already exists
+        if (c.LLVMGetNamedFunction(module, name.ptr)) |existing| {
+            return existing;
+        }
+        
+        // Create function type
+        const func_type = c.LLVMFunctionType(
+            return_type,
+            @constCast(param_types.ptr),
+            @intCast(param_types.len),
+            0
+        );
+        
+        // Add function declaration
+        const function = c.LLVMAddFunction(module, name.ptr, func_type);
+        
+        // Store in runtime functions if available
+        if (self.base_codegen.runtime_functions.get(name) == null) {
+            const name_copy = try self.base_codegen.allocator.dupe(u8, name);
+            try self.base_codegen.runtime_functions.put(name_copy, function);
+        }
+        
+        return function;
+    }
+    
+    /// Infer type from expression for generic function calls
+    fn inferExpressionType(self: *AdvancedCodeGen, expr: ast.Expression) CodeGenError!Type {
+        _ = self;
+        switch (expr) {
+            .Integer => return Type{ .Basic = .Thicc },
+            .Float => return Type{ .Basic = .Meal },
+            .String => return Type{ .Basic = .Tea },
+            .Boolean => return Type{ .Basic = .Lit },
+            .Identifier => return Type{ .Basic = .Thicc }, // Default to int for variables
+            else => return Type{ .Basic = .Thicc }, // Default fallback
+        }
+    }
+    
+    /// Create mangled name for generic function instantiation
+    fn createMangledGenericName(self: *AdvancedCodeGen, base_name: []const u8, type_args: []Type) CodeGenError![]u8 {
+        var mangled = std.ArrayList(u8).init(self.base_codegen.allocator);
+        defer mangled.deinit();
+        
+        try mangled.appendSlice(base_name);
+        try mangled.appendSlice("_");
+        
+        for (type_args, 0..) |arg_type, i| {
+            if (i > 0) try mangled.appendSlice("_");
+            
+            switch (arg_type) {
+                .Basic => |basic| {
+                    switch (basic) {
+                        .Thicc => try mangled.appendSlice("drip"),
+                        .Meal => try mangled.appendSlice("meal"),
+                        .Tea => try mangled.appendSlice("tea"),
+                        .Lit => try mangled.appendSlice("lit"),
+                        else => try mangled.appendSlice("unknown"),
+                    }
+                },
+                else => try mangled.appendSlice("complex"),
+            }
+        }
+        
+        return try self.base_codegen.allocator.dupe(u8, mangled.items);
+    }
+    
+    /// Check if two LLVM types are compatible
+    fn areTypesCompatible(self: *AdvancedCodeGen, type1: c.LLVMTypeRef, type2: c.LLVMTypeRef) bool {
+        _ = self;
+        
+        // Simple type compatibility check
+        const kind1 = c.LLVMGetTypeKind(type1);
+        const kind2 = c.LLVMGetTypeKind(type2);
+        
+        if (kind1 == kind2) {
+            switch (kind1) {
+                c.LLVMIntegerTypeKind => {
+                    // Integer types are compatible if they have the same bit width
+                    return c.LLVMGetIntTypeWidth(type1) == c.LLVMGetIntTypeWidth(type2);
+                },
+                c.LLVMPointerTypeKind => {
+                    // All pointer types are considered compatible for now
+                    return true;
+                },
+                else => return true,
+            }
+        }
+        
+        // Basic compatibility rules
+        if ((kind1 == c.LLVMIntegerTypeKind and kind2 == c.LLVMIntegerTypeKind) or
+            (kind1 == c.LLVMPointerTypeKind and kind2 == c.LLVMPointerTypeKind)) {
+            return true;
+        }
+        
+        return false;
     }
 
     /// Advanced select statement generation for CSP-style concurrency

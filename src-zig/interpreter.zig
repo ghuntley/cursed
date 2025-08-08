@@ -1125,6 +1125,8 @@ pub const Interpreter = struct {
     // CURSED Error Handling System Interpreter Implementation
     
     fn executeYikesStatement(self: *Interpreter, yikes: ast.YikesStatement) InterpreterError!void {
+        const error_prop = @import("error_propagation.zig");
+        
         // Evaluate the error message expression
         const message_value = try self.evaluateExpression(yikes.message.*);
         const message = switch (message_value) {
@@ -1132,50 +1134,84 @@ pub const Interpreter = struct {
             else => "Unknown error",
         };
         
-        // Create CURSED error with stack trace
-        const error_obj = try self.error_handler.yikes(
+        // Create source location if available
+        const location = if (yikes.location) |loc| 
+            error_prop.ErrorContext.SourceLocation{
+                .file = loc.file,
+                .line = loc.line,
+                .column = loc.column,
+            }
+        else null;
+        
+        // Use error propagation system to create and handle error
+        var error_propagator = error_prop.ErrorPropagation.init(self.allocator);
+        defer error_propagator.deinit();
+        
+        const error_ctx = try error_propagator.createYikesError(
             message,
-            .Runtime,
-            -1,
-            0, // TODO: Get actual line number from parser context
-            0  // TODO: Get actual column from parser context
+            yikes.error_type,
+            location
         );
         
-        // Print the error with full context
-        const stdout = std.io.getStdOut().writer();
-        try error_obj.format(stdout);
-        
-        return InterpreterError.RuntimeError;
+        // Propagate error immediately (yikes is like throw/panic)
+        const should_continue = try error_propagator.propagateError(error_ctx, true);
+        if (!should_continue) {
+            // Print the error with full context
+            const stdout = std.io.getStdOut().writer();
+            try error_ctx.format(stdout);
+            return InterpreterError.RuntimeError;
+        }
     }
 
     fn executeFamStatement(self: *Interpreter, fam: ast.FamStatement) InterpreterError!void {
-        // Implement try-catch-finally error handling
-        var error_occurred: ?ErrorValue = null;
+        const error_prop = @import("error_propagation.zig");
+        
+        // Create error propagation system for this fam block
+        var error_propagator = error_prop.ErrorPropagation.init(self.allocator);
+        defer error_propagator.deinit();
+        
+        // Enter try-catch block
+        try error_propagator.enterTryCatchBlock(fam.catch_blocks.items, fam.finally_block);
+        
+        var error_occurred: ?error_prop.ErrorContext = null;
         
         // Execute try body with error catching
         for (fam.try_body.items) |stmt| {
-            // Execute statement and catch any errors
             self.executeStatement(stmt) catch |err| {
-                // Convert interpreter error to CURSED error
-                error_occurred = ErrorValue.init(
+                // Create error context from interpreter error
+                const location = error_prop.ErrorContext.SourceLocation{
+                    .file = "unknown", // TODO: Get from statement location
+                    .line = 0,
+                    .column = 0,
+                };
+                
+                error_occurred = error_prop.ErrorContext.initWithLocation(
                     self.allocator,
+                    switch (err) {
+                        InterpreterError.RuntimeError => CursedError.RuntimeError,
+                        InterpreterError.UndefinedVariable => CursedError.UndefinedVariable,
+                        InterpreterError.TypeMismatch => CursedError.TypeMismatch,
+                        InterpreterError.DivisionByZero => CursedError.DivisionByZero,
+                        else => CursedError.UnknownError,
+                    },
                     @errorName(err),
-                    @intFromError(err)
+                    location
                 ) catch break;
                 break;
             };
         }
         
         // Handle errors with catch blocks
-        if (error_occurred != null) {
+        if (error_occurred) |error_ctx| {
             var handled = false;
             
             for (fam.catch_blocks.items) |catch_block| {
-                // Check if this catch block matches the error type (if specified)
-                if (catch_block.error_type == null or true) { // TODO: implement type matching
+                // Check if this catch block matches the error type
+                if (error_propagator.errorMatches(error_ctx, catch_block.error_type)) {
                     // Bind error variable if specified
                     if (catch_block.error_variable) |error_var| {
-                        try self.environment.define(error_var, Value{ .Error = error_occurred.? });
+                        const error_msg = try self.allocator.dupe(u8, error_ctx.message);
+                        try self.environment.define(error_var, Value{ .String = error_msg });
                     }
                     
                     // Execute catch block code
@@ -1190,7 +1226,10 @@ pub const Interpreter = struct {
             
             if (!handled) {
                 // No matching catch block, propagate the error
-                std.debug.print("Unhandled error in fam block: {s}\n", .{error_occurred.?.message});
+                const stdout = std.io.getStdOut().writer();
+                try stdout.print("Unhandled error in fam block: ");
+                try error_ctx.format(stdout);
+                return InterpreterError.RuntimeError;
             }
         }
         
@@ -1199,6 +1238,14 @@ pub const Interpreter = struct {
             for (finally_stmts.items) |stmt| {
                 try self.executeStatement(stmt);
             }
+        }
+        
+        // Exit try-catch block and handle any remaining errors
+        if (try error_propagator.exitTryCatchBlock()) |unhandled_error| {
+            const stdout = std.io.getStdOut().writer();
+            try stdout.print("Unhandled error after fam block: ");
+            try unhandled_error.format(stdout);
+            return InterpreterError.RuntimeError;
         }
     }
 
@@ -1650,41 +1697,100 @@ pub const Interpreter = struct {
     }
 
     fn evaluateShook(self: *Interpreter, shook: ast.ShookExpression) InterpreterError!Value {
+        const error_prop = @import("error_propagation.zig");
+        
+        // Create error propagation system
+        var error_propagator = error_prop.ErrorPropagation.init(self.allocator);
+        defer error_propagator.deinit();
+        
         // Evaluate the wrapped expression
         const result = self.evaluateExpression(shook.expression.*) catch |err| {
-            // Convert caught error to CURSED error value
-            const error_obj = try self.error_handler.yikes(
+            // Convert caught error to error context
+            const location = error_prop.ErrorContext.SourceLocation{
+                .file = "unknown", // TODO: Get from context
+                .line = 0,
+                .column = 0,
+            };
+            
+            const error_ctx = try error_prop.ErrorContext.initWithLocation(
+                self.allocator,
+                switch (err) {
+                    InterpreterError.RuntimeError => CursedError.RuntimeError,
+                    InterpreterError.UndefinedVariable => CursedError.UndefinedVariable,
+                    InterpreterError.TypeMismatch => CursedError.TypeMismatch,
+                    InterpreterError.DivisionByZero => CursedError.DivisionByZero,
+                    else => CursedError.UnknownError,
+                },
                 @errorName(err),
-                .Runtime,
-                @intFromError(err),
-                0, // TODO: Get actual line number
-                0  // TODO: Get actual column
+                location
             );
-            return Value{ .CursedError = error_obj };
+            
+            // Use error propagation system to handle the error
+            const should_continue = try error_propagator.propagateError(error_ctx, true);
+            if (!should_continue) {
+                // Error should be propagated up the call stack
+                const stdout = std.io.getStdOut().writer();
+                try stdout.print("Shook propagated error: ");
+                try error_ctx.format(stdout);
+                return InterpreterError.RuntimeError;
+            }
+            
+            // Convert to Value for return
+            const error_msg = try self.allocator.dupe(u8, error_ctx.message);
+            return Value{ .String = error_msg };
         };
         
-        // Check if result is already an error
+        // Check if result is already an error value
         switch (result) {
-            .Error => {
-                // Convert old error to new CURSED error and propagate
-                const error_obj = try self.error_handler.yikes(
-                    result.Error.message,
-                    .Runtime,
-                    result.Error.code,
-                    0, 0
+            .Error => |error_val| {
+                // Convert old error format to new error context
+                const location = error_prop.ErrorContext.SourceLocation{
+                    .file = "unknown",
+                    .line = 0,
+                    .column = 0,
+                };
+                
+                const error_ctx = try error_prop.ErrorContext.initWithLocation(
+                    self.allocator,
+                    CursedError.RuntimeError,
+                    error_val.message,
+                    location
                 );
-                const propagated = try self.error_handler.shook(error_obj);
-                std.debug.print("Error propagated by shook: {s}\n", .{propagated.message});
-                return Value{ .CursedError = propagated };
+                
+                // Propagate using new system
+                const should_continue = try error_propagator.propagateError(error_ctx, true);
+                if (!should_continue) {
+                    return InterpreterError.RuntimeError;
+                }
+                
+                const error_msg = try self.allocator.dupe(u8, error_ctx.message);
+                return Value{ .String = error_msg };
             },
-            .CursedError => |cursed_err| {
-                // Propagate CURSED error
-                const propagated = try self.error_handler.shook(cursed_err);
-                std.debug.print("CursedError propagated by shook: {s}\n", .{propagated.message});
-                return Value{ .CursedError = propagated };
+            .String => |str_val| {
+                // Check if this is an error message (simple heuristic)
+                if (std.mem.startsWith(u8, str_val, "Error:") or 
+                    std.mem.startsWith(u8, str_val, "yikes:") or
+                    std.mem.indexOf(u8, str_val, "error") != null) {
+                    
+                    // Create error context for error message
+                    const error_ctx = try error_prop.ErrorContext.init(
+                        self.allocator,
+                        CursedError.RuntimeError,
+                        str_val
+                    );
+                    
+                    // Propagate the error
+                    const should_continue = try error_propagator.propagateError(error_ctx, true);
+                    if (!should_continue) {
+                        return InterpreterError.RuntimeError;
+                    }
+                }
+                
+                // Regular string value, return as-is
+                return result;
             },
             else => {
-                // Normal value, return as-is
+                // Normal value, return as-is (shook operator passes through non-errors)
                 return result;
             },
         }
