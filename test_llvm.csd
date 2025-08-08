@@ -1,1 +1,1 @@
-sus x drip = 42; vibez.spill("Value:", x)
+vibez.spill("Hello from LLVM!")

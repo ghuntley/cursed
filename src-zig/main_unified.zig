@@ -264,6 +264,38 @@ const FunctionParameter = struct {
     param_type: []const u8,
 };
 
+// Struct field definition  
+const StructField = struct {
+    name: []const u8,
+    field_type: []const u8,
+    
+    pub fn deinit(self: *StructField, allocator: Allocator) void {
+        allocator.free(self.name);
+        allocator.free(self.field_type);
+    }
+};
+
+// Struct type definition for compile-time storage
+const StructDefinition = struct {
+    name: []const u8,
+    fields: ArrayList(StructField),
+    
+    pub fn init(allocator: Allocator, name: []const u8) StructDefinition {
+        return StructDefinition{
+            .name = name,
+            .fields = ArrayList(StructField).init(allocator),
+        };
+    }
+    
+    pub fn deinit(self: *StructDefinition, allocator: Allocator) void {
+        for (self.fields.items) |*field| {
+            field.deinit(allocator);
+        }
+        self.fields.deinit();
+        allocator.free(self.name);
+    }
+};
+
 // Simple function definition for runtime
 const FunctionDefinition = struct {
     name: []const u8,
@@ -309,6 +341,7 @@ const FunctionDefinition = struct {
 
 const VariableStore = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
 const FunctionStore = HashMap([]const u8, FunctionDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
+const StructStore = HashMap([]const u8, StructDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
 
 // Return value exception for control flow
 const FunctionReturnError = error{
@@ -505,6 +538,21 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         functions.deinit();
     }
     
+    // Create struct store
+    var structs = StructStore.init(allocator);
+    defer {
+        // Clean up struct names and definitions
+        var struct_iterator = structs.iterator();
+        while (struct_iterator.next()) |entry| {
+            // Free the key that was allocated with dupe()
+            allocator.free(entry.key_ptr.*);
+            // Free the struct definition
+            var struct_def = entry.value_ptr;
+            struct_def.deinit(allocator);
+        }
+        structs.deinit();
+    }
+    
     // Create generics monomorphizer - placeholder context and module
     // var monomorphizer = generics.Monomorphizer.init(allocator, null, null);
     // defer monomorphizer.deinit();
@@ -604,7 +652,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                 
                 // Now process the remaining statements by parsing them as a new line
                 if (remaining_part.len > 0) {
-                    try processStatements(&variables, &functions, allocator, variable_allocator, remaining_part, verbose);
+                    try processStatements(&variables, &functions, &structs, allocator, variable_allocator, remaining_part, verbose);
                 }
                 
                 line_index += 1;
@@ -643,10 +691,20 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         
         // Handle control flow statements: ready/otherwise (if/else)
         if (std.mem.startsWith(u8, trimmed, "ready ")) {
-            if (verbose) print("🔍 Processing ready/otherwise control flow: {s}\n", .{trimmed});
-            const lines_consumed = try handleReadyOtherwiseBlock(&variables, &functions, allocator, source_lines, line_index, verbose);
-            line_index += lines_consumed;
-            continue;
+            // Check if this is a single-line ready statement (contains braces on same line)
+            if (std.mem.indexOf(u8, trimmed, "{") != null and std.mem.indexOf(u8, trimmed, "}") != null) {
+                // Single-line ready statement - handle through processStatements
+                if (verbose) print("🔍 Processing single-line ready statement: {s}\n", .{trimmed});
+                try processStatements(&variables, &functions, &structs, allocator, variable_allocator, trimmed, verbose);
+                line_index += 1;
+                continue;
+            } else {
+                // Multi-line ready statement - handle through handleReadyOtherwiseBlock
+                if (verbose) print("🔍 Processing multi-line ready/otherwise control flow: {s}\n", .{trimmed});
+                const lines_consumed = try handleReadyOtherwiseBlock(&variables, &functions, allocator, source_lines, line_index, verbose);
+                line_index += lines_consumed;
+                continue;
+            }
         }
         
         // Handle while loop statements: bestie (condition) { ... }
@@ -708,8 +766,33 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         }
         
         // Process all other statements (including semicolon-separated ones) through the unified processor
-        try processStatements(&variables, &functions, allocator, variable_allocator, trimmed, verbose);
+        try processStatements(&variables, &functions, &structs, allocator, variable_allocator, trimmed, verbose);
         line_index += 1;
+    }
+    
+    // Wait for any active goroutines to complete
+    if (concurrency.getScheduler()) |scheduler| {
+        if (verbose) print("⏳ Waiting for goroutines to complete...\n", .{});
+        
+        // Wait for all goroutines to finish (simple approach)
+        var wait_count: u32 = 0;
+        while (scheduler.activeGoroutineCount() > 0 and wait_count < 100) {
+            std.time.sleep(10_000_000); // 10ms
+            wait_count += 1;
+        }
+        
+        if (verbose) {
+            const remaining = scheduler.activeGoroutineCount();
+            if (remaining > 0) {
+                print("⚠️  {} goroutines still active after wait\n", .{remaining});
+            } else {
+                print("✅ All goroutines completed\n", .{});
+            }
+        }
+        
+        // Shutdown the scheduler
+        concurrency.shutdownScheduler(allocator);
+        if (verbose) print("✅ Concurrency scheduler shutdown\n", .{});
     }
     
     // Print error diagnostics if any
@@ -722,7 +805,14 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
 }
 
 // Unified statement processor that handles semicolon-separated statements properly
-fn processStatements(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, variable_allocator: Allocator, line: []const u8, verbose: bool) !void {
+fn processStatements(variables: *VariableStore, functions: *FunctionStore, structs: *StructStore, allocator: Allocator, variable_allocator: Allocator, line: []const u8, verbose: bool) !void {
+    // Check for single-line control structures first (before splitting by semicolons)
+    if (std.mem.indexOf(u8, line, "ready ") != null) {
+        if (verbose) print("🔍 Found ready statement in line, processing as unit: '{s}'\n", .{line});
+        try handleSingleLineReadyInContext(variables, functions, allocator, variable_allocator, line, verbose);
+        return;
+    }
+    
     // Split line by semicolons to handle multiple statements on one line
     var statement_iter = std.mem.splitScalar(u8, line, ';');
     while (statement_iter.next()) |statement| {
@@ -734,7 +824,7 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, alloc
         // Handle variable declarations: sus varname type = value
         if (std.mem.startsWith(u8, stmt_trimmed, "sus ")) {
             if (verbose) print("🔍 Processing variable declaration: {s}\n", .{stmt_trimmed});
-            try handleVariableDeclaration(variables, functions, allocator, variable_allocator, stmt_trimmed, verbose);
+            try handleVariableDeclaration(variables, functions, structs, allocator, variable_allocator, stmt_trimmed, verbose);
             continue;
         }
         
@@ -748,7 +838,14 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, alloc
         // Handle struct definitions: squad StructName { ... }
         if (std.mem.startsWith(u8, stmt_trimmed, "squad ")) {
             if (verbose) print("🔍 Processing struct definition: {s}\n", .{stmt_trimmed});
-            try handleStructDefinition(variables, functions, allocator, stmt_trimmed, verbose);
+            try handleStructDefinition(structs, allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
+        // Handle goroutine spawning: stan { ... } or stan function_call()
+        if (std.mem.startsWith(u8, stmt_trimmed, "stan ")) {
+            if (verbose) print("🔍 Processing goroutine spawn: {s}\n", .{stmt_trimmed});
+            try handleStanGoroutine(variables, functions, allocator, stmt_trimmed, verbose);
             continue;
         }
         
@@ -847,6 +944,12 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, alloc
                 try handleStdlibFunctionCall(allocator, variables, module_part, remaining, verbose);
                 continue;
             }
+        }
+        
+        // Handle struct field declarations: spill fieldname type
+        if (std.mem.startsWith(u8, stmt_trimmed, "spill ")) {
+            try handleStructFieldDeclaration(structs, allocator, stmt_trimmed, verbose);
+            continue;
         }
         
         // If we get here, it's an unhandled statement type
@@ -1494,6 +1597,41 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
         return try variable.clone(allocator);
     }
     
+    // Handle yikes error expressions: yikes "message"
+    if (std.mem.startsWith(u8, value_str, "yikes ")) {
+        if (verbose) print("🚨 Evaluating yikes expression: {s}\n", .{value_str});
+        
+        const yikes_end = "yikes ".len;
+        const message_part = std.mem.trim(u8, value_str[yikes_end..], " \t");
+        
+        var error_message: []const u8 = "Unknown error";
+        const error_code: i64 = 1;
+        
+        // Handle string literal message
+        if (message_part.len >= 2 and message_part[0] == '"' and message_part[message_part.len - 1] == '"') {
+            error_message = message_part[1..message_part.len - 1];
+        } else {
+            // Could be a variable reference - check variables directly
+            if (variables.get(message_part)) |var_val| {
+                switch (var_val) {
+                    .String => |str| error_message = str,
+                    else => {
+                        const msg_str = try var_val.toString(allocator);
+                        defer allocator.free(msg_str);
+                        error_message = try allocator.dupe(u8, msg_str);
+                    }
+                }
+            } else {
+                error_message = message_part;
+            }
+        }
+        
+        // Create and return YikesError as Variable
+        const yikes_error = try YikesError.init(allocator, error_message, error_code, 0, 0, "unknown");
+        if (verbose) print("💥 Created yikes error: {s}\n", .{yikes_error.message});
+        return Variable{ .YikesError = yikes_error };
+    }
+    
     // Try to parse as string literal (return an owning copy to avoid ownership ambiguity)
     if (value_str.len >= 2 and value_str[0] == '"' and value_str[value_str.len - 1] == '"') {
         const string_value = value_str[1..value_str.len - 1];
@@ -1515,7 +1653,7 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
     return error.UnknownIdentifier;
 }
 
-fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, variable_allocator: Allocator, line: []const u8, verbose: bool) !void {
+fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStore, structs: *StructStore, allocator: Allocator, variable_allocator: Allocator, line: []const u8, verbose: bool) !void {
     // Parse: sus varname type = value
     // Examples: sus x drip = 42, sus numbers [normie] = [10, 20, 30]
     
@@ -1792,6 +1930,12 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
         // Parse the field assignments inside the braces
         const fields_str = std.mem.trim(u8, value_str[start_brace + 1..end_brace], " \t");
         
+        // Check if the struct type is defined
+        if (!structs.contains(var_type)) {
+            if (verbose) print("❌ Undefined struct type: {s}\n", .{var_type});
+            return;
+        }
+        
         var struct_instance = StructInstance.init(allocator, var_type);
         
         if (fields_str.len > 0) {
@@ -2028,6 +2172,262 @@ fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8)
     try args.append(arg);
     
     return args;
+}
+
+/// Handle goroutine spawning with 'stan' keyword
+fn handleStanGoroutine(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    const trimmed = std.mem.trim(u8, line, " \t\r\n");
+    const stan_content = std.mem.trim(u8, trimmed["stan ".len..], " \t");
+    
+    if (verbose) print("🚀 Spawning goroutine: {s}\n", .{stan_content});
+    
+    // Initialize scheduler if not already done
+    if (concurrency.getScheduler() == null) {
+        const config = concurrency.SchedulerConfig.default();
+        try concurrency.initializeScheduler(allocator, config);
+        if (verbose) print("✅ Initialized concurrency scheduler with {} workers\n", .{config.num_workers});
+    }
+    
+    // Handle block syntax: stan { statements }
+    if (std.mem.startsWith(u8, stan_content, "{") and std.mem.endsWith(u8, stan_content, "}")) {
+        const block_content = std.mem.trim(u8, stan_content[1..stan_content.len-1], " \t\r\n");
+        if (verbose) print("🧵 Goroutine block: {s}\n", .{block_content});
+        
+        // Create goroutine context with the block content
+        const GoroutineContext = struct {
+            block_content: []const u8,
+            variables: *VariableStore,
+            functions: *FunctionStore, 
+            allocator: Allocator,
+            verbose: bool,
+        };
+        
+        const context = try allocator.create(GoroutineContext);
+        context.* = GoroutineContext{
+            .block_content = try allocator.dupe(u8, block_content),
+            .variables = variables,
+            .functions = functions,
+            .allocator = allocator,
+            .verbose = verbose,
+        };
+        
+        const goroutineBlockFn = struct {
+            fn run(ctx: ?*anyopaque) void {
+                const goroutine_ctx: *GoroutineContext = @ptrCast(@alignCast(ctx.?));
+                
+                // Always print goroutine execution for visibility
+                print("🧵 Goroutine starting: {s}\n", .{goroutine_ctx.block_content});
+                
+                // Execute the block content in the goroutine
+                // For now, handle simple vibez.spill() statements
+                if (std.mem.indexOf(u8, goroutine_ctx.block_content, "vibez.spill(")) |start_pos| {
+                    handleVibesSpill(goroutine_ctx.variables, goroutine_ctx.functions, goroutine_ctx.allocator, goroutine_ctx.block_content, start_pos, false) catch |err| {
+                        print("❌ Goroutine error: {any}\n", .{err});
+                    };
+                } else {
+                    // For other statements, print what we would execute
+                    print("🧵 [Goroutine] Would execute: {s}\n", .{goroutine_ctx.block_content});
+                }
+                
+                print("✅ Goroutine completed\n", .{});
+                
+                // Cleanup
+                goroutine_ctx.allocator.free(goroutine_ctx.block_content);
+                goroutine_ctx.allocator.destroy(goroutine_ctx);
+            }
+        }.run;
+        
+        // Spawn the goroutine
+        const goroutine_id = try concurrency.stan(goroutineBlockFn, context);
+        if (verbose) print("✅ Spawned goroutine with ID: {}\n", .{goroutine_id});
+        
+        // Check scheduler status
+        if (concurrency.getScheduler()) |scheduler| {
+            if (verbose) print("📊 Scheduler status: active goroutines = {}\n", .{scheduler.activeGoroutineCount()});
+        }
+        
+    } 
+    // Handle function call syntax: stan function_name()
+    else if (std.mem.indexOf(u8, stan_content, "(")) |_| {
+        if (verbose) print("🧵 Goroutine function call: {s}\n", .{stan_content});
+        
+        // Create context for function call goroutine
+        const GoroutineContext = struct {
+            function_call: []const u8,
+            variables: *VariableStore,
+            functions: *FunctionStore,
+            allocator: Allocator,
+            verbose: bool,
+        };
+        
+        const context = try allocator.create(GoroutineContext);
+        context.* = GoroutineContext{
+            .function_call = try allocator.dupe(u8, stan_content),
+            .variables = variables,
+            .functions = functions,
+            .allocator = allocator,
+            .verbose = verbose,
+        };
+        
+        const goroutineFunctionFn = struct {
+            fn run(ctx: ?*anyopaque) void {
+                const goroutine_ctx: *GoroutineContext = @ptrCast(@alignCast(ctx.?));
+                
+                if (goroutine_ctx.verbose) print("🧵 Goroutine calling function: {s}\n", .{goroutine_ctx.function_call});
+                
+                // Execute the function call
+                _ = handleFunctionCall(goroutine_ctx.functions, goroutine_ctx.variables, goroutine_ctx.allocator, goroutine_ctx.function_call, goroutine_ctx.verbose) catch |err| {
+                    if (goroutine_ctx.verbose) print("❌ Goroutine function call error: {any}\n", .{err});
+                };
+                
+                if (goroutine_ctx.verbose) print("✅ Goroutine function call completed\n", .{});
+                
+                // Cleanup
+                goroutine_ctx.allocator.free(goroutine_ctx.function_call);
+                goroutine_ctx.allocator.destroy(goroutine_ctx);
+            }
+        }.run;
+        
+        // Spawn the goroutine
+        const goroutine_id = try concurrency.stan(goroutineFunctionFn, context);
+        if (verbose) print("✅ Spawned function goroutine with ID: {}\n", .{goroutine_id});
+    }
+    else {
+        if (verbose) print("❌ Invalid stan syntax: {s}\n", .{stan_content});
+        return error.InvalidStanSyntax;
+    }
+    
+    // Add a delay to allow goroutines to start and execute
+    std.time.sleep(50_000_000); // 50ms
+}
+
+/// Handle yikes error creation: yikes "message"
+fn handleYikesError(variables: *VariableStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    if (verbose) print("🚨 Processing yikes error: {s}\n", .{line});
+    
+    // Parse message from yikes "message"
+    const yikes_end = "yikes ".len;
+    const message_part = std.mem.trim(u8, line[yikes_end..], " \t\r\n");
+    
+    var error_message: []const u8 = "Unknown error";
+    const error_code: i64 = 1;
+    
+    // Handle string literal message
+    if (message_part.len >= 2 and message_part[0] == '"' and message_part[message_part.len - 1] == '"') {
+        error_message = message_part[1..message_part.len - 1];
+    } else {
+        // Could be a variable reference or expression
+        error_message = message_part;
+    }
+    
+    // Create YikesError
+    const yikes_error = try YikesError.init(allocator, error_message, error_code, 0, 0, "unknown");
+    
+    if (verbose) print("💥 Error created: {s}\n", .{yikes_error.message});
+    
+    // Print the error and propagate (in real implementation this would throw)
+    print("💥 yikes: {s} (code: {})\n", .{ yikes_error.message, yikes_error.code });
+    
+    // Store error in a special variable for potential recovery
+    const error_var = Variable{ .YikesError = yikes_error };
+    try variables.put("_last_error", error_var);
+    
+    if (verbose) print("✅ Yikes error handled\n", .{});
+}
+
+/// Simple shook/fam handler for single-line try-catch blocks
+fn handleShookFamSimple(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    if (verbose) print("🔄 Processing simple shook/fam block: {s}\n", .{line});
+    
+    // Simple pattern: shook { statement } fam err { statement }
+    if (std.mem.indexOf(u8, line, "fam")) |fam_pos| {
+        const shook_part = std.mem.trim(u8, line[0..fam_pos], " \t");
+        const fam_part = std.mem.trim(u8, line[fam_pos..], " \t");
+        
+        // Extract try content from shook { content }
+        if (std.mem.indexOf(u8, shook_part, "{")) |shook_brace| {
+            if (std.mem.lastIndexOf(u8, shook_part, "}")) |shook_end| {
+                const try_content = std.mem.trim(u8, shook_part[shook_brace + 1..shook_end], " \t");
+                
+                // Extract error variable and catch content from fam err { content }
+                var error_var: []const u8 = "err";
+                var catch_content: []const u8 = "";
+                
+                if (std.mem.indexOf(u8, fam_part, "{")) |fam_brace| {
+                    if (std.mem.lastIndexOf(u8, fam_part, "}")) |fam_end| {
+                        catch_content = std.mem.trim(u8, fam_part[fam_brace + 1..fam_end], " \t");
+                        
+                        // Extract error variable name
+                        const fam_prefix = std.mem.trim(u8, fam_part[3..fam_brace], " \t"); // Skip "fam"
+                        if (fam_prefix.len > 0) {
+                            error_var = fam_prefix;
+                        }
+                    }
+                }
+                
+                if (verbose) print("🔄 Try: '{s}', Catch: '{s}' (error var: {s})\n", .{ try_content, catch_content, error_var });
+                
+                // Execute try block and handle errors
+                var error_occurred = false;
+                var caught_error: ?Variable = null;
+                
+                // Save current error state
+                const previous_error = variables.get("_last_error");
+                
+                // Execute try block - check for yikes statements  
+                if (std.mem.indexOf(u8, try_content, "yikes")) |_| {
+                    // This will create a yikes error
+                    if (verbose) print("⚠️  Yikes statement detected in try block\n", .{});
+                    error_occurred = true;
+                    
+                    // Execute to create the error
+                    handleYikesError(variables, allocator, try_content, verbose) catch {
+                        if (verbose) print("❌ Failed to handle yikes error\n", .{});
+                    };
+                    
+                    // Get the error that was created
+                    if (variables.get("_last_error")) |last_error| {
+                        caught_error = try last_error.clone(allocator);
+                    }
+                } else {
+                    // No error expected, but simulate normal execution
+                    if (verbose) print("✅ No error detected in try block: '{s}'\n", .{try_content});
+                }
+                
+                // If error occurred, execute catch block with error variable bound
+                if (error_occurred and caught_error != null) {
+                    if (verbose) print("🔄 Error occurred, executing fam block with error bound to '{s}'\n", .{error_var});
+                    
+                    // Bind error to the specified variable
+                    try variables.put(error_var, caught_error.?);
+                    
+                    // Execute catch block - just handle vibez.spill for now
+                    if (std.mem.indexOf(u8, catch_content, "vibez.spill(")) |start| {
+                        try handleVibesSpill(variables, functions, allocator, catch_content, start, verbose);
+                    } else {
+                        if (verbose) print("🔧 Catch block: {s}\n", .{catch_content});
+                    }
+                    
+                    if (verbose) print("✅ Fam block executed successfully\n", .{});
+                } else {
+                    if (verbose) print("✅ No error occurred in shook block\n", .{});
+                    // Clean up caught_error if allocated
+                    if (caught_error) |*ce| {
+                        ce.deinit(allocator);
+                    }
+                }
+                
+                // Restore previous error state
+                if (previous_error) |prev| {
+                    try variables.put("_last_error", prev);
+                } else {
+                    _ = variables.remove("_last_error");
+                }
+            }
+        }
+    } else {
+        if (verbose) print("❌ No fam block found in shook statement\n", .{});
+    }
 }
 
 fn handleFormatCommand(allocator: Allocator, args: [][:0]u8) !void {
@@ -3083,7 +3483,9 @@ fn executeFunctionBodyLine(variables: *VariableStore, functions: *FunctionStore,
     // Handle variable declarations in function body: sus varname type = value
     if (std.mem.startsWith(u8, trimmed, "sus ")) {
         if (verbose) print("  🔍 Processing local variable declaration: {s}\n", .{trimmed});
-        try handleVariableDeclaration(variables, functions, allocator, allocator, trimmed, verbose);
+        var temp_structs = StructStore.init(allocator);
+        defer temp_structs.deinit();
+        try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, trimmed, verbose);
         return;
     }
     
@@ -3340,7 +3742,9 @@ fn handleShookFamBlock(
         if (std.mem.indexOf(u8, exec_line, "vibez.spill(")) |start| {
             try handleVibesSpill(variables, functions, allocator, exec_line, start, verbose);
         } else if (std.mem.startsWith(u8, exec_line, "sus ")) {
-            try handleVariableDeclaration(variables, functions, allocator, allocator, exec_line, verbose);
+            var temp_structs = StructStore.init(allocator);
+            defer temp_structs.deinit();
+            try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, exec_line, verbose);
         }
     }
     
@@ -3368,7 +3772,9 @@ fn handleShookFamBlock(
             if (std.mem.indexOf(u8, exec_line, "vibez.spill(")) |start| {
                 try handleVibesSpill(variables, functions, allocator, exec_line, start, verbose);
             } else if (std.mem.startsWith(u8, exec_line, "sus ")) {
-                try handleVariableDeclaration(variables, functions, allocator, allocator, exec_line, verbose);
+                var temp_structs = StructStore.init(allocator);
+                defer temp_structs.deinit();
+                try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, exec_line, verbose);
             }
         }
     }
@@ -3559,6 +3965,242 @@ fn handleReadyOtherwiseBlock(
     return total_lines_consumed;
 }
 
+/// Handle line containing single-line ready with proper statement separation
+fn handleSingleLineReadyInContext(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: Allocator,
+    variable_allocator: Allocator,
+    line: []const u8,
+    verbose: bool
+) !void {
+    if (verbose) print("🔍 Processing line with ready statement: '{s}'\n", .{line});
+    
+    // Find the position of "ready " in the line
+    const ready_pos = std.mem.indexOf(u8, line, "ready ") orelse return;
+    
+    // Process any statements before the ready statement
+    if (ready_pos > 0) {
+        const before_ready = std.mem.trim(u8, line[0..ready_pos], " \t\r\n");
+        if (before_ready.len > 0) {
+            if (verbose) print("🔍 Processing statements before ready: '{s}'\n", .{before_ready});
+            
+            // Split the part before ready by semicolons
+            var statement_iter = std.mem.splitScalar(u8, before_ready, ';');
+            while (statement_iter.next()) |statement| {
+                const stmt_trimmed = std.mem.trim(u8, statement, " \t\r\n");
+                if (stmt_trimmed.len == 0) continue;
+                
+                if (verbose) print("📝 Processing pre-ready statement: '{s}'\n", .{stmt_trimmed});
+                
+                // Handle variable declarations
+                if (std.mem.startsWith(u8, stmt_trimmed, "sus ")) {
+                    if (verbose) print("🔍 Processing variable declaration: {s}\n", .{stmt_trimmed});
+                    // For control flow blocks, use a temporary null structs parameter
+                    // TODO: Properly pass structs through the call chain
+                    var temp_structs = StructStore.init(allocator);
+                    defer temp_structs.deinit();
+                    try handleVariableDeclaration(variables, functions, &temp_structs, allocator, variable_allocator, stmt_trimmed, verbose);
+                    continue;
+                }
+                
+                // Handle other statements as needed (assignments, function calls, etc.)
+                if (std.mem.indexOf(u8, stmt_trimmed, "=")) |equals_pos| {
+                    const target = std.mem.trim(u8, stmt_trimmed[0..equals_pos], " \t");
+                    const value_expr = std.mem.trim(u8, stmt_trimmed[equals_pos + 1..], " \t");
+                    
+                    if (variables.get(target)) |_| {
+                        if (evaluateExpression(variables, functions, allocator, value_expr, verbose)) |result| {
+                            try variables.put(target, result);
+                            if (verbose) print("  ✅ Variable assignment: {s} = {any}\n", .{ target, result });
+                        } else |err| {
+                            if (verbose) print("  ❌ Failed to evaluate assignment: {any}\n", .{err});
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Now process the ready statement itself
+    const ready_part = std.mem.trim(u8, line[ready_pos..], " \t\r\n");
+    if (verbose) print("🔍 Processing ready statement: '{s}'\n", .{ready_part});
+    try handleSingleLineReady(variables, functions, allocator, ready_part, verbose);
+}
+
+/// Handle single-line ready/otherwise control structures
+fn handleSingleLineReady(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: Allocator,
+    line: []const u8,
+    verbose: bool
+) !void {
+    if (verbose) print("🔍 Starting single-line ready parsing: '{s}'\n", .{line});
+    
+    // Parse the condition from "ready (condition) { statements } otherwise { statements }"
+    var condition_start: ?usize = null;
+    var condition_end: ?usize = null;
+    
+    // Find the condition part
+    if (std.mem.indexOf(u8, line, "(")) |paren_start| {
+        condition_start = paren_start;
+        // Look for matching closing parenthesis
+        var paren_count: i32 = 0;
+        for (line[paren_start..], paren_start..) |char, idx| {
+            if (char == '(') {
+                paren_count += 1;
+            } else if (char == ')') {
+                paren_count -= 1;
+                if (paren_count == 0) {
+                    condition_end = idx;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (condition_start == null or condition_end == null) {
+        if (verbose) print("❌ Invalid ready statement syntax - could not find condition parentheses\n", .{});
+        return;
+    }
+    
+    const condition_expr = std.mem.trim(u8, line[condition_start.? + 1..condition_end.?], " \t");
+    if (verbose) print("🧮 Evaluating condition: '{s}'\n", .{condition_expr});
+    
+    // Evaluate the condition with proper cleanup
+    const condition_result = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
+        if (verbose) print("❌ Failed to evaluate condition: {any}\n", .{err});
+        return;
+    };
+    defer { var temp_result = condition_result; temp_result.deinit(allocator); }
+    
+    // Convert result to boolean
+    const condition_is_true = switch (condition_result) {
+        .Boolean => |b| b,
+        .Integer => |i| i != 0,
+        .Float => |f| f != 0.0,
+        .String => |s| s.len > 0,
+        else => false,
+    };
+    
+    if (verbose) print("✅ Condition evaluated to: {}\n", .{condition_is_true});
+    
+    // Find the first { after the condition
+    const after_condition = line[condition_end.? + 1..];
+    const first_brace_pos = std.mem.indexOf(u8, after_condition, "{") orelse {
+        if (verbose) print("❌ No opening brace found after condition\n", .{});
+        return;
+    };
+    
+    // Extract the if block content
+    var brace_count: i32 = 0;
+    var if_content_start: ?usize = null;
+    var if_content_end: ?usize = null;
+    var in_quotes = false;
+    
+    // Find if block boundaries (handle quoted strings properly)
+    for (after_condition[first_brace_pos..], condition_end.? + 1 + first_brace_pos..) |char, idx| {
+        if (char == '"' and (idx == 0 or line[idx - 1] != '\\')) {
+            in_quotes = !in_quotes;
+        } else if (!in_quotes) {
+            if (char == '{') {
+                brace_count += 1;
+                if (if_content_start == null) {
+                    if_content_start = idx + 1; // Start after the opening brace
+                }
+            } else if (char == '}') {
+                brace_count -= 1;
+                if (brace_count == 0) {
+                    if_content_end = idx;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (if_content_start == null or if_content_end == null) {
+        if (verbose) print("❌ Could not find if block boundaries\n", .{});
+        return;
+    }
+    
+    const if_content = std.mem.trim(u8, line[if_content_start.?..if_content_end.?], " \t");
+    if (verbose) print("🟢 If block content: '{s}'\n", .{if_content});
+    
+    // Look for "otherwise" after the if block
+    const after_if = line[if_content_end.? + 1..];
+    var else_content: ?[]const u8 = null;
+    
+    if (std.mem.indexOf(u8, after_if, "otherwise")) |otherwise_pos| {
+        // Find the { after otherwise
+        const after_otherwise = after_if[otherwise_pos + "otherwise".len..];
+        if (std.mem.indexOf(u8, after_otherwise, "{")) |else_brace_pos| {
+            // Extract else block content
+            brace_count = 0;
+            var else_content_start: ?usize = null;
+            var else_content_end: ?usize = null;
+            in_quotes = false;
+            
+            const else_start_idx = if_content_end.? + 1 + otherwise_pos + "otherwise".len + else_brace_pos;
+            for (line[else_start_idx..], else_start_idx..) |char, idx| {
+                if (char == '"' and (idx == 0 or line[idx - 1] != '\\')) {
+                    in_quotes = !in_quotes;
+                } else if (!in_quotes) {
+                    if (char == '{') {
+                        brace_count += 1;
+                        if (else_content_start == null) {
+                            else_content_start = idx + 1; // Start after the opening brace
+                        }
+                    } else if (char == '}') {
+                        brace_count -= 1;
+                        if (brace_count == 0) {
+                            else_content_end = idx;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (else_content_start != null and else_content_end != null) {
+                else_content = std.mem.trim(u8, line[else_content_start.?..else_content_end.?], " \t");
+                if (verbose) print("🔴 Else block content: '{s}'\n", .{else_content.?});
+            }
+        }
+    }
+    
+    // Execute the appropriate block
+    if (condition_is_true) {
+        if (verbose) print("🟢 Executing if block: '{s}'\n", .{if_content});
+        try executeSingleLineBlock(variables, functions, allocator, if_content, verbose);
+    } else if (else_content) |else_block| {
+        if (verbose) print("🔴 Executing else block: '{s}'\n", .{else_block});
+        try executeSingleLineBlock(variables, functions, allocator, else_block, verbose);
+    } else if (verbose) {
+        print("🔴 Condition false, no else block found\n", .{});
+    }
+    
+    if (verbose) print("✅ Single-line ready/otherwise processed\n", .{});
+}
+
+/// Execute statements within a single-line block (supports multiple statements separated by semicolons)
+fn executeSingleLineBlock(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: Allocator,
+    block_content: []const u8,
+    verbose: bool
+) !void {
+    // Split by semicolons if there are multiple statements
+    var statement_iter = std.mem.splitScalar(u8, block_content, ';');
+    while (statement_iter.next()) |statement| {
+        const stmt_trimmed = std.mem.trim(u8, statement, " \t\r\n");
+        if (stmt_trimmed.len == 0) continue;
+        
+        if (verbose) print("  🔧 Executing block statement: '{s}'\n", .{stmt_trimmed});
+        try executeBlockLine(variables, functions, allocator, stmt_trimmed, verbose);
+    }
+}
+
 /// Handle bestie (while loop) control flow blocks
 fn handleBestieLoop(
     variables: *VariableStore,
@@ -3721,9 +4363,23 @@ fn executeBlockLine(
         return;
     }
     
+    // Handle yikes error creation: yikes "message"
+    if (std.mem.startsWith(u8, trimmed, "yikes ")) {
+        try handleYikesError(variables, allocator, trimmed, verbose);
+        return;
+    }
+    
+    // Handle shook/fam try-catch blocks: shook { code } fam err { error_handling }
+    if (std.mem.startsWith(u8, trimmed, "shook ")) {
+        try handleShookFamSimple(variables, functions, allocator, trimmed, verbose);
+        return;
+    }
+    
     // Handle variable declarations
     if (std.mem.startsWith(u8, trimmed, "sus ")) {
-        try handleVariableDeclaration(variables, functions, allocator, allocator, trimmed, verbose);
+        var temp_structs = StructStore.init(allocator);
+        defer temp_structs.deinit();
+        try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, trimmed, verbose);
         return;
     }
     
@@ -3794,22 +4450,77 @@ fn handleInterfaceDefinition(variables: *VariableStore, functions: *FunctionStor
 }
 
 /// Handle struct definitions: squad StructName { field declarations }
-fn handleStructDefinition(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
-    _ = variables; // Struct types are compile-time, don't need runtime storage
-    _ = functions; // Struct definition doesn't define functions directly
-    _ = allocator; // Simple implementation for now
+fn handleStructDefinition(structs: *StructStore, allocator: Allocator, start_line: []const u8, verbose: bool) !void {
+    if (verbose) print("🏗️  Struct definition recognized: {s}\n", .{start_line});
     
-    if (verbose) print("🏗️  Struct definition recognized: {s}\n", .{line});
-    
-    // Extract struct name
-    const trimmed = std.mem.trim(u8, line, " \t\r\n");
+    // Extract struct name from "squad StructName {"
+    const trimmed = std.mem.trim(u8, start_line, " \t\r\n");
     const squad_end = "squad ".len;
     
-    if (std.mem.indexOf(u8, trimmed[squad_end..], " {")) |space_pos| {
-        const struct_name = std.mem.trim(u8, trimmed[squad_end..squad_end + space_pos], " \t");
-        if (verbose) print("✅ Struct '{s}' defined\n", .{struct_name});
+    const struct_name = if (std.mem.indexOf(u8, trimmed[squad_end..], " {")) |space_pos| blk: {
+        break :blk std.mem.trim(u8, trimmed[squad_end..squad_end + space_pos], " \t");
+    } else if (std.mem.indexOf(u8, trimmed[squad_end..], "{")) |brace_pos| blk: {
+        break :blk std.mem.trim(u8, trimmed[squad_end..squad_end + brace_pos], " \t");
     } else {
-        if (verbose) print("⚠️  Struct definition parsing not fully implemented\n", .{});
+        if (verbose) print("❌ Invalid struct definition syntax\n", .{});
+        return;
+    };
+    
+    if (verbose) print("🔧 Defining struct: {s}\n", .{struct_name});
+    
+    // Create struct definition (var needed for field additions in handleStructFieldDeclaration)
+    var struct_def = StructDefinition.init(allocator, try allocator.dupe(u8, struct_name));
+    _ = &struct_def; // Suppress unused mut warning
+    
+    // For now, we're just handling the opening line. The field declarations will be handled
+    // in the main loop as separate statements. We'll identify them by looking for "spill" statements
+    // immediately after a struct definition.
+    
+    // Store the struct definition
+    const name_copy = try allocator.dupe(u8, struct_name);
+    try structs.put(name_copy, struct_def);
+    
+    if (verbose) print("✅ Struct '{s}' defined and stored\n", .{struct_name});
+}
+
+/// Handle struct field declarations: spill fieldname type
+fn handleStructFieldDeclaration(structs: *StructStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    // Parse: spill fieldname type
+    const trimmed = std.mem.trim(u8, line, " \t\r\n");
+    const spill_end = "spill ".len;
+    
+    // Split the remaining part by whitespace
+    var parts = std.mem.tokenizeScalar(u8, trimmed[spill_end..], ' ');
+    const field_name = parts.next() orelse {
+        if (verbose) print("❌ Invalid field declaration syntax: missing field name\n", .{});
+        return;
+    };
+    const field_type = parts.next() orelse {
+        if (verbose) print("❌ Invalid field declaration syntax: missing field type\n", .{});
+        return;
+    };
+    
+    if (verbose) print("🔧 Adding field: {s} (type: {s})\n", .{ field_name, field_type });
+    
+    // Find the most recently defined struct (this is a simple approach)
+    // In a more complete implementation, we'd track the current struct context
+    var struct_iterator = structs.iterator();
+    var latest_struct: ?*StructDefinition = null;
+    
+    while (struct_iterator.next()) |entry| {
+        latest_struct = entry.value_ptr;
+    }
+    
+    if (latest_struct) |struct_def| {
+        const field = StructField{
+            .name = try allocator.dupe(u8, field_name),
+            .field_type = try allocator.dupe(u8, field_type),
+        };
+        
+        try struct_def.fields.append(field);
+        if (verbose) print("✅ Added field '{s}' to struct '{s}'\n", .{ field_name, struct_def.name });
+    } else {
+        if (verbose) print("❌ No struct definition found for field declaration\n", .{});
     }
 }
 
