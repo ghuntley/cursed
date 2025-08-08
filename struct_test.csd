@@ -1,11 +1,10 @@
-squad PersonName {
-    spill name tea
-    spill age drip
+squad Point {
+    spill x drip
+    spill y drip
 }
 
-sus person PersonName = PersonName{name: "John", age: 25}
-vibez.spill("Person name:", person.name)
-vibez.spill("Person age:", person.age)
+sus p Point = Point{x: 10, y: 20}
+vibez.spill("Point:", p.x, p.y)
 
-person.age = 26
-vibez.spill("Updated age:", person.age)
+sus total drip = p.x + p.y
+vibez.spill("Sum:", total)

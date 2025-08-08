@@ -470,11 +470,6 @@ pub fn main() !void {
     var verbose = false;
     var stdlib_path: ?[]const u8 = null;
     var filename: ?[]const u8 = null;
-    var target: ?[]const u8 = null;
-    var emit_llvm = false;
-    var static_link = false;
-    var inline_threshold: ?u32 = null;
-    var no_inline = false;
     
     for (args[1..]) |arg| {
         if (std.mem.eql(u8, arg, "--compile")) {
@@ -492,23 +487,8 @@ pub fn main() !void {
         } else if (std.mem.startsWith(u8, arg, "--optimize=")) {
             const level_str = arg[11..];
             optimization_level = std.fmt.parseUnsigned(u8, level_str, 10) catch 2;
-        } else if (std.mem.startsWith(u8, arg, "-O")) {
-            // Support -O0, -O1, -O2, -O3 format
-            const level_str = arg[2..];
-            optimization_level = std.fmt.parseUnsigned(u8, level_str, 10) catch 2;
         } else if (std.mem.startsWith(u8, arg, "--stdlib-path=")) {
             stdlib_path = arg[14..];
-        } else if (std.mem.startsWith(u8, arg, "--target=")) {
-            target = arg[9..];
-        } else if (std.mem.eql(u8, arg, "--emit-llvm")) {
-            emit_llvm = true;
-        } else if (std.mem.eql(u8, arg, "--static")) {
-            static_link = true;
-        } else if (std.mem.startsWith(u8, arg, "--inline-threshold=")) {
-            const threshold_str = arg[19..];
-            inline_threshold = std.fmt.parseUnsigned(u32, threshold_str, 10) catch null;
-        } else if (std.mem.eql(u8, arg, "--no-inline")) {
-            no_inline = true;
         } else if (!std.mem.startsWith(u8, arg, "--")) {
             // This looks like a filename (not an option)
             filename = arg;
@@ -558,11 +538,6 @@ pub fn main() !void {
             .verbose = verbose,
             .output_path = null,
             .debug_info = debug_info_enabled,
-            .target = target,
-            .emit_llvm = emit_llvm,
-            .static_link = static_link,
-            .inline_threshold = inline_threshold,
-            .no_inline = no_inline,
         };
         
         if (verbose) {
@@ -1299,7 +1274,7 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
         }
     }
     
-    // Check for array indexing (high precedence - before binary operators)
+    // Check for array indexing vs generic function calls (high precedence - before binary operators)
     if (std.mem.indexOf(u8, trimmed, "[")) |bracket_start| {
         if (std.mem.lastIndexOf(u8, trimmed, "]")) |bracket_end| {
             if (bracket_end > bracket_start) {
@@ -1316,13 +1291,40 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
                 if (paren_count > 0) is_top_level = false;
                 
                 if (is_top_level) {
-                    const array_name = std.mem.trim(u8, trimmed[0..bracket_start], " \t");
-                    const index_expr = std.mem.trim(u8, trimmed[bracket_start + 1..bracket_end], " \t");
+                    // Check if this is a generic function call: func_name[Type](args)
+                    var is_generic_function_call = false;
+                    if (bracket_end + 1 < trimmed.len and trimmed[bracket_end + 1] == '(') {
+                        const func_name = std.mem.trim(u8, trimmed[0..bracket_start], " \t");
+                        // Check for generic function by looking for function names that start with func_name[
+                        var found_generic_func = false;
+                        var func_iter = functions.iterator();
+                        while (func_iter.next()) |entry| {
+                            const stored_func_name = entry.key_ptr.*;
+                            if (std.mem.startsWith(u8, stored_func_name, func_name) and 
+                                stored_func_name.len > func_name.len and 
+                                stored_func_name[func_name.len] == '[') {
+                                found_generic_func = true;
+                                break;
+                            }
+                        }
+                        
+                        if (found_generic_func) {
+                            is_generic_function_call = true;
+                            if (verbose) print("🧬 Detected generic function call: {s}[...](args)\n", .{func_name});
+                            
+                            // Handle this as a function call instead
+                            return try handleFunctionCall(functions, variables, allocator, trimmed, verbose) orelse Variable{ .String = "nil" };
+                        }
+                    }
                     
-                    if (verbose) print("🔍 Found array indexing: array='{s}', index='{s}'\n", .{ array_name, index_expr });
-                    
-                    // Get the array variable
-                    if (variables.get(array_name)) |array_var| {
+                    if (!is_generic_function_call) {
+                        const array_name = std.mem.trim(u8, trimmed[0..bracket_start], " \t");
+                        const index_expr = std.mem.trim(u8, trimmed[bracket_start + 1..bracket_end], " \t");
+                        
+                        if (verbose) print("🔍 Found array indexing: array='{s}', index='{s}'\n", .{ array_name, index_expr });
+                        
+                        // Get the array variable
+                        if (variables.get(array_name)) |array_var| {
                         switch (array_var) {
                             .Array => |array_list| {
                                 // Evaluate the index expression to get the numeric index
@@ -1358,9 +1360,10 @@ fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allo
                                 return error.NotAnArray;
                             }
                         }
-                    } else {
-                        if (verbose) print("❌ Array variable '{s}' not found\n", .{array_name});
-                        return error.UnknownIdentifier;
+                        } else {
+                            if (verbose) print("❌ Array variable '{s}' not found\n", .{array_name});
+                            return error.UnknownIdentifier;
+                        }
                     }
                 }
             }
@@ -2235,10 +2238,47 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
         print("{s}", .{trimmed_content[1..trimmed_content.len - 1]});
         if (add_newline) print("\n", .{});
     } else if (std.mem.indexOf(u8, trimmed_content, "[")) |bracket_pos| {
-        // Array access expression like numbers[i]
-        const array_name = trimmed_content[0..bracket_pos];
+        // Check if this might be a generic function call: func[Type](args)
+        const potential_func_name = trimmed_content[0..bracket_pos];
         if (std.mem.indexOf(u8, trimmed_content[bracket_pos..], "]")) |end_bracket| {
-            const index_expr = trimmed_content[bracket_pos + 1..bracket_pos + end_bracket];
+            const full_end_bracket = bracket_pos + end_bracket;
+            
+            // Check if there's a parenthesis right after the closing bracket
+            if (full_end_bracket + 1 < trimmed_content.len and trimmed_content[full_end_bracket + 1] == '(') {
+                // Check for generic function by looking for function names that start with potential_func_name[
+                var found_generic_func = false;
+                var func_iter = functions.iterator();
+                while (func_iter.next()) |entry| {
+                    const func_name = entry.key_ptr.*;
+                    if (std.mem.startsWith(u8, func_name, potential_func_name) and 
+                        func_name.len > potential_func_name.len and 
+                        func_name[potential_func_name.len] == '[') {
+                        found_generic_func = true;
+                        break;
+                    }
+                }
+                
+                if (found_generic_func) {
+                    if (verbose) print("🧬 Generic function call in vibez.spill: {s}\n", .{trimmed_content});
+                    // Use evaluateExpression to handle the generic function call
+                    if (evaluateExpression(variables, functions, allocator, trimmed_content, verbose)) |result| {
+                        defer { var res = result; res.deinit(allocator); }
+                        const result_str = try result.toString(allocator);
+                        defer allocator.free(result_str);
+                        print("{s}", .{result_str});
+                        if (add_newline) print("\n", .{});
+                        return;
+                    } else |_| {
+                        print("error evaluating generic function call", .{});
+                        if (add_newline) print("\n", .{});
+                        return;
+                    }
+                }
+            }
+            
+            // If not a generic function call, handle as array access
+            const array_name = potential_func_name;
+            const index_expr = trimmed_content[bracket_pos + 1..full_end_bracket];
             
             if (verbose) print("🔍 Array access: {s}[{s}]\n", .{ array_name, index_expr });
             
@@ -2768,41 +2808,29 @@ fn handleCheckCommand(allocator: Allocator, args: [][:0]u8) !void {
 
     if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 
-    // For type checking, we just need basic syntax validation
-    // Use a simpler validation approach that matches the interpreter
-    var validation_passed = true;
-    var line_number: u32 = 1;
-    
-    // Split source into lines and validate each
-    var lines = std.mem.splitScalar(u8, source, '\n');
-    while (lines.next()) |line| {
-        const trimmed = std.mem.trim(u8, line, " \t\r\n");
-        
-        if (trimmed.len == 0 or std.mem.startsWith(u8, trimmed, "fr fr")) {
-            // Skip empty lines and comments
-            line_number += 1;
-            continue;
-        }
-        
-        // Basic syntax validation for CURSED statements
-        if (!isValidCursedStatement(trimmed)) {
-            print("❌ Syntax error on line {}: {s}\n", .{ line_number, trimmed });
-            validation_passed = false;
-        }
-        
-        if (verbose) print("✅ Line {} validated: {s}\n", .{ line_number, trimmed });
-        line_number += 1;
-    }
-    
-    if (!validation_passed) {
-        print("❌ Type checking failed due to syntax errors\n", .{});
+    // Parse
+    var p = parser.Parser.init(allocator, tokens.items);
+    var program = p.parseProgram() catch |err| {
+        print("❌ Parser error: {}\n", .{err});
         return;
-    }
+    };
+    defer program.deinit(allocator);
 
-    if (verbose) print("📊 Syntax validation completed\n", .{});
+    if (verbose) print("📊 Parsed {} statements\n", .{program.statements.items.len});
 
-    // For now, we'll skip the complex type checker and just do basic validation
-    // TODO: Implement proper type checking that works with the CURSED syntax
+    // Type check
+    var checker = type_system.TypeChecker.init(allocator) catch |err| {
+        print("❌ Type checker initialization error: {}\n", .{err});
+        return;
+    };
+    defer checker.deinit();
+
+    if (verbose) print("🔧 Type checker initialized\n", .{});
+
+    type_system.checkProgram(&checker, &program) catch |err| {
+        print("❌ Type checking error: {}\n", .{err});
+        return;
+    };
 
     print("✅ Type checking passed for {s}\n", .{filename});
     if (verbose) print("🎉 All types are valid and consistent!\n", .{});
@@ -3195,15 +3223,7 @@ fn printUsage() void {
     print("  --tokens           Show token stream\n", .{});
     print("  --verbose          Enable verbose output\n", .{});
     print("  --optimize=LEVEL   Optimization level (0-3, default: 2)\n", .{});
-    print("  -O[0-3]            Short form optimization level\n", .{});
     print("  --stdlib-path=PATH Path to standard library (default: auto-detect)\n", .{});
-    
-    print("\nCompilation Options:\n", .{});
-    print("  --target=TARGET    Cross-compilation target (e.g., x86_64-linux, wasm32)\n", .{});
-    print("  --emit-llvm        Generate LLVM IR (.ll) file\n", .{});
-    print("  --static           Static linking for deployment\n", .{});
-    print("  --inline-threshold=N  Inlining threshold (default: auto)\n", .{});
-    print("  --no-inline        Disable function inlining\n", .{});
     print("\nFormat Options:\n", .{});
     print("  --check            Check if files are formatted (exit 1 if not)\n", .{});
     print("  --diff             Show formatting differences\n", .{});
@@ -3619,18 +3639,8 @@ fn executeFunctionWithScope(
             const cloned_arg_value = try arg_value.clone(arena_allocator);
             try local_variables.put(param_name, cloned_arg_value);
             
-            // Clean up the original argument value only if it's safe to do so
-            // For recursive calls, the arg_value may be a temporary that needs cleanup
-            // but we need to check if it's actually owned by our scope
-            switch (arg_value) {
-                .Integer, .Float, .Boolean, .Channel, .GoroutineId => {
-                    // These are value types, no cleanup needed
-                },
-                else => {
-                    // For complex types, skip cleanup in recursive context to avoid double-free
-                    // The arena allocator will handle cleanup automatically
-                },
-            }
+            // Clean up the original argument value
+            { var temp = arg_value; temp.deinit(allocator); }
             
             if (verbose) print("  📝 Bound {s} = {any}\n", .{ param.name, cloned_arg_value });
             param_index += 1;
@@ -3671,8 +3681,17 @@ fn evaluateArgument(variables: *VariableStore, functions: *FunctionStore, alloca
 }
 
 fn executeReadyStatement(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) (FunctionReturnError || anyerror)!void {
-    // Handle ready/otherwise statements: ready (condition) { body } otherwise { else_body }
+    // Handle ready statements: ready (condition) { body } otherwise { else_body }
+    // Also handle pattern matching: ready (value) { 1 => action; _ => default }
     const trimmed = std.mem.trim(u8, line, " \t");
+    
+    // Check if this is pattern matching syntax (contains =>)
+    if (std.mem.indexOf(u8, trimmed, "=>")) |_| {
+        if (verbose) print("  🎯 Pattern matching detected\n", .{});
+        // Pattern matching not implemented yet
+        if (verbose) print("⚠️  Pattern matching not yet implemented: {s}\n", .{trimmed});
+        return;
+    }
     
     // Check if this has an otherwise clause
     if (std.mem.indexOf(u8, trimmed, "otherwise")) |otherwise_pos| {
@@ -5056,76 +5075,4 @@ fn executeMethodFunction(variables: *VariableStore, functions: *FunctionStore, a
     
     // If no return statement found, return void/null
     return Variable{ .String = "" };
-}
-
-/// Basic syntax validation for CURSED statements
-fn isValidCursedStatement(statement: []const u8) bool {
-    if (statement.len == 0) return false;
-    
-    // Variable declarations: sus varname type = value
-    if (std.mem.startsWith(u8, statement, "sus ")) {
-        return std.mem.indexOf(u8, statement, " = ") != null and
-               (std.mem.indexOf(u8, statement, " drip ") != null or
-                std.mem.indexOf(u8, statement, " tea ") != null or
-                std.mem.indexOf(u8, statement, " lit ") != null or
-                std.mem.indexOf(u8, statement, " meal ") != null or
-                std.mem.indexOf(u8, statement, " []drip ") != null);
-    }
-    
-    // Function definitions: slay function_name(...) type { ... }
-    if (std.mem.startsWith(u8, statement, "slay ")) {
-        return std.mem.indexOf(u8, statement, "(") != null and
-               std.mem.indexOf(u8, statement, ")") != null;
-    }
-    
-    // Print statements: vibez.spill(...)
-    if (std.mem.startsWith(u8, statement, "vibez.spill(")) {
-        return std.mem.lastIndexOf(u8, statement, ")") != null;
-    }
-    
-    // Import statements: yeet "module"
-    if (std.mem.startsWith(u8, statement, "yeet ")) {
-        return std.mem.indexOf(u8, statement, "\"") != null;
-    }
-    
-    // Control structures: ready, bestie, otherwise
-    if (std.mem.startsWith(u8, statement, "ready (") or
-       std.mem.startsWith(u8, statement, "bestie (") or
-       std.mem.startsWith(u8, statement, "otherwise {")) {
-        return true;
-    }
-    
-    // Struct definitions: squad Name { ... }
-    if (std.mem.startsWith(u8, statement, "squad ")) {
-        return std.mem.indexOf(u8, statement, "{") != null;
-    }
-    
-    // Interface definitions: collab Name { ... }
-    if (std.mem.startsWith(u8, statement, "collab ")) {
-        return std.mem.indexOf(u8, statement, "{") != null;
-    }
-    
-    // Return statements: damn expression
-    if (std.mem.startsWith(u8, statement, "damn ")) {
-        return true;
-    }
-    
-    // Closing braces
-    if (std.mem.eql(u8, statement, "}")) {
-        return true;
-    }
-    
-    // Assignment statements: variable = expression
-    if (std.mem.indexOf(u8, statement, " = ") != null) {
-        return true;
-    }
-    
-    // Function calls and expressions
-    if (std.mem.indexOf(u8, statement, "(") != null and
-       std.mem.indexOf(u8, statement, ")") != null) {
-        return true;
-    }
-    
-    // Allow expressions and other simple statements
-    return true; // For now, be permissive
 }

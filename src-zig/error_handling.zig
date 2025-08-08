@@ -38,6 +38,7 @@ pub const CursedError = error{
     IndexOutOfBounds,
     InvalidOperation,
     PatternMatchFailed,
+    StackOverflow,
     
     // File/IO errors
     FileNotFound,

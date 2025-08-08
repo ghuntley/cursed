@@ -96,7 +96,7 @@ pub const CursedError = struct {
         try writer.print("  Error Code: {}\n", .{self.code});
         
         if (self.stack_trace) |trace| {
-            try writer.print("  Stack Trace:\n");
+            try writer.print("  Stack Trace:\n", .{});
             for (trace) |frame| {
                 try writer.print("    at {s} ({s}:{}:{})\n", .{
                     frame.function_name, frame.file_name, frame.line, frame.column
@@ -105,7 +105,7 @@ pub const CursedError = struct {
         }
         
         if (self.context) |ctx| {
-            try writer.print("  Context:\n");
+            try writer.print("  Context:\n", .{});
             for (ctx) |context| {
                 try writer.print("    {s}: {s}\n", .{ context.key, context.value });
             }

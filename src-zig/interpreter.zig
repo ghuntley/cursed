@@ -364,7 +364,11 @@ pub const Interpreter = struct {
     next_goroutine_id: u64,
     defer_stack: ArrayList(DeferEntry),  // LIFO defer execution stack
     error_handler: cursed_error.ErrorHandler,
+    call_stack_depth: u32,
+    max_call_stack_depth: u32,
     allocator: Allocator,
+
+    const MAX_CALL_STACK_DEPTH = 1000;
 
     pub fn init(allocator: Allocator) Interpreter {
         var globals = Environment.init(allocator, null);
@@ -378,6 +382,8 @@ pub const Interpreter = struct {
             .next_goroutine_id = 0,
             .defer_stack = ArrayList(DeferEntry).init(allocator),
             .error_handler = cursed_error.ErrorHandler.init(allocator, "main.csd"),
+            .call_stack_depth = 0,
+            .max_call_stack_depth = MAX_CALL_STACK_DEPTH,
             .allocator = allocator,
         };
     }
@@ -402,31 +408,23 @@ pub const Interpreter = struct {
 
     pub fn execute(self: *Interpreter, program: Program) InterpreterError!void {
         // First pass: collect type and function declarations
-        for (program.statements.items) |stmt| {
-            switch (stmt.kind) {
-                .Function => {
-                    if (stmt.data) |data| {
-                        const func = @as(*ast.FunctionStatement, @ptrCast(@alignCast(data)));
-                        const cursed_func = CursedFunction{
-                            .declaration = func.*,
-                            .closure = self.environment,
-                        };
-                        std.debug.print("DEBUG: Registering function '{s}'\n", .{func.name});
-                         try self.functions.put(func.name, cursed_func);
-                    }
+        for (program.statements.items) |stmt_ptr| {
+            const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
+            switch (stmt.*) {
+                .Function => |func| {
+                    const cursed_func = CursedFunction{
+                        .declaration = func,
+                        .closure = self.environment,
+                    };
+                    std.debug.print("DEBUG: Registering function '{s}'\n", .{func.name});
+                    try self.functions.put(func.name, cursed_func);
                 },
-                .Struct => {
-                    if (stmt.data) |data| {
-                        const struct_decl = @as(*ast.StructStatement, @ptrCast(@alignCast(data)));
-                        std.debug.print("DEBUG: Registering struct '{s}' with {d} methods\n", .{struct_decl.name, struct_decl.methods.items.len});
-                        try self.type_registry.registerStruct(struct_decl.name, struct_decl.*);
-                    }
+                .Struct => |struct_decl| {
+                    std.debug.print("DEBUG: Registering struct '{s}' with {d} methods\n", .{struct_decl.name, struct_decl.methods.items.len});
+                    try self.type_registry.registerStruct(struct_decl.name, struct_decl);
                 },
-                .Interface => {
-                    if (stmt.data) |data| {
-                        const interface_decl = @as(*ast.InterfaceStatement, @ptrCast(@alignCast(data)));
-                        try self.type_registry.registerInterface(interface_decl.name, interface_decl.*);
-                    }
+                .Interface => |interface_decl| {
+                    try self.type_registry.registerInterface(interface_decl.name, interface_decl);
                 },
                 else => {},
             }
@@ -437,16 +435,18 @@ pub const Interpreter = struct {
             _ = try self.callFunction(main_func, &[_]Value{});
         } else {
             // Execute statements in order
-            for (program.statements.items) |stmt| {
-                try self.executeStatement(stmt);
+            for (program.statements.items) |stmt_ptr| {
+                const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
+                try self.executeStatement(stmt.*);
             }
         }
     }
 
     fn executeStatement(self: *Interpreter, stmt: Statement) InterpreterError!void {
         switch (stmt) {
-            .Expression => |expr| {
-                _ = try self.evaluateExpression(expr);
+            .Expression => |expr_ptr| {
+                const expr: *Expression = @ptrCast(@alignCast(expr_ptr));
+                _ = try self.evaluateExpression(expr.*);
             },
             .Let => |let| try self.executeLetStatement(let),
             .Assignment => |assign| try self.executeAssignmentStatement(assign),
@@ -786,19 +786,65 @@ pub const Interpreter = struct {
                     // Generate unique goroutine ID
                     self.next_goroutine_id += 1;
                     return Value{ .Number = @floatFromInt(self.next_goroutine_id) };
-                } else if (self.functions.get(name)) |func| {
-                    std.debug.print("DEBUG: Calling user function '{s}'\n", .{name});
-                    // Evaluate arguments
-                    var args = ArrayList(Value).init(self.allocator);
-                    defer args.deinit();
-                    
-                    for (call.arguments.items) |arg_expr| {
-                        const arg = try self.evaluateExpression(arg_expr);
-                        try args.append(arg);
+                } else {
+                    // Try to find function directly first
+                    if (self.functions.get(name)) |func| {
+                        std.debug.print("DEBUG: Calling user function '{s}'\n", .{name});
+                        // Evaluate arguments
+                        var args = ArrayList(Value).init(self.allocator);
+                        defer args.deinit();
+                        
+                        for (call.arguments.items) |arg_expr| {
+                            const arg = try self.evaluateExpression(arg_expr);
+                            try args.append(arg);
+                        }
+                        
+                        return try self.callFunction(func, args.items);
                     }
                     
-                    return try self.callFunction(func, args.items);
-                } else {
+                    // Check if this is a generic function call (e.g., "generic[drip]")
+                    if (std.mem.indexOf(u8, name, "[")) |bracket_start| {
+                        const template_name = name[0..bracket_start];
+                        std.debug.print("DEBUG: Attempting generic function lookup for template '{s}'\n", .{template_name});
+                        
+                        // Look for template function by base name
+                        var function_iterator = self.functions.iterator();
+                        while (function_iterator.next()) |entry| {
+                            const func_name = entry.key_ptr.*;
+                            const func = entry.value_ptr.*;
+                            
+                            // Check if this function starts with the template name and has type parameters
+                            if (std.mem.startsWith(u8, func_name, template_name) and 
+                                std.mem.indexOf(u8, func_name, "[") != null and
+                                func.declaration.type_parameters.items.len > 0) {
+                                
+                                std.debug.print("DEBUG: Found template function '{s}' for generic call '{s}'\n", .{func_name, name});
+                                
+                                // Extract type arguments from the call (e.g., "drip" from "generic[drip]")
+                                const type_args_start = bracket_start + 1;
+                                if (std.mem.indexOf(u8, name[type_args_start..], "]")) |bracket_end| {
+                                    const type_args_str = name[type_args_start..type_args_start + bracket_end];
+                                    std.debug.print("DEBUG: Extracted type arguments: '{s}'\n", .{type_args_str});
+                                    
+                                    // For now, just call the template function directly
+                                    // TODO: Implement proper type parameter substitution
+                                    
+                                    // Evaluate arguments
+                                    var args = ArrayList(Value).init(self.allocator);
+                                    defer args.deinit();
+                                    
+                                    for (call.arguments.items) |arg_expr| {
+                                        const arg = try self.evaluateExpression(arg_expr);
+                                        try args.append(arg);
+                                    }
+                                    
+                                    std.debug.print("DEBUG: Calling generic function with {d} arguments\n", .{args.items.len});
+                                    return try self.callFunction(func, args.items);
+                                }
+                            }
+                        }
+                    }
+                    
                     std.debug.print("DEBUG: Function '{s}' not found\n", .{name});
                     return InterpreterError.UndefinedFunction;
                 }
@@ -959,6 +1005,16 @@ pub const Interpreter = struct {
     }
 
     fn callFunction(self: *Interpreter, func: CursedFunction, args: []Value) InterpreterError!Value {
+        // Check for stack overflow
+        if (self.call_stack_depth >= self.max_call_stack_depth) {
+            return InterpreterError.StackOverflow;
+        }
+        
+        // Track recursion depth
+        const old_depth = self.call_stack_depth;
+        self.call_stack_depth += 1;
+        defer self.call_stack_depth = old_depth;
+        
         // Create new environment for function execution
         var function_env = Environment.init(self.allocator, func.closure);
         defer function_env.deinit();

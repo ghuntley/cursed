@@ -72,13 +72,13 @@ const TargetConfig = struct {
                 .supports_threading = true,
                 .supports_networking = true,
             },
-            .wasi => TargetConfig{
-                .name = "wasm32",
-                .description = "WebAssembly",
-                .exe_suffix = ".wasm",
-                .supports_llvm = false,
-                .supports_threading = false,
-                .supports_networking = false,
+            .wasi, .freestanding => TargetConfig{
+            .name = "wasm32",
+            .description = "WebAssembly",
+            .exe_suffix = ".wasm",
+            .supports_llvm = false,
+            .supports_threading = false,
+            .supports_networking = false,
             },
             else => TargetConfig{
                 .name = "unknown",
@@ -364,7 +364,7 @@ pub fn build(b: *std.Build) void {
     // Create the CURSED compiler executable - unified main with subcommands
     const exe = b.addExecutable(.{
         .name = "cursed", 
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/main_unified.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main_unified.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -415,7 +415,7 @@ pub fn build(b: *std.Build) void {
     // Alternative implementations for testing and fallback
     const minimal_exe = b.addExecutable(.{
         .name = "cursed-minimal",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/minimal_main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/minimal_main.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -425,7 +425,7 @@ pub fn build(b: *std.Build) void {
 
     const complete_exe = b.addExecutable(.{
         .name = "cursed-complete",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/main_complete.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main_complete.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -445,7 +445,7 @@ pub fn build(b: *std.Build) void {
     // Create performance-optimized compiler
     const optimized_exe = b.addExecutable(.{
         .name = "cursed-optimized",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/simplified_optimized_main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/simplified_optimized_main.zig"),
         .target = resolved_target,
         .optimize = .ReleaseFast, // Always use fastest optimization for performance compiler
     });
@@ -461,7 +461,7 @@ pub fn build(b: *std.Build) void {
     // Create legacy alias for backwards compatibility
     const legacy_exe = b.addExecutable(.{
         .name = "cursed-zig",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/main.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -485,7 +485,7 @@ b.installArtifact(complete_exe);
     // Create package manager CLI tool
     const pkg_manager_exe = b.addExecutable(.{
         .name = "cursed-pkg",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/cursed_pkg.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/cursed_pkg.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -592,7 +592,7 @@ b.installArtifact(complete_exe);
     // Create LSP server executable
     const lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("cursed_lsp_working.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("cursed_lsp_working.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -621,21 +621,19 @@ b.installArtifact(complete_exe);
     // }
     // b.installArtifact(debug_test_exe);
     
-    // Create documentation generator executable
-    const doc_exe = b.addExecutable(.{
-        .name = "cursed-doc",
-        .root_source_file = b.path("src-zig/doc_generator.zig"),
-        .target = resolved_target,
-        .optimize = optimize,
-    });
-    
-    // Doc generator uses direct file imports to avoid module conflicts
-    
+    // Create documentation generator executable (skip for WASM - uses filesystem)
     if (!is_wasm) {
+        const doc_exe = b.addExecutable(.{
+            .name = "cursed-doc",
+            .root_source_file = b.path("src-zig/doc_generator.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        });
+        
+        // Doc generator uses direct file imports to avoid module conflicts
         doc_exe.linkLibC();
+        b.installArtifact(doc_exe);
     }
-    
-    b.installArtifact(doc_exe);
     
     const run_lsp = b.addRunArtifact(lsp_exe);
     run_lsp.step.dependOn(b.getInstallStep());
@@ -689,7 +687,7 @@ b.installArtifact(complete_exe);
     // Create diagnostic demo executable
     const diagnostics_demo = b.addExecutable(.{
         .name = "cursed-diagnostics-demo",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_pure.zig") else b.path("src-zig/test_diagnostics_demo_simple.zig"),
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/test_diagnostics_demo_simple.zig"),
         .target = resolved_target,
         .optimize = optimize,
     });
