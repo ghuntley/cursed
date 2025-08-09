@@ -126,7 +126,7 @@ pub const ConcurrencyError = error{
 /// Goroutine entry point function type
 pub const GoroutineEntry = *const fn (context: ?*anyopaque) void;
 
-/// Channel data structure for typed channels
+/// Channel data structure for typed channels - dm<T> and dm<T>[N] syntax
 pub fn Channel(comptime T: type) type {
     return struct {
         const Self = @This();
@@ -136,7 +136,7 @@ pub fn Channel(comptime T: type) type {
         mutex: Mutex,
         send_condition: Condition,
         recv_condition: Condition,
-        capacity: usize,
+        capacity: usize, // 0 for unbuffered, N for buffered dm<T>[N]
         closed: Atomic(bool),
         sender_count: Atomic(u32),
         receiver_count: Atomic(u32),
@@ -160,7 +160,7 @@ pub fn Channel(comptime T: type) type {
         }
 
         pub fn deinit(self: *Self) void {
-            self.close();
+            self.dm_close();
             
             // Clean up buffer contents with GC integration
             for (self.buffer.items) |item| {
@@ -257,8 +257,8 @@ pub fn Channel(comptime T: type) type {
             return SendResult.sent;
         }
 
-        /// Receive a value from the channel (blocking)
-        pub fn receive(self: *Self) !?T {
+        /// dm_recv - Canonical CURSED channel receive operation
+        pub fn dm_recv(self: *Self) !?T {
             self.mutex.lock();
             defer self.mutex.unlock();
 
@@ -300,8 +300,8 @@ pub fn Channel(comptime T: type) type {
             return null; // Would block
         }
 
-        /// Close the channel
-        pub fn close(self: *Self) void {
+        /// dm_close - Canonical CURSED channel close operation
+        pub fn dm_close(self: *Self) void {
             self.closed.store(true, .release);
             self.send_condition.broadcast();
             self.recv_condition.broadcast();
@@ -337,6 +337,21 @@ pub fn Channel(comptime T: type) type {
             self.mutex.lock();
             defer self.mutex.unlock();
             return self.stats;
+        }
+
+        /// send - Standard channel send operation (alias for dm_send)
+        pub fn send(self: *Self, value: T) !SendResult {
+            return self.dm_send(value);
+        }
+
+        /// receive - Standard channel receive operation (alias for dm_recv)
+        pub fn receive(self: *Self) !?T {
+            return self.dm_recv();
+        }
+
+        /// close - Standard channel close operation (alias for dm_close)
+        pub fn close(self: *Self) void {
+            self.dm_close();
         }
     };
 }
@@ -1405,7 +1420,7 @@ export fn cursed_channel_send(channel_ptr: ?*anyopaque, data: ?*anyopaque, data_
     // Send each byte to the channel
     var i: u32 = 0;
     while (i < data_size) : (i += 1) {
-        const result = channel.send(data_bytes[i]) catch return @intFromEnum(SendResult.closed);
+        const result = channel.dm_send(data_bytes[i]) catch return @intFromEnum(SendResult.closed);
         if (result != SendResult.sent) {
             return @intFromEnum(result);
         }
@@ -1427,7 +1442,7 @@ export fn cursed_channel_receive(channel_ptr: ?*anyopaque, data_out: ?*anyopaque
     // Receive bytes from the channel
     var i: u32 = 0;
     while (i < data_size) : (i += 1) {
-        const result = channel.receive() catch return @intFromEnum(ReceiveResult.closed);
+        const result = channel.dm_recv() catch return @intFromEnum(ReceiveResult.closed);
         if (result) |byte| {
             data_bytes[i] = byte;
         } else {
@@ -1445,7 +1460,7 @@ export fn cursed_channel_close(channel_ptr: ?*anyopaque) void {
     
     // Cast to generic byte channel for now
     const channel: *Channel(u8) = @ptrCast(@alignCast(channel_ptr.?));
-    channel.close();
+    channel.dm_close();
 }
 
 /// C FFI export for initializing runtime from LLVM compiled code
@@ -1459,6 +1474,80 @@ export fn cursed_runtime_init() u32 {
 export fn cursed_runtime_shutdown() void {
     const allocator = std.heap.c_allocator;
     shutdownScheduler(allocator);
+}
+
+// ==================== ENHANCED CURSED CHANNEL OPERATIONS ====================
+
+/// Enhanced dm_send export for CURSED dm_send(channel, value) syntax
+export fn cursed_dm_send(channel_ptr: ?*anyopaque, data: ?*const anyopaque, data_size: u32) u32 {
+    if (channel_ptr == null or data == null) {
+        return @intFromEnum(SendResult.closed);
+    }
+    
+    const channel: *Channel(u8) = @ptrCast(@alignCast(channel_ptr.?));
+    const data_bytes: [*]const u8 = @ptrCast(data.?);
+    
+    // Send each byte to the channel using dm_send
+    var i: u32 = 0;
+    while (i < data_size) : (i += 1) {
+        const result = channel.dm_send(data_bytes[i]) catch return @intFromEnum(SendResult.closed);
+        if (result != SendResult.sent) {
+            return @intFromEnum(result);
+        }
+    }
+    
+    return @intFromEnum(SendResult.sent);
+}
+
+/// Enhanced dm_recv export for CURSED dm_recv(channel) syntax
+export fn cursed_dm_recv(channel_ptr: ?*anyopaque, data_out: ?*anyopaque, data_size: u32) u32 {
+    if (channel_ptr == null or data_out == null) {
+        return @intFromEnum(ReceiveResult.closed);
+    }
+    
+    const channel: *Channel(u8) = @ptrCast(@alignCast(channel_ptr.?));
+    const data_bytes: [*]u8 = @ptrCast(data_out.?);
+    
+    // Receive bytes from the channel using dm_recv
+    var i: u32 = 0;
+    while (i < data_size) : (i += 1) {
+        const result = channel.dm_recv() catch return @intFromEnum(ReceiveResult.closed);
+        if (result) |byte| {
+            data_bytes[i] = byte;
+        } else {
+            return @intFromEnum(ReceiveResult.closed);
+        }
+    }
+    
+    return @intFromEnum(ReceiveResult.received);
+}
+
+/// Enhanced dm_close export for CURSED dm_close(channel) syntax
+export fn cursed_dm_close(channel_ptr: ?*anyopaque) void {
+    if (channel_ptr == null) return;
+    
+    const channel: *Channel(u8) = @ptrCast(@alignCast(channel_ptr.?));
+    channel.dm_close();
+}
+
+/// Create buffered channel - dm<T>[N] syntax support
+export fn cursed_dm_create_buffered(element_size: u32, capacity: u32) ?*anyopaque {
+    _ = element_size;
+    const allocator = std.heap.c_allocator;
+    
+    // For simplicity, create byte channels with specified capacity
+    const channel = allocator.create(Channel(u8)) catch return null;
+    channel.* = Channel(u8).init(allocator, capacity) catch {
+        allocator.destroy(channel);
+        return null;
+    };
+    
+    return @ptrCast(channel);
+}
+
+/// Create unbuffered channel - dm<T> syntax support
+export fn cursed_dm_create_unbuffered(element_size: u32) ?*anyopaque {
+    return cursed_dm_create_buffered(element_size, 0);
 }
 
 // Tests
@@ -1502,13 +1591,13 @@ test "channel send and receive" {
     }
 
     // Test buffered send/receive
-    try std.testing.expect(try channel.send(42) == SendResult.sent);
-    try std.testing.expect(try channel.send(43) == SendResult.sent);
+    try std.testing.expect(try channel.dm_send(42) == SendResult.sent);
+    try std.testing.expect(try channel.dm_send(43) == SendResult.sent);
     
-    const received1 = try channel.receive();
+    const received1 = try channel.dm_recv();
     try std.testing.expect(received1.? == 42);
     
-    const received2 = try channel.receive();
+    const received2 = try channel.dm_recv();
     try std.testing.expect(received2.? == 43);
 }
 
@@ -1521,14 +1610,14 @@ test "channel close behavior" {
         allocator.destroy(channel);
     }
 
-    try std.testing.expect(try channel.send(100) == SendResult.sent);
-    channel.close();
+    try std.testing.expect(try channel.dm_send(100) == SendResult.sent);
+    channel.dm_close();
     
-    try std.testing.expect(try channel.send(101) == SendResult.closed);
+    try std.testing.expect(try channel.dm_send(101) == SendResult.closed);
     try std.testing.expect(channel.isClosed());
     
     // Should still be able to receive buffered value
-    const received = try channel.receive();
+    const received = try channel.dm_recv();
     try std.testing.expect(received.? == 100);
 }
 

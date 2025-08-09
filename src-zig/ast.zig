@@ -40,10 +40,7 @@ pub const Expression = union(enum) {
     Boolean: bool,
     Character: u8,
     Binary: BinaryExpression,
-    Call: struct {
-        function: *Expression,
-        arguments: ArrayList(*Expression),
-    },
+    Call: CallExpression,
     MemberAccess: *MemberAccessExpression,
     Literal: Literal,
     Unary: *UnaryExpression,
@@ -90,17 +87,8 @@ pub const Expression = union(enum) {
                 allocator.destroy(left_expr);
                 allocator.destroy(right_expr);
             },
-            .Call => |call| {
-                const func_expr: *Expression = @ptrCast(@alignCast(call.function));
-                func_expr.deinit(allocator);
-                allocator.destroy(func_expr);
-                
-                for (call.arguments.items) |arg| {
-                    const arg_expr: *Expression = @ptrCast(@alignCast(arg));
-                    arg_expr.deinit(allocator);
-                    allocator.destroy(arg_expr);
-                }
-                call.arguments.deinit();
+            .Call => |*call| {
+                call.deinit(allocator);
             },
             .MemberAccess => |member| {
                 allocator.destroy(member);
@@ -448,6 +436,7 @@ pub const Statement = union(enum) {
     Yikes: YikesStatement,
     Fam: FamStatement,
     Const: ConstDecl,
+    Block: BlockStatement,
 
     pub fn deinit(self: *Statement, allocator: Allocator) void {
         switch (self.*) {
@@ -465,6 +454,7 @@ pub const Statement = union(enum) {
             .Interface => |*interface_stmt| interface_stmt.deinit(allocator),
             .Implementation => |*impl_stmt| impl_stmt.deinit(allocator),
             .Stan => |*stan| stan.deinit(allocator),
+            .Block => |*block| block.deinit(allocator),
             // Add more cases as needed
             else => {},
         }
@@ -823,6 +813,26 @@ pub const ConstDecl = struct {
     const_type: ?Type,
     value: *anyopaque,
     visibility: Visibility,
+};
+
+/// Block statement for grouping statements
+pub const BlockStatement = struct {
+    statements: ArrayList(*anyopaque),
+    
+    pub fn init(allocator: Allocator) BlockStatement {
+        return BlockStatement{
+            .statements = ArrayList(*anyopaque).init(allocator),
+        };
+    }
+    
+    pub fn deinit(self: *BlockStatement, allocator: Allocator) void {
+        for (self.statements.items) |stmt| {
+            const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
+            stmt_ptr.deinit(allocator);
+            allocator.destroy(stmt_ptr);
+        }
+        self.statements.deinit();
+    }
 };
 
 // Expression structures

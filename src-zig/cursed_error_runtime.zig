@@ -343,6 +343,116 @@ export fn cursed_capture_stack_trace(error_obj: ?*CursedError) callconv(.C) void
     // Capture and attach stack trace
 }
 
+// ==================== ENHANCED ERROR HANDLING WITH ? OPERATOR ====================
+
+/// Error propagation result for ? operator
+pub const PropagationResult = union(enum) {
+    value: ?*anyopaque,
+    error_obj: *CursedError,
+};
+
+/// Global error handler for ? operator support
+var global_error_handler: ?*ErrorHandler = null;
+
+/// Initialize global error handler for ? operator
+export fn cursed_init_error_propagation(file_name: [*:0]const u8) callconv(.C) void {
+    const allocator = std.heap.c_allocator;
+    const file_span = std.mem.span(file_name);
+    
+    if (global_error_handler == null) {
+        global_error_handler = allocator.create(ErrorHandler) catch return;
+        global_error_handler.?.* = ErrorHandler.init(allocator, file_span);
+    }
+}
+
+/// Cleanup global error handler
+export fn cursed_cleanup_error_propagation() callconv(.C) void {
+    if (global_error_handler) |handler| {
+        handler.deinit();
+        std.heap.c_allocator.destroy(handler);
+        global_error_handler = null;
+    }
+}
+
+/// Implement ? operator for error propagation
+export fn cursed_error_propagate(
+    result: ?*anyopaque, 
+    is_error: bool, 
+    function_name: [*:0]const u8,
+    _: u32,  // line (unused)
+    _: u32   // column (unused)
+) callconv(.C) ?*anyopaque {
+    if (!is_error) {
+        return result; // Not an error, return the value
+    }
+    
+    // Handle error propagation
+    if (global_error_handler) |handler| {
+        _ = function_name; // TODO: Use for better error context
+        const error_obj: *CursedError = @ptrCast(@alignCast(result.?));
+        
+        // Propagate error through handler
+        const propagated = handler.shook(error_obj) catch return null;
+        return @ptrCast(propagated);
+    }
+    
+    return result;
+}
+
+/// Enhanced try/catch block implementation
+export fn cursed_try_catch_begin() callconv(.C) ?*anyopaque {
+    // Return try context handle
+    if (global_error_handler) |handler| {
+        return @ptrCast(handler);
+    }
+    return null;
+}
+
+export fn cursed_try_catch_end(
+    context: ?*anyopaque,
+    had_error: bool,
+    error_obj: ?*anyopaque
+) callconv(.C) void {
+    _ = context;
+    if (had_error and error_obj != null) {
+        const err: *CursedError = @ptrCast(@alignCast(error_obj.?));
+        const stdout = std.io.getStdOut().writer();
+        err.format(stdout) catch {};
+    }
+}
+
+/// Create runtime error for ? operator
+export fn cursed_create_runtime_error(
+    message: [*:0]const u8,
+    function_name: [*:0]const u8,
+    line: u32,
+    column: u32
+) callconv(.C) ?*anyopaque {
+
+    if (global_error_handler) |handler| {
+        const msg_span = std.mem.span(message);
+        const func_span = std.mem.span(function_name);
+        _ = func_span;
+        
+        handler.pushFunction("unknown") catch return null;
+        const error_obj = handler.yikes(msg_span, .Runtime, 1, line, column) catch return null;
+        handler.popFunction();
+        
+        return @ptrCast(error_obj);
+    }
+    
+    return null;
+}
+
+/// Check if value is an error for conditional compilation
+export fn cursed_check_error(value: ?*anyopaque) callconv(.C) bool {
+    if (value == null) return false;
+    
+    // Simple heuristic: if it's a CursedError pointer
+    const error_obj: *CursedError = @ptrCast(@alignCast(value.?));
+    return error_obj.error_type != .Custom or error_obj.code != 0;
+}
+
 test "CURSED error handling system" {
     const allocator = std.testing.allocator;
     

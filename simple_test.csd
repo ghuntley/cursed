@@ -1,1 +1,1 @@
-vibez.spill("Hello")
+vibez.spill("Enhanced features demo starting...")

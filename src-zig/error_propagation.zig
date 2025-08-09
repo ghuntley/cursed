@@ -3,7 +3,7 @@ const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const ast = @import("ast.zig");
 const CursedError = @import("error_handling.zig").CursedError;
-const ErrorContext = @import("error_handling.zig").ErrorContext;
+pub const ErrorContext = @import("error_handling.zig").ErrorContext;
 
 /// Complete error propagation semantics for CURSED error handling
 pub const ErrorPropagation = struct {
@@ -151,7 +151,7 @@ pub const ErrorPropagation = struct {
             return CursedError.RuntimeError;
         }
         
-        var frame = self.try_catch_stack.pop();
+        const frame: TryCatchFrame = self.try_catch_stack.pop() orelse return null;
         defer {
             for (frame.catch_blocks.items) |*catch_block| {
                 catch_block.body.deinit();
@@ -180,7 +180,7 @@ pub const ErrorPropagation = struct {
     }
     
     /// Check if error matches catch block type filter
-    fn errorMatches(self: *ErrorPropagation, error_ctx: ErrorContext, error_type: ?[]const u8) bool {
+    pub fn errorMatches(self: *ErrorPropagation, error_ctx: ErrorContext, error_type: ?[]const u8) bool {
         _ = self;
         
         if (error_type == null) {

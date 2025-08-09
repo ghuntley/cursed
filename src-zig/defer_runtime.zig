@@ -78,10 +78,9 @@ pub fn executeAll() void {
         std.debug.print("Executing defer function\n");
         
         // Execute cleanup function with error protection
-        entry.cleanup_func() catch |err| {
-            std.debug.print("Error in defer cleanup function: {}\n", .{err});
-            // Continue executing other defer functions even if one fails
-        };
+        // Execute cleanup function with error protection
+        entry.cleanup_func();
+        // Note: cleanup functions are void, no error handling needed
     }
 }
 
@@ -276,6 +275,143 @@ pub fn testDeferOrder() !void {
     }
     
     std.debug.print("✅ Defer order test passed\n");
+}
+
+// ==================== ENHANCED DEFER STATEMENT FEATURES ====================
+
+/// Enhanced defer entry with variable capture support
+const EnhancedDeferEntry = struct {
+    cleanup_func: CleanupFuncPtr,
+    scope_id: u32,
+    captured_vars: ?*anyopaque, // For variable capture
+    capture_size: usize,
+    early_return_safe: bool,
+};
+
+/// Enhanced defer stack for variable capture
+var enhanced_defer_stack: [MAX_DEFER_STACK_SIZE]EnhancedDeferEntry = undefined;
+var enhanced_defer_count: usize = 0;
+
+/// Push enhanced defer with variable capture - implements 'later' keyword
+export fn cursed_later_with_capture(
+    cleanup_func: CleanupFuncPtr,
+    captured_vars: ?*anyopaque,
+    capture_size: usize
+) void {
+    if (enhanced_defer_count >= MAX_DEFER_STACK_SIZE) {
+        std.debug.print("Error: Enhanced defer stack overflow\n");
+        return;
+    }
+    
+    enhanced_defer_stack[enhanced_defer_count] = EnhancedDeferEntry{
+        .cleanup_func = cleanup_func,
+        .scope_id = current_scope_id,
+        .captured_vars = captured_vars,
+        .capture_size = capture_size,
+        .early_return_safe = true,
+    };
+    enhanced_defer_count += 1;
+    
+    std.debug.print("Enhanced defer pushed with {} bytes of captured variables\n", .{capture_size});
+}
+
+/// Execute enhanced defers with proper cleanup
+export fn cursed_later_execute_all() void {
+    std.debug.print("Executing {} enhanced defer functions\n", .{enhanced_defer_count});
+    
+    // Execute in reverse order (LIFO)
+    while (enhanced_defer_count > 0) {
+        enhanced_defer_count -= 1;
+        const entry = enhanced_defer_stack[enhanced_defer_count];
+        
+        std.debug.print("Executing enhanced defer function\n");
+        
+        // Set up captured variables context if present
+        if (entry.captured_vars != null) {
+            // TODO: Set up variable context for cleanup function
+            std.debug.print("Restoring {} bytes of captured variables\n", .{entry.capture_size});
+        }
+        
+        // Execute cleanup function
+        entry.cleanup_func();
+        
+        // Clean up captured variables if allocated
+        if (entry.captured_vars != null and entry.capture_size > 0) {
+            std.heap.c_allocator.free(@as([*]u8, @ptrCast(entry.captured_vars.?))[0..entry.capture_size]);
+        }
+    }
+}
+
+/// Execute defers during early return
+export fn cursed_later_early_return(target_scope: u32) void {
+    std.debug.print("Executing defers for early return from scope {}\n", .{target_scope});
+    
+    // Execute all defers from current scope up to target scope
+    var i = enhanced_defer_count;
+    while (i > 0) {
+        i -= 1;
+        const entry = enhanced_defer_stack[i];
+        
+        if (entry.scope_id >= target_scope and entry.early_return_safe) {
+            std.debug.print("Executing early return defer for scope {}\n", .{entry.scope_id});
+            
+            // Set up captured variables if present
+            if (entry.captured_vars != null) {
+                std.debug.print("Restoring captured variables for early return\n");
+            }
+            
+            entry.cleanup_func();
+            
+            // Clean up this entry
+            if (entry.captured_vars != null and entry.capture_size > 0) {
+                std.heap.c_allocator.free(@as([*]u8, @ptrCast(entry.captured_vars.?))[0..entry.capture_size]);
+            }
+            
+            // Remove this entry by shifting
+            var j = i;
+            while (j < enhanced_defer_count - 1) {
+                enhanced_defer_stack[j] = enhanced_defer_stack[j + 1];
+                j += 1;
+            }
+            enhanced_defer_count -= 1;
+        }
+    }
+}
+
+/// Enhanced scope management for nested defer statements
+export fn cursed_later_enter_nested_scope() u32 {
+    current_scope_id += 1;
+    std.debug.print("Entered nested defer scope {}\n", .{current_scope_id});
+    return current_scope_id;
+}
+
+export fn cursed_later_exit_nested_scope(scope_id: u32) void {
+    std.debug.print("Exiting nested defer scope {}\n", .{scope_id});
+    
+    // Execute all defers for this specific scope
+    var i = enhanced_defer_count;
+    while (i > 0) {
+        i -= 1;
+        const entry = enhanced_defer_stack[i];
+        
+        if (entry.scope_id == scope_id) {
+            std.debug.print("Executing nested scope defer for scope {}\n", .{scope_id});
+            entry.cleanup_func();
+            
+            // Clean up captured variables
+            if (entry.captured_vars != null and entry.capture_size > 0) {
+                std.heap.c_allocator.free(@as([*]u8, @ptrCast(entry.captured_vars.?))[0..entry.capture_size]);
+            }
+            
+            // Remove this entry
+            var j = i;
+            while (j < enhanced_defer_count - 1) {
+                enhanced_defer_stack[j] = enhanced_defer_stack[j + 1];
+                j += 1;
+            }
+            enhanced_defer_count -= 1;
+        }
+    }
 }
 
 // Run tests

@@ -181,7 +181,12 @@ pub const Parser = struct {
         var program = Program.init(self.allocator);
         errdefer program.deinit(self.allocator);
         
-        while (!self.isAtEnd()) {
+        var statement_count: usize = 0;
+        const max_statements = 10000; // Prevent infinite loops/excessive memory usage
+        
+        while (!self.isAtEnd() and statement_count < max_statements) {
+            statement_count += 1;
+            
             // Skip newlines, semicolons, and comments
             if (self.check(.Newline) or self.check(.Semicolon) or 
                self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
@@ -189,25 +194,62 @@ pub const Parser = struct {
                 continue;
             }
 
-            // Parse package declaration
+            // Parse package declaration with error recovery
             if (self.check(.Vibe)) {
-                program.package = try self.parsePackageDeclaration();
+                if (self.parsePackageDeclaration()) |pkg| {
+                    program.package = pkg;
+                } else |err| {
+                    _ = self.reportErrorWithContext("Error parsing package declaration", "parseProgram") catch {};
+                    self.synchronize();
+                    if (err == ParserError.OutOfMemory) return err;
+                }
                 continue;
             }
 
-            // Parse import statement
+            // Parse import statement with error recovery
             if (self.check(.Yeet)) {
-                const import_stmt = try self.parseImportStatement();
-                try program.imports.append(import_stmt);
+                if (self.parseImportStatement()) |import_stmt| {
+                    program.imports.append(import_stmt) catch {
+                        _ = self.reportErrorWithContext("Out of memory adding import", "parseProgram") catch {};
+                        return ParserError.OutOfMemory;
+                    };
+                } else |err| {
+                    _ = self.reportErrorWithContext("Error parsing import statement", "parseProgram") catch {};
+                    self.synchronize();
+                    if (err == ParserError.OutOfMemory) return err;
+                }
                 continue;
             }
 
-            // Parse regular statements with proper allocation
-            const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement);
-            errdefer self.allocator.destroy(stmt_ptr);
-            stmt_ptr.* = stmt;
-            try program.statements.append(try self.statementToAnyopaque(stmt_ptr));
+            // Parse regular statements with enhanced error handling
+            if (self.parseStatement()) |stmt| {
+                const stmt_ptr = self.allocator.create(Statement) catch {
+                    _ = self.reportErrorWithContext("Out of memory allocating statement", "parseProgram") catch {};
+                    return ParserError.OutOfMemory;
+                };
+                errdefer self.allocator.destroy(stmt_ptr);
+                stmt_ptr.* = stmt;
+                
+                const anyopaque_ptr = self.statementToAnyopaque(stmt_ptr) catch |err| {
+                    _ = self.reportErrorWithContext("Error converting statement to anyopaque", "parseProgram") catch {};
+                    return err;
+                };
+                
+                program.statements.append(anyopaque_ptr) catch {
+                    _ = self.reportErrorWithContext("Out of memory adding statement to program", "parseProgram") catch {};
+                    return ParserError.OutOfMemory;
+                };
+            } else |err| {
+                _ = self.reportErrorWithContext("Error parsing statement", "parseProgram") catch {};
+                self.synchronize();
+                if (err == ParserError.OutOfMemory) return err;
+                // Continue parsing after error recovery
+            }
+        }
+        
+        if (statement_count >= max_statements) {
+            _ = self.reportErrorWithContext("Maximum number of statements exceeded", "parseProgram") catch {};
+            return ParserError.InvalidSyntax;
         }
 
         return program;
@@ -236,8 +278,12 @@ pub const Parser = struct {
         };
     }
 
-    // Enhanced error reporting
+    // Enhanced error reporting with recovery context
     fn reportError(self: *Parser, message: []const u8) ParserError {
+        return self.reportErrorWithContext(message, "parser");
+    }
+    
+    fn reportErrorWithContext(self: *Parser, message: []const u8, context: []const u8) ParserError {
         // Validate message before printing
         if (message.len == 0 or message.len > 1024) {
             std.debug.print("Error: Invalid error message (length: {})\n", .{message.len});
@@ -249,12 +295,12 @@ pub const Parser = struct {
         if (location) |loc| {
             // Bounds check for safe formatting
             if (loc.line < 65536 and loc.column < 65536) {
-                std.debug.print("Error at {}:{}:{} - {s}\n", .{ loc.file, loc.line, loc.column, message });
+                std.debug.print("Error at {s}:{}:{} - {s} (context: {s})\n", .{ loc.file, loc.line, loc.column, message, context });
             } else {
-                std.debug.print("Error in {s} - {s}\n", .{ loc.file, message });
+                std.debug.print("Error in {s} - {s} (context: {s})\n", .{ loc.file, message, context });
             }
         } else {
-            std.debug.print("Error: {s}\n", .{message});
+            std.debug.print("Error: {s} (context: {s})\n", .{ message, context });
         }
         self.had_error = true;
         return ParserError.SyntaxError;
@@ -262,7 +308,7 @@ pub const Parser = struct {
 
     fn reportErrorAtToken(self: *Parser, token: Token, message: []const u8) ParserError {
         const location = self.getSourceLocationForToken(token);
-        std.debug.print("Error at {}:{}:{} - {s}\n", .{ location.file, location.line, location.column, message });
+        std.debug.print("Error at {s}:{}:{} - {s}\n", .{ location.file, location.line, location.column, message });
         self.had_error = true;
         return ParserError.SyntaxError;
     }
@@ -340,14 +386,22 @@ pub const Parser = struct {
             _ = self.advance();
         }
         
-        // Function declaration (slay)
+        // Function declaration (slay) with error recovery
         if (self.check(.Slay)) {
-            return Statement{ .Function = try self.parseFunctionStatement() };
+            return Statement{ .Function = self.parseFunctionStatement() catch |err| {
+                _ = self.reportErrorWithContext("Error parsing function statement", "parseStatement") catch {};
+                self.synchronize();
+                return err;
+            }};
         }
         
-        // Variable declaration (sus/facts)
+        // Variable declaration (sus/facts) with error recovery
         if (self.check(.Sus) or self.check(.Facts)) {
-            return Statement{ .Let = try self.parseLetStatement() };
+            return Statement{ .Let = self.parseLetStatement() catch |err| {
+                _ = self.reportErrorWithContext("Error parsing variable declaration", "parseStatement") catch {};
+                self.synchronize();
+                return err;
+            }};
         }
         
         // Return statement (damn only - canonical spec)
@@ -450,22 +504,42 @@ pub const Parser = struct {
             return try self.parseAssignmentStatement();
         }
         
-        // Expression statement
-        const expr = try self.parseExpression();
-        const expr_ptr = try self.allocator.create(Expression);
+        // Expression statement with error handling
+        const expr = self.parseExpression() catch |err| {
+            _ = self.reportErrorWithContext("Error parsing expression statement", "parseStatement") catch {};
+            self.synchronize();
+            return err;
+        };
+        
+        const expr_ptr = self.allocator.create(Expression) catch {
+            _ = self.reportErrorWithContext("Out of memory allocating expression", "parseStatement") catch {};
+            return ParserError.OutOfMemory;
+        };
         errdefer self.allocator.destroy(expr_ptr);
         expr_ptr.* = expr;
-        return Statement{ .Expression = try self.expressionToAnyopaque(expr_ptr) };
+        
+        return Statement{ .Expression = self.expressionToAnyopaque(expr_ptr) catch |err| {
+            _ = self.reportErrorWithContext("Error converting expression to anyopaque", "parseStatement") catch {};
+            return err;
+        }};
     }
 
     fn parseFunctionStatement(self: *Parser) ParserError!FunctionStatement {
         _ = try self.consume(.Slay, "Expected 'slay'");
         
         if (!self.check(.Identifier)) {
+            _ = self.reportErrorWithContext("Expected function name after 'slay'", "parseFunctionStatement") catch {};
             return ParserError.UnexpectedToken;
         }
         
         const name = self.advance().lexeme;
+        
+        // Validate function name length
+        if (name.len == 0 or name.len > 255) {
+            _ = self.reportErrorWithContext("Invalid function name length", "parseFunctionStatement") catch {};
+            return ParserError.InvalidFunction;
+        }
+        
         var func = FunctionStatement.init(self.allocator, name);
         
         // Parse generic type parameters <T, U>
@@ -2970,8 +3044,12 @@ pub const Parser = struct {
     fn consume(self: *Parser, kind: TokenKind, message: []const u8) ParserError!Token {
         if (self.check(kind)) return self.advance();
         
-        std.debug.print("Parser error: {s}. Expected {}, got {}\n", .{ message, kind, self.peek().kind });
-        self.had_error = true;
+        // Enhanced error reporting with graceful handling
+        const current_token = self.peek();
+        var buffer: [256]u8 = undefined;
+        const error_msg = std.fmt.bufPrint(buffer[0..], "{s}. Expected {any}, got {any}", .{ message, kind, current_token.kind }) catch message;
+        
+        _ = self.reportErrorWithContext(error_msg, "consume") catch {};
         return ParserError.UnexpectedToken;
     }
 

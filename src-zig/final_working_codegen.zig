@@ -46,14 +46,26 @@ pub const FinalWorkingCodeGen = struct {
     }
 
     pub fn deinit(self: *FinalWorkingCodeGen) void {
+        print("🧹 Starting FinalWorkingCodeGen cleanup (memory-safe)...\n", .{});
+        
+        // Clean up Zig data structures first
         self.ir_buffer.deinit();
         self.string_constants.deinit();
         self.variables.deinit();
         
-        // Cleanup LLVM resources
-        c.LLVMDisposeBuilder(self.builder);
-        c.LLVMDisposeModule(self.module);
-        c.LLVMContextDispose(self.context);
+        // Critical: Cleanup LLVM resources in proper order
+        // Builder depends on context, module depends on context
+        if (self.builder != null) {
+            c.LLVMDisposeBuilder(self.builder);
+        }
+        if (self.module != null) {
+            c.LLVMDisposeModule(self.module);
+        }
+        if (self.context != null) {
+            c.LLVMContextDispose(self.context);
+        }
+        
+        print("✅ FinalWorkingCodeGen cleanup complete - all LLVM resources disposed\n", .{});
     }
 
     /// Compile CURSED source code to LLVM IR
