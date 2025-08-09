@@ -389,20 +389,129 @@ pub fn validateRaceConditionFix() !void {
 
 // Handle make_channel function - RACE-CONDITION FREE
 pub fn handleMakeChannel(variables: *anyopaque, allocator: Allocator, var_name: []const u8, verbose: bool) !void {
-    _ = variables;
+    // Import concurrency runtime for actual channel creation
+    const concurrency_runtime = @import("concurrency_runtime.zig");
+    const Variable = @import("main_unified.zig").Variable;
     
     initGlobalConcurrency(allocator);
     
-    if (verbose) print("🔧 Creating channel for variable: {s} (race-safe)\n", .{var_name});
+    if (verbose) print("🔧 Creating channel for variable: {s} (using runtime)\n", .{var_name});
+    
+    // Initialize runtime if needed
+    concurrency_runtime.initRuntime(allocator) catch {
+        if (verbose) print("❌ Failed to initialize concurrency runtime\n", .{});
+        return;
+    };
+    
+    // Create channel using runtime (capacity 1 for buffered channel)
+    const channel_id = concurrency_runtime.createChannel(1) catch {
+        if (verbose) print("❌ Failed to create channel\n", .{});
+        return;
+    };
     
     global_concurrency_mutex.lock();
     defer global_concurrency_mutex.unlock();
     
-    const channel_id = std.time.timestamp();
-    
     if (global_channels) |*channels| {
-        try channels.put(var_name, @as(u64, @intCast(channel_id)));
+        try channels.put(var_name, channel_id);
     }
     
-    if (verbose) print("✅ Channel created with ID: {} (race-safe)\n", .{channel_id});
+    // Also store in variables map if provided
+    if (@intFromPtr(variables) != 0) {
+        const variables_map = @as(*@import("main_unified.zig").VariableStore, @ptrCast(@alignCast(variables)));
+        const name_copy = try allocator.dupe(u8, var_name);
+        try variables_map.put(name_copy, Variable{ .Integer = @as(i64, @intCast(channel_id)) });
+    }
+    
+    if (verbose) print("✅ Channel created with ID: {} (runtime integrated)\n", .{channel_id});
+}
+
+// Handle send_channel function
+pub fn handleSendChannel(variables: *@import("main_unified.zig").VariableStore, allocator: Allocator, channel_var: []const u8, value_var: []const u8, verbose: bool) !void {
+    const concurrency_runtime = @import("concurrency_runtime.zig");
+    const Variable = @import("main_unified.zig").Variable;
+    
+    initGlobalConcurrency(allocator);
+    
+    if (verbose) print("🔧 Sending to channel: {s} <- {s}\n", .{ channel_var, value_var });
+    
+    // Get channel ID from variable
+    const channel_id = blk: {
+        if (variables.get(channel_var)) |channel_value| {
+            switch (channel_value) {
+                .Integer => |id| break :blk @as(u64, @intCast(id)),
+                else => {
+                    if (verbose) print("❌ Channel variable {s} is not an integer\n", .{channel_var});
+                    return;
+                },
+            }
+        } else {
+            if (verbose) print("❌ Channel variable {s} not found\n", .{channel_var});
+            return;
+        }
+    };
+    
+    // Get value to send
+    const value = blk: {
+        if (variables.get(value_var)) |var_value| {
+            break :blk var_value;
+        } else {
+            // Try to parse as integer literal
+            if (std.fmt.parseInt(i64, value_var, 10)) |int_val| {
+                break :blk Variable{ .Integer = int_val };
+            } else |_| {
+                // Try as string literal
+                const ManagedString = @import("main_unified.zig").ManagedString;
+                break :blk Variable{ .String = ManagedString.fromLiteral(value_var) };
+            }
+        }
+    };
+    
+    // Send to channel
+    concurrency_runtime.sendToChannel(channel_id, value) catch {
+        if (verbose) print("❌ Failed to send to channel {}\n", .{channel_id});
+        return;
+    };
+    
+    if (verbose) print("✅ Sent value to channel {} successfully\n", .{channel_id});
+}
+
+// Handle recv_channel function
+pub fn handleRecvChannel(variables: *@import("main_unified.zig").VariableStore, allocator: Allocator, result_var: []const u8, channel_var: []const u8, verbose: bool) !void {
+    const concurrency_runtime = @import("concurrency_runtime.zig");
+    
+    initGlobalConcurrency(allocator);
+    
+    if (verbose) print("🔧 Receiving from channel: {s} -> {s}\n", .{ channel_var, result_var });
+    
+    // Get channel ID from variable
+    const channel_id = blk: {
+        if (variables.get(channel_var)) |channel_value| {
+            switch (channel_value) {
+                .Integer => |id| break :blk @as(u64, @intCast(id)),
+                else => {
+                    if (verbose) print("❌ Channel variable {s} is not an integer\n", .{channel_var});
+                    return;
+                },
+            }
+        } else {
+            if (verbose) print("❌ Channel variable {s} not found\n", .{channel_var});
+            return;
+        }
+    };
+    
+    // Receive from channel
+    const received = concurrency_runtime.receiveFromChannel(channel_id) catch {
+        if (verbose) print("❌ Failed to receive from channel {}\n", .{channel_id});
+        return;
+    };
+    
+    if (received) |value| {
+        // Store result in variables
+        const name_copy = try allocator.dupe(u8, result_var);
+        try variables.put(name_copy, value);
+        if (verbose) print("✅ Received value from channel {} and stored in {s}\n", .{ channel_id, result_var });
+    } else {
+        if (verbose) print("⚠️ Channel {} closed or no data available\n", .{channel_id});
+    }
 }

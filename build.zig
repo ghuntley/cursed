@@ -116,6 +116,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
     };
     
     const llvm_include_paths = [_][]const u8{
+        "/usr/lib/llvm-18/include",
         "/usr/include/llvm-18",
         "/usr/local/include/llvm-18",
         "/opt/homebrew/include/llvm-18", 
@@ -124,7 +125,8 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
     };
     
     const llvm_c_include_paths = [_][]const u8{
-        "/usr/include/llvm-c-18",
+        "/usr/include/llvm-c-18/llvm-c",
+        "/usr/lib/llvm-18/include/llvm-c",
         "/usr/local/include/llvm-c-18",
         "/opt/homebrew/include/llvm-c-18",
         "/usr/include/llvm-c",
@@ -145,7 +147,7 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
     }
     
     // Link the correct LLVM library (found in /usr/lib/llvm-18/lib/)
-    exe.linkSystemLibrary("LLVM");
+    exe.linkSystemLibrary("LLVM-18");
     
     // Compile LLVM wrapper for this specific target instead of using pre-compiled object
     exe.addCSourceFile(.{
@@ -373,7 +375,33 @@ pub fn build(b: *std.Build) void {
     // Create syscall-enabled compiler with real file I/O, networking, and process management
     // Only build for native target to avoid cross-compilation LLVM issues
 
+    // Simple LLVM Test executable
+    const exe_simple_llvm_test = b.addExecutable(.{
+        .name = "cursed-simple-llvm-test",
+        .root_source_file = b.path("src-zig/simple_llvm_test.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    if (!is_wasm) {
+        exe_simple_llvm_test.linkLibC();
+        addLlvm(b, exe_simple_llvm_test, resolved_target);
+    }
+
+    // LLVM Test executable (more complex)
+    const exe_llvm_test = b.addExecutable(.{
+        .name = "cursed-llvm-test",
+        .root_source_file = b.path("src-zig/main_llvm_test.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    if (!is_wasm) {
+        exe_llvm_test.linkLibC();
+        addLlvm(b, exe_llvm_test, resolved_target);
+    }
+
     b.installArtifact(exe);
+    b.installArtifact(exe_simple_llvm_test);
+    b.installArtifact(exe_llvm_test);
     
     // Create legacy alias for backwards compatibility - using minimal version
     const legacy_exe = b.addExecutable(.{

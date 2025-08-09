@@ -1,7 +1,6 @@
-yeet "mathz"
+slay add(a drip, b drip) drip { 
+    damn a + b 
+}
 
-sus result normie = mathz.abs_normie(-42)
-vibez.spill("Absolute value:", result)
-
-sus max_val normie = mathz.max_normie(10, 5)
-vibez.spill("Maximum value:", max_val)
+sus result drip = add(3, 4)
+vibez.spill(result)

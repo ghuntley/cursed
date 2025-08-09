@@ -166,7 +166,7 @@ const YikesError = struct {
 
 // Simple variable store for runtime evaluation with error handling
 // String ownership tracking to prevent segfaults in deinit
-const ManagedString = struct {
+pub const ManagedString = struct {
     data: []const u8,
     owned: bool,  // true if allocated and needs to be freed
     
@@ -477,7 +477,7 @@ const FunctionDefinition = struct {
     }
 };
 
-const VariableStore = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
+pub const VariableStore = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
 const FunctionStore = HashMap([]const u8, FunctionDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
 const StructStore = HashMap([]const u8, StructDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
 
@@ -998,7 +998,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             // Check if this is a single-line ready statement (contains braces on same line)
             if (std.mem.indexOf(u8, trimmed, "{") != null and std.mem.indexOf(u8, trimmed, "}") != null) {
                 // Single-line ready statement - handle through processStatements
-                if (verbose) print("🔍 Processing single-line ready statement: {s}\n", .{trimmed});
+                print("🔍 DEBUG: Processing single-line ready statement: {s}\n", .{trimmed});
                 try processStatements(&variables, &functions, &structs, allocator, variable_allocator, trimmed, verbose);
                 line_index += 1;
                 continue;
@@ -1012,6 +1012,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         }
         
         // Handle while loop statements: bestie (condition) { ... }
+        if (verbose) print("🐛 DEBUG: Checking if '{s}' starts with 'bestie '\n", .{trimmed});
         if (std.mem.startsWith(u8, trimmed, "bestie ")) {
             if (verbose) print("🔍 Processing bestie while loop: {s}\n", .{trimmed});
             const lines_consumed = try handleBestieLoop(&variables, &functions, allocator, source_lines, line_index, verbose);
@@ -1112,7 +1113,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
 fn processStatements(variables: *VariableStore, functions: *FunctionStore, structs: *StructStore, allocator: Allocator, variable_allocator: Allocator, line: []const u8, verbose: bool) !void {
     // Check for single-line control structures first (before splitting by semicolons)
     if (std.mem.indexOf(u8, line, "ready ") != null) {
-        if (verbose) print("🔍 Found ready statement in line, processing as unit: '{s}'\n", .{line});
+        print("🔍 DEBUG: Found ready statement in line, processing as unit: '{s}'\n", .{line});
         try handleSingleLineReadyInContext(variables, functions, allocator, variable_allocator, line, verbose);
         return;
     }
@@ -1198,8 +1199,21 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
             continue;
         }
         
+        // Handle send_channel function calls
+        if (std.mem.indexOf(u8, stmt_trimmed, "send_channel(")) |_| {
+            try handleSendChannelCall(variables, allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
+        // Handle recv_channel function calls (in assignments)
+        if (std.mem.indexOf(u8, stmt_trimmed, "recv_channel(")) |_| {
+            try handleRecvChannelCall(variables, allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
         // Handle variable assignments: varname = function_call() or struct.field = value
         if (std.mem.indexOf(u8, stmt_trimmed, "=")) |equals_pos| {
+            if (verbose) print("🐛 DEBUG: Found assignment statement: {s}\n", .{stmt_trimmed});
             const target = std.mem.trim(u8, stmt_trimmed[0..equals_pos], " \t");
             const value_expr = std.mem.trim(u8, stmt_trimmed[equals_pos + 1..], " \t");
             
@@ -1237,13 +1251,16 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
                 if (verbose) print("🔍 Processing variable assignment: {s} = {s}\n", .{ target, value_expr });
                 
                 // Evaluate the expression (could be a function call)
-                if (evaluateExpression(variables, functions, allocator, value_expr, verbose)) |result| {
-                    try variables.put(target, result);
-                    if (verbose) print("✅ Variable {s} assigned value: {any}\n", .{ target, result });
-                } else |err| {
+                const result = evaluateExpression(variables, functions, allocator, value_expr, verbose) catch |err| {
                     if (verbose) print("❌ Failed to evaluate assignment expression: {any}\n", .{err});
-                }
+                    continue;
+                };
+                
+                try variables.put(target, result);
+                if (verbose) print("✅ Variable {s} assigned value: {any}\n", .{ target, result });
                 continue;
+            } else {
+                if (verbose) print("❌ Variable {s} does not exist for assignment\n", .{target});
             }
         }
         
@@ -2454,17 +2471,20 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
 }
 
 fn handleVibesSpill(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, start: usize, verbose: bool) !void {
+    print("🔍 DEBUG: handleVibesSpill called with line: '{s}'\n", .{line});
     if (std.mem.indexOf(u8, line[start..], "(")) |paren_start| {
         if (std.mem.lastIndexOf(u8, line, ")")) |paren_end| {
             const content_start = start + paren_start + 1;
             const content = line[content_start..paren_end];
             const trimmed_content = std.mem.trim(u8, content, " \t");
             
+            print("🔍 DEBUG: vibez.spill content: '{s}'\n", .{trimmed_content});
             if (verbose) print("🔍 Evaluating vibez.spill argument: '{s}'\n", .{trimmed_content});
             if (verbose) print("🔍 About to check comma\n", .{});
             
             // Temporarily hardcode comma detection for debugging
             const has_comma = std.mem.indexOf(u8, trimmed_content, ",") != null;
+            print("🔍 DEBUG: Has comma: {any}\n", .{has_comma});
             if (verbose) print("🔍 Simple comma check: '{any}'\n", .{has_comma});
             
             // Check if there are multiple arguments separated by commas (but not inside quotes)
@@ -2569,17 +2589,20 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
             if (verbose) print("🔍 Detected potential function call: '{s}'\n", .{trimmed_content});
             
             // Try evaluating as expression first (this handles built-in functions like len())
+            print("🔍 DEBUG: About to evaluate expression: '{s}'\n", .{trimmed_content});
             if (evaluateExpression(variables, functions, allocator, trimmed_content, verbose)) |result| {
-                const result_str = try result.toString(allocator);
-                defer allocator.free(result_str);
-                print("{s}", .{result_str});
-                if (add_newline) print("\n", .{});
-                if (verbose) print("✅ Expression '{s}' evaluated to: {s}\n", .{ trimmed_content, result_str });
-                // Free the result
-                var tmp = result;
+            print("✅ DEBUG: Expression evaluation succeeded!\n", .{});
+            const result_str = try result.toString(allocator);
+            defer allocator.free(result_str);
+            print("{s}", .{result_str});
+            if (add_newline) print("\n", .{});
+            if (verbose) print("✅ Expression '{s}' evaluated to: {s}\n", .{ trimmed_content, result_str });
+            // Free the result
+            var tmp = result;
                 tmp.deinit(allocator);
-                return;
-            } else |_| {
+            return;
+        } else |expr_err| {
+            print("❌ DEBUG: Expression evaluation failed: {any}\n", .{expr_err});
                 // If expression evaluation fails, try function call directly
                 if (handleFunctionCall(functions, variables, allocator, trimmed_content, verbose)) |func_result| {
                     if (func_result) |result| {
@@ -4013,12 +4036,33 @@ fn executeFunctionWithScope(
 }
 
 fn evaluateArgument(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, arg_str: []const u8, verbose: bool) anyerror!Variable {
+    if (verbose) print("🔍 EVAL_ARG: Evaluating argument: '{s}'\n", .{arg_str});
+    
     // Try to evaluate as expression first
     if (evaluateExpression(variables, functions, allocator, arg_str, verbose)) |result| {
+        if (verbose) print("✅ EVAL_ARG: Expression evaluation succeeded: {any}\n", .{result});
         return result;
-    } else |_| {
-        // Fallback to literal parsing
-        return evaluateSingleValue(variables, functions, allocator, arg_str, verbose) catch Variable{ .String = ManagedString.fromLiteral(arg_str) };
+    } else |expr_err| {
+        if (verbose) print("⚠️ EVAL_ARG: Expression evaluation failed with: {any}\n", .{expr_err});
+        
+        // Try evaluateSingleValue (which includes function call handling)
+        if (evaluateSingleValue(variables, functions, allocator, arg_str, verbose)) |result| {
+            if (verbose) print("✅ EVAL_ARG: Single value evaluation succeeded: {any}\n", .{result});
+            return result;
+        } else |single_err| {
+            if (verbose) print("❌ EVAL_ARG: Single value evaluation failed with: {any}\n", .{single_err});
+            
+            // Only fall back to literal string for obvious string cases
+            // Don't convert function calls to literal strings
+            if (std.mem.indexOf(u8, arg_str, "(") != null and std.mem.indexOf(u8, arg_str, ")") != null) {
+                if (verbose) print("❌ EVAL_ARG: Function call failed, propagating error instead of literal\n", .{});
+                return single_err; // Don't convert failed function calls to literals
+            }
+            
+            // For non-function expressions, use literal as last resort
+            if (verbose) print("⚠️ EVAL_ARG: Falling back to literal string: '{s}'\n", .{arg_str});
+            return Variable{ .String = ManagedString.fromLiteral(arg_str) };
+        }
     }
 }
 
@@ -5109,8 +5153,9 @@ fn handleSingleLineReady(
     }
     
     // Check if this is pattern matching (contains => patterns)
+    print("🔍 DEBUG: Checking if_content for =>: '{s}'\n", .{if_content});
     if (std.mem.indexOf(u8, if_content, "=>") != null) {
-        if (verbose) print("🎯 Detected pattern matching syntax in ready block\n", .{});
+        print("🎯 DEBUG: Detected pattern matching syntax in ready block\n", .{});
         
         // Parse the condition to get the variable being matched
         const match_value = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
@@ -5122,8 +5167,9 @@ fn handleSingleLineReady(
         try executePatternMatching(variables, functions, allocator, match_value, if_content, verbose);
     } else {
         // Execute as regular if/else block
+        print("🔴 DEBUG: Not pattern matching, executing as regular if/else\n", .{});
         if (condition_is_true) {
-            if (verbose) print("🟢 Executing if block: '{s}'\n", .{if_content});
+            print("🟢 DEBUG: Executing if block: '{s}'\n", .{if_content});
             try executeSingleLineBlock(variables, functions, allocator, if_content, verbose);
         } else if (else_content) |else_block| {
             if (verbose) print("🔴 Executing else block: '{s}'\n", .{else_block});
@@ -5444,9 +5490,11 @@ fn handleBestieLoop(
         if (verbose and iteration_count == 0) print("🔄 Starting loop execution\n", .{});
         
         // Execute loop body
+        if (verbose) print("🐛 DEBUG: Executing loop body lines {} to {}\n", .{loop_body_start, loop_body_end});
         for (loop_body_start..loop_body_end) |line_idx| {
             if (line_idx >= source_lines.items.len) break;
             const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
+            if (verbose) print("🐛 DEBUG: Loop line {}: '{s}'\n", .{line_idx, exec_line});
             if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
             
             try executeBlockLine(variables, functions, allocator, exec_line, verbose);
@@ -5476,8 +5524,11 @@ fn executeBlockLine(
 ) !void {
     const trimmed = std.mem.trim(u8, line, " \t\r\n");
     
+    if (verbose) print("🐛 DEBUG: executeBlockLine called with: '{s}'\n", .{trimmed});
+    
     // Skip empty lines and braces
     if (trimmed.len == 0 or std.mem.eql(u8, trimmed, "{") or std.mem.eql(u8, trimmed, "}")) {
+        if (verbose) print("🐛 DEBUG: Skipping empty line or brace\n", .{});
         return;
     }
     
@@ -5570,6 +5621,7 @@ fn executeAssignmentStatement(
     equals_pos: usize,
     verbose: bool
 ) !void {
+    if (verbose) print("🐛 DEBUG: executeAssignmentStatement called with line: '{s}'\n", .{line});
     // Make sure assignment is not inside quotes
     var in_quotes = false;
     for (line[0..equals_pos]) |char| {
@@ -6212,4 +6264,49 @@ fn isValidCursedStatement(statement: []const u8) bool {
     
     // Allow expressions and other simple statements
     return true; // For now, be permissive
+}
+
+// Handle send_channel(ch, value) function calls
+fn handleSendChannelCall(variables: *VariableStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    if (verbose) print("🔧 Handling send_channel call: {s}\n", .{line});
+    
+    // Extract arguments from send_channel(ch, value)
+    if (std.mem.indexOf(u8, line, "(")) |open_paren| {
+        if (std.mem.lastIndexOf(u8, line, ")")) |close_paren| {
+            const args_str = line[open_paren + 1..close_paren];
+            const args_trimmed = std.mem.trim(u8, args_str, " \t");
+            
+            // Split by comma
+            if (std.mem.indexOf(u8, args_trimmed, ",")) |comma_pos| {
+                const channel_var = std.mem.trim(u8, args_trimmed[0..comma_pos], " \t");
+                const value_var = std.mem.trim(u8, args_trimmed[comma_pos + 1..], " \t");
+                
+                try concurrency_handlers.handleSendChannel(variables, allocator, channel_var, value_var, verbose);
+            } else {
+                if (verbose) print("❌ send_channel requires 2 arguments: channel, value\n", .{});
+            }
+        }
+    }
+}
+
+// Handle result = recv_channel(ch) function calls
+fn handleRecvChannelCall(variables: *VariableStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    if (verbose) print("🔧 Handling recv_channel call: {s}\n", .{line});
+    
+    // Parse assignment: result = recv_channel(ch)
+    if (std.mem.indexOf(u8, line, "=")) |equals_pos| {
+        const result_var = std.mem.trim(u8, line[0..equals_pos], " \t");
+        const call_part = std.mem.trim(u8, line[equals_pos + 1..], " \t");
+        
+        // Extract channel argument from recv_channel(ch)
+        if (std.mem.indexOf(u8, call_part, "(")) |open_paren| {
+            if (std.mem.lastIndexOf(u8, call_part, ")")) |close_paren| {
+                const channel_var = std.mem.trim(u8, call_part[open_paren + 1..close_paren], " \t");
+                
+                try concurrency_handlers.handleRecvChannel(variables, allocator, result_var, channel_var, verbose);
+            }
+        }
+    } else {
+        if (verbose) print("❌ recv_channel must be used in assignment: result = recv_channel(ch)\n", .{});
+    }
 }
