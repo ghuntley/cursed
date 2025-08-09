@@ -1,1 +1,1 @@
-sus x drip = 100; sus y drip = x + 23; vibez.spill("Result:", y)
+yeet "cryptz"; yeet "stringz"; sus message tea = "Hello World"; sus hash tea = sha256_hash(message); vibez.spill("Message:", message); vibez.spill("SHA256:", hash)

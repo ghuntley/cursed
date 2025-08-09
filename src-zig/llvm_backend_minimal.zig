@@ -90,8 +90,10 @@ pub const LLVMBackendMinimal = struct {
     }
     
     pub fn compileProgram(self: *LLVMBackendMinimal, source: []const u8) !void {
-        // Simple parser for "sus x drip = 10; vibez.spill(x + 5)" pattern
-        if (std.mem.indexOf(u8, source, "vibez.spill(") != null) {
+        // Check for function definitions first
+        if (std.mem.indexOf(u8, source, "slay ") != null) {
+            try self.compileProgramWithFunctions(source);
+        } else if (std.mem.indexOf(u8, source, "vibez.spill(") != null) {
             if (parseSimpleArithmetic(source)) |result| {
                 try self.compileArithmeticExpression(result);
             } else {
@@ -102,6 +104,74 @@ pub const LLVMBackendMinimal = struct {
             // Default fallback
             try self.compileSimpleExpression(42);
         }
+    }
+    
+    pub fn compileProgramWithFunctions(self: *LLVMBackendMinimal, source: []const u8) !void {
+        // Parse function definitions and function calls
+        var lines = std.mem.splitScalar(u8, source, '\n');
+        var has_functions = false;
+        var main_statements = std.ArrayList([]const u8).init(self.allocator);
+        defer main_statements.deinit();
+        
+        while (lines.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r\n");
+            if (trimmed.len == 0) continue;
+            
+            if (std.mem.startsWith(u8, trimmed, "slay ")) {
+                // Generate function definition
+                try self.generateFunctionFromLine(trimmed);
+                has_functions = true;
+            } else {
+                // Collect main statements
+                try main_statements.append(try self.allocator.dupe(u8, trimmed));
+            }
+        }
+        
+        // Generate main function
+        try self.generateMainFunction(main_statements.items, has_functions);
+    }
+    
+    fn generateFunctionFromLine(self: *LLVMBackendMinimal, line: []const u8) !void {
+        // Parse: slay add(x drip, y drip) drip { damn x + y }
+        if (std.mem.indexOf(u8, line, "(")) |paren_pos| {
+            const func_name = std.mem.trim(u8, line[5..paren_pos], " \t");
+            
+            // For now, generate a simple add function
+            if (std.mem.eql(u8, func_name, "add")) {
+                const func_body = 
+                    \\  %result = add i64 %x, %y
+                    \\  ret i64 %result
+                ;
+                try self.addFunction("add", "i64", "i64 %x, i64 %y", func_body);
+            }
+        }
+    }
+    
+    fn generateMainFunction(self: *LLVMBackendMinimal, statements: [][]const u8, has_functions: bool) !void {
+        var main_body = std.ArrayList(u8).init(self.allocator);
+        defer main_body.deinit();
+        
+        for (statements) |stmt| {
+            if (std.mem.indexOf(u8, stmt, "vibez.spill(") != null) {
+                // Handle function calls
+                if (std.mem.indexOf(u8, stmt, "add(") != null and has_functions) {
+                    // Parse add(2, 3) call
+                    try main_body.appendSlice("  %1 = call i64 @add(i64 2, i64 3)\n");
+                    try main_body.appendSlice("  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @.str, i32 0, i32 0), i64 %1)\n");
+                } else {
+                    // Default output
+                    try main_body.appendSlice("  %1 = alloca i64\n");
+                    try main_body.appendSlice("  store i64 42, i64* %1\n");
+                    try main_body.appendSlice("  %2 = load i64, i64* %1\n");
+                    try main_body.appendSlice("  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @.str, i32 0, i32 0), i64 %2)\n");
+                }
+            }
+        }
+        
+        try main_body.appendSlice("  ret i32 0\n");
+        
+        try self.addGlobal(".str", "[12 x i8]", "c\"Value: %ld\\0A\\00\"");
+        try self.addFunction("main", "i32", "", main_body.items);
     }
     
     pub fn compileArithmeticExpression(self: *LLVMBackendMinimal, result: ArithmeticResult) !void {

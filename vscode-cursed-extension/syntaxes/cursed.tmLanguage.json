@@ -1,0 +1,152 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "CURSED",
+    "scopeName": "source.cursed",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#types"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#functions"
+        },
+        {
+            "include": "#variables"
+        },
+        {
+            "include": "#operators"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.hash.cursed",
+                    "match": "#.*$"
+                },
+                {
+                    "name": "comment.block.cursed",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.cursed",
+                    "match": "\\b(ready|otherwise|bestie|stan|dm|vibe|yikes|shook|facts)\\b"
+                },
+                {
+                    "name": "keyword.declaration.cursed",
+                    "match": "\\b(sus|damn|slay|collab|squad|spill)\\b"
+                },
+                {
+                    "name": "keyword.import.cursed",
+                    "match": "\\b(yeet|vibez)\\b"
+                },
+                {
+                    "name": "keyword.other.cursed",
+                    "match": "\\b(fam|based|cap|cringe|lit)\\b"
+                }
+            ]
+        },
+        "types": {
+            "patterns": [
+                {
+                    "name": "storage.type.cursed",
+                    "match": "\\b(tea|drip|lit|normie|smol|mid|thicc|snack|meal|byte|rune|extra|sip)\\b"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.cursed",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.cursed",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.cursed",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.cursed",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.decimal.cursed",
+                    "match": "\\b\\d+(\\.\\d+)?\\b"
+                },
+                {
+                    "name": "constant.numeric.hex.cursed",
+                    "match": "\\b0x[a-fA-F0-9]+\\b"
+                },
+                {
+                    "name": "constant.numeric.binary.cursed",
+                    "match": "\\b0b[01]+\\b"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "entity.name.function.cursed",
+                    "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()"
+                }
+            ]
+        },
+        "variables": {
+            "patterns": [
+                {
+                    "name": "variable.other.cursed",
+                    "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.arithmetic.cursed",
+                    "match": "(\\+|\\-|\\*|\\/|\\%)"
+                },
+                {
+                    "name": "keyword.operator.comparison.cursed",
+                    "match": "(==|!=|<|>|<=|>=)"
+                },
+                {
+                    "name": "keyword.operator.logical.cursed",
+                    "match": "(&&|\\|\\||!)"
+                },
+                {
+                    "name": "keyword.operator.assignment.cursed",
+                    "match": "(=|\\+=|\\-=|\\*=|\\/=)"
+                }
+            ]
+        }
+    }
+}

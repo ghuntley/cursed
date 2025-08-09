@@ -1,430 +1,300 @@
 # CURSED Language Server Protocol (LSP) Setup Guide
 
-This guide explains how to set up IDE support for the CURSED programming language using the built-in Language Server Protocol (LSP) implementation.
+The CURSED programming language includes a full-featured Language Server Protocol (LSP) implementation that provides rich IDE support across multiple editors.
 
-## Table of Contents
-- [VS Code Setup](#vs-code-setup)
-- [Neovim Setup](#neovim-setup)
-- [Emacs Setup](#emacs-setup)
-- [Vim Setup](#vim-setup)
-- [Sublime Text Setup](#sublime-text-setup)
-- [Generic LSP Client Setup](#generic-lsp-client-setup)
-- [Features](#features)
-- [Troubleshooting](#troubleshooting)
+## Features
 
-## Prerequisites
-
-1. **Install CURSED Compiler**: Make sure the `cursed` command is available in your PATH
-2. **Verify Installation**: Run `cursed --version` to confirm installation
-3. **Test LSP Server**: Run `cursed lsp --help` to verify LSP support
-
-## VS Code Setup
-
-### Option 1: Install Extension (Recommended)
-
-1. Open VS Code
-2. Press `Ctrl+Shift+X` (or `Cmd+Shift+X` on macOS) to open Extensions
-3. Search for "CURSED Language Support"
-4. Click "Install"
-
-### Option 2: Manual Setup
-
-1. Copy the extension from `.vscode/extensions/cursed-language-support/` to your VS Code extensions directory:
-   - **Windows**: `%USERPROFILE%\.vscode\extensions\`
-   - **macOS**: `~/.vscode/extensions/`
-   - **Linux**: `~/.vscode/extensions/`
-
-2. Reload VS Code
-
-3. Configure the extension in VS Code settings (`Ctrl+,`):
-   ```json
-   {
-     "cursed.languageServer.enabled": true,
-     "cursed.languageServer.path": "cursed",
-     "cursed.languageServer.arguments": ["lsp"],
-     "cursed.diagnostics.enabled": true,
-     "cursed.completion.enabled": true,
-     "cursed.highlighting.semantic": true,
-     "cursed.formatting.enabled": true,
-     "cursed.vibe.mode": "standard"
-   }
-   ```
-
-### VS Code Features
-- **Syntax Highlighting**: CURSED-specific keyword highlighting
-- **Code Completion**: Intelligent completion for keywords, functions, and variables
-- **Hover Information**: Type and documentation on hover
+- **Syntax Highlighting**: Full semantic syntax highlighting for CURSED code
+- **Error Diagnostics**: Real-time error detection and reporting
+- **Code Completion**: Intelligent autocompletion for keywords, functions, and variables
 - **Go to Definition**: Navigate to symbol definitions
-- **Error Reporting**: Real-time syntax and semantic error detection
-- **Code Formatting**: Automatic code formatting with `Shift+Alt+F`
-- **Commands**:
-  - `Ctrl+Shift+C`: Compile CURSED file
-  - `Ctrl+Shift+R`: Run CURSED file
-  - `Shift+Alt+F`: Format CURSED file
+- **Hover Information**: Get detailed information about symbols on hover
+- **Find References**: Find all references to a symbol
+- **Document Formatting**: Automatic code formatting
+- **Workspace Symbols**: Search symbols across the entire workspace
+- **Rename Refactoring**: Intelligent symbol renaming
 
-## Neovim Setup
+## Building the LSP Server
 
-### Using nvim-lspconfig
+The LSP server is built automatically when you build the CURSED compiler:
 
-1. Install `nvim-lspconfig` using your package manager (packer, lazy.nvim, etc.)
+```bash
+# Build all CURSED tools including LSP server
+zig build
 
-2. Add to your Neovim configuration:
-   ```lua
-   require('lspconfig.configs').cursed = {
-     default_config = {
-       cmd = { 'cursed', 'lsp' },
-       filetypes = { 'cursed' },
-       root_dir = require('lspconfig.util').root_pattern('.git', '.cursed-project'),
-       settings = {},
-     },
-   }
-   
-   require('lspconfig').cursed.setup{
-     on_attach = function(client, bufnr)
-       -- Enable completion triggered by <c-x><c-o>
-       vim.api.nvim_buf_set_option(bufnr, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
-       
-       -- Mappings
-       local bufopts = { noremap=true, silent=true, buffer=bufnr }
-       vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, bufopts)
-       vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
-       vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
-       vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
-       vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, bufopts)
-       vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, bufopts)
-       vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, bufopts)
-       vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
-       vim.keymap.set('n', '<space>f', function() vim.lsp.buf.format { async = true } end, bufopts)
-     end,
-   }
-   ```
+# The LSP server will be available at:
+./zig-out/bin/cursed-lsp
+```
 
-3. Add CURSED filetype detection to your configuration:
-   ```lua
-   vim.filetype.add({
-     extension = {
-       csd = 'cursed',
-     },
-   })
-   ```
+## Editor Setup
 
-### Neovim Features
-- **Syntax Highlighting**: Use a tree-sitter parser or vim syntax file
-- **LSP Integration**: Full LSP features through nvim-lspconfig
-- **Code Completion**: nvim-cmp integration for autocompletion
-- **Diagnostics**: Built-in diagnostic display
+### VS Code
 
-## Emacs Setup
+1. **Install Extension**: Install the CURSED language extension (if published) or load the development extension:
 
-### Using lsp-mode
+```bash
+# From the cursed repository root
+cd vscode-cursed-extension
+npm install
+npm run compile
+code --install-extension .
+```
 
-1. Install `lsp-mode` using your package manager
+2. **Configuration**: Add to your VS Code settings:
 
-2. Add to your Emacs configuration:
-   ```elisp
-   (use-package lsp-mode
-     :hook (cursed-mode . lsp)
-     :commands lsp
-     :config
-     (lsp-register-client
-      (make-lsp-client
-       :new-connection (lsp-stdio-connection '("cursed" "lsp"))
-       :major-modes '(cursed-mode)
-       :server-id 'cursed-lsp)))
-   
-   ;; Define cursed-mode
-   (define-derived-mode cursed-mode prog-mode "CURSED"
-     "Major mode for CURSED programming language."
-     (setq-local comment-start "// ")
-     (setq-local comment-end ""))
-   
-   ;; Associate .csd files with cursed-mode
-   (add-to-list 'auto-mode-alist '("\\.csd\\'" . cursed-mode))
-   ```
-
-3. Optional: Install additional packages for enhanced experience:
-   ```elisp
-   (use-package company-lsp)  ; For completion
-   (use-package flycheck)     ; For error checking
-   (use-package lsp-ui)       ; For enhanced UI
-   ```
-
-## Vim Setup
-
-### Using vim-lsp
-
-1. Install `vim-lsp` using your plugin manager
-
-2. Add to your `.vimrc`:
-   ```vim
-   if executable('cursed')
-     au User lsp_setup call lsp#register_server({
-       \ 'name': 'cursed-lsp',
-       \ 'cmd': {server_info->['cursed', 'lsp']},
-       \ 'allowlist': ['cursed'],
-       \ })
-   endif
-   
-   " CURSED filetype detection
-   au BufNewFile,BufRead *.csd set filetype=cursed
-   
-   " LSP mappings
-   function! s:on_lsp_buffer_enabled() abort
-     setlocal omnifunc=lsp#complete
-     setlocal signcolumn=yes
-     if exists('+tagfunc') | setlocal tagfunc=lsp#tagfunc | endif
-     nmap <buffer> gd <plug>(lsp-definition)
-     nmap <buffer> gs <plug>(lsp-document-symbol-search)
-     nmap <buffer> gS <plug>(lsp-workspace-symbol-search)
-     nmap <buffer> gr <plug>(lsp-references)
-     nmap <buffer> gi <plug>(lsp-implementation)
-     nmap <buffer> gt <plug>(lsp-type-definition)
-     nmap <buffer> <leader>rn <plug>(lsp-rename)
-     nmap <buffer> [g <plug>(lsp-previous-diagnostic)
-     nmap <buffer> ]g <plug>(lsp-next-diagnostic)
-     nmap <buffer> K <plug>(lsp-hover)
-   endfunction
-   
-   augroup lsp_install
-     au!
-     autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
-   augroup END
-   ```
-
-## Sublime Text Setup
-
-### Using LSP Package
-
-1. Install Package Control if not already installed
-2. Install the "LSP" package via Package Control
-3. Create or edit `Packages/User/LSP.sublime-settings`:
-   ```json
-   {
-     "clients": {
-       "cursed": {
-         "enabled": true,
-         "command": ["cursed", "lsp"],
-         "selector": "source.cursed"
-       }
-     }
-   }
-   ```
-
-4. Create syntax highlighting by adding `Packages/User/CURSED.sublime-syntax`:
-   ```yaml
-   %YAML 1.2
-   ---
-   name: CURSED
-   file_extensions:
-     - csd
-   scope: source.cursed
-   
-   contexts:
-     main:
-       - match: '\b(sus|slay|damn|lowkey|otherwise|bestie|ghosted|simp|yikes|shook|fam|yolo|ready|defer|yeet|vibes|vibe)\b'
-         scope: keyword.control.cursed
-       
-       - match: '\b(lit|tea|normie|drip|thicc|smol|mid|meal|byte|rune|sip|extra)\b'
-         scope: storage.type.cursed
-       
-       - match: '\b(based|cap|cringe)\b'
-         scope: constant.language.cursed
-       
-       - match: '"'
-         push: string
-       
-       - match: '//'
-         push: comment
-   
-     string:
-       - meta_scope: string.quoted.double.cursed
-       - match: '\\.'
-         scope: constant.character.escape.cursed
-       - match: '"'
-         pop: true
-   
-     comment:
-       - meta_scope: comment.line.cursed
-       - match: '$'
-         pop: true
-   ```
-
-## Generic LSP Client Setup
-
-For any LSP-compatible editor, use these settings:
-
-- **Server Command**: `cursed lsp`
-- **File Extensions**: `.csd`
-- **Language ID**: `cursed`
-- **Root Directory Patterns**: `.git`, `.cursed-project`, `Cargo.toml`
-
-### Example Configuration:
 ```json
 {
-  "languageServer": {
-    "cursed": {
-      "command": "cursed",
-      "args": ["lsp"],
-      "filetypes": ["cursed"],
-      "rootPatterns": [".git", ".cursed-project"]
+    "cursed.lsp.enabled": true,
+    "cursed.lsp.path": "cursed-lsp",
+    "cursed.lsp.trace": "off"
+}
+```
+
+3. **Workspace Configuration**: For project-specific LSP server path:
+
+```json
+{
+    "cursed.lsp.path": "./zig-out/bin/cursed-lsp"
+}
+```
+
+### Neovim with nvim-lspconfig
+
+1. **Install Dependencies**:
+   - Install `nvim-lspconfig`
+   - Install `nvim-cmp` and `cmp-nvim-lsp` for completion
+
+2. **Configuration**: Add to your Neovim configuration:
+
+```lua
+-- Load the CURSED LSP configuration
+require('lspconfig').cursed.setup({
+  cmd = { 'cursed-lsp' }, -- or full path: '/path/to/cursed-lsp'
+  settings = {
+    cursed = {
+      diagnostics = { enable = true },
+      completion = { enable = true },
+      hover = { enable = true },
+    },
+  },
+})
+
+-- Set file type for .csd files
+vim.cmd([[
+  augroup CursedFiletype
+    autocmd!
+    autocmd BufRead,BufNewFile *.csd set filetype=cursed
+  augroup END
+]])
+```
+
+3. **Key Bindings**: The LSP will automatically set up standard LSP key bindings.
+
+### Vim with vim-lsp
+
+1. **Install vim-lsp plugin**
+
+2. **Configuration**:
+
+```vim
+" Register CURSED language server
+if executable('cursed-lsp')
+    augroup lsp_cursed
+        autocmd!
+        autocmd User lsp_setup call lsp#register_server({
+            \ 'name': 'cursed-lsp',
+            \ 'cmd': {server_info->['cursed-lsp']},
+            \ 'allowlist': ['cursed'],
+            \ })
+    augroup END
+endif
+
+" Set filetype for .csd files
+autocmd BufRead,BufNewFile *.csd set filetype=cursed
+```
+
+### Emacs with lsp-mode
+
+1. **Install lsp-mode**
+
+2. **Configuration**:
+
+```elisp
+;; Add CURSED language support
+(add-to-list 'auto-mode-alist '("\\.csd\\'" . cursed-mode))
+
+;; Define cursed-mode (basic version)
+(define-derived-mode cursed-mode prog-mode "CURSED"
+  "Major mode for CURSED programming language."
+  (setq-local comment-start "#")
+  (setq-local comment-end ""))
+
+;; Register CURSED LSP server
+(with-eval-after-load 'lsp-mode
+  (add-to-list 'lsp-language-id-configuration '(cursed-mode . "cursed"))
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection "cursed-lsp")
+                    :major-modes '(cursed-mode)
+                    :server-id 'cursed-lsp)))
+```
+
+### Sublime Text with LSP Package
+
+1. **Install LSP package from Package Control**
+
+2. **Configuration**: Add to LSP settings:
+
+```json
+{
+  "clients": {
+    "cursed-lsp": {
+      "enabled": true,
+      "command": ["cursed-lsp"],
+      "selector": "source.cursed",
+      "settings": {}
     }
   }
 }
 ```
 
-## Features
+3. **Syntax Definition**: Create a CURSED syntax definition file.
 
-The CURSED LSP server provides the following features:
+## Usage
 
-### Code Completion
-- **Keywords**: All CURSED keywords (`sus`, `slay`, `damn`, etc.)
-- **Types**: All CURSED types (`lit`, `tea`, `normie`, etc.)
-- **Literals**: Boolean and nil literals (`based`, `cap`, `cringe`)
-- **Builtins**: Standard library functions (`vibez.spill`, `math.add`, etc.)
-- **Snippets**: Common code patterns (function declaration, if statement, etc.)
-- **Context-aware**: Member access completions (e.g., `vibez.` shows available methods)
+### Command Line Options
 
-### Hover Information
-- **Symbol Information**: Type and documentation for variables, functions, and types
-- **Error Context**: Detailed information about compiler errors
-- **CURSED-specific**: Special handling for CURSED syntax and semantics
-
-### Go to Definition
-- **Function Definitions**: Navigate to function declarations
-- **Variable Definitions**: Jump to variable declarations
-- **Type Definitions**: Navigate to type definitions
-- **Cross-file Navigation**: Works across multiple files in a project
-
-### Diagnostics (Error Reporting)
-- **Syntax Errors**: Real-time syntax error detection
-- **Type Errors**: Semantic analysis and type checking
-- **CURSED Linting**: CURSED-specific style and best practice warnings
-- **Performance**: Incremental analysis for fast feedback
-
-### Code Formatting
-- **Auto-formatting**: Consistent code style formatting
-- **CURSED Conventions**: Follows CURSED language style guidelines
-- **Configurable**: Customizable formatting options
-
-### Semantic Highlighting
-- **Context-aware Highlighting**: Different colors for keywords, types, functions, etc.
-- **CURSED-specific Tokens**: Special highlighting for CURSED slang and vibes
-- **Scope-based Coloring**: Variables, functions, and types highlighted by scope
-
-## Configuration Options
-
-### Server Configuration
 ```bash
-# Start LSP server with custom options
-cursed lsp --log-level debug --log-file cursed-lsp.log
+# Show version information
+cursed-lsp --version
 
-# Available options:
-# --stdio              Use stdio communication (default)
-# --tcp                Use TCP communication  
-# --port PORT          TCP port (default: 9257)
-# --log-level LEVEL    Logging level: error, warn, info, debug, trace
-# --log-file FILE      Log to file instead of stderr
+# Show help and features
+cursed-lsp --help
+
+# Run LSP server (usually called by editor)
+cursed-lsp
 ```
 
-### Client Configuration
+### Features in Action
 
-Most LSP clients allow configuration of:
-- **Completion triggers**: Characters that trigger completion
-- **Diagnostics**: Enable/disable error reporting
-- **Formatting**: Auto-format on save
-- **Hover**: Enable/disable hover information
+1. **Completion**: Type partial keywords or symbols and get intelligent suggestions
+2. **Diagnostics**: Syntax and semantic errors are highlighted in real-time
+3. **Hover**: Hover over symbols to see type information and documentation
+4. **Navigation**: Use "Go to Definition" to jump to symbol definitions
+5. **References**: Find all uses of a symbol across your codebase
+6. **Formatting**: Use the format document command to auto-format code
+
+### Example CURSED Code with LSP Features
+
+```cursed
+# This comment explains the function
+slay calculate_fibonacci(n drip) drip {
+    ready (n <= 1) {
+        damn n
+    } otherwise {
+        damn calculate_fibonacci(n - 1) + calculate_fibonacci(n - 2)
+    }
+}
+
+# Variables with type inference
+sus result drip = calculate_fibonacci(10)
+vibez.spill("Fibonacci(10) =", result)
+```
 
 ## Troubleshooting
 
-### Common Issues
+### LSP Server Not Starting
 
-1. **"cursed command not found"**
-   - Ensure CURSED is installed and in your PATH
-   - Try full path: `/path/to/cursed lsp`
+1. **Check Path**: Ensure `cursed-lsp` is in your PATH or specify the full path
+2. **Build Issues**: Rebuild the LSP server with `zig build`
+3. **Permissions**: Ensure the executable has proper permissions
 
-2. **LSP server not starting**
-   - Check server logs: `cursed lsp --log-level debug --log-file lsp.log`
-   - Verify client configuration
-   - Test server manually: `echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | cursed lsp`
+### No Completion/Features
 
-3. **No completions or diagnostics**
-   - Verify file is recognized as CURSED (check language mode)
-   - Check LSP client is connected to server
-   - Try restarting the language server
+1. **File Type**: Ensure `.csd` files are recognized as CURSED files
+2. **Server Status**: Check your editor's LSP status/logs
+3. **Workspace**: Ensure you're in a CURSED project directory
 
-4. **Slow performance**
-   - Enable incremental synchronization in client
-   - Reduce diagnostic frequency
-   - Check for large files causing analysis issues
+### Performance Issues
+
+1. **Large Files**: The LSP server handles large files efficiently
+2. **Memory Usage**: Monitor memory usage for very large workspaces
+3. **Concurrent Projects**: Multiple CURSED projects may each spawn an LSP server
 
 ### Debug Information
 
-Enable debug logging:
-```bash
-# Server-side logging
-cursed lsp --log-level debug --log-file cursed-lsp.log
+Enable verbose logging in your editor to see LSP communication:
 
-# Check server status
-ps aux | grep "cursed lsp"
-```
+- **VS Code**: Set `"cursed.lsp.trace": "verbose"`
+- **Neovim**: Use `:LspLog` to view logs
+- **Vim**: Check vim-lsp debug output
 
-### Getting Help
+## Advanced Configuration
 
-- **GitHub Issues**: Report bugs at https://github.com/cursed-lang/cursed/issues
-- **Documentation**: See docs/ directory for more information
-- **Community**: Join the CURSED community discussions
+### Custom Settings
 
-### Performance Tips
-
-1. **Use incremental sync**: Configure your client for incremental document synchronization
-2. **Limit workspace scope**: Open only necessary files/directories
-3. **Configure diagnostics**: Adjust diagnostic update frequency
-4. **File watching**: Ensure proper file watching for external changes
-
-## Advanced Setup
-
-### Custom Commands
-
-Add custom editor commands for CURSED-specific operations:
+The LSP server supports various configuration options:
 
 ```json
 {
-  "commands": [
-    {
-      "command": "cursed.compile",
-      "title": "Compile CURSED File"
+  "cursed": {
+    "diagnostics": {
+      "enable": true,
+      "level": "error" // "error", "warning", "info", "hint"
     },
-    {
-      "command": "cursed.run", 
-      "title": "Run CURSED File"
+    "completion": {
+      "enable": true,
+      "snippets": true,
+      "keywords": true
     },
-    {
-      "command": "cursed.test",
-      "title": "Run CURSED Tests"
+    "hover": {
+      "enable": true,
+      "documentation": true
+    },
+    "formatting": {
+      "enable": true,
+      "indentSize": 4,
+      "insertFinalNewline": true
     }
-  ]
+  }
 }
 ```
 
 ### Workspace Configuration
 
-Create `.cursed-project` in your project root:
+For CURSED projects, create a `.cursed-lsp.json` file in your project root:
+
 ```json
 {
-  "name": "my-cursed-project",
-  "version": "1.0.0",
-  "dependencies": {},
-  "lsp": {
-    "diagnostics": {
-      "enabled": true,
-      "level": "info"
-    },
-    "completion": {
-      "snippets": true,
-      "keywords": true
-    }
-  }
+  "diagnostics": {
+    "enable": true
+  },
+  "completion": {
+    "enable": true
+  },
+  "includePaths": [
+    "./stdlib",
+    "./src"
+  ]
 }
 ```
 
-This completes the comprehensive LSP setup guide for CURSED language support across multiple editors and IDEs.
+## Contributing
+
+The CURSED LSP server is implemented in Zig and located in:
+- `src-zig/lsp_server.zig` - Core LSP implementation
+- `src-zig/lsp_main.zig` - Main entry point
+
+To contribute:
+1. Fork the repository
+2. Make changes to the LSP implementation
+3. Test with multiple editors
+4. Submit a pull request
+
+## Version Compatibility
+
+- **CURSED Compiler**: v1.0.0+
+- **LSP Protocol**: v3.17.0
+- **VS Code**: v1.74.0+
+- **Neovim**: v0.8.0+
+- **Vim**: v8.2+ (with vim-lsp)
+- **Emacs**: v27.1+ (with lsp-mode)

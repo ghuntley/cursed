@@ -347,6 +347,18 @@ pub const TypeRegistry = struct {
     pub fn getInterface(self: *TypeRegistry, name: []const u8) ?ast.InterfaceStatement {
         return self.interface_types.get(name);
     }
+    
+    pub fn registerImplementation(self: *TypeRegistry, struct_name: []const u8, interface_name: []const u8, vtable: *VTable) !void {
+        // Create a key that combines struct and interface names
+        const key = try std.fmt.allocPrint(self.allocator, "{}::{}", .{struct_name, interface_name});
+        try self.vtables.put(key, vtable.*);
+    }
+    
+    pub fn getVTable(self: *TypeRegistry, struct_name: []const u8, interface_name: []const u8) ?VTable {
+        const key_temp = std.fmt.allocPrint(self.allocator, "{}::{}", .{struct_name, interface_name}) catch return null;
+        defer self.allocator.free(key_temp);
+        return self.vtables.get(key_temp);
+    }
 };
 
 // Defer statement entry for LIFO execution
@@ -426,6 +438,10 @@ pub const Interpreter = struct {
                 .Interface => |interface_decl| {
                     try self.type_registry.registerInterface(interface_decl.name, interface_decl);
                 },
+                .Implementation => |impl_decl| {
+                    // Register implementations during the first pass
+                    try self.executeImplementationStatement(impl_decl);
+                },
                 else => {},
             }
         }
@@ -443,6 +459,7 @@ pub const Interpreter = struct {
     }
 
     fn executeStatement(self: *Interpreter, stmt: Statement) InterpreterError!void {
+        std.debug.print("DEBUG: Executing statement type: {}\n", .{@tagName(stmt)});
         switch (stmt) {
             .Expression => |expr_ptr| {
                 const expr: *Expression = @ptrCast(@alignCast(expr_ptr));
@@ -461,6 +478,8 @@ pub const Interpreter = struct {
                 // Functions are already collected, skip execution
             },
             .Struct => |struct_stmt| try self.executeStructStatement(struct_stmt),
+            .Interface => |interface_stmt| try self.executeInterfaceStatement(interface_stmt),
+            .Implementation => |impl_stmt| try self.executeImplementationStatement(impl_stmt),
             .Stan => |stan| try self.executeStanStatement(stan),
             .Yikes => |yikes| try self.executeYikesStatement(yikes),
             .Fam => |fam| try self.executeFamStatement(fam),
@@ -468,7 +487,7 @@ pub const Interpreter = struct {
             .Switch => |switch_stmt| try self.executeSwitchStatement(switch_stmt),
             .PatternSwitch => |pattern_switch| try self.executePatternSwitchStatement(pattern_switch),
             else => {
-                std.debug.print("Unsupported statement type in interpreter: {s}\n", .{@tagName(stmt)});
+                std.debug.print("Unsupported statement type in interpreter: {}\n", .{@tagName(stmt)});
             },
         }
     }
@@ -569,6 +588,56 @@ pub const Interpreter = struct {
         try self.type_registry.registerStruct(struct_stmt.name, struct_stmt);
     }
 
+    fn executeInterfaceStatement(self: *Interpreter, interface_stmt: ast.InterfaceStatement) InterpreterError!void {
+        _ = self; // Interface statements are handled in the type registry during the first pass
+        // Nothing to do here for execution - they're already registered in execute()
+        std.debug.print("DEBUG: Executing interface statement for '{}'\n", .{interface_stmt.name});
+    }
+
+    fn executeImplementationStatement(self: *Interpreter, impl_stmt: ast.ImplementationStatement) InterpreterError!void {
+        std.debug.print("DEBUG: Executing implementation statement: {} for {}\n", .{impl_stmt.implementing_type, impl_stmt.interface_name});
+        
+        // Get the interface definition
+        const interface_def = self.type_registry.getInterface(impl_stmt.interface_name) orelse {
+            std.debug.print("ERROR: Interface '{}' not found\n", .{impl_stmt.interface_name});
+            return InterpreterError.UndefinedInterface;
+        };
+        
+        // Create a vtable for this implementation
+        var vtable = try VTable.init(self.allocator, impl_stmt.interface_name);
+        
+        // Populate vtable with implementation methods
+        for (interface_def.methods.items) |interface_method| {
+            var method_found = false;
+            for (impl_stmt.methods.items) |impl_method| {
+                if (std.mem.eql(u8, interface_method.name, impl_method.name)) {
+                    // Create function value for the method
+                    const func_value = try self.allocator.create(FunctionValue);
+                    func_value.* = try FunctionValue.init(
+                        self.allocator,
+                        impl_method.name,
+                        &[_][]const u8{}, // Parameters will be handled in executeInterfaceMethod
+                        impl_method.body.items,
+                        self.environment
+                    );
+                    
+                    try vtable.setMethod(interface_method.name, func_value);
+                    method_found = true;
+                    std.debug.print("DEBUG: Added method '{}' to vtable\n", .{interface_method.name});
+                    break;
+                }
+            }
+            
+            if (!method_found) {
+                std.debug.print("ERROR: Method '{}' not implemented for interface '{}'\n", .{interface_method.name, impl_stmt.interface_name});
+                return InterpreterError.UndefinedMethod;
+            }
+        }
+        
+        // Store the vtable in the type registry for this struct-interface pair
+        try self.type_registry.registerImplementation(impl_stmt.implementing_type, impl_stmt.interface_name, &vtable);
+    }
+
     fn executeIfStatement(self: *Interpreter, if_stmt: ast.IfStatement) InterpreterError!void {
         const condition = try self.evaluateExpression(if_stmt.condition);
         
@@ -595,6 +664,7 @@ pub const Interpreter = struct {
     }
 
     fn evaluateExpression(self: *Interpreter, expr: Expression) InterpreterError!Value {
+        std.debug.print("DEBUG: Evaluating expression type: {}\n", .{@tagName(expr)});
         switch (expr) {
             .Integer => |int| return Value{ .Integer = int },
             .Float => |float| return Value{ .Float = float },
@@ -734,6 +804,7 @@ pub const Interpreter = struct {
                     return Value.Null;
                 } else {
                     // Handle method calls on objects (structs/interfaces)
+                    std.debug.print("DEBUG: Detected method call: {}.{}\n", .{@tagName(member.object.*), member.property});
                     return try self.evaluateMethodCall(member, call.arguments.items);
                 }
             },
@@ -895,9 +966,9 @@ pub const Interpreter = struct {
                 if (interface_inst.underlying_struct.getField(member.property)) |field_value| {
                     return field_value;
                 }
-                // Or call interface method
-                if (interface_inst.vtable.getMethod(member.property)) |method| {
-                    return Value{ .String = method.name }; // Return method name for now
+                // Interface methods should only be accessed through method calls, not direct access
+                if (interface_inst.vtable.getMethod(member.property)) |_| {
+                    return InterpreterError.MethodMustBeCalled;
                 }
                 return InterpreterError.UndefinedField;
             },
@@ -940,23 +1011,74 @@ pub const Interpreter = struct {
                 }
                 return InterpreterError.UndefinedMethod;
             },
-            .Interface => {
+            .Interface => |interface_inst| {
                 // Use interface dispatch through vtable
-                var method_args = try std.ArrayList(Value).initCapacity(self.allocator, args.len);
+                var method_args = try std.ArrayList(Value).initCapacity(self.allocator, args.len + 1);
                 defer method_args.deinit();
+                
+                // First argument is self (the underlying struct)
+                try method_args.append(Value{ .Struct = interface_inst.underlying_struct.* });
                 
                 for (args) |arg_expr| {
                     const arg_val = try self.evaluateExpression(arg_expr);
                     try method_args.append(arg_val);
                 }
                 
-                // TODO: Implement proper interface method dispatch
-                return Value.Null;
+                // Get method from vtable and execute it
+                if (interface_inst.vtable.getMethod(member.property)) |method_func| {
+                    std.debug.print("DEBUG: Found interface method '{}' in vtable, executing...\n", .{member.property});
+                    return try self.executeInterfaceMethod(method_func, method_args.items);
+                } else {
+                    std.debug.print("DEBUG: Method '{}' not found in interface vtable\n", .{member.property});
+                    return InterpreterError.UndefinedMethod;
+                }
             },
             else => {
                 return InterpreterError.TypeMismatch;
             }
         }
+    }
+
+    fn executeInterfaceMethod(self: *Interpreter, method_func: *FunctionValue, args: []Value) InterpreterError!Value {
+        // Create new environment for method execution
+        var method_env = Environment.init(self.allocator);
+        defer method_env.deinit();
+        method_env.enclosing = self.environment;
+        
+        // Bind parameters to arguments
+        if (args.len != method_func.parameters.len + 1) { // +1 for 'self'
+            std.debug.print("ERROR: Interface method '{}' expects {} params but got {} args\n", .{method_func.name, method_func.parameters.len, args.len - 1});
+            return InterpreterError.InvalidArgumentCount;
+        }
+        
+        // First argument is always 'self' (the struct instance)
+        if (args.len > 0) {
+            try method_env.define("self", args[0]);
+        }
+        
+        // Bind remaining parameters
+        for (method_func.parameters, 1..) |param_name, i| {
+            if (i < args.len) {
+                try method_env.define(param_name, args[i]);
+            }
+        }
+        
+        // Execute method body
+        const previous_env = self.environment;
+        self.environment = &method_env;
+        defer self.environment = previous_env;
+        
+        var result = Value.Null;
+        for (method_func.body) |stmt| {
+            result = self.executeStatement(stmt) catch |err| {
+                if (err == InterpreterError.Return) {
+                    return self.return_value orelse Value.Null;
+                }
+                return err;
+            };
+        }
+        
+        return result;
     }
 
     fn executeMethodBody(self: *Interpreter, method: ast.FunctionStatement, args: []Value) InterpreterError!Value {

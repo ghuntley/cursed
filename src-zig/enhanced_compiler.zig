@@ -1,6 +1,7 @@
 const std = @import("std");
 const print = std.debug.print;
 const Allocator = std.mem.Allocator;
+const target_mapping = @import("target_mapping.zig");
 
 const StringLiteralInfo = struct {
     content: []const u8,
@@ -8,6 +9,36 @@ const StringLiteralInfo = struct {
 };
 
 const lexer = @import("lexer.zig");
+
+/// Get appropriate data layout string for target triple
+fn getDataLayoutForTarget(target_triple: []const u8) []const u8 {
+    if (std.mem.startsWith(u8, target_triple, "x86_64")) {
+        if (std.mem.containsAtLeast(u8, target_triple, 1, "windows")) {
+            return "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128";
+        } else if (std.mem.containsAtLeast(u8, target_triple, 1, "darwin")) {
+            return "e-m:o-i64:64-f80:128-n8:16:32:64-S128";
+        } else {
+            return "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128";
+        }
+    } else if (std.mem.startsWith(u8, target_triple, "aarch64")) {
+        if (std.mem.containsAtLeast(u8, target_triple, 1, "darwin")) {
+            return "e-m:o-i64:64-i128:128-n32:64-S128";
+        } else {
+            return "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128";
+        }
+    } else if (std.mem.startsWith(u8, target_triple, "i386")) {
+        return "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-f80:32-n8:16:32-S128";
+    } else if (std.mem.startsWith(u8, target_triple, "wasm32")) {
+        return "e-m:e-p:32:32-i64:64-n32:64-S128";
+    } else if (std.mem.startsWith(u8, target_triple, "wasm64")) {
+        return "e-m:e-p:64:64-i64:64-n32:64-S128";
+    } else if (std.mem.startsWith(u8, target_triple, "riscv64")) {
+        return "e-m:e-p:64:64-i64:64-i128:128-n64-S128";
+    } else {
+        // Default to x86_64 Linux layout
+        return "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128";
+    }
+}
 
 /// Enhanced CURSED compiler that supports both C backend and LLVM backend compilation
 pub const CompilationBackend = enum {
@@ -166,8 +197,31 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
 }
 
 /// LLVM Backend compilation with advanced optimization
-pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, _: []const u8, output_filename: []const u8, config: CompilerConfig) !void {
-    print("[1/6] Generating LLVM IR...\n", .{});
+pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, output_filename: []const u8, config: CompilerConfig) !void {
+    print("[1/6] Resolving target platform...\n", .{});
+    
+    // Determine target triple
+    const target_triple = if (config.target) |target_str| blk: {
+        const mapped_triple = target_mapping.targetToLLVMTriple(target_str) orelse {
+            print("❌ Error: Unknown target '{s}'\n", .{target_str});
+            print("Valid targets: linux-x64, macos-arm64, windows-x64, wasm32, etc.\n", .{});
+            return error.InvalidTarget;
+        };
+        if (config.verbose) print("🎯 Cross-compiling for target: {s} -> {s}\n", .{ target_str, mapped_triple });
+        break :blk mapped_triple;
+    } else blk: {
+        const native_triple = target_mapping.getNativeTriple();
+        if (config.verbose) print("🏠 Using native target: {s}\n", .{native_triple});
+        break :blk native_triple;
+    };
+    
+    // Validate target triple
+    if (!target_mapping.validateTargetTriple(target_triple)) {
+        print("❌ Error: Invalid target triple format: {s}\n", .{target_triple});
+        return error.InvalidTargetTriple;
+    }
+    
+    print("[2/6] Generating LLVM IR for target {s}...\n", .{target_triple});
     
     // Generate IR filename - if output is .ll, use it, otherwise create one
     const ir_filename = if (std.mem.endsWith(u8, output_filename, ".ll")) 
@@ -176,12 +230,9 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, _: []const
         try std.fmt.allocPrint(allocator, "{s}.ll", .{output_filename});
     defer if (!std.mem.endsWith(u8, output_filename, ".ll")) allocator.free(ir_filename);
     
-    // Use minimal LLVM backend to avoid C import issues
-    const llvm_backend_fixed = @import("llvm_backend_fixed.zig");
-    
-    // Generate LLVM IR using fixed backend (athlon-xp issue resolved)
-    print("[2/6] Generating LLVM IR using full backend...\n", .{});
-    try llvm_backend_fixed.compileToLLVM(allocator, source, ir_filename);
+    // Generate LLVM IR with proper target support
+    print("[3/6] Generating LLVM IR with target-specific optimizations...\n", .{});
+    try generateTargetSpecificLLVMIR(allocator, source, filename, ir_filename, config, target_triple);
     
     if (config.verbose) print("✅ Generated LLVM IR: {s}\n", .{ir_filename});
     
@@ -191,13 +242,147 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, _: []const
         return;
     }
     
-    // Compile IR to native executable
-    print("[3/6] Compiling IR to native executable...\n", .{});
-    try llvm_backend_fixed.compileIRToNative(allocator, ir_filename, output_filename);
+    // Compile IR to native executable with target-specific linking
+    print("[4/6] Compiling IR to native executable for {s}...\n", .{target_triple});
+    try compileIRToNativeWithTarget(allocator, ir_filename, output_filename, target_triple, config);
     
     // Clean up IR file if successful and not in verbose mode
     if (!config.verbose and !config.emit_llvm) {
         std.fs.cwd().deleteFile(ir_filename) catch {};
+    }
+}
+
+/// Generate LLVM IR with target-specific optimizations
+fn generateTargetSpecificLLVMIR(allocator: Allocator, source: []const u8, filename: []const u8, ir_filename: []const u8, config: CompilerConfig, target_triple: []const u8) !void {
+    const ir_file = std.fs.cwd().createFile(ir_filename, .{}) catch |err| {
+        print("❌ Error creating IR file: {}\n", .{err});
+        return err;
+    };
+    defer ir_file.close();
+    
+    const writer = ir_file.writer();
+    
+    // Generate LLVM IR with target triple
+    try generateProperLLVMIR(allocator, source, writer, config.verbose, filename, config.debug_info, target_triple);
+}
+
+/// Compile IR to native executable with target-specific settings
+fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, output_filename: []const u8, target_triple: []const u8, config: CompilerConfig) !void {
+    var compile_args = std.ArrayList([]const u8).init(allocator);
+    defer compile_args.deinit();
+    
+    // Base clang command
+    try compile_args.append("clang");
+    
+    // Target specification
+    try compile_args.append("-target");
+    try compile_args.append(target_triple);
+    
+    // Get target-specific CPU and features
+    const cpu_features = target_mapping.getTargetCpuAndFeatures(target_triple);
+    
+    // CPU specification
+    if (config.target_cpu) |cpu| {
+        try compile_args.append("-mcpu");
+        try compile_args.append(cpu);
+    } else if (!std.mem.eql(u8, cpu_features.cpu, "generic")) {
+        try compile_args.append("-mcpu");
+        try compile_args.append(cpu_features.cpu);
+    }
+    
+    // Target features
+    if (config.target_features) |features| {
+        try compile_args.append("-mattr");
+        try compile_args.append(features);
+    } else if (cpu_features.features.len > 0) {
+        try compile_args.append("-mattr");
+        try compile_args.append(cpu_features.features);
+    }
+    
+    // Optimization level
+    const opt_flag = switch (config.optimization_level) {
+        0 => "-O0",
+        1 => "-O1", 
+        2 => "-O2",
+        3 => "-O3",
+        else => "-O2",
+    };
+    try compile_args.append(opt_flag);
+    
+    // Debug information
+    if (config.debug_info) {
+        try compile_args.append("-g");
+    }
+    
+    // Static linking for cross-compilation
+    if (config.static_link or !std.mem.eql(u8, target_triple, target_mapping.getNativeTriple())) {
+        try compile_args.append("-static");
+    }
+    
+    // Input and output
+    try compile_args.append(ir_filename);
+    try compile_args.append("-o");
+    
+    // Add appropriate file extension for target
+    const extension = target_mapping.getExecutableExtension(target_triple);
+    const final_output = if (extension.len > 0 and !std.mem.endsWith(u8, output_filename, extension))
+        try std.fmt.allocPrint(allocator, "{s}{s}", .{output_filename, extension})
+    else
+        output_filename;
+    defer if (!std.mem.eql(u8, final_output, output_filename)) allocator.free(final_output);
+    
+    try compile_args.append(final_output);
+    
+    // WebAssembly specific flags
+    if (std.mem.startsWith(u8, target_triple, "wasm32")) {
+        try compile_args.append("--no-standard-libraries");
+        try compile_args.append("-Wl,--export-all");
+        try compile_args.append("-Wl,--no-entry");
+    }
+    
+    // Windows specific flags
+    if (std.mem.containsAtLeast(u8, target_triple, 1, "windows")) {
+        try compile_args.append("-lmsvcrt");
+    }
+    
+    if (config.verbose) {
+        print("🔧 Compilation command: ", .{});
+        for (compile_args.items) |arg| {
+            print("{s} ", .{arg});
+        }
+        print("\n", .{});
+    }
+    
+    // Execute compilation
+    const result = std.process.Child.run(.{
+        .allocator = allocator,
+        .argv = compile_args.items,
+    }) catch |err| {
+        print("❌ Error executing clang: {}\n", .{err});
+        return err;
+    };
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+    
+    if (result.term.Exited != 0) {
+        print("❌ Compilation failed with exit code: {}\n", .{result.term.Exited});
+        if (result.stderr.len > 0) {
+            print("Error output:\n{s}\n", .{result.stderr});
+        }
+        return error.CompilationFailed;
+    }
+    
+    print("✅ Successfully compiled to: {s}\n", .{final_output});
+    
+    // Verify the output file was created
+    const output_file = std.fs.cwd().openFile(final_output, .{}) catch |err| {
+        print("⚠️ Warning: Output file not found after compilation: {}\n", .{err});
+        return;
+    };
+    output_file.close();
+    
+    if (config.verbose) {
+        print("🎯 Target verification: Binary compiled for {s}\n", .{target_triple});
     }
 }
 
@@ -383,9 +568,9 @@ fn translateCursedToC(allocator: Allocator, source: []const u8, writer: anytype,
 }
 
 /// Generate LLVM IR header with necessary declarations
-fn generateLLVMHeader(writer: anytype) !void {
+fn generateLLVMHeader(writer: anytype, target_triple: []const u8) !void {
     try writer.writeAll("; Generated LLVM IR for CURSED program\n");
-    try writer.writeAll("target triple = \"x86_64-pc-linux-gnu\"\n\n");
+    try writer.print("target triple = \"{s}\"\n\n", .{target_triple});
     
     // External function declarations
     try writer.writeAll("declare i32 @puts(i8*)\n");
@@ -713,11 +898,14 @@ fn optimizeLLVMIR(allocator: Allocator, ir_filename: []const u8, optimization_le
 }
 
 /// Generate proper LLVM IR using text-based approach (avoids LLVM C API linking issues)
-fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool, filename: []const u8, debug_info: bool) !void {
+fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool, filename: []const u8, debug_info: bool, target_triple: []const u8) !void {
     // Target and basic module setup
     try writer.writeAll("; Generated LLVM IR for CURSED program\n");
-    try writer.writeAll("target triple = \"x86_64-pc-linux-gnu\"\n");
-    try writer.writeAll("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n\n");
+    try writer.print("target triple = \"{s}\"\n", .{target_triple});
+    
+    // Get appropriate data layout for target
+    const data_layout = getDataLayoutForTarget(target_triple);
+    try writer.print("target datalayout = \"{s}\"\n\n", .{data_layout});
     
     // Add debug metadata if enabled
     if (debug_info) {

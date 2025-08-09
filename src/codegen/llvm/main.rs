@@ -114,6 +114,7 @@ pub struct LlvmCodeGenerator {
     variables: HashMap<String, String>, // variable name -> register mapping
     variable_types: HashMap<String, String>, // variable name -> LLVM type mapping
     declared_functions: HashMap<String, String>, // function name -> signature for deduplication
+    function_signatures: HashMap<String, FunctionSignature>, // function name -> full signature
     package_manager: Option<Arc<Mutex<PackageManager>>>,
     package_config: Option<LlvmPackageConfig>,
     optimization_config: OptimizationConfig,
@@ -177,6 +178,7 @@ impl LlvmCodeGenerator {
             variables: HashMap::new(),
             variable_types: HashMap::new(),
             declared_functions: HashMap::new(),
+            function_signatures: HashMap::new(),
             loop_stack: Vec::new(),
             package_manager: None,
             package_config: None,
@@ -1173,7 +1175,16 @@ impl LlvmCodeGenerator {
                     let return_type = self.infer_expression_type(val)?;
                     self.ir_code.push_str(&format!("  ret {} {}\n", return_type, return_reg));
                 } else {
-                    self.ir_code.push_str("  ret i32 0\n");
+                    // Check if this is a main function or void function
+                    if let Some(func_name) = &self.current_function_name {
+                        if func_name == "main" {
+                            self.ir_code.push_str("  ret i32 0\n");
+                        } else {
+                            self.ir_code.push_str("  ret void\n");
+                        }
+                    } else {
+                        self.ir_code.push_str("  ret void\n");
+                    }
                 }
             },
             Statement::If(if_stmt) => {
@@ -2369,7 +2380,14 @@ impl LlvmCodeGenerator {
             // Now allocate the result register after all arguments are processed
             let result_reg = self.next_register();
             
-            self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, function_name));
+            // Get function return type from signature if available
+            let return_type = if let Some(signature) = self.function_signatures.get(function_name) {
+                signature.return_type.as_ref().unwrap_or(&"i32".to_string()).clone()
+            } else {
+                "i32".to_string() // Default fallback
+            };
+            
+            self.ir_code.push_str(&format!("  {} = call {} @{}(", result_reg, return_type, function_name));
             for (i, (arg_reg, arg_expr)) in arg_regs.iter().zip(arguments.iter()).enumerate() {
                 if i > 0 {
                     self.ir_code.push_str(", ");
@@ -2419,6 +2437,24 @@ impl LlvmCodeGenerator {
             },
         };
         
+        // Store function signature for later use in function calls
+        let mut param_types = Vec::new();
+        for param in params {
+            let param_type = if let Some(param_type) = &param.param_type {
+                self.map_type_to_llvm(param_type)
+            } else {
+                "i32".to_string() // Default type
+            };
+            param_types.push(param_type);
+        }
+        
+        let signature = FunctionSignature {
+            name: name.to_string(),
+            parameters: param_types,
+            return_type: Some(ret_type.clone()),
+        };
+        self.function_signatures.insert(name.to_string(), signature);
+        
         // Generate parameter list and collect parameter info
         let mut param_list = Vec::new();
         let mut param_info = Vec::new();
@@ -2432,16 +2468,14 @@ impl LlvmCodeGenerator {
             param_info.push((param.name.clone(), param_type, i));
         }
         
-        // Generate function definition with proper entry point and exception handling
+        // Generate function definition with proper entry point
         self.ir_code.push_str(&format!(
-            "define {} @{}({}) personality i32 (...)* @__gxx_personality_v0 {{\n",
+            "define {} @{}({}) {{\n",
             ret_type,
             name,
             param_list.join(", ")
         ));
         
-        // Add function attributes for proper exception handling and stack unwinding
-        self.ir_code.push_str("; Function Attrs: uwtable noinline optnone\n");
         self.ir_code.push_str("entry:\n");
         
         // For WebAssembly, reset register tracker for each function

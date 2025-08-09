@@ -257,9 +257,25 @@ pub fn testLLVMBackendFixed(allocator: Allocator) !void {
     print("✅ Fixed LLVM backend working correctly!\n", .{});
 }
 
+// Import reliable IR generator
+const reliable_ir = @import("reliable_llvm_ir_generator.zig");
+
 // Interface functions for compatibility with enhanced_compiler.zig
 pub fn compileToLLVM(allocator: Allocator, source: []const u8, output_file: []const u8) !void {
-    print("[LLVM] Compiling CURSED program with enhanced LLVM backend...\n", .{});
+    print("[LLVM] Compiling CURSED program without C imports...\n", .{});
+    
+    // Use reliable IR generator first
+    reliable_ir.generateReliableLLVMIR(allocator, source, output_file) catch |err| {
+        print("⚠️ Reliable IR generation failed: {any}, falling back to simplified backend\n", .{err});
+        return compileToLLVMFallback(allocator, source, output_file);
+    };
+    
+    return; // Success with reliable generator
+}
+
+// Fallback implementation using original backend
+fn compileToLLVMFallback(allocator: Allocator, source: []const u8, output_file: []const u8) !void {
+    print("[LLVM] Using fallback LLVM backend...\n", .{});
     
     // Parse the source code (simplified for now)
     var backend = try LLVMBackendFixed.init(allocator, "cursed_program");

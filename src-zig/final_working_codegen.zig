@@ -78,8 +78,10 @@ pub const FinalWorkingCodeGen = struct {
         try self.ir_buffer.appendSlice(";     vibez.spill(x)\n");
         try self.ir_buffer.appendSlice("; }\n\n");
         
-        // Target triple
-        try self.ir_buffer.appendSlice("target triple = \"x86_64-pc-linux-gnu\"\n\n");
+        // Target triple (note: this should be made configurable)
+        const target_mapping = @import("target_mapping.zig");
+        const target_triple = target_mapping.getNativeTriple();
+        try self.ir_buffer.writer().print("target triple = \"{s}\"\n\n", .{target_triple});
         
         // External function declarations
         try self.ir_buffer.appendSlice("declare i32 @puts(i8*)\n");
