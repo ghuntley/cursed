@@ -287,9 +287,9 @@ pub const PatternCompiler = struct {
         }
     }
 
-    /// Complete switch statement compilation with pattern matching
+    /// Complete switch statement compilation with pattern matching and exhaustiveness checking
     pub fn compileSwitchStatement(self: *PatternCompiler, switch_stmt: ast.PatternSwitchStatement) !void {
-        try self.output.writer().print("    // Pattern matching switch statement\n");
+        try self.output.writer().print("    // Pattern matching switch statement with exhaustiveness checking\n");
         
         const value_temp = try self.getTempVar();
         defer self.allocator.free(value_temp);
@@ -297,12 +297,27 @@ pub const PatternCompiler = struct {
         // Generate value extraction 
         try self.output.writer().print("    auto {s} = evaluate_switch_expression();\n", .{value_temp});
         
+        // Extract patterns for exhaustiveness analysis
+        var patterns = ArrayList(ast.Pattern).init(self.allocator);
+        defer patterns.deinit();
+        
+        for (switch_stmt.cases.items) |case| {
+            try patterns.append(case.pattern);
+        }
+        
+        // Perform exhaustiveness checking
+        const exhaustiveness_result = try self.checkExhaustiveness(patterns.items, null);
+        defer exhaustiveness_result.missing_patterns.deinit();
+        
+        // Generate exhaustiveness report
+        try self.generateExhaustivenessReport(exhaustiveness_result);
+        
         // Generate case labels
         const end_label = try std.fmt.allocPrint(self.allocator, "switch_end_{}", .{self.block_counter});
         defer self.allocator.free(end_label);
         self.block_counter += 1;
         
-        const has_default = false;
+        const has_default = exhaustiveness_result.is_exhaustive;
         
         // Generate optimized dispatch if applicable
         const literal_cases = try self.extractLiteralCases(switch_stmt.cases.items);
@@ -341,11 +356,14 @@ pub const PatternCompiler = struct {
             }
         }
         
-        // Generate default case if needed
+        // Generate default case based on exhaustiveness
+        try self.output.writer().print("match_fail:\n");
         if (!has_default) {
-            try self.output.writer().print("match_fail:\n");
-            try self.output.writer().print("    // No pattern matched - runtime error\n");
-            try self.output.writer().print("    cursed_runtime_error(\"Pattern match failed\");\n");
+            try self.output.writer().print("    // Non-exhaustive pattern match - runtime error\n");
+            try self.output.writer().print("    cursed_runtime_error(\"Pattern match failed: non-exhaustive patterns\");\n");
+        } else {
+            try self.output.writer().print("    // Exhaustive pattern match - this should never be reached\n");
+            try self.output.writer().print("    cursed_unreachable(\"Exhaustive pattern match fallthrough\");\n");
         }
         
         try self.output.writer().print("{s}:\n", .{end_label});
@@ -849,28 +867,22 @@ pub const PatternCompiler = struct {
         const end_temp = try self.getTempVar();
         defer self.allocator.free(end_temp);
         
-        // Check if ranges are literal values for optimization
-        if (range.start_literal) |start_lit| {
-            try self.output.writer().print("    int {s} = {};\n", .{ start_temp, start_lit });
-        } else {
-            try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ start_temp, @intFromPtr(range.start) });
-        }
-        
-        if (range.end_literal) |end_lit| {
-            try self.output.writer().print("    int {s} = {};\n", .{ end_temp, end_lit });
-        } else {
-            try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ end_temp, @intFromPtr(range.end) });
-        }
+        // Evaluate start and end expressions
+        try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ start_temp, @intFromPtr(range.start) });
+        try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ end_temp, @intFromPtr(range.end) });
         
         // Support both inclusive (..) and exclusive (...) ranges
         const op = if (range.is_inclusive) "<=" else "<";
         try self.output.writer().print("    int {s} = ({s} >= {s} && {s} {s} {s});\n", .{ temp_var, value_var, start_temp, value_var, op, end_temp });
         
-        // Add range type checking for character ranges
-        if (range.is_char_range) {
-            try self.output.writer().print("    // Character range validation\n");
-            try self.output.writer().print("    {s} = {s} && cursed_is_char({s});\n", .{ temp_var, temp_var, value_var });
-        }
+        // Add optimized bounds checking for integer ranges
+        try self.output.writer().print("    // Optimized integer range checking\n");
+        try self.output.writer().print("    if (cursed_is_integer({s}) && cursed_is_integer({s}) && cursed_is_integer({s})) {{\n", .{ value_var, start_temp, end_temp });
+        try self.output.writer().print("        int64_t val = cursed_to_int({s});\n", .{value_var});
+        try self.output.writer().print("        int64_t start_val = cursed_to_int({s});\n", .{start_temp});
+        try self.output.writer().print("        int64_t end_val = cursed_to_int({s});\n", .{end_temp});
+        try self.output.writer().print("        {s} = (val >= start_val && val {s} end_val);\n", .{ temp_var, op });
+        try self.output.writer().print("    }}\n");
         
         try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ temp_var, success_label, fail_label });
     }
@@ -903,28 +915,235 @@ pub const PatternCompiler = struct {
         try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ guard_temp, success_label, fail_label });
     }
 
-    /// Generate comprehensive pattern coverage analysis
-    pub fn analyzePatternCoverage(self: *PatternCompiler, patterns: []const ast.Pattern) !bool {
-        _ = self;
-        // Simple exhaustiveness check - can be enhanced
-        var has_wildcard = false;
-        var has_literal_coverage = false;
+    /// Generate comprehensive exhaustiveness checking for pattern matches
+    pub fn checkExhaustiveness(self: *PatternCompiler, patterns: []const ast.Pattern, matched_type: ?TypeInfo) !ExhaustivenessResult {
+        var coverage = ExhaustivenessAnalysis.init(self.allocator);
+        defer coverage.deinit();
         
+        // Analyze each pattern for coverage
         for (patterns) |pattern| {
-            switch (pattern) {
-                .Wildcard => has_wildcard = true,
-                .Literal => has_literal_coverage = true,
-                .Or => |or_pattern| {
-                    for (or_pattern.patterns) |sub_pattern| {
-                        if (sub_pattern == .Wildcard) has_wildcard = true;
+            try self.analyzePatternCoverage(&coverage, pattern, matched_type);
+        }
+        
+        // Check for exhaustiveness based on type and patterns
+        return self.determineExhaustiveness(coverage, matched_type);
+    }
+    
+    /// Analyze individual pattern coverage
+    fn analyzePatternCoverage(self: *PatternCompiler, coverage: *ExhaustivenessAnalysis, pattern: ast.Pattern, matched_type: ?TypeInfo) !void {
+        switch (pattern) {
+            .Wildcard => {
+                coverage.has_wildcard = true;
+            },
+            .Literal => |lit| {
+                switch (lit.value) {
+                    .Integer => |val| try coverage.covered_integers.put(val, true),
+                    .Boolean => |val| {
+                        if (val) coverage.has_true = true else coverage.has_false = true;
+                    },
+                    .String => |val| try coverage.covered_strings.put(val, true),
+                    else => {},
+                }
+            },
+            .Variable => {
+                coverage.has_variable_binding = true;
+            },
+            .Range => |range| {
+                // Mark range coverage (simplified)
+                coverage.has_range_pattern = true;
+                try coverage.range_patterns.append(range);
+            },
+            .Or => |or_pattern| {
+                // Recursively analyze OR alternatives
+                for (or_pattern.patterns) |sub_pattern| {
+                    try self.analyzePatternCoverage(coverage, sub_pattern, matched_type);
+                }
+            },
+            .Guard => |guard| {
+                // Guards reduce coverage - analyze base pattern
+                try self.analyzePatternCoverage(coverage, guard.pattern.*, matched_type);
+                coverage.has_guards = true;
+            },
+            .Enum => |enum_pattern| {
+                const key = EnumVariantKey{
+                    .enum_name = enum_pattern.enum_name,
+                    .variant_name = enum_pattern.variant_name,
+                };
+                try coverage.covered_enum_variants.put(key, true);
+            },
+            .Tuple => |tuple| {
+                coverage.has_tuple_patterns = true;
+                // Could analyze tuple arity for exhaustiveness
+            },
+            .Struct => |struct_pattern| {
+                try coverage.covered_struct_types.put(struct_pattern.type_name, true);
+            },
+            .Array => |array| {
+                coverage.has_array_patterns = true;
+                // Could analyze array length patterns
+            },
+            else => {},
+        }
+    }
+    
+    /// Determine if patterns are exhaustive for the given type
+    fn determineExhaustiveness(self: *PatternCompiler, coverage: ExhaustivenessAnalysis, matched_type: ?TypeInfo) !ExhaustivenessResult {
+        _ = self;
+        
+        // Wildcard or variable binding always provides exhaustive coverage
+        if (coverage.has_wildcard or coverage.has_variable_binding) {
+            return ExhaustivenessResult{ .is_exhaustive = true, .missing_patterns = ArrayList([]const u8).init(self.allocator) };
+        }
+        
+        var missing_patterns = ArrayList([]const u8).init(self.allocator);
+        
+        // Type-specific exhaustiveness checking
+        if (matched_type) |type_info| {
+            switch (type_info) {
+                .boolean => {
+                    if (!coverage.has_true) try missing_patterns.append("based");
+                    if (!coverage.has_false) try missing_patterns.append("cringe");
+                },
+                .integer => |bits| {
+                    // For small integer types, check if all values are covered
+                    if (bits <= 8 and !coverage.has_range_pattern) {
+                        const max_val = (@as(i64, 1) << @intCast(bits - 1)) - 1;
+                        const min_val = -(@as(i64, 1) << @intCast(bits - 1));
+                        
+                        for (min_val..max_val + 1) |val| {
+                            if (!coverage.covered_integers.contains(@intCast(val))) {
+                                const pattern_str = try std.fmt.allocPrint(self.allocator, "{}", .{val});
+                                try missing_patterns.append(pattern_str);
+                            }
+                        }
                     }
                 },
-                else => {},
+                else => {
+                    // For complex types, require wildcard or complete structural coverage
+                    if (!coverage.has_wildcard and !coverage.has_variable_binding) {
+                        try missing_patterns.append("_"); // Suggest wildcard
+                    }
+                },
             }
         }
         
-        return has_wildcard or has_literal_coverage;
+        // Check enum exhaustiveness if we have enum patterns
+        if (coverage.covered_enum_variants.count() > 0) {
+            // This would require type information about the enum
+            // For now, assume non-exhaustive unless wildcard present
+            if (!coverage.has_wildcard and missing_patterns.items.len == 0) {
+                try missing_patterns.append("_"); // Suggest wildcard for unknown enum variants
+            }
+        }
+        
+        const is_exhaustive = missing_patterns.items.len == 0 or coverage.has_guards;
+        
+        return ExhaustivenessResult{
+            .is_exhaustive = is_exhaustive,
+            .missing_patterns = missing_patterns,
+        };
     }
+    
+    /// Generate comprehensive pattern coverage analysis (legacy method)
+    pub fn analyzePatternCoverage(self: *PatternCompiler, patterns: []const ast.Pattern) !bool {
+        const result = try self.checkExhaustiveness(patterns, null);
+        defer result.missing_patterns.deinit();
+        return result.is_exhaustive;
+    }
+    
+    /// Generate exhaustiveness warning/error messages
+    pub fn generateExhaustivenessReport(self: *PatternCompiler, result: ExhaustivenessResult) !void {
+        if (!result.is_exhaustive) {
+            try self.output.writer().print("    // EXHAUSTIVENESS WARNING: Missing patterns detected\n");
+            try self.output.writer().print("    cursed_compiler_warning(\"Non-exhaustive pattern match\");\n");
+            
+            if (result.missing_patterns.items.len > 0) {
+                try self.output.writer().print("    // Missing patterns: ");
+                for (result.missing_patterns.items, 0..) |pattern, i| {
+                    if (i > 0) try self.output.writer().print(", ");
+                    try self.output.writer().print("{s}", .{pattern});
+                }
+                try self.output.writer().print("\n");
+            }
+            
+            // Generate runtime exhaustiveness check
+            try self.output.writer().print("    cursed_runtime_exhaustiveness_check();\n");
+        } else {
+            try self.output.writer().print("    // EXHAUSTIVENESS: Pattern match is exhaustive\n");
+        }
+    }
+    
+    const ExhaustivenessAnalysis = struct {
+        has_wildcard: bool = false,
+        has_variable_binding: bool = false,
+        has_guards: bool = false,
+        has_range_pattern: bool = false,
+        has_tuple_patterns: bool = false,
+        has_array_patterns: bool = false,
+        has_true: bool = false,
+        has_false: bool = false,
+        covered_integers: HashMap(i64, bool, IntegerContext, std.hash_map.default_max_load_percentage),
+        covered_strings: HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+        covered_enum_variants: HashMap(EnumVariantKey, bool, EnumVariantKeyContext, std.hash_map.default_max_load_percentage),
+        covered_struct_types: HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+        range_patterns: ArrayList(ast.Pattern.RangePattern),
+        allocator: Allocator,
+        
+        const IntegerContext = struct {
+            pub fn hash(self: @This(), key: i64) u64 {
+                _ = self;
+                return @bitCast(key);
+            }
+            pub fn eql(self: @This(), a: i64, b: i64) bool {
+                _ = self;
+                return a == b;
+            }
+        };
+        
+        const EnumVariantKey = struct {
+            enum_name: []const u8,
+            variant_name: []const u8,
+        };
+        
+        const EnumVariantKeyContext = struct {
+            pub fn hash(self: @This(), key: EnumVariantKey) u64 {
+                _ = self;
+                var hasher = std.hash.Wyhash.init(0);
+                hasher.update(key.enum_name);
+                hasher.update(key.variant_name);
+                return hasher.final();
+            }
+            pub fn eql(self: @This(), a: EnumVariantKey, b: EnumVariantKey) bool {
+                _ = self;
+                return std.mem.eql(u8, a.enum_name, b.enum_name) and 
+                       std.mem.eql(u8, a.variant_name, b.variant_name);
+            }
+        };
+        
+        fn init(allocator: Allocator) ExhaustivenessAnalysis {
+            return ExhaustivenessAnalysis{
+                .covered_integers = HashMap(i64, bool, IntegerContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .covered_strings = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .covered_enum_variants = HashMap(EnumVariantKey, bool, EnumVariantKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .covered_struct_types = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .range_patterns = ArrayList(ast.Pattern.RangePattern).init(allocator),
+                .allocator = allocator,
+            };
+        }
+        
+        fn deinit(self: *ExhaustivenessAnalysis) void {
+            self.covered_integers.deinit();
+            self.covered_strings.deinit();
+            self.covered_enum_variants.deinit();
+            self.covered_struct_types.deinit();
+            self.range_patterns.deinit();
+        }
+    };
+    
+    const ExhaustivenessResult = struct {
+        is_exhaustive: bool,
+        missing_patterns: ArrayList([]const u8),
+    };
 
     /// Helper to get a temporary variable name
     fn getTempVar(self: *PatternCompiler) ![]const u8 {

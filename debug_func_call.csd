@@ -1,1 +1,3 @@
-yeet "mathz"; sus result drip = abs_normie(-5); vibez.spill("Result:", result)
+yeet "mathz"
+
+vibez.spill(max_normie(10, 5))

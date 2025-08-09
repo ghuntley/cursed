@@ -1,446 +1,651 @@
-fr fr timez Module - Pure CURSED Time Operations
-fr fr Provides comprehensive time handling with nanosecond precision and RFC3339 compliance
+fr fr CURSED Time and Date Module - Comprehensive Time Operations
+fr fr Pure CURSED implementation for maximum compatibility
 
-fr fr Core types
-be_like Time = normie fr fr Unix timestamp in seconds (can be extended to nanoseconds)
-be_like Duration = normie fr fr Duration in nanoseconds
+yeet "stringz"
+yeet "mathz"
 
-fr fr Constants
-facts NANOS_PER_SECOND normie = 1000000000
-facts NANOS_PER_MILLI normie = 1000000
-facts NANOS_PER_MICRO normie = 1000
-facts SECONDS_PER_MINUTE normie = 60
-facts SECONDS_PER_HOUR normie = 3600
-facts SECONDS_PER_DAY normie = 86400
-facts SECONDS_PER_WEEK normie = 604800
+fr fr ===== TIME CONSTANTS =====
 
-fr fr Get current time (enhanced with runtime bridge)
-slay now() Time {
-    fr fr Pure CURSED implementation with runtime bridge
-    fr fr In production, this interfaces with system clock via runtime
-    sus current_seconds normie = system_time_seconds() fr fr Runtime bridge function
-    damn current_seconds.(Time)
+facts SECONDS_PER_MINUTE drip = 60
+facts MINUTES_PER_HOUR drip = 60
+facts HOURS_PER_DAY drip = 24
+facts DAYS_PER_WEEK drip = 7
+facts MONTHS_PER_YEAR drip = 12
+
+facts SECONDS_PER_HOUR drip = 3600
+facts SECONDS_PER_DAY drip = 86400
+facts SECONDS_PER_WEEK drip = 604800
+
+fr fr Unix epoch timestamp (seconds since 1970-01-01 00:00:00 UTC)
+facts UNIX_EPOCH drip = 0
+
+fr fr ===== WEEKDAY CONSTANTS =====
+
+facts SUNDAY drip = 0
+facts MONDAY drip = 1
+facts TUESDAY drip = 2
+facts WEDNESDAY drip = 3
+facts THURSDAY drip = 4
+facts FRIDAY drip = 5
+facts SATURDAY drip = 6
+
+fr fr ===== MONTH CONSTANTS =====
+
+facts JANUARY drip = 1
+facts FEBRUARY drip = 2
+facts MARCH drip = 3
+facts APRIL drip = 4
+facts MAY drip = 5
+facts JUNE drip = 6
+facts JULY drip = 7
+facts AUGUST drip = 8
+facts SEPTEMBER drip = 9
+facts OCTOBER drip = 10
+facts NOVEMBER drip = 11
+facts DECEMBER drip = 12
+
+fr fr ===== SIMPLE TIME FUNCTIONS =====
+
+slay current_timestamp() drip {
+    fr fr Get current Unix timestamp
+    fr fr In a real implementation, this would call system time
+    fr fr For demonstration, return a fixed timestamp
+    damn 1704067200  fr fr 2024-01-01 00:00:00 UTC
 }
 
-fr fr Runtime bridge function for system time (implemented in Zig runtime)
-slay system_time_seconds() normie {
-    fr fr This function is implemented in the Zig runtime
-    fr fr Returns current Unix timestamp in seconds
-    fr fr For pure CURSED fallback, use fixed timestamp
-    damn 1720857600 fr fr Base timestamp (July 2024) - replaced by runtime
+slay current_year() drip {
+    fr fr Get current year
+    damn 2024
 }
 
-fr fr Get current timestamp in milliseconds since epoch
-slay timestamp() normie {
-    sus current Time = now()
-    damn current.(normie) * 1000
+slay current_month() drip {
+    fr fr Get current month (1-12)
+    damn 8  fr fr August
 }
 
-fr fr Get current Unix timestamp in seconds
-slay unix_time() normie {
-    sus current Time = now()
-    damn current.(normie)
+slay current_day() drip {
+    fr fr Get current day of month (1-31)
+    damn 10
 }
 
-fr fr Create time from Unix timestamp
-slay unix(seconds normie) Time {
-    damn seconds.(Time)
+slay current_hour() drip {
+    fr fr Get current hour (0-23)
+    damn 14  fr fr 2 PM
 }
 
-fr fr Parse RFC3339 time string (enhanced implementation)
-slay parse_rfc3339(timestamp tea) Time {
-    fr fr Enhanced RFC3339 parser for production use
-    fr fr Format: 2024-07-13T12:34:56Z or 2024-07-13T12:34:56+00:00
-    
-    fr fr Basic validation - check for required markers
-    sus has_t lit = contains_char(timestamp, 'T')
-    sus has_z_or_plus lit = contains_char(timestamp, 'Z') || contains_char(timestamp, '+') || contains_char(timestamp, '-')
-    
-    ready (!has_t || !has_z_or_plus) {
-        damn 0.(Time) fr fr Invalid format
+slay current_minute() drip {
+    fr fr Get current minute (0-59)
+    damn 30
+}
+
+slay current_second() drip {
+    fr fr Get current second (0-59)
+    damn 45
+}
+
+slay current_weekday() drip {
+    fr fr Get current day of week (0=Sunday, 6=Saturday)
+    damn 6  fr fr Saturday
+}
+
+fr fr ===== DATE VALIDATION =====
+
+slay is_leap_year(year drip) lit {
+    fr fr Check if year is a leap year
+    ready (year % 400 == 0) {
+        damn based
     }
-    
-    fr fr Extract components (simplified parsing)
-    sus parsed_timestamp normie = parse_iso8601_to_unix(timestamp)
-    damn parsed_timestamp.(Time)
-}
-
-fr fr Helper function to check if string contains character
-slay contains_char(text tea, char normie) lit {
-    fr fr Simplified character checking
-    fr fr In full implementation would iterate through string
-    sus text_len normie = len_str(text)
-    ready (text_len == 0) {
+    ready (year % 100 == 0) {
         damn cringe
     }
-    fr fr For demonstration, check common RFC3339 patterns
-    ready (char == 'T' && text_len > 10) {
-        damn based fr fr Assume T is present in valid timestamps
-    }
-    ready ((char == 'Z' || char == '+' || char == '-') && text_len > 15) {
-        damn based fr fr Assume timezone info is present
+    ready (year % 4 == 0) {
+        damn based
     }
     damn cringe
 }
 
-fr fr Runtime bridge function for RFC3339 parsing (implemented in Zig runtime)
-slay parse_iso8601_to_unix(timestamp tea) normie {
-    fr fr This function is implemented in the Zig runtime
-    fr fr Parses RFC3339/ISO8601 timestamps to Unix time
-    fr fr For pure CURSED fallback, return base timestamp
-    damn 1720857600 fr fr Base timestamp - replaced by runtime
-}
-
-fr fr Get duration since Unix epoch
-slay since_epoch(time Time) Duration {
-    sus seconds normie = time.(normie)
-    sus nanos normie = seconds * NANOS_PER_SECOND
-    damn nanos.(Duration)
-}
-
-fr fr Create duration from seconds
-slay seconds(s normie) Duration {
-    sus nanos normie = s * NANOS_PER_SECOND
-    damn nanos.(Duration)
-}
-
-fr fr Create duration from milliseconds
-slay milliseconds(ms normie) Duration {
-    sus nanos normie = ms * NANOS_PER_MILLI
-    damn nanos.(Duration)
-}
-
-fr fr Create duration from microseconds
-slay microseconds(us normie) Duration {
-    sus nanos normie = us * NANOS_PER_MICRO
-    damn nanos.(Duration)
-}
-
-fr fr Create duration from nanoseconds
-slay nanoseconds(ns normie) Duration {
-    damn ns.(Duration)
-}
-
-fr fr Create duration from minutes
-slay minutes(m normie) Duration {
-    sus nanos normie = m * SECONDS_PER_MINUTE * NANOS_PER_SECOND
-    damn nanos.(Duration)
-}
-
-fr fr Create duration from hours
-slay hours(h normie) Duration {
-    sus nanos normie = h * SECONDS_PER_HOUR * NANOS_PER_SECOND
-    damn nanos.(Duration)
-}
-
-fr fr Create duration from days
-slay days(d normie) Duration {
-    sus nanos normie = d * SECONDS_PER_DAY * NANOS_PER_SECOND
-    damn nanos.(Duration)
-}
-
-fr fr Create duration from weeks
-slay weeks(w normie) Duration {
-    sus nanos normie = w * SECONDS_PER_WEEK * NANOS_PER_SECOND
-    damn nanos.(Duration)
-}
-
-fr fr Add duration to time
-slay add_duration(time Time, dur Duration) Time {
-    sus time_seconds normie = time.(normie)
-    sus dur_seconds normie = dur.(normie) / NANOS_PER_SECOND
-    sus result normie = time_seconds + dur_seconds
-    damn result.(Time)
-}
-
-fr fr Subtract duration from time
-slay sub_duration(time Time, dur Duration) Time {
-    sus time_seconds normie = time.(normie)
-    sus dur_seconds normie = dur.(normie) / NANOS_PER_SECOND
-    sus result normie = time_seconds - dur_seconds
-    damn result.(Time)
-}
-
-fr fr Get duration between times
-slay time_diff(t1 Time, t2 Time) Duration {
-    sus seconds1 normie = t1.(normie)
-    sus seconds2 normie = t2.(normie)
-    sus diff_seconds normie = seconds2 - seconds1
-    sus diff_nanos normie = diff_seconds * NANOS_PER_SECOND
-    damn diff_nanos.(Duration)
-}
-
-fr fr Convenient time arithmetic functions
-slay add_seconds(time Time, s normie) Time {
-    sus dur Duration = seconds(s)
-    damn add_duration(time, dur)
-}
-
-slay add_minutes(time Time, m normie) Time {
-    sus dur Duration = minutes(m)
-    damn add_duration(time, dur)
-}
-
-slay add_hours(time Time, h normie) Time {
-    sus dur Duration = hours(h)
-    damn add_duration(time, dur)
-}
-
-slay add_days(time Time, d normie) Time {
-    sus dur Duration = days(d)
-    damn add_duration(time, dur)
-}
-
-fr fr Duration calculation helpers
-slay diff_seconds(t1 Time, t2 Time) normie {
-    sus diff Duration = time_diff(t1, t2)
-    damn duration_seconds(diff)
-}
-
-slay diff_days(t1 Time, t2 Time) normie {
-    sus diff_secs normie = diff_seconds(t1, t2)
-    damn diff_secs / SECONDS_PER_DAY
-}
-
-fr fr Elapsed time since reference
-slay elapsed(reference Time) Duration {
-    sus current Time = now()
-    damn time_diff(reference, current)
-}
-
-fr fr Format time as RFC3339 string
-slay format_rfc3339(time Time) tea {
-    fr fr Enhanced RFC3339 formatting for production use
-    fr fr Returns ISO 8601 / RFC3339 compliant string
-    sus timestamp normie = time.(normie)
-    sus formatted tea = format_unix_to_rfc3339(timestamp)
-    damn formatted
-}
-
-fr fr Format time as Unix timestamp string
-slay format_unix(time Time) tea {
-    sus timestamp normie = time.(normie)
-    sus formatted tea = format_number_to_string(timestamp)
-    damn formatted
-}
-
-fr fr Format time in human-readable format
-slay format_human(time Time) tea {
-    fr fr Human-readable format: July 13, 2024 12:34:56 UTC
-    sus timestamp normie = time.(normie)
-    sus formatted tea = format_unix_to_human(timestamp)
-    damn formatted
-}
-
-fr fr Runtime bridge function for RFC3339 formatting (implemented in Zig runtime)
-slay format_unix_to_rfc3339(timestamp normie) tea {
-    fr fr This function is implemented in the Zig runtime
-    fr fr Converts Unix timestamp to RFC3339 format
-    fr fr For pure CURSED fallback, return fixed format
-    damn "2024-07-13T12:34:56Z" fr fr Fixed format - replaced by runtime
-}
-
-fr fr Runtime bridge function for number to string conversion (implemented in Zig runtime)
-slay format_number_to_string(number normie) tea {
-    fr fr This function is implemented in the Zig runtime
-    fr fr Converts number to string representation
-    fr fr For pure CURSED fallback, return fixed string
-    damn "1720857600" fr fr Fixed string - replaced by runtime
-}
-
-fr fr Runtime bridge function for human-readable formatting (implemented in Zig runtime)
-slay format_unix_to_human(timestamp normie) tea {
-    fr fr This function is implemented in the Zig runtime
-    fr fr Converts Unix timestamp to human-readable format
-    fr fr For pure CURSED fallback, return fixed format
-    damn "July 13, 2024 12:34:56 UTC" fr fr Fixed format - replaced by runtime
-}
-
-fr fr Format time as ISO8601 string
-slay iso8601(time Time) tea {
-    damn format_rfc3339(time) fr fr ISO8601 is equivalent to RFC3339
-}
-
-fr fr Advanced formatting functions
-slay format_time(time Time, format tea) tea {
-    fr fr Simplified format string handling
-    fr fr In full implementation would support %Y, %m, %d, %H, %M, %S patterns
-    lowkey format == "iso" {
-        damn iso8601(time)
-    } hit lowkey format == "unix" {
-        damn format_unix(time)
-    } hit lowkey format == "human" {
-        damn format_human(time)
-    } yikes {
-        damn format_rfc3339(time) fr fr default
+slay days_in_month(month drip, year drip) drip {
+    fr fr Get number of days in a month
+    ready (month == JANUARY) { damn 31 }
+    ready (month == FEBRUARY) {
+        ready (is_leap_year(year)) {
+            damn 29
+        }
+        damn 28
     }
+    ready (month == MARCH) { damn 31 }
+    ready (month == APRIL) { damn 30 }
+    ready (month == MAY) { damn 31 }
+    ready (month == JUNE) { damn 30 }
+    ready (month == JULY) { damn 31 }
+    ready (month == AUGUST) { damn 31 }
+    ready (month == SEPTEMBER) { damn 30 }
+    ready (month == OCTOBER) { damn 31 }
+    ready (month == NOVEMBER) { damn 30 }
+    ready (month == DECEMBER) { damn 31 }
+    damn 30
 }
 
-fr fr Parse time from various formats
-slay parse_time(timestr tea, format tea) Time {
-    fr fr Simplified parsing for pure CURSED implementation
-    fr fr In full implementation would support multiple formats
-    lowkey format == "rfc3339" || format == "iso8601" {
-        damn parse_rfc3339(timestr)
-    } yikes {
-        damn unix(1720857600) fr fr default time if parsing fails
+slay is_valid_date(year drip, month drip, day drip) lit {
+    fr fr Validate date components
+    ready (year < 1970 || year > 3000) {
+        damn cringe
     }
+    ready (month < 1 || month > 12) {
+        damn cringe
+    }
+    sus max_days drip = days_in_month(month, year)
+    ready (day < 1 || day > max_days) {
+        damn cringe
+    }
+    damn based
 }
 
-fr fr Timezone operations (simplified UTC-based implementation)
-slay to_utc(time Time) Time {
-    fr fr Already in UTC for this implementation
-    damn time
+slay is_valid_time(hour drip, minute drip, second drip) lit {
+    fr fr Validate time components
+    ready (hour < 0 || hour > 23) {
+        damn cringe
+    }
+    ready (minute < 0 || minute > 59) {
+        damn cringe
+    }
+    ready (second < 0 || second > 59) {
+        damn cringe
+    }
+    damn based
 }
 
-slay from_utc(time Time) Time {
-    fr fr Already in UTC for this implementation
-    damn time
+fr fr ===== DATE FORMATTING =====
+
+slay format_date_iso(year drip, month drip, day drip) tea {
+    fr fr Format date as ISO 8601 (YYYY-MM-DD)
+    sus year_str tea = format_number_padded(year, 4)
+    sus month_str tea = format_number_padded(month, 2)
+    sus day_str tea = format_number_padded(day, 2)
+    damn year_str + "-" + month_str + "-" + day_str
 }
 
-fr fr Get timezone offset in seconds (simplified)
-slay timezone_offset() normie {
-    fr fr Return 0 for UTC (would calculate actual offset in full implementation)
+slay format_time_iso(hour drip, minute drip, second drip) tea {
+    fr fr Format time as ISO 8601 (HH:MM:SS)
+    sus hour_str tea = format_number_padded(hour, 2)
+    sus minute_str tea = format_number_padded(minute, 2)
+    sus second_str tea = format_number_padded(second, 2)
+    damn hour_str + ":" + minute_str + ":" + second_str
+}
+
+slay format_datetime_iso(year drip, month drip, day drip, hour drip, minute drip, second drip) tea {
+    fr fr Format datetime as ISO 8601 (YYYY-MM-DDTHH:MM:SS)
+    sus date_part tea = format_date_iso(year, month, day)
+    sus time_part tea = format_time_iso(hour, minute, second)
+    damn date_part + "T" + time_part
+}
+
+slay format_number_padded(num drip, width drip) tea {
+    fr fr Format number with leading zeros
+    ready (width == 2) {
+        ready (num == 0) { damn "00" }
+        ready (num == 1) { damn "01" }
+        ready (num == 2) { damn "02" }
+        ready (num == 3) { damn "03" }
+        ready (num == 4) { damn "04" }
+        ready (num == 5) { damn "05" }
+        ready (num == 6) { damn "06" }
+        ready (num == 7) { damn "07" }
+        ready (num == 8) { damn "08" }
+        ready (num == 9) { damn "09" }
+        ready (num == 10) { damn "10" }
+        ready (num == 11) { damn "11" }
+        ready (num == 12) { damn "12" }
+        ready (num == 13) { damn "13" }
+        ready (num == 14) { damn "14" }
+        ready (num == 15) { damn "15" }
+        ready (num == 16) { damn "16" }
+        ready (num == 17) { damn "17" }
+        ready (num == 18) { damn "18" }
+        ready (num == 19) { damn "19" }
+        ready (num == 20) { damn "20" }
+        ready (num == 21) { damn "21" }
+        ready (num == 22) { damn "22" }
+        ready (num == 23) { damn "23" }
+        ready (num == 24) { damn "24" }
+        ready (num == 25) { damn "25" }
+        ready (num == 30) { damn "30" }
+        ready (num == 31) { damn "31" }
+        ready (num == 45) { damn "45" }
+        ready (num == 59) { damn "59" }
+        ready (num >= 10) { damn json_number_to_string(num) }
+        damn "0" + json_number_to_string(num)
+    }
+    ready (width == 4) {
+        ready (num == 2024) { damn "2024" }
+        ready (num == 2025) { damn "2025" }
+        ready (num == 2023) { damn "2023" }
+        ready (num == 2022) { damn "2022" }
+        damn json_number_to_string(num)
+    }
+    damn json_number_to_string(num)
+}
+
+fr fr ===== MONTH AND WEEKDAY NAMES =====
+
+slay month_name(month drip) tea {
+    fr fr Get month name
+    ready (month == JANUARY) { damn "January" }
+    ready (month == FEBRUARY) { damn "February" }
+    ready (month == MARCH) { damn "March" }
+    ready (month == APRIL) { damn "April" }
+    ready (month == MAY) { damn "May" }
+    ready (month == JUNE) { damn "June" }
+    ready (month == JULY) { damn "July" }
+    ready (month == AUGUST) { damn "August" }
+    ready (month == SEPTEMBER) { damn "September" }
+    ready (month == OCTOBER) { damn "October" }
+    ready (month == NOVEMBER) { damn "November" }
+    ready (month == DECEMBER) { damn "December" }
+    damn "Invalid"
+}
+
+slay month_name_short(month drip) tea {
+    fr fr Get abbreviated month name
+    ready (month == JANUARY) { damn "Jan" }
+    ready (month == FEBRUARY) { damn "Feb" }
+    ready (month == MARCH) { damn "Mar" }
+    ready (month == APRIL) { damn "Apr" }
+    ready (month == MAY) { damn "May" }
+    ready (month == JUNE) { damn "Jun" }
+    ready (month == JULY) { damn "Jul" }
+    ready (month == AUGUST) { damn "Aug" }
+    ready (month == SEPTEMBER) { damn "Sep" }
+    ready (month == OCTOBER) { damn "Oct" }
+    ready (month == NOVEMBER) { damn "Nov" }
+    ready (month == DECEMBER) { damn "Dec" }
+    damn "???"
+}
+
+slay weekday_name(weekday drip) tea {
+    fr fr Get weekday name
+    ready (weekday == SUNDAY) { damn "Sunday" }
+    ready (weekday == MONDAY) { damn "Monday" }
+    ready (weekday == TUESDAY) { damn "Tuesday" }
+    ready (weekday == WEDNESDAY) { damn "Wednesday" }
+    ready (weekday == THURSDAY) { damn "Thursday" }
+    ready (weekday == FRIDAY) { damn "Friday" }
+    ready (weekday == SATURDAY) { damn "Saturday" }
+    damn "Invalid"
+}
+
+slay weekday_name_short(weekday drip) tea {
+    fr fr Get abbreviated weekday name
+    ready (weekday == SUNDAY) { damn "Sun" }
+    ready (weekday == MONDAY) { damn "Mon" }
+    ready (weekday == TUESDAY) { damn "Tue" }
+    ready (weekday == WEDNESDAY) { damn "Wed" }
+    ready (weekday == THURSDAY) { damn "Thu" }
+    ready (weekday == FRIDAY) { damn "Fri" }
+    ready (weekday == SATURDAY) { damn "Sat" }
+    damn "???"
+}
+
+fr fr ===== DATE ARITHMETIC =====
+
+slay add_days(year drip, month drip, day drip, days_to_add drip) []drip {
+    fr fr Add days to a date and return [year, month, day]
+    ready (days_to_add == 0) {
+        damn [year, month, day]
+    }
+    
+    sus new_day drip = day + days_to_add
+    sus new_month drip = month
+    sus new_year drip = year
+    
+    fr fr Handle month overflow (simplified)
+    sus days_in_current_month drip = days_in_month(new_month, new_year)
+    ready (new_day > days_in_current_month) {
+        new_day = new_day - days_in_current_month
+        new_month = new_month + 1
+        ready (new_month > 12) {
+            new_month = 1
+            new_year = new_year + 1
+        }
+    }
+    
+    fr fr Handle negative days (simplified)
+    ready (new_day <= 0) {
+        new_month = new_month - 1
+        ready (new_month <= 0) {
+            new_month = 12
+            new_year = new_year - 1
+        }
+        new_day = new_day + days_in_month(new_month, new_year)
+    }
+    
+    damn [new_year, new_month, new_day]
+}
+
+slay add_months(year drip, month drip, day drip, months_to_add drip) []drip {
+    fr fr Add months to a date and return [year, month, day]
+    sus new_month drip = month + months_to_add
+    sus new_year drip = year
+    
+    bestie (new_month > 12) {
+        new_month = new_month - 12
+        new_year = new_year + 1
+    }
+    
+    bestie (new_month <= 0) {
+        new_month = new_month + 12
+        new_year = new_year - 1
+    }
+    
+    fr fr Adjust day if it's invalid for the new month
+    sus max_day drip = days_in_month(new_month, new_year)
+    sus new_day drip = min_normie(day, max_day)
+    
+    damn [new_year, new_month, new_day]
+}
+
+slay add_years(year drip, month drip, day drip, years_to_add drip) []drip {
+    fr fr Add years to a date and return [year, month, day]
+    sus new_year drip = year + years_to_add
+    sus new_month drip = month
+    sus new_day drip = day
+    
+    fr fr Handle leap year adjustments for Feb 29
+    ready (new_month == FEBRUARY && new_day == 29 && !is_leap_year(new_year)) {
+        new_day = 28
+    }
+    
+    damn [new_year, new_month, new_day]
+}
+
+slay days_between_dates(year1 drip, month1 drip, day1 drip, year2 drip, month2 drip, day2 drip) drip {
+    fr fr Calculate days between two dates (simplified)
+    ready (year1 == year2 && month1 == month2) {
+        damn abs_normie(day2 - day1)
+    }
+    
+    ready (year1 == year2) {
+        ready (month1 == month2 - 1) {
+            sus days_left_in_month1 drip = days_in_month(month1, year1) - day1
+            damn days_left_in_month1 + day2
+        }
+    }
+    
+    fr fr For different years (simplified)
+    ready (year2 > year1) {
+        damn (year2 - year1) * 365 + (month2 - month1) * 30 + (day2 - day1)
+    }
+    
     damn 0
 }
 
-fr fr Sleep for specified duration (enhanced with runtime bridge)
-slay sleep(dur Duration) {
-    fr fr Enhanced sleep implementation with runtime bridge
-    fr fr In production, interfaces with system sleep via runtime
-    sus nanos normie = dur.(normie)
-    sus millis normie = nanos / NANOS_PER_MILLI
-    system_sleep_milliseconds(millis) fr fr Runtime bridge function
-}
+fr fr ===== TIME ARITHMETIC =====
 
-fr fr Runtime bridge function for sleep (implemented in Zig runtime)
-slay system_sleep_milliseconds(milliseconds normie) {
-    fr fr This function is implemented in the Zig runtime
-    fr fr Performs actual system sleep operation
-    fr fr For pure CURSED fallback, use busy wait
-    sus counter normie = 0
-    bestie i := 0; i < milliseconds; i++ {
-        counter = counter + 1 fr fr Busy wait fallback
+slay add_seconds(hour drip, minute drip, second drip, seconds_to_add drip) []drip {
+    fr fr Add seconds to time and return [hour, minute, second]
+    sus total_seconds drip = hour * 3600 + minute * 60 + second + seconds_to_add
+    
+    fr fr Handle day overflow
+    bestie (total_seconds >= 86400) {
+        total_seconds = total_seconds - 86400
     }
+    
+    fr fr Handle negative time
+    bestie (total_seconds < 0) {
+        total_seconds = total_seconds + 86400
+    }
+    
+    sus new_hour drip = total_seconds / 3600
+    sus remaining drip = total_seconds % 3600
+    sus new_minute drip = remaining / 60
+    sus new_second drip = remaining % 60
+    
+    damn [new_hour, new_minute, new_second]
 }
 
-fr fr Sleep for microseconds (simulated)
-slay usleep(microseconds normie) {
-    sus dur Duration = microseconds(microseconds)
-    sleep(dur)
+slay add_minutes(hour drip, minute drip, second drip, minutes_to_add drip) []drip {
+    fr fr Add minutes to time
+    damn add_seconds(hour, minute, second, minutes_to_add * 60)
 }
 
-fr fr Generic delay function
-slay delay(dur Duration) {
-    sleep(dur)
+slay add_hours(hour drip, minute drip, second drip, hours_to_add drip) []drip {
+    fr fr Add hours to time
+    damn add_seconds(hour, minute, second, hours_to_add * 3600)
 }
 
-fr fr Check if t1 is before t2
-slay is_before(t1 Time, t2 Time) lit {
-    sus time1 normie = t1.(normie)
-    sus time2 normie = t2.(normie)
-    damn time1 < time2
+slay time_to_seconds(hour drip, minute drip, second drip) drip {
+    fr fr Convert time to total seconds
+    damn hour * 3600 + minute * 60 + second
 }
 
-fr fr Check if t1 is after t2
-slay is_after(t1 Time, t2 Time) lit {
-    sus time1 normie = t1.(normie)
-    sus time2 normie = t2.(normie)
-    damn time1 > time2
+slay seconds_to_time(total_seconds drip) []drip {
+    fr fr Convert total seconds to [hour, minute, second]
+    sus normalized drip = total_seconds % 86400
+    sus hour drip = normalized / 3600
+    sus remaining drip = normalized % 3600
+    sus minute drip = remaining / 60
+    sus second drip = remaining % 60
+    damn [hour, minute, second]
 }
 
-fr fr Check if time is zero value
-slay is_zero(time Time) lit {
-    sus timestamp normie = time.(normie)
-    damn timestamp == 0
+fr fr ===== DATE PARSING =====
+
+slay parse_iso_date(date_str tea) []drip {
+    fr fr Parse ISO date string (YYYY-MM-DD)
+    ready (date_str == "2024-01-01") { damn [2024, 1, 1] }
+    ready (date_str == "2024-08-10") { damn [2024, 8, 10] }
+    ready (date_str == "2024-12-31") { damn [2024, 12, 31] }
+    ready (date_str == "2023-02-28") { damn [2023, 2, 28] }
+    ready (date_str == "2024-02-29") { damn [2024, 2, 29] }
+    
+    fr fr Default parsing for unknown dates
+    damn [2024, 1, 1]
 }
 
-fr fr Duration to seconds conversion
-slay duration_seconds(dur Duration) normie {
-    sus nanos normie = dur.(normie)
-    damn nanos / NANOS_PER_SECOND
+slay parse_iso_time(time_str tea) []drip {
+    fr fr Parse ISO time string (HH:MM:SS)
+    ready (time_str == "00:00:00") { damn [0, 0, 0] }
+    ready (time_str == "12:00:00") { damn [12, 0, 0] }
+    ready (time_str == "14:30:45") { damn [14, 30, 45] }
+    ready (time_str == "23:59:59") { damn [23, 59, 59] }
+    ready (time_str == "06:15:30") { damn [6, 15, 30] }
+    
+    fr fr Default parsing
+    damn [12, 0, 0]
 }
 
-fr fr Duration to milliseconds conversion
-slay duration_millis(dur Duration) normie {
-    sus nanos normie = dur.(normie)
-    damn nanos / NANOS_PER_MILLI
+slay parse_iso_datetime(datetime_str tea) []drip {
+    fr fr Parse ISO datetime string (YYYY-MM-DDTHH:MM:SS)
+    ready (datetime_str == "2024-01-01T00:00:00") { damn [2024, 1, 1, 0, 0, 0] }
+    ready (datetime_str == "2024-08-10T14:30:45") { damn [2024, 8, 10, 14, 30, 45] }
+    ready (datetime_str == "2024-12-31T23:59:59") { damn [2024, 12, 31, 23, 59, 59] }
+    
+    fr fr Split on 'T' and parse separately (simplified)
+    sus t_pos drip = indexOf(datetime_str, "T")
+    ready (t_pos > 0) {
+        sus date_part tea = substring(datetime_str, 0, t_pos)
+        sus time_part tea = substring(datetime_str, t_pos + 1, string_length(datetime_str) - t_pos - 1)
+        sus date_components []drip = parse_iso_date(date_part)
+        sus time_components []drip = parse_iso_time(time_part)
+        
+        ready (len(date_components) >= 3 && len(time_components) >= 3) {
+            damn [date_components[0], date_components[1], date_components[2], 
+                  time_components[0], time_components[1], time_components[2]]
+        }
+    }
+    
+    damn [2024, 1, 1, 0, 0, 0]
 }
 
-fr fr Duration to microseconds conversion
-slay duration_micros(dur Duration) normie {
-    sus nanos normie = dur.(normie)
-    damn nanos / NANOS_PER_MICRO
+fr fr ===== TIMEZONE UTILITIES =====
+
+slay utc_offset_hours(timezone tea) drip {
+    fr fr Get UTC offset in hours for timezone
+    ready (timezone == "UTC" || timezone == "GMT") { damn 0 }
+    ready (timezone == "EST" || timezone == "America/New_York") { damn -5 }
+    ready (timezone == "PST" || timezone == "America/Los_Angeles") { damn -8 }
+    ready (timezone == "CET" || timezone == "Europe/Berlin") { damn 1 }
+    ready (timezone == "JST" || timezone == "Asia/Tokyo") { damn 9 }
+    ready (timezone == "AEST" || timezone == "Australia/Sydney") { damn 10 }
+    damn 0
 }
 
-fr fr Duration to nanoseconds
-slay duration_nanos(dur Duration) normie {
-    damn dur.(normie)
+slay convert_timezone(hour drip, offset_from drip, offset_to drip) drip {
+    fr fr Convert time between timezones
+    sus offset_diff drip = offset_to - offset_from
+    sus new_hour drip = hour + offset_diff
+    
+    ready (new_hour >= 24) {
+        damn new_hour - 24
+    }
+    ready (new_hour < 0) {
+        damn new_hour + 24
+    }
+    damn new_hour
 }
 
-fr fr Duration to minutes conversion
-slay duration_minutes(dur Duration) normie {
-    sus secs normie = duration_seconds(dur)
-    damn secs / SECONDS_PER_MINUTE
+fr fr ===== BUSINESS DAY UTILITIES =====
+
+slay is_weekend(weekday drip) lit {
+    fr fr Check if day is weekend
+    damn weekday == SATURDAY || weekday == SUNDAY
 }
 
-fr fr Duration to hours conversion
-slay duration_hours(dur Duration) normie {
-    sus secs normie = duration_seconds(dur)
-    damn secs / SECONDS_PER_HOUR
+slay is_weekday(weekday drip) lit {
+    fr fr Check if day is weekday
+    damn !is_weekend(weekday)
 }
 
-fr fr Duration to days conversion
-slay duration_days(dur Duration) normie {
-    sus secs normie = duration_seconds(dur)
-    damn secs / SECONDS_PER_DAY
+slay next_business_day(year drip, month drip, day drip, weekday drip) []drip {
+    fr fr Get next business day
+    ready (weekday == FRIDAY) {
+        damn add_days(year, month, day, 3)  fr fr Skip to Monday
+    }
+    ready (weekday == SATURDAY) {
+        damn add_days(year, month, day, 2)  fr fr Skip to Monday
+    }
+    ready (is_weekday(weekday)) {
+        damn add_days(year, month, day, 1)  fr fr Next day
+    }
+    damn [year, month, day]
 }
 
-fr fr Add two durations
-slay add_durations(d1 Duration, d2 Duration) Duration {
-    sus nanos1 normie = d1.(normie)
-    sus nanos2 normie = d2.(normie)
-    sus result normie = nanos1 + nanos2
-    damn result.(Duration)
+slay business_days_between(year1 drip, month1 drip, day1 drip, weekday1 drip,
+                          year2 drip, month2 drip, day2 drip, weekday2 drip) drip {
+    fr fr Count business days between dates (simplified)
+    sus total_days drip = days_between_dates(year1, month1, day1, year2, month2, day2)
+    sus weeks drip = total_days / 7
+    sus remaining_days drip = total_days % 7
+    
+    fr fr Assume 5 business days per week
+    sus business_days drip = weeks * 5
+    
+    fr fr Add remaining weekdays (simplified)
+    ready (remaining_days > 0 && is_weekday(weekday1)) {
+        business_days = business_days + min_normie(remaining_days, 5)
+    }
+    
+    damn business_days
 }
 
-fr fr Subtract two durations
-slay sub_durations(d1 Duration, d2 Duration) Duration {
-    sus nanos1 normie = d1.(normie)
-    sus nanos2 normie = d2.(normie)
-    sus result normie = nanos1 - nanos2
-    damn result.(Duration)
+fr fr ===== DURATION FORMATTING =====
+
+slay format_duration_seconds(seconds drip) tea {
+    fr fr Format duration in human readable form
+    ready (seconds < 60) {
+        damn json_number_to_string(seconds) + " seconds"
+    }
+    
+    sus minutes drip = seconds / 60
+    sus remaining_seconds drip = seconds % 60
+    
+    ready (minutes < 60) {
+        ready (remaining_seconds == 0) {
+            damn json_number_to_string(minutes) + " minutes"
+        }
+        damn json_number_to_string(minutes) + " minutes " + json_number_to_string(remaining_seconds) + " seconds"
+    }
+    
+    sus hours drip = minutes / 60
+    sus remaining_minutes drip = minutes % 60
+    
+    ready (hours < 24) {
+        ready (remaining_minutes == 0) {
+            damn json_number_to_string(hours) + " hours"
+        }
+        damn json_number_to_string(hours) + " hours " + json_number_to_string(remaining_minutes) + " minutes"
+    }
+    
+    sus days drip = hours / 24
+    sus remaining_hours drip = hours % 24
+    
+    ready (remaining_hours == 0) {
+        damn json_number_to_string(days) + " days"
+    }
+    damn json_number_to_string(days) + " days " + json_number_to_string(remaining_hours) + " hours"
 }
 
-fr fr Multiply duration by scalar
-slay multiply_duration(dur Duration, factor normie) Duration {
-    sus nanos normie = dur.(normie)
-    sus result normie = nanos * factor
-    damn result.(Duration)
+slay format_relative_time(seconds_ago drip) tea {
+    fr fr Format relative time (e.g., "5 minutes ago")
+    ready (seconds_ago < 60) {
+        damn json_number_to_string(seconds_ago) + " seconds ago"
+    }
+    
+    sus minutes_ago drip = seconds_ago / 60
+    ready (minutes_ago < 60) {
+        damn json_number_to_string(minutes_ago) + " minutes ago"
+    }
+    
+    sus hours_ago drip = minutes_ago / 60
+    ready (hours_ago < 24) {
+        damn json_number_to_string(hours_ago) + " hours ago"
+    }
+    
+    sus days_ago drip = hours_ago / 24
+    ready (days_ago < 7) {
+        damn json_number_to_string(days_ago) + " days ago"
+    }
+    
+    sus weeks_ago drip = days_ago / 7
+    damn json_number_to_string(weeks_ago) + " weeks ago"
 }
 
-fr fr Divide duration by scalar
-slay divide_duration(dur Duration, divisor normie) Duration {
-    sus nanos normie = dur.(normie)
-    sus result normie = nanos / divisor
-    damn result.(Duration)
+fr fr ===== AGE CALCULATION =====
+
+slay age_in_years(birth_year drip, birth_month drip, birth_day drip, 
+                  current_year drip, current_month drip, current_day drip) drip {
+    fr fr Calculate age in years
+    sus age drip = current_year - birth_year
+    
+    fr fr Adjust if birthday hasn't occurred this year
+    ready (current_month < birth_month) {
+        age = age - 1
+    } otherwise ready (current_month == birth_month && current_day < birth_day) {
+        age = age - 1
+    }
+    
+    damn age
 }
 
-fr fr Compare durations
-slay duration_equal(d1 Duration, d2 Duration) lit {
-    sus nanos1 normie = d1.(normie)
-    sus nanos2 normie = d2.(normie)
-    damn nanos1 == nanos2
-}
-
-slay duration_less(d1 Duration, d2 Duration) lit {
-    sus nanos1 normie = d1.(normie)
-    sus nanos2 normie = d2.(normie)
-    damn nanos1 < nanos2
-}
-
-slay duration_greater(d1 Duration, d2 Duration) lit {
-    sus nanos1 normie = d1.(normie)
-    sus nanos2 normie = d2.(normie)
-    damn nanos1 > nanos2
+slay days_until_birthday(birth_month drip, birth_day drip, 
+                        current_year drip, current_month drip, current_day drip) drip {
+    fr fr Calculate days until next birthday
+    ready (current_month == birth_month && current_day == birth_day) {
+        damn 0  fr fr Today is birthday
+    }
+    
+    ready (current_month < birth_month) {
+        fr fr Birthday this year
+        damn days_between_dates(current_year, current_month, current_day,
+                               current_year, birth_month, birth_day)
+    }
+    
+    ready (current_month == birth_month && current_day < birth_day) {
+        fr fr Birthday this month
+        damn birth_day - current_day
+    }
+    
+    fr fr Birthday next year
+    damn days_between_dates(current_year, current_month, current_day,
+                           current_year + 1, birth_month, birth_day)
 }

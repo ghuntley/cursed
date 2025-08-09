@@ -2532,20 +2532,18 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
 }
 
 pub fn handleVibesSpill(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, start: usize, verbose: bool) !void {
-    print("🔍 DEBUG: handleVibesSpill called with line: '{s}'\n", .{line});
+    if (verbose) print("🔍 DEBUG: handleVibesSpill called with line: '{s}'\n", .{line});
     if (std.mem.indexOf(u8, line[start..], "(")) |paren_start| {
         if (std.mem.lastIndexOf(u8, line, ")")) |paren_end| {
             const content_start = start + paren_start + 1;
             const content = line[content_start..paren_end];
             const trimmed_content = std.mem.trim(u8, content, " \t");
             
-            print("🔍 DEBUG: vibez.spill content: '{s}'\n", .{trimmed_content});
+            if (verbose) print("🔍 DEBUG: vibez.spill content: '{s}'\n", .{trimmed_content});
             if (verbose) print("🔍 Evaluating vibez.spill argument: '{s}'\n", .{trimmed_content});
-            if (verbose) print("🔍 About to check comma\n", .{});
             
-            // Temporarily hardcode comma detection for debugging
+            // Check if there are multiple arguments separated by commas (but not inside quotes)
             const has_comma = std.mem.indexOf(u8, trimmed_content, ",") != null;
-            print("🔍 DEBUG: Has comma: {any}\n", .{has_comma});
             if (verbose) print("🔍 Simple comma check: '{any}'\n", .{has_comma});
             
             // Check if there are multiple arguments separated by commas (but not inside quotes)
@@ -2650,9 +2648,9 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
             if (verbose) print("🔍 Detected potential function call: '{s}'\n", .{trimmed_content});
             
             // Try evaluating as expression first (this handles built-in functions like len())
-            print("🔍 DEBUG: About to evaluate expression: '{s}'\n", .{trimmed_content});
+            if (verbose) print("🔍 DEBUG: About to evaluate expression: '{s}'\n", .{trimmed_content});
             if (evaluateExpression(variables, functions, allocator, trimmed_content, verbose)) |result| {
-            print("✅ DEBUG: Expression evaluation succeeded!\n", .{});
+            if (verbose) print("✅ DEBUG: Expression evaluation succeeded!\n", .{});
             const result_str = try result.toString(allocator);
             defer allocator.free(result_str);
             print("{s}", .{result_str});
@@ -2663,7 +2661,7 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
                 tmp.deinit(allocator);
             return;
         } else |expr_err| {
-            print("❌ DEBUG: Expression evaluation failed: {any}\n", .{expr_err});
+            if (verbose) print("❌ DEBUG: Expression evaluation failed: {any}\n", .{expr_err});
                 // If expression evaluation fails, try function call directly
                 if (handleFunctionCall(functions, variables, allocator, trimmed_content, verbose)) |func_result| {
                     if (func_result) |result| {

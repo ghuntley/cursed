@@ -394,6 +394,15 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     
+    // Performance optimization options
+    const enable_compiler_optimizations = b.option(bool, "optimize-compiler", "Enable compiler performance optimizations") orelse true;
+    const enable_parallel_compilation = b.option(bool, "parallel", "Enable parallel compilation") orelse true;
+    const enable_compilation_cache = b.option(bool, "cache", "Enable compilation caching") orelse true;
+    const llvm_optimization_level = b.option([]const u8, "llvm-opt", "LLVM optimization level (O0, O1, O2, O3, Os, Oz)") orelse "O2";
+    const enable_fast_build = b.option(bool, "fast-build", "Prioritize compilation speed over runtime performance") orelse false;
+    const enable_performance_profiling = b.option(bool, "profile", "Enable performance profiling") orelse false;
+    const enable_memory_optimization = b.option(bool, "memory-opt", "Enable memory optimization") orelse true;
+    
     // Ensure we use the resolved target properly
     // Fix CPU detection issue - override incorrect CPU detection
     const resolved_target = blk: {
@@ -443,36 +452,119 @@ pub fn build(b: *std.Build) void {
     }
 
     // Create the CURSED compiler executable - use unified main with proper CLI parsing
+    const root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else if (is_wasm) 
+        b.path("src-zig/wasm_minimal_compiler.zig") 
+    else 
+        b.path("src-zig/main_unified.zig");
+        
     const exe = b.addExecutable(.{
         .name = "cursed", 
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main_unified.zig"),
+        .root_source_file = root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
 
     // Create stable minimal compiler (core features only, no stdlib)
+    const stable_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else 
+        b.path("src-zig/stable_minimal_main.zig");
+        
     const exe_stable = b.addExecutable(.{
         .name = "cursed-stable",
-        .root_source_file = b.path("src-zig/stable_minimal_main.zig"),
+        .root_source_file = stable_source,
         .target = resolved_target,
         .optimize = optimize,
     });
 
-    // Create interactive debugger (development tool)
-    const debugger_exe = if (!is_wasm) b.addExecutable(.{
-        .name = "cursed-debug",
-        .root_source_file = b.path("src-zig/cursed_debugger_main.zig"),
-        .target = resolved_target,
-        .optimize = optimize,
-    }) else null;
+    // Create optimized compiler with performance enhancements (production builds)
+    const optimized_exe = if (!is_wasm and resolved_target.result.os.tag != .freestanding and resolved_target.result.os.tag != .wasi and enable_compiler_optimizations)
+        b.addExecutable(.{
+            .name = "cursed-optimized",
+            .root_source_file = b.path("src-zig/optimized_main.zig"),
+            .target = resolved_target,
+            .optimize = if (enable_fast_build) .ReleaseFast else .ReleaseSafe,
+        })
+    else 
+        null;
+
+    // Configure performance optimization macros
+    if (optimized_exe) |opt_exe| {
+        if (enable_parallel_compilation) {
+            opt_exe.root_module.addCMacro("CURSED_ENABLE_PARALLEL", "1");
+        }
+        if (enable_compilation_cache) {
+            opt_exe.root_module.addCMacro("CURSED_ENABLE_CACHE", "1");
+        }
+        if (enable_performance_profiling) {
+            opt_exe.root_module.addCMacro("CURSED_ENABLE_PROFILING", "1");
+        }
+        if (enable_memory_optimization) {
+            opt_exe.root_module.addCMacro("CURSED_ENABLE_MEMORY_OPT", "1");
+        }
+        opt_exe.root_module.addCMacro("CURSED_LLVM_OPT_LEVEL", b.fmt("\"{s}\"", .{llvm_optimization_level}));
+        
+        if (!is_wasm) {
+            opt_exe.linkLibC();
+        }
+        
+        if (!is_wasm) {
+            addLlvm(b, opt_exe, resolved_target);
+        }
+        
+        b.installArtifact(opt_exe);
+    }
+
+    // Create interactive debugger (development tool) - skip for WASM and freestanding
+    const debugger_exe = if (!is_wasm and resolved_target.result.os.tag != .freestanding and resolved_target.result.os.tag != .wasi) 
+        b.addExecutable(.{
+            .name = "cursed-debug",
+            .root_source_file = b.path("src-zig/cursed_debugger_main.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }) 
+    else 
+        null;
     
     // Configure debugger for all non-WASM targets
     if (debugger_exe) |debug_exe| {
         debug_exe.linkLibC();
     }
+    
+    // Configure optimized compiler with performance enhancements
+    if (optimized_exe) |opt_exe| {
+        opt_exe.linkLibC();
+        
+        // Add performance optimization macros
+        opt_exe.root_module.addCMacro("CURSED_OPTIMIZED", "1");
+        opt_exe.root_module.addCMacro("CURSED_ENABLE_PARALLEL", if (enable_parallel_compilation) "1" else "0");
+        opt_exe.root_module.addCMacro("CURSED_ENABLE_CACHE", if (enable_compilation_cache) "1" else "0");
+        opt_exe.root_module.addCMacro("CURSED_FAST_BUILD", if (enable_fast_build) "1" else "0");
+        opt_exe.root_module.addCMacro("CURSED_LLVM_OPT_LEVEL", b.fmt("\"{s}\"", .{llvm_optimization_level}));
+        
+        // Enable LLVM for optimized compiler
+        const enable_llvm = config.supports_llvm and !is_cross_compile;
+        if (enable_llvm) {
+            addLlvm(b, opt_exe, resolved_target);
+            opt_exe.root_module.addCMacro("CURSED_ENABLE_LLVM", "1");
+        } else {
+            opt_exe.root_module.addCMacro("CURSED_DISABLE_LLVM", "1");
+        }
+        
+        if (b.verbose) {
+            std.debug.print("✅ Optimized compiler configured with:\n", .{});
+            std.debug.print("  Parallel compilation: {}\n", .{enable_parallel_compilation});
+            std.debug.print("  Compilation cache: {}\n", .{enable_compilation_cache});
+            std.debug.print("  Fast build mode: {}\n", .{enable_fast_build});
+            std.debug.print("  LLVM optimization level: {s}\n", .{llvm_optimization_level});
+        }
+    }
 
-    // Configure libc and LLVM support for main compiler
-    if (!is_wasm) {
+    // Configure libc and LLVM support for main compiler (skip libc for freestanding)
+    const supports_libc = !is_wasm and resolved_target.result.os.tag != .freestanding and resolved_target.result.os.tag != .wasi;
+    if (supports_libc) {
         exe.linkLibC();
         
         // Add LLVM support - enable for native builds and compatible cross-compilation
@@ -546,23 +638,37 @@ pub fn build(b: *std.Build) void {
     // }
 
     // Alternative implementations for testing and fallback
+    const minimal_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else if (is_wasm) 
+        b.path("src-zig/wasm_minimal_compiler.zig") 
+    else 
+        b.path("src-zig/minimal_main.zig");
+        
     const minimal_exe = b.addExecutable(.{
         .name = "cursed-minimal",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/minimal_main.zig"),
+        .root_source_file = minimal_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
-    if (!is_wasm) {
+    if (supports_libc) {
         minimal_exe.linkLibC();
     }
 
+    const complete_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else if (is_wasm) 
+        b.path("src-zig/wasm_minimal_compiler.zig") 
+    else 
+        b.path("src-zig/main_complete.zig");
+        
     const complete_exe = b.addExecutable(.{
         .name = "cursed-complete",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main_complete.zig"),
+        .root_source_file = complete_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
-    if (!is_wasm) {
+    if (supports_libc) {
         complete_exe.linkLibC();
         // Add LLVM support to complete compiler - native builds only for now
         const enable_llvm_complete = config.supports_llvm and !is_cross_compile;
@@ -582,51 +688,74 @@ pub fn build(b: *std.Build) void {
     // enhanced_exe.linkLibC();
 
     // Create performance-optimized compiler
-    const optimized_exe = b.addExecutable(.{
-        .name = "cursed-optimized",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/simplified_optimized_main.zig"),
-        .target = resolved_target,
-        .optimize = .ReleaseFast, // Always use fastest optimization for performance compiler
-    });
-    if (!is_wasm) {
-        optimized_exe.linkLibC();
-    }
+    // Legacy optimized executable (use the new optimized_exe instead)
+    // const optimized_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+    //     b.path("src-zig/freestanding_main.zig")
+    // else if (is_wasm) 
+    //     b.path("src-zig/wasm_minimal_compiler.zig") 
+    // else 
+    //     b.path("src-zig/simplified_optimized_main.zig");
+    //     
+    // const optimized_exe_legacy = b.addExecutable(.{
+    //     .name = "cursed-optimized-legacy",
+    //     .root_source_file = optimized_root_source,
+    //     .target = resolved_target,
+    //     .optimize = .ReleaseFast, // Always use fastest optimization for performance compiler
+    // });
+    // if (supports_libc) {
+    //     optimized_exe_legacy.linkLibC();
+    // }
 
     // Create syscall-enabled compiler with real file I/O, networking, and process management
     // Only build for native target to avoid cross-compilation LLVM issues
 
     // Simple LLVM Test executable
+    const simple_llvm_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else 
+        b.path("src-zig/simple_llvm_test.zig");
+        
     const exe_simple_llvm_test = b.addExecutable(.{
         .name = "cursed-simple-llvm-test",
-        .root_source_file = b.path("src-zig/simple_llvm_test.zig"),
+        .root_source_file = simple_llvm_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
-    if (!is_wasm) {
+    if (supports_libc) {
         exe_simple_llvm_test.linkLibC();
         addLlvm(b, exe_simple_llvm_test, resolved_target);
     }
 
     // LLVM Test executable (more complex)
+    const llvm_test_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else 
+        b.path("src-zig/main_llvm_test.zig");
+        
     const exe_llvm_test = b.addExecutable(.{
         .name = "cursed-llvm-test",
-        .root_source_file = b.path("src-zig/main_llvm_test.zig"),
+        .root_source_file = llvm_test_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
-    if (!is_wasm) {
+    if (supports_libc) {
         exe_llvm_test.linkLibC();
         addLlvm(b, exe_llvm_test, resolved_target);
     }
 
     // Create enhanced CLI version with comprehensive argument parsing
+    const enhanced_cli_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else 
+        b.path("src-zig/main_enhanced_cli.zig");
+        
     const cursed_enhanced_cli = b.addExecutable(.{
         .name = "cursed-cli",
-        .root_source_file = b.path("src-zig/main_enhanced_cli.zig"),
+        .root_source_file = enhanced_cli_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
-    if (!is_wasm) {
+    if (supports_libc) {
         cursed_enhanced_cli.linkLibC();
     }
 
@@ -640,13 +769,20 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(cursed_enhanced_cli);
     
     // Create legacy alias for backwards compatibility - using minimal version
+    const legacy_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else if (is_wasm) 
+        b.path("src-zig/wasm_minimal_compiler.zig") 
+    else 
+        b.path("src-zig/minimal_main.zig");
+        
     const legacy_exe = b.addExecutable(.{
         .name = "cursed-zig",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/minimal_main.zig"),
+        .root_source_file = legacy_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
-    if (!is_wasm) {
+    if (supports_libc) {
         legacy_exe.linkLibC();
     }
     b.installArtifact(legacy_exe);
@@ -655,7 +791,9 @@ pub fn build(b: *std.Build) void {
 b.installArtifact(minimal_exe);
 b.installArtifact(complete_exe);
     // b.installArtifact(enhanced_exe);  // Disabled due to API issues
-    b.installArtifact(optimized_exe);
+    if (optimized_exe) |opt_exe| {
+        b.installArtifact(opt_exe);
+    }
     // syscall_exe now handled after modules are defined
     
     // Create shared modules for tools (need to be defined before packages use them)
@@ -664,29 +802,43 @@ b.installArtifact(complete_exe);
     });
     
     // Create package manager CLI tool
+    const pkg_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else if (is_wasm) 
+        b.path("src-zig/wasm_minimal_compiler.zig") 
+    else 
+        b.path("src-zig/cursed_pkg.zig");
+        
     const pkg_manager_exe = b.addExecutable(.{
         .name = "cursed-pkg",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/cursed_pkg.zig"),
+        .root_source_file = pkg_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
     
     // Add module imports to package manager
-    if (!is_wasm) {
+    if (supports_libc) {
         pkg_manager_exe.root_module.addImport("tools", tools_mod);
         pkg_manager_exe.linkLibC();
     }
     b.installArtifact(pkg_manager_exe);
 
     // Create LSP server for IDE support - standalone version
+    const lsp_server_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else if (is_wasm) 
+        b.path("src-zig/wasm_minimal_compiler.zig") 
+    else 
+        b.path("src-zig/lsp_main_standalone.zig");
+        
     const lsp_server_exe = b.addExecutable(.{
         .name = "cursed-lsp",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/lsp_main_standalone.zig"),
+        .root_source_file = lsp_server_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
     
-    if (!is_wasm) {
+    if (supports_libc) {
         lsp_server_exe.linkLibC();
         // Disable LLVM for LSP to avoid compilation issues
         lsp_server_exe.root_module.addCMacro("CURSED_DISABLE_LLVM", "1");
@@ -710,7 +862,7 @@ b.installArtifact(complete_exe);
         .optimize = optimize,
     });
 
-    if (!is_wasm) {
+    if (supports_libc) {
         unit_tests.linkLibC();
         // Add LLVM support for tests if available
         if (config.supports_llvm and !is_cross_compile) {
@@ -722,24 +874,31 @@ b.installArtifact(complete_exe);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
 
-    // Create concurrency test suite
-    const concurrency_tests = b.addTest(.{
-        .root_source_file = b.path("src-zig/concurrency.zig"),
-        .target = resolved_target,
-        .optimize = optimize,
-    });
+    // Create concurrency test suite (skip for freestanding)
+    const concurrency_tests = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        null
+    else 
+        b.addTest(.{
+            .root_source_file = b.path("src-zig/concurrency.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        });
 
     // Link libc for concurrency tests (needed for platform APIs)
-    if (!is_wasm) {
-        concurrency_tests.linkLibC();
+    if (concurrency_tests) |tests| {
+        if (supports_libc) {
+            tests.linkLibC();
+        }
     }
 
-    const run_concurrency_tests = b.addRunArtifact(concurrency_tests);
-    const concurrency_test_step = b.step("test-concurrency", "Run concurrency tests");
-    concurrency_test_step.dependOn(&run_concurrency_tests.step);
+    if (concurrency_tests) |tests| {
+        const run_concurrency_tests = b.addRunArtifact(tests);
+        const concurrency_test_step = b.step("test-concurrency", "Run concurrency tests");
+        concurrency_test_step.dependOn(&run_concurrency_tests.step);
+    }
 
-    // Create concurrency benchmark executable (skip for WASM - no threading support)
-    if (!is_wasm) {
+    // Create concurrency benchmark executable (skip for WASM and freestanding - no threading support)
+    if (!is_wasm and resolved_target.result.os.tag != .freestanding and resolved_target.result.os.tag != .wasi) {
         const concurrency_benchmark = b.addExecutable(.{
             .name = "cursed-concurrency-benchmark",
             .root_source_file = b.path("src-zig/concurrency_benchmark.zig"),
@@ -789,9 +948,16 @@ b.installArtifact(complete_exe);
         };
         const syscall_target = b.resolveTargetQuery(syscall_target_query);
         
+        const syscall_root_source = if (syscall_target.result.os.tag == .freestanding or syscall_target.result.os.tag == .wasi) 
+            b.path("src-zig/freestanding_main.zig")
+        else if (is_wasm) 
+            b.path("src-zig/wasm_minimal_compiler.zig") 
+        else 
+            b.path("src-zig/main_llvm_working.zig");
+            
         const exe_syscall = b.addExecutable(.{
             .name = "cursed-syscall",
-            .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/main_llvm_working.zig"),
+            .root_source_file = syscall_root_source,
             .target = syscall_target,
             .optimize = optimize,
         });
@@ -811,14 +977,21 @@ b.installArtifact(complete_exe);
     }
     
     // Create LSP server executable
+    const lsp_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else if (is_wasm) 
+        b.path("src-zig/wasm_minimal_compiler.zig") 
+    else 
+        b.path("cursed_lsp_working.zig");
+        
     const lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("cursed_lsp_working.zig"),
+        .root_source_file = lsp_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
     
-    if (!is_wasm) {
+    if (supports_libc) {
         lsp_exe.linkLibC();
     }
     
@@ -842,8 +1015,8 @@ b.installArtifact(complete_exe);
     // }
     // b.installArtifact(debug_test_exe);
     
-    // Create documentation generator executable (skip for WASM - uses filesystem)
-    if (!is_wasm) {
+    // Create documentation generator executable (skip for WASM and freestanding - uses filesystem)
+    if (!is_wasm and resolved_target.result.os.tag != .freestanding and resolved_target.result.os.tag != .wasi) {
         const doc_exe = b.addExecutable(.{
             .name = "cursed-doc",
             .root_source_file = b.path("src-zig/doc_generator.zig"),
@@ -915,9 +1088,16 @@ b.installArtifact(complete_exe);
     error_diagnostics_test_step.dependOn(&run_error_diagnostics_tests.step);
 
     // Create diagnostic demo executable
+    const diagnostics_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else if (is_wasm) 
+        b.path("src-zig/wasm_minimal_compiler.zig") 
+    else 
+        b.path("src-zig/test_diagnostics_demo_simple.zig");
+        
     const diagnostics_demo = b.addExecutable(.{
         .name = "cursed-diagnostics-demo",
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/test_diagnostics_demo_simple.zig"),
+        .root_source_file = diagnostics_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
@@ -947,14 +1127,19 @@ b.installArtifact(complete_exe);
     // platform_test_step.dependOn(&run_platform_test.step);
 
     // Create regression test runner
+    const regression_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else 
+        b.path("src-zig/simple_regression_test.zig");
+        
     const regression_test_exe = b.addExecutable(.{
         .name = "cursed-regression-test",
-        .root_source_file = b.path("src-zig/simple_regression_test.zig"),
+        .root_source_file = regression_root_source,
         .target = resolved_target,
         .optimize = optimize,
     });
     
-    if (!is_wasm) {
+    if (supports_libc) {
         regression_test_exe.linkLibC();
     }
     
@@ -983,7 +1168,10 @@ b.installArtifact(complete_exe);
     // Create comprehensive test step that runs all tests
     const all_tests_step = b.step("test-all", "Run all test suites");
     all_tests_step.dependOn(&run_unit_tests.step);
-    all_tests_step.dependOn(&run_concurrency_tests.step);
+    if (concurrency_tests) |tests| {
+        const run_concurrency_tests = b.addRunArtifact(tests);
+        all_tests_step.dependOn(&run_concurrency_tests.step);
+    }
     all_tests_step.dependOn(&run_parser_tests.step);
     all_tests_step.dependOn(&run_syscall_tests.step);
     all_tests_step.dependOn(&run_error_diagnostics_tests.step);
@@ -1047,12 +1235,16 @@ b.installArtifact(complete_exe);
         if (is_native) continue;
         
         // Create cross-compiled executable
+        const cross_root_source = if (cross_target.result.os.tag == .freestanding or cross_target.result.os.tag == .wasi) 
+            b.path("src-zig/freestanding_main.zig")
+        else if (query.cpu_arch == .wasm32) 
+            b.path("src-zig/wasm_minimal_compiler.zig") 
+        else 
+            b.path("src-zig/demo_simple.zig");  // Use simple demo for cross-compilation (no LLVM)
+            
         const cross_exe = b.addExecutable(.{
             .name = b.fmt("cursed-{s}", .{cross_config.name}),
-            .root_source_file = if (query.cpu_arch == .wasm32) 
-                b.path("src-zig/wasm_minimal.zig") 
-            else 
-                b.path("src-zig/demo_simple.zig"),  // Use simple demo for cross-compilation (no LLVM)
+            .root_source_file = cross_root_source,
             .target = cross_target,
             .optimize = optimize,
         });
@@ -1147,6 +1339,28 @@ b.installArtifact(complete_exe);
     });
     cursed_project_init.step.dependOn(b.getInstallStep());
     cursed_init_step.dependOn(&cursed_project_init.step);
+
+    // Performance optimization build steps
+    const performance_step = b.step("performance", "Build performance-optimized compiler");
+    const perf_benchmark_step = b.step("perf-benchmark", "Run performance benchmarks");
+    const profile_step = b.step("profile", "Build with performance profiling enabled");
+    
+    // Add performance-optimized build
+    if (optimized_exe) |opt_exe| {
+        performance_step.dependOn(&opt_exe.step);
+        
+        // Create benchmark run command
+        const perf_benchmark_run = b.addRunArtifact(opt_exe);
+        perf_benchmark_run.addArg("--benchmark");
+        perf_benchmark_run.step.dependOn(b.getInstallStep());
+        perf_benchmark_step.dependOn(&perf_benchmark_run.step);
+        
+        // Create profiling build command
+        const profile_run = b.addRunArtifact(opt_exe);
+        profile_run.addArg("--profile");
+        profile_run.step.dependOn(b.getInstallStep());
+        profile_step.dependOn(&profile_run.step);
+    }
 
     // Cross-platform testing step
     const cross_test_step = b.step("cross-test", "Test cross-compilation functionality");

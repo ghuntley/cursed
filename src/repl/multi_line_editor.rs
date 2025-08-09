@@ -1,4 +1,5 @@
-//! Minimal working module for CURSED compilation
+//! Basic multi-line editor for CURSED REPL
+//! This is a minimal implementation - see advanced_multi_line_editor.rs for full features
 
 use crate::error::CursedError;
 
@@ -11,5 +12,5 @@ impl MinimalImplementation {
 }
 
 pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+    Ok("CURSED basic multi-line editor enabled".to_string())
 }
