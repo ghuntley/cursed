@@ -1,1 +1,3 @@
-yeet "arrayz"; sus nums []drip = [1, 2, 3]; vibez.spill(len(nums))
+sus numbers []drip = [10, 20, 30];
+vibez.spill("First:", numbers[0]);
+vibez.spill("Length:", len(numbers));

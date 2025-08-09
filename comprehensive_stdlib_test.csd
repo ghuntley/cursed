@@ -1,39 +1,55 @@
-vibez.spill("=== CURSED Standard Library Comprehensive Test ===")
-
-vibez.spill("Testing vibez module...")
-vibez.spill("Basic I/O functions working")
-
-vibez.spill("")
-vibez.spill("Testing mathz module...")
-yeet "mathz"
-sus abs_result drip = abs_normie(-10)
-sus max_result drip = max_normie(5, 8)
-sus min_result drip = min_normie(5, 8)
-vibez.spill("abs_normie(-10) =", abs_result)
-vibez.spill("max_normie(5, 8) =", max_result)
-vibez.spill("min_normie(5, 8) =", min_result)
-
-vibez.spill("")
-vibez.spill("Testing stringz module...")
+yeet "testz"
+yeet "mathz"  
 yeet "stringz"
-sus concat_result tea = concat_strings("Hello", " World")
-sus repeat_result tea = repeat_string("x", 3)
-sus empty_check lit = is_empty_string("")
-vibez.spill("concat_strings result:", concat_result)
-vibez.spill("repeat_string result:", repeat_result)
-vibez.spill("is_empty_string check:", empty_check)
-
-vibez.spill("")
-vibez.spill("Testing arrayz module...")
 yeet "arrayz"
-sus test_array []drip = [1, 2, 3, 4, 5]
-sus sum_result drip = sum_array(test_array)
-sus max_val drip = find_max(test_array)
-sus contains_3 lit = contains_value(test_array, 3)
-vibez.spill("sum_array result:", sum_result)
-vibez.spill("find_max result:", max_val)
-vibez.spill("contains_value(3):", contains_3)
 
-vibez.spill("")
-vibez.spill("=== All Standard Library Tests Complete ===")
-vibez.spill("✅ All modules working correctly!")
+test_start("CURSED Stdlib Comprehensive Test")
+
+fr fr === MATHZ MODULE TESTS ===
+vibez.spill("=== Testing mathz module ===")
+
+test_start("mathz basic functions")
+sus abs_result drip = abs_normie(-5)
+assert_eq_int(abs_result, 5)
+
+sus max_result drip = max_normie(10, 5)
+assert_eq_int(max_result, 10)
+
+sus min_result drip = min_normie(10, 5)
+assert_eq_int(min_result, 5)
+
+sus add_result drip = add_two(3, 4)
+assert_eq_int(add_result, 7)
+
+test_start("mathz advanced functions")
+sus sub_result drip = subtract_two(10, 3)
+assert_eq_int(sub_result, 7)
+
+sus mul_result drip = multiply_two(6, 7)
+assert_eq_int(mul_result, 42)
+
+sus div_result drip = divide_two(15, 3)
+assert_eq_int(div_result, 5)
+
+fr fr === STRINGZ MODULE TESTS ===
+vibez.spill("=== Testing stringz module ===")
+
+test_start("stringz basic functions")
+sus concat_result tea = concat_strings("hello", "world")
+assert_eq_string(concat_result, "helloworld")
+
+fr fr === ARRAYZ MODULE TESTS ===
+vibez.spill("=== Testing arrayz module ===")
+
+test_start("arrayz basic functions")
+sus nums []drip = [1, 2, 3, 4, 5]
+sus sum_result drip = sum_array(nums)
+assert_eq_int(sum_result, 15)
+
+sus max_array_result drip = find_max(nums)
+assert_eq_int(max_array_result, 5)
+
+sus min_array_result drip = find_min(nums)
+assert_eq_int(min_array_result, 1)
+
+print_test_summary()

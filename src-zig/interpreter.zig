@@ -494,7 +494,7 @@ pub const Interpreter = struct {
 
     fn executeLetStatement(self: *Interpreter, let: ast.LetStatement) InterpreterError!void {
         const value = if (let.initializer) |initializer_expr|
-            try self.evaluateExpression(initializer_expr)
+            try self.evaluateExpression(initializer_expr.*)
         else
             Value.Null;
         
@@ -541,7 +541,7 @@ pub const Interpreter = struct {
         const target_expr: *Expression = @ptrCast(@alignCast(assign.target));
         const value_expr: *Expression = @ptrCast(@alignCast(assign.value));
         
-        const value = try self.evaluateExpression(value_expr);
+        const value = try self.evaluateExpression(value_expr.*);
         
         switch (target_expr.*) {
             .Identifier => |name| {
@@ -1811,11 +1811,11 @@ pub const Interpreter = struct {
             
             // Save current environment and switch to defer environment
             const saved_env = self.environment;
-            self.environment = defer_entry.environment;
+            self.environment = defer_entry.?.environment;
             
             // Execute the deferred statement
             std.debug.print("Executing deferred statement\n", .{});
-            self.executeStatement(defer_entry.statement) catch |err| {
+            self.executeStatement(defer_entry.?.statement) catch |err| {
                 std.debug.print("Error executing deferred statement: {}\n", .{err});
                 // Continue with other defers even if one fails
             };
@@ -1834,11 +1834,11 @@ pub const Interpreter = struct {
             
             // Save current environment and switch to defer environment
             const saved_env = self.environment;
-            self.environment = defer_entry.environment;
+            self.environment = defer_entry.?.environment;
             
             // Execute the deferred statement
             std.debug.print("Executing scoped deferred statement\n");
-            self.executeStatement(defer_entry.statement) catch |err| {
+            self.executeStatement(defer_entry.?.statement) catch |err| {
                 std.debug.print("Error executing deferred statement: {}\n", .{err});
                 // Continue with other defers even if one fails
             };
