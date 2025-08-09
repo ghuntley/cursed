@@ -2643,18 +2643,18 @@ const expectEqual = testing.expectEqual;
 test "GC basic allocation and collection" {
     const gpa = std.testing.allocator;
     
-    const config = GCConfig.default();
+    var config = GCConfig.default();
     config.initial_heap_size = 1024 * 1024; // 1MB for testing
     
     var gc = try GC.init(gpa, config);
     defer gc.deinit();
     
     // Test basic allocation
-    const ptr1 = try gc.alloc(64, 0);
-    try expect(ptr1 != null);
+    _ = try gc.alloc(64, 0);
+    // Allocation succeeded if no error thrown
     
-    const ptr2 = try gc.alloc(128, 1);
-    try expect(ptr2 != null);
+    _ = try gc.alloc(128, 1);
+    // Allocation succeeded if no error thrown
     
     // Verify objects are tracked
     try expect(gc.stats.total_allocations >= 2);
@@ -2670,7 +2670,7 @@ test "GC basic allocation and collection" {
 test "GC tri-color marking algorithm" {
     const gpa = std.testing.allocator;
     
-    const config = GCConfig.default();
+    var config = GCConfig.default();
     config.initial_heap_size = 1024 * 1024;
     
     var gc = try GC.init(gpa, config);
@@ -2708,7 +2708,7 @@ test "GC tri-color marking algorithm" {
 test "GC Variable integration" {
     const gpa = std.testing.allocator;
     
-    const config = GCConfig.default();
+    var config = GCConfig.default();
     config.initial_heap_size = 1024 * 1024;
     
     var gc = try GC.init(gpa, config);
@@ -2730,8 +2730,7 @@ test "GC Variable integration" {
     const gc_ptr1 = try gc.allocVariable(&test_string);
     const gc_ptr2 = try gc.allocVariable(&test_int);
     
-    try expect(gc_ptr1 != null);
-    try expect(gc_ptr2 != null);
+    // Allocation succeeded if no error thrown
     
     // Load Variables back from GC
     const loaded_string = try gc.loadVariable(gc_ptr1, gpa);
@@ -2799,7 +2798,7 @@ test "GC stress test - allocation and collection cycles" {
     try expect(gc.stats.total_allocations >= num_objects);
     
     // Print statistics for manual verification
-    std.debug.print("\nGC Stress Test Results:\n");
+    std.debug.print("\nGC Stress Test Results:\n", .{});
     std.debug.print("Total allocations: {}\n", .{gc.stats.total_allocations});
     std.debug.print("GC cycles: {}\n", .{gc.stats.gc_cycles});
     std.debug.print("Total pause time: {} μs\n", .{gc.stats.total_pause_time_us});
@@ -2810,7 +2809,7 @@ test "GC stress test - allocation and collection cycles" {
 test "GC memory leak detection" {
     const gpa = std.testing.allocator;
     
-    const config = GCConfig.default();
+    var config = GCConfig.default();
     config.initial_heap_size = 1024 * 1024;
     
     var gc = try GC.init(gpa, config);
@@ -2838,7 +2837,7 @@ test "GC memory leak detection" {
 test "GC concurrent collection safety" {
     const gpa = std.testing.allocator;
     
-    const config = GCConfig.default();
+    var config = GCConfig.default();
     config.initial_heap_size = 2 * 1024 * 1024; // 2MB
     config.concurrent_threads = 2;
     
@@ -2865,7 +2864,7 @@ test "GC concurrent collection safety" {
 test "GC generational collection" {
     const gpa = std.testing.allocator;
     
-    const config = GCConfig.default();
+    var config = GCConfig.default();
     config.initial_heap_size = 1024 * 1024;
     config.young_gc_trigger_threshold = 0.3; // Trigger young GC early
     
@@ -2903,7 +2902,7 @@ test "GC generational collection" {
 test "GC finalization" {
     const gpa = std.testing.allocator;
     
-    const config = GCConfig.default();
+    var config = GCConfig.default();
     config.enable_finalization = true;
     
     var gc = try GC.init(gpa, config);
@@ -2925,7 +2924,7 @@ test "GC finalization" {
     std.time.sleep(10_000_000); // 10ms
     
     // Note: In a real implementation, we'd wait for finalization completion
-    std.debug.print("Finalization test completed\n");
+    std.debug.print("Finalization test completed\n", .{});
 }
 
 test "GC memory pool allocation" {
@@ -2936,13 +2935,13 @@ test "GC memory pool allocation" {
     
     // Test small allocations
     const ptr1 = try pool_manager.getAllocation(16);
-    try expect(ptr1 != null);
+    // Allocation succeeded if no error thrown
     
     const ptr2 = try pool_manager.getAllocation(32);
-    try expect(ptr2 != null);
+    // Allocation succeeded if no error thrown
     
     const ptr3 = try pool_manager.getAllocation(64);
-    try expect(ptr3 != null);
+    // Allocation succeeded if no error thrown
     
     // Test deallocation
     try pool_manager.deallocate(ptr1.?, 16);

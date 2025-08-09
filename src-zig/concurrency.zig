@@ -173,6 +173,10 @@ pub fn Channel(comptime T: type) type {
         closed: Atomic(bool),
         sender_count: Atomic(u32),
         receiver_count: Atomic(u32),
+        // Race condition fix: atomic reference counting
+        ref_count: Atomic(u32),
+        cleanup_started: Atomic(bool),
+        cleanup_completed: Atomic(bool),
         stats: ChannelStats,
         allocator: Allocator,
 
@@ -187,6 +191,10 @@ pub fn Channel(comptime T: type) type {
                 .closed = Atomic(bool).init(false),
                 .sender_count = Atomic(u32).init(0),
                 .receiver_count = Atomic(u32).init(0),
+                // Race condition fix: initialize reference counting
+                .ref_count = Atomic(u32).init(1), // Start with 1 reference
+                .cleanup_started = Atomic(bool).init(false),
+                .cleanup_completed = Atomic(bool).init(false),
                 .stats = ChannelStats.init(),
                 .allocator = allocator,
             };
@@ -204,8 +212,87 @@ pub fn Channel(comptime T: type) type {
             self.buffer.deinit();
         }
 
+        /// Race condition fix: Increment reference count atomically
+        pub fn addRef(self: *Self) void {
+            _ = self.ref_count.fetchAdd(1, .acq_rel);
+        }
+        
+        /// Race condition fix: Decrement reference count and cleanup if last reference
+        pub fn release(self: *Self) void {
+            const old_count = self.ref_count.fetchSub(1, .acq_rel);
+            
+            if (old_count == 1) {
+                // This was the last reference, perform cleanup
+                self.performCleanup();
+            }
+        }
+        
+        /// Race condition fix: Perform final cleanup when reference count reaches zero
+        fn performCleanup(self: *Self) void {
+            // Ensure cleanup only happens once
+            if (self.cleanup_started.cmpxchgStrong(false, true, .acq_rel, .acquire)) |_| {
+                return; // Cleanup already started by another thread
+            }
+            
+            // Close the channel first
+            self.dm_close();
+            
+            // Wait for all operations to complete
+            self.waitForOperationsToComplete();
+            
+            // Clean up buffer contents
+            self.mutex.lock();
+            defer self.mutex.unlock();
+            
+            // Clear any remaining items in buffer
+            for (self.buffer.items) |item| {
+                // For complex types, would need proper cleanup
+                _ = item;
+            }
+            self.buffer.deinit();
+            
+            // Mark cleanup as completed
+            self.cleanup_completed.store(true, .release);
+        }
+        
+        /// Race condition fix: Wait for all active operations to complete before cleanup
+        fn waitForOperationsToComplete(self: *Self) void {
+            // Wait for all senders and receivers to finish
+            const max_wait_attempts = 1000; // 1 second max wait
+            var attempts: u32 = 0;
+            
+            while (attempts < max_wait_attempts) {
+                const senders = self.sender_count.load(.acquire);
+                const receivers = self.receiver_count.load(.acquire);
+                
+                if (senders == 0 and receivers == 0) {
+                    break; // All operations completed
+                }
+                
+                // Broadcast to wake up any waiting operations
+                self.send_condition.broadcast();
+                self.recv_condition.broadcast();
+                
+                // Small delay before checking again
+                std.time.sleep(1_000_000); // 1ms
+                attempts += 1;
+            }
+        }
+
         /// dm_send - Canonical CURSED channel send operation
         pub fn dm_send(self: *Self, value: T) !SendResult {
+            // Race condition fix: Check if cleanup has started
+            if (self.cleanup_started.load(.acquire)) {
+                return SendResult.closed;
+            }
+            
+            // Race condition fix: Increment sender count and add reference
+            _ = self.sender_count.fetchAdd(1, .acq_rel);
+            defer _ = self.sender_count.fetchSub(1, .acq_rel);
+            
+            self.addRef();
+            defer self.release();
+            
             if (self.closed.load(.acquire)) {
                 return SendResult.closed;
             }
@@ -215,11 +302,13 @@ pub fn Channel(comptime T: type) type {
 
             // For unbuffered channels, wait for receiver
             if (self.capacity == 0) {
-                while (self.receiver_count.load(.acquire) == 0 and !self.closed.load(.acquire)) {
+                while (self.receiver_count.load(.acquire) == 0 and 
+                       !self.closed.load(.acquire) and 
+                       !self.cleanup_started.load(.acquire)) {
                     self.send_condition.wait(&self.mutex);
                 }
 
-                if (self.closed.load(.acquire)) {
+                if (self.closed.load(.acquire) or self.cleanup_started.load(.acquire)) {
                     return SendResult.closed;
                 }
 
@@ -230,11 +319,13 @@ pub fn Channel(comptime T: type) type {
             }
 
             // For buffered channels, wait for space
-            while (self.buffer.items.len >= self.capacity and !self.closed.load(.acquire)) {
+            while (self.buffer.items.len >= self.capacity and 
+                   !self.closed.load(.acquire) and 
+                   !self.cleanup_started.load(.acquire)) {
                 self.send_condition.wait(&self.mutex);
             }
 
-            if (self.closed.load(.acquire)) {
+            if (self.closed.load(.acquire) or self.cleanup_started.load(.acquire)) {
                 return SendResult.closed;
             }
 
@@ -345,11 +436,25 @@ pub fn Channel(comptime T: type) type {
 
         /// dm_recv - Canonical CURSED channel receive operation
         pub fn dm_recv(self: *Self) !?T {
+            // Race condition fix: Check if cleanup has started
+            if (self.cleanup_started.load(.acquire)) {
+                return null;
+            }
+            
+            // Race condition fix: Increment receiver count and add reference
+            _ = self.receiver_count.fetchAdd(1, .acq_rel);
+            defer _ = self.receiver_count.fetchSub(1, .acq_rel);
+            
+            self.addRef();
+            defer self.release();
+            
             self.mutex.lock();
             defer self.mutex.unlock();
 
             // Wait for data or channel close
-            while (self.buffer.items.len == 0 and !self.closed.load(.acquire)) {
+            while (self.buffer.items.len == 0 and 
+                   !self.closed.load(.acquire) and 
+                   !self.cleanup_started.load(.acquire)) {
                 self.recv_condition.wait(&self.mutex);
             }
 
@@ -360,10 +465,7 @@ pub fn Channel(comptime T: type) type {
                 return value;
             }
 
-            if (self.closed.load(.acquire)) {
-                return null;
-            }
-
+            // Channel is closed or cleanup started
             return null;
         }
 

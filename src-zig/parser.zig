@@ -357,23 +357,47 @@ pub const Parser = struct {
     fn parseImportStatement(self: *Parser) ParserError!ast.ImportStatement {
         _ = try self.consume(.Yeet, "Expected 'yeet'");
         
+        // Handle first import path
         if (!self.check(.StringLiteral) and !self.check(.String)) {
             return ParserError.UnexpectedToken;
         }
         
-        const path_token = self.advance();
-        const path = if (path_token.lexeme.len >= 2 and 
-                        path_token.lexeme[0] == '"' and 
-                        path_token.lexeme[path_token.lexeme.len-1] == '"')
-                     path_token.lexeme[1..path_token.lexeme.len-1] // Remove quotes
-                     else path_token.lexeme;
+        const first_path_token = self.advance();
+        const first_path = if (first_path_token.lexeme.len >= 2 and 
+                              first_path_token.lexeme[0] == '"' and 
+                              first_path_token.lexeme[first_path_token.lexeme.len-1] == '"')
+                           first_path_token.lexeme[1..first_path_token.lexeme.len-1] // Remove quotes
+                           else first_path_token.lexeme;
         
-        var import_stmt = ast.ImportStatement.init(self.allocator, path);
+        var import_stmt = ast.ImportStatement.init(self.allocator, first_path);
         
-        // Handle alias (as name)
-        if (self.match(.As)) {
+        // Handle comma-separated additional imports
+        while (self.match(.Comma)) {
+            if (!self.check(.StringLiteral) and !self.check(.String)) {
+                _ = self.reportErrorWithContext("Expected string literal after comma in import statement", "parseImportStatement") catch {};
+                return ParserError.UnexpectedToken;
+            }
+            
+            const path_token = self.advance();
+            const path = if (path_token.lexeme.len >= 2 and 
+                            path_token.lexeme[0] == '"' and 
+                            path_token.lexeme[path_token.lexeme.len-1] == '"')
+                         path_token.lexeme[1..path_token.lexeme.len-1] // Remove quotes
+                         else path_token.lexeme;
+            
+            import_stmt.items.append(path) catch {
+                _ = self.reportErrorWithContext("Out of memory adding import item", "parseImportStatement") catch {};
+                return ParserError.OutOfMemory;
+            };
+        }
+        
+        // Handle alias (as name) - only for simple single imports
+        if (import_stmt.items.items.len == 0 and self.match(.As)) {
             if (self.check(.Identifier)) {
                 import_stmt.alias = self.advance().lexeme;
+            } else {
+                _ = self.reportErrorWithContext("Expected identifier after 'as' in import statement", "parseImportStatement") catch {};
+                return ParserError.UnexpectedToken;
             }
         }
         
