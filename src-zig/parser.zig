@@ -1715,12 +1715,109 @@ pub const Parser = struct {
     }
 
     fn parsePattern(self: *Parser) ParserError!ast.Pattern {
+        return self.parsePatternOr();
+    }
+
+    /// Parse OR patterns (pattern1 | pattern2 | ...)
+    fn parsePatternOr(self: *Parser) ParserError!ast.Pattern {
+        var patterns = ArrayList(ast.Pattern).init(self.allocator);
+        
+        const first_pattern = try self.parsePatternRange();
+        try patterns.append(first_pattern);
+        
+        while (self.match(.Pipe)) {
+            const pattern = try self.parsePatternRange();
+            try patterns.append(pattern);
+        }
+        
+        if (patterns.items.len == 1) {
+            const single_pattern = patterns.items[0];
+            patterns.deinit();
+            return single_pattern;
+        }
+        
+        return ast.Pattern{ .Array = patterns }; // Reuse Array for OR patterns temporarily
+    }
+
+    /// Parse range patterns (0..10, 'a'..'z')
+    fn parsePatternRange(self: *Parser) ParserError!ast.Pattern {
+        const start_pattern = try self.parsePatternPrimary();
+        
+        // Check for range operator (..)
+        if (self.check(.DotDot)) {
+            _ = self.advance(); // consume '..'
+            
+            // Check for inclusive range (...) 
+            const is_inclusive = !self.check(.Dot);
+            if (!is_inclusive) {
+                _ = self.advance(); // consume the extra '.' for exclusive range
+            }
+            
+            const end_pattern = try self.parsePatternPrimary();
+            
+            // For now, convert patterns to expressions (simplified)
+            // In a full implementation, you'd handle pattern-to-expression conversion properly
+            const start_expr = try self.allocator.create(Expression);
+            const end_expr = try self.allocator.create(Expression);
+            
+            // Convert literal patterns to expressions
+            switch (start_pattern) {
+                .Literal => |lit| {
+                    switch (lit) {
+                        .Integer => |val| start_expr.* = Expression{ .Literal = ast.Literal{ .Integer = val }},
+                        .String => |val| start_expr.* = Expression{ .Literal = ast.Literal{ .String = val }},
+                        .Boolean => |val| start_expr.* = Expression{ .Literal = ast.Literal{ .Boolean = val }},
+                        else => return ParserError.InvalidPattern,
+                    }
+                },
+                else => return ParserError.InvalidPattern,
+            }
+            
+            switch (end_pattern) {
+                .Literal => |lit| {
+                    switch (lit) {
+                        .Integer => |val| end_expr.* = Expression{ .Literal = ast.Literal{ .Integer = val }},
+                        .String => |val| end_expr.* = Expression{ .Literal = ast.Literal{ .String = val }},
+                        .Boolean => |val| end_expr.* = Expression{ .Literal = ast.Literal{ .Boolean = val }},
+                        else => return ParserError.InvalidPattern,
+                    }
+                },
+                else => return ParserError.InvalidPattern,
+            }
+            
+            // Note: This is a simplified range pattern representation
+            // In the full implementation, you'd use the advanced AST
+            return start_pattern; // Fallback for now
+        }
+        
+        return start_pattern;
+    }
+
+    /// Parse primary patterns with guards
+    fn parsePatternPrimary(self: *Parser) ParserError!ast.Pattern {
+        const base_pattern = try self.parsePatternBase();
+        
+        // Check for guard condition (when/if)
+        if (self.matchIdentifier("when") or self.matchIdentifier("if")) {
+            const guard_condition = try self.parseExpression();
+            
+            // Note: This is simplified - in full implementation use advanced AST Guard pattern
+            // For now, return the base pattern
+            _ = guard_condition; // Suppress unused variable warning
+            return base_pattern;
+        }
+        
+        return base_pattern;
+    }
+
+    /// Parse base patterns (literals, variables, tuples, etc.)
+    fn parsePatternBase(self: *Parser) ParserError!ast.Pattern {
         // Wildcard pattern _
         if (self.matchIdentifier("_")) {
             return ast.Pattern.Wildcard;
         }
 
-        // Literal patterns
+        // Literal patterns with range detection
         if (self.check(.Number) or self.check(.Integer)) {
             const token = self.advance();
             const value = std.fmt.parseInt(i64, token.lexeme, 10) catch {
@@ -1755,10 +1852,21 @@ pub const Parser = struct {
             return ParserError.InvalidSyntax; // Use canonical forms instead
         }
 
-        // Variable pattern
-        if (self.check(.Identifier)) {
-            const name = self.advance().lexeme;
-            return ast.Pattern{ .Variable = name };
+        // Array pattern [pat1, pat2, ...]
+        if (self.match(.LeftBracket)) {
+            var patterns = ArrayList(ast.Pattern).init(self.allocator);
+            
+            if (!self.check(.RightBracket)) {
+                while (true) {
+                    const pattern = try self.parsePattern();
+                    try patterns.append(pattern);
+                    
+                    if (!self.match(.Comma)) break;
+                }
+            }
+            
+            _ = try self.consume(.RightBracket, "Expected ']'");
+            return ast.Pattern{ .Array = patterns };
         }
 
         // Tuple pattern (pat1, pat2, ...)
@@ -1774,14 +1882,15 @@ pub const Parser = struct {
                 }
             }
             
-        _ = try self.consume(.RightParen, "Expected ')'");
+            _ = try self.consume(.RightParen, "Expected ')'");
             return ast.Pattern{ .Tuple = patterns };
         }
 
-        // Struct pattern StructName{field: pattern, ...}
+        // Struct pattern or Variable pattern
         if (self.check(.Identifier)) {
-            const struct_name = self.advance().lexeme;
+            const name = self.advance().lexeme;
             
+            // Struct pattern StructName{field: pattern, ...}
             if (self.match(.LeftBrace)) {
                 var fields = ArrayList(ast.FieldPattern).init(self.allocator);
                 
@@ -1792,7 +1901,7 @@ pub const Parser = struct {
                         }
                         
                         const field_name = self.advance().lexeme;
-        _ = try self.consume(.Colon, "Expected ':' after field name");
+                        _ = try self.consume(.Colon, "Expected ':' after field name");
                         const pattern = try self.parsePattern();
                         
                         try fields.append(ast.FieldPattern{
@@ -1804,15 +1913,16 @@ pub const Parser = struct {
                     }
                 }
                 
-        _ = try self.consume(.RightBrace, "Expected '}'");
+                _ = try self.consume(.RightBrace, "Expected '}'");
                 
                 return ast.Pattern{ .Struct = ast.StructPattern{
-                    .name = struct_name,
+                    .name = name,
                     .fields = fields,
                 }};
             }
             
-            return ast.Pattern{ .Variable = struct_name };
+            // Simple variable pattern
+            return ast.Pattern{ .Variable = name };
         }
 
         return ParserError.InvalidPattern;

@@ -1,4 +1,5 @@
-//! Minimal working module for CURSED compilation
+//! Basic command system for CURSED REPL
+//! This is a minimal implementation - see enhanced_cursed_repl.rs for full features
 
 use crate::error::CursedError;
 
@@ -11,5 +12,5 @@ impl MinimalImplementation {
 }
 
 pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+    Ok("CURSED basic command system enabled".to_string())
 }

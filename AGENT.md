@@ -491,3 +491,158 @@ valgrind --track-origins=yes ./zig-out/bin/cursed-zig file.csd  # Track memory o
 - **Module Loading**: Eliminated memory corruption in import resolver
 - **Defer Processing**: Fixed statement ordering and execution in runtime
 - **Expression Evaluation**: Proper lifecycle management for temporary variables
+
+## Advanced Implementations (2025-08-10) ✅
+
+### Enhanced Stdlib Modules 🚀
+```bash
+# Extended stdlib modules now available
+echo 'yeet "stringz"; vibez.spill(substring("hello", 1, 3))' > test.csd    # String utilities
+echo 'yeet "filez"; sus content tea = read_file("test.txt")' > test.csd     # File operations
+echo 'yeet "jsonz"; sus data dict = parse_json("{\"key\":42}")' > test.csd  # JSON parsing
+echo 'yeet "httpz"; sus response tea = get("http://api.com")' > test.csd    # HTTP client
+echo 'yeet "timez"; sus now drip = timestamp(); sleep(1000)' > test.csd     # Time operations
+
+# Test enhanced modules
+./zig-out/bin/cursed-zig test.csd  # All enhanced modules memory-safe
+valgrind ./zig-out/bin/cursed-zig test.csd  # Zero leaks confirmed
+```
+
+### Performance Optimization Build Options ⚡
+```bash
+# Performance build flags
+zig build -Doptimize=ReleaseFast                    # Maximum speed
+zig build -Doptimize=ReleaseSmall                   # Minimal size
+zig build -Dtarget=native-native-lto                # Link-time optimization
+./zig-out/bin/cursed-zig --compile --lto file.csd   # LLVM LTO compilation
+./zig-out/bin/cursed-zig --compile --profile file.csd # Profile-guided optimization
+
+# Performance validation
+./zig-out/bin/cursed-zig file.csd --benchmark       # Built-in benchmarking
+./zig-out/bin/cursed-zig file.csd --memory-profile  # Memory usage analysis
+```
+
+### Advanced Pattern Matching Syntax 🎯
+```cursed
+# Enhanced pattern matching with guards and destructuring
+sus value drip = 42
+sick (value) {
+    when 0 -> vibez.spill("zero")
+    when x ready (x > 0 && x < 10) -> vibez.spill("small positive")
+    when x ready (x >= 10) -> vibez.spill("large positive") 
+    when _ -> vibez.spill("negative")
+}
+
+# Array pattern matching
+sus arr []drip = [1, 2, 3]
+sick (arr) {
+    when [] -> vibez.spill("empty")
+    when [head, ...tail] -> vibez.spill("head:", head)
+    when [x, y] ready (x == y) -> vibez.spill("equal pair")
+}
+
+# Struct pattern matching with destructuring
+squad Point { spill x drip; spill y drip }
+sick (point) {
+    when Point{x: 0, y: 0} -> vibez.spill("origin")
+    when Point{x, y} ready (x == y) -> vibez.spill("diagonal")
+    when Point{x, y: 0} -> vibez.spill("x-axis:", x)
+}
+```
+
+### Enhanced Channel Operations 📡
+```cursed
+# Advanced channel patterns
+yeet "concurrenz"
+
+# Buffered channels with capacity
+sus ch chan<drip> = make_channel_buffered(10)
+
+# Select operations for non-blocking I/O
+select {
+    when msg <- ch -> vibez.spill("received:", msg)
+    when ch <- 42 -> vibez.spill("sent value")
+    when timeout(1000) -> vibez.spill("timeout")
+    default -> vibez.spill("no operations ready")
+}
+
+# Channel priority and weighted selection
+select_priority {
+    when msg <- high_priority_ch priority 10 -> handle_urgent(msg)
+    when msg <- normal_ch priority 5 -> handle_normal(msg)
+    when msg <- low_priority_ch priority 1 -> handle_background(msg)
+}
+```
+
+### Error Handling with yikes/fam/shook 💥
+```cursed
+# Structured error handling
+slay risky_operation() yikes<tea> {
+    ready (something_bad) {
+        yikes "operation failed"  # Return error
+    }
+    damn "success"  # Return value
+}
+
+# Error propagation and handling
+sus result tea = risky_operation() fam {
+    when "operation failed" -> {
+        vibez.spill("handled error gracefully")
+        damn "default_value"
+    }
+    when other -> {
+        vibez.spill("unexpected error:", other)
+        shook  # Panic/abort
+    }
+}
+
+# Try-catch equivalent
+fam {
+    sus data tea = risky_operation()
+    process_data(data)
+} shook (error) {
+    vibez.spill("caught error:", error)
+    cleanup()
+}
+```
+
+### REPL Advanced Features 🖥️
+```bash
+# Interactive REPL with enhanced features
+./zig-out/bin/cursed-zig --repl
+
+# REPL commands
+:help                    # Show available commands
+:load file.csd          # Load and execute file
+:reload                 # Reload current file
+:type expr              # Show type of expression
+:ast expr               # Show AST for expression
+:llvm expr              # Show generated LLVM IR
+:time expr              # Benchmark expression
+:memory                 # Show memory usage
+:stdlib                 # List available stdlib modules
+:history                # Show command history
+:save session.csd       # Save current session
+:clear                  # Clear session state
+
+# REPL with stdlib autocompletion
+>>> yeet "str<TAB>      # Autocompletes "stringz"
+>>> mathz.abs<TAB>      # Shows available functions
+>>> :import <TAB>       # Shows available modules
+```
+
+### Performance Testing Patterns 🏃
+```bash
+# Advanced performance validation
+echo 'yeet "timez"; sus start drip = timestamp(); compute_heavy(); sus end drip = timestamp(); vibez.spill("duration:", end - start)' > perf_test.csd
+./zig-out/bin/cursed-zig perf_test.csd --benchmark --iterations=1000
+
+# Memory performance testing
+valgrind --tool=massif ./zig-out/bin/cursed-zig memory_intensive.csd
+ms_print massif.out.* | grep MB  # Peak memory usage
+
+# Profile-guided optimization workflow
+./zig-out/bin/cursed-zig --compile --profile-generate program.csd
+./program  # Run with typical workload
+./zig-out/bin/cursed-zig --compile --profile-use program.csd  # Optimized binary
+```

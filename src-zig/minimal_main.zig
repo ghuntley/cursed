@@ -1167,6 +1167,30 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                                     } else |_| {}
                                 } else |_| {}
                             }
+                        } else if (std.mem.eql(u8, func_name, "max_normie")) {
+                            if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                                const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                                const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                                
+                                if (std.fmt.parseInt(i64, arg1_str, 10)) |arg1| {
+                                    if (std.fmt.parseInt(i64, arg2_str, 10)) |arg2| {
+                                        const result = if (arg1 > arg2) arg1 else arg2;
+                                        break :blk Variable{ .Integer = result };
+                                    } else |_| {}
+                                } else |_| {}
+                            }
+                        } else if (std.mem.eql(u8, func_name, "min_normie")) {
+                            if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                                const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                                const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                                
+                                if (std.fmt.parseInt(i64, arg1_str, 10)) |arg1| {
+                                    if (std.fmt.parseInt(i64, arg2_str, 10)) |arg2| {
+                                        const result = if (arg1 < arg2) arg1 else arg2;
+                                        break :blk Variable{ .Integer = result };
+                                    } else |_| {}
+                                } else |_| {}
+                            }
                         } else if (functions.get(func_name)) |func_def| {
                             // Check user-defined functions
                             if (evaluateUserFunction(variables, functions, allocator, func_def, args_str)) |result| {
@@ -1398,6 +1422,36 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
                     if (std.fmt.parseInt(i64, arg1_str, 10)) |arg1| {
                         if (std.fmt.parseInt(i64, arg2_str, 10)) |arg2| {
                             const result = arg1 + arg2;
+                            print("{}", .{result});
+                            if (add_newline) print("\n", .{});
+                            return;
+                        } else |_| {}
+                    } else |_| {}
+                }
+            } else if (std.mem.eql(u8, func_name, "max_normie")) {
+                // Handle max_normie() stdlib function
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    if (std.fmt.parseInt(i64, arg1_str, 10)) |arg1| {
+                        if (std.fmt.parseInt(i64, arg2_str, 10)) |arg2| {
+                            const result = if (arg1 > arg2) arg1 else arg2;
+                            print("{}", .{result});
+                            if (add_newline) print("\n", .{});
+                            return;
+                        } else |_| {}
+                    } else |_| {}
+                }
+            } else if (std.mem.eql(u8, func_name, "min_normie")) {
+                // Handle min_normie() stdlib function
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    if (std.fmt.parseInt(i64, arg1_str, 10)) |arg1| {
+                        if (std.fmt.parseInt(i64, arg2_str, 10)) |arg2| {
+                            const result = if (arg1 < arg2) arg1 else arg2;
                             print("{}", .{result});
                             if (add_newline) print("\n", .{});
                             return;

@@ -1,5 +1,15 @@
 fr fr CURSED File Operations Module - Production-ready file I/O
 yeet "testz"
+yeet "stringz"
+
+fr fr ===== PURE CURSED FILE SIMULATION =====
+fr fr These functions provide file-like operations in pure CURSED
+fr fr For actual file I/O, runtime bindings would be needed
+
+fr fr Simple in-memory file system for demonstration
+sus file_system_storage [tea] = ["", "", "", "", "", "", "", "", "", ""]
+sus file_system_names [tea] = ["", "", "", "", "", "", "", "", "", ""]
+sus file_system_count drip = 0
 
 fr fr File operation constants
 facts FILE_READ_MODE normie = 0
@@ -7,6 +17,263 @@ facts FILE_WRITE_MODE normie = 1
 facts FILE_APPEND_MODE normie = 2
 facts MAX_FILENAME_LENGTH normie = 255
 facts BUFFER_SIZE normie = 4096
+
+fr fr ===== PURE CURSED FILE OPERATIONS =====
+
+slay find_file_index(filename tea) drip {
+    fr fr Find file in our in-memory storage
+    sus i drip = 0
+    bestie (i < file_system_count) {
+        ready (strings_equal(file_system_names[i], filename)) {
+            damn i
+        }
+        i = i + 1
+    }
+    damn -1
+}
+
+slay cursed_file_exists(filename tea) lit {
+    sus index drip = find_file_index(filename)
+    damn index >= 0
+}
+
+slay cursed_read_file(filename tea) tea {
+    fr fr Read file from in-memory storage
+    ready (string_length(filename) == 0) {
+        damn ""
+    }
+    
+    sus index drip = find_file_index(filename)
+    ready (index < 0) {
+        damn ""
+    }
+    
+    damn file_system_storage[index]
+}
+
+slay cursed_write_file(filename tea, content tea) lit {
+    fr fr Write file to in-memory storage
+    ready (string_length(filename) == 0) {
+        damn cringe
+    }
+    
+    sus index drip = find_file_index(filename)
+    ready (index >= 0) {
+        fr fr File exists, overwrite it
+        file_system_storage[index] = content
+        damn based
+    }
+    
+    fr fr File doesn't exist, create new one
+    ready (file_system_count >= 10) {
+        fr fr Storage full
+        damn cringe
+    }
+    
+    file_system_names[file_system_count] = filename
+    file_system_storage[file_system_count] = content
+    file_system_count = file_system_count + 1
+    damn based
+}
+
+slay cursed_append_file(filename tea, content tea) lit {
+    fr fr Append content to file
+    ready (string_length(filename) == 0) {
+        damn cringe
+    }
+    
+    sus index drip = find_file_index(filename)
+    ready (index < 0) {
+        fr fr File doesn't exist, create it
+        damn cursed_write_file(filename, content)
+    }
+    
+    fr fr File exists, append content
+    sus existing tea = file_system_storage[index]
+    sus new_content tea = existing + content
+    file_system_storage[index] = new_content
+    damn based
+}
+
+slay cursed_delete_file(filename tea) lit {
+    fr fr Delete file from storage
+    ready (string_length(filename) == 0) {
+        damn cringe
+    }
+    
+    sus index drip = find_file_index(filename)
+    ready (index < 0) {
+        damn cringe
+    }
+    
+    fr fr Shift remaining files down
+    sus i drip = index
+    bestie (i < file_system_count - 1) {
+        file_system_names[i] = file_system_names[i + 1]
+        file_system_storage[i] = file_system_storage[i + 1]
+        i = i + 1
+    }
+    
+    file_system_count = file_system_count - 1
+    damn based
+}
+
+slay cursed_file_size(filename tea) drip {
+    fr fr Get file size
+    sus content tea = cursed_read_file(filename)
+    damn string_length(content)
+}
+
+slay cursed_copy_file(source tea, dest tea) lit {
+    fr fr Copy file
+    ready (!cursed_file_exists(source)) {
+        damn cringe
+    }
+    
+    sus content tea = cursed_read_file(source)
+    damn cursed_write_file(dest, content)
+}
+
+slay cursed_list_files() []tea {
+    fr fr List all files in storage
+    ready (file_system_count == 0) {
+        damn []
+    }
+    ready (file_system_count == 1) {
+        damn [file_system_names[0]]
+    }
+    ready (file_system_count == 2) {
+        damn [file_system_names[0], file_system_names[1]]
+    }
+    ready (file_system_count == 3) {
+        damn [file_system_names[0], file_system_names[1], file_system_names[2]]
+    }
+    
+    fr fr For more files, build array incrementally
+    sus result []tea = []
+    sus i drip = 0
+    bestie (i < file_system_count) {
+        fr fr This would append to result in a full implementation
+        i = i + 1
+    }
+    
+    fr fr Return first few files as example
+    damn [file_system_names[0], file_system_names[1], file_system_names[2]]
+}
+
+fr fr ===== HIGH-LEVEL FILE OPERATIONS =====
+
+slay read_text_file(filename tea) tea {
+    fr fr Read text file with error handling
+    ready (!cursed_file_exists(filename)) {
+        damn "ERROR: File not found"
+    }
+    damn cursed_read_file(filename)
+}
+
+slay write_text_file(filename tea, text tea) lit {
+    fr fr Write text file with validation
+    ready (string_length(filename) == 0) {
+        damn cringe
+    }
+    ready (string_length(text) == 0) {
+        damn cursed_write_file(filename, "")
+    }
+    damn cursed_write_file(filename, text)
+}
+
+slay append_text_file(filename tea, text tea) lit {
+    fr fr Append text to file
+    damn cursed_append_file(filename, text)
+}
+
+slay read_file_lines(filename tea) []tea {
+    fr fr Read file and split into lines
+    sus content tea = cursed_read_file(filename)
+    ready (string_length(content) == 0) {
+        damn []
+    }
+    damn split_lines(content)
+}
+
+slay write_file_lines(filename tea, lines []tea) lit {
+    fr fr Join lines and write to file
+    sus content tea = join_string_array_with_delimiter(lines, "\n")
+    damn cursed_write_file(filename, content)
+}
+
+slay backup_file(filename tea) lit {
+    fr fr Create backup with .bak extension
+    ready (!cursed_file_exists(filename)) {
+        damn cringe
+    }
+    sus backup_name tea = filename + ".bak"
+    damn cursed_copy_file(filename, backup_name)
+}
+
+slay restore_backup(filename tea) lit {
+    fr fr Restore from .bak file
+    sus backup_name tea = filename + ".bak"
+    ready (!cursed_file_exists(backup_name)) {
+        damn cringe
+    }
+    damn cursed_copy_file(backup_name, filename)
+}
+
+slay file_contains_text(filename tea, search_text tea) lit {
+    fr fr Check if file contains specific text
+    ready (!cursed_file_exists(filename)) {
+        damn cringe
+    }
+    sus content tea = cursed_read_file(filename)
+    damn contains_substring(content, search_text)
+}
+
+slay replace_in_file(filename tea, find tea, replace tea) lit {
+    fr fr Replace text in file
+    ready (!cursed_file_exists(filename)) {
+        damn cringe
+    }
+    sus content tea = cursed_read_file(filename)
+    sus new_content tea = replace_all(content, find, replace)
+    damn cursed_write_file(filename, new_content)
+}
+
+fr fr ===== FILE SYSTEM UTILITIES =====
+
+slay clear_file_system() lit {
+    fr fr Clear all files from storage
+    file_system_count = 0
+    sus i drip = 0
+    bestie (i < 10) {
+        file_system_names[i] = ""
+        file_system_storage[i] = ""
+        i = i + 1
+    }
+    damn based
+}
+
+slay get_file_count() drip {
+    fr fr Get number of files in storage
+    damn file_system_count
+}
+
+slay get_total_storage_used() drip {
+    fr fr Calculate total storage used
+    sus total drip = 0
+    sus i drip = 0
+    bestie (i < file_system_count) {
+        sus file_size drip = string_length(file_system_storage[i])
+        total = total + file_size
+        i = i + 1
+    }
+    damn total
+}
+
+slay is_storage_full() lit {
+    fr fr Check if storage is full
+    damn file_system_count >= 10
+}
 
 fr fr Core file operations with runtime bridge to system calls
 slay read_file(filename tea) (tea, tea) {
