@@ -382,6 +382,13 @@ pub const MemoryMetrics = struct {
     pub fn init() MemoryMetrics {
         return MemoryMetrics{};
     }
+    
+    pub fn recordOptimization(self: *MemoryMetrics, optimization_name: []const u8, speedup_factor: f64) void {
+        // Simple implementation to track memory optimizations
+        _ = optimization_name;
+        _ = speedup_factor;
+        self.allocations_count += 1;
+    }
 };
 
 /// Cache performance metrics

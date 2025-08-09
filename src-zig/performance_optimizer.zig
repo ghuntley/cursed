@@ -101,7 +101,7 @@ pub const FastLexer = struct {
     // Performance optimizations
     identifier_cache: std.HashMap([]const u8, TokenKind, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
-    const Token = struct {
+    pub const Token = struct {
         kind: TokenKind,
         lexeme: []const u8,
         line: usize,

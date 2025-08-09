@@ -1,1 +1,1 @@
-yeet "mathz"; vibez.spill(abs_normie(-5))
+yeet "mathz"; vibez.spill("Absolute value:", abs_normie(-15))

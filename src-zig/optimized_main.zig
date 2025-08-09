@@ -12,6 +12,7 @@ const CompilationCache = @import("performance_optimizer.zig").CompilationCache;
 
 // Import core compiler modules
 const Lexer = @import("lexer.zig").Lexer;
+const Token = @import("lexer.zig").Token;
 const Parser = @import("parser.zig").Parser;
 const TypeSystem = @import("type_system_runtime.zig").TypeSystemRuntime;
 const Codegen = @import("advanced_codegen.zig").CodeGenerator;
@@ -36,10 +37,10 @@ pub fn main() !void {
     defer performance_optimizer.deinit();
     
     // Apply compilation speed optimizations
-    std.debug.print("🚀 Optimizing compiler performance...\n");
+    std.debug.print("🚀 Optimizing compiler performance...\n", .{});
     const optimization_result = try performance_optimizer.optimizeCompilationSpeed();
     
-    std.debug.print("✅ Optimization complete:\n");
+    std.debug.print("✅ Optimization complete:\n", .{});
     std.debug.print("  - Speedup factor: {d:.1}x\n", .{optimization_result.speedup_factor});
     std.debug.print("  - Memory savings: {d:.1}%\n", .{optimization_result.memory_savings_percent});
     std.debug.print("  - Cache hit rate: {d:.1}%\n", .{optimization_result.cache_hit_rate * 100});
@@ -77,7 +78,7 @@ pub fn main() !void {
         } else if (std.mem.eql(u8, arg, "--compile")) {
             // Handle compilation mode
             if (i + 1 >= args.len) {
-                std.debug.print("❌ Error: --compile requires a source file\n");
+                std.debug.print("❌ Error: --compile requires a source file\n", .{});
                 return;
             }
             i += 1;
@@ -87,7 +88,7 @@ pub fn main() !void {
         } else if (std.mem.eql(u8, arg, "--check")) {
             // Handle type checking mode
             if (i + 1 >= args.len) {
-                std.debug.print("❌ Error: --check requires a source file\n");
+                std.debug.print("❌ Error: --check requires a source file\n", .{});
                 return;
             }
             i += 1;
@@ -104,7 +105,7 @@ pub fn main() !void {
     }
     
     if (input_files.items.len == 0) {
-        std.debug.print("❌ Error: No input files specified\n");
+        std.debug.print("❌ Error: No input files specified\n", .{});
         try printUsage();
         return;
     }
@@ -137,7 +138,7 @@ fn compileFileOptimized(
     
     // Check compilation cache first
     if (cache.getCachedOutput(source, source_file)) |cached_output| {
-        std.debug.print("⚡ Using cached compilation result\n");
+        std.debug.print("⚡ Using cached compilation result\n", .{});
         
         const output_file = try generateOutputFilename(allocator, source_file);
         defer allocator.free(output_file);
@@ -187,11 +188,11 @@ fn compileFileOptimized(
     if (profiler) |*p| p.endTiming(.parsing, if (ast) |a| countASTNodes(a) else 0);
     
     if (ast == null) {
-        std.debug.print("❌ Parsing failed\n");
+        std.debug.print("❌ Parsing failed\n", .{});
         return;
     }
     
-    std.debug.print("🌳 Parsed AST with arena allocation\n");
+    std.debug.print("🌳 Parsed AST with arena allocation\n", .{});
     
     // Phase 3: Fast Type Checking
     var type_system = try TypeSystem.init(arena_allocator);
@@ -201,7 +202,7 @@ fn compileFileOptimized(
     try type_system.enableFastTypeChecking();
     
     if (!try type_system.checkProgram(ast.?)) {
-        std.debug.print("❌ Type checking failed\n");
+        std.debug.print("❌ Type checking failed\n", .{});
         return;
     }
     
@@ -325,7 +326,7 @@ fn checkFileOptimized(
     try type_system.enableFastTypeChecking();
     
     if (!try type_system.checkProgram(ast.?)) {
-        std.debug.print("❌ Type checking failed\n");
+        std.debug.print("❌ Type checking failed\n", .{});
         return;
     }
     
@@ -515,12 +516,12 @@ fn writeOutputFile(filename: []const u8, content: []const u8) !void {
     try file.writeAll(content);
 }
 
-fn convertTokensToParserFormat(allocator: Allocator, fast_tokens: []const FastLexer.Token) ![]Lexer.Token {
+fn convertTokensToParserFormat(allocator: Allocator, fast_tokens: []const FastLexer.Token) ![]Token {
     // Adapter function to convert FastLexer tokens to Parser tokens
-    var parser_tokens = try allocator.alloc(Lexer.Token, fast_tokens.len);
+    var parser_tokens = try allocator.alloc(Token, fast_tokens.len);
     
     for (fast_tokens, 0..) |fast_token, i| {
-        parser_tokens[i] = Lexer.Token{
+        parser_tokens[i] = Token{
             .kind = convertTokenKind(fast_token.kind),
             .lexeme = fast_token.lexeme,
             .line = fast_token.line,
@@ -581,40 +582,40 @@ fn countASTNodes(ast: anytype) usize {
 }
 
 fn printUsage() !void {
-    std.debug.print("CURSED Optimized Compiler v1.0.0\n");
-    std.debug.print("High-performance CURSED language compiler with advanced optimizations\n\n");
-    std.debug.print("Usage: cursed-optimized [options] <file.csd>\n\n");
-    std.debug.print("Options:\n");
-    std.debug.print("  --help              Show this help message\n");
-    std.debug.print("  --version           Show version information\n");
-    std.debug.print("  --compile <file>    Compile to native executable\n");
-    std.debug.print("  --check <file>      Type check only (no code generation)\n");
-    std.debug.print("  --profile           Enable performance profiling\n");
-    std.debug.print("  --parallel          Enable parallel compilation\n");
-    std.debug.print("  --llvm-opt=<level>  LLVM optimization level (O0, O1, O2, O3, Os, Oz)\n");
-    std.debug.print("  --benchmark         Run performance benchmarks\n\n");
-    std.debug.print("Performance Features:\n");
-    std.debug.print("  ⚡ Arena-based memory allocation (3x faster)\n");
-    std.debug.print("  🚀 Optimized lexing with token pooling\n");
-    std.debug.print("  🧠 Intelligent compilation caching\n");
-    std.debug.print("  🔧 LLVM optimization passes\n");
-    std.debug.print("  📊 Real-time performance profiling\n");
-    std.debug.print("  🏃 Parallel compilation phases\n\n");
-    std.debug.print("Examples:\n");
-    std.debug.print("  cursed-optimized --compile myprogram.csd\n");
-    std.debug.print("  cursed-optimized --profile --parallel myprogram.csd\n");
-    std.debug.print("  cursed-optimized --benchmark\n");
+    std.debug.print("CURSED Optimized Compiler v1.0.0\n", .{});
+    std.debug.print("High-performance CURSED language compiler with advanced optimizations\n\n", .{});
+    std.debug.print("Usage: cursed-optimized [options] <file.csd>\n\n", .{});
+    std.debug.print("Options:\n", .{});
+    std.debug.print("  --help              Show this help message\n", .{});
+    std.debug.print("  --version           Show version information\n", .{});
+    std.debug.print("  --compile <file>    Compile to native executable\n", .{});
+    std.debug.print("  --check <file>      Type check only (no code generation)\n", .{});
+    std.debug.print("  --profile           Enable performance profiling\n", .{});
+    std.debug.print("  --parallel          Enable parallel compilation\n", .{});
+    std.debug.print("  --llvm-opt=<level>  LLVM optimization level (O0, O1, O2, O3, Os, Oz)\n", .{});
+    std.debug.print("  --benchmark         Run performance benchmarks\n\n", .{});
+    std.debug.print("Performance Features:\n", .{});
+    std.debug.print("  ⚡ Arena-based memory allocation (3x faster)\n", .{});
+    std.debug.print("  🚀 Optimized lexing with token pooling\n", .{});
+    std.debug.print("  🧠 Intelligent compilation caching\n", .{});
+    std.debug.print("  🔧 LLVM optimization passes\n", .{});
+    std.debug.print("  📊 Real-time performance profiling\n", .{});
+    std.debug.print("  🏃 Parallel compilation phases\n\n", .{});
+    std.debug.print("Examples:\n", .{});
+    std.debug.print("  cursed-optimized --compile myprogram.csd\n", .{});
+    std.debug.print("  cursed-optimized --profile --parallel myprogram.csd\n", .{});
+    std.debug.print("  cursed-optimized --benchmark\n", .{});
 }
 
 fn printVersion() !void {
-    std.debug.print("CURSED Optimized Compiler v1.0.0\n");
-    std.debug.print("Performance-optimized CURSED language compiler\n");
-    std.debug.print("Built with Zig and LLVM for maximum speed\n");
-    std.debug.print("\nOptimizations enabled:\n");
-    std.debug.print("  ✓ Fast lexing with token caching\n");
-    std.debug.print("  ✓ Arena-based memory allocation\n");
-    std.debug.print("  ✓ Incremental compilation caching\n");
-    std.debug.print("  ✓ LLVM optimization passes\n");
-    std.debug.print("  ✓ Parallel compilation phases\n");
-    std.debug.print("  ✓ Performance profiling and analysis\n");
+    std.debug.print("CURSED Optimized Compiler v1.0.0\n", .{});
+    std.debug.print("Performance-optimized CURSED language compiler\n", .{});
+    std.debug.print("Built with Zig and LLVM for maximum speed\n", .{});
+    std.debug.print("\nOptimizations enabled:\n", .{});
+    std.debug.print("  ✓ Fast lexing with token caching\n", .{});
+    std.debug.print("  ✓ Arena-based memory allocation\n", .{});
+    std.debug.print("  ✓ Incremental compilation caching\n", .{});
+    std.debug.print("  ✓ LLVM optimization passes\n", .{});
+    std.debug.print("  ✓ Parallel compilation phases\n", .{});
+    std.debug.print("  ✓ Performance profiling and analysis\n", .{});
 }
