@@ -92,6 +92,22 @@ const TargetConfig = struct {
     }
 };
 
+// LLVM library detection - try multiple methods to find the correct library
+fn detectLlvmLibrary(b: *std.Build, target: std.Build.ResolvedTarget) []const u8 {
+    // Platform-specific LLVM library detection - use first valid library
+    const lib_name = switch (target.result.os.tag) {
+        .linux => "LLVM-18",        // Ubuntu/Debian standard
+        .macos => "LLVM",           // Homebrew standard
+        .windows => "LLVM",         // Windows standard
+        else => "LLVM-18",          // Default
+    };
+    
+    if (b.verbose) {
+        std.debug.print("✅ Using LLVM library: {s}\n", .{lib_name});
+    }
+    return lib_name;
+}
+
 fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.ResolvedTarget) void {
     // LLVM integration for advanced code generation and compilation
     const config = TargetConfig.forTarget(target);
@@ -106,48 +122,130 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
         return;
     }
     
-    // Try to find LLVM installation - check common paths
-    const llvm_paths = [_][]const u8{
-        "/usr/lib/llvm-18/lib",
-        "/usr/local/lib/llvm-18/lib", 
-        "/opt/homebrew/lib/llvm-18/lib",
-        "/usr/lib/llvm/lib",
-        "/usr/local/lib/llvm/lib",
-    };
+    // Define LLVM library paths based on platform
+    var llvm_paths: []const []const u8 = undefined;
     
-    const llvm_include_paths = [_][]const u8{
-        "/usr/lib/llvm-18/include",
-        "/usr/include/llvm-18",
-        "/usr/local/include/llvm-18",
-        "/opt/homebrew/include/llvm-18", 
-        "/usr/include/llvm",
-        "/usr/local/include/llvm",
-    };
-    
-    const llvm_c_include_paths = [_][]const u8{
-        "/usr/include/llvm-c-18/llvm-c",
-        "/usr/lib/llvm-18/include/llvm-c",
-        "/usr/local/include/llvm-c-18",
-        "/opt/homebrew/include/llvm-c-18",
-        "/usr/include/llvm-c",
-        "/usr/local/include/llvm-c",
-    };
-    
-    // Add LLVM library paths - try multiple common locations
-    for (llvm_paths) |path| {
-        exe.addLibraryPath(.{ .cwd_relative = path });
+    switch (target.result.os.tag) {
+        .linux => {
+            llvm_paths = &[_][]const u8{
+                "/usr/lib/llvm-18/lib",
+                "/usr/lib/x86_64-linux-gnu", // Ubuntu/Debian standard lib path
+                "/usr/lib64",                // RedHat/CentOS lib path
+                "/usr/local/lib/llvm-18/lib",
+                "/usr/lib/llvm/lib",
+            };
+        },
+        .macos => {
+            llvm_paths = &[_][]const u8{
+                "/opt/homebrew/lib",         // Homebrew ARM64
+                "/usr/local/lib",            // Homebrew x86_64
+                "/opt/homebrew/lib/llvm-18/lib",
+                "/usr/local/lib/llvm-18/lib",
+                "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib",
+            };
+        },
+        .windows => {
+            llvm_paths = &[_][]const u8{
+                "C:\\Program Files\\LLVM\\lib",
+                "C:\\llvm\\lib",
+                "C:\\tools\\llvm\\lib",
+            };
+        },
+        else => {
+            llvm_paths = &[_][]const u8{
+                "/usr/lib/llvm-18/lib",
+                "/usr/local/lib/llvm-18/lib",
+            };
+        },
     }
     
-    // Add LLVM include directories
+    var llvm_include_paths: []const []const u8 = undefined;
+    var llvm_c_include_paths: []const []const u8 = undefined;
+    
+    switch (target.result.os.tag) {
+        .linux => {
+            llvm_include_paths = &[_][]const u8{
+                "/usr/lib/llvm-18/include",
+                "/usr/include/llvm-18",
+                "/usr/include/llvm",
+                "/usr/local/include/llvm-18",
+            };
+            llvm_c_include_paths = &[_][]const u8{
+                "/usr/include/llvm-c-18/llvm-c",
+                "/usr/lib/llvm-18/include/llvm-c",
+                "/usr/include/llvm-c",
+            };
+        },
+        .macos => {
+            llvm_include_paths = &[_][]const u8{
+                "/opt/homebrew/include",
+                "/usr/local/include",
+                "/opt/homebrew/include/llvm-18",
+                "/usr/local/include/llvm-18",
+            };
+            llvm_c_include_paths = &[_][]const u8{
+                "/opt/homebrew/include/llvm-c",
+                "/usr/local/include/llvm-c",
+            };
+        },
+        .windows => {
+            llvm_include_paths = &[_][]const u8{
+                "C:\\Program Files\\LLVM\\include",
+                "C:\\llvm\\include",
+            };
+            llvm_c_include_paths = &[_][]const u8{
+                "C:\\Program Files\\LLVM\\include\\llvm-c",
+            };
+        },
+        else => {
+            llvm_include_paths = &[_][]const u8{
+                "/usr/include/llvm-18",
+                "/usr/local/include/llvm-18",
+            };
+            llvm_c_include_paths = &[_][]const u8{
+                "/usr/include/llvm-c",
+            };
+        },
+    }
+    
+    // Add LLVM library paths - add all paths for cross-compilation compatibility
+    for (llvm_paths) |path| {
+        exe.addLibraryPath(.{ .cwd_relative = path });
+        if (b.verbose) {
+            // Check if path exists for verbose output
+            std.fs.cwd().access(path, .{}) catch {
+                std.debug.print("⚠️ LLVM lib path not found: {s}\n", .{path});
+                continue;
+            };
+            std.debug.print("✅ Added LLVM lib path: {s}\n", .{path});
+        }
+    }
+    
+    // Add LLVM include directories - add all paths for cross-compilation compatibility
     for (llvm_include_paths) |path| {
         exe.addSystemIncludePath(.{ .cwd_relative = path });
+        if (b.verbose) {
+            std.fs.cwd().access(path, .{}) catch {
+                std.debug.print("⚠️ LLVM include not found: {s}\n", .{path});
+                continue;
+            };
+            std.debug.print("✅ Added LLVM include: {s}\n", .{path});
+        }
     }
     for (llvm_c_include_paths) |path| {
         exe.addSystemIncludePath(.{ .cwd_relative = path });
+        if (b.verbose) {
+            std.fs.cwd().access(path, .{}) catch {
+                std.debug.print("⚠️ LLVM-C include not found: {s}\n", .{path});
+                continue;
+            };
+            std.debug.print("✅ Added LLVM-C include: {s}\n", .{path});
+        }
     }
     
-    // Link the correct LLVM library (found in /usr/lib/llvm-18/lib/)
-    exe.linkSystemLibrary("LLVM-18");
+    // Detect and link the correct LLVM library
+    const llvm_lib = detectLlvmLibrary(b, target);
+    exe.linkSystemLibrary(llvm_lib);
     
     // Compile LLVM wrapper for this specific target instead of using pre-compiled object
     exe.addCSourceFile(.{
@@ -270,12 +368,25 @@ pub fn build(b: *std.Build) void {
     if (!is_wasm) {
         exe.linkLibC();
         
-        // Add LLVM support for native targets, disable for cross-compilation due to library incompatibility
-        if (config.supports_llvm and !is_cross_compile) {
+        // Add LLVM support - enable for native builds and compatible cross-compilation
+        const enable_llvm = config.supports_llvm and (
+            // Enable for native builds only for now
+            !is_cross_compile
+            // TODO: Enable cross-compilation when proper LLVM toolchain setup is available
+            // (resolved_target.result.os.tag == .linux and builtin.target.os.tag == .linux)
+        );
+        
+        if (enable_llvm) {
             addLlvm(b, exe, resolved_target);
             exe.root_module.addCMacro("CURSED_ENABLE_LLVM", "1");
+            if (b.verbose) {
+                std.debug.print("✅ LLVM enabled for target: {s}\n", .{config.description});
+            }
         } else {
             exe.root_module.addCMacro("CURSED_DISABLE_LLVM", "1");
+            if (b.verbose) {
+                std.debug.print("⚠️ LLVM disabled for target: {s}\n", .{config.description});
+            }
         }
         
         // Set explicit CPU target to avoid athlon-xp conflicts
@@ -346,8 +457,10 @@ pub fn build(b: *std.Build) void {
     });
     if (!is_wasm) {
         complete_exe.linkLibC();
-        // Add LLVM support to complete compiler
-        if (config.supports_llvm and !is_cross_compile) {
+        // Add LLVM support to complete compiler - native builds only for now
+        const enable_llvm_complete = config.supports_llvm and !is_cross_compile;
+        
+        if (enable_llvm_complete) {
             addLlvm(b, complete_exe, resolved_target);
         }
     }
@@ -765,9 +878,9 @@ b.installArtifact(complete_exe);
         const cross_exe = b.addExecutable(.{
             .name = b.fmt("cursed-{s}", .{cross_config.name}),
             .root_source_file = if (query.cpu_arch == .wasm32) 
-                b.path("src-zig/wasm_pure.zig") 
+                b.path("src-zig/wasm_minimal.zig") 
             else 
-                b.path("src-zig/minimal_main.zig"),  // Use minimal main for cross-compilation (no LLVM)
+                b.path("src-zig/demo_simple.zig"),  // Use simple demo for cross-compilation (no LLVM)
             .target = cross_target,
             .optimize = optimize,
         });
@@ -776,9 +889,13 @@ b.installArtifact(complete_exe);
         if (query.cpu_arch != .wasm32) {
             cross_exe.linkLibC();
             
-            // Disable LLVM for cross-compilation due to library incompatibility
-            // Cross-compiled binaries will run without LLVM backend
+            // Disable LLVM for cross-compilation to avoid library linking issues
             cross_exe.root_module.addCMacro("CURSED_DISABLE_LLVM", "1");
+            if (b.verbose) {
+                const cross_target_for_llvm = b.resolveTargetQuery(query);
+                const cross_config_for_llvm = TargetConfig.forTarget(cross_target_for_llvm);
+                std.debug.print("⚠️ Cross-compilation LLVM disabled for: {s} (library compatibility)\n", .{cross_config_for_llvm.description});
+            }
         }
         
         // Install cross-compiled artifact

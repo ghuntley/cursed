@@ -130,3 +130,93 @@ void llvm_dispose_message(char* message) {
 int llvm_write_bitcode_to_file(void* module, const char* path) {
     return LLVMWriteBitcodeToFile((LLVMModuleRef)module, path);
 }
+
+// Additional LLVM wrapper functions needed for codegen
+void* llvm_void_type(void* context) {
+    return LLVMVoidTypeInContext((LLVMContextRef)context);
+}
+
+void* llvm_build_alloca(void* builder, void* type_ref, const char* name) {
+    return LLVMBuildAlloca((LLVMBuilderRef)builder, (LLVMTypeRef)type_ref, name);
+}
+
+void* llvm_build_store(void* builder, void* value, void* alloca) {
+    return LLVMBuildStore((LLVMBuilderRef)builder, (LLVMValueRef)value, (LLVMValueRef)alloca);
+}
+
+void* llvm_build_load2(void* builder, void* type_ref, void* alloca, const char* name) {
+    return LLVMBuildLoad2((LLVMBuilderRef)builder, (LLVMTypeRef)type_ref, (LLVMValueRef)alloca, name);
+}
+
+void* llvm_get_param(void* function, unsigned int index) {
+    return LLVMGetParam((LLVMValueRef)function, index);
+}
+
+void* llvm_get_insert_block(void* builder) {
+    return LLVMGetInsertBlock((LLVMBuilderRef)builder);
+}
+
+void* llvm_get_basic_block_terminator(void* block) {
+    return LLVMGetBasicBlockTerminator((LLVMBasicBlockRef)block);
+}
+
+void* llvm_build_ret_void(void* builder) {
+    return LLVMBuildRetVoid((LLVMBuilderRef)builder);
+}
+
+void* llvm_int64_type(void* context) {
+    return LLVMInt64TypeInContext((LLVMContextRef)context);
+}
+
+void* llvm_build_add(void* builder, void* left, void* right, const char* name) {
+    return LLVMBuildAdd((LLVMBuilderRef)builder, (LLVMValueRef)left, (LLVMValueRef)right, name);
+}
+
+void* llvm_build_sub(void* builder, void* left, void* right, const char* name) {
+    return LLVMBuildSub((LLVMBuilderRef)builder, (LLVMValueRef)left, (LLVMValueRef)right, name);
+}
+
+void* llvm_build_mul(void* builder, void* left, void* right, const char* name) {
+    return LLVMBuildMul((LLVMBuilderRef)builder, (LLVMValueRef)left, (LLVMValueRef)right, name);
+}
+
+void* llvm_build_div(void* builder, void* left, void* right, const char* name) {
+    return LLVMBuildSDiv((LLVMBuilderRef)builder, (LLVMValueRef)left, (LLVMValueRef)right, name);
+}
+
+void* llvm_type_of(void* value) {
+    return LLVMTypeOf((LLVMValueRef)value);
+}
+
+void* llvm_get_allocated_type(void* alloca) {
+    return LLVMGetAllocatedType((LLVMValueRef)alloca);
+}
+
+// Additional functions for full LLVM integration
+void* llvm_get_basic_block_parent(void* block) {
+    return LLVMGetBasicBlockParent((LLVMBasicBlockRef)block);
+}
+
+void* llvm_build_cond_br(void* builder, void* condition, void* then_block, void* else_block) {
+    return LLVMBuildCondBr((LLVMBuilderRef)builder, (LLVMValueRef)condition, (LLVMBasicBlockRef)then_block, (LLVMBasicBlockRef)else_block);
+}
+
+void* llvm_build_br(void* builder, void* block) {
+    return LLVMBuildBr((LLVMBuilderRef)builder, (LLVMBasicBlockRef)block);
+}
+
+void* llvm_int1_type(void* context) {
+    return LLVMInt1TypeInContext((LLVMContextRef)context);
+}
+
+void* llvm_global_get_value_type(void* global) {
+    return LLVMGlobalGetValueType((LLVMValueRef)global);
+}
+
+int llvm_get_type_kind(void* type_ref) {
+    return LLVMGetTypeKind((LLVMTypeRef)type_ref);
+}
+
+void* llvm_get_named_function(void* module, const char* name) {
+    return LLVMGetNamedFunction((LLVMModuleRef)module, name);
+}

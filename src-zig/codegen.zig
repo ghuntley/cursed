@@ -1,16 +1,19 @@
 const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
-// LLVM C imports disabled to fix "athlon-xp" CPU detection issues
-// Replace with dummy types to allow compilation without LLVM
+
+// Import real LLVM integration from the prepared fix
+const llvm_fix = @import("llvm_integration_fix.zig");
+
+// Use real LLVM types and functions from the integration fix
 const c = struct {
-    // Dummy LLVM types to make compilation work without LLVM
-    pub const LLVMModuleRef = ?*anyopaque;
-    pub const LLVMBuilderRef = ?*anyopaque;
-    pub const LLVMContextRef = ?*anyopaque;
-    pub const LLVMValueRef = ?*anyopaque;
-    pub const LLVMTypeRef = ?*anyopaque;
-    pub const LLVMBasicBlockRef = ?*anyopaque;
+    // Real LLVM types
+    pub const LLVMModuleRef = llvm_fix.LLVMModuleRef;
+    pub const LLVMBuilderRef = llvm_fix.LLVMBuilderRef;
+    pub const LLVMContextRef = llvm_fix.LLVMContextRef;
+    pub const LLVMValueRef = llvm_fix.LLVMValueRef;
+    pub const LLVMTypeRef = llvm_fix.LLVMTypeRef;
+    pub const LLVMBasicBlockRef = llvm_fix.LLVMBasicBlockRef;
     pub const LLVMExecutionEngineRef = ?*anyopaque;
     pub const LLVMTargetRef = ?*anyopaque;
     pub const LLVMTargetMachineRef = ?*anyopaque;
@@ -18,18 +21,142 @@ const c = struct {
     pub const LLVMMemoryBufferRef = ?*anyopaque;
     pub const LLVMBool = c_int;
     
-    // Dummy functions to prevent link errors (add more as needed)
-    pub fn LLVMCreateModule(_: [*c]const u8) LLVMModuleRef { return null; }
-    pub fn LLVMCreateBuilder() LLVMBuilderRef { return null; }
-    pub fn LLVMGetGlobalContext() LLVMContextRef { return null; }
-    pub fn LLVMDisposeModule(_: LLVMModuleRef) void {}
-    pub fn LLVMDisposeBuilder(_: LLVMBuilderRef) void {}
-    pub fn LLVMInitializeX86TargetInfo() void {}
-    pub fn LLVMInitializeX86Target() void {}
-    pub fn LLVMInitializeX86TargetMC() void {}
-    pub fn LLVMInitializeX86AsmPrinter() void {}
-    pub fn LLVMCreateTargetMachine() LLVMTargetMachineRef { return null; }
-    pub fn LLVMDisposeTargetMachine(_: LLVMTargetMachineRef) void {}
+    // Real LLVM functions from integration fix
+    pub const LLVMInitializeNativeTarget = llvm_fix.LLVMInitializeNativeTarget;
+    pub const LLVMInitializeNativeAsmPrinter = llvm_fix.LLVMInitializeNativeAsmPrinter;
+    pub const LLVMInitializeNativeAsmParser = llvm_fix.LLVMInitializeNativeAsmParser;
+    pub const LLVMContextCreate = llvm_fix.LLVMContextCreate;
+    pub const LLVMModuleCreateWithNameInContext = llvm_fix.LLVMModuleCreateWithNameInContext;
+    pub const LLVMCreateBuilderInContext = llvm_fix.LLVMCreateBuilderInContext;
+    pub const LLVMDisposeModule = llvm_fix.LLVMDisposeModule;
+    pub const LLVMDisposeBuilder = llvm_fix.LLVMDisposeBuilder;
+    pub const LLVMContextDispose = llvm_fix.LLVMContextDispose;
+    pub const LLVMInt32TypeInContext = llvm_fix.LLVMInt32TypeInContext;
+    pub const LLVMInt8TypeInContext = llvm_fix.LLVMInt8TypeInContext;
+    pub const LLVMPointerType = llvm_fix.LLVMPointerType;
+    pub const LLVMFunctionType = llvm_fix.LLVMFunctionType;
+    pub const LLVMAddFunction = llvm_fix.LLVMAddFunction;
+    pub const LLVMAppendBasicBlockInContext = llvm_fix.LLVMAppendBasicBlockInContext;
+    pub const LLVMPositionBuilderAtEnd = llvm_fix.LLVMPositionBuilderAtEnd;
+    pub const LLVMBuildGlobalStringPtr = llvm_fix.LLVMBuildGlobalStringPtr;
+    pub const LLVMConstInt = llvm_fix.LLVMConstInt;
+    pub const LLVMBuildRet = llvm_fix.LLVMBuildRet;
+    pub const LLVMVerifyModule = llvm_fix.LLVMVerifyModule;
+    pub const LLVMPrintModuleToString = llvm_fix.LLVMPrintModuleToString;
+    pub const LLVMDisposeMessage = llvm_fix.LLVMDisposeMessage;
+    pub const LLVMWriteBitcodeToFile = llvm_fix.LLVMWriteBitcodeToFile;
+    
+    // Additional LLVM functions needed for full implementation
+    extern fn llvm_void_type(context: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_build_alloca(builder: ?*anyopaque, type_ref: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
+    extern fn llvm_build_store(builder: ?*anyopaque, value: ?*anyopaque, alloca: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_build_load2(builder: ?*anyopaque, type_ref: ?*anyopaque, alloca: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
+    extern fn llvm_get_param(function: ?*anyopaque, index: c_uint) ?*anyopaque;
+    extern fn llvm_get_insert_block(builder: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_get_basic_block_terminator(block: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_build_ret_void(builder: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_int64_type(context: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_build_add(builder: ?*anyopaque, left: ?*anyopaque, right: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
+    extern fn llvm_build_sub(builder: ?*anyopaque, left: ?*anyopaque, right: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
+    extern fn llvm_build_mul(builder: ?*anyopaque, left: ?*anyopaque, right: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
+    extern fn llvm_build_div(builder: ?*anyopaque, left: ?*anyopaque, right: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
+    extern fn llvm_type_of(value: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_get_allocated_type(alloca: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_get_basic_block_parent(block: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_build_cond_br(builder: ?*anyopaque, condition: ?*anyopaque, then_block: ?*anyopaque, else_block: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_build_br(builder: ?*anyopaque, block: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_int1_type(context: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_global_get_value_type(global: ?*anyopaque) ?*anyopaque;
+    extern fn llvm_get_type_kind(type_ref: ?*anyopaque) c_int;
+    
+    pub fn LLVMVoidTypeInContext(context: LLVMContextRef) LLVMTypeRef {
+        return llvm_void_type(context);
+    }
+    
+    pub fn LLVMBuildAlloca(builder: LLVMBuilderRef, type_ref: LLVMTypeRef, name: [*c]const u8) LLVMValueRef {
+        return llvm_build_alloca(builder, type_ref, name);
+    }
+    
+    pub fn LLVMBuildStore(builder: LLVMBuilderRef, value: LLVMValueRef, alloca: LLVMValueRef) LLVMValueRef {
+        return llvm_build_store(builder, value, alloca);
+    }
+    
+    pub fn LLVMBuildLoad2(builder: LLVMBuilderRef, type_ref: LLVMTypeRef, alloca: LLVMValueRef, name: [*c]const u8) LLVMValueRef {
+        return llvm_build_load2(builder, type_ref, alloca, name);
+    }
+    
+    pub fn LLVMGetParam(function: LLVMValueRef, index: c_uint) LLVMValueRef {
+        return llvm_get_param(function, index);
+    }
+    
+    pub fn LLVMGetInsertBlock(builder: LLVMBuilderRef) LLVMBasicBlockRef {
+        return llvm_get_insert_block(builder);
+    }
+    
+    pub fn LLVMGetBasicBlockTerminator(block: LLVMBasicBlockRef) LLVMValueRef {
+        return llvm_get_basic_block_terminator(block);
+    }
+    
+    pub fn LLVMBuildRetVoid(builder: LLVMBuilderRef) LLVMValueRef {
+        return llvm_build_ret_void(builder);
+    }
+    
+    pub fn LLVMInt64TypeInContext(context: LLVMContextRef) LLVMTypeRef {
+        return llvm_int64_type(context);
+    }
+    
+    pub fn LLVMBuildAdd(builder: LLVMBuilderRef, left: LLVMValueRef, right: LLVMValueRef, name: [*c]const u8) LLVMValueRef {
+        return llvm_build_add(builder, left, right, name);
+    }
+    
+    pub fn LLVMBuildSub(builder: LLVMBuilderRef, left: LLVMValueRef, right: LLVMValueRef, name: [*c]const u8) LLVMValueRef {
+        return llvm_build_sub(builder, left, right, name);
+    }
+    
+    pub fn LLVMBuildMul(builder: LLVMBuilderRef, left: LLVMValueRef, right: LLVMValueRef, name: [*c]const u8) LLVMValueRef {
+        return llvm_build_mul(builder, left, right, name);
+    }
+    
+    pub fn LLVMBuildSDiv(builder: LLVMBuilderRef, left: LLVMValueRef, right: LLVMValueRef, name: [*c]const u8) LLVMValueRef {
+        return llvm_build_div(builder, left, right, name);
+    }
+    
+    pub fn LLVMTypeOf(value: LLVMValueRef) LLVMTypeRef {
+        return llvm_type_of(value);
+    }
+    
+    pub fn LLVMGetAllocatedType(alloca: LLVMValueRef) LLVMTypeRef {
+        return llvm_get_allocated_type(alloca);
+    }
+    
+    pub fn LLVMGetBasicBlockParent(block: LLVMBasicBlockRef) LLVMValueRef {
+        return llvm_get_basic_block_parent(block);
+    }
+    
+    pub fn LLVMBuildCondBr(builder: LLVMBuilderRef, condition: LLVMValueRef, then_block: LLVMBasicBlockRef, else_block: LLVMBasicBlockRef) LLVMValueRef {
+        return llvm_build_cond_br(builder, condition, then_block, else_block);
+    }
+    
+    pub fn LLVMBuildBr(builder: LLVMBuilderRef, block: LLVMBasicBlockRef) LLVMValueRef {
+        return llvm_build_br(builder, block);
+    }
+    
+    pub fn LLVMInt1TypeInContext(context: LLVMContextRef) LLVMTypeRef {
+        return llvm_int1_type(context);
+    }
+    
+    pub fn LLVMGlobalGetValueType(global: LLVMValueRef) LLVMTypeRef {
+        return llvm_global_get_value_type(global);
+    }
+    
+    pub fn LLVMGetTypeKind(type_ref: LLVMTypeRef) c_int {
+        return llvm_get_type_kind(type_ref);
+    }
+    
+    // Additional constants
+    pub const LLVMPrintMessageAction: c_int = 1;
+    pub const LLVMIntegerTypeKind: c_int = 8;
+    pub const LLVMPointerTypeKind: c_int = 15;
 };
 
 const ast = @import("ast_simple.zig");
@@ -428,6 +555,383 @@ pub const CodeGen = struct {
         
         // Clear local variables
         self.variables.clearRetainingCapacity();
+    }
+
+    // Add missing function implementations for basic functionality
+    
+    fn generateLet(self: *CodeGen, let_stmt: ast.LetStatement) CodeGenError!void {
+        const var_type = try self.getLLVMType(let_stmt.var_type);
+        const alloca = c.LLVMBuildAlloca(self.builder, var_type, let_stmt.name.ptr);
+        
+        if (let_stmt.value) |value_expr| {
+            const value = try self.generateExpression(value_expr.*);
+            _ = c.LLVMBuildStore(self.builder, value, alloca);
+        }
+        
+        try self.variables.put(let_stmt.name, alloca);
+    }
+    
+    fn generateReturn(self: *CodeGen, ret_stmt: ast.ReturnStatement) CodeGenError!void {
+        if (ret_stmt.value) |value_expr| {
+            const value = try self.generateExpression(value_expr.*);
+            _ = c.LLVMBuildRet(self.builder, value);
+        } else {
+            _ = c.LLVMBuildRetVoid(self.builder);
+        }
+    }
+    
+    fn generateIf(self: *CodeGen, if_stmt: ast.IfStatement) CodeGenError!void {
+        const condition = try self.generateExpression(if_stmt.condition.*);
+        
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        const then_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "if_then");
+        const else_block = if (if_stmt.else_body != null) 
+            c.LLVMAppendBasicBlockInContext(self.context, current_func, "if_else")
+        else
+            null;
+        const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "if_merge");
+        
+        _ = c.LLVMBuildCondBr(self.builder, condition, then_block, else_block orelse merge_block);
+        
+        // Generate then block
+        c.LLVMPositionBuilderAtEnd(self.builder, then_block);
+        try self.generateStatement(if_stmt.then_body);
+        _ = c.LLVMBuildBr(self.builder, merge_block);
+        
+        // Generate else block if present
+        if (if_stmt.else_body) |else_body| {
+            c.LLVMPositionBuilderAtEnd(self.builder, else_block.?);
+            try self.generateStatement(else_body);
+            _ = c.LLVMBuildBr(self.builder, merge_block);
+        }
+        
+        // Continue in merge block
+        c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+    }
+    
+    fn generateWhile(self: *CodeGen, while_stmt: ast.WhileStatement) CodeGenError!void {
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        const loop_header = c.LLVMAppendBasicBlockInContext(self.context, current_func, "while_header");
+        const loop_body = c.LLVMAppendBasicBlockInContext(self.context, current_func, "while_body");
+        const loop_exit = c.LLVMAppendBasicBlockInContext(self.context, current_func, "while_exit");
+        
+        _ = c.LLVMBuildBr(self.builder, loop_header);
+        
+        // Generate loop header with condition
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_header);
+        const condition = try self.generateExpression(while_stmt.condition.*);
+        _ = c.LLVMBuildCondBr(self.builder, condition, loop_body, loop_exit);
+        
+        // Generate loop body
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_body);
+        try self.generateStatement(while_stmt.body);
+        _ = c.LLVMBuildBr(self.builder, loop_header);
+        
+        // Continue after loop
+        c.LLVMPositionBuilderAtEnd(self.builder, loop_exit);
+    }
+    
+    fn generateExpression(self: *CodeGen, expr: ast.Expression) CodeGenError!c.LLVMValueRef {
+        switch (expr.tag) {
+            .Literal => {
+                const literal: *ast.LiteralExpression = @ptrCast(@alignCast(expr.data));
+                return try self.generateLiteral(literal.*);
+            },
+            .Identifier => {
+                const ident: *ast.IdentifierExpression = @ptrCast(@alignCast(expr.data));
+                return try self.generateIdentifier(ident.*);
+            },
+            .BinaryOp => {
+                const binary: *ast.BinaryOpExpression = @ptrCast(@alignCast(expr.data));
+                return try self.generateBinaryOp(binary.*);
+            },
+            .Call => {
+                const call: *ast.CallExpression = @ptrCast(@alignCast(expr.data));
+                return try self.generateCall(call.*);
+            },
+            else => {
+                std.debug.print("Unsupported expression type: {}\n", .{expr.tag});
+                return CodeGenError.LLVMError;
+            },
+        }
+    }
+    
+    fn generateLiteral(self: *CodeGen, literal: ast.LiteralExpression) CodeGenError!c.LLVMValueRef {
+        switch (literal.value) {
+            .Integer => |int_val| {
+                const int_type = c.LLVMInt32TypeInContext(self.context);
+                return c.LLVMConstInt(int_type, @intCast(int_val), 0);
+            },
+            .String => |str_val| {
+                return c.LLVMBuildGlobalStringPtr(self.builder, str_val.ptr, "str");
+            },
+            .Boolean => |bool_val| {
+                const bool_type = c.LLVMInt1TypeInContext(self.context);
+                return c.LLVMConstInt(bool_type, if (bool_val) 1 else 0, 0);
+            },
+            else => {
+                return CodeGenError.InvalidType;
+            },
+        }
+    }
+    
+    fn generateIdentifier(self: *CodeGen, ident: ast.IdentifierExpression) CodeGenError!c.LLVMValueRef {
+        if (self.variables.get(ident.name)) |alloca| {
+            const var_type = c.LLVMGetAllocatedType(alloca);
+            return c.LLVMBuildLoad2(self.builder, var_type, alloca, ident.name.ptr);
+        } else {
+            return CodeGenError.UndefinedSymbol;
+        }
+    }
+    
+    fn generateBinaryOp(self: *CodeGen, binary: ast.BinaryOpExpression) CodeGenError!c.LLVMValueRef {
+        const left = try self.generateExpression(binary.left.*);
+        const right = try self.generateExpression(binary.right.*);
+        
+        switch (binary.operator) {
+            .Add => return c.LLVMBuildAdd(self.builder, left, right, "add"),
+            .Subtract => return c.LLVMBuildSub(self.builder, left, right, "sub"),
+            .Multiply => return c.LLVMBuildMul(self.builder, left, right, "mul"),
+            .Divide => return c.LLVMBuildSDiv(self.builder, left, right, "div"),
+            else => {
+                std.debug.print("Unsupported binary operator: {}\n", .{binary.operator});
+                return CodeGenError.LLVMError;
+            },
+        }
+    }
+    
+    fn generateCall(self: *CodeGen, call: ast.CallExpression) CodeGenError!c.LLVMValueRef {
+        // Handle special case for vibez.spill (printf)
+        if (std.mem.eql(u8, call.function, "vibez.spill")) {
+            return try self.generatePrintCall(call.arguments.items);
+        }
+        
+        // Regular function call
+        const function = self.functions.get(call.function) orelse {
+            return CodeGenError.UndefinedSymbol;
+        };
+        
+        var args = ArrayList(c.LLVMValueRef).init(self.allocator);
+        defer args.deinit();
+        
+        for (call.arguments.items) |arg| {
+            const arg_value = try self.generateExpression(arg.*);
+            try args.append(arg_value);
+        }
+        
+        const func_type = c.LLVMGlobalGetValueType(function);
+        return c.LLVMBuildCall2(
+            self.builder,
+            func_type,
+            function,
+            if (args.items.len > 0) args.items.ptr else null,
+            @intCast(args.items.len),
+            "call"
+        );
+    }
+    
+    fn generatePrintCall(self: *CodeGen, args: []ast.Expression) CodeGenError!c.LLVMValueRef {
+        const printf_func = self.functions.get("printf") orelse {
+            return CodeGenError.UndefinedSymbol;
+        };
+        
+        var format_str = std.ArrayList(u8).init(self.allocator);
+        defer format_str.deinit();
+        
+        var llvm_args = ArrayList(c.LLVMValueRef).init(self.allocator);
+        defer llvm_args.deinit();
+        
+        // Generate format string and arguments
+        for (args, 0..) |arg, i| {
+            if (i > 0) try format_str.append(' ');
+            
+            const arg_value = try self.generateExpression(arg);
+            const arg_type = c.LLVMTypeOf(arg_value);
+            
+            if (c.LLVMGetTypeKind(arg_type) == c.LLVMIntegerTypeKind) {
+                try format_str.appendSlice("%d");
+            } else {
+                try format_str.appendSlice("%s");
+            }
+            
+            try llvm_args.append(arg_value);
+        }
+        
+        try format_str.append('\n');
+        try format_str.append(0); // null terminator
+        
+        const format_global = c.LLVMBuildGlobalStringPtr(self.builder, format_str.items.ptr, "printf_fmt");
+        
+        var printf_args = ArrayList(c.LLVMValueRef).init(self.allocator);
+        defer printf_args.deinit();
+        try printf_args.append(format_global);
+        try printf_args.appendSlice(llvm_args.items);
+        
+        const printf_type = c.LLVMGlobalGetValueType(printf_func);
+        return c.LLVMBuildCall2(
+            self.builder,
+            printf_type,
+            printf_func,
+            printf_args.items.ptr,
+            @intCast(printf_args.items.len),
+            "printf"
+        );
+    }
+    
+    fn getLLVMType(self: *CodeGen, cursed_type: ast.Type) CodeGenError!c.LLVMTypeRef {
+        switch (cursed_type) {
+            .Integer => return c.LLVMInt32TypeInContext(self.context),
+            .String => return c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            .Boolean => return c.LLVMInt1TypeInContext(self.context),
+            .Void => return c.LLVMVoidTypeInContext(self.context),
+            else => return CodeGenError.InvalidType,
+        }
+    }
+    
+    fn getDefaultValue(self: *CodeGen, cursed_type: ast.Type) CodeGenError!c.LLVMValueRef {
+        switch (cursed_type) {
+            .Integer => {
+                const int_type = c.LLVMInt32TypeInContext(self.context);
+                return c.LLVMConstInt(int_type, 0, 0);
+            },
+            .Boolean => {
+                const bool_type = c.LLVMInt1TypeInContext(self.context);
+                return c.LLVMConstInt(bool_type, 0, 0);
+            },
+            else => return CodeGenError.InvalidType,
+        }
+    }
+    
+    fn optimizeModule(self: *CodeGen) CodeGenError!void {
+        // Basic optimization - for now just a placeholder
+        _ = self;
+    }
+    
+    // Add placeholder implementations for missing functions
+    fn generateStruct(self: *CodeGen, struct_stmt: ast.StructStatement) CodeGenError!void {
+        _ = self; _ = struct_stmt;
+        // Placeholder implementation
+    }
+    
+    fn generateInterface(self: *CodeGen, interface_stmt: ast.InterfaceStatement) CodeGenError!void {
+        _ = self; _ = interface_stmt;
+        // Placeholder implementation
+    }
+    
+    fn generateImplementation(self: *CodeGen, impl_stmt: ast.ImplementationStatement) CodeGenError!void {
+        _ = self; _ = impl_stmt;
+        // Placeholder implementation
+    }
+    
+    fn generateYikes(self: *CodeGen, yikes_stmt: ast.YikesStatement) CodeGenError!void {
+        _ = self; _ = yikes_stmt;
+        // Placeholder implementation
+    }
+    
+    fn generateFam(self: *CodeGen, fam_stmt: ast.FamStatement) CodeGenError!void {
+        _ = self; _ = fam_stmt;
+        // Placeholder implementation
+    }
+    
+    fn generateBlock(self: *CodeGen, block_stmt: ast.BlockStatement) CodeGenError!void {
+        for (block_stmt.statements.items) |stmt| {
+            try self.generateStatement(stmt);
+        }
+    }
+    
+    fn generateAssignment(self: *CodeGen, assign_stmt: ast.AssignmentStatement) CodeGenError!void {
+        const value = try self.generateExpression(assign_stmt.value.*);
+        
+        if (self.variables.get(assign_stmt.target)) |alloca| {
+            _ = c.LLVMBuildStore(self.builder, value, alloca);
+        } else {
+            return CodeGenError.UndefinedSymbol;
+        }
+    }
+    
+    // Add placeholder implementations for other missing statement types
+    fn generateStan(self: *CodeGen, stan_stmt: ast.StanStatement) CodeGenError!void {
+        _ = self; _ = stan_stmt;
+    }
+    
+    fn generateSelect(self: *CodeGen, select_stmt: ast.SelectStatement) CodeGenError!void {
+        _ = self; _ = select_stmt;
+    }
+    
+    fn generateDefer(self: *CodeGen, defer_stmt: ast.DeferStatement) CodeGenError!void {
+        _ = self; _ = defer_stmt;
+    }
+    
+    fn generateBestie(self: *CodeGen, bestie_stmt: ast.BestieStatement) CodeGenError!void {
+        _ = self; _ = bestie_stmt;
+    }
+    
+    fn generateVibes(self: *CodeGen, vibes_stmt: ast.VibesStatement) CodeGenError!void {
+        _ = self; _ = vibes_stmt;
+    }
+    
+    fn generateMatchStatement(self: *CodeGen, match_stmt: ast.MatchStatement) CodeGenError!void {
+        _ = self; _ = match_stmt;
+    }
+    
+    fn generateFor(self: *CodeGen, for_stmt: ast.ForStatement) CodeGenError!void {
+        _ = self; _ = for_stmt;
+    }
+    
+    fn generateForIn(self: *CodeGen, for_in_stmt: ast.ForInStatement) CodeGenError!void {
+        _ = self; _ = for_in_stmt;
+    }
+    
+    fn generateSwitch(self: *CodeGen, switch_stmt: ast.SwitchStatement) CodeGenError!void {
+        _ = self; _ = switch_stmt;
+    }
+    
+    fn generatePatternSwitch(self: *CodeGen, pattern_switch_stmt: ast.PatternSwitchStatement) CodeGenError!void {
+        _ = self; _ = pattern_switch_stmt;
+    }
+    
+    fn generateGoroutineStatement(self: *CodeGen, goroutine_stmt: ast.GoroutineStatement) CodeGenError!void {
+        _ = self; _ = goroutine_stmt;
+    }
+    
+    fn generateChannelStatement(self: *CodeGen, channel_stmt: ast.ChannelStatement) CodeGenError!void {
+        _ = self; _ = channel_stmt;
+    }
+    
+    fn generateTypeAlias(self: *CodeGen, type_alias_stmt: ast.TypeAliasStatement) CodeGenError!void {
+        _ = self; _ = type_alias_stmt;
+    }
+    
+    fn generatePanicStatement(self: *CodeGen, panic_stmt: ast.PanicStatement) CodeGenError!void {
+        _ = self; _ = panic_stmt;
+    }
+    
+    fn generateCatch(self: *CodeGen, catch_stmt: ast.CatchStatement) CodeGenError!void {
+        _ = self; _ = catch_stmt;
+    }
+    
+    fn generateBreak(self: *CodeGen, break_stmt: ast.BreakStatement) CodeGenError!void {
+        _ = self; _ = break_stmt;
+    }
+    
+    fn generateContinue(self: *CodeGen, continue_stmt: ast.ContinueStatement) CodeGenError!void {
+        _ = self; _ = continue_stmt;
+    }
+    
+    fn generateIncrementStatement(self: *CodeGen, inc_stmt: ast.IncrementStatement) CodeGenError!void {
+        _ = self; _ = inc_stmt;
+    }
+    
+    fn generateDecrementStatement(self: *CodeGen, dec_stmt: ast.DecrementStatement) CodeGenError!void {
+        _ = self; _ = dec_stmt;
+    }
+    
+    fn generateShortDeclaration(self: *CodeGen, short_decl_stmt: ast.ShortDeclarationStatement) CodeGenError!void {
+        _ = self; _ = short_decl_stmt;
+    }
+    
+    fn generateConst(self: *CodeGen, const_stmt: ast.ConstStatement) CodeGenError!void {
+        _ = self; _ = const_stmt;
     }
 
     fn generateMainWrapper(self: *CodeGen) CodeGenError!void {

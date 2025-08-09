@@ -27,6 +27,7 @@ extern fn llvm_verify_module(?*anyopaque) c_int;
 extern fn llvm_print_module_to_string(?*anyopaque) [*c]u8;
 extern fn llvm_dispose_message([*c]u8) void;
 extern fn llvm_write_bitcode_to_file(?*anyopaque, [*c]const u8) c_int;
+extern fn llvm_get_named_function(?*anyopaque, [*c]const u8) ?*anyopaque;
 
 // Real LLVM types that should replace the dummy types in codegen.zig
 pub const LLVMModuleRef = ?*anyopaque;
@@ -74,7 +75,6 @@ pub fn LLVMContextDispose(context: LLVMContextRef) void {
 }
 
 pub fn LLVMInt32TypeInContext(context: LLVMContextRef) LLVMTypeRef {
-    _ = context; // Context passed to wrapper
     return llvm_int32_type(context);
 }
 
@@ -131,6 +131,10 @@ pub fn LLVMDisposeMessage(message: [*c]u8) void {
 
 pub fn LLVMWriteBitcodeToFile(module: LLVMModuleRef, path: [*c]const u8) c_int {
     return llvm_write_bitcode_to_file(module, path);
+}
+
+pub fn LLVMGetNamedFunction(module: LLVMModuleRef, name: [*c]const u8) LLVMValueRef {
+    return llvm_get_named_function(module, name);
 }
 
 // Test to demonstrate the functions work
