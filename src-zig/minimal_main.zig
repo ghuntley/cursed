@@ -160,7 +160,7 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    print("🚀 CURSED Compiler Processing: {s}\n", .{filename});
+    print("🚀 CURSED Stable Compiler Processing: {s}\n", .{filename});
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
@@ -377,7 +377,7 @@ fn simplePatternMatch(value: Variable, pattern: []const u8) !bool {
 }
 
 fn interpretProgram(allocator: Allocator, source: []const u8) !void {
-    print("🚀 Interpreting CURSED program...\n", .{});
+    // print("🚀 Interpreting CURSED program...\n", .{}); // Commented out debug
     
     // Create variable store
     var variables = VariableStore.init(allocator);
@@ -748,7 +748,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             continue;
         }
         
-        print("Line {}: {s}\n", .{ line_number, trimmed });
+        // print("Line {}: {s}\n", .{ line_number, trimmed }); // Commented out debug line
         
         // Check for single-line ready statements with pattern matching before splitting by semicolons
         if (std.mem.indexOf(u8, trimmed, "ready (") != null and 
@@ -875,12 +875,12 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             
             if (!found_function) {
                 // Show parsing for other statements
-                print("Line {}: {s}\n", .{ line_number, stmt_trimmed });
+                // print("Line {}: {s}\n", .{ line_number, stmt_trimmed }); // Commented out debug line
             }
         }
     }
     
-    print("✅ Program interpretation completed\n", .{});
+    // print("✅ Program interpretation completed\n", .{}); // Commented out debug
 }
 
 fn evaluateUserFunction(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, func_def: FunctionDefinition, args_str: []const u8) !Variable {

@@ -1140,13 +1140,32 @@ pub const Interpreter = struct {
         defer self.environment = previous_env;
         
         // Execute method body
+        var return_value: ?Value = null;
         for (method.body.items) |stmt| {
+            if (self.checkForReturn(stmt.*)) |ret_val| {
+                return_value = ret_val;
+                break;
+            }
             try self.executeStatement(stmt.*);
-            
-            // TODO: Handle return statements properly
         }
         
-        return Value.Null;
+        return return_value orelse Value.Null;
+    }
+    
+    /// Check if a statement is a return statement and extract its value
+    fn checkForReturn(self: *Interpreter, stmt: Statement) ?Value {
+        switch (stmt) {
+            .Return => |ret| {
+                if (ret.value) |value_ptr| {
+                    const value_expr: *Expression = @ptrCast(@alignCast(value_ptr));
+                    const result = self.evaluateExpression(value_expr.*) catch Value.Null;
+                    return result;
+                } else {
+                    return Value.Null;
+                }
+            },
+            else => return null,
+        }
     }
     
     fn evaluateStructLiteral(self: *Interpreter, struct_lit: ast.StructLiteralExpression) InterpreterError!Value {

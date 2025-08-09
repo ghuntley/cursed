@@ -1,0 +1,15 @@
+Content-Length: 325
+
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"processId": null, "rootUri": "file:///home/ghuntley/cursed", "capabilities": {"textDocument": {"completion": {"completionItem": {"snippetSupport": true}}, "hover": {"contentFormat": ["plaintext"]}, "definition": {}}}}}
+
+Content-Length: 53
+
+{"jsonrpc": "2.0", "method": "initialized", "params": {}}
+
+Content-Length: 287
+
+{"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": {"textDocument": {"uri": "file:///home/ghuntley/cursed/test_lsp_integration.csd", "languageId": "cursed", "version": 1, "text": "sus test_var drip = 42\nslay test_func() drip {\n    damn 42\n}"}}}
+
+Content-Length: 207
+
+{"jsonrpc": "2.0", "id": 2, "method": "textDocument/completion", "params": {"textDocument": {"uri": "file:///home/ghuntley/cursed/test_lsp_integration.csd"}, "position": {"line": 1, "character": 5}}}

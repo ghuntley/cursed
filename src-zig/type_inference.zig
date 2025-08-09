@@ -357,18 +357,52 @@ pub const GenericCallResolver = struct {
     
     /// Look up variable type from context
     fn lookupVariableType(self: *GenericCallResolver, var_name: []const u8) !ast.Type {
-        _ = self;
-        _ = var_name;
-        // TODO: Implement variable type lookup from scope
-        return ast.Type{ .Primitive = .Normie }; // Placeholder
+        // Check local scope first
+        if (self.current_scope) |scope| {
+            var iter = scope.variables.iterator();
+            while (iter.next()) |entry| {
+                if (std.mem.eql(u8, entry.key_ptr.*, var_name)) {
+                    return entry.value_ptr.*;
+                }
+            }
+        }
+        
+        // Check global scope
+        var iter = self.global_types.iterator();
+        while (iter.next()) |entry| {
+            if (std.mem.eql(u8, entry.key_ptr.*, var_name)) {
+                return entry.value_ptr.*;
+            }
+        }
+        
+        // Default to normie if not found
+        return ast.Type{ .Primitive = .Normie };
     }
     
     /// Infer function call result type
     fn inferFunctionCallType(self: *GenericCallResolver, call: ast.FunctionCall) !ast.Type {
-        _ = self;
-        _ = call;
-        // TODO: Implement function result type inference
-        return ast.Type{ .Primitive = .Normie }; // Placeholder
+        // Look up function in registered functions
+        var iter = self.global_types.iterator();
+        while (iter.next()) |entry| {
+            if (std.mem.eql(u8, entry.key_ptr.*, call.name)) {
+                switch (entry.value_ptr.*) {
+                    .Function => |func_type| return func_type.return_type.*,
+                    else => continue,
+                }
+            }
+        }
+        
+        // Check if it's a built-in function
+        if (std.mem.eql(u8, call.name, "len")) {
+            return ast.Type{ .Primitive = .Normie };
+        } else if (std.mem.eql(u8, call.name, "spill")) {
+            return ast.Type{ .Primitive = .Void };
+        } else if (std.mem.startsWith(u8, call.name, "abs_")) {
+            return ast.Type{ .Primitive = .Normie };
+        }
+        
+        // Default return type inference based on common patterns
+        return ast.Type{ .Primitive = .Normie };
     }
 };
 

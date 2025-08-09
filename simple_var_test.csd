@@ -1,2 +1,1 @@
-sus x drip = 42
-vibez.spill(x)
+sus result drip = 30; vibez.spill(result)

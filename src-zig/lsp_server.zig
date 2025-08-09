@@ -155,7 +155,7 @@ pub const CursedLanguageServer = struct {
 
     /// Handle LSP requests
     pub fn handleRequest(self: *CursedLanguageServer, input: []const u8, writer: std.io.AnyWriter) !void {
-        const parsed = json.parseFromSlice(json.Value, self.allocator, input) catch |err| {
+        const parsed = json.parseFromSlice(json.Value, self.allocator, input, .{}) catch |err| {
             std.log.err("Failed to parse JSON: {}", .{err});
             return;
         };
@@ -171,9 +171,9 @@ pub const CursedLanguageServer = struct {
             } else if (std.mem.eql(u8, method_str, "initialized")) {
                 try self.handleInitialized();
             } else if (std.mem.eql(u8, method_str, "textDocument/didOpen")) {
-                try self.handleDidOpenTextDocument(root);
+                try self.handleDidOpenTextDocument(root, writer);
             } else if (std.mem.eql(u8, method_str, "textDocument/didChange")) {
-                try self.handleDidChangeTextDocument(root);
+                try self.handleDidChangeTextDocument(root, writer);
             } else if (std.mem.eql(u8, method_str, "textDocument/completion")) {
                 try self.handleCompletion(root, writer);
             } else if (std.mem.eql(u8, method_str, "textDocument/hover")) {
@@ -256,7 +256,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle didOpen text document
-    fn handleDidOpenTextDocument(self: *CursedLanguageServer, request: json.Value) !void {
+    fn handleDidOpenTextDocument(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const params = request.object.get("params").?.object;
         const text_document = params.get("textDocument").?.object;
         
@@ -268,11 +268,11 @@ pub const CursedLanguageServer = struct {
         try self.analyzeDocument(&doc_data);
         
         try self.documents.put(uri, doc_data);
-        try self.publishDiagnostics(uri, &doc_data.diagnostics);
+        try self.publishDiagnostics(writer, uri, &doc_data.diagnostics);
     }
 
     /// Handle didChange text document
-    fn handleDidChangeTextDocument(self: *CursedLanguageServer, request: json.Value) !void {
+    fn handleDidChangeTextDocument(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const params = request.object.get("params").?.object;
         const text_document = params.get("textDocument").?.object;
         const content_changes = params.get("contentChanges").?.array;
@@ -294,7 +294,7 @@ pub const CursedLanguageServer = struct {
                     doc_data.diagnostics.clearAndFree();
                     
                     try self.analyzeDocument(doc_data);
-                    try self.publishDiagnostics(uri, &doc_data.diagnostics);
+                    try self.publishDiagnostics(writer, uri, &doc_data.diagnostics);
                 }
             }
         }
@@ -304,7 +304,6 @@ pub const CursedLanguageServer = struct {
     fn analyzeDocument(self: *CursedLanguageServer, doc_data: *DocumentData) !void {
         // Tokenize
         var lex = lexer.Lexer.init(self.allocator, doc_data.text);
-        defer lex.deinit();
         
         const tokens = lex.tokenize() catch |err| {
             try doc_data.diagnostics.append(Diagnostic{
@@ -319,9 +318,10 @@ pub const CursedLanguageServer = struct {
             });
             return;
         };
+        defer tokens.deinit();
 
         // Parse
-        var parse = parser.Parser.init(self.allocator, tokens);
+        var parse = parser.Parser.init(self.allocator, tokens.items);
         defer parse.deinit();
         
         const program = parse.parseProgram() catch |err| {
@@ -344,52 +344,61 @@ pub const CursedLanguageServer = struct {
 
     /// Extract symbols from AST
     fn extractSymbols(self: *CursedLanguageServer, doc_data: *DocumentData, program: ast.Program) !void {
-        for (program.statements.items) |stmt| {
-            switch (stmt) {
-                .function_declaration => |func| {
-                    try doc_data.symbols.append(SymbolInformation{
-                        .name = try self.allocator.dupe(u8, func.name),
-                        .kind = 12, // Function
-                        .location = Location{
-                            .uri = doc_data.uri,
-                            .range = Range{
-                                .start = Position{ .line = 0, .character = 0 },
-                                .end = Position{ .line = 0, .character = @as(u32, @intCast(func.name.len)) },
+        _ = program;
+        
+        // Simple text-based symbol extraction for demonstration
+        const lines = std.mem.splitScalar(u8, doc_data.text, '\n');
+        var line_num: u32 = 0;
+        
+        var line_iter = lines;
+        while (line_iter.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r\n");
+            
+            // Extract function declarations (slay keyword)
+            if (std.mem.startsWith(u8, trimmed, "slay ")) {
+                const after_slay = trimmed[5..];
+                if (std.mem.indexOf(u8, after_slay, "(")) |paren_pos| {
+                    const func_name = std.mem.trim(u8, after_slay[0..paren_pos], " \t");
+                    if (func_name.len > 0) {
+                        try doc_data.symbols.append(SymbolInformation{
+                            .name = try self.allocator.dupe(u8, func_name),
+                            .kind = 12, // Function
+                            .location = Location{
+                                .uri = doc_data.uri,
+                                .range = Range{
+                                    .start = Position{ .line = line_num, .character = 0 },
+                                    .end = Position{ .line = line_num, .character = @as(u32, @intCast(func_name.len + 5)) },
+                                },
                             },
-                        },
-                        .containerName = null,
-                    });
-                },
-                .variable_declaration => |var_decl| {
-                    try doc_data.symbols.append(SymbolInformation{
-                        .name = try self.allocator.dupe(u8, var_decl.name),
-                        .kind = 13, // Variable
-                        .location = Location{
-                            .uri = doc_data.uri,
-                            .range = Range{
-                                .start = Position{ .line = 0, .character = 0 },
-                                .end = Position{ .line = 0, .character = @as(u32, @intCast(var_decl.name.len)) },
-                            },
-                        },
-                        .containerName = null,
-                    });
-                },
-                .interface_statement => |interface| {
-                    try doc_data.symbols.append(SymbolInformation{
-                        .name = try self.allocator.dupe(u8, interface.name),
-                        .kind = 11, // Interface
-                        .location = Location{
-                            .uri = doc_data.uri,
-                            .range = Range{
-                                .start = Position{ .line = 0, .character = 0 },
-                                .end = Position{ .line = 0, .character = @as(u32, @intCast(interface.name.len)) },
-                            },
-                        },
-                        .containerName = null,
-                    });
-                },
-                else => {}, // Handle other statement types
+                            .containerName = null,
+                        });
+                    }
+                }
             }
+            
+            // Extract variable declarations (sus keyword)
+            if (std.mem.startsWith(u8, trimmed, "sus ")) {
+                const after_sus = trimmed[4..];
+                if (std.mem.indexOf(u8, after_sus, " ")) |space_pos| {
+                    const var_name = std.mem.trim(u8, after_sus[0..space_pos], " \t");
+                    if (var_name.len > 0) {
+                        try doc_data.symbols.append(SymbolInformation{
+                            .name = try self.allocator.dupe(u8, var_name),
+                            .kind = 13, // Variable
+                            .location = Location{
+                                .uri = doc_data.uri,
+                                .range = Range{
+                                    .start = Position{ .line = line_num, .character = 0 },
+                                    .end = Position{ .line = line_num, .character = @as(u32, @intCast(var_name.len + 4)) },
+                                },
+                            },
+                            .containerName = null,
+                        });
+                    }
+                }
+            }
+            
+            line_num += 1;
         }
     }
 
@@ -398,7 +407,10 @@ pub const CursedLanguageServer = struct {
         const id = request.object.get("id").?.integer;
         const params = request.object.get("params").?.object;
         const text_document = params.get("textDocument").?.object;
-        _ = text_document.get("uri").?.string; // uri not used in current implementation
+        const uri = text_document.get("uri").?.string;
+        const position = params.get("position").?.object;
+        const line = @as(u32, @intCast(position.get("line").?.integer));
+        const character = @as(u32, @intCast(position.get("character").?.integer));
         
         var completions = ArrayList(CompletionItem).init(self.allocator);
         defer {
@@ -410,40 +422,93 @@ pub const CursedLanguageServer = struct {
             completions.deinit();
         }
 
-        // Add CURSED keywords
+        // Get current document for context-aware completion
+        const doc_data = self.documents.get(uri);
+        var context_prefix: []const u8 = "";
+        
+        if (doc_data) |*doc| {
+            // Extract word prefix at cursor position for context-sensitive completion
+            const lines = std.mem.splitScalar(u8, doc.text, '\n');
+            var current_line: []const u8 = "";
+            var line_num: u32 = 0;
+            
+            var line_iter = lines;
+            while (line_iter.next()) |text_line| {
+                if (line_num == line) {
+                    current_line = text_line;
+                    break;
+                }
+                line_num += 1;
+            }
+            
+            // Extract prefix for intelligent completion
+            if (character > 0 and current_line.len >= character) {
+                var start: u32 = character;
+                while (start > 0 and (std.ascii.isAlphanumeric(current_line[start - 1]) or current_line[start - 1] == '_')) {
+                    start -= 1;
+                }
+                context_prefix = current_line[start..character];
+            }
+        }
+
+        // Add CURSED keywords (filtered by prefix)
         const keywords = [_][]const u8{
             "sus", "damn", "slay", "vibez", "yeet", "bestie", "stan", "dm",
             "ready", "vibe", "yikes", "shook", "fam", "based", "cap", "cringe",
             "facts", "lit", "tea", "drip", "normie", "smol", "mid", "thicc",
+            "squad", "collab", "sick", "when", "otherwise", "bestie", "aight"
         };
 
         for (keywords) |keyword| {
-            try completions.append(CompletionItem{
-                .label = try self.allocator.dupe(u8, keyword),
-                .kind = 14, // Keyword
-                .detail = try self.allocator.dupe(u8, "CURSED keyword"),
-                .documentation = null,
-                .insertText = null,
-            });
-        }
-
-        // Add symbols from workspace
-        var doc_iterator = self.documents.iterator();
-        while (doc_iterator.next()) |entry| {
-            const doc_data = entry.value_ptr;
-            for (doc_data.symbols.items) |symbol| {
+            if (context_prefix.len == 0 or std.mem.startsWith(u8, keyword, context_prefix)) {
                 try completions.append(CompletionItem{
-                    .label = try self.allocator.dupe(u8, symbol.name),
-                    .kind = switch (symbol.kind) {
-                        12 => 3, // Function
-                        13 => 6, // Variable
-                        11 => 8, // Interface
-                        else => 1, // Text
-                    },
-                    .detail = try std.fmt.allocPrint(self.allocator, "Symbol from {s}", .{symbol.location.uri}),
-                    .documentation = null,
+                    .label = try self.allocator.dupe(u8, keyword),
+                    .kind = 14, // Keyword
+                    .detail = try self.allocator.dupe(u8, "CURSED keyword"),
+                    .documentation = try self.allocator.dupe(u8, try self.getKeywordDocumentation(keyword)),
                     .insertText = null,
                 });
+            }
+        }
+
+        // Add CURSED stdlib modules
+        const stdlib_modules = [_][]const u8{
+            "mathz", "stringz", "arrayz", "testz", "cryptz", "filez", 
+            "httpz", "timez", "jsonz", "vibez", "concurrenz"
+        };
+
+        for (stdlib_modules) |module| {
+            if (context_prefix.len == 0 or std.mem.startsWith(u8, module, context_prefix)) {
+                try completions.append(CompletionItem{
+                    .label = try self.allocator.dupe(u8, module),
+                    .kind = 9, // Module
+                    .detail = try self.allocator.dupe(u8, "CURSED stdlib module"),
+                    .documentation = try std.fmt.allocPrint(self.allocator, "Import with: yeet \"{s}\"", .{module}),
+                    .insertText = null,
+                });
+            }
+        }
+
+        // Add symbols from workspace (filtered by prefix)
+        var doc_iterator = self.documents.iterator();
+        while (doc_iterator.next()) |entry| {
+            const doc_data_item = entry.value_ptr;
+            for (doc_data_item.symbols.items) |symbol| {
+                if (context_prefix.len == 0 or std.mem.startsWith(u8, symbol.name, context_prefix)) {
+                    try completions.append(CompletionItem{
+                        .label = try self.allocator.dupe(u8, symbol.name),
+                        .kind = switch (symbol.kind) {
+                            12 => 3, // Function
+                            13 => 6, // Variable
+                            11 => 8, // Interface
+                            5 => 7,  // Class/Struct
+                            else => 1, // Text
+                        },
+                        .detail = try std.fmt.allocPrint(self.allocator, "Symbol from {s}", .{symbol.location.uri}),
+                        .documentation = null,
+                        .insertText = null,
+                    });
+                }
             }
         }
 
@@ -513,7 +578,9 @@ pub const CursedLanguageServer = struct {
     /// Handle references request  
     fn handleReferences(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
-        try self.sendReferencesResponse(writer, id, &ArrayList(Location).init(self.allocator));
+        var empty_locations = ArrayList(Location).init(self.allocator);
+        defer empty_locations.deinit();
+        try self.sendReferencesResponse(writer, id, &empty_locations);
     }
 
     /// Handle formatting request
@@ -549,7 +616,9 @@ pub const CursedLanguageServer = struct {
     /// Handle semantic tokens request
     fn handleSemanticTokens(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
-        try self.sendSemanticTokensResponse(writer, id, &ArrayList(u32).init(self.allocator));
+        var empty_tokens = ArrayList(u32).init(self.allocator);
+        defer empty_tokens.deinit();
+        try self.sendSemanticTokensResponse(writer, id, &empty_tokens);
     }
 
     /// Handle workspace symbol request
@@ -591,7 +660,7 @@ pub const CursedLanguageServer = struct {
         defer formatted.deinit();
         
         var indent_level: u32 = 0;
-        var lines = std.mem.split(u8, code, "\n");
+        var lines = std.mem.splitScalar(u8, code, '\n');
         
         while (lines.next()) |line| {
             const trimmed = std.mem.trim(u8, line, " \t");
@@ -637,20 +706,108 @@ pub const CursedLanguageServer = struct {
                pos.character >= range.start.character and pos.character <= range.end.character;
     }
 
-    /// Publish diagnostics
-    fn publishDiagnostics(self: *CursedLanguageServer, uri: []const u8, diagnostics: *ArrayList(Diagnostic)) !void {
+    /// Get documentation for CURSED keywords
+    fn getKeywordDocumentation(self: *CursedLanguageServer, keyword: []const u8) ![]const u8 {
         _ = self;
-        _ = uri;
-        _ = diagnostics;
-        // TODO: Send diagnostic notifications to client
+        if (std.mem.eql(u8, keyword, "sus")) return "Variable declaration: sus name type = value";
+        if (std.mem.eql(u8, keyword, "damn")) return "Return statement: damn value";
+        if (std.mem.eql(u8, keyword, "slay")) return "Function definition: slay name(params) return_type { body }";
+        if (std.mem.eql(u8, keyword, "vibez")) return "I/O operations: vibez.spill() for output";
+        if (std.mem.eql(u8, keyword, "yeet")) return "Import module: yeet \"module_name\"";
+        if (std.mem.eql(u8, keyword, "bestie")) return "While loop: bestie (condition) { body }";
+        if (std.mem.eql(u8, keyword, "ready")) return "If statement: ready (condition) { body }";
+        if (std.mem.eql(u8, keyword, "otherwise")) return "Else clause: otherwise { body }";
+        if (std.mem.eql(u8, keyword, "squad")) return "Struct definition: squad Name { fields }";
+        if (std.mem.eql(u8, keyword, "collab")) return "Interface definition: collab Name { methods }";
+        if (std.mem.eql(u8, keyword, "sick")) return "Pattern matching: sick (value) { when pattern -> result }";
+        if (std.mem.eql(u8, keyword, "when")) return "Pattern case: when pattern -> result";
+        if (std.mem.eql(u8, keyword, "based")) return "Boolean true value";
+        if (std.mem.eql(u8, keyword, "cringe")) return "Boolean false value";
+        if (std.mem.eql(u8, keyword, "drip")) return "Integer type";
+        if (std.mem.eql(u8, keyword, "tea")) return "String type";
+        if (std.mem.eql(u8, keyword, "lit")) return "Boolean type";
+        return "CURSED keyword";
+    }
+
+    /// Publish diagnostics
+    fn publishDiagnostics(self: *CursedLanguageServer, writer: std.io.AnyWriter, uri: []const u8, diagnostics: *ArrayList(Diagnostic)) !void {
+        // Build diagnostics JSON array
+        var diag_json = ArrayList(u8).init(self.allocator);
+        defer diag_json.deinit();
+        
+        try diag_json.appendSlice("[");
+        
+        for (diagnostics.items, 0..) |diag, i| {
+            if (i > 0) try diag_json.appendSlice(",");
+            
+            // Escape diagnostic message for JSON
+            var escaped_message = ArrayList(u8).init(self.allocator);
+            defer escaped_message.deinit();
+            
+            for (diag.message) |c| {
+                switch (c) {
+                    '"' => try escaped_message.appendSlice("\\\""),
+                    '\\' => try escaped_message.appendSlice("\\\\"),
+                    '\n' => try escaped_message.appendSlice("\\n"),
+                    '\r' => try escaped_message.appendSlice("\\r"),
+                    '\t' => try escaped_message.appendSlice("\\t"),
+                    else => try escaped_message.append(c),
+                }
+            }
+            
+            const diag_obj = try std.fmt.allocPrint(self.allocator,
+                \\{{"range": {{"start": {{"line": {}, "character": {}}}, "end": {{"line": {}, "character": {}}}}}, "severity": {}, "source": "{s}", "message": "{s}"}}
+            , .{
+                diag.range.start.line, diag.range.start.character,
+                diag.range.end.line, diag.range.end.character,
+                diag.severity, diag.source, escaped_message.items
+            });
+            defer self.allocator.free(diag_obj);
+            
+            try diag_json.appendSlice(diag_obj);
+        }
+        
+        try diag_json.appendSlice("]");
+        
+        // Send textDocument/publishDiagnostics notification
+        const notification = try std.fmt.allocPrint(self.allocator,
+            \\{{"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics", "params": {{"uri": "{s}", "diagnostics": {s}}}}}
+        , .{ uri, diag_json.items });
+        defer self.allocator.free(notification);
+        
+        try writer.print("Content-Length: {}\r\n\r\n", .{notification.len});
+        try writer.writeAll(notification);
     }
 
     /// Send response helpers
     fn sendCompletionResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, completions: *ArrayList(CompletionItem)) !void {
-        _ = completions; // not fully implemented yet
+        // Build completion items JSON array
+        var items_json = ArrayList(u8).init(self.allocator);
+        defer items_json.deinit();
+        
+        try items_json.appendSlice("[");
+        
+        for (completions.items, 0..) |item, i| {
+            if (i > 0) try items_json.appendSlice(",");
+            
+            const item_obj = try std.fmt.allocPrint(self.allocator,
+                \\{{"label": "{s}", "kind": {}, "detail": "{s}", "insertText": "{s}"}}
+            , .{ 
+                item.label, 
+                item.kind, 
+                item.detail orelse item.label,
+                item.insertText orelse item.label 
+            });
+            defer self.allocator.free(item_obj);
+            
+            try items_json.appendSlice(item_obj);
+        }
+        
+        try items_json.appendSlice("]");
+        
         const response = try std.fmt.allocPrint(self.allocator,
-            \\{{"jsonrpc": "2.0", "id": {}, "result": {{"isIncomplete": false, "items": []}}}}
-        , .{id});
+            \\{{"jsonrpc": "2.0", "id": {}, "result": {{"isIncomplete": false, "items": {s}}}}}
+        , .{ id, items_json.items });
         defer self.allocator.free(response);
         
         try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
@@ -673,10 +830,32 @@ pub const CursedLanguageServer = struct {
     }
 
     fn sendDefinitionResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, locations: *ArrayList(Location)) !void {
-        _ = locations;
+        // Build locations JSON array
+        var locations_json = ArrayList(u8).init(self.allocator);
+        defer locations_json.deinit();
+        
+        try locations_json.appendSlice("[");
+        
+        for (locations.items, 0..) |location, i| {
+            if (i > 0) try locations_json.appendSlice(",");
+            
+            const location_obj = try std.fmt.allocPrint(self.allocator,
+                \\{{"uri": "{s}", "range": {{"start": {{"line": {}, "character": {}}}, "end": {{"line": {}, "character": {}}}}}}}
+            , .{
+                location.uri,
+                location.range.start.line, location.range.start.character,
+                location.range.end.line, location.range.end.character
+            });
+            defer self.allocator.free(location_obj);
+            
+            try locations_json.appendSlice(location_obj);
+        }
+        
+        try locations_json.appendSlice("]");
+        
         const response = try std.fmt.allocPrint(self.allocator,
-            \\{{"jsonrpc": "2.0", "id": {}, "result": []}}
-        , .{id});
+            \\{{"jsonrpc": "2.0", "id": {}, "result": {s}}}
+        , .{ id, locations_json.items });
         defer self.allocator.free(response);
         
         try writer.print("Content-Length: {}\r\n\r\n", .{response.len});

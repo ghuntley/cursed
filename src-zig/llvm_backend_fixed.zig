@@ -30,6 +30,9 @@ extern fn llvm_verify_module(module: ?*anyopaque) c_int;
 extern fn llvm_print_module_to_string(module: ?*anyopaque) [*c]u8;
 extern fn llvm_dispose_message(message: [*c]u8) void;
 extern fn llvm_write_bitcode_to_file(module: ?*anyopaque, path: [*c]const u8) c_int;
+extern fn llvm_build_add(builder: ?*anyopaque, lhs: ?*anyopaque, rhs: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
+extern fn llvm_build_mul(builder: ?*anyopaque, lhs: ?*anyopaque, rhs: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
+extern fn llvm_build_sub(builder: ?*anyopaque, lhs: ?*anyopaque, rhs: ?*anyopaque, name: [*c]const u8) ?*anyopaque;
 
 // Type aliases for compatibility
 const LLVMContextRef = ?*anyopaque;
@@ -153,30 +156,21 @@ pub const LLVMBackendFixed = struct {
     }
     
     pub fn buildAdd(self: *LLVMBackendFixed, lhs: LLVMValueRef, rhs: LLVMValueRef, name: []const u8) !LLVMValueRef {
-        // Addition not implemented in wrapper yet, simulate by returning lhs for now
-        // TODO: Implement LLVM add instruction in C wrapper
-        _ = self;
-        _ = rhs;
-        _ = name;
-        return lhs;
+        const name_cstr = try std.fmt.allocPrintZ(self.allocator, "{s}", .{name});
+        defer self.allocator.free(name_cstr);
+        return llvm_build_add(self.builder, lhs, rhs, name_cstr.ptr) orelse error.LLVMError;
     }
     
     pub fn buildMul(self: *LLVMBackendFixed, lhs: LLVMValueRef, rhs: LLVMValueRef, name: []const u8) !LLVMValueRef {
-        // Multiplication not implemented in wrapper yet, simulate by returning lhs for now
-        // TODO: Implement LLVM mul instruction in C wrapper
-        _ = self;
-        _ = rhs;
-        _ = name;
-        return lhs;
+        const name_cstr = try std.fmt.allocPrintZ(self.allocator, "{s}", .{name});
+        defer self.allocator.free(name_cstr);
+        return llvm_build_mul(self.builder, lhs, rhs, name_cstr.ptr) orelse error.LLVMError;
     }
     
     pub fn buildSub(self: *LLVMBackendFixed, lhs: LLVMValueRef, rhs: LLVMValueRef, name: []const u8) !LLVMValueRef {
-        // Subtraction not implemented in wrapper yet, simulate by returning lhs for now
-        // TODO: Implement LLVM sub instruction in C wrapper
-        _ = self;
-        _ = rhs;
-        _ = name;
-        return lhs;
+        const name_cstr = try std.fmt.allocPrintZ(self.allocator, "{s}", .{name});
+        defer self.allocator.free(name_cstr);
+        return llvm_build_sub(self.builder, lhs, rhs, name_cstr.ptr) orelse error.LLVMError;
     }
     
     pub fn getInt32Type(self: *LLVMBackendFixed) LLVMTypeRef {

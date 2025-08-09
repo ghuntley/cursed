@@ -1,1 +1,1 @@
-sus x drip = 42; vibez.spill("Value:", x)
+yeet "mathz"; vibez.spill("Testing abs_normie(-5):", abs_normie(-5))

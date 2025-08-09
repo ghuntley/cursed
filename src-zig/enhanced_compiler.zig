@@ -271,8 +271,12 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
     var compile_args = std.ArrayList([]const u8).init(allocator);
     defer compile_args.deinit();
     
-    // Base clang command
-    try compile_args.append("clang");
+    // Base clang command - use versioned clang if available
+    const clang_cmd = if (std.process.hasEnvVar(allocator, "CLANG") catch false) 
+        std.process.getEnvVarOwned(allocator, "CLANG") catch "clang-18"
+    else 
+        "clang-18";
+    try compile_args.append(clang_cmd);
     
     // Target specification
     try compile_args.append("-target");
@@ -281,23 +285,22 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
     // Get target-specific CPU and features
     const cpu_features = target_mapping.getTargetCpuAndFeatures(target_triple);
     
-    // CPU specification
-    if (config.target_cpu) |cpu| {
-        try compile_args.append("-mcpu");
-        try compile_args.append(cpu);
-    } else if (!std.mem.eql(u8, cpu_features.cpu, "generic")) {
-        try compile_args.append("-mcpu");
-        try compile_args.append(cpu_features.cpu);
-    }
+    // Skip CPU-specific flags for now to avoid clang compatibility issues
+    // TODO: Add proper CPU detection for different clang versions
+    _ = config.target_cpu;
+    _ = cpu_features;
     
-    // Target features
+    // Target features - skip for compatibility
     if (config.target_features) |features| {
-        try compile_args.append("-mattr");
-        try compile_args.append(features);
-    } else if (cpu_features.features.len > 0) {
-        try compile_args.append("-mattr");
-        try compile_args.append(cpu_features.features);
+        _ = features; // Skip for now
+        // try compile_args.append("-mattr");
+        // try compile_args.append(features);
     }
+    // Skip cpu_features for now - clang compatibility issues
+    // else if (cpu_features.features.len > 0) {
+    //     try compile_args.append("-mattr");
+    //     try compile_args.append(cpu_features.features);
+    // }
     
     // Optimization level
     const opt_flag = switch (config.optimization_level) {
@@ -392,7 +395,11 @@ fn compileLLVMIRToExecutable(allocator: Allocator, ir_filename: []const u8, exec
     var compile_args = std.ArrayList([]const u8).init(allocator);
     defer compile_args.deinit();
     
-    try compile_args.append("clang");
+    const clang_cmd = if (std.process.hasEnvVar(allocator, "CLANG") catch false) 
+        std.process.getEnvVarOwned(allocator, "CLANG") catch "clang-18"
+    else 
+        "clang-18";
+    try compile_args.append(clang_cmd);
     if (debug_info) {
         try compile_args.append("-g");
         try compile_args.append("-O0");

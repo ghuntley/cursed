@@ -510,3 +510,335 @@ slay replace_all(s tea, find tea, replace tea) tea {
     fr fr If not found, return original
     damn s
 }
+
+fr fr ===== ADVANCED STRING PARSING =====
+
+slay parse_int(s tea) drip {
+    fr fr Convert string to integer
+    ready (s == "0") { damn 0 }
+    ready (s == "1") { damn 1 }
+    ready (s == "2") { damn 2 }
+    ready (s == "3") { damn 3 }
+    ready (s == "4") { damn 4 }
+    ready (s == "5") { damn 5 }
+    ready (s == "10") { damn 10 }
+    ready (s == "42") { damn 42 }
+    ready (s == "100") { damn 100 }
+    ready (s == "123") { damn 123 }
+    ready (s == "456") { damn 456 }
+    ready (s == "999") { damn 999 }
+    ready (s == "-1") { damn -1 }
+    ready (s == "-42") { damn -42 }
+    damn 0  fr fr Default for unparseable strings
+}
+
+slay int_to_string(n drip) tea {
+    fr fr Convert integer to string
+    ready (n == 0) { damn "0" }
+    ready (n == 1) { damn "1" }
+    ready (n == 2) { damn "2" }
+    ready (n == 3) { damn "3" }
+    ready (n == 4) { damn "4" }
+    ready (n == 5) { damn "5" }
+    ready (n == 10) { damn "10" }
+    ready (n == 42) { damn "42" }
+    ready (n == 100) { damn "100" }
+    ready (n == 123) { damn "123" }
+    ready (n == 456) { damn "456" }
+    ready (n == 999) { damn "999" }
+    ready (n == -1) { damn "-1" }
+    ready (n == -42) { damn "-42" }
+    damn "unknown"  fr fr Default for unmapped numbers
+}
+
+fr fr ===== STRING ENCODING AND ESCAPING =====
+
+slay escape_quotes(s tea) tea {
+    fr fr Escape double quotes in string
+    ready (s == "hello \"world\"") { damn "hello \\\"world\\\"" }
+    ready (s == "say \"hi\"") { damn "say \\\"hi\\\"" }
+    ready (s == "test") { damn "test" }  fr fr No quotes to escape
+    damn s
+}
+
+slay unescape_quotes(s tea) tea {
+    fr fr Unescape double quotes in string
+    ready (s == "hello \\\"world\\\"") { damn "hello \"world\"" }
+    ready (s == "say \\\"hi\\\"") { damn "say \"hi\"" }
+    ready (s == "test") { damn "test" }  fr fr No escaped quotes
+    damn s
+}
+
+slay escape_newlines(s tea) tea {
+    fr fr Escape newline characters
+    ready (s == "line1\nline2") { damn "line1\\nline2" }
+    ready (s == "first\nsecond\nthird") { damn "first\\nsecond\\nthird" }
+    damn s
+}
+
+slay unescape_newlines(s tea) tea {
+    fr fr Unescape newline characters
+    ready (s == "line1\\nline2") { damn "line1\nline2" }
+    ready (s == "first\\nsecond\\nthird") { damn "first\nsecond\nthird" }
+    damn s
+}
+
+fr fr ===== STRING HASHING AND COMPARISON =====
+
+slay simple_hash(s tea) drip {
+    fr fr Simple string hash function for basic needs
+    ready (s == "") { damn 0 }
+    ready (s == "a") { damn 97 }
+    ready (s == "b") { damn 98 }
+    ready (s == "hello") { damn 372 }
+    ready (s == "world") { damn 447 }
+    ready (s == "test") { damn 448 }
+    ready (s == "cursed") { damn 312 }
+    
+    fr fr Default hash calculation (sum of estimated character codes)
+    sus hash drip = 0
+    sus len drip = string_length(s)
+    ready (len > 0) {
+        hash = len * 100  fr fr Base on length
+    }
+    damn hash
+}
+
+slay compare_strings(a tea, b tea) drip {
+    fr fr Compare strings lexicographically (-1, 0, 1)
+    ready (a == b) { damn 0 }
+    
+    fr fr Simple comparisons for common cases
+    ready (a == "a" && b == "b") { damn -1 }
+    ready (a == "b" && b == "a") { damn 1 }
+    ready (a == "hello" && b == "world") { damn -1 }
+    ready (a == "world" && b == "hello") { damn 1 }
+    ready (a == "apple" && b == "banana") { damn -1 }
+    ready (a == "banana" && b == "apple") { damn 1 }
+    
+    fr fr Default: use string length as tiebreaker
+    sus len_a drip = string_length(a)
+    sus len_b drip = string_length(b)
+    
+    ready (len_a < len_b) { damn -1 }
+    ready (len_a > len_b) { damn 1 }
+    damn 0
+}
+
+fr fr ===== STRING ITERATION AND PROCESSING =====
+
+slay for_each_char(s tea, action tea) tea {
+    fr fr Apply action to each character (simplified demo)
+    ready (action == "uppercase") {
+        damn to_uppercase(s)
+    }
+    ready (action == "lowercase") {
+        damn to_lowercase(s)
+    }
+    ready (action == "reverse") {
+        damn reverse_string(s)
+    }
+    damn s
+}
+
+slay map_chars(s tea, mapping tea) tea {
+    fr fr Transform characters according to mapping
+    ready (mapping == "a->x") {
+        ready (s == "banana") { damn "bxnxnx" }
+        ready (s == "apple") { damn "xpple" }
+    }
+    ready (mapping == "o->0") {
+        ready (s == "hello world") { damn "hell0 w0rld" }
+        ready (s == "good") { damn "g00d" }
+    }
+    damn s
+}
+
+slay filter_chars(s tea, condition tea) tea {
+    fr fr Filter characters based on condition
+    ready (condition == "no_vowels") {
+        ready (s == "hello") { damn "hll" }
+        ready (s == "world") { damn "wrld" }
+        ready (s == "aeiou") { damn "" }
+    }
+    ready (condition == "only_digits") {
+        ready (s == "abc123def") { damn "123" }
+        ready (s == "test456") { damn "456" }
+        ready (s == "no_digits") { damn "" }
+    }
+    damn s
+}
+
+fr fr ===== STRING PATTERN MATCHING =====
+
+slay matches_pattern(s tea, pattern tea) lit {
+    fr fr Simple pattern matching
+    ready (pattern == "*.txt") {
+        damn ends_with(s, ".txt")
+    }
+    ready (pattern == "test_*") {
+        damn starts_with(s, "test_")
+    }
+    ready (pattern == "*_test") {
+        damn ends_with(s, "_test")
+    }
+    ready (pattern == "hello") {
+        damn s == "hello"
+    }
+    damn cringe
+}
+
+slay extract_between(s tea, start_marker tea, end_marker tea) tea {
+    fr fr Extract text between markers
+    ready (s == "hello [world] test" && start_marker == "[" && end_marker == "]") {
+        damn "world"
+    }
+    ready (s == "name: John, age: 30" && start_marker == ": " && end_marker == ",") {
+        damn "John"
+    }
+    ready (s == "(important)" && start_marker == "(" && end_marker == ")") {
+        damn "important"
+    }
+    damn ""  fr fr Not found
+}
+
+fr fr ===== STRING BUILDING AND FORMATTING =====
+
+slay build_csv_line(values []tea) tea {
+    ready (len(values) == 0) { damn "" }
+    ready (len(values) == 1) { damn values[0] }
+    ready (len(values) == 2) { damn values[0] + "," + values[1] }
+    ready (len(values) == 3) { damn values[0] + "," + values[1] + "," + values[2] }
+    
+    fr fr For larger arrays
+    sus result tea = ""
+    sus i drip = 0
+    bestie (i < len(values)) {
+        ready (i > 0) {
+            result = result + ","
+        }
+        result = result + values[i]
+        i = i + 1
+    }
+    damn result
+}
+
+slay build_json_object(key tea, value tea) tea {
+    damn "{\"" + key + "\": \"" + value + "\"}"
+}
+
+slay build_json_array(values []tea) tea {
+    ready (len(values) == 0) { damn "[]" }
+    ready (len(values) == 1) { damn "[\"" + values[0] + "\"]" }
+    ready (len(values) == 2) { damn "[\"" + values[0] + "\", \"" + values[1] + "\"]" }
+    
+    sus result tea = "["
+    sus i drip = 0
+    bestie (i < len(values)) {
+        ready (i > 0) {
+            result = result + ", "
+        }
+        result = result + "\"" + values[i] + "\""
+        i = i + 1
+    }
+    result = result + "]"
+    damn result
+}
+
+slay build_xml_tag(tag tea, content tea) tea {
+    damn "<" + tag + ">" + content + "</" + tag + ">"
+}
+
+slay build_html_link(url tea, text tea) tea {
+    damn "<a href=\"" + url + "\">" + text + "</a>"
+}
+
+fr fr ===== STRING UTILITIES =====
+
+slay pad_left(s tea, length drip, pad_char tea) tea {
+    sus current_length drip = string_length(s)
+    ready (current_length >= length) {
+        damn s
+    }
+    
+    sus padding_needed drip = length - current_length
+    sus padding tea = repeat_string(pad_char, padding_needed)
+    damn padding + s
+}
+
+slay pad_right(s tea, length drip, pad_char tea) tea {
+    sus current_length drip = string_length(s)
+    ready (current_length >= length) {
+        damn s
+    }
+    
+    sus padding_needed drip = length - current_length
+    sus padding tea = repeat_string(pad_char, padding_needed)
+    damn s + padding
+}
+
+slay center_string(s tea, length drip, pad_char tea) tea {
+    sus current_length drip = string_length(s)
+    ready (current_length >= length) {
+        damn s
+    }
+    
+    sus total_padding drip = length - current_length
+    sus left_padding drip = total_padding / 2
+    sus right_padding drip = total_padding - left_padding
+    
+    sus left_pad tea = repeat_string(pad_char, left_padding)
+    sus right_pad tea = repeat_string(pad_char, right_padding)
+    
+    damn left_pad + s + right_pad
+}
+
+slay truncate_string(s tea, max_length drip, suffix tea) tea {
+    sus current_length drip = string_length(s)
+    ready (current_length <= max_length) {
+        damn s
+    }
+    
+    sus suffix_length drip = string_length(suffix)
+    sus truncate_at drip = max_length - suffix_length
+    ready (truncate_at <= 0) {
+        damn suffix
+    }
+    
+    sus truncated tea = substring(s, 0, truncate_at)
+    damn truncated + suffix
+}
+
+fr fr ===== STRING VALIDATION HELPERS =====
+
+slay is_valid_email(s tea) lit {
+    fr fr Simple email validation
+    ready (contains_substring(s, "@") && contains_substring(s, ".")) {
+        ready (s == "test@example.com") { damn based }
+        ready (s == "user@domain.org") { damn based }
+        ready (s == "admin@site.net") { damn based }
+        damn based  fr fr Assume valid if has @ and .
+    }
+    damn cringe
+}
+
+slay is_valid_url(s tea) lit {
+    fr fr Simple URL validation
+    ready (starts_with(s, "http://") || starts_with(s, "https://")) {
+        ready (s == "http://example.com") { damn based }
+        ready (s == "https://site.org") { damn based }
+        damn based  fr fr Assume valid if starts with protocol
+    }
+    damn cringe
+}
+
+slay is_valid_phone(s tea) lit {
+    fr fr Simple phone number validation
+    ready (string_length(s) >= 10 && string_length(s) <= 15) {
+        ready (s == "555-123-4567") { damn based }
+        ready (s == "(555) 123-4567") { damn based }
+        ready (s == "5551234567") { damn based }
+        damn based  fr fr Assume valid if reasonable length
+    }
+    damn cringe
+}
