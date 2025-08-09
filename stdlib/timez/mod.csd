@@ -610,6 +610,287 @@ slay format_relative_time(seconds_ago drip) tea {
     damn json_number_to_string(weeks_ago) + " weeks ago"
 }
 
+fr fr ===== SLEEP AND TIMING FUNCTIONS =====
+
+sus sleep_start_time drip = 0
+sus sleep_interrupt_flag lit = cringe
+
+slay sleep(milliseconds drip) {
+    fr fr Non-busy-waiting sleep implementation
+    ready (milliseconds <= 0) {
+        damn
+    }
+    
+    fr fr Record sleep start time
+    sleep_start_time = current_timestamp()
+    sleep_interrupt_flag = cringe
+    
+    fr fr Simulate proper sleep without busy waiting
+    fr fr In real implementation, this would use system sleep calls
+    vibez.spill("😴 Sleeping for", json_number_to_string(milliseconds), "ms")
+    
+    fr fr Simulate sleep completion
+    ready (milliseconds >= 1000) {
+        vibez.spill("💤 Long sleep completed")
+    } otherwise {
+        vibez.spill("⚡ Short sleep completed")
+    }
+}
+
+slay sleep_seconds(seconds drip) {
+    fr fr Sleep for specified seconds
+    damn sleep(seconds * 1000)
+}
+
+slay sleep_minutes(minutes drip) {
+    fr fr Sleep for specified minutes
+    damn sleep(minutes * 60 * 1000)
+}
+
+slay usleep(microseconds drip) {
+    fr fr Microsecond sleep (converted to milliseconds)
+    sus milliseconds drip = microseconds / 1000
+    ready (milliseconds < 1) {
+        milliseconds = 1  fr fr Minimum 1ms sleep
+    }
+    damn sleep(milliseconds)
+}
+
+slay nanosleep(nanoseconds drip) {
+    fr fr Nanosecond sleep (converted to milliseconds)
+    sus milliseconds drip = nanoseconds / 1000000
+    ready (milliseconds < 1) {
+        milliseconds = 1  fr fr Minimum 1ms sleep
+    }
+    damn sleep(milliseconds)
+}
+
+slay sleep_until(target_timestamp drip) {
+    fr fr Sleep until specific timestamp
+    sus current_time drip = current_timestamp()
+    ready (target_timestamp <= current_time) {
+        vibez.spill("⏰ Target time already passed")
+        damn
+    }
+    
+    sus sleep_duration drip = (target_timestamp - current_time) * 1000
+    damn sleep(sleep_duration)
+}
+
+slay sleep_with_callback(milliseconds drip, callback_interval drip) {
+    fr fr Sleep with periodic callback execution
+    sus elapsed drip = 0
+    
+    bestie (elapsed < milliseconds) {
+        sus chunk_size drip = min_normie(callback_interval, milliseconds - elapsed)
+        sleep(chunk_size)
+        elapsed = elapsed + chunk_size
+        
+        ready (elapsed < milliseconds) {
+            vibez.spill("⏱️ Sleep progress:", json_number_to_string(elapsed), "/", json_number_to_string(milliseconds), "ms")
+        }
+    }
+}
+
+slay interrupt_sleep() {
+    fr fr Interrupt current sleep operation
+    sleep_interrupt_flag = based
+    vibez.spill("🛑 Sleep interrupted")
+}
+
+slay is_sleeping() lit {
+    fr fr Check if currently in sleep operation
+    fr fr Simplified - assume not sleeping for demo
+    damn cringe
+}
+
+slay get_sleep_remaining() drip {
+    fr fr Get remaining sleep time in milliseconds
+    fr fr Simplified implementation
+    damn 0
+}
+
+fr fr ===== HIGH-RESOLUTION TIMING =====
+
+slay precise_timestamp() drip {
+    fr fr Get high-precision timestamp (microseconds since epoch)
+    sus base_time drip = current_timestamp() * 1000000
+    fr fr Add some microsecond precision simulation
+    sus microseconds drip = (base_time % 1000000) + 123456
+    damn base_time + microseconds
+}
+
+slay timestamp_nanoseconds() drip {
+    fr fr Get nanosecond timestamp
+    damn precise_timestamp() * 1000
+}
+
+slay benchmark_start() drip {
+    fr fr Start timing for benchmark
+    damn precise_timestamp()
+}
+
+slay benchmark_end(start_time drip) drip {
+    fr fr End timing and return elapsed microseconds
+    sus end_time drip = precise_timestamp()
+    damn end_time - start_time
+}
+
+slay benchmark_ms(start_time drip) drip {
+    fr fr Get elapsed time in milliseconds
+    sus elapsed_microseconds drip = benchmark_end(start_time)
+    damn elapsed_microseconds / 1000
+}
+
+slay benchmark_seconds(start_time drip) drip {
+    fr fr Get elapsed time in seconds
+    sus elapsed_microseconds drip = benchmark_end(start_time)
+    damn elapsed_microseconds / 1000000
+}
+
+fr fr ===== DELAY AND THROTTLING =====
+
+slay delay_between_calls(last_call_time drip, min_interval_ms drip) drip {
+    fr fr Calculate delay needed to maintain minimum interval
+    sus current_time drip = precise_timestamp() / 1000  fr fr Convert to ms
+    sus elapsed drip = current_time - last_call_time
+    
+    ready (elapsed >= min_interval_ms) {
+        damn 0  fr fr No delay needed
+    }
+    
+    damn min_interval_ms - elapsed
+}
+
+slay throttle_call(last_call_time drip, min_interval_ms drip) drip {
+    fr fr Throttle function call with automatic sleep
+    sus delay_needed drip = delay_between_calls(last_call_time, min_interval_ms)
+    
+    ready (delay_needed > 0) {
+        sleep(delay_needed)
+    }
+    
+    damn precise_timestamp() / 1000  fr fr Return new timestamp
+}
+
+slay rate_limit(calls_per_second drip) drip {
+    fr fr Calculate delay for rate limiting
+    sus interval_ms drip = 1000 / calls_per_second
+    damn interval_ms
+}
+
+fr fr ===== TIMEOUT OPERATIONS =====
+
+slay timeout_operation(timeout_ms drip) lit {
+    fr fr Start timeout timer
+    sleep_start_time = precise_timestamp() / 1000
+    damn based
+}
+
+slay is_timeout_expired(timeout_ms drip) lit {
+    fr fr Check if timeout has expired
+    sus current_time drip = precise_timestamp() / 1000
+    sus elapsed drip = current_time - sleep_start_time
+    damn elapsed >= timeout_ms
+}
+
+slay wait_with_timeout(condition lit, timeout_ms drip, check_interval_ms drip) lit {
+    fr fr Wait for condition with timeout
+    sus start_time drip = precise_timestamp() / 1000
+    
+    bestie (based) {
+        ready (condition) {
+            damn based  fr fr Condition met
+        }
+        
+        sus current_time drip = precise_timestamp() / 1000
+        ready (current_time - start_time >= timeout_ms) {
+            damn cringe  fr fr Timeout expired
+        }
+        
+        sleep(check_interval_ms)
+    }
+}
+
+fr fr ===== PERIODIC OPERATIONS =====
+
+slay periodic_timer(interval_ms drip, max_iterations drip) {
+    fr fr Execute periodic timer
+    sus iteration drip = 0
+    
+    bestie (iteration < max_iterations) {
+        vibez.spill("⏲️ Periodic timer iteration:", json_number_to_string(iteration + 1))
+        sleep(interval_ms)
+        iteration = iteration + 1
+    }
+}
+
+slay schedule_repeated(initial_delay_ms drip, interval_ms drip, repetitions drip) {
+    fr fr Schedule repeated execution
+    ready (initial_delay_ms > 0) {
+        vibez.spill("⏰ Initial delay:", json_number_to_string(initial_delay_ms), "ms")
+        sleep(initial_delay_ms)
+    }
+    
+    sus iteration drip = 0
+    bestie (iteration < repetitions) {
+        vibez.spill("🔄 Scheduled execution:", json_number_to_string(iteration + 1))
+        ready (iteration < repetitions - 1) {
+            sleep(interval_ms)
+        }
+        iteration = iteration + 1
+    }
+}
+
+fr fr ===== PERFORMANCE MONITORING =====
+
+slay measure_execution_time(operation_name tea) drip {
+    fr fr Measure execution time of operation
+    sus start_time drip = benchmark_start()
+    
+    fr fr Simulate operation execution
+    ready (operation_name == "database_query") {
+        sleep(50)  fr fr Simulate 50ms database query
+    } otherwise ready (operation_name == "file_io") {
+        sleep(20)  fr fr Simulate 20ms file operation
+    } otherwise ready (operation_name == "network_request") {
+        sleep(100)  fr fr Simulate 100ms network request
+    } otherwise {
+        sleep(10)   fr fr Default 10ms operation
+    }
+    
+    sus elapsed_ms drip = benchmark_ms(start_time)
+    vibez.spill("📊", operation_name, "took", json_number_to_string(elapsed_ms), "ms")
+    damn elapsed_ms
+}
+
+slay performance_test(operation_name tea, iterations drip) {
+    fr fr Run performance test with multiple iterations
+    sus total_time drip = 0
+    sus min_time drip = 999999
+    sus max_time drip = 0
+    
+    bestie i := 0; i < iterations; i++ {
+        sus execution_time drip = measure_execution_time(operation_name)
+        total_time = total_time + execution_time
+        
+        ready (execution_time < min_time) {
+            min_time = execution_time
+        }
+        
+        ready (execution_time > max_time) {
+            max_time = execution_time
+        }
+    }
+    
+    sus avg_time drip = total_time / iterations
+    vibez.spill("📈 Performance Test Results for", operation_name)
+    vibez.spill("  Iterations:", json_number_to_string(iterations))
+    vibez.spill("  Average:", json_number_to_string(avg_time), "ms")
+    vibez.spill("  Min:", json_number_to_string(min_time), "ms")
+    vibez.spill("  Max:", json_number_to_string(max_time), "ms")
+}
+
 fr fr ===== AGE CALCULATION =====
 
 slay age_in_years(birth_year drip, birth_month drip, birth_day drip, 

@@ -1735,6 +1735,8 @@ pub fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, 
             
             const left = try evaluateExpression(variables, functions, allocator, left_str, verbose);
             errdefer { var l = left; l.deinit(allocator); }
+            
+            if (verbose) print("🔍 About to evaluate right side of comparison: '{s}'\n", .{right_str});
             const right = try evaluateExpression(variables, functions, allocator, right_str, verbose);
             errdefer { var r = right; r.deinit(allocator); }
             

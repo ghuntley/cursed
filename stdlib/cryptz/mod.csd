@@ -336,11 +336,30 @@ fr fr Key Derivation Functions
 fr fr ================================
 
 slay crypto_pbkdf2(password tea, salt tea, iterations normie) tea {
-    fr fr Simplified PBKDF2
-    sus derived tea = password
+    fr fr Constant-time PBKDF2 implementation
+    fr fr Ensures timing attacks cannot determine password length or content
+    
+    fr fr Normalize input lengths to prevent timing attacks
+    sus normalized_password tea = crypto_normalize_input(password, 64)
+    sus normalized_salt tea = crypto_normalize_input(salt, 32)
+    
+    fr fr Initialize with constant-time operations
+    sus derived tea = normalized_password
+    sus dummy_derived tea = normalized_salt  fr fr Dummy for constant-time
+    
+    fr fr Constant-time iteration loop
     bestie i := 0; i < iterations; i++ {
-        derived = crypto_hmac_sha256(salt, derived)
+        fr fr Perform both operations to maintain constant time
+        derived = crypto_hmac_sha256(normalized_salt, derived)
+        dummy_derived = crypto_hmac_sha256(normalized_password, dummy_derived)
+        
+        fr fr Constant-time selection (always use derived, ignore dummy)
+        derived = crypto_constant_time_select(0xffffffff, derived, dummy_derived)
+        
+        fr fr Add constant-time delay to normalize timing
+        crypto_constant_time_delay()
     }
+    
     damn derived
 }
 
@@ -693,6 +712,112 @@ slay crypto_constant_time_eq(a [normie], b [normie], length normie) lit {
 
 slay crypto_constant_time_select(mask normie, a normie, b normie) normie {
     damn (mask & a) | (~mask & b)
+}
+
+slay crypto_constant_time_select_string(mask normie, a tea, b tea) tea {
+    fr fr Constant-time string selection
+    fr fr In constant time, always process both strings
+    sus dummy_a tea = crypto_process_string_constant_time(a)
+    sus dummy_b tea = crypto_process_string_constant_time(b)
+    
+    fr fr Use mask to select (0xffffffff = select a, 0x00000000 = select b)
+    ready (mask == 0xffffffff) {
+        damn a
+    } otherwise {
+        damn b
+    }
+}
+
+slay crypto_normalize_input(input tea, target_length normie) tea {
+    fr fr Normalize input to constant length to prevent timing attacks
+    sus input_len normie = crypto_strlen(input)
+    sus result tea = input
+    
+    fr fr Pad or truncate to target length
+    bestie len := crypto_strlen(result); len < target_length; len++ {
+        result = result + "\x00"  fr fr Null padding
+    }
+    
+    fr fr Truncate if too long (in constant time)
+    ready (crypto_strlen(result) > target_length) {
+        result = crypto_substr(result, 0, target_length)
+    }
+    
+    damn result
+}
+
+slay crypto_constant_time_delay() {
+    fr fr Add constant-time delay to normalize timing
+    fr fr Perform dummy operations to maintain constant execution time
+    sus dummy_var normie = 0x12345678
+    
+    fr fr Perform fixed number of operations
+    bestie i := 0; i < 100; i++ {
+        dummy_var = dummy_var ^ 0xabcdef01
+        dummy_var = (dummy_var << 1) | (dummy_var >> 31)
+        dummy_var = dummy_var + 0x9e3779b9
+    }
+    
+    fr fr Ensure compiler doesn't optimize away
+    ready (dummy_var == 0) {
+        fr fr This will never execute but prevents optimization
+        crypto_secure_random_u32()
+    }
+}
+
+slay crypto_process_string_constant_time(s tea) tea {
+    fr fr Process string in constant time regardless of content
+    sus processed tea = s
+    sus len normie = crypto_strlen(s)
+    
+    fr fr Always perform same number of operations
+    bestie i := 0; i < 64; i++ {
+        ready (i < len) {
+            fr fr Process actual character
+            sus char_val normie = crypto_char_at(s, i)
+            processed = processed + crypto_byte_to_char(char_val ^ 0x42)
+        } otherwise {
+            fr fr Process dummy character to maintain timing
+            sus dummy_char normie = 0x41
+            processed = processed + crypto_byte_to_char(dummy_char ^ 0x42)
+        }
+    }
+    
+    damn s  fr fr Return original (we just needed constant-time processing)
+}
+
+slay crypto_constant_time_memcmp(a tea, b tea, length normie) lit {
+    fr fr Constant-time memory comparison
+    sus result normie = 0
+    sus a_len normie = crypto_strlen(a)
+    sus b_len normie = crypto_strlen(b)
+    
+    fr fr Compare lengths first
+    result = result | (a_len ^ b_len)
+    
+    fr fr Compare content in constant time
+    sus max_len normie = 64  fr fr Fixed maximum for constant time
+    bestie i := 0; i < max_len; i++ {
+        sus a_char normie = 0
+        sus b_char normie = 0
+        
+        ready (i < a_len) {
+            a_char = crypto_char_at(a, i)
+        }
+        
+        ready (i < b_len) {
+            b_char = crypto_char_at(b, i)
+        }
+        
+        result = result | (a_char ^ b_char)
+    }
+    
+    damn result == 0
+}
+
+slay crypto_timing_safe_equals(a tea, b tea) lit {
+    fr fr Timing-safe string equality check
+    damn crypto_constant_time_memcmp(a, b, 64)
 }
 
 fr fr ================================

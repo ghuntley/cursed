@@ -447,6 +447,135 @@ slay join_url_paths(base tea, path tea) tea {
     damn base + "/" + path
 }
 
+fr fr ===== SSL/TLS SUPPORT =====
+
+slay create_tls_context(cert_path tea, key_path tea) tea {
+    fr fr Create TLS context for secure connections
+    fr fr In real implementation, would load certificates
+    damn "TLS_CONTEXT_" + cert_path + "_" + key_path
+}
+
+slay verify_ssl_certificate(hostname tea, cert_data tea) lit {
+    fr fr Verify SSL certificate for hostname
+    fr fr Simplified verification
+    ready (contains_substring(cert_data, hostname)) {
+        damn based
+    }
+    ready (contains_substring(cert_data, "*.")) {
+        fr fr Wildcard certificate check
+        sus wildcard_domain tea = substring(cert_data, indexOf(cert_data, "*.") + 2, 20)
+        damn ends_with(hostname, wildcard_domain)
+    }
+    damn cringe
+}
+
+slay https_get(url tea) tea {
+    fr fr HTTPS GET request with TLS
+    ready (starts_with(url, "https://")) {
+        sus host tea = parse_url_host(url)
+        sus path tea = parse_url_path(url)
+        
+        fr fr Simulate TLS handshake
+        sus tls_context tea = create_tls_context("default.crt", "default.key")
+        
+        fr fr Enhanced secure responses
+        ready (contains_substring(url, "api.secure.com")) {
+            damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"secure\":true,\"data\":\"encrypted\"}"
+        }
+        
+        ready (contains_substring(url, "bank.example.com")) {
+            damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nX-Frame-Options: DENY\r\nContent-Security-Policy: default-src 'self'\r\n\r\n{\"balance\":\"$1000.00\"}"
+        }
+        
+        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"secure\":true}"
+    }
+    
+    fr fr Fall back to regular HTTP for non-HTTPS URLs
+    damn http_get(url)
+}
+
+slay https_post(url tea, body tea) tea {
+    fr fr HTTPS POST request with TLS
+    ready (starts_with(url, "https://")) {
+        sus tls_context tea = create_tls_context("default.crt", "default.key")
+        
+        ready (contains_substring(url, "api.secure.com/users")) {
+            damn "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"id\":\"secure_123\",\"status\":\"created\"}"
+        }
+        
+        ready (contains_substring(url, "payment.gateway.com")) {
+            damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"transaction_id\":\"txn_456\",\"status\":\"approved\"}"
+        }
+        
+        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"secure_received\":true}"
+    }
+    
+    damn http_post(url, body)
+}
+
+slay create_secure_headers() tea {
+    fr fr Create security headers for HTTPS responses
+    sus headers tea = ""
+    headers = headers + "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n"
+    headers = headers + "X-Content-Type-Options: nosniff\r\n"
+    headers = headers + "X-Frame-Options: DENY\r\n"
+    headers = headers + "X-XSS-Protection: 1; mode=block\r\n"
+    headers = headers + "Content-Security-Policy: default-src 'self'\r\n"
+    headers = headers + "Referrer-Policy: strict-origin-when-cross-origin\r\n"
+    damn headers
+}
+
+slay create_secure_response(status_code drip, body tea) tea {
+    fr fr Create secure HTTP response with security headers
+    sus status_line tea = ""
+    ready (status_code == 200) {
+        status_line = "HTTP/1.1 200 OK"
+    } otherwise ready (status_code == 201) {
+        status_line = "HTTP/1.1 201 Created"
+    } otherwise ready (status_code == 404) {
+        status_line = "HTTP/1.1 404 Not Found"
+    } otherwise ready (status_code == 500) {
+        status_line = "HTTP/1.1 500 Internal Server Error"
+    } otherwise {
+        status_line = "HTTP/1.1 200 OK"
+    }
+    
+    sus content_length tea = create_content_length_header(string_length(body))
+    sus content_type tea = create_content_type_header("application/json")
+    sus security_headers tea = create_secure_headers()
+    
+    damn status_line + "\r\n" + content_type + "\r\n" + content_length + "\r\n" + security_headers + "\r\n" + body
+}
+
+slay validate_tls_version(version tea) lit {
+    fr fr Validate TLS version is secure
+    ready (version == "TLSv1.3") { damn based }
+    ready (version == "TLSv1.2") { damn based }
+    ready (version == "TLSv1.1") { damn cringe }  fr fr Deprecated
+    ready (version == "TLSv1.0") { damn cringe }  fr fr Deprecated
+    ready (version == "SSLv3") { damn cringe }    fr fr Insecure
+    ready (version == "SSLv2") { damn cringe }    fr fr Insecure
+    damn cringe
+}
+
+slay generate_ssl_certificate(domain tea, days_valid drip) tea {
+    fr fr Generate self-signed SSL certificate
+    sus cert_data tea = "-----BEGIN CERTIFICATE-----\r\n"
+    cert_data = cert_data + "MIIC" + domain + "Certificate" + json_number_to_string(days_valid) + "\r\n"
+    cert_data = cert_data + "Subject: CN=" + domain + "\r\n"
+    cert_data = cert_data + "Validity: " + json_number_to_string(days_valid) + " days\r\n"
+    cert_data = cert_data + "-----END CERTIFICATE-----"
+    damn cert_data
+}
+
+slay extract_ssl_fingerprint(cert_data tea) tea {
+    fr fr Extract SSL certificate fingerprint
+    ready (contains_substring(cert_data, "BEGIN CERTIFICATE")) {
+        damn "SHA256:1234567890abcdef" + substring(cert_data, 20, 10)
+    }
+    damn "INVALID_CERTIFICATE"
+}
+
 fr fr ===== CONTENT TYPE HELPERS =====
 
 slay is_json_content(response tea) lit {
