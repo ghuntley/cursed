@@ -85,17 +85,22 @@ const FunctionDef = struct {
 const Context = struct {
     variables: std.HashMap([]const u8, Variable, std.hash_map.StringContext, 80),
     functions: std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, 80),
+    defer_stack: ArrayList([]const u8),
     allocator: Allocator,
     
     pub fn init(allocator: Allocator) Context {
         return Context{
             .variables = std.HashMap([]const u8, Variable, std.hash_map.StringContext, 80).init(allocator),
             .functions = std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, 80).init(allocator),
+            .defer_stack = ArrayList([]const u8).init(allocator),
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *Context) void {
+        // Execute all deferred statements in LIFO order before cleanup
+        self.executeAllDefers();
+        
         // Clean up variables
         var var_iter = self.variables.iterator();
         while (var_iter.next()) |entry| {
@@ -111,6 +116,12 @@ const Context = struct {
             entry.value_ptr.deinit(self.allocator);
         }
         self.functions.deinit();
+        
+        // Clean up defer stack
+        for (self.defer_stack.items) |statement| {
+            self.allocator.free(statement);
+        }
+        self.defer_stack.deinit();
     }
     
     pub fn setVariable(self: *Context, name: []const u8, value: Variable) !void {
@@ -127,6 +138,29 @@ const Context = struct {
     
     pub fn getVariable(self: *Context, name: []const u8) ?Variable {
         return self.variables.get(name);
+    }
+    
+    pub fn executeAllDefers(self: *Context) void {
+        if (self.defer_stack.items.len == 0) return;
+        
+        print("🔄 Executing {d} deferred statements in LIFO order\n", .{self.defer_stack.items.len});
+        
+        // Execute in reverse order (LIFO - Last In, First Out)
+        while (self.defer_stack.items.len > 0) {
+            const statement: []const u8 = self.defer_stack.pop().?;
+            print("🔧 Executing deferred statement: {s}\n", .{statement});
+            
+            // Execute the deferred statement
+            executeStatement(self, statement) catch |err| {
+                print("❌ Error executing deferred statement: {any}\n", .{err});
+                // Continue with other defers even if one fails
+            };
+            
+            // Free the statement string
+            self.allocator.free(statement);
+        }
+        
+        print("✅ All deferred statements executed\n", .{});
     }
 };
 
@@ -264,6 +298,12 @@ fn executeStatement(ctx: *Context, statement: []const u8) ParseError!void {
         return;
     }
     
+    // Defer statements: defer statement
+    if (std.mem.startsWith(u8, trimmed, "defer ")) {
+        try handleDeferStatement(ctx, trimmed);
+        return;
+    }
+    
     // I/O: vibez.spill(value)
     if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |_| {
         try handlePrint(ctx, trimmed);
@@ -275,6 +315,27 @@ fn executeStatement(ctx: *Context, statement: []const u8) ParseError!void {
         _ = try evaluateExpression(ctx, trimmed);
         return;
     }
+}
+
+fn handleDeferStatement(ctx: *Context, statement: []const u8) ParseError!void {
+    // Extract the deferred statement (everything after "defer ")
+    const trimmed = std.mem.trim(u8, statement, " \t\r\n");
+    if (trimmed.len <= 5) { // "defer" is 5 characters
+        print("❌ Empty defer statement\n", .{});
+        return;
+    }
+    
+    const deferred_statement = std.mem.trim(u8, trimmed[5..], " \t\r\n"); // Skip "defer "
+    if (deferred_statement.len == 0) {
+        print("❌ Empty defer statement\n", .{});
+        return;
+    }
+    
+    // Store a copy of the statement in the defer stack
+    const statement_copy = try ctx.allocator.dupe(u8, deferred_statement);
+    try ctx.defer_stack.append(statement_copy);
+    
+    print("✅ Defer statement pushed to stack: '{s}' (stack size: {d})\n", .{ deferred_statement, ctx.defer_stack.items.len });
 }
 
 fn handleVariableDeclaration(ctx: *Context, statement: []const u8) ParseError!void {

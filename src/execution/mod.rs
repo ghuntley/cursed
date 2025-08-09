@@ -1237,18 +1237,18 @@ impl CursedExecutionEngine {
                 // Store error in context
                 context.set_variable(yikes_stmt.name.clone(), error_obj.clone());
                 
-                // Check if we're in a fam context - if so, trigger recovery
-                if context.is_in_fam_context() {
-                    // Trigger fam recovery by throwing the error
-                    let error_message = match error_obj {
-                        CursedValue::Error { message, .. } => message,
-                        _ => "Error occurred".to_string(),
-                    };
-                    return Err(CursedError::FamRecovery(error_message));
-                }
+                // yikes ALWAYS terminates execution - proper error throw behavior
+                let error_message = match error_obj {
+                    CursedValue::Error { message, .. } => message,
+                    _ => "Error occurred".to_string(),
+                };
                 
-                // For yikes statements outside fam, we store the error but continue execution
-                Ok(ExecutionFlow::Continue(error_obj))
+                // Check if we're in a fam context for recovery, otherwise terminate program
+                if context.is_in_fam_context() {
+                    return Err(CursedError::FamRecovery(error_message));
+                } else {
+                    return Err(CursedError::RuntimeError(format!("Uncaught error: {}", error_message)));
+                }
             },
             Statement::Fam(fam_stmt) => {
                 // Implement error recovery statement
@@ -1447,8 +1447,13 @@ impl CursedExecutionEngine {
                 // Check if the result is an error
                 match result {
                     CursedValue::Error { message, .. } => {
-                        // Propagate error by returning it as a runtime error with the original message
-                        Err(CursedError::RuntimeError(message))
+                        // shook operator propagates error and terminates current function
+                        // Similar to Rust's ? operator - early return on error
+                        if context.is_in_fam_context() {
+                            Err(CursedError::FamRecovery(message))
+                        } else {
+                            Err(CursedError::RuntimeError(format!("Error propagated by shook: {}", message)))
+                        }
                     }
                     _ => Ok(result)
                 }
@@ -2662,8 +2667,12 @@ impl CursedExecutionEngine {
                                         match error_value {
                                             CursedValue::Error { message, .. } => {
                                                 log::warn!("⚠️ Function error: {}", message);
-                                                error_occurred = true;
-                                                break; // Will be handled as error after defer cleanup
+                                                // Execute deferred expressions before propagating error
+                                                let deferred_exprs = func_context.pop_defer_scope();
+                                                for defer_expr in deferred_exprs {
+                                                    let _ = self.evaluate_expression(&defer_expr, &mut func_context);
+                                                }
+                                                return Err(CursedError::RuntimeError(message));
                                             }
                                             _ => {
                                                 log::warn!("⚠️ Unknown error occurred");
@@ -2674,8 +2683,12 @@ impl CursedExecutionEngine {
                                     },
                                     Err(e) => {
                                         log::warn!("⚠️ Execution error: {:?}", e);
-                                        error_occurred = true;
-                                        break; // Will be handled as error after defer cleanup
+                                        // Execute deferred expressions before propagating error
+                                        let deferred_exprs = func_context.pop_defer_scope();
+                                        for defer_expr in deferred_exprs {
+                                            let _ = self.evaluate_expression(&defer_expr, &mut func_context);
+                                        }
+                                        return Err(e); // Propagate error immediately
                                     }
                                 }
                             }

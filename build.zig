@@ -458,6 +458,19 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    // Create interactive debugger (development tool)
+    const debugger_exe = if (!is_wasm) b.addExecutable(.{
+        .name = "cursed-debug",
+        .root_source_file = b.path("src-zig/cursed_debugger_main.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    }) else null;
+    
+    // Configure debugger for all non-WASM targets
+    if (debugger_exe) |debug_exe| {
+        debug_exe.linkLibC();
+    }
+
     // Configure libc and LLVM support for main compiler
     if (!is_wasm) {
         exe.linkLibC();
@@ -606,10 +619,25 @@ pub fn build(b: *std.Build) void {
         addLlvm(b, exe_llvm_test, resolved_target);
     }
 
+    // Create enhanced CLI version with comprehensive argument parsing
+    const cursed_enhanced_cli = b.addExecutable(.{
+        .name = "cursed-cli",
+        .root_source_file = b.path("src-zig/main_enhanced_cli.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    if (!is_wasm) {
+        cursed_enhanced_cli.linkLibC();
+    }
+
     b.installArtifact(exe);
     b.installArtifact(exe_stable);
+    if (debugger_exe) |debug_exe| {
+        b.installArtifact(debug_exe);  // Install interactive debugger
+    }
     b.installArtifact(exe_simple_llvm_test);
     b.installArtifact(exe_llvm_test);
+    b.installArtifact(cursed_enhanced_cli);
     
     // Create legacy alias for backwards compatibility - using minimal version
     const legacy_exe = b.addExecutable(.{
@@ -649,6 +677,21 @@ b.installArtifact(complete_exe);
         pkg_manager_exe.linkLibC();
     }
     b.installArtifact(pkg_manager_exe);
+
+    // Create LSP server for IDE support - standalone version
+    const lsp_server_exe = b.addExecutable(.{
+        .name = "cursed-lsp",
+        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/lsp_main_standalone.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    
+    if (!is_wasm) {
+        lsp_server_exe.linkLibC();
+        // Disable LLVM for LSP to avoid compilation issues
+        lsp_server_exe.root_module.addCMacro("CURSED_DISABLE_LLVM", "1");
+    }
+    b.installArtifact(lsp_server_exe);
 
     // Create run step
     const run_cmd = b.addRunArtifact(exe);

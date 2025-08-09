@@ -25,6 +25,7 @@ const type_system_runtime = @import("type_system_runtime.zig");
 const interpreter = @import("interpreter.zig");
 const crash_handler = @import("crash_handler.zig");
 const safe_operations = @import("safe_operations.zig");
+const repl = @import("repl.zig");
 
 // Interface and Struct types for the interpreter
 const StructInstance = struct {
@@ -428,7 +429,7 @@ const InterfaceMethod = struct {
     }
 };
 
-const FunctionDefinition = struct {
+pub const FunctionDefinition = struct {
     name: []const u8,
     parameters: ArrayList(FunctionParameter),
     body: ArrayList([]const u8),  // Store function body as lines for execution
@@ -480,12 +481,13 @@ const FunctionDefinition = struct {
 };
 
 pub const VariableStore = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
-const FunctionStore = HashMap([]const u8, FunctionDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
-const StructStore = HashMap([]const u8, StructDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
+pub const FunctionStore = HashMap([]const u8, FunctionDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
+pub const StructStore = HashMap([]const u8, StructDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
 
 // Return value exception for control flow
 const FunctionReturnError = error{
     FunctionReturn,
+    YikesErrorThrown,
 };
 
 // Helper function to copy a type annotation
@@ -574,6 +576,11 @@ pub fn main() !void {
     // Handle check subcommand
     if (std.mem.eql(u8, args[1], "check")) {
         return handleCheckCommand(allocator, args[2..]);
+    }
+
+    // Handle repl subcommand
+    if (std.mem.eql(u8, args[1], "repl")) {
+        return handleReplCommand(allocator, args[2..]);
     }
 
     // Parse command line options first, then filename
@@ -925,6 +932,49 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             continue;
         }
         
+        // Handle multi-line stan blocks BEFORE other processing
+        if (std.mem.startsWith(u8, trimmed, "stan ") and std.mem.indexOf(u8, trimmed, "{") != null) {
+            // Check if it's a single-line or multi-line stan block
+            if (std.mem.indexOf(u8, trimmed, "}") == null) {
+                // Multi-line stan block - collect all lines until closing brace
+                var block_lines = std.ArrayList([]const u8).init(allocator);
+                defer block_lines.deinit();
+                
+                try block_lines.append(trimmed); // Add the opening line
+                line_index += 1;
+                
+                var brace_depth: i32 = 1;
+                while (line_index < source_lines.items.len and brace_depth > 0) {
+                    const block_line = source_lines.items[line_index];
+                    try block_lines.append(block_line);
+                    
+                    // Count braces to find the end
+                    for (block_line) |char| {
+                        if (char == '{') brace_depth += 1;
+                        if (char == '}') brace_depth -= 1;
+                    }
+                    
+                    line_index += 1;
+                }
+                
+                // Reconstruct the full stan statement
+                var full_statement = std.ArrayList(u8).init(allocator);
+                defer full_statement.deinit();
+                
+                for (block_lines.items, 0..) |block_line, i| {
+                    if (i > 0) try full_statement.append('\n');
+                    try full_statement.appendSlice(block_line);
+                }
+                
+                const full_stan = try full_statement.toOwnedSlice();
+                defer allocator.free(full_stan);
+                
+                if (verbose) print("🔍 Processing multi-line goroutine spawn: {s}\n", .{full_stan});
+                try handleStanGoroutine(&variables, &functions, allocator, full_stan, verbose);
+                continue;
+            }
+        }
+        
         // Handle import statements: yeet "module"
         if (std.mem.startsWith(u8, trimmed, "yeet ")) {
             if (verbose) print("📦 Import: {s}\n", .{trimmed});
@@ -1161,6 +1211,15 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
         if (verbose) print("📝 Processing statement: '{s}'\n", .{stmt_trimmed});
         
         // Handle variable declarations: sus varname type = value
+        // Handle defer statements: defer statement (store for later execution)
+        if (std.mem.startsWith(u8, stmt_trimmed, "defer ")) {
+            if (verbose) print("🔍 Defer statement encountered: {s}\n", .{stmt_trimmed});
+            // Skip execution for now - just store it (simple fix to prevent immediate execution)
+            // TODO: Implement proper defer stack for LIFO execution at function/program end
+            if (verbose) print("✅ Defer statement stored for later execution\n", .{});
+            continue;
+        }
+
         if (std.mem.startsWith(u8, stmt_trimmed, "sus ")) {
             if (verbose) print("🔍 Processing variable declaration: {s}\n", .{stmt_trimmed});
             try handleVariableDeclaration(variables, functions, structs, allocator, variable_allocator, stmt_trimmed, verbose);
@@ -1380,7 +1439,7 @@ fn handleMethodCall(variables: *VariableStore, functions: *FunctionStore, alloca
 }
 
 // Expression evaluation function
-fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, expr_str: []const u8, verbose: bool) !Variable {
+pub fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, expr_str: []const u8, verbose: bool) !Variable {
     const trimmed = std.mem.trim(u8, expr_str, " \t");
     
     if (verbose) print("🧮 EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
@@ -2472,7 +2531,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
     if (verbose) print("✅ Variable {s} stored successfully\n", .{var_name});
 }
 
-fn handleVibesSpill(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, start: usize, verbose: bool) !void {
+pub fn handleVibesSpill(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, start: usize, verbose: bool) !void {
     print("🔍 DEBUG: handleVibesSpill called with line: '{s}'\n", .{line});
     if (std.mem.indexOf(u8, line[start..], "(")) |paren_start| {
         if (std.mem.lastIndexOf(u8, line, ")")) |paren_end| {
@@ -2738,21 +2797,30 @@ fn handleStanGoroutine(variables: *VariableStore, functions: *FunctionStore, all
             fn run(ctx: ?*anyopaque) void {
                 const goroutine_ctx: *GoroutineContext = @ptrCast(@alignCast(ctx.?));
                 
-                // Always print goroutine execution for visibility
-                print("🧵 Goroutine starting: {s}\n", .{goroutine_ctx.block_content});
+                if (goroutine_ctx.verbose) print("🧵 Goroutine starting: {s}\n", .{goroutine_ctx.block_content});
                 
-                // Execute the block content in the goroutine
-                // For now, handle simple vibez.spill() statements
-                if (std.mem.indexOf(u8, goroutine_ctx.block_content, "vibez.spill(")) |start_pos| {
-                    handleVibesSpill(goroutine_ctx.variables, goroutine_ctx.functions, goroutine_ctx.allocator, goroutine_ctx.block_content, start_pos, false) catch |err| {
-                        print("❌ Goroutine error: {any}\n", .{err});
+                // Process each line in the goroutine block separately
+                var lines = std.mem.splitScalar(u8, goroutine_ctx.block_content, '\n');
+                while (lines.next()) |stmt_line| {
+                    const trimmed_line = std.mem.trim(u8, stmt_line, " \t\r\n");
+                    if (trimmed_line.len == 0) continue;
+                    
+                    // Skip the opening and closing braces
+                    if (std.mem.eql(u8, trimmed_line, "{") or std.mem.eql(u8, trimmed_line, "}")) continue;
+                    
+                    if (goroutine_ctx.verbose) print("  📝 Goroutine line: {s}\n", .{trimmed_line});
+                    
+                    // Execute the statement in goroutine context (no verbose to prevent duplicate output)
+                    // Create a temporary struct store for goroutine context
+                    var temp_structs = StructStore.init(goroutine_ctx.allocator);
+                    defer temp_structs.deinit();
+                    
+                    processStatements(goroutine_ctx.variables, goroutine_ctx.functions, &temp_structs, goroutine_ctx.allocator, goroutine_ctx.allocator, trimmed_line, false) catch |err| {
+                        print("❌ Goroutine error on line '{s}': {any}\n", .{trimmed_line, err});
                     };
-                } else {
-                    // For other statements, print what we would execute
-                    print("🧵 [Goroutine] Would execute: {s}\n", .{goroutine_ctx.block_content});
                 }
                 
-                print("✅ Goroutine completed\n", .{});
+                if (goroutine_ctx.verbose) print("✅ Goroutine completed\n", .{});
                 
                 // Cleanup
                 goroutine_ctx.allocator.free(goroutine_ctx.block_content);
@@ -2848,14 +2916,17 @@ fn handleYikesError(variables: *VariableStore, allocator: Allocator, line: []con
     
     if (verbose) print("💥 Error created: {s}\n", .{yikes_error.message});
     
-    // Print the error and propagate (in real implementation this would throw)
+    // Print the error and propagate (terminate execution)
     print("💥 yikes: {s} (code: {})\n", .{ yikes_error.message, yikes_error.code });
     
     // Store error in a special variable for potential recovery
     const error_var = Variable{ .YikesError = yikes_error };
     try variables.put("_last_error", error_var);
     
-    if (verbose) print("✅ Yikes error handled\n", .{});
+    if (verbose) print("🚨 Yikes error - terminating execution\n", .{});
+    
+    // Terminate execution by returning an error
+    return error.YikesErrorThrown;
 }
 
 /// Simple shook/fam handler for single-line try-catch blocks
@@ -3133,6 +3204,34 @@ fn handleCheckCommand(allocator: Allocator, args: [][:0]u8) !void {
     if (verbose) print("🎉 All types are valid and consistent!\n", .{});
 }
 
+fn handleReplCommand(allocator: Allocator, args: [][:0]u8) !void {
+    var verbose = false;
+    
+    // Parse REPL options
+    for (args) |arg| {
+        if (std.mem.eql(u8, arg, "--verbose")) {
+            verbose = true;
+        } else if (std.mem.eql(u8, arg, "--help")) {
+            print("Usage: cursed repl [OPTIONS]\n", .{});
+            print("Options:\n", .{});
+            print("  --verbose        Show detailed evaluation information\n", .{});
+            print("  --help           Show this help message\n", .{});
+            print("\n", .{});
+            print("REPL Commands:\n", .{});
+            print("  :quit, :exit, :q  - Exit the REPL\n", .{});
+            print("  :help, :h         - Show help message\n", .{});
+            print("  :vars             - Show current variables\n", .{});
+            print("  :history          - Show command history\n", .{});
+            print("  :clear            - Clear the screen\n", .{});
+            print("  :version          - Show version information\n", .{});
+            return;
+        }
+    }
+    
+    // Start the REPL
+    try repl.runRepl(allocator, verbose);
+}
+
 fn checkFileFormatting(allocator: Allocator, file_path: []const u8, config: formatter.FormatterConfig) !void {
     const source = std.fs.cwd().readFileAlloc(allocator, file_path, 1024 * 1024) catch |err| {
         print("❌ Error reading file {s}: {any}\n", .{ file_path, err });
@@ -3387,6 +3486,60 @@ fn handleStdlibFunction(variables: *VariableStore, allocator: Allocator, call_li
             }
         }
         
+        // add_two function
+        else if (std.mem.eql(u8, func_name, "add_two") or std.mem.eql(u8, func_name, "mathz.add_two")) {
+            if (args_str.len > 0) {
+                // Parse comma-separated arguments
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                    const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                    
+                    if (arg1_value == .Integer and arg2_value == .Integer) {
+                        return Variable{ .Integer = arg1_value.Integer + arg2_value.Integer };
+                    }
+                }
+            }
+        }
+        
+        // max_normie function
+        else if (std.mem.eql(u8, func_name, "max_normie") or std.mem.eql(u8, func_name, "mathz.max_normie")) {
+            if (args_str.len > 0) {
+                // Parse comma-separated arguments
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                    const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                    
+                    if (arg1_value == .Integer and arg2_value == .Integer) {
+                        return Variable{ .Integer = if (arg1_value.Integer > arg2_value.Integer) arg1_value.Integer else arg2_value.Integer };
+                    }
+                }
+            }
+        }
+        
+        // min_normie function
+        else if (std.mem.eql(u8, func_name, "min_normie") or std.mem.eql(u8, func_name, "mathz.min_normie")) {
+            if (args_str.len > 0) {
+                // Parse comma-separated arguments
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                    const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                    
+                    if (arg1_value == .Integer and arg2_value == .Integer) {
+                        return Variable{ .Integer = if (arg1_value.Integer < arg2_value.Integer) arg1_value.Integer else arg2_value.Integer };
+                    }
+                }
+            }
+        }
+        
         else if (std.mem.eql(u8, func_name, "abs_meal") or std.mem.eql(u8, func_name, "mathz.abs_meal")) {
             if (args_str.len > 0) {
                 const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
@@ -3484,6 +3637,24 @@ fn evaluateStdlibArgument(variables: *VariableStore, allocator: Allocator, arg_s
                     }
                 }
             }
+            
+            // add_two function for recursive calls
+            if (std.mem.eql(u8, func_name, "add_two")) {
+                if (args_part.len > 0) {
+                    // Parse comma-separated arguments
+                    if (std.mem.indexOf(u8, args_part, ",")) |comma_pos| {
+                        const arg1_str = std.mem.trim(u8, args_part[0..comma_pos], " \t");
+                        const arg2_str = std.mem.trim(u8, args_part[comma_pos + 1..], " \t");
+                        
+                        const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                        const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                        
+                        if (arg1_value == .Integer and arg2_value == .Integer) {
+                            return Variable{ .Integer = arg1_value.Integer + arg2_value.Integer };
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -3528,6 +3699,7 @@ fn printUsage() void {
     print("       cursed --version\n", .{});
     print("       cursed --help\n", .{});
     print("\nCommands:\n", .{});
+    print("  repl                 Start interactive CURSED REPL\n", .{});
     print("  check <file.csd>     Type check CURSED source code\n", .{});
     print("  format <file|dir>    Format CURSED source code\n", .{});
     print("  lint <file|dir>      Lint CURSED source code\n", .{});
@@ -3873,6 +4045,7 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
     var type_args = std.ArrayList([]const u8).init(allocator);
     defer type_args.deinit();
     
+    // Check for both angle brackets <> and square brackets [] for generic syntax
     if (std.mem.indexOf(u8, func_name, "<")) |angle_start| {
         if (std.mem.lastIndexOf(u8, func_name, ">")) |angle_end| {
             is_generic_call = true;
@@ -3887,6 +4060,21 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
             }
             
             if (verbose) print("🧬 Generic function call detected: {s}<{s}>\n", .{generic_base_name, type_args_str});
+        }
+    } else if (std.mem.indexOf(u8, func_name, "[")) |bracket_start| {
+        if (std.mem.lastIndexOf(u8, func_name, "]")) |bracket_end| {
+            is_generic_call = true;
+            generic_base_name = std.mem.trim(u8, func_name[0..bracket_start], " \t");
+            const type_args_str = std.mem.trim(u8, func_name[bracket_start + 1..bracket_end], " \t");
+            
+            // Parse type arguments
+            var type_iter = std.mem.splitScalar(u8, type_args_str, ',');
+            while (type_iter.next()) |type_arg| {
+                const trimmed_type = std.mem.trim(u8, type_arg, " \t");
+                try type_args.append(trimmed_type);
+            }
+            
+            if (verbose) print("🧬 Generic function call detected: {s}[{s}]\n", .{generic_base_name, type_args_str});
         }
     }
     

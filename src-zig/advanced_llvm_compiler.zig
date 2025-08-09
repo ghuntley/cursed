@@ -113,9 +113,20 @@ pub fn writeOptimizedLLVMIR(advanced_codegen: *AdvancedCodeGen, writer: anytype,
     
     try writer.writeAll("\n");
     
-    // Module-level attributes
-    try writer.writeAll("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n");
-    try writer.writeAll("target triple = \"x86_64-pc-linux-gnu\"\n\n");
+    // Module-level attributes (note: should be made configurable)
+    const target_mapping = @import("target_mapping.zig");
+    const target_triple = target_mapping.getNativeTriple();
+    const data_layout = blk: {
+        if (std.mem.startsWith(u8, target_triple, "x86_64")) {
+            break :blk "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128";
+        } else if (std.mem.startsWith(u8, target_triple, "aarch64")) {
+            break :blk "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128";
+        } else {
+            break :blk "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128";
+        }
+    };
+    try writer.print("target datalayout = \"{s}\"\n", .{data_layout});
+    try writer.print("target triple = \"{s}\"\n\n", .{target_triple});
     
     // Generate main function with optimization attributes
     try writer.writeAll("define dso_local i32 @main() ");

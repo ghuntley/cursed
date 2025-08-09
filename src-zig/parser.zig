@@ -706,15 +706,22 @@ pub const Parser = struct {
             }};
         }
 
-        // Channel types dm<element_type>
+        // Channel types dm<element_type> or dm[element_type]
         if (self.check(.Dm) or self.matchIdentifier("dm")) {
             _ = self.advance();
-            if (self.match(.Less) or self.match(.LeftAngle)) {
+            if (self.match(.Less) or self.match(.LeftAngle) or self.match(.LeftBracket)) {
                 const element_type_ptr = try self.allocator.create(ast.Type);
                 errdefer self.allocator.destroy(element_type_ptr);
                 element_type_ptr.* = try self.parseType();
                 
-        _ = try self.consume(.Greater, "Expected '>' after channel element type");
+                // Match the corresponding closing bracket
+                if (self.check(.Greater) or self.check(.RightAngle)) {
+                    _ = try self.consume(.Greater, "Expected '>' after channel element type");
+                } else if (self.check(.RightBracket)) {
+                    _ = try self.consume(.RightBracket, "Expected ']' after channel element type");
+                } else {
+                    return ParserError.UnexpectedToken;
+                }
                 
                 return ast.Type{ .Channel = ast.ChannelType{
                     .element_type = element_type_ptr,
@@ -1488,6 +1495,30 @@ pub const Parser = struct {
                 }
                 
         _ = try self.consume(.RightParen, "Expected ')' after make_channel");
+                
+                return Expression{ .ChannelCreation = ast.ChannelCreationExpression{
+                    .element_type = element_type,
+                    .buffer_size = buffer_size,
+                }};
+            }
+        }
+
+        // Channel creation dm[type](capacity)
+        if (self.matchIdentifier("dm")) {
+            if (self.match(.LeftBracket)) {
+                const element_type = try self.parseType();
+                _ = try self.consume(.RightBracket, "Expected ']' after channel element type");
+                _ = try self.consume(.LeftParen, "Expected '(' after dm[T]");
+                
+                var buffer_size: ?*Expression = null;
+                if (!self.check(.RightParen)) {
+                    const buffer_expr = try self.parseExpression();
+                    const buffer_ptr = try self.allocator.create(Expression);
+                    buffer_ptr.* = buffer_expr;
+                    buffer_size = buffer_ptr;
+                }
+                
+                _ = try self.consume(.RightParen, "Expected ')' after dm[T]");
                 
                 return Expression{ .ChannelCreation = ast.ChannelCreationExpression{
                     .element_type = element_type,

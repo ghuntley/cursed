@@ -51,6 +51,8 @@ pub const CursedError = error{
     InterfaceNotImplemented,
     InvalidStructField,
     MissingInterface,
+    MethodMustBeCalled,
+    InvalidArgumentCount,
     
     // Concurrency errors
     ChannelClosed,

@@ -435,6 +435,15 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
         imports.deinit();
     }
     
+    // Store function name copies for hashmap safety
+    var function_name_copies = ArrayList([]const u8).init(allocator);
+    defer {
+        for (function_name_copies.items) |name| {
+            allocator.free(name);
+        }
+        function_name_copies.deinit();
+    }
+
     // Load functions from imported modules using safe extraction
     if (imports.items.len > 0) {
         print("📦 Loading {} modules...\n", .{imports.items.len});
@@ -445,24 +454,30 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
                 print("❌ Failed to load module '{s}': {}\n", .{ module_name, err });
                 continue;
             };
-            defer {
-                for (module_functions.items) |*func| {
-                    func.deinit(allocator);
-                }
-                module_functions.deinit();
-            }
+            defer module_functions.deinit();
             
             print("✅ Loaded module: {s} with {} functions\n", .{ module_name, module_functions.items.len });
             
             // Add functions to the function store with safe string handling
             for (module_functions.items) |func| {
-                // func.name was already copied in the module loader, so we can use it directly
-                const func_info = FunctionInfo{ .name = func.name, .available = true };
-                loaded_functions.put(func.name, func_info) catch |err| {
-                    print("  ❌ Failed to store function '{s}': {}\n", .{func.name, err});
+                // Create a copy of the function name for the hashmap
+                const name_copy = allocator.dupe(u8, func.name) catch |err| {
+                    print("  ❌ Failed to copy function name '{s}': {}\n", .{func.name, err});
                     continue;
                 };
-                print("  📋 Available function: {s}\n", .{func.name});
+                try function_name_copies.append(name_copy);
+                
+                const func_info = FunctionInfo{ .name = name_copy, .available = true };
+                loaded_functions.put(name_copy, func_info) catch |err| {
+                    print("  ❌ Failed to store function '{s}': {}\n", .{name_copy, err});
+                    continue;
+                };
+                print("  📋 Available function: {s}\n", .{name_copy});
+            }
+            
+            // Clean up module function names
+            for (module_functions.items) |*func| {
+                func.deinit(allocator);
             }
         }
     }
@@ -1119,9 +1134,31 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                 // Check if this is a function call
                 if (std.mem.indexOf(u8, value_str, "(")) |paren_pos| {
                     const func_name = std.mem.trim(u8, value_str[0..paren_pos], " \t");
-                    if (functions.get(func_name)) |func_def| {
-                        if (std.mem.lastIndexOf(u8, value_str, ")")) |end_paren| {
-                            const args_str = std.mem.trim(u8, value_str[paren_pos + 1..end_paren], " \t");
+                    if (std.mem.lastIndexOf(u8, value_str, ")")) |end_paren| {
+                        const args_str = std.mem.trim(u8, value_str[paren_pos + 1..end_paren], " \t");
+                        
+                        // Check for stdlib functions first
+                        if (std.mem.eql(u8, func_name, "abs_normie")) {
+                            if (args_str.len > 0) {
+                                if (std.fmt.parseInt(i64, args_str, 10)) |arg_val| {
+                                    const result = if (arg_val < 0) -arg_val else arg_val;
+                                    break :blk Variable{ .Integer = result };
+                                } else |_| {}
+                            }
+                        } else if (std.mem.eql(u8, func_name, "add_two")) {
+                            if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                                const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                                const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                                
+                                if (std.fmt.parseInt(i64, arg1_str, 10)) |arg1| {
+                                    if (std.fmt.parseInt(i64, arg2_str, 10)) |arg2| {
+                                        const result = arg1 + arg2;
+                                        break :blk Variable{ .Integer = result };
+                                    } else |_| {}
+                                } else |_| {}
+                            }
+                        } else if (functions.get(func_name)) |func_def| {
+                            // Check user-defined functions
                             if (evaluateUserFunction(variables, functions, allocator, func_def, args_str)) |result| {
                                 break :blk result;
                             } else |_| {
@@ -1331,6 +1368,31 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
                         },
                         else => {},
                     }
+                }
+            } else if (std.mem.eql(u8, func_name, "abs_normie")) {
+                // Handle abs_normie() stdlib function
+                if (args_str.len > 0) {
+                    if (std.fmt.parseInt(i64, args_str, 10)) |arg_val| {
+                        const result = if (arg_val < 0) -arg_val else arg_val;
+                        print("{}", .{result});
+                        if (add_newline) print("\n", .{});
+                        return;
+                    } else |_| {}
+                }
+            } else if (std.mem.eql(u8, func_name, "add_two")) {
+                // Handle add_two() stdlib function
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    if (std.fmt.parseInt(i64, arg1_str, 10)) |arg1| {
+                        if (std.fmt.parseInt(i64, arg2_str, 10)) |arg2| {
+                            const result = arg1 + arg2;
+                            print("{}", .{result});
+                            if (add_newline) print("\n", .{});
+                            return;
+                        } else |_| {}
+                    } else |_| {}
                 }
             } else if (functions.get(func_name)) |func_def| {
                 // Handle user-defined function call

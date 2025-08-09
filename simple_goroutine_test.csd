@@ -1,12 +1,4 @@
-fr fr Test basic goroutine functionality
-vibez.spill("Main thread starting")
-
-stan {
-    vibez.spill("Goroutine 1 executing")
-}
-
-stan {
-    vibez.spill("Goroutine 2 executing")
-}
-
-vibez.spill("Main thread completed")
+vibez.spill("Before goroutines")
+stan { vibez.spill("A") }
+stan { vibez.spill("B") }
+vibez.spill("After goroutines")
