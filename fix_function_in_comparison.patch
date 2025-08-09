@@ -1,0 +1,21 @@
+The issue is in the expression evaluation when function calls are used within comparison operators.
+
+When evaluating `i < len(numbers)`, the system:
+1. Finds the '<' comparison operator
+2. Splits into left='i' and right='len(numbers)'  
+3. Evaluates left side (works fine)
+4. Tries to evaluate right side 'len(numbers)' 
+
+The problem occurs during step 4 where somehow 'numbers' gets replaced with '[1, 2, 3, 4, 5]' in the expression string.
+
+Root cause: String substitution in expression evaluation is corrupting the original expression.
+
+WORKAROUND: Pre-calculate function results and store in variables:
+```cursed
+sus array_length drip = len(numbers)
+bestie (i < array_length) {
+    # loop body
+}
+```
+
+PROPER FIX: Ensure expression evaluation doesn't modify original strings and handles function calls correctly within operators.

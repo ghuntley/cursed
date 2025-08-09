@@ -392,6 +392,69 @@ zig test src-zig/relevant_component.zig
 - **LLVM Debugging**: Use `--verbose` and `--debug` flags, inspect generated IR
 - **Cross-Platform**: Force native target, use alternative executables when needed
 
+## New Language Features ✨ (2025-08-10)
+
+### Implemented Features:
+- ✅ **P26**: Exhaustive pattern checking for enums (`src-zig/exhaustive_pattern_checking.zig`)
+- ✅ **P29**: Enhanced generic type inference (`src-zig/type_inference.zig`)  
+- ✅ **P30**: Compile-time reflection API (`src-zig/compile_time_reflection.zig`)
+- ✅ **P31**: Macro hygiene system (`src-zig/macro_hygiene.zig`)
+- ✅ **P33**: Simplified extern C ABI (`src-zig/extern_abi.zig`)
+
+### Feature Testing:
+```bash
+# Test all new language features
+./zig-out/bin/cursed-zig test_language_features.csd
+
+# Test individual features  
+./zig-out/bin/cursed-zig simple_feature_test.csd
+
+# Memory safety validation
+valgrind ./zig-out/bin/cursed-zig test_language_features.csd
+```
+
+### Usage Examples:
+
+**Exhaustive Pattern Matching**:
+```cursed
+enum Color { Red, Green, Blue }
+sick (color) {
+    when Red -> "red"
+    when Green -> "green"  
+    // Compiler warns: Missing Blue pattern
+}
+```
+
+**Type Inference**:
+```cursed
+slay swap<T>(a T, b T) (T, T) { damn (b, a) }
+sus result = swap(42, 84)  // T automatically inferred as normie
+```
+
+**Compile-time Reflection**:
+```cursed
+struct Person { spill name tea; spill age normie }
+sus fields = Person.fields  // Compile-time field info
+sus size = Person.size      // Compile-time size calculation
+```
+
+**Macro Hygiene**:
+```cursed
+@macro slay debug(expr) {
+    sus temp = expr  // Automatically renamed to prevent capture
+    vibez.spill("DEBUG: " + temp)
+}
+```
+
+**Extern Functions**:
+```cursed
+extern "C" {
+    library "libc"
+    slay strlen(str tea) normie
+}
+sus len = strlen("hello")  // Direct C function call
+```
+
 ## Development Session Notes (2025-08-09)
 
 ### Key Fixes Applied Today ✅

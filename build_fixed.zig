@@ -516,30 +516,30 @@ pub fn build(b: *std.Build) void {
         std.debug.print("🔧 Auto-tuned build jobs: {d}\n", .{optimal_jobs});
     }
     
-    // Check ninja max jobs and print recommendation
-    if (std.process.getEnvVarOwned(b.allocator, "NINJA_MAX_JOBS")) |ninja_env| {
-        b.allocator.free(ninja_env);
+    // Set ninja max jobs if not already set
+    const ninja_env = std.process.getEnvVarOwned(b.allocator, "NINJA_MAX_JOBS") catch null;
+    if (ninja_env == null) {
+        const ninja_jobs = b.fmt("{d}", .{optimal_jobs});
+        std.process.setEnvVar("NINJA_MAX_JOBS", ninja_jobs) catch {};
         if (b.verbose) {
-            std.debug.print("🔧 NINJA_MAX_JOBS already set\n", .{});
+            std.debug.print("🔧 Set NINJA_MAX_JOBS={s}\n", .{ninja_jobs});
         }
-    } else |_| {
-        if (b.verbose) {
-            std.debug.print("🔧 Recommend setting NINJA_MAX_JOBS={d} for optimal performance\n", .{optimal_jobs});
-        }
+    } else |val| {
+        b.allocator.free(val);
     }
     
     // Get target, defaulting to native/host target when none specified
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     
-    // Performance optimization options (suppress unused warnings)
+    // Performance optimization options
     _ = b.option(bool, "optimize-compiler", "Enable compiler performance optimizations") orelse true;
-    _ = b.option(bool, "parallel", "Enable parallel compilation") orelse true;
-    _ = b.option(bool, "cache", "Enable compilation caching") orelse true;
-    _ = b.option([]const u8, "llvm-opt", "LLVM optimization level (O0, O1, O2, O3, Os, Oz)") orelse "O2";
-    _ = b.option(bool, "fast-build", "Prioritize compilation speed over runtime performance") orelse false;
-    _ = b.option(bool, "profile", "Enable performance profiling") orelse false;
-    _ = b.option(bool, "memory-opt", "Enable memory optimization") orelse true;
+    const enable_parallel_compilation = b.option(bool, "parallel", "Enable parallel compilation") orelse true;
+    const enable_compilation_cache = b.option(bool, "cache", "Enable compilation caching") orelse true;
+    const llvm_optimization_level = b.option([]const u8, "llvm-opt", "LLVM optimization level (O0, O1, O2, O3, Os, Oz)") orelse "O2";
+    const enable_fast_build = b.option(bool, "fast-build", "Prioritize compilation speed over runtime performance") orelse false;
+    const enable_performance_profiling = b.option(bool, "profile", "Enable performance profiling") orelse false;
+    const enable_memory_optimization = b.option(bool, "memory-opt", "Enable memory optimization") orelse true;
     
     // Fix ReleaseSmall debug sections issue
     const actual_optimize = if (optimize == .ReleaseSmall) blk: {
@@ -615,7 +615,7 @@ pub fn build(b: *std.Build) void {
 
     // Explicitly disable debug info for ReleaseSmall builds
     if (actual_optimize == .ReleaseSmall) {
-        exe.want_lto = true;
+        exe.strip = true;
         exe.root_module.addCMacro("NDEBUG", "1");
         if (b.verbose) {
             std.debug.print("🔧 ReleaseSmall: Stripped debug symbols and defined NDEBUG\n", .{});
@@ -637,7 +637,7 @@ pub fn build(b: *std.Build) void {
 
     // Apply ReleaseSmall fix to stable build too
     if (actual_optimize == .ReleaseSmall) {
-        exe_stable.want_lto = true;
+        exe_stable.strip = true;
         exe_stable.root_module.addCMacro("NDEBUG", "1");
     }
 
@@ -699,7 +699,7 @@ pub fn build(b: *std.Build) void {
     else if (is_wasm) 
         b.path("src-zig/wasm_minimal_compiler.zig") 
     else 
-        b.path("src-zig/lsp_minimal_fixed.zig");
+        b.path("src-zig/lsp_server_fixed.zig");
         
     const lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp",
@@ -714,7 +714,7 @@ pub fn build(b: *std.Build) void {
     
     // Apply ReleaseSmall fix to LSP
     if (actual_optimize == .ReleaseSmall) {
-        lsp_exe.want_lto = true;
+        lsp_exe.strip = true;
         lsp_exe.root_module.addCMacro("NDEBUG", "1");
     }
     
