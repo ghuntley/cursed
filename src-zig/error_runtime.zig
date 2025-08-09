@@ -240,10 +240,11 @@ pub const ErrorHandler = struct {
 };
 
 // C-compatible runtime functions for LLVM IR
-export fn cursed_error_handler_init() *ErrorHandler {
+export fn cursed_error_handler_init() ?*ErrorHandler {
     const allocator = std.heap.c_allocator;
     const handler = allocator.create(ErrorHandler) catch |err| {
-        std.debug.panic("Failed to create error handler: {}\n", .{err});
+        std.debug.print("Failed to create error handler: {}\n", .{err});
+        return null;
     };
     handler.* = ErrorHandler.init(allocator);
     return handler;
@@ -261,7 +262,8 @@ export fn cursed_yikes(handler: *ErrorHandler, message: [*:0]const u8, error_typ
     const file_name = std.mem.span(file);
     
     handler.yikes(msg, err_type, file_name, line, column) catch |err| {
-        std.debug.panic("Failed to create error: {}\n", .{err});
+        std.debug.print("Failed to create error: {}\n", .{err});
+        return; // Graceful failure instead of panic
     };
 }
 
@@ -281,7 +283,8 @@ export fn cursed_clear_error(handler: *ErrorHandler) void {
 export fn cursed_push_function(handler: *ErrorHandler, function_name: [*:0]const u8) void {
     const func_name = std.mem.span(function_name);
     handler.pushFunction(func_name) catch |err| {
-        std.debug.panic("Failed to push function: {}\n", .{err});
+        std.debug.print("Failed to push function: {}\n", .{err});
+        return; // Graceful failure instead of panic
     };
 }
 
@@ -299,7 +302,8 @@ export fn cursed_push_try_catch(handler: *ErrorHandler, try_block_start: usize, 
     };
     
     handler.pushTryCatch(try_block_start, var_name, h_type) catch |err| {
-        std.debug.panic("Failed to push try-catch: {}\n", .{err});
+        std.debug.print("Failed to push try-catch: {}\n", .{err});
+        return; // Graceful failure instead of panic
     };
 }
 

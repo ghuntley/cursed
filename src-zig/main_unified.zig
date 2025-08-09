@@ -23,6 +23,8 @@ const concurrency_handlers = @import("main_concurrency_handlers.zig");
 const interface_dispatch = @import("interface_dispatch.zig");
 const type_system_runtime = @import("type_system_runtime.zig");
 const interpreter = @import("interpreter.zig");
+const crash_handler = @import("crash_handler.zig");
+const safe_operations = @import("safe_operations.zig");
 
 // Interface and Struct types for the interpreter
 const StructInstance = struct {

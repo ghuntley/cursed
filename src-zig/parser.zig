@@ -4,6 +4,8 @@ const Allocator = std.mem.Allocator;
 
 const lexer = @import("lexer.zig");
 const ast = @import("ast.zig");
+const crash_handler = @import("crash_handler.zig");
+const safe_operations = @import("safe_operations.zig");
 
 const Token = lexer.Token;
 const TokenKind = lexer.TokenKind;
@@ -31,6 +33,7 @@ pub const ParserError = error{
     InvalidPattern,
     InvalidGeneric,
     SyntaxError,
+    AlignmentError,
 };
 
 pub const Parser = struct {
@@ -44,6 +47,7 @@ pub const Parser = struct {
     in_loop: bool,
     scope_depth: usize,
     file_path: []const u8,
+    telemetry: ?*crash_handler.CrashTelemetry,
 
     pub fn init(allocator: Allocator, tokens: []const Token) Parser {
         var arena = std.heap.ArenaAllocator.init(allocator);
@@ -58,6 +62,7 @@ pub const Parser = struct {
             .in_loop = false,
             .scope_depth = 0,
             .file_path = "unknown",
+            .telemetry = null,
         };
     }
 
@@ -78,27 +83,73 @@ pub const Parser = struct {
             .in_loop = false,
             .scope_depth = 0,
             .file_path = file_path,
+            .telemetry = null,
+        };
+    }
+    
+    pub fn initWithTelemetry(allocator: Allocator, tokens: []const Token, file_path: []const u8, telemetry: *crash_handler.CrashTelemetry) Parser {
+        var arena = std.heap.ArenaAllocator.init(allocator);
+        return Parser{
+            .tokens = tokens,
+            .current = 0,
+            .allocator = allocator,
+            .arena = arena,
+            .arena_allocator = arena.allocator(),
+            .had_error = false,
+            .in_function = false,
+            .in_loop = false,
+            .scope_depth = 0,
+            .file_path = file_path,
+            .telemetry = telemetry,
         };
     }
 
     // Safe type conversion helpers to replace unsafe @ptrCast
-    fn statementToAnyopaque(_: *Parser, stmt_ptr: *Statement) *anyopaque {
+    fn statementToAnyopaque(self: *Parser, stmt_ptr: *Statement) !*anyopaque {
         // Runtime type validation - ensure the pointer is properly aligned
         const alignment = @alignOf(Statement);
         const addr = @intFromPtr(stmt_ptr);
         if (addr % alignment != 0) {
-            std.debug.panic("Statement pointer is not properly aligned\n", .{});
+            if (self.telemetry) |telemetry| {
+                var context = crash_handler.CrashContext.init(
+                    self.allocator,
+                    .Fatal,
+                    "Statement pointer is not properly aligned",
+                    @src().file,
+                    @src().line,
+                    0,
+                    @src().fn_name
+                ) catch return error.AlignmentError;
+                defer context.deinit(self.allocator);
+                
+                telemetry.recordCrash(context) catch {};
+            }
+            return error.AlignmentError;
         }
         
         return @ptrCast(stmt_ptr);
     }
     
-    fn expressionToAnyopaque(_: *Parser, expr_ptr: *Expression) *anyopaque {
+    fn expressionToAnyopaque(self: *Parser, expr_ptr: *Expression) !*anyopaque {
         // Runtime type validation - ensure the pointer is properly aligned
         const alignment = @alignOf(Expression);
         const addr = @intFromPtr(expr_ptr);
         if (addr % alignment != 0) {
-            std.debug.panic("Expression pointer is not properly aligned\n", .{});
+            if (self.telemetry) |telemetry| {
+                var context = crash_handler.CrashContext.init(
+                    self.allocator,
+                    .Fatal,
+                    "Expression pointer is not properly aligned",
+                    @src().file,
+                    @src().line,
+                    0,
+                    @src().fn_name
+                ) catch return error.AlignmentError;
+                defer context.deinit(self.allocator);
+                
+                telemetry.recordCrash(context) catch {};
+            }
+            return error.AlignmentError;
         }
         
         return @ptrCast(expr_ptr);
@@ -156,7 +207,7 @@ pub const Parser = struct {
             const stmt_ptr = try self.allocator.create(Statement);
             errdefer self.allocator.destroy(stmt_ptr);
             stmt_ptr.* = stmt;
-            try program.statements.append(self.statementToAnyopaque(stmt_ptr));
+            try program.statements.append(try self.statementToAnyopaque(stmt_ptr));
         }
 
         return program;
@@ -187,9 +238,21 @@ pub const Parser = struct {
 
     // Enhanced error reporting
     fn reportError(self: *Parser, message: []const u8) ParserError {
+        // Validate message before printing
+        if (message.len == 0 or message.len > 1024) {
+            std.debug.print("Error: Invalid error message (length: {})\n", .{message.len});
+            self.had_error = true;
+            return ParserError.SyntaxError;
+        }
+        
         const location = self.getCurrentSourceLocation();
         if (location) |loc| {
-            std.debug.print("Error at {}:{}:{} - {s}\n", .{ loc.file, loc.line, loc.column, message });
+            // Bounds check for safe formatting
+            if (loc.line < 65536 and loc.column < 65536) {
+                std.debug.print("Error at {}:{}:{} - {s}\n", .{ loc.file, loc.line, loc.column, message });
+            } else {
+                std.debug.print("Error in {s} - {s}\n", .{ loc.file, message });
+            }
         } else {
             std.debug.print("Error: {s}\n", .{message});
         }
@@ -350,7 +413,7 @@ pub const Parser = struct {
             const expr_ptr = try self.allocator.create(Expression);
             errdefer self.allocator.destroy(expr_ptr);
             expr_ptr.* = match_expr;
-            return Statement{ .Expression = self.expressionToAnyopaque(expr_ptr) };
+            return Statement{ .Expression = try self.expressionToAnyopaque(expr_ptr) };
         }
 
         // Vibe check (switch)
@@ -392,7 +455,7 @@ pub const Parser = struct {
         const expr_ptr = try self.allocator.create(Expression);
         errdefer self.allocator.destroy(expr_ptr);
         expr_ptr.* = expr;
-        return Statement{ .Expression = self.expressionToAnyopaque(expr_ptr) };
+        return Statement{ .Expression = try self.expressionToAnyopaque(expr_ptr) };
     }
 
     fn parseFunctionStatement(self: *Parser) ParserError!FunctionStatement {
@@ -540,15 +603,38 @@ pub const Parser = struct {
             const default_ptr = try self.allocator.create(Expression); 
             errdefer self.allocator.destroy(default_ptr);
             default_ptr.* = default_expr; 
-            param.default_value = self.expressionToAnyopaque(default_ptr);
+            param.default_value = try self.expressionToAnyopaque(default_ptr);
         }
         
         return param;
     }
 
     fn parseType(self: *Parser) ParserError!ast.Type {
-        // Check for basic types first (drip, tea, lit, etc.)
-        if (self.checkType()) {
+        // Check for array types first []element_type or [size]element_type
+        if (self.match(.LeftBracket)) {
+            // Check for size or empty for slice
+            var size: ?usize = null;
+            if (!self.check(.RightBracket)) {
+                if (self.check(.Number) or self.check(.Integer)) {
+                    const size_token = self.advance();
+                    size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch null;
+                }
+            }
+            
+        _ = try self.consume(.RightBracket, "Expected ']'");
+            
+            const element_type_ptr = try self.allocator.create(ast.Type);
+            errdefer self.allocator.destroy(element_type_ptr);
+            element_type_ptr.* = try self.parseType();
+            
+            return ast.Type{ .Array = ast.ArrayType{
+                .element_type = element_type_ptr,
+                .size = size,
+            }};
+        }
+        
+        // Check for basic types (drip, tea, lit, etc.)
+        if (self.checkBasicType()) {
             const base_type = try self.parseBasicType();
             
             // Check for array suffix []
@@ -577,8 +663,8 @@ pub const Parser = struct {
             return base_type;
         }
 
-        // Array/slice types []element_type or [size]element_type
-        if (self.match(.LeftBracket)) {
+        // This block becomes redundant since we moved it to the top
+        if (false and self.match(.LeftBracket)) {
             // Check for size or empty for slice
             var size: ?usize = null;
             if (!self.check(.RightBracket)) {
@@ -1016,7 +1102,7 @@ pub const Parser = struct {
             const stmt_ptr = try self.allocator.create(Statement);
             errdefer self.allocator.destroy(stmt_ptr);
             stmt_ptr.* = stmt;
-            try try_body.append(self.statementToAnyopaque(stmt_ptr));
+            try try_body.append(try self.statementToAnyopaque(stmt_ptr));
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after try body");
@@ -1042,7 +1128,7 @@ pub const Parser = struct {
                 const stmt_ptr = try self.allocator.create(Statement);
                 errdefer self.allocator.destroy(stmt_ptr);
                 stmt_ptr.* = stmt;
-                try catch_body.append(self.statementToAnyopaque(stmt_ptr));
+                try catch_body.append(try self.statementToAnyopaque(stmt_ptr));
             }
             
         _ = try self.consume(.RightBrace, "Expected '}' after sus catch body");
@@ -1066,7 +1152,7 @@ pub const Parser = struct {
                 const stmt_ptr = try self.allocator.create(Statement);
                 errdefer self.allocator.destroy(stmt_ptr);
                 stmt_ptr.* = stmt;
-                try finally_body.append(self.statementToAnyopaque(stmt_ptr));
+                try finally_body.append(try self.statementToAnyopaque(stmt_ptr));
             }
             
         _ = try self.consume(.RightBrace, "Expected '}' after finally body");
@@ -1499,7 +1585,7 @@ pub const Parser = struct {
             if (guard) |g| {
                 const g_ptr = try self.allocator.create(Expression);
                 g_ptr.* = g;
-                guard_ptr = self.expressionToAnyopaque(g_ptr);
+                guard_ptr = try self.expressionToAnyopaque(g_ptr);
             }
             
             const result_ptr = try self.allocator.create(Expression);
@@ -1508,7 +1594,7 @@ pub const Parser = struct {
             try cases.append(ast.MatchCase{
                 .pattern = pattern,
                 .guard = guard_ptr,
-                .result = self.expressionToAnyopaque(result_ptr),
+                .result = try self.expressionToAnyopaque(result_ptr),
             });
             
             _ = self.match(.Comma);
@@ -1638,7 +1724,7 @@ pub const Parser = struct {
             const value_ptr = try self.allocator.create(Expression);
             errdefer self.allocator.destroy(value_ptr);
             value_ptr.* = value_expr;
-            return_stmt.value = self.expressionToAnyopaque(value_ptr);
+            return_stmt.value = try self.expressionToAnyopaque(value_ptr);
         }
         
         return Statement{ .Return = return_stmt };
@@ -1666,7 +1752,7 @@ pub const Parser = struct {
             const stmt_ptr = try self.allocator.create(Statement); 
             errdefer self.allocator.destroy(stmt_ptr);
             stmt_ptr.* = stmt; 
-            try then_branch.append(self.statementToAnyopaque(stmt_ptr));
+            try then_branch.append(try self.statementToAnyopaque(stmt_ptr));
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -1684,7 +1770,7 @@ pub const Parser = struct {
                 const if_stmt_ptr = try self.allocator.create(Statement);
                 errdefer self.allocator.destroy(if_stmt_ptr);
                 if_stmt_ptr.* = if_stmt;
-                try else_stmts.append(self.statementToAnyopaque(if_stmt_ptr));
+                try else_stmts.append(try self.statementToAnyopaque(if_stmt_ptr));
             } else {
                 // else block
         _ = try self.consume(.LeftBrace, "Expected '{'");
@@ -1696,7 +1782,7 @@ pub const Parser = struct {
                     const stmt_ptr = try self.allocator.create(Statement); 
                     errdefer self.allocator.destroy(stmt_ptr);
                     stmt_ptr.* = stmt; 
-                    try else_stmts.append(self.statementToAnyopaque(stmt_ptr));
+                    try else_stmts.append(try self.statementToAnyopaque(stmt_ptr));
                 }
                 
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -1710,7 +1796,7 @@ pub const Parser = struct {
         condition_ptr.* = condition;
         
         return ast.IfStatement{
-            .condition = self.expressionToAnyopaque(condition_ptr),
+            .condition = try self.expressionToAnyopaque(condition_ptr),
             .then_branch = then_branch,
             .else_branch = else_branch,
         };
@@ -2293,7 +2379,7 @@ pub const Parser = struct {
             const stmt = try self.parseStatement();
             const stmt_ptr = try self.allocator.create(Statement); 
             stmt_ptr.* = stmt; 
-            try body.append(self.statementToAnyopaque(stmt_ptr));
+            try body.append(try self.statementToAnyopaque(stmt_ptr));
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -2318,7 +2404,7 @@ pub const Parser = struct {
                 const stmt = try self.parseStatement();
                 const stmt_ptr = try self.allocator.create(Statement); 
                 stmt_ptr.* = stmt; 
-                try body.append(self.statementToAnyopaque(stmt_ptr));
+                try body.append(try self.statementToAnyopaque(stmt_ptr));
             }
             
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -2451,7 +2537,7 @@ pub const Parser = struct {
                     const stmt = try self.parseStatement();
                     const stmt_ptr = try self.allocator.create(Statement); 
                     stmt_ptr.* = stmt; 
-                    try case_body.append(self.statementToAnyopaque(stmt_ptr));
+                    try case_body.append(try self.statementToAnyopaque(stmt_ptr));
                 }
                 
                 try cases.append(ast.SelectCase{
@@ -2751,7 +2837,7 @@ pub const Parser = struct {
             }};
         } else {
             // If no assignment operator found, this is an expression statement
-            return Statement{ .Expression = self.expressionToAnyopaque(target_ptr) };
+            return Statement{ .Expression = try self.expressionToAnyopaque(target_ptr) };
         }
     }
 
@@ -2812,6 +2898,14 @@ pub const Parser = struct {
                self.check(.Lit) or self.check(.Cap) or self.check(.Identifier) or
                self.check(.LeftBracket) or self.check(.Dm) or 
                self.checkIdentifier("map") or self.check(.LeftParen);
+    }
+
+    fn checkBasicType(self: *Parser) bool {
+        return self.check(.Normie) or self.check(.Drip) or self.check(.Tea) or self.check(.Txt) or
+               self.check(.Sip) or self.check(.Smol) or self.check(.Mid) or
+               self.check(.Thicc) or self.check(.Snack) or self.check(.Meal) or
+               self.check(.Byte) or self.check(.Rune) or self.check(.Extra) or
+               self.check(.Lit) or self.check(.Cap) or self.check(.Identifier);
     }
 
     fn advance(self: *Parser) Token {
@@ -3483,7 +3577,7 @@ pub const Parser = struct {
                     
                     try interpolation.parts.append(ast.InterpolationPart{
                         .text = "",
-                        .expression = self.expressionToAnyopaque(expr_ptr),
+                        .expression = try self.expressionToAnyopaque(expr_ptr),
                         .format_spec = null,
                     });
                     

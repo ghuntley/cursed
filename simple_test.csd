@@ -1,1 +1,1 @@
-sus x drip = 42; vibez.spill(x)
+vibez.spill("Hello")

@@ -15,6 +15,7 @@ const ParseError = error{
 const lexer = @import("lexer.zig");
 const module_loader = @import("module_loader.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
+const simple_module_extractor = @import("simple_module_extractor.zig");
 const llvm_backend_minimal = @import("llvm_backend_minimal.zig");
 
 // Simple variable storage
@@ -85,6 +86,26 @@ const Variable = union(enum) {
 
 const VariableStore = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
 const FunctionStore = HashMap([]const u8, FunctionDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
+
+// Safe module function loading without full AST parsing
+fn loadModuleFunctionsSafely(allocator: Allocator, module_name: []const u8) !ArrayList(simple_module_extractor.SimpleFunctionInfo) {
+    // Build stdlib path
+    const project_root = std.fs.cwd().realpathAlloc(allocator, ".") catch return error.ProjectRootNotFound;
+    defer allocator.free(project_root);
+    
+    const module_path = try std.fmt.allocPrint(allocator, "{s}/stdlib/{s}/mod.csd", .{ project_root, module_name });
+    defer allocator.free(module_path);
+    
+    // Read module source safely
+    const file = std.fs.cwd().openFile(module_path, .{}) catch return error.ModuleNotFound;
+    defer file.close();
+    
+    const source = try file.readToEndAlloc(allocator, 1024 * 1024); // 1MB max
+    defer allocator.free(source);
+    
+    // Extract function names safely without full parsing
+    return simple_module_extractor.extractFunctionNames(allocator, source);
+}
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -394,10 +415,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
     // Create simple function store for imported functions
     var loaded_functions = HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
     defer {
-        var iter = loaded_functions.iterator();
-        while (iter.next()) |entry| {
-            allocator.free(entry.key_ptr.*);
-        }
+        // Note: Keys are now managed by the SimpleFunctionInfo, so we don't free them here
         loaded_functions.deinit();
     }
     
@@ -417,23 +435,34 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
         imports.deinit();
     }
     
-    // Load functions from imported modules
+    // Load functions from imported modules using safe extraction
     if (imports.items.len > 0) {
         print("📦 Loading {} modules...\n", .{imports.items.len});
         
         for (imports.items) |module_name| {
-            if (try loader.loadModule(module_name)) |module_functions| {
-                print("✅ Loaded module: {s} with {} functions\n", .{ module_name, module_functions.len });
-                
-                // Add functions to the function store
-                for (module_functions) |func| {
-                    const func_key = try allocator.dupe(u8, func.name);
-                    const func_info = FunctionInfo{ .name = func_key, .available = true };
-                    try loaded_functions.put(func_key, func_info);
-                    print("  📋 Available function: {s}\n", .{func.name});
+            // Use safe module function extraction instead of full AST parsing
+            const module_functions = loadModuleFunctionsSafely(allocator, module_name) catch |err| {
+                print("❌ Failed to load module '{s}': {}\n", .{ module_name, err });
+                continue;
+            };
+            defer {
+                for (module_functions.items) |*func| {
+                    func.deinit(allocator);
                 }
-            } else {
-                print("❌ Failed to load module: {s}\n", .{module_name});
+                module_functions.deinit();
+            }
+            
+            print("✅ Loaded module: {s} with {} functions\n", .{ module_name, module_functions.items.len });
+            
+            // Add functions to the function store with safe string handling
+            for (module_functions.items) |func| {
+                // func.name was already copied in the module loader, so we can use it directly
+                const func_info = FunctionInfo{ .name = func.name, .available = true };
+                loaded_functions.put(func.name, func_info) catch |err| {
+                    print("  ❌ Failed to store function '{s}': {}\n", .{func.name, err});
+                    continue;
+                };
+                print("  📋 Available function: {s}\n", .{func.name});
             }
         }
     }
@@ -489,8 +518,82 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
                                          std.mem.startsWith(u8, condition_str, "!");
                     
                     if (has_operators) {
-                        // This is a boolean condition - use enhanced if statement handler
-                        try handleEnhancedIfStatement(&variables, &functions, allocator, trimmed);
+                        // This is a boolean condition - collect the complete multi-line if statement
+                        var complete_if_statement = std.ArrayList(u8).init(allocator);
+                        defer complete_if_statement.deinit();
+                        
+                        try complete_if_statement.appendSlice(trimmed);
+                        
+                        // Check if we need to collect more lines
+                        var brace_count: i32 = 0;
+                        var found_opening_brace = false;
+                        var found_otherwise = false;
+                        
+                        // Count braces in current line
+                        for (trimmed) |c| {
+                            if (c == '{') {
+                                brace_count += 1;
+                                found_opening_brace = true;
+                            } else if (c == '}') {
+                                brace_count -= 1;
+                            }
+                        }
+                        
+                        // If we haven't found opening brace or braces aren't balanced, keep collecting
+                        while (!found_opening_brace or brace_count > 0 or !found_otherwise) {
+                            if (lines.next()) |next_line| {
+                            line_number += 1;
+                            const next_trimmed = std.mem.trim(u8, next_line, " \t\r\n");
+                            
+                            if (next_trimmed.len == 0) {
+                                try complete_if_statement.appendSlice(" ");
+                                continue;
+                            }
+                            
+                            try complete_if_statement.appendSlice(" ");
+                            try complete_if_statement.appendSlice(next_trimmed);
+                            
+                            // Count braces
+                            for (next_trimmed) |c| {
+                                if (c == '{') {
+                                    brace_count += 1;
+                                    found_opening_brace = true;
+                                } else if (c == '}') {
+                                    brace_count -= 1;
+                                }
+                            }
+                            
+                            // Check for otherwise clause
+                            if (std.mem.indexOf(u8, next_trimmed, "otherwise") != null) {
+                                found_otherwise = true;
+                            }
+                            
+                            // If braces are balanced and we've seen otherwise (or no otherwise), we're done
+                            if (found_opening_brace and brace_count == 0) {
+                                // Check if there's still an otherwise clause coming
+                                if (!found_otherwise) {
+                                    // Peek at next line to see if it's otherwise
+                                    const saved_pos = lines.index;
+                                    if (lines.next()) |peek_line| {
+                                        const peek_trimmed = std.mem.trim(u8, peek_line, " \t\r\n");
+                                        if (std.mem.startsWith(u8, peek_trimmed, "otherwise")) {
+                                            continue; // Keep collecting
+                                        } else {
+                                            // Reset and break
+                                            lines.index = saved_pos;
+                                            line_number -= 1;
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            } else {
+                                break; // No more lines
+                            }
+                        }
+                        
+                        try handleEnhancedIfStatement(&variables, &functions, allocator, complete_if_statement.items);
                         continue;
                     } else if (std.mem.endsWith(u8, trimmed, ") {")) {
                         // This is simple pattern matching - continue with original logic
@@ -1938,8 +2041,26 @@ fn handleEnhancedIfStatement(
     const remaining_after_if = std.mem.trim(u8, trimmed[if_body_end.? + 1..], " \t");
     if (std.mem.startsWith(u8, remaining_after_if, "otherwise")) {
         const else_part = std.mem.trim(u8, remaining_after_if[9..], " \t"); // Skip "otherwise"
-        if (std.mem.startsWith(u8, else_part, "{") and std.mem.endsWith(u8, else_part, "}")) {
-            else_body_text = std.mem.trim(u8, else_part[1..else_part.len - 1], " \t");
+        if (std.mem.startsWith(u8, else_part, "{")) {
+            // Find the matching closing brace for the else clause
+            var else_brace_count: i32 = 0;
+            var else_body_end: ?usize = null;
+            
+            for (else_part, 0..) |char, idx| {
+                if (char == '{') {
+                    else_brace_count += 1;
+                } else if (char == '}') {
+                    else_brace_count -= 1;
+                    if (else_brace_count == 0) {
+                        else_body_end = idx;
+                        break;
+                    }
+                }
+            }
+            
+            if (else_body_end) |end_idx| {
+                else_body_text = std.mem.trim(u8, else_part[1..end_idx], " \t");
+            }
         }
     }
     
