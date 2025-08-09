@@ -686,6 +686,13 @@ pub fn main() !void {
     }
 
     if (compile_mode) {
+        // Check if LLVM backend is available for this target at runtime
+        if (@import("std").process.hasEnvVarConstant("CURSED_DISABLE_LLVM")) {
+            print("❌ LLVM backend not available for this target - compilation mode disabled\n", .{});
+            print("💡 Use interpretation mode instead: {s} {s}\n", .{ std.os.argv[0], filename.? });
+            std.process.exit(1);
+        }
+        
         // Enhanced compilation mode implementation - default to LLVM backend
         const enhanced_compiler = @import("enhanced_compiler.zig");
         const config = enhanced_compiler.CompilerConfig{
@@ -2556,6 +2563,42 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
         if (verbose) print("✅ Resolved variable {s} to: {s}\n", .{ trimmed_content, var_str });
     } else {
         if (verbose) print("🔍 '{s}' not found as variable, trying as expression\n", .{trimmed_content});
+        
+        // Check if it's a function call first (before trying full expression evaluation)
+        if (std.mem.indexOf(u8, trimmed_content, "(") != null and std.mem.indexOf(u8, trimmed_content, ")") != null) {
+            if (verbose) print("🔍 Detected potential function call: '{s}'\n", .{trimmed_content});
+            
+            // Try evaluating as expression first (this handles built-in functions like len())
+            if (evaluateExpression(variables, functions, allocator, trimmed_content, verbose)) |result| {
+                const result_str = try result.toString(allocator);
+                defer allocator.free(result_str);
+                print("{s}", .{result_str});
+                if (add_newline) print("\n", .{});
+                if (verbose) print("✅ Expression '{s}' evaluated to: {s}\n", .{ trimmed_content, result_str });
+                // Free the result
+                var tmp = result;
+                tmp.deinit(allocator);
+                return;
+            } else |_| {
+                // If expression evaluation fails, try function call directly
+                if (handleFunctionCall(functions, variables, allocator, trimmed_content, verbose)) |func_result| {
+                    if (func_result) |result| {
+                        const result_str = try result.toString(allocator);
+                        defer allocator.free(result_str);
+                        print("{s}", .{result_str});
+                        if (add_newline) print("\n", .{});
+                        if (verbose) print("✅ Function call '{s}' returned: {s}\n", .{ trimmed_content, result_str });
+                        // Free the result
+                        var tmp = result;
+                        tmp.deinit(allocator);
+                        return;
+                    }
+                } else |err| {
+                    if (verbose) print("❌ Function call failed: {any}\n", .{err});
+                }
+            }
+        }
+        
         // Try to evaluate as expression
         if (verbose) print("🧮 Attempting to evaluate '{s}' as expression...\n", .{trimmed_content});
         if (evaluateExpression(variables, functions, allocator, trimmed_content, verbose)) |result| {
@@ -3388,6 +3431,22 @@ fn evaluateStdlibArgument(variables: *VariableStore, allocator: Allocator, arg_s
             const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
             const args_part = std.mem.trim(u8, trimmed[paren_pos + 1..end_paren], " \t");
             
+            // Handle len() function for arrays and strings
+            if (std.mem.eql(u8, func_name, "len") or std.mem.eql(u8, func_name, "length")) {
+                if (args_part.len > 0) {
+                    const arg_value = try evaluateStdlibArgument(variables, allocator, args_part, verbose);
+                    switch (arg_value) {
+                        .String => |str| {
+                            return Variable{ .Integer = @intCast(str.data.len) };
+                        },
+                        .Array => |arr| {
+                            return Variable{ .Integer = @intCast(arr.items.len) };
+                        },
+                        else => if (verbose) print("❌ len() expects string or array argument\n", .{}),
+                    }
+                }
+            }
+            
             // Try to handle common stdlib functions recursively
             if (std.mem.eql(u8, func_name, "abs_normie")) {
                 if (args_part.len > 0) {
@@ -3405,7 +3464,7 @@ fn evaluateStdlibArgument(variables: *VariableStore, allocator: Allocator, arg_s
     
     // Check if it's a variable reference
     if (variables.get(trimmed)) |var_value| {
-        return var_value;
+        return try var_value.clone(allocator);
     }
     
     // Try to parse as literal values
@@ -3776,8 +3835,12 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
 
 fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allocator: Allocator, call_line: []const u8, verbose: bool) !?Variable {
     // Parse function call: funcname(arg1, arg2, ...) or generic_func<T>(arg1, arg2, ...)
+    if (verbose) print("🔍 DEBUG: handleFunctionCall called with: '{s}'\n", .{call_line});
+    
     const paren_pos = std.mem.indexOf(u8, call_line, "(") orelse return null;
     var func_name = std.mem.trim(u8, call_line[0..paren_pos], " \t");
+    
+    if (verbose) print("🔍 DEBUG: Function name extracted: '{s}'\n", .{func_name});
     
     // Check for generic function call syntax: func_name<T>
     var is_generic_call = false;
@@ -3804,6 +3867,18 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
     
     // Look up function definition (use generic base name for generics)
     const lookup_name = if (is_generic_call) generic_base_name else func_name;
+    
+    if (verbose) print("🔍 DEBUG: Looking up function: '{s}'\n", .{lookup_name});
+        
+        // Debug: List all functions in the store
+        if (verbose) {
+            print("🔍 DEBUG: Functions in store:\n", .{});
+            var iter = functions.iterator();
+            while (iter.next()) |entry| {
+                print("  - {s}\n", .{entry.key_ptr.*});
+            }
+        }
+    
     const func_def = functions.get(lookup_name) orelse {
         if (verbose) print("❌ Function '{s}' not found in function store\n", .{lookup_name});
         return null;
@@ -3820,6 +3895,8 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
     // Parse arguments
     if (std.mem.lastIndexOf(u8, call_line, ")")) |end_paren| {
         const args_str = std.mem.trim(u8, call_line[paren_pos + 1..end_paren], " \t");
+        
+        if (verbose) print("🔍 DEBUG: Arguments string: '{s}'\n", .{args_str});
         
         return try executeFunctionWithScope(func_def, functions, variables, allocator, args_str, is_generic_call, type_args.items, verbose);
     }
@@ -3869,6 +3946,8 @@ fn executeFunctionWithScope(
     
     // Bind arguments to parameters
     if (args_str.len > 0) {
+        if (verbose) print("  🔍 Parsing function arguments: '{s}'\n", .{args_str});
+        
         var arg_iter = std.mem.splitScalar(u8, args_str, ',');
         var param_index: usize = 0;
         
@@ -3878,9 +3957,13 @@ fn executeFunctionWithScope(
             const trimmed_arg = std.mem.trim(u8, arg_str, " \t");
             const param = func_def.parameters.items[param_index];
             
+            if (verbose) print("  🔍 Processing argument {d}: '{s}' for parameter '{s}'\n", .{ param_index, trimmed_arg, param.name });
+            
             // Evaluate argument and bind to parameter - use main allocator for recursive calls
             const arg_value = try evaluateArgument(&local_variables, functions, allocator, trimmed_arg, verbose);
             const param_name = try arena_allocator.dupe(u8, param.name);
+            
+            if (verbose) print("  📊 Argument '{s}' evaluated to: {any}\n", .{ trimmed_arg, arg_value });
             
             // Clone the argument value to the arena allocator to prevent lifetime issues
             const cloned_arg_value = try arg_value.clone(arena_allocator);
@@ -3902,6 +3985,8 @@ fn executeFunctionWithScope(
             if (verbose) print("  📝 Bound {s} = {any}\n", .{ param.name, cloned_arg_value });
             param_index += 1;
         }
+        
+        if (verbose) print("  📊 Successfully bound {d} arguments to parameters\n", .{param_index});
     }
     
     // Execute function body with return value handling
@@ -4709,14 +4794,13 @@ fn executePatternMatching(
     if (verbose) print("⚠️ No patterns matched, no action executed\n", .{});
 }
 
-/// Check if a value matches a pattern
+/// Check if a value matches a pattern, with support for when guards
 fn matchesPattern(
     value: Variable,
     pattern: []const u8,
     allocator: Allocator,
     verbose: bool
 ) !bool {
-    _ = allocator; // Suppress unused parameter warning
     if (verbose) print("🔍 Matching pattern '{s}' against value\n", .{pattern});
     
     // Handle wildcard pattern
@@ -4725,9 +4809,68 @@ fn matchesPattern(
         return true;
     }
     
+    // Handle when guard patterns: "variable when condition"
+    if (std.mem.indexOf(u8, pattern, " when ")) |when_pos| {
+        const var_name = std.mem.trim(u8, pattern[0..when_pos], " \t");
+        const condition_expr = std.mem.trim(u8, pattern[when_pos + 6..], " \t");
+        
+        if (verbose) print("🛡️ When guard pattern: variable='{s}', condition='{s}'\n", .{ var_name, condition_expr });
+        
+        // Create a temporary variable store for the guard scope
+        var guard_variables = VariableStore.init(allocator);
+        defer guard_variables.deinit();
+        
+        // Create an empty function store for the guard scope
+        var guard_functions = FunctionStore.init(allocator);
+        defer guard_functions.deinit();
+        
+        // Bind the matched value to the variable name
+        try guard_variables.put(var_name, try value.clone(allocator));
+        
+        // Evaluate the condition in the guard scope
+        const condition_result = evaluateExpression(&guard_variables, &guard_functions, allocator, condition_expr, verbose) catch |err| {
+            if (verbose) print("❌ Error evaluating when guard condition: {}\n", .{err});
+            return false;
+        };
+        defer { var cond = condition_result; cond.deinit(allocator); }
+        
+        // Check if condition evaluates to true
+        const matches = switch (condition_result) {
+            .Boolean => |bool_val| bool_val,
+            .Integer => |int_val| int_val != 0,
+            else => blk: {
+                if (verbose) print("❌ When guard condition must evaluate to boolean or integer, got: {any}\n", .{condition_result});
+                break :blk false;
+            }
+        };
+        
+        if (verbose) print("🛡️ When guard condition result: {}\n", .{matches});
+        return matches;
+    }
+    
     // Handle literal patterns (numbers, strings, booleans)
     switch (value) {
         .Integer => |int_val| {
+            // Check for range pattern first (start..end)
+            if (std.mem.indexOf(u8, pattern, "..")) |dot_pos| {
+                const start_str = std.mem.trim(u8, pattern[0..dot_pos], " \t");
+                const end_str = std.mem.trim(u8, pattern[dot_pos + 2..], " \t");
+                
+                if (std.fmt.parseInt(i64, start_str, 10)) |start_val| {
+                    if (std.fmt.parseInt(i64, end_str, 10)) |end_val| {
+                        const matches = int_val >= start_val and int_val <= end_val;
+                        if (verbose) print("📏 Range pattern: {} <= {} <= {} -> {}\n", .{ start_val, int_val, end_val, matches });
+                        return matches;
+                    } else |_| {
+                        if (verbose) print("❌ Could not parse range end '{s}' as integer\n", .{end_str});
+                        return false;
+                    }
+                } else |_| {
+                    if (verbose) print("❌ Could not parse range start '{s}' as integer\n", .{start_str});
+                    return false;
+                }
+            }
+            
             // Try to parse pattern as integer
             if (std.fmt.parseInt(i64, pattern, 10)) |pattern_int| {
                 const matches = int_val == pattern_int;
@@ -4739,6 +4882,26 @@ fn matchesPattern(
             }
         },
         .Float => |float_val| {
+            // Check for range pattern first (start..end)
+            if (std.mem.indexOf(u8, pattern, "..")) |dot_pos| {
+                const start_str = std.mem.trim(u8, pattern[0..dot_pos], " \t");
+                const end_str = std.mem.trim(u8, pattern[dot_pos + 2..], " \t");
+                
+                if (std.fmt.parseFloat(f64, start_str)) |start_val| {
+                    if (std.fmt.parseFloat(f64, end_str)) |end_val| {
+                        const matches = float_val >= start_val and float_val <= end_val;
+                        if (verbose) print("📏 Float range pattern: {d} <= {d} <= {d} -> {}\n", .{ start_val, float_val, end_val, matches });
+                        return matches;
+                    } else |_| {
+                        if (verbose) print("❌ Could not parse range end '{s}' as float\n", .{end_str});
+                        return false;
+                    }
+                } else |_| {
+                    if (verbose) print("❌ Could not parse range start '{s}' as float\n", .{start_str});
+                    return false;
+                }
+            }
+            
             // Try to parse pattern as float
             if (std.fmt.parseFloat(f64, pattern)) |pattern_float| {
                 const matches = float_val == pattern_float;

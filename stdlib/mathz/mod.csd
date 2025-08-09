@@ -1,11 +1,19 @@
-fr fr CURSED Math Operations Module - Simple Working Version
+fr fr CURSED Math Operations Module - Ultra Simple
+
+slay abs_normie(x drip) drip {
+    ready (x < 0) {
+        damn -x
+    }
+    damn x
+}
 
 slay add_two(a drip, b drip) drip {
     damn a + b
 }
 
-slay double_number(x drip) drip {
-    damn x * 2
+slay max_normie(a drip, b drip) drip {
+    ready (a > b) {
+        damn a
+    }
+    damn b
 }
-
-sus math_pi meal = 3.14159

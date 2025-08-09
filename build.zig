@@ -106,22 +106,81 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
         return;
     }
     
-    // Add LLVM system library and correct library path
-    exe.linkSystemLibrary("LLVM-18");
-    exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/llvm-18/lib" });
+    // Try to find LLVM installation - check common paths
+    const llvm_paths = [_][]const u8{
+        "/usr/lib/llvm-18/lib",
+        "/usr/local/lib/llvm-18/lib", 
+        "/opt/homebrew/lib/llvm-18/lib",
+        "/usr/lib/llvm/lib",
+        "/usr/local/lib/llvm/lib",
+    };
     
-    // Add LLVM include directories - fix the include path
-    exe.addSystemIncludePath(.{ .cwd_relative = "/usr/include/llvm-18" });
-    exe.addSystemIncludePath(.{ .cwd_relative = "/usr/include/llvm-c-18" });
+    const llvm_include_paths = [_][]const u8{
+        "/usr/include/llvm-18",
+        "/usr/local/include/llvm-18",
+        "/opt/homebrew/include/llvm-18", 
+        "/usr/include/llvm",
+        "/usr/local/include/llvm",
+    };
     
-    // Add the pre-compiled LLVM wrapper object file to avoid Zig C compilation issues
-    exe.addObjectFile(b.path("llvm_wrapper.o"));
+    const llvm_c_include_paths = [_][]const u8{
+        "/usr/include/llvm-c-18",
+        "/usr/local/include/llvm-c-18",
+        "/opt/homebrew/include/llvm-c-18",
+        "/usr/include/llvm-c",
+        "/usr/local/include/llvm-c",
+    };
+    
+    // Add LLVM library paths - try multiple common locations
+    for (llvm_paths) |path| {
+        exe.addLibraryPath(.{ .cwd_relative = path });
+    }
+    
+    // Add LLVM include directories
+    for (llvm_include_paths) |path| {
+        exe.addSystemIncludePath(.{ .cwd_relative = path });
+    }
+    for (llvm_c_include_paths) |path| {
+        exe.addSystemIncludePath(.{ .cwd_relative = path });
+    }
+    
+    // Link the correct LLVM library (found in /usr/lib/llvm-18/lib/)
+    exe.linkSystemLibrary("LLVM");
+    
+    // Compile LLVM wrapper for this specific target instead of using pre-compiled object
+    exe.addCSourceFile(.{
+        .file = b.path("src-zig/llvm_wrapper.c"),
+        .flags = &[_][]const u8{
+            "-std=c99",
+            "-O2",
+            "-DLLVM_VERSION_MAJOR=18",
+            "-DLLVM_VERSION_MINOR=1",
+        },
+    });
+    
+    // Set target-specific LLVM macros 
+    const target_triple = switch (target.result.os.tag) {
+        .linux => switch (target.result.cpu.arch) {
+            .x86_64 => "x86_64-unknown-linux-gnu",
+            .aarch64 => "aarch64-unknown-linux-gnu",
+            else => "unknown-unknown-linux-gnu",
+        },
+        .macos => switch (target.result.cpu.arch) {
+            .x86_64 => "x86_64-apple-darwin",
+            .aarch64 => "aarch64-apple-darwin",
+            else => "unknown-apple-darwin",
+        },
+        .windows => switch (target.result.cpu.arch) {
+            .x86_64 => "x86_64-pc-windows-gnu",
+            else => "unknown-pc-windows-gnu",
+        },
+        else => "unknown-unknown-unknown",
+    };
     
     // Set LLVM C macro definitions for proper integration
     exe.root_module.addCMacro("LLVM_VERSION_MAJOR", "18");
     exe.root_module.addCMacro("LLVM_VERSION_MINOR", "1");
-    exe.root_module.addCMacro("LLVM_DEFAULT_TARGET_TRIPLE", "\"x86_64-unknown-linux-gnu\"");
-    exe.root_module.addCMacro("LLVM_HOST_TARGET", "\"x86-64\"");
+    exe.root_module.addCMacro("LLVM_DEFAULT_TARGET_TRIPLE", b.fmt("\"{s}\"", .{target_triple}));
     
     // Configure CPU target to avoid athlon-xp conflicts
     const cpu_name = switch (target.result.cpu.arch) {
@@ -130,17 +189,28 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
         else => "generic",
     };
     exe.root_module.addCMacro("LLVM_TARGET_CPU", b.fmt("\"{s}\"", .{cpu_name}));
+    exe.root_module.addCMacro("LLVM_HOST_TARGET", b.fmt("\"{s}\"", .{cpu_name}));
     
-    // Force specific target to avoid unknown CPU errors and athlon-xp detection
-    exe.root_module.addCMacro("__x86_64__", "1");
-    exe.root_module.addCMacro("__i386__", "0");
+    // Target-specific macros
+    switch (target.result.cpu.arch) {
+        .x86_64 => {
+            exe.root_module.addCMacro("__x86_64__", "1");
+            exe.root_module.addCMacro("__i386__", "0");
+        },
+        .aarch64 => {
+            exe.root_module.addCMacro("__aarch64__", "1");
+            exe.root_module.addCMacro("__x86_64__", "0");
+        },
+        else => {},
+    }
+    
     exe.root_module.addCMacro("_GNU_SOURCE", "1");
-    exe.root_module.addCMacro("TARGET_CPU", "\"x86-64\"");
-    exe.root_module.addCMacro("LLVM_HOST_TRIPLE", "\"x86_64-unknown-linux-gnu\"");
+    exe.root_module.addCMacro("TARGET_CPU", b.fmt("\"{s}\"", .{cpu_name}));
+    exe.root_module.addCMacro("LLVM_HOST_TRIPLE", b.fmt("\"{s}\"", .{target_triple}));
     
     // Enable debug information support
     if (b.verbose) {
-        std.debug.print("✅ LLVM-18 integration enabled for target: {s}\n", .{config.description});
+        std.debug.print("✅ LLVM-18 integration enabled for target: {s} (triple: {s})\n", .{config.description, target_triple});
     }
 }
 
@@ -150,7 +220,20 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     
     // Ensure we use the resolved target properly
-    const resolved_target = target;
+    // Fix CPU detection issue - override native CPU if it's detected as athlon_xp
+    const resolved_target = blk: {
+        if (target.result.cpu.arch == .x86_64 and std.mem.eql(u8, target.result.cpu.model.name, "athlon_xp")) {
+            std.debug.print("Detected athlon_xp CPU, overriding to x86-64\n", .{});
+            const target_query = std.Target.Query{
+                .cpu_arch = .x86_64,
+                .os_tag = target.result.os.tag,
+                .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
+            };
+            break :blk b.resolveTargetQuery(target_query);
+        } else {
+            break :blk target;
+        }
+    };
     const config = TargetConfig.forTarget(resolved_target);
     const is_wasm = resolved_target.result.cpu.arch == .wasm32;
     
@@ -185,7 +268,7 @@ pub fn build(b: *std.Build) void {
     if (!is_wasm) {
         exe.linkLibC();
         
-        // Add LLVM support for native targets
+        // Add LLVM support for native targets, disable for cross-compilation due to library incompatibility
         if (config.supports_llvm and !is_cross_compile) {
             addLlvm(b, exe, resolved_target);
             exe.root_module.addCMacro("CURSED_ENABLE_LLVM", "1");
@@ -417,8 +500,8 @@ b.installArtifact(complete_exe);
     // Note: Using direct file imports instead of modules to avoid conflicts
     
     // Create syscall-enabled compiler with real file I/O, networking, and process management
-    // Only build for native target to avoid cross-compilation LLVM issues
-    const syscall_exe = if (!is_cross_compile and config.supports_llvm) blk: {
+    // Build for native targets only due to LLVM library incompatibility
+    const syscall_exe = if (config.supports_llvm and !is_cross_compile) blk: {
         // Override the CPU target to avoid athlon-xp detection issue
         const syscall_target_query = std.Target.Query{
             .cpu_arch = resolved_target.result.cpu.arch,
@@ -656,7 +739,7 @@ b.installArtifact(complete_exe);
             .root_source_file = if (query.cpu_arch == .wasm32) 
                 b.path("src-zig/wasm_pure.zig") 
             else 
-                b.path("src-zig/main_unified.zig"),
+                b.path("src-zig/minimal_main.zig"),  // Use minimal main for cross-compilation (no LLVM)
             .target = cross_target,
             .optimize = optimize,
         });
@@ -665,13 +748,9 @@ b.installArtifact(complete_exe);
         if (query.cpu_arch != .wasm32) {
             cross_exe.linkLibC();
             
-            // Skip LLVM for cross-compilation to avoid library dependency issues
-            // Only add LLVM when compiling for the exact same target as the host
-            if (cross_config.supports_llvm and 
-                query.os_tag == resolved_target.result.os.tag and
-                query.cpu_arch == resolved_target.result.cpu.arch) {
-                addLlvm(b, cross_exe, cross_target);
-            }
+            // Disable LLVM for cross-compilation due to library incompatibility
+            // Cross-compiled binaries will run without LLVM backend
+            cross_exe.root_module.addCMacro("CURSED_DISABLE_LLVM", "1");
         }
         
         // Install cross-compiled artifact

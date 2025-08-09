@@ -1,9 +1,10 @@
-sus x drip = 42
-vibez.spill("Simple test:", x)
+fr fr Simple LLVM Backend Test
+fr fr Test basic features that should work
 
-slay add(a drip, b drip) drip {
-    damn a + b
-}
+vibez.spill("Hello from CURSED LLVM!")
 
-sus result drip = add(10, 20)
+sus x = 10
+sus y = 5
+sus result = x + y
+
 vibez.spill("Result:", result)

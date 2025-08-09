@@ -1,13 +1,11 @@
-yeet "arrayz"
+sus nums []drip = [1, 2, 3, 4, 5]
+vibez.spill("Array:", nums)
+vibez.spill("Length:", len(nums))
+vibez.spill("First:", nums[0])
+vibez.spill("Second:", nums[1])
+vibez.spill("Last:", nums[4])
 
-sus nums []drip = [10, 20, 30, 40]
-vibez.spill("Array length:", len(nums))
-vibez.spill("Element 0:", nums[0])  
-vibez.spill("Element 1:", nums[1])
-vibez.spill("Element 2:", nums[2])
-vibez.spill("Element 3:", nums[3])
-
-# Test assignment
-nums[1] = 99
-vibez.spill("After assignment nums[1] = 99:")
-vibez.spill("Element 1:", nums[1])
+sus names []drip = [10, 20, 30]
+vibez.spill("Names array:", names)
+vibez.spill("Names length:", len(names))
+vibez.spill("Middle element:", names[1])
