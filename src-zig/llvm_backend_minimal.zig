@@ -111,7 +111,13 @@ pub const LLVMBackendMinimal = struct {
         var lines = std.mem.splitScalar(u8, source, '\n');
         var has_functions = false;
         var main_statements = std.ArrayList([]const u8).init(self.allocator);
-        defer main_statements.deinit();
+        defer {
+            // Fix memory leak: Free all duplicated strings before deinit
+            for (main_statements.items) |stmt| {
+                self.allocator.free(stmt);
+            }
+            main_statements.deinit();
+        }
         
         while (lines.next()) |line| {
             const trimmed = std.mem.trim(u8, line, " \t\r\n");
@@ -122,7 +128,7 @@ pub const LLVMBackendMinimal = struct {
                 try self.generateFunctionFromLine(trimmed);
                 has_functions = true;
             } else {
-                // Collect main statements
+                // Collect main statements - fix memory leak by properly managing string lifecycle
                 try main_statements.append(try self.allocator.dupe(u8, trimmed));
             }
         }

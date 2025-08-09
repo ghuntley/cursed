@@ -157,10 +157,25 @@ pub const AdvancedCodeGen = struct {
     }
 
     pub fn deinit(self: *AdvancedCodeGen) void {
+        print("🧹 Starting AdvancedCodeGen cleanup (memory-safe)...\n", .{});
+        
         // Cleanup variable scope system
         const llvm_fixes = @import("llvm_fixes.zig");
         llvm_fixes.deinitializeVariableScope(self.base_codegen.allocator);
         
+        // Critical: Clean up LLVM resources in proper order
+        // 1. Dispose LLVM objects first (order matters!)
+        if (self.base_codegen.builder) |builder| {
+            c.LLVMDisposeBuilder(builder);
+        }
+        if (self.base_codegen.module) |module| {
+            c.LLVMDisposeModule(module);
+        }
+        if (self.base_codegen.context) |context| {
+            c.LLVMContextDispose(context);
+        }
+        
+        // 2. Clean up Zig data structures
         self.base_codegen.deinit();
         self.defer_stack.deinit();
         
@@ -191,6 +206,8 @@ pub const AdvancedCodeGen = struct {
             debug_gen.deinit();
         }
         self.source_locations.deinit();
+        
+        print("✅ AdvancedCodeGen cleanup complete - all LLVM resources disposed\n", .{});
     }
 
     /// Set optimization level

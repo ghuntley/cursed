@@ -3407,6 +3407,57 @@ fn handleStdlibFunction(variables: *VariableStore, allocator: Allocator, call_li
         
         if (verbose) print("🔧 Calling stdlib function: {s} with args: '{s}'\n", .{ func_name, args_str });
         
+        // Handle mathz module functions directly  
+        if (std.mem.eql(u8, func_name, "mathz.abs_normie")) {
+            if (args_str.len > 0) {
+                const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
+                switch (arg_value) {
+                    .Integer => |int| {
+                        return Variable{ .Integer = if (int < 0) -int else int };
+                    },
+                    else => if (verbose) print("❌ mathz.abs_normie expects integer argument\n", .{}),
+                }
+            }
+        }
+        
+        else if (std.mem.eql(u8, func_name, "mathz.max_normie")) {
+            if (args_str.len > 0) {
+                // Parse comma-separated arguments
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                    const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                    
+                    if (arg1_value == .Integer and arg2_value == .Integer) {
+                        const a = arg1_value.Integer;
+                        const b = arg2_value.Integer;
+                        return Variable{ .Integer = if (a > b) a else b };
+                    }
+                }
+            }
+        }
+        
+        else if (std.mem.eql(u8, func_name, "mathz.min_normie")) {
+            if (args_str.len > 0) {
+                // Parse comma-separated arguments
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                    const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                    
+                    if (arg1_value == .Integer and arg2_value == .Integer) {
+                        const a = arg1_value.Integer;
+                        const b = arg2_value.Integer;
+                        return Variable{ .Integer = if (a < b) a else b };
+                    }
+                }
+            }
+        }
+        
         // String functions from stringz module - handle both qualified and unqualified names
         if (std.mem.eql(u8, func_name, "string_length") or std.mem.eql(u8, func_name, "length") or std.mem.eql(u8, func_name, "len_str") or std.mem.eql(u8, func_name, "stringz.length")) {
             if (args_str.len > 0) {

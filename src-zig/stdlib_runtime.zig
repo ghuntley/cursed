@@ -44,7 +44,7 @@ const CompilationState = enum {
 /// Function execution entry for runtime tracking
 const FunctionExecutionEntry = struct {
     name: []const u8,
-    ast_function: ast.Function,
+    ast_function: ast.FunctionStatement,
     compilation_state: CompilationState,
     call_count: u64,
     last_execution_time: u64,
@@ -155,7 +155,7 @@ pub const StdlibRuntime = struct {
 
         return StdlibRuntime{
             .allocator = allocator,
-            .module_cache = ModuleCache.init(allocator, cache_dir),
+            .module_cache = try ModuleCache.init(allocator, cache_dir),
             .stdlib_path = try allocator.dupe(u8, stdlib_path),
             .hot_reload_enabled = true,
             .performance_monitoring = true,
@@ -277,7 +277,7 @@ pub const StdlibRuntime = struct {
         
         for (program.statements.items) |stmt| {
             switch (stmt) {
-                .Function => |func| {
+                .FunctionStatement => |func| {
                     const func_name = try self.allocator.dupe(u8, func.name);
                     
                     // Get actual function pointer from LLVM execution engine
@@ -302,7 +302,7 @@ pub const StdlibRuntime = struct {
     }
     
     /// Create wrapper function for CURSED stdlib functions
-    fn createStdlibFunctionWrapper(self: *StdlibRuntime, module_name: []const u8, func_name: []const u8, func: ast.Function) !*const fn() callconv(.C) void {
+    fn createStdlibFunctionWrapper(self: *StdlibRuntime, module_name: []const u8, func_name: []const u8, func: ast.FunctionStatement) !*const fn() callconv(.C) void {
         // Store function metadata for runtime execution
         const full_name = try std.fmt.allocPrint(self.allocator, "{s}.{s}", .{ module_name, func_name });
         defer self.allocator.free(full_name);
@@ -320,7 +320,7 @@ pub const StdlibRuntime = struct {
     }
     
     /// Register function for runtime execution
-    fn registerFunctionForExecution(self: *StdlibRuntime, full_name: []const u8, func: ast.Function) !void {
+    fn registerFunctionForExecution(self: *StdlibRuntime, full_name: []const u8, func: ast.FunctionStatement) !void {
         const func_name_copy = try self.allocator.dupe(u8, full_name);
         
         // Store function AST for interpretation/JIT compilation
@@ -419,7 +419,6 @@ pub const StdlibRuntime = struct {
     
     /// Execute basic stdlib function with built-in implementations
     fn executeBasicStdlibFunction(self: *StdlibRuntime, module_name: []const u8, function_name: []const u8, args: []const interpreter.Value) !interpreter.Value {
-        _ = self;
         
         // Handle core vibez module functions
         if (std.mem.eql(u8, module_name, "vibez")) {

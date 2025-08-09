@@ -87,9 +87,9 @@ pub const CursedDebugger = struct {
     
     /// Start interactive debugging session
     pub fn startSession(self: *Self, source_file: []const u8) !void {
-        print("{s}", .{"🐛 CURSED Interactive Debugger v1.0\n"});
+        print("🐛 CURSED Interactive Debugger v1.0\n", .{});
         print("📁 Debugging: {s}\n", .{source_file});
-        print("{s}", .{"Type 'help' for available commands\n\n"});
+        print("Type 'help' for available commands\n\n", .{});
         
         // Load source file
         try self.loadSourceFile(source_file);
@@ -129,7 +129,7 @@ pub const CursedDebugger = struct {
                 try self.showCurrentLocation();
             }
             
-            print("{s}", .{"(cursed-debug) "});
+            print("(cursed-debug) ", .{});
             
             if (try stdin.readUntilDelimiterOrEof(input_buffer[0..], '\n')) |input| {
                 const trimmed_input = std.mem.trim(u8, input, " \t\r\n");
@@ -143,7 +143,7 @@ pub const CursedDebugger = struct {
             }
         }
         
-        print("{s}", .{"👋 Debug session ended\n"});
+        print("👋 Debug session ended\n", .{});
     }
     
     /// Process debugger command
@@ -197,45 +197,45 @@ pub const CursedDebugger = struct {
     /// Print help information
     fn printHelp(self: *Self) void {
         _ = self;
-        print("{s}", .{"🐛 CURSED Debugger Commands:\n"});
-        print("{s}", .{"  help, h                 - Show this help\n"});
-        print("{s}", .{"  run, r [args]           - Run the program\n"});
-        print("{s}", .{"  break, b <location>     - Set breakpoint (line number or function)\n"});
-        print("{s}", .{"  continue, c             - Continue execution\n"});
-        print("{s}", .{"  step, s                 - Step into (single statement)\n"});
-        print("{s}", .{"  next, n                 - Step over (next statement)\n"});
-        print("{s}", .{"  finish, f               - Step out (finish current function)\n"});
-        print("{s}", .{"  print, p <variable>     - Print variable value\n"});
-        print("{s}", .{"  watch, w <variable>     - Watch variable for changes\n"});
-        print("{s}", .{"  backtrace, bt           - Show stack trace\n"});
-        print("{s}", .{"  list, l [line]          - List source code around current/specified line\n"});
-        print("{s}", .{"  info, i <topic>         - Show information (breakpoints, variables, etc.)\n"});
-        print("{s}", .{"  delete, d <bp_id>       - Delete breakpoint\n"});
-        print("{s}", .{"  enable <bp_id>          - Enable breakpoint\n"});
-        print("{s}", .{"  disable <bp_id>         - Disable breakpoint\n"});
-        print("{s}", .{"  set <var> <value>       - Set variable value\n"});
-        print("{s}", .{"  eval <expression>       - Evaluate expression in current context\n"});
-        print("{s}", .{"  quit, q                 - Exit debugger\n"});
+        print("🐛 CURSED Debugger Commands:\n", .{});
+        print("  help, h                 - Show this help\n", .{});
+        print("  run, r [args]           - Run the program\n", .{});
+        print("  break, b <location>     - Set breakpoint (line number or function)\n", .{});
+        print("  continue, c             - Continue execution\n", .{});
+        print("  step, s                 - Step into (single statement)\n", .{});
+        print("  next, n                 - Step over (next statement)\n", .{});
+        print("  finish, f               - Step out (finish current function)\n", .{});
+        print("  print, p <variable>     - Print variable value\n", .{});
+        print("  watch, w <variable>     - Watch variable for changes\n", .{});
+        print("  backtrace, bt           - Show stack trace\n", .{});
+        print("  list, l [line]          - List source code around current/specified line\n", .{});
+        print("  info, i <topic>         - Show information (breakpoints, variables, etc.)\n", .{});
+        print("  delete, d <bp_id>       - Delete breakpoint\n", .{});
+        print("  enable <bp_id>          - Enable breakpoint\n", .{});
+        print("  disable <bp_id>         - Disable breakpoint\n", .{});
+        print("  set <var> <value>       - Set variable value\n", .{});
+        print("  eval <expression>       - Evaluate expression in current context\n", .{});
+        print("  quit, q                 - Exit debugger\n", .{});
     }
     
     /// Run program
     fn runProgram(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         _ = args; // TODO: Handle program arguments
         
-        print("{s}", .{"🏃 Running program...\n"});
+        print("🏃 Running program...\n", .{});
         self.is_running = true;
         self.is_paused = false;
         self.step_mode = .Continue;
         
         // TODO: Integrate with interpreter execution
-        print("{s}", .{"ℹ️  Program execution integration coming soon\n"});
+        print("ℹ️  Program execution integration coming soon\n", .{});
         self.is_paused = true;
     }
     
     /// Set breakpoint
     fn setBreakpoint(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         const location = args.next() orelse {
-            print("{s}", .{"❌ Usage: break <line_number> or break <function_name>\n"});
+            print("❌ Usage: break <line_number> or break <function_name>\n", .{});
             return;
         };
         
@@ -279,11 +279,11 @@ pub const CursedDebugger = struct {
     /// Continue execution
     fn continueExecution(self: *Self) !void {
         if (!self.is_running) {
-            print("{s}", .{"❌ Program is not running. Use 'run' first.\n"});
+            print("❌ Program is not running. Use 'run' first.\n", .{});
             return;
         }
         
-        print("{s}", .{"▶️ Continuing execution...\n"});
+        print("▶️ Continuing execution...\n", .{});
         self.step_mode = .Continue;
         self.is_paused = false;
         
@@ -293,11 +293,11 @@ pub const CursedDebugger = struct {
     /// Step execution (into)
     fn stepExecution(self: *Self) !void {
         if (!self.is_running) {
-            print("{s}", .{"❌ Program is not running. Use 'run' first.\n"});
+            print("❌ Program is not running. Use 'run' first.\n", .{});
             return;
         }
         
-        print("{s}", .{"👣 Stepping into...\n"});
+        print("👣 Stepping into...\n", .{});
         self.step_mode = .StepInto;
         self.is_paused = false;
         
@@ -309,11 +309,11 @@ pub const CursedDebugger = struct {
     /// Next execution (over)
     fn nextExecution(self: *Self) !void {
         if (!self.is_running) {
-            print("{s}", .{"❌ Program is not running. Use 'run' first.\n"});
+            print("❌ Program is not running. Use 'run' first.\n", .{});
             return;
         }
         
-        print("{s}", .{"⏭️ Stepping over...\n"});
+        print("⏭️ Stepping over...\n", .{});
         self.step_mode = .StepOver;
         self.is_paused = false;
         
@@ -325,11 +325,11 @@ pub const CursedDebugger = struct {
     /// Finish function (step out)
     fn finishFunction(self: *Self) !void {
         if (!self.is_running) {
-            print("{s}", .{"❌ Program is not running. Use 'run' first.\n"});
+            print("❌ Program is not running. Use 'run' first.\n", .{});
             return;
         }
         
-        print("{s}", .{"🏁 Finishing function...\n"});
+        print("🏁 Finishing function...\n", .{});
         self.step_mode = .StepOut;
         self.is_paused = false;
         
@@ -340,7 +340,7 @@ pub const CursedDebugger = struct {
     /// Print variable value
     fn printVariable(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         const var_name = args.next() orelse {
-            print("{s}", .{"❌ Usage: print <variable_name>\n"});
+            print("❌ Usage: print <variable_name>\n", .{});
             return;
         };
         
@@ -362,21 +362,21 @@ pub const CursedDebugger = struct {
             .Integer => |i| print("{d}", .{i}),
             .Float => |f| print("{d}", .{f}),
             .String => |s| print("\"{s}\"", .{s}),
-            .Boolean => |b| print("{}", .{b}),
-            .Null => print("{s}", .{"null"}),
+            .Boolean => |b| print("{any}", .{b}),
+            .Null => print("null", .{}),
             .Tuple => |arr| {
-                print("{s}", .{"["});
+                print("[", .{});
                 for (arr.items, 0..) |item, i| {
-                    if (i > 0) print("{s}", .{", "});
+                    if (i > 0) print(", ", .{});
                     try self.printValueInline(item);
                 }
-                print("{s}", .{"]"});
+                print("]", .{});
             },
             .Struct => |s| print("struct {{ {d} fields }}", .{s.fields.count()}),
             // .Function => print("{s}", .{"<function>"}),
             else => print("<{s}>", .{@tagName(value)}),
         }
-        print("{s}", .{"\n"});
+        print("\n", .{});
     }
     
     /// Print value inline (for arrays, etc.)
@@ -386,8 +386,8 @@ pub const CursedDebugger = struct {
             .Integer => |i| print("{d}", .{i}),
             .Float => |f| print("{d}", .{f}),
             .String => |s| print("\"{s}\"", .{s}),
-            .Boolean => |b| print("{}", .{b}),
-            .Null => print("{s}", .{"null"}),
+            .Boolean => |b| print("{any}", .{b}),
+            .Null => print("null", .{}),
             else => print("<{s}>", .{@tagName(value)}),
         }
     }
@@ -407,40 +407,40 @@ pub const CursedDebugger = struct {
     /// List watched variables
     fn listWatchVariables(self: *Self) void {
         if (self.watch_variables.items.len == 0) {
-            print("{s}", .{"👁️ No variables being watched\n"});
+            print("👁️ No variables being watched\n", .{});
             return;
         }
         
-        print("{s}", .{"👁️ Watched variables:\n"});
+        print("👁️ Watched variables:\n", .{});
         for (self.watch_variables.items, 0..) |var_name, i| {
             print("  {d}: {s}", .{ i + 1, var_name });
             
             // Try to print current value
             if (self.interpreter.environment.get(var_name)) |value| {
-                print("{s}", .{" = "});
+                print(" = ", .{});
                 switch (value) {
                     .Integer => |int| print("{d}", .{int}),
                     .Float => |f| print("{d}", .{f}),
                     .String => |s| print("\"{s}\"", .{s}),
-                    .Boolean => |b| print("{}", .{b}),
-                    .Null => print("{s}", .{"null"}),
+                    .Boolean => |b| print("{any}", .{b}),
+                    .Null => print("null", .{}),
                     else => print("<{s}>", .{@tagName(value)}),
                 }
             } else |_| {
-                print("{s}", .{" = <not in scope>"});
+                print(" = <not in scope>", .{});
             }
-            print("{s}", .{"\n"});
+            print("\n", .{});
         }
     }
     
     /// Print stack backtrace
     fn printBacktrace(self: *Self) void {
         if (self.execution_stack.items.len == 0) {
-            print("{s}", .{"📚 No stack frames available\n"});
+            print("📚 No stack frames available\n", .{});
             return;
         }
         
-        print("{s}", .{"📚 Stack trace:\n"});
+        print("📚 Stack trace:\n", .{});
         for (self.execution_stack.items, 0..) |frame, i| {
             const marker = if (i == 0) "➤" else " ";
             print("  {s} #{d}: {s} at {s}:{d}\n", .{ marker, i, frame.function_name, frame.file, frame.line });
@@ -732,7 +732,7 @@ pub const CursedDebugger = struct {
                         .Integer => |i| print("{d}", .{i}),
                         .Float => |f| print("{d}", .{f}),
                         .String => |s| print("\"{s}\"", .{s}),
-                        .Boolean => |b| print("{}", .{b}),
+                        .Boolean => |b| print("{any}", .{b}),
                         .Null => print("{s}", .{"null"}),
                         else => print("<{s}>", .{@tagName(value)}),
                     }
@@ -788,7 +788,7 @@ pub const Breakpoint = struct {
 };
 
 /// Stack frame information
-const StackFrame = struct {
+pub const StackFrame = struct {
     function_name: []const u8,
     file: []const u8,
     line: u32,

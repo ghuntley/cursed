@@ -59,7 +59,7 @@ fn parseArguments(allocator: std.mem.Allocator, args: [][:0]u8) !DebuggerOptions
             options.verbose = true;
         } else if (std.mem.eql(u8, arg, "--breakpoint") or std.mem.eql(u8, arg, "-b")) {
             if (i + 1 >= args.len) {
-                print("{s}", .{"❌ Error: --breakpoint requires a line number\n"});
+                print("❌ Error: --breakpoint requires a line number\n", .{});
                 return error.InvalidArguments;
             }
             const line_str = args[i + 1];
@@ -71,7 +71,7 @@ fn parseArguments(allocator: std.mem.Allocator, args: [][:0]u8) !DebuggerOptions
             i += 1;
         } else if (std.mem.eql(u8, arg, "--script") or std.mem.eql(u8, arg, "-s")) {
             if (i + 1 >= args.len) {
-                print("{s}", .{"❌ Error: --script requires a file path\n"});
+                print("❌ Error: --script requires a file path\n", .{});
                 return error.InvalidArguments;
             }
             options.script_file = args[i + 1];
@@ -90,36 +90,36 @@ fn parseArguments(allocator: std.mem.Allocator, args: [][:0]u8) !DebuggerOptions
 
 /// Print usage information
 fn printUsage(program_name: []const u8) void {
-    print("{s}", .{"🐛 CURSED Interactive Debugger v1.0\n"});
-    print("{s}", .{"\n"});
+    print("🐛 CURSED Interactive Debugger v1.0\n", .{});
+    print("\n", .{});
     print("Usage: {s} <source_file.csd> [options]\n", .{program_name});
-    print("{s}", .{"\n"});
-    print("{s}", .{"Options:\n"});
-    print("{s}", .{"  -h, --help              Show this help message\n"});
-    print("{s}", .{"  -i, --interactive       Start in interactive mode (default)\n"});
-    print("{s}", .{"  -r, --auto-run          Automatically run the program\n"});
-    print("{s}", .{"  -v, --verbose           Enable verbose output\n"});
-    print("{s}", .{"  -b, --breakpoint <line> Set initial breakpoint at line number\n"});
-    print("{s}", .{"  -s, --script <file>     Run debug script from file\n"});
-    print("{s}", .{"\n"});
-    print("{s}", .{"Examples:\n"});
+    print("\n", .{});
+    print("Options:\n", .{});
+    print("  -h, --help              Show this help message\n", .{});
+    print("  -i, --interactive       Start in interactive mode (default)\n", .{});
+    print("  -r, --auto-run          Automatically run the program\n", .{});
+    print("  -v, --verbose           Enable verbose output\n", .{});
+    print("  -b, --breakpoint <line> Set initial breakpoint at line number\n", .{});
+    print("  -s, --script <file>     Run debug script from file\n", .{});
+    print("\n", .{});
+    print("Examples:\n", .{});
     print("  {s} program.csd                    # Interactive debugging\n", .{program_name});
     print("  {s} program.csd -b 10 -b 25        # Start with breakpoints\n", .{program_name});
     print("  {s} program.csd -r                 # Auto-run program\n", .{program_name});
     print("  {s} program.csd -s debug.script    # Run debug script\n", .{program_name});
-    print("{s}", .{"\n"});
-    print("{s}", .{"Interactive Commands:\n"});
-    print("{s}", .{"  help, h                 - Show debugger help\n"});
-    print("{s}", .{"  run, r                  - Run the program\n"});
-    print("{s}", .{"  break, b <location>     - Set breakpoint\n"});
-    print("{s}", .{"  continue, c             - Continue execution\n"});
-    print("{s}", .{"  step, s                 - Step into\n"});
-    print("{s}", .{"  next, n                 - Step over\n"});
-    print("{s}", .{"  print, p <variable>     - Print variable value\n"});
-    print("{s}", .{"  watch, w <variable>     - Watch variable for changes\n"});
-    print("{s}", .{"  backtrace, bt           - Show stack trace\n"});
-    print("{s}", .{"  list, l [line]          - List source code\n"});
-    print("{s}", .{"  quit, q                 - Exit debugger\n"});
+    print("\n", .{});
+    print("Interactive Commands:\n", .{});
+    print("  help, h                 - Show debugger help\n", .{});
+    print("  run, r                  - Run the program\n", .{});
+    print("  break, b <location>     - Set breakpoint\n", .{});
+    print("  continue, c             - Continue execution\n", .{});
+    print("  step, s                 - Step into\n", .{});
+    print("  next, n                 - Step over\n", .{});
+    print("  print, p <variable>     - Print variable value\n", .{});
+    print("  watch, w <variable>     - Watch variable for changes\n", .{});
+    print("  backtrace, bt           - Show stack trace\n", .{});
+    print("  list, l [line]          - List source code\n", .{});
+    print("  quit, q                 - Exit debugger\n", .{});
 }
 
 /// Verify source file exists and is readable
@@ -206,18 +206,18 @@ fn executeDebugScript(allocator: std.mem.Allocator, script_file: []const u8, deb
         
         // Process debug command (simplified - would integrate with debugger command processor)
         if (std.mem.startsWith(u8, trimmed_line, "break ")) {
-            print("{s}", .{"  → Setting breakpoint\n"});
+            print("  → Setting breakpoint\n", .{});
         } else if (std.mem.startsWith(u8, trimmed_line, "run")) {
-            print("{s}", .{"  → Running program\n"});
+            print("  → Running program\n", .{});
         } else if (std.mem.startsWith(u8, trimmed_line, "continue")) {
-            print("{s}", .{"  → Continuing execution\n"});
+            print("  → Continuing execution\n", .{});
         } else {
             print("  → Unknown command: {s}\n", .{trimmed_line});
         }
     }
     
     _ = debugger_instance; // TODO: Actually integrate with debugger commands
-    print("{s}", .{"✅ Debug script execution complete\n"});
+    print("✅ Debug script execution complete\n", .{});
 }
 
 /// Main entry point
@@ -241,27 +241,27 @@ pub fn main() !void {
     }
     
     // Print banner
-    print("{s}", .{"🐛 CURSED Interactive Debugger v1.0\n"});
+    print("🐛 CURSED Interactive Debugger v1.0\n", .{});
     print("📁 Source file: {s}\n", .{options.source_file});
     
     if (options.verbose) {
-        print("{s}", .{"🔧 Verbose mode enabled\n"});
+        print("🔧 Verbose mode enabled\n", .{});
         if (options.interactive) {
-            print("{s}", .{"🔧 Interactive mode enabled\n"});
+            print("🔧 Interactive mode enabled\n", .{});
         }
         if (options.auto_run) {
-            print("{s}", .{"🔧 Auto-run enabled\n"});
+            print("🔧 Auto-run enabled\n", .{});
         }
         if (options.script_file) |script| {
             print("🔧 Script file: {s}\n", .{script});
         }
         if (options.initial_breakpoints.items.len > 0) {
-            print("{s}", .{"🔧 Initial breakpoints: "});
+            print("🔧 Initial breakpoints: ", .{});
             for (options.initial_breakpoints.items, 0..) |bp, i| {
-                if (i > 0) print("{s}", .{", "});
+                if (i > 0) print(", ", .{});
                 print("{d}", .{bp});
             }
-            print("{s}", .{"\n"});
+            print("\n", .{});
         }
     }
     
@@ -291,7 +291,7 @@ pub fn main() !void {
     
     // Set initial breakpoints
     if (options.initial_breakpoints.items.len > 0) {
-        print("{s}", .{"🔴 Setting initial breakpoints...\n"});
+        print("🔴 Setting initial breakpoints...\n", .{});
         const debugger_ref = debug_interpreter.getDebugger();
         
         for (options.initial_breakpoints.items) |line_num| {
@@ -323,18 +323,18 @@ pub fn main() !void {
     
     // Start debugging session
     if (options.interactive) {
-        print("{s}", .{"\n🚀 Starting interactive debugging session...\n"});
-        print("{s}", .{"Type 'help' for available commands\n\n"});
+        print("\n🚀 Starting interactive debugging session...\n", .{});
+        print("Type 'help' for available commands\n\n", .{});
         
         try debug_interpreter.startDebugSession(options.source_file);
     } else if (options.auto_run) {
-        print("{s}", .{"\n🏃 Auto-running program with debugging...\n"});
+        print("\n🏃 Auto-running program with debugging...\n", .{});
         try debug_interpreter.executeWithDebug(program);
     } else {
-        print("{s}", .{"\n📊 Program analysis complete. Use --interactive to debug.\n"});
+        print("\n📊 Program analysis complete. Use --interactive to debug.\n", .{});
     }
     
-    print("{s}", .{"👋 Debugger session ended\n"});
+    print("👋 Debugger session ended\n", .{});
 }
 
 // Error handling for cleaner output

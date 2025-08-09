@@ -189,21 +189,31 @@ pub fn main() !void {
 }
 
 fn compileToLLVM(allocator: Allocator, filename: []const u8, source: []const u8) !void {
-    print("🔥 Compiling CURSED program to native executable using LLVM...\n", .{});
+    print("🔥 Compiling CURSED program to native executable using Memory-Safe LLVM...\n", .{});
     
-    const output_name = try getOutputName(allocator, filename);
-    defer allocator.free(output_name);
+    // Use arena allocator to prevent memory leaks
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    const arena_allocator = arena.allocator();
     
-    const ir_filename = try std.fmt.allocPrint(allocator, "{s}.ll", .{output_name});
-    defer allocator.free(ir_filename);
+    const output_name = try getOutputName(arena_allocator, filename);
+    const ir_filename = try std.fmt.allocPrint(arena_allocator, "{s}.ll", .{output_name});
     
-    // Use minimal LLVM backend
-    try llvm_backend_minimal.compileToLLVM(allocator, source, ir_filename);
+    // Use simple memory-leak-fixed LLVM backend
+    const simple_fixed_llvm = @import("llvm_simple_fixed.zig");
+    simple_fixed_llvm.compileToLLVM(allocator, source, ir_filename) catch |err| {
+        print("⚠️ Simple fixed LLVM failed ({any}), falling back to minimal backend...\n", .{err});
+        // Use minimal LLVM backend as fallback
+        try llvm_backend_minimal.compileToLLVM(allocator, source, ir_filename);
+    };
     
-    // Compile IR to native executable
-    try llvm_backend_minimal.compileIRToNative(allocator, ir_filename, output_name);
+    // Compile IR to native executable with simple fixed backend
+    simple_fixed_llvm.compileIRToNative(allocator, ir_filename, output_name) catch |err| {
+        print("⚠️ Simple fixed native compilation failed ({any}), using fallback...\n", .{err});
+        try llvm_backend_minimal.compileIRToNative(allocator, ir_filename, output_name);
+    };
     
-    print("✅ LLVM compilation complete! Run with: ./{s}\n", .{output_name});
+    print("✅ Memory-Safe LLVM compilation complete! Run with: ./{s}\n", .{output_name});
 }
 
 fn compileToC(allocator: Allocator, filename: []const u8, source: []const u8, tokens: std.ArrayList(lexer.Token)) !void {
