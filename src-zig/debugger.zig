@@ -313,7 +313,7 @@ pub const CursedDebugger = struct {
             return;
         }
         
-        print("⏭️ Stepping over...\n");
+        print("{s}", .{"⏭️ Stepping over...\n"});
         self.step_mode = .StepOver;
         self.is_paused = false;
         
@@ -329,7 +329,7 @@ pub const CursedDebugger = struct {
             return;
         }
         
-        print("🏁 Finishing function...\n");
+        print("{s}", .{"🏁 Finishing function...\n"});
         self.step_mode = .StepOut;
         self.is_paused = false;
         
@@ -340,7 +340,7 @@ pub const CursedDebugger = struct {
     /// Print variable value
     fn printVariable(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         const var_name = args.next() orelse {
-            print("❌ Usage: print <variable_name>\n");
+            print("{s}", .{"❌ Usage: print <variable_name>\n"});
             return;
         };
         
@@ -363,20 +363,20 @@ pub const CursedDebugger = struct {
             .Float => |f| print("{d}", .{f}),
             .String => |s| print("\"{s}\"", .{s}),
             .Boolean => |b| print("{}", .{b}),
-            .Null => print("null"),
-            .Array => |arr| {
-                print("[");
+            .Null => print("{s}", .{"null"}),
+            .Tuple => |arr| {
+                print("{s}", .{"["});
                 for (arr.items, 0..) |item, i| {
-                    if (i > 0) print(", ");
+                    if (i > 0) print("{s}", .{", "});
                     try self.printValueInline(item);
                 }
-                print("]");
+                print("{s}", .{"]"});
             },
-            .Struct => |s| print("struct {{ {} fields }}", .{s.fields.count()}),
-            .Function => print("<function>"),
+            .Struct => |s| print("struct {{ {d} fields }}", .{s.fields.count()}),
+            // .Function => print("{s}", .{"<function>"}),
             else => print("<{s}>", .{@tagName(value)}),
         }
-        print("\n");
+        print("{s}", .{"\n"});
     }
     
     /// Print value inline (for arrays, etc.)
@@ -387,7 +387,7 @@ pub const CursedDebugger = struct {
             .Float => |f| print("{d}", .{f}),
             .String => |s| print("\"{s}\"", .{s}),
             .Boolean => |b| print("{}", .{b}),
-            .Null => print("null"),
+            .Null => print("{s}", .{"null"}),
             else => print("<{s}>", .{@tagName(value)}),
         }
     }
@@ -407,40 +407,40 @@ pub const CursedDebugger = struct {
     /// List watched variables
     fn listWatchVariables(self: *Self) void {
         if (self.watch_variables.items.len == 0) {
-            print("👁️ No variables being watched\n");
+            print("{s}", .{"👁️ No variables being watched\n"});
             return;
         }
         
-        print("👁️ Watched variables:\n");
+        print("{s}", .{"👁️ Watched variables:\n"});
         for (self.watch_variables.items, 0..) |var_name, i| {
             print("  {d}: {s}", .{ i + 1, var_name });
             
             // Try to print current value
             if (self.interpreter.environment.get(var_name)) |value| {
-                print(" = ");
+                print("{s}", .{" = "});
                 switch (value) {
                     .Integer => |int| print("{d}", .{int}),
                     .Float => |f| print("{d}", .{f}),
                     .String => |s| print("\"{s}\"", .{s}),
                     .Boolean => |b| print("{}", .{b}),
-                    .Null => print("null"),
+                    .Null => print("{s}", .{"null"}),
                     else => print("<{s}>", .{@tagName(value)}),
                 }
             } else |_| {
-                print(" = <not in scope>");
+                print("{s}", .{" = <not in scope>"});
             }
-            print("\n");
+            print("{s}", .{"\n"});
         }
     }
     
     /// Print stack backtrace
     fn printBacktrace(self: *Self) void {
         if (self.execution_stack.items.len == 0) {
-            print("📚 No stack frames available\n");
+            print("{s}", .{"📚 No stack frames available\n"});
             return;
         }
         
-        print("📚 Stack trace:\n");
+        print("{s}", .{"📚 Stack trace:\n"});
         for (self.execution_stack.items, 0..) |frame, i| {
             const marker = if (i == 0) "➤" else " ";
             print("  {s} #{d}: {s} at {s}:{d}\n", .{ marker, i, frame.function_name, frame.file, frame.line });
@@ -492,7 +492,7 @@ pub const CursedDebugger = struct {
     /// Info command
     fn infoCommand(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         const topic = args.next() orelse {
-            print("❌ Usage: info <topic> (breakpoints, variables, stack)\n");
+            print("{s}", .{"❌ Usage: info <topic> (breakpoints, variables, stack)\n"});
             return;
         };
         
@@ -506,18 +506,18 @@ pub const CursedDebugger = struct {
             self.listWatchVariables();
         } else {
             print("❌ Unknown info topic: {s}\n", .{topic});
-            print("Available topics: breakpoints, variables, stack, watch\n");
+            print("{s}", .{"Available topics: breakpoints, variables, stack, watch\n"});
         }
     }
     
     /// List all breakpoints
     fn listBreakpoints(self: *Self) void {
         if (self.breakpoints.count() == 0) {
-            print("📍 No breakpoints set\n");
+            print("{s}", .{"📍 No breakpoints set\n"});
             return;
         }
         
-        print("📍 Breakpoints:\n");
+        print("{s}", .{"📍 Breakpoints:\n"});
         var iter = self.breakpoints.iterator();
         while (iter.next()) |entry| {
             const bp = entry.value_ptr;
@@ -536,17 +536,17 @@ pub const CursedDebugger = struct {
     /// List variables in current scope
     fn listVariables(self: *Self) !void {
         _ = self; // TODO: Use when interpreter integration is complete
-        print("🔍 Variables in current scope:\n");
+        print("{s}", .{"🔍 Variables in current scope:\n"});
         
         // TODO: Iterate through interpreter environment
         // This is a placeholder implementation
-        print("  (Variable listing integration pending)\n");
+        print("{s}", .{"  (Variable listing integration pending)\n"});
     }
     
     /// Delete breakpoint
     fn deleteBreakpoint(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         const id_str = args.next() orelse {
-            print("❌ Usage: delete <breakpoint_id>\n");
+            print("{s}", .{"❌ Usage: delete <breakpoint_id>\n"});
             return;
         };
         
@@ -576,7 +576,7 @@ pub const CursedDebugger = struct {
     /// Enable breakpoint
     fn enableBreakpoint(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         const id_str = args.next() orelse {
-            print("❌ Usage: enable <breakpoint_id>\n");
+            print("{s}", .{"❌ Usage: enable <breakpoint_id>\n"});
             return;
         };
         
@@ -600,7 +600,7 @@ pub const CursedDebugger = struct {
     /// Disable breakpoint
     fn disableBreakpoint(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         const id_str = args.next() orelse {
-            print("❌ Usage: disable <breakpoint_id>\n");
+            print("{s}", .{"❌ Usage: disable <breakpoint_id>\n"});
             return;
         };
         
@@ -624,12 +624,12 @@ pub const CursedDebugger = struct {
     /// Set variable value
     fn setVariable(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         const var_name = args.next() orelse {
-            print("❌ Usage: set <variable> <value>\n");
+            print("{s}", .{"❌ Usage: set <variable> <value>\n"});
             return;
         };
         
         const value_str = args.next() orelse {
-            print("❌ Usage: set <variable> <value>\n");
+            print("{s}", .{"❌ Usage: set <variable> <value>\n"});
             return;
         };
         
@@ -660,7 +660,7 @@ pub const CursedDebugger = struct {
     fn evaluateExpression(self: *Self, args: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) !void {
         _ = self;
         _ = args;
-        print("📊 Expression evaluation coming soon\n");
+        print("{s}", .{"📊 Expression evaluation coming soon\n"});
         // TODO: Parse and evaluate expression using interpreter
     }
     
@@ -724,7 +724,7 @@ pub const CursedDebugger = struct {
         
         // Show watch variables
         if (self.watch_variables.items.len > 0) {
-            print("👁️ Watch variables:\n");
+            print("{s}", .{"👁️ Watch variables:\n"});
             for (self.watch_variables.items) |var_name| {
                 if (self.interpreter.environment.get(var_name)) |value| {
                     print("  {s} = ", .{var_name});
@@ -733,10 +733,10 @@ pub const CursedDebugger = struct {
                         .Float => |f| print("{d}", .{f}),
                         .String => |s| print("\"{s}\"", .{s}),
                         .Boolean => |b| print("{}", .{b}),
-                        .Null => print("null"),
+                        .Null => print("{s}", .{"null"}),
                         else => print("<{s}>", .{@tagName(value)}),
                     }
-                    print("\n");
+                    print("{s}", .{"\n"});
                 } else |_| {
                     print("  {s} = <not in scope>\n", .{var_name});
                 }

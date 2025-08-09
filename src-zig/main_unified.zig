@@ -3327,6 +3327,8 @@ fn loadModuleFunctions(allocator: Allocator, functions: *FunctionStore, module_n
     if (std.mem.indexOf(u8, module_name, "vibez") != null or
         std.mem.indexOf(u8, module_name, "stringz") != null or
         std.mem.indexOf(u8, module_name, "mathz") != null or
+        std.mem.indexOf(u8, module_name, "arrayz") != null or
+        std.mem.indexOf(u8, module_name, "testz") != null or
         std.mem.indexOf(u8, module_name, "cryptz") != null) {
         if (verbose) print("  ↩️  Skipping stub generation for stdlib module: {s}\n", .{module_name});
         return;
@@ -3552,6 +3554,137 @@ fn handleStdlibFunction(variables: *VariableStore, allocator: Allocator, call_li
                         return Variable{ .Float = if (float_val < 0.0) -float_val else float_val };
                     },
                     else => if (verbose) print("❌ abs_meal expects numeric argument\n", .{}),
+                }
+            }
+        }
+        
+        // Additional mathz functions
+        else if (std.mem.eql(u8, func_name, "multiply_two") or std.mem.eql(u8, func_name, "mathz.multiply_two")) {
+            if (args_str.len > 0) {
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                    const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                    
+                    if (arg1_value == .Integer and arg2_value == .Integer) {
+                        return Variable{ .Integer = arg1_value.Integer * arg2_value.Integer };
+                    }
+                }
+            }
+        }
+        
+        else if (std.mem.eql(u8, func_name, "divide_two") or std.mem.eql(u8, func_name, "mathz.divide_two")) {
+            if (args_str.len > 0) {
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                    const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                    
+                    if (arg1_value == .Integer and arg2_value == .Integer and arg2_value.Integer != 0) {
+                        return Variable{ .Integer = @divTrunc(arg1_value.Integer, arg2_value.Integer) };
+                    }
+                }
+            }
+        }
+        
+        else if (std.mem.eql(u8, func_name, "subtract_two") or std.mem.eql(u8, func_name, "mathz.subtract_two")) {
+            if (args_str.len > 0) {
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                    const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                    
+                    if (arg1_value == .Integer and arg2_value == .Integer) {
+                        return Variable{ .Integer = arg1_value.Integer - arg2_value.Integer };
+                    }
+                }
+            }
+        }
+        
+        // String functions from stringz module
+        else if (std.mem.eql(u8, func_name, "concat_strings") or std.mem.eql(u8, func_name, "stringz.concat_strings")) {
+            if (args_str.len > 0) {
+                if (std.mem.indexOf(u8, args_str, ",")) |comma_pos| {
+                    const arg1_str = std.mem.trim(u8, args_str[0..comma_pos], " \t");
+                    const arg2_str = std.mem.trim(u8, args_str[comma_pos + 1..], " \t");
+                    
+                    const arg1_value = try evaluateStdlibArgument(variables, allocator, arg1_str, verbose);
+                    const arg2_value = try evaluateStdlibArgument(variables, allocator, arg2_str, verbose);
+                    
+                    if (arg1_value == .String and arg2_value == .String) {
+                        const result = try std.fmt.allocPrint(allocator, "{s}{s}", .{ arg1_value.String.data, arg2_value.String.data });
+                        return Variable{ .String = ManagedString.fromOwned(result) };
+                    }
+                }
+            }
+        }
+        
+        // Array functions from arrayz module
+        else if (std.mem.eql(u8, func_name, "sum_array") or std.mem.eql(u8, func_name, "arrayz.sum_array")) {
+            if (args_str.len > 0) {
+                const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
+                switch (arg_value) {
+                    .Array => |arr| {
+                        var total: i64 = 0;
+                        for (arr.items) |item| {
+                            switch (item) {
+                                .Integer => |int| total += int,
+                                else => {},
+                            }
+                        }
+                        return Variable{ .Integer = total };
+                    },
+                    else => if (verbose) print("❌ sum_array expects array argument\n", .{}),
+                }
+            }
+        }
+        
+        else if (std.mem.eql(u8, func_name, "find_max") or std.mem.eql(u8, func_name, "arrayz.find_max")) {
+            if (args_str.len > 0) {
+                const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
+                switch (arg_value) {
+                    .Array => |arr| {
+                        if (arr.items.len == 0) return Variable{ .Integer = 0 };
+                        var max_val: i64 = std.math.minInt(i64);
+                        for (arr.items) |item| {
+                            switch (item) {
+                                .Integer => |int| {
+                                    if (int > max_val) max_val = int;
+                                },
+                                else => {},
+                            }
+                        }
+                        return Variable{ .Integer = max_val };
+                    },
+                    else => if (verbose) print("❌ find_max expects array argument\n", .{}),
+                }
+            }
+        }
+        
+        else if (std.mem.eql(u8, func_name, "find_min") or std.mem.eql(u8, func_name, "arrayz.find_min")) {
+            if (args_str.len > 0) {
+                const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
+                switch (arg_value) {
+                    .Array => |arr| {
+                        if (arr.items.len == 0) return Variable{ .Integer = 0 };
+                        var min_val: i64 = std.math.maxInt(i64);
+                        for (arr.items) |item| {
+                            switch (item) {
+                                .Integer => |int| {
+                                    if (int < min_val) min_val = int;
+                                },
+                                else => {},
+                            }
+                        }
+                        return Variable{ .Integer = min_val };
+                    },
+                    else => if (verbose) print("❌ find_min expects array argument\n", .{}),
                 }
             }
         }

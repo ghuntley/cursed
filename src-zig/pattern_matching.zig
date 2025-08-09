@@ -594,9 +594,9 @@ pub const PatternCompiler = struct {
         }
     }
     
-    /// Compile range patterns
+    /// Compile range patterns with enhanced 0..10 syntax
     fn compileRangePattern(self: *PatternCompiler, range: ast.Pattern.RangePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.compileRangePatternEfficient(range, value_var, success_label, fail_label);
+        try self.compileRangePatternEnhanced(range, value_var, success_label, fail_label);
     }
     
     /// Compile guard patterns (conditional matching)
@@ -835,31 +835,49 @@ pub const PatternCompiler = struct {
         return literal_cases.toOwnedSlice();
     }
 
-    /// Generate efficient range pattern implementation
-    fn compileRangePatternEfficient(self: *PatternCompiler, range: ast.Pattern.RangePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Efficient range pattern matching\n");
+    /// Enhanced range pattern implementation with 0..10 syntax support
+    fn compileRangePatternEnhanced(self: *PatternCompiler, range: ast.Pattern.RangePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
+        try self.output.writer().print("    // Enhanced range pattern matching with 0..10 syntax\n");
         
         const temp_var = try self.getTempVar();
         defer self.allocator.free(temp_var);
         
-        // Evaluate range bounds
+        // Enhanced range bounds evaluation with literal optimization
         const start_temp = try self.getTempVar();
         defer self.allocator.free(start_temp);
         
         const end_temp = try self.getTempVar();
         defer self.allocator.free(end_temp);
         
-        try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ start_temp, @intFromPtr(range.start) });
-        try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ end_temp, @intFromPtr(range.end) });
+        // Check if ranges are literal values for optimization
+        if (range.start_literal) |start_lit| {
+            try self.output.writer().print("    int {s} = {};\n", .{ start_temp, start_lit });
+        } else {
+            try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ start_temp, @intFromPtr(range.start) });
+        }
         
+        if (range.end_literal) |end_lit| {
+            try self.output.writer().print("    int {s} = {};\n", .{ end_temp, end_lit });
+        } else {
+            try self.output.writer().print("    auto {s} = evaluate_expression({});\n", .{ end_temp, @intFromPtr(range.end) });
+        }
+        
+        // Support both inclusive (..) and exclusive (...) ranges
         const op = if (range.is_inclusive) "<=" else "<";
         try self.output.writer().print("    int {s} = ({s} >= {s} && {s} {s} {s});\n", .{ temp_var, value_var, start_temp, value_var, op, end_temp });
+        
+        // Add range type checking for character ranges
+        if (range.is_char_range) {
+            try self.output.writer().print("    // Character range validation\n");
+            try self.output.writer().print("    {s} = {s} && cursed_is_char({s});\n", .{ temp_var, temp_var, value_var });
+        }
+        
         try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ temp_var, success_label, fail_label });
     }
 
-    /// Compile guard patterns with efficient condition evaluation
+    /// Compile guard patterns with 'when' condition support
     fn compileGuardPatternEfficient(self: *PatternCompiler, guard: ast.Pattern.GuardPattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Guard pattern with efficient condition check\n");
+        try self.output.writer().print("    // Guard pattern with 'when' condition support\n");
         
         // First match the inner pattern
         const inner_success = try std.fmt.allocPrint(self.allocator, "guard_inner_success_{}", .{self.temp_counter});
@@ -869,12 +887,19 @@ pub const PatternCompiler = struct {
         try self.compilePattern(guard.pattern.*, value_var, inner_success, fail_label);
         
         try self.output.writer().print("{s}:\n", .{inner_success});
-        try self.output.writer().print("    // Evaluate guard condition efficiently\n");
+        try self.output.writer().print("    // Evaluate 'when' condition with variable binding context\n");
         
         const guard_temp = try self.getTempVar();
         defer self.allocator.free(guard_temp);
         
-        try self.output.writer().print("    int {s} = evaluate_expression({});\n", .{ guard_temp, @intFromPtr(guard.condition) });
+        // Enhanced guard evaluation with pattern variable access
+        try self.output.writer().print("    // Set up guard evaluation context with pattern variables\n");
+        for (self.pattern_variables.items) |var_name| {
+            try self.output.writer().print("    cursed_set_guard_variable(\"{s}\", {s});\n", .{ var_name, var_name });
+        }
+        
+        try self.output.writer().print("    int {s} = evaluate_guard_expression({});\n", .{ guard_temp, @intFromPtr(guard.condition) });
+        try self.output.writer().print("    cursed_clear_guard_context();\n");
         try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ guard_temp, success_label, fail_label });
     }
 

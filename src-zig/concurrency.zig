@@ -175,8 +175,8 @@ pub fn Channel(comptime T: type) type {
             self.buffer.deinit();
         }
 
-        /// Send a value to the channel (blocking)
-        pub fn send(self: *Self, value: T) !SendResult {
+        /// dm_send - Canonical CURSED channel send operation
+        pub fn dm_send(self: *Self, value: T) !SendResult {
             if (self.closed.load(.acquire)) {
                 return SendResult.closed;
             }
