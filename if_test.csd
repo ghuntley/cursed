@@ -1,1 +1,1 @@
-sus x drip = 5; ready (x > 3) { vibez.spill("Greater") } otherwise { vibez.spill("Smaller") }
+sus x drip = 10; ready (x > 5) { vibez.spill("Greater than 5") } otherwise { vibez.spill("Not greater") }

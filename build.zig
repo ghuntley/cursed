@@ -450,6 +450,14 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    // Create stable minimal compiler (core features only, no stdlib)
+    const exe_stable = b.addExecutable(.{
+        .name = "cursed-stable",
+        .root_source_file = b.path("src-zig/stable_minimal_main.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+
     // Configure libc and LLVM support for main compiler
     if (!is_wasm) {
         exe.linkLibC();
@@ -599,6 +607,7 @@ pub fn build(b: *std.Build) void {
     }
 
     b.installArtifact(exe);
+    b.installArtifact(exe_stable);
     b.installArtifact(exe_simple_llvm_test);
     b.installArtifact(exe_llvm_test);
     
@@ -893,6 +902,40 @@ b.installArtifact(complete_exe);
     
     // const platform_test_step = b.step("test-platform", "Test platform abstraction layer");
     // platform_test_step.dependOn(&run_platform_test.step);
+
+    // Create regression test runner
+    const regression_test_exe = b.addExecutable(.{
+        .name = "cursed-regression-test",
+        .root_source_file = b.path("src-zig/simple_regression_test.zig"),
+        .target = resolved_target,
+        .optimize = optimize,
+    });
+    
+    if (!is_wasm) {
+        regression_test_exe.linkLibC();
+    }
+    
+    b.installArtifact(regression_test_exe);
+    
+    // Create regression test run step
+    const run_regression_tests = b.addRunArtifact(regression_test_exe);
+    run_regression_tests.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_regression_tests.addArgs(args);
+    }
+    
+    const regression_test_step = b.step("test-regression", "Run comprehensive regression tests");
+    regression_test_step.dependOn(&run_regression_tests.step);
+    
+    // Create memory-specific regression tests
+    const memory_regression_test = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        "cd tests/regression/memory && for f in *.csd; do echo \"Testing $f with valgrind...\"; timeout 10 valgrind --leak-check=summary --error-exitcode=1 ../../../zig-out/bin/cursed-zig \"$f\" || exit 1; done"
+    });
+    memory_regression_test.step.dependOn(b.getInstallStep());
+    
+    const memory_test_step = b.step("test-memory-regression", "Run memory safety regression tests");
+    memory_test_step.dependOn(&memory_regression_test.step);
 
     // Create comprehensive test step that runs all tests
     const all_tests_step = b.step("test-all", "Run all test suites");
