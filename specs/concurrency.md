@@ -90,20 +90,35 @@ sus msgCh dm<Message>[5]
 
 ### Channel Operations
 
+**CANONICAL SYNTAX (Required for all implementations):**
+
 #### Send Operation
 ```cursed
 dm_send(ch, value)             // Blocking send
 ```
 
-#### Receive Operation
+#### Receive Operation  
 ```cursed
 value := dm_recv(ch)           // Blocking receive
-value, ok := dm_recv_ok(ch)    // Receive with close check
+value, ok := dm_recv(ch)       // Receive with close check
 ```
 
 #### Channel Closing
 ```cursed
-close(ch)                      // Close channel
+dm_close(ch)                   // Close channel
+```
+
+#### Channel Creation
+```cursed
+ch := dm_make(type, capacity)  // Create channel (0 = unbuffered)
+```
+
+**DEPRECATED SYNTAX (Remove in v2.0):**
+```cursed
+// Legacy Go-style operators - DO NOT USE
+ch <- value                    // DEPRECATED: Use dm_send(ch, value)
+value := <-ch                  // DEPRECATED: Use value := dm_recv(ch)
+close(ch)                      // DEPRECATED: Use dm_close(ch)
 ```
 
 ### Channel Semantics

@@ -14,28 +14,50 @@ PackageName      = identifier .
 
 ## Imports
 
-Imports declare dependencies on other packages.
+**CANONICAL SYNTAX:** Imports declare dependencies on other packages using the `yeet` keyword.
 
 ```
-ImportDecl       = "yeet" ( ImportSpec | "(" { ImportSpec ";" } ")" ) .
+ImportDecl       = "yeet" ( ImportSpec | "(" { ImportSpec ";" } ")" | ImportList ) .
 ImportSpec       = [ identifier | "." ] ImportPath .
 ImportPath       = string_lit .
+ImportList       = ImportPath { "," ImportPath } .
 ```
+
+**PARSING RULES:**
+
+1. **Single import**: `yeet "module_name"`
+2. **Multiple imports (comma-separated)**: `yeet "module1", "module2", "module3"`
+3. **Grouped imports (parenthesized)**: `yeet ( "module1"; "module2"; "module3" )`
+4. **Aliased import**: `yeet "module_name" as alias_name`
+5. **Specific imports**: `yeet "module" { symbol1, symbol2 }`
 
 Examples:
 
 ```
 vibe main
 
+// Single import
 yeet "vibez"
-yeet "math"
+yeet "mathz"
 
+// Comma-separated imports  
+yeet "vibez", "mathz", "stringz"
+
+// Grouped imports (semicolon-separated)
 yeet (
     "vibez"
-    "math"
-    "string"
+    "mathz"
+    "stringz"  
 )
+
+// Aliased import
+yeet "very_long_module_name" as short
+
+// Specific symbol imports
+yeet "mathz" { sin, cos, tan }
 ```
+
+**IMPLEMENTATION REQUIREMENT:** All parsers MUST support all four import forms with consistent precedence and error handling.
 
 ## Declarations and Scope
 
@@ -127,31 +149,36 @@ SimpleStmt       = EmptyStmt | ExpressionStmt | Assignment | ShortVarDecl |
 
 ### If Statements
 
+**CANONICAL KEYWORDS:**
 ```
-IfStmt           = "lowkey" [ SimpleStmt ";" ] Expression Block [ "highkey" ( IfStmt | Block ) ] .
+IfStmt           = "ready" [ SimpleStmt ";" ] Expression Block [ "otherwise" ( IfStmt | Block ) ] .
 ```
 
 Example:
 
 ```
-lowkey x > 0 {
+ready x > 0 {
     damn x
-} highkey lowkey x < 0 {
+} otherwise ready x < 0 {
     damn -x
-} highkey {
+} otherwise {
     damn 0
 }
+```
+
+**DEPRECATED (remove in v2.0):**
+```
+// DEPRECATED: lowkey/highkey - use ready/otherwise  
+lowkey x > 0 { ... } highkey { ... }
 ```
 
 Parentheses around the condition expression are optional:
 
 ```
-lowkey (x > 0) {
+ready (x > 0) {
     damn x
 }
 ```
-
-Both forms are valid in CURSED.
 
 ### Switch Statements
 
@@ -177,6 +204,7 @@ vibe_check day {
 
 ### For Statements
 
+**CANONICAL KEYWORDS:**
 ```
 ForStmt          = "bestie" [ Condition | ForClause | RangeClause ] Block .
 Condition        = Expression .
@@ -197,7 +225,7 @@ bestie x < 100 {
 
 bestie {
     doSomething()
-    lowkey done() {
+    ready done() {
         ghosted
     }
 }
@@ -209,23 +237,24 @@ bestie _, val := flex items {
 
 ### While Statements
 
+**CANONICAL KEYWORD:**
 ```
-WhileStmt        = ( "periodt" | "flex" ) Expression Block .
+WhileStmt        = "periodt" Expression Block .
 ```
 
-Examples:
+Example:
 
 ```
 periodt x > 0 {
     x--
 }
-
-flex x < 100 {
-    x = x * 2
-}
 ```
 
-**COMPATIBILITY**: Both `periodt` and `flex` are accepted for while statements.
+**DEPRECATED (remove in v2.0):**
+```
+// DEPRECATED: flex for while loops - use periodt
+flex x < 100 { ... }
+```
 
 ### Return Statements
 

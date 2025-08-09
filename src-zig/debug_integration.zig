@@ -185,14 +185,36 @@ pub const DebugInterpreter = struct {
     /// Execute assignment statement with debug support
     fn executeAssignmentStatementWithDebug(self: *Self, assign: ast.AssignmentStatement) !void {
         const value_expr: *ast.Expression = @ptrCast(@alignCast(assign.value));
-        _ = try self.evaluateExpressionWithDebug(value_expr.*);
-        // TODO: Handle assignment properly by evaluating target
+        const new_value = try self.evaluateExpressionWithDebug(value_expr.*);
+        
+        // Store old value for comparison if variable exists
+        var old_value: ?Value = null;
+        if (self.environment.get(assign.target)) |existing| {
+            old_value = existing;
+        }
+        
+        // Perform the assignment
+        try self.environment.define(assign.target, new_value);
         
         // Debug notification of variable change
         if (self.debug_enabled) {
             std.debug.print("DEBUG: Assignment statement executed\n", .{});
+            std.debug.print("DEBUG: Variable '{s}' = ", .{assign.target});
+            self.printValue(new_value);
+            std.debug.print("\n", .{});
             
-            // TODO: Check if variable is being watched and display changes
+            // Check if variable is being watched and display changes
+            if (self.isVariableWatched(assign.target)) {
+                std.debug.print("WATCH: Variable '{s}' changed from ", .{assign.target});
+                if (old_value) |old| {
+                    self.printValue(old);
+                } else {
+                    std.debug.print("undefined", .{});
+                }
+                std.debug.print(" to ", .{});
+                self.printValue(new_value);
+                std.debug.print("\n", .{});
+            }
         }
     }
     
@@ -307,6 +329,31 @@ pub const DebugInterpreter = struct {
     /// Get debugger reference for external control
     pub fn getDebugger(self: *Self) *debugger.CursedDebugger {
         return &self.debugger;
+    }
+    
+    /// Print value for debug output
+    fn printValue(self: *Self, value: interpreter.Value) void {
+        _ = self;
+        switch (value) {
+            .Integer => |i| std.debug.print("{d}", .{i}),
+            .Float => |f| std.debug.print("{d}", .{f}),
+            .String => |s| std.debug.print("\"{s}\"", .{s}),
+            .Boolean => |b| std.debug.print("{}", .{b}),
+            .Character => |c| std.debug.print("'{c}'", .{c}),
+            .Null => std.debug.print("null", .{}),
+            else => std.debug.print("(complex value)", .{}),
+        }
+    }
+    
+    /// Check if variable is being watched
+    fn isVariableWatched(self: *Self, var_name: []const u8) bool {
+        // Check if the debugger has this variable in its watch list
+        for (self.debugger.watched_variables.items) |watched| {
+            if (std.mem.eql(u8, watched, var_name)) {
+                return true;
+            }
+        }
+        return false;
     }
 };
 

@@ -248,11 +248,18 @@ fn interpretProgram(ctx: *Context, source: []const u8) !void {
         
         // Skip module imports (yeet statements) - make them no-ops
         if (std.mem.startsWith(u8, trimmed, "yeet ")) {
-            print("Info: Skipping module import (not supported in stable mode): {s}\n", .{trimmed});
+            // print("Info: Skipping module import (not supported in stable mode): {s}\n", .{trimmed});
             continue;
         }
         
-        try executeStatement(ctx, trimmed);
+        // Split line by semicolons to handle multiple statements
+        var statements = std.mem.splitScalar(u8, trimmed, ';');
+        while (statements.next()) |stmt| {
+            const stmt_trimmed = std.mem.trim(u8, stmt, " \t\r\n");
+            if (stmt_trimmed.len == 0) continue;
+            
+            try executeStatement(ctx, stmt_trimmed);
+        }
     }
 }
 

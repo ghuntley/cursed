@@ -4,12 +4,16 @@ This document defines the comprehensive error handling system for the CURSED pro
 
 ## Overview
 
+**CANONICAL ERROR HANDLING APPROACH**: CURSED uses the **yikes/fam/shook** system as the primary error handling mechanism, combining structured error types with panic recovery.
+
 The CURSED error handling system provides:
-- Explicit error types and handling mechanisms
-- Panic detection and recovery
-- Error propagation and context preservation
+- **yikes**: Structured error creation and propagation  
+- **fam**: Panic recovery and error handling blocks
+- **shook**: Error propagation operator and panic trigger
 - Performance monitoring and debugging integration
 - Goroutine isolation and recovery strategies
+
+**DEPRECATED**: Go-style `Result<T, Error>` patterns are deprecated in favor of CURSED-native error handling.
 
 ## Error Types
 
@@ -76,29 +80,32 @@ sus err yikes = yikes{
 }
 ```
 
-### 2. Function Error Returns
+### 2. CURSED Error Handling Pattern
 
-Functions that can fail should return a result type that includes an error:
+**CANONICAL**: Use yikes/fam/shook for all error handling:
 
 ```cursed
-// Function signature with error return
-slay divide(a normie, b normie) (normie, yikes) {
-    vibe_check b {
-        mood 0:
-            damn 0, yikes("Division by zero")
-        basic:
-            damn a / b, cringe
+// Function that can fail using yikes
+slay divide(a normie, b normie) normie yikes {
+    ready (b == 0) {
+        yikes "Division by zero"
     }
+    damn a / b
 }
 
-// Usage with error handling
-sus result, err = divide(10, 0)
-vibe_check err != cringe {
-    vibez.spill("Error:", err.message())
-    damn  // Early return with error
+// Usage with fam recovery block
+fam {
+    sus result = divide(10, 0) shook  // shook propagates yikes
+    vibez.spill("Result:", result)
+} sus error {
+    vibez.spill("Error:", error.message())
 }
+```
 
-vibez.spill("Result:", result)
+**DEPRECATED Go-style returns (remove in v2.0):**
+```cursed
+// DEPRECATED: Don't use tuple returns for errors
+slay old_divide(a normie, b normie) (normie, yikes) { ... }
 ```
 
 ### 3. Error Propagation

@@ -699,7 +699,7 @@ pub fn build(b: *std.Build) void {
     else if (is_wasm) 
         b.path("src-zig/wasm_minimal_compiler.zig") 
     else 
-        b.path("src-zig/lsp_minimal_fixed.zig");
+        b.path("src-zig/lsp_main.zig");
         
     const lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp",
