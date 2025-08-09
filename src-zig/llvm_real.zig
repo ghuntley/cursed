@@ -122,8 +122,9 @@ pub const RealLLVMCodeGen = struct {
     
     pub fn generateProgram(self: *RealLLVMCodeGen, program: Program) LLVMError!void {
         // Generate all statements
-        for (program.statements.items) |stmt| {
-            try self.generateStatement(stmt);
+        for (program.statements.items) |stmt_ptr| {
+            const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
+            try self.generateStatement(stmt.*);
         }
         
         // Create main function if it doesn't exist
@@ -138,29 +139,28 @@ pub const RealLLVMCodeGen = struct {
     }
     
     fn generateStatement(self: *RealLLVMCodeGen, stmt: Statement) LLVMError!void {
-        switch (stmt.tag) {
-            .Function => {
-                const func: *FunctionStatement = @ptrCast(@alignCast(stmt.data));
-                try self.generateFunction(func.*);
+        switch (stmt) {
+            .Function => |func| {
+                try self.generateFunction(func);
             },
-            .Expression => {
-                const expr: *Expression = @ptrCast(@alignCast(stmt.data));
+            .Expression => |expr_ptr| {
+                const expr: *Expression = @ptrCast(@alignCast(expr_ptr));
                 _ = try self.generateExpression(expr.*);
             },
-            .Let => {
-                const let_stmt: *ast.LetStatement = @ptrCast(@alignCast(stmt.data));
-                try self.generateLet(let_stmt.*);
+            .Let => |let_stmt| {
+                try self.generateLet(let_stmt);
             },
             else => {
                 // For now, skip other statement types
-                std.debug.print("Statement type not implemented: {}\n", .{stmt.tag});
+                std.debug.print("Statement type not implemented yet\n", .{});
             },
         }
     }
     
     fn generateFunction(self: *RealLLVMCodeGen, func: FunctionStatement) LLVMError!void {
         // Create function type (simplified - assuming no parameters for now)
-        const function_type = llvm_function_type(self.i32_type, null, 0, 0);
+        var empty_params: [0]?*anyopaque = undefined;
+        const function_type = llvm_function_type(self.i32_type, &empty_params, 0, 0);
         const function = llvm_add_function(self.module, func.name.ptr, function_type);
         
         if (function == null) {
@@ -175,7 +175,10 @@ pub const RealLLVMCodeGen = struct {
         llvm_position_builder_at_end(self.builder, entry_block);
         
         // Generate function body
-        try self.generateStatement(func.body);
+        for (func.body.items) |stmt_ptr| {
+            const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
+            try self.generateStatement(stmt.*);
+        }
         
         // Add default return if needed
         const return_value = llvm_const_int(self.i32_type, 0);
@@ -183,50 +186,43 @@ pub const RealLLVMCodeGen = struct {
     }
     
     fn generateLet(self: *RealLLVMCodeGen, let_stmt: ast.LetStatement) LLVMError!void {
-        // For now, just generate the value expression
-        _ = try self.generateExpression(let_stmt.value);
+        // For now, just generate the initializer expression
+        if (let_stmt.initializer) |initializer| {
+            const expr: *Expression = @ptrCast(@alignCast(initializer));
+            _ = try self.generateExpression(expr.*);
+        }
         // TODO: Store in variable table
     }
     
     fn generateExpression(self: *RealLLVMCodeGen, expr: Expression) LLVMError!?*anyopaque {
-        switch (expr.tag) {
-            .Integer => {
-                const int_expr: *ast.IntegerExpression = @ptrCast(@alignCast(expr.data));
-                return llvm_const_int(self.i32_type, @intCast(int_expr.value));
+        switch (expr) {
+            .Integer => |int_value| {
+                return llvm_const_int(self.i32_type, @intCast(int_value));
             },
-            .String => {
-                const str_expr: *ast.StringExpression = @ptrCast(@alignCast(expr.data));
-                return llvm_build_global_string_ptr(self.builder, str_expr.value.ptr, "str");
+            .String => |str_value| {
+                return llvm_build_global_string_ptr(self.builder, str_value.ptr, "str");
             },
-            .Identifier => {
+            .Identifier => |name| {
                 // Look up variable (simplified)
-                const id_expr: *ast.IdentifierExpression = @ptrCast(@alignCast(expr.data));
-                return self.variables.get(id_expr.name) orelse null;
+                return self.variables.get(name) orelse null;
             },
-            .FunctionCall => {
-                const call_expr: *ast.FunctionCallExpression = @ptrCast(@alignCast(expr.data));
-                return try self.generateFunctionCall(call_expr.*);
+            .Call => |_| {
+                // TODO: Implement function call generation
+                return llvm_const_int(self.i32_type, 0);
             },
             else => {
-                std.debug.print("Expression type not implemented: {}\n", .{expr.tag});
+                std.debug.print("Expression type not implemented yet\n", .{});
                 return llvm_const_int(self.i32_type, 0);
             },
         }
     }
     
-    fn generateFunctionCall(self: *RealLLVMCodeGen, call: ast.FunctionCallExpression) LLVMError!?*anyopaque {
-        // Handle vibez.spill special case
-        if (std.mem.eql(u8, call.name, "vibez.spill")) {
-            return try self.generatePrintCall(call);
-        }
+    fn generateFunctionCall(self: *RealLLVMCodeGen, call: struct { function: *Expression, arguments: ArrayList(*Expression) }) LLVMError!?*anyopaque {
+        // For now, assume function is an identifier and handle simple cases
+        _ = call; // Avoid unused parameter warning
         
-        // Regular function call
-        const function = self.functions.get(call.name) orelse {
-            return LLVMError.UndefinedSymbol;
-        };
-        
-        const func_type = llvm_get_function_type(function);
-        return llvm_build_call2(self.builder, func_type, function, null, 0, "call");
+        // TODO: Implement proper function call generation
+        return llvm_const_int(self.i32_type, 0);
     }
     
     fn generatePrintCall(self: *RealLLVMCodeGen, call: ast.FunctionCallExpression) LLVMError!?*anyopaque {
@@ -256,7 +252,8 @@ pub const RealLLVMCodeGen = struct {
     
     fn generateMainFunction(self: *RealLLVMCodeGen) LLVMError!void {
         // Create main function that returns int
-        const main_type = llvm_function_type(self.i32_type, null, 0, 0);
+        var empty_params: [0]?*anyopaque = undefined;
+        const main_type = llvm_function_type(self.i32_type, &empty_params, 0, 0);
         const main_func = llvm_add_function(self.module, "main", main_type);
         
         if (main_func == null) {

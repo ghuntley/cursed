@@ -216,7 +216,3 @@ void* llvm_global_get_value_type(void* global) {
 int llvm_get_type_kind(void* type_ref) {
     return LLVMGetTypeKind((LLVMTypeRef)type_ref);
 }
-
-void* llvm_get_named_function(void* module, const char* name) {
-    return LLVMGetNamedFunction((LLVMModuleRef)module, name);
-}
