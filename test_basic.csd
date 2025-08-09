@@ -1,1 +1,1 @@
-vibez.spill("Hello CURSED!")
+sus x drip = 42; vibez.spill("Answer:", x)

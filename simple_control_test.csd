@@ -1,27 +1,31 @@
-# Test basic if statement
-ready (5 > 3) {
-    vibez.spill("Basic if works")
+# Simple Enhanced Control Test
+sus a drip = 5
+sus b drip = 10
+
+# Test basic comparison
+ready (a > 3) {
+    vibez.spill("a is greater than 3")
 }
 
-# Test if/else with variable
-sus x drip = 7
-ready (x > 10) {
-    vibez.spill("x is large")
-} otherwise {
-    vibez.spill("x is small")
+# Test AND operator
+ready (a > 3 && b < 15) {
+    vibez.spill("AND condition works")
 }
 
-# Test while loop
-sus counter drip = 0
-bestie (counter < 3) {
-    vibez.spill("Counter:", counter)
-    counter = counter + 1
+# Test OR operator
+ready (a > 10 || b > 5) {
+    vibez.spill("OR condition works")
 }
 
-# Test nested if
-sus y drip = 4
-ready (y > 2) {
-    ready (y < 6) {
-        vibez.spill("y is between 2 and 6")
+# Test nested structure
+sus i drip = 0
+bestie (i < 2) {
+    ready (i == 0) {
+        vibez.spill("First iteration")
+    } otherwise {
+        vibez.spill("Other iteration")
     }
+    i = i + 1
 }
+
+vibez.spill("Test completed")

@@ -460,28 +460,46 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             continue;
         }
         
-        // Handle pattern matching: ready (value) {
-        if (std.mem.startsWith(u8, trimmed, "ready (") and std.mem.endsWith(u8, trimmed, ") {")) {
-            in_pattern_block = true;
-            pattern_matched = false;
-            
-            // Extract value from ready (value) {
+        // Handle enhanced if statements (ready) with complex conditions
+        if (std.mem.startsWith(u8, trimmed, "ready (")) {
+            // Check if this is a boolean condition (contains operators) or simple pattern matching
             if (std.mem.indexOf(u8, trimmed, "(")) |start_paren| {
                 if (std.mem.indexOf(u8, trimmed[start_paren..], ")")) |rel_end_paren| {
                     const end_paren = start_paren + rel_end_paren;
-                    const value_str = std.mem.trim(u8, trimmed[start_paren + 1..end_paren], " \t");
+                    const condition_str = std.mem.trim(u8, trimmed[start_paren + 1..end_paren], " \t");
                     
-                    // Evaluate the pattern value
-                    if (variables.get(value_str)) |var_value| {
-                        pattern_value = var_value;
-                        print("🎯 Pattern matching on: {any}\n", .{var_value});
-                    } else {
-                        print("❌ Variable '{s}' not found for pattern matching\n", .{value_str});
-                        pattern_value = null;
+                    // Check if it contains boolean/comparison operators
+                    const has_operators = std.mem.containsAtLeast(u8, condition_str, 1, "&&") or
+                                         std.mem.containsAtLeast(u8, condition_str, 1, "||") or
+                                         std.mem.containsAtLeast(u8, condition_str, 1, "==") or
+                                         std.mem.containsAtLeast(u8, condition_str, 1, "!=") or
+                                         std.mem.containsAtLeast(u8, condition_str, 1, "<=") or
+                                         std.mem.containsAtLeast(u8, condition_str, 1, ">=") or
+                                         std.mem.containsAtLeast(u8, condition_str, 1, "<") or
+                                         std.mem.containsAtLeast(u8, condition_str, 1, ">") or
+                                         std.mem.startsWith(u8, condition_str, "!");
+                    
+                    if (has_operators) {
+                        // This is a boolean condition - use enhanced if statement handler
+                        try handleEnhancedIfStatement(&variables, &functions, allocator, trimmed);
+                        continue;
+                    } else if (std.mem.endsWith(u8, trimmed, ") {")) {
+                        // This is simple pattern matching - continue with original logic
+                        in_pattern_block = true;
+                        pattern_matched = false;
+                        
+                        // Evaluate the pattern value
+                        if (variables.get(condition_str)) |var_value| {
+                            pattern_value = var_value;
+                            print("🎯 Pattern matching on: {any}\n", .{var_value});
+                        } else {
+                            print("❌ Variable '{s}' not found for pattern matching\n", .{condition_str});
+                            pattern_value = null;
+                        }
+                        continue;
                     }
                 }
             }
-            continue;
         }
         
         // Handle function body collection
@@ -1508,15 +1526,148 @@ fn handleBestieLoop(
     }
 }
 
-/// Evaluate a simple condition like "i < 3"
+/// Enhanced condition evaluator with support for complex boolean expressions
 fn evaluateCondition(
     variables: *HashMap([]const u8, Variable, std.hash_map.StringContext, 80),
     condition: []const u8,
-    _: Allocator
+    allocator: Allocator
 ) !bool {
     const trimmed = std.mem.trim(u8, condition, " \t");
     
-    // Check for boolean constants first
+    // Handle parentheses first (recursive parsing)
+    if (std.mem.startsWith(u8, trimmed, "(") and std.mem.endsWith(u8, trimmed, ")")) {
+        return try evaluateCondition(variables, trimmed[1..trimmed.len - 1], allocator);
+    }
+    
+    // Handle logical OR (||) - lowest precedence
+    if (std.mem.indexOf(u8, trimmed, "||")) |or_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..or_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[or_pos + 2..], " \t");
+        
+        const left_result = try evaluateCondition(variables, left_str, allocator);
+        if (left_result) return true; // Short-circuit evaluation
+        
+        return try evaluateCondition(variables, right_str, allocator);
+    }
+    
+    // Handle logical AND (&&) - higher precedence than OR
+    if (std.mem.indexOf(u8, trimmed, "&&")) |and_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..and_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[and_pos + 2..], " \t");
+        
+        const left_result = try evaluateCondition(variables, left_str, allocator);
+        if (!left_result) return false; // Short-circuit evaluation
+        
+        return try evaluateCondition(variables, right_str, allocator);
+    }
+    
+    // Handle logical NOT (!) - highest precedence
+    if (std.mem.startsWith(u8, trimmed, "!")) {
+        const expr = std.mem.trim(u8, trimmed[1..], " \t");
+        return !(try evaluateCondition(variables, expr, allocator));
+    }
+    
+    // Handle comparison operators (left to right precedence)
+    
+    // Less than or equal (<=)
+    if (std.mem.indexOf(u8, trimmed, "<=")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 2..], " \t");
+        
+        const left_val = try evaluateNumericExpression(variables, left_str, allocator);
+        const right_val = try evaluateNumericExpression(variables, right_str, allocator);
+        
+        return left_val <= right_val;
+    }
+    
+    // Greater than or equal (>=)
+    if (std.mem.indexOf(u8, trimmed, ">=")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 2..], " \t");
+        
+        const left_val = try evaluateNumericExpression(variables, left_str, allocator);
+        const right_val = try evaluateNumericExpression(variables, right_str, allocator);
+        
+        return left_val >= right_val;
+    }
+    
+    // Not equal (!=)
+    if (std.mem.indexOf(u8, trimmed, "!=")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 2..], " \t");
+        
+        // Handle boolean comparisons
+        if (isBooleanExpression(left_str) or isBooleanExpression(right_str)) {
+            const left_bool = try evaluateBooleanExpression(variables, left_str, allocator);
+            const right_bool = try evaluateBooleanExpression(variables, right_str, allocator);
+            return left_bool != right_bool;
+        }
+        
+        // Handle string comparisons
+        if (isStringExpression(left_str) or isStringExpression(right_str)) {
+            const left_str_val = try evaluateStringExpression(variables, left_str, allocator);
+            defer allocator.free(left_str_val);
+            const right_str_val = try evaluateStringExpression(variables, right_str, allocator);
+            defer allocator.free(right_str_val);
+            return !std.mem.eql(u8, left_str_val, right_str_val);
+        }
+        
+        // Handle numeric comparisons
+        const left_val = try evaluateNumericExpression(variables, left_str, allocator);
+        const right_val = try evaluateNumericExpression(variables, right_str, allocator);
+        return left_val != right_val;
+    }
+    
+    // Equality comparison (==)
+    if (std.mem.indexOf(u8, trimmed, "==")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 2..], " \t");
+        
+        // Handle boolean comparisons
+        if (isBooleanExpression(left_str) or isBooleanExpression(right_str)) {
+            const left_bool = try evaluateBooleanExpression(variables, left_str, allocator);
+            const right_bool = try evaluateBooleanExpression(variables, right_str, allocator);
+            return left_bool == right_bool;
+        }
+        
+        // Handle string comparisons
+        if (isStringExpression(left_str) or isStringExpression(right_str)) {
+            const left_str_val = try evaluateStringExpression(variables, left_str, allocator);
+            defer allocator.free(left_str_val);
+            const right_str_val = try evaluateStringExpression(variables, right_str, allocator);
+            defer allocator.free(right_str_val);
+            return std.mem.eql(u8, left_str_val, right_str_val);
+        }
+        
+        // Handle numeric comparisons
+        const left_val = try evaluateNumericExpression(variables, left_str, allocator);
+        const right_val = try evaluateNumericExpression(variables, right_str, allocator);
+        return left_val == right_val;
+    }
+    
+    // Less than (<)
+    if (std.mem.indexOf(u8, trimmed, "<")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 1..], " \t");
+        
+        const left_val = try evaluateNumericExpression(variables, left_str, allocator);
+        const right_val = try evaluateNumericExpression(variables, right_str, allocator);
+        
+        return left_val < right_val;
+    }
+    
+    // Greater than (>)
+    if (std.mem.indexOf(u8, trimmed, ">")) |op_pos| {
+        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
+        const right_str = std.mem.trim(u8, trimmed[op_pos + 1..], " \t");
+        
+        const left_val = try evaluateNumericExpression(variables, left_str, allocator);
+        const right_val = try evaluateNumericExpression(variables, right_str, allocator);
+        
+        return left_val > right_val;
+    }
+    
+    // Check for boolean constants
     if (std.mem.eql(u8, trimmed, "based")) {
         return true;
     }
@@ -1531,65 +1682,99 @@ fn evaluateCondition(
         }
     }
     
-    // Simple parsing for conditions like "i < 3"
-    if (std.mem.indexOf(u8, trimmed, "<")) |op_pos| {
-        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
-        const right_str = std.mem.trim(u8, trimmed[op_pos + 1..], " \t");
-        
-        const left_val = try evaluateIntegerExpression(variables, left_str);
-        const right_val = try evaluateIntegerExpression(variables, right_str);
-        
-        return left_val < right_val;
+    return false;
+}
+
+/// Helper function to evaluate numeric expressions
+fn evaluateNumericExpression(
+    variables: *HashMap([]const u8, Variable, std.hash_map.StringContext, 80),
+    expr: []const u8,
+    allocator: Allocator
+) !i64 {
+    _ = allocator; // Not used in this simple implementation
+    
+    const trimmed = std.mem.trim(u8, expr, " \t");
+    
+    // Check if it's a variable
+    if (variables.get(trimmed)) |var_val| {
+        switch (var_val) {
+            .Integer => |int_val| return int_val,
+            .Boolean => |bool_val| return if (bool_val) 1 else 0,
+            else => return 0,
+        }
     }
     
-    // Add more operators as needed
-    if (std.mem.indexOf(u8, trimmed, ">")) |op_pos| {
-        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
-        const right_str = std.mem.trim(u8, trimmed[op_pos + 1..], " \t");
-        
-        const left_val = try evaluateIntegerExpression(variables, left_str);
-        const right_val = try evaluateIntegerExpression(variables, right_str);
-        
-        return left_val > right_val;
+    // Try to parse as integer literal
+    return std.fmt.parseInt(i64, trimmed, 10) catch 0;
+}
+
+/// Helper function to evaluate boolean expressions
+fn evaluateBooleanExpression(
+    variables: *HashMap([]const u8, Variable, std.hash_map.StringContext, 80),
+    expr: []const u8,
+    _: Allocator
+) !bool {
+    const trimmed = std.mem.trim(u8, expr, " \t");
+    
+    // Check for boolean constants
+    if (std.mem.eql(u8, trimmed, "based")) return true;
+    if (std.mem.eql(u8, trimmed, "cringe")) return false;
+    
+    // Check for boolean variables
+    if (variables.get(trimmed)) |var_val| {
+        switch (var_val) {
+            .Boolean => |bool_val| return bool_val,
+            .Integer => |int_val| return int_val != 0,
+            else => return false,
+        }
     }
     
-    // Equality comparison
-    if (std.mem.indexOf(u8, trimmed, "==")) |op_pos| {
-        const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
-        const right_str = std.mem.trim(u8, trimmed[op_pos + 2..], " \t");
-        
-        // Check if comparing boolean values
-        if ((std.mem.eql(u8, left_str, "based") or std.mem.eql(u8, left_str, "cringe")) and
-            (std.mem.eql(u8, right_str, "based") or std.mem.eql(u8, right_str, "cringe"))) {
-            const left_bool = std.mem.eql(u8, left_str, "based");
-            const right_bool = std.mem.eql(u8, right_str, "based");
-            return left_bool == right_bool;
-        }
-        
-        // Check if left side is a boolean variable
-        if (variables.get(left_str)) |left_var| {
-            if (left_var == .Boolean) {
-                const right_bool = std.mem.eql(u8, right_str, "based");
-                return left_var.Boolean == right_bool;
-            }
-        }
-        
-        // Check if right side is a boolean variable
-        if (variables.get(right_str)) |right_var| {
-            if (right_var == .Boolean) {
-                const left_bool = std.mem.eql(u8, left_str, "based");
-                return left_bool == right_var.Boolean;
-            }
-        }
-        
-        // Compare as integers
-        const left_val = try evaluateIntegerExpression(variables, left_str);
-        const right_val = try evaluateIntegerExpression(variables, right_str);
-        
-        return left_val == right_val;
-    }
+    // For simple expressions without complex operators, return false
+    // (Complex expressions should be handled by evaluateCondition directly)
     
     return false;
+}
+
+/// Helper function to evaluate string expressions
+fn evaluateStringExpression(
+    variables: *HashMap([]const u8, Variable, std.hash_map.StringContext, 80),
+    expr: []const u8,
+    allocator: Allocator
+) ![]u8 {
+    const trimmed = std.mem.trim(u8, expr, " \t");
+    
+    // Handle string literals
+    if (trimmed.len >= 2 and trimmed[0] == '"' and trimmed[trimmed.len - 1] == '"') {
+        return try allocator.dupe(u8, trimmed[1..trimmed.len - 1]);
+    }
+    
+    // Check for string variables
+    if (variables.get(trimmed)) |var_val| {
+        switch (var_val) {
+            .String => |str_val| return try allocator.dupe(u8, str_val),
+            .Integer => |int_val| return try std.fmt.allocPrint(allocator, "{}", .{int_val}),
+            .Boolean => |bool_val| return try allocator.dupe(u8, if (bool_val) "based" else "cringe"),
+            else => return try allocator.dupe(u8, ""),
+        }
+    }
+    
+    return try allocator.dupe(u8, trimmed);
+}
+
+/// Helper function to determine if an expression is boolean-like
+fn isBooleanExpression(expr: []const u8) bool {
+    const trimmed = std.mem.trim(u8, expr, " \t");
+    return std.mem.eql(u8, trimmed, "based") or 
+           std.mem.eql(u8, trimmed, "cringe") or
+           std.mem.containsAtLeast(u8, trimmed, 1, "&&") or
+           std.mem.containsAtLeast(u8, trimmed, 1, "||") or
+           std.mem.startsWith(u8, trimmed, "!");
+}
+
+/// Helper function to determine if an expression is string-like
+fn isStringExpression(expr: []const u8) bool {
+    const trimmed = std.mem.trim(u8, expr, " \t");
+    return (trimmed.len >= 2 and trimmed[0] == '"' and trimmed[trimmed.len - 1] == '"');
 }
 
 /// Handle variable assignment statements like "i = i + 1"
@@ -1675,6 +1860,171 @@ fn parseArgumentsWithParentheses(allocator: Allocator, input: []const u8) !Array
     }
     
     return arguments;
+}
+
+/// Handle enhanced if statements with complex boolean conditions and optional else
+fn handleEnhancedIfStatement(
+    variables: *HashMap([]const u8, Variable, std.hash_map.StringContext, 80),
+    functions: *HashMap([]const u8, FunctionDefinition, std.hash_map.StringContext, 80),
+    allocator: Allocator,
+    statement: []const u8
+) !void {
+    const trimmed = std.mem.trim(u8, statement, " \t\r\n");
+    
+    // Parse: ready (condition) { if_body } [otherwise { else_body }]
+    
+    // Find condition in parentheses
+    const condition_start = std.mem.indexOf(u8, trimmed, "(") orelse return;
+    var condition_end: ?usize = null;
+    var paren_count: i32 = 0;
+    for (trimmed[condition_start..], condition_start..) |char, idx| {
+        if (char == '(') {
+            paren_count += 1;
+        } else if (char == ')') {
+            paren_count -= 1;
+            if (paren_count == 0) {
+                condition_end = idx;
+                break;
+            }
+        }
+    }
+    
+    if (condition_end == null) return;
+    
+    // Find if body in braces
+    const if_body_start = std.mem.indexOf(u8, trimmed, "{") orelse return;
+    var if_body_end: ?usize = null;
+    var brace_count: i32 = 0;
+    for (trimmed[if_body_start..], if_body_start..) |char, idx| {
+        if (char == '{') {
+            brace_count += 1;
+        } else if (char == '}') {
+            brace_count -= 1;
+            if (brace_count == 0) {
+                if_body_end = idx;
+                break;
+            }
+        }
+    }
+    
+    if (if_body_end == null) return;
+    
+    const condition_expr = std.mem.trim(u8, trimmed[condition_start + 1..condition_end.?], " \t");
+    const if_body_text = std.mem.trim(u8, trimmed[if_body_start + 1..if_body_end.?], " \t");
+    
+    // Check for else clause
+    var else_body_text: ?[]const u8 = null;
+    const remaining_after_if = std.mem.trim(u8, trimmed[if_body_end.? + 1..], " \t");
+    if (std.mem.startsWith(u8, remaining_after_if, "otherwise")) {
+        const else_part = std.mem.trim(u8, remaining_after_if[9..], " \t"); // Skip "otherwise"
+        if (std.mem.startsWith(u8, else_part, "{") and std.mem.endsWith(u8, else_part, "}")) {
+            else_body_text = std.mem.trim(u8, else_part[1..else_part.len - 1], " \t");
+        }
+    }
+    
+    // Evaluate the condition using enhanced evaluateCondition
+    const condition_result = try evaluateCondition(variables, condition_expr, allocator);
+    
+    const body_to_execute = if (condition_result) if_body_text else else_body_text;
+    
+    if (body_to_execute) |body| {
+        // Execute the appropriate body
+        try executeStatementBlock(variables, functions, allocator, body);
+    }
+}
+
+/// Execute a block of statements (semicolon or newline separated)
+fn executeStatementBlock(
+    variables: *HashMap([]const u8, Variable, std.hash_map.StringContext, 80),
+    functions: *HashMap([]const u8, FunctionDefinition, std.hash_map.StringContext, 80),
+    allocator: Allocator,
+    block: []const u8
+) !void {
+    // Split by semicolons first, then by newlines
+    var statements = std.mem.splitScalar(u8, block, ';');
+    while (statements.next()) |stmt| {
+        const stmt_trimmed = std.mem.trim(u8, stmt, " \t\r\n");
+        if (stmt_trimmed.len == 0) continue;
+        
+        // Split by newlines for multi-statement blocks
+        var line_iter = std.mem.splitScalar(u8, stmt_trimmed, '\n');
+        while (line_iter.next()) |line| {
+            const line_trimmed = std.mem.trim(u8, line, " \t\r\n");
+            if (line_trimmed.len == 0) continue;
+            
+            try executeStatement(variables, functions, allocator, line_trimmed);
+        }
+    }
+}
+
+/// Execute a single statement
+fn executeStatement(
+    variables: *HashMap([]const u8, Variable, std.hash_map.StringContext, 80),
+    functions: *HashMap([]const u8, FunctionDefinition, std.hash_map.StringContext, 80),
+    allocator: Allocator,
+    statement: []const u8
+) !void {
+    const trimmed = std.mem.trim(u8, statement, " \t\r\n");
+    if (trimmed.len == 0) return;
+    
+    // Handle variable declarations: sus name type = value
+    if (std.mem.startsWith(u8, trimmed, "sus ")) {
+        try handleVariableDeclaration(variables, functions, allocator, trimmed);
+        return;
+    }
+    
+    // Handle variable assignments: varname = value
+    if (std.mem.indexOf(u8, trimmed, "=")) |equals_pos| {
+        // Check if it's not part of a comparison operator
+        if (equals_pos > 0 and equals_pos < trimmed.len - 1) {
+            const prev_char = trimmed[equals_pos - 1];
+            const next_char = trimmed[equals_pos + 1];
+            if (prev_char != '!' and prev_char != '=' and prev_char != '<' and prev_char != '>' and 
+                next_char != '=') {
+                try handleVariableAssignment(variables, functions, allocator, trimmed, equals_pos);
+                return;
+            }
+        }
+    }
+    
+    // Handle vibez.spill() calls
+    if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
+        try handleVibesSpill(variables, functions, allocator, trimmed, start);
+        return;
+    }
+    
+    // Handle nested if statements
+    if (std.mem.startsWith(u8, trimmed, "ready (")) {
+        // Check if this is a boolean condition (contains operators) or simple pattern matching
+        if (std.mem.indexOf(u8, trimmed, "(")) |start_paren| {
+            if (std.mem.indexOf(u8, trimmed[start_paren..], ")")) |rel_end_paren| {
+                const end_paren = start_paren + rel_end_paren;
+                const condition_str = std.mem.trim(u8, trimmed[start_paren + 1..end_paren], " \t");
+                
+                // Check if it contains boolean/comparison operators
+                const has_operators = std.mem.containsAtLeast(u8, condition_str, 1, "&&") or
+                                     std.mem.containsAtLeast(u8, condition_str, 1, "||") or
+                                     std.mem.containsAtLeast(u8, condition_str, 1, "==") or
+                                     std.mem.containsAtLeast(u8, condition_str, 1, "!=") or
+                                     std.mem.containsAtLeast(u8, condition_str, 1, "<=") or
+                                     std.mem.containsAtLeast(u8, condition_str, 1, ">=") or
+                                     std.mem.containsAtLeast(u8, condition_str, 1, "<") or
+                                     std.mem.containsAtLeast(u8, condition_str, 1, ">") or
+                                     std.mem.startsWith(u8, condition_str, "!");
+                
+                if (has_operators) {
+                    try handleEnhancedIfStatement(variables, functions, allocator, trimmed);
+                    return;
+                }
+            }
+        }
+    }
+    
+    // Handle nested while loops
+    if (std.mem.startsWith(u8, trimmed, "bestie (")) {
+        try handleBestieLoop(variables, functions, allocator, trimmed);
+        return;
+    }
 }
 
 
