@@ -660,7 +660,10 @@ pub const AdvancedImportResolver = struct {
             
             // Look for "yeet" statements
             if (std.mem.startsWith(u8, trimmed, "yeet ")) {
-                if (try self.parseYeetStatement(trimmed, line_num)) |import_spec| {
+                var import_specs = try self.parseYeetStatementMultiple(trimmed, line_num);
+                defer import_specs.deinit();
+                
+                for (import_specs.items) |import_spec| {
                     try imports.append(import_spec);
                 }
             }
@@ -671,6 +674,43 @@ pub const AdvancedImportResolver = struct {
         return imports;
     }
     
+    fn parseYeetStatementMultiple(self: *AdvancedImportResolver, line: []const u8, line_num: u32) !ArrayList(ImportSpec) {
+        var imports = ArrayList(ImportSpec).init(self.allocator);
+        
+        const import_part = line[5..]; // Skip "yeet "
+        
+        // Extract all module names from quotes (handle comma-separated imports)
+        var search_offset: usize = 0;
+        var column_offset: u32 = 5; // Start after "yeet "
+        
+        while (search_offset < import_part.len) {
+            if (std.mem.indexOfPos(u8, import_part, search_offset, "\"")) |start_quote| {
+                const after_start = import_part[start_quote + 1 ..];
+                if (std.mem.indexOf(u8, after_start, "\"")) |end_quote| {
+                    const module_name = after_start[0..end_quote];
+                    
+                    const import_spec = ImportSpec{
+                        .raw_path = try self.allocator.dupe(u8, module_name),
+                        .module_type = .local, // Will be determined during resolution
+                        .source_file = try self.allocator.dupe(u8, self.current_file orelse "unknown"),
+                        .line = line_num,
+                        .column = @intCast(column_offset + start_quote + 1),
+                    };
+                    
+                    try imports.append(import_spec);
+                    search_offset = start_quote + 1 + end_quote + 1;
+                    column_offset += @intCast(start_quote + 1 + end_quote + 1);
+                } else {
+                    break; // No closing quote found
+                }
+            } else {
+                break; // No more quotes found
+            }
+        }
+        
+        return imports;
+    }
+
     fn parseYeetStatement(self: *AdvancedImportResolver, line: []const u8, line_num: u32) !?ImportSpec {
         // Extract module name from quotes in "yeet" statement
         // Format: yeet "module_name" [as alias]

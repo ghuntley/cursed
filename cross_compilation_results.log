@@ -1,0 +1,138 @@
+=== CROSS-COMPILATION TEST MATRIX ===
+Testing aarch64-linux target...
+Successfully integrated 0 package dependencies
+install
++- install cursed-simple-llvm-test
+   +- zig build-exe cursed-simple-llvm-test Debug aarch64-linux 1 errors
+error: ld.lld: /usr/lib/llvm-18/lib/libLLVM-18.so is incompatible with aarch64linux
+error: the following command failed with 1 compilation errors:
+/opt/zig/zig build-exe -lLLVM-18 -cflags -std=c99 -O2 -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -- /home/ghuntley/cursed/src-zig/llvm_wrapper.c -ODebug -target aarch64-linux -mcpu baseline -isystem /usr/lib/llvm-18/include -isystem /usr/include/llvm-18 -isystem /usr/lib/llvm-18/include/llvm-c -isystem /usr/include/llvm-c-18/llvm-c -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -DLLVM_DEFAULT_TARGET_TRIPLE="aarch64-unknown-linux-gnu" -DLLVM_TARGET_CPU="generic" -DLLVM_HOST_TARGET="generic" -D__aarch64__=1 -D__x86_64__=0 -D_GNU_SOURCE=1 -DTARGET_CPU="generic" -DLLVM_HOST_TRIPLE="aarch64-unknown-linux-gnu" -L /usr/lib/llvm-18/lib -L /usr/lib/x86_64-linux-gnu -L /usr/lib64 -Mroot=/home/ghuntley/cursed/src-zig/simple_llvm_test.zig -lc --cache-dir /home/ghuntley/cursed/.zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-simple-llvm-test --zig-lib-dir /opt/zig/lib/ --listen=- 
+install
++- install cursed-llvm-test
+   +- zig build-exe cursed-llvm-test Debug aarch64-linux 1 errors
+error: ld.lld: /usr/lib/llvm-18/lib/libLLVM-18.so is incompatible with aarch64linux
+error: the following command failed with 1 compilation errors:
+/opt/zig/zig build-exe -lLLVM-18 -cflags -std=c99 -O2 -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -- /home/ghuntley/cursed/src-zig/llvm_wrapper.c -ODebug -target aarch64-linux -mcpu baseline -isystem /usr/lib/llvm-18/include -isystem /usr/include/llvm-18 -isystem /usr/lib/llvm-18/include/llvm-c -isystem /usr/include/llvm-c-18/llvm-c -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -DLLVM_DEFAULT_TARGET_TRIPLE="aarch64-unknown-linux-gnu" -DLLVM_TARGET_CPU="generic" -DLLVM_HOST_TARGET="generic" -D__aarch64__=1 -D__x86_64__=0 -D_GNU_SOURCE=1 -DTARGET_CPU="generic" -DLLVM_HOST_TRIPLE="aarch64-unknown-linux-gnu" -L /usr/lib/llvm-18/lib -L /usr/lib/x86_64-linux-gnu -L /usr/lib64 -Mroot=/home/ghuntley/cursed/src-zig/main_llvm_test.zig -lc --cache-dir /home/ghuntley/cursed/.zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-llvm-test --zig-lib-dir /opt/zig/lib/ --listen=- 
+Build Summary: 28/33 steps succeeded; 2 failed
+install transitive failure
++- install cursed-simple-llvm-test transitive failure
+|  +- zig build-exe cursed-simple-llvm-test Debug aarch64-linux 1 errors
++- install cursed-llvm-test transitive failure
+   +- zig build-exe cursed-llvm-test Debug aarch64-linux 1 errors
+error: the following build command failed with exit code 1:
+/home/ghuntley/cursed/.zig-cache/o/faf752a3e017d189c71a0024706e665b/build /opt/zig/zig /opt/zig/lib /home/ghuntley/cursed /home/ghuntley/cursed/.zig-cache /home/ghuntley/.cache/zig --seed 0xab511b81 -Z13cf5dccda4a4ba7 -Dtarget=aarch64-linux
+Testing x86_64-macos target...
+Successfully integrated 0 package dependencies
+install
++- install cursed-llvm-test
+   +- zig build-exe cursed-llvm-test Debug x86_64-macos failure
+error: warning: unable to open library directory '/opt/homebrew/lib': FileNotFound
+warning: unable to open library directory '/opt/homebrew/lib/llvm-18/lib': FileNotFound
+warning: unable to open library directory '/usr/local/lib/llvm-18/lib': FileNotFound
+warning: unable to open library directory '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib': FileNotFound
+error: unable to find dynamic system library 'LLVM-18' using strategy 'paths_first'. searched paths:
+  /usr/local/lib/libLLVM-18.tbd
+  /usr/local/lib/libLLVM-18.dylib
+  /usr/local/lib/libLLVM-18.so
+  /usr/local/lib/libLLVM-18.a
+
+error: the following command exited with error code 1:
+/opt/zig/zig build-exe -lLLVM-18 -cflags -std=c99 -O2 -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -- /home/ghuntley/cursed/src-zig/llvm_wrapper.c -ODebug -target x86_64-macos -mcpu baseline -isystem /opt/homebrew/include -isystem /usr/local/include -isystem /opt/homebrew/include/llvm-18 -isystem /usr/local/include/llvm-18 -isystem /opt/homebrew/include/llvm-c -isystem /usr/local/include/llvm-c -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -DLLVM_DEFAULT_TARGET_TRIPLE="x86_64-apple-darwin" -DLLVM_TARGET_CPU="x86-64" -DLLVM_HOST_TARGET="x86-64" -D__x86_64__=1 -D__i386__=0 -D_GNU_SOURCE=1 -DTARGET_CPU="x86-64" -DLLVM_HOST_TRIPLE="x86_64-apple-darwin" -L /opt/homebrew/lib -L /usr/local/lib -L /opt/homebrew/lib/llvm-18/lib -L /usr/local/lib/llvm-18/lib -L /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib -Mroot=/home/ghuntley/cursed/src-zig/main_llvm_test.zig -lc --cache-dir /home/ghuntley/cursed/.zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-llvm-test --zig-lib-dir /opt/zig/lib/ --listen=- 
+install
++- install cursed-simple-llvm-test
+   +- zig build-exe cursed-simple-llvm-test Debug x86_64-macos failure
+error: warning: unable to open library directory '/opt/homebrew/lib': FileNotFound
+warning: unable to open library directory '/opt/homebrew/lib/llvm-18/lib': FileNotFound
+warning: unable to open library directory '/usr/local/lib/llvm-18/lib': FileNotFound
+warning: unable to open library directory '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib': FileNotFound
+error: unable to find dynamic system library 'LLVM-18' using strategy 'paths_first'. searched paths:
+  /usr/local/lib/libLLVM-18.tbd
+  /usr/local/lib/libLLVM-18.dylib
+  /usr/local/lib/libLLVM-18.so
+  /usr/local/lib/libLLVM-18.a
+
+error: the following command exited with error code 1:
+/opt/zig/zig build-exe -lLLVM-18 -cflags -std=c99 -O2 -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -- /home/ghuntley/cursed/src-zig/llvm_wrapper.c -ODebug -target x86_64-macos -mcpu baseline -isystem /opt/homebrew/include -isystem /usr/local/include -isystem /opt/homebrew/include/llvm-18 -isystem /usr/local/include/llvm-18 -isystem /opt/homebrew/include/llvm-c -isystem /usr/local/include/llvm-c -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -DLLVM_DEFAULT_TARGET_TRIPLE="x86_64-apple-darwin" -DLLVM_TARGET_CPU="x86-64" -DLLVM_HOST_TARGET="x86-64" -D__x86_64__=1 -D__i386__=0 -D_GNU_SOURCE=1 -DTARGET_CPU="x86-64" -DLLVM_HOST_TRIPLE="x86_64-apple-darwin" -L /opt/homebrew/lib -L /usr/local/lib -L /opt/homebrew/lib/llvm-18/lib -L /usr/local/lib/llvm-18/lib -L /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib -Mroot=/home/ghuntley/cursed/src-zig/simple_llvm_test.zig -lc --cache-dir /home/ghuntley/cursed/.zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-simple-llvm-test --zig-lib-dir /opt/zig/lib/ --listen=- 
+Build Summary: 28/33 steps succeeded; 2 failed
+install transitive failure
++- install cursed-simple-llvm-test transitive failure
+|  +- zig build-exe cursed-simple-llvm-test Debug x86_64-macos failure
++- install cursed-llvm-test transitive failure
+   +- zig build-exe cursed-llvm-test Debug x86_64-macos failure
+error: the following build command failed with exit code 1:
+/home/ghuntley/cursed/.zig-cache/o/faf752a3e017d189c71a0024706e665b/build /opt/zig/zig /opt/zig/lib /home/ghuntley/cursed /home/ghuntley/cursed/.zig-cache /home/ghuntley/.cache/zig --seed 0xd1f37088 -Ze289c8d11afba27d -Dtarget=x86_64-macos
+Testing x86_64-windows target...
+Successfully integrated 0 package dependencies
+install
++- install cursed-llvm-test
+   +- zig build-exe cursed-llvm-test Debug x86_64-windows failure
+error: warning: unable to open library directory 'C:/Program Files/LLVM/lib': FileNotFound
+warning: unable to open library directory 'C:/llvm/lib': FileNotFound
+warning: unable to open library directory 'C:/tools/llvm/lib': FileNotFound
+error: unable to find dynamic system library 'LLVM-18' using strategy 'paths_first'. searched paths: none
+
+error: the following command exited with error code 1:
+/opt/zig/zig build-exe -lLLVM-18 -cflags -std=c99 -O2 -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -- /home/ghuntley/cursed/src-zig/llvm_wrapper.c -ODebug -target x86_64-windows -mcpu baseline -isystem C:/Program Files/LLVM/include -isystem C:/llvm/include -isystem C:/Program Files/LLVM/include/llvm-c -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -DLLVM_DEFAULT_TARGET_TRIPLE="x86_64-pc-windows-gnu" -DLLVM_TARGET_CPU="x86-64" -DLLVM_HOST_TARGET="x86-64" -D__x86_64__=1 -D__i386__=0 -D_GNU_SOURCE=1 -DTARGET_CPU="x86-64" -DLLVM_HOST_TRIPLE="x86_64-pc-windows-gnu" -L C:/Program Files/LLVM/lib -L C:/llvm/lib -L C:/tools/llvm/lib -Mroot=/home/ghuntley/cursed/src-zig/main_llvm_test.zig -lc --cache-dir /home/ghuntley/cursed/.zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-llvm-test --zig-lib-dir /opt/zig/lib/ --listen=- 
+install
++- install cursed-simple-llvm-test
+   +- zig build-exe cursed-simple-llvm-test Debug x86_64-windows failure
+error: warning: unable to open library directory 'C:/Program Files/LLVM/lib': FileNotFound
+warning: unable to open library directory 'C:/llvm/lib': FileNotFound
+warning: unable to open library directory 'C:/tools/llvm/lib': FileNotFound
+error: unable to find dynamic system library 'LLVM-18' using strategy 'paths_first'. searched paths: none
+
+error: the following command exited with error code 1:
+/opt/zig/zig build-exe -lLLVM-18 -cflags -std=c99 -O2 -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -- /home/ghuntley/cursed/src-zig/llvm_wrapper.c -ODebug -target x86_64-windows -mcpu baseline -isystem C:/Program Files/LLVM/include -isystem C:/llvm/include -isystem C:/Program Files/LLVM/include/llvm-c -DLLVM_VERSION_MAJOR=18 -DLLVM_VERSION_MINOR=1 -DLLVM_DEFAULT_TARGET_TRIPLE="x86_64-pc-windows-gnu" -DLLVM_TARGET_CPU="x86-64" -DLLVM_HOST_TARGET="x86-64" -D__x86_64__=1 -D__i386__=0 -D_GNU_SOURCE=1 -DTARGET_CPU="x86-64" -DLLVM_HOST_TRIPLE="x86_64-pc-windows-gnu" -L C:/Program Files/LLVM/lib -L C:/llvm/lib -L C:/tools/llvm/lib -Mroot=/home/ghuntley/cursed/src-zig/simple_llvm_test.zig -lc --cache-dir /home/ghuntley/cursed/.zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-simple-llvm-test --zig-lib-dir /opt/zig/lib/ --listen=- 
+Build Summary: 28/33 steps succeeded; 2 failed
+install transitive failure
++- install cursed-simple-llvm-test transitive failure
+|  +- zig build-exe cursed-simple-llvm-test Debug x86_64-windows failure
++- install cursed-llvm-test transitive failure
+   +- zig build-exe cursed-llvm-test Debug x86_64-windows failure
+error: the following build command failed with exit code 1:
+/home/ghuntley/cursed/.zig-cache/o/faf752a3e017d189c71a0024706e665b/build /opt/zig/zig /opt/zig/lib /home/ghuntley/cursed /home/ghuntley/cursed/.zig-cache /home/ghuntley/.cache/zig --seed 0x257069d7 -Z0d8730414597fd77 -Dtarget=x86_64-windows
+Testing wasm32-freestanding target...
+Testing native target...
+Successfully integrated 0 package dependencies
+=== CHECKING AVAILABLE LLVM LIBRARIES ===
+Host LLVM libraries:
+total 491016
+drwxr-xr-x 6 root root     20480 Aug  6 23:14 .
+drwxr-xr-x 8 root root      4096 Aug  6 23:14 ..
+-rw-r--r-- 1 root root   3989152 May 27  2024 LLVMPolly.so
+-rw-r--r-- 1 root root     85744 May 27  2024 LLVMgold.so
+drwxr-xr-x 3 root root      4096 Aug  6 16:50 clang
+drwxr-xr-x 4 root root      4096 Aug  6 16:50 cmake
+lrwxrwxrwx 1 root root        12 May 27  2024 libLLVM-18.1.3.so -> libLLVM.so.1
+lrwxrwxrwx 1 root root        12 May 27  2024 libLLVM-18.so -> libLLVM.so.1
+lrwxrwxrwx 1 root root        15 May 27  2024 libLLVM.so -> libLLVM.so.18.1
+LLVM library architecture check:
+/usr/lib/llvm-18/lib/libLLVM-18.so: symbolic link to libLLVM.so.1
+Testing non-LLVM targets...
+Testing cursed-stable for aarch64-linux:
+🚀 CURSED Stable Compiler Processing: cross_compilation_test.csd
+Cross-compilation test - Answer: 42
+Error: Missing closing brace in function declaration
+Error: Unknown function: add
+Runtime error: error.UnknownIdentifier
+Testing wasm32 success verification:
+-rwxrwxr-x 1 ghuntley ghuntley  524631 Aug 10 01:33 cursed-cli.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524641 Aug 10 01:33 cursed-complete.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524657 Aug 10 01:33 cursed-diagnostics-demo.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524643 Aug 10 01:33 cursed-llvm-test.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524628 Aug 10 01:33 cursed-lsp.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524639 Aug 10 01:33 cursed-minimal.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524631 Aug 10 01:33 cursed-pkg.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524655 Aug 10 01:33 cursed-regression-test.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524657 Aug 10 01:33 cursed-simple-llvm-test.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524637 Aug 10 01:33 cursed-stable.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524631 Aug 10 01:33 cursed-zig.wasm
+-rwxrwxr-x 1 ghuntley ghuntley  524623 Aug 10 01:33 cursed.wasm
+/usr/lib/llvm-18/lib/libLLVM.so.1: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, BuildID[sha1]=495b188fed20e21b476ccb1eaea212f4304fad28, stripped
+Testing targets without LLVM dependency...
+Attempting minimal cross-compilation to aarch64:
+Successfully integrated 0 package dependencies
+no step named 'cursed-stable'
+  access the help menu with 'zig build -h'
+error: the following build command failed with exit code 1:
+/home/ghuntley/cursed/.zig-cache/o/faf752a3e017d189c71a0024706e665b/build /opt/zig/zig /opt/zig/lib /home/ghuntley/cursed /home/ghuntley/cursed/.zig-cache /home/ghuntley/.cache/zig --seed 0xf2e7f149 -Zadd3165751842149 -Dtarget=aarch64-linux cursed-stable

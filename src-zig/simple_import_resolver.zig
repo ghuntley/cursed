@@ -218,12 +218,20 @@ fn extractImportsLegacy(allocator: Allocator, source: []const u8) !ArrayList([]c
         if (std.mem.startsWith(u8, trimmed, "yeet ")) {
             const import_part = trimmed[5..]; // Skip "yeet "
 
-            // Extract module name from quotes
-            if (std.mem.indexOf(u8, import_part, "\"")) |start_quote| {
-                const after_start = import_part[start_quote + 1 ..];
-                if (std.mem.indexOf(u8, after_start, "\"")) |end_quote| {
-                    const module_name = after_start[0..end_quote];
-                    try imports.append(try allocator.dupe(u8, module_name));
+            // Extract all module names from quotes (handle comma-separated imports)
+            var search_offset: usize = 0;
+            while (search_offset < import_part.len) {
+                if (std.mem.indexOfPos(u8, import_part, search_offset, "\"")) |start_quote| {
+                    const after_start = import_part[start_quote + 1 ..];
+                    if (std.mem.indexOf(u8, after_start, "\"")) |end_quote| {
+                        const module_name = after_start[0..end_quote];
+                        try imports.append(try allocator.dupe(u8, module_name));
+                        search_offset = start_quote + 1 + end_quote + 1;
+                    } else {
+                        break; // No closing quote found
+                    }
+                } else {
+                    break; // No more quotes found
                 }
             }
         }

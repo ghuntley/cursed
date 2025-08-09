@@ -1291,7 +1291,9 @@ pub const AdvancedParser = struct {
             const operand = self.allocator.create(Expression) catch return ParserError.OutOfMemory;
             operand.* = right;
             return Expression{ .Unary = ast.UnaryExpression{
+                .operator = .Minus, // Add missing operator field
                 .operand = operand,
+            } };
         }
         
         return try self.parseCall();
@@ -1305,18 +1307,23 @@ pub const AdvancedParser = struct {
                 expr = try self.finishCall(expr);
             } else if (self.match(.Dot)) {
                 const name = try self.parseIdentifier();
+                const object = self.allocator.create(Expression) catch return ParserError.OutOfMemory;
+                object.* = expr;
                 expr = Expression{ .MemberAccess = ast.MemberAccessExpression{
-                    .object = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
+                    .object = object,
                     .member = name,
-                expr.MemberAccess.object.* = expr;
+                } };
             } else if (self.match(.LeftBracket)) {
                 const index = try self.parseExpression();
                 _ = try self.consume(.RightBracket, "Expected ']' after array index");
+                const array = self.allocator.create(Expression) catch return ParserError.OutOfMemory;
+                const index_ptr = self.allocator.create(Expression) catch return ParserError.OutOfMemory;
+                array.* = expr;
+                index_ptr.* = index;
                 expr = Expression{ .ArrayAccess = ast.ArrayAccessExpression{
-                    .array = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-                    .index = self.allocator.create(Expression) catch return ParserError.OutOfMemory,
-                expr.ArrayAccess.array.* = expr;
-                expr.ArrayAccess.index.* = index;
+                    .array = array,
+                    .index = index_ptr,
+                } };
             } else {
                 break;
             }
@@ -1345,7 +1352,7 @@ pub const AdvancedParser = struct {
         return Expression{ .Call = ast.CallExpression{
             .callee = callee_ptr,
             .arguments = try arguments.toOwnedSlice(),
-    }
+        } };
     
     fn parsePrimary(self: *AdvancedParser) ParserError!Expression {
         // Match expression
