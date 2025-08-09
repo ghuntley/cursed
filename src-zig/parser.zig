@@ -37,6 +37,8 @@ pub const Parser = struct {
     tokens: []const Token,
     current: usize,
     allocator: Allocator,
+    arena: std.heap.ArenaAllocator,
+    arena_allocator: Allocator,
     had_error: bool,
     in_function: bool,
     in_loop: bool,
@@ -44,10 +46,13 @@ pub const Parser = struct {
     file_path: []const u8,
 
     pub fn init(allocator: Allocator, tokens: []const Token) Parser {
+        var arena = std.heap.ArenaAllocator.init(allocator);
         return Parser{
             .tokens = tokens,
             .current = 0,
             .allocator = allocator,
+            .arena = arena,
+            .arena_allocator = arena.allocator(),
             .had_error = false,
             .in_function = false,
             .in_loop = false,
@@ -56,11 +61,18 @@ pub const Parser = struct {
         };
     }
 
+    pub fn deinit(self: *Parser) void {
+        self.arena.deinit();
+    }
+
     pub fn initWithFile(allocator: Allocator, tokens: []const Token, file_path: []const u8) Parser {
+        var arena = std.heap.ArenaAllocator.init(allocator);
         return Parser{
             .tokens = tokens,
             .current = 0,
             .allocator = allocator,
+            .arena = arena,
+            .arena_allocator = arena.allocator(),
             .had_error = false,
             .in_function = false,
             .in_loop = false,
@@ -139,7 +151,7 @@ pub const Parser = struct {
                 continue;
             }
 
-            // Parse regular statements with proper error cleanup
+            // Parse regular statements with proper allocation
             const stmt = try self.parseStatement();
             const stmt_ptr = try self.allocator.create(Statement);
             errdefer self.allocator.destroy(stmt_ptr);
@@ -526,6 +538,7 @@ pub const Parser = struct {
         if (self.match(.Equal)) {
             const default_expr = try self.parseExpression(); 
             const default_ptr = try self.allocator.create(Expression); 
+            errdefer self.allocator.destroy(default_ptr);
             default_ptr.* = default_expr; 
             param.default_value = self.expressionToAnyopaque(default_ptr);
         }
@@ -1623,6 +1636,7 @@ pub const Parser = struct {
         if (!self.check(.Semicolon) and !self.check(.Newline) and !self.isAtEnd() and !self.check(.RightBrace)) {
             const value_expr = try self.parseExpression();
             const value_ptr = try self.allocator.create(Expression);
+            errdefer self.allocator.destroy(value_ptr);
             value_ptr.* = value_expr;
             return_stmt.value = self.expressionToAnyopaque(value_ptr);
         }
@@ -1650,6 +1664,7 @@ pub const Parser = struct {
             
             const stmt = try self.parseStatement();
             const stmt_ptr = try self.allocator.create(Statement); 
+            errdefer self.allocator.destroy(stmt_ptr);
             stmt_ptr.* = stmt; 
             try then_branch.append(self.statementToAnyopaque(stmt_ptr));
         }
@@ -1667,6 +1682,7 @@ pub const Parser = struct {
                 const elif_stmt = try self.parseIfStatement();
                 const if_stmt = Statement{ .If = elif_stmt };
                 const if_stmt_ptr = try self.allocator.create(Statement);
+                errdefer self.allocator.destroy(if_stmt_ptr);
                 if_stmt_ptr.* = if_stmt;
                 try else_stmts.append(self.statementToAnyopaque(if_stmt_ptr));
             } else {
@@ -1678,6 +1694,7 @@ pub const Parser = struct {
                     
                     const stmt = try self.parseStatement();
                     const stmt_ptr = try self.allocator.create(Statement); 
+                    errdefer self.allocator.destroy(stmt_ptr);
                     stmt_ptr.* = stmt; 
                     try else_stmts.append(self.statementToAnyopaque(stmt_ptr));
                 }
@@ -1689,6 +1706,7 @@ pub const Parser = struct {
         }
         
         const condition_ptr = try self.allocator.create(Expression);
+        errdefer self.allocator.destroy(condition_ptr);
         condition_ptr.* = condition;
         
         return ast.IfStatement{
@@ -2714,23 +2732,27 @@ pub const Parser = struct {
     fn parseAssignmentStatement(self: *Parser) ParserError!Statement {
         const target = try self.parseExpression();
         const target_ptr = try self.allocator.create(Expression);
+        errdefer self.allocator.destroy(target_ptr);
         target_ptr.* = target;
         
-        if (!self.match(.Equal) and !self.match(.PlusEqual) and !self.match(.MinusEqual) and
-           !self.match(.StarEqual) and !self.match(.SlashEqual) and !self.match(.PercentEqual)) {
-            return ParserError.UnexpectedToken;
+        // Check for assignment operators
+        if (self.match(.Equal) or self.match(.PlusEqual) or self.match(.MinusEqual) or
+           self.match(.StarEqual) or self.match(.SlashEqual) or self.match(.PercentEqual)) {
+            const operator = self.previous().lexeme;
+            const value = try self.parseExpression();
+            const value_ptr = try self.allocator.create(Expression);
+            errdefer self.allocator.destroy(value_ptr);
+            value_ptr.* = value;
+            
+            return Statement{ .Assignment = ast.AssignmentStatement{
+                .target = @ptrCast(target_ptr),
+                .value = @ptrCast(value_ptr),
+                .operator = operator,
+            }};
+        } else {
+            // If no assignment operator found, this is an expression statement
+            return Statement{ .Expression = self.expressionToAnyopaque(target_ptr) };
         }
-        
-        const operator = self.previous().lexeme;
-        const value = try self.parseExpression();
-        const value_ptr = try self.allocator.create(Expression);
-        value_ptr.* = value;
-        
-        return Statement{ .Assignment = ast.AssignmentStatement{
-            .target = @ptrCast(target_ptr),
-            .value = @ptrCast(value_ptr),
-            .operator = operator,
-        }};
     }
 
     // Helper utility methods
@@ -2985,6 +3007,49 @@ pub const Parser = struct {
     fn allocateUnaryExpression(self: *Parser, unary: ast.UnaryExpression) ParserError!*ast.UnaryExpression {
         const ptr = self.allocator.create(ast.UnaryExpression) catch return ParserError.OutOfMemory;
         ptr.* = unary;
+        return ptr;
+    }
+
+    // Arena-based allocation helpers (automatic cleanup)
+    fn allocateExpressionArena(self: *Parser, expr: Expression) ParserError!*Expression {
+        const ptr = self.arena_allocator.create(Expression) catch return ParserError.OutOfMemory;
+        ptr.* = expr;
+        return ptr;
+    }
+
+    fn allocateUnaryExpressionArena(self: *Parser, unary: ast.UnaryExpression) ParserError!*ast.UnaryExpression {
+        const ptr = self.arena_allocator.create(ast.UnaryExpression) catch return ParserError.OutOfMemory;
+        ptr.* = unary;
+        return ptr;
+    }
+
+    fn allocateMemberAccessArena(self: *Parser, member_access: ast.MemberAccessExpression) ParserError!*ast.MemberAccessExpression {
+        const ptr = self.arena_allocator.create(ast.MemberAccessExpression) catch return ParserError.OutOfMemory;
+        ptr.* = member_access;
+        return ptr;
+    }
+
+    fn allocateArrayExpressionArena(self: *Parser, array_expr: ast.ArrayExpression) ParserError!*ast.ArrayExpression {
+        const ptr = self.arena_allocator.create(ast.ArrayExpression) catch return ParserError.OutOfMemory;
+        ptr.* = array_expr;
+        return ptr;
+    }
+
+    fn allocateMapExpressionArena(self: *Parser, map_expr: ast.MapExpression) ParserError!*ast.MapExpression {
+        const ptr = self.arena_allocator.create(ast.MapExpression) catch return ParserError.OutOfMemory;
+        ptr.* = map_expr;
+        return ptr;
+    }
+
+    fn allocateMethodCallArena(self: *Parser, method_call: ast.MethodCallExpression) ParserError!*ast.MethodCallExpression {
+        const ptr = self.arena_allocator.create(ast.MethodCallExpression) catch return ParserError.OutOfMemory;
+        ptr.* = method_call;
+        return ptr;
+    }
+
+    fn allocateStructExpressionArena(self: *Parser, struct_expr: ast.StructExpression) ParserError!*ast.StructExpression {
+        const ptr = self.arena_allocator.create(ast.StructExpression) catch return ParserError.OutOfMemory;
+        ptr.* = struct_expr;
         return ptr;
     }
 

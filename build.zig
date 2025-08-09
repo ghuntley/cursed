@@ -92,20 +92,130 @@ const TargetConfig = struct {
     }
 };
 
-// LLVM library detection - try multiple methods to find the correct library
+// LLVM library detection - dynamically detect LLVM installation
 fn detectLlvmLibrary(b: *std.Build, target: std.Build.ResolvedTarget) []const u8 {
-    // Platform-specific LLVM library detection - use first valid library
-    const lib_name = switch (target.result.os.tag) {
+    _ = target; // Unused for now
+    
+    // Try to detect LLVM using llvm-config
+    const result = std.process.Child.run(.{
+        .allocator = b.allocator,
+        .argv = &[_][]const u8{ "llvm-config-18", "--libdir" },
+    }) catch |err| {
+        if (b.verbose) {
+            std.debug.print("⚠️ llvm-config-18 failed: {}\n", .{err});
+        }
+        return "LLVM-18"; // Fallback
+    };
+    defer b.allocator.free(result.stdout);
+    defer b.allocator.free(result.stderr);
+    
+    if (result.term == .Exited and result.term.Exited == 0) {
+        if (b.verbose) {
+            const libdir = std.mem.trim(u8, result.stdout, " \n\r\t");
+            std.debug.print("✅ LLVM detected via llvm-config: {s}\n", .{libdir});
+        }
+        return "LLVM-18";
+    }
+    
+    // Fallback detection
+    const lib_name = switch (builtin.target.os.tag) {
         .linux => "LLVM-18",        // Ubuntu/Debian standard
-        .macos => "LLVM",           // Homebrew standard
+        .macos => "LLVM",           // Homebrew standard  
         .windows => "LLVM",         // Windows standard
         else => "LLVM-18",          // Default
     };
     
     if (b.verbose) {
-        std.debug.print("✅ Using LLVM library: {s}\n", .{lib_name});
+        std.debug.print("✅ Using fallback LLVM library: {s}\n", .{lib_name});
     }
     return lib_name;
+}
+
+// Dynamic LLVM path detection
+fn detectLlvmPaths(b: *std.Build, allocator: std.mem.Allocator) struct {
+    lib_paths: [][]const u8,
+    include_paths: [][]const u8,
+    c_include_paths: [][]const u8,
+} {
+    var lib_paths = std.ArrayList([]const u8).init(allocator);
+    var include_paths = std.ArrayList([]const u8).init(allocator);
+    var c_include_paths = std.ArrayList([]const u8).init(allocator);
+    
+    // Try llvm-config-18 first
+    if (std.process.Child.run(.{
+        .allocator = allocator,
+        .argv = &[_][]const u8{ "llvm-config-18", "--libdir" },
+    })) |result| {
+        defer allocator.free(result.stdout);
+        defer allocator.free(result.stderr);
+        
+        if (result.term == .Exited and result.term.Exited == 0) {
+            const libdir = std.mem.trim(u8, result.stdout, " \n\r\t");
+            lib_paths.append(b.dupe(libdir)) catch {};
+            
+            if (b.verbose) {
+                std.debug.print("✅ LLVM libdir detected: {s}\n", .{libdir});
+            }
+        }
+    } else |_| {}
+    
+    if (std.process.Child.run(.{
+        .allocator = allocator,
+        .argv = &[_][]const u8{ "llvm-config-18", "--includedir" },
+    })) |result| {
+        defer allocator.free(result.stdout);
+        defer allocator.free(result.stderr);
+        
+        if (result.term == .Exited and result.term.Exited == 0) {
+            const includedir = std.mem.trim(u8, result.stdout, " \n\r\t");
+            include_paths.append(b.dupe(includedir)) catch {};
+            
+            // Add llvm-c subdir
+            const c_include_dir = std.fmt.allocPrint(allocator, "{s}/llvm-c", .{includedir}) catch "";
+            c_include_paths.append(c_include_dir) catch {};
+            
+            if (b.verbose) {
+                std.debug.print("✅ LLVM includedir detected: {s}\n", .{includedir});
+            }
+        }
+    } else |_| {}
+    
+    // Add fallback paths only if they exist
+    const fallback_lib_paths = [_][]const u8{
+        "/usr/lib/x86_64-linux-gnu", // Ubuntu/Debian standard lib path
+        "/usr/lib64",                // RedHat/CentOS lib path
+    };
+    
+    const fallback_include_paths = [_][]const u8{
+        "/usr/include/llvm-18",
+        "/usr/include/llvm",
+    };
+    
+    const fallback_c_include_paths = [_][]const u8{
+        "/usr/include/llvm-c-18/llvm-c",
+        "/usr/include/llvm-c",
+    };
+    
+    for (fallback_lib_paths) |path| {
+        std.fs.cwd().access(path, .{}) catch continue;
+        lib_paths.append(b.dupe(path)) catch {};
+    }
+    
+    for (fallback_include_paths) |path| {
+        std.fs.cwd().access(path, .{}) catch continue;
+        include_paths.append(b.dupe(path)) catch {};
+    }
+    
+    for (fallback_c_include_paths) |path| {
+        std.fs.cwd().access(path, .{}) catch continue;
+        c_include_paths.append(b.dupe(path)) catch {};
+    }
+    
+    return .{
+        .lib_paths = lib_paths.toOwnedSlice() catch &[_][]const u8{},
+        .include_paths = include_paths.toOwnedSlice() catch &[_][]const u8{},
+        .c_include_paths = c_include_paths.toOwnedSlice() catch &[_][]const u8{},
+    };
 }
 
 fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.ResolvedTarget) void {
@@ -122,123 +232,88 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
         return;
     }
     
-    // Define LLVM library paths based on platform
-    var llvm_paths: []const []const u8 = undefined;
+    // Dynamically detect LLVM paths
+    const llvm_paths = detectLlvmPaths(b, b.allocator);
+    
+    // Legacy static paths for macOS and Windows
+    var static_paths: struct {
+        lib_paths: []const []const u8,
+        include_paths: []const []const u8,
+        c_include_paths: []const []const u8,
+    } = undefined;
     
     switch (target.result.os.tag) {
         .linux => {
-            llvm_paths = &[_][]const u8{
-                "/usr/lib/llvm-18/lib",
-                "/usr/lib/x86_64-linux-gnu", // Ubuntu/Debian standard lib path
-                "/usr/lib64",                // RedHat/CentOS lib path
-                "/usr/local/lib/llvm-18/lib",
-                "/usr/lib/llvm/lib",
-            };
+            // Use dynamically detected paths for Linux
         },
         .macos => {
-            llvm_paths = &[_][]const u8{
-                "/opt/homebrew/lib",         // Homebrew ARM64
-                "/usr/local/lib",            // Homebrew x86_64
-                "/opt/homebrew/lib/llvm-18/lib",
-                "/usr/local/lib/llvm-18/lib",
-                "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib",
+            static_paths = .{
+                .lib_paths = &[_][]const u8{
+                    "/opt/homebrew/lib",         // Homebrew ARM64
+                    "/usr/local/lib",            // Homebrew x86_64
+                    "/opt/homebrew/lib/llvm-18/lib",
+                    "/usr/local/lib/llvm-18/lib",
+                    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib",
+                },
+                .include_paths = &[_][]const u8{
+                    "/opt/homebrew/include",
+                    "/usr/local/include",
+                    "/opt/homebrew/include/llvm-18",
+                    "/usr/local/include/llvm-18",
+                },
+                .c_include_paths = &[_][]const u8{
+                    "/opt/homebrew/include/llvm-c",
+                    "/usr/local/include/llvm-c",
+                },
             };
         },
         .windows => {
-            llvm_paths = &[_][]const u8{
-                "C:\\Program Files\\LLVM\\lib",
-                "C:\\llvm\\lib",
-                "C:\\tools\\llvm\\lib",
+            static_paths = .{
+                .lib_paths = &[_][]const u8{
+                    "C:\\Program Files\\LLVM\\lib",
+                    "C:\\llvm\\lib",
+                    "C:\\tools\\llvm\\lib",
+                },
+                .include_paths = &[_][]const u8{
+                    "C:\\Program Files\\LLVM\\include",
+                    "C:\\llvm\\include",
+                },
+                .c_include_paths = &[_][]const u8{
+                    "C:\\Program Files\\LLVM\\include\\llvm-c",
+                },
             };
         },
         else => {
-            llvm_paths = &[_][]const u8{
-                "/usr/lib/llvm-18/lib",
-                "/usr/local/lib/llvm-18/lib",
+            static_paths = .{
+                .lib_paths = &[_][]const u8{},
+                .include_paths = &[_][]const u8{},
+                .c_include_paths = &[_][]const u8{},
             };
         },
     }
     
-    var llvm_include_paths: []const []const u8 = undefined;
-    var llvm_c_include_paths: []const []const u8 = undefined;
-    
-    switch (target.result.os.tag) {
-        .linux => {
-            llvm_include_paths = &[_][]const u8{
-                "/usr/lib/llvm-18/include",
-                "/usr/include/llvm-18",
-                "/usr/include/llvm",
-                "/usr/local/include/llvm-18",
-            };
-            llvm_c_include_paths = &[_][]const u8{
-                "/usr/include/llvm-c-18/llvm-c",
-                "/usr/lib/llvm-18/include/llvm-c",
-                "/usr/include/llvm-c",
-            };
-        },
-        .macos => {
-            llvm_include_paths = &[_][]const u8{
-                "/opt/homebrew/include",
-                "/usr/local/include",
-                "/opt/homebrew/include/llvm-18",
-                "/usr/local/include/llvm-18",
-            };
-            llvm_c_include_paths = &[_][]const u8{
-                "/opt/homebrew/include/llvm-c",
-                "/usr/local/include/llvm-c",
-            };
-        },
-        .windows => {
-            llvm_include_paths = &[_][]const u8{
-                "C:\\Program Files\\LLVM\\include",
-                "C:\\llvm\\include",
-            };
-            llvm_c_include_paths = &[_][]const u8{
-                "C:\\Program Files\\LLVM\\include\\llvm-c",
-            };
-        },
-        else => {
-            llvm_include_paths = &[_][]const u8{
-                "/usr/include/llvm-18",
-                "/usr/local/include/llvm-18",
-            };
-            llvm_c_include_paths = &[_][]const u8{
-                "/usr/include/llvm-c",
-            };
-        },
-    }
-    
-    // Add LLVM library paths - add all paths for cross-compilation compatibility
-    for (llvm_paths) |path| {
+    // Add LLVM library paths
+    const lib_paths_to_use = if (target.result.os.tag == .linux) llvm_paths.lib_paths else static_paths.lib_paths;
+    for (lib_paths_to_use) |path| {
         exe.addLibraryPath(.{ .cwd_relative = path });
         if (b.verbose) {
-            // Check if path exists for verbose output
-            std.fs.cwd().access(path, .{}) catch {
-                std.debug.print("⚠️ LLVM lib path not found: {s}\n", .{path});
-                continue;
-            };
             std.debug.print("✅ Added LLVM lib path: {s}\n", .{path});
         }
     }
     
-    // Add LLVM include directories - add all paths for cross-compilation compatibility
-    for (llvm_include_paths) |path| {
+    // Add LLVM include directories
+    const include_paths_to_use = if (target.result.os.tag == .linux) llvm_paths.include_paths else static_paths.include_paths;
+    for (include_paths_to_use) |path| {
         exe.addSystemIncludePath(.{ .cwd_relative = path });
         if (b.verbose) {
-            std.fs.cwd().access(path, .{}) catch {
-                std.debug.print("⚠️ LLVM include not found: {s}\n", .{path});
-                continue;
-            };
             std.debug.print("✅ Added LLVM include: {s}\n", .{path});
         }
     }
-    for (llvm_c_include_paths) |path| {
+    
+    const c_include_paths_to_use = if (target.result.os.tag == .linux) llvm_paths.c_include_paths else static_paths.c_include_paths;
+    for (c_include_paths_to_use) |path| {
         exe.addSystemIncludePath(.{ .cwd_relative = path });
         if (b.verbose) {
-            std.fs.cwd().access(path, .{}) catch {
-                std.debug.print("⚠️ LLVM-C include not found: {s}\n", .{path});
-                continue;
-            };
             std.debug.print("✅ Added LLVM-C include: {s}\n", .{path});
         }
     }
@@ -320,14 +395,25 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     
     // Ensure we use the resolved target properly
-    // Fix CPU detection issue - override native CPU if it's detected as athlon_xp
+    // Fix CPU detection issue - override incorrect CPU detection
     const resolved_target = blk: {
-        if (target.result.cpu.arch == .x86_64 and std.mem.eql(u8, target.result.cpu.model.name, "athlon_xp")) {
-            std.debug.print("Detected athlon_xp CPU, overriding to x86-64\n", .{});
+        const cpu_name = target.result.cpu.model.name;
+        
+        // Check for known CPU detection issues
+        if (target.result.cpu.arch == .x86_64 and 
+           (std.mem.eql(u8, cpu_name, "athlon_xp") or 
+            std.mem.eql(u8, cpu_name, "athlon") or
+            std.mem.eql(u8, cpu_name, "pentium4"))) {
+            
+            if (b.verbose) {
+                std.debug.print("⚠️ Incorrect CPU detected: {s}, overriding to x86-64\n", .{cpu_name});
+            }
+            
             const target_query = std.Target.Query{
                 .cpu_arch = .x86_64,
                 .os_tag = target.result.os.tag,
                 .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64 },
+                .abi = target.result.abi,
             };
             break :blk b.resolveTargetQuery(target_query);
         } else {

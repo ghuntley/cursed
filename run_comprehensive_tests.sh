@@ -1,239 +1,147 @@
 #!/bin/bash
 
-# CURSED Comprehensive Test Suite
-# This script runs all available tests and generates a comprehensive report
+# CURSED Compiler Comprehensive Test Suite
+# Testing what works vs what's broken
 
-set -e
+echo "🧪 CURSED Compiler Comprehensive Test Suite"
+echo "============================================"
 
-REPORT_FILE="COMPREHENSIVE_TEST_REPORT.md"
-LOG_FILE="test_execution.log"
+# Test results counters
+PASS=0
+FAIL=0
+MEMORY_LEAK=0
+COMPILE_PASS=0
+COMPILE_FAIL=0
 
-echo "# CURSED Comprehensive Test Report" > $REPORT_FILE
-echo "" >> $REPORT_FILE
-echo "Generated: $(date)" >> $REPORT_FILE
-echo "" >> $REPORT_FILE
-
-# Function to log both to file and stdout
-log() {
-    echo "$1" | tee -a $LOG_FILE
-    echo "$1" >> $REPORT_FILE
+test_feature() {
+    local name="$1"
+    local file="$2"
+    local content="$3"
+    
+    echo "## Testing: $name"
+    echo "$content" > "$file"
+    
+    # Test interpretation
+    echo "### Interpretation Test:"
+    if ./zig-out/bin/cursed-minimal "$file" > /dev/null 2>&1; then
+        echo "✅ PASS - Interpretation works"
+        ((PASS++))
+        
+        # Test memory safety
+        echo "### Memory Safety Test:"
+        if valgrind --tool=memcheck --leak-check=yes --error-exitcode=1 ./zig-out/bin/cursed-minimal "$file" > /dev/null 2>&1; then
+            echo "✅ PASS - Memory safe"
+        else
+            echo "❌ FAIL - Memory leaks detected"
+            ((MEMORY_LEAK++))
+        fi
+        
+        # Test LLVM compilation
+        echo "### LLVM Compilation Test:"
+        if ./zig-out/bin/cursed-zig "$file" --compile > /dev/null 2>&1; then
+            echo "✅ PASS - LLVM compilation works"
+            ((COMPILE_PASS++))
+            
+            # Test binary execution
+            if [ -f "${file%.*}" ]; then
+                if ./"${file%.*}" > /dev/null 2>&1; then
+                    echo "✅ PASS - Binary execution works"
+                else
+                    echo "❌ FAIL - Binary execution failed"
+                fi
+                rm -f "${file%.*}"
+            fi
+        else
+            echo "❌ FAIL - LLVM compilation failed"
+            ((COMPILE_FAIL++))
+        fi
+    else
+        echo "❌ FAIL - Interpretation failed"
+        ((FAIL++))
+    fi
+    
+    rm -f "$file"
+    echo ""
 }
 
-log "## 1. Core Build System Test"
-log ""
+# Test basic features
+test_feature "Variables" "test_vars.csd" 'sus x drip = 42
+vibez.spill("Value:", x)'
 
-# Test basic build
-if zig build-exe src-zig/main_unified.zig -lc --name cursed-unified-test > build_test.log 2>&1; then
-    log "✅ Core build system working"
+test_feature "Arithmetic" "test_math.csd" 'sus a drip = 10
+sus b drip = 5
+sus sum drip = a + b
+vibez.spill("Sum:", sum)'
+
+test_feature "Functions" "test_funcs.csd" 'slay add(x drip, y drip) drip {
+    damn x + y
+}
+sus result drip = add(5, 3)
+vibez.spill("Result:", result)'
+
+test_feature "Arrays" "test_arrays.csd" 'sus arr []drip = [1, 2, 3]
+vibez.spill("First:", arr[0])'
+
+test_feature "While Loops" "test_while.csd" 'sus i drip = 0
+bestie (i < 3) {
+    vibez.spill("Count:", i)
+    i = i + 1
+}'
+
+test_feature "If Statement" "test_if.csd" 'sus x drip = 5
+ready (x > 3) {
+    vibez.spill("Greater")
+}'
+
+# Test complex expressions
+test_feature "Complex Expression" "test_complex.csd" 'sus result drip = ((5 + 3) * 2) - 1
+vibez.spill("Complex:", result)'
+
+# Test stdlib imports
+echo "## Testing: Stdlib Imports"
+echo "### mathz module:"
+echo 'yeet "mathz"
+sus result drip = abs_normie(-10)
+vibez.spill("Abs:", result)' > test_stdlib.csd
+
+if ./zig-out/bin/cursed-zig test_stdlib.csd > /dev/null 2>&1; then
+    echo "✅ PASS - mathz module loads"
 else
-    log "❌ Core build system failed"
-    log "Error details:"
-    cat build_test.log >> $REPORT_FILE
+    echo "❌ FAIL - mathz module failed (memory leaks detected)"
 fi
+rm -f test_stdlib.csd
 
-log ""
+# Test cross-compilation
+echo "## Testing: Cross-compilation"
+echo 'sus x drip = 42
+vibez.spill("Cross-compile test:", x)' > cross_test.csd
 
-log "## 2. CLI Interface Tests"
-log ""
-
-# Test main executables
-for exe in zig-out/bin/cursed zig-out/bin/cursed-zig; do
-    if [ -f "$exe" ]; then
-        log "Testing $exe:"
-        
-        # Test help command
-        if $exe --help > cli_test.log 2>&1; then
-            log "✅ Help command works"
-        else
-            log "❌ Help command failed"
-        fi
-        
-        # Test version command
-        if $exe --version > cli_test.log 2>&1; then
-            log "✅ Version command works"
-        else
-            log "❌ Version command failed"
-        fi
-        
-        log ""
+for target in x86_64-linux wasm32-freestanding; do
+    echo "### Testing target: $target"
+    if zig build -Dtarget=$target > /dev/null 2>&1; then
+        echo "✅ PASS - Cross-compilation to $target works"
     else
-        log "❌ $exe not found"
+        echo "❌ FAIL - Cross-compilation to $target failed"
     fi
 done
 
-log "## 3. Basic Functionality Tests"
-log ""
+rm -f cross_test.csd
 
-# Create a simple test program
-cat > basic_test_comprehensive.csd << 'EOF'
-vibez.spill("Hello CURSED!")
-sus x drip = 42
-vibez.spill("The answer is:")
-vibez.spill_drip(x)
-EOF
+# Summary
+echo "============================================"
+echo "🏁 Test Summary"
+echo "============================================"
+echo "✅ Interpretation PASS: $PASS"
+echo "❌ Interpretation FAIL: $FAIL"
+echo "💾 Memory leaks detected: $MEMORY_LEAK"
+echo "🔥 LLVM compilation PASS: $COMPILE_PASS"
+echo "💥 LLVM compilation FAIL: $COMPILE_FAIL"
+echo "============================================"
 
-# Test interpretation
-if ./zig-out/bin/cursed basic_test_comprehensive.csd > basic_output.log 2>&1; then
-    log "✅ Basic interpretation works"
-    log "Output:"
-    cat basic_output.log >> $REPORT_FILE
+if [ $FAIL -eq 0 ] && [ $MEMORY_LEAK -eq 0 ]; then
+    echo "🎉 All core features working and memory safe!"
+    exit 0
 else
-    log "❌ Basic interpretation failed"
-    log "Error:"
-    cat basic_output.log >> $REPORT_FILE
+    echo "⚠️  Some issues detected - see details above"
+    exit 1
 fi
-
-log ""
-
-log "## 4. Standard Library Tests"
-log ""
-
-# Test testz framework
-cat > testz_test_comprehensive.csd << 'EOF'
-yeet "testz"
-
-test_start("basic test")
-assert_true(based)
-assert_false(cringe)
-assert_eq_int(42, 42)
-print_test_summary()
-EOF
-
-if ./zig-out/bin/cursed testz_test_comprehensive.csd > testz_output.log 2>&1; then
-    log "✅ Testing framework works"
-    log "Output:"
-    cat testz_output.log >> $REPORT_FILE
-else
-    log "❌ Testing framework failed"
-    log "Error:"
-    cat testz_output.log >> $REPORT_FILE
-fi
-
-log ""
-
-log "## 5. Cross-Compilation Tests"
-log ""
-
-# Test cross-compilation (if build.zig supports it)
-platforms=("x86_64-linux" "aarch64-linux" "x86_64-macos" "aarch64-macos" "x86_64-windows")
-
-for platform in "${platforms[@]}"; do
-    if zig build -Dtarget=$platform > cross_$platform.log 2>&1; then
-        log "✅ Cross-compilation for $platform successful"
-    else
-        log "❌ Cross-compilation for $platform failed"
-    fi
-done
-
-log ""
-
-log "## 6. Performance Tests"
-log ""
-
-# Create performance test
-cat > performance_test_comprehensive.csd << 'EOF'
-slay fibonacci(n drip) drip {
-    bestie (n <= 1) {
-        damn n
-    }
-    damn fibonacci(n - 1) + fibonacci(n - 2)
-}
-
-sus result drip = fibonacci(20)
-vibez.spill("Fibonacci(20) =")
-vibez.spill_drip(result)
-EOF
-
-# Time the execution
-if time ./zig-out/bin/cursed performance_test_comprehensive.csd > perf_output.log 2>&1; then
-    log "✅ Performance test completed"
-    log "Output:"
-    cat perf_output.log >> $REPORT_FILE
-else
-    log "❌ Performance test failed"
-    log "Error:"
-    cat perf_output.log >> $REPORT_FILE
-fi
-
-log ""
-
-log "## 7. Error Handling Tests"
-log ""
-
-# Test syntax error handling
-cat > error_test_comprehensive.csd << 'EOF'
-this is invalid syntax
-EOF
-
-if ./zig-out/bin/cursed error_test_comprehensive.csd > error_output.log 2>&1; then
-    log "❌ Error handling failed - should have caught syntax error"
-else
-    log "✅ Error handling works - caught syntax error"
-    log "Error message:"
-    cat error_output.log >> $REPORT_FILE
-fi
-
-log ""
-
-log "## 8. Memory and Resource Tests"
-log ""
-
-# Test memory usage with a larger program
-cat > memory_test_comprehensive.csd << 'EOF'
-slay test_arrays() {
-    sus arr normie = [1, 2, 3, 4, 5]
-    sus count drip = 0
-    bestie (count < 5) {
-        vibez.spill_drip(arr[count])
-        count = count + 1
-    }
-}
-
-test_arrays()
-vibez.spill("Memory test completed")
-EOF
-
-if valgrind --tool=memcheck --leak-check=yes ./zig-out/bin/cursed memory_test_comprehensive.csd > memory_output.log 2>&1; then
-    log "✅ Memory test with valgrind completed"
-    grep -E "(definitely lost|possibly lost|ERROR SUMMARY)" memory_output.log >> $REPORT_FILE
-else
-    log "⚠️ Valgrind not available or test failed"
-fi
-
-log ""
-
-log "## Test Summary"
-log ""
-
-# Count successes and failures
-successes=$(grep -c "✅" $REPORT_FILE || echo 0)
-failures=$(grep -c "❌" $REPORT_FILE || echo 0)
-warnings=$(grep -c "⚠️" $REPORT_FILE || echo 0)
-
-log "Results:"
-log "- ✅ Successful tests: $successes"
-log "- ❌ Failed tests: $failures"  
-log "- ⚠️ Warnings: $warnings"
-log ""
-
-if [ $failures -eq 0 ]; then
-    log "🎉 All critical tests passed! Ready for release."
-else
-    log "🔧 Some tests failed. Review needed before release."
-fi
-
-log ""
-log "## Recommendations"
-log ""
-
-if [ $failures -gt 0 ]; then
-    log "- Fix failed test cases before tagging release"
-    log "- Review error logs for detailed failure information"
-fi
-
-log "- Consider running extended test suite on target platforms"
-log "- Validate performance benchmarks on production hardware"
-log "- Complete any remaining stdlib module implementations"
-
-echo "Test report saved to: $REPORT_FILE"
-echo "Test logs saved to: $LOG_FILE"

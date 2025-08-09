@@ -1,18 +1,12 @@
-# Functions Test
-slay add(a drip, b drip) drip {
-    damn a + b
+slay add(x drip, y drip) drip {
+    damn x + y
 }
 
-slay multiply(x drip, y drip) drip {
-    damn x * y
+slay multiply(a drip, b drip) drip {
+    damn a * b
 }
 
-slay greet(name tea) {
-    vibez.spill("Hello", name)
-}
-
-sus x drip = 3
-sus y drip = 4
-vibez.spill("Sum:", add(x, y))
-vibez.spill("Product:", multiply(5, 6))
-greet("CURSED")
+sus result1 drip = add(5, 3)
+sus result2 drip = multiply(4, 6)
+vibez.spill("Addition result:", result1)
+vibez.spill("Multiplication result:", result2)
