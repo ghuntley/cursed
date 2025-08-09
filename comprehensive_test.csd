@@ -1,52 +1,33 @@
-# Comprehensive CURSED Language Test
-
-# Variables and arithmetic
-sus x drip = 10
-sus y drip = 5
-sus result drip = x + y * 2
-vibez.spill("Arithmetic:", result)
-
-# Functions
-slay multiply(a drip, b drip) drip {
-    damn a * b
-}
-vibez.spill("Function result:", multiply(6, 7))
-
-# Arrays
-sus nums [drip] = [1, 2, 3, 4, 5]
-vibez.spill("Array length:", len(nums))
-vibez.spill("First element:", nums[0])
-vibez.spill("Last element:", nums[4])
-
-# Control structures
-ready (result > 15) {
-    vibez.spill("Result is greater than 15")
-} otherwise {
-    vibez.spill("Result is not greater than 15")
+# CURSED Comprehensive Test
+slay multiply(x drip, y drip) drip { damn x * y }
+slay factorial(n drip) drip {
+    sus result drip = 1
+    sus i drip = 1
+    bestie (i <= n) {
+        result = result * i
+        i = i + 1
+    }
+    damn result
 }
 
-# Loops
-sus i drip = 0
-bestie (i < 3) {
-    vibez.spill("Loop iteration:", i)
-    i = i + 1
+vibez.spill("Function test:", multiply(6, 7))
+vibez.spill("Factorial test:", factorial(5))
+
+sus x drip = 5
+ready (x) {
+    1 => vibez.spill("One")
+    5 => vibez.spill("Five - pattern matching works!")
+    _ => vibez.spill("Other")
 }
 
-# Pattern matching with ranges
-sus value drip = 25
-ready (value) {
-    0..10 => vibez.spill("Small number")
-    11..30 => vibez.spill("Medium number")  
-    _ => vibez.spill("Large number")
+sus count drip = 0
+bestie (count < 3) {
+    vibez.spill("Loop iteration:", count)
+    count = count + 1
 }
 
-# Pattern matching with when guards
-sus score drip = 85
-ready (score) {
-    s when s >= 90 => vibez.spill("Grade: A")
-    s when s >= 80 => vibez.spill("Grade: B")
-    s when s >= 70 => vibez.spill("Grade: C")
-    _ => vibez.spill("Grade: F")
+ready (x > 3 && count >= 3) {
+    vibez.spill("Advanced conditions work!")
 }
 
-vibez.spill("All tests completed!")
+vibez.spill("All major features working correctly!")

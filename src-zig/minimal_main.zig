@@ -3,6 +3,15 @@ const print = std.debug.print;
 const Allocator = std.mem.Allocator;
 const HashMap = std.HashMap;
 
+// Error types for this module
+const ParseError = error{
+    MalformedIfStatement,
+    DivisionByZero,
+    NotAnInteger,
+    UnknownIdentifier,
+    OutOfMemory,
+};
+
 const lexer = @import("lexer.zig");
 const module_loader = @import("module_loader.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
@@ -1868,13 +1877,16 @@ fn handleEnhancedIfStatement(
     functions: *HashMap([]const u8, FunctionDefinition, std.hash_map.StringContext, 80),
     allocator: Allocator,
     statement: []const u8
-) !void {
+) ParseError!void {
     const trimmed = std.mem.trim(u8, statement, " \t\r\n");
     
     // Parse: ready (condition) { if_body } [otherwise { else_body }]
     
     // Find condition in parentheses
-    const condition_start = std.mem.indexOf(u8, trimmed, "(") orelse return;
+    const condition_start = std.mem.indexOf(u8, trimmed, "(") orelse {
+        std.debug.print("Error: Missing opening parenthesis in if statement\n", .{});
+        return error.MalformedIfStatement;
+    };
     var condition_end: ?usize = null;
     var paren_count: i32 = 0;
     for (trimmed[condition_start..], condition_start..) |char, idx| {
@@ -1889,10 +1901,16 @@ fn handleEnhancedIfStatement(
         }
     }
     
-    if (condition_end == null) return;
+    if (condition_end == null) {
+        std.debug.print("Error: Missing closing parenthesis in if statement\n", .{});
+        return error.MalformedIfStatement;
+    }
     
     // Find if body in braces
-    const if_body_start = std.mem.indexOf(u8, trimmed, "{") orelse return;
+    const if_body_start = std.mem.indexOf(u8, trimmed, "{") orelse {
+        std.debug.print("Error: Missing opening brace in if statement\n", .{});
+        return error.MalformedIfStatement;
+    };
     var if_body_end: ?usize = null;
     var brace_count: i32 = 0;
     for (trimmed[if_body_start..], if_body_start..) |char, idx| {
@@ -1907,7 +1925,10 @@ fn handleEnhancedIfStatement(
         }
     }
     
-    if (if_body_end == null) return;
+    if (if_body_end == null) {
+        std.debug.print("Error: Missing closing brace in if statement\n", .{});
+        return error.MalformedIfStatement;
+    }
     
     const condition_expr = std.mem.trim(u8, trimmed[condition_start + 1..condition_end.?], " \t");
     const if_body_text = std.mem.trim(u8, trimmed[if_body_start + 1..if_body_end.?], " \t");
