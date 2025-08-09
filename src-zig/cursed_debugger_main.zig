@@ -134,7 +134,7 @@ fn verifySourceFile(file_path: []const u8) !void {
             return err;
         },
         else => {
-            print("❌ Error: Failed to open '{s}': {}\n", .{ file_path, err });
+            print("❌ Error: Failed to open '{s}': {!}\n", .{ file_path, err });
             return err;
         },
     };
@@ -180,7 +180,7 @@ fn parseSourceFile(allocator: std.mem.Allocator, file_path: []const u8) !ast.Pro
 /// Execute debug script from file
 fn executeDebugScript(allocator: std.mem.Allocator, script_file: []const u8, debugger_instance: *debug_integration.DebugInterpreter) !void {
     const file = std.fs.cwd().openFile(script_file, .{}) catch |err| {
-        print("❌ Error: Failed to open script file '{s}': {}\n", .{ script_file, err });
+        print("❌ Error: Failed to open script file '{s}': {!}\n", .{ script_file, err });
         return err;
     };
     defer file.close();
@@ -270,7 +270,7 @@ pub fn main() !void {
     
     // Parse source file
     const program = parseSourceFile(allocator, options.source_file) catch |err| {
-        print("❌ Failed to parse source file: {}\n", .{err});
+        print("❌ Failed to parse source file: {!}\n", .{err});
         return;
     };
     defer {
@@ -284,7 +284,7 @@ pub fn main() !void {
     
     // Create debug interpreter
     var debug_interpreter = debug_integration.DebugInterpreter.init(allocator) catch |err| {
-        print("❌ Failed to initialize debugger: {}\n", .{err});
+        print("❌ Failed to initialize debugger: {!}\n", .{err});
         return;
     };
     defer debug_interpreter.deinit();
@@ -344,7 +344,7 @@ fn handleError(err: anyerror) void {
         error.InvalidArguments => print("❌ Invalid command line arguments\n"),
         error.FileNotFound => print("❌ Source file not found\n"),
         error.AccessDenied => print("❌ Permission denied\n"),
-        else => print("❌ Unexpected error: {}\n", .{err}),
+        else => print("❌ Unexpected error: {!}\n", .{err}),
     }
 }
 

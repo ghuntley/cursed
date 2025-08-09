@@ -157,7 +157,7 @@ pub const AdvancedCodeGen = struct {
     }
 
     pub fn deinit(self: *AdvancedCodeGen) void {
-        print("🧹 Starting AdvancedCodeGen cleanup (memory-safe)...\n", .{});
+        std.debug.print("🧹 Starting AdvancedCodeGen cleanup (memory-safe)...\n", .{});
         
         // Cleanup variable scope system
         const llvm_fixes = @import("llvm_fixes.zig");
@@ -207,7 +207,7 @@ pub const AdvancedCodeGen = struct {
         }
         self.source_locations.deinit();
         
-        print("✅ AdvancedCodeGen cleanup complete - all LLVM resources disposed\n", .{});
+        std.debug.print("✅ AdvancedCodeGen cleanup complete - all LLVM resources disposed\n", .{});
     }
 
     /// Set optimization level

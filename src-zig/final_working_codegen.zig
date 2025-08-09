@@ -46,7 +46,7 @@ pub const FinalWorkingCodeGen = struct {
     }
 
     pub fn deinit(self: *FinalWorkingCodeGen) void {
-        print("🧹 Starting FinalWorkingCodeGen cleanup (memory-safe)...\n", .{});
+        std.debug.print("🧹 Starting FinalWorkingCodeGen cleanup (memory-safe)...\n", .{});
         
         // Clean up Zig data structures first
         self.ir_buffer.deinit();
@@ -65,7 +65,7 @@ pub const FinalWorkingCodeGen = struct {
             c.LLVMContextDispose(self.context);
         }
         
-        print("✅ FinalWorkingCodeGen cleanup complete - all LLVM resources disposed\n", .{});
+        std.debug.print("✅ FinalWorkingCodeGen cleanup complete - all LLVM resources disposed\n", .{});
     }
 
     /// Compile CURSED source code to LLVM IR

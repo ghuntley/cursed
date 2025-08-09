@@ -395,7 +395,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     
     // Performance optimization options
-    const enable_compiler_optimizations = b.option(bool, "optimize-compiler", "Enable compiler performance optimizations") orelse true;
+    _ = b.option(bool, "optimize-compiler", "Enable compiler performance optimizations") orelse true;
     const enable_parallel_compilation = b.option(bool, "parallel", "Enable parallel compilation") orelse true;
     const enable_compilation_cache = b.option(bool, "cache", "Enable compilation caching") orelse true;
     const llvm_optimization_level = b.option([]const u8, "llvm-opt", "LLVM optimization level (O0, O1, O2, O3, Os, Oz)") orelse "O2";
@@ -479,16 +479,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // Create optimized compiler with performance enhancements (production builds)
-    const optimized_exe = if (!is_wasm and resolved_target.result.os.tag != .freestanding and resolved_target.result.os.tag != .wasi and enable_compiler_optimizations)
-        b.addExecutable(.{
-            .name = "cursed-optimized",
-            .root_source_file = b.path("src-zig/optimized_main.zig"),
-            .target = resolved_target,
-            .optimize = if (enable_fast_build) .ReleaseFast else .ReleaseSafe,
-        })
-    else 
-        null;
+    // Create optimized compiler with performance enhancements (production builds) - DISABLED
+    const optimized_exe = null;
 
     // Configure performance optimization macros
     if (optimized_exe) |opt_exe| {
@@ -517,16 +509,8 @@ pub fn build(b: *std.Build) void {
         b.installArtifact(opt_exe);
     }
 
-    // Create interactive debugger (development tool) - skip for WASM and freestanding
-    const debugger_exe = if (!is_wasm and resolved_target.result.os.tag != .freestanding and resolved_target.result.os.tag != .wasi) 
-        b.addExecutable(.{
-            .name = "cursed-debug",
-            .root_source_file = b.path("src-zig/cursed_debugger_main.zig"),
-            .target = resolved_target,
-            .optimize = optimize,
-        }) 
-    else 
-        null;
+    // Create interactive debugger (development tool) - DISABLED due to compilation issues
+    const debugger_exe = null;
     
     // Configure debugger for all non-WASM targets
     if (debugger_exe) |debug_exe| {
