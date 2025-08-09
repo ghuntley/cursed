@@ -1,1 +1,1 @@
-slay add(x drip, y drip) drip { damn x + y }; vibez.spill("Sum:", add(3, 4))
+slay multiply(x drip, y drip) drip { damn x * y }; vibez.spill(multiply(6, 7))

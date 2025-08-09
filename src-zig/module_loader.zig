@@ -198,6 +198,8 @@ pub const ModuleLoader = struct {
         
         // Parse the tokens
         var module_parser = parser.Parser.initWithFile(self.allocator, tokens.items, module_path);
+        defer module_parser.deinit();
+        
         const program = try module_parser.parseProgram();
         
         if (self.verbose) print("🔍 Parsed module '{s}' - {} statements\n", .{ module_name, program.statements.items.len });
