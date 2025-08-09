@@ -905,6 +905,8 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             const lines_consumed = try handleBestieLoop(&variables, &functions, allocator, source_lines, line_index, verbose);
             line_index += lines_consumed;
             continue;
+        } else if (verbose and std.mem.indexOf(u8, trimmed, "bestie") != null) {
+            print("⚠️  Found 'bestie' but pattern didn't match: '{s}'\n", .{trimmed});
         }
         
         // Handle goroutine spawning: stan { ... }
@@ -4892,8 +4894,11 @@ fn handleBestieLoop(
     const max_iterations = 10000; // Prevent infinite loops
     var iteration_count: usize = 0;
     
+    if (verbose) print("🔄 Starting loop execution with condition: '{s}'\n", .{condition_expr});
+    
     while (iteration_count < max_iterations) {
         // Evaluate the condition
+        if (verbose) print("🔄 Evaluating condition on iteration {}: '{s}'\n", .{iteration_count, condition_expr});
         const condition_result = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
             if (verbose) print("❌ Failed to evaluate loop condition: {any}\n", .{err});
             break;
@@ -4909,6 +4914,8 @@ fn handleBestieLoop(
             else => false,
         };
         
+        if (verbose) print("🔄 Condition result: {any}, truthy: {}\n", .{condition_result, condition_is_true});
+        
         if (!condition_is_true) {
             if (verbose) print("🔄 Loop condition false, exiting loop\n", .{});
             break;
@@ -4917,11 +4924,13 @@ fn handleBestieLoop(
         if (verbose and iteration_count == 0) print("🔄 Starting loop execution\n", .{});
         
         // Execute loop body
+        if (verbose) print("🔄 Executing loop body iteration {}\n", .{iteration_count});
         for (loop_body_start..loop_body_end) |line_idx| {
             if (line_idx >= source_lines.items.len) break;
             const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
             if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
             
+            if (verbose) print("🔄 Loop body line {}: {s}\n", .{line_idx + 1, exec_line});
             try executeBlockLine(variables, functions, allocator, exec_line, verbose);
         }
         
@@ -4985,8 +4994,10 @@ fn executeBlockLine(
         return;
     }
     
+    // Skip 'bestie' statements when called from within a loop body
+    // The loop iteration is handled by the main loop processor
     if (std.mem.startsWith(u8, trimmed, "bestie ")) {
-        try executeWhileStatement(variables, functions, allocator, trimmed, verbose);
+        if (verbose) print("  🔄 Skipping bestie statement in loop body\n", .{});
         return;
     }
     

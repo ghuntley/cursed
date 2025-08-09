@@ -9,16 +9,60 @@ const simple_import_resolver = @import("simple_import_resolver.zig");
 const llvm_backend_minimal = @import("llvm_backend_minimal.zig");
 
 // Simple variable storage
+const ArrayList = std.ArrayList;
+
 const Variable = union(enum) {
     Integer: i64,
     String: []const u8,
     Boolean: bool,
+    Array: ArrayList(Variable),
     
     fn toString(self: Variable, allocator: Allocator) ![]const u8 {
         return switch (self) {
             .Integer => |i| try std.fmt.allocPrint(allocator, "{}", .{i}),
             .String => |s| try allocator.dupe(u8, s),
             .Boolean => |b| try allocator.dupe(u8, if (b) "based" else "cringe"),
+            .Array => |arr| {
+                var result = std.ArrayList(u8).init(allocator);
+                defer result.deinit();
+                try result.append('[');
+                for (arr.items, 0..) |item, i| {
+                    if (i > 0) try result.appendSlice(", ");
+                    const item_str = try item.toString(allocator);
+                    defer allocator.free(item_str);
+                    try result.appendSlice(item_str);
+                }
+                try result.append(']');
+                return try result.toOwnedSlice();
+            },
+        };
+    }
+    
+    fn deinit(self: *Variable, allocator: Allocator) void {
+        switch (self.*) {
+            .String => |s| allocator.free(s),
+            .Array => |*arr| {
+                for (arr.items) |*item| {
+                    item.deinit(allocator);
+                }
+                arr.deinit();
+            },
+            else => {},
+        }
+    }
+    
+    fn clone(self: Variable, allocator: Allocator) !Variable {
+        return switch (self) {
+            .Integer => |i| Variable{ .Integer = i },
+            .String => |s| Variable{ .String = try allocator.dupe(u8, s) },
+            .Boolean => |b| Variable{ .Boolean = b },
+            .Array => |arr| {
+                var new_array = ArrayList(Variable).init(allocator);
+                for (arr.items) |item| {
+                    try new_array.append(try item.clone(allocator));
+                }
+                return Variable{ .Array = new_array };
+            },
         };
     }
 };
@@ -228,6 +272,62 @@ const FunctionInfo = struct {
     available: bool,
 };
 
+// Simple pattern matching function
+fn simplePatternMatch(value: Variable, pattern: []const u8) !bool {
+    // Handle wildcard pattern
+    if (std.mem.eql(u8, pattern, "_")) {
+        return true;
+    }
+    
+    switch (value) {
+        .Integer => |int_val| {
+            // Handle range patterns: start..end
+            if (std.mem.indexOf(u8, pattern, "..")) |dot_pos| {
+                const start_str = std.mem.trim(u8, pattern[0..dot_pos], " \t");
+                const end_str = std.mem.trim(u8, pattern[dot_pos + 2..], " \t");
+                
+                if (std.fmt.parseInt(i64, start_str, 10)) |start_val| {
+                    if (std.fmt.parseInt(i64, end_str, 10)) |end_val| {
+                        return int_val >= start_val and int_val <= end_val;
+                    } else |_| {
+                        return false;
+                    }
+                } else |_| {
+                    return false;
+                }
+            }
+            
+            // Handle exact integer match
+            if (std.fmt.parseInt(i64, pattern, 10)) |pattern_int| {
+                return int_val == pattern_int;
+            } else |_| {
+                return false;
+            }
+        },
+        .Boolean => |bool_val| {
+            if (std.mem.eql(u8, pattern, "based")) {
+                return bool_val == true;
+            } else if (std.mem.eql(u8, pattern, "cringe")) {
+                return bool_val == false;
+            }
+            return false;
+        },
+        .String => |str_val| {
+            // Handle string literal patterns (with quotes)
+            if (pattern.len >= 2 and pattern[0] == '"' and pattern[pattern.len - 1] == '"') {
+                const pattern_str = pattern[1..pattern.len - 1];
+                return std.mem.eql(u8, str_val, pattern_str);
+            }
+            // Handle unquoted string patterns
+            return std.mem.eql(u8, str_val, pattern);
+        },
+        .Array => |_| {
+            // Arrays don't support pattern matching yet
+            return false;
+        },
+    }
+}
+
 fn interpretProgram(allocator: Allocator, source: []const u8) !void {
     print("🚀 Interpreting CURSED program...\n", .{});
     
@@ -239,6 +339,12 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             allocator.free(entry.key_ptr.*);
             switch (entry.value_ptr.*) {
                 .String => |s| allocator.free(s),
+                .Array => |*arr| {
+                    for (arr.items) |*item| {
+                        item.deinit(allocator);
+                    }
+                    arr.deinit();
+                },
                 else => {},
             }
         }
@@ -295,6 +401,11 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
     var lines = std.mem.splitScalar(u8, source, '\n');
     var line_number: u32 = 0;
     
+    // Pattern matching state
+    var in_pattern_block = false;
+    var pattern_value: ?Variable = null;
+    var pattern_matched = false;
+    
     while (lines.next()) |line| {
         line_number += 1;
         const trimmed = std.mem.trim(u8, line, " \t\r\n");
@@ -303,6 +414,71 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
         if (trimmed.len == 0 or std.mem.startsWith(u8, trimmed, "fr fr")) {
             continue;
         }
+        
+        // Handle pattern matching: ready (value) {
+        if (std.mem.startsWith(u8, trimmed, "ready (") and std.mem.endsWith(u8, trimmed, ") {")) {
+            in_pattern_block = true;
+            pattern_matched = false;
+            
+            // Extract value from ready (value) {
+            if (std.mem.indexOf(u8, trimmed, "(")) |start_paren| {
+                if (std.mem.indexOf(u8, trimmed[start_paren..], ")")) |rel_end_paren| {
+                    const end_paren = start_paren + rel_end_paren;
+                    const value_str = std.mem.trim(u8, trimmed[start_paren + 1..end_paren], " \t");
+                    
+                    // Evaluate the pattern value
+                    if (variables.get(value_str)) |var_value| {
+                        pattern_value = var_value;
+                        print("🎯 Pattern matching on: {any}\n", .{var_value});
+                    } else {
+                        print("❌ Variable '{s}' not found for pattern matching\n", .{value_str});
+                        pattern_value = null;
+                    }
+                }
+            }
+            continue;
+        }
+        
+        // Handle end of pattern block
+        if (in_pattern_block and std.mem.eql(u8, trimmed, "}")) {
+            in_pattern_block = false;
+            pattern_value = null;
+            pattern_matched = false;
+            print("Line {}: }}\n", .{line_number});
+            continue;
+        }
+        
+        // Handle pattern branches: pattern => action
+        if (in_pattern_block) {
+            if (std.mem.indexOf(u8, trimmed, "=>")) |arrow_pos| {
+                if (!pattern_matched and pattern_value != null) {
+                    const pattern_part = std.mem.trim(u8, trimmed[0..arrow_pos], " \t");
+                    const action_part = std.mem.trim(u8, trimmed[arrow_pos + 2..], " \t");
+                    
+                    // Simple pattern matching
+                    const matches = try simplePatternMatch(pattern_value.?, pattern_part);
+                    if (matches) {
+                        pattern_matched = true;  // Prevent other patterns from executing
+                        print("✅ Pattern '{s}' matched! Executing: {s}\n", .{ pattern_part, action_part });
+                        
+                        // Execute the action (only vibez.spill for now)
+                        if (std.mem.indexOf(u8, action_part, "vibez.spill(")) |start| {
+                            try handleVibesSpill(&variables, allocator, action_part, start);
+                        }
+                    } else {
+                        print("❌ Pattern '{s}' did not match\n", .{pattern_part});
+                    }
+                }
+            }
+            continue;
+        }
+        
+        // Skip other statements inside pattern blocks
+        if (in_pattern_block) {
+            continue;
+        }
+        
+        print("Line {}: {s}\n", .{ line_number, trimmed });
         
         // Split line by semicolons to handle multiple statements
         var statements = std.mem.splitScalar(u8, trimmed, ';');
@@ -377,13 +553,57 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
 fn evaluateIntegerExpression(variables: *VariableStore, expr: []const u8) !i64 {
     const trimmed = std.mem.trim(u8, expr, " \t");
     
-    // Check for binary operators (addition and subtraction for now)
+    // Handle complex expressions with multiple operators
+    // Parse from left to right for now (can be improved with precedence)
+    var tokens = std.ArrayList([]const u8).init(std.heap.page_allocator);
+    defer tokens.deinit();
+    
+    // Simple tokenization by spaces
+    var parts = std.mem.tokenizeScalar(u8, trimmed, ' ');
+    while (parts.next()) |part| {
+        try tokens.append(part);
+    }
+    
+    if (tokens.items.len == 1) {
+        // Single term
+        return try evaluateIntegerTerm(variables, tokens.items[0]);
+    } else if (tokens.items.len >= 3) {
+        // Multiple terms - evaluate left to right
+        var result = try evaluateIntegerTerm(variables, tokens.items[0]);
+        
+        var i: usize = 1;
+        while (i < tokens.items.len - 1) {
+            const operator = tokens.items[i];
+            const right_operand = tokens.items[i + 1];
+            const right_val = try evaluateIntegerTerm(variables, right_operand);
+            
+            if (std.mem.eql(u8, operator, "+")) {
+                result = result + right_val;
+            } else if (std.mem.eql(u8, operator, "-")) {
+                result = result - right_val;
+            } else if (std.mem.eql(u8, operator, "*")) {
+                result = result * right_val;
+            } else if (std.mem.eql(u8, operator, "/")) {
+                if (right_val != 0) {
+                    result = @divTrunc(result, right_val);
+                } else {
+                    return error.DivisionByZero;
+                }
+            }
+            
+            i += 2;
+        }
+        
+        return result;
+    }
+    
+    // Fallback to original binary operator handling
     if (std.mem.indexOf(u8, trimmed, " + ")) |op_pos| {
         const left_str = std.mem.trim(u8, trimmed[0..op_pos], " \t");
         const right_str = std.mem.trim(u8, trimmed[op_pos + 3..], " \t");
         
         const left_val = try evaluateIntegerTerm(variables, left_str);
-        const right_val = try evaluateIntegerTerm(variables, right_str);
+        const right_val = try evaluateIntegerExpression(variables, right_str); // Recursive for right side
         
         return left_val + right_val;
     }
@@ -393,7 +613,7 @@ fn evaluateIntegerExpression(variables: *VariableStore, expr: []const u8) !i64 {
         const right_str = std.mem.trim(u8, trimmed[op_pos + 3..], " \t");
         
         const left_val = try evaluateIntegerTerm(variables, left_str);
-        const right_val = try evaluateIntegerTerm(variables, right_str);
+        const right_val = try evaluateIntegerExpression(variables, right_str); // Recursive for right side
         
         return left_val - right_val;
     }
@@ -422,47 +642,106 @@ fn evaluateIntegerTerm(variables: *VariableStore, term: []const u8) !i64 {
 }
 
 fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, line: []const u8) !void {
-    // Parse: sus varname type = value
+    // Parse: sus varname type = value OR sus varname = value (simplified)
     const equals_pos = std.mem.indexOf(u8, line, "=") orelse return;
     const decl_part = std.mem.trim(u8, line[0..equals_pos], " \t");
     const value_str = std.mem.trim(u8, line[equals_pos + 1..], " \t");
     
-    // Parse declaration part: "sus varname type" 
+    // Parse declaration part: "sus varname [type]" 
     var parts = std.mem.tokenizeScalar(u8, decl_part, ' ');
     _ = parts.next(); // skip "sus"
     
     const var_name = parts.next() orelse return;
-    const var_type = parts.next() orelse return;
     
-    // Parse value based on type
-    const variable_value = if (std.mem.eql(u8, var_type, "drip")) blk: {
-        // Integer type - try expression evaluation first, then literal parsing
+    // Check if type is specified
+    const var_type = parts.next();
+    
+    // Parse value based on type or infer type
+    const variable_value = if (var_type) |type_name| blk: {
+        // Explicit type specified
+        if (std.mem.eql(u8, type_name, "drip")) {
+            // Integer type - try expression evaluation first, then literal parsing
+            if (evaluateIntegerExpression(variables, value_str)) |int_val| {
+                break :blk Variable{ .Integer = int_val };
+            } else |_| {
+                // Fallback to literal parsing
+                const int_val = std.fmt.parseInt(i64, value_str, 10) catch return;
+                break :blk Variable{ .Integer = int_val };
+            }
+        } else if (std.mem.eql(u8, type_name, "tea")) {
+            // String type
+            var trimmed_value = std.mem.trim(u8, value_str, " \t");
+            if (trimmed_value.len >= 2 and trimmed_value[0] == '"' and trimmed_value[trimmed_value.len - 1] == '"') {
+                trimmed_value = trimmed_value[1..trimmed_value.len - 1];
+            }
+            const string_copy = try allocator.dupe(u8, trimmed_value);
+            break :blk Variable{ .String = string_copy };
+        } else if (std.mem.eql(u8, type_name, "lit")) {
+            // Boolean type
+            const bool_val = std.mem.eql(u8, std.mem.trim(u8, value_str, " \t"), "based");
+            break :blk Variable{ .Boolean = bool_val };
+        } else if (std.mem.eql(u8, type_name, "[]drip")) {
+            // Array type with integer elements
+            const trimmed_val = std.mem.trim(u8, value_str, " \t");
+            if (trimmed_val.len >= 2 and trimmed_val[0] == '[' and trimmed_val[trimmed_val.len - 1] == ']') {
+                var array = ArrayList(Variable).init(allocator);
+                const content = trimmed_val[1..trimmed_val.len - 1];
+                
+                if (content.len > 0) {
+                    var elements = std.mem.splitScalar(u8, content, ',');
+                    while (elements.next()) |element| {
+                        const trimmed_element = std.mem.trim(u8, element, " \t");
+                        const int_val = std.fmt.parseInt(i64, trimmed_element, 10) catch continue;
+                        try array.append(Variable{ .Integer = int_val });
+                    }
+                }
+                
+                break :blk Variable{ .Array = array };
+            } else {
+                return; // Invalid array literal
+            }
+        } else {
+            return; // Unknown type
+        }
+    } else blk: {
+        // No type specified - infer from value
+        // Try integer first
         if (evaluateIntegerExpression(variables, value_str)) |int_val| {
             break :blk Variable{ .Integer = int_val };
         } else |_| {
-            // Fallback to literal parsing
-            const int_val = std.fmt.parseInt(i64, value_str, 10) catch return;
-            break :blk Variable{ .Integer = int_val };
+            // Try literal integer parsing
+            if (std.fmt.parseInt(i64, value_str, 10)) |int_val| {
+                break :blk Variable{ .Integer = int_val };
+            } else |_| {
+                // Try boolean
+                const trimmed_value = std.mem.trim(u8, value_str, " \t");
+                if (std.mem.eql(u8, trimmed_value, "based") or std.mem.eql(u8, trimmed_value, "cringe")) {
+                    const bool_val = std.mem.eql(u8, trimmed_value, "based");
+                    break :blk Variable{ .Boolean = bool_val };
+                }
+                
+                // Default to string
+                var trimmed_value_str = std.mem.trim(u8, value_str, " \t");
+                if (trimmed_value_str.len >= 2 and trimmed_value_str[0] == '"' and trimmed_value_str[trimmed_value_str.len - 1] == '"') {
+                    trimmed_value_str = trimmed_value_str[1..trimmed_value_str.len - 1];
+                }
+                const string_copy = try allocator.dupe(u8, trimmed_value_str);
+                break :blk Variable{ .String = string_copy };
+            }
         }
-    } else if (std.mem.eql(u8, var_type, "tea")) blk: {
-        // String type
-        var trimmed_value = std.mem.trim(u8, value_str, " \t");
-        if (trimmed_value.len >= 2 and trimmed_value[0] == '"' and trimmed_value[trimmed_value.len - 1] == '"') {
-            trimmed_value = trimmed_value[1..trimmed_value.len - 1];
-        }
-        const string_copy = try allocator.dupe(u8, trimmed_value);
-        break :blk Variable{ .String = string_copy };
-    } else if (std.mem.eql(u8, var_type, "lit")) blk: {
-        // Boolean type
-        const bool_val = std.mem.eql(u8, std.mem.trim(u8, value_str, " \t"), "based");
-        break :blk Variable{ .Boolean = bool_val };
-    } else {
-        return; // Unknown type
     };
     
     // Store variable
     const name_copy = try allocator.dupe(u8, var_name);
     try variables.put(name_copy, variable_value);
+    
+    // Debug: Print variable assignment (uncomment for debugging)
+    // print("DEBUG: Assigned {s} = ", .{var_name});
+    // switch (variable_value) {
+    //     .Integer => |i| print("{}\n", .{i}),
+    //     .String => |s| print("\"{s}\"\n", .{s}),
+    //     .Boolean => |b| print("{s}\n", .{if (b) "based" else "cringe"}),
+    // }
 }
 
 fn handleVibesSpill(variables: *VariableStore, allocator: Allocator, line: []const u8, start: usize) !void {
@@ -499,6 +778,62 @@ fn evaluateAndPrintArgument(variables: *VariableStore, allocator: Allocator, tri
     if (trimmed_content.len >= 2 and trimmed_content[0] == '"' and trimmed_content[trimmed_content.len - 1] == '"') {
         print("{s}", .{trimmed_content[1..trimmed_content.len - 1]});
         if (add_newline) print("\n", .{});
+    } else if (std.mem.indexOf(u8, trimmed_content, "(")) |paren_pos| {
+        // Function call like len(nums)
+        const func_name = std.mem.trim(u8, trimmed_content[0..paren_pos], " \t");
+        if (std.mem.lastIndexOf(u8, trimmed_content, ")")) |end_paren| {
+            const args_str = std.mem.trim(u8, trimmed_content[paren_pos + 1..end_paren], " \t");
+            
+            if (std.mem.eql(u8, func_name, "len")) {
+                // Handle len() function for arrays
+                if (variables.get(args_str)) |variable| {
+                    switch (variable) {
+                        .Array => |arr| {
+                            print("{}", .{arr.items.len});
+                            if (add_newline) print("\n", .{});
+                            return;
+                        },
+                        .String => |str| {
+                            print("{}", .{str.len});
+                            if (add_newline) print("\n", .{});
+                            return;
+                        },
+                        else => {},
+                    }
+                }
+            }
+        }
+        
+        // Unknown function call - print as is
+        print("{s}", .{trimmed_content});
+        if (add_newline) print("\n", .{});
+    } else if (std.mem.indexOf(u8, trimmed_content, "[")) |bracket_pos| {
+        // Array indexing like nums[0]
+        const array_name = std.mem.trim(u8, trimmed_content[0..bracket_pos], " \t");
+        if (std.mem.lastIndexOf(u8, trimmed_content, "]")) |end_bracket| {
+            const index_str = std.mem.trim(u8, trimmed_content[bracket_pos + 1..end_bracket], " \t");
+            
+            if (variables.get(array_name)) |variable| {
+                switch (variable) {
+                    .Array => |arr| {
+                        if (std.fmt.parseInt(usize, index_str, 10)) |index| {
+                            if (index < arr.items.len) {
+                                const elem_str = try arr.items[index].toString(allocator);
+                                defer allocator.free(elem_str);
+                                print("{s}", .{elem_str});
+                                if (add_newline) print("\n", .{});
+                                return;
+                            }
+                        } else |_| {}
+                    },
+                    else => {},
+                }
+            }
+        }
+        
+        // Unknown array access - print as is
+        print("{s}", .{trimmed_content});
+        if (add_newline) print("\n", .{});
     } else if (variables.get(trimmed_content)) |variable| {
         // Variable reference - evaluate and print
         const var_str = try variable.toString(allocator);
@@ -511,7 +846,7 @@ fn evaluateAndPrintArgument(variables: *VariableStore, allocator: Allocator, tri
             print("{}", .{int_val});
             if (add_newline) print("\n", .{});
         } else |_| {
-            // Unknown identifier - print as is
+            // Unknown identifier - print as is (could be an expression)
             print("{s}", .{trimmed_content});
             if (add_newline) print("\n", .{});
         }

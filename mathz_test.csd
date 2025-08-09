@@ -1,2 +1,1 @@
-yeet "mathz"
-vibez.spill("Result:", add_two(5, 3))
+yeet "mathz"; sus x drip = -5; vibez.spill("Absolute value:", abs_normie(x))
