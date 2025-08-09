@@ -1,1 +1,1 @@
-sus nums normie = 123; vibez.spill("Test:", nums)
+sus x drip = 42; vibez.spill("Answer:", x)

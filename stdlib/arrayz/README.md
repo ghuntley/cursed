@@ -1,78 +1,62 @@
-# arrayz - CURSED Array Operations Module
+# ARRAYZ Module - Array Operations
 
-Pure CURSED implementation for comprehensive array manipulation operations.
+Essential array manipulation functions for CURSED programs.
 
-## Features
+## Functions
 
-### Core Array Creation
-- `array_new()` - Create empty array
-- `array_fill(size, value)` - Create array filled with value
-- `array_range(start, end)` - Create array of numbers in range
-
-### Basic Operations
-- `array_length(arr)` - Get array length
-- `array_get(arr, index)` - Get element at index
-- `array_set(arr, index, value)` - Set element at index
-- `array_push(arr, value)` - Add element to end
-- `array_pop(arr)` - Remove and return last element
-- `array_insert(arr, index, value)` - Insert element at index
-- `array_remove(arr, index)` - Remove element at index
+### Array Arithmetic
+- `sum_array(nums []drip) drip` - Sum all elements
+- `average_array(nums []drip) drip` - Calculate average
+- `product_array(nums []drip) drip` - Multiply all elements
 
 ### Search Operations
-- `array_find(arr, value)` - Find first occurrence index
-- `array_contains(arr, value)` - Check if value exists
-- `array_count(arr, value)` - Count occurrences
-
-### Manipulation
-- `array_reverse(arr)` - Reverse array order
-- `array_slice(arr, start, end)` - Extract sub-array
-- `array_concat(arr1, arr2)` - Combine two arrays
-- `array_join(arr, separator)` - Join elements into string
-
-### Sorting
-- `array_sort_strings(arr)` - Sort string array
-- `array_sort_numbers(arr)` - Sort numeric array
-
-### Set Operations
-- `array_unique(arr)` - Remove duplicates
-- `array_intersection(arr1, arr2)` - Common elements
-- `array_difference(arr1, arr2)` - Elements in arr1 not in arr2
-- `array_union(arr1, arr2)` - All unique elements from both
-
-### Functional Operations
-- `array_filter(arr, predicate)` - Filter elements
-- `array_map(arr, mapper)` - Transform elements
-- `array_reduce(arr, initial, reducer)` - Reduce to single value
+- `find_max(nums []drip) drip` - Find maximum value
+- `find_min(nums []drip) drip` - Find minimum value
+- `contains_value(nums []drip, value drip) lit` - Check if value exists
+- `find_index(nums []drip, value drip) drip` - Find index of value (-1 if not found)
 
 ### Validation
-- `array_all(arr, predicate)` - Check if all elements match
-- `array_any(arr, predicate)` - Check if any element matches
-- `array_none(arr, predicate)` - Check if no elements match
+- `is_empty_array(nums []drip) lit` - Check if array is empty
+- `array_size(nums []drip) drip` - Get array size (same as len())
+- `arrays_equal_size(a []drip, b []drip) lit` - Check if arrays same size
+- `is_valid_index(nums []drip, index drip) lit` - Check if index is valid
 
-### Utilities
-- `array_chunk(arr, size)` - Split into chunks
-- `array_flatten(nested_arr)` - Flatten nested arrays
-- `array_zip(arr1, arr2)` - Combine into pairs
+### Counting
+- `count_positive(nums []drip) drip` - Count positive numbers
+- `count_negative(nums []drip) drip` - Count negative numbers
+- `count_zeros(nums []drip) drip` - Count zeros
+- `count_occurrences(nums []drip, value drip) drip` - Count occurrences of value
 
-## Usage Example
+### Safe Operations
+- `safe_get(nums []drip, index drip, default drip) drip` - Get with default value
+
+### Properties
+- `all_positive(nums []drip) lit` - Check if all numbers positive
+- `all_negative(nums []drip) lit` - Check if all numbers negative
+- `has_duplicates(nums []drip) lit` - Check for duplicate values
+
+### String Arrays
+- `join_string_array(strings []tea, separator tea) tea` - Join strings with separator
+- `concat_string_array(strings []tea) tea` - Concatenate all strings
+- `string_array_contains(strings []tea, value tea) lit` - Check if string exists
+
+## Usage
 
 ```cursed
 yeet "arrayz"
 
-# Create and manipulate arrays
-sus numbers [normie] = arrayz.array_range(1, 6)  # [1, 2, 3, 4, 5]
-sus doubled [normie] = arrayz.array_map(numbers, slay(x normie) normie { damn x * 2 })
-sus sum normie = arrayz.array_sum_numbers(doubled)
+sus numbers []drip = [1, 2, 3, 4, 5]
+sus sum drip = sum_array(numbers)
+sus max_val drip = find_max(numbers)
+sus has_three lit = contains_value(numbers, 3)
+sus positive_count drip = count_positive(numbers)
 
-# String operations
-sus words [tea] = ["hello", "world", "test"]
-sus sentence tea = arrayz.array_join(words, " ")
-sus filtered [tea] = arrayz.array_filter(words, slay(w tea) lit { damn len(w) > 4 })
+vibez.spill("Sum:", sum)
+vibez.spill("Max:", max_val)
+vibez.spill("Has 3:", has_three)
+vibez.spill("Positive count:", positive_count)
+
+sus strings []tea = ["hello", "world"]
+sus joined tea = join_string_array(strings, " ")
+vibez.spill("Joined:", joined)
 ```
-
-## Dependencies
-- Pure CURSED implementation - no FFI dependencies
-- Uses core CURSED language features only
-
-## Testing
-Run tests with: `./zig-out/bin/cursed stdlib/arrayz/test_arrayz.csd`

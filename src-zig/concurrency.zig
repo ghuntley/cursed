@@ -652,9 +652,8 @@ pub const Scheduler = struct {
     // GC integration for thread-safe operation
     gc_instance: ?*gc.GC,
 
-    pub fn init(allocator: Allocator, config: SchedulerConfig) !*Scheduler {
-        const scheduler = try allocator.create(Scheduler);
-        scheduler.* = Scheduler{
+    pub fn init(allocator: Allocator, config: SchedulerConfig) Scheduler {
+        return Scheduler{
             .config = config,
             .workers = ArrayList(Worker).init(allocator),
             .global_queue = ArrayList(*Goroutine).init(allocator),
@@ -667,16 +666,19 @@ pub const Scheduler = struct {
             .allocator = allocator,
             .gc_instance = null,
         };
+    }
 
+    pub fn start(self: *Scheduler) !void {
+        self.running.store(true, .release);
+        
         // Initialize workers
-        try scheduler.workers.ensureTotalCapacity(config.num_workers);
-        for (0..config.num_workers) |_| {
-            const worker_id = scheduler.next_worker_id.fetchAdd(1, .acq_rel);
-            const worker = Worker.init(allocator, worker_id, scheduler);
-            try scheduler.workers.append(worker);
+        try self.workers.ensureTotalCapacity(self.config.num_workers);
+        for (0..self.config.num_workers) |_| {
+            const worker_id = self.next_worker_id.fetchAdd(1, .acq_rel);
+            var worker = Worker.init(self.allocator, worker_id, self);
+            try worker.start();
+            try self.workers.append(worker);
         }
-
-        return scheduler;
     }
     
     /// Initialize GC integration for thread-safe memory management
@@ -734,16 +736,7 @@ pub const Scheduler = struct {
         self.global_queue.deinit();
     }
 
-    pub fn start(self: *Scheduler) !void {
-        self.running.store(true, .release);
-        
-        // Start all worker threads
-        for (self.workers.items) |*worker| {
-            try worker.start();
-        }
-        
-        self.stats.start_time = std.time.milliTimestamp();
-    }
+
 
     pub fn stop(self: *Scheduler) void {
         self.running.store(false, .release);
@@ -984,10 +977,10 @@ pub fn initializeScheduler(allocator: Allocator, config: SchedulerConfig) !void 
         return; // Already initialized
     }
 
-    const scheduler = try Scheduler.init(allocator, config);
-    global_scheduler = scheduler;
+    global_scheduler = try allocator.create(Scheduler);
+    global_scheduler.?.* = Scheduler.init(allocator, config);
     
-    try scheduler.start();
+    try global_scheduler.?.start();
 }
 
 /// Get global scheduler

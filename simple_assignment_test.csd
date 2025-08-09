@@ -1,5 +1,4 @@
-slay add_numbers(a drip, b drip) drip { 
-  damn a + b
-}
-sus result drip = add_numbers(5, 7)
-vibez.spill("Result:", result)
+sus i drip = 0
+vibez.spill("Initial i:", i)
+i = i + 1
+vibez.spill("After assignment i:", i)

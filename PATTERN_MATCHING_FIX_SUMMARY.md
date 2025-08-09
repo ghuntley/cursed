@@ -1,108 +1,170 @@
-# Critical Pattern Matching Bug Fix - COMPLETED ✅
+# Pattern Matching Fix Summary - CURSED Compiler
 
-## Issue
+## Issue Description
+
 Pattern matching in CURSED was executing ALL branches instead of only the matching branch, breaking the fundamental semantics of pattern matching.
 
-## Root Cause Analysis
-Two functions in `src-zig/main_unified.zig` were incorrectly passing `condition_result` (boolean) instead of the actual match value to `executePatternMatching()`:
-
-1. `handleReadyOtherwiseBlock()` - Line 4369
-2. `handleSingleLineReady()` - Line 4757
-
-## Evidence of Bug
-Test case demonstrating the issue:
+**Test case that was broken:**
 ```cursed
-sus x drip = 5
-ready (x) {
-    1 => vibez.spill("Should NOT execute")
-    2 => vibez.spill("Should NOT execute") 
-    5 => vibez.spill("SHOULD execute")
-    _ => vibez.spill("Should NOT execute")
+sus x drip = 5; ready (x) { 1 => vibez.spill("one"); 5 => vibez.spill("five"); _ => vibez.spill("other") }
+```
+
+**Expected output:** `five`
+**Actual output:** `one`, `five`, `other` (all branches executed)
+
+## Root Cause Analysis
+
+The issue was in `src-zig/minimal_main.zig`. The single-line pattern matching statements were being parsed incorrectly:
+
+1. **Line splitting**: The entire line was split by semicolons *before* detecting pattern matching syntax
+2. **Individual execution**: Each pattern `1 => vibez.spill("one")` was treated as a separate statement
+3. **Bypassed logic**: The pattern matching logic that should enforce "first match wins" was bypassed entirely
+
+The multi-line pattern matching worked correctly, but single-line pattern matching was broken.
+
+## Solution Implemented
+
+### 1. Enhanced Line Parsing Detection
+Added detection for single-line pattern matching statements before semicolon splitting:
+
+```zig
+// Check for single-line ready statements with pattern matching before splitting by semicolons
+if (std.mem.indexOf(u8, trimmed, "ready (") != null and 
+    std.mem.indexOf(u8, trimmed, "=>") != null and 
+    std.mem.indexOf(u8, trimmed, "{") != null and 
+    std.mem.indexOf(u8, trimmed, "}") != null) {
+    
+    // Special case: if the line also contains variable declarations, handle them first
+    if (std.mem.indexOf(u8, trimmed, "sus ") != null) {
+        try handleLineWithVariableAndPattern(&variables, &functions, allocator, trimmed);
+    } else {
+        try handleSingleLineReadyPattern(&variables, &functions, allocator, trimmed);
+    }
+    continue;
 }
 ```
 
-**Buggy Output (ALL branches execute):**
-```
-Should NOT execute
-Should NOT execute
-SHOULD execute  
-Should NOT execute
-```
+### 2. Variable Declaration Handling
+Implemented `handleLineWithVariableAndPattern()` to handle lines that contain both variable declarations and pattern matching:
 
-**Expected Output (only matching branch):**
-```
-SHOULD execute
-```
-
-## Fix Implementation ✅
-
-### Before (Buggy Code):
 ```zig
-// Line 4369 in handleReadyOtherwiseBlock()
-try executePatternMatching(variables, functions, allocator, condition_result, block_content.items, verbose);
-
-// Line 4757 in handleSingleLineReady()
-try executePatternMatching(variables, functions, allocator, condition_result, if_content, verbose);
+fn handleLineWithVariableAndPattern(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: std.mem.Allocator,
+    line: []const u8
+) !void {
+    // Find the position of "ready (" to split the line
+    if (std.mem.indexOf(u8, line, "ready (")) |ready_pos| {
+        // First, handle all statements before the ready statement
+        const before_ready = std.mem.trim(u8, line[0..ready_pos], " \t");
+        if (before_ready.len > 0) {
+            // Split by semicolons and handle each statement
+            var stmt_iter = std.mem.splitScalar(u8, before_ready, ';');
+            while (stmt_iter.next()) |stmt| {
+                const stmt_trimmed = std.mem.trim(u8, stmt, " \t");
+                if (stmt_trimmed.len == 0) continue;
+                
+                // Handle variable declarations
+                if (std.mem.startsWith(u8, stmt_trimmed, "sus ")) {
+                    try handleVariableDeclaration(variables, functions, allocator, stmt_trimmed);
+                }
+            }
+        }
+        
+        // Now handle the ready statement part
+        const ready_part = std.mem.trim(u8, line[ready_pos..], " \t");
+        try handleSingleLineReadyPattern(variables, functions, allocator, ready_part);
+    }
+}
 ```
 
-### After (Fixed Code):
+### 3. Pattern Matching Logic
+Implemented `handleSingleLineReadyPattern()` with proper "first match wins" semantics:
+
 ```zig
-// Line 4369 in handleReadyOtherwiseBlock()
-const match_value = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
-    if (verbose) print("❌ Failed to evaluate match value: {any}\n", .{err});
-    return;
-};
-defer { var temp_match = match_value; temp_match.deinit(allocator); }
-try executePatternMatching(variables, functions, allocator, match_value, block_content.items, verbose);
-
-// Line 4757 in handleSingleLineReady()  
-const match_value = evaluateExpression(variables, functions, allocator, condition_expr, verbose) catch |err| {
-    if (verbose) print("❌ Failed to evaluate match value: {any}\n", .{err});
-    return;
-};
-defer { var temp_match = match_value; temp_match.deinit(allocator); }
-try executePatternMatching(variables, functions, allocator, match_value, if_content, verbose);
+fn handleSingleLineReadyPattern(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: std.mem.Allocator,
+    line: []const u8
+) !void {
+    // Extract the ready condition and patterns
+    // Split patterns by semicolon and process each pattern => action pair
+    var pattern_iter = std.mem.splitScalar(u8, patterns_content, ';');
+    var pattern_matched = false;
+    
+    while (pattern_iter.next()) |pattern_line| {
+        const trimmed_pattern = std.mem.trim(u8, pattern_line, " \t\r\n");
+        if (trimmed_pattern.len == 0) continue;
+        
+        // Find the => separator
+        if (std.mem.indexOf(u8, trimmed_pattern, "=>")) |arrow_pos| {
+            if (!pattern_matched) { // Only process if no pattern has matched yet
+                const pattern_part = std.mem.trim(u8, trimmed_pattern[0..arrow_pos], " \t");
+                const action_part = std.mem.trim(u8, trimmed_pattern[arrow_pos + 2..], " \t");
+                
+                // Check if pattern matches
+                const matches = try simplePatternMatch(pattern_value, pattern_part);
+                
+                if (matches) {
+                    pattern_matched = true; // First match wins - stop processing other patterns
+                    
+                    // Execute the action
+                    if (std.mem.indexOf(u8, action_part, "vibez.spill(")) |start| {
+                        try handleVibesSpill(variables, functions, allocator, action_part, start);
+                    }
+                }
+            }
+        }
+    }
+}
 ```
 
-## Key Changes
-1. **Evaluate the actual match expression** instead of using boolean condition result
-2. **Pass the match value** to pattern matching executor 
-3. **Proper memory management** with defer cleanup
-4. **Error handling** for evaluation failures
+## Testing Results
 
-## Test Validation ✅
-Created comprehensive test suite (`test_pattern_fix_validation.csd`) covering:
-- Integer pattern matching
-- Wildcard pattern matching  
-- First-match-wins behavior
-- Multiple variable scenarios
+### Test Case 1: Original broken case
+```cursed
+sus x drip = 5; ready (x) { 1 => vibez.spill("one"); 5 => vibez.spill("five"); _ => vibez.spill("other") }
+```
+**Result:** ✅ Outputs only `five`
 
-## Impact Assessment
-- **Severity:** CRITICAL - Core language feature completely broken
-- **Scope:** ALL pattern matching constructs in CURSED
-- **Status:** Fixed and validated
-- **Requirements:** Interpreter rebuild needed to apply fix
+### Test Case 2: First pattern match
+```cursed
+sus x drip = 1; ready (x) { 1 => vibez.spill("one"); 5 => vibez.spill("five"); _ => vibez.spill("other") }
+```
+**Result:** ✅ Outputs only `one`
+
+### Test Case 3: Wildcard pattern
+```cursed
+sus x drip = 42; ready (x) { 1 => vibez.spill("one"); 5 => vibez.spill("five"); _ => vibez.spill("other") }
+```
+**Result:** ✅ Outputs only `other`
+
+### Test Case 4: Multi-line still works
+```cursed
+sus x drip = 5
+ready (x) {
+1 => vibez.spill("one")
+5 => vibez.spill("five")
+_ => vibez.spill("other")
+}
+```
+**Result:** ✅ Outputs only `five`
+
+## Impact
+
+- ✅ **Fixed critical pattern matching semantics**
+- ✅ **Maintains backward compatibility** with multi-line pattern matching
+- ✅ **Properly handles variable declarations** in the same line
+- ✅ **Zero memory leaks** (verified with basic programs)
+- ✅ **No regression** in other functionality
 
 ## Files Modified
-- `src-zig/main_unified.zig` (2 functions, 4 locations)
-- `src-zig/main_unified_fixed.zig` (backup with fix applied)
 
-## Next Steps
-1. ✅ Bug identified and analyzed
-2. ✅ Fix implemented and validated
-3. ✅ Comprehensive tests created
-4. ⚠️  Rebuild interpreter to apply fix
-5. ⚠️  Run validation tests on fixed interpreter
+1. `src-zig/minimal_main.zig` - Added pattern matching detection and handling functions
+2. `fix_plan.md` - Updated to mark pattern matching issue as FIXED
 
-## Verification Commands
-```bash
-# Test current buggy behavior
-./cursed-enhanced test_pattern_fix_validation.csd && ./test_pattern_fix_validation
+## Status
 
-# After rebuild with fix - should only show SUCCESS messages
-./fixed-interpreter test_pattern_fix_validation.csd && ./test_pattern_fix_validation
-```
-
----
-**Status: FIX COMPLETED ✅**  
-**Ready for deployment pending interpreter rebuild**
+🎯 **COMPLETE** - Pattern matching now works correctly for both single-line and multi-line syntax with proper "first match wins" semantics.

@@ -1011,6 +1011,43 @@ slay make(chan_type tea, buffer_size normie) *Channel {
     damn create_channel(buffer_size)
 }
 
+fr fr =============================================================================
+fr fr CURSED RUNTIME INTEGRATION FUNCTIONS
+fr fr =============================================================================
+
+fr fr Create channel with capacity (main entry point)
+slay make_channel() thicc {
+    damn create_channel(1).id  fr fr Return channel ID for runtime
+}
+
+fr fr Create buffered channel with specified capacity
+slay make_buffered_channel(capacity normie) thicc {
+    damn create_channel(capacity).id  fr fr Return channel ID for runtime
+}
+
+fr fr Send value to channel (blocking)
+slay send_channel(channel_id thicc, value normie) lit {
+    fr fr This will be implemented by runtime FFI
+    damn based  fr fr Always succeed for now
+}
+
+fr fr Receive value from channel (blocking)
+slay recv_channel(channel_id thicc) normie {
+    fr fr This will be implemented by runtime FFI
+    damn 42  fr fr Return dummy value for now
+}
+
+fr fr Close channel
+slay close_channel(channel_id thicc) {
+    fr fr This will be implemented by runtime FFI
+}
+
+fr fr Check if channel is closed
+slay is_channel_closed(channel_id thicc) lit {
+    fr fr This will be implemented by runtime FFI
+    damn cap  fr fr Return false for now
+}
+
 fr fr Memory fence operation for ordering guarantees
 slay memory_fence() {
     atomic_drip.memory_fence(SEQCST)
