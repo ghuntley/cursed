@@ -858,7 +858,10 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         }
         
         for (imports.items) |module_name| {
-            if (try simple_loader.loadModule(module_name)) |module_functions| {
+            if (simple_loader.loadModule(module_name) catch |err| {
+                if (verbose) print("❌ Failed to load module '{s}': {any}\n", .{ module_name, err });
+                continue; // Skip this module and continue with others
+            }) |module_functions| {
                 // Add functions to the function store
                 for (module_functions) |func| {
                     // Create function definition for the imported function
@@ -1288,6 +1291,12 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
         // Handle vibez.spill() BEFORE assignment checks to avoid conflicts with strings containing =
         if (std.mem.indexOf(u8, stmt_trimmed, "vibez.spill(")) |vibez_start| {
             try handleVibesSpill(variables, functions, allocator, stmt_trimmed, vibez_start, verbose);
+            continue;
+        }
+        
+        // Handle facts() function - print function with multiple arguments
+        if (std.mem.indexOf(u8, stmt_trimmed, "facts(")) |facts_start| {
+            try handleFacts(variables, functions, allocator, stmt_trimmed, facts_start, verbose);
             continue;
         }
         
@@ -2679,6 +2688,48 @@ pub fn handleVibesSpill(variables: *VariableStore, functions: *FunctionStore, al
             if (verbose) print("🔍 Simple comma check: '{any}'\n", .{has_comma});
             
             // Check if there are multiple arguments separated by commas (but not inside quotes)
+            if (has_comma) {
+                // Handle multiple arguments - need to parse them properly respecting quotes
+                var args = try parseArguments(allocator, trimmed_content);
+                defer args.deinit();
+                
+                var first_arg = true;
+                for (args.items) |arg| {
+                    if (!first_arg) print(" ", .{});
+                    first_arg = false;
+                    
+                    try evaluateAndPrintArgument(variables, functions, allocator, arg, verbose, false); // no newline for multi-args
+                }
+                print("\n", .{});
+                return;
+            }
+            
+            // Single argument - evaluate and print with newline
+            try evaluateAndPrintArgument(variables, functions, allocator, trimmed_content, verbose, true);
+        }
+    }
+}
+
+pub fn handleFacts(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, start: usize, verbose: bool) !void {
+    if (verbose) print("🔍 DEBUG: handleFacts called with line: '{s}'\n", .{line});
+    if (std.mem.indexOf(u8, line[start..], "(")) |paren_start| {
+        if (std.mem.lastIndexOf(u8, line, ")")) |paren_end| {
+            const content_start = start + paren_start + 1;
+            const content = line[content_start..paren_end];
+            const trimmed_content = std.mem.trim(u8, content, " \t");
+            
+            if (verbose) print("🔍 DEBUG: facts content: '{s}'\n", .{trimmed_content});
+            
+            if (trimmed_content.len == 0) {
+                // Empty facts() call
+                print("\n", .{});
+                return;
+            }
+            
+            // Check if there are multiple arguments separated by commas (but not inside quotes)
+            const has_comma = std.mem.indexOf(u8, trimmed_content, ",") != null;
+            if (verbose) print("🔍 facts comma check: '{any}'\n", .{has_comma});
+            
             if (has_comma) {
                 // Handle multiple arguments - need to parse them properly respecting quotes
                 var args = try parseArguments(allocator, trimmed_content);
@@ -4193,6 +4244,16 @@ fn handleStdlibFunctionCall(allocator: Allocator, variables: *VariableStore, mod
             // Handle specific stdlib function calls
             if (std.mem.eql(u8, module_name, "vibez") and std.mem.eql(u8, function_name, "spill")) {
                 try handleVibezSpill(allocator, variables, args_part);
+            } else if (std.mem.eql(u8, module_name, "vibez") and std.mem.eql(u8, function_name, "print_header")) {
+                try handleVibezPrintHeader(allocator, variables, args_part);
+            } else if (std.mem.eql(u8, module_name, "vibez") and std.mem.eql(u8, function_name, "print_success")) {
+                try handleVibezPrintSuccess(allocator, variables, args_part);
+            } else if (std.mem.eql(u8, module_name, "vibez") and std.mem.eql(u8, function_name, "print_error")) {
+                try handleVibezPrintError(allocator, variables, args_part);
+            } else if (std.mem.eql(u8, module_name, "vibez") and std.mem.eql(u8, function_name, "print_warning")) {
+                try handleVibezPrintWarning(allocator, variables, args_part);
+            } else if (std.mem.eql(u8, module_name, "vibez") and std.mem.eql(u8, function_name, "print_info")) {
+                try handleVibezPrintInfo(allocator, variables, args_part);
             } else if (std.mem.eql(u8, module_name, "testz")) {
                 try handleTestzFunction(allocator, variables, function_name, args_part);
             } else {
@@ -4322,6 +4383,103 @@ fn handleVibezSpill(allocator: Allocator, variables: *VariableStore, args: []con
     }
     
     print("{s}\n", .{output.items});
+}
+
+fn handleVibezPrintHeader(allocator: Allocator, variables: *VariableStore, args: []const u8) !void {
+    _ = allocator;
+    // Extract the header text
+    const trimmed_args = std.mem.trim(u8, args, " \t");
+    var header_text: []const u8 = undefined;
+    
+    if (trimmed_args.len >= 2 and trimmed_args[0] == '"' and trimmed_args[trimmed_args.len - 1] == '"') {
+        header_text = trimmed_args[1..trimmed_args.len - 1];
+    } else if (variables.get(trimmed_args)) |value| {
+        switch (value) {
+            .String => |s| header_text = s.data,
+            else => header_text = "Unknown",
+        }
+    } else {
+        header_text = trimmed_args;
+    }
+    
+    // Print a nice header with decoration
+    print("\n=== {s} ===\n", .{header_text});
+}
+
+fn handleVibezPrintSuccess(allocator: Allocator, variables: *VariableStore, args: []const u8) !void {
+    _ = allocator;
+    const trimmed_args = std.mem.trim(u8, args, " \t");
+    var message_text: []const u8 = undefined;
+    
+    if (trimmed_args.len >= 2 and trimmed_args[0] == '"' and trimmed_args[trimmed_args.len - 1] == '"') {
+        message_text = trimmed_args[1..trimmed_args.len - 1];
+    } else if (variables.get(trimmed_args)) |value| {
+        switch (value) {
+            .String => |s| message_text = s.data,
+            else => message_text = "Success",
+        }
+    } else {
+        message_text = trimmed_args;
+    }
+    
+    print("✅ {s}\n", .{message_text});
+}
+
+fn handleVibezPrintError(allocator: Allocator, variables: *VariableStore, args: []const u8) !void {
+    _ = allocator;
+    const trimmed_args = std.mem.trim(u8, args, " \t");
+    var message_text: []const u8 = undefined;
+    
+    if (trimmed_args.len >= 2 and trimmed_args[0] == '"' and trimmed_args[trimmed_args.len - 1] == '"') {
+        message_text = trimmed_args[1..trimmed_args.len - 1];
+    } else if (variables.get(trimmed_args)) |value| {
+        switch (value) {
+            .String => |s| message_text = s.data,
+            else => message_text = "Error",
+        }
+    } else {
+        message_text = trimmed_args;
+    }
+    
+    print("❌ {s}\n", .{message_text});
+}
+
+fn handleVibezPrintWarning(allocator: Allocator, variables: *VariableStore, args: []const u8) !void {
+    _ = allocator;
+    const trimmed_args = std.mem.trim(u8, args, " \t");
+    var message_text: []const u8 = undefined;
+    
+    if (trimmed_args.len >= 2 and trimmed_args[0] == '"' and trimmed_args[trimmed_args.len - 1] == '"') {
+        message_text = trimmed_args[1..trimmed_args.len - 1];
+    } else if (variables.get(trimmed_args)) |value| {
+        switch (value) {
+            .String => |s| message_text = s.data,
+            else => message_text = "Warning",
+        }
+    } else {
+        message_text = trimmed_args;
+    }
+    
+    print("⚠️  {s}\n", .{message_text});
+}
+
+fn handleVibezPrintInfo(allocator: Allocator, variables: *VariableStore, args: []const u8) !void {
+    _ = allocator;
+    const trimmed_args = std.mem.trim(u8, args, " \t");
+    var message_text: []const u8 = undefined;
+    
+    if (trimmed_args.len >= 2 and trimmed_args[0] == '"' and trimmed_args[trimmed_args.len - 1] == '"') {
+        message_text = trimmed_args[1..trimmed_args.len - 1];
+    } else if (variables.get(trimmed_args)) |value| {
+        switch (value) {
+            .String => |s| message_text = s.data,
+            else => message_text = "Info",
+        }
+    } else {
+        message_text = trimmed_args;
+    }
+    
+    print("ℹ️  {s}\n", .{message_text});
 }
 
 fn handleTestzFunction(allocator: Allocator, variables: *VariableStore, function_name: []const u8, args: []const u8) !void {

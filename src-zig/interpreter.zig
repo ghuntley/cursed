@@ -849,8 +849,22 @@ pub const Interpreter = struct {
                 }
             },
             .Identifier => |name| {
+                // Handle facts() function - print function with multiple arguments
+                if (std.mem.eql(u8, name, "facts")) {
+                    // Print all arguments separated by spaces, similar to print() in other languages
+                    for (call.arguments.items, 0..) |arg_expr, i| {
+                        if (i > 0) std.debug.print(" ", .{});
+                        
+                        const arg = try self.evaluateExpression(arg_expr.*);
+                        const str = try arg.toString(self.allocator);
+                        defer self.allocator.free(str);
+                        std.debug.print("{s}", .{str});
+                    }
+                    std.debug.print("\n", .{});
+                    return Value.Null;
+                }
                 // Handle concurrency built-in functions
-                if (std.mem.eql(u8, name, "dm_create")) {
+                else if (std.mem.eql(u8, name, "dm_create")) {
                     // dm_create(element_size, capacity) -> channel pointer
                     if (call.arguments.items.len != 2) {
                         return InterpreterError.TypeMismatch;
