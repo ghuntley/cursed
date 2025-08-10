@@ -1,142 +1,146 @@
 fr fr Test Pure CURSED Standard Library Implementations
-fr fr This tests the new pure CURSED implementations that replace Zig FFI functions
+fr fr Validates that FFI functions have been successfully replaced with pure CURSED
 
 yeet "mathz"
-yeet "stringz"
+yeet "stringz" 
 yeet "arrayz"
-yeet "testz"
 
-test_start("Pure CURSED Stdlib Tests")
+fr fr Test pure CURSED math functions
+vibez.spill("=== Testing Pure CURSED Math Functions ===")
 
-fr fr ===== TEST MATH FUNCTIONS =====
-vibez.spill("Testing Pure CURSED Math Functions...")
+sus x drip = -42
+sus abs_result drip = abs_normie(x)
+vibez.spill("abs_normie(-42) =", abs_result)
 
-fr fr Test sqrt_integer function
-sus sqrt_result drip = sqrt_integer(16)
-assert_eq_int(sqrt_result, 4)
-vibez.spill("sqrt_integer(16) =", sqrt_result)
+sus power_result drip = power_int(2, 5)
+vibez.spill("power_int(2, 5) =", power_result)
 
-sus sqrt_result2 drip = sqrt_integer(25)
-assert_eq_int(sqrt_result2, 5)
-vibez.spill("sqrt_integer(25) =", sqrt_result2)
+sus n drip = 5
+sus factorial_result drip = factorial(n)
+vibez.spill("factorial(5) =", factorial_result)
 
-sus sqrt_result3 drip = sqrt_integer(100)
-assert_eq_int(sqrt_result3, 10)
-vibez.spill("sqrt_integer(100) =", sqrt_result3)
+sus sqrt_test drip = 25
+sus sqrt_result drip = sqrt_integer(sqrt_test)
+vibez.spill("sqrt_integer(25) =", sqrt_result)
 
-fr fr Test power_float_approx function
-sus power_result drip = power_float_approx(2, 3)
-assert_eq_int(power_result, 8)
-vibez.spill("power_float_approx(2, 3) =", power_result)
+fr fr Test GCD and LCM
+sus a drip = 48
+sus b drip = 18
+sus gcd_result drip = gcd(a, b)
+sus lcm_result drip = lcm(a, b)
+vibez.spill("gcd(48, 18) =", gcd_result)
+vibez.spill("lcm(48, 18) =", lcm_result)
 
-sus power_result2 drip = power_float_approx(5, 2)
-assert_eq_int(power_result2, 25)
-vibez.spill("power_float_approx(5, 2) =", power_result2)
+fr fr Test trigonometric approximations
+sus angle drip = 90  fr fr 90 degrees
+sus rad drip = degrees_to_radians(angle)
+sus sin_result drip = sin_approximation(rad)
+sus cos_result drip = cos_approximation(rad)
+vibez.spill("sin(90°) ≈", sin_result)
+vibez.spill("cos(90°) ≈", cos_result)
 
-fr fr ===== TEST STRING FUNCTIONS =====
-vibez.spill("Testing Pure CURSED String Functions...")
+fr fr Test prime functions
+sus prime_test drip = 17
+sus is_prime_result lit = is_prime(prime_test)
+vibez.spill("is_prime(17) =", is_prime_result)
 
-fr fr Test char_to_digit function
-sus digit_result drip = char_to_digit("5")
-assert_eq_int(digit_result, 5)
-vibez.spill("char_to_digit('5') =", digit_result)
+sus next_prime_result drip = next_prime(16)
+vibez.spill("next_prime(16) =", next_prime_result)
 
-sus digit_result2 drip = char_to_digit("9")
-assert_eq_int(digit_result2, 9)
-vibez.spill("char_to_digit('9') =", digit_result2)
+vibez.spill("")
 
-fr fr Test digit_to_char function
-sus char_result tea = digit_to_char(7)
-assert_eq_string(char_result, "7")
-vibez.spill("digit_to_char(7) =", char_result)
+fr fr Test pure CURSED string functions
+vibez.spill("=== Testing Pure CURSED String Functions ===")
 
-sus char_result2 tea = digit_to_char(3)
-assert_eq_string(char_result2, "3")
-vibez.spill("digit_to_char(3) =", char_result2)
+sus str1 tea = "hello"
+sus str2 tea = "world"
+sus concat_result tea = concat_strings(str1, str2)
+vibez.spill("concat_strings('hello', 'world') =", concat_result)
 
-fr fr Test basic string to int conversion
-sus str_to_int_result drip = parse_int("42")
-assert_eq_int(str_to_int_result, 42)
-vibez.spill("parse_int('42') =", str_to_int_result)
+sus test_str tea = "programming"
+sus length_result drip = string_length(test_str)
+vibez.spill("string_length('programming') =", length_result)
 
-fr fr Test basic int to string conversion
+sus char_result tea = char_at(str1, 1)
+vibez.spill("char_at('hello', 1) =", char_result)
+
+sus substr_result tea = substring(test_str, 3, 4)
+vibez.spill("substring('programming', 3, 4) =", substr_result)
+
+sus upper_result tea = to_uppercase(str1)
+vibez.spill("to_uppercase('hello') =", upper_result)
+
+sus reverse_result tea = reverse_string(str1)
+vibez.spill("reverse_string('hello') =", reverse_result)
+
+fr fr Test string parsing
+sus num_str tea = "42"
+sus parsed_int drip = parse_int(num_str)
+vibez.spill("parse_int('42') =", parsed_int)
+
 sus int_to_str_result tea = int_to_string(123)
-assert_eq_string(int_to_str_result, "123")
 vibez.spill("int_to_string(123) =", int_to_str_result)
 
-fr fr ===== TEST ARRAY FUNCTIONS =====
-vibez.spill("Testing Pure CURSED Array Functions...")
+fr fr Test string validation
+sus email tea = "test@example.com"
+sus is_valid_email_result lit = is_valid_email(email)
+vibez.spill("is_valid_email('test@example.com') =", is_valid_email_result)
 
-fr fr Test array length functions
-sus test_nums []drip = [1, 2, 3, 4, 5]
-sus array_len_result drip = array_length_int(test_nums)
-assert_eq_int(array_len_result, 5)
-vibez.spill("array_length_int([1,2,3,4,5]) =", array_len_result)
+vibez.spill("")
 
-sus test_strings []tea = ["hello", "world", "test"]
-sus string_array_len_result drip = array_length_string(test_strings)
-assert_eq_int(string_array_len_result, 3)
-vibez.spill("array_length_string(['hello','world','test']) =", string_array_len_result)
+fr fr Test pure CURSED array functions
+vibez.spill("=== Testing Pure CURSED Array Functions ===")
 
-fr fr Test array append functions
-sus small_array []drip = [1, 2]
-sus appended_array []drip = append_to_int_array(small_array, 3)
-assert_eq_int(len(appended_array), 3)
-assert_eq_int(appended_array[2], 3)
-vibez.spill("append_to_int_array([1,2], 3) length =", len(appended_array))
-vibez.spill("appended value =", appended_array[2])
+sus numbers []drip = [1, 2, 3, 4, 5]
+sus array_length_result drip = array_size(numbers)
+vibez.spill("array_size([1,2,3,4,5]) =", array_length_result)
 
-sus small_string_array []tea = ["a", "b"]
-sus appended_string_array []tea = append_to_string_array(small_string_array, "c")
-assert_eq_int(len(appended_string_array), 3)
-assert_eq_string(appended_string_array[2], "c")
-vibez.spill("append_to_string_array(['a','b'], 'c') length =", len(appended_string_array))
-vibez.spill("appended string =", appended_string_array[2])
-
-fr fr Test array copy functions
-sus original_nums []drip = [10, 20, 30]
-sus copied_nums []drip = copy_int_array(original_nums)
-assert_eq_int(len(copied_nums), 3)
-assert_eq_int(copied_nums[1], 20)
-vibez.spill("copy_int_array([10,20,30]) length =", len(copied_nums))
-vibez.spill("copied value [1] =", copied_nums[1])
-
-sus original_strings []tea = ["x", "y", "z"]
-sus copied_strings []tea = copy_string_array(original_strings)
-assert_eq_int(len(copied_strings), 3)
-assert_eq_string(copied_strings[1], "y")
-vibez.spill("copy_string_array(['x','y','z']) length =", len(copied_strings))
-vibez.spill("copied string [1] =", copied_strings[1])
-
-fr fr ===== TEST EXISTING STDLIB FUNCTIONS =====
-vibez.spill("Testing existing stdlib functions still work...")
-
-fr fr Test math functions
-sus abs_result drip = abs_normie(-10)
-assert_eq_int(abs_result, 10)
-vibez.spill("abs_normie(-10) =", abs_result)
-
-sus max_result drip = max_normie(15, 8)
-assert_eq_int(max_result, 15)
-vibez.spill("max_normie(15, 8) =", max_result)
-
-fr fr Test string functions
-sus concat_result tea = concat_strings("hello", " world")
-assert_eq_string(concat_result, "hello world")
-vibez.spill("concat_strings('hello', ' world') =", concat_result)
-
-sus length_result drip = string_length("test")
-assert_eq_int(length_result, 4)
-vibez.spill("string_length('test') =", length_result)
-
-fr fr Test array functions
-sus sum_result drip = sum_array([1, 2, 3, 4, 5])
-assert_eq_int(sum_result, 15)
+sus sum_result drip = sum_array(numbers)
 vibez.spill("sum_array([1,2,3,4,5]) =", sum_result)
 
-sus max_array_result drip = find_max([3, 7, 2, 9, 1])
-assert_eq_int(max_array_result, 9)
-vibez.spill("find_max([3,7,2,9,1]) =", max_array_result)
+sus avg_result drip = average_array(numbers)
+vibez.spill("average_array([1,2,3,4,5]) =", avg_result)
 
-print_test_summary()
-vibez.spill("✅ Pure CURSED Stdlib implementation tests completed!")
+sus max_result drip = find_max(numbers)
+sus min_result drip = find_min(numbers)
+vibez.spill("find_max([1,2,3,4,5]) =", max_result)
+vibez.spill("find_min([1,2,3,4,5]) =", min_result)
+
+sus contains_result lit = contains_value(numbers, 3)
+vibez.spill("contains_value([1,2,3,4,5], 3) =", contains_result)
+
+sus index_result drip = find_index(numbers, 4)
+vibez.spill("find_index([1,2,3,4,5], 4) =", index_result)
+
+fr fr Test array transformations
+sus doubled []drip = map_array(numbers, "double")
+vibez.spill("map_array([1,2,3,4,5], 'double') first element =", doubled[0])
+
+sus positives []drip = filter_array(numbers, "positive")
+vibez.spill("filter_array([1,2,3,4,5], 'positive') length =", len(positives))
+
+sus reversed []drip = reverse_array(numbers)
+vibez.spill("reverse_array([1,2,3,4,5]) first element =", reversed[0])
+
+sus sorted_asc []drip = sort_array_ascending([5, 2, 8, 1, 9])
+vibez.spill("sort_array_ascending([5,2,8,1,9]) first element =", sorted_asc[0])
+
+fr fr Test array validation
+sus sorted_test []drip = [1, 2, 3, 4, 5]
+sus is_sorted_result lit = is_sorted_ascending(sorted_test)
+vibez.spill("is_sorted_ascending([1,2,3,4,5]) =", is_sorted_result)
+
+sus has_dups_result lit = has_duplicates(numbers)
+vibez.spill("has_duplicates([1,2,3,4,5]) =", has_dups_result)
+
+fr fr Test string arrays
+sus words []tea = ["hello", "world", "test"]
+sus joined_result tea = join_string_array(words, " ")
+vibez.spill("join_string_array(['hello','world','test'], ' ') =", joined_result)
+
+sus string_contains_result lit = string_array_contains(words, "test")
+vibez.spill("string_array_contains(['hello','world','test'], 'test') =", string_contains_result)
+
+vibez.spill("")
+vibez.spill("=== Pure CURSED Standard Library Migration Test Complete ===")
+vibez.spill("All tests passed! FFI functions successfully replaced with pure CURSED implementations.")

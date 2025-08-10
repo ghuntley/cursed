@@ -87,10 +87,10 @@ fr fr ===== STRING CHECKING =====
 
 slay starts_with_char(s tea, c tea) lit {
     fr fr Simple prefix check for single characters
-    ready (is_empty_string(s)) {
+    lowkey (is_empty_string(s)) {
         damn cringe
     }
-    ready (is_empty_string(c)) {
+    lowkey (is_empty_string(c)) {
         damn cringe
     }
     fr fr This is a simplified version - just checks equality for now
@@ -99,10 +99,10 @@ slay starts_with_char(s tea, c tea) lit {
 
 slay ends_with_char(s tea, c tea) lit {
     fr fr Simple suffix check for single characters
-    ready (is_empty_string(s)) {
+    lowkey (is_empty_string(s)) {
         damn cringe
     }
-    ready (is_empty_string(c)) {
+    lowkey (is_empty_string(c)) {
         damn cringe
     }
     fr fr This is a simplified version - just checks equality for now

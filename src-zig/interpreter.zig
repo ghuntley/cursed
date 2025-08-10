@@ -935,47 +935,9 @@ pub const Interpreter = struct {
                         return try self.callFunction(func, args.items);
                     }
                     
-                    // Check if this is a generic function call (e.g., "generic[drip]")
-                    if (std.mem.indexOf(u8, name, "[")) |bracket_start| {
-                        const template_name = name[0..bracket_start];
-                        std.debug.print("DEBUG: Attempting generic function lookup for template '{s}'\n", .{template_name});
-                        
-                        // Look for template function by base name
-                        var function_iterator = self.functions.iterator();
-                        while (function_iterator.next()) |entry| {
-                            const func_name = entry.key_ptr.*;
-                            const func = entry.value_ptr.*;
-                            
-                            // Check if this function starts with the template name and has type parameters
-                            if (std.mem.startsWith(u8, func_name, template_name) and 
-                                std.mem.indexOf(u8, func_name, "[") != null and
-                                func.declaration.type_parameters.items.len > 0) {
-                                
-                                std.debug.print("DEBUG: Found template function '{s}' for generic call '{s}'\n", .{func_name, name});
-                                
-                                // Extract type arguments from the call (e.g., "drip" from "generic[drip]")
-                                const type_args_start = bracket_start + 1;
-                                if (std.mem.indexOf(u8, name[type_args_start..], "]")) |bracket_end| {
-                                    const type_args_str = name[type_args_start..type_args_start + bracket_end];
-                                    std.debug.print("DEBUG: Extracted type arguments: '{s}'\n", .{type_args_str});
-                                    
-                                    // For now, just call the template function directly
-                                    // TODO: Implement proper type parameter substitution
-                                    
-                                    // Evaluate arguments
-                                    var args = ArrayList(Value).init(self.allocator);
-                                    defer args.deinit();
-                                    
-                                    for (call.arguments.items) |arg_expr| {
-                                    const arg = try self.evaluateExpression(arg_expr.*);
-                                    try args.append(arg);
-                                    }
-                                    
-                                    std.debug.print("DEBUG: Calling generic function with {d} arguments\n", .{args.items.len});
-                                    return try self.callFunction(func, args.items);
-                                }
-                            }
-                        }
+                    // Enhanced generic function call resolution
+                    if (try self.resolveGenericFunctionCall(name, call.arguments.items)) |result| {
+                        return result;
                     }
                     
                     std.debug.print("DEBUG: Function '{s}' not found\n", .{name});
@@ -1202,6 +1164,137 @@ pub const Interpreter = struct {
         }
         
         return Value{ .Struct = struct_instance };
+    }
+
+    /// Enhanced generic function call resolution
+    /// Supports both <T> and [T] syntax for generic function calls
+    fn resolveGenericFunctionCall(self: *Interpreter, function_name: []const u8, arguments: []ast.Expression) InterpreterError!?Value {
+        // Parse generic call syntax - check for angle brackets first
+        const generic_call_info = self.parseGenericCallSyntax(function_name) catch return null;
+        if (generic_call_info == null) return null;
+        
+        const call_info = generic_call_info.?;
+        defer self.allocator.free(call_info.base_name);
+        defer {
+            for (call_info.type_args) |arg| {
+                self.allocator.free(arg);
+            }
+            self.allocator.free(call_info.type_args);
+        }
+        
+        std.debug.print("DEBUG: Parsing generic call '{s}' -> base: '{s}', type_args: {any}\n", 
+            .{function_name, call_info.base_name, call_info.type_args});
+        
+        // Find the generic template function
+        const template_func = self.findGenericTemplate(call_info.base_name) orelse {
+            std.debug.print("DEBUG: No generic template found for '{s}'\n", .{call_info.base_name});
+            return null;
+        };
+        
+        std.debug.print("DEBUG: Found generic template function '{s}' with {d} type parameters\n", 
+            .{template_func.declaration.name, template_func.declaration.type_parameters.items.len});
+        
+        // Validate type argument count
+        if (call_info.type_args.len != template_func.declaration.type_parameters.items.len) {
+            std.debug.print("DEBUG: Type argument count mismatch: expected {d}, got {d}\n", 
+                .{template_func.declaration.type_parameters.items.len, call_info.type_args.len});
+            return InterpreterError.TypeMismatch;
+        }
+        
+        // Evaluate function arguments
+        var args = ArrayList(Value).init(self.allocator);
+        defer args.deinit();
+        
+        for (arguments) |arg_expr| {
+            const arg_value = try self.evaluateExpression(arg_expr);
+            try args.append(arg_value);
+        }
+        
+        std.debug.print("DEBUG: Calling generic function '{s}' with {d} arguments\n", 
+            .{function_name, args.items.len});
+        
+        // For now, call the template function directly (basic monomorphization)
+        // TODO: Implement proper type parameter substitution in function body
+        return try self.callFunction(template_func, args.items);
+    }
+    
+    const GenericCallInfo = struct {
+        base_name: []const u8,
+        type_args: [][]const u8,
+    };
+    
+    /// Parse generic function call syntax
+    fn parseGenericCallSyntax(self: *Interpreter, function_name: []const u8) !?GenericCallInfo {
+        // Try angle bracket syntax: function<type1, type2>
+        if (std.mem.indexOf(u8, function_name, "<")) |start| {
+            if (std.mem.lastIndexOf(u8, function_name, ">")) |end| {
+                const base_name = try self.allocator.dupe(u8, function_name[0..start]);
+                const type_args_str = function_name[start + 1..end];
+                const type_args = try self.parseTypeArguments(type_args_str);
+                
+                return GenericCallInfo{
+                    .base_name = base_name,
+                    .type_args = type_args,
+                };
+            }
+        }
+        
+        // Try square bracket syntax: function[type1, type2]
+        if (std.mem.indexOf(u8, function_name, "[")) |start| {
+            if (std.mem.lastIndexOf(u8, function_name, "]")) |end| {
+                const base_name = try self.allocator.dupe(u8, function_name[0..start]);
+                const type_args_str = function_name[start + 1..end];
+                const type_args = try self.parseTypeArguments(type_args_str);
+                
+                return GenericCallInfo{
+                    .base_name = base_name,
+                    .type_args = type_args,
+                };
+            }
+        }
+        
+        return null;
+    }
+    
+    /// Parse comma-separated type arguments
+    fn parseTypeArguments(self: *Interpreter, type_args_str: []const u8) ![][]const u8 {
+        var type_args = ArrayList([]const u8).init(self.allocator);
+        defer type_args.deinit();
+        
+        var iterator = std.mem.split(u8, type_args_str, ",");
+        while (iterator.next()) |type_arg| {
+            const trimmed = std.mem.trim(u8, type_arg, " \t\n");
+            if (trimmed.len > 0) {
+                try type_args.append(try self.allocator.dupe(u8, trimmed));
+            }
+        }
+        
+        return type_args.toOwnedSlice();
+    }
+    
+    /// Find generic template function by base name
+    fn findGenericTemplate(self: *Interpreter, base_name: []const u8) ?CursedFunction {
+        // First, try exact match for generic functions
+        if (self.functions.get(base_name)) |func| {
+            if (func.declaration.type_parameters.items.len > 0) {
+                return func;
+            }
+        }
+        
+        // Search for functions that match the base name pattern
+        var iterator = self.functions.iterator();
+        while (iterator.next()) |entry| {
+            const func_name = entry.key_ptr.*;
+            const func = entry.value_ptr.*;
+            
+            // Check if this function is a generic template
+            if (std.mem.eql(u8, func_name, base_name) and 
+                func.declaration.type_parameters.items.len > 0) {
+                return func;
+            }
+        }
+        
+        return null;
     }
 
     pub fn callFunction(self: *Interpreter, func: CursedFunction, args: []Value) InterpreterError!Value {

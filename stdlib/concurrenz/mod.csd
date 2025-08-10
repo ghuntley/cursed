@@ -139,7 +139,7 @@ slay create_mutex() *Mutex {
 
 fr fr Lock mutex (blocking operation) - RACE-SAFE WITH PROPER BACKOFF
 slay mutex_lock(mutex *Mutex) lit {
-    ready mutex == 0 {
+    lowkey (mutex == 0) {
         damn cap  fr fr Invalid mutex
     }
     
@@ -150,7 +150,7 @@ slay mutex_lock(mutex *Mutex) lit {
     periodt {
         fr fr Try to acquire lock atomically
         sus expected normie = 0
-        ready atomic_drip.compare_and_swap_i32(&mutex.lock_state, expected, 1, ACQUIRE) {
+        lowkey (atomic_drip.compare_and_swap_i32(&mutex.lock_state, expected, 1, ACQUIRE)) {
             fr fr Successfully acquired lock
             atomic_drip.memory_fence(ACQUIRE)
             mutex.owner = current_owner
@@ -168,14 +168,14 @@ slay mutex_lock(mutex *Mutex) lit {
         }
         
         fr fr Increase backoff up to maximum
-        ready backoff_count < 100 {
+        lowkey (backoff_count < 100) {
             backoff_count = backoff_count * 2
         } otherwise {
             backoff_count = 100
         }
         
         fr fr Check if lock is still held before next attempt
-        ready atomic_drip.atomic_load_i32(&mutex.lock_state, ACQUIRE) == 0 {
+        lowkey (atomic_drip.atomic_load_i32(&mutex.lock_state, ACQUIRE) == 0) {
             fr fr Lock appears free, decrement waiters and retry immediately
             atomic_drip.atomic_sub_i32(&mutex.waiters, 1, RELAXED)
             backoff_count = 1  fr fr Reset backoff

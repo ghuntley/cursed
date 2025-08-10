@@ -1478,6 +1478,29 @@ pub fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, 
     // DEBUG: Always show expression evaluation for debugging  
     if (verbose) print("🐛 DEBUG EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
     
+    // PRIORITY FIX: Early check for generic function calls to prevent operator confusion
+    // Generic functions like generic_function<drip>(100) were being parsed as comparison operators
+    if (std.mem.indexOf(u8, trimmed, "(") != null and std.mem.indexOf(u8, trimmed, ")") != null) {
+        const paren_pos = std.mem.indexOf(u8, trimmed, "(").?;
+        const func_name_part = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
+        
+        // Check for generic function patterns: name<...> or name[...]
+        var is_generic_function = false;
+        if (std.mem.indexOf(u8, func_name_part, "<") != null and std.mem.indexOf(u8, func_name_part, ">") != null) {
+            is_generic_function = true;
+            if (verbose) print("🧬 PRIORITY: Detected generic function call with <> syntax: '{s}'\n", .{trimmed});
+        } else if (std.mem.indexOf(u8, func_name_part, "[") != null and std.mem.indexOf(u8, func_name_part, "]") != null) {
+            is_generic_function = true;
+            if (verbose) print("🧬 PRIORITY: Detected generic function call with [] syntax: '{s}'\n", .{trimmed});
+        }
+        
+        // If it's a generic function call, handle it immediately to avoid operator parsing
+        if (is_generic_function) {
+            if (verbose) print("📞 PRIORITY: Processing generic function call immediately: '{s}'\n", .{trimmed});
+            return try evaluateSingleValue(variables, functions, allocator, trimmed, verbose);
+        }
+    }
+    
     // REMOVED: Old arithmetic operator handling that interfered with precedence
     // This was causing expressions like "2 + 3 * 4" to be evaluated as "(2 + 3) * 4" instead of "2 + (3 * 4)"
     // The proper precedence-ordered operator handling is implemented later in this function
