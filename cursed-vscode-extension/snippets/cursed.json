@@ -1,104 +1,186 @@
 {
-    "Function Definition": {
-        "prefix": "slay",
-        "body": [
-            "slay ${1:function_name}(${2:params}) {",
-            "\t$0",
-            "}"
-        ],
-        "description": "Create a function definition"
-    },
-    "Variable Declaration": {
-        "prefix": "sus",
-        "body": [
-            "sus ${1:name} ${2:type} = ${3:value}"
-        ],
-        "description": "Declare a variable"
-    },
-    "Print Statement": {
-        "prefix": "spill",
-        "body": [
-            "vibez.spill(${1:\"message\"})"
-        ],
-        "description": "Print output"
-    },
-    "If Statement": {
-        "prefix": "facts",
-        "body": [
-            "facts ${1:condition} {",
-            "\t$0",
-            "}"
-        ],
-        "description": "If condition"
-    },
-    "Else Statement": {
-        "prefix": "lowkey",
-        "body": [
-            "lowkey {",
-            "\t$0",
-            "}"
-        ],
-        "description": "Else clause"
-    },
-    "For Loop": {
-        "prefix": "bestie",
-        "body": [
-            "bestie ${1:i} ${2:range} {",
-            "\t$0",
-            "}"
-        ],
-        "description": "For loop"
-    },
-    "While Loop": {
-        "prefix": "stan",
-        "body": [
-            "stan ${1:condition} {",
-            "\t$0",
-            "}"
-        ],
-        "description": "While loop"
-    },
-    "Struct Definition": {
-        "prefix": "squad",
-        "body": [
-            "squad ${1:Name} {",
-            "\tspill ${2:field} ${3:type}",
-            "\t$0",
-            "}"
-        ],
-        "description": "Define a struct"
-    },
-    "Interface Definition": {
-        "prefix": "collab",
-        "body": [
-            "collab ${1:Name} {",
-            "\tslay ${2:method}(${3:params}) ${4:return_type}",
-            "\t$0",
-            "}"
-        ],
-        "description": "Define an interface"
-    },
-    "Return Statement": {
-        "prefix": "damn",
-        "body": [
-            "damn ${1:value}"
-        ],
-        "description": "Return statement"
-    },
-    "Import Statement": {
-        "prefix": "yeet",
-        "body": [
-            "yeet \"${1:module}\""
-        ],
-        "description": "Import a module"
-    },
-    "Main Function": {
-        "prefix": "main",
-        "body": [
-            "slay main() {",
-            "\t$0",
-            "}"
-        ],
-        "description": "Main function entry point"
-    }
+  "function": {
+    "prefix": "slay",
+    "body": [
+      "slay ${1:functionName}(${2:params}) ${3:returnType} {",
+      "\t${4:// function body}",
+      "\tdamn ${5:returnValue}",
+      "}"
+    ],
+    "description": "Create a new function"
+  },
+  "variable": {
+    "prefix": "sus",
+    "body": [
+      "sus ${1:variableName} ${2:type} = ${3:value}"
+    ],
+    "description": "Declare a variable"
+  },
+  "if": {
+    "prefix": "ready",
+    "body": [
+      "ready (${1:condition}) {",
+      "\t${2:// if body}",
+      "}"
+    ],
+    "description": "If statement"
+  },
+  "ifelse": {
+    "prefix": "readyotherwise",
+    "body": [
+      "ready (${1:condition}) {",
+      "\t${2:// if body}",
+      "} otherwise {",
+      "\t${3:// else body}",
+      "}"
+    ],
+    "description": "If-else statement"
+  },
+  "while": {
+    "prefix": "bestie",
+    "body": [
+      "bestie (${1:condition}) {",
+      "\t${2:// loop body}",
+      "}"
+    ],
+    "description": "While loop"
+  },
+  "struct": {
+    "prefix": "squad",
+    "body": [
+      "squad ${1:StructName} {",
+      "\tspill ${2:fieldName} ${3:fieldType}",
+      "}"
+    ],
+    "description": "Define a struct"
+  },
+  "interface": {
+    "prefix": "collab",
+    "body": [
+      "collab ${1:InterfaceName} {",
+      "\tslay ${2:methodName}(${3:params}) ${4:returnType}",
+      "}"
+    ],
+    "description": "Define an interface"
+  },
+  "pattern": {
+    "prefix": "sick",
+    "body": [
+      "sick (${1:value}) {",
+      "\twhen ${2:pattern} -> ${3:result}",
+      "\twhen _ -> ${4:default}",
+      "}"
+    ],
+    "description": "Pattern matching"
+  },
+  "import": {
+    "prefix": "yeet",
+    "body": [
+      "yeet \"${1:moduleName}\""
+    ],
+    "description": "Import a module"
+  },
+  "print": {
+    "prefix": "spill",
+    "body": [
+      "vibez.spill(${1:value})"
+    ],
+    "description": "Print to console"
+  },
+  "defer": {
+    "prefix": "defer",
+    "body": [
+      "defer ${1:expression}"
+    ],
+    "description": "Defer statement"
+  },
+  "goroutine": {
+    "prefix": "stan",
+    "body": [
+      "stan ${1:function}(${2:args})"
+    ],
+    "description": "Start a goroutine"
+  },
+  "channel": {
+    "prefix": "dm",
+    "body": [
+      "sus ${1:channelName} dm<${2:type}> = make_channel()"
+    ],
+    "description": "Create a channel"
+  },
+  "error": {
+    "prefix": "yikes",
+    "body": [
+      "yikes \"${1:error message}\""
+    ],
+    "description": "Return an error"
+  },
+  "error_handling": {
+    "prefix": "fam",
+    "body": [
+      "sus ${1:result} = ${2:expression} fam {",
+      "\twhen ${3:errorType} -> {",
+      "\t\t${4:// handle error}",
+      "\t}",
+      "}"
+    ],
+    "description": "Error handling with fam"
+  },
+  "test": {
+    "prefix": "test",
+    "body": [
+      "yeet \"testz\"",
+      "",
+      "slay test_${1:testName}() {",
+      "\ttest_start(\"${2:test description}\")",
+      "\t${3:// test code}",
+      "\tassert_eq_int(${4:actual}, ${5:expected})",
+      "}"
+    ],
+    "description": "Create a test function"
+  },
+  "main": {
+    "prefix": "main",
+    "body": [
+      "slay main() drip {",
+      "\tvibez.spill(\"Hello, CURSED!\")",
+      "\tdamn 0",
+      "}"
+    ],
+    "description": "Main function template"
+  },
+  "array": {
+    "prefix": "array",
+    "body": [
+      "sus ${1:arrayName} []${2:type} = [${3:elements}]"
+    ],
+    "description": "Create an array"
+  },
+  "map": {
+    "prefix": "map",
+    "body": [
+      "sus ${1:mapName} map[${2:keyType}]${3:valueType} = map[${2:keyType}]${3:valueType}{",
+      "\t${4:// key-value pairs}",
+      "}"
+    ],
+    "description": "Create a map"
+  },
+  "for_range": {
+    "prefix": "forrange",
+    "body": [
+      "bestie ${1:item} flex ${2:collection} {",
+      "\t${3:// loop body}",
+      "}"
+    ],
+    "description": "For-range loop"
+  },
+  "package": {
+    "prefix": "vibe",
+    "body": [
+      "vibe ${1:packageName}",
+      "",
+      "${2:// package content}"
+    ],
+    "description": "Package declaration"
+  }
 }

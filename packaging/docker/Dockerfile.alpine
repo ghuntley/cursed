@@ -1,0 +1,66 @@
+# Alpine Linux production image for CURSED Compiler
+# Minimal, secure, and efficient container
+
+FROM alpine:3.19
+
+# Build arguments
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    libc6-compat \
+    libgcc \
+    libstdc++ \
+    llvm18-libs \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Create cursed user and group
+RUN addgroup -g 1000 cursed && \
+    adduser -D -s /bin/sh -u 1000 -G cursed cursed
+
+# Create necessary directories
+RUN mkdir -p \
+    /usr/local/bin \
+    /usr/local/share/cursed \
+    /var/cache/cursed \
+    /home/cursed/.cursed \
+    /home/cursed/work
+
+# Copy pre-built binaries and standard library
+# These should be provided by the build context
+COPY bin/* /usr/local/bin/
+COPY stdlib /usr/local/share/cursed/stdlib
+
+# Set proper permissions
+RUN chmod +x /usr/local/bin/cursed-* && \
+    chown -R cursed:cursed /usr/local/share/cursed /var/cache/cursed /home/cursed
+
+# Configure environment
+ENV PATH="/usr/local/bin:$PATH"
+ENV CURSED_CACHE_DIR="/var/cache/cursed"
+ENV CURSED_STDLIB_PATH="/usr/local/share/cursed/stdlib"
+ENV CURSED_HOME="/home/cursed/.cursed"
+ENV USER="cursed"
+ENV HOME="/home/cursed"
+
+# Health check to ensure the compiler is working
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD cursed-zig --version >/dev/null 2>&1 || exit 1
+
+# Switch to non-root user
+USER cursed
+WORKDIR /home/cursed/work
+
+# Container metadata
+LABEL maintainer="CURSED Development Team <dev@cursed.dev>"
+LABEL description="CURSED Compiler - Alpine Linux"
+LABEL version="$VERSION"
+LABEL base.image="alpine:3.19"
+LABEL cursed.version="$VERSION"
+
+# Default entrypoint and command
+ENTRYPOINT ["cursed-zig"]
+CMD ["--help"]

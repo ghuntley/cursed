@@ -1,0 +1,43 @@
+[package]
+name = "cursed"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "cursed"
+path = "src/main.rs"
+
+[features]
+default = ["std"]
+std = []
+wasm = ["wasm-bindgen", "js-sys", "web-sys"]
+
+[dependencies]
+# Core dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+cfg-if = "1.0"
+
+# WASM-compatible getrandom
+getrandom = { version = "0.2", features = ["js"], default-features = false }
+
+# Basic dependencies that work with WASM
+base64 = "0.22"
+hex = "0.4"
+subtle = "2.5.0"
+
+# WASM-specific dependencies
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", optional = true }
+js-sys = { version = "0.3", optional = true }
+web-sys = { version = "0.3", features = [
+  "console",
+  "Performance",
+  "Window",
+], optional = true }
+wasi = "0.11"
+
+# Very minimal tokio for WASM
+tokio = { version = "1.0", default-features = false, features = ["rt", "macros"] }

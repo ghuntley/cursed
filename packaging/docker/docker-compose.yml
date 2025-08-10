@@ -1,0 +1,278 @@
+version: '3.8'
+
+# Docker Compose configuration for CURSED Compiler
+# Provides multiple deployment scenarios
+
+services:
+  # ============================================================================
+  # PRODUCTION COMPILER SERVICE
+  # ============================================================================
+  
+  cursed-compiler:
+    image: cursed/compiler:latest
+    container_name: cursed-compiler
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Environment configuration
+    environment:
+      - CURSED_CACHE_DIR=/var/cache/cursed
+      - CURSED_PARALLEL_JOBS=4
+      - CURSED_OPTIMIZATION_LEVEL=2
+    
+    # Volume mounts for persistent storage
+    volumes:
+      - cursed-cache:/var/cache/cursed
+      - cursed-projects:/home/cursed/projects
+      - ./src:/home/cursed/work:ro
+    
+    # Working directory
+    working_dir: /home/cursed/work
+    
+    # Override default command for interactive use
+    command: ["--help"]
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "cursed-zig", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================================================
+  # DEVELOPMENT ENVIRONMENT
+  # ============================================================================
+  
+  cursed-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: cursed/compiler:dev
+    container_name: cursed-dev
+    
+    # Development configuration
+    environment:
+      - CURSED_DEV_MODE=1
+      - CURSED_DEBUG=1
+      - CURSED_CACHE_DIR=/var/cache/cursed
+    
+    # Volume mounts for development
+    volumes:
+      - cursed-dev-cache:/var/cache/cursed
+      - ./:/workspace:cached
+      - cursed-dev-home:/home/cursed
+    
+    # Interactive terminal
+    stdin_open: true
+    tty: true
+    
+    # Override entrypoint for development
+    entrypoint: ["/bin/bash"]
+    
+    # Port forwarding (if needed for LSP or other services)
+    ports:
+      - "9999:9999"  # LSP server port
+
+  # ============================================================================
+  # LSP SERVER SERVICE
+  # ============================================================================
+  
+  cursed-lsp:
+    image: cursed/compiler:latest
+    container_name: cursed-lsp
+    restart: unless-stopped
+    
+    # LSP-specific configuration
+    environment:
+      - CURSED_LSP_MODE=1
+      - CURSED_CACHE_DIR=/var/cache/cursed
+    
+    # Volume mounts
+    volumes:
+      - cursed-cache:/var/cache/cursed
+      - ./src:/workspace:ro
+    
+    # Network configuration
+    ports:
+      - "9999:9999"
+    
+    # Override command to run LSP server
+    command: ["cursed-lsp", "--port", "9999", "--host", "0.0.0.0"]
+    
+    # Health check for LSP server
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9999"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ============================================================================
+  # BUILD SERVICE (for CI/CD)
+  # ============================================================================
+  
+  cursed-build:
+    image: cursed/compiler:latest
+    container_name: cursed-build
+    
+    # Build environment
+    environment:
+      - CURSED_BUILD_MODE=release
+      - CURSED_OPTIMIZATION_LEVEL=3
+      - CURSED_PARALLEL_JOBS=8
+    
+    # Volume mounts for build artifacts
+    volumes:
+      - ./:/src:ro
+      - build-output:/output
+      - cursed-cache:/var/cache/cursed
+    
+    # Working directory
+    working_dir: /src
+    
+    # Build command
+    command: ["cursed-zig", "build", "--release", "--output-dir", "/output"]
+    
+    # Resource limits for build
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 2G
+
+  # ============================================================================
+  # TESTING SERVICE
+  # ============================================================================
+  
+  cursed-test:
+    image: cursed/compiler:latest
+    container_name: cursed-test
+    
+    # Test environment
+    environment:
+      - CURSED_TEST_MODE=1
+      - CURSED_PARALLEL_TESTS=4
+    
+    # Volume mounts
+    volumes:
+      - ./tests:/tests:ro
+      - test-results:/test-results
+      - cursed-cache:/var/cache/cursed
+    
+    # Working directory
+    working_dir: /tests
+    
+    # Test command
+    command: ["cursed-zig", "test", "--output-dir", "/test-results"]
+
+  # ============================================================================
+  # PACKAGE REGISTRY MIRROR
+  # ============================================================================
+  
+  cursed-registry:
+    image: nginx:alpine
+    container_name: cursed-registry
+    restart: unless-stopped
+    
+    # Port configuration
+    ports:
+      - "8080:80"
+    
+    # Volume mounts for package registry
+    volumes:
+      - ./packaging/registry:/usr/share/nginx/html:ro
+      - ./packaging/nginx.conf:/etc/nginx/nginx.conf:ro
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ============================================================================
+  # DOCUMENTATION SERVER
+  # ============================================================================
+  
+  cursed-docs:
+    image: nginx:alpine
+    container_name: cursed-docs
+    restart: unless-stopped
+    
+    # Port configuration
+    ports:
+      - "8081:80"
+    
+    # Volume mounts for documentation
+    volumes:
+      - ./docs:/usr/share/nginx/html:ro
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+# ============================================================================
+# VOLUME DEFINITIONS
+# ============================================================================
+
+volumes:
+  # Compiler cache (shared between services)
+  cursed-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./cache
+  
+  # Development cache (separate for dev work)
+  cursed-dev-cache:
+    driver: local
+  
+  # Development home directory
+  cursed-dev-home:
+    driver: local
+  
+  # Project storage
+  cursed-projects:
+    driver: local
+  
+  # Build output
+  build-output:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./build-output
+  
+  # Test results
+  test-results:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./test-results
+
+# ============================================================================
+# NETWORK DEFINITIONS
+# ============================================================================
+
+networks:
+  default:
+    name: cursed-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

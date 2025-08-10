@@ -1,222 +1,443 @@
 import * as vscode from 'vscode';
-import {
-    LanguageClient,
-    LanguageClientOptions,
-    ServerOptions,
-    TransportKind
-} from 'vscode-languageclient/node';
-
-let client: LanguageClient;
+import * as path from 'path';
+import { CursedLanguageClient } from './languageClient';
+import { CursedDebugAdapterDescriptorFactory } from './debugAdapter';
+import { CursedTaskProvider } from './taskProvider';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('CURSED Language Extension is now active!');
 
-    // Get configuration
-    const config = vscode.workspace.getConfiguration('cursed');
-    const lspEnabled = config.get<boolean>('lsp.enabled', true);
-    
-    if (!lspEnabled) {
-        console.log('CURSED LSP is disabled in configuration');
-        return;
-    }
+    // Initialize Language Server Client
+    const languageClient = new CursedLanguageClient(context);
+    context.subscriptions.push(languageClient);
 
-    // Language Server setup
-    const serverPath = config.get<string>('lsp.serverPath', 'cursed-lsp');
-    
-    // Server options
-    const serverOptions: ServerOptions = {
-        command: serverPath,
-        args: [],
-        transport: TransportKind.stdio
-    };
-
-    // Client options
-    const clientOptions: LanguageClientOptions = {
-        documentSelector: [
-            { scheme: 'file', language: 'cursed' }
-        ],
-        synchronize: {
-            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.{csd,cursed}')
-        },
-        outputChannelName: 'CURSED Language Server'
-    };
-
-    // Create and start the language client
-    client = new LanguageClient(
-        'cursed-lsp',
-        'CURSED Language Server',
-        serverOptions,
-        clientOptions
+    // Register Debug Adapter
+    const debugAdapterFactory = new CursedDebugAdapterDescriptorFactory();
+    context.subscriptions.push(
+        vscode.debug.registerDebugAdapterDescriptorFactory('cursed', debugAdapterFactory)
     );
 
-    // Start the client (this will also launch the server)
-    client.start();
+    // Register Task Provider
+    const taskProvider = new CursedTaskProvider();
+    context.subscriptions.push(
+        vscode.tasks.registerTaskProvider('cursed', taskProvider)
+    );
 
-    // Register commands
+    // Register Commands
     registerCommands(context);
 
-    // Register providers
-    registerProviders(context);
+    // Register File Watchers and Event Handlers
+    registerEventHandlers(context);
 
-    // Status bar item
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    statusBarItem.text = "$(symbol-method) CURSED";
-    statusBarItem.tooltip = "CURSED Language Active";
-    statusBarItem.show();
-    context.subscriptions.push(statusBarItem);
-
-    console.log('CURSED Language Server client started');
-}
-
-export function deactivate(): Thenable<void> | undefined {
-    if (!client) {
-        return undefined;
-    }
-    return client.stop();
+    // Show welcome message
+    showWelcomeMessage(context);
 }
 
 function registerCommands(context: vscode.ExtensionContext) {
-    // Compile command
-    const compileCommand = vscode.commands.registerCommand('cursed.compile', async () => {
+    // Run CURSED Program
+    const runCommand = vscode.commands.registerCommand('cursed.run', async () => {
         const activeEditor = vscode.window.activeTextEditor;
         if (!activeEditor || activeEditor.document.languageId !== 'cursed') {
-            vscode.window.showErrorMessage('No active CURSED file to compile');
+            vscode.window.showErrorMessage('No CURSED file is currently open');
             return;
         }
 
-        const terminal = vscode.window.createTerminal('CURSED Compiler');
-        const filePath = activeEditor.document.uri.fsPath;
-        terminal.sendText(`cursed "${filePath}"`);
-        terminal.show();
+        const filePath = activeEditor.document.fileName;
+        await runCursedProgram(filePath);
     });
+    context.subscriptions.push(runCommand);
 
-    // Format command
+    // Build CURSED Program
+    const buildCommand = vscode.commands.registerCommand('cursed.build', async () => {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor || activeEditor.document.languageId !== 'cursed') {
+            vscode.window.showErrorMessage('No CURSED file is currently open');
+            return;
+        }
+
+        const filePath = activeEditor.document.fileName;
+        await buildCursedProgram(filePath);
+    });
+    context.subscriptions.push(buildCommand);
+
+    // Format CURSED Code
     const formatCommand = vscode.commands.registerCommand('cursed.format', async () => {
         const activeEditor = vscode.window.activeTextEditor;
         if (!activeEditor || activeEditor.document.languageId !== 'cursed') {
-            vscode.window.showErrorMessage('No active CURSED file to format');
+            vscode.window.showErrorMessage('No CURSED file is currently open');
             return;
         }
 
         await vscode.commands.executeCommand('editor.action.formatDocument');
     });
+    context.subscriptions.push(formatCommand);
 
-    // Lint command
+    // Lint CURSED Code
     const lintCommand = vscode.commands.registerCommand('cursed.lint', async () => {
         const activeEditor = vscode.window.activeTextEditor;
         if (!activeEditor || activeEditor.document.languageId !== 'cursed') {
-            vscode.window.showErrorMessage('No active CURSED file to lint');
+            vscode.window.showErrorMessage('No CURSED file is currently open');
             return;
         }
 
-        const terminal = vscode.window.createTerminal('CURSED Linter');
-        const filePath = activeEditor.document.uri.fsPath;
-        terminal.sendText(`cursed-lint "${filePath}"`);
-        terminal.show();
+        const filePath = activeEditor.document.fileName;
+        await lintCursedCode(filePath);
     });
+    context.subscriptions.push(lintCommand);
 
-    // Restart LSP command
-    const restartLspCommand = vscode.commands.registerCommand('cursed.restart-lsp', async () => {
-        if (client) {
-            await client.stop();
-            client.start();
-            vscode.window.showInformationMessage('CURSED Language Server restarted');
-        }
+    // New CURSED Project
+    const newProjectCommand = vscode.commands.registerCommand('cursed.newProject', async () => {
+        await createNewCursedProject();
     });
+    context.subscriptions.push(newProjectCommand);
 
-    context.subscriptions.push(compileCommand, formatCommand, lintCommand, restartLspCommand);
+    // Show Documentation
+    const docsCommand = vscode.commands.registerCommand('cursed.showDocumentation', async () => {
+        const panel = vscode.window.createWebviewPanel(
+            'cursedDocs',
+            'CURSED Documentation',
+            vscode.ViewColumn.Two,
+            {
+                enableScripts: true,
+                retainContextWhenHidden: true
+            }
+        );
+
+        panel.webview.html = getDocumentationContent();
+    });
+    context.subscriptions.push(docsCommand);
 }
 
-function registerProviders(context: vscode.ExtensionContext) {
-    // Code completion provider for enhanced snippets
-    const completionProvider = vscode.languages.registerCompletionItemProvider(
-        'cursed',
-        {
-            provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
-                const linePrefix = document.lineAt(position).text.substr(0, position.character);
-                
-                // Custom completion items
-                const items: vscode.CompletionItem[] = [];
-
-                // Function template
-                if (linePrefix.endsWith('slay ')) {
-                    const funcItem = new vscode.CompletionItem('function template', vscode.CompletionItemKind.Snippet);
-                    funcItem.insertText = new vscode.SnippetString('${1:function_name}(${2:params}) {\n\t$0\n}');
-                    funcItem.documentation = 'Create a new CURSED function';
-                    items.push(funcItem);
-                }
-
-                // Struct template
-                if (linePrefix.endsWith('squad ')) {
-                    const structItem = new vscode.CompletionItem('struct template', vscode.CompletionItemKind.Snippet);
-                    structItem.insertText = new vscode.SnippetString('${1:StructName} {\n\tspill ${2:field_name} ${3:field_type}\n\t$0\n}');
-                    structItem.documentation = 'Create a new CURSED struct';
-                    items.push(structItem);
-                }
-
-                // Interface template
-                if (linePrefix.endsWith('collab ')) {
-                    const interfaceItem = new vscode.CompletionItem('interface template', vscode.CompletionItemKind.Snippet);
-                    interfaceItem.insertText = new vscode.SnippetString('${1:InterfaceName} {\n\tslay ${2:method_name}(${3:params}) ${4:return_type}\n\t$0\n}');
-                    interfaceItem.documentation = 'Create a new CURSED interface';
-                    items.push(interfaceItem);
-                }
-
-                return items;
+function registerEventHandlers(context: vscode.ExtensionContext) {
+    // Format on save
+    const formatOnSave = vscode.workspace.onDidSaveTextDocument(async (document) => {
+        if (document.languageId === 'cursed') {
+            const config = vscode.workspace.getConfiguration('cursed');
+            if (config.get('format.onSave')) {
+                await vscode.commands.executeCommand('cursed.format');
             }
-        },
-        ' ' // Trigger on space
+            if (config.get('lint.onSave')) {
+                await lintCursedCode(document.fileName);
+            }
+        }
+    });
+    context.subscriptions.push(formatOnSave);
+
+    // Status bar integration
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    statusBarItem.text = "$(play) CURSED";
+    statusBarItem.command = 'cursed.run';
+    statusBarItem.tooltip = 'Run CURSED Program';
+    
+    const updateStatusBar = () => {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (activeEditor && activeEditor.document.languageId === 'cursed') {
+            statusBarItem.show();
+        } else {
+            statusBarItem.hide();
+        }
+    };
+
+    updateStatusBar();
+    context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor(updateStatusBar),
+        statusBarItem
     );
-
-    // Hover provider for additional information
-    const hoverProvider = vscode.languages.registerHoverProvider('cursed', {
-        provideHover(document, position, token) {
-            const range = document.getWordRangeAtPosition(position);
-            const word = document.getText(range);
-
-            // Enhanced hover information
-            const genZKeywords: { [key: string]: string } = {
-                'slay': 'Function definition keyword - defines a function that slays (executes)',
-                'sus': 'Variable declaration keyword - creates a suspicious (mutable) variable',
-                'facts': 'Conditional keyword - checks if something is facts (true)',
-                'lowkey': 'Else keyword - used when something is lowkey false',
-                'bestie': 'Loop keyword - iterates with your bestie (loop variable)',
-                'squad': 'Struct keyword - defines a squad (data structure)',
-                'collab': 'Interface keyword - defines a collab (interface)',
-                'vibez': 'I/O module - handles all the vibez (input/output operations)',
-                'based': 'Boolean true - when something is based (true)',
-                'cringe': 'Boolean false - when something is cringe (false)',
-                'normie': 'Integer type - for normie (normal integer) values',
-                'tea': 'String type - for spilling the tea (string data)',
-                'lit': 'Boolean type - for lit (boolean) values',
-                'drip': 'Float type - for drip (floating point) values'
-            };
-
-            if (genZKeywords[word]) {
-                const hoverText = new vscode.MarkdownString();
-                hoverText.appendCodeblock(word, 'cursed');
-                hoverText.appendMarkdown(`**${genZKeywords[word]}**`);
-                hoverText.appendMarkdown('\n\n*CURSED Language - Gen Z Programming Syntax*');
-                return new vscode.Hover(hoverText);
-            }
-
-            return null;
-        }
-    });
-
-    context.subscriptions.push(completionProvider, hoverProvider);
 }
 
-// Status monitoring
-vscode.workspace.onDidChangeConfiguration((event) => {
-    if (event.affectsConfiguration('cursed')) {
+async function runCursedProgram(filePath: string) {
+    const config = vscode.workspace.getConfiguration('cursed');
+    const compilerPath = config.get('compiler.path', 'cursed');
+    
+    const terminal = vscode.window.createTerminal('CURSED Run');
+    terminal.sendText(`${compilerPath} "${filePath}"`);
+    terminal.show();
+}
+
+async function buildCursedProgram(filePath: string) {
+    const config = vscode.workspace.getConfiguration('cursed');
+    const compilerPath = config.get('compiler.path', 'cursed');
+    const optimization = config.get('build.optimization', 'debug');
+    
+    const outputChannel = vscode.window.createOutputChannel('CURSED Build');
+    outputChannel.show();
+    
+    const { spawn } = require('child_process');
+    const args = ['--compile', filePath];
+    
+    if (optimization !== 'debug') {
+        args.push(`--optimize=${optimization}`);
+    }
+    
+    const process = spawn(compilerPath, args);
+    
+    process.stdout.on('data', (data: Buffer) => {
+        outputChannel.append(data.toString());
+    });
+    
+    process.stderr.on('data', (data: Buffer) => {
+        outputChannel.append(data.toString());
+    });
+    
+    process.on('close', (code: number) => {
+        if (code === 0) {
+            vscode.window.showInformationMessage('CURSED build completed successfully');
+        } else {
+            vscode.window.showErrorMessage(`CURSED build failed with exit code ${code}`);
+        }
+    });
+}
+
+async function lintCursedCode(filePath: string) {
+    const config = vscode.workspace.getConfiguration('cursed');
+    const compilerPath = config.get('compiler.path', 'cursed');
+    
+    const outputChannel = vscode.window.createOutputChannel('CURSED Lint');
+    
+    const { spawn } = require('child_process');
+    const process = spawn(compilerPath, ['--lint', filePath]);
+    
+    let output = '';
+    
+    process.stdout.on('data', (data: Buffer) => {
+        output += data.toString();
+    });
+    
+    process.stderr.on('data', (data: Buffer) => {
+        output += data.toString();
+    });
+    
+    process.on('close', (code: number) => {
+        outputChannel.clear();
+        outputChannel.append(output);
+        
+        if (code === 0) {
+            vscode.window.showInformationMessage('CURSED lint passed');
+        } else {
+            outputChannel.show();
+            vscode.window.showWarningMessage('CURSED lint found issues');
+        }
+    });
+}
+
+async function createNewCursedProject() {
+    const folderUri = await vscode.window.showOpenDialog({
+        canSelectFolders: true,
+        canSelectFiles: false,
+        canSelectMany: false,
+        openLabel: 'Select Project Folder'
+    });
+
+    if (!folderUri || folderUri.length === 0) {
+        return;
+    }
+
+    const projectPath = folderUri[0].fsPath;
+    const projectName = await vscode.window.showInputBox({
+        prompt: 'Enter project name',
+        placeHolder: 'my-cursed-project'
+    });
+
+    if (!projectName) {
+        return;
+    }
+
+    const fullProjectPath = path.join(projectPath, projectName);
+    
+    try {
+        const fs = require('fs');
+        
+        // Create project directory
+        fs.mkdirSync(fullProjectPath, { recursive: true });
+        
+        // Create main.csd
+        const mainContent = `// CURSED Project: ${projectName}
+yeet "vibez"
+
+slay main() drip {
+    vibez.spill("Hello, CURSED!")
+    damn 0
+}
+`;
+        fs.writeFileSync(path.join(fullProjectPath, 'main.csd'), mainContent);
+        
+        // Create CursedPackage.toml
+        const packageContent = `[package]
+name = "${projectName}"
+version = "0.1.0"
+description = "A new CURSED project"
+authors = ["Your Name <you@example.com>"]
+
+[dependencies]
+# Add dependencies here
+
+[build]
+optimization = "debug"
+target = "native"
+`;
+        fs.writeFileSync(path.join(fullProjectPath, 'CursedPackage.toml'), packageContent);
+        
+        // Create README.md
+        const readmeContent = `# ${projectName}
+
+A CURSED programming language project.
+
+## Building
+
+\`\`\`bash
+cursed build
+\`\`\`
+
+## Running
+
+\`\`\`bash
+cursed run main.csd
+\`\`\`
+`;
+        fs.writeFileSync(path.join(fullProjectPath, 'README.md'), readmeContent);
+        
+        // Open the new project
+        const uri = vscode.Uri.file(fullProjectPath);
+        vscode.commands.executeCommand('vscode.openFolder', uri, true);
+        
+        vscode.window.showInformationMessage(`Created new CURSED project: ${projectName}`);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to create project: ${error}`);
+    }
+}
+
+function getDocumentationContent(): string {
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CURSED Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+        }
+        h1, h2, h3 { color: var(--vscode-textLink-foreground); }
+        code {
+            background-color: var(--vscode-textCodeBlock-background);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Cascadia Code', monospace;
+        }
+        pre {
+            background-color: var(--vscode-textCodeBlock-background);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .keyword { color: #569CD6; }
+        .string { color: #CE9178; }
+        .comment { color: #6A9955; }
+    </style>
+</head>
+<body>
+    <h1>CURSED Language Documentation</h1>
+    
+    <h2>Quick Start</h2>
+    <p>CURSED is a modern systems programming language with expressive syntax.</p>
+    
+    <h3>Basic Syntax</h3>
+    <pre><code><span class="comment">// Variable declaration</span>
+<span class="keyword">sus</span> name <span class="keyword">tea</span> = <span class="string">"CURSED"</span>
+<span class="keyword">sus</span> count <span class="keyword">drip</span> = 42
+
+<span class="comment">// Function definition</span>
+<span class="keyword">slay</span> greet(name <span class="keyword">tea</span>) <span class="keyword">tea</span> {
+    <span class="keyword">damn</span> <span class="string">"Hello, "</span> + name
+}
+
+<span class="comment">// Main function</span>
+<span class="keyword">slay</span> main() <span class="keyword">drip</span> {
+    vibez.spill(greet(<span class="string">"World"</span>))
+    <span class="keyword">damn</span> 0
+}</code></pre>
+
+    <h3>Control Flow</h3>
+    <pre><code><span class="comment">// If statement</span>
+<span class="keyword">ready</span> (condition) {
+    vibez.spill(<span class="string">"True branch"</span>)
+} <span class="keyword">otherwise</span> {
+    vibez.spill(<span class="string">"False branch"</span>)
+}
+
+<span class="comment">// While loop</span>
+<span class="keyword">bestie</span> (count > 0) {
+    vibez.spill(count)
+    count = count - 1
+}</code></pre>
+
+    <h3>Data Structures</h3>
+    <pre><code><span class="comment">// Struct definition</span>
+<span class="keyword">squad</span> Person {
+    <span class="keyword">spill</span> name <span class="keyword">tea</span>
+    <span class="keyword">spill</span> age <span class="keyword">drip</span>
+}
+
+<span class="comment">// Interface definition</span>
+<span class="keyword">collab</span> Greeter {
+    <span class="keyword">slay</span> greet() <span class="keyword">tea</span>
+}</code></pre>
+
+    <h3>Standard Library</h3>
+    <ul>
+        <li><strong>vibez</strong> - I/O operations</li>
+        <li><strong>mathz</strong> - Mathematical functions</li>
+        <li><strong>stringz</strong> - String manipulation</li>
+        <li><strong>arrayz</strong> - Array operations</li>
+        <li><strong>cryptz</strong> - Cryptographic functions</li>
+        <li><strong>filez</strong> - File I/O</li>
+        <li><strong>httpz</strong> - HTTP client/server</li>
+        <li><strong>timez</strong> - Time and date operations</li>
+    </ul>
+
+    <h3>Error Handling</h3>
+    <pre><code><span class="keyword">sus</span> result = risky_operation() <span class="keyword">fam</span> {
+    <span class="keyword">when</span> ErrorType -> {
+        vibez.spill(<span class="string">"Handle error"</span>)
+    }
+}</code></pre>
+
+    <h2>Resources</h2>
+    <ul>
+        <li><a href="https://cursed-lang.org">Official Website</a></li>
+        <li><a href="https://github.com/ghuntley/cursed">GitHub Repository</a></li>
+        <li><a href="https://playground.cursed-lang.org">Online Playground</a></li>
+    </ul>
+</body>
+</html>
+    `;
+}
+
+function showWelcomeMessage(context: vscode.ExtensionContext) {
+    const hasShownWelcome = context.globalState.get('cursed.hasShownWelcome', false);
+    
+    if (!hasShownWelcome) {
         vscode.window.showInformationMessage(
-            'CURSED configuration changed. Restart the LSP for changes to take effect.',
-            'Restart LSP'
-        ).then((selection) => {
-            if (selection === 'Restart LSP') {
-                vscode.commands.executeCommand('cursed.restart-lsp');
+            'Welcome to CURSED! 🔥',
+            'Show Documentation',
+            'Create New Project'
+        ).then(selection => {
+            if (selection === 'Show Documentation') {
+                vscode.commands.executeCommand('cursed.showDocumentation');
+            } else if (selection === 'Create New Project') {
+                vscode.commands.executeCommand('cursed.newProject');
             }
         });
+        
+        context.globalState.update('cursed.hasShownWelcome', true);
     }
-});
+}
+
+export function deactivate() {
+    console.log('CURSED Language Extension is now deactivated');
+}
