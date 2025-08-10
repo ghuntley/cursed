@@ -673,7 +673,7 @@ pub const LLVMIRGenerator = struct {
         try self.addLine(try self.allocator.dupe(u8, "entry:"));
         
         // Simple statement-by-statement IR generation
-        var var_counter: u32 = 0;
+        _ = @as(u32, 0); // placeholder for future variable tracking
         for (tokens.items) |token| {
             if (token.type == .Identifier) {
                 const line = try std.fmt.allocPrint(self.allocator, "  ; Processing token: {s}", .{token.value});

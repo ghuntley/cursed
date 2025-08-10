@@ -78,6 +78,13 @@ pub const Expression = union(enum) {
     Match: MatchExpression,
     TypeSwitch: TypeSwitchExpression,
     StringInterpolation: StringInterpolationExpression,
+    AwaitExpression: AwaitExpressionType,
+    Loop: LoopExpression,
+    For: ForExpression,
+    While: WhileExpression,
+    Block: BlockExpression,
+    If: IfExpression,
+    FunctionCall: FunctionCallExpression,
 
     pub fn deinit(self: *Expression, allocator: Allocator) void {
         // Memory cleanup is now handled properly without circular dependencies
@@ -1179,6 +1186,110 @@ pub const InterpolationPart = struct {
     text: []const u8,        // Literal text part
     expression: ?*anyopaque, // Expression to evaluate (null for literal parts)
     format_spec: ?[]const u8, // Optional format specification
+};
+
+// Async/await expression types
+pub const AwaitExpressionType = struct {
+    expression: *Expression,
+    timeout: ?*Expression,
+    cancellation_token: ?*Expression,
+    
+    pub fn init(expression: *Expression) AwaitExpressionType {
+        return AwaitExpressionType{
+            .expression = expression,
+            .timeout = null,
+            .cancellation_token = null,
+        };
+    }
+};
+
+pub const AsyncFunction = struct {
+    name: []const u8,
+    parameters: []Parameter,
+    return_type: ?*Type,
+    body: *Expression,
+    is_generator: bool,
+    yield_type: ?*Type,
+    
+    pub fn init(name: []const u8, parameters: []Parameter, body: *Expression) AsyncFunction {
+        return AsyncFunction{
+            .name = name,
+            .parameters = parameters,
+            .return_type = null,
+            .body = body,
+            .is_generator = false,
+            .yield_type = null,
+        };
+    }
+};
+
+// Control flow expression types for proper async transformation
+pub const LoopExpression = struct {
+    body: *Expression,
+    
+    pub fn init(body: *Expression) LoopExpression {
+        return LoopExpression{ .body = body };
+    }
+};
+
+pub const ForExpression = struct {
+    variable: []const u8,
+    iterable: *Expression,
+    body: *Expression,
+    
+    pub fn init(variable: []const u8, iterable: *Expression, body: *Expression) ForExpression {
+        return ForExpression{
+            .variable = variable,
+            .iterable = iterable,
+            .body = body,
+        };
+    }
+};
+
+pub const WhileExpression = struct {
+    condition: *Expression,
+    body: *Expression,
+    
+    pub fn init(condition: *Expression, body: *Expression) WhileExpression {
+        return WhileExpression{
+            .condition = condition,
+            .body = body,
+        };
+    }
+};
+
+pub const BlockExpression = struct {
+    statements: []*Expression,
+    
+    pub fn init(statements: []*Expression) BlockExpression {
+        return BlockExpression{ .statements = statements };
+    }
+};
+
+pub const IfExpression = struct {
+    condition: *Expression,
+    then_branch: *Expression,
+    else_branch: ?*Expression,
+    
+    pub fn init(condition: *Expression, then_branch: *Expression) IfExpression {
+        return IfExpression{
+            .condition = condition,
+            .then_branch = then_branch,
+            .else_branch = null,
+        };
+    }
+};
+
+pub const FunctionCallExpression = struct {
+    function: *Expression,
+    arguments: []*Expression,
+    
+    pub fn init(function: *Expression, arguments: []*Expression) FunctionCallExpression {
+        return FunctionCallExpression{
+            .function = function,
+            .arguments = arguments,
+        };
+    }
 };
 
 // AST type alias for tools

@@ -84,8 +84,8 @@ pub const CompilationCache = struct {
                 return true;
             }
             
-            // Compare modification time
-            if (cached_entry.timestamp < current_stat.mtime) {
+            // Compare file modification time with cached file mtime
+            if (cached_entry.file_mtime < current_stat.mtime) {
                 self.metrics.recordCacheMiss();
                 return true;
             }
@@ -151,7 +151,8 @@ pub const CompilationCache = struct {
         const source_entry = SourceCacheEntry{
             .file_path = try self.allocator.dupe(u8, file_path),
             .source_hash = source_hash,
-            .timestamp = file_metadata.mtime,
+            .timestamp = std.time.nanoTimestamp(), // Use monotonic time for cache entry
+            .file_mtime = file_metadata.mtime, // Store file mtime separately
             .size = file_metadata.size,
         };
         try self.source_cache.put(try self.allocator.dupe(u8, file_path), source_entry);
@@ -163,7 +164,7 @@ pub const CompilationCache = struct {
         const serialized_ast = try serializeAST(self.allocator, ast);
         const cached_ast = CachedAST{
             .serialized_data = serialized_ast,
-            .timestamp = std.time.timestamp(),
+            .timestamp = std.time.nanoTimestamp(),
             .dependencies = try self.allocator.dupe([]const u8, dependencies),
         };
         
@@ -218,7 +219,7 @@ pub const CompilationCache = struct {
         // Cache object metadata
         const cached_object = CachedObject{
             .object_path = object_path,
-            .timestamp = std.time.timestamp(),
+            .timestamp = std.time.nanoTimestamp(),
             .optimization_level = try self.allocator.dupe(u8, optimization_level),
             .size = object_data.len,
         };
@@ -346,8 +347,8 @@ pub const CompilationCache = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        const current_time = std.time.timestamp();
-        const expiry_threshold = current_time - self.config.cache_expiry_seconds;
+        const current_time = std.time.nanoTimestamp();
+        const expiry_threshold = current_time - (self.config.cache_expiry_seconds * std.time.ns_per_s);
         
         // Clean up source cache
         var source_iter = self.source_cache.iterator();
@@ -419,7 +420,7 @@ pub const CompilationCache = struct {
             };
             
             if (self.source_cache.get(dep)) |cached_dep| {
-                if (cached_dep.timestamp < dep_metadata.mtime) {
+                if (cached_dep.file_mtime < dep_metadata.mtime) {
                     return true;
                 }
             } else {
@@ -468,7 +469,7 @@ pub const CompilationCache = struct {
             defer self.allocator.free(cache_key);
             
             if (self.source_cache.get(cache_key)) |cached_config| {
-                if (cached_config.timestamp < config_metadata.mtime) {
+                if (cached_config.file_mtime < config_metadata.mtime) {
                     // Build config is newer than cached compilation
                     return true;
                 }
@@ -500,7 +501,8 @@ pub const CompilationCache = struct {
             const config_entry = SourceCacheEntry{
                 .file_path = try self.allocator.dupe(u8, config_file),
                 .source_hash = config_hash,
-                .timestamp = config_metadata.mtime,
+                .timestamp = std.time.nanoTimestamp(), // Monotonic time for cache entry
+                .file_mtime = config_metadata.mtime, // Store file mtime separately
                 .size = config_metadata.size,
             };
             
@@ -661,7 +663,8 @@ pub const CacheConfig = struct {
 const SourceCacheEntry = struct {
     file_path: []const u8,
     source_hash: u64,
-    timestamp: i64,
+    timestamp: i64, // Monotonic timestamp when cache entry was created (nanoseconds)
+    file_mtime: i64, // File modification time at time of caching
     size: usize,
 };
 
@@ -672,13 +675,13 @@ const FileMetadata = struct {
 
 const CachedAST = struct {
     serialized_data: []const u8,
-    timestamp: i64,
+    timestamp: i64, // Now uses nanoseconds from monotonic clock (not wall clock time)
     dependencies: []const []const u8,
 };
 
 const CachedObject = struct {
     object_path: []const u8,
-    timestamp: i64,
+    timestamp: i64, // Now uses nanoseconds from monotonic clock (not wall clock time)
     optimization_level: []const u8,
     size: usize,
 };

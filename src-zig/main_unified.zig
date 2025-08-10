@@ -26,6 +26,7 @@ const interpreter = @import("interpreter.zig");
 const crash_handler = @import("crash_handler.zig");
 const safe_operations = @import("safe_operations.zig");
 const repl = @import("repl.zig");
+const async_transform = @import("async_transform.zig");
 
 // Windows async I/O integration (Windows-only)
 const windows_async = if (@import("builtin").target.os.tag == .windows) 
@@ -2290,7 +2291,14 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
             break :blk result;
         } else |err| {
             if (verbose) print("❌ AUTO TYPE: Failed to evaluate expression '{s}': {}\n", .{value_str, err});
-            return;
+            
+            // Check if this is an UnknownIdentifier error
+            if (err == error.UnknownIdentifier) {
+                print("❌ RUNTIME ERROR: Undefined variable in assignment: '{s}'\n", .{value_str});
+                return error.UndefinedVariable;
+            }
+            
+            return err;
         }
     } else if (std.mem.eql(u8, var_type, "drip")) blk: {
         // Integer type - drip is specifically for integers
@@ -2310,8 +2318,14 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                     return;
                 }
             }
-        } else |_| {
-            // Fallback to literal parsing
+        } else |err| {
+            // Check if this is an UnknownIdentifier error before fallback
+            if (err == error.UnknownIdentifier) {
+                print("❌ RUNTIME ERROR: Undefined variable in drip assignment: '{s}'\n", .{value_str});
+                return error.UndefinedVariable;
+            }
+            
+            // Fallback to literal parsing for other errors
             if (std.fmt.parseInt(i64, std.mem.trim(u8, value_str, " \t"), 10)) |int_val| {
                 break :blk Variable{ .Integer = int_val };
             } else |_| {
@@ -2789,7 +2803,15 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
             tmp.deinit(allocator);
         } else |err| {
             if (verbose) print("❌ Expression evaluation failed: {any}\n", .{err});
-            // Fallback to literal value parsing
+            
+            // Check if this is an UnknownIdentifier error - don't silently fall back
+            if (err == error.UnknownIdentifier) {
+                print("❌ RUNTIME ERROR: Undefined variable or identifier: '{s}'\n", .{trimmed_content});
+                if (verbose) print("❌ Variable '{s}' not found in current scope\n", .{trimmed_content});
+                return error.UndefinedVariable;
+            }
+            
+            // For other errors, try literal value parsing as fallback
             if (std.fmt.parseInt(i64, trimmed_content, 10)) |int_val| {
                 print("{}", .{int_val});
                 if (add_newline) print("\n", .{});
@@ -2798,10 +2820,9 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
                     print("{d}", .{float_val});
                     if (add_newline) print("\n", .{});
                 } else |_| {
-                    // Unknown identifier
-                    print("{s}", .{trimmed_content});
-                    if (add_newline) print("\n", .{});
-                    if (verbose) print("⚠️  Unknown variable or expression: {s}\n", .{trimmed_content});
+                    // Only fallback to literal text for non-identifier errors
+                    print("❌ RUNTIME ERROR: Cannot evaluate expression: '{s}' (error: {any})\n", .{trimmed_content, err});
+                    return err;
                 }
             }
         }

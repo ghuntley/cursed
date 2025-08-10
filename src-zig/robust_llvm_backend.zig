@@ -66,13 +66,16 @@ pub const ARM64CallingConvention = struct {
         }
     };
     
-    /// Classify struct return based on size and fields
+    /// Classify struct return based on size and fields (ARM64 AAPCS64 compliant)
     pub fn classifyStructReturn(struct_size: usize, field_count: usize) ParameterClass {
-        // ARM64 AAPCS: structs ≤16 bytes returned in registers
-        if (struct_size <= 16 and field_count <= 2) {
+        _ = field_count; // Field count doesn't matter for AAPCS64 struct returns
+        
+        // ARM64 AAPCS64: structs ≤16 bytes returned in X0/X1 registers
+        // regardless of field count or alignment
+        if (struct_size <= 16) {
             return ParameterClass.init(.General, 0);
         } else {
-            // Large structs returned via X8 (indirect result)
+            // Large structs (>16 bytes) returned via X8 (indirect result)
             return ParameterClass{
                 .register_type = .IndirectResult,
                 .register_index = 8,
@@ -118,18 +121,37 @@ pub const ARM64CallingConvention = struct {
                 c.LLVMStructTypeKind => {
                     const struct_size = c.LLVMSizeOfTypeInBits(param_type) / 8;
                     const field_count = c.LLVMCountStructElementTypes(param_type);
+                    _ = field_count; // Field count doesn't affect AAPCS64 classification
                     
-                    if (struct_size <= 16 and field_count <= 2 and general_reg_count + 1 < 8) {
-                        // Small structs in registers
-                        try classifications.append(ParameterClass.init(.General, general_reg_count));
-                        general_reg_count += @intCast((struct_size + 7) / 8); // Round up to register count
+                    // ARM64 AAPCS64: structs ≤16 bytes passed in registers if available
+                    if (struct_size <= 16) {
+                        const regs_needed = @as(u8, @intCast((struct_size + 7) / 8)); // Round up to 8-byte chunks
+                        if (general_reg_count + regs_needed <= 8) {
+                            // Fits in available general registers
+                            try classifications.append(ParameterClass.init(.General, general_reg_count));
+                            general_reg_count += regs_needed;
+                        } else {
+                            // Not enough registers available - pass on stack
+                            var stack_param = ParameterClass.init(.Stack, 0);
+                            stack_param.stack_offset = stack_offset;
+                            try classifications.append(stack_param);
+                            stack_offset += @intCast((struct_size + 7) & ~@as(u32, 7)); // 8-byte align
+                        }
                     } else {
-                        // Large structs on stack or indirect
-                        var stack_param = ParameterClass.init(.Stack, 0);
-                        stack_param.stack_offset = stack_offset;
-                        stack_param.is_indirect = struct_size > 16;
-                        try classifications.append(stack_param);
-                        stack_offset += if (struct_size > 16) 8 else @intCast(struct_size);
+                        // Large structs (>16 bytes) passed by reference
+                        if (general_reg_count < 8) {
+                            var indirect_param = ParameterClass.init(.General, general_reg_count);
+                            indirect_param.is_indirect = true;
+                            try classifications.append(indirect_param);
+                            general_reg_count += 1;
+                        } else {
+                            // No registers available for pointer - pass reference on stack
+                            var stack_param = ParameterClass.init(.Stack, 0);
+                            stack_param.stack_offset = stack_offset;
+                            stack_param.is_indirect = true;
+                            try classifications.append(stack_param);
+                            stack_offset += 8; // Pointer size
+                        }
                     }
                 },
                 else => {
@@ -252,7 +274,7 @@ pub const PatternMatchVerifier = struct {
     }
     
     /// Create default value for a type
-    fn createDefaultValue(self: *PatternMatchVerifier, llvm_type: c.LLVMTypeRef) c.LLVMValueRef {
+    fn createDefaultValue(_: *PatternMatchVerifier, llvm_type: c.LLVMTypeRef) c.LLVMValueRef {
         const type_kind = c.LLVMGetTypeKind(llvm_type);
         
         return switch (type_kind) {
@@ -567,10 +589,12 @@ pub const RobustLLVMBackend = struct {
         var adjusted_args = ArrayList(c.LLVMValueRef).init(self.allocator);
         defer adjusted_args.deinit();
         
-        // Add X8 parameter for indirect returns
+        var return_alloca: ?c.LLVMValueRef = null;
+        
+        // Add X8 parameter for indirect returns (ARM64 AAPCS64)
         if (return_classification.is_indirect) {
-            const return_alloca = c.LLVMBuildAlloca(self.builder, return_type, "indirect_return");
-            try adjusted_args.append(return_alloca);
+            return_alloca = c.LLVMBuildAlloca(self.builder, return_type, "indirect_return");
+            try adjusted_args.append(return_alloca.?);
         }
         
         // Add regular parameters with ARM64 adjustments
@@ -585,27 +609,45 @@ pub const RobustLLVMBackend = struct {
             }
         }
         
+        // For indirect returns, we need to modify the function type to return void
+        // and add the result pointer as the first parameter
+        var actual_func_type = func_type;
+        if (return_classification.is_indirect) {
+            const void_type = c.LLVMVoidTypeInContext(self.context);
+            
+            // Create new parameter types with X8 as first parameter
+            const new_param_count = param_count + 1;
+            const new_param_types = try self.allocator.alloc(c.LLVMTypeRef, new_param_count);
+            defer self.allocator.free(new_param_types);
+            
+            new_param_types[0] = c.LLVMPointerType(return_type, 0); // X8 pointer
+            for (param_types, 0..) |ptype, i| {
+                new_param_types[i + 1] = ptype;
+            }
+            
+            actual_func_type = c.LLVMFunctionType(void_type, new_param_types.ptr, @intCast(new_param_count), 0);
+        }
+        
         const call_name_z = try self.arena.allocator().dupeZ(u8, call_name);
         const call_result = c.LLVMBuildCall2(
             self.builder, 
-            func_type, 
+            actual_func_type, 
             function, 
             adjusted_args.items.ptr, 
             @intCast(adjusted_args.items.len), 
             call_name_z.ptr
         );
         
-        // Handle indirect returns
+        // Handle indirect returns: load from X8 location
         if (return_classification.is_indirect) {
-            const return_alloca = adjusted_args.items[0];
-            return c.LLVMBuildLoad2(self.builder, return_type, return_alloca, "indirect_return_value");
+            return c.LLVMBuildLoad2(self.builder, return_type, return_alloca.?, "indirect_return_value");
         }
         
         return call_result;
     }
     
     /// Classify return type for ARM64
-    fn classifyReturnType(self: *RobustLLVMBackend, return_type: c.LLVMTypeRef) ARM64CallingConvention.ParameterClass {
+    fn classifyReturnType(_: *RobustLLVMBackend, return_type: c.LLVMTypeRef) ARM64CallingConvention.ParameterClass {
         const type_kind = c.LLVMGetTypeKind(return_type);
         
         if (type_kind == c.LLVMStructTypeKind) {
@@ -627,6 +669,10 @@ pub const RobustLLVMBackend = struct {
             
             const error_str = std.mem.span(error_message);
             
+            // CRITICAL: ALWAYS report LLVM verification failures regardless of verbose mode
+            // These errors indicate serious compilation issues that must never be silently ignored
+            std.debug.print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
+            
             // Create structured error instead of just adding string
             const error_handling = @import("error_handling.zig");
             const error_ctx = error_handling.createLLVMVerificationError(
@@ -634,7 +680,8 @@ pub const RobustLLVMBackend = struct {
                 error_str,
                 null // TODO: Add source location tracking
             ) catch |alloc_err| {
-                // Fallback for allocation failures
+                // Fallback for allocation failures - still report the core error
+                std.debug.print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
                 try self.addError(error_str);
                 std.debug.print("LLVM module verification failed: {s}\n", .{error_str});
                 return switch (alloc_err) {
@@ -844,13 +891,29 @@ test "ARM64 calling convention classification" {
 }
 
 test "struct return classification" {
-    // Small struct (≤16 bytes) should use registers
-    const small_struct_class = ARM64CallingConvention.classifyStructReturn(16, 2);
-    try std.testing.expect(small_struct_class.register_type == .General);
-    try std.testing.expect(!small_struct_class.is_indirect);
+    // Small struct (≤16 bytes) should use registers regardless of field count
+    const small_struct_1_field = ARM64CallingConvention.classifyStructReturn(8, 1);
+    try std.testing.expect(small_struct_1_field.register_type == .General);
+    try std.testing.expect(!small_struct_1_field.is_indirect);
     
-    // Large struct (>16 bytes) should use indirect return
-    const large_struct_class = ARM64CallingConvention.classifyStructReturn(32, 4);
+    const small_struct_4_fields = ARM64CallingConvention.classifyStructReturn(16, 4);
+    try std.testing.expect(small_struct_4_fields.register_type == .General);
+    try std.testing.expect(!small_struct_4_fields.is_indirect);
+    
+    // Exactly 16-byte struct should still use registers
+    const exact_16_bytes = ARM64CallingConvention.classifyStructReturn(16, 8);
+    try std.testing.expect(exact_16_bytes.register_type == .General);
+    try std.testing.expect(!exact_16_bytes.is_indirect);
+    
+    // Large struct (>16 bytes) should use indirect return (X8)
+    const large_struct_class = ARM64CallingConvention.classifyStructReturn(17, 1);
     try std.testing.expect(large_struct_class.register_type == .IndirectResult);
+    try std.testing.expect(large_struct_class.register_index == 8);
     try std.testing.expect(large_struct_class.is_indirect);
+    
+    // Very large struct should also use X8
+    const very_large_struct = ARM64CallingConvention.classifyStructReturn(1024, 100);
+    try std.testing.expect(very_large_struct.register_type == .IndirectResult);
+    try std.testing.expect(very_large_struct.register_index == 8);
+    try std.testing.expect(very_large_struct.is_indirect);
 }

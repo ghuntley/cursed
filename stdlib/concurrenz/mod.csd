@@ -139,7 +139,7 @@ slay create_mutex() *Mutex {
 
 fr fr Lock mutex (blocking operation) - RACE-SAFE WITH PROPER BACKOFF
 slay mutex_lock(mutex *Mutex) lit {
-    lowkey mutex == 0 {
+    ready mutex == 0 {
         damn cap  fr fr Invalid mutex
     }
     
@@ -147,10 +147,10 @@ slay mutex_lock(mutex *Mutex) lit {
     sus backoff_count normie = 1
     
     fr fr Retry loop with exponential backoff
-    bestie based {
+    periodt {
         fr fr Try to acquire lock atomically
         sus expected normie = 0
-        lowkey atomic_drip.compare_and_swap_i32(&mutex.lock_state, expected, 1, ACQUIRE) {
+        ready atomic_drip.compare_and_swap_i32(&mutex.lock_state, expected, 1, ACQUIRE) {
             fr fr Successfully acquired lock
             atomic_drip.memory_fence(ACQUIRE)
             mutex.owner = current_owner
@@ -168,14 +168,18 @@ slay mutex_lock(mutex *Mutex) lit {
         }
         
         fr fr Increase backoff up to maximum
-        backoff_count = lowkey backoff_count < 100 { backoff_count * 2 } else { 100 }
+        ready backoff_count < 100 {
+            backoff_count = backoff_count * 2
+        } otherwise {
+            backoff_count = 100
+        }
         
         fr fr Check if lock is still held before next attempt
-        lowkey atomic_drip.atomic_load_i32(&mutex.lock_state, ACQUIRE) == 0 {
+        ready atomic_drip.atomic_load_i32(&mutex.lock_state, ACQUIRE) == 0 {
             fr fr Lock appears free, decrement waiters and retry immediately
             atomic_drip.atomic_sub_i32(&mutex.waiters, 1, RELAXED)
             backoff_count = 1  fr fr Reset backoff
-            continue
+            break
         }
         
         atomic_drip.atomic_sub_i32(&mutex.waiters, 1, RELAXED)
@@ -186,13 +190,13 @@ slay mutex_lock(mutex *Mutex) lit {
 
 fr fr Unlock mutex using atomic operations
 slay mutex_unlock(mutex *Mutex) lit {
-    lowkey mutex == 0 {
+    ready mutex == 0 {
         damn cap
     }
     
     fr fr Verify we own the lock
     sus current_owner thicc = 42
-    lowkey mutex.owner != current_owner {
+    ready mutex.owner != current_owner {
         damn cap  fr fr Not lock owner
     }
     
@@ -204,14 +208,14 @@ slay mutex_unlock(mutex *Mutex) lit {
 
 fr fr Try to lock mutex (non-blocking)
 slay mutex_trylock(mutex *Mutex) lit {
-    lowkey mutex == 0 {
+    ready mutex == 0 {
         damn cap
     }
     
     sus expected normie = 0
     sus current_owner thicc = 42
     
-    lowkey atomic_drip.compare_and_swap_i32(&mutex.lock_state, expected, 1, ACQUIRE) {
+    ready atomic_drip.compare_and_swap_i32(&mutex.lock_state, expected, 1, ACQUIRE) {
         mutex.owner = current_owner
         damn based
     }
@@ -234,12 +238,12 @@ slay create_waitgroup() *WaitGroup {
 
 fr fr Add count to wait group using atomic operations
 slay waitgroup_add(wg *WaitGroup, count normie) lit {
-    lowkey wg == 0 {
+    ready wg == 0 {
         damn cap
     }
     
     sus old_counter normie = atomic_drip.atomic_add_i32(&wg.counter, count, SEQCST)
-    lowkey old_counter + count < 0 {
+    ready old_counter + count < 0 {
         damn cap  fr fr Would make counter negative
     }
     damn based
@@ -247,17 +251,17 @@ slay waitgroup_add(wg *WaitGroup, count normie) lit {
 
 fr fr Mark one task as done in wait group
 slay waitgroup_done(wg *WaitGroup) lit {
-    lowkey wg == 0 {
+    ready wg == 0 {
         damn cap
     }
     
     sus old_counter normie = atomic_drip.atomic_sub_i32(&wg.counter, 1, SEQCST)
-    lowkey old_counter <= 0 {
+    ready old_counter <= 0 {
         damn cap  fr fr Already at zero or negative
     }
     
     fr fr Check if all tasks are done
-    lowkey old_counter == 1 {
+    ready old_counter == 1 {
         atomic_drip.atomic_store_i32(&wg.done_flag, 1, RELEASE)
     }
     damn based
@@ -265,7 +269,7 @@ slay waitgroup_done(wg *WaitGroup) lit {
 
 fr fr Wait for all tasks to complete
 slay waitgroup_wait(wg *WaitGroup) lit {
-    lowkey wg == 0 {
+    ready wg == 0 {
         damn cap
     }
     
@@ -304,17 +308,17 @@ slay create_sync_channel() *Channel {
 
 fr fr Send data through channel (blocking) - RACE-SAFE IMPLEMENTATION
 slay channel_send(ch *Channel, data normie) lit {
-    lowkey ch == 0 {
+    ready ch == 0 {
         damn cap  fr fr Invalid channel
     }
     
     fr fr Check if channel is closed (atomic read)
-    lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
+    ready atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
         damn cap  fr fr Channel closed
     }
     
     fr fr For unbuffered channels (synchronous)
-    lowkey ch.capacity == 0 {
+    ready ch.capacity == 0 {
         fr fr CRITICAL SECTION: Atomic synchronous send operation
         atomic_drip.atomic_add_i32(&ch.send_waiters, 1, RELAXED)
         
@@ -328,11 +332,15 @@ slay channel_send(ch *Channel, data normie) lit {
                 runtime_yield()
                 yield_cycles = yield_cycles + 1
             }
-            backoff_count = lowkey backoff_count < 1000 { backoff_count * 2 } else { 1000 }
+            ready backoff_count < 1000 {
+                backoff_count = backoff_count * 2
+            } otherwise {
+                backoff_count = 1000
+            }
         }
         
         fr fr Double-check channel not closed after wait
-        lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
+        ready atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
             atomic_drip.atomic_sub_i32(&ch.send_waiters, 1, RELAXED)
             damn cap
         }
@@ -359,30 +367,34 @@ slay channel_send(ch *Channel, data normie) lit {
             runtime_yield()
             space_yield_cycles = space_yield_cycles + 1
         }
-        space_backoff = lowkey space_backoff < 500 { space_backoff * 2 } else { 500 }
+        ready space_backoff < 500 {
+            space_backoff = space_backoff * 2
+        } otherwise {
+            space_backoff = 500
+        }
         
         atomic_drip.atomic_sub_i32(&ch.send_waiters, 1, RELAXED)
     }
     
     fr fr Final check: channel not closed
-    lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
+    ready atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
         damn cap
     }
     
     fr fr ATOMIC BUFFER OPERATION: Compare-and-swap position update
-    bestie based {
+    periodt {
         sus current_pos normie = atomic_drip.atomic_load_i32(&ch.send_pos, ACQUIRE)
         sus current_size normie = atomic_drip.atomic_load_i32(&ch.size, ACQUIRE)
         
         fr fr Check capacity one more time (double-check pattern)
-        lowkey current_size >= ch.capacity {
+        ready current_size >= ch.capacity {
             fr fr Channel became full, retry
             runtime_yield()
-            continue
+            break
         }
         
         fr fr Atomic position and size update with CAS
-        lowkey atomic_drip.compare_and_swap_i32(&ch.send_pos, current_pos, current_pos + 1, ACQREL) &&
+        ready atomic_drip.compare_and_swap_i32(&ch.send_pos, current_pos, current_pos + 1, ACQREL) &&
               atomic_drip.compare_and_swap_i32(&ch.size, current_size, current_size + 1, ACQREL) {
             
             fr fr Successfully reserved slot - safe to write
@@ -402,12 +414,12 @@ slay channel_send(ch *Channel, data normie) lit {
 
 fr fr Receive data from channel (blocking) - RACE-SAFE IMPLEMENTATION
 slay channel_receive(ch *Channel) normie {
-    lowkey ch == 0 {
+    ready ch == 0 {
         damn 0  fr fr Invalid channel
     }
     
     fr fr For unbuffered channels (synchronous)
-    lowkey ch.capacity == 0 {
+    ready ch.capacity == 0 {
         atomic_drip.atomic_add_i32(&ch.recv_waiters, 1, RELAXED)
         
         fr fr Wait for sender with exponential backoff
@@ -420,11 +432,15 @@ slay channel_receive(ch *Channel) normie {
                 runtime_yield()
                 recv_yield_cycles = recv_yield_cycles + 1
             }
-            recv_backoff = lowkey recv_backoff < 1000 { recv_backoff * 2 } else { 1000 }
+            ready recv_backoff < 1000 {
+                recv_backoff = recv_backoff * 2
+            } otherwise {
+                recv_backoff = 1000
+            }
         }
         
         fr fr Check if channel closed during wait
-        lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
+        ready atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
             atomic_drip.atomic_sub_i32(&ch.recv_waiters, 1, RELAXED)
             damn 0  fr fr Channel closed
         }
@@ -451,26 +467,30 @@ slay channel_receive(ch *Channel) normie {
             runtime_yield()
             data_yield_cycles = data_yield_cycles + 1
         }
-        data_backoff = lowkey data_backoff < 500 { data_backoff * 2 } else { 500 }
+        ready data_backoff < 500 {
+            data_backoff = data_backoff * 2
+        } otherwise {
+            data_backoff = 500
+        }
         
         atomic_drip.atomic_sub_i32(&ch.recv_waiters, 1, RELAXED)
     }
     
     fr fr Check if channel is closed and empty (final check)
-    lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 && 
+    ready atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 && 
           atomic_drip.atomic_load_i32(&ch.size, ACQUIRE) == 0 {
         damn 0  fr fr Channel closed and empty
     }
     
     fr fr ATOMIC BUFFER RECEIVE: Compare-and-swap position update
-    bestie based {
+    periodt {
         sus current_pos normie = atomic_drip.atomic_load_i32(&ch.recv_pos, ACQUIRE)
         sus current_size normie = atomic_drip.atomic_load_i32(&ch.size, ACQUIRE)
         
         fr fr Check if data available (double-check pattern)
-        lowkey current_size == 0 {
+        ready current_size == 0 {
             fr fr No data available, check if closed
-            lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
+            ready atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
                 damn 0  fr fr Channel closed, no more data
             }
             fr fr Not closed, retry
@@ -479,7 +499,7 @@ slay channel_receive(ch *Channel) normie {
         }
         
         fr fr Atomic position and size update with CAS
-        lowkey atomic_drip.compare_and_swap_i32(&ch.recv_pos, current_pos, current_pos + 1, ACQREL) &&
+        ready atomic_drip.compare_and_swap_i32(&ch.recv_pos, current_pos, current_pos + 1, ACQREL) &&
               atomic_drip.compare_and_swap_i32(&ch.size, current_size, current_size - 1, ACQREL) {
             
             fr fr Successfully reserved data slot - safe to read
@@ -500,7 +520,7 @@ slay channel_receive(ch *Channel) normie {
 
 fr fr Close channel to signal no more data
 slay channel_close(ch *Channel) lit {
-    lowkey ch == 0 {
+    ready ch == 0 {
         damn cap
     }
     
@@ -510,7 +530,7 @@ slay channel_close(ch *Channel) lit {
 
 fr fr Check if channel is closed
 slay channel_is_closed(ch *Channel) lit {
-    lowkey ch == 0 {
+    ready ch == 0 {
         damn based  fr fr Invalid channel treated as closed
     }
     
@@ -523,13 +543,13 @@ fr fr ==========================================================================
 
 fr fr Select operation for non-blocking channel operations
 slay select_try_send(ch *Channel, data normie) lit {
-    lowkey ch == 0 || atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
+    ready ch == 0 || atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
         damn cap
     }
     
     fr fr For unbuffered channels, check for waiting receivers
-    lowkey ch.capacity == 0 {
-        lowkey atomic_drip.atomic_load_i32(&ch.recv_waiters, ACQUIRE) > 0 {
+    ready ch.capacity == 0 {
+        ready atomic_drip.atomic_load_i32(&ch.recv_waiters, ACQUIRE) > 0 {
             fr fr Receiver available - can send immediately
             atomic_drip.memory_fence(ACQREL)
             ch.buffer[0] = data
@@ -540,12 +560,12 @@ slay select_try_send(ch *Channel, data normie) lit {
     }
     
     fr fr For buffered channels, check if space available
-    lowkey atomic_drip.atomic_load_i32(&ch.size, ACQUIRE) < ch.capacity {
+    ready atomic_drip.atomic_load_i32(&ch.size, ACQUIRE) < ch.capacity {
         fr fr Try atomic send
         sus current_pos normie = atomic_drip.atomic_load_i32(&ch.send_pos, ACQUIRE)
         sus current_size normie = atomic_drip.atomic_load_i32(&ch.size, ACQUIRE)
         
-        lowkey atomic_drip.compare_and_swap_i32(&ch.send_pos, current_pos, current_pos + 1, ACQREL) &&
+        ready atomic_drip.compare_and_swap_i32(&ch.send_pos, current_pos, current_pos + 1, ACQREL) &&
               atomic_drip.compare_and_swap_i32(&ch.size, current_size, current_size + 1, ACQREL) {
             
             atomic_drip.memory_fence(ACQUIRE)
@@ -560,13 +580,13 @@ slay select_try_send(ch *Channel, data normie) lit {
 
 fr fr Select operation for non-blocking channel receive
 slay select_try_receive(ch *Channel) normie {
-    lowkey ch == 0 {
+    ready ch == 0 {
         damn 0
     }
     
     fr fr For unbuffered channels, check for waiting senders
-    lowkey ch.capacity == 0 {
-        lowkey atomic_drip.atomic_load_i32(&ch.send_waiters, ACQUIRE) > 0 {
+    ready ch.capacity == 0 {
+        ready atomic_drip.atomic_load_i32(&ch.send_waiters, ACQUIRE) > 0 {
             fr fr Sender available - can receive immediately
             atomic_drip.memory_fence(ACQUIRE)
             sus data normie = ch.buffer[0]
@@ -574,19 +594,19 @@ slay select_try_receive(ch *Channel) normie {
             damn data
         }
         fr fr Check if closed
-        lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
+        ready atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 {
             damn 0  fr fr Closed, no data
         }
         damn -1  fr fr No sender, would block (use -1 to distinguish from closed)
     }
     
     fr fr For buffered channels, check if data available
-    lowkey atomic_drip.atomic_load_i32(&ch.size, ACQUIRE) > 0 {
+    ready atomic_drip.atomic_load_i32(&ch.size, ACQUIRE) > 0 {
         fr fr Try atomic receive
         sus current_pos normie = atomic_drip.atomic_load_i32(&ch.recv_pos, ACQUIRE)
         sus current_size normie = atomic_drip.atomic_load_i32(&ch.size, ACQUIRE)
         
-        lowkey current_size > 0 &&
+        ready current_size > 0 &&
               atomic_drip.compare_and_swap_i32(&ch.recv_pos, current_pos, current_pos + 1, ACQREL) &&
               atomic_drip.compare_and_swap_i32(&ch.size, current_size, current_size - 1, ACQREL) {
             
@@ -598,7 +618,7 @@ slay select_try_receive(ch *Channel) normie {
     }
     
     fr fr Check if closed and empty
-    lowkey atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 &&
+    ready atomic_drip.atomic_load_i32(&ch.closed, ACQUIRE) == 1 &&
           atomic_drip.atomic_load_i32(&ch.size, ACQUIRE) == 0 {
         damn 0  fr fr Closed and empty
     }
@@ -608,7 +628,7 @@ slay select_try_receive(ch *Channel) normie {
 
 fr fr Select statement with multiple channels
 slay select_multi_channel(channels []*Channel, channel_count normie, timeout_ms normie) normie {
-    lowkey channels == 0 || channel_count == 0 {
+    ready channels == 0 || channel_count == 0 {
         damn -1  fr fr Invalid parameters
     }
     
@@ -628,7 +648,7 @@ slay select_multi_channel(channels []*Channel, channel_count normie, timeout_ms 
             
             fr fr Try non-blocking receive
             sus received normie = select_try_receive(ch)
-            lowkey received != -1 {
+            ready received != -1 {
                 damn channel_index  fr fr Return index of ready channel
             }
             
@@ -705,13 +725,17 @@ slay atomic_i64_new(initial thicc) *AtomicI64 {
 fr fr Create atomic boolean
 slay atomic_bool_new(initial lit) *AtomicBool {
     sus atomic *AtomicBool = memory.allocate(AtomicBool)
-    atomic.value = lowkey initial == based { 1 } else { 0 }
+    ready initial == based {
+        atomic.value = 1
+    } otherwise {
+        atomic.value = 0
+    }
     damn atomic
 }
 
 fr fr Atomic compare and swap operation for 32-bit
 slay atomic_cas_i32(atomic *AtomicI32, expected normie, desired normie) lit {
-    lowkey atomic == 0 {
+    ready atomic == 0 {
         damn cap
     }
     damn atomic_drip.compare_and_swap_i32(&atomic.value, expected, desired, SEQCST)
@@ -719,7 +743,7 @@ slay atomic_cas_i32(atomic *AtomicI32, expected normie, desired normie) lit {
 
 fr fr Atomic compare and swap operation for 64-bit
 slay atomic_cas_i64(atomic *AtomicI64, expected thicc, desired thicc) lit {
-    lowkey atomic == 0 {
+    ready atomic == 0 {
         damn cap
     }
     damn atomic_drip.compare_and_swap_i64(&atomic.value, expected, desired, SEQCST)
@@ -727,7 +751,7 @@ slay atomic_cas_i64(atomic *AtomicI64, expected thicc, desired thicc) lit {
 
 fr fr Atomic increment operation
 slay atomic_increment(atomic *AtomicI32) normie {
-    lowkey atomic == 0 {
+    ready atomic == 0 {
         damn 0
     }
     damn atomic_drip.atomic_add_i32(&atomic.value, 1, SEQCST)
@@ -735,7 +759,7 @@ slay atomic_increment(atomic *AtomicI32) normie {
 
 fr fr Atomic decrement operation
 slay atomic_decrement(atomic *AtomicI32) normie {
-    lowkey atomic == 0 {
+    ready atomic == 0 {
         damn 0
     }
     damn atomic_drip.atomic_sub_i32(&atomic.value, 1, SEQCST)
@@ -743,7 +767,7 @@ slay atomic_decrement(atomic *AtomicI32) normie {
 
 fr fr Atomic load operation
 slay atomic_load_i32(atomic *AtomicI32) normie {
-    lowkey atomic == 0 {
+    ready atomic == 0 {
         damn 0
     }
     damn atomic_drip.atomic_load_i32(&atomic.value, ACQUIRE)
@@ -751,7 +775,7 @@ slay atomic_load_i32(atomic *AtomicI32) normie {
 
 fr fr Atomic store operation
 slay atomic_store_i32(atomic *AtomicI32, value normie) {
-    lowkey atomic == 0 {
+    ready atomic == 0 {
         damn
     }
     atomic_drip.atomic_store_i32(&atomic.value, value, RELEASE)
@@ -759,7 +783,7 @@ slay atomic_store_i32(atomic *AtomicI32, value normie) {
 
 fr fr Atomic add operation
 slay atomic_add_i32(atomic *AtomicI32, delta normie) normie {
-    lowkey atomic == 0 {
+    ready atomic == 0 {
         damn 0
     }
     damn atomic_drip.atomic_add_i32(&atomic.value, delta, SEQCST)
@@ -767,7 +791,7 @@ slay atomic_add_i32(atomic *AtomicI32, delta normie) normie {
 
 fr fr Atomic subtract operation
 slay atomic_sub_i32(atomic *AtomicI32, delta normie) normie {
-    lowkey atomic == 0 {
+    ready atomic == 0 {
         damn 0
     }
     damn atomic_drip.atomic_sub_i32(&atomic.value, delta, SEQCST)
@@ -789,14 +813,14 @@ slay create_barrier(count normie) *Barrier {
 
 fr fr Wait at barrier until all participants arrive
 slay barrier_wait(barrier *Barrier) lit {
-    lowkey barrier == 0 {
+    ready barrier == 0 {
         damn cap
     }
     
     sus current_gen normie = atomic_drip.atomic_load_i32(&barrier.generation, ACQUIRE)
     sus arrived_count normie = atomic_drip.atomic_add_i32(&barrier.arrived, 1, SEQCST)
     
-    lowkey arrived_count + 1 == barrier.count {
+    ready arrived_count + 1 == barrier.count {
         fr fr Last participant - wake everyone up
         atomic_drip.atomic_store_i32(&barrier.arrived, 0, RELEASE)
         atomic_drip.atomic_add_i32(&barrier.generation, 1, RELEASE)
@@ -826,18 +850,18 @@ slay create_semaphore(initial normie) *Semaphore {
 
 fr fr Acquire semaphore (decrement count)
 slay semaphore_acquire(sem *Semaphore) lit {
-    lowkey sem == 0 {
+    ready sem == 0 {
         damn cap
     }
     
     fr fr Try to acquire permit atomically
-    bestie based {
+    periodt {
         sus current_permits normie = atomic_drip.atomic_load_i32(&sem.permits, ACQUIRE)
-        lowkey current_permits > 0 {
-            lowkey atomic_drip.compare_and_swap_i32(&sem.permits, current_permits, current_permits - 1, SEQCST) {
+        ready current_permits > 0 {
+            ready atomic_drip.compare_and_swap_i32(&sem.permits, current_permits, current_permits - 1, SEQCST) {
                 damn based
             }
-        } else {
+        } otherwise {
             fr fr No permits available - wait
             atomic_drip.atomic_add_i32(&sem.waiter_count, 1, RELAXED)
             fr fr Spin-wait for permits (real implementation would block goroutine)
@@ -849,12 +873,12 @@ slay semaphore_acquire(sem *Semaphore) lit {
 
 fr fr Release semaphore (increment count)
 slay semaphore_release(sem *Semaphore) lit {
-    lowkey sem == 0 {
+    ready sem == 0 {
         damn cap
     }
     
     sus current_permits normie = atomic_drip.atomic_add_i32(&sem.permits, 1, SEQCST)
-    lowkey current_permits + 1 > sem.max_permits {
+    ready current_permits + 1 > sem.max_permits {
         fr fr Don't exceed max permits
         atomic_drip.atomic_sub_i32(&sem.permits, 1, SEQCST)
         damn cap
@@ -864,12 +888,12 @@ slay semaphore_release(sem *Semaphore) lit {
 
 fr fr Try to acquire semaphore (non-blocking)
 slay semaphore_try_acquire(sem *Semaphore) lit {
-    lowkey sem == 0 {
+    ready sem == 0 {
         damn cap
     }
     
     sus current_permits normie = atomic_drip.atomic_load_i32(&sem.permits, ACQUIRE)
-    lowkey current_permits > 0 {
+    ready current_permits > 0 {
         damn atomic_drip.compare_and_swap_i32(&sem.permits, current_permits, current_permits - 1, SEQCST)
     }
     damn cap
@@ -894,17 +918,17 @@ slay create_thread_pool(worker_count normie, queue_size normie) *ThreadPool {
 
 fr fr Submit task to thread pool
 slay thread_pool_submit(pool *ThreadPool, task normie) lit {
-    lowkey pool == 0 {
+    ready pool == 0 {
         damn cap
     }
     
-    lowkey atomic_drip.atomic_load_i32(&pool.shutdown, ACQUIRE) == 1 {
+    ready atomic_drip.atomic_load_i32(&pool.shutdown, ACQUIRE) == 1 {
         damn cap  fr fr Pool is shutting down
     }
     
     fr fr Check if queue has space
     sus current_size normie = atomic_drip.atomic_load_i32(&pool.queue_size, ACQUIRE)
-    lowkey current_size >= 100 {  fr fr Assume max queue size of 100
+    ready current_size >= 100 {  fr fr Assume max queue size of 100
         damn cap  fr fr Queue full
     }
     
@@ -918,7 +942,7 @@ slay thread_pool_submit(pool *ThreadPool, task normie) lit {
 
 fr fr Shutdown thread pool
 slay thread_pool_shutdown(pool *ThreadPool) lit {
-    lowkey pool == 0 {
+    ready pool == 0 {
         damn cap
     }
     
@@ -928,7 +952,7 @@ slay thread_pool_shutdown(pool *ThreadPool) lit {
 
 fr fr Wait for all tasks to complete
 slay thread_pool_wait_all(pool *ThreadPool) lit {
-    lowkey pool == 0 {
+    ready pool == 0 {
         damn cap
     }
     
@@ -952,17 +976,17 @@ slay create_once() *Once {
 
 fr fr Execute function exactly once
 slay once_do(once *Once, func_id normie) lit {
-    lowkey once == 0 {
+    ready once == 0 {
         damn cap
     }
     
     fr fr Check if already done
-    lowkey atomic_drip.atomic_load_i32(&once.done, ACQUIRE) == 1 {
+    ready atomic_drip.atomic_load_i32(&once.done, ACQUIRE) == 1 {
         damn cap  fr fr Already executed
     }
     
     fr fr Try to start execution
-    lowkey atomic_drip.compare_and_swap_i32(&once.in_progress, 0, 1, SEQCST) {
+    ready atomic_drip.compare_and_swap_i32(&once.in_progress, 0, 1, SEQCST) {
         fr fr We got to execute - set done flag
         atomic_drip.atomic_store_i32(&once.done, 1, RELEASE)
         atomic_drip.atomic_store_i32(&once.in_progress, 0, RELEASE)
@@ -1085,7 +1109,7 @@ slay create_rwmutex() *RWMutex {
 
 fr fr Acquire read lock (multiple readers allowed)
 slay rwmutex_rlock(rwmutex *RWMutex) lit {
-    lowkey rwmutex == 0 {
+    ready rwmutex == 0 {
         damn cap
     }
     
@@ -1101,12 +1125,12 @@ slay rwmutex_rlock(rwmutex *RWMutex) lit {
 
 fr fr Release read lock
 slay rwmutex_runlock(rwmutex *RWMutex) lit {
-    lowkey rwmutex == 0 {
+    ready rwmutex == 0 {
         damn cap
     }
     
     sus reader_count normie = atomic_drip.atomic_sub_i32(&rwmutex.readers, 1, RELEASE)
-    lowkey reader_count < 0 {
+    ready reader_count < 0 {
         damn cap  fr fr Not holding read lock
     }
     damn based
@@ -1114,7 +1138,7 @@ slay rwmutex_runlock(rwmutex *RWMutex) lit {
 
 fr fr Acquire write lock (exclusive access)
 slay rwmutex_lock(rwmutex *RWMutex) lit {
-    lowkey rwmutex == 0 {
+    ready rwmutex == 0 {
         damn cap
     }
     
@@ -1132,11 +1156,11 @@ slay rwmutex_lock(rwmutex *RWMutex) lit {
 
 fr fr Release write lock
 slay rwmutex_unlock(rwmutex *RWMutex) lit {
-    lowkey rwmutex == 0 {
+    ready rwmutex == 0 {
         damn cap
     }
     
-    lowkey atomic_drip.atomic_load_i32(&rwmutex.writer, ACQUIRE) != 1 {
+    ready atomic_drip.atomic_load_i32(&rwmutex.writer, ACQUIRE) != 1 {
         damn cap  fr fr Not holding write lock
     }
     
@@ -1160,7 +1184,7 @@ slay create_condition() *CondVar {
 
 fr fr Wait on condition variable
 slay condition_wait(cond *CondVar, mutex *Mutex) lit {
-    lowkey cond == 0 || mutex == 0 {
+    ready cond == 0 || mutex == 0 {
         damn cap
     }
     
@@ -1182,11 +1206,11 @@ slay condition_wait(cond *CondVar, mutex *Mutex) lit {
 
 fr fr Signal one waiting goroutine
 slay condition_signal(cond *CondVar) lit {
-    lowkey cond == 0 {
+    ready cond == 0 {
         damn cap
     }
     
-    lowkey atomic_drip.atomic_load_i32(&cond.waiter_count, ACQUIRE) > 0 {
+    ready atomic_drip.atomic_load_i32(&cond.waiter_count, ACQUIRE) > 0 {
         atomic_drip.atomic_add_i32(&cond.signal_count, 1, RELEASE)
     }
     damn based
@@ -1194,11 +1218,11 @@ slay condition_signal(cond *CondVar) lit {
 
 fr fr Signal all waiting goroutines
 slay condition_broadcast(cond *CondVar) lit {
-    lowkey cond == 0 {
+    ready cond == 0 {
         damn cap
     }
     
-    lowkey atomic_drip.atomic_load_i32(&cond.waiter_count, ACQUIRE) > 0 {
+    ready atomic_drip.atomic_load_i32(&cond.waiter_count, ACQUIRE) > 0 {
         atomic_drip.atomic_store_i32(&cond.broadcast_flag, 1, RELEASE)
     }
     damn based

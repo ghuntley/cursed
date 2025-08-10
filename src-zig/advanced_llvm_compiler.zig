@@ -342,7 +342,8 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
 
 /// Generate performance benchmark
 pub fn generatePerformanceBenchmark(allocator: Allocator, output_filename: []const u8, config: CompilerConfig) !void {
-    if (!config.verbose) return;
+    // Performance benchmarking should not be gated on verbose mode since it's a critical debugging tool
+    // if (!config.verbose) return;
     
     print("\n🔬 Running performance benchmark...\n", .{});
     

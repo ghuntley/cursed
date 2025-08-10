@@ -371,6 +371,14 @@ pub const Lexer = struct {
                     self.column -= 1;
                     return self.identifier(start_line, start_column);
                 }
+                
+                // Handle Unicode characters - check if it's a valid identifier start
+                if (c >= 0x80) { // Non-ASCII byte, might be start of Unicode identifier
+                    self.position -= 1; // Back up to re-read the character
+                    self.column -= 1;
+                    return self.unicodeIdentifier(start_line, start_column);
+                }
+                
                 return error.UnexpectedCharacter;
             },
         }
@@ -388,9 +396,51 @@ pub const Lexer = struct {
         return c;
     }
 
+    // Unicode-aware advance that returns the code point and advances by the correct UTF-8 byte count
+    fn advanceUtf8(self: *Lexer) u32 {
+        if (self.isAtEnd()) return 0;
+        const remaining = self.input[self.position..];
+        
+        if (remaining.len == 0) return 0;
+        
+        const cp_len = std.unicode.utf8ByteSequenceLength(remaining[0]) catch 1;
+        if (cp_len > remaining.len) {
+            // Invalid UTF-8, advance by 1 byte
+            self.position += 1;
+            self.column += 1;
+            return 0xFFFD; // Replacement character
+        }
+        
+        const codepoint = std.unicode.utf8Decode(remaining[0..cp_len]) catch {
+            // Invalid UTF-8, advance by 1 byte  
+            self.position += 1;
+            self.column += 1;
+            return 0xFFFD; // Replacement character
+        };
+        
+        self.position += cp_len;
+        // Only increment column by 1 for each Unicode code point
+        self.column += 1;
+        return codepoint;
+    }
+
     fn peek(self: *Lexer) u8 {
         if (self.isAtEnd()) return 0;
         return self.input[self.position];
+    }
+
+    fn peekUtf8(self: *Lexer) u32 {
+        if (self.isAtEnd()) return 0;
+        const remaining = self.input[self.position..];
+        
+        if (remaining.len == 0) return 0;
+        
+        const cp_len = std.unicode.utf8ByteSequenceLength(remaining[0]) catch 1;
+        if (cp_len > remaining.len) {
+            return 0xFFFD; // Replacement character for invalid UTF-8
+        }
+        
+        return std.unicode.utf8Decode(remaining[0..cp_len]) catch 0xFFFD;
     }
 
     fn peekNext(self: *Lexer) u8 {
@@ -438,12 +488,13 @@ pub const Lexer = struct {
             if (self.peek() == '\n') {
                 self.line += 1;
                 self.column = 0; // Will be incremented by advance()
-            }
-            if (self.peek() == '\\') {
-                _ = self.advance(); // Skip escape character
-                if (!self.isAtEnd()) _ = self.advance(); // Skip escaped character
-            } else {
                 _ = self.advance();
+            } else if (self.peek() == '\\') {
+                // Handle escape sequences properly
+                try self.parseEscapeSequence();
+            } else {
+                // Use Unicode-aware advancement for proper offset tracking
+                _ = self.advanceUtf8();
             }
         }
 
@@ -456,14 +507,86 @@ pub const Lexer = struct {
         return Token.init(.StringLiteral, lexeme, line, column);
     }
 
+    fn parseEscapeSequence(self: *Lexer) !void {
+        _ = self.advance(); // Skip backslash
+        
+        if (self.isAtEnd()) return error.InvalidEscapeSequence;
+        
+        const escaped_char = self.peek();
+        switch (escaped_char) {
+            'n', 't', 'r', '\\', '"', '\'' => {
+                _ = self.advance();
+            },
+            'x' => {
+                // Hexadecimal escape \xNN
+                _ = self.advance(); // Skip 'x'
+                var i: u8 = 0;
+                while (i < 2 and !self.isAtEnd()) : (i += 1) {
+                    const c = self.peek();
+                    if (!std.ascii.isHex(c)) return error.InvalidHexEscape;
+                    _ = self.advance();
+                }
+                if (i != 2) return error.InvalidHexEscape;
+            },
+            'u' => {
+                // Unicode escape \uNNNN
+                _ = self.advance(); // Skip 'u'
+                
+                if (self.peek() == '{') {
+                    // Extended Unicode escape \u{NNNNNN}
+                    _ = self.advance(); // Skip '{'
+                    var digit_count: u8 = 0;
+                    while (!self.isAtEnd() and self.peek() != '}' and digit_count < 6) : (digit_count += 1) {
+                        const c = self.peek();
+                        if (!std.ascii.isHex(c)) return error.InvalidUnicodeEscape;
+                        _ = self.advance();
+                    }
+                    if (self.isAtEnd() or self.peek() != '}') return error.InvalidUnicodeEscape;
+                    if (digit_count == 0 or digit_count > 6) return error.InvalidUnicodeEscape;
+                    _ = self.advance(); // Skip '}'
+                } else {
+                    // Standard Unicode escape \uNNNN
+                    var i: u8 = 0;
+                    while (i < 4 and !self.isAtEnd()) : (i += 1) {
+                        const c = self.peek();
+                        if (!std.ascii.isHex(c)) return error.InvalidUnicodeEscape;
+                        _ = self.advance();
+                    }
+                    if (i != 4) return error.InvalidUnicodeEscape;
+                }
+            },
+            'U' => {
+                // 8-digit Unicode escape \UNNNNNNNN
+                _ = self.advance(); // Skip 'U'
+                var i: u8 = 0;
+                while (i < 8 and !self.isAtEnd()) : (i += 1) {
+                    const c = self.peek();
+                    if (!std.ascii.isHex(c)) return error.InvalidUnicodeEscape;
+                    _ = self.advance();
+                }
+                if (i != 8) return error.InvalidUnicodeEscape;
+            },
+            '0'...'7' => {
+                // Octal escape \NNN
+                var i: u8 = 0;
+                while (i < 3 and !self.isAtEnd() and self.peek() >= '0' and self.peek() <= '7') : (i += 1) {
+                    _ = self.advance();
+                }
+            },
+            else => {
+                // Unknown escape sequence, treat as literal
+                _ = self.advance();
+            }
+        }
+    }
+
     fn charLiteral(self: *Lexer, line: usize, column: usize) !Token {
         const start = self.position - 1; // Include opening quote
         
         if (self.peek() == '\\') {
-            _ = self.advance(); // Skip escape character
-            if (!self.isAtEnd()) _ = self.advance(); // Skip escaped character
+            try self.parseEscapeSequence();
         } else if (!self.isAtEnd()) {
-            _ = self.advance(); // Single character
+            _ = self.advanceUtf8(); // Single Unicode character
         }
 
         if (self.isAtEnd() or self.peek() != '\'') return error.UnterminatedChar;
@@ -492,6 +615,52 @@ pub const Lexer = struct {
 
         const lexeme = self.input[start..self.position];
         return Token.init(.Number, lexeme, line, column);
+    }
+
+    fn isUnicodeIdentifierStart(codepoint: u32) bool {
+        // Unicode categories: Lu, Ll, Lt, Lm, Lo, Nl plus underscore
+        // Simplified check for common Unicode identifier characters
+        return (codepoint >= 0x41 and codepoint <= 0x5A) or  // A-Z
+               (codepoint >= 0x61 and codepoint <= 0x7A) or  // a-z  
+               (codepoint == 0x5F) or                        // _
+               (codepoint >= 0xC0 and codepoint <= 0xD6) or  // Latin-1 supplement letters
+               (codepoint >= 0xD8 and codepoint <= 0xF6) or
+               (codepoint >= 0xF8 and codepoint <= 0xFF) or
+               (codepoint >= 0x100 and codepoint <= 0x17F) or // Latin Extended-A
+               (codepoint >= 0x180 and codepoint <= 0x24F) or // Latin Extended-B
+               (codepoint >= 0x370 and codepoint <= 0x3FF) or // Greek and Coptic
+               (codepoint >= 0x400 and codepoint <= 0x4FF) or // Cyrillic
+               (codepoint >= 0x4E00 and codepoint <= 0x9FFF) or // CJK Unified Ideographs
+               (codepoint >= 0x3040 and codepoint <= 0x309F) or // Hiragana
+               (codepoint >= 0x30A0 and codepoint <= 0x30FF) or // Katakana
+               (codepoint >= 0x1F300 and codepoint <= 0x1F6FF); // Emoji ranges (partial)
+    }
+
+    fn isUnicodeIdentifierContinue(codepoint: u32) bool {
+        return isUnicodeIdentifierStart(codepoint) or
+               (codepoint >= 0x30 and codepoint <= 0x39); // 0-9
+    }
+
+    fn unicodeIdentifier(self: *Lexer, line: usize, column: usize) !Token {
+        const start = self.position;
+        
+        // First character must be a valid identifier start
+        const first_cp = self.peekUtf8();
+        if (!isUnicodeIdentifierStart(first_cp)) {
+            return error.UnexpectedCharacter;
+        }
+        _ = self.advanceUtf8();
+        
+        // Continue with identifier characters
+        while (!self.isAtEnd()) {
+            const cp = self.peekUtf8();
+            if (!isUnicodeIdentifierContinue(cp)) break;
+            _ = self.advanceUtf8();
+        }
+
+        const lexeme = self.input[start..self.position];
+        const kind = getKeywordType(lexeme);
+        return Token.init(kind, lexeme, line, column);
     }
 
     fn identifier(self: *Lexer, line: usize, column: usize) !Token {

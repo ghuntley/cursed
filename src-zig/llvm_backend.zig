@@ -557,14 +557,18 @@ pub const LLVMBackend = struct {
             // Convert LLVM error message to proper string
             const error_str = std.mem.span(error_msg);
             
+            // CRITICAL: ALWAYS report LLVM verification failures regardless of verbose mode
+            // These errors indicate serious compilation issues that must never be silently ignored
+            std.debug.print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
+            
             // Create structured error context for proper error reporting
             const error_ctx = error_handling.createLLVMVerificationError(
                 self.allocator,
                 error_str,
                 null // TODO: Add source location when available
             ) catch |alloc_err| {
-                // Fallback if allocation fails
-                std.debug.print("LLVM module verification failed: {s}\n", .{error_str});
+                // Fallback if allocation fails - still report the core error
+                std.debug.print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
                 return switch (alloc_err) {
                     error.OutOfMemory => LLVMBackendError.OutOfMemory,
                     else => LLVMBackendError.LLVMError,
@@ -573,8 +577,8 @@ pub const LLVMBackend = struct {
             
             // Report the structured error through proper error reporting system
             self.reportStructuredError(error_ctx) catch {
-                // Fallback to stderr if structured reporting fails
-                std.debug.print("LLVM module verification failed: {s}\n", .{error_str});
+                // Fallback to stderr if structured reporting fails - still report the core error
+                std.debug.print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
             };
             
             return LLVMBackendError.LLVMVerificationFailed;

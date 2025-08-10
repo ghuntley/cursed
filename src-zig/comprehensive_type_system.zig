@@ -370,35 +370,93 @@ pub const TypeEnvironment = struct {
     
     // Occurs check to prevent infinite types
     fn occursCheck(self: *TypeEnvironment, var_id: u32, cursed_type: CursedType) bool {
+        var visited = std.AutoHashMap(u64, void).init(self.allocator);
+        defer visited.deinit();
+        return self.occursCheckRecursive(var_id, cursed_type, &visited);
+    }
+    
+    fn occursCheckRecursive(self: *TypeEnvironment, var_id: u32, cursed_type: CursedType, visited: *std.AutoHashMap(u64, void)) bool {
+        // Create a unique hash for this type to detect cycles
+        const type_hash = self.computeTypeHash(cursed_type);
+        if (visited.contains(type_hash)) {
+            // Cycle detected - conservatively return false to allow unification
+            return false;
+        }
+        visited.put(type_hash, {}) catch return false;
+        
         return switch (cursed_type) {
             .Unknown => |id| id == var_id,
-            .Array => |arr| self.occursCheck(var_id, arr.element_type.*),
-            .Slice => |slice| self.occursCheck(var_id, slice.element_type.*),
-            .Channel => |ch| self.occursCheck(var_id, ch.element_type.*),
+            .Array => |arr| self.occursCheckRecursive(var_id, arr.element_type.*, visited),
+            .Slice => |slice| self.occursCheckRecursive(var_id, slice.element_type.*, visited),
+            .Channel => |ch| self.occursCheckRecursive(var_id, ch.element_type.*, visited),
             .Function => |func| {
                 for (func.parameters.items) |param_type| {
-                    if (self.occursCheck(var_id, param_type)) return true;
+                    if (self.occursCheckRecursive(var_id, param_type, visited)) return true;
                 }
                 if (func.return_type) |ret_type| {
-                    return self.occursCheck(var_id, ret_type.*);
+                    return self.occursCheckRecursive(var_id, ret_type.*, visited);
                 }
                 return false;
             },
             .Generic => |gen| {
-                if (self.occursCheck(var_id, gen.base_type.*)) return true;
+                if (self.occursCheckRecursive(var_id, gen.base_type.*, visited)) return true;
                 for (gen.type_args.items) |arg_type| {
-                    if (self.occursCheck(var_id, arg_type)) return true;
+                    if (self.occursCheckRecursive(var_id, arg_type, visited)) return true;
                 }
                 return false;
             },
             .Tuple => |tuple| {
                 for (tuple.elements.items) |elem_type| {
-                    if (self.occursCheck(var_id, elem_type)) return true;
+                    if (self.occursCheckRecursive(var_id, elem_type, visited)) return true;
                 }
                 return false;
             },
             else => false,
         };
+    }
+    
+    fn computeTypeHash(self: *TypeEnvironment, cursed_type: CursedType) u64 {
+        _ = self;
+        var hasher = std.hash.Wyhash.init(0);
+        
+        switch (cursed_type) {
+            .Unknown => |id| {
+                hasher.update("Unknown");
+                hasher.update(std.mem.asBytes(&id));
+            },
+            .Basic => |basic| {
+                hasher.update("Basic");
+                hasher.update(std.mem.asBytes(&basic));
+            },
+            .Array => |arr| {
+                hasher.update("Array");
+                hasher.update(std.mem.asBytes(&arr.size));
+                // Don't recurse to avoid infinite hashing
+                hasher.update("ElementType");
+            },
+            .Slice => {
+                hasher.update("Slice");
+            },
+            .Channel => {
+                hasher.update("Channel");
+            },
+            .Function => {
+                hasher.update("Function");
+            },
+            .Generic => |gen| {
+                hasher.update("Generic");
+                hasher.update(gen.name);
+            },
+            .Tuple => |tuple| {
+                hasher.update("Tuple");
+                hasher.update(std.mem.asBytes(&tuple.elements.items.len));
+            },
+            else => {
+                hasher.update("Other");
+            }
+        }
+        
+        return hasher.final();
     }
     
     // Validate constraints on type variables
@@ -431,11 +489,13 @@ pub const TypeEnvironment = struct {
     
     // Recursive type resolution to handle chains of type variables
     pub fn resolveTypeRecursive(self: *TypeEnvironment, cursed_type: CursedType) CursedType {
+        const MAX_RESOLUTION_DEPTH = 100;
         var current_type = cursed_type;
         var visited = std.AutoHashMap(u32, void).init(self.allocator);
         defer visited.deinit();
+        var depth: u32 = 0;
         
-        while (true) {
+        while (depth < MAX_RESOLUTION_DEPTH) {
             switch (current_type) {
                 .Unknown => |var_id| {
                     if (visited.contains(var_id)) {
@@ -446,6 +506,7 @@ pub const TypeEnvironment = struct {
                     
                     if (self.type_vars.get(var_id)) |resolved| {
                         current_type = resolved;
+                        depth += 1;
                     } else {
                         return current_type;
                     }
@@ -453,6 +514,9 @@ pub const TypeEnvironment = struct {
                 else => return current_type,
             }
         }
+        
+        // If we hit the depth limit, return the current type to prevent infinite recursion
+        return current_type;
     }
     
     pub fn resolveType(self: *TypeEnvironment, cursed_type: CursedType) CursedType {

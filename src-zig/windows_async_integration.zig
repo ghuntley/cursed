@@ -80,22 +80,50 @@ pub const WindowsAsyncRuntime = struct {
         self.iocp_runtime.integrateWithScheduler(scheduler);
     }
     
-    // High-level async file operations
+    // High-level async file operations  
     pub fn readFileAsync(self: *Self, file_path: []const u8, buffer: []u8) !iocp.AsyncResult {
-        // Open file handle
-        const file_handle = try self.openFileForAsync(file_path, .read);
+        // P0 Issue #12 Fix: Enhanced error handling to prevent hanging promises
+        const file_handle = self.openFileForAsync(file_path, .read) catch |err| {
+            std.log.err("P0 #12 FIX: File open failed for async read: {}, path: {s}", .{ err, file_path });
+            // Return proper error result instead of propagating exception
+            return iocp.AsyncResult{
+                .success = false,
+                .bytes_transferred = 0,
+                .error_code = switch (err) {
+                    error.FileNotFound => @intFromEnum(windows.Win32Error.FILE_NOT_FOUND),
+                    error.AccessDenied => @intFromEnum(windows.Win32Error.ACCESS_DENIED),
+                    error.PathTooLong => @intFromEnum(windows.Win32Error.FILENAME_EXCED_RANGE),
+                    else => @intFromEnum(windows.Win32Error.INVALID_PARAMETER),
+                },
+                .operation = undefined, // Will be set by caller if needed
+            };
+        };
         defer windows.CloseHandle(file_handle);
         
-        // Perform async read
+        // Perform async read with timeout protection
         return self.iocp_runtime.asyncRead(file_handle, buffer);
     }
     
     pub fn writeFileAsync(self: *Self, file_path: []const u8, data: []const u8) !iocp.AsyncResult {
-        // Open file handle
-        const file_handle = try self.openFileForAsync(file_path, .write);
+        // P0 Issue #12 Fix: Enhanced error handling to prevent hanging promises
+        const file_handle = self.openFileForAsync(file_path, .write) catch |err| {
+            std.log.err("P0 #12 FIX: File open failed for async write: {}, path: {s}", .{ err, file_path });
+            // Return proper error result instead of propagating exception
+            return iocp.AsyncResult{
+                .success = false,
+                .bytes_transferred = 0,
+                .error_code = switch (err) {
+                    error.FileNotFound => @intFromEnum(windows.Win32Error.FILE_NOT_FOUND),
+                    error.AccessDenied => @intFromEnum(windows.Win32Error.ACCESS_DENIED),
+                    error.PathTooLong => @intFromEnum(windows.Win32Error.FILENAME_EXCED_RANGE),
+                    else => @intFromEnum(windows.Win32Error.INVALID_PARAMETER),
+                },
+                .operation = undefined, // Will be set by caller if needed
+            };
+        };
         defer windows.CloseHandle(file_handle);
         
-        // Perform async write
+        // Perform async write with timeout protection
         return self.iocp_runtime.asyncWrite(file_handle, data);
     }
     

@@ -35,6 +35,9 @@ const OptimizationEngine = @import("optimization_engine.zig").OptimizationEngine
 const OptimizationConfig = @import("optimization_engine.zig").OptimizationConfig;
 const OptimizationResult = @import("optimization_engine.zig").OptimizationResult;
 
+const gc_integration = @import("gc_integration.zig");
+const GCIntegration = gc_integration.GCIntegration;
+
 // Import LLVM C types from the fixed backend
 const c = @cImport({
     @cDefine("__x86_64__", "1");
@@ -108,6 +111,12 @@ pub const AdvancedCodeGen = struct {
     // Required field to track current function
     current_function: ?c.LLVMValueRef,
     
+    // Lambda generation counter for unique naming
+    lambda_counter: u32,
+    
+    // GC integration for write barriers
+    gc_integration: ?*GCIntegration,
+    
     pub fn init(allocator: Allocator) !AdvancedCodeGen {
         var gc_registry = GCTypeRegistry.init(allocator);
         var interface_registry = InterfaceRegistry.init(allocator);
@@ -153,11 +162,28 @@ pub const AdvancedCodeGen = struct {
             .source_file = null,
             .source_locations = HashMap(c.LLVMValueRef, SourceLocation, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage).init(allocator),
             .current_function = null,
+            .lambda_counter = 0,
+            .gc_integration = null,
         };
+    }
+    
+    /// Initialize GC integration for write barriers
+    pub fn initGCIntegration(self: *AdvancedCodeGen, allocator: Allocator) !void {
+        if (self.gc_integration == null) {
+            const gc_integration_ptr = try allocator.create(GCIntegration);
+            gc_integration_ptr.* = try GCIntegration.init(allocator, self.base_codegen.context, self.base_codegen.module, self.base_codegen.builder);
+            self.gc_integration = gc_integration_ptr;
+        }
     }
 
     pub fn deinit(self: *AdvancedCodeGen) void {
         std.debug.print("🧹 Starting AdvancedCodeGen cleanup (memory-safe)...\n", .{});
+        
+        // Cleanup GC integration
+        if (self.gc_integration) |gc_ptr| {
+            gc_ptr.deinit();
+            self.base_codegen.allocator.destroy(gc_ptr);
+        }
         
         // Cleanup variable scope system
         const llvm_fixes = @import("llvm_fixes.zig");
@@ -2321,7 +2347,12 @@ pub const AdvancedCodeGen = struct {
                 @as(u32, @intCast(i)),
                 "field_ptr"
             );
-            _ = c.LLVMBuildStore(self.base_codegen.builder, value, field_ptr);
+            // CRITICAL P0 FIX: Wire write barrier into field stores for generational GC correctness
+            if (self.gc_integration) |gc| {
+                gc.generatePointerStore(field_ptr, value);
+            } else {
+                _ = c.LLVMBuildStore(self.base_codegen.builder, value, field_ptr);
+            }
         }
         
         return typed_ptr;
@@ -3437,10 +3468,278 @@ pub const AdvancedCodeGen = struct {
         return c.LLVMAddFunction(self.base_codegen.module, func_name, func_type);
     }
     
-    /// Advanced lambda compilation
+    /// Advanced lambda compilation with proper closure support
     fn generateAdvancedLambda(self: *AdvancedCodeGen, lambda: ast.LambdaExpression) CodeGenError!c.LLVMValueRef {
-        return try self.base_codegen.generateLambda(lambda);
+        // First, analyze the lambda to detect captured variables
+        var captured_vars = ArrayList([]const u8).init(self.base_codegen.allocator);
+        defer captured_vars.deinit();
+        
+        // Analyze lambda body for variable captures
+        switch (lambda.parameters.len) {
+            0 => {
+                // No parameters, analyze body directly
+                try self.analyzeCapturedVariables(lambda.body.*, &captured_vars);
+            },
+            else => {
+                // Has parameters, analyze body
+                try self.analyzeCapturedVariables(lambda.body.*, &captured_vars);
+            }
+        }
+        
+        if (captured_vars.items.len == 0) {
+            // Simple function pointer - no closure needed
+            return try self.generateSimpleLambda(lambda);
+        } else {
+            // Complex closure with captured variables
+            return try self.generateClosureLambda(lambda, captured_vars.items);
+        }
     }
+    
+    /// Generate simple lambda (function pointer) when no variables are captured
+    fn generateSimpleLambda(self: *AdvancedCodeGen, lambda: ast.LambdaExpression) CodeGenError!c.LLVMValueRef {
+        // Create function type for lambda  
+        const return_type = c.LLVMInt32TypeInContext(self.base_codegen.context); // Default to int
+        
+        // Simple case: treat parameters as string names for now
+        var param_types = ArrayList(c.LLVMTypeRef).init(self.base_codegen.allocator);
+        defer param_types.deinit();
+        
+        for (lambda.parameters.items) |_| {
+            // Default all parameters to int for now
+            try param_types.append(c.LLVMInt32TypeInContext(self.base_codegen.context));
+        }
+        
+        const func_type = c.LLVMFunctionType(
+            return_type,
+            if (param_types.items.len > 0) param_types.items.ptr else null,
+            @as(u32, @intCast(param_types.items.len)),
+            0
+        );
+        
+        // Create lambda function with unique name
+        var lambda_name_buf: [128]u8 = undefined;
+        const lambda_name = try std.fmt.bufPrint(&lambda_name_buf, "lambda_simple_{}", .{self.lambda_counter});
+        self.lambda_counter += 1;
+        
+        const lambda_func = c.LLVMAddFunction(self.base_codegen.module, lambda_name.ptr, func_type);
+        
+        // Generate lambda body
+        const saved_function = self.base_codegen.current_function;
+        const saved_block = c.LLVMGetInsertBlock(self.base_codegen.builder);
+        
+        const entry_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, lambda_func, "entry");
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, entry_block);
+        self.base_codegen.current_function = lambda_func;
+        
+        // Set up parameters in local variables
+        for (lambda.parameters.items, 0..) |param_name, i| {
+            const llvm_param = c.LLVMGetParam(lambda_func, @as(u32, @intCast(i)));
+            try self.base_codegen.variables.put(param_name, llvm_param);
+        }
+        
+        // Generate body and return
+        const body_value = try self.generateExpression(lambda.body.*);
+        _ = c.LLVMBuildRet(self.base_codegen.builder, body_value);
+        
+        // Restore state
+        self.base_codegen.current_function = saved_function;
+        if (saved_block != null) {
+            c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, saved_block);
+        }
+        
+        return lambda_func;
+    }
+    
+    /// Generate closure lambda with captured variables
+    fn generateClosureLambda(self: *AdvancedCodeGen, lambda: ast.LambdaExpression, captured_vars: [][]const u8) CodeGenError!c.LLVMValueRef {
+        // Create closure struct type: { function_ptr, capture_count, captured_vars... }
+        var closure_field_types = ArrayList(c.LLVMTypeRef).init(self.base_codegen.allocator);
+        defer closure_field_types.deinit();
+        
+        // Function pointer type
+        var param_types = ArrayList(c.LLVMTypeRef).init(self.base_codegen.allocator);
+        defer param_types.deinit();
+        
+        // First parameter is closure environment pointer
+        try param_types.append(c.LLVMPointerTypeInContext(self.base_codegen.context, 0));
+        
+        // Add lambda parameters (default to int for now)
+        for (lambda.parameters.items) |_| {
+            try param_types.append(c.LLVMInt32TypeInContext(self.base_codegen.context));
+        }
+        
+        const return_type = c.LLVMInt32TypeInContext(self.base_codegen.context);
+        
+        const func_ptr_type = c.LLVMPointerTypeInContext(self.base_codegen.context, 0);
+        try closure_field_types.append(func_ptr_type);
+        
+        // Capture count
+        try closure_field_types.append(c.LLVMInt32TypeInContext(self.base_codegen.context));
+        
+        // Captured variable slots
+        for (captured_vars) |_| {
+            try closure_field_types.append(c.LLVMPointerTypeInContext(self.base_codegen.context, 0));
+        }
+        
+        const closure_type = c.LLVMStructTypeInContext(
+            self.base_codegen.context,
+            closure_field_types.items.ptr,
+            @as(u32, @intCast(closure_field_types.items.len)),
+            0
+        );
+        
+        // Create the actual lambda function (with environment parameter)
+        const func_type = c.LLVMFunctionType(
+            return_type,
+            param_types.items.ptr,
+            @as(u32, @intCast(param_types.items.len)),
+            0
+        );
+        
+        var lambda_name_buf: [128]u8 = undefined;
+        const lambda_name = try std.fmt.bufPrint(&lambda_name_buf, "lambda_closure_{}", .{self.lambda_counter});
+        self.lambda_counter += 1;
+        
+        const lambda_func = c.LLVMAddFunction(self.base_codegen.module, lambda_name.ptr, func_type);
+        
+        // Generate lambda body with closure environment
+        const saved_function = self.base_codegen.current_function;
+        const saved_block = c.LLVMGetInsertBlock(self.base_codegen.builder);
+        
+        const entry_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, lambda_func, "entry");
+        c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, entry_block);
+        self.base_codegen.current_function = lambda_func;
+        
+        // Get environment parameter
+        const env_param = c.LLVMGetParam(lambda_func, 0);
+        
+        // Set up lambda parameters
+        for (lambda.parameters.items, 0..) |param_name, i| {
+            const llvm_param = c.LLVMGetParam(lambda_func, @as(u32, @intCast(i + 1)));
+            try self.base_codegen.variables.put(param_name, llvm_param);
+        }
+        
+        // Load captured variables from environment
+        for (captured_vars, 0..) |var_name, i| {
+            const field_index = @as(u32, @intCast(i + 2)); // Skip function ptr and count
+            const var_ptr_ptr = c.LLVMBuildStructGEP2(
+                self.base_codegen.builder,
+                closure_type,
+                env_param,
+                field_index,
+                "captured_var_ptr"
+            );
+            const var_ptr = c.LLVMBuildLoad2(
+                self.base_codegen.builder,
+                c.LLVMPointerTypeInContext(self.base_codegen.context, 0),
+                var_ptr_ptr,
+                "captured_var"
+            );
+            try self.base_codegen.variables.put(var_name, var_ptr);
+        }
+        
+        // Generate body and return
+        const body_value = try self.generateExpression(lambda.body.*);
+        _ = c.LLVMBuildRet(self.base_codegen.builder, body_value);
+        
+        // Restore state
+        self.base_codegen.current_function = saved_function;
+        if (saved_block != null) {
+            c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, saved_block);
+        }
+        
+        // Now create the closure object at runtime
+        const closure_alloc = c.LLVMBuildMalloc(self.base_codegen.builder, closure_type, "closure");
+        
+        // Set function pointer
+        const func_ptr_slot = c.LLVMBuildStructGEP2(
+            self.base_codegen.builder,
+            closure_type,
+            closure_alloc,
+            0,
+            "func_ptr_slot"
+        );
+        _ = c.LLVMBuildStore(self.base_codegen.builder, lambda_func, func_ptr_slot);
+        
+        // Set capture count
+        const count_slot = c.LLVMBuildStructGEP2(
+            self.base_codegen.builder,
+            closure_type,
+            closure_alloc,
+            1,
+            "count_slot"
+        );
+        const count_val = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.base_codegen.context), captured_vars.len, 0);
+        _ = c.LLVMBuildStore(self.base_codegen.builder, count_val, count_slot);
+        
+        // Store captured variables
+        for (captured_vars, 0..) |var_name, i| {
+            if (self.base_codegen.variables.get(var_name)) |var_value| {
+                const field_index = @as(u32, @intCast(i + 2));
+                const var_slot = c.LLVMBuildStructGEP2(
+                    self.base_codegen.builder,
+                    closure_type,
+                    closure_alloc,
+                    field_index,
+                    "var_slot"
+                );
+                _ = c.LLVMBuildStore(self.base_codegen.builder, var_value, var_slot);
+            }
+        }
+        
+        return closure_alloc;
+    }
+    
+    /// Analyze expression tree to find captured variables
+    fn analyzeCapturedVariables(self: *AdvancedCodeGen, expr: ast.Expression, captured_vars: *ArrayList([]const u8)) CodeGenError!void {
+        switch (expr) {
+            .Variable => |var_expr| {
+                // Check if this variable is from an outer scope (captured)
+                if (self.base_codegen.variables.get(var_expr.name) != null) {
+                    // Variable exists in current scope - might be captured
+                    for (captured_vars.items) |existing| {
+                        if (std.mem.eql(u8, existing, var_expr.name)) {
+                            return; // Already captured
+                        }
+                    }
+                    try captured_vars.append(var_expr.name);
+                }
+            },
+            .FunctionCall => |call| {
+                for (call.arguments.items) |arg| {
+                    try self.analyzeCapturedVariables(arg, captured_vars);
+                }
+            },
+            .BinaryOp => |binop| {
+                try self.analyzeCapturedVariables(binop.left.*, captured_vars);
+                try self.analyzeCapturedVariables(binop.right.*, captured_vars);
+            },
+            .UnaryOp => |unary| {
+                try self.analyzeCapturedVariables(unary.operand.*, captured_vars);
+            },
+            .ArrayAccess => |access| {
+                try self.analyzeCapturedVariables(access.object.*, captured_vars);
+                try self.analyzeCapturedVariables(access.index.*, captured_vars);
+            },
+            .FieldAccess => |field| {
+                try self.analyzeCapturedVariables(field.object.*, captured_vars);
+            },
+            .MethodCall => |method| {
+                try self.analyzeCapturedVariables(method.object.*, captured_vars);
+                for (method.arguments.items) |arg| {
+                    try self.analyzeCapturedVariables(arg, captured_vars);
+                }
+            },
+            .TypeAssertion => |assertion| {
+                try self.analyzeCapturedVariables(assertion.expression.*, captured_vars);
+            },
+            else => {
+                // Other expression types don't contain variables
+            },
+        }
+    }
+    
+
 
     // Helper functions for advanced expression compilation
     

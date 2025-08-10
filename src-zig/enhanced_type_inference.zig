@@ -100,7 +100,10 @@ pub const RecursionDetector = struct {
     /// Exit a type variable after processing
     pub fn exit(self: *RecursionDetector, type_var_id: u32) void {
         _ = self.visiting.remove(type_var_id);
-        try self.visited.put(type_var_id, {});
+        // Never fail on exit - just log if visited tracking fails
+        self.visited.put(type_var_id, {}) catch |err| {
+            std.log.warn("Failed to track visited type variable {}: {}", .{ type_var_id, err });
+        };
         self.recursion_depth -= 1;
     }
     

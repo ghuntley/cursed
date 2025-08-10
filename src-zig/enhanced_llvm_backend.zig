@@ -447,6 +447,10 @@ pub const EnhancedLLVMBackend = struct {
             
             const error_str = std.mem.span(error_message);
             
+            // CRITICAL: ALWAYS report LLVM verification failures regardless of verbose mode
+            // These errors indicate serious compilation issues that must never be silently ignored
+            print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
+            
             // Create structured error context
             const error_handling = @import("error_handling.zig");
             const error_ctx = error_handling.createLLVMVerificationError(
@@ -454,8 +458,8 @@ pub const EnhancedLLVMBackend = struct {
                 error_str,
                 null // TODO: Add source location tracking
             ) catch |alloc_err| {
-                // Fallback if allocation fails
-                print("LLVM module verification failed: {s}\n", .{error_str});
+                // Fallback if allocation fails - still report the core error
+                print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
                 return switch (alloc_err) {
                     error.OutOfMemory => error.OutOfMemory,
                     else => error.LLVMModuleVerificationFailed,
