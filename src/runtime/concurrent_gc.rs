@@ -1064,9 +1064,31 @@ impl ConcurrentGarbageCollector {
         Ok(())
     }
 
-    /// Finalize custom object
+    /// Finalize custom object with proper error handling
     fn finalize_custom_object(object_addr: usize) -> Result<(), String> {
-        // Call user-defined finalizer
+        unsafe {
+            let object_ptr = object_addr as *mut u8;
+            let metadata_ptr = object_ptr as *mut ObjectMetadata;
+            
+            // Check if object has custom finalizer
+            if (*metadata_ptr).has_finalizer {
+                // Get finalizer function pointer from object header
+                if let Some(finalizer_fn) = (*metadata_ptr).finalizer_fn {
+                    // Call the finalizer function
+                    match finalizer_fn(object_ptr.add(std::mem::size_of::<ObjectMetadata>())) {
+                        Ok(()) => {
+                            debug!("Successfully finalized custom object at 0x{:x}", object_addr);
+                        }
+                        Err(e) => {
+                            error!("Custom finalizer failed for object at 0x{:x}: {}", object_addr, e);
+                            return Err(format!("Custom finalizer failed: {}", e));
+                        }
+                    }
+                } else {
+                    warn!("Object marked as having finalizer but no function pointer found");
+                }
+            }
+        }
         Ok(())
     }
 

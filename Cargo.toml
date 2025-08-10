@@ -109,7 +109,7 @@ walkdir = "2.0"
 
 # Windows-specific dependencies
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["winbase", "winnt", "memoryapi", "processthreadsapi", "sysinfoapi", "winuser", "handleapi"] }
+winapi = { version = "0.3", features = ["winbase", "winnt", "memoryapi", "processthreadsapi", "sysinfoapi", "winuser", "handleapi", "ioapiset", "errhandlingapi", "winsock2", "minwinbase", "fileapi"] }
 # Native compression libraries for non-WASM targets
 flate2 = "1.0"
 

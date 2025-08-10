@@ -198,58 +198,37 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
 
 /// LLVM Backend compilation with advanced optimization
 pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: []const u8, output_filename: []const u8, config: CompilerConfig) !void {
-    print("[1/6] Resolving target platform...\n", .{});
+    if (config.verbose) print("🔥 LLVM Backend: Compiling {s} to executable {s}\n", .{ filename, output_filename });
     
-    // Determine target triple
-    const target_triple = if (config.target) |target_str| blk: {
-        const mapped_triple = target_mapping.targetToLLVMTriple(target_str) orelse {
-            print("❌ Error: Unknown target '{s}'\n", .{target_str});
-            print("Valid targets: linux-x64, macos-arm64, windows-x64, wasm32, etc.\n", .{});
-            return error.InvalidTarget;
-        };
-        if (config.verbose) print("🎯 Cross-compiling for target: {s} -> {s}\n", .{ target_str, mapped_triple });
-        break :blk mapped_triple;
-    } else blk: {
-        const native_triple = target_mapping.getNativeTriple();
-        if (config.verbose) print("🏠 Using native target: {s}\n", .{native_triple});
-        break :blk native_triple;
-    };
+    // Import the new LLVM IR Pipeline
+    const LLVMCompilationManager = @import("llvm_compilation_manager.zig").LLVMCompilationManager;
     
-    // Validate target triple
-    if (!target_mapping.validateTargetTriple(target_triple)) {
-        print("❌ Error: Invalid target triple format: {s}\n", .{target_triple});
-        return error.InvalidTargetTriple;
+    // Create compilation manager
+    var manager = LLVMCompilationManager.init(allocator);
+    manager.setVerbose(config.verbose);
+    manager.setOptimizationLevel(config.optimization_level);
+    manager.setDebugInfo(config.debug_info);
+    
+    // Check LLVM availability
+    if (!manager.checkLLVMAvailability()) {
+        print("❌ LLVM backend not available, falling back to C backend\n", .{});
+        return compileToCBackend(allocator, source, filename, config);
     }
     
-    print("[2/6] Generating LLVM IR for target {s}...\n", .{target_triple});
+    // Use the new compilation pipeline
+    try manager.compileSource(source, output_filename);
     
-    // Generate IR filename - if output is .ll, use it, otherwise create one
-    const ir_filename = if (std.mem.endsWith(u8, output_filename, ".ll")) 
-        output_filename 
-    else 
-        try std.fmt.allocPrint(allocator, "{s}.ll", .{output_filename});
-    defer if (!std.mem.endsWith(u8, output_filename, ".ll")) allocator.free(ir_filename);
-    
-    // Generate LLVM IR with proper target support
-    print("[3/6] Generating LLVM IR with target-specific optimizations...\n", .{});
-    try generateTargetSpecificLLVMIR(allocator, source, filename, ir_filename, config, target_triple);
-    
-    if (config.verbose) print("✅ Generated LLVM IR: {s}\n", .{ir_filename});
-    
-    // If output_filename ends with .ll, we only wanted IR generation
-    if (std.mem.endsWith(u8, output_filename, ".ll")) {
-        print("✅ LLVM IR generation complete: {s}\n", .{output_filename});
-        return;
+    // Emit LLVM IR file if requested
+    if (config.emit_llvm) {
+        const emit_ir_filename = try std.fmt.allocPrint(allocator, "{s}_emitted.ll", .{output_filename});
+        defer allocator.free(emit_ir_filename);
+        
+        try manager.generateIROnly(source, emit_ir_filename);
+        if (config.verbose) print("📄 LLVM IR emitted to: {s}\n", .{emit_ir_filename});
     }
     
-    // Compile IR to native executable with target-specific linking
-    print("[4/6] Compiling IR to native executable for {s}...\n", .{target_triple});
-    try compileIRToNativeWithTarget(allocator, ir_filename, output_filename, target_triple, config);
-    
-    // Clean up IR file if successful and not in verbose mode
-    if (!config.verbose and !config.emit_llvm) {
-        std.fs.cwd().deleteFile(ir_filename) catch {};
-    }
+    print("✅ Successfully compiled to: {s}\n", .{output_filename});
+    if (config.verbose) print("🚀 Try running: ./{s}\n", .{output_filename});
 }
 
 /// Generate LLVM IR with target-specific optimizations

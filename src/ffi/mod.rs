@@ -18,6 +18,7 @@ pub mod multi_language;
 pub mod performance;
 pub mod profiling;
 pub mod safety_checks;
+pub mod threads;
 pub mod type_mapping;
 pub mod wasm_bridge;
 
@@ -37,6 +38,7 @@ pub use multi_language::*;
 pub use performance::*;
 pub use profiling::*;
 pub use safety_checks::*;
+pub use threads::*;
 pub use type_mapping::*;
 pub use wasm_bridge::*;
 
