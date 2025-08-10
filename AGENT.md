@@ -812,3 +812,31 @@ zig build -Dtarget=native-native-lto                    # ✅ Build-time LTO
 - **Component Testing**: Use testz framework, test individual modules
 - **Performance**: Use --benchmark and profile-guided optimization
 - **Cross-Platform**: Force native target, avoid hanging cross-compilation
+
+## Latest Session Learnings (Current Session) ✅
+
+### Confirmed Working Build & Test Commands ✅
+```bash
+# Build system works reliably
+zig build                                      # ✅ Reliable main build
+./zig-out/bin/cursed-zig --version           # ✅ Shows version info
+./zig-out/bin/cursed-zig file.csd            # ✅ Runs CURSED programs
+valgrind ./zig-out/bin/cursed-zig file.csd   # ✅ Memory safety validation - zero errors
+```
+
+### Core Language Features Working ✅
+- **Variables & Arithmetic**: `sus x drip = 42; vibez.spill(x)` works correctly
+- **Output System**: `vibez.spill("Hello, world!")` displays text properly
+- **Memory Safety**: valgrind confirms zero memory leaks for basic programs
+
+### Current Status Summary ✅
+- **Working**: Runtime execution, Windows async I/O, GC finalizers, performance hooks, LLVM IR generation
+- **Ready**: Pure CURSED stdlib implementations complete
+- **Issue**: Module loading system needs fixes for stdlib integration
+- **Memory**: Zero memory errors confirmed with valgrind testing
+
+### Key Testing Workflow ✅
+1. Write CURSED program to .csd file
+2. Run with `./zig-out/bin/cursed-zig file.csd`
+3. Validate memory safety with `valgrind ./zig-out/bin/cursed-zig file.csd`
+4. Expect zero memory leaks for basic programs

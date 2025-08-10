@@ -414,6 +414,13 @@ pub const RobustLLVMBackend = struct {
         try self.warnings.append(owned_message);
     }
     
+    /// Add structured error context (for enhanced error reporting)
+    fn addStructuredError(self: *RobustLLVMBackend, error_ctx: anytype) !void {
+        // For now, just extract message and add as regular error
+        // This can be extended to store full error contexts if needed
+        try self.addError(error_ctx.message);
+    }
+    
     /// Compile pattern matching with proper verification
     pub fn compilePatternMatch(self: *RobustLLVMBackend, match_expr: ast.MatchExpression, result_type: c.LLVMTypeRef) !c.LLVMValueRef {
         const function = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
@@ -619,9 +626,28 @@ pub const RobustLLVMBackend = struct {
             defer c.LLVMDisposeMessage(error_message);
             
             const error_str = std.mem.span(error_message);
-            try self.addError(error_str);
             
-            std.debug.print("LLVM module verification failed: {s}\n", .{error_str});
+            // Create structured error instead of just adding string
+            const error_handling = @import("error_handling.zig");
+            const error_ctx = error_handling.createLLVMVerificationError(
+                self.allocator,
+                error_str,
+                null // TODO: Add source location tracking
+            ) catch |alloc_err| {
+                // Fallback for allocation failures
+                try self.addError(error_str);
+                std.debug.print("LLVM module verification failed: {s}\n", .{error_str});
+                return switch (alloc_err) {
+                    error.OutOfMemory => LLVMBackendError.OutOfMemory,
+                    else => LLVMBackendError.LLVMVerificationFailed,
+                };
+            };
+            
+            // Store structured error
+            try self.addStructuredError(error_ctx);
+            
+            // Optional: still print for debugging (can be disabled)
+            std.debug.print("[LLVM Verification] {s}\n", .{error_str});
             
             // Try to fix common issues
             try self.fixCommonVerificationIssues();

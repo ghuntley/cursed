@@ -32,9 +32,9 @@ pub const CompilationCache = struct {
         return CompilationCache{
             .allocator = allocator,
             .cache_dir = try allocator.dupe(u8, cache_dir),
-            .source_cache = try SourceCache.init(allocator),
-            .ast_cache = try ASTCache.init(allocator),
-            .object_cache = try ObjectCache.init(allocator),
+            .source_cache = SourceCache.init(allocator),
+            .ast_cache = ASTCache.init(allocator),
+            .object_cache = ObjectCache.init(allocator),
             .dependency_graph = try DependencyGraph.init(allocator),
             .config = config,
             .mutex = Mutex{},
@@ -55,20 +55,67 @@ pub const CompilationCache = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        // Check if source file has changed
-        const current_hash = try calculateFileHash(self.allocator, file_path);
+        return try self.needsRecompilationInternal(file_path);
+    }
+    
+    /// Check if a valid cached compilation exists for a file
+    pub fn hasValidCache(self: *CompilationCache, file_path: []const u8) !bool {
+        self.mutex.lock();
+        defer self.mutex.unlock();
         
+        // Inverse of needsRecompilation - if we don't need recompilation, we have valid cache
+        return !(try self.needsRecompilationInternal(file_path));
+    }
+    
+    /// Internal recompilation check without mutex (assumes caller has lock)
+    fn needsRecompilationInternal(self: *CompilationCache, file_path: []const u8) !bool {
+        // Check if source file exists and get current metadata
+        const current_stat = self.getFileMetadata(file_path) catch {
+            // File doesn't exist, definitely needs compilation
+            self.metrics.recordCacheMiss();
+            return true;
+        };
+        
+        // Check if we have a cached entry
         if (self.source_cache.get(file_path)) |cached_entry| {
-            if (cached_entry.source_hash == current_hash) {
-                // Source unchanged, check dependencies
-                const deps_changed = try self.checkDependencyChanges(file_path);
-                if (!deps_changed) {
-                    self.metrics.recordCacheHit();
-                    return false;
-                }
+            // Compare file size first (quick check)
+            if (cached_entry.size != current_stat.size) {
+                self.metrics.recordCacheMiss();
+                return true;
             }
+            
+            // Compare modification time
+            if (cached_entry.timestamp < current_stat.mtime) {
+                self.metrics.recordCacheMiss();
+                return true;
+            }
+            
+            // Compare content hash (more expensive but definitive)
+            const current_hash = try calculateFileHash(self.allocator, file_path);
+            if (cached_entry.source_hash != current_hash) {
+                self.metrics.recordCacheMiss();
+                return true;
+            }
+            
+            // Source unchanged, check dependencies
+            const deps_changed = try self.checkDependencyChanges(file_path);
+            if (deps_changed) {
+                self.metrics.recordCacheMiss();
+                return true;
+            }
+            
+            // Check if build configuration has changed
+            if (try self.hasBuildConfigChanged(file_path)) {
+                self.metrics.recordCacheMiss();
+                return true;
+            }
+            
+            // All checks passed - cache is valid
+            self.metrics.recordCacheHit();
+            return false;
         }
         
+        // No cached entry exists
         self.metrics.recordCacheMiss();
         return true;
     }
@@ -96,15 +143,18 @@ pub const CompilationCache = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        // Update source cache
+        // Get current file metadata
+        const file_metadata = try self.getFileMetadata(file_path);
         const source_hash = try calculateFileHash(self.allocator, file_path);
+        
+        // Update source cache with accurate metadata
         const source_entry = SourceCacheEntry{
             .file_path = try self.allocator.dupe(u8, file_path),
             .source_hash = source_hash,
-            .timestamp = std.time.timestamp(),
-            .size = try getFileSize(file_path),
+            .timestamp = file_metadata.mtime,
+            .size = file_metadata.size,
         };
-        try self.source_cache.put(file_path, source_entry);
+        try self.source_cache.put(try self.allocator.dupe(u8, file_path), source_entry);
         
         // Update dependency graph
         try self.dependency_graph.updateDependencies(file_path, dependencies);
@@ -117,7 +167,10 @@ pub const CompilationCache = struct {
             .dependencies = try self.allocator.dupe([]const u8, dependencies),
         };
         
-        try self.ast_cache.put(file_path, cached_ast);
+        try self.ast_cache.put(try self.allocator.dupe(u8, file_path), cached_ast);
+        
+        // Update build configuration cache
+        try self.updateBuildConfigCache();
         
         // Persist to disk if enabled
         if (self.config.enable_disk_cache) {
@@ -192,7 +245,99 @@ pub const CompilationCache = struct {
                 try self.removeDiskCacheFile(dependent);
             }
             
+            // Recursively invalidate dependents of this dependent
+            try self.invalidateDependentsRecursive(dependent);
+            
             self.metrics.recordCacheInvalidation();
+        }
+    }
+    
+    /// Recursively invalidate dependents (used internally)
+    fn invalidateDependentsRecursive(self: *CompilationCache, file_path: []const u8) !void {
+        const dependents = self.dependency_graph.getDependents(file_path);
+        
+        for (dependents) |dependent| {
+            // Only invalidate if not already invalidated
+            if (self.source_cache.contains(dependent)) {
+                _ = self.source_cache.remove(dependent);
+                _ = self.ast_cache.remove(dependent);
+                _ = self.object_cache.remove(dependent);
+                
+                if (self.config.enable_disk_cache) {
+                    try self.removeDiskCacheFile(dependent);
+                }
+                
+                // Continue recursion
+                try self.invalidateDependentsRecursive(dependent);
+                
+                self.metrics.recordCacheInvalidation();
+            }
+        }
+    }
+    
+    /// Invalidate entire cache (nuclear option)
+    pub fn invalidateAll(self: *CompilationCache) !void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        
+        // Count entries before clearing
+        const total_entries = self.source_cache.count() + self.ast_cache.count() + self.object_cache.count();
+        
+        // Clear all in-memory caches
+        self.source_cache.clearAndFree();
+        self.ast_cache.clearAndFree();
+        self.object_cache.clearAndFree();
+        self.dependency_graph.clearAll();
+        
+        // Remove all disk cache files
+        if (self.config.enable_disk_cache) {
+            try self.clearDiskCache();
+        }
+        
+        // Update metrics
+        var i: usize = 0;
+        while (i < total_entries) : (i += 1) {
+            self.metrics.recordCacheInvalidation();
+        }
+    }
+    
+    /// Smart cache invalidation based on file change patterns
+    pub fn invalidateByPattern(self: *CompilationCache, pattern: CacheInvalidationPattern) !void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        
+        switch (pattern) {
+            .build_config_changed => {
+                // Invalidate everything when build config changes
+                try self.invalidateAllInternal();
+            },
+            .source_file_changed => |file_path| {
+                // Invalidate file and its dependents
+                _ = self.source_cache.remove(file_path);
+                _ = self.ast_cache.remove(file_path);
+                _ = self.object_cache.remove(file_path);
+                try self.invalidateDependentsRecursive(file_path);
+            },
+            .dependency_changed => |dep_path| {
+                // Invalidate all files that depend on this dependency
+                try self.invalidateDependentsRecursive(dep_path);
+            },
+            .optimization_level_changed => {
+                // Only invalidate object cache (AST can be reused)
+                self.object_cache.clearAndFree();
+            },
+        }
+    }
+    
+    /// Internal invalidate all without mutex
+    fn invalidateAllInternal(self: *CompilationCache) !void {
+        self.source_cache.clearAndFree();
+        self.ast_cache.clearAndFree();
+        self.object_cache.clearAndFree();
+        self.dependency_graph.clearAll();
+        
+        if (self.config.enable_disk_cache) {
+            try self.clearDiskCache();
         }
     }
     
@@ -267,12 +412,100 @@ pub const CompilationCache = struct {
         const dependencies = self.dependency_graph.getDependencies(file_path);
         
         for (dependencies) |dep| {
-            if (try self.needsRecompilation(dep)) {
+            // Use simple file metadata check to avoid infinite recursion
+            const dep_metadata = self.getFileMetadata(dep) catch {
+                // Dependency file doesn't exist - needs recompilation
+                return true;
+            };
+            
+            if (self.source_cache.get(dep)) |cached_dep| {
+                if (cached_dep.timestamp < dep_metadata.mtime) {
+                    return true;
+                }
+            } else {
+                // No cached dependency - needs recompilation
                 return true;
             }
         }
         
         return false;
+    }
+    
+    /// Get file metadata for cache invalidation
+    fn getFileMetadata(self: *CompilationCache, file_path: []const u8) !FileMetadata {
+        _ = self;
+        
+        const file = std.fs.cwd().openFile(file_path, .{}) catch |err| switch (err) {
+            error.FileNotFound => return error.FileNotFound,
+            else => return err,
+        };
+        defer file.close();
+        
+        const stat = try file.stat();
+        
+        return FileMetadata{
+            .size = stat.size,
+            .mtime = @intCast(stat.mtime),
+        };
+    }
+    
+    /// Check if build configuration has changed since last compilation
+    fn hasBuildConfigChanged(self: *CompilationCache, file_path: []const u8) !bool {
+        _ = file_path;
+        
+        // Check if build configuration file exists and has changed
+        const build_config_files = [_][]const u8{
+            "build.zig",
+            ".cursed-config",
+            "CursedPackage.toml",
+        };
+        
+        for (build_config_files) |config_file| {
+            const config_metadata = self.getFileMetadata(config_file) catch continue;
+            
+            // Check if we have cached metadata for this config file
+            const cache_key = try std.fmt.allocPrint(self.allocator, "build_config:{s}", .{config_file});
+            defer self.allocator.free(cache_key);
+            
+            if (self.source_cache.get(cache_key)) |cached_config| {
+                if (cached_config.timestamp < config_metadata.mtime) {
+                    // Build config is newer than cached compilation
+                    return true;
+                }
+            } else {
+                // No cached build config metadata - assume changed
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /// Update build configuration cache after successful compilation
+    fn updateBuildConfigCache(self: *CompilationCache) !void {
+        const build_config_files = [_][]const u8{
+            "build.zig",
+            ".cursed-config", 
+            "CursedPackage.toml",
+        };
+        
+        for (build_config_files) |config_file| {
+            const config_metadata = self.getFileMetadata(config_file) catch continue;
+            
+            const cache_key = try std.fmt.allocPrint(self.allocator, "build_config:{s}", .{config_file});
+            defer self.allocator.free(cache_key);
+            
+            const config_hash = calculateFileHash(self.allocator, config_file) catch 0;
+            
+            const config_entry = SourceCacheEntry{
+                .file_path = try self.allocator.dupe(u8, config_file),
+                .source_hash = config_hash,
+                .timestamp = config_metadata.mtime,
+                .size = config_metadata.size,
+            };
+            
+            try self.source_cache.put(try self.allocator.dupe(u8, cache_key), config_entry);
+        }
     }
     
     fn generateObjectPath(self: *CompilationCache, file_path: []const u8, optimization_level: []const u8) ![]u8 {
@@ -329,6 +562,25 @@ pub const CompilationCache = struct {
         std.fs.cwd().deleteFile(ast_path) catch {};
     }
     
+    fn clearDiskCache(self: *CompilationCache) !void {
+        // Remove entire cache directory
+        var cache_dir = std.fs.cwd().openDir(self.cache_dir, .{ .iterate = true }) catch return;
+        defer cache_dir.close();
+        
+        // Remove AST cache directory
+        const ast_dir_path = try std.fmt.allocPrint(self.allocator, "{s}/ast", .{self.cache_dir});
+        defer self.allocator.free(ast_dir_path);
+        std.fs.cwd().deleteTree(ast_dir_path) catch {};
+        
+        // Remove objects cache directory 
+        const objects_dir_path = try std.fmt.allocPrint(self.allocator, "{s}/objects", .{self.cache_dir});
+        defer self.allocator.free(objects_dir_path);
+        std.fs.cwd().deleteTree(objects_dir_path) catch {};
+        
+        // Recreate directories
+        try createCacheDirectories(self.cache_dir);
+    }
+    
     fn calculateMemoryUsage(self: *const CompilationCache) usize {
         var total: usize = 0;
         
@@ -362,6 +614,14 @@ pub const CompilationCache = struct {
         // Implementation would calculate actual disk usage
         return 0;
     }
+};
+
+/// Cache invalidation patterns for smart invalidation
+pub const CacheInvalidationPattern = union(enum) {
+    build_config_changed,
+    source_file_changed: []const u8,
+    dependency_changed: []const u8,
+    optimization_level_changed,
 };
 
 /// Cache configuration
@@ -403,6 +663,11 @@ const SourceCacheEntry = struct {
     source_hash: u64,
     timestamp: i64,
     size: usize,
+};
+
+const FileMetadata = struct {
+    size: usize,
+    mtime: i64,
 };
 
 const CachedAST = struct {
@@ -491,6 +756,30 @@ const DependencyGraph = struct {
         }
         return &[_][]const u8{};
     }
+    
+    fn clearAll(self: *DependencyGraph) void {
+        // Clean up dependencies
+        var deps_iter = self.dependencies.iterator();
+        while (deps_iter.next()) |entry| {
+            for (entry.value_ptr.items) |dep| {
+                self.allocator.free(dep);
+            }
+            entry.value_ptr.deinit();
+            self.allocator.free(entry.key_ptr.*);
+        }
+        self.dependencies.clearAndFree();
+        
+        // Clean up dependents
+        var dependents_iter = self.dependents.iterator();
+        while (dependents_iter.next()) |entry| {
+            for (entry.value_ptr.items) |dependent| {
+                self.allocator.free(dependent);
+            }
+            entry.value_ptr.deinit();
+            self.allocator.free(entry.key_ptr.*);
+        }
+        self.dependents.clearAndFree();
+    }
 };
 
 /// Cache performance metrics
@@ -542,19 +831,19 @@ pub const CacheStatistics = struct {
     disk_usage_bytes: usize,
     
     pub fn print(self: *const CacheStatistics) void {
-        std.debug.print("=== COMPILATION CACHE STATISTICS ===\n");
+        std.debug.print("=== COMPILATION CACHE STATISTICS ===\n", .{});
         std.debug.print("Source cache entries: {d}\n", .{self.source_cache_size});
         std.debug.print("AST cache entries: {d}\n", .{self.ast_cache_size});
         std.debug.print("Object cache entries: {d}\n", .{self.object_cache_size});
         std.debug.print("Cache hit rate: {d:.1}%\n", .{self.hit_rate * 100});
         std.debug.print("Memory usage: {d:.2}MB\n", .{@as(f64, @floatFromInt(self.memory_usage_bytes)) / (1024 * 1024)});
         std.debug.print("Disk usage: {d:.2}MB\n", .{@as(f64, @floatFromInt(self.disk_usage_bytes)) / (1024 * 1024)});
-        std.debug.print("===================================\n");
+        std.debug.print("===================================\n", .{});
     }
 };
 
 // Placeholder types
-const AST = struct {
+pub const AST = struct {
     // Placeholder AST structure
 };
 

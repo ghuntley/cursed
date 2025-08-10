@@ -127,16 +127,33 @@ pub const RuntimeTypeInfo = struct {
     }
 };
 
-// Enhanced garbage collector integration
+// Import collision handling system
+const type_collision = @import("type_id_collision_handling.zig");
+const CollisionResistantTypeRegistry = type_collision.CollisionResistantTypeRegistry;
+const TypeId = type_collision.TypeId;
+
+// Enhanced garbage collector integration with collision-resistant type registry
 pub const GCTypeRegistry = struct {
+    /// Legacy interface for compatibility
     types: std.HashMap(u32, RuntimeTypeInfo, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
+    
+    /// New collision-resistant registry
+    collision_resistant_registry: CollisionResistantTypeRegistry,
+    
+    /// Legacy type ID counter
     type_id_counter: u32,
+    
+    /// Type ID mapping for legacy compatibility
+    legacy_id_mapping: std.HashMap(u32, TypeId, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
+    
     allocator: Allocator,
 
     pub fn init(allocator: Allocator) GCTypeRegistry {
         return GCTypeRegistry{
             .types = std.HashMap(u32, RuntimeTypeInfo, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
+            .collision_resistant_registry = CollisionResistantTypeRegistry.init(allocator),
             .type_id_counter = 1,
+            .legacy_id_mapping = std.HashMap(u32, TypeId, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
     }
@@ -147,22 +164,72 @@ pub const GCTypeRegistry = struct {
             entry.value_ptr.deinit();
         }
         self.types.deinit();
+        
+        self.collision_resistant_registry.deinit();
+        
+        var mapping_iter = self.legacy_id_mapping.iterator();
+        while (mapping_iter.next()) |entry| {
+            entry.value_ptr.deinit(self.allocator);
+        }
+        self.legacy_id_mapping.deinit();
     }
 
+    /// Enhanced type registration with collision detection
     pub fn registerType(self: *GCTypeRegistry, name: []const u8, kind: RuntimeTypeInfo.TypeKind) !u32 {
-        const type_id = self.type_id_counter;
+        // Check for existing type first
+        if (self.findTypeByName(name)) |existing| {
+            std.log.info("Type '{s}' already exists with ID {d}, returning existing ID", .{name, existing.type_id});
+            return existing.type_id;
+        }
+        
+        const legacy_type_id = self.type_id_counter;
         self.type_id_counter += 1;
 
-        const type_info = try RuntimeTypeInfo.init(self.allocator, type_id, name, kind);
-        try self.types.put(type_id, type_info);
-        return type_id;
+        const type_info = try RuntimeTypeInfo.init(self.allocator, legacy_type_id, name, kind);
+        
+        // Register in both systems for compatibility
+        try self.types.put(legacy_type_id, type_info);
+        
+        // Register in collision-resistant system
+        const new_type_id = try self.collision_resistant_registry.registerType(name, type_info);
+        try self.legacy_id_mapping.put(legacy_type_id, new_type_id);
+        
+        // Validate registry integrity periodically
+        if (self.type_id_counter % 100 == 0) {
+            if (!try self.collision_resistant_registry.validateIntegrity()) {
+                std.log.err("Type registry integrity validation failed at type ID {d}", .{legacy_type_id});
+            }
+        }
+        
+        // Check if rehashing is needed
+        try self.collision_resistant_registry.rehashIfNeeded();
+        
+        return legacy_type_id;
     }
 
+    /// Enhanced type lookup with collision-aware search
     pub fn getType(self: *GCTypeRegistry, type_id: u32) ?*RuntimeTypeInfo {
-        return self.types.getPtr(type_id);
+        // Try legacy lookup first for compatibility
+        if (self.types.getPtr(type_id)) |legacy_type| {
+            return legacy_type;
+        }
+        
+        // Try collision-resistant lookup via mapping
+        if (self.legacy_id_mapping.get(type_id)) |new_type_id| {
+            return self.collision_resistant_registry.getTypeById(new_type_id);
+        }
+        
+        return null;
     }
 
+    /// Enhanced name-based lookup with collision detection
     pub fn findTypeByName(self: *GCTypeRegistry, name: []const u8) ?*RuntimeTypeInfo {
+        // First try collision-resistant registry
+        if (self.collision_resistant_registry.getTypeByName(name)) |found| {
+            return found;
+        }
+        
+        // Fallback to legacy search
         var iter = self.types.iterator();
         while (iter.next()) |entry| {
             if (std.mem.eql(u8, entry.value_ptr.type_name, name)) {
@@ -170,6 +237,64 @@ pub const GCTypeRegistry = struct {
             }
         }
         return null;
+    }
+    
+    /// Get collision statistics for monitoring
+    pub fn getCollisionStats(self: *GCTypeRegistry) type_collision.CollisionResistantTypeRegistry.CollisionStats {
+        return self.collision_resistant_registry.getCollisionStats();
+    }
+    
+    /// Validate the integrity of both registries
+    pub fn validateIntegrity(self: *GCTypeRegistry) !bool {
+        // Validate collision-resistant registry
+        if (!try self.collision_resistant_registry.validateIntegrity()) {
+            return false;
+        }
+        
+        // Cross-validate legacy mappings
+        var mapping_iter = self.legacy_id_mapping.iterator();
+        var validation_errors: u32 = 0;
+        
+        while (mapping_iter.next()) |entry| {
+            const legacy_id = entry.key_ptr.*;
+            const new_type_id = entry.value_ptr.*;
+            
+            const legacy_type = self.types.get(legacy_id);
+            const new_type = self.collision_resistant_registry.getTypeById(new_type_id);
+            
+            if (legacy_type == null or new_type == null) {
+                std.log.err("Mapping inconsistency: legacy_id={d} exists in legacy={} new={}", 
+                          .{legacy_id, legacy_type != null, new_type != null});
+                validation_errors += 1;
+                continue;
+            }
+            
+            if (!std.mem.eql(u8, legacy_type.?.type_name, new_type.?.type_name)) {
+                std.log.err("Name mismatch in mapping: legacy='{s}' new='{s}'", 
+                          .{legacy_type.?.type_name, new_type.?.type_name});
+                validation_errors += 1;
+            }
+        }
+        
+        if (validation_errors > 0) {
+            std.log.err("GCTypeRegistry validation failed with {d} mapping errors", .{validation_errors});
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /// Print detailed registry statistics
+    pub fn debugPrintStats(self: *GCTypeRegistry) void {
+        std.log.info("=== GCTypeRegistry Statistics ===", .{});
+        std.log.info("Legacy types registered: {d}", .{self.types.count()});
+        std.log.info("Type ID counter: {d}", .{self.type_id_counter});
+        std.log.info("Legacy mappings: {d}", .{self.legacy_id_mapping.count()});
+        
+        const stats = self.getCollisionStats();
+        stats.debugPrint();
+        
+        std.log.info("=================================", .{});
     }
 };
 
@@ -289,20 +414,37 @@ pub const TypedAllocator = struct {
     }
 };
 
-// Interface implementation tracking
+// Enhanced interface implementation tracking with collision resistance
 pub const InterfaceRegistry = struct {
+    /// Legacy implementation tracking
     implementations: HashMap(InterfaceImplKey, VTablePtr, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage),
+    
+    /// Collision-resistant interface registry
+    collision_resistant_impls: type_collision.InterfaceImplRegistry,
+    
+    /// VTable storage with collision detection
+    vtable_storage: HashMap(u64, VTableEntry, std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage),
+    
     allocator: Allocator,
 
     pub const InterfaceImplKey = struct {
         struct_type_id: u32,
         interface_type_id: u32,
+        
+        /// Enhanced hash with collision resistance
+        pub fn getEnhancedHash(self: InterfaceImplKey) u64 {
+            var hasher = std.hash.Wyhash.init(0);
+            hasher.update(std.mem.asBytes(&self.struct_type_id));
+            hasher.update(std.mem.asBytes(&self.interface_type_id));
+            return hasher.final();
+        }
     };
 
     pub const InterfaceImplKeyContext = struct {
         pub fn hash(self: @This(), key: InterfaceImplKey) u64 {
             _ = self;
-            return @as(u64, key.struct_type_id) << 32 | @as(u64, key.interface_type_id);
+            // Use enhanced hash instead of simple bit shifting
+            return key.getEnhancedHash();
         }
 
         pub fn eql(self: @This(), a: InterfaceImplKey, b: InterfaceImplKey) bool {
@@ -319,32 +461,168 @@ pub const InterfaceRegistry = struct {
 
         pub const MethodPtr = *const fn (object: *TypedAllocator.TypedObject, args: []interpreter.Value) anyerror!interpreter.Value;
     };
+    
+    pub const VTableEntry = struct {
+        vtable: VTablePtr,
+        access_count: u32,
+        registration_time: i64,
+        
+        pub fn init(vtable: VTablePtr) VTableEntry {
+            return VTableEntry{
+                .vtable = vtable,
+                .access_count = 0,
+                .registration_time = std.time.milliTimestamp(),
+            };
+        }
+    };
 
     pub fn init(allocator: Allocator) InterfaceRegistry {
         return InterfaceRegistry{
             .implementations = HashMap(InterfaceImplKey, VTablePtr, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .collision_resistant_impls = type_collision.InterfaceImplRegistry.init(allocator),
+            .vtable_storage = HashMap(u64, VTableEntry, std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
     }
 
     pub fn deinit(self: *InterfaceRegistry) void {
         self.implementations.deinit();
+        self.collision_resistant_impls.deinit();
+        self.vtable_storage.deinit();
     }
 
+    /// Enhanced registration with collision detection
     pub fn registerImplementation(self: *InterfaceRegistry, struct_type_id: u32, interface_type_id: u32, vtable: VTablePtr) !void {
         const key = InterfaceImplKey{
             .struct_type_id = struct_type_id,
             .interface_type_id = interface_type_id,
         };
+        
+        // Register in legacy system
         try self.implementations.put(key, vtable);
+        
+        // Register in collision-resistant system (requires type names)
+        // For now, generate placeholder names based on IDs
+        const struct_name = try std.fmt.allocPrint(self.allocator, "struct_{d}", .{struct_type_id});
+        defer self.allocator.free(struct_name);
+        
+        const interface_name = try std.fmt.allocPrint(self.allocator, "interface_{d}", .{interface_type_id});
+        defer self.allocator.free(interface_name);
+        
+        try self.collision_resistant_impls.registerImplementation(struct_name, interface_name);
+        
+        // Store VTable with collision-resistant key
+        const vtable_hash = key.getEnhancedHash();
+        const vtable_entry = VTableEntry.init(vtable);
+        try self.vtable_storage.put(vtable_hash, vtable_entry);
+    }
+    
+    /// Register implementation by name (preferred method)
+    pub fn registerImplementationByName(self: *InterfaceRegistry, struct_name: []const u8, interface_name: []const u8, vtable: VTablePtr) !void {
+        // Register in collision-resistant system
+        try self.collision_resistant_impls.registerImplementation(struct_name, interface_name);
+        
+        // Generate hash for VTable storage
+        var hasher = std.hash.Wyhash.init(0);
+        hasher.update(struct_name);
+        hasher.update(interface_name);
+        const vtable_hash = hasher.final();
+        
+        const vtable_entry = VTableEntry.init(vtable);
+        try self.vtable_storage.put(vtable_hash, vtable_entry);
     }
 
+    /// Enhanced VTable lookup with collision resistance
     pub fn getVTable(self: *InterfaceRegistry, struct_type_id: u32, interface_type_id: u32) ?VTablePtr {
         const key = InterfaceImplKey{
             .struct_type_id = struct_type_id,
             .interface_type_id = interface_type_id,
         };
-        return self.implementations.get(key);
+        
+        // Try legacy lookup first
+        if (self.implementations.get(key)) |vtable| {
+            return vtable;
+        }
+        
+        // Try collision-resistant lookup
+        const vtable_hash = key.getEnhancedHash();
+        if (self.vtable_storage.getPtr(vtable_hash)) |entry| {
+            entry.access_count += 1;
+            return entry.vtable;
+        }
+        
+        return null;
+    }
+    
+    /// Get VTable by type names
+    pub fn getVTableByName(self: *InterfaceRegistry, struct_name: []const u8, interface_name: []const u8) ?VTablePtr {
+        // Check if implementation exists
+        if (self.collision_resistant_impls.isImplemented(struct_name, interface_name) catch false) {
+            // Generate hash for VTable lookup
+            var hasher = std.hash.Wyhash.init(0);
+            hasher.update(struct_name);
+            hasher.update(interface_name);
+            const vtable_hash = hasher.final();
+            
+            if (self.vtable_storage.getPtr(vtable_hash)) |entry| {
+                entry.access_count += 1;
+                return entry.vtable;
+            }
+        }
+        
+        return null;
+    }
+    
+    /// Check if interface is implemented with collision-resistant lookup
+    pub fn isImplemented(self: *InterfaceRegistry, struct_name: []const u8, interface_name: []const u8) bool {
+        return self.collision_resistant_impls.isImplemented(struct_name, interface_name) catch false;
+    }
+    
+    /// Validate interface registry integrity
+    pub fn validateIntegrity(self: *InterfaceRegistry) !bool {
+        var validation_errors: u32 = 0;
+        
+        // Cross-validate legacy and collision-resistant systems
+        var legacy_iter = self.implementations.iterator();
+        while (legacy_iter.next()) |entry| {
+            const key = entry.key_ptr.*;
+            const vtable_hash = key.getEnhancedHash();
+            
+            if (self.vtable_storage.get(vtable_hash) == null) {
+                std.log.err("VTable missing for struct_type_id={d}, interface_type_id={d}", 
+                          .{key.struct_type_id, key.interface_type_id});
+                validation_errors += 1;
+            }
+        }
+        
+        if (validation_errors > 0) {
+            std.log.err("Interface registry validation failed with {d} errors", .{validation_errors});
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /// Debug print interface registry statistics
+    pub fn debugPrintStats(self: *InterfaceRegistry) void {
+        std.log.info("=== Interface Registry Statistics ===", .{});
+        std.log.info("Legacy implementations: {d}", .{self.implementations.count()});
+        std.log.info("VTable entries: {d}", .{self.vtable_storage.count()});
+        
+        // Calculate average access count
+        var total_accesses: u64 = 0;
+        var vtable_iter = self.vtable_storage.iterator();
+        while (vtable_iter.next()) |entry| {
+            total_accesses += entry.value_ptr.access_count;
+        }
+        
+        const avg_accesses = if (self.vtable_storage.count() > 0) 
+            @as(f64, @floatFromInt(total_accesses)) / @as(f64, @floatFromInt(self.vtable_storage.count()))
+        else 
+            0.0;
+            
+        std.log.info("Average VTable accesses: {d:.2}", .{avg_accesses});
+        std.log.info("======================================", .{});
     }
 };
 
@@ -560,7 +838,7 @@ pub fn registerBuiltinTypes(gc_registry: *GCTypeRegistry) !void {
 }
 
 // Test helper functions
-test "runtime type checking" {
+test "runtime type checking with collision handling" {
     const allocator = std.testing.allocator;
     var gc_registry = GCTypeRegistry.init(allocator);
     defer gc_registry.deinit();
@@ -578,6 +856,23 @@ test "runtime type checking" {
     const normie_type = gc_registry.findTypeByName("normie").?;
     
     try std.testing.expect(checker.areTypesCompatible(drip_type.type_id, normie_type.type_id));
+    
+    // Test collision handling by registering many types
+    var i: u32 = 0;
+    while (i < 50) : (i += 1) {
+        const type_name = try std.fmt.allocPrint(allocator, "TestType{d}", .{i});
+        defer allocator.free(type_name);
+        
+        _ = try gc_registry.registerType(type_name, .Basic);
+    }
+    
+    // Validate integrity after bulk registration
+    try std.testing.expect(try gc_registry.validateIntegrity());
+    
+    // Print collision statistics
+    gc_registry.debugPrintStats();
+    
+    std.log.info("Type collision handling test completed successfully", .{});
 }
 
 test "runtime expression checking" {

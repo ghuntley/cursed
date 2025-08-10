@@ -379,11 +379,11 @@ pub const ErrorCodeGen = struct {
     /// Generate error unwinding code
     pub fn generateUnwind(self: *ErrorCodeGen, target_scope: u32) void {
         // Generate code to unwind stack to target scope
-        // This would involve calling defer cleanup functions
+        // This involves calling defer cleanup functions in reverse order
         
         const scope_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), target_scope, 0);
         
-        // Create unwind function call (would need to implement this)
+        // Create unwind function call
         const unwind_func_type = c.LLVMFunctionType(
             c.LLVMVoidTypeInContext(self.context),
             &[_]c.LLVMTypeRef{c.LLVMInt32TypeInContext(self.context)},
@@ -397,6 +397,143 @@ pub const ErrorCodeGen = struct {
             self.builder,
             unwind_func_type,
             unwind_func,
+            &args,
+            1,
+            ""
+        );
+    }
+    
+    /// Generate stack unwinding for panic propagation
+    pub fn generateStackUnwind(self: *ErrorCodeGen) void {
+        // Generate call to stack unwind runtime function
+        const unwind_func_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(self.context),
+            null,
+            0,
+            0
+        );
+        const unwind_func = c.LLVMAddFunction(self.module, "cursed_stack_unwind", unwind_func_type);
+        
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            unwind_func_type,
+            unwind_func,
+            null,
+            0,
+            ""
+        );
+    }
+    
+    /// Generate panic creation with context preservation
+    pub fn generatePanicCreate(self: *ErrorCodeGen, message: []const u8, file: []const u8, line: u32) c.LLVMValueRef {
+        // Create string constant for message
+        const message_global = c.LLVMAddGlobal(self.module, c.LLVMArrayType(c.LLVMInt8TypeInContext(self.context), @intCast(message.len)), "panic_msg");
+        const message_init = c.LLVMConstStringInContext(self.context, message.ptr, @intCast(message.len), 0);
+        c.LLVMSetInitializer(message_global, message_init);
+        c.LLVMSetGlobalConstant(message_global, 1);
+        c.LLVMSetLinkage(message_global, c.LLVMPrivateLinkage);
+        
+        // Get pointer to message data
+        const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        const indices = [_]c.LLVMValueRef{ zero, zero };
+        const message_ptr = c.LLVMBuildGEP2(
+            self.builder,
+            c.LLVMArrayType(c.LLVMInt8TypeInContext(self.context), @intCast(message.len)),
+            message_global,
+            &indices,
+            2,
+            "panic_msg_ptr"
+        );
+        
+        // Create panic function call
+        const panic_func_type = c.LLVMFunctionType(
+            c.LLVMPointerTypeInContext(self.context, 0),
+            &[_]c.LLVMTypeRef{c.LLVMPointerTypeInContext(self.context, 0)},
+            1,
+            0
+        );
+        const panic_func = c.LLVMAddFunction(self.module, "cursed_panic_create", panic_func_type);
+        
+        const args = [_]c.LLVMValueRef{message_ptr};
+        const panic_value = c.LLVMBuildCall2(
+            self.builder,
+            panic_func_type,
+            panic_func,
+            &args,
+            1,
+            "panic_obj"
+        );
+        
+        // Add debug metadata for source location
+        self.addDebugLocation(panic_value, file, line, 0);
+        
+        return panic_value;
+    }
+    
+    /// Generate panic recovery
+    pub fn generatePanicRecover(self: *ErrorCodeGen) c.LLVMValueRef {
+        // Create panic recover function call
+        const recover_func_type = c.LLVMFunctionType(
+            c.LLVMPointerTypeInContext(self.context, 0),
+            null,
+            0,
+            0
+        );
+        const recover_func = c.LLVMAddFunction(self.module, "cursed_panic_recover", recover_func_type);
+        
+        const recovered_panic = c.LLVMBuildCall2(
+            self.builder,
+            recover_func_type,
+            recover_func,
+            null,
+            0,
+            "recovered_panic"
+        );
+        
+        return recovered_panic;
+    }
+    
+    /// Generate defer cleanup during unwinding
+    pub fn generateDeferCleanupDuringUnwind(self: *ErrorCodeGen, scope_level: u32) void {
+        // Create scope level value
+        const scope_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), scope_level, 0);
+        
+        // Create defer cleanup function call
+        const cleanup_func_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(self.context),
+            &[_]c.LLVMTypeRef{c.LLVMInt32TypeInContext(self.context)},
+            1,
+            0
+        );
+        const cleanup_func = c.LLVMAddFunction(self.module, "cursed_defer_cleanup_scope", cleanup_func_type);
+        
+        const args = [_]c.LLVMValueRef{scope_value};
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            cleanup_func_type,
+            cleanup_func,
+            &args,
+            1,
+            ""
+        );
+    }
+    
+    /// Generate goroutine panic propagation
+    pub fn generateGoroutinePanicPropagation(self: *ErrorCodeGen, panic_obj: c.LLVMValueRef) void {
+        // Create goroutine panic propagation function call
+        const propagate_func_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(self.context),
+            &[_]c.LLVMTypeRef{c.LLVMPointerTypeInContext(self.context, 0)},
+            1,
+            0
+        );
+        const propagate_func = c.LLVMAddFunction(self.module, "cursed_goroutine_panic_propagate", propagate_func_type);
+        
+        const args = [_]c.LLVMValueRef{panic_obj};
+        _ = c.LLVMBuildCall2(
+            self.builder,
+            propagate_func_type,
+            propagate_func,
             &args,
             1,
             ""
