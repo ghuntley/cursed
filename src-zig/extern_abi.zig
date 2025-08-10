@@ -6,6 +6,7 @@ const ArrayList = std.ArrayList;
 const HashMap = std.HashMap;
 const Allocator = std.mem.Allocator;
 const ast = @import("ast_advanced.zig");
+const ffi_enum = @import("ffi_enum_mapping.zig");
 
 // Simple C bindings (fallback when LLVM not available)
 const c = struct {
@@ -20,6 +21,7 @@ const c = struct {
     
     // Library loading functions (platform-specific)
     pub fn loadLibrary(name: [*:0]const u8) ?*anyopaque {
+        _ = name;
         if (@import("builtin").os.tag == .windows) {
             // Windows LoadLibrary
             return null; // Stub
@@ -63,6 +65,15 @@ pub const CABISignature = struct {
         Float64,
         Pointer,
         String,
+        // Enhanced enum support
+        EnumInt8,
+        EnumInt16, 
+        EnumInt32,
+        EnumInt64,
+        EnumUInt8,
+        EnumUInt16,
+        EnumUInt32,
+        EnumUInt64,
         
         pub fn toZigType(self: CABIType) []const u8 {
             return switch (self) {
@@ -79,6 +90,15 @@ pub const CABISignature = struct {
                 .Float64 => "f64",
                 .Pointer => "*anyopaque",
                 .String => "[*:0]const u8",
+                // Enhanced enum support
+                .EnumInt8 => "i8",
+                .EnumInt16 => "i16",
+                .EnumInt32 => "i32",
+                .EnumInt64 => "i64",
+                .EnumUInt8 => "u8",
+                .EnumUInt16 => "u16",
+                .EnumUInt32 => "u32",
+                .EnumUInt64 => "u64",
             };
         }
         
@@ -97,6 +117,15 @@ pub const CABISignature = struct {
                 .Float64 => "double",
                 .Pointer => "void*",
                 .String => "const char*",
+                // Enhanced enum support
+                .EnumInt8 => "signed char",
+                .EnumInt16 => "short",
+                .EnumInt32 => "int",
+                .EnumInt64 => "long long",
+                .EnumUInt8 => "unsigned char",
+                .EnumUInt16 => "unsigned short",
+                .EnumUInt32 => "unsigned int",
+                .EnumUInt64 => "unsigned long long",
             };
         }
     };
@@ -217,6 +246,8 @@ pub const CABIBridge = struct {
     libraries: HashMap([]const u8, ExternLibrary, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     type_mappings: HashMap([]const u8, CABISignature.CABIType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     generated_wrappers: ArrayList([]const u8),
+    // Enhanced enum support
+    enum_mapper: ffi_enum.FFIEnumMapper,
     
     pub fn init(allocator: Allocator) CABIBridge {
         var bridge = CABIBridge{
@@ -224,6 +255,7 @@ pub const CABIBridge = struct {
             .libraries = HashMap([]const u8, ExternLibrary, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .type_mappings = HashMap([]const u8, CABISignature.CABIType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .generated_wrappers = ArrayList([]const u8).init(allocator),
+            .enum_mapper = ffi_enum.FFIEnumMapper.init(allocator),
         };
         
         // Initialize default type mappings
@@ -245,6 +277,9 @@ pub const CABIBridge = struct {
             self.allocator.free(wrapper);
         }
         self.generated_wrappers.deinit();
+        
+        // Clean up enum mapper
+        self.enum_mapper.deinit();
     }
     
     /// Initialize CURSED to C type mappings
@@ -267,7 +302,7 @@ pub const CABIBridge = struct {
         // Simple parser for extern declarations like:
         // extern "C" int add(int a, int b);
         
-        var tokens = std.mem.tokenize(u8, decl_text, " \t\n();,");
+        var tokens = std.mem.tokenizeAny(u8, decl_text, " \t\n();,");
         
         // Skip "extern" and "C"
         _ = tokens.next(); // extern
@@ -302,17 +337,35 @@ pub const CABIBridge = struct {
     
     /// Parse C type string to CABIType
     fn parseCType(self: *CABIBridge, type_str: []const u8) CABISignature.CABIType {
-        _ = self;
+        // Check if it's a known enum type first
+        if (self.enum_mapper.enum_definitions.contains(type_str)) {
+            if (self.enum_mapper.type_mappings.get(type_str)) |enum_type| {
+                return enum_type;
+            }
+        }
         
+        // Standard C type parsing
         if (std.mem.eql(u8, type_str, "void")) return .Void;
         if (std.mem.eql(u8, type_str, "char")) return .Int8;
+        if (std.mem.eql(u8, type_str, "signed char")) return .Int8;
+        if (std.mem.eql(u8, type_str, "unsigned char")) return .UInt8;
         if (std.mem.eql(u8, type_str, "short")) return .Int16;
+        if (std.mem.eql(u8, type_str, "unsigned short")) return .UInt16;
         if (std.mem.eql(u8, type_str, "int")) return .Int32;
+        if (std.mem.eql(u8, type_str, "unsigned int") or std.mem.eql(u8, type_str, "unsigned")) return .UInt32;
         if (std.mem.eql(u8, type_str, "long")) return .Int64;
+        if (std.mem.eql(u8, type_str, "unsigned long")) return .UInt64;
+        if (std.mem.eql(u8, type_str, "long long")) return .Int64;
+        if (std.mem.eql(u8, type_str, "unsigned long long")) return .UInt64;
         if (std.mem.eql(u8, type_str, "float")) return .Float32;
         if (std.mem.eql(u8, type_str, "double")) return .Float64;
         if (std.mem.indexOf(u8, type_str, "*") != null) return .Pointer;
         if (std.mem.indexOf(u8, type_str, "char*") != null) return .String;
+        
+        // Check for enum keyword
+        if (std.mem.startsWith(u8, type_str, "enum ")) {
+            return .EnumInt32; // Default enum size
+        }
         
         return .Int32; // Default fallback
     }
@@ -327,8 +380,8 @@ pub const CABIBridge = struct {
         
         // Generate parameters
         for (signature.parameters.items, 0..) |param, i| {
-            if (i > 0) try wrapper.writer().print(", ");
-            try wrapper.writer().print("{s} {s}", .{ self.cTypeToCA(param.param_type), param.name });
+            if (i > 0) try wrapper.writer().print(", ", .{});
+            try wrapper.writer().print("{s} {s}", .{ self.cTypeToCAType(param.param_type), param.name });
         }
         
         try wrapper.writer().print(") {s} {{\n", .{self.cTypeToCAbbreviationType(signature.return_type)});
@@ -339,7 +392,7 @@ pub const CABIBridge = struct {
         if (signature.return_type != .Void) {
             try wrapper.writer().print("    sus result {s} = ", .{self.cTypeToCAType(signature.return_type)});
         } else {
-            try wrapper.writer().print("    ");
+            try wrapper.writer().print("    ", .{});
         }
         
         try wrapper.writer().print("cursed_ffi_call(\"{s}\", \"{s}\"", .{ library_name, signature.name });
@@ -348,13 +401,13 @@ pub const CABIBridge = struct {
             try wrapper.writer().print(", {s}", .{param.name});
         }
         
-        try wrapper.writer().print(")\n");
+        try wrapper.writer().print(")\n", .{});
         
         if (signature.return_type != .Void) {
-            try wrapper.writer().print("    damn result\n");
+            try wrapper.writer().print("    damn result\n", .{});
         }
         
-        try wrapper.writer().print("}}\n\n");
+        try wrapper.writer().print("}}\n\n", .{});
         
         const result = try wrapper.toOwnedSlice();
         try self.generated_wrappers.append(result);
@@ -378,17 +431,26 @@ pub const CABIBridge = struct {
             .Float64 => "meal",
             .Pointer => "*vibes",
             .String => "tea",
+            // Enhanced enum support - enums use same CURSED types as their underlying types
+            .EnumInt8 => "smol",
+            .EnumInt16 => "smol",
+            .EnumInt32 => "normie", 
+            .EnumInt64 => "drip",
+            .EnumUInt8 => "smol",
+            .EnumUInt16 => "smol",
+            .EnumUInt32 => "normie",
+            .EnumUInt64 => "drip",
         };
     }
     
     /// Get CURSED type abbreviation
-    fn cTypeToCAType(self: *CABIBridge, c_type: CABISignature.CABIType) []const u8 {
+    fn cTypeToCAbbreviationType(self: *CABIBridge, c_type: CABISignature.CABIType) []const u8 {
         return self.cTypeToCAType(c_type);
     }
     
     /// Register external library
     pub fn registerLibrary(self: *CABIBridge, library_name: []const u8) !*ExternLibrary {
-        var library = ExternLibrary.init(self.allocator, library_name);
+        const library = ExternLibrary.init(self.allocator, library_name);
         try self.libraries.put(try self.allocator.dupe(u8, library_name), library);
         return self.libraries.getPtr(library_name).?;
     }
@@ -428,6 +490,7 @@ pub const CABIBridge = struct {
     
     /// Convert CURSED type to C type
     fn cursedTypeToCType(self: *CABIBridge, cursed_type: ?ast.Type) []const u8 {
+        _ = self;
         if (cursed_type == null) return "void";
         
         return switch (cursed_type.?) {
@@ -477,6 +540,44 @@ pub const CABIBridge = struct {
         
         return runtime.toOwnedSlice();
     }
+    
+    /// Enhanced enum support methods
+    
+    /// Parse and register C enum from declaration
+    pub fn registerCEnum(self: *CABIBridge, enum_declaration: []const u8) !void {
+        const enum_def = try self.enum_mapper.parseCEnumDeclaration(enum_declaration);
+        try self.enum_mapper.registerEnumMapping(enum_def.name);
+    }
+    
+    /// Generate CURSED enum binding from C enum
+    pub fn generateEnumBinding(self: *CABIBridge, enum_name: []const u8) ![]const u8 {
+        const enum_def = self.enum_mapper.enum_definitions.get(enum_name) orelse return error.EnumNotFound;
+        return self.enum_mapper.generateCursedEnum(&enum_def);
+    }
+    
+    /// Generate C header for CURSED enum
+    pub fn generateEnumCHeader(self: *CABIBridge, enum_name: []const u8) ![]const u8 {
+        return self.enum_mapper.generateCHeader(enum_name);
+    }
+    
+    /// Marshall enum value from CURSED to C
+    pub fn marshallEnumToC(self: *CABIBridge, enum_name: []const u8, cursed_value: i64) !i64 {
+        return self.enum_mapper.marshallToCValue(enum_name, cursed_value);
+    }
+    
+    /// Marshall enum value from C to CURSED
+    pub fn marshallEnumFromC(self: *CABIBridge, enum_name: []const u8, c_value: i64) !i64 {
+        return self.enum_mapper.marshallFromCValue(enum_name, c_value);
+    }
+    
+    /// Get enum underlying type information
+    pub fn getEnumTypeInfo(self: *CABIBridge, enum_name: []const u8) !struct { size: u8, signed: bool } {
+        const enum_def = self.enum_mapper.enum_definitions.get(enum_name) orelse return error.EnumNotFound;
+        return .{
+            .size = enum_def.underlying_size.getByteSize(),
+            .signed = enum_def.is_signed,
+        };
+    }
 };
 
 /// Simple extern declaration parser
@@ -493,7 +594,7 @@ pub const ExternParser = struct {
     
     /// Parse extern block
     pub fn parseExternBlock(self: *ExternParser, block_text: []const u8) !void {
-        var lines = std.mem.split(u8, block_text, "\n");
+        var lines = std.mem.splitSequence(u8, block_text, "\n");
         
         var current_library: ?[]const u8 = null;
         
@@ -508,9 +609,9 @@ pub const ExternParser = struct {
                 // Parse extern function: extern "C" int func(int x);
                 if (current_library) |lib_name| {
                     const signature = try self.bridge.parseExternDeclaration(trimmed);
-                    var library = self.bridge.libraries.getPtr(lib_name) orelse {
-                        var new_lib = try self.bridge.registerLibrary(lib_name);
-                        new_lib
+                    var library = self.bridge.libraries.getPtr(lib_name) orelse blk: {
+                        _ = try self.bridge.registerLibrary(lib_name);
+                        break :blk self.bridge.libraries.getPtr(lib_name).?;
                     };
                     try library.declareFunction(signature);
                 }
@@ -536,7 +637,7 @@ test "basic extern function parsing" {
     defer bridge.deinit();
     
     const decl = "extern \"C\" int add(int a, int b)";
-    const signature = try bridge.parseExternDeclaration(decl);
+    var signature = try bridge.parseExternDeclaration(decl);
     defer signature.deinit();
     
     try std.testing.expectEqualStrings("add", signature.name);
@@ -565,4 +666,87 @@ test "wrapper generation" {
     // Wrapper should contain the function declaration
     try std.testing.expect(std.mem.indexOf(u8, wrapper, "slay strlen") != null);
     try std.testing.expect(std.mem.indexOf(u8, wrapper, "cursed_ffi_call") != null);
+}
+
+test "enum type parsing and mapping" {
+    var bridge = CABIBridge.init(std.testing.allocator);
+    defer bridge.deinit();
+    
+    // Test basic enum parsing
+    const enum_decl = 
+        \\enum Color {
+        \\    Red = 0,
+        \\    Green = 1,
+        \\    Blue = 2
+        \\}
+    ;
+    
+    try bridge.registerCEnum(enum_decl);
+    
+    // Test enum type detection
+    const color_type = bridge.parseCType("Color");
+    try std.testing.expect(color_type == .EnumInt32);
+    
+    // Test enum marshalling
+    const c_value = try bridge.marshallEnumToC("Color", 1);
+    try std.testing.expect(c_value == 1);
+    
+    const cursed_value = try bridge.marshallEnumFromC("Color", 1);
+    try std.testing.expect(cursed_value == 1);
+}
+
+test "enum with different sizes" {
+    var bridge = CABIBridge.init(std.testing.allocator);
+    defer bridge.deinit();
+    
+    // Test char-sized enum
+    const char_enum = 
+        \\enum Status : unsigned char {
+        \\    OK = 0,
+        \\    ERROR = 255
+        \\}
+    ;
+    
+    try bridge.registerCEnum(char_enum);
+    
+    const type_info = try bridge.getEnumTypeInfo("Status");
+    try std.testing.expect(type_info.size == 1);
+    try std.testing.expect(!type_info.signed);
+    
+    // Test that value 255 is valid for unsigned char
+    const c_value = try bridge.marshallEnumToC("Status", 255);
+    try std.testing.expect(c_value == 255);
+}
+
+test "enum binding generation" {
+    var bridge = CABIBridge.init(std.testing.allocator);
+    defer bridge.deinit();
+    
+    const enum_decl = 
+        \\enum FileMode {
+        \\    Read = 1,
+        \\    Write = 2,
+        \\    Append = 4
+        \\}
+    ;
+    
+    try bridge.registerCEnum(enum_decl);
+    
+    const cursed_binding = try bridge.generateEnumBinding("FileMode");
+    defer std.testing.allocator.free(cursed_binding);
+    
+    // Check that binding contains expected elements
+    try std.testing.expect(std.mem.indexOf(u8, cursed_binding, "enum FileMode") != null);
+    try std.testing.expect(std.mem.indexOf(u8, cursed_binding, "Read = 1") != null);
+    try std.testing.expect(std.mem.indexOf(u8, cursed_binding, "Write = 2") != null);
+    try std.testing.expect(std.mem.indexOf(u8, cursed_binding, "Append = 4") != null);
+    try std.testing.expect(std.mem.indexOf(u8, cursed_binding, "FileMode_to_raw") != null);
+    try std.testing.expect(std.mem.indexOf(u8, cursed_binding, "raw_to_FileMode") != null);
+    
+    const c_header = try bridge.generateEnumCHeader("FileMode");
+    defer std.testing.allocator.free(c_header);
+    
+    // Check C header generation
+    try std.testing.expect(std.mem.indexOf(u8, c_header, "typedef enum") != null);
+    try std.testing.expect(std.mem.indexOf(u8, c_header, "FileMode_Read = 1") != null);
 }

@@ -442,9 +442,32 @@ pub const EnhancedLLVMBackend = struct {
     /// Verify module integrity
     pub fn verifyModule(self: *EnhancedLLVMBackend) !void {
         var error_message: [*c]u8 = undefined;
-        if (c.LLVMVerifyModule(self.module, c.LLVMPrintMessageAction, &error_message) != 0) {
+        if (c.LLVMVerifyModule(self.module, c.LLVMReturnStatusAction, &error_message) != 0) {
             defer c.LLVMDisposeMessage(error_message);
-            print("LLVM module verification failed: {s}\n", .{error_message});
+            
+            const error_str = std.mem.span(error_message);
+            
+            // Create structured error context
+            const error_handling = @import("error_handling.zig");
+            const error_ctx = error_handling.createLLVMVerificationError(
+                self.allocator,
+                error_str,
+                null // TODO: Add source location tracking
+            ) catch |alloc_err| {
+                // Fallback if allocation fails
+                print("LLVM module verification failed: {s}\n", .{error_str});
+                return switch (alloc_err) {
+                    error.OutOfMemory => error.OutOfMemory,
+                    else => error.LLVMModuleVerificationFailed,
+                };
+            };
+            
+            // Report structured error (extend this to store in compilation context)
+            print("[LLVM Verification Error] {s}\n", .{error_ctx.message});
+            if (error_ctx.location) |loc| {
+                print("  at {s}:{d}:{d}\n", .{ loc.file, loc.line, loc.column });
+            }
+            
             return error.LLVMModuleVerificationFailed;
         }
     }

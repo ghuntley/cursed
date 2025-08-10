@@ -34,8 +34,13 @@ const c = struct {
 
 const lexer = @import("lexer.zig");
 
+const error_handling = @import("error_handling.zig");
+
 pub const LLVMBackendError = error{
     LLVMError,
+    LLVMVerificationFailed,
+    LLVMIRGenerationFailed,
+    LLVMOptimizationFailed,
     OutOfMemory,
     InvalidType,
     UndefinedSymbol,
@@ -52,6 +57,9 @@ pub const LLVMBackend = struct {
     // Symbol tables
     functions: std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     variables: std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    
+    // Error reporting
+    error_contexts: std.ArrayList(error_handling.ErrorContext),
     
     // Current state
     current_function: ?c.LLVMValueRef,
@@ -79,12 +87,19 @@ pub const LLVMBackend = struct {
             .builder = builder,
             .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .error_contexts = std.ArrayList(error_handling.ErrorContext).init(allocator),
             .current_function = null,
             .string_counter = 0,
         };
     }
     
     pub fn deinit(self: *LLVMBackend) void {
+        // Clean up error contexts
+        for (self.error_contexts.items) |*error_ctx| {
+            error_ctx.deinit();
+        }
+        self.error_contexts.deinit();
+        
         self.functions.deinit();
         self.variables.deinit();
         c.LLVMDisposeBuilder(self.builder);
@@ -536,11 +551,62 @@ pub const LLVMBackend = struct {
     
     fn verifyModule(self: *LLVMBackend) LLVMBackendError!void {
         var error_msg: [*c]u8 = undefined;
-        if (c.LLVMVerifyModule(self.module, c.LLVMPrintMessageAction, &error_msg) != 0) {
-            std.debug.print("LLVM module verification failed: {s}\n", .{error_msg});
-            c.LLVMDisposeMessage(error_msg);
-            return LLVMBackendError.LLVMError;
+        if (c.LLVMVerifyModule(self.module, c.LLVMReturnStatusAction, &error_msg) != 0) {
+            defer c.LLVMDisposeMessage(error_msg);
+            
+            // Convert LLVM error message to proper string
+            const error_str = std.mem.span(error_msg);
+            
+            // Create structured error context for proper error reporting
+            const error_ctx = error_handling.createLLVMVerificationError(
+                self.allocator,
+                error_str,
+                null // TODO: Add source location when available
+            ) catch |alloc_err| {
+                // Fallback if allocation fails
+                std.debug.print("LLVM module verification failed: {s}\n", .{error_str});
+                return switch (alloc_err) {
+                    error.OutOfMemory => LLVMBackendError.OutOfMemory,
+                    else => LLVMBackendError.LLVMError,
+                };
+            };
+            
+            // Report the structured error through proper error reporting system
+            self.reportStructuredError(error_ctx) catch {
+                // Fallback to stderr if structured reporting fails
+                std.debug.print("LLVM module verification failed: {s}\n", .{error_str});
+            };
+            
+            return LLVMBackendError.LLVMVerificationFailed;
         }
+    }
+    
+    /// Report structured error through proper error reporting system
+    fn reportStructuredError(self: *LLVMBackend, error_ctx: error_handling.ErrorContext) !void {
+        // Store error context for later retrieval by compilation pipeline
+        try self.error_contexts.append(error_ctx);
+        
+        // Also report to error reporter if available (can be extended)
+        // For now, we store the error and let the compilation pipeline handle it
+        
+        // Optional: print to stderr for debugging (can be disabled in production)
+        std.debug.print("[LLVM Error] {s}\n", .{error_ctx.message});
+        if (error_ctx.location) |loc| {
+            std.debug.print("  at {s}:{d}:{d}\n", .{ loc.file, loc.line, loc.column });
+        }
+    }
+    
+    /// Get all accumulated error contexts for the compilation pipeline
+    pub fn getErrorContexts(self: *LLVMBackend) []const error_handling.ErrorContext {
+        return self.error_contexts.items;
+    }
+    
+    /// Clear accumulated error contexts
+    pub fn clearErrorContexts(self: *LLVMBackend) void {
+        for (self.error_contexts.items) |*error_ctx| {
+            error_ctx.deinit();
+        }
+        self.error_contexts.clearRetainingCapacity();
     }
     
     fn applyOptimizations(self: *LLVMBackend, level: u8, verbose: bool) LLVMBackendError!void {

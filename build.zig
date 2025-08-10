@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const linker_script_manager = @import("src-zig/linker_script_manager.zig");
 
 // Platform-specific target configuration
 const TargetConfig = struct {
@@ -516,6 +517,10 @@ pub fn build(b: *std.Build) void {
         std.debug.print("🔧 Auto-tuned build jobs: {d}\n", .{optimal_jobs});
     }
     
+    // Initialize linker script manager for cross-compilation support
+    var linker_manager = linker_script_manager.LinkerScriptManager.init(b.allocator, b.build_root.path orelse ".");
+    defer linker_manager.deinit();
+    
     // Check ninja max jobs and print recommendation
     if (std.process.getEnvVarOwned(b.allocator, "NINJA_MAX_JOBS")) |ninja_env| {
         b.allocator.free(ninja_env);
@@ -532,10 +537,14 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     
-    // Performance optimization options (suppress unused warnings)
+    // Performance optimization options and cache configuration
+    const enable_cache = b.option(bool, "cache", "Enable compilation caching") orelse true;
+    const cache_dir = b.option([]const u8, "cache-dir", "Cache directory path") orelse ".cursed_build_cache";
+    const enable_incremental = b.option(bool, "incremental", "Enable incremental compilation") orelse true;
+    const invalidate_cache = b.option(bool, "invalidate-cache", "Force cache invalidation") orelse false;
+    
     _ = b.option(bool, "optimize-compiler", "Enable compiler performance optimizations") orelse true;
     _ = b.option(bool, "parallel", "Enable parallel compilation") orelse true;
-    _ = b.option(bool, "cache", "Enable compilation caching") orelse true;
     _ = b.option([]const u8, "llvm-opt", "LLVM optimization level (O0, O1, O2, O3, Os, Oz)") orelse "O2";
     _ = b.option(bool, "fast-build", "Prioritize compilation speed over runtime performance") orelse false;
     _ = b.option(bool, "profile", "Enable performance profiling") orelse false;
@@ -582,6 +591,34 @@ pub fn build(b: *std.Build) void {
     const is_cross_compile = resolved_target.result.cpu.arch != @import("builtin").target.cpu.arch or
                             resolved_target.result.os.tag != @import("builtin").target.os.tag;
     
+    // Generate normalized target triple for linker script selection
+    const target_triple_str = switch (resolved_target.result.os.tag) {
+        .linux => switch (resolved_target.result.cpu.arch) {
+            .x86_64 => "x86_64-unknown-linux-gnu",
+            .aarch64 => "aarch64-unknown-linux-gnu",
+            .x86 => "i386-unknown-linux-gnu",
+            else => "unknown-unknown-linux-gnu",
+        },
+        .macos => switch (resolved_target.result.cpu.arch) {
+            .x86_64 => "x86_64-apple-darwin",
+            .aarch64 => "aarch64-apple-darwin",
+            else => "unknown-apple-darwin",
+        },
+        .windows => switch (resolved_target.result.cpu.arch) {
+            .x86_64 => "x86_64-pc-windows-gnu",
+            .aarch64 => "aarch64-pc-windows-gnu",
+            .x86 => "i386-pc-windows-gnu",
+            else => "unknown-pc-windows-gnu",
+        },
+        .wasi => "wasm32-wasi",
+        .freestanding => switch (resolved_target.result.cpu.arch) {
+            .wasm32 => "wasm32-unknown-unknown",
+            .aarch64 => "aarch64-unknown-none",
+            else => "unknown-unknown-none",
+        },
+        else => "unknown-unknown-unknown",
+    };
+
     // Debug info: print target info in verbose mode
     if (b.verbose) {
         std.debug.print("Building for target: {s} ({s})\n", .{
@@ -594,8 +631,14 @@ pub fn build(b: *std.Build) void {
         std.debug.print("  Networking: {}\n", .{config.supports_networking});
         std.debug.print("  Target CPU: {s}\n", .{@tagName(resolved_target.result.cpu.arch)});
         std.debug.print("  Target OS: {s}\n", .{@tagName(resolved_target.result.os.tag)});
+        std.debug.print("  Target triple: {s}\n", .{target_triple_str});
         std.debug.print("  Cross-compiling: {}\n", .{is_cross_compile});
         std.debug.print("  Optimize mode: {s}\n", .{@tagName(actual_optimize)});
+        
+        // Print linker configuration info
+        linker_manager.printLinkerConfigInfo(target_triple_str, b) catch |err| {
+            std.debug.print("⚠️ Failed to print linker config: {}\n", .{err});
+        };
     }
 
     // Create the CURSED compiler executable - use unified main with proper CLI parsing
@@ -640,6 +683,19 @@ pub fn build(b: *std.Build) void {
         exe_stable.want_lto = true;
         exe_stable.root_module.addCMacro("NDEBUG", "1");
     }
+    
+    // Apply linker script configuration for cross-compilation
+    linker_manager.applyLinkerConfig(exe, target_triple_str, b) catch |err| {
+        if (b.verbose) {
+            std.debug.print("⚠️ Failed to apply linker config to main executable: {}\n", .{err});
+        }
+    };
+    
+    linker_manager.applyLinkerConfig(exe_stable, target_triple_str, b) catch |err| {
+        if (b.verbose) {
+            std.debug.print("⚠️ Failed to apply linker config to stable executable: {}\n", .{err});
+        }
+    };
 
     // Configure build options
     const supports_libc = !is_wasm and resolved_target.result.os.tag != .freestanding and resolved_target.result.os.tag != .wasi;
@@ -707,6 +763,13 @@ pub fn build(b: *std.Build) void {
         }
     }
     
+    // Apply linker configuration to unit tests
+    linker_manager.applyLinkerConfig(unit_tests, target_triple_str, b) catch |err| {
+        if (b.verbose) {
+            std.debug.print("⚠️ Failed to apply linker config to unit tests: {}\n", .{err});
+        }
+    };
+    
     // Windows-specific async I/O tests
     if (resolved_target.result.os.tag == .windows) {
         const windows_async_tests = b.addTest(.{
@@ -759,6 +822,13 @@ pub fn build(b: *std.Build) void {
         lsp_exe.root_module.addCMacro("NDEBUG", "1");
     }
     
+    // Apply linker configuration to LSP
+    linker_manager.applyLinkerConfig(lsp_exe, target_triple_str, b) catch |err| {
+        if (b.verbose) {
+            std.debug.print("⚠️ Failed to apply linker config to LSP executable: {}\n", .{err});
+        }
+    };
+    
     b.installArtifact(lsp_exe);
     
     const run_lsp = b.addRunArtifact(lsp_exe);
@@ -783,17 +853,131 @@ pub fn build(b: *std.Build) void {
     perf_test_cmd.step.dependOn(b.getInstallStep());
     perf_test_step.dependOn(&perf_test_cmd.step);
 
-    // Build validation step
+    // Cache management steps
+    const cache_info_step = b.step("cache-info", "Display cache information and statistics");
+    const cache_info_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        b.fmt(
+            \\echo "📊 CURSED Compilation Cache Information"
+            \\echo "Cache directory: {s}"
+            \\echo "Cache enabled: {}"
+            \\echo "Incremental compilation: {}"
+            \\echo "Cache size: $(du -sh {s} 2>/dev/null | cut -f1 || echo 'No cache')"
+            \\echo "Cache entries: $(find {s} -type f 2>/dev/null | wc -l || echo '0')"
+            \\echo "Cache status: $(test -d {s} && echo 'Active' || echo 'Not initialized')"
+        , .{ cache_dir, enable_cache, enable_incremental, cache_dir, cache_dir, cache_dir })
+    });
+    cache_info_step.dependOn(&cache_info_cmd.step);
+    
+    const cache_clean_step = b.step("cache-clean", "Clean compilation cache");
+    const cache_clean_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        b.fmt(
+            \\echo "🧹 Cleaning compilation cache..."
+            \\rm -rf {s}
+            \\echo "✅ Cache cleaned successfully"
+        , .{cache_dir})
+    });
+    cache_clean_step.dependOn(&cache_clean_cmd.step);
+    
+    const cache_validate_step = b.step("cache-validate", "Validate cache integrity");
+    const cache_validate_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c", 
+        b.fmt(
+            \\echo "🔍 Validating cache integrity..."
+            \\if [ -d {s} ]; then
+            \\  echo "✅ Cache directory exists"
+            \\  echo "AST cache: $(find {s}/ast -name '*.ast' 2>/dev/null | wc -l) entries"
+            \\  echo "Object cache: $(find {s}/objects -name '*.o' 2>/dev/null | wc -l) entries"
+            \\  echo "✅ Cache validation complete"
+            \\else
+            \\  echo "⚠️ Cache directory not found - will be created on first build"
+            \\fi
+        , .{ cache_dir, cache_dir, cache_dir })
+    });
+    cache_validate_step.dependOn(&cache_validate_cmd.step);
+    
+    // Handle cache invalidation if requested
+    if (invalidate_cache) {
+        const invalidate_cmd = b.addSystemCommand(&[_][]const u8{
+            "bash", "-c",
+            b.fmt(
+                \\echo "💥 Force invalidating compilation cache..."
+                \\rm -rf {s}
+                \\echo "✅ Cache invalidated - fresh build will be performed"
+            , .{cache_dir})
+        });
+        exe.step.dependOn(&invalidate_cmd.step);
+        exe_stable.step.dependOn(&invalidate_cmd.step);
+    }
+    
+    // Linker script generation step
+    const generate_linker_scripts_step = b.step("generate-linker-scripts", "Generate linker scripts for embedded targets");
+    const generate_scripts_cmd = b.addWriteFiles();
+    generate_scripts_cmd.step.name = "Generate embedded linker scripts";
+    
+    // Generate the embedded ARM64 linker script
+    linker_manager.generateEmbeddedARM64LinkerScript() catch |err| {
+        if (b.verbose) {
+            std.debug.print("⚠️ Failed to generate embedded linker script: {}\n", .{err});
+        }
+    };
+    
+    generate_linker_scripts_step.dependOn(&generate_scripts_cmd.step);
+    
+    // List available linker configurations step
+    const list_linker_configs_step = b.step("list-linker-configs", "List available linker configurations");
+    const list_configs_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        b.fmt(
+            \\echo "📋 Available Linker Configurations:"
+            \\echo "  x86_64-unknown-linux-gnu    - Linux x86_64 (native/cross)"
+            \\echo "  aarch64-unknown-linux-gnu   - Linux ARM64 (cross-compilation)"
+            \\echo "  x86_64-pc-windows-gnu       - Windows x86_64 MinGW"
+            \\echo "  x86_64-pc-windows-msvc      - Windows x86_64 MSVC"
+            \\echo "  aarch64-pc-windows-gnu      - Windows ARM64 MinGW"
+            \\echo "  x86_64-apple-darwin         - macOS Intel"
+            \\echo "  aarch64-apple-darwin        - macOS Apple Silicon"
+            \\echo "  wasm32-unknown-unknown      - WebAssembly"
+            \\echo "  wasm32-wasi                 - WebAssembly with WASI"
+            \\echo "  aarch64-unknown-none        - Embedded ARM64"
+            \\echo ""
+            \\echo "Current target: {s}"
+            \\echo "Cross-compiling: {}"
+        , .{ target_triple_str, is_cross_compile })
+    });
+    list_linker_configs_step.dependOn(&list_configs_cmd.step);
+    
+    // Linker configuration validation step
+    const validate_linker_step = b.step("validate-linker", "Validate linker configuration for target");
+    const validate_linker_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        b.fmt(
+            \\echo "🔍 Validating linker configuration for target: {s}"
+            \\echo "✅ Target triple: {s}"
+            \\echo "✅ Cross-compilation: {}"
+            \\echo "✅ Linker config available: $(test -f linker_scripts/aarch64_embedded.ld && echo 'Yes' || echo 'System default')"
+            \\echo "🎉 Linker validation complete"
+        , .{ config.description, target_triple_str, is_cross_compile })
+    });
+    validate_linker_step.dependOn(&validate_linker_cmd.step);
+    
+    // Build validation step  
     const validate_step = b.step("validate", "Validate build configuration and dependencies");
     const validate_cmd = b.addSystemCommand(&[_][]const u8{
         "bash", "-c",
-        \\echo "🔍 Validating build configuration..."
-        \\echo "✅ Build jobs: $NINJA_MAX_JOBS"
-        \\echo "✅ Zig version: $(zig version)"
-        \\echo "✅ LLVM config: $(llvm-config-18 --version 2>/dev/null || echo 'Not found')"
-        \\echo "✅ Target executable: $(ls -la zig-out/bin/cursed-zig 2>/dev/null || echo 'Not built')"
-        \\echo "🎉 Build validation complete"
+        b.fmt(
+            \\echo "🔍 Validating build configuration..."
+            \\echo "✅ Build jobs: ${{NINJA_MAX_JOBS:-{d}}}"
+            \\echo "✅ Zig version: $(zig version)"
+            \\echo "✅ LLVM config: $(llvm-config-18 --version 2>/dev/null || echo 'Not found')"
+            \\echo "✅ Target executable: $(ls -la zig-out/bin/cursed-zig 2>/dev/null || echo 'Not built')"
+            \\echo "✅ Cache directory: {s} (enabled: {})"
+            \\echo "✅ Target triple: {s}"
+            \\echo "🎉 Build validation complete"
+        , .{ optimal_jobs, cache_dir, enable_cache, target_triple_str })
     });
     validate_cmd.step.dependOn(b.getInstallStep());
     validate_step.dependOn(&validate_cmd.step);
+    validate_step.dependOn(&validate_linker_cmd.step);
 }

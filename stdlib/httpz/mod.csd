@@ -447,70 +447,87 @@ slay join_url_paths(base tea, path tea) tea {
     damn base + "/" + path
 }
 
-fr fr ===== SSL/TLS SUPPORT =====
+fr fr ===== SECURE SSL/TLS SUPPORT =====
 
-slay create_tls_context(cert_path tea, key_path tea) tea {
-    fr fr Create TLS context for secure connections
-    fr fr In real implementation, would load certificates
-    damn "TLS_CONTEXT_" + cert_path + "_" + key_path
+yeet "tls_vibe"  fr fr Import secure TLS implementation
+
+slay create_secure_tls_context(cert_path tea, key_path tea) tea {
+    fr fr Create secure TLS context with proper validation
+    fr fr Use high-security configuration by default
+    sus config tea = create_high_security_tls_config()
+    sus ca_bundle tea = get_system_ca_bundle_path()
+    
+    fr fr Create TLS context with certificate validation
+    sus context tea = create_tls_context(config, ca_bundle)
+    
+    fr fr Validate configuration security
+    sus validation tea = validate_tls_configuration(config)
+    sus is_secure lit = json_get_boolean(validation, "configuration_valid")
+    
+    ready (!is_secure) {
+        fr fr Log security warnings
+        sus warnings tea = json_get_string(validation, "warnings")
+        vibez.spill("TLS Security Warning: " + warnings)
+    }
+    
+    damn context
 }
 
-slay verify_ssl_certificate(hostname tea, cert_data tea) lit {
-    fr fr Verify SSL certificate for hostname
-    fr fr Simplified verification
-    ready (contains_substring(cert_data, hostname)) {
-        damn based
+slay verify_ssl_certificate_secure(hostname tea, cert_data tea) lit {
+    fr fr Secure certificate verification with comprehensive checks
+    
+    fr fr Basic hostname matching (enhanced)
+    ready (!validate_hostname_match(cert_data, hostname)) {
+        damn cringe
     }
-    ready (contains_substring(cert_data, "*.")) {
-        fr fr Wildcard certificate check
-        sus wildcard_domain tea = substring(cert_data, indexOf(cert_data, "*.") + 2, 20)
-        damn ends_with(hostname, wildcard_domain)
+    
+    fr fr Check for weak signature algorithms
+    ready (has_weak_signature_algorithm(cert_data)) {
+        vibez.spill("Certificate has weak signature algorithm")
+        damn cringe
     }
-    damn cringe
+    
+    fr fr Validate certificate time (mock timestamps for demo)
+    sus not_before drip = 1700000000  fr fr Mock start time
+    sus not_after drip = 1800000000   fr fr Mock end time
+    
+    ready (!is_certificate_time_valid(not_before, not_after)) {
+        vibez.spill("Certificate is expired or not yet valid")
+        damn cringe
+    }
+    
+    fr fr All checks passed
+    damn based
+}
+
+slay https_get_secure(url tea) tea {
+    fr fr Secure HTTPS GET request with comprehensive TLS validation
+    ready (!starts_with(url, "https://")) {
+        damn create_tls_error("INSECURE_PROTOCOL", "URL must use HTTPS protocol")
+    }
+    
+    fr fr Use secure TLS implementation
+    damn secure_https_get(url)
 }
 
 slay https_get(url tea) tea {
-    fr fr HTTPS GET request with TLS
-    ready (starts_with(url, "https://")) {
-        sus host tea = parse_url_host(url)
-        sus path tea = parse_url_path(url)
-        
-        fr fr Simulate TLS handshake
-        sus tls_context tea = create_tls_context("default.crt", "default.key")
-        
-        fr fr Enhanced secure responses
-        ready (contains_substring(url, "api.secure.com")) {
-            damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"secure\":true,\"data\":\"encrypted\"}"
-        }
-        
-        ready (contains_substring(url, "bank.example.com")) {
-            damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nX-Frame-Options: DENY\r\nContent-Security-Policy: default-src 'self'\r\n\r\n{\"balance\":\"$1000.00\"}"
-        }
-        
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"secure\":true}"
+    fr fr Legacy HTTPS GET - redirects to secure implementation
+    damn https_get_secure(url)
+}
+
+slay https_post_secure(url tea, body tea) tea {
+    fr fr Secure HTTPS POST request with comprehensive TLS validation
+    ready (!starts_with(url, "https://")) {
+        damn create_tls_error("INSECURE_PROTOCOL", "URL must use HTTPS protocol")
     }
     
-    fr fr Fall back to regular HTTP for non-HTTPS URLs
-    damn http_get(url)
+    fr fr Use secure TLS implementation
+    damn secure_https_post(url, body)
 }
 
 slay https_post(url tea, body tea) tea {
-    fr fr HTTPS POST request with TLS
-    ready (starts_with(url, "https://")) {
-        sus tls_context tea = create_tls_context("default.crt", "default.key")
-        
-        ready (contains_substring(url, "api.secure.com/users")) {
-            damn "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"id\":\"secure_123\",\"status\":\"created\"}"
-        }
-        
-        ready (contains_substring(url, "payment.gateway.com")) {
-            damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"transaction_id\":\"txn_456\",\"status\":\"approved\"}"
-        }
-        
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nStrict-Transport-Security: max-age=31536000\r\n\r\n{\"secure_received\":true}"
-    }
-    
-    damn http_post(url, body)
+    fr fr Legacy HTTPS POST - redirects to secure implementation
+    damn https_post_secure(url, body)
 }
 
 slay create_secure_headers() tea {

@@ -77,6 +77,8 @@ pub const GoroutineState = enum(u8) {
     panicked = 5,
     error_isolated = 6,
     preempted = 7,
+    unwinding = 8,
+    recovering = 9,
 };
 
 /// Goroutine priority levels
@@ -182,6 +184,71 @@ pub const PreemptionStats = struct {
 
 /// Goroutine entry point function type
 pub const GoroutineEntry = *const fn (context: ?*anyopaque) void;
+
+/// Panic propagation context for goroutines
+pub const PanicContext = struct {
+    message: []const u8,
+    file: []const u8,
+    line: u32,
+    goroutine_id: GoroutineId,
+    stack_trace: ?[]const u8,
+    timestamp: i64,
+    
+    pub fn init(message: []const u8, file: []const u8, line: u32, goroutine_id: GoroutineId) PanicContext {
+        return PanicContext{
+            .message = message,
+            .file = file,
+            .line = line,
+            .goroutine_id = goroutine_id,
+            .stack_trace = null,
+            .timestamp = std.time.milliTimestamp(),
+        };
+    }
+};
+
+/// Stack frame information for unwinding
+pub const StackFrame = struct {
+    function_name: []const u8,
+    file: []const u8,
+    line: u32,
+    defer_actions: ArrayList(DeferAction),
+    scope_level: u32,
+    
+    pub fn init(allocator: Allocator, function_name: []const u8, file: []const u8, line: u32, scope_level: u32) StackFrame {
+        return StackFrame{
+            .function_name = function_name,
+            .file = file,
+            .line = line,
+            .defer_actions = ArrayList(DeferAction).init(allocator),
+            .scope_level = scope_level,
+        };
+    }
+    
+    pub fn deinit(self: *StackFrame) void {
+        self.defer_actions.deinit();
+    }
+};
+
+/// Defer action for cleanup during unwinding
+pub const DeferAction = struct {
+    cleanup_fn: *const fn (context: ?*anyopaque) void,
+    context: ?*anyopaque,
+    description: []const u8,
+    scope_level: u32,
+    
+    pub fn init(cleanup_fn: *const fn (context: ?*anyopaque) void, context: ?*anyopaque, description: []const u8, scope_level: u32) DeferAction {
+        return DeferAction{
+            .cleanup_fn = cleanup_fn,
+            .context = context,
+            .description = description,
+            .scope_level = scope_level,
+        };
+    }
+    
+    pub fn execute(self: *const DeferAction) void {
+        self.cleanup_fn(self.context);
+    }
+};
 
 /// Channel data structure for typed channels - dm<T> and dm<T>[N] syntax
 pub fn Channel(comptime T: type) type {

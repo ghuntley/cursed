@@ -132,6 +132,30 @@ pub const ExceptionHandlingLLVM = struct {
             self.runtime_functions.cursed_stack_unwind = c.LLVMAddFunction(self.module, "cursed_stack_unwind", func_type);
         }
         
+        // cursed_unwind_to_scope(scope: i32) -> void
+        {
+            var params = [_]c.LLVMTypeRef{i32_type};
+            const func_type = c.LLVMFunctionType(void_type, &params, 1, 0);
+            const unwind_to_scope_func = c.LLVMAddFunction(self.module, "cursed_unwind_to_scope", func_type);
+            _ = unwind_to_scope_func; // Store if needed
+        }
+        
+        // cursed_defer_cleanup_scope(scope: i32) -> void
+        {
+            var params = [_]c.LLVMTypeRef{i32_type};
+            const func_type = c.LLVMFunctionType(void_type, &params, 1, 0);
+            const cleanup_scope_func = c.LLVMAddFunction(self.module, "cursed_defer_cleanup_scope", func_type);
+            _ = cleanup_scope_func; // Store if needed
+        }
+        
+        // cursed_goroutine_panic_propagate(panic: i8*) -> void
+        {
+            var params = [_]c.LLVMTypeRef{i8_ptr_type};
+            const func_type = c.LLVMFunctionType(void_type, &params, 1, 0);
+            const goroutine_panic_func = c.LLVMAddFunction(self.module, "cursed_goroutine_panic_propagate", func_type);
+            _ = goroutine_panic_func; // Store if needed
+        }
+        
         // cursed_error_create(message: i8*, code: i32) -> i8*
         {
             var params = [_]c.LLVMTypeRef{i8_ptr_type, i32_type};

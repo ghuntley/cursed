@@ -60,6 +60,12 @@ pub const CursedError = error{
     RaceCondition,
     ThreadError,
     
+    // LLVM Backend errors
+    LLVMVerificationFailed,
+    LLVMModuleError,
+    LLVMIRGenerationFailed,
+    LLVMOptimizationFailed,
+    
     // System errors
     SystemError,
     PlatformNotSupported,
@@ -284,6 +290,79 @@ pub fn safePanic(comptime operation: anytype, args: anytype) CursedError!@TypeOf
         error.OutOfMemory => CursedError.OutOfMemory,
         else => CursedError.UnknownError,
     };
+}
+
+/// Create structured LLVM verification error with proper context
+pub fn createLLVMVerificationError(
+    allocator: Allocator,
+    llvm_message: []const u8,
+    source_location: ?ErrorContext.SourceLocation
+) !ErrorContext {
+    const formatted_message = try std.fmt.allocPrint(
+        allocator,
+        "LLVM module verification failed: {s}",
+        .{llvm_message}
+    );
+    defer allocator.free(formatted_message);
+    
+    var error_ctx = try ErrorContext.init(
+        allocator,
+        CursedError.LLVMVerificationFailed,
+        formatted_message
+    );
+    
+    if (source_location) |loc| {
+        error_ctx.location = loc;
+    }
+    
+    return error_ctx;
+}
+
+/// Create structured LLVM IR generation error
+pub fn createLLVMIRError(
+    allocator: Allocator,
+    operation: []const u8,
+    details: []const u8,
+    source_location: ?ErrorContext.SourceLocation
+) !ErrorContext {
+    const formatted_message = try std.fmt.allocPrint(
+        allocator,
+        "LLVM IR generation failed during {s}: {s}",
+        .{ operation, details }
+    );
+    defer allocator.free(formatted_message);
+    
+    var error_ctx = try ErrorContext.init(
+        allocator,
+        CursedError.LLVMIRGenerationFailed,
+        formatted_message
+    );
+    
+    if (source_location) |loc| {
+        error_ctx.location = loc;
+    }
+    
+    return error_ctx;
+}
+
+/// Create structured LLVM optimization error
+pub fn createLLVMOptimizationError(
+    allocator: Allocator,
+    optimization_pass: []const u8,
+    llvm_message: []const u8
+) !ErrorContext {
+    const formatted_message = try std.fmt.allocPrint(
+        allocator,
+        "LLVM optimization pass '{s}' failed: {s}",
+        .{ optimization_pass, llvm_message }
+    );
+    defer allocator.free(formatted_message);
+    
+    return ErrorContext.init(
+        allocator,
+        CursedError.LLVMOptimizationFailed,
+        formatted_message
+    );
 }
 
 /// Enhanced error recovery mechanism with runtime support
