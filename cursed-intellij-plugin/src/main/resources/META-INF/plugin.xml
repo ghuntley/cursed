@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<idea-plugin>
+    <id>org.cursed.intellij</id>
+    <name>CURSED Language Support</name>
+    <vendor email="support@cursed-lang.org" url="https://cursed-lang.org">CURSED Language Team</vendor>
+    
+    <description><![CDATA[
+        Professional-grade IntelliJ IDEA plugin for the CURSED programming language.
+        
+        Features:
+        • Advanced syntax highlighting with semantic analysis
+        • Intelligent code completion with type inference
+        • Real-time error detection and quick fixes
+        • Integrated debugging with goroutine support
+        • Project templates and scaffolding tools
+        • Package management integration
+        • Performance analysis and profiling
+        • Cross-compilation support
+        • Code formatting and linting
+        • Documentation integration
+        
+        The CURSED language brings modern systems programming with Gen-Z syntax,
+        offering memory safety, concurrency, and high performance.
+    ]]></description>
+    
+    <change-notes><![CDATA[
+        <h3>Version 2.0.0</h3>
+        <ul>
+            <li>Complete rewrite with advanced IDE features</li>
+            <li>LSP integration for real-time analysis</li>
+            <li>Enhanced debugging with variable inspection</li>
+            <li>Project management and templates</li>
+            <li>Performance optimization tools</li>
+        </ul>
+    ]]></change-notes>
+    
+    <!-- Requires IntelliJ IDEA 2023.2+ -->
+    <idea-version since-build="232" until-build="241.*"/>
+    
+    <!-- Plugin dependencies -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends optional="true" config-file="java-features.xml">com.intellij.modules.java</depends>
+    
+    <resource-bundle>messages.CursedBundle</resource-bundle>
+    
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Language Definition -->
+        <fileType 
+            name="CURSED" 
+            implementationClass="org.cursed.lang.CursedFileType" 
+            fieldName="INSTANCE" 
+            language="CURSED" 
+            extensions="csd;cursed" />
+        
+        <lang.parserDefinition 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.parser.CursedParserDefinition" />
+        
+        <lang.syntaxHighlighterFactory 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.highlighting.CursedSyntaxHighlighterFactory" />
+        
+        <colorSettingsPage 
+            implementation="org.cursed.lang.highlighting.CursedColorSettingsPage" />
+        
+        <!-- Code Analysis -->
+        <annotator 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.annotator.CursedAnnotator" />
+        
+        <externalAnnotator 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.annotator.CursedExternalAnnotator" />
+        
+        <!-- Code Completion -->
+        <completion.contributor 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.completion.CursedCompletionContributor" />
+        
+        <lookup.charFilter 
+            implementation="org.cursed.lang.completion.CursedCharFilter" />
+        
+        <!-- Code Navigation -->
+        <gotoSymbolContributor 
+            implementation="org.cursed.lang.navigation.CursedGoToSymbolContributor" />
+        
+        <gotoClassContributor 
+            implementation="org.cursed.lang.navigation.CursedGoToClassContributor" />
+        
+        <definitionsScopedSearch 
+            implementation="org.cursed.lang.navigation.CursedDefinitionsSearch" />
+        
+        <!-- References and Refactoring -->
+        <lang.findUsagesProvider 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.refactoring.CursedFindUsagesProvider" />
+        
+        <lang.refactoringSupport 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.refactoring.CursedRefactoringSupportProvider" />
+        
+        <renamePsiElementProcessor 
+            implementation="org.cursed.lang.refactoring.CursedRenameProcessor" />
+        
+        <!-- Code Formatting -->
+        <lang.formatter 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.formatting.CursedFormattingModelBuilder" />
+        
+        <codeStyleSettingsProvider 
+            implementation="org.cursed.lang.formatting.CursedCodeStyleSettingsProvider" />
+        
+        <langCodeStyleSettingsProvider 
+            implementation="org.cursed.lang.formatting.CursedLanguageCodeStyleSettingsProvider" />
+        
+        <!-- Live Templates -->
+        <defaultLiveTemplatesProvider 
+            implementation="org.cursed.lang.templates.CursedLiveTemplatesProvider" />
+        
+        <liveTemplateContext 
+            implementation="org.cursed.lang.templates.CursedLiveTemplateContext" />
+        
+        <!-- Structure View -->
+        <lang.psiStructureViewFactory 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.structure.CursedStructureViewFactory" />
+        
+        <!-- Folding -->
+        <lang.foldingBuilder 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.folding.CursedFoldingBuilder" />
+        
+        <!-- Breadcrumbs -->
+        <breadcrumbsInfoProvider 
+            implementation="org.cursed.lang.breadcrumbs.CursedBreadcrumbsProvider" />
+        
+        <!-- Documentation -->
+        <lang.documentationProvider 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.documentation.CursedDocumentationProvider" />
+        
+        <!-- Intentions and Quick Fixes -->
+        <intentionAction>
+            <category>CURSED</category>
+            <className>org.cursed.lang.intentions.AddImportIntention</className>
+        </intentionAction>
+        
+        <intentionAction>
+            <category>CURSED</category>
+            <className>org.cursed.lang.intentions.OptimizeImportsIntention</className>
+        </intentionAction>
+        
+        <!-- Project Templates -->
+        <projectTemplatesFactory 
+            implementation="org.cursed.lang.project.CursedProjectTemplatesFactory" />
+        
+        <directoryProjectGenerator 
+            implementation="org.cursed.lang.project.CursedProjectGenerator" />
+        
+        <!-- Build System Integration -->
+        <buildProcess.parametersProvider 
+            implementation="org.cursed.lang.build.CursedBuildParametersProvider" />
+        
+        <compiler.task 
+            execute="BEFORE" 
+            implementation="org.cursed.lang.build.CursedCompileTask" />
+        
+        <!-- Run Configurations -->
+        <configurationType 
+            implementation="org.cursed.lang.run.CursedRunConfigurationType" />
+        
+        <runConfigurationProducer 
+            implementation="org.cursed.lang.run.CursedRunConfigurationProducer" />
+        
+        <!-- Debugging -->
+        <debugger.positionManagerFactory 
+            implementation="org.cursed.lang.debug.CursedPositionManagerFactory" />
+        
+        <xdebugger.breakpointType 
+            implementation="org.cursed.lang.debug.CursedLineBreakpointType" />
+        
+        <!-- Tool Windows -->
+        <toolWindow 
+            id="CURSED Package Manager" 
+            anchor="left" 
+            factoryClass="org.cursed.lang.toolwindow.CursedPackageToolWindowFactory" 
+            icon="/icons/cursed-tool-window.svg" />
+        
+        <toolWindow 
+            id="CURSED Performance" 
+            anchor="bottom" 
+            factoryClass="org.cursed.lang.toolwindow.CursedPerformanceToolWindowFactory" 
+            icon="/icons/cursed-performance.svg" />
+        
+        <!-- File Templates -->
+        <internalFileTemplate name="CURSED File" />
+        <internalFileTemplate name="CURSED Module" />
+        <internalFileTemplate name="CURSED Struct" />
+        <internalFileTemplate name="CURSED Interface" />
+        <internalFileTemplate name="CURSED Test" />
+        
+        <!-- Postfix Templates -->
+        <codeInsight.template.postfixTemplateProvider 
+            language="CURSED" 
+            implementationClass="org.cursed.lang.templates.CursedPostfixTemplateProvider" />
+        
+        <!-- Language Server Protocol -->
+        <platform.lsp.serverSupportProvider 
+            implementation="org.cursed.lang.lsp.CursedLspServerSupportProvider" />
+        
+        <!-- Settings -->
+        <applicationConfigurable 
+            parentId="language" 
+            instance="org.cursed.lang.settings.CursedSettingsConfigurable" 
+            id="org.cursed.settings" 
+            displayName="CURSED" />
+        
+        <projectConfigurable 
+            parentId="org.cursed.settings" 
+            instance="org.cursed.lang.settings.CursedProjectSettingsConfigurable" 
+            id="org.cursed.project.settings" 
+            displayName="Project Settings" />
+    </extensions>
+    
+    <projectListeners>
+        <listener 
+            class="org.cursed.lang.project.CursedProjectListener" 
+            topic="com.intellij.openapi.project.ProjectManagerListener" />
+    </projectListeners>
+    
+    <actions>
+        <!-- Main Menu Actions -->
+        <group id="CursedMainMenu" text="CURSED" popup="true">
+            <add-to-group group-id="MainMenu" anchor="before" relative-to-action="HelpMenu" />
+            
+            <action 
+                id="Cursed.NewProject" 
+                class="org.cursed.lang.actions.NewCursedProjectAction" 
+                text="New CURSED Project..." 
+                description="Create a new CURSED project" 
+                icon="/icons/cursed-project.svg" />
+            
+            <action 
+                id="Cursed.NewFile" 
+                class="org.cursed.lang.actions.NewCursedFileAction" 
+                text="New CURSED File..." 
+                description="Create a new CURSED file" 
+                icon="/icons/cursed-file.svg" />
+            
+            <separator />
+            
+            <action 
+                id="Cursed.Build" 
+                class="org.cursed.lang.actions.BuildAction" 
+                text="Build Project" 
+                description="Build the CURSED project" 
+                icon="AllIcons.Actions.Compile" />
+            
+            <action 
+                id="Cursed.Run" 
+                class="org.cursed.lang.actions.RunAction" 
+                text="Run" 
+                description="Run the CURSED application" 
+                icon="AllIcons.Actions.Execute" />
+            
+            <action 
+                id="Cursed.Test" 
+                class="org.cursed.lang.actions.TestAction" 
+                text="Run Tests" 
+                description="Run CURSED tests" 
+                icon="AllIcons.RunConfigurations.TestState.Run" />
+            
+            <separator />
+            
+            <action 
+                id="Cursed.Format" 
+                class="org.cursed.lang.actions.FormatAction" 
+                text="Format Code" 
+                description="Format CURSED code" 
+                icon="AllIcons.Actions.PrettyPrint" />
+            
+            <action 
+                id="Cursed.Lint" 
+                class="org.cursed.lang.actions.LintAction" 
+                text="Lint Code" 
+                description="Lint CURSED code" 
+                icon="AllIcons.Actions.RealIntentionBulb" />
+            
+            <separator />
+            
+            <action 
+                id="Cursed.ShowDocumentation" 
+                class="org.cursed.lang.actions.ShowDocumentationAction" 
+                text="Show Documentation" 
+                description="Show CURSED documentation" 
+                icon="AllIcons.Actions.Help" />
+        </group>
+        
+        <!-- Editor Context Menu -->
+        <group id="CursedEditorPopup">
+            <add-to-group group-id="EditorPopupMenu" anchor="first" />
+            
+            <action 
+                id="Cursed.QuickFix" 
+                class="org.cursed.lang.actions.QuickFixAction" 
+                text="Quick Fix" 
+                description="Apply quick fix for CURSED code" 
+                icon="AllIcons.Actions.QuickfixBulb" />
+            
+            <action 
+                id="Cursed.Optimize" 
+                class="org.cursed.lang.actions.OptimizeAction" 
+                text="Optimize Performance" 
+                description="Suggest performance optimizations" 
+                icon="AllIcons.Actions.Lightning" />
+        </group>
+        
+        <!-- Project View Context Menu -->
+        <group id="CursedProjectViewPopup">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="EditSource" />
+            
+            <action 
+                id="Cursed.AddDependency" 
+                class="org.cursed.lang.actions.AddDependencyAction" 
+                text="Add CURSED Dependency..." 
+                description="Add a new dependency to CursedPackage.toml" 
+                icon="AllIcons.General.Add" />
+        </group>
+        
+        <!-- Toolbar Actions -->
+        <action 
+            id="Cursed.RunConfiguration" 
+            class="org.cursed.lang.actions.RunConfigurationAction" 
+            text="Run CURSED" 
+            description="Run CURSED application" 
+            icon="/icons/cursed-run.svg">
+            <add-to-group group-id="ToolbarRunGroup" anchor="after" relative-to-action="RunConfiguration" />
+        </action>
+    </actions>
+    
+    <!-- Notification Groups -->
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup 
+            id="CURSED Compiler" 
+            displayType="BALLOON" 
+            key="notification.group.cursed.compiler" />
+        
+        <notificationGroup 
+            id="CURSED Language Server" 
+            displayType="BALLOON" 
+            key="notification.group.cursed.lsp" />
+        
+        <notificationGroup 
+            id="CURSED Package Manager" 
+            displayType="BALLOON" 
+            key="notification.group.cursed.package" />
+    </extensions>
+</idea-plugin>
