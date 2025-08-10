@@ -735,8 +735,8 @@ pub const CodeGenerator = struct {
         if (call.function.* == .Identifier) {
             const func_name = call.function.Identifier.name;
             
-            if (std.mem.eql(u8, func_name, "printf") or std.mem.eql(u8, func_name, "vibez.spill")) {
-                return try self.generatePrintfCall(call);
+            if (std.mem.eql(u8, func_name, "printf") or std.mem.eql(u8, func_name, "vibez.spill") or std.mem.eql(u8, func_name, "facts")) {
+            return try self.generatePrintfCall(call);
             }
         }
         

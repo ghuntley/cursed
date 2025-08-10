@@ -1,1 +1,1 @@
-sus x drip = 10
+facts("test")
