@@ -199,7 +199,7 @@ struct AtomicBool {
 fr fr Create atomic boolean
 slay atomic_bool_new(initial lit) *AtomicBool {
     sus atomic_bool *AtomicBool = &AtomicBool{
-        value: lowkey initial == based { 1 } else { 0 }
+        value: lowkey (initial == based) { 1 } otherwise { 0 }
     }
     damn atomic_bool
 }
@@ -212,24 +212,27 @@ slay atomic_bool_load(ptr *AtomicBool) lit {
 
 fr fr Store atomic boolean value
 slay atomic_bool_store(ptr *AtomicBool, val lit) {
-    sus int_val normie = lowkey val == based { 1 } else { 0 }
+    sus int_val normie = lowkey (val == based) { 1 } otherwise { 0 }
     hardware_atomics.atomic_store_i32(&ptr.value, int_val, MEMORY_ORDER_SEQ_CST)
 }
 
 fr fr Compare and swap atomic boolean
 slay atomic_bool_cas(ptr *AtomicBool, expected lit, desired lit) lit {
-    sus expected_int normie = lowkey expected == based { 1 } else { 0 }
-    sus desired_int normie = lowkey desired == based { 1 } else { 0 }
+    sus expected_int normie = lowkey (expected == based) { 1 } otherwise { 0 }
+    sus desired_int normie = lowkey (desired == based) { 1 } otherwise { 0 }
     damn hardware_atomics.compare_and_swap_i32(&ptr.value, expected_int, desired_int, MEMORY_ORDER_SEQ_CST)
 }
 
 fr fr Swap atomic boolean value
 slay atomic_bool_swap(ptr *AtomicBool, new_val lit) lit {
-    sus new_int normie = lowkey new_val == based { 1 } else { 0 }
+    sus new_int normie = lowkey (new_val == based) { 1 } otherwise { 0 }
     sus old_int normie
-    nah {
+    periodt {
         old_int = hardware_atomics.atomic_load_i32(&ptr.value, MEMORY_ORDER_ACQUIRE)
-    } bestie !hardware_atomics.compare_and_swap_i32(&ptr.value, old_int, new_int, MEMORY_ORDER_ACQ_REL)
+        lowkey (hardware_atomics.compare_and_swap_i32(&ptr.value, old_int, new_int, MEMORY_ORDER_ACQ_REL)) {
+            break
+        }
+    }
     damn old_int != 0
 }
 

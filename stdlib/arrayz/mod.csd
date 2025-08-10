@@ -12,7 +12,7 @@ fr fr ===== ARRAY ARITHMETIC =====
 slay sum_array(nums []drip) drip {
     sus total drip = 0
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         total = total + nums[i]
         i = i + 1
     }
@@ -20,7 +20,7 @@ slay sum_array(nums []drip) drip {
 }
 
 slay average_array(nums []drip) drip {
-    ready (len(nums) == 0) {
+    lowkey (len(nums) == 0) {
         damn 0
     }
     sus total drip = sum_array(nums)
@@ -28,12 +28,12 @@ slay average_array(nums []drip) drip {
 }
 
 slay product_array(nums []drip) drip {
-    ready (len(nums) == 0) {
+    lowkey (len(nums) == 0) {
         damn 0
     }
     sus product drip = 1
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         product = product * nums[i]
         i = i + 1
     }
@@ -43,13 +43,13 @@ slay product_array(nums []drip) drip {
 fr fr ===== ARRAY SEARCH =====
 
 slay find_max(nums []drip) drip {
-    ready (len(nums) == 0) {
+    lowkey (len(nums) == 0) {
         damn 0
     }
     sus max_val drip = nums[0]
     sus i drip = 1
-    bestie (i < len(nums)) {
-        ready (nums[i] > max_val) {
+    periodt (i < len(nums)) {
+        lowkey (nums[i] > max_val) {
             max_val = nums[i]
         }
         i = i + 1
@@ -63,7 +63,7 @@ slay find_min(nums []drip) drip {
     }
     sus min_val drip = nums[0]
     sus i drip = 1
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         ready (nums[i] < min_val) {
             min_val = nums[i]
         }
@@ -74,7 +74,7 @@ slay find_min(nums []drip) drip {
 
 slay contains_value(nums []drip, value drip) lit {
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         ready (nums[i] == value) {
             damn based
         }
@@ -85,7 +85,7 @@ slay contains_value(nums []drip, value drip) lit {
 
 slay find_index(nums []drip, value drip) drip {
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         ready (nums[i] == value) {
             damn i
         }
@@ -113,7 +113,7 @@ fr fr ===== ARRAY COUNTING =====
 slay count_positive(nums []drip) drip {
     sus count drip = 0
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         ready (nums[i] > 0) {
             count = count + 1
         }
@@ -125,7 +125,7 @@ slay count_positive(nums []drip) drip {
 slay count_negative(nums []drip) drip {
     sus count drip = 0
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         ready (nums[i] < 0) {
             count = count + 1
         }
@@ -137,7 +137,7 @@ slay count_negative(nums []drip) drip {
 slay count_zeros(nums []drip) drip {
     sus count drip = 0
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         ready (nums[i] == 0) {
             count = count + 1
         }
@@ -149,7 +149,7 @@ slay count_zeros(nums []drip) drip {
 slay count_occurrences(nums []drip, value drip) drip {
     sus count drip = 0
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         ready (nums[i] == value) {
             count = count + 1
         }
@@ -175,7 +175,7 @@ fr fr ===== ARRAY PROPERTIES =====
 
 slay all_positive(nums []drip) lit {
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         ready (nums[i] <= 0) {
             damn cringe
         }
@@ -186,7 +186,7 @@ slay all_positive(nums []drip) lit {
 
 slay all_negative(nums []drip) lit {
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         ready (nums[i] >= 0) {
             damn cringe
         }
@@ -197,9 +197,9 @@ slay all_negative(nums []drip) lit {
 
 slay has_duplicates(nums []drip) lit {
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         sus j drip = i + 1
-        bestie (j < len(nums)) {
+        periodt (j < len(nums)) {
             ready (nums[i] == nums[j]) {
                 damn based
             }
@@ -218,7 +218,7 @@ slay join_string_array(strings []tea, separator tea) tea {
     }
     sus result tea = strings[0]
     sus i drip = 1
-    bestie (i < len(strings)) {
+    periodt (i < len(strings)) {
         result = result + separator + strings[i]
         i = i + 1
     }
@@ -228,7 +228,7 @@ slay join_string_array(strings []tea, separator tea) tea {
 slay concat_string_array(strings []tea) tea {
     sus result tea = ""
     sus i drip = 0
-    bestie (i < len(strings)) {
+    periodt (i < len(strings)) {
         result = result + strings[i]
         i = i + 1
     }
@@ -237,7 +237,7 @@ slay concat_string_array(strings []tea) tea {
 
 slay string_array_contains(strings []tea, value tea) lit {
     sus i drip = 0
-    bestie (i < len(strings)) {
+    periodt (i < len(strings)) {
         ready (strings[i] == value) {
             damn based
         }
@@ -366,7 +366,7 @@ slay filter_array(nums []drip, condition tea) []drip {
     ready (condition == "positive") {
         sus result []drip = []
         sus i drip = 0
-        bestie (i < len(nums)) {
+        periodt (i < len(nums)) {
             ready (nums[i] > 0) {
                 fr fr Add to result (simplified for small arrays)
                 ready (len(result) == 0) { result = [nums[i]] }
@@ -381,7 +381,7 @@ slay filter_array(nums []drip, condition tea) []drip {
     ready (condition == "even") {
         sus result []drip = []
         sus i drip = 0
-        bestie (i < len(nums)) {
+        periodt (i < len(nums)) {
             ready (nums[i] % 2 == 0) {
                 ready (len(result) == 0) { result = [nums[i]] }
                 ready (len(result) == 1) { result = [result[0], nums[i]] }
@@ -400,21 +400,21 @@ slay reduce_array(nums []drip, operation tea, initial drip) drip {
     sus i drip = 0
     
     ready (operation == "sum") {
-        bestie (i < len(nums)) {
+        periodt (i < len(nums)) {
             result = result + nums[i]
             i = i + 1
         }
     }
     
     ready (operation == "product") {
-        bestie (i < len(nums)) {
+        periodt (i < len(nums)) {
             result = result * nums[i]
             i = i + 1
         }
     }
     
     ready (operation == "max") {
-        bestie (i < len(nums)) {
+        periodt (i < len(nums)) {
             ready (nums[i] > result) {
                 result = nums[i]
             }
@@ -423,7 +423,7 @@ slay reduce_array(nums []drip, operation tea, initial drip) drip {
     }
     
     ready (operation == "min") {
-        bestie (i < len(nums)) {
+        periodt (i < len(nums)) {
             ready (nums[i] < result) {
                 result = nums[i]
             }
@@ -445,7 +445,7 @@ slay arrays_equal(a []drip, b []drip) lit {
     }
     
     sus i drip = 0
-    bestie (i < len_a) {
+    periodt (i < len_a) {
         ready (a[i] != b[i]) {
             damn cringe
         }
@@ -462,7 +462,7 @@ slay is_sorted_ascending(nums []drip) lit {
     }
     
     sus i drip = 0
-    bestie (i < length - 1) {
+    periodt (i < length - 1) {
         ready (nums[i] > nums[i + 1]) {
             damn cringe
         }
@@ -479,7 +479,7 @@ slay is_sorted_descending(nums []drip) lit {
     }
     
     sus i drip = 0
-    bestie (i < length - 1) {
+    periodt (i < length - 1) {
         ready (nums[i] < nums[i + 1]) {
             damn cringe
         }
@@ -521,7 +521,7 @@ slay mode_array(nums []drip) drip {
     sus mode_value drip = nums[0]
     
     sus i drip = 0
-    bestie (i < len(nums)) {
+    periodt (i < len(nums)) {
         sus current_count drip = count_occurrences(nums, nums[i])
         ready (current_count > max_count) {
             max_count = current_count
@@ -680,7 +680,7 @@ slay filter_string_array(strings []tea, condition tea) []tea {
     ready (condition == "non_empty") {
         sus result []tea = []
         sus i drip = 0
-        bestie (i < len(strings)) {
+        periodt (i < len(strings)) {
             ready (strings[i] != "") {
                 ready (len(result) == 0) { result = [strings[i]] }
                 ready (len(result) == 1) { result = [result[0], strings[i]] }
@@ -703,7 +703,7 @@ slay find_longest_string(strings []tea) tea {
     sus max_length drip = string_length(longest)
     
     sus i drip = 1
-    bestie (i < len(strings)) {
+    periodt (i < len(strings)) {
         sus current_length drip = string_length(strings[i])
         ready (current_length > max_length) {
             longest = strings[i]
@@ -724,7 +724,7 @@ slay find_shortest_string(strings []tea) tea {
     sus min_length drip = string_length(shortest)
     
     sus i drip = 1
-    bestie (i < len(strings)) {
+    periodt (i < len(strings)) {
         sus current_length drip = string_length(strings[i])
         ready (current_length < min_length) {
             shortest = strings[i]

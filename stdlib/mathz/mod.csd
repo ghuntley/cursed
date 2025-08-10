@@ -4,21 +4,21 @@ fr fr Pure CURSED implementation for maximum compatibility
 fr fr ===== BASIC ARITHMETIC =====
 
 slay abs_normie(x drip) drip {
-    ready (x < 0) {
+    lowkey (x < 0) {
         damn -x
     }
     damn x
 }
 
 slay max_normie(a drip, b drip) drip {
-    ready (a > b) {
+    lowkey (a > b) {
         damn a
     }
     damn b
 }
 
 slay min_normie(a drip, b drip) drip {
-    ready (a < b) {
+    lowkey (a < b) {
         damn a
     }
     damn b
@@ -37,7 +37,7 @@ slay multiply_two(a drip, b drip) drip {
 }
 
 slay divide_two(a drip, b drip) drip {
-    ready (b == 0) {
+    lowkey (b == 0) {
         damn 0
     }
     damn a / b
@@ -46,10 +46,10 @@ slay divide_two(a drip, b drip) drip {
 fr fr ===== ADVANCED FUNCTIONS =====
 
 slay power_int(base drip, exponent drip) drip {
-    ready (exponent == 0) {
+    lowkey (exponent == 0) {
         damn 1
     }
-    ready (exponent == 1) {
+    lowkey (exponent == 1) {
         damn base
     }
     sus result drip = base
@@ -62,7 +62,7 @@ slay power_int(base drip, exponent drip) drip {
 }
 
 slay factorial(n drip) drip {
-    ready (n <= 1) {
+    lowkey (n <= 1) {
         damn 1
     }
     sus result drip = 1
@@ -75,7 +75,7 @@ slay factorial(n drip) drip {
 }
 
 slay gcd(a drip, b drip) drip {
-    ready (b == 0) {
+    lowkey (b == 0) {
         damn a
     }
     damn gcd(b, a % b)

@@ -13,7 +13,7 @@ slay test_start(name tea) lit {
 }
 
 slay assert_true(condition lit) lit {
-    ready (condition == based) {
+    lowkey (condition == based) {
         vibez.spill("✅ PASS: assert_true")
         pass_test_count = pass_test_count + 1
     } otherwise {
@@ -24,7 +24,7 @@ slay assert_true(condition lit) lit {
 }
 
 slay assert_false(condition lit) lit {
-    ready (condition == cringe) {
+    lowkey (condition == cringe) {
         vibez.spill("✅ PASS: assert_false")
         pass_test_count = pass_test_count + 1
     } otherwise {
@@ -35,7 +35,7 @@ slay assert_false(condition lit) lit {
 }
 
 slay assert_eq_int(actual drip, expected drip) lit {
-    ready (actual == expected) {
+    lowkey (actual == expected) {
         vibez.spill("✅ PASS: assert_eq_int")
         pass_test_count = pass_test_count + 1
     } otherwise {
@@ -46,7 +46,7 @@ slay assert_eq_int(actual drip, expected drip) lit {
 }
 
 slay assert_eq_string(actual tea, expected tea) lit {
-    ready (actual == expected) {
+    lowkey (actual == expected) {
         vibez.spill("✅ PASS: assert_eq_string")
         pass_test_count = pass_test_count + 1
     } otherwise {
@@ -80,7 +80,7 @@ slay print_test_summary() lit {
     vibez.spill("Passed:", pass_test_count)
     vibez.spill("Failed:", fail_test_count)
     
-    ready (fail_test_count == 0) {
+    lowkey (fail_test_count == 0) {
         vibez.spill("🎉 All tests passed!")
     } otherwise {
         vibez.spill("Some tests failed")
@@ -105,7 +105,7 @@ slay property_test_start(name tea, iterations drip) lit {
 }
 
 slay property_assert(condition lit, input_description tea) lit {
-    ready (condition == based) {
+    lowkey (condition == based) {
         property_pass_count = property_pass_count + 1
     } otherwise {
         vibez.spill("❌ Property violation with input:", input_description)
@@ -131,7 +131,7 @@ slay next_random() drip {
 }
 
 slay random_int(min_val drip, max_val drip) drip {
-    ready (min_val >= max_val) {
+    lowkey (min_val >= max_val) {
         damn min_val
     }
     
@@ -150,9 +150,11 @@ slay random_string(length drip) tea {
     sus chars_len drip = 62
     sus result tea = ""
     
-    bestie i := 0; i < length; i++ {
+    sus i drip = 0
+    periodt (i < length) {
         sus char_index drip = random_int(0, chars_len - 1)
         result = result + charAt(chars, char_index)
+        i = i + 1
     }
     
     damn result
@@ -160,19 +162,23 @@ slay random_string(length drip) tea {
 
 slay random_list_int(size drip, min_val drip, max_val drip) []drip {
     sus result []drip = []
-    bestie i := 0; i < size; i++ {
+    sus i drip = 0
+    periodt (i < size) {
         sus value drip = random_int(min_val, max_val)
         result = append_to_list_int(result, value)
+        i = i + 1
     }
     damn result
 }
 
 slay random_list_string(size drip, max_length drip) []tea {
     sus result []tea = []
-    bestie i := 0; i < size; i++ {
+    sus i drip = 0
+    periodt (i < size) {
         sus length drip = random_int(1, max_length)
         sus value tea = random_string(length)
         result = append_to_list_string(result, value)
+        i = i + 1
     }
     damn result
 }
@@ -182,20 +188,23 @@ fr fr ===== PROPERTY TEST HELPERS =====
 slay test_property_forall_int(property_name tea, min_val drip, max_val drip, iterations drip) {
     property_test_start(property_name, iterations)
     
-    bestie i := 0; i < iterations; i++ {
+    sus i drip = 0
+    periodt (i < iterations) {
         sus test_value drip = random_int(min_val, max_val)
         sus description tea = "int=" + json_number_to_string(test_value)
         
         fr fr Example property: all integers should be within range
         sus in_range lit = test_value >= min_val && test_value <= max_val
         property_assert(in_range, description)
+        i = i + 1
     }
 }
 
 slay test_property_forall_string(property_name tea, max_length drip, iterations drip) {
     property_test_start(property_name, iterations)
     
-    bestie i := 0; i < iterations; i++ {
+    sus i drip = 0
+    periodt (i < iterations) {
         sus length drip = random_int(1, max_length)
         sus test_value tea = random_string(length)
         sus description tea = "string=\"" + test_value + "\""
@@ -203,6 +212,7 @@ slay test_property_forall_string(property_name tea, max_length drip, iterations 
         fr fr Example property: all strings should have expected length
         sus correct_length lit = string_length(test_value) == length
         property_assert(correct_length, description)
+        i = i + 1
     }
 }
 
@@ -210,7 +220,8 @@ slay test_property_custom(property_name tea, test_function tea, iterations drip)
     fr fr Custom property test with user-defined test function
     property_test_start(property_name, iterations)
     
-    bestie i := 0; i < iterations; i++ {
+    sus i drip = 0
+    periodt (i < iterations) {
         ready (test_function == "test_addition_commutative") {
             sus a drip = random_int(1, 100)
             sus b drip = random_int(1, 100)
@@ -242,6 +253,7 @@ slay test_property_custom(property_name tea, test_function tea, iterations drip)
             sus reversed_twice []drip = reverse_list_int(reversed_once)
             property_assert(lists_equal_int(test_list, reversed_twice), description)
         }
+        i = i + 1
     }
 }
 
@@ -285,7 +297,8 @@ fr fr ===== INVARIANT TESTING =====
 slay test_invariant(invariant_name tea, setup_function tea, iterations drip) {
     property_test_start(invariant_name, iterations)
     
-    bestie i := 0; i < iterations; i++ {
+    sus i drip = 0
+    periodt (i < iterations) {
         ready (setup_function == "test_list_operations") {
             sus list []drip = random_list_int(random_int(1, 10), 1, 100)
             sus description tea = "list=[" + format_list_int(list) + "]"
@@ -309,6 +322,7 @@ slay test_invariant(invariant_name tea, setup_function tea, iterations drip) {
             
             property_assert(original_length == final_length, description)
         }
+        i = i + 1
     }
 }
 
@@ -359,10 +373,12 @@ slay lists_equal_int(list1 []drip, list2 []drip) lit {
         damn cringe
     }
     
-    bestie i := 0; i < len1; i++ {
+    sus i drip = 0
+    periodt (i < len1) {
         ready (list1[i] != list2[i]) {
             damn cringe
         }
+        i = i + 1
     }
     
     damn based
