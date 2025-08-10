@@ -1,0 +1,344 @@
+# CURSED Compiler v{{VERSION}}
+
+> **Release Date**: {{DATE}}  
+> **Previous Version**: {{PREVIOUS_VERSION}}
+
+## 🎉 What's New
+
+### ✨ Features
+{{GIT_LOG}}
+
+### 🚀 Performance Improvements
+- Enhanced compilation speed through optimized parser
+- Reduced memory usage in LLVM backend
+- Improved startup time for small programs
+
+### 🐛 Bug Fixes
+- Fixed memory leaks in pattern matching
+- Resolved type inference edge cases
+- Corrected cross-compilation issues
+
+### 📚 Documentation
+- Updated language specification
+- Enhanced standard library documentation
+- Added more examples and tutorials
+
+## 📦 Installation
+
+### Package Managers
+
+#### Homebrew (macOS)
+```bash
+brew install cursed
+```
+
+#### APT (Ubuntu/Debian)
+```bash
+# Add repository
+curl -fsSL https://packages.cursed.dev/apt/install-cursed-repo.sh | sudo bash
+
+# Install CURSED
+sudo apt install cursed
+```
+
+#### YUM (RHEL/CentOS/Fedora)
+```bash
+# Add repository
+curl -fsSL https://packages.cursed.dev/yum/install-cursed-repo.sh | sudo bash
+
+# Install CURSED
+sudo dnf install cursed  # Fedora/RHEL 8+
+sudo yum install cursed  # RHEL 7
+```
+
+#### Chocolatey (Windows)
+```powershell
+choco install cursed
+```
+
+### Direct Downloads
+
+| Platform | Architecture | Download |
+|----------|--------------|----------|
+| Linux    | x86_64       | [cursed-{{VERSION}}-x86_64-unknown-linux-gnu.tar.gz](https://github.com/ghuntley/cursed/releases/download/v{{VERSION}}/cursed-{{VERSION}}-x86_64-unknown-linux-gnu.tar.gz) |
+| Linux    | ARM64        | [cursed-{{VERSION}}-aarch64-unknown-linux-gnu.tar.gz](https://github.com/ghuntley/cursed/releases/download/v{{VERSION}}/cursed-{{VERSION}}-aarch64-unknown-linux-gnu.tar.gz) |
+| macOS    | Intel        | [cursed-{{VERSION}}-x86_64-apple-darwin.tar.gz](https://github.com/ghuntley/cursed/releases/download/v{{VERSION}}/cursed-{{VERSION}}-x86_64-apple-darwin.tar.gz) |
+| macOS    | Apple Silicon | [cursed-{{VERSION}}-aarch64-apple-darwin.tar.gz](https://github.com/ghuntley/cursed/releases/download/v{{VERSION}}/cursed-{{VERSION}}-aarch64-apple-darwin.tar.gz) |
+| Windows  | x86_64       | [cursed-{{VERSION}}-x86_64-pc-windows-gnu.zip](https://github.com/ghuntley/cursed/releases/download/v{{VERSION}}/cursed-{{VERSION}}-x86_64-pc-windows-gnu.zip) |
+| WebAssembly | WASI      | [cursed-{{VERSION}}-wasm32-wasi.tar.gz](https://github.com/ghuntley/cursed/releases/download/v{{VERSION}}/cursed-{{VERSION}}-wasm32-wasi.tar.gz) |
+
+### Container Images
+
+```bash
+# Latest release
+docker pull cursed/compiler:{{VERSION}}
+docker pull cursed/compiler:latest
+
+# Alpine variant (smaller)
+docker pull cursed/compiler:{{VERSION}}-alpine
+
+# Ubuntu variant (compatibility)
+docker pull cursed/compiler:{{VERSION}}-ubuntu
+
+# Development environment
+docker pull cursed/compiler:{{VERSION}}-dev
+```
+
+## 🔒 Security
+
+### Package Verification
+
+All release artifacts are signed and can be verified:
+
+```bash
+# Download checksums and signature
+wget https://github.com/ghuntley/cursed/releases/download/v{{VERSION}}/SHA256SUMS
+wget https://github.com/ghuntley/cursed/releases/download/v{{VERSION}}/SHA256SUMS.sig
+
+# Import GPG key (first time only)
+gpg --recv-keys 0x1234567890ABCDEF
+
+# Verify signature
+gpg --verify SHA256SUMS.sig SHA256SUMS
+
+# Verify your download
+sha256sum -c SHA256SUMS
+```
+
+### Container Image Verification
+
+```bash
+# Verify container image signatures
+docker trust inspect cursed/compiler:{{VERSION}}
+
+# Run security scan
+docker scout cves cursed/compiler:{{VERSION}}
+```
+
+## 🚀 Quick Start
+
+### Hello World
+
+```bash
+# Create a simple program
+echo 'vibez.spill("Hello, CURSED!")' > hello.csd
+
+# Run it
+cursed-zig hello.csd
+```
+
+### Using the Standard Library
+
+```cursed
+yeet "mathz"
+yeet "stringz"
+
+sus result drip = add_numbers(21, 21)
+sus message tea = format_string("Answer: {}", [result])
+vibez.spill(message)
+```
+
+### LSP Integration
+
+The Language Server Protocol (LSP) server provides IDE integration:
+
+```bash
+# Start LSP server for VS Code, Vim, etc.
+cursed-lsp --stdio
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+- `CURSED_CACHE_DIR`: Compiler cache directory (default: `~/.cursed/cache`)
+- `CURSED_STDLIB_PATH`: Standard library path (auto-detected)
+- `CURSED_PARALLEL_JOBS`: Number of parallel compilation jobs
+- `CURSED_OPTIMIZATION_LEVEL`: Default optimization level (0-3)
+
+### Configuration File
+
+Create `~/.cursed/config.toml`:
+
+```toml
+[compiler]
+optimization_level = 2
+parallel_jobs = 4
+cache_enabled = true
+
+[lsp]
+port = 9999
+host = "127.0.0.1"
+log_level = "info"
+
+[paths]
+stdlib = "/usr/local/share/cursed/stdlib"
+cache = "~/.cursed/cache"
+```
+
+## 🧪 Testing
+
+Verify your installation:
+
+```bash
+# Check version
+cursed-zig --version
+
+# Run built-in tests
+cursed-zig test stdlib/testz/test_testz.csd
+
+# Benchmark performance
+cursed-zig --benchmark examples/fibonacci.csd
+```
+
+## ⚠️ Breaking Changes
+
+> **Important**: This release contains breaking changes from v{{PREVIOUS_VERSION}}
+
+### Language Changes
+- Deprecated `old_syntax` in favor of `new_syntax`
+- Changed behavior of `pattern_matching` to be more strict
+- Updated standard library module structure
+
+### Migration Guide
+
+1. **Update Syntax**:
+   ```cursed
+   # Old (deprecated)
+   old_syntax variable = value
+   
+   # New (recommended)
+   new_syntax variable = value
+   ```
+
+2. **Update Imports**:
+   ```cursed
+   # Old
+   yeet "old_module"
+   
+   # New
+   yeet "new_module"
+   ```
+
+3. **Run Migration Tool**:
+   ```bash
+   cursed-zig migrate --from {{PREVIOUS_VERSION}} --to {{VERSION}} src/
+   ```
+
+## 📈 Performance Benchmarks
+
+Performance improvements in this release:
+
+| Benchmark | {{PREVIOUS_VERSION}} | {{VERSION}} | Improvement |
+|-----------|----------------------|-------------|-------------|
+| Hello World | 45ms | 32ms | 29% faster |
+| Large Project | 2.3s | 1.8s | 22% faster |
+| Memory Usage | 156MB | 128MB | 18% reduction |
+| Binary Size | 12.4MB | 10.1MB | 19% smaller |
+
+## 🛠️ Developer Tools
+
+### VS Code Extension
+
+Install the CURSED VS Code extension:
+
+```bash
+code --install-extension cursed.cursed-language-support
+```
+
+### Vim/Neovim
+
+Configure with your favorite LSP client:
+
+```vim
+" For vim-lsp
+let g:lsp_settings = {
+\   'cursed-lsp': {
+\     'cmd': ['cursed-lsp', '--stdio'],
+\     'allowlist': ['cursed'],
+\   }
+\ }
+```
+
+### Emacs
+
+```elisp
+;; For lsp-mode
+(use-package lsp-mode
+  :hook (cursed-mode . lsp))
+```
+
+## 📋 System Requirements
+
+### Minimum Requirements
+- **OS**: Linux (Ubuntu 20.04+), macOS (10.15+), Windows (10+)
+- **Architecture**: x86_64, ARM64
+- **Memory**: 512MB RAM
+- **Storage**: 100MB available space
+
+### Recommended Requirements
+- **Memory**: 2GB RAM
+- **Storage**: 1GB available space
+- **LLVM**: Version 16+ for compilation features
+
+### Dependencies
+- **Linux**: glibc 2.31+, libllvm18
+- **macOS**: macOS 10.15+, Xcode Command Line Tools
+- **Windows**: Visual C++ Redistributable 2019+
+
+## 🤝 Community
+
+### Getting Help
+- 📖 [Documentation](https://docs.cursed.dev)
+- 💬 [Discord Server](https://discord.gg/cursed)
+- 🐛 [Issue Tracker](https://github.com/ghuntley/cursed/issues)
+- 💡 [Discussions](https://github.com/ghuntley/cursed/discussions)
+
+### Contributing
+- 🔀 [Contribution Guide](https://github.com/ghuntley/cursed/blob/main/CONTRIBUTING.md)
+- 📋 [Good First Issues](https://github.com/ghuntley/cursed/labels/good%20first%20issue)
+- 🏗️ [Development Setup](https://docs.cursed.dev/contributing/setup)
+
+## 📝 Changelog
+
+See the complete changelog: [CHANGELOG.md](https://github.com/ghuntley/cursed/blob/main/CHANGELOG.md)
+
+**Full Diff**: https://github.com/ghuntley/cursed/compare/v{{PREVIOUS_VERSION}}...v{{VERSION}}
+
+## 👥 Contributors
+
+Special thanks to all contributors who made this release possible:
+
+- @contributor1 - Feature implementation
+- @contributor2 - Bug fixes
+- @contributor3 - Documentation improvements
+- @contributor4 - Performance optimizations
+
+See all contributors: [Contributors](https://github.com/ghuntley/cursed/graphs/contributors)
+
+## 🎯 What's Next
+
+### Upcoming in v{{NEXT_VERSION}}
+- Advanced metaprogramming features
+- Improved error messages with suggestions
+- WebAssembly runtime optimizations
+- Package manager improvements
+
+### Roadmap
+- 🔮 [2024 Q4 Roadmap](https://github.com/ghuntley/cursed/issues/roadmap-2024q4)
+- 📅 [Release Schedule](https://github.com/ghuntley/cursed/milestones)
+
+## 💝 Sponsors
+
+CURSED development is supported by:
+
+- **Enterprise Sponsors**: Company A, Company B
+- **Individual Sponsors**: @sponsor1, @sponsor2, @sponsor3
+
+[Become a sponsor](https://github.com/sponsors/ghuntley) to support CURSED development.
+
+---
+
+**Happy coding with CURSED v{{VERSION}}!** 🎉
+
+For support and questions, reach out on [Discord](https://discord.gg/cursed) or [GitHub Discussions](https://github.com/ghuntley/cursed/discussions).

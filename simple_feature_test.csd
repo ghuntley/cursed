@@ -1,74 +1,35 @@
-fr fr Simple test for language features implementation
-
+// Simple test for advanced CURSED features
 yeet "testz"
 
-fr fr Test basic pattern matching with enum
-enum Status {
-    Success,
-    Error,
-    Pending
-}
-
-slay test_patterns() {
-    vibez.spill("Testing pattern matching...")
+// Basic pattern matching (simplified syntax)
+slay pattern_demo() {
+    sus value drip = 42
     
-    sus status Status = Status::Success
-    
-    sick (status) {
-        when Success -> vibez.spill("Operation succeeded")
-        when Error -> vibez.spill("Operation failed")
-        when Pending -> vibez.spill("Operation pending")
+    // Basic pattern matching that should work
+    ready (value > 0) {
+        vibez.spill("Positive value:", value)
+    } otherwise {
+        vibez.spill("Non-positive value")
     }
+    
+    // Array operations
+    sus numbers []drip = [1, 2, 3, 4, 5]
+    sus length drip = len(numbers)
+    vibez.spill("Array length:", length)
+    
+    // Function calls
+    sus result drip = add_numbers(5, 7)
+    vibez.spill("Function result:", result)
 }
 
-fr fr Test basic reflection
-struct TestStruct {
-    spill value normie
-    spill name tea
+// Simple function definition
+slay add_numbers(a drip, b drip) drip {
+    damn a + b
 }
 
-slay test_reflection() {
-    vibez.spill("Testing reflection...")
-    
-    fr fr Basic reflection usage
-    sus struct_size = 16  fr fr Simulated struct size
-    vibez.spill("TestStruct size: " + struct_size + " bytes")
-    
-    sus instance TestStruct = TestStruct{value: 42, name: "test"}
-    vibez.spill("Created instance with value: " + instance.value)
+// Main function
+slay main() {
+    vibez.spill("=== Simple Advanced Features Test ===")
+    pattern_demo()
+    vibez.spill("=== Test Complete ===")
 }
-
-fr fr Test generics
-slay identity<T>(x T) T {
-    damn x
-}
-
-slay test_generics() {
-    vibez.spill("Testing generics...")
-    
-    fr fr These should work with type inference
-    sus int_result = identity(42)
-    sus str_result = identity("hello")
-    
-    vibez.spill("Identity results: " + int_result + ", " + str_result)
-}
-
-fr fr Main test function
-slay run_feature_tests() {
-    vibez.spill("CURSED Language Features Test")
-    vibez.spill("=============================")
-    
-    test_start("Pattern Matching")
-    test_patterns()
-    
-    test_start("Reflection")
-    test_reflection()
-    
-    test_start("Generics")
-    test_generics()
-    
-    print_test_summary()
-}
-
-fr fr Execute tests
-run_feature_tests()

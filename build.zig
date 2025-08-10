@@ -848,6 +848,53 @@ pub fn build(b: *std.Build) void {
     const lsp_step = b.step("lsp", "Run the CURSED Language Server");
     lsp_step.dependOn(&run_lsp.step);
 
+    // Performance Optimization CLI
+    const perf_cli_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")  // Fallback for limited targets
+    else 
+        b.path("performance_optimization_cli_simple.zig");
+        
+    const perf_cli_exe = b.addExecutable(.{
+        .name = "cursed-perf",
+        .root_source_file = perf_cli_source,
+        .target = resolved_target,
+        .optimize = actual_optimize,
+    });
+    
+    if (supports_libc) {
+        perf_cli_exe.linkLibC();
+        
+        // Add Windows-specific libraries if needed
+        if (resolved_target.result.os.tag == .windows) {
+            perf_cli_exe.linkSystemLibrary("ws2_32");
+            perf_cli_exe.linkSystemLibrary("kernel32");
+        }
+    }
+    
+    // Apply ReleaseSmall fix to performance CLI
+    if (actual_optimize == .ReleaseSmall) {
+        perf_cli_exe.want_lto = true;
+        perf_cli_exe.root_module.addCMacro("NDEBUG", "1");
+    }
+    
+    // Apply linker configuration to performance CLI
+    linker_manager.applyLinkerConfig(perf_cli_exe, target_triple_str, b) catch |err| {
+        if (b.verbose) {
+            std.debug.print("⚠️ Failed to apply linker config to performance CLI: {}\n", .{err});
+        }
+    };
+    
+    b.installArtifact(perf_cli_exe);
+    
+    const run_perf_cli = b.addRunArtifact(perf_cli_exe);
+    run_perf_cli.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_perf_cli.addArgs(args);
+    }
+    
+    const perf_cli_step = b.step("perf", "Run the CURSED Performance Optimization CLI");
+    perf_cli_step.dependOn(&run_perf_cli.step);
+
     // Comprehensive test step that runs all tests
     const all_tests_step = b.step("test-all", "Run all test suites");
     all_tests_step.dependOn(&run_unit_tests.step);
@@ -988,4 +1035,95 @@ pub fn build(b: *std.Build) void {
     validate_cmd.step.dependOn(b.getInstallStep());
     validate_step.dependOn(&validate_cmd.step);
     validate_step.dependOn(&validate_linker_cmd.step);
+    
+    // Performance optimization steps
+    const perf_optimize_step = b.step("perf-optimize", "Run performance optimization on CURSED programs");
+    const perf_optimize_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        b.fmt(
+            \\echo "🚀 Running CURSED Performance Optimization..."
+            \\if [ -f ./scripts/run_performance_optimization.sh ]; then
+            \\  ./scripts/run_performance_optimization.sh optimize --level=standard "${{@:-examples/basic_test.csd}}"
+            \\else
+            \\  echo "⚠️ Performance optimization script not found"
+            \\  ./zig-out/bin/cursed-perf optimize --level=standard "${{@:-examples/basic_test.csd}}"
+            \\fi
+        , .{})
+    });
+    perf_optimize_cmd.step.dependOn(b.getInstallStep());
+    perf_optimize_step.dependOn(&perf_optimize_cmd.step);
+    
+    const perf_profile_step = b.step("perf-profile", "Run performance profiling on CURSED programs");
+    const perf_profile_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        b.fmt(
+            \\echo "📊 Running CURSED Performance Profiling..."
+            \\if [ -f ./scripts/run_performance_optimization.sh ]; then
+            \\  ./scripts/run_performance_optimization.sh profile --format=text "${{@:-examples/basic_test.csd}}"
+            \\else
+            \\  echo "⚠️ Performance optimization script not found"
+            \\  ./zig-out/bin/cursed-perf profile --format=text "${{@:-examples/basic_test.csd}}"
+            \\fi
+        , .{})
+    });
+    perf_profile_cmd.step.dependOn(b.getInstallStep());
+    perf_profile_step.dependOn(&perf_profile_cmd.step);
+    
+    const perf_benchmark_step = b.step("perf-benchmark", "Run performance benchmarks");
+    const perf_benchmark_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        b.fmt(
+            \\echo "🏃 Running CURSED Performance Benchmarks..."
+            \\if [ -f ./scripts/run_performance_optimization.sh ]; then
+            \\  ./scripts/run_performance_optimization.sh benchmark all
+            \\else
+            \\  echo "⚠️ Performance optimization script not found"
+            \\  ./zig-out/bin/cursed-perf benchmark all
+            \\fi
+        , .{})
+    });
+    perf_benchmark_cmd.step.dependOn(b.getInstallStep());
+    perf_benchmark_step.dependOn(&perf_benchmark_cmd.step);
+    
+    const perf_comprehensive_step = b.step("perf-comprehensive", "Run comprehensive performance optimization suite");
+    const perf_comprehensive_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        b.fmt(
+            \\echo "🎯 Running Comprehensive Performance Optimization Suite..."
+            \\if [ -f ./scripts/run_performance_optimization.sh ]; then
+            \\  ./scripts/run_performance_optimization.sh comprehensive "${{@:-examples/basic_test.csd}}"
+            \\else
+            \\  echo "⚠️ Performance optimization script not found"
+            \\  echo "Running individual performance tools..."
+            \\  ./zig-out/bin/cursed-perf optimize --level=aggressive "${{@:-examples/basic_test.csd}}"
+            \\  ./zig-out/bin/cursed-perf profile --format=json "${{@:-examples/basic_test.csd}}"
+            \\  ./zig-out/bin/cursed-perf benchmark all
+            \\fi
+        , .{})
+    });
+    perf_comprehensive_cmd.step.dependOn(b.getInstallStep());
+    perf_comprehensive_step.dependOn(&perf_comprehensive_cmd.step);
+    
+    // Performance help step
+    const perf_help_step = b.step("perf-help", "Show performance optimization help");
+    const perf_help_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        \\echo "🚀 CURSED Performance Optimization Suite"
+        \\echo "========================================"
+        \\echo ""
+        \\echo "Available performance optimization commands:"
+        \\echo "  zig build perf                  - Run performance CLI"
+        \\echo "  zig build perf-optimize         - Apply performance optimizations"
+        \\echo "  zig build perf-profile          - Profile program execution"
+        \\echo "  zig build perf-benchmark        - Run performance benchmarks"
+        \\echo "  zig build perf-comprehensive    - Run full optimization suite"
+        \\echo "  zig build perf-help             - Show this help"
+        \\echo ""
+        \\echo "Performance optimization script (if available):"
+        \\echo "  ./scripts/run_performance_optimization.sh --help"
+        \\echo ""
+        \\echo "Direct CLI usage:"
+        \\echo "  ./zig-out/bin/cursed-perf --help"
+    });
+    perf_help_step.dependOn(&perf_help_cmd.step);
 }
