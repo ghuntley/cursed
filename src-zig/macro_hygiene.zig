@@ -57,10 +57,6 @@ pub const MacroHygieneContext = struct {
         }
         
         pub fn deinit(self: *Scope) void {
-            var iterator = self.symbols.iterator();
-            while (iterator.next()) |entry| {
-                entry.value_ptr.symbols.deinit();
-            }
             self.symbols.deinit();
         }
     };
@@ -136,7 +132,7 @@ pub const MacroHygieneContext = struct {
         };
         
         // Create global scope
-        var global_scope = Scope.init(allocator, 0, null, false);
+        const global_scope = Scope.init(allocator, 0, null, false);
         try context.scope_stack.append(global_scope);
         context.global_scope = &context.scope_stack.items[0];
         
@@ -187,11 +183,11 @@ pub const MacroHygieneContext = struct {
             return error.NoActiveExpansion;
         }
         
-        var expansion = self.expansion_stack.pop();
+        const expansion = self.expansion_stack.pop();
         defer expansion.deinit();
         
         // Check for hygiene violations in this expansion
-        try self.checkHygieneViolations(&expansion);
+        try self.checkHygieneViolations(expansion);
         
         // Pop the macro's scope
         self.popScope();
@@ -228,7 +224,7 @@ pub const MacroHygieneContext = struct {
         // Check for hygiene violations
         if (is_macro_context) {
             // Check if this symbol would shadow an outer scope variable
-            if (self.findSymbolInOuterScopes(name, current_scope)) |outer_symbol| {
+            if (self.findSymbolInOuterScopes(name, current_scope)) |_| {
                 // This is a potential shadowing violation
                 try self.hygiene_violations.append(HygieneViolation{
                     .kind = .SymbolShadowing,
@@ -319,6 +315,7 @@ pub const MacroHygieneContext = struct {
     
     /// Find symbol in outer scopes
     fn findSymbolInOuterScopes(self: *MacroHygieneContext, name: []const u8, current_scope: *Scope) ?*Scope.SymbolInfo {
+        _ = self;
         var scope = current_scope.parent;
         while (scope) |s| {
             if (s.symbols.getPtr(name)) |symbol| {
@@ -345,10 +342,10 @@ pub const MacroHygieneContext = struct {
     }
     
     /// Check for hygiene violations after macro expansion
-    fn checkHygieneViolations(self: *MacroHygieneContext, expansion: *MacroExpansion) !void {
+    fn checkHygieneViolations(self: *MacroHygieneContext, expansion: MacroExpansion) !void {
         // Check if any symbols introduced by the macro escape their intended scope
         for (expansion.symbols_introduced.items) |symbol_name| {
-            if (self.symbolEscapesScope(symbol_name, expansion)) {
+            if (self.symbolEscapesScope(symbol_name, &expansion)) {
                 try self.hygiene_violations.append(HygieneViolation{
                     .kind = .ScopeEscape,
                     .symbol_name = symbol_name,

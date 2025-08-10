@@ -36,6 +36,30 @@ pub const ParserError = error{
     AlignmentError,
 };
 
+pub const ErrorRecoveryStats = struct {
+    total_errors: usize = 0,
+    semicolon_recoveries: usize = 0,
+    statement_recoveries: usize = 0,
+    expression_recoveries: usize = 0,
+    delimiter_recoveries: usize = 0,
+    tokens_skipped: usize = 0,
+    
+    pub fn init() ErrorRecoveryStats {
+        return ErrorRecoveryStats{};
+    }
+    
+    pub fn reportStats(self: *const ErrorRecoveryStats) void {
+        std.debug.print("\n=== Error Recovery Statistics ===\n", .{});
+        std.debug.print("Total errors encountered: {}\n", .{self.total_errors});
+        std.debug.print("Semicolon recoveries: {}\n", .{self.semicolon_recoveries});
+        std.debug.print("Statement recoveries: {}\n", .{self.statement_recoveries});
+        std.debug.print("Expression recoveries: {}\n", .{self.expression_recoveries});
+        std.debug.print("Delimiter recoveries: {}\n", .{self.delimiter_recoveries});
+        std.debug.print("Total tokens skipped: {}\n", .{self.tokens_skipped});
+        std.debug.print("================================\n", .{});
+    }
+};
+
 pub const Parser = struct {
     tokens: []const Token,
     current: usize,
@@ -48,6 +72,7 @@ pub const Parser = struct {
     scope_depth: usize,
     file_path: []const u8,
     telemetry: ?*crash_handler.CrashTelemetry,
+    error_recovery_stats: ErrorRecoveryStats,
 
     pub fn init(allocator: Allocator, tokens: []const Token) Parser {
         var arena = std.heap.ArenaAllocator.init(allocator);
@@ -63,6 +88,7 @@ pub const Parser = struct {
             .scope_depth = 0,
             .file_path = "unknown",
             .telemetry = null,
+            .error_recovery_stats = ErrorRecoveryStats.init(),
         };
     }
 
@@ -84,6 +110,7 @@ pub const Parser = struct {
             .scope_depth = 0,
             .file_path = file_path,
             .telemetry = null,
+            .error_recovery_stats = ErrorRecoveryStats.init(),
         };
     }
     
@@ -101,6 +128,7 @@ pub const Parser = struct {
             .scope_depth = 0,
             .file_path = file_path,
             .telemetry = telemetry,
+            .error_recovery_stats = ErrorRecoveryStats.init(),
         };
     }
 
@@ -221,7 +249,7 @@ pub const Parser = struct {
                 continue;
             }
 
-            // Parse regular statements with enhanced error handling
+            // Parse regular statements with enhanced error handling and recovery
             if (self.parseStatement()) |stmt| {
                 const stmt_ptr = self.allocator.create(Statement) catch {
                     _ = self.reportErrorWithContext("Out of memory allocating statement", "parseProgram") catch {};
@@ -240,8 +268,12 @@ pub const Parser = struct {
                     return ParserError.OutOfMemory;
                 };
             } else |err| {
-                _ = self.reportErrorWithContext("Error parsing statement", "parseProgram") catch {};
-                self.synchronize();
+                const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
+                _ = self.reportErrorAtToken(error_token, "Failed to parse statement") catch {};
+                
+                // Use enhanced error recovery strategy
+                self.recoverFromStatementError();
+                
                 if (err == ParserError.OutOfMemory) return err;
                 // Continue parsing after error recovery
             }
@@ -250,6 +282,11 @@ pub const Parser = struct {
         if (statement_count >= max_statements) {
             _ = self.reportErrorWithContext("Maximum number of statements exceeded", "parseProgram") catch {};
             return ParserError.InvalidSyntax;
+        }
+
+        // Report error recovery statistics if any errors occurred
+        if (self.error_recovery_stats.total_errors > 0) {
+            self.error_recovery_stats.reportStats();
         }
 
         return program;
@@ -313,29 +350,172 @@ pub const Parser = struct {
         return ParserError.SyntaxError;
     }
 
-    // Recovery parsing
+    // Enhanced recovery parsing with multiple strategies
     fn synchronize(self: *Parser) void {
-        _ = self.advance();
+        _ = self.reportErrorWithContext("Synchronizing parser after error", "synchronize") catch {};
+        self.syncToSemicolon();
+    }
+
+    /// Sync to semicolon algorithm - the primary error recovery mechanism
+    /// Scans forward until finding a semicolon or statement-starting token
+    fn syncToSemicolon(self: *Parser) void {
+        var tokens_skipped: usize = 0;
+        const max_skip = 50; // Prevent infinite loops
         
-        while (!self.isAtEnd()) {
-            if (self.previous().kind == .Semicolon) return;
+        self.error_recovery_stats.semicolon_recoveries += 1;
+        
+        // Skip the current erroneous token
+        if (!self.isAtEnd()) {
+            _ = self.advance();
+            tokens_skipped += 1;
+        }
+        
+        while (!self.isAtEnd() and tokens_skipped < max_skip) {
+            const current_token = self.peek();
             
-            switch (self.peek().kind) {
-                .Slay, .Sus, .Facts, .Squad, .Collab, .Vibe, .Yeet => return,
+            // Stop at semicolon - this is our sync point
+            if (current_token.kind == .Semicolon) {
+                _ = self.advance(); // consume the semicolon
+                self.error_recovery_stats.tokens_skipped += tokens_skipped;
+                std.debug.print("INFO: Recovered at semicolon after skipping {} tokens\n", .{tokens_skipped});
+                return;
+            }
+            
+            // Stop at newline (statement separator in many cases)
+            if (current_token.kind == .Newline) {
+                _ = self.advance(); // consume the newline
+                self.error_recovery_stats.tokens_skipped += tokens_skipped;
+                std.debug.print("INFO: Recovered at newline after skipping {} tokens\n", .{tokens_skipped});
+                return;
+            }
+            
+            // Stop at statement-starting keywords
+            switch (current_token.kind) {
+                .Slay, .Sus, .Facts, .Squad, .Collab, .Vibe, .Yeet, .Ready, .Lowkey, 
+                .Periodt, .Flex, .Bestie, .Ghosted, .Simp, .Later, .Impl, .BeLike, 
+                .Stan, .Match, .VibeCheck => {
+                    // Don't consume these - let the next parsing cycle handle them
+                    self.error_recovery_stats.tokens_skipped += tokens_skipped;
+                    std.debug.print("INFO: Recovered at statement keyword '{s}' after skipping {} tokens\n", .{@tagName(current_token.kind), tokens_skipped});
+                    return;
+                },
                 else => {},
             }
             
-        _ = self.advance();
+            // Stop at block delimiters that might indicate recovery points
+            switch (current_token.kind) {
+                .RightBrace, .RightParen, .RightBracket => {
+                    // Don't consume these - they might be needed for proper parsing
+                    self.error_recovery_stats.tokens_skipped += tokens_skipped;
+                    std.debug.print("INFO: Recovered at delimiter '{s}' after skipping {} tokens\n", .{@tagName(current_token.kind), tokens_skipped});
+                    return;
+                },
+                else => {},
+            }
+            
+            _ = self.advance();
+            tokens_skipped += 1;
+        }
+        
+        self.error_recovery_stats.tokens_skipped += tokens_skipped;
+        if (tokens_skipped >= max_skip) {
+            _ = self.reportErrorWithContext("Maximum tokens skipped during error recovery", "syncToSemicolon") catch {};
         }
     }
 
-    fn recoverToNext(self: *Parser, target_tokens: []const TokenKind) void {
-        while (!self.isAtEnd()) {
-            for (target_tokens) |target| {
-                if (self.check(target)) return;
+    /// Sync to specific token - for targeted recovery
+    fn syncToToken(self: *Parser, target: TokenKind) void {
+        var tokens_skipped: usize = 0;
+        const max_skip = 30;
+        
+        while (!self.isAtEnd() and tokens_skipped < max_skip) {
+            if (self.check(target)) {
+                return; // Found target, don't consume it
             }
-        _ = self.advance();
+            
+            _ = self.advance();
+            tokens_skipped += 1;
         }
+    }
+
+    /// Sync to any of multiple target tokens
+    fn syncToAnyToken(self: *Parser, targets: []const TokenKind) void {
+        var tokens_skipped: usize = 0;
+        const max_skip = 30;
+        
+        while (!self.isAtEnd() and tokens_skipped < max_skip) {
+            for (targets) |target| {
+                if (self.check(target)) {
+                    return; // Found one of the targets
+                }
+            }
+            
+            _ = self.advance();
+            tokens_skipped += 1;
+        }
+    }
+
+    /// Sync to matching delimiter (e.g., find closing brace for opening brace)
+    fn syncToMatchingDelimiter(self: *Parser, open: TokenKind, close: TokenKind) void {
+        var depth: i32 = 1; // Start with 1 since we're already inside
+        var tokens_skipped: usize = 0;
+        const max_skip = 100;
+        
+        while (!self.isAtEnd() and depth > 0 and tokens_skipped < max_skip) {
+            const current = self.peek();
+            
+            if (current.kind == open) {
+                depth += 1;
+            } else if (current.kind == close) {
+                depth -= 1;
+            }
+            
+            _ = self.advance();
+            tokens_skipped += 1;
+        }
+    }
+
+    /// Enhanced recovery that tries multiple strategies
+    fn recoverToNext(self: *Parser, target_tokens: []const TokenKind) void {
+        // First try to sync to semicolon
+        const start_pos = self.current;
+        self.syncToSemicolon();
+        
+        // If we didn't make progress, try syncing to target tokens
+        if (self.current == start_pos) {
+            self.syncToAnyToken(target_tokens);
+        }
+    }
+
+    /// Recovery for expression parsing - tries to find expression boundaries
+    fn recoverFromExpressionError(self: *Parser) void {
+        const expr_recovery_tokens = [_]TokenKind{
+            .Semicolon, .Newline, .Comma, .RightParen, .RightBrace, .RightBracket,
+            .Plus, .Minus, .Star, .Slash, .Equal, .EqualEqual, .BangEqual,
+            .Less, .LessEqual, .Greater, .GreaterEqual
+        };
+        
+        self.syncToAnyToken(&expr_recovery_tokens);
+    }
+
+    /// Recovery for statement parsing - tries to find statement boundaries
+    fn recoverFromStatementError(self: *Parser) void {
+        self.error_recovery_stats.total_errors += 1;
+        self.error_recovery_stats.statement_recoveries += 1;
+        
+        // First try semicolon sync
+        self.syncToSemicolon();
+        
+        // If no semicolon found, try to find next statement
+        if (self.isAtEnd()) return;
+        
+        const stmt_start_tokens = [_]TokenKind{
+            .Slay, .Sus, .Facts, .Squad, .Collab, .Ready, .Lowkey,
+            .Periodt, .Flex, .Bestie, .Later, .Impl, .Stan, .Match
+        };
+        
+        std.debug.print("INFO: Attempting additional statement recovery\n", .{});
+        self.syncToAnyToken(&stmt_start_tokens);
     }
 
     fn parsePackageDeclaration(self: *Parser) ParserError!ast.PackageDeclaration {
@@ -410,20 +590,27 @@ pub const Parser = struct {
             _ = self.advance();
         }
         
-        // Function declaration (slay) with error recovery
+        // Function declaration (slay) with enhanced error recovery
         if (self.check(.Slay)) {
             return Statement{ .Function = self.parseFunctionStatement() catch |err| {
-                _ = self.reportErrorWithContext("Error parsing function statement", "parseStatement") catch {};
-                self.synchronize();
+                const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
+                _ = self.reportErrorAtToken(error_token, "Error parsing function statement") catch {};
+                
+                // Try to recover to the end of the function
+                self.syncToMatchingDelimiter(.LeftBrace, .RightBrace);
+                self.recoverFromStatementError();
                 return err;
             }};
         }
         
-        // Variable declaration (sus/facts) with error recovery
+        // Variable declaration (sus/facts) with enhanced error recovery
         if (self.check(.Sus) or self.check(.Facts)) {
             return Statement{ .Let = self.parseLetStatement() catch |err| {
-                _ = self.reportErrorWithContext("Error parsing variable declaration", "parseStatement") catch {};
-                self.synchronize();
+                const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
+                _ = self.reportErrorAtToken(error_token, "Error parsing variable declaration") catch {};
+                
+                // Sync to semicolon for variable declarations
+                self.syncToSemicolon();
                 return err;
             }};
         }

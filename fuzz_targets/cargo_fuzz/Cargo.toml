@@ -1,0 +1,11 @@
+[package]
+name = "cursed-fuzz"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[[bin]]
+name = "fuzz_targets"
+path = "src/main.rs"

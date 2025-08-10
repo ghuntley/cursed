@@ -1,0 +1,66 @@
+// CURSED Memory Buffer Fuzz Target Template
+// Targets: demo_struct_marshalling in examples/ffi_demo.rs:110
+
+#include <stdint.h>\n#include <stddef.h>
+
+#define MAX_BUFFER_SIZE (1024 * 1024)
+
+// C-specific setup
+
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+    if (size == 0 || size > MAX_BUFFER_SIZE) return 0;
+    
+    // C uses malloc/free directly
+    
+    // Test buffer operations with various sizes
+    test_buffer_operations(data, size);
+    test_string_operations(data, size);
+    test_boundary_conditions(data, size);
+    
+    // C cleanup handled manually
+    return 0;
+}
+
+void test_buffer_operations(const uint8_t *data, size_t size) {
+    // Test buffer copying and manipulation
+    uint8_t *buffer = malloc(size + 1);
+    if (!buffer) return;
+    
+    // demo_struct_marshalling(buffer, data, size);
+    
+    free(buffer);
+}
+
+void test_string_operations(const uint8_t *data, size_t size) {
+    char *str = malloc(size + 1);
+    if (!str) return;
+    
+    memcpy(str, data, size);
+    str[size] = '\0';
+    
+    // Test string functions
+    // demo_struct_marshalling(str);
+    
+    free(str);
+}
+
+void test_boundary_conditions(const uint8_t *data, size_t size) {
+    // Test edge cases
+    if (size > 0) {
+        // demo_struct_marshalling(data, 0);        // Zero size
+        // demo_struct_marshalling(data, 1);        // Single byte
+        // demo_struct_marshalling(data, size);     // Full size
+        // demo_struct_marshalling(NULL, 0);        // NULL pointer
+    }
+}
+
+
+// Additional test functions for demo_struct_marshalling
+void test_edge_cases(const uint8_t *data, size_t size) {
+    // Test with edge cases specific to memory_buffer
+}
+
+void test_error_conditions(const uint8_t *data, size_t size) {
+    // Test error handling paths
+}
+

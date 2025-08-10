@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "locale": "ja-JP",
+    "version": "1.0",
+    "description": "CURSED パニックメッセージ 日本語版",
+    "contributors": ["CURSED開発チーム"],
+    "last_updated": "2025-01-10"
+  },
+  "messages": {
+    "panic.yikes": "🚨 CURSED ランタイムエラー: {message}",
+    "panic.shook": "💥 CURSED パニック: {message} (コード: {code})",
+    "panic.fam": "❌ CURSED 例外: {message}",
+    "panic.location": "📍 {function}() 内の {file}:{line}:{column} で",
+    "panic.stack_trace": "📚 スタックトレース:",
+    "panic.caused_by": "原因:",
+    "panic.memory_error": "💾 メモリエラー: {message}",
+    "panic.type_error": "🔷 型エラー: {message}",
+    "panic.runtime_error": "⚡ ランタイムエラー: {message}",
+    "panic.division_by_zero": "🚫 ゼロ除算",
+    "panic.index_out_of_bounds": "📊 インデックス {index} が範囲外 (サイズ: {size})",
+    "panic.null_pointer": "🎯 ヌルポインタの参照解除",
+    "panic.invalid_operation": "❗ 無効な操作: {operation}",
+    "panic.unknown_error": "❓ 不明なエラー",
+    "panic.file_not_found": "📄 ファイルが見つかりません: {filename}",
+    "panic.permission_denied": "🔒 アクセス拒否: {action}",
+    "panic.network_error": "🌐 ネットワークエラー: {message}",
+    "panic.timeout": "⏰ {seconds}秒後にタイムアウトしました",
+    "panic.resource_exhausted": "📈 リソース不足: {resource}",
+    "panic.assertion_failed": "⚠️ アサーション失敗: {condition}",
+    "panic.overflow": "🔢 {operation}で算術オーバーフロー",
+    "panic.underflow": "🔢 {operation}で算術アンダーフロー",
+    "panic.format_error": "📝 フォーマットエラー: {message}",
+    "panic.encoding_error": "🔤 エンコーディングエラー: {encoding}",
+    "panic.deadlock": "🔄 {resource}でデッドロック検出",
+    "panic.race_condition": "🏃 競合状態検出: {details}",
+    "panic.invalid_state": "🔧 無効な状態: {state}",
+    "panic.not_implemented": "🚧 未実装の機能: {feature}",
+    "panic.deprecated": "⚠️ 非推奨機能の使用: {feature}",
+    "panic.configuration_error": "⚙️ 設定エラー: {message}",
+    "panic.validation_error": "✅ 検証エラー: {field}",
+    "panic.syntax_error": "📖 {line}:{column}で構文エラー: {message}",
+    "panic.parse_error": "🔍 解析エラー: {message}",
+    "panic.compilation_error": "🔨 コンパイルエラー: {message}",
+    "panic.linking_error": "🔗 リンクエラー: {message}",
+    "panic.runtime_version_mismatch": "📦 ランタイムバージョン不一致: 期待値{expected}、実際{actual}",
+    "panic.unsupported_platform": "💻 サポートされていないプラットフォーム: {platform}",
+    "panic.insufficient_permissions": "🛡️ {action}の権限が不足",
+    "panic.quota_exceeded": "📊 {resource}のクォータ超過: {limit}",
+    "panic.service_unavailable": "🚫 サービス利用不可: {service}",
+    "panic.connection_refused": "🔌 {address}:{port}への接続拒否",
+    "panic.authentication_failed": "🔐 ユーザー{user}の認証失敗",
+    "panic.authorization_failed": "🚪 アクション{action}の認可失敗",
+    "panic.data_corruption": "💿 {location}でデータ破損検出",
+    "panic.checksum_mismatch": "🔍 チェックサム不一致: 期待値{expected}、実際{actual}",
+    "panic.version_conflict": "📚 バージョン競合: {package}は{required}が必要ですが、{current}がインストールされています"
+  },
+  "pluralization": {
+    "type": "one",
+    "rules": {
+      "other": "true"
+    }
+  },
+  "formatting": {
+    "decimal_separator": ".",
+    "thousands_separator": ",",
+    "currency_symbol": "¥",
+    "currency_position": "before",
+    "date_format": "YYYY/MM/DD",
+    "time_format": "HH:mm:ss",
+    "datetime_format": "YYYY/MM/DD HH:mm:ss",
+    "rtl": false,
+    "text_direction": "ltr"
+  },
+  "context": {
+    "error_severity_levels": {
+      "low": "ℹ️",
+      "medium": "⚠️",
+      "high": "🚨",
+      "critical": "💀"
+    },
+    "component_prefixes": {
+      "lexer": "字句解析",
+      "parser": "構文解析",
+      "compiler": "コンパイラ",
+      "runtime": "ランタイム",
+      "gc": "GC",
+      "vm": "VM"
+    }
+  }
+}

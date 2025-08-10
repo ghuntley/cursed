@@ -34,6 +34,11 @@ const c = struct {
     pub fn LLVMDisposeTargetMachine(_: LLVMTargetMachineRef) void {}
     pub fn LLVMCreateDIBuilder(_: LLVMModuleRef) LLVMDIBuilderRef { return null; }
     pub fn LLVMDisposeDIBuilder(_: LLVMDIBuilderRef) void {}
+    pub fn LLVMDIBuilderCreateDebugLocation(_: LLVMContextRef, _: u32, _: u32, _: LLVMMetadataRef, _: ?LLVMMetadataRef) LLVMMetadataRef { return null; }
+    pub fn LLVMInstructionSetDebugLoc(_: LLVMValueRef, _: LLVMMetadataRef) void {}
+    pub fn LLVMContextCreate() LLVMContextRef { return null; }
+    pub fn LLVMContextDispose(_: LLVMContextRef) void {}
+    pub fn LLVMModuleCreateWithNameInContext(_: [*c]const u8, _: LLVMContextRef) LLVMModuleRef { return null; }
 };
 
 const ast = @import("ast.zig");
@@ -604,6 +609,113 @@ pub const DebugInfoGenerator = struct {
         }
         
         return inlined_func;
+    }
+    
+    /// Create debug location with inlined-at metadata for inlined functions
+    pub fn createInlinedDebugLocation(self: *DebugInfoGenerator, 
+                                     line: u32, 
+                                     column: u32, 
+                                     scope: c.LLVMMetadataRef,
+                                     inlined_at_line: u32,
+                                     inlined_at_column: u32,
+                                     inlined_at_scope: c.LLVMMetadataRef) c.LLVMMetadataRef {
+        
+        // Create the "inlined at" metadata first
+        const inlined_at = c.LLVMDIBuilderCreateDebugLocation(
+            self.context,
+            inlined_at_line,
+            inlined_at_column,
+            inlined_at_scope,
+            null // No further nesting
+        );
+        
+        // Create the main debug location with inlined-at reference
+        return c.LLVMDIBuilderCreateDebugLocation(
+            self.context,
+            line,
+            column,
+            scope,
+            inlined_at // This tells debuggers where the function was inlined from
+        );
+    }
+    
+    /// Set debug location for inlined instruction with proper call stack mapping
+    pub fn setInlinedInstructionDebugLocation(self: *DebugInfoGenerator, 
+                                             instruction: c.LLVMValueRef, 
+                                             original_line: u32, 
+                                             original_column: u32,
+                                             original_scope: c.LLVMMetadataRef,
+                                             inline_site_line: u32,
+                                             inline_site_column: u32,
+                                             inline_site_scope: c.LLVMMetadataRef) void {
+        
+        const inlined_debug_loc = self.createInlinedDebugLocation(
+            original_line,
+            original_column,
+            original_scope,
+            inline_site_line,
+            inline_site_column,
+            inline_site_scope
+        );
+        
+        c.LLVMInstructionSetDebugLoc(instruction, inlined_debug_loc);
+        
+        std.debug.print("🎯 Set inlined debug location for instruction: {d}:{d} (inlined at {d}:{d})\n",
+                       .{ original_line, original_column, inline_site_line, inline_site_column });
+    }
+    
+    /// Create debug info for inlined variable with proper scope tracking
+    pub fn createInlinedVariable(self: *DebugInfoGenerator, 
+                                name: []const u8, 
+                                original_line: u32,
+                                original_scope: c.LLVMMetadataRef,
+                                di_type: c.LLVMMetadataRef, 
+                                alloca: c.LLVMValueRef,
+                                inline_site_line: u32,
+                                inline_site_column: u32,
+                                inline_site_scope: c.LLVMMetadataRef) DebugError!void {
+        
+        // Create inlined debug location for the variable
+        const inlined_location = self.createInlinedDebugLocation(
+            original_line,
+            0, // Column not available for variables
+            original_scope,
+            inline_site_line,
+            inline_site_column,
+            inline_site_scope
+        );
+        
+        // Create the variable debug info
+        const di_variable = c.LLVMDIBuilderCreateAutoVariable(
+            self.di_builder,
+            original_scope,
+            name.ptr,
+            name.len,
+            self.file_metadata.?,
+            original_line,
+            di_type,
+            1, // Always preserve
+            c.LLVMDIFlagZero,
+            0  // Alignment in bits
+        );
+        
+        if (di_variable == null) {
+            return DebugError.MetadataError;
+        }
+        
+        // Insert variable declaration with inlined location
+        const di_expr = c.LLVMDIBuilderCreateExpression(self.di_builder, null, 0);
+        _ = c.LLVMDIBuilderInsertDeclareAtEnd(
+            self.di_builder,
+            alloca,
+            di_variable,
+            di_expr,
+            inlined_location,
+            c.LLVMGetLastBasicBlock(c.LLVMGetBasicBlockParent(c.LLVMGetInstructionParent(alloca)))
+        );
+        
+        std.debug.print("📍 Created inlined variable debug info: {s} at {d} (inlined at {d}:{d})\n",
+                       .{ name, original_line, inline_site_line, inline_site_column });
     }
     
     /// Finalize debug information with optimization for debugging
