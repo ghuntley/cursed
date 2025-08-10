@@ -86,6 +86,13 @@ pub const BuiltInRegistry = struct {
             .arg_count = 1,
         });
 
+        // Register facts (print function with multiple arguments) - Pure CURSED
+        try self.functions.put("facts", BuiltInFunction{
+            .name = "facts",
+            .implementation = pureCursedFacts,
+            .arg_count = 0, // Variable argument count
+        });
+
         // Register string operations - Now pure CURSED
         try self.functions.put("string.concat", BuiltInFunction{
             .name = "string.concat",
@@ -193,7 +200,8 @@ pub const BuiltInRegistry = struct {
 
     pub fn callFunction(self: *BuiltInRegistry, name: []const u8, args: []const Value) !Value {
         if (self.getFunction(name)) |func| {
-            if (args.len != func.arg_count) {
+            // arg_count = 0 means variable arguments (like facts())
+            if (func.arg_count != 0 and args.len != func.arg_count) {
                 return error.ArgumentCountMismatch;
             }
             return func.implementation(args);
@@ -216,6 +224,25 @@ pub const BuiltInRegistry = struct {
             .Null => std.debug.print("cap\n", .{}),
             else => std.debug.print("<unknown>\n", .{}),
         }
+        return Value.Null;
+    }
+
+    /// Pure CURSED facts() implementation - supports multiple arguments
+    fn pureCursedFacts(args: []const Value) anyerror!Value {
+        // Print all arguments separated by spaces, similar to print() in other languages
+        for (args, 0..) |arg, i| {
+            if (i > 0) std.debug.print(" ", .{}); // Add space between arguments
+            
+            switch (arg) {
+                .String => |str| std.debug.print("{s}", .{str}),
+                .Integer => |int| std.debug.print("{}", .{int}),
+                .Float => |float| std.debug.print("{d}", .{float}),
+                .Boolean => |bool_val| std.debug.print("{s}", .{if (bool_val) "based" else "cringe"}),
+                .Null => std.debug.print("cap", .{}),
+                else => std.debug.print("<unknown>", .{}),
+            }
+        }
+        std.debug.print("\n", .{}); // Add newline at the end
         return Value.Null;
     }
 

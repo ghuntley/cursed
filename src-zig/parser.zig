@@ -931,25 +931,36 @@ pub const Parser = struct {
     }
 
     fn parseType(self: *Parser) ParserError!ast.Type {
-        // Check for array types first []element_type or [size]element_type
+        // Check for array types first []element_type or [size]element_type or [element_type]
         if (self.match(.LeftBracket)) {
-            // Check for size or empty for slice
+            // Check for size or empty for slice or element type (non-standard syntax)
             var size: ?usize = null;
+            var element_type_ptr: ?*ast.Type = null;
+            
             if (!self.check(.RightBracket)) {
                 if (self.check(.Number) or self.check(.Integer)) {
+                    // [size]element_type syntax
                     const size_token = self.advance();
                     size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch null;
+                } else if (self.checkBasicType()) {
+                    // Handle [element_type] syntax (non-standard but used in stdlib)
+                    element_type_ptr = try self.allocator.create(ast.Type);
+                    errdefer self.allocator.destroy(element_type_ptr.?);
+                    element_type_ptr.?.* = try self.parseBasicType();
                 }
             }
             
-        _ = try self.consume(.RightBracket, "Expected ']'");
+            _ = try self.consume(.RightBracket, "Expected ']'");
             
-            const element_type_ptr = try self.allocator.create(ast.Type);
-            errdefer self.allocator.destroy(element_type_ptr);
-            element_type_ptr.* = try self.parseType();
+            if (element_type_ptr == null) {
+                // Standard []element_type syntax
+                element_type_ptr = try self.allocator.create(ast.Type);
+                errdefer self.allocator.destroy(element_type_ptr.?);
+                element_type_ptr.?.* = try self.parseType();
+            }
             
             return ast.Type{ .Array = ast.ArrayType{
-                .element_type = element_type_ptr,
+                .element_type = element_type_ptr.?,
                 .size = size,
             }};
         }
@@ -2184,9 +2195,17 @@ pub const Parser = struct {
             _ = try self.consume(.Lowkey, "Expected 'lowkey' or 'ready'");
         }
         
-        _ = try self.consume(.LeftParen, "Expected '(' after if keyword");
+        // CURSED syntax allows condition without parentheses: ready condition { or lowkey condition {
+        var has_parens = false;
+        if (self.match(.LeftParen)) {
+            has_parens = true;
+        }
+        
         const condition = try self.parseExpression();
-        _ = try self.consume(.RightParen, "Expected ')' after condition");
+        
+        if (has_parens) {
+            _ = try self.consume(.RightParen, "Expected ')' after condition");
+        }
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
@@ -2251,9 +2270,17 @@ pub const Parser = struct {
     fn parseWhileStatement(self: *Parser) ParserError!ast.WhileStatement {
         _ = self.advance(); // consume periodt/flex/bestie
         
-        _ = try self.consume(.LeftParen, "Expected '(' after while keyword");
+        // CURSED syntax allows condition without parentheses: bestie condition {
+        var has_parens = false;
+        if (self.match(.LeftParen)) {
+            has_parens = true;
+        }
+        
         const condition = try self.parseExpression();
-        _ = try self.consume(.RightParen, "Expected ')' after condition");
+        
+        if (has_parens) {
+            _ = try self.consume(.RightParen, "Expected ')' after condition");
+        }
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
