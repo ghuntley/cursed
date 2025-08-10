@@ -638,8 +638,8 @@ pub const Parser = struct {
             }};
         }
         
-        // Variable declaration (sus/facts) with enhanced error recovery
-        if (self.check(.Sus) or self.check(.Facts)) {
+        // Variable declaration (sus/facts) with lookahead to distinguish from function calls
+        if (self.check(.Sus)) {
             return Statement{ .Let = self.parseLetStatement() catch |err| {
                 const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                 _ = self.reportErrorAtToken(error_token, "Error parsing variable declaration") catch {};
@@ -648,6 +648,28 @@ pub const Parser = struct {
                 self.syncToSemicolon();
                 return err;
             }};
+        }
+        
+        // facts can be either variable declaration or function call - lookahead to decide
+        if (self.check(.Facts)) {
+            // Lookahead to check if this is facts(args) or facts variable = value
+            if (self.current + 1 < self.tokens.len and self.tokens[self.current + 1].kind == .LeftParen) {
+                // This is facts(...) function call - parse as expression statement
+                const expr = try self.parseExpression();
+                const expr_ptr = try self.allocator.create(Expression);
+                expr_ptr.* = expr;
+                return Statement{ .Expression = try self.expressionToAnyopaque(expr_ptr) };
+            } else {
+                // This is facts variable = value - parse as variable declaration
+                return Statement{ .Let = self.parseLetStatement() catch |err| {
+                    const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
+                    _ = self.reportErrorAtToken(error_token, "Error parsing variable declaration") catch {};
+                    
+                    // Sync to semicolon for variable declarations
+                    self.syncToSemicolon();
+                    return err;
+                }};
+            }
         }
         
         // Return statement (damn only - canonical spec)
@@ -1843,8 +1865,8 @@ pub const Parser = struct {
             }
         }
 
-        // Identifiers
-        if (self.check(.Identifier)) {
+        // Identifiers and keywords used as identifiers (like facts as function name)
+        if (self.check(.Identifier) or self.check(.Facts)) {
             const name = self.advance().lexeme;
             
             // Check for struct literal Name{field: value, ...}

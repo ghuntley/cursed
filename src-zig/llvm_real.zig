@@ -420,7 +420,8 @@ pub const RealLLVMCodeGen = struct {
                 if (args.items.len > 0) {
                     return llvm_build_call2(self.builder, func_type, func, args.items.ptr, @intCast(args.items.len), "call");
                 } else {
-                    return llvm_build_call2(self.builder, func_type, func, null, 0, "call");
+                    var empty_array: [0]?*anyopaque = undefined;
+                    return llvm_build_call2(self.builder, func_type, func, @ptrCast(&empty_array), 0, "call");
                 }
             }
         }

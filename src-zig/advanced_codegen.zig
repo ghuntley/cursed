@@ -4334,6 +4334,11 @@ pub const AdvancedCodeGen = struct {
             return try self.generateArrayLengthCall(call);
         }
         
+        // Handle facts() function as printf equivalent
+        if (std.mem.eql(u8, name, "facts")) {
+            return try self.generateVibesSpillCall(call);
+        }
+        
         // Handle user-defined functions (including recursive calls)
         if (self.base_codegen.functions.get(name)) |function| {
             return try self.generateEnhancedUserFunctionCall(function, call);
