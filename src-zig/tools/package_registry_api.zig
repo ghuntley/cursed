@@ -323,8 +323,6 @@ pub const RegistryApiClient = struct {
     }
     
     fn validatePackageStructure(self: *RegistryApiClient, package_path: []const u8) !void {
-        _ = self;
-        
         // Check for required files
         const required_files = [_][]const u8{
             "CursedPackage.toml",
@@ -345,7 +343,6 @@ pub const RegistryApiClient = struct {
     }
     
     fn performPublishSecurityScan(self: *RegistryApiClient, package_path: []const u8) !SecurityScanResult {
-        _ = self;
         _ = package_path;
         
         // Simulate security scanning

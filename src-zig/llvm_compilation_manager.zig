@@ -3,6 +3,7 @@ const print = std.debug.print;
 const Allocator = std.mem.Allocator;
 
 const SimpleLLVMIRGenerator = @import("simple_llvm_ir_generator.zig").SimpleLLVMIRGenerator;
+const RealLLVMCodeGen = @import("llvm_real.zig").RealLLVMCodeGen;
 const ast = @import("ast.zig");
 const lexer = @import("lexer.zig");
 const parser = @import("parser.zig");
@@ -54,6 +55,105 @@ pub const LLVMCompilationManager = struct {
             print("Source code ({d} bytes):\n{s}\n", .{ source.len, source });
         }
         
+        // Try the real LLVM backend first
+        if (self.tryRealLLVMBackend(source, output_file)) |_| {
+            print("✅ Compilation completed successfully with real LLVM backend!\n", .{});
+            return;
+        } else |err| {
+            if (self.verbose) {
+                print("⚠️  Real LLVM backend failed: {any}, falling back to IR generator\n", .{err});
+            }
+        }
+        
+        // Fallback to simple IR generator
+        try self.compileWithSimpleIRGenerator(source, output_file);
+    }
+    
+    /// Try using the real LLVM backend
+    fn tryRealLLVMBackend(self: *LLVMCompilationManager, source: []const u8, output_file: []const u8) !void {
+        if (self.verbose) print("🔧 Trying real LLVM backend...\n", .{});
+        
+        // Parse the source into AST
+        var lex = lexer.Lexer.init(self.allocator, source);
+        const tokens = try lex.tokenize();
+        defer tokens.deinit();
+        
+        var parse = parser.Parser.init(self.allocator, tokens.items);
+        defer parse.deinit();
+        
+        const program = try parse.parseProgram();
+        defer {
+            var mut_program = program;
+            mut_program.deinit(self.allocator);
+        }
+        
+        // Initialize real LLVM codegen
+        var codegen = RealLLVMCodeGen.init(self.allocator) catch |err| {
+            if (self.verbose) print("❌ Failed to initialize real LLVM backend: {any}\n", .{err});
+            return err;
+        };
+        defer codegen.deinit();
+        
+        // Generate program
+        try codegen.generateProgram(program);
+        
+        // Write to bitcode file and compile
+        const bc_file = try std.fmt.allocPrint(self.allocator, "{s}.bc", .{output_file});
+        defer self.allocator.free(bc_file);
+        
+        try codegen.writeToFile(bc_file);
+        
+        // Compile bitcode to executable using clang
+        const compile_result = std.process.Child.run(.{
+            .allocator = self.allocator,
+            .argv = &[_][]const u8{
+                "clang-18",
+                "-O2",
+                "-o", output_file,
+                bc_file,
+            },
+        }) catch |err| {
+            // Try fallback to clang
+            const fallback = std.process.Child.run(.{
+                .allocator = self.allocator,
+                .argv = &[_][]const u8{
+                    "clang",
+                    "-O2", 
+                    "-o", output_file,
+                    bc_file,
+                },
+            }) catch {
+                return err;
+            };
+            defer self.allocator.free(fallback.stdout);
+            defer self.allocator.free(fallback.stderr);
+            
+            if (fallback.term != .Exited or fallback.term.Exited != 0) {
+                print("❌ Compilation failed:\n{s}\n", .{fallback.stderr});
+                return error.CompilationFailed;
+            }
+            
+            return;
+        };
+        
+        defer self.allocator.free(compile_result.stdout);
+        defer self.allocator.free(compile_result.stderr);
+        
+        if (compile_result.term != .Exited or compile_result.term.Exited != 0) {
+            print("❌ Compilation failed:\n{s}\n", .{compile_result.stderr});
+            return error.CompilationFailed;
+        }
+        
+        // Clean up bitcode file unless verbose
+        if (!self.verbose) {
+            std.fs.cwd().deleteFile(bc_file) catch {};
+        }
+    }
+    
+    /// Fallback to simple IR generator
+    fn compileWithSimpleIRGenerator(self: *LLVMCompilationManager, source: []const u8, output_file: []const u8) !void {
+        if (self.verbose) print("🔧 Using simple IR generator...\n", .{});
+        
         // Create LLVM IR generator
         var generator = SimpleLLVMIRGenerator.init(self.allocator);
         defer generator.deinit();
@@ -101,14 +201,22 @@ pub const LLVMCompilationManager = struct {
     
     /// Check if LLVM backend is available
     pub fn checkLLVMAvailability(self: *LLVMCompilationManager) bool {
+        if (self.verbose) print("🔍 Checking LLVM availability...\n", .{});
         
         // Check if clang is available as a fallback
         const result = std.process.Child.run(.{
             .allocator = self.allocator,
-            .argv = &[_][]const u8{"clang", "--version"},
-        }) catch {
-            print("❌ Neither LLVM backend nor clang available\n", .{});
-            return false;
+            .argv = &[_][]const u8{"clang-18", "--version"},
+        }) catch blk: {
+            // Try fallback to clang
+            const fallback = std.process.Child.run(.{
+                .allocator = self.allocator,
+                .argv = &[_][]const u8{"clang", "--version"},
+            }) catch {
+                print("❌ Neither LLVM backend nor clang available\n", .{});
+                return false;
+            };
+            break :blk fallback;
         };
         
         defer self.allocator.free(result.stdout);

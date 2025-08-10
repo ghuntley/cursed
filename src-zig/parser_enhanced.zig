@@ -402,7 +402,7 @@ pub const EnhancedParser = struct {
         
         _ = try self.consume(.Slay, "Expected 'slay'");
         
-        if (!self.check(.Identifier)) {
+        if (!self.check(.Identifier) and !self.check(.Spill)) {
             try self.reportError("Expected function name after 'slay'", "parseFunctionStatement");
             return ParserError.UnexpectedToken;
         }

@@ -2,6 +2,86 @@ const std = @import("std");
 const builtin = @import("builtin");
 const linker_script_manager = @import("src-zig/linker_script_manager.zig");
 
+// CURSED Compilation Helper Functions
+const CursedBuilder = struct {
+    b: *std.Build,
+    
+    const Self = @This();
+    
+    pub fn init(b: *std.Build) Self {
+        return Self{ .b = b };
+    }
+    
+    // Compile a .csd file to an object file
+    pub fn compileToObject(self: Self, csd_file: []const u8, output_name: []const u8) *std.Build.Step.Run {
+        // CURSED compiler generates executables, not object files, so we compile and rename
+        const compile_cmd = self.b.addSystemCommand(&[_][]const u8{
+            "bash", "-c",
+            self.b.fmt(
+                \\./zig-out/bin/cursed-zig --compile "{s}" && \
+                \\mkdir -p zig-out/obj && \
+                \\mv "$(basename "{s}" .csd)" zig-out/obj/{s}
+            , .{ csd_file, csd_file, output_name })
+        });
+        compile_cmd.step.dependOn(self.b.getInstallStep()); // Ensure compiler is built first
+        return compile_cmd;
+    }
+    
+    // Compile a .csd file to an executable
+    pub fn compileToExecutable(self: Self, csd_file: []const u8, exe_name: []const u8) *std.Build.Step.Run {
+        // CURSED compiler doesn't support -o flag, so we compile in current directory then move
+        const compile_cmd = self.b.addSystemCommand(&[_][]const u8{
+            "bash", "-c",
+            self.b.fmt(
+                \\./zig-out/bin/cursed-zig --compile "{s}" && \
+                \\mkdir -p zig-out/bin && \
+                \\mv "$(basename "{s}" .csd)" zig-out/bin/{s}
+            , .{ csd_file, csd_file, exe_name })
+        });
+        compile_cmd.step.dependOn(self.b.getInstallStep()); // Ensure compiler is built first
+        return compile_cmd;
+    }
+    
+    // Interpret a .csd file (for testing)
+    pub fn interpret(self: Self, csd_file: []const u8) *std.Build.Step.Run {
+        const run_cmd = self.b.addSystemCommand(&[_][]const u8{
+            "./zig-out/bin/cursed-zig",
+            csd_file,
+        });
+        run_cmd.step.dependOn(self.b.getInstallStep()); // Ensure compiler is built first
+        return run_cmd;
+    }
+    
+    // Create a step that runs a compiled CURSED executable
+    pub fn createRunStep(self: Self, exe_name: []const u8, description: []const u8) *std.Build.Step {
+        const step = self.b.step(exe_name, description);
+        const run_cmd = self.b.addSystemCommand(&[_][]const u8{
+            self.b.fmt("./zig-out/bin/{s}", .{exe_name})
+        });
+        step.dependOn(&run_cmd.step);
+        return step;
+    }
+    
+    // Batch compile multiple .csd files
+    pub fn batchCompile(self: Self, files: []const []const u8, step_name: []const u8, description: []const u8) *std.Build.Step {
+        const batch_step = self.b.step(step_name, description);
+        
+        for (files) |file| {
+            // Extract filename without extension for executable name
+            const basename = std.fs.path.basename(file);
+            const exe_name = if (std.mem.endsWith(u8, basename, ".csd"))
+                basename[0..basename.len - 4]
+            else
+                basename;
+                
+            const compile_cmd = self.compileToExecutable(file, exe_name);
+            batch_step.dependOn(&compile_cmd.step);
+        }
+        
+        return batch_step;
+    }
+};
+
 // Platform-specific target configuration
 const TargetConfig = struct {
     name: []const u8,
@@ -377,6 +457,24 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
                 .c_include_paths = &[_][]const u8{},
             };
         },
+    }
+    
+    // Add system library paths first (for OpenGL, X11, ALSA, Vulkan, etc.)
+    const system_lib_paths = [_][]const u8{
+        "/usr/lib/x86_64-linux-gnu",
+        "/usr/lib64",
+        "/usr/lib",
+        "/lib/x86_64-linux-gnu",
+        "/lib64",
+        "/lib",
+    };
+    
+    for (system_lib_paths) |path| {
+        std.fs.cwd().access(path, .{}) catch continue;
+        exe.addLibraryPath(.{ .cwd_relative = path });
+        if (b.verbose) {
+            std.debug.print("✅ Added system lib path: {s}\n", .{path});
+        }
     }
     
     // Add LLVM library paths (only existing ones)
@@ -854,118 +952,67 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
 
-    // P2 Item #7: Multimedia modules - ImageZ, AudioZ, RenderZ
-    const multimedia_demo = b.addExecutable(.{
-        .name = "cursed-multimedia-demo",
-        .root_source_file = b.path("multimedia_demo_comprehensive.csd"),
-        .target = resolved_target,
-        .optimize = actual_optimize,
-    });
+    // Initialize CURSED builder helper
+    const cursed_builder = CursedBuilder.init(b);
     
-    if (supports_libc) {
-        multimedia_demo.linkLibC();
-        if (resolved_target.result.os.tag == .windows) {
-            multimedia_demo.linkSystemLibrary("ws2_32");
-            multimedia_demo.linkSystemLibrary("kernel32");
-            multimedia_demo.linkSystemLibrary("opengl32");
-            multimedia_demo.linkSystemLibrary("d3d11");
-        } else if (resolved_target.result.os.tag == .linux) {
-            multimedia_demo.linkSystemLibrary("GL");
-            multimedia_demo.linkSystemLibrary("X11");
-            multimedia_demo.linkSystemLibrary("asound");
-        } else if (resolved_target.result.os.tag == .macos) {
-            multimedia_demo.linkFramework("OpenGL");
-            multimedia_demo.linkFramework("Metal");
-            multimedia_demo.linkFramework("CoreAudio");
-            multimedia_demo.linkFramework("AudioUnit");
-        }
-        
-        if (config.supports_llvm and !is_cross_compile) {
-            addLlvm(b, multimedia_demo, resolved_target);
-        }
-    }
+    // P2 Item #7: Multimedia modules - ImageZ, AudioZ, RenderZ  
+    // Multimedia demo using CURSED compiler
+    const multimedia_demo_compile = cursed_builder.compileToExecutable("examples/multimedia_demo.csd", "cursed-multimedia-demo");
+    const multimedia_step = b.step("multimedia", "Compile and run comprehensive multimedia demo showcasing ImageZ, AudioZ, and RenderZ modules");
+    multimedia_step.dependOn(&multimedia_demo_compile.step);
     
-    b.installArtifact(multimedia_demo);
+    // Compile CURSED source files step
+    const cursed_compiler_step = b.step("compile-cursed", "Compile CURSED .csd files using CURSED compiler");
 
-    const multimedia_demo_run = b.addRunArtifact(multimedia_demo);
-    const multimedia_step = b.step("multimedia", "Run comprehensive multimedia demo showcasing ImageZ, AudioZ, and RenderZ modules");
-    multimedia_step.dependOn(&multimedia_demo_run.step);
-
-    // Individual module demos
-    const imagez_demo = b.addExecutable(.{
-        .name = "cursed-imagez-demo",
-        .root_source_file = b.path("stdlib/imagez/example_image_processing.csd"),
-        .target = resolved_target,
-        .optimize = actual_optimize,
-    });
+    // Individual module demos - Now properly using CURSED compiler
+    const imagez_demo_compile = cursed_builder.compileToExecutable("stdlib/imagez/example_image_processing.csd", "cursed-imagez-demo");
+    cursed_compiler_step.dependOn(&imagez_demo_compile.step);
     
-    if (supports_libc) {
-        imagez_demo.linkLibC();
-        if (resolved_target.result.os.tag == .windows) {
-            imagez_demo.linkSystemLibrary("gdi32");
-        }
-        if (config.supports_llvm and !is_cross_compile) {
-            addLlvm(b, imagez_demo, resolved_target);
-        }
+    // if (supports_libc) {
+    //     imagez_demo.linkLibC();
+    //     if (resolved_target.result.os.tag == .windows) {
+    //         imagez_demo.linkSystemLibrary("gdi32");
+    //     }
+    //     if (config.supports_llvm and !is_cross_compile) {
+    //         addLlvm(b, imagez_demo, resolved_target);
+    //     }
+    // }
+    
+    // AudioZ demo compilation
+    const audioz_demo_compile = cursed_builder.compileToExecutable("stdlib/audioz/example_audio_processing.csd", "cursed-audioz-demo");
+    cursed_compiler_step.dependOn(&audioz_demo_compile.step);
+    
+    // RenderZ demo compilation
+    const renderz_demo_compile = cursed_builder.compileToExecutable("stdlib/renderz/example_graphics_rendering.csd", "cursed-renderz-demo");
+    cursed_compiler_step.dependOn(&renderz_demo_compile.step);
+    
+    // CURSED example compilation steps using batch compile
+    const example_files = [_][]const u8{
+        "basic_test_simple.csd",
+        "test_simple.csd",
+    };
+    
+    const cursed_examples_step = cursed_builder.batchCompile(&example_files, "examples", "Compile all CURSED example files");
+    cursed_examples_step.dependOn(cursed_compiler_step);
+    
+    // Test runner for CURSED files
+    const test_cursed_step = b.step("test-cursed", "Test compiled CURSED programs");
+    
+    // Add individual test runs
+    for (example_files) |file| {
+        const basename = std.fs.path.basename(file);
+        const exe_name = if (std.mem.endsWith(u8, basename, ".csd"))
+            basename[0..basename.len - 4]
+        else
+            basename;
+            
+        const test_run = b.addSystemCommand(&[_][]const u8{
+            b.fmt("./zig-out/bin/{s}", .{exe_name})
+        });
+        const compile_cmd = cursed_builder.compileToExecutable(file, exe_name);
+        test_run.step.dependOn(&compile_cmd.step);
+        test_cursed_step.dependOn(&test_run.step);
     }
-    
-    b.installArtifact(imagez_demo);
-
-    const audioz_demo = b.addExecutable(.{
-        .name = "cursed-audioz-demo", 
-        .root_source_file = b.path("stdlib/audioz/example_audio_processing.csd"),
-        .target = resolved_target,
-        .optimize = actual_optimize,
-    });
-    
-    if (supports_libc) {
-        audioz_demo.linkLibC();
-        if (resolved_target.result.os.tag == .windows) {
-            audioz_demo.linkSystemLibrary("winmm");
-            audioz_demo.linkSystemLibrary("dsound");
-        } else if (resolved_target.result.os.tag == .linux) {
-            audioz_demo.linkSystemLibrary("asound");
-            audioz_demo.linkSystemLibrary("pulse");
-        } else if (resolved_target.result.os.tag == .macos) {
-            audioz_demo.linkFramework("CoreAudio");
-            audioz_demo.linkFramework("AudioUnit");
-        }
-        if (config.supports_llvm and !is_cross_compile) {
-            addLlvm(b, audioz_demo, resolved_target);
-        }
-    }
-    
-    b.installArtifact(audioz_demo);
-
-    const renderz_demo = b.addExecutable(.{
-        .name = "cursed-renderz-demo",
-        .root_source_file = b.path("stdlib/renderz/example_graphics_rendering.csd"),
-        .target = resolved_target,
-        .optimize = actual_optimize,
-    });
-    
-    if (supports_libc) {
-        renderz_demo.linkLibC();
-        if (resolved_target.result.os.tag == .windows) {
-            renderz_demo.linkSystemLibrary("opengl32");
-            renderz_demo.linkSystemLibrary("d3d11");
-            renderz_demo.linkSystemLibrary("d3d12");
-            renderz_demo.linkSystemLibrary("gdi32");
-        } else if (resolved_target.result.os.tag == .linux) {
-            renderz_demo.linkSystemLibrary("GL");
-            renderz_demo.linkSystemLibrary("X11");
-            renderz_demo.linkSystemLibrary("vulkan");
-        } else if (resolved_target.result.os.tag == .macos) {
-            renderz_demo.linkFramework("OpenGL");
-            renderz_demo.linkFramework("Metal");
-            renderz_demo.linkFramework("Cocoa");
-        }
-        if (config.supports_llvm and !is_cross_compile) {
-            addLlvm(b, renderz_demo, resolved_target);
-        }
-    }
-    
-    b.installArtifact(renderz_demo);
 
     // Enhanced LSP server with incremental compilation fixes
     const lsp_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
@@ -1107,6 +1154,7 @@ pub fn build(b: *std.Build) void {
     // Comprehensive test step that runs all tests
     const all_tests_step = b.step("test-all", "Run all test suites");
     all_tests_step.dependOn(&run_unit_tests.step);
+    all_tests_step.dependOn(test_cursed_step);
 
     // Performance test step with job auto-tuning
     const perf_test_step = b.step("test-performance", "Run performance tests with optimal parallelism");
@@ -1335,4 +1383,37 @@ pub fn build(b: *std.Build) void {
         \\echo "  ./zig-out/bin/cursed-perf --help"
     });
     perf_help_step.dependOn(&perf_help_cmd.step);
+    
+    // CURSED compilation help step
+    const cursed_help_step = b.step("cursed-help", "Show CURSED compilation help");
+    const cursed_help_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        \\echo "📋 CURSED Compilation System"
+        \\echo "============================="
+        \\echo ""
+        \\echo "CURSED compilation commands:"
+        \\echo "  zig build compile-cursed        - Compile individual .csd files"
+        \\echo "  zig build examples              - Compile all CURSED example files"
+        \\echo "  zig build test-cursed           - Compile and test CURSED programs"
+        \\echo "  zig build cursed-help           - Show this help"
+        \\echo ""
+        \\echo "Available .csd example files:"
+        \\echo "  basic_test.csd                  - Basic language features test"
+        \\echo "  array_test.csd                  - Array operations test"
+        \\echo "  comprehensive_test.csd          - Comprehensive language test"
+        \\echo "  arithmetic_test.csd             - Arithmetic operations test"
+        \\echo "  control_structures_test.csd     - Control flow test"
+        \\echo "  comprehensive_stdlib_test.csd   - Standard library test"
+        \\echo ""
+        \\echo "Direct CURSED compiler usage:"
+        \\echo "  ./zig-out/bin/cursed-zig file.csd           - Interpret file"
+        \\echo "  ./zig-out/bin/cursed-zig --compile file.csd - Compile to executable"
+        \\echo "  ./zig-out/bin/cursed-zig --help             - Show compiler help"
+        \\echo ""
+        \\echo "Build workflow:"
+        \\echo "  1. zig build                    - Build CURSED compiler"
+        \\echo "  2. zig build examples           - Compile .csd files to executables"
+        \\echo "  3. zig build test-cursed        - Run compiled CURSED programs"
+    });
+    cursed_help_step.dependOn(&cursed_help_cmd.step);
 }

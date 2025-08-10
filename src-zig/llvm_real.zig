@@ -121,15 +121,26 @@ pub const RealLLVMCodeGen = struct {
     }
     
     pub fn generateProgram(self: *RealLLVMCodeGen, program: Program) LLVMError!void {
-        // Generate all statements
+        // Separate functions from global statements
+        var global_statements = std.ArrayList(*Statement).init(self.allocator);
+        defer global_statements.deinit();
+        
+        // Process statements - functions are generated immediately, others saved for main
         for (program.statements.items) |stmt_ptr| {
             const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-            try self.generateStatement(stmt.*);
+            switch (stmt.*) {
+                .Function => {
+                    try self.generateStatement(stmt.*);
+                },
+                else => {
+                    try global_statements.append(stmt);
+                },
+            }
         }
         
         // Create main function if it doesn't exist
         if (self.functions.get("main") == null) {
-            try self.generateMainFunction();
+            try self.generateMainFunctionWithStatements(global_statements.items);
         }
         
         // Verify the module
@@ -250,7 +261,7 @@ pub const RealLLVMCodeGen = struct {
         return llvm_build_call2(self.builder, func_type, printf_func, args.items.ptr, @intCast(args.items.len), "printf_call");
     }
     
-    fn generateMainFunction(self: *RealLLVMCodeGen) LLVMError!void {
+    fn generateMainFunctionWithStatements(self: *RealLLVMCodeGen, statements: []*Statement) LLVMError!void {
         // Create main function that returns int
         var empty_params: [0]?*anyopaque = undefined;
         const main_type = llvm_function_type(self.i32_type, &empty_params, 0, 0);
@@ -264,11 +275,20 @@ pub const RealLLVMCodeGen = struct {
         const entry_block = llvm_append_basic_block(self.context, main_func, "entry");
         llvm_position_builder_at_end(self.builder, entry_block);
         
+        // Generate the global statements inside main
+        for (statements) |stmt| {
+            try self.generateStatement(stmt.*);
+        }
+        
         // Return 0
         const return_value = llvm_const_int(self.i32_type, 0);
         _ = llvm_build_ret(self.builder, return_value);
         
         try self.functions.put("main", main_func);
+    }
+    
+    fn generateMainFunction(self: *RealLLVMCodeGen) LLVMError!void {
+        return self.generateMainFunctionWithStatements(&[_]*Statement{});
     }
     
     pub fn writeToFile(self: *RealLLVMCodeGen, filename: []const u8) LLVMError!void {

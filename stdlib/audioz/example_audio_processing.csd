@@ -1,16 +1,16 @@
-fr fr CURSED AudioZ Module - Comprehensive Audio Processing Examples
-fr fr Demonstrates professional audio manipulation capabilities
+// CURSED AudioZ Module - Comprehensive Audio Processing Examples
+// Demonstrates professional audio manipulation capabilities
 
 yeet "audioz"
 yeet "vibez"
 yeet "testz"
 
-fr fr ===== BASIC AUDIO LOADING AND CONVERSION EXAMPLE =====
+// ===== BASIC AUDIO LOADING AND CONVERSION EXAMPLE =====
 
 slay demo_basic_audio_operations() lit {
     vibez.print_header("Basic Audio Operations Demo")
     
-    fr fr Load an audio file
+    // Load an audio file
     sus audio audioz.AudioData = audioz_load_from_file("sample.wav")
     vibez.print_result("Sample rate", stringz_from_int(audio.sample_rate))
     vibez.print_result("Bit depth", stringz_from_int(audio.bit_depth))
@@ -18,22 +18,22 @@ slay demo_basic_audio_operations() lit {
     vibez.print_result("Duration", stringz_concat(stringz_from_float(audio.duration), " seconds"))
     vibez.print_result("Frame count", stringz_from_int(audio.frame_count))
     
-    fr fr Convert sample rate
+    // Convert sample rate
     sus resampled audioz.AudioData = audioz_resample(audio, audioz.SAMPLE_RATE_48KHZ)
     vibez.print_success("Resampled to 48kHz")
     
-    fr fr Convert to stereo if mono
+    // Convert to stereo if mono
     ready (audio.channels == 1) {
         sus stereo audioz.AudioData = audioz_convert_channels(audio, audioz.CHANNELS_STEREO)
         vibez.print_success("Converted mono to stereo")
         audio = stereo
     }
     
-    fr fr Convert bit depth
+    // Convert bit depth
     sus high_quality audioz.AudioData = audioz_convert_bit_depth(audio, audioz.BIT_DEPTH_24)
     vibez.print_success("Converted to 24-bit")
     
-    fr fr Save in different formats
+    // Save in different formats
     audioz_save_to_file(high_quality, "output.flac", 100)
     vibez.print_success("Saved as FLAC")
     
@@ -43,19 +43,19 @@ slay demo_basic_audio_operations() lit {
     damn true
 }
 
-fr fr ===== AUDIO EFFECTS PROCESSING EXAMPLE =====
+// ===== AUDIO EFFECTS PROCESSING EXAMPLE =====
 
 slay demo_audio_effects() lit {
     vibez.print_header("Audio Effects Processing Demo")
     
     sus audio audioz.AudioData = audioz_load_from_file("music.wav")
     
-    fr fr Create reverb effect
+    // Create reverb effect
     sus reverb audioz.AudioEffect
     reverb.effect_type = audioz.EFFECT_REVERB
-    reverb.parameters[0] = 0.3 fr fr Room size
-    reverb.parameters[1] = 0.7 fr fr Damping
-    reverb.parameters[2] = 0.2 fr fr Pre-delay
+    reverb.parameters[0] = 0.3 // Room size
+    reverb.parameters[1] = 0.7 // Damping
+    reverb.parameters[2] = 0.2 // Pre-delay
     reverb.wet_mix = 0.25
     reverb.dry_mix = 0.75
     reverb.enabled = true
@@ -64,12 +64,12 @@ slay demo_audio_effects() lit {
     audioz_save_to_file(reverb_audio, "output_reverb.wav", 100)
     vibez.print_success("Applied reverb effect")
     
-    fr fr Create echo effect
+    // Create echo effect
     sus echo audioz.AudioEffect
     echo.effect_type = audioz.EFFECT_ECHO
-    echo.parameters[0] = 0.5 fr fr Delay time
-    echo.parameters[1] = 0.4 fr fr Feedback
-    echo.parameters[2] = 0.3 fr fr Mix level
+    echo.parameters[0] = 0.5 // Delay time
+    echo.parameters[1] = 0.4 // Feedback
+    echo.parameters[2] = 0.3 // Mix level
     echo.wet_mix = 0.4
     echo.dry_mix = 0.6
     echo.enabled = true
@@ -78,11 +78,11 @@ slay demo_audio_effects() lit {
     audioz_save_to_file(echo_audio, "output_echo.wav", 100)
     vibez.print_success("Applied echo effect")
     
-    fr fr Create distortion effect
+    // Create distortion effect
     sus distortion audioz.AudioEffect
     distortion.effect_type = audioz.EFFECT_DISTORTION
-    distortion.parameters[0] = 5.0 fr fr Drive
-    distortion.parameters[1] = 0.8 fr fr Tone
+    distortion.parameters[0] = 5.0 // Drive
+    distortion.parameters[1] = 0.8 // Tone
     distortion.wet_mix = 0.7
     distortion.dry_mix = 0.3
     distortion.enabled = true
@@ -94,37 +94,37 @@ slay demo_audio_effects() lit {
     damn true
 }
 
-fr fr ===== AUDIO SYNTHESIS EXAMPLE =====
+// ===== AUDIO SYNTHESIS EXAMPLE =====
 
 slay demo_audio_synthesis() lit {
     vibez.print_header("Audio Synthesis Demo")
     
-    fr fr Generate sine wave
+    // Generate sine wave
     sus sine_wave audioz.AudioData = audioz_generate_sine_wave(440.0, 2.0, audioz.SAMPLE_RATE_44KHZ, 0.5)
     audioz_save_to_file(sine_wave, "sine_440hz.wav", 100)
     vibez.print_success("Generated 440Hz sine wave")
     
-    fr fr Generate square wave
+    // Generate square wave
     sus square_wave audioz.AudioData = audioz_generate_square_wave(220.0, 1.5, audioz.SAMPLE_RATE_44KHZ, 0.3)
     audioz_save_to_file(square_wave, "square_220hz.wav", 100)
     vibez.print_success("Generated 220Hz square wave")
     
-    fr fr Generate sawtooth wave
+    // Generate sawtooth wave
     sus sawtooth_wave audioz.AudioData = audioz_generate_sawtooth_wave(110.0, 3.0, audioz.SAMPLE_RATE_44KHZ, 0.4)
     audioz_save_to_file(sawtooth_wave, "sawtooth_110hz.wav", 100)
     vibez.print_success("Generated 110Hz sawtooth wave")
     
-    fr fr Generate white noise
+    // Generate white noise
     sus white_noise audioz.AudioData = audioz_generate_white_noise(1.0, audioz.SAMPLE_RATE_44KHZ, 0.2)
     audioz_save_to_file(white_noise, "white_noise.wav", 100)
     vibez.print_success("Generated white noise")
     
-    fr fr Generate pink noise
+    // Generate pink noise
     sus pink_noise audioz.AudioData = audioz_generate_pink_noise(2.0, audioz.SAMPLE_RATE_44KHZ, 0.15)
     audioz_save_to_file(pink_noise, "pink_noise.wav", 100)
     vibez.print_success("Generated pink noise")
     
-    fr fr Create chord by mixing sine waves
+    // Create chord by mixing sine waves
     sus note_c audioz.AudioData = audioz_generate_sine_wave(261.63, 2.0, audioz.SAMPLE_RATE_44KHZ, 0.3)
     sus note_e audioz.AudioData = audioz_generate_sine_wave(329.63, 2.0, audioz.SAMPLE_RATE_44KHZ, 0.3)
     sus note_g audioz.AudioData = audioz_generate_sine_wave(392.00, 2.0, audioz.SAMPLE_RATE_44KHZ, 0.3)
@@ -137,47 +137,47 @@ slay demo_audio_synthesis() lit {
     damn true
 }
 
-fr fr ===== AUDIO ANALYSIS EXAMPLE =====
+// ===== AUDIO ANALYSIS EXAMPLE =====
 
 slay demo_audio_analysis() lit {
     vibez.print_header("Audio Analysis Demo")
     
     sus audio audioz.AudioData = audioz_load_from_file("analyze.wav")
     
-    fr fr Calculate spectrum
+    // Calculate spectrum
     sus spectrum audioz.AudioSpectrum = audioz_calculate_spectrum(audio, audioz.WINDOW_HANN)
     vibez.print_result("Spectrum window size", stringz_from_int(spectrum.window_size))
     vibez.print_result("Spectrum sample rate", stringz_from_int(spectrum.sample_rate))
     
-    fr fr Detect tempo
+    // Detect tempo
     sus tempo drip = audioz_detect_tempo(audio)
     vibez.print_result("Detected tempo", stringz_concat(stringz_from_float(tempo), " BPM"))
     
-    fr fr Detect pitch
+    // Detect pitch
     sus pitch drip = audioz_detect_pitch(audio)
     vibez.print_result("Detected pitch", stringz_concat(stringz_from_float(pitch), " Hz"))
     
-    fr fr Calculate audio levels
+    // Calculate audio levels
     sus rms_level drip = audioz_calculate_rms(audio)
     sus peak_level drip = audioz_calculate_peak(audio)
     vibez.print_result("RMS level", stringz_from_float(rms_level))
     vibez.print_result("Peak level", stringz_from_float(peak_level))
     
-    fr fr Detect silence regions
+    // Detect silence regions
     sus silence_regions [100]drip = audioz_detect_silence(audio, 0.01)
     vibez.print_success("Detected silence regions")
     
     damn true
 }
 
-fr fr ===== AUDIO EDITING EXAMPLE =====
+// ===== AUDIO EDITING EXAMPLE =====
 
 slay demo_audio_editing() lit {
     vibez.print_header("Audio Editing Demo")
     
     sus full_audio audioz.AudioData = audioz_load_from_file("full_song.wav")
     
-    fr fr Trim audio
+    // Trim audio
     sus intro audioz.AudioData = audioz_trim(full_audio, 0.0, 10.0)
     audioz_save_to_file(intro, "intro.wav", 100)
     vibez.print_success("Extracted 10-second intro")
@@ -190,15 +190,15 @@ slay demo_audio_editing() lit {
     audioz_save_to_file(chorus, "chorus.wav", 100)
     vibez.print_success("Extracted chorus section")
     
-    fr fr Concatenate sections
+    // Concatenate sections
     sus verse_chorus audioz.AudioData = audioz_concatenate(verse, chorus)
     audioz_save_to_file(verse_chorus, "verse_chorus.wav", 100)
     vibez.print_success("Concatenated verse and chorus")
     
-    fr fr Apply fade effects
+    // Apply fade effects
     sus fade_in_effect audioz.AudioEffect
     fade_in_effect.effect_type = audioz.EFFECT_FADE_IN
-    fade_in_effect.parameters[0] = 2.0 fr fr Fade duration
+    fade_in_effect.parameters[0] = 2.0 // Fade duration
     fade_in_effect.enabled = true
     
     sus faded_intro audioz.AudioData = audioz_apply_effect(intro, fade_in_effect)
@@ -207,7 +207,7 @@ slay demo_audio_editing() lit {
     
     sus fade_out_effect audioz.AudioEffect
     fade_out_effect.effect_type = audioz.EFFECT_FADE_OUT
-    fade_out_effect.parameters[0] = 3.0 fr fr Fade duration
+    fade_out_effect.parameters[0] = 3.0 // Fade duration
     fade_out_effect.enabled = true
     
     sus faded_outro audioz.AudioData = audioz_apply_effect(chorus, fade_out_effect)
@@ -217,40 +217,40 @@ slay demo_audio_editing() lit {
     damn true
 }
 
-fr fr ===== REAL-TIME AUDIO PROCESSING EXAMPLE =====
+// ===== REAL-TIME AUDIO PROCESSING EXAMPLE =====
 
 slay demo_realtime_processing() lit {
     vibez.print_header("Real-time Audio Processing Demo")
     
-    fr fr Simulate real-time processing
+    // Simulate real-time processing
     sus input_buffer_size normie = 512
     sus sample_rate normie = audioz.SAMPLE_RATE_44KHZ
     
-    fr fr Create processing effects
+    // Create processing effects
     sus compressor audioz.AudioEffect
     compressor.effect_type = audioz.EFFECT_COMPRESSOR
-    compressor.parameters[0] = 4.0 fr fr Ratio
-    compressor.parameters[1] = -18.0 fr fr Threshold
-    compressor.parameters[2] = 5.0 fr fr Attack (ms)
-    compressor.parameters[3] = 50.0 fr fr Release (ms)
+    compressor.parameters[0] = 4.0 // Ratio
+    compressor.parameters[1] = -18.0 // Threshold
+    compressor.parameters[2] = 5.0 // Attack (ms)
+    compressor.parameters[3] = 50.0 // Release (ms)
     compressor.enabled = true
     
     sus eq audioz.AudioEffect
     eq.effect_type = audioz.EFFECT_EQ
-    eq.parameters[0] = 100.0 fr fr Low freq
-    eq.parameters[1] = 1.2 fr fr Low gain
-    eq.parameters[2] = 1000.0 fr fr Mid freq
-    eq.parameters[3] = 0.8 fr fr Mid gain
-    eq.parameters[4] = 8000.0 fr fr High freq
-    eq.parameters[5] = 1.5 fr fr High gain
+    eq.parameters[0] = 100.0 // Low freq
+    eq.parameters[1] = 1.2 // Low gain
+    eq.parameters[2] = 1000.0 // Mid freq
+    eq.parameters[3] = 0.8 // Mid gain
+    eq.parameters[4] = 8000.0 // High freq
+    eq.parameters[5] = 1.5 // High gain
     eq.enabled = true
     
-    fr fr Create noise gate
+    // Create noise gate
     sus noise_gate audioz.AudioEffect
     noise_gate.effect_type = audioz.EFFECT_NOISE_GATE
-    noise_gate.parameters[0] = -40.0 fr fr Threshold
-    noise_gate.parameters[1] = 10.0 fr fr Attack (ms)
-    noise_gate.parameters[2] = 100.0 fr fr Release (ms)
+    noise_gate.parameters[0] = -40.0 // Threshold
+    noise_gate.parameters[1] = 10.0 // Attack (ms)
+    noise_gate.parameters[2] = 100.0 // Release (ms)
     noise_gate.enabled = true
     
     vibez.print_success("Real-time processing chain configured")
@@ -263,41 +263,41 @@ slay demo_realtime_processing() lit {
     damn true
 }
 
-fr fr ===== MULTI-FORMAT CONVERSION EXAMPLE =====
+// ===== MULTI-FORMAT CONVERSION EXAMPLE =====
 
 slay demo_format_conversion() lit {
     vibez.print_header("Multi-format Conversion Demo")
     
-    fr fr Load source audio
+    // Load source audio
     sus source audioz.AudioData = audioz_load_from_file("source.wav")
     
-    fr fr Convert to various formats with different quality settings
+    // Convert to various formats with different quality settings
     
-    fr fr High-quality FLAC
+    // High-quality FLAC
     audioz_save_to_file(source, "output_hq.flac", 100)
     vibez.print_success("Saved as high-quality FLAC")
     
-    fr fr High-bitrate MP3
+    // High-bitrate MP3
     audioz_save_to_file(source, "output_320.mp3", 320)
     vibez.print_success("Saved as 320kbps MP3")
     
-    fr fr Medium-bitrate MP3
+    // Medium-bitrate MP3
     audioz_save_to_file(source, "output_192.mp3", 192)
     vibez.print_success("Saved as 192kbps MP3")
     
-    fr fr High-quality OGG Vorbis
+    // High-quality OGG Vorbis
     audioz_save_to_file(source, "output_hq.ogg", 500)
     vibez.print_success("Saved as high-quality OGG")
     
-    fr fr AAC format
+    // AAC format
     audioz_save_to_file(source, "output.aac", 256)
     vibez.print_success("Saved as 256kbps AAC")
     
-    fr fr M4A format
+    // M4A format
     audioz_save_to_file(source, "output.m4a", 256)
     vibez.print_success("Saved as M4A")
     
-    fr fr Prepare for streaming - lower quality
+    // Prepare for streaming - lower quality
     sus streaming audioz.AudioData = audioz_resample(source, audioz.SAMPLE_RATE_22KHZ)
     streaming = audioz_convert_bit_depth(streaming, audioz.BIT_DEPTH_16)
     audioz_save_to_file(streaming, "output_streaming.mp3", 96)
@@ -306,21 +306,21 @@ slay demo_format_conversion() lit {
     damn true
 }
 
-fr fr ===== PERFORMANCE BENCHMARKING EXAMPLE =====
+// ===== PERFORMANCE BENCHMARKING EXAMPLE =====
 
 slay demo_performance_benchmarking() lit {
     vibez.print_header("Performance Benchmarking Demo")
     
-    fr fr Create test audio
+    // Create test audio
     sus test_audio audioz.AudioData = audioz_generate_white_noise(30.0, audioz.SAMPLE_RATE_48KHZ, 0.5)
     
-    fr fr Benchmark resampling
+    // Benchmark resampling
     sus resample_start drip = time_now_seconds()
     sus resampled audioz.AudioData = audioz_resample(test_audio, audioz.SAMPLE_RATE_96KHZ)
     sus resample_time drip = time_now_seconds() - resample_start
     vibez.print_result("Resample time (48kHz->96kHz)", stringz_concat(stringz_from_float(resample_time), "s"))
     
-    fr fr Benchmark effects processing
+    // Benchmark effects processing
     sus effect_start drip = time_now_seconds()
     sus reverb audioz.AudioEffect
     reverb.effect_type = audioz.EFFECT_REVERB
@@ -329,13 +329,13 @@ slay demo_performance_benchmarking() lit {
     sus effect_time drip = time_now_seconds() - effect_start
     vibez.print_result("Reverb processing time", stringz_concat(stringz_from_float(effect_time), "s"))
     
-    fr fr Benchmark encoding
+    // Benchmark encoding
     sus encode_start drip = time_now_seconds()
     sus encoded_data tea = audioz_save_to_memory(test_audio, "MP3", 192)
     sus encode_time drip = time_now_seconds() - encode_start
     vibez.print_result("MP3 encoding time", stringz_concat(stringz_from_float(encode_time), "s"))
     
-    fr fr Benchmark spectrum analysis
+    // Benchmark spectrum analysis
     sus fft_start drip = time_now_seconds()
     sus spectrum audioz.AudioSpectrum = audioz_calculate_spectrum(test_audio, audioz.WINDOW_HANN)
     sus fft_time drip = time_now_seconds() - fft_start
@@ -344,12 +344,12 @@ slay demo_performance_benchmarking() lit {
     damn true
 }
 
-fr fr ===== MAIN DEMO FUNCTION =====
+// ===== MAIN DEMO FUNCTION =====
 
 slay main() normie {
     vibez.print_header("CURSED AudioZ Professional Audio Processing Demo")
     
-    fr fr Check GPU acceleration availability
+    // Check GPU acceleration availability
     ready (audioz_is_gpu_available()) {
         vibez.print_success("GPU acceleration available")
         audioz_enable_gpu_acceleration()
@@ -357,7 +357,7 @@ slay main() normie {
         vibez.print_warning("GPU acceleration not available, using CPU")
     }
     
-    fr fr Run all demonstrations
+    // Run all demonstrations
     demo_basic_audio_operations()
     vibez.print_separator()
     
@@ -382,7 +382,7 @@ slay main() normie {
     demo_performance_benchmarking()
     vibez.print_separator()
     
-    fr fr Cleanup
+    // Cleanup
     ready (audioz_is_gpu_available()) {
         audioz_disable_gpu_acceleration()
         vibez.print_success("GPU acceleration disabled")
@@ -393,24 +393,24 @@ slay main() normie {
     damn 0
 }
 
-fr fr ===== HELPER FUNCTIONS =====
+// ===== HELPER FUNCTIONS =====
 
 slay time_now_seconds() drip {
-    fr fr Mock implementation - would return actual timestamp
+    // Mock implementation - would return actual timestamp
     damn 1234567890.0
 }
 
 slay stringz_from_int(value normie) tea {
-    fr fr Mock implementation - would convert integer to string
+    // Mock implementation - would convert integer to string
     damn "42"
 }
 
 slay stringz_from_float(value drip) tea {
-    fr fr Mock implementation - would convert float to string
+    // Mock implementation - would convert float to string
     damn "3.14"
 }
 
 slay stringz_concat(s1 tea, s2 tea) tea {
-    fr fr Mock implementation - would concatenate strings
+    // Mock implementation - would concatenate strings
     damn s1
 }

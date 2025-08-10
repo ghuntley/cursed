@@ -135,8 +135,6 @@ pub const CommunitySystem = struct {
     }
     
     fn validateReview(self: *CommunitySystem, review_data: ReviewSubmission) !ValidationResult {
-        _ = self;
-        
         // Rating validation
         if (review_data.rating < 1 or review_data.rating > 5) {
             return ValidationResult{
@@ -190,8 +188,6 @@ pub const CommunitySystem = struct {
     }
     
     fn containsSpam(self: *CommunitySystem, content: []const u8) bool {
-        _ = self;
-        
         const spam_patterns = [_][]const u8{
             "buy now",
             "click here", 
@@ -245,7 +241,7 @@ pub const CommunitySystem = struct {
             };
         } else {
             // Create new user profile
-            var new_profile = UserProfile.init(self.allocator, author);
+            const new_profile = UserProfile.init(self.allocator, author);
             try self.user_profiles.put(try self.allocator.dupe(u8, author), new_profile);
             
             return AuthorizationResult{

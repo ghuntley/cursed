@@ -282,7 +282,7 @@ pub const CoverageAnalyzer = struct {
     
     pub fn recordExecution(self: *Self, file_path: []const u8, line: u32) !void {
         var file_data = self.runtime_data.get(file_path) orelse blk: {
-            var new_map = std.StringHashMap(bool).init(self.allocator);
+            const new_map = std.StringHashMap(bool).init(self.allocator);
             try self.runtime_data.put(file_path, new_map);
             break :blk self.runtime_data.getPtr(file_path).?;
         };
@@ -535,7 +535,7 @@ pub const CoverageRuntime = struct {
     
     fn recordLineExecution(self: *Self, file_path: []const u8, line: u32) !void {
         var file_data = self.coverage_data.getPtr(file_path) orelse blk: {
-            var new_map = std.StringHashMap(bool).init(self.allocator);
+            const new_map = std.StringHashMap(bool).init(self.allocator);
             try self.coverage_data.put(file_path, new_map);
             break :blk self.coverage_data.getPtr(file_path).?;
         };
