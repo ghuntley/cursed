@@ -1,699 +1,736 @@
-# CURSED Language Reference
+# 📖 CURSED Language Reference
 
-Complete reference for CURSED language syntax, semantics, and features.
+Complete syntax reference for the CURSED programming language.
 
-## Table of Contents
+## 📝 Table of Contents
 
-1. [Lexical Structure](#lexical-structure)
-2. [Data Types](#data-types)
-3. [Variables and Constants](#variables-and-constants)
-4. [Functions](#functions)
-5. [Control Flow](#control-flow)
-6. [Pattern Matching](#pattern-matching)
-7. [Structs and Enums](#structs-and-enums)
-8. [Modules and Imports](#modules-and-imports)
-9. [Error Handling](#error-handling)
-10. [Concurrency](#concurrency)
-11. [Memory Management](#memory-management)
+- [Basic Syntax](#basic-syntax)
+- [Data Types](#data-types)
+- [Variables](#variables)
+- [Functions](#functions)
+- [Control Flow](#control-flow)
+- [Error Handling](#error-handling)
+- [Modules and Imports](#modules-and-imports)
+- [Concurrency](#concurrency)
+- [Advanced Features](#advanced-features)
+- [Operators](#operators)
+- [Comments](#comments)
+- [Keywords](#keywords)
 
-## Lexical Structure
+## 🔤 Basic Syntax
 
-### Keywords
-```cursed
-# Variable declarations
-sus          # Variable declaration
-spill        # Struct field declaration
-
-# Function definitions
-slay         # Function definition
-damn         # Return statement
-
-# Control flow
-ready        # If condition
-otherwise    # Else clause
-bestie       # While loop
-sick         # Pattern matching switch
-when         # Pattern matching case
-
-# Literals
-based        # Boolean true
-cringe       # Boolean false
-
-# Module system
-yeet         # Import statement
-squad        # Struct definition
-collab       # Interface definition
-
-# Error handling
-yikes        # Error return
-fam          # Error handling
-shook        # Panic/abort
-
-# Concurrency
-vibe         # Goroutine spawn
-chan         # Channel type
-```
-
-### Identifiers
-- Start with letter or underscore
-- Followed by letters, digits, or underscores
-- Case-sensitive
-- No reserved word conflicts
+CURSED uses Gen Z slang keywords for a fun and modern programming experience:
 
 ```cursed
-# Valid identifiers
-sus valid_name drip = 42
-sus camelCase drip = 100
-sus PascalCase drip = 200
-sus _private drip = 300
+fr This is a comment
+sus variable_name type = value    # Variable declaration
+slay function_name() { }          # Function declaration
+vibez.spill("Hello")             # Print statement
 ```
 
-### Comments
-```cursed
-# Single line comment
+### File Extension
+- CURSED source files use the `.csd` extension
 
-# Multi-line comments are multiple single-line comments
-# This is line 1
-# This is line 2
-```
+### Case Sensitivity
+- CURSED is case-sensitive
+- Variables and functions typically use `snake_case`
+- Types use `lowercase`
 
-## Data Types
+## 🏷️ Data Types
 
 ### Primitive Types
 
-#### Integer Types
+| Type | Description | Example |
+|------|-------------|---------|
+| `drip` | Integer (64-bit signed) | `42`, `-123` |
+| `meal` | Floating point (64-bit) | `3.14`, `-2.5` |
+| `tea` | String (UTF-8) | `"Hello"`, `'World'` |
+| `lit` | Boolean | `based` (true), `cap` (false) |
+
+### Collection Types
+
 ```cursed
-# Signed integers
-sus small drip = 42           # i32 (default integer)
-sus big i64 = 1234567890
+fr Arrays
+sus numbers []drip = [1, 2, 3, 4, 5]
+sus names []tea = ["Alice", "Bob", "Charlie"]
 
-# Unsigned integers  
-sus positive u32 = 100
-sus large u64 = 18446744073709551615
-```
-
-#### Floating Point
-```cursed
-sus price f32 = 19.99
-sus precise f64 = 3.141592653589793
-```
-
-#### Boolean
-```cursed
-sus is_active lit = based     # true
-sus is_disabled lit = cringe  # false
-```
-
-#### String
-```cursed
-sus name tea = "Alice"
-sus multiline tea = "Line 1\nLine 2"
-sus escaped tea = "Quote: \"Hello\""
-```
-
-#### Character
-```cursed
-sus letter rune = 'A'
-sus emoji rune = '🔥'
-```
-
-### Composite Types
-
-#### Arrays
-```cursed
-# Fixed-size arrays
-sus numbers [5]drip = [1, 2, 3, 4, 5]
-sus names [3]tea = ["Alice", "Bob", "Charlie"]
-
-# Dynamic arrays (slices)
-sus dynamic []drip = [1, 2, 3]
-dynamic = append(dynamic, 4)  # [1, 2, 3, 4]
-```
-
-#### Slices
-```cursed
-sus full []drip = [1, 2, 3, 4, 5]
-sus slice []drip = full[1:4]  # [2, 3, 4]
-sus prefix []drip = full[:3]  # [1, 2, 3]
-sus suffix []drip = full[2:]  # [3, 4, 5]
-```
-
-#### Maps/Dictionaries
-```cursed
-sus scores map[tea]drip = {
+fr Maps (dictionaries)
+sus scores map<tea, drip> = {
     "Alice": 95,
     "Bob": 87,
     "Charlie": 92
 }
 
-# Access and modify
-vibez.spill(scores["Alice"])  # 95
-scores["David"] = 89
+fr Sets
+sus unique_numbers set<drip> = {1, 2, 3, 4, 5}
 ```
 
-## Variables and Constants
+### Custom Types
 
-### Variable Declaration
 ```cursed
-# Basic declaration
-sus count drip = 0
-sus message tea = "Hello"
-
-# Type inference
-sus auto_int = 42        # Inferred as drip
-sus auto_string = "hi"   # Inferred as tea
-
-# Uninitialized variables
-sus later drip
-later = 100
-
-# Multiple declarations
-sus x drip = 1
-sus y drip = 2
-sus z drip = x + y
-```
-
-### Constants
-```cursed
-# Compile-time constants
-const PI f64 = 3.141592653589793
-const MAX_USERS drip = 1000
-const APP_NAME tea = "CURSED App"
-```
-
-### Type Annotations
-```cursed
-# Explicit typing
-sus age: drip = 25
-sus name: tea = "Bob"
-sus scores: []drip = [90, 85, 92]
-```
-
-## Functions
-
-### Function Definition
-```cursed
-# Basic function
-slay greet(name tea) tea {
-    damn "Hello, " + name + "!"
-}
-
-# Multiple parameters
-slay add(x drip, y drip) drip {
-    damn x + y
-}
-
-# No return value (void)
-slay print_info(name tea, age drip) {
-    vibez.spill("Name:", name)
-    vibez.spill("Age:", age)
-}
-```
-
-### Generic Functions
-```cursed
-# Generic function with type parameter
-slay swap<T>(a T, b T) (T, T) {
-    damn (b, a)
-}
-
-# Usage
-sus (x, y) = swap(1, 2)        # x=2, y=1
-sus (p, q) = swap("a", "b")    # p="b", q="a"
-```
-
-### Function Types and Higher-Order Functions
-```cursed
-# Function type alias
-type Predicate<T> = slay(T) lit
-
-# Higher-order function
-slay filter<T>(items []T, pred Predicate<T>) []T {
-    sus result []T = []
-    for item in items {
-        ready (pred(item)) {
-            result = append(result, item)
-        }
-    }
-    damn result
-}
-
-# Usage
-slay is_positive(x drip) lit {
-    damn x > 0
-}
-
-sus numbers []drip = [-2, -1, 0, 1, 2]
-sus positive []drip = filter(numbers, is_positive)
-```
-
-### Closures
-```cursed
-# Closure with captured variables
-slay make_adder(x drip) slay(drip) drip {
-    damn slay(y drip) drip {
-        damn x + y  # Captures x from outer scope
-    }
-}
-
-sus add_five = make_adder(5)
-sus result drip = add_five(10)  # 15
-```
-
-## Control Flow
-
-### Conditional Statements
-```cursed
-# If-else
-sus score drip = 85
-ready (score >= 90) {
-    vibez.spill("Excellent!")
-} otherwise ready (score >= 80) {
-    vibez.spill("Good!")
-} otherwise ready (score >= 70) {
-    vibez.spill("Fair")
-} otherwise {
-    vibez.spill("Needs improvement")
-}
-
-# Ternary-like expression
-sus grade tea = ready (score >= 80) "Pass" otherwise "Fail"
-```
-
-### Loops
-```cursed
-# While loop
-sus i drip = 0
-bestie (i < 5) {
-    vibez.spill("Iteration:", i)
-    i = i + 1
-}
-
-# For loop (range)
-for i in 0..5 {
-    vibez.spill("Number:", i)
-}
-
-# For loop (array iteration)
-sus items []tea = ["apple", "banana", "cherry"]
-for item in items {
-    vibez.spill("Item:", item)
-}
-
-# For loop with index
-for i, item in items {
-    vibez.spill("Index:", i, "Item:", item)
-}
-
-# Break and continue
-for i in 0..10 {
-    ready (i == 3) {
-        continue  # Skip 3
-    }
-    ready (i == 7) {
-        break     # Stop at 7
-    }
-    vibez.spill(i)
-}
-```
-
-## Pattern Matching
-
-### Basic Pattern Matching
-```cursed
-enum Status {
-    Pending,
-    Processing,
-    Complete,
-    Failed(tea)  # Enum with associated data
-}
-
-sus current Status = Processing
-
-sick (current) {
-    when Pending -> vibez.spill("Waiting...")
-    when Processing -> vibez.spill("Working...")
-    when Complete -> vibez.spill("Done!")
-    when Failed(error) -> vibez.spill("Error:", error)
-}
-```
-
-### Advanced Pattern Matching
-```cursed
-# Pattern matching with guards
-sus value drip = 42
-sick (value) {
-    when 0 -> vibez.spill("Zero")
-    when x ready (x > 0 && x < 10) -> vibez.spill("Small positive")
-    when x ready (x >= 10 && x < 100) -> vibez.spill("Medium positive")
-    when x ready (x >= 100) -> vibez.spill("Large positive")
-    when _ -> vibez.spill("Negative")
-}
-
-# Array pattern matching
-sus numbers []drip = [1, 2, 3]
-sick (numbers) {
-    when [] -> vibez.spill("Empty array")
-    when [x] -> vibez.spill("Single element:", x)
-    when [first, ...rest] -> {
-        vibez.spill("First:", first)
-        vibez.spill("Rest:", rest)
-    }
-}
-
-# Struct pattern matching
-squad Point { spill x drip; spill y drip }
-sus point Point = Point{x: 0, y: 5}
-
-sick (point) {
-    when Point{x: 0, y: 0} -> vibez.spill("Origin")
-    when Point{x: 0, y} -> vibez.spill("On Y-axis at", y)
-    when Point{x, y: 0} -> vibez.spill("On X-axis at", x)
-    when Point{x, y} ready (x == y) -> vibez.spill("On diagonal")
-    when Point{x, y} -> vibez.spill("Point at", x, ",", y)
-}
-```
-
-## Structs and Enums
-
-### Struct Definition
-```cursed
-# Basic struct
+fr Structs
 squad Person {
-    spill name tea
-    spill age drip
-    spill email tea
+    name tea
+    age drip
+    email tea
 }
 
-# Struct with methods
-squad Rectangle {
-    spill width drip
-    spill height drip
-}
-
-# Method implementation
-impl Rectangle {
-    slay area(self) drip {
-        damn self.width * self.height
-    }
-    
-    slay perimeter(self) drip {
-        damn 2 * (self.width + self.height)
-    }
-    
-    slay scale(self mut, factor drip) {
-        self.width = self.width * factor
-        self.height = self.height * factor
-    }
-}
-```
-
-### Generic Structs
-```cursed
-# Generic struct
-squad Container<T> {
-    spill value T
-    spill name tea
-}
-
-# Usage
-sus int_container Container<drip> = Container{
-    value: 42,
-    name: "Number container"
-}
-
-sus string_container Container<tea> = Container{
-    value: "Hello",
-    name: "String container"
-}
-```
-
-### Enums
-```cursed
-# Simple enum
-enum Color {
+fr Enums
+sick Color {
     Red,
     Green,
     Blue,
-    Custom(r u8, g u8, b u8)  # Enum with data
+    RGB(drip, drip, drip)
 }
 
-# Enum with methods
-impl Color {
-    slay to_hex(self) tea {
-        sick (self) {
-            when Red -> damn "#FF0000"
-            when Green -> damn "#00FF00"
-            when Blue -> damn "#0000FF"
-            when Custom(r, g, b) -> {
-                damn "#" + hex(r) + hex(g) + hex(b)
-            }
-        }
+fr Interfaces
+collab Drawable {
+    slay draw()
+    slay area() meal
+}
+```
+
+## 📦 Variables
+
+### Declaration
+
+```cursed
+fr Basic declaration
+sus name tea = "Alice"
+sus age drip = 25
+
+fr Type inference
+sus auto_string = "Inferred as tea"
+sus auto_number = 42
+
+fr Mutable vs immutable
+sus mutable_var drip = 10    # Can be changed
+lock immutable_var drip = 5  # Cannot be changed
+
+fr Multiple assignment
+sus x, y drip = 10, 20
+sus a, b, c = 1, "hello", based
+```
+
+### Scope
+
+```cursed
+sus global_var drip = 100
+
+slay example_function() {
+    sus local_var drip = 50
+    
+    ready (based) {
+        sus block_var drip = 25
+        fr block_var is only accessible here
+    }
+    
+    fr local_var is accessible here
+    fr global_var is accessible everywhere
+}
+```
+
+## ⚙️ Functions
+
+### Basic Functions
+
+```cursed
+fr Simple function
+slay greet() {
+    vibez.spill("Hello!")
+}
+
+fr Function with parameters
+slay greet_person(name tea) {
+    vibez.spill("Hello,", name, "!")
+}
+
+fr Function with return value
+slay add(a drip, b drip) drip {
+    damn a + b
+}
+
+fr Multiple return values
+slay divide_and_remainder(a drip, b drip) (drip, drip) {
+    damn a / b, a % b
+}
+```
+
+### Advanced Functions
+
+```cursed
+fr Default parameters
+slay greet_with_title(name tea, title tea = "Mr.") {
+    vibez.spill("Hello,", title, name)
+}
+
+fr Variadic functions
+slay sum(numbers ...drip) drip {
+    sus total drip = 0
+    bestie (num in numbers) {
+        total = total + num
+    }
+    damn total
+}
+
+fr Higher-order functions
+slay apply_operation(a drip, b drip, op slay(drip, drip) drip) drip {
+    damn op(a, b)
+}
+
+sus result drip = apply_operation(5, 3, slay(x drip, y drip) drip {
+    damn x * y
+})
+```
+
+### Generic Functions
+
+```cursed
+fr Generic function
+slay max<T>(a T, b T) T {
+    ready (a > b) {
+        damn a
+    }
+    damn b
+}
+
+sus max_int drip = max<drip>(5, 10)
+sus max_float meal = max<meal>(3.14, 2.71)
+```
+
+## 🔄 Control Flow
+
+### Conditional Statements
+
+```cursed
+fr If-else statements
+ready (condition) {
+    fr Execute if true
+} otherwise ready (other_condition) {
+    fr Execute if other_condition is true
+} otherwise {
+    fr Execute if all conditions are false
+}
+
+fr Ternary operator
+sus result drip = condition ? value_if_true : value_if_false
+```
+
+### Loops
+
+```cursed
+fr While loop
+sus i drip = 0
+bestie (i < 10) {
+    vibez.spill("Count:", i)
+    i = i + 1
+}
+
+fr For-each loop
+sus numbers []drip = [1, 2, 3, 4, 5]
+bestie (num in numbers) {
+    vibez.spill("Number:", num)
+}
+
+fr For-each with index
+bestie (index, num in numbers) {
+    vibez.spill("Index:", index, "Number:", num)
+}
+
+fr Range loops
+bestie (i in 0..10) {        # 0 to 9
+    vibez.spill("i:", i)
+}
+
+bestie (i in 0..=10) {       # 0 to 10 (inclusive)
+    vibez.spill("i:", i)
+}
+```
+
+### Loop Control
+
+```cursed
+bestie (i in 0..100) {
+    ready (i == 50) {
+        break      # Exit loop
+    }
+    
+    ready (i % 2 == 0) {
+        continue   # Skip to next iteration
+    }
+    
+    vibez.spill("Odd number:", i)
+}
+```
+
+### Pattern Matching
+
+```cursed
+sick Result<T> {
+    Ok(T),
+    Error(tea)
+}
+
+sus result Result<drip> = Ok(42)
+
+sick result {
+    Ok(value) -> {
+        vibez.spill("Success:", value)
+    }
+    Error(message) -> {
+        vibez.spill("Error:", message)
     }
 }
-```
 
-## Modules and Imports
-
-### Module Structure
-```
-project/
-├── main.csd
-├── utils.csd
-└── models/
-    ├── user.csd
-    └── order.csd
-```
-
-### Import System
-```cursed
-# Import standard library modules
-yeet "mathz"        # Math functions
-yeet "stringz"      # String utilities
-yeet "testz"        # Testing framework
-
-# Import local modules
-yeet "utils"        # ./utils.csd
-yeet "models/user"  # ./models/user.csd
-
-# Aliased imports
-yeet "mathz" as math
-yeet "stringz" as str
-
-# Selective imports
-yeet "mathz" { abs_normie, max_normie }
-```
-
-### Module Exports
-```cursed
-# utils.csd - Export functions and types
-slay public_function() tea {
-    damn "This is exported"
-}
-
-# Private function (not exported)
-slay private_helper() tea {
-    damn "This is internal"
-}
-
-# Export struct
-squad PublicStruct {
-    spill data tea
+fr Pattern guards
+sick value {
+    x when x > 100 -> vibez.spill("Large number")
+    x when x > 10 -> vibez.spill("Medium number")
+    _ -> vibez.spill("Small number")
 }
 ```
 
-## Error Handling
+## ⚠️ Error Handling
 
 ### Error Types
+
 ```cursed
-# Function that can return an error
+fr Function that can return an error
 slay divide(a drip, b drip) yikes<tea> {
     ready (b == 0) {
-        yikes "Division by zero error"
+        yikes "Division by zero"
     }
     damn a / b
 }
-
-# Result type for fallible operations
-type Result<T, E> = enum {
-    Ok(T),
-    Err(E)
-}
 ```
 
-### Error Handling Patterns
+### Error Handling
+
 ```cursed
-# Try-catch style error handling
+fr Try-catch with fam
 sus result drip = divide(10, 2) fam {
-    when "Division by zero error" -> {
+    when "Division by zero" -> {
         vibez.spill("Cannot divide by zero!")
-        damn 0  # Default value
+        damn 0
     }
-    when other -> {
-        vibez.spill("Unexpected error:", other)
-        shook   # Panic
+    when error -> {
+        vibez.spill("Unexpected error:", error)
+        damn -1
     }
 }
 
-# Error propagation
-slay calculate() yikes<tea> {
-    sus x drip = divide(20, 4)?  # Propagate error if any
-    sus y drip = divide(x, 2)?   # Propagate error if any
-    damn y
+fr Propagate errors
+slay risky_operation() yikes<tea> {
+    sus value drip = divide(10, 0)?  # ? propagates error
+    damn value * 2
 }
 
-# Panic on error
-sus value drip = divide(10, 0).unwrap()  # Panics if error
+fr Multiple error types
+sick CustomError {
+    NetworkError(tea),
+    ParseError(tea),
+    ValidationError(tea)
+}
+
+slay complex_operation() yikes<CustomError> {
+    fr Function implementation
+}
 ```
 
-## Concurrency
+### Error Recovery
+
+```cursed
+fr Defer statements for cleanup
+slay file_operation() yikes<tea> {
+    sus file = open_file("data.txt")?
+    defer file.close()  # Always executed, even on error
+    
+    fr Work with file
+    sus content tea = file.read()?
+    damn content
+}
+```
+
+## 📦 Modules and Imports
+
+### Import Statements
+
+```cursed
+fr Import entire module
+yeet "mathz"
+yeet "stringz"
+
+fr Import specific functions
+yeet "mathz" { sqrt, sin, cos }
+
+fr Import with alias
+yeet "very_long_module_name" as vmn
+
+fr Import from relative path
+yeet "./utils/helpers"
+yeet "../shared/constants"
+```
+
+### Module Definition
+
+```cursed
+fr In file: math_utils.csd
+module math_utils
+
+fr Public functions (exported)
+slay pub add(a drip, b drip) drip {
+    damn a + b
+}
+
+fr Private functions (not exported)
+slay calculate_internal() drip {
+    damn 42
+}
+
+fr Public constants
+lock pub PI meal = 3.14159265359
+
+fr Public types
+squad pub Point {
+    x meal
+    y meal
+}
+```
+
+### Package System
+
+```cursed
+fr CursedPackage.toml
+[package]
+name = "my-package"
+version = "1.0.0"
+
+[dependencies]
+mathz = "1.2.0"
+stringz = "2.1.0"
+networkz = { version = "3.0.0", features = ["tls"] }
+```
+
+## 🔄 Concurrency
 
 ### Goroutines
+
 ```cursed
 yeet "concurrenz"
 
-# Spawn a goroutine
-vibe {
-    vibez.spill("Running in goroutine")
-    sleep(1000)  # Sleep for 1 second
-    vibez.spill("Goroutine finished")
+fr Start a goroutine
+go {
+    vibez.spill("Running in background")
 }
 
-# Goroutine with parameters
-slay worker(id drip, work_channel chan<tea>) {
-    bestie (based) {
-        sus work tea = <-work_channel
-        ready (work == "stop") {
-            break
-        }
-        vibez.spill("Worker", id, "processing:", work)
-    }
+fr Goroutine with parameters
+go worker(worker_id) {
+    vibez.spill("Worker", worker_id, "starting")
 }
 
-# Spawn multiple workers
-for i in 0..5 {
-    vibe worker(i, work_chan)
+fr Wait for goroutines
+sus wg WaitGroup = WaitGroup.new()
+wg.add(2)
+
+go {
+    defer wg.done()
+    fr Do work
 }
+
+go {
+    defer wg.done()
+    fr Do more work
+}
+
+wg.wait()  # Wait for all to complete
 ```
 
 ### Channels
-```cursed
-# Create channels
-sus messages chan<tea> = make_channel()
-sus numbers chan<drip> = make_channel_buffered(10)
 
-# Send and receive
-vibe {
-    messages <- "Hello"      # Send
-    messages <- "World"
+```cursed
+fr Create channels
+sus ch chan<drip> = make_channel()
+sus buffered_ch chan<drip> = make_channel(10)  # Buffered
+
+fr Send and receive
+go {
+    ch <- 42      # Send
 }
 
-sus msg1 tea = <-messages   # Receive (blocking)
-sus msg2 tea = <-messages
+sus value drip = <-ch  # Receive
 
-# Channel operations with select
-select {
-    when msg <- messages -> {
-        vibez.spill("Received message:", msg)
+fr Select statement
+sick {
+    ch1 <- value -> {
+        vibez.spill("Sent to ch1")
     }
-    when numbers <- 42 -> {
-        vibez.spill("Sent number 42")
+    value := <-ch2 -> {
+        vibez.spill("Received from ch2:", value)
     }
-    when timeout(1000) -> {
+    timeout(1000) -> {
         vibez.spill("Timeout after 1 second")
     }
-    default -> {
-        vibez.spill("No channel operation ready")
+}
+```
+
+### Async/Await
+
+```cursed
+fr Async functions
+slay async fetch_data(url tea) Promise<tea> {
+    sus response = await http_get(url)
+    damn response.body
+}
+
+fr Using async functions
+slay main() {
+    sus data tea = await fetch_data("https://api.example.com")
+    vibez.spill("Data:", data)
+}
+```
+
+## 🚀 Advanced Features
+
+### Generics
+
+```cursed
+fr Generic types
+squad Box<T> {
+    value T
+}
+
+fr Generic functions with constraints
+slay sort<T: Comparable>(items []T) []T {
+    fr Sorting implementation
+}
+
+fr Multiple type parameters
+slay map<K, V>(items []K, mapper slay(K) V) []V {
+    sus result []V = []
+    bestie (item in items) {
+        result.push(mapper(item))
     }
+    damn result
 }
 ```
 
-### Synchronization
+### Interfaces
+
 ```cursed
-yeet "concurrenz"
-
-# Mutex for shared state
-sus counter Mutex<drip> = Mutex.new(0)
-
-slay increment_counter() {
-    sus guard = counter.lock()
-    guard.value = guard.value + 1
-    # Automatically unlocked when guard goes out of scope
+fr Define interface
+collab Drawable {
+    slay draw()
+    slay area() meal
 }
 
-# WaitGroup for coordination
-sus wg WaitGroup = WaitGroup.new()
-
-for i in 0..10 {
-    wg.add(1)
-    vibe {
-        defer wg.done()
-        increment_counter()
-    }
+fr Implement interface
+squad Circle {
+    radius meal
 }
 
-wg.wait()  # Wait for all goroutines to finish
-```
-
-## Memory Management
-
-### Stack vs Heap Allocation
-```cursed
-# Stack allocation (automatic)
-sus local_array [100]drip = [0; 100]  # Stack allocated
-
-# Heap allocation (manual)
-sus heap_array []drip = make_slice(1000)  # Heap allocated
-
-# Reference counting for shared ownership
-sus shared Rc<tea> = Rc.new("shared data")
-sus another_ref = shared.clone()
-```
-
-### Memory Safety Features
-```cursed
-# Automatic memory management
-slay process_data() {
-    sus data []drip = [1, 2, 3, 4, 5]
-    # Memory automatically freed when function exits
-}
-
-# Explicit cleanup with defer
-slay file_operation() yikes<tea> {
-    sus file = open_file("data.txt")?
-    defer file.close()  # Always called before function exit
-    
-    # Process file...
-    ready (some_condition) {
-        yikes "Processing failed"  # defer still runs
+impl Drawable for Circle {
+    slay draw() {
+        vibez.spill("Drawing circle with radius", self.radius)
     }
     
-    damn "Success"
-}
-```
-
-### Ownership and Borrowing
-```cursed
-# Move semantics
-sus data []drip = [1, 2, 3]
-sus moved_data = data      # data is now invalid
-# vibez.spill(data)       # Compile error: use after move
-
-# Borrowing (references)
-slay process_slice(items &[]drip) {
-    for item in items {
-        vibez.spill(item)
+    slay area() meal {
+        damn 3.14159 * self.radius * self.radius
     }
 }
-
-sus numbers []drip = [1, 2, 3]
-process_slice(&numbers)    # Borrow, not move
-vibez.spill(numbers)       # Still valid
 ```
 
-This completes the core language reference. For more advanced topics, see:
+### Macros
 
-- [Standard Library Reference](stdlib/)
-- [Advanced Features Guide](advanced-features.md)
-- [Performance Best Practices](../deployment/performance.md)
-- [Memory Safety Guide](memory-safety.md)
+```cursed
+fr Define macro
+macro debug_print(expr) {
+    vibez.spill("DEBUG:", stringify(expr), "=", expr)
+}
+
+fr Use macro
+sus x drip = 42
+debug_print(x + 1)  # Outputs: DEBUG: x + 1 = 43
+```
+
+### Attributes
+
+```cursured
+fr Function attributes
+[inline]
+slay fast_function() drip {
+    damn 42
+}
+
+[deprecated("Use new_function instead")]
+slay old_function() {
+    fr Old implementation
+}
+
+[test]
+slay test_addition() {
+    assert_eq(2 + 2, 4)
+}
+```
+
+## 🔧 Operators
+
+### Arithmetic Operators
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `+` | Addition | `5 + 3` → `8` |
+| `-` | Subtraction | `5 - 3` → `2` |
+| `*` | Multiplication | `5 * 3` → `15` |
+| `/` | Division | `15 / 3` → `5` |
+| `%` | Modulo | `17 % 5` → `2` |
+| `**` | Exponentiation | `2 ** 3` → `8` |
+
+### Comparison Operators
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `==` | Equal | `5 == 5` → `based` |
+| `!=` | Not equal | `5 != 3` → `based` |
+| `<` | Less than | `3 < 5` → `based` |
+| `<=` | Less or equal | `5 <= 5` → `based` |
+| `>` | Greater than | `5 > 3` → `based` |
+| `>=` | Greater or equal | `5 >= 5` → `based` |
+
+### Logical Operators
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `&&` | Logical AND | `based && cap` → `cap` |
+| `\|\|` | Logical OR | `based \|\| cap` → `based` |
+| `!` | Logical NOT | `!based` → `cap` |
+
+### Assignment Operators
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `=` | Assignment | `x = 5` |
+| `+=` | Add and assign | `x += 3` |
+| `-=` | Subtract and assign | `x -= 2` |
+| `*=` | Multiply and assign | `x *= 4` |
+| `/=` | Divide and assign | `x /= 2` |
+| `%=` | Modulo and assign | `x %= 3` |
+
+### Bitwise Operators
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `&` | Bitwise AND | `5 & 3` → `1` |
+| `\|` | Bitwise OR | `5 \| 3` → `7` |
+| `^` | Bitwise XOR | `5 ^ 3` → `6` |
+| `~` | Bitwise NOT | `~5` → `-6` |
+| `<<` | Left shift | `5 << 1` → `10` |
+| `>>` | Right shift | `10 >> 1` → `5` |
+
+## 💬 Comments
+
+```cursed
+fr Single-line comment
+
+/*
+Multi-line comment
+can span multiple lines
+*/
+
+fr fr Alternative single-line comment style
+
+/**
+ * Documentation comment
+ * Used for generating documentation
+ */
+slay documented_function() {
+    fr Function body
+}
+```
+
+## 🔑 Keywords
+
+### Core Keywords
+
+| Keyword | Purpose | Example |
+|---------|---------|---------|
+| `sus` | Variable declaration | `sus x drip = 5` |
+| `lock` | Constant declaration | `lock PI meal = 3.14` |
+| `slay` | Function declaration | `slay add() { }` |
+| `damn` | Return statement | `damn result` |
+| `ready` | If statement | `ready (condition) { }` |
+| `otherwise` | Else clause | `otherwise { }` |
+| `bestie` | While/for loop | `bestie (x < 10) { }` |
+| `break` | Break from loop | `break` |
+| `continue` | Continue loop | `continue` |
+| `sick` | Pattern matching | `sick value { }` |
+| `when` | Pattern case | `when pattern -> { }` |
+
+### Type Keywords
+
+| Keyword | Purpose | Example |
+|---------|---------|---------|
+| `drip` | Integer type | `sus x drip` |
+| `meal` | Float type | `sus y meal` |
+| `tea` | String type | `sus s tea` |
+| `lit` | Boolean type | `sus b lit` |
+| `squad` | Struct definition | `squad Person { }` |
+| `collab` | Interface definition | `collab Drawable { }` |
+| `sick` | Enum definition | `sick Color { }` |
+
+### Module Keywords
+
+| Keyword | Purpose | Example |
+|---------|---------|---------|
+| `yeet` | Import statement | `yeet "mathz"` |
+| `module` | Module declaration | `module utils` |
+| `pub` | Public visibility | `slay pub function() { }` |
+
+### Concurrency Keywords
+
+| Keyword | Purpose | Example |
+|---------|---------|---------|
+| `go` | Start goroutine | `go { work() }` |
+| `chan` | Channel type | `sus ch chan<drip>` |
+| `async` | Async function | `slay async fetch() { }` |
+| `await` | Await async result | `await fetch()` |
+
+### Error Handling Keywords
+
+| Keyword | Purpose | Example |
+|---------|---------|---------|
+| `yikes` | Error type/throw | `yikes "error message"` |
+| `fam` | Error handling | `result fam { }` |
+| `defer` | Defer execution | `defer cleanup()` |
+
+### Literal Keywords
+
+| Keyword | Purpose | Example |
+|---------|---------|---------|
+| `based` | Boolean true | `sus x lit = based` |
+| `cap` | Boolean false | `sus y lit = cap` |
+| `nil` | Null value | `sus ptr = nil` |
+
+## 📏 Syntax Rules
+
+### Naming Conventions
+- Variables and functions: `snake_case`
+- Types and interfaces: `PascalCase` or `lowercase`
+- Constants: `UPPER_CASE` or `snake_case`
+- Modules: `lowercase` or `snake_case`
+
+### Code Style
+- Use 4 spaces for indentation (not tabs)
+- Place opening braces on the same line
+- Use meaningful variable names
+- Keep lines under 100 characters
+- Use the built-in formatter: `cursed format`
+
+### Best Practices
+- Handle errors explicitly with `fam` blocks
+- Use `defer` for cleanup operations
+- Prefer composition over inheritance
+- Write tests for your functions
+- Document public APIs with comments
+- Use type annotations for clarity
+
+This reference covers the core CURSED language syntax. For more advanced topics and standard library documentation, see the [API Reference](../api/) and [Examples](../../examples/).
