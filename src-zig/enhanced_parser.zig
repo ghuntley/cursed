@@ -208,7 +208,7 @@ pub const Parser = struct {
     fn parseFunctionStatement(self: *Parser) !ast.FunctionStatement {
         _ = try self.consume(.Slay, "Expected 'slay' keyword");
         
-        if (!self.check(.Identifier)) {
+        if (!self.check(.Identifier) and !self.check(.Spill)) {
             try self.reportError(.E102_ExpectedToken, "Expected function name after 'slay'", self.peek().location);
             try self.reportSuggestion("Function syntax: slay functionName(params) returnType { ... }", null);
             return error.ParseError;

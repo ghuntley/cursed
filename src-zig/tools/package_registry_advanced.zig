@@ -663,7 +663,7 @@ pub const AnalyticsEngine = struct {
                 else => {},
             }
         } else {
-            var new_stats = PackageStats{
+            const new_stats = PackageStats{
                 .total_downloads = if (event.event_type == .download) 1 else 0,
                 .unique_users = 0,
                 .daily_downloads = ArrayList(PackageStats.DailyStats).init(self.allocator),
@@ -782,7 +782,6 @@ pub const DiscoveryEngine = struct {
     }
     
     fn getPatternRecommendations(self: *DiscoveryEngine, dependencies: ArrayList([]const u8)) !ArrayList([]const u8) {
-        _ = self;
         var recommendations = ArrayList([]const u8).init(self.allocator);
         
         // Analyze dependency patterns

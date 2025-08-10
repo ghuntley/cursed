@@ -99,6 +99,15 @@ pub const Parser = struct {
         self.arena.deinit();
     }
 
+    /// Check if the current token is a keyword that can be used as a method name
+    fn isKeywordAllowedAsMethodName(self: *Parser) bool {
+        return switch (self.peek().kind) {
+            .Spill, .Tea, .Drip, .Lit, .Cap, .Normie, .Smol, .Mid, .Thicc, 
+            .Snack, .Meal, .Byte, .Rune, .Extra, .Txt, .Sip => true,
+            else => false,
+        };
+    }
+
     // Helper to handle >> vs > ambiguity in generic types
     fn matchGenericClosing(self: *Parser, depth: u32) bool {
         if (depth == 1) {
@@ -764,7 +773,7 @@ pub const Parser = struct {
     fn parseFunctionStatement(self: *Parser) ParserError!FunctionStatement {
         _ = try self.consume(.Slay, "Expected 'slay'");
         
-        if (!self.check(.Identifier)) {
+        if (!self.check(.Identifier) and !self.check(.Spill)) {
             _ = self.reportErrorWithContext("Expected function name after 'slay'", "parseFunctionStatement") catch {};
             return ParserError.UnexpectedToken;
         }
@@ -1478,7 +1487,8 @@ pub const Parser = struct {
             if (self.match(.LeftParen)) {
                 expr = try self.finishCall(expr);
             } else if (self.match(.Dot)) {
-                if (!self.check(.Identifier)) {
+                // Allow identifiers and keywords that can be used as method names
+                if (!self.check(.Identifier) and !self.isKeywordAllowedAsMethodName()) {
                     return ParserError.UnexpectedToken;
                 }
                 const property = self.advance().lexeme;

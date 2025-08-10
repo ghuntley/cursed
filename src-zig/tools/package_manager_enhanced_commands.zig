@@ -17,8 +17,8 @@ pub const EnhancedPackageManager = struct {
     package_registry: registry.PackageRegistry,
     
     pub fn init(allocator: Allocator) !EnhancedPackageManager {
-        var registry_client = try api.RegistryApiClient.init(allocator, "https://packages.cursed.dev");
-        var package_registry = try registry.PackageRegistry.init(allocator, "https://packages.cursed.dev");
+        const registry_client = try api.RegistryApiClient.init(allocator, "https://packages.cursed.dev");
+        const package_registry = try registry.PackageRegistry.init(allocator, "https://packages.cursed.dev");
         
         return EnhancedPackageManager{
             .allocator = allocator,
@@ -351,24 +351,24 @@ pub const EnhancedPackageManager = struct {
     fn showPackageAnalytics(self: *EnhancedPackageManager, package_name: []const u8) !void {
         print("\n📊 Analytics (Last 30 days):\n", .{});
         
-        var analytics = try self.registry_client.getPackageAnalytics(package_name, .last_30_days);
-        defer analytics.deinit();
+        var package_analytics = try self.registry_client.getPackageAnalytics(package_name, .last_30_days);
+        defer package_analytics.deinit();
         
-        print("   Downloads: {}\n", .{analytics.total_downloads});
-        print("   Unique users: {}\n", .{analytics.unique_users});
-        print("   Growth rate: {d:.1f}%\n", .{analytics.growth_rate});
+        print("   Downloads: {}\n", .{package_analytics.total_downloads});
+        print("   Unique users: {}\n", .{package_analytics.unique_users});
+        print("   Growth rate: {d:.1f}%\n", .{package_analytics.growth_rate});
         
-        if (analytics.geographic_distribution.count() > 0) {
+        if (package_analytics.geographic_distribution.count() > 0) {
             print("   Geographic distribution:\n", .{});
-            var geo_iter = analytics.geographic_distribution.iterator();
+            var geo_iter = package_analytics.geographic_distribution.iterator();
             while (geo_iter.next()) |entry| {
                 print("     {s}: {}%\n", .{entry.key_ptr.*, entry.value_ptr.*});
             }
         }
         
-        if (analytics.version_distribution.count() > 0) {
+        if (package_analytics.version_distribution.count() > 0) {
             print("   Version distribution:\n", .{});
-            var ver_iter = analytics.version_distribution.iterator();
+            var ver_iter = package_analytics.version_distribution.iterator();
             while (ver_iter.next()) |entry| {
                 print("     {s}: {}%\n", .{entry.key_ptr.*, entry.value_ptr.*});
             }
@@ -401,7 +401,7 @@ pub const EnhancedPackageManager = struct {
         print("🔄 Migrating from {s}: {s}\n", .{@tagName(ecosystem), package_spec});
         
         // Perform migration analysis
-        var import_result = try self.registry_client.importFromEcosystem(ecosystem, package_spec);
+        const import_result = try self.registry_client.importFromEcosystem(ecosystem, package_spec);
         
         if (import_result.success) {
             print("✅ Migration analysis complete!\n\n", .{});
@@ -510,24 +510,24 @@ pub const EnhancedPackageManager = struct {
         print("📊 Analytics for {s} ({s})\n", .{package_name, timeframe_str});
         print("=" ** 50 ++ "\n\n");
         
-        var analytics = try self.registry_client.getPackageAnalytics(package_name, timeframe);
-        defer analytics.deinit();
+        var analytics_data = try self.registry_client.getPackageAnalytics(package_name, timeframe);
+        defer analytics_data.deinit();
         
         // Display analytics with charts
-        try self.displayAnalyticsCharts(analytics, timeframe_str);
+        try self.displayAnalyticsCharts(analytics_data, timeframe_str);
     }
     
-    fn displayAnalyticsCharts(self: *EnhancedPackageManager, analytics: api.PackageAnalytics, timeframe: []const u8) !void {
+    fn displayAnalyticsCharts(self: *EnhancedPackageManager, analytics_data: api.PackageAnalytics, timeframe: []const u8) !void {
         _ = self;
         
-        print("📥 Downloads: {}\n", .{analytics.total_downloads});
-        print("👥 Unique Users: {}\n", .{analytics.unique_users});
-        print("📈 Growth Rate: {d:.1f}%\n\n", .{analytics.growth_rate});
+        print("📥 Downloads: {}\n", .{analytics_data.total_downloads});
+        print("👥 Unique Users: {}\n", .{analytics_data.unique_users});
+        print("📈 Growth Rate: {d:.1f}%\n\n", .{analytics_data.growth_rate});
         
         // Geographic distribution chart
-        if (analytics.geographic_distribution.count() > 0) {
+        if (analytics_data.geographic_distribution.count() > 0) {
             print("🌍 Geographic Distribution:\n", .{});
-            var geo_iter = analytics.geographic_distribution.iterator();
+            var geo_iter = analytics_data.geographic_distribution.iterator();
             while (geo_iter.next()) |entry| {
                 const percentage = entry.value_ptr.*;
                 const bar = "█" ** @min(percentage / 2, 50); // Simple bar chart
@@ -537,9 +537,9 @@ pub const EnhancedPackageManager = struct {
         }
         
         // Version distribution chart
-        if (analytics.version_distribution.count() > 0) {
+        if (analytics_data.version_distribution.count() > 0) {
             print("📦 Version Distribution:\n", .{});
-            var ver_iter = analytics.version_distribution.iterator();
+            var ver_iter = analytics_data.version_distribution.iterator();
             while (ver_iter.next()) |entry| {
                 const percentage = entry.value_ptr.*;
                 const bar = "█" ** @min(percentage / 2, 50);
@@ -666,7 +666,6 @@ test "search options parsing" {
     var manager = try EnhancedPackageManager.init(allocator);
     defer manager.deinit();
     
-    const args = [_][]const u8{"json"};
     const options = SearchOptions{
         .category = "utilities",
         .min_quality = 80.0,

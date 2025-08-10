@@ -155,6 +155,7 @@ pub fn main() !void {
     const config = try parseArgs(allocator, args);
     
     // Execute the appropriate command
+    print("🐛 DEBUG: Executing command: {s}\n", .{@tagName(config.command)});
     switch (config.command) {
         .version => {
             printVersion();
@@ -234,6 +235,7 @@ fn parseArgs(allocator: Allocator, args: [][:0]u8) !Config {
         i += 1;
     } else if (std.mem.eql(u8, args[i], "compile")) {
         config.command = .compile;
+        if (config.verbose) print("🐛 DEBUG: Command set to compile\n", .{});
         i += 1;
     } else if (std.mem.eql(u8, args[i], "check")) {
         config.command = .check;

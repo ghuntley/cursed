@@ -92,10 +92,11 @@ pub const SimpleLLVMIRGenerator = struct {
             },
             else => {
                 // Other statements handled in function body
+                if (self.verbose) print("⚠️  Unsupported statement type: {s}\n", .{@tagName(stmt)});
             },
         }
     }
-    
+
     /// Generate function
     fn generateFunction(self: *SimpleLLVMIRGenerator, func_stmt: ast.FunctionStatement) !void {
         const writer = self.ir_buffer.writer();
@@ -444,15 +445,33 @@ pub const SimpleLLVMIRGenerator = struct {
     
     /// Compile IR to executable using clang
     pub fn compileToExecutable(self: *SimpleLLVMIRGenerator, ir_file: []const u8, output_file: []const u8) !void {
-        const result = try std.process.Child.run(.{
+        // Try clang-18 first, then fallback to clang
+        var clang_cmd: []const u8 = "clang-18";
+        const result = std.process.Child.run(.{
             .allocator = self.allocator,
             .argv = &[_][]const u8{
-                "clang",
+                clang_cmd,
                 "-O2",
                 "-o", output_file,
                 ir_file,
             },
-        });
+        }) catch blk: {
+            // Fallback to clang
+            clang_cmd = "clang";
+            const fallback = std.process.Child.run(.{
+                .allocator = self.allocator,
+                .argv = &[_][]const u8{
+                    clang_cmd,
+                    "-O2",
+                    "-o", output_file,
+                    ir_file,
+                },
+            }) catch |err| {
+                print("❌ Neither clang-18 nor clang found\n", .{});
+                return err;
+            };
+            break :blk fallback;
+        };
         
         defer self.allocator.free(result.stdout);
         defer self.allocator.free(result.stderr);
