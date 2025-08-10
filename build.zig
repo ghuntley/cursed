@@ -730,9 +730,40 @@ pub fn build(b: *std.Build) void {
         }
     }
     
+    // Create P2 Advanced Optimization Demo executable
+    const p2_demo_exe = b.addExecutable(.{
+        .name = "cursed-p2-optimization-demo",
+        .root_source_file = b.path("src-zig/main_unified.zig"),
+        .target = resolved_target,
+        .optimize = .ReleaseFast, // Always use fast optimization for demo
+    });
+    
+    if (supports_libc) {
+        p2_demo_exe.linkLibC();
+        
+        // Add Windows-specific libraries
+        if (resolved_target.result.os.tag == .windows) {
+            p2_demo_exe.linkSystemLibrary("ws2_32");
+            p2_demo_exe.linkSystemLibrary("kernel32");
+        }
+        
+        // Add LLVM support for native builds
+        if (config.supports_llvm and !is_cross_compile) {
+            addLlvm(b, p2_demo_exe, resolved_target);
+        }
+    }
+    
+    // Apply advanced optimization flags for P2 demo
+    p2_demo_exe.want_lto = true;
+    p2_demo_exe.root_module.addCMacro("CURSED_P2_DEMO", "1");
+    p2_demo_exe.root_module.addCMacro("CURSED_ENABLE_PGO", "1");
+    p2_demo_exe.root_module.addCMacro("CURSED_ENABLE_LTO", "1");
+    p2_demo_exe.root_module.addCMacro("CURSED_ENABLE_CROSS_PLATFORM", "1");
+    
     // Install artifacts
     b.installArtifact(exe);
     b.installArtifact(exe_stable);
+    b.installArtifact(p2_demo_exe);
     
     // Create run steps
     const run_cmd = b.addRunArtifact(exe);
@@ -753,6 +784,24 @@ pub fn build(b: *std.Build) void {
     
     const run_stable_step = b.step("run-stable", "Run the stable CURSED compiler");
     run_stable_step.dependOn(&run_stable_cmd.step);
+    
+    // Create P2 demo run step
+    const run_p2_demo_cmd = b.addRunArtifact(p2_demo_exe);
+    run_p2_demo_cmd.step.dependOn(b.getInstallStep());
+    run_p2_demo_cmd.addArg("advanced_p2_optimization_demo.csd");
+    run_p2_demo_cmd.addArg("--optimize=ReleaseFast");
+    run_p2_demo_cmd.addArg("--enable-pgo");
+    run_p2_demo_cmd.addArg("--enable-lto=full");
+    run_p2_demo_cmd.addArg("--cross-platform");
+    run_p2_demo_cmd.addArg("--vectorize");
+    run_p2_demo_cmd.addArg("--aggressive-inline");
+    run_p2_demo_cmd.addArg("--verbose");
+    if (b.args) |args| {
+        run_p2_demo_cmd.addArgs(args);
+    }
+    
+    const run_p2_demo_step = b.step("run-p2-demo", "Run the P2 Advanced Optimization Demo");
+    run_p2_demo_step.dependOn(&run_p2_demo_cmd.step);
 
     // Unit tests
     const unit_tests = b.addTest(.{
@@ -804,6 +853,119 @@ pub fn build(b: *std.Build) void {
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
+
+    // P2 Item #7: Multimedia modules - ImageZ, AudioZ, RenderZ
+    const multimedia_demo = b.addExecutable(.{
+        .name = "cursed-multimedia-demo",
+        .root_source_file = b.path("multimedia_demo_comprehensive.csd"),
+        .target = resolved_target,
+        .optimize = actual_optimize,
+    });
+    
+    if (supports_libc) {
+        multimedia_demo.linkLibC();
+        if (resolved_target.result.os.tag == .windows) {
+            multimedia_demo.linkSystemLibrary("ws2_32");
+            multimedia_demo.linkSystemLibrary("kernel32");
+            multimedia_demo.linkSystemLibrary("opengl32");
+            multimedia_demo.linkSystemLibrary("d3d11");
+        } else if (resolved_target.result.os.tag == .linux) {
+            multimedia_demo.linkSystemLibrary("GL");
+            multimedia_demo.linkSystemLibrary("X11");
+            multimedia_demo.linkSystemLibrary("asound");
+        } else if (resolved_target.result.os.tag == .macos) {
+            multimedia_demo.linkFramework("OpenGL");
+            multimedia_demo.linkFramework("Metal");
+            multimedia_demo.linkFramework("CoreAudio");
+            multimedia_demo.linkFramework("AudioUnit");
+        }
+        
+        if (config.supports_llvm and !is_cross_compile) {
+            addLlvm(b, multimedia_demo, resolved_target);
+        }
+    }
+    
+    b.installArtifact(multimedia_demo);
+
+    const multimedia_demo_run = b.addRunArtifact(multimedia_demo);
+    const multimedia_step = b.step("multimedia", "Run comprehensive multimedia demo showcasing ImageZ, AudioZ, and RenderZ modules");
+    multimedia_step.dependOn(&multimedia_demo_run.step);
+
+    // Individual module demos
+    const imagez_demo = b.addExecutable(.{
+        .name = "cursed-imagez-demo",
+        .root_source_file = b.path("stdlib/imagez/example_image_processing.csd"),
+        .target = resolved_target,
+        .optimize = actual_optimize,
+    });
+    
+    if (supports_libc) {
+        imagez_demo.linkLibC();
+        if (resolved_target.result.os.tag == .windows) {
+            imagez_demo.linkSystemLibrary("gdi32");
+        }
+        if (config.supports_llvm and !is_cross_compile) {
+            addLlvm(b, imagez_demo, resolved_target);
+        }
+    }
+    
+    b.installArtifact(imagez_demo);
+
+    const audioz_demo = b.addExecutable(.{
+        .name = "cursed-audioz-demo", 
+        .root_source_file = b.path("stdlib/audioz/example_audio_processing.csd"),
+        .target = resolved_target,
+        .optimize = actual_optimize,
+    });
+    
+    if (supports_libc) {
+        audioz_demo.linkLibC();
+        if (resolved_target.result.os.tag == .windows) {
+            audioz_demo.linkSystemLibrary("winmm");
+            audioz_demo.linkSystemLibrary("dsound");
+        } else if (resolved_target.result.os.tag == .linux) {
+            audioz_demo.linkSystemLibrary("asound");
+            audioz_demo.linkSystemLibrary("pulse");
+        } else if (resolved_target.result.os.tag == .macos) {
+            audioz_demo.linkFramework("CoreAudio");
+            audioz_demo.linkFramework("AudioUnit");
+        }
+        if (config.supports_llvm and !is_cross_compile) {
+            addLlvm(b, audioz_demo, resolved_target);
+        }
+    }
+    
+    b.installArtifact(audioz_demo);
+
+    const renderz_demo = b.addExecutable(.{
+        .name = "cursed-renderz-demo",
+        .root_source_file = b.path("stdlib/renderz/example_graphics_rendering.csd"),
+        .target = resolved_target,
+        .optimize = actual_optimize,
+    });
+    
+    if (supports_libc) {
+        renderz_demo.linkLibC();
+        if (resolved_target.result.os.tag == .windows) {
+            renderz_demo.linkSystemLibrary("opengl32");
+            renderz_demo.linkSystemLibrary("d3d11");
+            renderz_demo.linkSystemLibrary("d3d12");
+            renderz_demo.linkSystemLibrary("gdi32");
+        } else if (resolved_target.result.os.tag == .linux) {
+            renderz_demo.linkSystemLibrary("GL");
+            renderz_demo.linkSystemLibrary("X11");
+            renderz_demo.linkSystemLibrary("vulkan");
+        } else if (resolved_target.result.os.tag == .macos) {
+            renderz_demo.linkFramework("OpenGL");
+            renderz_demo.linkFramework("Metal");
+            renderz_demo.linkFramework("Cocoa");
+        }
+        if (config.supports_llvm and !is_cross_compile) {
+            addLlvm(b, renderz_demo, resolved_target);
+        }
+    }
+    
+    b.installArtifact(renderz_demo);
 
     // Enhanced LSP server with incremental compilation fixes
     const lsp_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
@@ -894,6 +1056,53 @@ pub fn build(b: *std.Build) void {
     
     const perf_cli_step = b.step("perf", "Run the CURSED Performance Optimization CLI");
     perf_cli_step.dependOn(&run_perf_cli.step);
+
+    // Enhanced Package Manager CLI
+    const pkg_cli_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")  // Fallback for limited targets
+    else 
+        b.path("src-zig/cursed_pkg.zig");
+        
+    const pkg_cli_exe = b.addExecutable(.{
+        .name = "cursed-pkg",
+        .root_source_file = pkg_cli_source,
+        .target = resolved_target,
+        .optimize = actual_optimize,
+    });
+    
+    if (supports_libc) {
+        pkg_cli_exe.linkLibC();
+        
+        // Add Windows-specific libraries if needed
+        if (resolved_target.result.os.tag == .windows) {
+            pkg_cli_exe.linkSystemLibrary("ws2_32");
+            pkg_cli_exe.linkSystemLibrary("kernel32");
+        }
+    }
+    
+    // Apply ReleaseSmall fix to package manager CLI
+    if (actual_optimize == .ReleaseSmall) {
+        pkg_cli_exe.want_lto = true;
+        pkg_cli_exe.root_module.addCMacro("NDEBUG", "1");
+    }
+    
+    // Apply linker configuration to package manager CLI
+    linker_manager.applyLinkerConfig(pkg_cli_exe, target_triple_str, b) catch |err| {
+        if (b.verbose) {
+            std.debug.print("⚠️ Failed to apply linker config to package manager CLI: {}\n", .{err});
+        }
+    };
+    
+    b.installArtifact(pkg_cli_exe);
+    
+    const run_pkg_cli = b.addRunArtifact(pkg_cli_exe);
+    run_pkg_cli.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_pkg_cli.addArgs(args);
+    }
+    
+    const pkg_cli_step = b.step("pkg", "Run the CURSED Package Manager");
+    pkg_cli_step.dependOn(&run_pkg_cli.step);
 
     // Comprehensive test step that runs all tests
     const all_tests_step = b.step("test-all", "Run all test suites");

@@ -1,0 +1,659 @@
+{
+  "name": "cursed-language-advanced",
+  "displayName": "CURSED Language - Advanced IDE Support",
+  "description": "Professional-grade IDE support for CURSED with advanced IntelliSense, debugging, and real-time analysis",
+  "version": "2.0.0",
+  "publisher": "cursed-lang",
+  "icon": "images/cursed-icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghuntley/cursed"
+  },
+  "bugs": {
+    "url": "https://github.com/ghuntley/cursed/issues"
+  },
+  "homepage": "https://cursed-lang.org",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Debuggers",
+    "Formatters",
+    "Linters",
+    "Snippets",
+    "Testing",
+    "Other"
+  ],
+  "keywords": [
+    "cursed",
+    "programming",
+    "language",
+    "compiler",
+    "systems",
+    "performance",
+    "concurrency",
+    "advanced"
+  ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "onLanguage:cursed",
+    "workspaceContains:**/*.csd",
+    "workspaceContains:CursedPackage.toml"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "cursed",
+        "aliases": [
+          "CURSED",
+          "cursed"
+        ],
+        "extensions": [
+          ".csd",
+          ".cursed"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/cursed-file-icon-light.svg",
+          "dark": "./images/cursed-file-icon-dark.svg"
+        }
+      },
+      {
+        "id": "cursed-toml",
+        "aliases": [
+          "CURSED TOML",
+          "CursedPackage"
+        ],
+        "filenames": [
+          "CursedPackage.toml",
+          "CursedWorkspace.toml"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cursed",
+        "scopeName": "source.cursed",
+        "path": "./syntaxes/cursed-advanced.tmLanguage.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "CURSED Dark Pro",
+        "uiTheme": "vs-dark",
+        "path": "./themes/cursed-dark-pro.json"
+      },
+      {
+        "label": "CURSED Light Pro",
+        "uiTheme": "vs",
+        "path": "./themes/cursed-light-pro.json"
+      },
+      {
+        "label": "CURSED High Contrast",
+        "uiTheme": "hc-black",
+        "path": "./themes/cursed-high-contrast.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "cursed",
+        "path": "./snippets/cursed-advanced.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "cursed.run",
+        "title": "Run CURSED Program",
+        "category": "CURSED",
+        "icon": "$(play)"
+      },
+      {
+        "command": "cursed.build",
+        "title": "Build CURSED Program",
+        "category": "CURSED",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "cursed.buildRelease",
+        "title": "Build Release",
+        "category": "CURSED",
+        "icon": "$(package)"
+      },
+      {
+        "command": "cursed.test",
+        "title": "Run Tests",
+        "category": "CURSED",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "cursed.format",
+        "title": "Format CURSED Code",
+        "category": "CURSED",
+        "icon": "$(symbol-misc)"
+      },
+      {
+        "command": "cursed.lint",
+        "title": "Lint CURSED Code",
+        "category": "CURSED",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "cursed.newProject",
+        "title": "New CURSED Project",
+        "category": "CURSED",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "cursed.newPackage",
+        "title": "New CURSED Package",
+        "category": "CURSED",
+        "icon": "$(package)"
+      },
+      {
+        "command": "cursed.showDocumentation",
+        "title": "Show Documentation",
+        "category": "CURSED",
+        "icon": "$(book)"
+      },
+      {
+        "command": "cursed.showAST",
+        "title": "Show AST",
+        "category": "CURSED Debug",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "cursed.showTokens",
+        "title": "Show Tokens",
+        "category": "CURSED Debug",
+        "icon": "$(symbol-keyword)"
+      },
+      {
+        "command": "cursed.analyzePerformance",
+        "title": "Performance Analysis",
+        "category": "CURSED",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "cursed.benchmarkCode",
+        "title": "Benchmark Code",
+        "category": "CURSED",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "cursed.profile",
+        "title": "Profile Code",
+        "category": "CURSED",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "cursed.memoryCheck",
+        "title": "Memory Check",
+        "category": "CURSED",
+        "icon": "$(device-mobile)"
+      },
+      {
+        "command": "cursed.crossCompile",
+        "title": "Cross Compile",
+        "category": "CURSED",
+        "icon": "$(server-process)"
+      },
+      {
+        "command": "cursed.projectExplorer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "cursed.dependencies.add",
+        "title": "Add Dependency",
+        "icon": "$(add)"
+      },
+      {
+        "command": "cursed.dependencies.update",
+        "title": "Update Dependencies",
+        "icon": "$(sync)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "cursed.run",
+        "key": "ctrl+f5",
+        "when": "editorTextFocus && editorLangId == cursed"
+      },
+      {
+        "command": "cursed.build",
+        "key": "ctrl+shift+b",
+        "when": "editorTextFocus && editorLangId == cursed"
+      },
+      {
+        "command": "cursed.test",
+        "key": "ctrl+shift+t",
+        "when": "editorTextFocus && editorLangId == cursed"
+      },
+      {
+        "command": "cursed.format",
+        "key": "shift+alt+f",
+        "when": "editorTextFocus && editorLangId == cursed"
+      },
+      {
+        "command": "cursed.lint",
+        "key": "ctrl+shift+l",
+        "when": "editorTextFocus && editorLangId == cursed"
+      },
+      {
+        "command": "cursed.showAST",
+        "key": "ctrl+shift+a",
+        "when": "editorTextFocus && editorLangId == cursed"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorLangId == cursed",
+          "command": "cursed.run",
+          "group": "navigation@1"
+        },
+        {
+          "when": "editorLangId == cursed",
+          "command": "cursed.format",
+          "group": "1_modification@1"
+        },
+        {
+          "when": "editorLangId == cursed",
+          "command": "cursed.lint",
+          "group": "1_modification@2"
+        },
+        {
+          "when": "editorLangId == cursed",
+          "command": "cursed.showAST",
+          "group": "cursed@1"
+        },
+        {
+          "when": "editorLangId == cursed",
+          "command": "cursed.analyzePerformance",
+          "group": "cursed@2"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "resourceExtname == .csd",
+          "command": "cursed.run",
+          "group": "navigation@1"
+        },
+        {
+          "when": "resourceExtname == .csd",
+          "command": "cursed.build",
+          "group": "navigation@2"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .csd",
+          "command": "cursed.run",
+          "group": "navigation@1"
+        },
+        {
+          "when": "resourceFilename == CursedPackage.toml",
+          "command": "cursed.dependencies.update",
+          "group": "cursed@1"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "cursed.projectExplorer.refresh",
+          "when": "view == cursedProjectExplorer",
+          "group": "navigation"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "cursedProjectExplorer",
+          "name": "CURSED Project",
+          "when": "cursed.projectOpen"
+        },
+        {
+          "id": "cursedDependencies",
+          "name": "Dependencies",
+          "when": "cursed.projectOpen"
+        }
+      ],
+      "debug": [
+        {
+          "id": "cursedVariables",
+          "name": "CURSED Variables",
+          "when": "debugType == cursed"
+        },
+        {
+          "id": "cursedGoroutines",
+          "name": "Goroutines",
+          "when": "debugType == cursed"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "cursedProjectExplorer",
+        "contents": "No CURSED project found.\n[Create New Project](command:cursed.newProject)\n[Open Project](command:vscode.openFolder)"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "CURSED Language Configuration",
+      "properties": {
+        "cursed.compiler.path": {
+          "type": "string",
+          "default": "cursed-zig",
+          "description": "Path to the CURSED compiler binary"
+        },
+        "cursed.lsp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CURSED Language Server Protocol"
+        },
+        "cursed.lsp.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable detailed LSP debug logging"
+        },
+        "cursed.lsp.trace": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Trace communication between VS Code and language server"
+        },
+        "cursed.format.onSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically format CURSED code on save"
+        },
+        "cursed.lint.onSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically lint CURSED code on save"
+        },
+        "cursed.lint.onType": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable real-time linting while typing"
+        },
+        "cursed.build.optimization": {
+          "type": "string",
+          "enum": ["debug", "release", "release-fast", "release-small"],
+          "default": "debug",
+          "description": "Default build optimization level"
+        },
+        "cursed.intellisense.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable advanced IntelliSense and code completion"
+        },
+        "cursed.intellisense.suggestSnippets": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include snippets in code completion"
+        },
+        "cursed.intellisense.autoImport": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically add import statements"
+        },
+        "cursed.debug.enableBreakpoints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable breakpoint support in debugger"
+        },
+        "cursed.debug.showVariables": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show variable values during debugging"
+        },
+        "cursed.debug.showGoroutines": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show goroutine information during debugging"
+        },
+        "cursed.performance.enableAnalysis": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable performance analysis features"
+        },
+        "cursed.performance.showMetrics": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show performance metrics in editor"
+        },
+        "cursed.crossCompile.targets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["x86_64-linux", "x86_64-windows", "aarch64-macos"],
+          "description": "Cross-compilation targets"
+        },
+        "cursed.terminal.useIntegrated": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use VS Code integrated terminal for CURSED commands"
+        },
+        "cursed.experimental.features": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable experimental language features"
+        }
+      }
+    },
+    "configurationDefaults": {
+      "[cursed]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.detectIndentation": false,
+        "editor.rulers": [80, 120],
+        "editor.wordWrap": "wordWrapColumn",
+        "editor.wordWrapColumn": 120,
+        "editor.bracketPairColorization.enabled": true,
+        "editor.guides.bracketPairs": true,
+        "editor.semanticHighlighting.enabled": true,
+        "editor.inlayHints.enabled": "on"
+      }
+    },
+    "debuggers": [
+      {
+        "type": "cursed",
+        "label": "CURSED Advanced Debugger",
+        "program": "./out/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to a CURSED source file",
+                "default": "${workspaceFolder}/main.csd"
+              },
+              "args": {
+                "type": "array",
+                "description": "Command line arguments passed to the program",
+                "default": []
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Absolute path to the working directory",
+                "default": "${workspaceFolder}"
+              },
+              "env": {
+                "type": "object",
+                "description": "Environment variables",
+                "default": {}
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch",
+                "default": true
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol",
+                "default": false
+              },
+              "optimization": {
+                "type": "string",
+                "enum": ["debug", "release"],
+                "description": "Build optimization for debugging",
+                "default": "debug"
+              },
+              "enableGoroutineDebugging": {
+                "type": "boolean",
+                "description": "Enable goroutine debugging features",
+                "default": true
+              },
+              "showMemoryViews": {
+                "type": "boolean",
+                "description": "Show memory allocation views",
+                "default": false
+              }
+            }
+          },
+          "attach": {
+            "required": ["processId"],
+            "properties": {
+              "processId": {
+                "type": "number",
+                "description": "Process ID to attach to"
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol",
+                "default": false
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "cursed",
+            "request": "launch",
+            "name": "Launch CURSED Program",
+            "program": "${workspaceFolder}/main.csd",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "optimization": "debug"
+          },
+          {
+            "type": "cursed",
+            "request": "launch",
+            "name": "Launch with Goroutine Debugging",
+            "program": "${workspaceFolder}/main.csd",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "enableGoroutineDebugging": true,
+            "showMemoryViews": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "CURSED: Launch",
+            "description": "Launch a CURSED program with debugging",
+            "body": {
+              "type": "cursed",
+              "request": "launch",
+              "name": "Launch CURSED Program",
+              "program": "^\"\\${workspaceFolder}/main.csd\"",
+              "args": [],
+              "cwd": "^\"\\${workspaceFolder}\"",
+              "stopOnEntry": false
+            }
+          },
+          {
+            "label": "CURSED: Attach",
+            "description": "Attach to a running CURSED process",
+            "body": {
+              "type": "cursed",
+              "request": "attach",
+              "name": "Attach to CURSED Process",
+              "processId": "^\"\\${command:pickProcess}\""
+            }
+          }
+        ]
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "cursed",
+        "required": ["task"],
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "The CURSED task to execute"
+          },
+          "file": {
+            "type": "string",
+            "description": "The CURSED file to process"
+          },
+          "optimization": {
+            "type": "string",
+            "description": "Build optimization level"
+          },
+          "target": {
+            "type": "string",
+            "description": "Cross-compilation target"
+          }
+        }
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "cursed",
+        "owner": "cursed",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning|info):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "install-deps": "npm install",
+    "clean": "rimraf out",
+    "dev": "npm run watch"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.44.0",
+    "typescript": "^5.1.6",
+    "@vscode/test-electron": "^2.3.4",
+    "@vscode/vsce": "^2.20.0",
+    "rimraf": "^5.0.1"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.1.0",
+    "vscode-debugadapter": "^1.61.0",
+    "vscode-debugprotocol": "^1.61.0",
+    "tree-sitter": "^0.20.1",
+    "tree-sitter-cursed": "file:../tree-sitter"
+  }
+}
