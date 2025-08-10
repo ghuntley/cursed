@@ -327,6 +327,11 @@ var global_interpreter: ?WasmInterpreter = null;
 export fn wasm_init() i32 {
     const base_allocator = std.heap.page_allocator;
     
+    // Initialize garbage collector for WASM target
+    if (builtin.target.os.tag == .freestanding) {
+        _ = @import("gc.zig").cursed_gc_init(1024 * 1024); // 1MB initial heap
+    }
+    
     var arena = std.heap.ArenaAllocator.init(base_allocator);
     global_allocator = arena;
     

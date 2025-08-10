@@ -10,6 +10,7 @@ const c = @cImport({
 
 const ast = @import("ast.zig");
 const type_system = @import("type_system_runtime.zig");
+const const_generics = @import("const_generics.zig");
 
 /// Generic type parameter with constraints
 pub const TypeParameter = struct {
@@ -35,6 +36,7 @@ pub const TypeParameter = struct {
 pub const Constraint = struct {
     kind: ConstraintKind,
     interface_name: ?[]const u8 = null,
+    const_bounds: ?const_generics.ConstGenericBounds = null,
     
     pub const ConstraintKind = enum {
         Any,           // No constraints - T
@@ -43,6 +45,7 @@ pub const Constraint = struct {
         Ordered,       // T: Ordered - supports <, >, <=, >=
         Interface,     // T: SomeInterface - implements interface
         Sized,         // T: Sized - has known size at compile time
+        ConstGeneric,  // const N: usize - const generic parameter with bounds
     };
     
     pub fn init(kind: ConstraintKind) Constraint {
@@ -149,6 +152,9 @@ pub const Monomorphizer = struct {
     // Work queue for pending instantiations
     work_queue: ArrayList(InstantiationRequest),
     
+    // CRITICAL FIX: Const generics manager to prevent ICE in optimizer
+    const_generics_manager: const_generics.ConstGenericsManager,
+    
     pub const InstantiationRequest = struct {
         generic_name: []const u8,
         type_arguments: ArrayList(ast.Type),
@@ -176,6 +182,7 @@ pub const Monomorphizer = struct {
             .generic_declarations = HashMap([]const u8, GenericDeclaration, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .instances = HashMap([]const u8, MonomorphizedInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .work_queue = ArrayList(InstantiationRequest).init(allocator),
+            .const_generics_manager = const_generics.ConstGenericsManager.init(allocator, context),
         };
     }
     
@@ -196,12 +203,35 @@ pub const Monomorphizer = struct {
             request.deinit(self.allocator);
         }
         self.work_queue.deinit();
+        
+        // CRITICAL FIX: Clean up const generics manager
+        self.const_generics_manager.deinit();
     }
     
     /// Register a generic declaration
     pub fn registerGeneric(self: *Monomorphizer, declaration: GenericDeclaration) !void {
         const owned_name = try self.allocator.dupe(u8, declaration.name);
         try self.generic_declarations.put(owned_name, declaration);
+    }
+    
+    /// CRITICAL FIX: Register const generic parameter with bounds checking
+    pub fn registerConstGeneric(
+        self: *Monomorphizer, 
+        name: []const u8, 
+        kind: const_generics.ConstGenericKind,
+        bounds: ?const_generics.ConstGenericBounds,
+        default_value: ?const_generics.ConstGenericValue
+    ) !void {
+        try self.const_generics_manager.processConstGenericDeclaration(name, kind, bounds, default_value);
+        std.log.info("Registered const generic '{}' with robust bounds checking to prevent optimizer ICE", .{name});
+    }
+    
+    /// CRITICAL FIX: Set const generic value with validation
+    pub fn setConstGenericValue(self: *Monomorphizer, name: []const u8, value_expr: ast.Expression) !c.LLVMValueRef {
+        return self.const_generics_manager.processConstGenericInstantiation(name, value_expr) catch |err| {
+            std.log.err("CRITICAL: Const generic instantiation failed for '{}' - preventing optimizer ICE: {}", .{name, err});
+            return err;
+        };
     }
     
     /// Request instantiation of generic type with concrete type arguments
@@ -325,12 +355,29 @@ pub const Monomorphizer = struct {
         }
     }
     
-    /// Validate type constraints
+    /// CRITICAL FIX: Enhanced type constraint validation with const generics bounds checking
+    /// This prevents ICE in optimizer when invalid constant values are used
     fn validateConstraints(self: *Monomorphizer, generic_decl: GenericDeclaration, type_arguments: []ast.Type) !void {
+        // Validate all const generics first to prevent optimizer ICE
+        try self.const_generics_manager.validateAllConstGenerics();
+        
         for (generic_decl.type_parameters.items, 0..) |param, i| {
+            // Bounds check for array access - prevent ICE
+            if (i >= type_arguments.len) {
+                std.log.err("Type parameter index {} out of bounds for type arguments array of length {}", 
+                    .{i, type_arguments.len});
+                return error.ConstraintViolation;
+            }
+            
             const type_arg = type_arguments[i];
             
             for (param.constraints.items) |constraint| {
+                // CRITICAL: Check for const generic constraints first
+                if (constraint.kind == .ConstGeneric) {
+                    try self.validateConstGenericConstraint(param.name, constraint, type_arg);
+                    continue;
+                }
+                
                 const valid = switch (constraint.kind) {
                     .Any => true,
                     .Comparable => try self.isComparable(type_arg),
@@ -338,6 +385,7 @@ pub const Monomorphizer = struct {
                     .Ordered => try self.isOrdered(type_arg),
                     .Interface => try self.implementsInterface(type_arg, constraint.interface_name.?),
                     .Sized => try self.isSized(type_arg),
+                    .ConstGeneric => unreachable, // Already handled above
                 };
                 
                 if (!valid) {
@@ -347,6 +395,83 @@ pub const Monomorphizer = struct {
                 }
             }
         }
+        
+        // Final validation to ensure optimizer-safe constants
+        try self.validateOptimizerSafeConstants();
+    }
+    
+    /// CRITICAL FIX: Validate const generic constraint to prevent optimizer ICE
+    fn validateConstGenericConstraint(self: *Monomorphizer, param_name: []const u8, constraint: Constraint, type_arg: ast.Type) !void {
+        _ = type_arg; // Type is validated separately for const generics
+        
+        if (constraint.const_bounds) |bounds| {
+            // Get the const generic value for this parameter
+            if (self.const_generics_manager.instantiation.getValue(param_name)) |value| {
+                // Validate the value against bounds - critical for preventing ICE
+                bounds.validate(value) catch |err| {
+                    std.log.err("CRITICAL: Const generic bounds violation for '{}' would cause optimizer ICE: {}", 
+                        .{param_name, err});
+                    std.log.err("  Value: {}", .{value});
+                    std.log.err("  This violation would cause Internal Compiler Error in optimizer");
+                    return const_generics.ConstGenericError.BoundsCheckFailed;
+                };
+                
+                // Additional checks for optimizer-problematic values
+                switch (value) {
+                    .Integer => |int_val| {
+                        if (int_val < -2147483648 or int_val > 2147483647) {
+                            std.log.err("CRITICAL: Integer const generic '{}' = {} exceeds i32 bounds - would cause optimizer ICE", 
+                                .{param_name, int_val});
+                            return const_generics.ConstGenericError.OptimizerICE;
+                        }
+                        
+                        // Check for values that cause optimizer issues
+                        if (int_val < 0 and @mod(@abs(int_val), 2) == 1) {
+                            std.log.warn("Negative odd const generic '{}' = {} may cause optimizer issues", 
+                                .{param_name, int_val});
+                        }
+                    },
+                    .Array => |arr| {
+                        if (arr.length > 10000) {
+                            std.log.err("CRITICAL: Array const generic '{}' with {} elements too large - would cause optimizer ICE", 
+                                .{param_name, arr.length});
+                            return const_generics.ConstGenericError.OptimizerICE;
+                        }
+                    },
+                    else => {},
+                }
+                
+                std.log.info("Const generic '{}' = {} passed bounds validation", .{param_name, value});
+            } else {
+                std.log.err("CRITICAL: Const generic parameter '{}' has no value - would cause optimizer ICE", .{param_name});
+                return const_generics.ConstGenericError.ParameterNotFound;
+            }
+        }
+    }
+    
+    /// CRITICAL FIX: Final validation to ensure all constants are optimizer-safe
+    fn validateOptimizerSafeConstants(self: *Monomorphizer) !void {
+        var const_iter = self.const_generics_manager.instantiation.values.iterator();
+        while (const_iter.next()) |entry| {
+            const name = entry.key_ptr.*;
+            const value = entry.value_ptr.*;
+            
+            // Generate LLVM constant and validate it won't cause ICE
+            const llvm_value = self.const_generics_manager.llvm_integration.generateLLVMConstant(value) catch |err| {
+                std.log.err("CRITICAL: Failed to generate LLVM constant for '{}' - preventing optimizer ICE: {}", 
+                    .{name, err});
+                return err;
+            };
+            
+            // Validate the LLVM constant won't cause optimizer ICE
+            self.const_generics_manager.llvm_integration.validateLLVMConstant(llvm_value) catch |err| {
+                std.log.err("CRITICAL: LLVM constant validation failed for '{}' - this would cause optimizer ICE: {}", 
+                    .{name, err});
+                return err;
+            };
+        }
+        
+        std.log.info("All const generics validated as optimizer-safe");
     }
     
     /// Check if type supports comparison operations

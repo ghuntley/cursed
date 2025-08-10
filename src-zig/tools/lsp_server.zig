@@ -7,6 +7,34 @@ const ArrayList = std.ArrayList;
 const HashMap = std.HashMap;
 const Allocator = std.mem.Allocator;
 
+/// Safe conversion from token position to LSP Position with bounds checking
+fn tokenPositionToLSP(token_line: usize, token_column: usize) Position {
+    return Position{
+        .line = @min(@as(u32, @intCast(@min(token_line, std.math.maxInt(u32)))), std.math.maxInt(u32)),
+        .character = @min(@as(u32, @intCast(@min(token_column, std.math.maxInt(u32)))), std.math.maxInt(u32)),
+    };
+}
+
+/// Create a safe range with validation to prevent negative or invalid ranges
+fn createSafeRange(start_line: usize, start_char: usize, end_line: usize, end_char: usize) Range {
+    const safe_start = tokenPositionToLSP(start_line, start_char);
+    const safe_end = tokenPositionToLSP(end_line, end_char);
+    
+    // Ensure end is not before start
+    if (safe_end.line < safe_start.line or 
+        (safe_end.line == safe_start.line and safe_end.character < safe_start.character)) {
+        return Range{
+            .start = safe_start,
+            .end = Position{ .line = safe_start.line, .character = safe_start.character + 1 },
+        };
+    }
+    
+    return Range{
+        .start = safe_start,
+        .end = safe_end,
+    };
+}
+
 // Note: LSP server uses direct file access to avoid module path issues
 // These modules are accessed via the build system configuration
 
@@ -454,14 +482,8 @@ pub const DocumentInfo = struct {
                     const symbol = DocumentSymbol{
                         .name = next_token.lexeme,
                         .kind = .Function,
-                        .range = Range{
-                            .start = Position{ .line = token.line, .character = token.column },
-                            .end = Position{ .line = token.line + 1, .character = 0 },
-                        },
-                        .selectionRange = Range{
-                            .start = Position{ .line = next_token.line, .character = next_token.column },
-                            .end = Position{ .line = next_token.line, .character = next_token.column + @as(u32, @intCast(next_token.lexeme.len)) },
-                        },
+                        .range = createSafeRange(token.line, token.column, token.line + 1, 0),
+                        .selectionRange = createSafeRange(next_token.line, next_token.column, next_token.line, next_token.column + next_token.lexeme.len),
                     };
                     try self.symbols.append(symbol);
                 }
@@ -474,14 +496,8 @@ pub const DocumentInfo = struct {
                     const symbol = DocumentSymbol{
                         .name = next_token.lexeme,
                         .kind = .Struct,
-                        .range = Range{
-                            .start = Position{ .line = token.line, .character = token.column },
-                            .end = Position{ .line = token.line + 1, .character = 0 },
-                        },
-                        .selectionRange = Range{
-                            .start = Position{ .line = next_token.line, .character = next_token.column },
-                            .end = Position{ .line = next_token.line, .character = next_token.column + @as(u32, @intCast(next_token.lexeme.len)) },
-                        },
+                        .range = createSafeRange(token.line, token.column, token.line + 1, 0),
+                        .selectionRange = createSafeRange(next_token.line, next_token.column, next_token.line, next_token.column + next_token.lexeme.len),
                     };
                     try self.symbols.append(symbol);
                 }
@@ -494,14 +510,8 @@ pub const DocumentInfo = struct {
                     const symbol = DocumentSymbol{
                         .name = next_token.lexeme,
                         .kind = .Interface,
-                        .range = Range{
-                            .start = Position{ .line = token.line, .character = token.column },
-                            .end = Position{ .line = token.line + 1, .character = 0 },
-                        },
-                        .selectionRange = Range{
-                            .start = Position{ .line = next_token.line, .character = next_token.column },
-                            .end = Position{ .line = next_token.line, .character = next_token.column + @as(u32, @intCast(next_token.lexeme.len)) },
-                        },
+                        .range = createSafeRange(token.line, token.column, token.line + 1, 0),
+                        .selectionRange = createSafeRange(next_token.line, next_token.column, next_token.line, next_token.column + next_token.lexeme.len),
                     };
                     try self.symbols.append(symbol);
                 }
@@ -514,14 +524,8 @@ pub const DocumentInfo = struct {
                     const symbol = DocumentSymbol{
                         .name = next_token.lexeme,
                         .kind = .Variable,
-                        .range = Range{
-                            .start = Position{ .line = token.line, .character = token.column },
-                            .end = Position{ .line = token.line + 1, .character = 0 },
-                        },
-                        .selectionRange = Range{
-                            .start = Position{ .line = next_token.line, .character = next_token.column },
-                            .end = Position{ .line = next_token.line, .character = next_token.column + @as(u32, @intCast(next_token.lexeme.len)) },
-                        },
+                        .range = createSafeRange(token.line, token.column, token.line + 1, 0),
+                        .selectionRange = createSafeRange(next_token.line, next_token.column, next_token.line, next_token.column + next_token.lexeme.len),
                     };
                     try self.symbols.append(symbol);
                 }

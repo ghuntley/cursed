@@ -1261,7 +1261,7 @@ pub const Interpreter = struct {
         var type_args = ArrayList([]const u8).init(self.allocator);
         defer type_args.deinit();
         
-        var iterator = std.mem.split(u8, type_args_str, ",");
+        var iterator = std.mem.splitScalar(u8, type_args_str, ',');
         while (iterator.next()) |type_arg| {
             const trimmed = std.mem.trim(u8, type_arg, " \t\n");
             if (trimmed.len > 0) {

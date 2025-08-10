@@ -87,7 +87,7 @@ pub const NetAddress = struct {
     
     pub fn fromString(ip_str: []const u8, port: u16) !NetAddress {
         var ip: [4]u8 = undefined;
-        var parts = std.mem.split(u8, ip_str, ".");
+        var parts = std.mem.splitScalar(u8, ip_str, '.');
         
         for (0..4) |i| {
             const part = parts.next() orelse return error.InvalidIP;

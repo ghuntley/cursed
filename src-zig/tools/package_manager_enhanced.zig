@@ -292,24 +292,68 @@ pub const Version = struct {
         var parts = std.mem.splitScalar(u8, version_str, '.');
         const major_str = parts.next() orelse return error.InvalidVersion;
         const minor_str = parts.next() orelse return error.InvalidVersion;
-        const patch_part = parts.next() orelse return error.InvalidVersion;
+        const patch_part_start = parts.next() orelse return error.InvalidVersion;
+        
+        // Reconstruct patch part including any remaining parts (for build metadata with dots)
+        var patch_part_builder = std.ArrayList(u8).init(allocator);
+        defer patch_part_builder.deinit();
+        
+        try patch_part_builder.appendSlice(patch_part_start);
+        while (parts.next()) |remaining_part| {
+            try patch_part_builder.append('.');
+            try patch_part_builder.appendSlice(remaining_part);
+        }
+        
+        const patch_part = patch_part_builder.items;
 
-        // Parse patch with potential pre-release/build metadata
-        var patch_parts = std.mem.splitScalar(u8, patch_part, '-');
+        // Parse patch with potential pre-release and build metadata
+        // Format: MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
+        var working_part = patch_part;
+        var build_metadata: ?[]const u8 = null;
+        
+        // Extract build metadata (+BUILD) first
+        if (std.mem.indexOf(u8, working_part, "+")) |plus_idx| {
+            build_metadata = try allocator.dupe(u8, working_part[plus_idx + 1..]);
+            working_part = working_part[0..plus_idx];
+        }
+        
+        // Extract pre-release (-PRERELEASE) 
+        var patch_parts = std.mem.splitScalar(u8, working_part, '-');
         const patch_str = patch_parts.next() orelse return error.InvalidVersion;
-        const pre_release = if (patch_parts.next()) |pr| try allocator.dupe(u8, pr) else null;
+        
+        // Collect remaining parts as pre-release (there could be multiple dashes)
+        var pre_release: ?[]const u8 = null;
+        if (patch_parts.next()) |first_part| {
+            var pre_release_parts = std.ArrayList(u8).init(allocator);
+            defer pre_release_parts.deinit();
+            
+            try pre_release_parts.appendSlice(first_part);
+            while (patch_parts.next()) |part| {
+                try pre_release_parts.append('-');
+                try pre_release_parts.appendSlice(part);
+            }
+            
+            pre_release = try allocator.dupe(u8, pre_release_parts.items);
+        }
 
         return Version{
             .major = try std.fmt.parseInt(u32, major_str, 10),
             .minor = try std.fmt.parseInt(u32, minor_str, 10),
             .patch = try std.fmt.parseInt(u32, patch_str, 10),
             .pre_release = pre_release,
+            .build_metadata = build_metadata,
         };
     }
 
     pub fn toString(self: Version, allocator: Allocator) ![]const u8 {
         if (self.pre_release) |pr| {
-            return try std.fmt.allocPrint(allocator, "{}.{}.{}-{s}", .{ self.major, self.minor, self.patch, pr });
+            if (self.build_metadata) |bm| {
+                return try std.fmt.allocPrint(allocator, "{}.{}.{}-{s}+{s}", .{ self.major, self.minor, self.patch, pr, bm });
+            } else {
+                return try std.fmt.allocPrint(allocator, "{}.{}.{}-{s}", .{ self.major, self.minor, self.patch, pr });
+            }
+        } else if (self.build_metadata) |bm| {
+            return try std.fmt.allocPrint(allocator, "{}.{}.{}+{s}", .{ self.major, self.minor, self.patch, bm });
         }
         return try std.fmt.allocPrint(allocator, "{}.{}.{}", .{ self.major, self.minor, self.patch });
     }
@@ -324,7 +368,11 @@ pub const Version = struct {
         if (self.pre_release == null and other.pre_release != null) return 1;
         if (self.pre_release != null and other.pre_release == null) return -1;
         
-        return std.mem.order(u8, self.pre_release.?, other.pre_release.?).compare(.eq);
+        return switch (std.mem.order(u8, self.pre_release.?, other.pre_release.?)) {
+            .lt => -1,
+            .gt => 1,
+            .eq => 0,
+        };
     }
 
     pub fn satisfies(self: Version, requirement: VersionRequirement) bool {
@@ -335,7 +383,13 @@ pub const Version = struct {
         _ = fmt;
         _ = options;
         if (self.pre_release) |pr| {
-            try writer.print("{}.{}.{}-{s}", .{ self.major, self.minor, self.patch, pr });
+            if (self.build_metadata) |bm| {
+                try writer.print("{}.{}.{}-{s}+{s}", .{ self.major, self.minor, self.patch, pr, bm });
+            } else {
+                try writer.print("{}.{}.{}-{s}", .{ self.major, self.minor, self.patch, pr });
+            }
+        } else if (self.build_metadata) |bm| {
+            try writer.print("{}.{}.{}+{s}", .{ self.major, self.minor, self.patch, bm });
         } else {
             try writer.print("{}.{}.{}", .{ self.major, self.minor, self.patch });
         }

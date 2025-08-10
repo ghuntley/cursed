@@ -59,8 +59,7 @@ pub const AttributeType = enum {
     Deprecated,     // @deprecated(since: string, reason: string)
     Since,          // @since(version: string)
     
-    // Custom user-defined attributes
-    Custom,         // @custom(name: string, args: any)
+    // Custom attributes are no longer supported - all attributes must be predefined
 };
 
 /// Attribute parameter value types

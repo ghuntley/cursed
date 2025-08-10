@@ -92,6 +92,12 @@ squad FormatterConfig {
     spill continue_on_errors lit
     spill preserve_malformed_syntax lit
     spill add_error_comments lit
+    
+    fr fr Multiline string handling
+    spill preserve_multiline_strings lit
+    spill escape_newlines_in_strings lit
+    spill normalize_string_quotes lit
+    spill multiline_string_indent_level drip
 }
 
 slay default_formatter_config() FormatterConfig {
@@ -136,7 +142,12 @@ slay default_formatter_config() FormatterConfig {
         
         continue_on_errors: based,
         preserve_malformed_syntax: based,
-        add_error_comments: cringe
+        add_error_comments: cringe,
+        
+        preserve_multiline_strings: based,
+        escape_newlines_in_strings: cringe,
+        normalize_string_quotes: cringe,
+        multiline_string_indent_level: 0
     }
 }
 
@@ -265,21 +276,45 @@ slay collect_string_literal(ctx TokenizerContext) tea {
     sus literal tea = ""
     sus quote_char tea = advance_char(ctx)  fr fr Consume opening quote
     literal = literal + quote_char
+    sus escape_next lit = cringe
+    sus line_count drip = 0
     
     bestie (ctx.position < string_length(ctx.source)) {
         sus ch tea = peek_char(ctx)
+        
+        ready (escape_next) {
+            fr fr Previous character was escape, consume this one literally
+            literal = literal + advance_char(ctx)
+            escape_next = cringe
+            continue
+        }
+        
+        ready (ch == "\\") {
+            fr fr Escape character found
+            literal = literal + advance_char(ctx)
+            escape_next = based
+            continue
+        }
+        
         ready (ch == quote_char) {
-            literal = literal + advance_char(ctx)  fr fr Consume closing quote
+            fr fr Found closing quote
+            literal = literal + advance_char(ctx)
             break
         }
-        ready (ch == "\\") {
-            literal = literal + advance_char(ctx)  fr fr Escape character
-            ready (ctx.position < string_length(ctx.source)) {
-                literal = literal + advance_char(ctx)  fr fr Escaped character
-            }
-        } otherwise {
-            literal = literal + advance_char(ctx)
+        
+        ready (ch == "\n") {
+            fr fr Track newlines for multiline string detection
+            line_count = line_count + 1
         }
+        
+        fr fr Regular character
+        literal = literal + advance_char(ctx)
+    }
+    
+    fr fr Mark token as multiline if it contains newlines
+    ready (line_count > 0) {
+        fr fr Add metadata to indicate this is a multiline string
+        literal = "MULTILINE:" + literal
     }
     
     damn literal
@@ -340,13 +375,21 @@ slay tokenize_advanced(source tea) TokenizerContext {
             continue
         }
         
-        fr fr Handle string literals
+        fr fr Handle string literals with multiline support
         ready (peek_char(ctx) == "\"" || peek_char(ctx) == "'") {
             sus literal tea = collect_string_literal(ctx)
+            sus token_type tea = "STRING"
+            sus actual_literal tea = literal
+            
+            fr fr Check if this is a multiline string
+            ready (starts_with(literal, "MULTILINE:")) {
+                token_type = "MULTILINE_STRING"
+                actual_literal = slice_tea(literal, 10, string_length(literal))  fr fr Remove MULTILINE: prefix
+            }
             
             sus token Token = Token{
-                type: "STRING",
-                value: literal,
+                type: token_type,
+                value: actual_literal,
                 line: start_line,
                 column: start_column,
                 start_pos: start_pos,
@@ -1265,6 +1308,126 @@ slay format_expression(node ASTNode, ctx FormatterContext) tea {
     damn node.value
 }
 
+fr fr ===== ENHANCED STRING LITERAL FORMATTING =====
+
+slay is_multiline_string(value tea) lit {
+    damn contains_substring(value, "\n")
+}
+
+slay format_string_literal(token Token, ctx FormatterContext) tea {
+    ready (token.type == "MULTILINE_STRING") {
+        fr fr Preserve multiline strings exactly as written
+        damn token.value
+    } otherwise ready (token.type == "STRING") {
+        fr fr Regular string - preserve exactly
+        damn token.value
+    }
+    damn token.value
+}
+
+slay format_tokens_with_multiline_support(tokens []Token, config FormatterConfig) tea {
+    sus ctx FormatterContext = create_formatter_context(config)
+    sus output tea = ""
+    sus i drip = 0
+    sus line_start lit = based
+    
+    bestie (i < len(tokens)) {
+        sus token Token = tokens[i]
+        
+        ready (line_start && token.type != "NEWLINE") {
+            output = output + generate_indent(ctx)
+            line_start = cringe
+        }
+        
+        fr fr Handle multiline strings specially
+        ready (token.type == "STRING" || token.type == "MULTILINE_STRING") {
+            output = output + format_string_literal(token, ctx)
+        } otherwise ready (token.type == "KEYWORD") {
+            output = output + token.value
+            
+            ready (token.value == "sus" || token.value == "slay" || token.value == "ready" || 
+                   token.value == "bestie" || token.value == "yeet" || token.value == "squad" || 
+                   token.value == "collab" || token.value == "spill" || token.value == "damn") {
+                output = output + " "
+            }
+            
+            ready (token.value == "slay") {
+                ctx.in_function_params = cringe
+            }
+            
+            ready (token.value == "squad" || token.value == "collab") {
+                ctx.in_struct_definition = based
+            }
+            
+        } otherwise ready (token.type == "BRACE") {
+            ready (token.value == "{") {
+                ready (ctx.config.opening_brace_style == "new_line") {
+                    output = output + "\n" + generate_indent(ctx)
+                }
+                output = output + "{"
+                output = output + "\n"
+                ctx.current_indent = ctx.current_indent + 1
+                line_start = based
+                ctx.in_struct_definition = cringe
+            } otherwise {
+                ctx.current_indent = ctx.current_indent - 1
+                output = output + "\n" + generate_indent(ctx) + "}"
+                output = output + "\n"
+                line_start = based
+            }
+            
+        } otherwise ready (token.type == "PAREN") {
+            ready (token.value == "(") {
+                output = output + "("
+                ctx.in_function_params = based
+            } otherwise {
+                output = output + ")"
+                ctx.in_function_params = cringe
+            }
+            
+        } otherwise ready (token.type == "SEMICOLON") {
+            output = output + ";"
+            output = output + "\n"
+            line_start = based
+            
+        } otherwise ready (token.type == "COMMA") {
+            output = output + ","
+            ready (ctx.config.space_around_operators) {
+                output = output + " "
+            }
+            
+        } otherwise ready (token.type == "OPERATOR") {
+            ready (ctx.config.space_around_operators && 
+                   (token.value == "=" || token.value == "+" || token.value == "-" || 
+                    token.value == "*" || token.value == "/" || token.value == "==" || 
+                    token.value == "!=" || token.value == "<" || token.value == ">")) {
+                output = output + " " + token.value + " "
+            } otherwise {
+                output = output + token.value
+            }
+            
+        } otherwise ready (token.type == "TYPE") {
+            output = output + token.value
+            ready (i + 1 < len(tokens) && tokens[i + 1].type != "OPERATOR") {
+                output = output + " "
+            }
+            
+        } otherwise ready (token.type == "IDENTIFIER") {
+            output = output + token.value
+            ready (i + 1 < len(tokens) && tokens[i + 1].type == "TYPE") {
+                output = output + " "
+            }
+            
+        } otherwise {
+            output = output + token.value
+        }
+        
+        i = i + 1
+    }
+    
+    damn output
+}
+
 fr fr ===== DIFF GENERATION SYSTEM =====
 
 squad DiffLine {
@@ -1355,7 +1518,7 @@ slay format_cursed_code_ast(source tea) tea {
 }
 
 slay format_cursed_code_with_config_ast(source tea, config FormatterConfig) tea {
-    fr fr Tokenize with advanced features
+    fr fr Tokenize with advanced features and multiline string support
     sus tokenizer_ctx TokenizerContext = tokenize_advanced(source)
     
     ready (len(tokenizer_ctx.errors) > 0 && !config.continue_on_errors) {
@@ -1367,16 +1530,19 @@ slay format_cursed_code_with_config_ast(source tea, config FormatterConfig) tea 
         damn source
     }
     
-    fr fr Parse into AST
-    sus ast ASTNode = parse_ast(tokenizer_ctx.tokens, config)
+    fr fr Use enhanced token formatter for better multiline string support
+    sus formatted tea = format_tokens_with_multiline_support(tokenizer_ctx.tokens, config)
     
-    fr fr Format AST
-    sus formatter_ctx FormatterContext = create_formatter_context(config)
-    sus formatted tea = format_ast_node(ast, formatter_ctx)
-    
-    ready (len(formatter_ctx.errors) > 0 && !config.continue_on_errors) {
-        fr fr Return original source on formatting errors
-        damn source
+    fr fr Fallback to AST formatting if needed
+    ready (string_length(formatted) == 0 || !config.preserve_malformed_syntax) {
+        sus ast ASTNode = parse_ast(tokenizer_ctx.tokens, config)
+        sus formatter_ctx FormatterContext = create_formatter_context(config)
+        formatted = format_ast_node(ast, formatter_ctx)
+        
+        ready (len(formatter_ctx.errors) > 0 && !config.continue_on_errors) {
+            fr fr Return original source on formatting errors
+            damn source
+        }
     }
     
     damn formatted

@@ -16,6 +16,7 @@ const Attribute = attribute_system.Attribute;
 const AttributeType = attribute_system.AttributeType;
 const AttributeValue = attribute_system.AttributeValue;
 const AttributeList = attribute_system.AttributeList;
+const AttributeError = attribute_system.AttributeError;
 const parseAttributeType = attribute_system.parseAttributeType;
 
 /// Attribute parser that extends the CURSED parser with attribute support
@@ -93,8 +94,11 @@ pub const AttributeParser = struct {
         
         try self.nextToken(); // Consume attribute name
         
-        // Determine attribute type
-        const attr_type = parseAttributeType(attr_name) orelse .Custom;
+        // Determine attribute type - fail on unknown attributes
+        const attr_type = parseAttributeType(attr_name) orelse {
+            std.log.err("Unknown attribute '@{s}' at line {d}, column {d}. Valid attributes are: performance, inline, optimize, unroll, vectorize, memory_layout, align, pack, cache, debug, no_debug, profile_guided, export, import, extern, link_section, unsafe, bounds, overflow, atomic, thread_safe, lock, test, benchmark, fuzz, doc, deprecated, since", .{ attr_name, location.line, location.column });
+            return AttributeError.UnknownAttribute;
+        };
         
         var attr = Attribute.init(self.allocator, attr_type, attr_name, location);
         
@@ -337,7 +341,7 @@ test "parse multiple attributes" {
     try std.testing.expect(attrs.hasAttribute(.Debug));
 }
 
-test "parse custom attribute" {
+test "reject unknown custom attribute" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
@@ -346,19 +350,8 @@ test "parse custom attribute" {
     var lex = try createTestLexer(allocator, source);
     
     var parser = AttributeParser.init(allocator, &lex);
-    var attrs = try parser.parseAttributeList();
-    defer attrs.deinit(allocator);
+    const result = parser.parseAttributeList();
     
-    try std.testing.expect(attrs.attributes.items.len == 1);
-    const attr = &attrs.attributes.items[0];
-    try std.testing.expect(attr.type == .Custom);
-    try std.testing.expect(std.mem.eql(u8, attr.name, "my_custom_attr"));
-    
-    const value = attr.getIntegerParameter("value");
-    try std.testing.expect(value != null);
-    try std.testing.expect(value.? == 42);
-    
-    const name = attr.getStringParameter("name");
-    try std.testing.expect(name != null);
-    try std.testing.expect(std.mem.eql(u8, name.?, "test"));
+    // This should now fail with UnknownAttribute error since custom attributes are not allowed
+    try std.testing.expectError(AttributeError.UnknownAttribute, result);
 }

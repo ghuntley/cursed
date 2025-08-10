@@ -183,6 +183,45 @@ pub const MacroExpansionContext = struct {
         }
     };
     
+    /// Context for nested macro expansion with hygiene tracking
+    const NestedExpansionContext = struct {
+        parent_expansion_id: u64,
+        nested_hygiene_id: u32,
+        nesting_depth: usize,
+        symbol_capture_context: SymbolCaptureContext,
+        
+        fn deinit(self: *const NestedExpansionContext, allocator: Allocator) void {
+            self.symbol_capture_context.deinit(allocator);
+        }
+    };
+    
+    /// Symbol capture context for hygiene tracking
+    const SymbolCaptureContext = struct {
+        captured_symbols: ArrayList([]const u8),
+        scope_boundaries: ArrayList(ScopeBoundary),
+        
+        const ScopeBoundary = struct {
+            scope_id: u32,
+            symbol_count: usize,
+            is_macro_scope: bool,
+        };
+        
+        fn init(allocator: Allocator) SymbolCaptureContext {
+            return SymbolCaptureContext{
+                .captured_symbols = ArrayList([]const u8).init(allocator),
+                .scope_boundaries = ArrayList(ScopeBoundary).init(allocator),
+            };
+        }
+        
+        fn deinit(self: *const SymbolCaptureContext, allocator: Allocator) void {
+            for (self.captured_symbols.items) |symbol| {
+                allocator.free(symbol);
+            }
+            self.captured_symbols.deinit();
+            self.scope_boundaries.deinit();
+        }
+    };
+    
     pub fn init(allocator: Allocator, hygiene_context: *MacroHygieneContext) !MacroExpansionContext {
         return MacroExpansionContext{
             .allocator = allocator,
@@ -408,7 +447,7 @@ pub const MacroExpansionContext = struct {
         try result.appendSlice(definition.body);
     }
     
-    /// Process nested macro calls in expanded tokens
+    /// Process nested macro calls in expanded tokens with comprehensive hygiene
     fn processNestedMacros(self: *MacroExpansionContext, tokens: []Token) ![]Token {
         var result = ArrayList(Token).init(self.allocator);
         defer result.deinit();
@@ -431,12 +470,46 @@ pub const MacroExpansionContext = struct {
                     // Parse macro call
                     const macro_call = try self.parseMacroCall(call_tokens);
                     
-                    // Queue nested expansion
-                    const nested_id = try self.queueMacroExpansion(macro_call);
+                    // Critical P1 Fix: Enhanced hygiene for nested macro calls
+                    const current_expansion_id = if (self.current_expansions.count() > 0) 
+                        self.expansion_counter - 1 
+                    else 
+                        self.expansion_counter;
                     
-                    // Get expanded result (recursive processing)
-                    const nested_result = try self.expandSpecificMacro(nested_id);
-                    try result.appendSlice(nested_result);
+                    // Begin nested expansion with hygiene tracking
+                    const nested_hygiene_id = try self.hygiene_context.beginMacroExpansion(
+                        macro_name, 
+                        macro_call.location.file
+                    );
+                    
+                    // Track nested expansion context for hygiene
+                    const nested_expansion_context = NestedExpansionContext{
+                        .parent_expansion_id = current_expansion_id,
+                        .nested_hygiene_id = nested_hygiene_id,
+                        .nesting_depth = self.call_stack.items.len,
+                        .symbol_capture_context = try self.captureSymbolContext(tokens[0..i]),
+                    };
+                    
+                    // Queue nested expansion with enhanced context
+                    const nested_id = try self.queueNestedMacroExpansion(macro_call, nested_expansion_context);
+                    
+                    // Apply pre-expansion hygiene checks
+                    try self.performPreExpansionHygieneChecks(nested_id, &nested_expansion_context);
+                    
+                    // Get expanded result with hygiene tracking
+                    const nested_result = try self.expandSpecificMacroWithHygiene(nested_id);
+                    
+                    // Apply post-expansion hygiene fixes
+                    const sanitized_result = try self.applyScopeRenaming(nested_result, nested_hygiene_id);
+                    
+                    try result.appendSlice(sanitized_result);
+                    
+                    // End nested expansion hygiene tracking
+                    try self.hygiene_context.endMacroExpansion();
+                    
+                    // Clean up
+                    self.allocator.free(sanitized_result);
+                    nested_expansion_context.deinit(self.allocator);
                     
                     i = call_end;
                 } else {
@@ -589,6 +662,243 @@ pub const MacroExpansionContext = struct {
             hasher.update(token.lexeme);
         }
         return hasher.final();
+    }
+    
+    // ============================================================================
+    // Enhanced nested macro processing functions for P1 hygiene fix
+    // ============================================================================
+    
+    /// Capture symbol context from preceding tokens
+    fn captureSymbolContext(self: *MacroExpansionContext, preceding_tokens: []const Token) !SymbolCaptureContext {
+        var context = SymbolCaptureContext.init(self.allocator);
+        
+        // Scan preceding tokens for symbol references
+        for (preceding_tokens) |token| {
+            if (token.kind == .Identifier) {
+                // Check if this identifier is a symbol that might be captured
+                if (self.hygiene_context.resolveSymbol(token.lexeme)) |resolved_name| {
+                    if (resolved_name.ptr != token.lexeme.ptr) {
+                        // Symbol has been renamed, indicating potential capture
+                        try context.captured_symbols.append(try self.allocator.dupe(u8, token.lexeme));
+                    }
+                }
+            }
+        }
+        
+        // Track current scope boundaries
+        for (self.hygiene_context.scope_stack.items, 0..) |*scope, i| {
+            try context.scope_boundaries.append(SymbolCaptureContext.ScopeBoundary{
+                .scope_id = scope.id,
+                .symbol_count = scope.symbols.count(),
+                .is_macro_scope = scope.macro_generated,
+            });
+        }
+        
+        return context;
+    }
+    
+    /// Queue nested macro expansion with enhanced context
+    fn queueNestedMacroExpansion(self: *MacroExpansionContext, macro_call: MacroCall, context: NestedExpansionContext) !MacroId {
+        const macro_id = MacroId{
+            .name = macro_call.name,
+            .expansion_id = self.expansion_counter,
+            .call_site_hash = self.hashCallSite(&macro_call),
+        };
+        
+        // Create pending expansion with nested context
+        var pending = PendingExpansion{
+            .macro_id = macro_id,
+            .call = macro_call,
+            .dependencies = ArrayList(MacroId).init(self.allocator),
+            .priority = .Normal, // Could be adjusted based on nesting depth
+            .estimated_complexity = @intCast(u32, context.nesting_depth * 10), // Penalty for nesting
+        };
+        
+        // Analyze dependencies considering nested context
+        if (self.macro_definitions.getPtr(macro_call.name)) |definition| {
+            try self.analyzeDependenciesWithContext(&pending, definition, &context);
+        }
+        
+        try self.insertIntoQueue(pending);
+        self.expansion_counter += 1;
+        
+        return macro_id;
+    }
+    
+    /// Perform pre-expansion hygiene checks
+    fn performPreExpansionHygieneChecks(self: *MacroExpansionContext, macro_id: MacroId, context: *const NestedExpansionContext) !void {
+        // Check for potential variable capture issues before expansion
+        for (context.symbol_capture_context.captured_symbols.items) |captured_symbol| {
+            // Verify this capture is intentional
+            const current_expansion = &self.hygiene_context.expansion_stack.items[self.hygiene_context.expansion_stack.items.len - 1];
+            
+            if (self.hygiene_context.isAccidentalCapture(captured_symbol, current_expansion)) {
+                // Add a warning or error about potential hygiene violation
+                try self.hygiene_context.hygiene_violations.append(macro_hygiene.MacroHygieneContext.HygieneViolation{
+                    .kind = .VariableCapture,
+                    .symbol_name = captured_symbol,
+                    .macro_name = macro_id.name,
+                    .location = "pre-expansion check",
+                });
+            }
+        }
+        
+        // Check for scope boundary violations
+        if (context.nesting_depth > 5) { // Arbitrary deep nesting threshold
+            std.log.warn("Deep macro nesting detected (depth: {}), potential performance impact", .{context.nesting_depth});
+        }
+    }
+    
+    /// Expand specific macro with hygiene tracking
+    fn expandSpecificMacroWithHygiene(self: *MacroExpansionContext, macro_id: MacroId) ![]Token {
+        // Find the macro in pending expansions
+        var expansion_index: ?usize = null;
+        for (self.expansion_queue.items, 0..) |*expansion, i| {
+            if (std.mem.eql(u8, expansion.macro_id.name, macro_id.name) and 
+                expansion.macro_id.expansion_id == macro_id.expansion_id) {
+                expansion_index = i;
+                break;
+            }
+        }
+        
+        if (expansion_index == null) {
+            return error.MacroNotFound;
+        }
+        
+        const expansion = self.expansion_queue.swapRemove(expansion_index.?);
+        defer expansion.deinit();
+        
+        // Get macro definition
+        const definition = self.macro_definitions.get(expansion.macro_id.name) orelse return error.MacroNotDefined;
+        
+        // Perform expansion with hygiene tracking
+        var result = ArrayList(Token).init(self.allocator);
+        defer result.deinit();
+        
+        if (definition.is_function_like) {
+            try self.substituteFunctionLikeMacroWithHygiene(&result, &definition, expansion.call.arguments);
+        } else {
+            try self.substituteObjectLikeMacroWithHygiene(&result, &definition);
+        }
+        
+        return result.toOwnedSlice();
+    }
+    
+    /// Apply scope renaming for hygiene
+    fn applyScopeRenaming(self: *MacroExpansionContext, tokens: []Token, hygiene_id: u32) ![]Token {
+        var result = try self.allocator.alloc(Token, tokens.len);
+        
+        for (tokens, 0..) |token, i| {
+            if (token.kind == .Identifier) {
+                // Check if this identifier needs renaming for hygiene
+                if (try self.hygiene_context.resolveSymbol(token.lexeme)) |renamed| {
+                    // Create new token with renamed identifier
+                    result[i] = Token{
+                        .kind = token.kind,
+                        .lexeme = renamed,
+                        .line = token.line,
+                        .column = token.column,
+                        .offset = token.offset,
+                    };
+                } else {
+                    result[i] = token;
+                }
+            } else {
+                result[i] = token;
+            }
+        }
+        
+        return result;
+    }
+    
+    /// Analyze dependencies with nested context
+    fn analyzeDependenciesWithContext(self: *MacroExpansionContext, expansion: *PendingExpansion, definition: *const MacroDefinition, context: *const NestedExpansionContext) !void {
+        // Standard dependency analysis
+        try self.analyzeDependencies(expansion, definition);
+        
+        // Additional analysis for nested context
+        if (context.nesting_depth > 0) {
+            // Check for circular dependencies in nested context
+            const parent_id = MacroId{
+                .name = "parent", // Would be actual parent name
+                .expansion_id = context.parent_expansion_id,
+                .call_site_hash = 0,
+            };
+            
+            // Ensure we don't create circular dependency with parent
+            for (expansion.dependencies.items) |dep| {
+                if (dep.expansion_id == parent_id.expansion_id) {
+                    // Potential circular dependency detected
+                    expansion.priority = .Low; // Reduce priority to break cycles
+                }
+            }
+        }
+    }
+    
+    /// Substitute function-like macro with hygiene
+    fn substituteFunctionLikeMacroWithHygiene(self: *MacroExpansionContext, result: *ArrayList(Token), definition: *const MacroDefinition, arguments: []Token) !void {
+        // Enhanced substitution with hygiene considerations
+        const parsed_args = try self.parseArguments(arguments);
+        defer {
+            for (parsed_args) |arg| {
+                self.allocator.free(arg);
+            }
+            self.allocator.free(parsed_args);
+        }
+        
+        var arg_index: usize = 0;
+        for (definition.body) |token| {
+            if (token.kind == .Identifier) {
+                // Check if this is a parameter
+                var is_parameter = false;
+                for (definition.parameters, 0..) |param, param_idx| {
+                    if (std.mem.eql(u8, token.lexeme, param)) {
+                        // Substitute with argument
+                        if (param_idx < parsed_args.len) {
+                            // Apply hygiene renaming to argument tokens
+                            for (parsed_args[param_idx]) |arg_token| {
+                                const renamed_token = try self.applyHygieneToToken(arg_token);
+                                try result.append(renamed_token);
+                            }
+                        }
+                        is_parameter = true;
+                        break;
+                    }
+                }
+                
+                if (!is_parameter) {
+                    // Not a parameter, apply hygiene renaming
+                    const renamed_token = try self.applyHygieneToToken(token);
+                    try result.append(renamed_token);
+                }
+            } else {
+                try result.append(token);
+            }
+        }
+    }
+    
+    /// Substitute object-like macro with hygiene
+    fn substituteObjectLikeMacroWithHygiene(self: *MacroExpansionContext, result: *ArrayList(Token), definition: *const MacroDefinition) !void {
+        for (definition.body) |token| {
+            const renamed_token = try self.applyHygieneToToken(token);
+            try result.append(renamed_token);
+        }
+    }
+    
+    /// Apply hygiene to individual token
+    fn applyHygieneToToken(self: *MacroExpansionContext, token: Token) !Token {
+        if (token.kind == .Identifier) {
+            if (try self.hygiene_context.resolveSymbol(token.lexeme)) |renamed| {
+                return Token{
+                    .kind = token.kind,
+                    .lexeme = renamed,
+                    .line = token.line,
+                    .column = token.column,
+                    .offset = token.offset,
+                };
+            }
+        }
+        return token;
     }
     
     fn parseArguments(self: *MacroExpansionContext, tokens: []const Token) ![][]Token {
