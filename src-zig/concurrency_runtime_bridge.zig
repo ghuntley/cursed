@@ -210,7 +210,7 @@ fn goroutineWrapper(context: ?*anyopaque) void {
         const id = goroutine_ctx.goroutine_id;
         
         // Update state to running
-        if (goroutine_tracker) |*tracker| {
+        if (goroutine_tracker) |tracker| {
             tracker.updateState(id, .running);
         }
         
@@ -221,7 +221,7 @@ fn goroutineWrapper(context: ?*anyopaque) void {
         }
         
         // Update state to completed and cleanup
-        if (goroutine_tracker) |*tracker| {
+        if (goroutine_tracker) |tracker| {
             tracker.updateState(id, .completed);
             // Defer cleanup to avoid immediate deallocation
             std.time.sleep(1_000_000); // 1ms grace period

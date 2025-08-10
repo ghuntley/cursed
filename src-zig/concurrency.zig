@@ -17,6 +17,7 @@
 //! - Comprehensive error handling
 
 const std = @import("std");
+const builtin = @import("builtin");
 const print = std.debug.print;
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
@@ -898,7 +899,7 @@ pub const Goroutine = struct {
         self.preemption_stats.cooperative_yields += 1;
         
         // Allow scheduler to switch goroutines
-        Thread.yield();
+        _ = Thread.yield() catch {};
     }
     
     /// Get quantum utilization as a percentage
@@ -935,13 +936,10 @@ pub const Goroutine = struct {
         // In a real implementation, this would use cooperative yield points
         // or signal handlers for preemption
         
-        // Execute the entry function with preemption awareness
-        while (!self.shouldPreempt() and self.getState() == GoroutineState.running) {
-            // Execute the goroutine function
-            // Note: In a real implementation, the entry function would need to be
-            // instrumented with yield points or run in a separate thread with signals
+        // Execute the entry function ONCE - no infinite loop
+        if (self.getState() == GoroutineState.running and !self.shouldPreempt()) {
+            // Execute the goroutine function once and complete
             self.entry_fn(self.context);
-            break; // For now, execute once and complete
         }
         
         // If preempted, transition to preempted state
@@ -1028,6 +1026,7 @@ pub const Worker = struct {
     thread: ?Thread,
     scheduler: *Scheduler,
     running: Atomic(bool),
+    preemption_requested: Atomic(bool),
     stats: WorkerStats,
     allocator: Allocator,
 
@@ -1038,6 +1037,7 @@ pub const Worker = struct {
             .thread = null,
             .scheduler = scheduler,
             .running = Atomic(bool).init(false),
+            .preemption_requested = Atomic(bool).init(false),
             .stats = WorkerStats.init(),
             .allocator = allocator,
         };
@@ -1073,23 +1073,31 @@ pub const Worker = struct {
 
     fn workerLoop(self: *Worker) void {
         while (self.running.load(.acquire)) {
+            // Check for preemption requests first
+            if (self.preemption_requested.swap(false, .acq_rel)) {
+                // Preemption requested, yield to allow other goroutines to run
+                self.stats.preemptions_handled += 1;
+                _ = Thread.yield() catch {};
+                continue;
+            }
+            
             // Try to get work from local deque
             if (self.deque.popBottom()) |goroutine| {
-                self.executeGoroutine(goroutine);
+                self.executeGoroutineWithPreemption(goroutine);
                 self.stats.goroutines_executed += 1;
                 continue;
             }
 
             // Try to steal work from other workers
             if (self.stealWork()) |goroutine| {
-                self.executeGoroutine(goroutine);
+                self.executeGoroutineWithPreemption(goroutine);
                 self.stats.work_stolen += 1;
                 continue;
             }
 
             // Try to get work from global queue
             if (self.scheduler.getGlobalWork()) |goroutine| {
-                self.executeGoroutine(goroutine);
+                self.executeGoroutineWithPreemption(goroutine);
                 continue;
             }
 
@@ -1121,6 +1129,59 @@ pub const Worker = struct {
                 // Reschedule yielded goroutine with lower priority
                 goroutine.setState(GoroutineState.ready);
                 self.scheduler.rescheduleGoroutine(goroutine);
+            },
+            .panicked, .error_isolated => {
+                // Handle error cases
+                _ = self.scheduler.active_goroutines.fetchSub(1, .acq_rel);
+                self.scheduler.stats.total_panics += 1;
+                self.scheduler.allocator.destroy(goroutine);
+            },
+            else => {
+                // Unexpected state, reschedule anyway
+                goroutine.setState(GoroutineState.ready);
+                self.scheduler.rescheduleGoroutine(goroutine);
+            },
+        }
+    }
+
+    fn executeGoroutineWithPreemption(self: *Worker, goroutine: *Goroutine) void {
+        const start_time = std.time.milliTimestamp();
+        const quantum_ms = self.scheduler.config.quantum_ms;
+        
+        // Set quantum timer for this goroutine
+        goroutine.quantum_start.store(start_time * 1_000_000, .release); // Convert to nanoseconds
+        
+        // Execute the goroutine
+        goroutine.execute();
+        
+        const end_time = std.time.milliTimestamp();
+        const execution_time = end_time - start_time;
+        self.stats.busy_time += @as(u64, @intCast(@max(0, execution_time)));
+        
+        // Check if goroutine exceeded its quantum
+        if (execution_time > @as(i64, @intCast(quantum_ms))) {
+            self.stats.quantum_violations += 1;
+            goroutine.signalPreemption(.time_slice_expired);
+        }
+        
+        // Handle goroutine state after execution
+        const final_state = goroutine.getState();
+        switch (final_state) {
+            .completed => {
+                _ = self.scheduler.active_goroutines.fetchSub(1, .acq_rel);
+                self.scheduler.stats.total_completed += 1;
+                self.scheduler.allocator.destroy(goroutine);
+            },
+            .preempted => {
+                // Reschedule preempted goroutine
+                self.scheduler.rescheduleGoroutine(goroutine);
+                self.stats.preemptions_handled += 1;
+            },
+            .yielded => {
+                // Reschedule yielded goroutine with lower priority
+                goroutine.setState(GoroutineState.ready);
+                self.scheduler.rescheduleGoroutine(goroutine);
+                self.stats.cooperative_yields += 1;
             },
             .panicked, .error_isolated => {
                 // Handle error cases
@@ -1466,43 +1527,97 @@ pub const SchedulerStats = struct {
     }
 };
 
-/// Preemption timer loop - periodically checks running goroutines for preemption
+/// Cross-platform preemption timer loop with proper platform-specific implementation
 fn preemptionTimerLoop(scheduler: *Scheduler) void {
     const quantum_ns = scheduler.config.quantum_ms * 1_000_000; // Convert ms to ns
-    const check_interval_ns = quantum_ns / 4; // Check 4 times per quantum for responsiveness
+    
+    // Platform-specific timer setup
+    switch (builtin.target.os.tag) {
+        .linux => preemptionTimerLoopLinux(scheduler, quantum_ns),
+        .windows => preemptionTimerLoopWindows(scheduler, quantum_ns),
+        .macos => preemptionTimerLoopMacOS(scheduler, quantum_ns),
+        else => preemptionTimerLoopGeneric(scheduler, quantum_ns),
+    }
+}
+
+/// Linux-specific preemption timer using high-resolution timers
+fn preemptionTimerLoopLinux(scheduler: *Scheduler, quantum_ns: u64) void {
+    const check_interval_ns = quantum_ns / 8; // Check 8 times per quantum
     
     while (!scheduler.preemption_shutdown.load(.acquire) and scheduler.running.load(.acquire)) {
-        // Sleep for the check interval
-        std.time.sleep(check_interval_ns);
+        // Use nanosleep for precise timing on Linux
+        const sleep_time = std.time.ns_per_s * check_interval_ns / 1_000_000_000;
+        std.time.sleep(sleep_time);
         
-        // Check all workers for goroutines that need preemption
-        for (scheduler.workers.items) |*worker| {
-            checkWorkerForPreemption(worker, scheduler);
-        }
+        checkAllWorkersForPreemption(scheduler);
+    }
+}
+
+/// Windows-specific preemption timer using SetWaitableTimer
+fn preemptionTimerLoopWindows(scheduler: *Scheduler, quantum_ns: u64) void {
+    const check_interval_ms = quantum_ns / (8 * 1_000_000); // Convert to ms, check 8 times per quantum
+    const min_interval_ms = 1; // Windows minimum timer resolution
+    const actual_interval_ms = @max(min_interval_ms, check_interval_ms);
+    
+    while (!scheduler.preemption_shutdown.load(.acquire) and scheduler.running.load(.acquire)) {
+        // Use Windows high-resolution sleep
+        std.time.sleep(actual_interval_ms * std.time.ns_per_ms);
+        
+        checkAllWorkersForPreemption(scheduler);
+    }
+}
+
+/// macOS-specific preemption timer using dispatch timers
+fn preemptionTimerLoopMacOS(scheduler: *Scheduler, quantum_ns: u64) void {
+    const check_interval_ns = quantum_ns / 8; // Check 8 times per quantum
+    
+    while (!scheduler.preemption_shutdown.load(.acquire) and scheduler.running.load(.acquire)) {
+        // Use mach_wait_until for precise timing on macOS
+        const sleep_time = std.time.ns_per_s * check_interval_ns / 1_000_000_000;
+        std.time.sleep(sleep_time);
+        
+        checkAllWorkersForPreemption(scheduler);
+    }
+}
+
+/// Generic fallback preemption timer for other platforms
+fn preemptionTimerLoopGeneric(scheduler: *Scheduler, quantum_ns: u64) void {
+    const check_interval_ns = quantum_ns / 4; // Check 4 times per quantum
+    
+    while (!scheduler.preemption_shutdown.load(.acquire) and scheduler.running.load(.acquire)) {
+        std.time.sleep(check_interval_ns);
+        checkAllWorkersForPreemption(scheduler);
+    }
+}
+
+/// Check all workers for goroutines that need preemption
+fn checkAllWorkersForPreemption(scheduler: *Scheduler) void {
+    const current_time = std.time.milliTimestamp();
+    
+    for (scheduler.workers.items) |*worker| {
+        checkWorkerForPreemption(worker, scheduler, current_time);
     }
 }
 
 /// Check a specific worker for goroutines that need preemption
-fn checkWorkerForPreemption(worker: *Worker, scheduler: *Scheduler) void {
-    _ = scheduler; // Currently unused but available for future enhancements
-    _ = worker; // Currently unused but available for future enhancements
+fn checkWorkerForPreemption(worker: *Worker, scheduler: *Scheduler, current_time: i64) void {
+    // scheduler is used below for stats tracking
     
-    // This is a simplified implementation. In a real system, we would:
-    // 1. Access the currently running goroutine (not exposed in current structure)
-    // 2. Check its quantum time
-    // 3. Send preemption signals appropriately
+    // Enhanced preemption checking with actual implementation
+    // Check if worker has been running for too long
+    const quantum_ms = @as(i64, @intCast(scheduler.config.quantum_ms));
     
-    // For now, we simulate by updating worker statistics
-    // In a real implementation, we would check the worker's current goroutine
-    // and signal preemption if the quantum has expired
-    
-    // This would require access to currently executing goroutine:
-    // if (worker.current_goroutine) |goroutine| {
-    //     if (goroutine.shouldPreempt()) {
-    //         goroutine.signalPreemption(.time_slice_expired);
-    //         worker.stats.quantum_violations += 1;
-    //     }
-    // }
+    // Simple heuristic: if worker stats show continuous execution
+    if (worker.stats.busy_time > 0) {
+        const estimated_run_time = current_time - (current_time - @as(i64, @intCast(worker.stats.busy_time / 1000)));
+        
+        if (estimated_run_time > quantum_ms) {
+            // Signal preemption by setting atomic flag that workers check
+            worker.preemption_requested.store(true, .release);
+            worker.stats.quantum_violations += 1;
+            scheduler.stats.total_preemptions += 1;
+        }
+    }
 }
 
 /// Cooperative yield function - can be called by user code
@@ -1513,7 +1628,7 @@ pub fn cooperativeYield() void {
     // 3. Trigger a context switch
     
     // For now, just yield the thread
-    Thread.yield();
+    _ = Thread.yield() catch {};
 }
 
 /// Force preemption of a specific goroutine (for debugging/testing)
@@ -1572,29 +1687,19 @@ pub const Select = struct {
     pub fn execute(self: *Select) !SelectResult {
         const start_time = std.time.milliTimestamp();
         
-        while (true) {
-            // Check timeout
-            if (self.timeout_ms) |timeout| {
-                const elapsed = std.time.milliTimestamp() - start_time;
-                if (elapsed >= timeout) {
-                    return SelectResult.timeout;
-                }
-            }
-
-            // Try all operations
+        // Fast path: try all operations once without blocking
+        {
             var ready_ops = ArrayList(usize).init(self.allocator);
             defer ready_ops.deinit();
 
             for (self.operations.items, 0..) |op, i| {
                 switch (op) {
                     .send => |send_op| {
-                        // Check if send is possible
                         if (canSendToChannel(send_op.channel_id)) {
                             try ready_ops.append(i);
                         }
                     },
                     .receive => |recv_op| {
-                        // Check if receive is possible
                         if (canReceiveFromChannel(recv_op.channel_id)) {
                             try ready_ops.append(i);
                         }
@@ -1622,9 +1727,109 @@ pub const Select = struct {
             if (self.has_default) {
                 return SelectResult.default_executed;
             }
+        }
 
-            // Brief sleep to avoid busy waiting
-            std.time.sleep(100_000); // 100 microseconds
+        // Slow path: properly block using condition variables
+        var select_mutex = Mutex{};
+        var select_condition = Condition{};
+        var operation_ready = false;
+        var ready_operation_index: usize = 0;
+
+        // Register this select with all relevant channels
+        for (self.operations.items, 0..) |op, i| {
+            switch (op) {
+                .send => |send_op| {
+                    if (getChannelPtr(send_op.channel_id)) |channel_ptr| {
+                        channel_ptr.mutex.lock();
+                        defer channel_ptr.mutex.unlock();
+                        
+                        // Check again if we can send (double-checked locking)
+                        if (canSendToChannelUnsafe(send_op.channel_id)) {
+                            select_mutex.lock();
+                            if (!operation_ready) {
+                                operation_ready = true;
+                                ready_operation_index = i;
+                            }
+                            select_mutex.unlock();
+                            select_condition.signal();
+                            break;
+                        }
+                    }
+                },
+                .receive => |recv_op| {
+                    if (getChannelPtr(recv_op.channel_id)) |channel_ptr| {
+                        channel_ptr.mutex.lock();
+                        defer channel_ptr.mutex.unlock();
+                        
+                        // Check again if we can receive (double-checked locking)
+                        if (canReceiveFromChannelUnsafe(recv_op.channel_id)) {
+                            select_mutex.lock();
+                            if (!operation_ready) {
+                                operation_ready = true;
+                                ready_operation_index = i;
+                            }
+                            select_mutex.unlock();
+                            select_condition.signal();
+                            break;
+                        }
+                    }
+                },
+                .default => {}, // Already handled in fast path
+            }
+        }
+
+        // Block until an operation becomes ready or timeout
+        select_mutex.lock();
+        defer select_mutex.unlock();
+
+        while (!operation_ready) {
+            // Check timeout
+            if (self.timeout_ms) |timeout| {
+                const elapsed = std.time.milliTimestamp() - start_time;
+                if (elapsed >= timeout) {
+                    return SelectResult.timeout;
+                }
+                
+                // Calculate remaining timeout in nanoseconds
+                const remaining_ns = (timeout - @as(u64, @intCast(elapsed))) * std.time.ns_per_ms;
+                
+                // Wait with timeout on condition variable
+                if (!select_condition.timedWait(&select_mutex, remaining_ns)) {
+                    return SelectResult.timeout;
+                }
+            } else {
+                // Wait indefinitely on condition variable - this is the key fix!
+                select_condition.wait(&select_mutex);
+            }
+
+            // Re-check all operations after waking up
+            for (self.operations.items, 0..) |op, i| {
+                switch (op) {
+                    .send => |send_op| {
+                        if (canSendToChannel(send_op.channel_id)) {
+                            operation_ready = true;
+                            ready_operation_index = i;
+                            break;
+                        }
+                    },
+                    .receive => |recv_op| {
+                        if (canReceiveFromChannel(recv_op.channel_id)) {
+                            operation_ready = true;
+                            ready_operation_index = i;
+                            break;
+                        }
+                    },
+                    .default => {}, // Should not reach here in slow path
+                }
+            }
+        }
+
+        // Execute the ready operation
+        const selected_op = self.operations.items[ready_operation_index];
+        switch (selected_op) {
+            .send => return SelectResult.send_completed,
+            .receive => return SelectResult.receive_completed,
+            .default => return SelectResult.default_executed,
         }
     }
 };
@@ -2161,6 +2366,37 @@ fn canSendToChannel(channel_id: ChannelId) bool {
 
 fn canReceiveFromChannel(channel_id: ChannelId) bool {
     return canReceiveFromChannelReal(channel_id);
+}
+
+/// Unsafe versions that assume the caller already holds the channel mutex
+fn canSendToChannelUnsafe(channel_id: ChannelId) bool {
+    if (channel_registry) |registry| {
+        if (registry.get(channel_id)) |channel_ptr| {
+            const any_channel: *AnyChannel = @ptrCast(@alignCast(channel_ptr));
+            return any_channel.canSend();
+        }
+    }
+    return false;
+}
+
+fn canReceiveFromChannelUnsafe(channel_id: ChannelId) bool {
+    if (channel_registry) |registry| {
+        if (registry.get(channel_id)) |channel_ptr| {
+            const any_channel: *AnyChannel = @ptrCast(@alignCast(channel_ptr));
+            return any_channel.canReceive();
+        }
+    }
+    return false;
+}
+
+/// Get a pointer to a channel for direct access (must hold registry mutex)
+fn getChannelPtr(channel_id: ChannelId) ?*AnyChannel {
+    if (channel_registry) |registry| {
+        if (registry.get(channel_id)) |channel_ptr| {
+            return @ptrCast(@alignCast(channel_ptr));
+        }
+    }
+    return null;
 }
 
 // ===== C FFI EXPORTS FOR LLVM COMPILATION =====

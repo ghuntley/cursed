@@ -96,6 +96,15 @@ pub const Parser = struct {
         self.arena.deinit();
     }
 
+    // Helper to handle >> vs > ambiguity in generic types
+    fn matchGenericClosing(self: *Parser, depth: u32) bool {
+        if (depth == 1) {
+            return self.match(.Greater) or self.match(.RightAngle) or self.match(.RightShift);
+        } else {
+            return self.match(.Greater) or self.match(.RightAngle);
+        }
+    }
+
     pub fn initWithFile(allocator: Allocator, tokens: []const Token, file_path: []const u8) Parser {
         var arena = std.heap.ArenaAllocator.init(allocator);
         return Parser{
@@ -755,7 +764,7 @@ pub const Parser = struct {
         
         // Parse generic type parameters <T, U>
         if (self.match(.Less) or self.match(.LeftAngle)) {
-            while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
+            while (!self.check(.Greater) and !self.check(.RightAngle) and !self.check(.RightShift) and !self.isAtEnd()) {
                 if (self.check(.Identifier)) {
                     const param_name = self.advance().lexeme;
                     var type_param = ast.TypeParameter{
@@ -765,7 +774,7 @@ pub const Parser = struct {
                     
                     // Parse constraints (T: SomeInterface)
                     if (self.match(.Colon)) {
-                        while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
+                        while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle) and !self.check(.RightShift)) {
                             const constraint = try self.parseType();
                             try type_param.constraints.append(constraint);
                             if (!self.match(.Plus)) break;
@@ -778,7 +787,8 @@ pub const Parser = struct {
                 if (!self.match(.Comma)) break;
             }
             
-            if (!self.match(.Greater) and !self.match(.RightAngle)) {
+            // Handle both > and >> for closing generic parameters
+            if (!self.match(.Greater) and !self.match(.RightAngle) and !self.match(.RightShift)) {
                 return ParserError.MissingToken;
             }
         }
@@ -1081,25 +1091,8 @@ pub const Parser = struct {
             const type_name = self.advance().lexeme;
             
             if (self.match(.Less) or self.match(.LeftAngle)) {
-                // Generic type instantiation
-                var type_args = ArrayList(ast.Type).init(self.allocator);
-                
-                while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
-                    const arg_type = try self.parseType();
-                    try type_args.append(arg_type);
-                    
-                    if (!self.match(.Comma)) break;
-                }
-                
-                if (!self.match(.Greater) and !self.match(.RightAngle)) {
-                    return ParserError.MissingToken;
-                }
-                
-                return ast.Type{ .Generic = ast.GenericType{
-                    .name = type_name,
-                    .type_arguments = type_args,
-                    .constraints = ArrayList(ast.TypeConstraint).init(self.allocator),
-                }};
+                // Use the dedicated parseGenericType function that handles >> ambiguity
+                return try self.parseGenericType(type_name);
             }
             
             // Check if it's a basic type name like normie, tea, etc.
@@ -3622,21 +3615,38 @@ pub const Parser = struct {
     // Advanced parser features
     fn parseGenericType(self: *Parser, base_name: []const u8) ParserError!ast.Type {
         // Parse generic type like Vec<T>, Map<K,V>
-        if (!self.match(.Less) and !self.match(.LeftAngle)) {
-            return ast.Type{ .Custom = base_name };
-        }
+        // Already consumed the opening < or LeftAngle when called from parseType
         
         var type_arguments = ArrayList(ast.Type).init(self.allocator);
         
-        while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
-            const type_arg = try self.parseType();
-            try type_arguments.append(type_arg);
-            
-            if (!self.match(.Comma)) break;
-        }
-        
-        if (!self.match(.Greater) and !self.match(.RightAngle)) {
-            return ParserError.MissingToken;
+        // Parse type arguments, handling >> vs > ambiguity
+        if (!self.check(.Greater) and !self.check(.RightAngle) and !self.check(.RightShift)) {
+            while (true) {
+                const type_arg = try self.parseType();
+                try type_arguments.append(type_arg);
+                
+                // Check for end of type arguments
+                if (self.check(.Greater) or self.check(.RightAngle)) {
+                    _ = self.advance();
+                    break;
+                }
+                
+                // Handle >> as closing this generic level (nested generics case)
+                if (self.check(.RightShift)) {
+                    // Don't consume the token - let the caller handle the second >
+                    break;
+                }
+                
+                // Must have comma between type arguments
+                if (!self.match(.Comma)) {
+                    return ParserError.UnexpectedToken;
+                }
+            }
+        } else {
+            // Empty generic arguments, just consume closing bracket
+            if (!self.match(.Greater) and !self.match(.RightAngle)) {
+                return ParserError.MissingToken;
+            }
         }
         
         return ast.Type{ .Generic = ast.GenericType{

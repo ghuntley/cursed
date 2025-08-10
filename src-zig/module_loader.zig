@@ -14,6 +14,70 @@ const safe_operations = @import("safe_operations.zig");
 // Module loading system for CURSED imports
 // Handles loading modules from stdlib/ directory and making their functions available
 
+// Module loader specific errors (includes all possible system errors)
+pub const ModuleLoadError = error{
+    // Module-specific errors
+    ModuleNotFound,
+    ModuleNameCollision,
+    InvalidModuleFormat,
+    FileTooBig,
+    
+    // System errors
+    OutOfMemory,
+    AccessDenied,
+    FileNotFound,
+    SystemResources,
+    DeviceBusy,
+    NoDevice,
+    Unexpected,
+    SharingViolation,
+    PathAlreadyExists,
+    PipeBusy,
+    NameTooLong,
+    InvalidWtf8,
+    BadPathName,
+    NetworkNotFound,
+    AntivirusInterference,
+    SymLinkLoop,
+    ProcessFdQuotaExceeded,
+    SystemFdQuotaExceeded,
+    IsDir,
+    NotDir,
+    NotSupported,
+    FileSystem,
+    UnrecognizedVolume,
+    NoSpaceLeft,
+    InputOutput,
+    InvalidUtf8,
+    WouldBlock,
+    FileLocksNotSupported,
+    FileBusy,
+    
+    // Parsing errors
+    InvalidExpression,
+    UnexpectedCharacter,
+    InvalidEscapeSequence,
+    InvalidHexEscape,
+    InvalidUnicodeEscape,
+    UnterminatedString,
+    UnterminatedChar,
+    UnterminatedBlockComment,
+    UnexpectedToken,
+    UnexpectedEof,
+    InvalidSyntax,
+    MissingToken,
+    InvalidStatement,
+    InvalidType,
+    InvalidFunction,
+    InvalidParameter,
+    InvalidBlock,
+    InvalidAssignment,
+    InvalidPattern,
+    InvalidGeneric,
+    SyntaxError,
+    AlignmentError,
+};
+
 pub const ModuleLoader = struct {
     allocator: Allocator,
     loaded_modules: HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
@@ -85,7 +149,8 @@ pub const ModuleLoader = struct {
     }
     
     /// Load a module and return the functions it exports
-    pub fn loadModule(self: *ModuleLoader, module_name: []const u8) !?[]ast.FunctionStatement {
+    /// Returns ModuleNameCollision error if a module with the same name is already loaded from a different path
+    pub fn loadModule(self: *ModuleLoader, module_name: []const u8) anyerror!?[]ast.FunctionStatement {
         // Check if module is already loaded
         if (self.loaded_modules.get(module_name)) |loaded_module| {
             if (self.verbose) print("📦 Module '{s}' already loaded, returning cached functions\n", .{module_name});
@@ -115,10 +180,44 @@ pub const ModuleLoader = struct {
         defer self.allocator.free(source);
         
         // Parse module and extract functions
-        const loaded_module = try self.parseModule(module_name, module_path, source);
+        const loaded_module = self.parseModule(module_name, module_path, source) catch |err| switch (err) {
+            error.InvalidExpression, error.UnexpectedCharacter, error.InvalidEscapeSequence,
+            error.InvalidHexEscape, error.InvalidUnicodeEscape, error.UnterminatedString,
+            error.UnterminatedChar, error.UnterminatedBlockComment, error.UnexpectedToken,
+            error.UnexpectedEof, error.InvalidSyntax, error.MissingToken, error.InvalidStatement,
+            error.InvalidType, error.InvalidFunction, error.InvalidParameter, error.InvalidBlock,
+            error.InvalidAssignment, error.InvalidPattern, error.InvalidGeneric, error.SyntaxError,
+            error.AlignmentError => return error.InvalidModuleFormat,
+            else => return err,
+        };
         
-        // Store in cache
+        // Store in cache with conflict detection
         const cached_name = try self.allocator.dupe(u8, module_name);
+        
+        // Check for module name conflicts before storing
+        if (self.loaded_modules.get(module_name)) |existing_module| {
+            // Module name collision detected - provide detailed error
+            const error_msg = try std.fmt.allocPrint(self.allocator, 
+                "Module name conflict: '{s}' already loaded from '{s}', attempted to load from '{s}'", 
+                .{ module_name, existing_module.path, module_path });
+            defer self.allocator.free(error_msg);
+            
+            if (self.verbose) {
+                print("❌ {s}\n", .{error_msg});
+                print("   Existing module: {s} ({} functions, {} variables)\n", 
+                    .{ existing_module.path, existing_module.functions.items.len, existing_module.variables.items.len });
+                print("   Attempted module: {s} ({} functions, {} variables)\n", 
+                    .{ module_path, loaded_module.functions.items.len, loaded_module.variables.items.len });
+            }
+            
+            // Clean up the new module since we're not storing it
+            var cleanup_module = loaded_module;
+            cleanup_module.deinit(self.allocator);
+            self.allocator.free(cached_name);
+            
+            return error.ModuleNameCollision;
+        }
+        
         try self.loaded_modules.put(cached_name, loaded_module);
         
         if (self.verbose) print("✅ Module '{s}' loaded with {} functions\n", .{ module_name, loaded_module.functions.items.len });
@@ -127,7 +226,7 @@ pub const ModuleLoader = struct {
     }
     
     /// Find the path to a module file
-    fn findModulePath(self: *ModuleLoader, module_name: []const u8) ![]const u8 {
+    fn findModulePath(self: *ModuleLoader, module_name: []const u8) anyerror![]const u8 {
         // Try to resolve stdlib module first with custom path if available
         if (simple_import_resolver.resolveStdlibImportWithPath(self.allocator, module_name, self.stdlib_path) catch false) {
             // Build stdlib path using consistent method
@@ -170,7 +269,7 @@ pub const ModuleLoader = struct {
     }
     
     /// Find the project root directory
-    fn findProjectRoot(self: *ModuleLoader) ![]const u8 {
+    fn findProjectRoot(self: *ModuleLoader) anyerror![]const u8 {
         const cwd = std.fs.cwd();
         var buf: [1024]u8 = undefined;
         const current_path = try cwd.realpath(".", &buf);
@@ -239,7 +338,7 @@ pub const ModuleLoader = struct {
     }
     
     /// Read the source code of a module
-    fn readModuleSource(self: *ModuleLoader, module_path: []const u8) ![]const u8 {
+    fn readModuleSource(self: *ModuleLoader, module_path: []const u8) anyerror![]const u8 {
         const file = std.fs.cwd().openFile(module_path, .{}) catch |err| {
             if (self.verbose) print("❌ Cannot open module file: {s} - {any}\n", .{ module_path, err });
             return err;
@@ -247,14 +346,24 @@ pub const ModuleLoader = struct {
         defer file.close();
         
         const file_size = try file.getEndPos();
+        
+        if (file_size > 10 * 1024 * 1024) { // 10MB limit
+            if (self.verbose) print("❌ Module file too large: {d} bytes\n", .{file_size});
+            return error.FileTooBig;
+        }
+        
         const contents = try self.allocator.alloc(u8, file_size);
-        _ = try file.readAll(contents);
+        
+        _ = file.readAll(contents) catch |err| {
+            self.allocator.free(contents);
+            return err;
+        };
         
         return contents;
     }
     
     /// Parse a module and extract its functions and variables
-    fn parseModule(self: *ModuleLoader, module_name: []const u8, module_path: []const u8, source: []const u8) !LoadedModule {
+    fn parseModule(self: *ModuleLoader, module_name: []const u8, module_path: []const u8, source: []const u8) anyerror!LoadedModule {
         // Use an arena allocator for temporary parsing to prevent use-after-free
         var arena = std.heap.ArenaAllocator.init(self.allocator);
         defer arena.deinit();

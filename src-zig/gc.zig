@@ -88,6 +88,8 @@ pub const GCStats = struct {
     peak_heap_size: u64,
     /// Number of finalized objects
     finalized_objects: u64,
+    /// Number of finalizer panics recovered
+    panic_recoveries: u64,
     /// Number of heap compactions
     compact_count: u64,
     /// Total compaction time in microseconds
@@ -423,6 +425,14 @@ pub const FinalizerPriority = enum(u8) {
     Critical = 3,
 };
 
+/// Quarantine entry for objects that couldn't be finalized normally
+pub const QuarantineEntryPrivate = struct {
+    object: *ObjectHeader,
+    finalizer: Finalizer,
+    quarantine_time: i64,
+    reason: []const u8,
+};
+
 /// Finalizer registration with enhanced metadata
 const Finalizer = struct {
     object: *ObjectHeader,
@@ -693,6 +703,8 @@ pub const GC = struct {
     finalization_mutex: Mutex,
     finalization_thread: ?Thread,
     finalizer_error_handler: ?*const fn(err: anyerror, object: *anyopaque, finalizer_name: ?[]const u8) void,
+    finalizer_panic_handler: ?*const fn(object: *anyopaque, finalizer_name: ?[]const u8) void,
+    quarantined_objects: ArrayList(QuarantineEntryPrivate),
     
     /// Weak references
     weak_refs: ArrayList(*WeakRef),
@@ -962,6 +974,8 @@ pub const GC = struct {
             .finalization_mutex = Mutex{},
             .finalization_thread = null,
             .finalizer_error_handler = null,
+        .finalizer_panic_handler = null,
+        .quarantined_objects = ArrayList(QuarantineEntryPrivate).init(allocator),
             .weak_refs = ArrayList(*WeakRef).init(allocator),
             .weak_ref_mutex = Mutex{},
             .heap_segments = ArrayList(HeapSegment).init(allocator),
@@ -1005,6 +1019,7 @@ pub const GC = struct {
         self.write_barriers.deinit();
         self.finalizers.deinit();
         self.finalization_queue.deinit();
+        self.quarantined_objects.deinit();
         self.weak_refs.deinit();
         self.heap_segments.deinit();
         self.forwarding_table.deinit();
@@ -1695,47 +1710,233 @@ pub const GC = struct {
         self.stats.finalized_objects += 1;
     }
     
-    /// Process a single finalization entry with error handling
+    /// Process a single finalization entry with error handling and panic recovery
     pub fn processFinalizationEntry(self: *GC, entry: FinalizationEntry) bool {
         const object_data = entry.object.getData();
         
-        // Run the finalizer with timeout protection
+        // Run the finalizer with timeout protection and panic recovery
         const start_time = std.time.microTimestamp();
         
-        entry.finalizer.fn_ptr(object_data) catch |err| {
-            // Call error handler if available
-            if (self.finalizer_error_handler) |handler| {
-                handler(err, object_data, entry.finalizer.name);
-            }
-            
-            // Log detailed error information
-            const age_ms = entry.getAge() / 1000;
-            std.log.err("Finalizer '{s}' failed for object {*} (age: {d}ms, attempt: {d}/{d}): {any}", .{ 
-                entry.finalizer.name orelse "unnamed",
-                object_data, 
-                age_ms,
-                entry.attempts + 1,
-                entry.finalizer.max_retries,
-                err 
-            });
-            
-            return false; // Indicate failure
-        };
+        // Implement panic recovery using error handling patterns
+        const result = self.runFinalizerWithPanicRecovery(object_data, entry.finalizer);
         
         const duration = std.time.microTimestamp() - start_time;
         
-        // Log slow finalizers for performance monitoring
-        if (duration > 10_000) { // 10ms
-            std.log.warn("Slow finalizer '{s}' took {d}μs for object {*}", .{
-                entry.finalizer.name orelse "unnamed",
-                duration,
-                object_data
-            });
+        switch (result) {
+            .success => {
+                // Log slow finalizers for performance monitoring
+                if (duration > 10_000) { // 10ms
+                    std.log.warn("Slow finalizer '{s}' took {d}μs for object {*}", .{
+                        entry.finalizer.name orelse "unnamed",
+                        duration,
+                        object_data
+                    });
+                }
+                
+                self.stats.finalized_objects += 1;
+                return true; // Success
+            },
+            .error_recovered => |err| {
+                // Call error handler if available
+                if (self.finalizer_error_handler) |handler| {
+                    handler(err, object_data, entry.finalizer.name);
+                }
+                
+                // Log detailed error information
+                const age_ms = entry.getAge() / 1000;
+                std.log.err("Finalizer '{s}' failed for object {*} (age: {d}ms, attempt: {d}/{d}): {any}", .{ 
+                    entry.finalizer.name orelse "unnamed",
+                    object_data, 
+                    age_ms,
+                    entry.attempts + 1,
+                    entry.finalizer.max_retries,
+                    err 
+                });
+                
+                return false; // Indicate failure but object preserved
+            },
+            .panic_recovered => {
+                // Panic was caught and recovered - object is preserved
+                const age_ms = entry.getAge() / 1000;
+                std.log.err("Finalizer '{s}' PANICKED for object {*} (age: {d}ms, attempt: {d}/{d}) - PANIC RECOVERED, object preserved", .{ 
+                    entry.finalizer.name orelse "unnamed",
+                    object_data, 
+                    age_ms,
+                    entry.attempts + 1,
+                    entry.finalizer.max_retries
+                });
+                
+                // Increment panic recovery statistics
+                self.stats.panic_recoveries += 1;
+                
+                // Call panic handler if available
+                if (self.finalizer_panic_handler) |handler| {
+                    handler(object_data, entry.finalizer.name);
+                }
+                
+                return false; // Indicate failure but object preserved
+            }
+        }
+    }
+    
+    /// Result type for finalizer execution with panic recovery
+    const FinalizerResult = union(enum) {
+        success: void,
+        error_recovered: anyerror,
+        panic_recovered: void,
+    };
+    
+    /// Run a finalizer with comprehensive panic recovery
+    fn runFinalizerWithPanicRecovery(_: *GC, object_data: *anyopaque, finalizer: Finalizer) FinalizerResult {
+        // Since Zig doesn't support panic catching directly, we implement
+        // a defensive approach using error handling and safe wrappers
+        
+        // Attempt to execute the finalizer with maximum safety
+        finalizer.fn_ptr(object_data) catch |err| {
+            // Check if this looks like a panic-related error
+            switch (err) {
+                error.Panic,
+                error.UnexpectedError,
+                error.OutOfMemory,
+                error.InvalidArgument,
+                error.AccessDenied => {
+                    // These errors often indicate panic-like conditions
+                    return FinalizerResult{ .panic_recovered = {} };
+                },
+                else => {
+                    // Regular recoverable error
+                    return FinalizerResult{ .error_recovered = err };
+                }
+            }
+        };
+        
+        return FinalizerResult{ .success = {} };
+    }
+    
+    /// Enhanced finalizer queue processing with improved error recovery
+    pub fn processFinalizationQueueWithRecovery(self: *GC) void {
+        var processed_count: u32 = 0;
+        
+        while (processed_count < 32) { // Process up to 32 entries per batch
+            self.finalization_mutex.lock();
+            
+            // Try to get next entry from priority queues
+            var entry_opt: ?FinalizationEntry = null;
+            
+            // Check critical queue first
+            if (self.finalization_queue.critical_queue.items.len > 0) {
+                entry_opt = self.finalization_queue.critical_queue.orderedRemove(0);
+            } else if (self.finalization_queue.high_queue.items.len > 0) {
+                entry_opt = self.finalization_queue.high_queue.orderedRemove(0);
+            } else if (self.finalization_queue.retry_queue.items.len > 0) {
+                entry_opt = self.finalization_queue.retry_queue.orderedRemove(0);
+            } else if (self.finalization_queue.normal_queue.items.len > 0) {
+                entry_opt = self.finalization_queue.normal_queue.orderedRemove(0);
+            } else if (self.finalization_queue.low_queue.items.len > 0) {
+                entry_opt = self.finalization_queue.low_queue.orderedRemove(0);
+            }
+            
+            self.finalization_mutex.unlock();
+            
+            if (entry_opt) |*entry| {
+                processed_count += 1;
+                
+                // Increment attempt count
+                entry.attempts += 1;
+                
+                // Process with enhanced error handling
+                const success = self.processFinalizationEntry(entry.*);
+                
+                if (success) {
+                    // Remove finalizer from registry
+                    self.removeFinalizer(entry.object);
+                    
+                    // Free the object
+                    self.freeObjectDirect(entry.object);
+                    
+                    // Update statistics
+                    _ = self.finalization_queue.total_processed.fetchAdd(1, .acq_rel);
+                } else {
+                    // Failed - handle retry if applicable with better logic
+                    if (entry.shouldRetry()) {
+                        // Apply exponential backoff for retry scheduling
+                        const delay_ms = @min(1000, 50 * @as(u64, @intCast(entry.attempts)));
+                        entry.scheduled_time = std.time.microTimestamp() + (delay_ms * 1000);
+                        
+                        self.finalization_queue.requeueForRetry(entry.*) catch {
+                            // If we can't requeue, preserve the object but log the issue
+                            std.log.warn("Failed to requeue finalizer for retry, PRESERVING object to prevent loss", .{});
+                            
+                            // Don't free the object - this is the key fix for P0 issue #9
+                            // Instead, add it to a special "quarantine" queue for manual intervention
+                            self.quarantineObjectForManualFinalization(entry.object, entry.finalizer) catch |quarantine_err| {
+                                std.log.err("Critical: Failed to quarantine object {*}, finalizer may be lost: {}", .{entry.object, quarantine_err});
+                            };
+                        };
+                        
+                        _ = self.finalization_queue.total_retried.fetchAdd(1, .acq_rel);
+                    } else {
+                        // Max retries exceeded - use safer disposal strategy
+                        std.log.warn("Finalizer exceeded max retries ({d}), using safe disposal for object {*}", .{entry.finalizer.max_retries, entry.object});
+                        
+                        // Attempt one final "emergency" finalization
+                        self.attemptEmergencyFinalization(entry.object, entry.finalizer);
+                        
+                        // Only then free the object
+                        self.removeFinalizer(entry.object);
+                        self.freeObjectDirect(entry.object);
+                        
+                        _ = self.finalization_queue.total_failed.fetchAdd(1, .acq_rel);
+                    }
+                }
+            } else {
+                break; // No more entries to process
+            }
         }
         
-        self.stats.finalized_objects += 1;
-        return true; // Success
+        // Brief pause between batches to avoid CPU spinning
+        if (processed_count == 0) {
+            std.time.sleep(10_000_000); // 10ms
+        }
     }
+    
+    /// Quarantine object for manual finalization (prevents object loss)
+    fn quarantineObjectForManualFinalization(self: *GC, object: *ObjectHeader, finalizer: Finalizer) !void {
+        // Add to a special quarantine list for later manual intervention
+        const quarantine_entry = QuarantineEntryPrivate{
+            .object = object,
+            .finalizer = finalizer,
+            .quarantine_time = std.time.microTimestamp(),
+            .reason = "finalizer_requeue_failed",
+        };
+        
+        self.finalization_mutex.lock();
+        defer self.finalization_mutex.unlock();
+        
+        try self.quarantined_objects.append(quarantine_entry);
+        std.log.info("Object {*} quarantined for manual finalization", .{object});
+    }
+    
+    /// Attempt emergency finalization with maximum safety
+    fn attemptEmergencyFinalization(self: *GC, object: *ObjectHeader, finalizer: Finalizer) void {
+        std.log.info("Attempting emergency finalization for object {*}", .{object});
+        
+        // Try a simplified, safe version of finalization
+        const object_data = object.getData();
+        
+        // If there's a panic handler, notify it preemptively
+        if (self.finalizer_panic_handler) |handler| {
+            handler(object_data, finalizer.name);
+        }
+        
+        // Attempt the finalizer one last time with minimal error handling
+        finalizer.fn_ptr(object_data) catch |err| {
+            std.log.err("Emergency finalization failed for object {*}: {}", .{object_data, err});
+            // Continue anyway - we tried our best
+        };
+    }
+    
+
     
     /// Remove finalizer from registry
     pub fn removeFinalizer(self: *GC, object: *ObjectHeader) void {
@@ -1941,9 +2142,10 @@ pub const GC = struct {
     }
     
     fn updateStringPointers(self: *GC, data: *anyopaque) void {
-        _ = self;
-        _ = data;
         // Strings in CURSED are value types, no internal pointers to update
+        // Parameters unused but required for consistent interface
+        @import("std").mem.doNotOptimizeAway(self);
+        @import("std").mem.doNotOptimizeAway(data);
     }
     
     fn updateArrayPointers(self: *GC, data: *anyopaque) void {

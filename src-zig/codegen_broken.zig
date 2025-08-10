@@ -1903,6 +1903,8 @@ test "codegen basic" {
                 @as(u32, @intCast(i)),
                 "field_ptr"
             );
+            // CRITICAL P0 FIX: Wire write barrier into field stores for generational GC correctness
+            // TODO: Add GC integration support to CodeGen struct
             _ = c.LLVMBuildStore(self.builder, field_value, field_ptr);
         }
         

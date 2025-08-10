@@ -442,15 +442,18 @@ pub const InterfaceDispatcher = struct {
         
         // Set vtable pointer
         const vtable_field = c.LLVMBuildStructGEP2(builder, interface_type, interface_instance, 0, "vtable_field");
+        // TODO: Add write barrier for interface vtable field stores
         _ = c.LLVMBuildStore(builder, vtable, vtable_field);
         
         // Set data pointer
         const data_field = c.LLVMBuildStructGEP2(builder, interface_type, interface_instance, 1, "data_field");
+        // TODO: Add write barrier for interface data field stores
         _ = c.LLVMBuildStore(builder, data_ptr, data_field);
         
         // Set type info (null for now)
         const type_info_field = c.LLVMBuildStructGEP2(builder, interface_type, interface_instance, 2, "type_info_field");
         const null_ptr = c.LLVMConstNull(c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0));
+        // TODO: Add write barrier for interface type_info field stores
         _ = c.LLVMBuildStore(builder, null_ptr, type_info_field);
         
         return interface_instance;

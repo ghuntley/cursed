@@ -405,30 +405,66 @@ pub const IOCPPoller = struct {
             callback(operation);
         }
         
+        // CRITICAL FIX for P0 Issue #12: Always complete promises, even on error paths
         // Integrate with CURSED runtime if enabled
         if (self.runtime_integration) {
             if (operation.goroutine_id) |goroutine_id| {
-                // Wake up waiting goroutine
+                // ALWAYS attempt to send result to channel - this must succeed to complete promises
                 if (operation.completion_channel) |channel| {
-                    channel.send(result) catch |err| {
-                        std.log.err("Failed to send async result to channel: {}", .{err});
-                    };
+                    // Try multiple times with different strategies for error recovery
+                    var send_attempts: u32 = 0;
+                    const max_attempts = 3;
+                    
+                    while (send_attempts < max_attempts) {
+                        channel.send(result) catch |err| {
+                            send_attempts += 1;
+                            std.log.warn("Attempt {} to send async result failed: {}", .{ send_attempts, err });
+                            
+                            if (send_attempts >= max_attempts) {
+                                // CRITICAL: Force goroutine wakeup even if channel send fails
+                                std.log.err("CRITICAL: Channel send failed {} times, forcing goroutine wakeup to prevent hanging", .{max_attempts});
+                                
+                                // Schedule the goroutine anyway to prevent infinite hanging
+                                if (self.goroutine_scheduler) |scheduler| {
+                                    scheduler.scheduleGoroutine(goroutine_id) catch |sched_err| {
+                                        std.log.err("CRITICAL: Failed to force schedule goroutine {}: {}", .{ goroutine_id, sched_err });
+                                    };
+                                }
+                                break;
+                            }
+                            
+                            // Brief delay before retry
+                            std.time.sleep(1 * std.time.ns_per_ms);
+                            continue;
+                        };
+                        
+                        // Success - break out of retry loop
+                        break;
+                    }
+                } else {
+                    // No channel but goroutine exists - still try to schedule it
+                    std.log.warn("No completion channel but goroutine exists, attempting to schedule anyway");
                 }
                 
-                // Schedule goroutine for execution
+                // ALWAYS attempt to schedule goroutine for execution - this prevents hanging
                 if (self.goroutine_scheduler) |scheduler| {
                     scheduler.scheduleGoroutine(goroutine_id) catch |err| {
                         std.log.err("Failed to schedule goroutine after async completion: {}", .{err});
+                        // Don't fail silently - this could cause hanging promises
                     };
                 }
+            } else {
+                // No goroutine ID but runtime integration enabled - log for debugging
+                std.log.debug("Runtime integration enabled but no goroutine ID for async operation");
             }
         }
         
         // Log completion for debugging
-        std.log.debug("Async operation completed: type={}, success={}, bytes={}", .{
+        std.log.debug("Async operation completed: type={}, success={}, bytes={}, error={}", .{
             operation.op_type,
             result.success,
             result.bytes_transferred,
+            result.error_code,
         });
     }
 };
@@ -550,7 +586,21 @@ pub const AsyncRuntime = struct {
                 operation.bindGoroutine(current_goroutine.id, result_channel);
                 
                 // Yield current goroutine and wait for completion
-                const result = result_channel.receive() catch {
+                const result = result_channel.receive() catch |recv_err| {
+                    std.log.err("CRITICAL P0 #12 FIX: Channel receive failed with {}, operation may have completed with error", .{recv_err});
+                    
+                    // IMPORTANT: Even if channel receive fails, check if operation completed with error
+                    // This prevents hanging when the completion handler ran but channel communication failed
+                    if (operation.error_code != 0 or operation.bytes_transferred > 0) {
+                        std.log.info("Operation actually completed but channel failed - returning actual result");
+                        return AsyncResult{
+                            .success = operation.error_code == 0,
+                            .bytes_transferred = operation.bytes_transferred,
+                            .error_code = operation.error_code,
+                            .operation = operation,
+                        };
+                    }
+                    
                     return AsyncResult{
                         .success = false,
                         .bytes_transferred = 0,
@@ -597,7 +647,21 @@ pub const AsyncRuntime = struct {
                 operation.bindGoroutine(current_goroutine.id, result_channel);
                 
                 // Yield current goroutine and wait for completion
-                const result = result_channel.receive() catch {
+                const result = result_channel.receive() catch |recv_err| {
+                    std.log.err("CRITICAL P0 #12 FIX: Channel receive failed with {}, operation may have completed with error", .{recv_err});
+                    
+                    // IMPORTANT: Even if channel receive fails, check if operation completed with error
+                    // This prevents hanging when the completion handler ran but channel communication failed
+                    if (operation.error_code != 0 or operation.bytes_transferred > 0) {
+                        std.log.info("Operation actually completed but channel failed - returning actual result");
+                        return AsyncResult{
+                            .success = operation.error_code == 0,
+                            .bytes_transferred = operation.bytes_transferred,
+                            .error_code = operation.error_code,
+                            .operation = operation,
+                        };
+                    }
+                    
                     return AsyncResult{
                         .success = false,
                         .bytes_transferred = 0,
