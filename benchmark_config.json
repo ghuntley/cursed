@@ -1,0 +1,60 @@
+{
+  "benchmark_interval_minutes": 30,
+  "benchmark_files": [
+    "benchmarks/cursed/fasta.csd",
+    "benchmarks/cursed/mandelbrot.csd",
+    "benchmarks/cursed/binary_trees.csd",
+    "benchmarks/cursed/n_bodies.csd",
+    "benchmarks/cursed/string_processing.csd",
+    "benchmarks/cursed/fannkuch.csd",
+    "benchmarks/cursed/comprehensive_stdlib_benchmark.csd",
+    "benchmarks/cursed/memory_benchmark.csd",
+    "benchmarks/cursed/string_benchmark.csd",
+    "benchmarks/cursed/math_benchmark.csd",
+    "comprehensive_stdlib_test.csd",
+    "advanced_features_test.csd",
+    "comprehensive_test.csd"
+  ],
+  "optimization_levels": [
+    "Debug",
+    "ReleaseFast",
+    "ReleaseSmall"
+  ],
+  "regression_threshold_percent": 10.0,
+  "confidence_threshold": 0.95,
+  "alert_severity_thresholds": {
+    "low": 5.0,
+    "medium": 15.0,
+    "high": 25.0,
+    "critical": 50.0
+  },
+  "max_workers": 4,
+  "database_path": "benchmark_results.db",
+  "report_path": "benchmark_reports",
+  "git_monitoring": true,
+  "email_alerts": false,
+  "webhook_url": null,
+  "statistical_analysis": {
+    "min_historical_samples": 10,
+    "trend_analysis_window_days": 14,
+    "outlier_detection": true,
+    "seasonal_adjustment": false
+  },
+  "performance_targets": {
+    "compilation_time_ms": {
+      "target": 1000,
+      "warning_threshold": 1500,
+      "critical_threshold": 3000
+    },
+    "execution_time_ms": {
+      "target": 100,
+      "warning_threshold": 200,
+      "critical_threshold": 500
+    },
+    "memory_usage_kb": {
+      "target": 10240,
+      "warning_threshold": 20480,
+      "critical_threshold": 51200
+    }
+  }
+}

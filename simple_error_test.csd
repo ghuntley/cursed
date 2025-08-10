@@ -1,15 +1,15 @@
-// Simple CURSED error handling test for interpreter
+slay func1() drip {
+    damn 42
+}
 
-vibez.spill("=== Simple Error Handling Test ===")
+# Missing closing brace on previous function should cause error
 
-// Test basic error creation
-vibez.spill("Testing basic error creation...")
-sus test_yikes drip = 42
-vibez.spill("Basic test passed")
+slay func2() drip {
+    damn 24
+}
 
-// Test error propagation (simplified)
-vibez.spill("Testing error propagation...")
-sus result drip = 123
-vibez.spill("Error propagation test result:", result)
+sus var1 drip = 10;
+sus var2 = 20;  # Missing type - should cause error
+sus var3 drip = 30;
 
-vibez.spill("=== Error handling test completed ===")
+vibez.spill("Test complete");

@@ -46,6 +46,8 @@ chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.4"
 colored = "2.0"
 futures = "0.3"
+clap = { version = "4.0", features = ["derive"] }
+serde_yaml = "0.9"
 # Move reqwest to target-specific sections for WASM compatibility
 # Move archive and LLVM dependencies to target-specific sections for WASM compatibility
 gimli = "0.28"

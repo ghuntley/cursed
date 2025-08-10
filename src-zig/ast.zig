@@ -2,6 +2,10 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
+// Import attribute system for AST node decoration
+const attribute_system = @import("attribute_system.zig");
+const AttributeList = attribute_system.AttributeList;
+
 /// Enhanced source location for error reporting and DWARF debug information
 pub const SourceLocation = struct {
     file: []const u8,
@@ -585,6 +589,7 @@ pub const FunctionStatement = struct {
     type_parameters: ArrayList(TypeParameter),
     comments: ArrayList(Comment),
     location: SourceLocation = SourceLocation.unknown(), // Debug location for DWARF
+    attributes: ?AttributeList = null, // Attribute decorations for code generation
 
     pub fn init(allocator: Allocator, name: []const u8) FunctionStatement {
         return FunctionStatement{
@@ -597,6 +602,7 @@ pub const FunctionStatement = struct {
             .type_parameters = ArrayList(TypeParameter).init(allocator),
             .comments = ArrayList(Comment).init(allocator),
             .location = SourceLocation.unknown(),
+            .attributes = null,
         };
     }
 
@@ -629,6 +635,10 @@ pub const FunctionStatement = struct {
         self.type_parameters.deinit();
         
         self.comments.deinit();
+        
+        if (self.attributes) |*attrs| {
+            attrs.deinit(allocator);
+        }
     }
 };
 
@@ -705,6 +715,7 @@ pub const StructStatement = struct {
     methods: ArrayList(FunctionStatement),
     visibility: Visibility,
     type_parameters: ArrayList(TypeParameter),
+    attributes: ?AttributeList = null, // Attribute decorations for memory layout and optimization
     
     pub fn deinit(self: *StructStatement, allocator: Allocator) void {
         for (self.fields.items) |*field| {
@@ -719,6 +730,10 @@ pub const StructStatement = struct {
             type_param.constraints.deinit();
         }
         self.type_parameters.deinit();
+        
+        if (self.attributes) |*attrs| {
+            attrs.deinit(allocator);
+        }
     }
 };
 

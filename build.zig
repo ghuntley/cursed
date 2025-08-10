@@ -511,10 +511,18 @@ fn getOptimalJobCount() u32 {
 }
 
 pub fn build(b: *std.Build) void {
-    // Auto-tune parallel build jobs
+    // Import deadlock prevention system
+    const build_system_fixes = @import("src-zig/build_system_fixes.zig");
+    
+    // Apply safe build configuration with deadlock prevention
+    build_system_fixes.createSafeBuildConfig(b) catch |err| {
+        std.debug.print("⚠️ Warning: Could not apply all safe build configurations: {}\n", .{err});
+    };
+    
+    // Auto-tune parallel build jobs with enhanced safety
     const optimal_jobs = getOptimalJobCount();
     if (b.verbose) {
-        std.debug.print("🔧 Auto-tuned build jobs: {d}\n", .{optimal_jobs});
+        std.debug.print("🔧 Auto-tuned build jobs: {d} (with deadlock prevention)\n", .{optimal_jobs});
     }
     
     // Initialize linker script manager for cross-compilation support

@@ -7,6 +7,9 @@
 //! - GC and memory usage tracking
 //! - Error and regression detection
 //! - Production deployment visibility
+//! - Secure Prometheus metrics export with label sanitization
+
+pub mod prometheus_exporter;
 
 use std::sync::{Arc, RwLock, Mutex};
 use once_cell::sync::Lazy;
@@ -637,9 +640,29 @@ impl MetricsManager {
         }
     }
 
-    fn export_prometheus(&self, _metrics: &AggregatedMetrics) -> Result<String, CursedError> {
-        // Implement Prometheus export format
-        Ok("# Prometheus metrics export not yet implemented".to_string())
+    fn export_prometheus(&self, metrics: &AggregatedMetrics) -> Result<String, CursedError> {
+        use crate::metrics::prometheus_exporter::{PrometheusExporter, PrometheusExporterConfig};
+        
+        // Create Prometheus exporter with secure configuration
+        let config = PrometheusExporterConfig {
+            namespace: "cursed".to_string(),
+            global_labels: {
+                let mut labels = std::collections::HashMap::new();
+                labels.insert("instance".to_string(), "cursed_compiler".to_string());
+                labels.insert("version".to_string(), env!("CARGO_PKG_VERSION").to_string());
+                labels
+            },
+            include_timestamps: true,
+            max_metrics: 5000, // Limit for safety
+            include_metadata: true,
+            strict_validation: true,
+            ..Default::default()
+        };
+        
+        let mut exporter = PrometheusExporter::new(config)
+            .map_err(|e| CursedError::runtime_error(&format!("Failed to create Prometheus exporter: {}", e)))?;
+        
+        exporter.export_metrics(metrics)
     }
 
     fn export_json(&self, metrics: &AggregatedMetrics) -> Result<String, CursedError> {
