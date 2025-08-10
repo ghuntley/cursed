@@ -15,6 +15,7 @@ squad TypeInfo {
     spill is_struct lit
     spill is_interface lit
     spill is_function lit
+    spill methods []MethodInfo
 }
 
 squad FieldInfo {
@@ -74,37 +75,43 @@ slay init_primitive_types() lit {
     register_type(TypeInfo{
         type_id: 1, name: "tea", size: 8, alignment: 8,
         kind: TypeKind{id: TYPE_KIND_PRIMITIVE, name: "primitive"},
-        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap
+        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap,
+        methods: []
     })
     
     register_type(TypeInfo{
         type_id: 2, name: "normie", size: 4, alignment: 4,
         kind: TypeKind{id: TYPE_KIND_PRIMITIVE, name: "primitive"},
-        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap
+        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap,
+        methods: []
     })
     
     register_type(TypeInfo{
         type_id: 3, name: "thicc", size: 8, alignment: 8,
         kind: TypeKind{id: TYPE_KIND_PRIMITIVE, name: "primitive"},
-        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap
+        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap,
+        methods: []
     })
     
     register_type(TypeInfo{
         type_id: 4, name: "meal", size: 8, alignment: 8,
         kind: TypeKind{id: TYPE_KIND_PRIMITIVE, name: "primitive"},
-        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap
+        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap,
+        methods: []
     })
     
     register_type(TypeInfo{
         type_id: 5, name: "lit", size: 1, alignment: 1,
         kind: TypeKind{id: TYPE_KIND_PRIMITIVE, name: "primitive"},
-        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap
+        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap,
+        methods: []
     })
     
     register_type(TypeInfo{
         type_id: 6, name: "smol", size: 1, alignment: 1,
         kind: TypeKind{id: TYPE_KIND_PRIMITIVE, name: "primitive"},
-        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap
+        is_primitive: based, is_pointer: cap, is_array: cap, is_struct: cap, is_interface: cap, is_function: cap,
+        methods: []
     })
     
     damn based
@@ -144,7 +151,8 @@ slay register_struct_type(name tea, fields []FieldInfo, methods []MethodInfo) no
         is_array: cap,
         is_struct: based,
         is_interface: cap,
-        is_function: cap
+        is_function: cap,
+        methods: methods
     }
     
     type_id_counter = type_id_counter + 1
@@ -172,7 +180,8 @@ slay register_interface_type(name tea, methods []MethodInfo) normie {
         is_array: cap,
         is_struct: cap,
         is_interface: based,
-        is_function: cap
+        is_function: cap,
+        methods: methods
     }
     
     type_id_counter = type_id_counter + 1
@@ -195,7 +204,8 @@ slay register_array_type(element_type TypeInfo, length normie) normie {
         is_array: based,
         is_struct: cap,
         is_interface: cap,
-        is_function: cap
+        is_function: cap,
+        methods: []
     }
     
     type_id_counter = type_id_counter + 1

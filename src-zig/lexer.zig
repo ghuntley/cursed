@@ -362,20 +362,23 @@ pub const Lexer = struct {
 
             else => {
                 if (std.ascii.isDigit(c)) {
-                    self.position -= 1; // Back up to re-read the digit
-                    self.column -= 1;
+                    // Safe backup with underflow protection
+                    if (self.position > 0) self.position -= 1;
+                    if (self.column > 0) self.column -= 1;
                     return self.number(start_line, start_column);
                 }
                 if (std.ascii.isAlphabetic(c) or c == '_') {
-                    self.position -= 1; // Back up to re-read the character
-                    self.column -= 1;
+                    // Safe backup with underflow protection
+                    if (self.position > 0) self.position -= 1;
+                    if (self.column > 0) self.column -= 1;
                     return self.identifier(start_line, start_column);
                 }
                 
                 // Handle Unicode characters - check if it's a valid identifier start
                 if (c >= 0x80) { // Non-ASCII byte, might be start of Unicode identifier
-                    self.position -= 1; // Back up to re-read the character
-                    self.column -= 1;
+                    // Safe backup with underflow protection
+                    if (self.position > 0) self.position -= 1;
+                    if (self.column > 0) self.column -= 1;
                     return self.unicodeIdentifier(start_line, start_column);
                 }
                 
@@ -482,7 +485,8 @@ pub const Lexer = struct {
     }
 
     fn stringLiteral(self: *Lexer, line: usize, column: usize) !Token {
-        const start = self.position - 1; // Include opening quote
+        // Safe start calculation with underflow protection
+        const start = if (self.position > 0) self.position - 1 else self.position;
         
         while (self.peek() != '"' and !self.isAtEnd()) {
             if (self.peek() == '\n') {

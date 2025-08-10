@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
@@ -49,14 +50,16 @@ pub const ErrorRecoveryStats = struct {
     }
     
     pub fn reportStats(self: *const ErrorRecoveryStats) void {
-        std.debug.print("\n=== Error Recovery Statistics ===\n", .{});
-        std.debug.print("Total errors encountered: {}\n", .{self.total_errors});
-        std.debug.print("Semicolon recoveries: {}\n", .{self.semicolon_recoveries});
-        std.debug.print("Statement recoveries: {}\n", .{self.statement_recoveries});
-        std.debug.print("Expression recoveries: {}\n", .{self.expression_recoveries});
-        std.debug.print("Delimiter recoveries: {}\n", .{self.delimiter_recoveries});
-        std.debug.print("Total tokens skipped: {}\n", .{self.tokens_skipped});
-        std.debug.print("================================\n", .{});
+        if (builtin.mode == .Debug) {
+            std.debug.print("\n=== Error Recovery Statistics ===\n", .{});
+            std.debug.print("Total errors encountered: {}\n", .{self.total_errors});
+            std.debug.print("Semicolon recoveries: {}\n", .{self.semicolon_recoveries});
+            std.debug.print("Statement recoveries: {}\n", .{self.statement_recoveries});
+            std.debug.print("Expression recoveries: {}\n", .{self.expression_recoveries});
+            std.debug.print("Delimiter recoveries: {}\n", .{self.delimiter_recoveries});
+            std.debug.print("Total tokens skipped: {}\n", .{self.tokens_skipped});
+            std.debug.print("================================\n", .{});
+        }
     }
 };
 
@@ -332,29 +335,35 @@ pub const Parser = struct {
     fn reportErrorWithContext(self: *Parser, message: []const u8, context: []const u8) ParserError {
         // Validate message before printing
         if (message.len == 0 or message.len > 1024) {
-            std.debug.print("Error: Invalid error message (length: {})\n", .{message.len});
+            if (builtin.mode == .Debug) {
+                std.debug.print("Error: Invalid error message (length: {})\n", .{message.len});
+            }
             self.had_error = true;
             return ParserError.SyntaxError;
         }
         
-        const location = self.getCurrentSourceLocation();
-        if (location) |loc| {
-            // Bounds check for safe formatting
-            if (loc.line < 65536 and loc.column < 65536) {
-                std.debug.print("Error at {s}:{}:{} - {s} (context: {s})\n", .{ loc.file, loc.line, loc.column, message, context });
+        if (builtin.mode == .Debug) {
+            const location = self.getCurrentSourceLocation();
+            if (location) |loc| {
+                // Bounds check for safe formatting
+                if (loc.line < 65536 and loc.column < 65536) {
+                    std.debug.print("Error at {s}:{}:{} - {s} (context: {s})\n", .{ loc.file, loc.line, loc.column, message, context });
+                } else {
+                    std.debug.print("Error in {s} - {s} (context: {s})\n", .{ loc.file, message, context });
+                }
             } else {
-                std.debug.print("Error in {s} - {s} (context: {s})\n", .{ loc.file, message, context });
+                std.debug.print("Error: {s} (context: {s})\n", .{ message, context });
             }
-        } else {
-            std.debug.print("Error: {s} (context: {s})\n", .{ message, context });
         }
         self.had_error = true;
         return ParserError.SyntaxError;
     }
 
     fn reportErrorAtToken(self: *Parser, token: Token, message: []const u8) ParserError {
-        const location = self.getSourceLocationForToken(token);
-        std.debug.print("Error at {s}:{}:{} - {s}\n", .{ location.file, location.line, location.column, message });
+        if (builtin.mode == .Debug) {
+            const location = self.getSourceLocationForToken(token);
+            std.debug.print("Error at {s}:{}:{} - {s}\n", .{ location.file, location.line, location.column, message });
+        }
         self.had_error = true;
         return ParserError.SyntaxError;
     }
@@ -386,7 +395,9 @@ pub const Parser = struct {
             if (current_token.kind == .Semicolon) {
                 _ = self.advance(); // consume the semicolon
                 self.error_recovery_stats.tokens_skipped += tokens_skipped;
-                std.debug.print("INFO: Recovered at semicolon after skipping {} tokens\n", .{tokens_skipped});
+                if (builtin.mode == .Debug) {
+                    std.debug.print("INFO: Recovered at semicolon after skipping {} tokens\n", .{tokens_skipped});
+                }
                 return;
             }
             
@@ -394,7 +405,9 @@ pub const Parser = struct {
             if (current_token.kind == .Newline) {
                 _ = self.advance(); // consume the newline
                 self.error_recovery_stats.tokens_skipped += tokens_skipped;
-                std.debug.print("INFO: Recovered at newline after skipping {} tokens\n", .{tokens_skipped});
+                if (builtin.mode == .Debug) {
+                    std.debug.print("INFO: Recovered at newline after skipping {} tokens\n", .{tokens_skipped});
+                }
                 return;
             }
             
@@ -405,7 +418,9 @@ pub const Parser = struct {
                 .Stan, .Match, .VibeCheck => {
                     // Don't consume these - let the next parsing cycle handle them
                     self.error_recovery_stats.tokens_skipped += tokens_skipped;
-                    std.debug.print("INFO: Recovered at statement keyword '{s}' after skipping {} tokens\n", .{@tagName(current_token.kind), tokens_skipped});
+                    if (builtin.mode == .Debug) {
+                        std.debug.print("INFO: Recovered at statement keyword '{s}' after skipping {} tokens\n", .{@tagName(current_token.kind), tokens_skipped});
+                    }
                     return;
                 },
                 else => {},
@@ -416,7 +431,9 @@ pub const Parser = struct {
                 .RightBrace, .RightParen, .RightBracket => {
                     // Don't consume these - they might be needed for proper parsing
                     self.error_recovery_stats.tokens_skipped += tokens_skipped;
-                    std.debug.print("INFO: Recovered at delimiter '{s}' after skipping {} tokens\n", .{@tagName(current_token.kind), tokens_skipped});
+                    if (builtin.mode == .Debug) {
+                        std.debug.print("INFO: Recovered at delimiter '{s}' after skipping {} tokens\n", .{@tagName(current_token.kind), tokens_skipped});
+                    }
                     return;
                 },
                 else => {},

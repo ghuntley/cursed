@@ -116,6 +116,35 @@ pub const LinkerScriptManager = struct {
             .memory_layout = null,
         }},
         
+        // Linux x86_64 - musl libc (Alpine Linux, embedded)
+        .{ "x86_64-unknown-linux-musl", LinkerConfig{
+            .script_path = null, // Use system default
+            .linker_args = &[_][]const u8{
+                "-Wl,--as-needed",
+                "-Wl,--gc-sections",
+                "-Wl,--strip-debug",
+                "-static",  // musl often used for static linking
+                "-Wl,--no-dynamic-linker",
+            },
+            .required_libs = &[_][]const u8{ "c" }, // musl provides integrated threading
+            .memory_layout = null,
+        }},
+        
+        // Linux ARM64 - musl libc (Alpine Linux ARM64, embedded)
+        .{ "aarch64-unknown-linux-musl", LinkerConfig{
+            .script_path = null,
+            .linker_args = &[_][]const u8{
+                "-Wl,--as-needed",
+                "-Wl,--gc-sections",
+                "-Wl,--fix-cortex-a53-843419", // ARM64 CPU errata fix
+                "-Wl,--fix-cortex-a53-835769",
+                "-static",  // musl static linking for embedded
+                "-Wl,--no-dynamic-linker",
+            },
+            .required_libs = &[_][]const u8{ "c" },
+            .memory_layout = null,
+        }},
+
         // WebAssembly
         .{ "wasm32-unknown-unknown", LinkerConfig{
             .script_path = null,
@@ -251,9 +280,19 @@ pub const LinkerScriptManager = struct {
         } else if (triple.isLinux()) {
             args.append("-Wl,--as-needed") catch {};
             libs.append("c") catch {};
-            libs.append("m") catch {};
-            if (triple.supportsThreading()) {
-                libs.append("pthread") catch {};
+            
+            // Handle musl vs glibc differences
+            if (triple.abi != null and std.mem.eql(u8, triple.abi.?, "musl")) {
+                // musl libc: static linking preferred, integrated threading
+                args.append("-static") catch {};
+                args.append("-Wl,--no-dynamic-linker") catch {};
+                // musl doesn't need separate libm or pthread
+            } else {
+                // glibc: dynamic linking, separate math and threading libs
+                libs.append("m") catch {};
+                if (triple.supportsThreading()) {
+                    libs.append("pthread") catch {};
+                }
             }
         } else if (triple.isApple()) {
             args.append("-Wl,-dead_strip") catch {};
@@ -578,12 +617,31 @@ test "LinkerScriptManager WebAssembly configuration" {
     try testing.expect(wasi_config.memory_layout != null);
 }
 
+test "LinkerScriptManager musl targets" {
+    var manager = LinkerScriptManager.init(testing.allocator, "/test/project");
+    defer manager.deinit();
+    
+    // Test musl x86_64 configuration (Alpine Linux)
+    const musl_x64_config = try manager.getLinkerConfig("x86_64-unknown-linux-musl");
+    try testing.expect(musl_x64_config.script_path == null); // Uses system default
+    try testing.expect(musl_x64_config.linker_args.len > 0);
+    try testing.expect(std.mem.indexOf(u8, musl_x64_config.linker_args[3], "-static") != null); // static linking
+    try testing.expect(musl_x64_config.required_libs.len == 1); // only 'c', no pthread/m needed
+    
+    // Test musl ARM64 configuration
+    const musl_arm64_config = try manager.getLinkerConfig("aarch64-unknown-linux-musl");
+    try testing.expect(musl_arm64_config.linker_args.len > 0);
+    try testing.expect(musl_arm64_config.required_libs.len == 1); // only 'c'
+}
+
 test "LinkerScriptManager validation" {
     var manager = LinkerScriptManager.init(testing.allocator, "/test/project");
     defer manager.deinit();
     
     // Test validation for supported targets
     try testing.expect(try manager.validateLinkerConfig("x86_64-unknown-linux-gnu"));
+    try testing.expect(try manager.validateLinkerConfig("x86_64-unknown-linux-musl"));
+    try testing.expect(try manager.validateLinkerConfig("aarch64-unknown-linux-musl"));
     try testing.expect(try manager.validateLinkerConfig("aarch64-apple-darwin"));
     try testing.expect(try manager.validateLinkerConfig("wasm32-unknown-unknown"));
 }

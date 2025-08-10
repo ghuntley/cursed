@@ -300,6 +300,34 @@ pub const CursedLanguageServer = struct {
         }
     }
 
+    /// Safe conversion from token position to LSP Position with bounds checking
+    fn tokenPositionToLSP(token_line: usize, token_column: usize) Position {
+        return Position{
+            .line = @min(@as(u32, @intCast(@min(token_line, std.math.maxInt(u32)))), std.math.maxInt(u32)),
+            .character = @min(@as(u32, @intCast(@min(token_column, std.math.maxInt(u32)))), std.math.maxInt(u32)),
+        };
+    }
+
+    /// Create a safe range with validation to prevent negative or invalid ranges
+    fn createSafeRange(start_line: usize, start_char: usize, end_line: usize, end_char: usize) Range {
+        const safe_start = tokenPositionToLSP(start_line, start_char);
+        const safe_end = tokenPositionToLSP(end_line, end_char);
+        
+        // Ensure end is not before start
+        if (safe_end.line < safe_start.line or 
+            (safe_end.line == safe_start.line and safe_end.character < safe_start.character)) {
+            return Range{
+                .start = safe_start,
+                .end = Position{ .line = safe_start.line, .character = safe_start.character + 1 },
+            };
+        }
+        
+        return Range{
+            .start = safe_start,
+            .end = safe_end,
+        };
+    }
+
     /// Analyze document and extract symbols/diagnostics
     fn analyzeDocument(self: *CursedLanguageServer, doc_data: *DocumentData) !void {
         // Tokenize
@@ -307,10 +335,7 @@ pub const CursedLanguageServer = struct {
         
         const tokens = lex.tokenize() catch |err| {
             try doc_data.diagnostics.append(Diagnostic{
-                .range = Range{
-                    .start = Position{ .line = 0, .character = 0 },
-                    .end = Position{ .line = 0, .character = 10 },
-                },
+                .range = createSafeRange(0, 0, 0, 10),
                 .severity = 1, // Error
                 .code = null,
                 .source = "cursed-lexer",
@@ -325,11 +350,15 @@ pub const CursedLanguageServer = struct {
         defer parse.deinit();
         
         const program = parse.parseProgram() catch |err| {
+            // Try to get more precise error position from parser
+            const error_pos = if (tokens.items.len > 0) tokens.items[tokens.items.len - 1] else null;
+            const range = if (error_pos) |pos| 
+                createSafeRange(pos.line, pos.column, pos.line, pos.column + pos.lexeme.len)
+            else 
+                createSafeRange(0, 0, 0, 10);
+                
             try doc_data.diagnostics.append(Diagnostic{
-                .range = Range{
-                    .start = Position{ .line = 0, .character = 0 },
-                    .end = Position{ .line = 0, .character = 10 },
-                },
+                .range = range,
                 .severity = 1, // Error
                 .code = null,
                 .source = "cursed-parser",

@@ -1,5 +1,6 @@
 fr fr CURSED Networking Standard Library Module (networkz)
 fr fr Basic networking operations in pure CURSED
+fr fr P1 Issue #33 FIXED: HTTP/2 framing parser now integrated via networkz_advanced
 
 fr fr ===== HTTP CLIENT OPERATIONS =====
 
@@ -502,4 +503,69 @@ slay len_str(text tea) normie {
         i = i + 1
     }
     damn count
+}
+
+fr fr =============================================================================
+fr fr ADVANCED NETWORKING API INTEGRATION (P1 Issue #33 FIXED)
+fr fr HTTP/2 framing parser now wired into networkz through networkz_advanced
+fr fr =============================================================================
+
+fr fr HTTP/2 Enhanced GET request with modern web protocols
+slay http2_get(url tea, headers [20]tea, header_count normie) tea {
+    damn networkz_advanced.http2_get(url, headers, header_count)
+}
+
+fr fr HTTP/2 Enhanced POST request with modern web protocols  
+slay http2_post(url tea, body tea, headers [20]tea, header_count normie) tea {
+    damn networkz_advanced.http2_post(url, body, headers, header_count)
+}
+
+fr fr Create HTTP/2 client session for connection reuse
+slay http2_client_create() networkz_advanced.AdvancedHTTPClient {
+    damn networkz_advanced.http2_client_session()
+}
+
+fr fr Send request through HTTP/2 session
+slay http2_client_request(client *networkz_advanced.AdvancedHTTPClient, method tea, url tea, headers [20]tea, header_count normie, body tea) tea {
+    damn networkz_advanced.http2_session_request(client, method, url, headers, header_count, body)
+}
+
+fr fr Close HTTP/2 client session
+slay http2_client_close(client *networkz_advanced.AdvancedHTTPClient) lit {
+    damn networkz_advanced.http2_session_close(client)
+}
+
+fr fr WebSocket connection via advanced networking
+slay websocket_connect(url tea, protocols []tea) normie {
+    damn networkz_advanced.websocket_connect(url, protocols)
+}
+
+fr fr Send WebSocket message
+slay websocket_send(ws_id normie, message tea) lit {
+    damn networkz_advanced.websocket_send_message(ws_id, message)
+}
+
+fr fr Receive WebSocket message
+slay websocket_receive(ws_id normie) tea {
+    damn networkz_advanced.websocket_receive_message(ws_id)
+}
+
+fr fr Close WebSocket connection
+slay websocket_close(ws_id normie, code normie, reason tea) lit {
+    damn networkz_advanced.websocket_close_connection(ws_id, code, reason)
+}
+
+fr fr Check if URL supports HTTP/2
+slay is_http2_supported(url tea) lit {
+    damn networkz_advanced.is_http2_url(url)
+}
+
+fr fr Check if URL is WebSocket
+slay is_websocket(url tea) lit {
+    damn networkz_advanced.is_websocket_url(url)
+}
+
+fr fr Demo advanced networking features
+slay demo_advanced_networking() {
+    damn networkz_advanced.connection_multiplexing_demo()
 }

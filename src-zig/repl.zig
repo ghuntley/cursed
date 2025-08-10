@@ -10,6 +10,12 @@ const ast = @import("ast.zig");
 const type_system_runtime = @import("type_system_runtime.zig");
 const module_loader = @import("module_loader.zig");
 
+// History persistence constants
+const HISTORY_FILE_NAME = ".cursed_history";
+const HISTORY_BACKUP_SUFFIX = ".backup";
+const HISTORY_TEMP_SUFFIX = ".tmp";
+const MAX_HISTORY_ENTRIES = 1000;
+
 // Import Variable and VariableStore from main_unified.zig
 const main = @import("main_unified.zig");
 const Variable = main.Variable;
@@ -26,6 +32,7 @@ pub const ReplSession = struct {
     allocator: Allocator,
     verbose: bool,
     line_number: u32,
+    history_file_path: ?[]const u8,
     
     pub fn init(allocator: Allocator, verbose: bool) ReplSession {
         return ReplSession{
@@ -36,6 +43,7 @@ pub const ReplSession = struct {
             .allocator = allocator,
             .verbose = verbose,
             .line_number = 1,
+            .history_file_path = null,
         };
     }
     
@@ -69,6 +77,204 @@ pub const ReplSession = struct {
             self.allocator.free(line);
         }
         self.history.deinit();
+        
+        // Clean up history file path
+        if (self.history_file_path) |path| {
+            self.allocator.free(path);
+        }
+    }
+    
+    /// Initialize history persistence with robust file handling
+    pub fn initHistoryPersistence(self: *ReplSession, custom_path: ?[]const u8) !void {
+        // Determine history file path
+        const path = if (custom_path) |p| 
+            try self.allocator.dupe(u8, p)
+        else 
+            try self.getDefaultHistoryPath();
+        
+        self.history_file_path = path;
+        
+        // Perform crash recovery check
+        try self.recoverFromCrash();
+        
+        // Load existing history
+        try self.loadHistory();
+    }
+    
+    /// Get default history file path (in user's home directory)
+    fn getDefaultHistoryPath(self: *ReplSession) ![]const u8 {
+        const home_dir = std.process.getEnvVarOwned(self.allocator, "HOME") catch {
+            // Fallback to current directory if HOME is not available
+            return try self.allocator.dupe(u8, HISTORY_FILE_NAME);
+        };
+        defer self.allocator.free(home_dir);
+        
+        return try std.fs.path.join(self.allocator, &[_][]const u8{ home_dir, HISTORY_FILE_NAME });
+    }
+    
+    /// Recover from potential crash by checking for incomplete writes
+    fn recoverFromCrash(self: *ReplSession) !void {
+        if (self.history_file_path == null) return;
+        
+        const history_path = self.history_file_path.?;
+        var arena = std.heap.ArenaAllocator.init(self.allocator);
+        defer arena.deinit();
+        const arena_allocator = arena.allocator();
+        
+        // Check for temporary file (indicates interrupted write)
+        const temp_path = try std.fmt.allocPrint(arena_allocator, "{s}{s}", .{ history_path, HISTORY_TEMP_SUFFIX });
+        const backup_path = try std.fmt.allocPrint(arena_allocator, "{s}{s}", .{ history_path, HISTORY_BACKUP_SUFFIX });
+        
+        // If temp file exists, we had an interrupted write
+        std.fs.cwd().access(temp_path, .{}) catch |err| switch (err) {
+            error.FileNotFound => {
+                // No temp file, check if backup is newer than main file
+                const main_stat = std.fs.cwd().statFile(history_path) catch null;
+                const backup_stat = std.fs.cwd().statFile(backup_path) catch null;
+                
+                if (main_stat != null and backup_stat != null) {
+                    if (backup_stat.?.mtime > main_stat.?.mtime) {
+                        // Backup is newer, restore it
+                        std.fs.cwd().rename(backup_path, history_path) catch {};
+                        if (self.verbose) {
+                            print("✅ Restored newer backup history\n", .{});
+                        }
+                    }
+                }
+                return;
+            },
+            else => return,
+        };
+        
+        // Temp file exists, we had an interrupted write
+        if (self.verbose) {
+            print("🔧 Recovering from interrupted history write...\n", .{});
+        }
+        
+        // Remove the incomplete temp file
+        std.fs.cwd().deleteFile(temp_path) catch {};
+        
+        // If backup exists, restore it
+        std.fs.cwd().access(backup_path, .{}) catch {
+            return; // No backup available
+        };
+        
+        std.fs.cwd().rename(backup_path, history_path) catch {};
+        if (self.verbose) {
+            print("✅ History recovered from backup\n", .{});
+        }
+    }
+    
+    /// Load history from file with corruption handling
+    fn loadHistory(self: *ReplSession) !void {
+        if (self.history_file_path == null) return;
+        
+        const file = std.fs.cwd().openFile(self.history_file_path.?, .{}) catch |err| {
+            if (err == error.FileNotFound) {
+                // File doesn't exist yet, that's fine
+                return;
+            }
+            return err;
+        };
+        defer file.close();
+        
+        const file_size = try file.getEndPos();
+        if (file_size == 0) {
+            if (self.verbose) {
+                print("⚠️  History file is empty (possible corruption)\n", .{});
+            }
+            return;
+        }
+        
+        const content = try file.readToEndAlloc(self.allocator, 10 * 1024 * 1024); // Max 10MB
+        defer self.allocator.free(content);
+        
+        var lines = std.mem.splitScalar(u8, content, '\n');
+        var loaded_count: usize = 0;
+        
+        while (lines.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r\n");
+            if (trimmed.len == 0) continue;
+            
+            // Validate line doesn't contain null bytes or other corruption
+            if (std.mem.indexOfScalar(u8, trimmed, 0) != null) {
+                if (self.verbose) {
+                    print("⚠️  Skipping corrupted history line\n", .{});
+                }
+                continue;
+            }
+            
+            const history_line = try self.allocator.dupe(u8, trimmed);
+            try self.history.append(history_line);
+            loaded_count += 1;
+            
+            // Prevent excessive memory usage
+            if (loaded_count >= MAX_HISTORY_ENTRIES) {
+                break;
+            }
+        }
+        
+        if (self.verbose and loaded_count > 0) {
+            print("📜 Loaded {} history entries\n", .{loaded_count});
+        }
+    }
+    
+    /// Save history with atomic write and backup
+    fn saveHistory(self: *ReplSession) !void {
+        if (self.history_file_path == null or self.history.items.len == 0) return;
+        
+        const history_path = self.history_file_path.?;
+        var arena = std.heap.ArenaAllocator.init(self.allocator);
+        defer arena.deinit();
+        const arena_allocator = arena.allocator();
+        
+        const temp_path = try std.fmt.allocPrint(arena_allocator, "{s}{s}", .{ history_path, HISTORY_TEMP_SUFFIX });
+        const backup_path = try std.fmt.allocPrint(arena_allocator, "{s}{s}", .{ history_path, HISTORY_BACKUP_SUFFIX });
+        
+        // Create backup of existing history file
+        std.fs.cwd().access(history_path, .{}) catch {
+            // File doesn't exist yet, no backup needed
+        };
+        std.fs.cwd().copyFile(history_path, std.fs.cwd(), backup_path, .{}) catch {};
+        
+        // Write to temporary file first (atomic operation)
+        const temp_file = try std.fs.cwd().createFile(temp_path, .{});
+        defer temp_file.close();
+        
+        // Only save the most recent entries to prevent unlimited growth
+        const start_idx = if (self.history.items.len > MAX_HISTORY_ENTRIES) 
+            self.history.items.len - MAX_HISTORY_ENTRIES 
+        else 
+            0;
+        
+        for (self.history.items[start_idx..]) |line| {
+            try temp_file.writeAll(line);
+            try temp_file.writeAll("\n");
+        }
+        
+        try temp_file.sync(); // Ensure data is written to disk
+        
+        // Atomically replace the history file
+        try std.fs.cwd().rename(temp_path, history_path);
+        
+        if (self.verbose) {
+            print("💾 History saved ({} entries)\n", .{self.history.items.len - start_idx});
+        }
+    }
+    
+    /// Add entry to history and immediately persist it
+    fn addToHistory(self: *ReplSession, line: []const u8) !void {
+        // Don't save empty lines or duplicates
+        if (line.len == 0) return;
+        if (self.history.items.len > 0 and std.mem.eql(u8, self.history.items[self.history.items.len - 1], line)) {
+            return;
+        }
+        
+        const history_line = try self.allocator.dupe(u8, line);
+        try self.history.append(history_line);
+        
+        // Immediately persist for crash safety
+        try self.saveHistory();
     }
     
     /// Evaluate a CURSED expression in the REPL context
@@ -76,9 +282,8 @@ pub const ReplSession = struct {
         const trimmed = std.mem.trim(u8, input, " \t\r\n");
         if (trimmed.len == 0) return null;
         
-        // Add to history
-        const history_line = try self.allocator.dupe(u8, trimmed);
-        try self.history.append(history_line);
+        // Add to history with robust persistence
+        try self.addToHistory(trimmed);
         
         // Try to parse and evaluate the input
         var arena = std.heap.ArenaAllocator.init(self.allocator);
@@ -309,8 +514,27 @@ pub const ReplSession = struct {
 
 /// CURSED REPL implementation
 pub fn runRepl(allocator: Allocator, verbose: bool) !void {
+    return runReplWithHistory(allocator, verbose, null);
+}
+
+/// CURSED REPL implementation with custom history file
+pub fn runReplWithHistory(allocator: Allocator, verbose: bool, history_file: ?[]const u8) !void {
     var session = ReplSession.init(allocator, verbose);
     defer session.deinit();
+    
+    // Initialize robust history persistence
+    session.initHistoryPersistence(history_file) catch |err| {
+        if (verbose) {
+            print("⚠️  History persistence disabled: {any}\n", .{err});
+        }
+    };
+    
+    // Set up signal handler for graceful shutdown
+    setupSignalHandler(&session) catch |err| {
+        if (verbose) {
+            print("⚠️  Signal handler setup failed: {any}\n", .{err});
+        }
+    };
     
     // Print welcome message
     printWelcome();
@@ -356,6 +580,13 @@ pub fn runRepl(allocator: Allocator, verbose: bool) !void {
         
         session.line_number += 1;
     }
+    
+    // Final history save on normal exit
+    session.saveHistory() catch |err| {
+        if (verbose) {
+            print("⚠️  Failed to save history on exit: {any}\n", .{err});
+        }
+    };
     
     print("Goodbye!\n", .{});
 }
@@ -429,4 +660,41 @@ fn printHelp() void {
     print("  Control:    ready (condition) {{ ... }}\n", .{});
     print("              bestie (condition) {{ ... }}\n", .{});
     print("\n", .{});
+}
+
+// Global session pointer for signal handler
+var global_session: ?*ReplSession = null;
+
+/// Signal handler for graceful shutdown and history preservation
+fn signalHandler(sig: c_int) callconv(.C) void {
+    if (global_session) |session| {
+        session.saveHistory() catch {};
+    }
+    
+    switch (sig) {
+        std.posix.SIG.INT => {
+            print("\n💾 History saved. Goodbye!\n", .{});
+            std.process.exit(0);
+        },
+        std.posix.SIG.TERM => {
+            print("\n💾 History saved. Terminated.\n", .{});
+            std.process.exit(0);
+        },
+        else => {},
+    }
+}
+
+/// Setup signal handlers for crash recovery
+fn setupSignalHandler(session: *ReplSession) !void {
+    global_session = session;
+    
+    // Set up signal handlers for graceful shutdown
+    const act = std.posix.Sigaction{
+        .handler = .{ .handler = signalHandler },
+        .mask = std.posix.empty_sigset,
+        .flags = 0,
+    };
+    
+    _ = std.posix.sigaction(std.posix.SIG.INT, &act, null);
+    _ = std.posix.sigaction(std.posix.SIG.TERM, &act, null);
 }
