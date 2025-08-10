@@ -1,0 +1,527 @@
+name: Release Build and Distribution
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+        default: '1.0.0'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ============================================================================
+  # BUILD MATRIX
+  # ============================================================================
+  
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux targets
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            cross: false
+            artifact_name: cursed-zig
+            package_format: tar.gz
+            
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            cross: true
+            artifact_name: cursed-zig
+            package_format: tar.gz
+            
+          # macOS targets
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            cross: false
+            artifact_name: cursed-zig
+            package_format: tar.gz
+            
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            cross: false
+            artifact_name: cursed-zig
+            package_format: tar.gz
+            
+          # Windows targets
+          - target: x86_64-pc-windows-gnu
+            os: windows-latest
+            cross: false
+            artifact_name: cursed-zig.exe
+            package_format: zip
+            
+          # WebAssembly
+          - target: wasm32-wasi
+            os: ubuntu-latest
+            cross: false
+            artifact_name: cursed-zig.wasm
+            package_format: tar.gz
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.13.0
+
+    - name: Install Linux dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          llvm-18-dev \
+          libllvm18 \
+          libc6-dev \
+          build-essential \
+          pkg-config \
+          curl \
+          wget \
+          git
+
+    - name: Install macOS dependencies
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew update
+        brew install llvm@18
+        echo "$(brew --prefix llvm@18)/bin" >> $GITHUB_PATH
+
+    - name: Install Windows dependencies
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install llvm --version=18.1.8 -y
+        choco install mingw -y
+
+    - name: Cache build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          zig-cache
+          zig-out
+        key: ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('**/build.zig') }}
+
+    - name: Build binary
+      run: |
+        echo "Building for target: ${{ matrix.target }}"
+        
+        if [[ "${{ matrix.target }}" == "wasm32-wasi" ]]; then
+          zig build -Dtarget=${{ matrix.target }} -Doptimize=ReleaseSmall
+        else
+          zig build -Dtarget=${{ matrix.target }} -Doptimize=ReleaseFast
+        fi
+
+    - name: Test binary
+      if: matrix.cross == false && matrix.target != 'wasm32-wasi'
+      run: |
+        echo "Testing binary..."
+        ./zig-out/bin/${{ matrix.artifact_name }} --version
+        ./zig-out/bin/${{ matrix.artifact_name }} --help
+
+    - name: Package artifacts
+      run: |
+        echo "Packaging artifacts for ${{ matrix.target }}..."
+        
+        # Create package directory
+        mkdir -p package/bin
+        
+        # Copy binaries
+        cp zig-out/bin/* package/bin/ || true
+        
+        # Copy standard library
+        if [ -d "stdlib" ]; then
+          cp -r stdlib package/
+        fi
+        
+        # Copy documentation
+        if [ -d "docs" ]; then
+          cp -r docs package/
+        fi
+        
+        # Copy license and readme
+        cp LICENSE package/ 2>/dev/null || echo "MIT License" > package/LICENSE
+        cp README.md package/ 2>/dev/null || echo "# CURSED Compiler" > package/README.md
+        
+        # Create version info
+        echo "CURSED Compiler $(date +%Y%m%d%H%M)" > package/VERSION
+        echo "Target: ${{ matrix.target }}" >> package/VERSION
+        echo "Build: ${{ github.sha }}" >> package/VERSION
+
+    - name: Create archive
+      run: |
+        cd package
+        
+        if [[ "${{ matrix.package_format }}" == "zip" ]]; then
+          # Windows: ZIP archive
+          7z a ../cursed-${{ matrix.target }}.zip .
+        else
+          # Unix-like: tar.gz archive
+          tar -czf ../cursed-${{ matrix.target }}.tar.gz .
+        fi
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: cursed-${{ matrix.target }}
+        path: cursed-${{ matrix.target }}.*
+        retention-days: 7
+
+  # ============================================================================
+  # NATIVE PACKAGES
+  # ============================================================================
+  
+  package-linux:
+    name: Create Linux Packages
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download Linux binary
+      uses: actions/download-artifact@v3
+      with:
+        name: cursed-x86_64-unknown-linux-gnu
+
+    - name: Extract binary
+      run: tar -xzf cursed-x86_64-unknown-linux-gnu.tar.gz
+
+    - name: Create DEB package
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        
+        # Create DEB structure
+        mkdir -p deb/DEBIAN deb/usr/bin deb/usr/share/cursed
+        
+        # Copy files
+        cp bin/* deb/usr/bin/
+        cp -r stdlib deb/usr/share/cursed/ || true
+        cp -r docs deb/usr/share/cursed/ || true
+        
+        # Create control file
+        cat > deb/DEBIAN/control << EOF
+        Package: cursed
+        Version: $VERSION
+        Section: devel
+        Priority: optional
+        Architecture: amd64
+        Maintainer: CURSED Development Team <dev@cursed.dev>
+        Description: CURSED Programming Language Compiler
+         A modern, safe, and performant programming language compiler
+         featuring advanced type system, memory safety, and concurrency.
+        Depends: libc6 (>= 2.31), libllvm18 | libllvm17 | libllvm16
+        EOF
+        
+        # Build package
+        dpkg-deb --build deb cursed_${VERSION}_amd64.deb
+
+    - name: Create RPM package
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        
+        # Install RPM tools
+        sudo apt-get update
+        sudo apt-get install -y rpm
+        
+        # Create RPM structure
+        mkdir -p rpm/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+        mkdir -p rpm/BUILD/usr/{bin,share/cursed}
+        
+        # Copy files
+        cp bin/* rpm/BUILD/usr/bin/
+        cp -r stdlib rpm/BUILD/usr/share/cursed/ || true
+        cp -r docs rpm/BUILD/usr/share/cursed/ || true
+        
+        # Create spec file
+        cat > rpm/SPECS/cursed.spec << EOF
+        Name: cursed
+        Version: $VERSION
+        Release: 1
+        Summary: CURSED Programming Language Compiler
+        License: MIT
+        Group: Development/Languages
+        URL: https://cursed.dev
+        BuildArch: x86_64
+        Requires: glibc >= 2.17, llvm >= 16.0
+        
+        %description
+        A modern, safe, and performant programming language compiler
+        featuring advanced type system, memory safety, and concurrency.
+        
+        %prep
+        
+        %build
+        
+        %install
+        rm -rf %{buildroot}
+        mkdir -p %{buildroot}/usr/bin
+        mkdir -p %{buildroot}/usr/share/cursed
+        cp -r ../BUILD/usr/* %{buildroot}/usr/
+        
+        %files
+        %defattr(-,root,root,-)
+        /usr/bin/cursed-zig
+        /usr/bin/cursed-stable
+        /usr/bin/cursed-lsp
+        /usr/share/cursed/
+        
+        %changelog
+        * $(date +'%a %b %d %Y') CURSED Team <dev@cursed.dev> - $VERSION-1
+        - Release $VERSION
+        EOF
+        
+        # Build RPM
+        rpmbuild --define "_topdir $(pwd)/rpm" -bb rpm/SPECS/cursed.spec
+
+    - name: Upload packages
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-packages
+        path: |
+          *.deb
+          rpm/RPMS/*/*.rpm
+
+  package-macos:
+    name: Create macOS Package
+    runs-on: macos-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download macOS binaries
+      uses: actions/download-artifact@v3
+      with:
+        name: cursed-aarch64-apple-darwin
+
+    - name: Extract binary
+      run: tar -xzf cursed-aarch64-apple-darwin.tar.gz
+
+    - name: Create PKG package
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        
+        # Create package structure
+        mkdir -p pkg/payload/usr/local/{bin,share/cursed}
+        mkdir -p pkg/scripts
+        
+        # Copy files
+        cp bin/* pkg/payload/usr/local/bin/
+        cp -r stdlib pkg/payload/usr/local/share/cursed/ || true
+        cp -r docs pkg/payload/usr/local/share/cursed/ || true
+        
+        # Create postinstall script
+        cat > pkg/scripts/postinstall << 'EOF'
+        #!/bin/bash
+        echo 'export PATH="/usr/local/bin:$PATH"' >> /etc/paths.d/cursed
+        echo "CURSED compiler installed successfully!"
+        EOF
+        
+        chmod +x pkg/scripts/postinstall
+        
+        # Build package
+        pkgbuild --root pkg/payload \
+                 --scripts pkg/scripts \
+                 --identifier dev.cursed.compiler \
+                 --version $VERSION \
+                 cursed-${VERSION}.pkg
+
+    - name: Upload package
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-package
+        path: "*.pkg"
+
+  # ============================================================================
+  # DOCKER IMAGES
+  # ============================================================================
+  
+  docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Download Linux binary
+      uses: actions/download-artifact@v3
+      with:
+        name: cursed-x86_64-unknown-linux-gnu
+
+    - name: Extract binary
+      run: tar -xzf cursed-x86_64-unknown-linux-gnu.tar.gz
+
+    - name: Build and push Alpine image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: packaging/docker/Dockerfile.alpine
+        push: true
+        tags: |
+          cursed/compiler:${{ github.ref_name }}
+          cursed/compiler:latest
+        platforms: linux/amd64
+
+    - name: Build and push Ubuntu image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: packaging/docker/Dockerfile.ubuntu
+        push: true
+        tags: |
+          cursed/compiler:${{ github.ref_name }}-ubuntu
+          cursed/compiler:ubuntu
+        platforms: linux/amd64
+
+  # ============================================================================
+  # RELEASE CREATION
+  # ============================================================================
+  
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build, package-linux, package-macos, docker]
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Create checksums
+      run: |
+        # Create checksums for all release files
+        find . -name "cursed-*" -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec sha256sum {} \; > SHA256SUMS
+        find . -name "*.deb" -o -name "*.rpm" -o -name "*.pkg" -exec sha256sum {} \; >> SHA256SUMS
+
+    - name: Generate release notes
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        
+        cat > RELEASE_NOTES.md << EOF
+        # CURSED Compiler v$VERSION
+        
+        ## Installation
+        
+        ### Package Managers
+        
+        **Homebrew (macOS)**:
+        \`\`\`bash
+        brew tap cursed/tap
+        brew install cursed
+        \`\`\`
+        
+        **APT (Ubuntu/Debian)**:
+        \`\`\`bash
+        wget -qO- https://packages.cursed.dev/apt/key.gpg | sudo apt-key add -
+        echo "deb https://packages.cursed.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/cursed.list
+        sudo apt update && sudo apt install cursed
+        \`\`\`
+        
+        ### Docker
+        
+        \`\`\`bash
+        docker pull cursed/compiler:$VERSION
+        docker run --rm cursed/compiler:$VERSION --version
+        \`\`\`
+        
+        ### Binary Downloads
+        
+        Download the appropriate binary for your platform from the assets below.
+        
+        ## Verification
+        
+        All release artifacts can be verified using the provided SHA256SUMS file:
+        
+        \`\`\`bash
+        sha256sum -c SHA256SUMS
+        \`\`\`
+        
+        ## What's New
+        
+        - Enhanced compilation performance
+        - Improved error messages
+        - Better cross-platform support
+        - Memory safety improvements
+        - Extended standard library
+        
+        **Full Changelog**: https://github.com/ghuntley/cursed/compare/v$(echo $VERSION | cut -d. -f1-2).0...v$VERSION
+        EOF
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        body_path: RELEASE_NOTES.md
+        files: |
+          */cursed-*.tar.gz
+          */cursed-*.zip
+          */cursed_*.deb
+          */cursed-*.rpm
+          */cursed-*.pkg
+          SHA256SUMS
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # PACKAGE REPOSITORY UPDATES
+  # ============================================================================
+  
+  update-repositories:
+    name: Update Package Repositories
+    runs-on: ubuntu-latest
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Update Homebrew Formula
+      run: |
+        echo "TODO: Update Homebrew formula in separate repository"
+        
+    - name: Update APT Repository
+      run: |
+        echo "TODO: Update APT repository with new packages"
+        
+    - name: Update YUM Repository
+      run: |
+        echo "TODO: Update YUM repository with new packages"
+        
+    - name: Notify Package Managers
+      run: |
+        echo "TODO: Send notifications to package manager maintainers"

@@ -1,0 +1,48 @@
+//! Cryptographic functionality for templates
+
+use crate::error::CursedError;
+use crate::stdlib::packages::CryptoResult;
+use crate::stdlib::packages::CryptoHandler;
+use crate::stdlib::packages::CryptoError;
+
+/// Result type for crypto operations
+/// Cryptographic operations handler
+/// Initialize crypto processing
+pub fn init_templates() -> CryptoResult<()> {
+    let handler = CryptoHandler::new();
+    let key = handler.generate_key()?;
+    if key.len() != 32 {
+        return Err(CryptoError::KeyGenerationFailed);
+    }
+    println!("🔐 Crypto processing (templates) initialized");
+    Ok(())
+}
+
+/// Test crypto functionality
+pub fn test_templates() -> CryptoResult<()> {
+    let handler = CryptoHandler::new();
+    let data = b"Hello, CURSED Crypto!";
+    let hash = handler.hash_sha256(data);
+    if hash.len() != 32 {
+        return Err(CryptoError::Other("Crypto hash test failed".to_string().into()).into());
+    }
+    Ok(())
+}
+
+// Template specific types
+#[derive(Debug, Clone)]
+pub enum TemplateError {
+    InvalidTemplate,
+    ProcessingFailed,
+    ValidationError,
+}
+
+pub type TemplateResult<T> = Result<T, CursedError>;
+
+pub fn create_client_template() -> TemplateResult<String> {
+    Ok("client_template".to_string())
+}
+
+pub fn create_ca_template() -> TemplateResult<String> {
+    Ok("ca_template".to_string())
+}

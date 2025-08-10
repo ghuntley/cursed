@@ -1,0 +1,10 @@
+[package]
+name = "test_windows_pthread"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "test_windows_pthread"
+path = "test_windows_pthread.rs"
+
+[dependencies]

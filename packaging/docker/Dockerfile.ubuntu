@@ -1,0 +1,70 @@
+# Ubuntu LTS production image for CURSED Compiler
+# Better compatibility with enterprise environments
+
+FROM ubuntu:22.04
+
+# Build arguments
+ARG VERSION=1.0.0
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libc6 \
+    libgcc-s1 \
+    libstdc++6 \
+    llvm-18 \
+    ca-certificates \
+    tzdata \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create cursed user and group
+RUN groupadd -g 1000 cursed && \
+    useradd -m -s /bin/bash -u 1000 -g cursed cursed
+
+# Create necessary directories
+RUN mkdir -p \
+    /usr/local/bin \
+    /usr/local/share/cursed \
+    /var/cache/cursed \
+    /home/cursed/.cursed \
+    /home/cursed/work
+
+# Copy pre-built binaries and standard library
+# These should be provided by the build context
+COPY bin/* /usr/local/bin/
+COPY stdlib /usr/local/share/cursed/stdlib
+
+# Set proper permissions
+RUN chmod +x /usr/local/bin/cursed-* && \
+    chown -R cursed:cursed /usr/local/share/cursed /var/cache/cursed /home/cursed
+
+# Configure environment
+ENV PATH="/usr/local/bin:$PATH"
+ENV CURSED_CACHE_DIR="/var/cache/cursed"
+ENV CURSED_STDLIB_PATH="/usr/local/share/cursed/stdlib"
+ENV CURSED_HOME="/home/cursed/.cursed"
+ENV USER="cursed"
+ENV HOME="/home/cursed"
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Health check to ensure the compiler is working
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD cursed-zig --version >/dev/null 2>&1 || exit 1
+
+# Switch to non-root user
+USER cursed
+WORKDIR /home/cursed/work
+
+# Container metadata
+LABEL maintainer="CURSED Development Team <dev@cursed.dev>"
+LABEL description="CURSED Compiler - Ubuntu LTS"
+LABEL version="$VERSION"
+LABEL base.image="ubuntu:22.04"
+LABEL cursed.version="$VERSION"
+
+# Default entrypoint and command
+ENTRYPOINT ["cursed-zig"]
+CMD ["--help"]

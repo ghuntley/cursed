@@ -1,0 +1,275 @@
+/* CURSED Coverage Report Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0d1117;
+    color: #c9d1d9;
+    line-height: 1.6;
+}
+
+header {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    padding: 2rem 0;
+    text-align: center;
+    border-bottom: 2px solid #30363d;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: #58a6ff;
+}
+
+header p {
+    color: #8b949e;
+    font-size: 1.1rem;
+}
+
+header a {
+    color: #58a6ff;
+    text-decoration: none;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    display: inline-block;
+}
+
+header a:hover {
+    text-decoration: underline;
+}
+
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+section {
+    margin-bottom: 3rem;
+}
+
+section h2 {
+    color: #f0f6fc;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+/* Coverage Summary */
+.summary {
+    background: #161b22;
+    padding: 2rem;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+}
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.metric {
+    background: #21262d;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #30363d;
+}
+
+.metric-value {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #58a6ff;
+    margin-bottom: 0.5rem;
+}
+
+.metric-label {
+    font-size: 1.2rem;
+    color: #f0f6fc;
+    margin-bottom: 0.3rem;
+}
+
+.metric-detail {
+    color: #8b949e;
+    font-size: 0.9rem;
+}
+
+/* File List Table */
+.file-list {
+    background: #161b22;
+    padding: 2rem;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+table th,
+table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #30363d;
+}
+
+table th {
+    background: #21262d;
+    color: #f0f6fc;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+table td {
+    color: #c9d1d9;
+}
+
+table tr:hover {
+    background: #21262d;
+}
+
+table td:first-child {
+    color: #58a6ff;
+}
+
+table td:first-child a {
+    color: #58a6ff;
+    text-decoration: none;
+}
+
+table td:first-child a:hover {
+    text-decoration: underline;
+}
+
+/* Coverage indicators */
+.high-coverage {
+    background: rgba(46, 160, 67, 0.1);
+    border-left: 4px solid #2ea043;
+}
+
+.medium-coverage {
+    background: rgba(251, 188, 5, 0.1);
+    border-left: 4px solid #fbbc05;
+}
+
+.low-coverage {
+    background: rgba(218, 54, 51, 0.1);
+    border-left: 4px solid #da3633;
+}
+
+/* Source Code View */
+.source-code {
+    background: #161b22;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    overflow-x: auto;
+}
+
+.source-table {
+    width: 100%;
+    font-family: 'Courier New', monospace;
+}
+
+.source-table th {
+    background: #21262d;
+    padding: 0.8rem;
+    font-size: 0.9rem;
+}
+
+.source-table td {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.line-number {
+    color: #8b949e;
+    background: #0d1117;
+    border-right: 1px solid #30363d;
+    text-align: right;
+    user-select: none;
+    min-width: 60px;
+}
+
+.hit-count {
+    color: #58a6ff;
+    background: #0d1117;
+    border-right: 1px solid #30363d;
+    text-align: right;
+    min-width: 60px;
+}
+
+.source-line {
+    color: #c9d1d9;
+    white-space: pre;
+    background: #0d1117;
+}
+
+/* Coverage line highlighting */
+.covered {
+    background: rgba(46, 160, 67, 0.1);
+}
+
+.uncovered {
+    background: rgba(218, 54, 51, 0.1);
+}
+
+.not-executable {
+    background: transparent;
+    color: #8b949e;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+    }
+    
+    main {
+        padding: 1rem;
+    }
+    
+    table {
+        font-size: 0.9rem;
+    }
+    
+    table th,
+    table td {
+        padding: 0.5rem;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #161b22;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #484f58;
+}

@@ -1,0 +1,402 @@
+/// CURSED Test Runner
+/// Standardized test execution for .csd files in stdlib
+
+use std::path::{Path, PathBuf};
+use std::fs;
+use std::process::{Command, Stdio};
+use std::collections::HashMap;
+use colored::*;
+use glob::glob;
+use serde_json::Value;
+use crate::error::CursedError;
+// use crate::execution::runtime::Runtime;
+use crate::runtime::RuntimeConfig;
+
+#[derive(Debug, Clone)]
+pub struct TestResult {
+    pub name: String,
+    pub file: String,
+    pub passed: bool,
+    pub message: String,
+    pub duration: u128,
+}
+
+#[derive(Debug, Clone)]
+pub struct TestConfig {
+    pub test_dir: String,
+    pub pattern: String,
+    pub parallel: bool,
+    pub timeout: u64,
+    pub verbose: bool,
+    pub fail_fast: bool,
+    pub output_format: String,
+}
+
+impl Default for TestConfig {
+    fn default() -> Self {
+        Self {
+            test_dir: "stdlib".to_string(),
+            pattern: "test_*.csd".to_string(),
+            parallel: false,
+            timeout: 30000,
+            verbose: false,
+            fail_fast: false,
+            output_format: "pretty".to_string(),
+        }
+    }
+}
+
+// pub struct CursedTestRunner {
+    config: TestConfig,
+    runtime: Runtime,
+}
+
+// impl CursedTestRunner {
+    pub fn new(config: TestConfig) -> Result<Self, CursedError> {
+        let runtime_config = RuntimeConfig::default();
+        let runtime = Runtime::new(runtime_config)?;
+        
+        Ok(Self {
+            config,
+            runtime,
+        })
+    }
+
+    /// Discover all test files in the stdlib directory
+    pub fn discover_tests(&self) -> Result<Vec<PathBuf>, CursedError> {
+        let mut test_files = Vec::new();
+        
+        // Pattern: stdlib/**/test_*.csd
+        let pattern = format!("{}/**/test_*.csd", self.config.test_dir);
+        let paths = glob(&pattern)
+            .map_err(|e| CursedError::RuntimeError(format!("Failed to glob pattern {}: {}", pattern, e)))?;
+        
+        for path in paths {
+            match path {
+                Ok(path) => {
+                    if path.is_file() {
+                        test_files.push(path);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Warning: Failed to read path: {}", e);
+                }
+            }
+        }
+        
+        // Also check for *_test.csd files
+        let pattern2 = format!("{}/**/*_test.csd", self.config.test_dir);
+        let paths2 = glob(&pattern2)
+            .map_err(|e| CursedError::RuntimeError(format!("Failed to glob pattern {}: {}", pattern2, e)))?;
+        
+        for path in paths2 {
+            match path {
+                Ok(path) => {
+                    if path.is_file() && !test_files.contains(&path) {
+                        test_files.push(path);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Warning: Failed to read path: {}", e);
+                }
+            }
+        }
+        
+        test_files.sort();
+        Ok(test_files)
+    }
+
+    /// Run a single test file
+    pub fn run_test_file(&mut self, test_file: &Path) -> Result<Vec<TestResult>, CursedError> {
+        let start_time = std::time::Instant::now();
+        
+        if self.config.verbose {
+            println!("{} Running test file: {}", "INFO".blue(), test_file.display());
+        }
+        
+        let test_content = fs::read_to_string(test_file)
+            .map_err(|e| CursedError::RuntimeError(format!("Failed to read test file {}: {}", test_file.display(), e)))?;
+        
+        // Execute the test file using the CURSED runtime
+        let result = self.runtime.execute_source(&test_content, Some(test_file.to_string_lossy().to_string()));
+        
+        let duration = start_time.elapsed().as_millis();
+        
+        match result {
+            Ok(_) => {
+                Ok(vec![TestResult {
+                    name: test_file.file_stem().unwrap().to_string_lossy().to_string(),
+                    file: test_file.to_string_lossy().to_string(),
+                    passed: true,
+                    message: "Test executed successfully".to_string(),
+                    duration,
+                }])
+            }
+            Err(e) => {
+                Ok(vec![TestResult {
+                    name: test_file.file_stem().unwrap().to_string_lossy().to_string(),
+                    file: test_file.to_string_lossy().to_string(),
+                    passed: false,
+                    message: format!("Test execution failed: {}", e),
+                    duration,
+                }])
+            }
+        }
+    }
+
+    /// Run all discovered tests
+    pub fn run_all_tests(&mut self) -> Result<Vec<TestResult>, CursedError> {
+        let test_files = self.discover_tests()?;
+        
+        if test_files.is_empty() {
+            println!("{} No test files found in {}", "WARNING".yellow(), self.config.test_dir);
+            return Ok(vec![]);
+        }
+        
+        println!("{} Found {} test files", "INFO".blue(), test_files.len());
+        
+        let mut all_results = Vec::new();
+        
+        for test_file in test_files {
+            let results = self.run_test_file(&test_file)?;
+            
+            for result in &results {
+                if self.config.verbose || !result.passed {
+                    let status = if result.passed { "PASS".green() } else { "FAIL".red() };
+                    println!("  {} {} ({}ms)", status, result.name, result.duration);
+                    
+                    if !result.passed {
+                        println!("    {}", result.message);
+                    }
+                }
+                
+                if self.config.fail_fast && !result.passed {
+                    all_results.extend(results);
+                    return Ok(all_results);
+                }
+            }
+            
+            all_results.extend(results);
+        }
+        
+        Ok(all_results)
+    }
+
+    /// Generate test report
+    pub fn generate_report(&self, results: &[TestResult]) -> Result<(), CursedError> {
+        let total = results.len();
+        let passed = results.iter().filter(|r| r.passed).count();
+        let failed = total - passed;
+        
+        match self.config.output_format.as_str() {
+            "json" => self.generate_json_report(results, total, passed, failed),
+            "xml" => self.generate_xml_report(results, total, passed, failed),
+            "html" => self.generate_html_report(results, total, passed, failed),
+            _ => self.generate_pretty_report(results, total, passed, failed),
+        }
+    }
+
+    fn generate_pretty_report(&self, results: &[TestResult], total: usize, passed: usize, failed: usize) -> Result<(), CursedError> {
+        println!();
+        println!("{}", "=".repeat(60));
+        println!("{} CURSED STDLIB TEST SUMMARY", "📋".to_string());
+        println!("{}", "=".repeat(60));
+        
+        println!("Total tests: {}", total);
+        println!("Passed: {}", passed.to_string().green());
+        println!("Failed: {}", failed.to_string().red());
+        
+        let success_rate = if total > 0 {
+            (passed as f64 / total as f64) * 100.0
+        } else {
+            0.0
+        };
+        
+        println!("Success rate: {:.1}%", success_rate);
+        
+        if failed > 0 {
+            println!();
+            println!("{} FAILED TESTS:", "❌".to_string());
+            for result in results.iter().filter(|r| !r.passed) {
+                println!("  {} - {}", result.name.red(), result.message);
+            }
+        }
+        
+        println!();
+        if failed == 0 {
+            println!("{} ALL TESTS PASSED! 🎉", "✅".to_string());
+        } else {
+            println!("{} {} tests failed", "❌".to_string(), failed);
+        }
+        
+        Ok(())
+    }
+
+    fn generate_json_report(&self, results: &[TestResult], total: usize, passed: usize, failed: usize) -> Result<(), CursedError> {
+        let report = serde_json::json!({
+            "summary": {
+                "total": total,
+                "passed": passed,
+                "failed": failed,
+                "success_rate": if total > 0 { (passed as f64 / total as f64) * 100.0 } else { 0.0 }
+            },
+            "tests": results.iter().map(|r| {
+                serde_json::json!({
+                    "name": r.name,
+                    "file": r.file,
+                    "passed": r.passed,
+                    "message": r.message,
+                    "duration": r.duration
+                })
+            }).collect::<Vec<_>>()
+        });
+        
+        println!("{}", serde_json::to_string_pretty(&report).unwrap());
+        Ok(())
+    }
+
+    fn generate_xml_report(&self, results: &[TestResult], total: usize, passed: usize, failed: usize) -> Result<(), CursedError> {
+        println!("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        println!("<testsuite tests=\"{}\" failures=\"{}\" time=\"{}\">", 
+                 total, failed, results.iter().map(|r| r.duration).sum::<u128>());
+        
+        for result in results {
+            println!("  <testcase name=\"{}\" classname=\"{}\" time=\"{}\">", 
+                     result.name, result.file, result.duration);
+            
+            if !result.passed {
+                println!("    <failure message=\"{}\" type=\"TestFailure\">", result.message);
+                println!("      {}", result.message);
+                println!("    </failure>");
+            }
+            
+            println!("  </testcase>");
+        }
+        
+        println!("</testsuite>");
+        Ok(())
+    }
+
+    fn generate_html_report(&self, results: &[TestResult], total: usize, passed: usize, failed: usize) -> Result<(), CursedError> {
+        println!("<!DOCTYPE html>");
+        println!("<html>");
+        println!("<head>");
+        println!("  <title>CURSED Test Report</title>");
+        println!("  <style>");
+        println!("    body {{ font-family: Arial, sans-serif; margin: 20px; }}");
+        println!("    .summary {{ background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }}");
+        println!("    .pass {{ color: green; }}");
+        println!("    .fail {{ color: red; }}");
+        println!("    table {{ width: 100%; border-collapse: collapse; }}");
+        println!("    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}");
+        println!("    th {{ background-color: #f2f2f2; }}");
+        println!("  </style>");
+        println!("</head>");
+        println!("<body>");
+        
+        println!("  <h1>CURSED Stdlib Test Report</h1>");
+        
+        println!("  <div class=\"summary\">");
+        println!("    <h2>Summary</h2>");
+        println!("    <p>Total: {}</p>", total);
+        println!("    <p>Passed: <span class=\"pass\">{}</span></p>", passed);
+        println!("    <p>Failed: <span class=\"fail\">{}</span></p>", failed);
+        println!("    <p>Success Rate: {:.1}%</p>", 
+                 if total > 0 { (passed as f64 / total as f64) * 100.0 } else { 0.0 });
+        println!("  </div>");
+        
+        println!("  <h2>Test Results</h2>");
+        println!("  <table>");
+        println!("    <tr><th>Test Name</th><th>File</th><th>Status</th><th>Duration (ms)</th><th>Message</th></tr>");
+        
+        for result in results {
+            let status_class = if result.passed { "pass" } else { "fail" };
+            let status_text = if result.passed { "PASS" } else { "FAIL" };
+            
+            println!("    <tr>");
+            println!("      <td>{}</td>", result.name);
+            println!("      <td>{}</td>", result.file);
+            println!("      <td class=\"{}\">{}</td>", status_class, status_text);
+            println!("      <td>{}</td>", result.duration);
+            println!("      <td>{}</td>", result.message);
+            println!("    </tr>");
+        }
+        
+        println!("  </table>");
+        println!("</body>");
+        println!("</html>");
+        Ok(())
+    }
+
+    /// Run tests with filtering
+    pub fn run_tests_with_filter(&mut self, filter: Option<&str>) -> Result<Vec<TestResult>, CursedError> {
+        let test_files = self.discover_tests()?;
+        
+        let filtered_files: Vec<_> = if let Some(filter) = filter {
+            test_files.into_iter()
+                .filter(|path| {
+                    path.to_string_lossy().contains(filter) ||
+                    path.file_stem().unwrap().to_string_lossy().contains(filter)
+                })
+                .collect()
+        } else {
+            test_files
+        };
+        
+        if filtered_files.is_empty() {
+            println!("{} No test files found matching filter", "WARNING".yellow());
+            return Ok(vec![]);
+        }
+        
+        println!("{} Running {} test files", "INFO".blue(), filtered_files.len());
+        
+        let mut all_results = Vec::new();
+        
+        for test_file in filtered_files {
+            let results = self.run_test_file(&test_file)?;
+            all_results.extend(results);
+        }
+        
+        Ok(all_results)
+    }
+}
+
+/// CLI interface for test runner
+pub fn run_tests_cli(
+    test_dir: Option<String>,
+    pattern: Option<String>,
+    parallel: bool,
+    timeout: Option<u64>,
+    verbose: bool,
+    fail_fast: bool,
+    output_format: Option<String>,
+    filter: Option<String>,
+) -> Result<(), CursedError> {
+    let config = TestConfig {
+        test_dir: test_dir.unwrap_or_else(|| "stdlib".to_string()),
+        pattern: pattern.unwrap_or_else(|| "test_*.csd".to_string()),
+        parallel,
+        timeout: timeout.unwrap_or(30000),
+        verbose,
+        fail_fast,
+        output_format: output_format.unwrap_or_else(|| "pretty".to_string()),
+    };
+    
+    let mut runner = CursedTestRunner::new(config)?;
+    
+    let results = if let Some(filter) = filter {
+        runner.run_tests_with_filter(Some(&filter))?
+    } else {
+        runner.run_all_tests()?
+    };
+    
+    runner.generate_report(&results)?;
+    
+    // Exit with error code if any tests failed
+    let failed_count = results.iter().filter(|r| !r.passed).count();
+    if failed_count > 0 {
+        std::process::exit(1);
+    }
+    
+    Ok(())
+}

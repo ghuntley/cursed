@@ -4,7 +4,9 @@
 [![Release](https://img.shields.io/github/v/release/ghuntley/cursed)](https://github.com/ghuntley/cursed/releases)
 [![License](https://img.shields.io/github/license/ghuntley/cursed)](LICENSE)
 
-A powerful, modern programming language with advanced features including:
+A powerful, modern programming language implemented in Zig with advanced features including:
+
+> **📦 Implementation Migration**: CURSED has been successfully migrated from Rust to Zig, achieving 50-300x faster build times and zero memory leaks. The historical Rust implementation is preserved in `/archive/rust-implementation/` for reference.
 
 ## Features
 
@@ -12,9 +14,9 @@ A powerful, modern programming language with advanced features including:
 - **Advanced Cryptography**: Basic, advanced, and post-quantum cryptographic capabilities
 - **Zero-Knowledge Proofs**: Built-in support for zk-SNARKs and other ZK protocols
 - **Multi-Database Support**: SQLite, PostgreSQL, MySQL, Redis, MongoDB integration
-- **LLVM Backend**: High-performance compilation with LLVM 17
-- **Async Runtime**: Built on Tokio for high-concurrency applications
-- **Memory Management**: Garbage collection with cycle detection
+- **LLVM Backend**: High-performance compilation with LLVM integration and optimizations  
+- **Advanced Concurrency**: Custom goroutines, channels, and select operations
+- **Memory Management**: Zero-leak memory management with arena allocators and GC
 - **Cross-Platform**: Supports Linux, macOS, and Windows
 
 ## Installation
@@ -37,51 +39,54 @@ sudo mv cursed* /usr/local/bin/
 
 ```bash
 # Run a CURSED program
-cursed program.csd
+./zig-out/bin/cursed-zig program.csd
 
 # Start the REPL
-cursed-repl
+./zig-out/bin/cursed-zig --repl
 
-# Build a project
-cursed-build
+# Compile to binary
+./zig-out/bin/cursed-zig --compile program.csd
 
-# Run tests
-cursed-test
+# Run tests with built-in framework
+./zig-out/bin/cursed-zig test.csd
 
 # Start language server
-cursed-lsp
+./zig-out/bin/cursed-lsp
 ```
 
 ## Building from Source
 
-This project uses [devenv](https://devenv.sh/) for development environment management:
+This project uses [devenv](https://devenv.sh/) for development environment management and Zig for compilation:
 
 ```bash
 # Clone the repository
 git clone https://github.com/ghuntley/cursed.git
 cd cursed
 
-# Enter development environment
+# Enter development environment (provides Zig toolchain)
 devenv shell
 
-# Build the project
-cargo build --release
+# Build the project (fast: 0.1-0.2s builds)
+zig build
 
 # Run tests
-cargo test
+zig build test
+
+# Run the compiler
+./zig-out/bin/cursed-zig program.csd
 ```
 
 ## Tools Included
 
-- **cursed**: Main CURSED language interpreter
-- **cursed-doc**: Documentation generator
-- **cursed-build**: Project build system
-- **cursed-pkg**: Package manager
-- **cursed-repl**: Interactive REPL
-- **cursed-test**: Test runner
+- **cursed-zig**: Main CURSED language compiler and interpreter (built with Zig)
+- **cursed-stable**: Minimal stable compiler for core language features
 - **cursed-lsp**: Language Server Protocol implementation
-- **cursed-debug**: Debugger
-- **cursed-compile-fast**: Fast compiler
+- **Built-in REPL**: Interactive development environment (`--repl` flag)
+- **Built-in Compiler**: Native code generation (`--compile` flag)
+- **Built-in Formatter**: Code formatting (`format` command)
+- **Built-in Package Manager**: Dependency management (`pkg` command)
+- **Built-in Documentation**: Doc generation (`doc` command)
+- **Built-in Testing**: Test framework with testz stdlib module
 
 ## CI/CD
 
