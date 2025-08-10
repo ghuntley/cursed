@@ -1,5 +1,5 @@
-fr fr CURSED ImageZ Module - Comprehensive Image Processing Examples
-fr fr Demonstrates professional image manipulation capabilities
+fr CURSED ImageZ Module - Comprehensive Image Processing Examples
+fr Demonstrates professional image manipulation capabilities
 
 yeet "imagez"
 yeet "vibez"

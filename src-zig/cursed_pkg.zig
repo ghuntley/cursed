@@ -228,7 +228,7 @@ fn cmdList(allocator: std.mem.Allocator, args: CliArgs) !void {
     print("📦 Installed packages:\n", .{});
     
     // Check if CursedPackage.toml exists
-    std.fs.cwd().statFile("CursedPackage.toml") catch {
+    _ = std.fs.cwd().statFile("CursedPackage.toml") catch {
         print("No CursedPackage.toml found in current directory\n", .{});
         print("Run 'cursed-pkg init' to initialize a new package\n", .{});
         return;
