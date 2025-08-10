@@ -48,6 +48,7 @@ pub mod tools;
 pub mod config;
 pub mod bootstrap;
 pub mod execution;
+pub mod execution_pipeline;
 pub mod subprocess_utils;
 pub mod optimization;
 pub mod common;

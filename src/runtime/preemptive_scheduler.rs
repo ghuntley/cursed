@@ -14,6 +14,7 @@ use crate::runtime::goroutine::{
 };
 use crate::runtime::stack::{RuntimeStack, StackId};
 use crate::runtime::gc::GarbageCollector;
+use crate::runtime::async_poller::{AsyncPoller, IoCompletion, IoOpType};
 
 use std::collections::{HashMap, BTreeSet, VecDeque};
 use crate::runtime::lockfree_deque::{LockFreeDeque, PriorityLockFreeDeque};
@@ -115,8 +116,10 @@ pub struct PreemptiveScheduler {
     stack_manager: Arc<RuntimeStack>,
     /// Garbage collector integration
     gc: Arc<Mutex<GarbageCollector>>,
-    /// Network poller
+    /// Network poller (Linux epoll-based)
     network_poller: Arc<NetworkPoller>,
+    /// Cross-platform async I/O poller (IOCP on Windows, epoll on Linux)
+    async_poller: Arc<Mutex<AsyncPoller>>,
     /// Next goroutine ID
     next_id: AtomicU64,
     /// Active goroutines count
@@ -558,6 +561,10 @@ impl PreemptiveScheduler {
         let gc = Arc::new(Mutex::new(GarbageCollector::new()));
         let mut network_poller = NetworkPoller::new()?;
         network_poller.start()?;
+        
+        // Create cross-platform async I/O poller
+        let mut async_poller = AsyncPoller::new()?;
+        async_poller.start()?;
 
         let quantum = Duration::from_millis(config.quantum_ms.max(1).min(100));
         
@@ -577,6 +584,7 @@ impl PreemptiveScheduler {
             stack_manager,
             gc,
             network_poller: Arc::new(network_poller),
+            async_poller: Arc::new(Mutex::new(async_poller)),
             next_id: AtomicU64::new(1),
             active_count: AtomicUsize::new(0),
             stats: Mutex::new(PreemptiveSchedulerStats::default()),

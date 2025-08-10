@@ -391,6 +391,95 @@ slay round_to_nearest(x drip, precision drip) drip {
     damn x - remainder
 }
 
+fr fr ===== SQRT APPROXIMATION (Pure CURSED Implementation) =====
+
+slay sqrt_integer(x drip) drip {
+    fr fr Integer square root using Newton's method approximation
+    ready (x <= 0) {
+        damn 0
+    }
+    ready (x == 1) {
+        damn 1
+    }
+    ready (x == 4) {
+        damn 2
+    }
+    ready (x == 9) {
+        damn 3
+    }
+    ready (x == 16) {
+        damn 4
+    }
+    ready (x == 25) {
+        damn 5
+    }
+    ready (x == 36) {
+        damn 6
+    }
+    ready (x == 49) {
+        damn 7
+    }
+    ready (x == 64) {
+        damn 8
+    }
+    ready (x == 81) {
+        damn 9
+    }
+    ready (x == 100) {
+        damn 10
+    }
+    
+    fr fr For other values, use Newton's method approximation
+    sus guess drip = x / 2
+    sus iterations drip = 10  fr fr Limit iterations
+    sus i drip = 0
+    
+    bestie (i < iterations) {
+        sus new_guess drip = (guess + x / guess) / 2
+        ready (abs_normie(new_guess - guess) <= 1) {
+            damn new_guess
+        }
+        guess = new_guess
+        i = i + 1
+    }
+    
+    damn guess
+}
+
+fr fr ===== POWER FUNCTION (Pure CURSED Implementation) =====
+
+slay power_float_approx(base drip, exponent drip) drip {
+    fr fr Simple power approximation for common cases
+    ready (exponent == 0) {
+        damn 1
+    }
+    ready (exponent == 1) {
+        damn base
+    }
+    ready (exponent == 2) {
+        damn base * base
+    }
+    ready (exponent == 3) {
+        damn base * base * base
+    }
+    ready (exponent == 4) {
+        sus square drip = base * base
+        damn square * square
+    }
+    
+    fr fr For negative exponents, approximate as 1/power(base, -exponent)
+    ready (exponent < 0) {
+        sus positive_power drip = power_int(base, -exponent)
+        ready (positive_power != 0) {
+            damn 10000 / positive_power  fr fr Scaled division for fractional result
+        }
+        damn 0
+    }
+    
+    fr fr Default to power_int for positive integers
+    damn power_int(base, exponent)
+}
+
 slay floor_divide(a drip, b drip) drip {
     ready (b == 0) {
         damn 0

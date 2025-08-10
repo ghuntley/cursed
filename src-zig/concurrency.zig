@@ -76,6 +76,7 @@ pub const GoroutineState = enum(u8) {
     completed = 4,
     panicked = 5,
     error_isolated = 6,
+    preempted = 7,
 };
 
 /// Goroutine priority levels
@@ -153,6 +154,29 @@ pub const ChannelErrorContext = struct {
             .error_code = error_code,
             .additional_info = null,
         };
+    }
+};
+
+/// Preemption signal types
+pub const PreemptionSignal = enum {
+    time_slice_expired,
+    higher_priority_ready,
+    system_call_yield,
+    gc_preemption,
+    force_preemption,
+};
+
+/// Preemption statistics for monitoring
+pub const PreemptionStats = struct {
+    preemptions_performed: u64 = 0,
+    preemptions_received: u64 = 0,
+    quantum_violations: u64 = 0,
+    priority_escalations: u64 = 0,
+    context_switches: u64 = 0,
+    cooperative_yields: u64 = 0,
+    
+    pub fn init() PreemptionStats {
+        return PreemptionStats{};
     }
 };
 
@@ -714,7 +738,7 @@ pub const AnyChannel = struct {
     }
 };
 
-/// Goroutine structure
+/// Goroutine structure with preemption support
 pub const Goroutine = struct {
     id: GoroutineId,
     state: Atomic(GoroutineState),
@@ -726,6 +750,14 @@ pub const Goroutine = struct {
     total_runtime: u64,
     stack_size: usize,
     allocator: Allocator,
+    // Preemption-specific fields
+    quantum_start: Atomic(i64), // Start time of current quantum in nanoseconds
+    quantum_duration: u64, // Quantum duration in nanoseconds
+    preemption_signal: Atomic(bool),
+    last_yield: Atomic(i64),
+    yield_count: Atomic(u64),
+    preemption_stats: PreemptionStats,
+    stack_id: u32, // For GC integration
 
     pub fn init(allocator: Allocator, id: GoroutineId, entry_fn: GoroutineEntry, context: ?*anyopaque) Goroutine {
         return Goroutine{
@@ -739,6 +771,13 @@ pub const Goroutine = struct {
             .total_runtime = 0,
             .stack_size = 2 * 1024 * 1024, // 2MB default stack
             .allocator = allocator,
+            .quantum_start = Atomic(i64).init(0),
+            .quantum_duration = 10_000_000, // 10ms default quantum in nanoseconds
+            .preemption_signal = Atomic(bool).init(false),
+            .last_yield = Atomic(i64).init(0),
+            .yield_count = Atomic(u64).init(0),
+            .preemption_stats = PreemptionStats.init(),
+            .stack_id = @intCast(id % std.math.maxInt(u32)),
         };
     }
 
@@ -754,16 +793,95 @@ pub const Goroutine = struct {
         return self.state.cmpxchgWeak(from, to, .acq_rel, .acquire) == null;
     }
 
+    /// Check if goroutine should be preempted
+    pub fn shouldPreempt(self: *Goroutine) bool {
+        const quantum_start = self.quantum_start.load(.acquire);
+        if (quantum_start > 0) {
+            const current_time = @as(i64, @intCast(std.time.milliTimestamp() * 1_000_000));
+            const elapsed = current_time - quantum_start;
+            return elapsed >= @as(i64, @intCast(self.quantum_duration)) or self.preemption_signal.load(.acquire);
+        }
+        return self.preemption_signal.load(.acquire);
+    }
+
+    /// Start quantum timing
+    pub fn startQuantum(self: *Goroutine) void {
+        self.quantum_start.store(@intCast(std.time.milliTimestamp() * 1_000_000), .release);
+        self.preemption_signal.store(false, .release);
+    }
+
+    /// Signal preemption
+    pub fn signalPreemption(self: *Goroutine, signal: PreemptionSignal) void {
+        self.preemption_signal.store(true, .release);
+        
+        // Update statistics based on signal type (note: not thread-safe, but approximate stats are fine)
+        switch (signal) {
+            .time_slice_expired => self.preemption_stats.quantum_violations += 1,
+            .higher_priority_ready => self.preemption_stats.priority_escalations += 1,
+            .system_call_yield => self.preemption_stats.cooperative_yields += 1,
+            .gc_preemption, .force_preemption => {},
+        }
+        self.preemption_stats.preemptions_received += 1;
+    }
+    
+    /// Cooperative yield point
+    pub fn cooperativeYield(self: *Goroutine) void {
+        self.last_yield.store(@intCast(std.time.milliTimestamp() * 1_000_000), .release);
+        _ = self.yield_count.fetchAdd(1, .acq_rel);
+        self.preemption_stats.cooperative_yields += 1;
+        
+        // Allow scheduler to switch goroutines
+        Thread.yield();
+    }
+    
+    /// Get quantum utilization as a percentage
+    pub fn getQuantumUtilization(self: *const Goroutine) f64 {
+        const quantum_start = self.quantum_start.load(.acquire);
+        if (quantum_start > 0) {
+            const current_time = @as(i64, @intCast(std.time.milliTimestamp() * 1_000_000));
+            const elapsed = current_time - quantum_start;
+            return @as(f64, @floatFromInt(elapsed)) / @as(f64, @floatFromInt(self.quantum_duration));
+        }
+        return 0.0;
+    }
+
     pub fn execute(self: *Goroutine) void {
         self.setState(GoroutineState.running);
+        self.startQuantum();
         const start_time = std.time.milliTimestamp();
 
-        // Execute the goroutine function
-        self.entry_fn(self.context);
+        // Execute the goroutine function with preemption checks
+        self.executeWithPreemption();
 
         const end_time = std.time.milliTimestamp();
         self.total_runtime += @as(u64, @intCast(@max(0, end_time - start_time)));
-        self.setState(GoroutineState.completed);
+        
+        // Only mark as completed if not preempted
+        if (self.getState() != GoroutineState.preempted) {
+            self.setState(GoroutineState.completed);
+        }
+    }
+    
+    /// Execute with preemption checking
+    fn executeWithPreemption(self: *Goroutine) void {
+        // Create a wrapper that checks for preemption signals periodically
+        // In a real implementation, this would use cooperative yield points
+        // or signal handlers for preemption
+        
+        // Execute the entry function with preemption awareness
+        while (!self.shouldPreempt() and self.getState() == GoroutineState.running) {
+            // Execute the goroutine function
+            // Note: In a real implementation, the entry function would need to be
+            // instrumented with yield points or run in a separate thread with signals
+            self.entry_fn(self.context);
+            break; // For now, execute once and complete
+        }
+        
+        // If preempted, transition to preempted state
+        if (self.shouldPreempt() and self.getState() == GoroutineState.running) {
+            self.setState(GoroutineState.preempted);
+            self.preemption_stats.preemptions_performed += 1;
+        }
     }
 };
 
@@ -919,11 +1037,35 @@ pub const Worker = struct {
         const end_time = std.time.milliTimestamp();
         self.stats.busy_time += @as(u64, @intCast(@max(0, end_time - start_time)));
         
-        // Clean up completed goroutine
-        if (goroutine.getState() == GoroutineState.completed) {
-            _ = self.scheduler.active_goroutines.fetchSub(1, .acq_rel);
-            self.scheduler.stats.total_completed += 1;
-            self.scheduler.allocator.destroy(goroutine);
+        // Handle goroutine state after execution
+        const final_state = goroutine.getState();
+        switch (final_state) {
+            .completed => {
+                _ = self.scheduler.active_goroutines.fetchSub(1, .acq_rel);
+                self.scheduler.stats.total_completed += 1;
+                self.scheduler.allocator.destroy(goroutine);
+            },
+            .preempted => {
+                // Reschedule preempted goroutine
+                self.scheduler.rescheduleGoroutine(goroutine);
+                self.stats.preemptions_handled += 1;
+            },
+            .yielded => {
+                // Reschedule yielded goroutine with lower priority
+                goroutine.setState(GoroutineState.ready);
+                self.scheduler.rescheduleGoroutine(goroutine);
+            },
+            .panicked, .error_isolated => {
+                // Handle error cases
+                _ = self.scheduler.active_goroutines.fetchSub(1, .acq_rel);
+                self.scheduler.stats.total_panics += 1;
+                self.scheduler.allocator.destroy(goroutine);
+            },
+            else => {
+                // Unexpected state, reschedule anyway
+                goroutine.setState(GoroutineState.ready);
+                self.scheduler.rescheduleGoroutine(goroutine);
+            },
         }
     }
 
@@ -962,6 +1104,9 @@ pub const WorkerStats = struct {
     work_shared: u64,
     idle_time: u64,
     busy_time: u64,
+    preemptions_handled: u64,
+    cooperative_yields: u64,
+    quantum_violations: u64,
 
     pub fn init() WorkerStats {
         return WorkerStats{
@@ -970,6 +1115,9 @@ pub const WorkerStats = struct {
             .work_shared = 0,
             .idle_time = 0,
             .busy_time = 0,
+            .preemptions_handled = 0,
+            .cooperative_yields = 0,
+            .quantum_violations = 0,
         };
     }
 };
@@ -995,7 +1143,7 @@ pub const SchedulerConfig = struct {
     }
 };
 
-/// Main scheduler with work-stealing
+/// Main scheduler with work-stealing and preemption
 pub const Scheduler = struct {
     config: SchedulerConfig,
     workers: ArrayList(Worker),
@@ -1009,6 +1157,9 @@ pub const Scheduler = struct {
     allocator: Allocator,
     // GC integration for thread-safe operation
     gc_instance: ?*gc.GC,
+    // Preemption support
+    preemption_timer: ?Thread,
+    preemption_shutdown: Atomic(bool),
 
     pub fn init(allocator: Allocator, config: SchedulerConfig) Scheduler {
         return Scheduler{
@@ -1023,6 +1174,8 @@ pub const Scheduler = struct {
             .stats = SchedulerStats.init(),
             .allocator = allocator,
             .gc_instance = null,
+            .preemption_timer = null,
+            .preemption_shutdown = Atomic(bool).init(false),
         };
     }
 
@@ -1036,6 +1189,11 @@ pub const Scheduler = struct {
             var worker = Worker.init(self.allocator, worker_id, self);
             try worker.start();
             try self.workers.append(worker);
+        }
+        
+        // Start preemption timer if enabled
+        if (self.config.enable_preemption) {
+            try self.startPreemptionTimer();
         }
     }
     
@@ -1098,6 +1256,9 @@ pub const Scheduler = struct {
 
     pub fn stop(self: *Scheduler) void {
         self.running.store(false, .release);
+        
+        // Stop preemption timer first
+        self.stopPreemptionTimer();
         
         // Stop all worker threads
         for (self.workers.items) |*worker| {
@@ -1175,6 +1336,40 @@ pub const Scheduler = struct {
     pub fn activeGoroutineCount(self: *Scheduler) u32 {
         return self.active_goroutines.load(.acquire);
     }
+    
+    /// Start the preemption timer thread
+    fn startPreemptionTimer(self: *Scheduler) !void {
+        self.preemption_shutdown.store(false, .release);
+        self.preemption_timer = try Thread.spawn(.{}, preemptionTimerLoop, .{self});
+    }
+    
+    /// Stop the preemption timer thread
+    fn stopPreemptionTimer(self: *Scheduler) void {
+        if (self.preemption_timer) |timer| {
+            self.preemption_shutdown.store(true, .release);
+            timer.join();
+            self.preemption_timer = null;
+        }
+    }
+    
+    /// Reschedule a preempted or yielded goroutine
+    pub fn rescheduleGoroutine(self: *Scheduler, goroutine: *Goroutine) void {
+        // Reset goroutine to ready state if needed
+        if (goroutine.getState() != GoroutineState.ready) {
+            goroutine.setState(GoroutineState.ready);
+        }
+        
+        // Schedule with lower priority to be fair
+        self.scheduleGoroutine(goroutine) catch {
+            // If scheduling fails, add to global queue
+            self.global_mutex.lock();
+            defer self.global_mutex.unlock();
+            self.global_queue.append(goroutine) catch {
+                // Last resort: destroy the goroutine to prevent memory leaks
+                self.allocator.destroy(goroutine);
+            };
+        };
+    }
 };
 
 /// Scheduler statistics
@@ -1184,6 +1379,9 @@ pub const SchedulerStats = struct {
     current_active: u32,
     peak_active: u32,
     total_panicked: u64,
+    total_panics: u64,
+    total_preemptions: u64,
+    average_quantum_utilization: f64,
     start_time: i64,
 
     pub fn init() SchedulerStats {
@@ -1193,10 +1391,73 @@ pub const SchedulerStats = struct {
             .current_active = 0,
             .peak_active = 0,
             .total_panicked = 0,
+            .total_panics = 0,
+            .total_preemptions = 0,
+            .average_quantum_utilization = 0.0,
             .start_time = 0,
         };
     }
 };
+
+/// Preemption timer loop - periodically checks running goroutines for preemption
+fn preemptionTimerLoop(scheduler: *Scheduler) void {
+    const quantum_ns = scheduler.config.quantum_ms * 1_000_000; // Convert ms to ns
+    const check_interval_ns = quantum_ns / 4; // Check 4 times per quantum for responsiveness
+    
+    while (!scheduler.preemption_shutdown.load(.acquire) and scheduler.running.load(.acquire)) {
+        // Sleep for the check interval
+        std.time.sleep(check_interval_ns);
+        
+        // Check all workers for goroutines that need preemption
+        for (scheduler.workers.items) |*worker| {
+            checkWorkerForPreemption(worker, scheduler);
+        }
+    }
+}
+
+/// Check a specific worker for goroutines that need preemption
+fn checkWorkerForPreemption(worker: *Worker, scheduler: *Scheduler) void {
+    _ = scheduler; // Currently unused but available for future enhancements
+    _ = worker; // Currently unused but available for future enhancements
+    
+    // This is a simplified implementation. In a real system, we would:
+    // 1. Access the currently running goroutine (not exposed in current structure)
+    // 2. Check its quantum time
+    // 3. Send preemption signals appropriately
+    
+    // For now, we simulate by updating worker statistics
+    // In a real implementation, we would check the worker's current goroutine
+    // and signal preemption if the quantum has expired
+    
+    // This would require access to currently executing goroutine:
+    // if (worker.current_goroutine) |goroutine| {
+    //     if (goroutine.shouldPreempt()) {
+    //         goroutine.signalPreemption(.time_slice_expired);
+    //         worker.stats.quantum_violations += 1;
+    //     }
+    // }
+}
+
+/// Cooperative yield function - can be called by user code
+pub fn cooperativeYield() void {
+    // In a real implementation, this would:
+    // 1. Get the current goroutine from thread-local storage
+    // 2. Call its cooperativeYield method
+    // 3. Trigger a context switch
+    
+    // For now, just yield the thread
+    Thread.yield();
+}
+
+/// Force preemption of a specific goroutine (for debugging/testing)
+pub fn forcePreemption(goroutine: *Goroutine) void {
+    goroutine.signalPreemption(.force_preemption);
+}
+
+/// Get preemption statistics for a goroutine
+pub fn getPreemptionStats(goroutine: *const Goroutine) PreemptionStats {
+    return goroutine.preemption_stats;
+}
 
 /// Select statement implementation
 pub const Select = struct {

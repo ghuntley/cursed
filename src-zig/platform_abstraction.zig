@@ -157,7 +157,6 @@ pub const FileOps = struct {
     fn openFileUnix(path: []const u8, mode: OpenMode) FileError!FileHandle {
         if (builtin.target.os.tag == .wasi) {
             // WASM/WASI implementation - use basic file operations
-            _ = path; _ = mode;
             return error.NotSupported; // File operations not supported in WASM
         }
         
@@ -201,7 +200,6 @@ pub const FileOps = struct {
     
     fn readFileUnix(handle: FileHandle, buffer: []u8) FileError!usize {
         if (builtin.target.os.tag == .wasi) {
-            _ = handle; _ = buffer;
             return error.NotSupported;
         }
         
@@ -235,7 +233,6 @@ pub const FileOps = struct {
     
     fn writeFileUnix(handle: FileHandle, data: []const u8) FileError!usize {
         if (builtin.target.os.tag == .wasi) {
-            _ = handle;
             return data.len; // Pretend write succeeded
         }
         

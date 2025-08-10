@@ -4,6 +4,7 @@
 
 pub mod package_manager;
 pub mod profiler;
+pub mod execution_pipeline_demo;
 
 pub use package_manager::{PackageManager, PackageConfig};
 pub use profiler::{Profiler, ProfilerConfig, ProfileReport};
@@ -11,19 +12,33 @@ pub use profiler::{Profiler, ProfilerConfig, ProfileReport};
 use std::path::Path;
 use std::fs;
 
+// Import the execution pipeline
+use crate::execution_pipeline::{CursedExecutionPipeline, ExecutionConfig, ExecutionBackend, ExecutionResult};
+
 /// Integrated development tools manager
 #[derive(Debug, Clone)]
 pub struct CursedTools {
     pub package_manager: PackageManager,
     pub profiler: Profiler,
+    pub execution_pipeline: Option<CursedExecutionPipeline>,
 }
 
 impl CursedTools {
     /// Create new tools suite
     pub fn new() -> Self {
+        let execution_pipeline = match CursedExecutionPipeline::new() {
+            Ok(pipeline) => Some(pipeline),
+            Err(e) => {
+                eprintln!("⚠️  Warning: Could not initialize execution pipeline: {}", e);
+                eprintln!("   Some features may not be available. Run 'zig build' to build the CURSED interpreter.");
+                None
+            }
+        };
+
         Self {
             package_manager: PackageManager::new("https://registry.cursed.dev".to_string()),
             profiler: Profiler::new(ProfilerConfig::default()),
+            execution_pipeline,
         }
     }
 
@@ -62,17 +77,64 @@ impl CursedTools {
         // Start profiling
         self.profiler.start_profiling()?;
 
-        // TODO: Run the CURSED program here
-        // This would integrate with the compiler/interpreter
-        
-        // Simulate some profiling time
-        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        // Execute the CURSED program with complete pipeline: parser → type-checker → interpreter/VM
+        match self.execute_cursed_program(program_path).await {
+            Ok(execution_result) => {
+                if self.profiler.config.verbose {
+                    println!("📊 Program executed successfully in {}ms", execution_result.execution_time_ms);
+                    if let Some(tokens) = execution_result.tokens_count {
+                        println!("🔤 Tokens processed: {}", tokens);
+                    }
+                    if let Some(ast_nodes) = execution_result.ast_nodes_count {
+                        println!("🌳 AST nodes generated: {}", ast_nodes);
+                    }
+                    if let Some(memory) = execution_result.memory_usage_bytes {
+                        println!("💾 Memory usage: {} bytes", memory);
+                    }
+                }
+                
+                if execution_result.exit_code != 0 {
+                    eprintln!("⚠️  Program execution failed with exit code: {}", execution_result.exit_code);
+                    eprintln!("Error output: {}", execution_result.stderr);
+                }
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to execute CURSED program: {}", e);
+                return Err(e);
+            }
+        }
 
         // Stop profiling and generate report
         let report = self.profiler.stop_profiling()?;
 
         println!("✅ Performance profiling complete");
         Ok(report)
+    }
+
+    /// Execute a CURSED program through the complete pipeline
+    async fn execute_cursed_program(&self, program_path: &Path) -> Result<ExecutionResult, Box<dyn std::error::Error>> {
+        match &self.execution_pipeline {
+            Some(pipeline) => {
+                let config = ExecutionConfig {
+                    backend: ExecutionBackend::AST,  // Use AST backend for full language support
+                    verbose: self.profiler.config.verbose,
+                    memory_profile: true,  // Enable memory profiling for performance analysis
+                    performance_profile: true,
+                    show_tokens: self.profiler.config.verbose,
+                    show_ast: self.profiler.config.verbose,
+                    optimization_level: 0,  // No optimization for profiling accuracy
+                };
+
+                let program_path_str = program_path.to_string_lossy();
+                
+                // Execute through complete pipeline: Lexer → Parser → Type-Checker → Interpreter/VM
+                let result = pipeline.execute_file(&program_path_str, &config)?;
+                Ok(result)
+            }
+            None => {
+                Err("Execution pipeline not available. Please build the CURSED interpreter with 'zig build'.".into())
+            }
+        }
     }
 
     /// Manage project dependencies
@@ -88,6 +150,119 @@ impl CursedTools {
 
         println!("✅ Dependencies updated successfully");
         Ok(())
+    }
+
+    /// Compile a CURSED program to optimized native binary
+    pub async fn compile_program(&self, source_path: &Path, output_path: Option<&str>, optimization_level: u8) -> Result<ExecutionResult, Box<dyn std::error::Error>> {
+        println!("🔨 Compiling CURSED program to native binary...");
+
+        match &self.execution_pipeline {
+            Some(pipeline) => {
+                let config = ExecutionConfig {
+                    backend: ExecutionBackend::LLVM,  // Use LLVM for production compilation
+                    verbose: true,
+                    optimization_level,
+                    ..Default::default()
+                };
+
+                let source_path_str = source_path.to_string_lossy();
+                let result = pipeline.compile_to_binary(&source_path_str, output_path, &config)?;
+                
+                if result.exit_code == 0 {
+                    println!("✅ Compilation successful!");
+                    if let Some(output) = output_path {
+                        println!("📦 Output binary: {}", output);
+                        println!("🚀 Run with: ./{}", output);
+                    }
+                } else {
+                    eprintln!("❌ Compilation failed:");
+                    eprintln!("{}", result.stderr);
+                }
+
+                Ok(result)
+            }
+            None => {
+                Err("Execution pipeline not available. Please build the CURSED interpreter with 'zig build'.".into())
+            }
+        }
+    }
+
+    /// Type-check a CURSED program without execution
+    pub async fn type_check_program(&self, source_path: &Path) -> Result<ExecutionResult, Box<dyn std::error::Error>> {
+        println!("🔍 Type-checking CURSED program...");
+
+        match &self.execution_pipeline {
+            Some(pipeline) => {
+                let config = ExecutionConfig {
+                    backend: ExecutionBackend::AST,
+                    verbose: true,
+                    ..Default::default()
+                };
+
+                let source_path_str = source_path.to_string_lossy();
+                let result = pipeline.type_check(&source_path_str, &config)?;
+                
+                if result.exit_code == 0 {
+                    println!("✅ Type checking passed!");
+                } else {
+                    eprintln!("❌ Type checking failed:");
+                    eprintln!("{}", result.stderr);
+                }
+
+                Ok(result)
+            }
+            None => {
+                Err("Execution pipeline not available. Please build the CURSED interpreter with 'zig build'.".into())
+            }
+        }
+    }
+
+    /// Execute a CURSED program with debugging information
+    pub async fn debug_execute(&self, source_path: &Path) -> Result<ExecutionResult, Box<dyn std::error::Error>> {
+        println!("🐛 Debug-executing CURSED program...");
+
+        match &self.execution_pipeline {
+            Some(pipeline) => {
+                let result = pipeline.debug_execute(&source_path.to_string_lossy())?;
+                
+                println!("📊 Execution completed in {}ms", result.execution_time_ms);
+                if let Some(tokens) = result.tokens_count {
+                    println!("🔤 Tokens: {}", tokens);
+                }
+                if let Some(ast_nodes) = result.ast_nodes_count {
+                    println!("🌳 AST nodes: {}", ast_nodes);
+                }
+                if let Some(memory) = result.memory_usage_bytes {
+                    println!("💾 Memory: {} bytes", memory);
+                }
+
+                if result.exit_code == 0 {
+                    println!("✅ Execution successful!");
+                    println!("Output:\n{}", result.stdout);
+                } else {
+                    eprintln!("❌ Execution failed:");
+                    eprintln!("{}", result.stderr);
+                }
+
+                Ok(result)
+            }
+            None => {
+                Err("Execution pipeline not available. Please build the CURSED interpreter with 'zig build'.".into())
+            }
+        }
+    }
+
+    /// Quick interpretation for development/testing
+    pub async fn quick_run(&self, source_code: &str) -> Result<String, Box<dyn std::error::Error>> {
+        match &self.execution_pipeline {
+            Some(pipeline) => {
+                let output = pipeline.quick_interpret(source_code)?;
+                Ok(output)
+            }
+            None => {
+                Err("Execution pipeline not available. Please build the CURSED interpreter with 'zig build'.".into())
+            }
+        }
     }
 
     /// Run complete project analysis

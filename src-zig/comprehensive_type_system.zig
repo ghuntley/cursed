@@ -57,9 +57,9 @@ pub const CursedType = union(enum) {
             .Lit => try writer.writeAll("lit"),
             .Sip => try writer.writeAll("sip"),
             .Vibes => try writer.writeAll("vibes"),
-            .Array => |arr| try writer.print("[]{}", .{arr.element_type.*}),
-            .Slice => |slice| try writer.print("[]{}", .{slice.element_type.*}),
-            .Channel => |ch| try writer.print("dm<{}>", .{ch.element_type.*}),
+            .Array => |arr| try writer.print("[]{any}", .{arr.element_type.*}),
+            .Slice => |slice| try writer.print("[]{any}", .{slice.element_type.*}),
+            .Channel => |ch| try writer.print("dm<{any}>", .{ch.element_type.*}),
             .Function => |func| {
                 try writer.writeAll("slay(");
                 for (func.parameters.items, 0..) |param, i| {

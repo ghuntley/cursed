@@ -822,6 +822,133 @@ slay is_valid_email(s tea) lit {
     damn cringe
 }
 
+fr fr ===== STRING TO NUMBER CONVERSION (Pure CURSED Implementation) =====
+
+slay char_to_digit(c tea) drip {
+    fr fr Convert single character to digit
+    ready (c == "0") { damn 0 }
+    ready (c == "1") { damn 1 }
+    ready (c == "2") { damn 2 }
+    ready (c == "3") { damn 3 }
+    ready (c == "4") { damn 4 }
+    ready (c == "5") { damn 5 }
+    ready (c == "6") { damn 6 }
+    ready (c == "7") { damn 7 }
+    ready (c == "8") { damn 8 }
+    ready (c == "9") { damn 9 }
+    damn -1  fr fr Invalid digit
+}
+
+slay string_to_int_advanced(s tea) drip {
+    fr fr Enhanced string to integer conversion
+    ready (is_empty_string(s)) {
+        damn 0
+    }
+    
+    sus is_negative lit = cringe
+    sus start_index drip = 0
+    
+    fr fr Check for negative sign
+    ready (char_at(s, 0) == "-") {
+        is_negative = based
+        start_index = 1
+    }
+    
+    sus result drip = 0
+    sus multiplier drip = 1
+    sus length drip = string_length(s)
+    
+    fr fr Process digits from right to left
+    sus i drip = length - 1
+    bestie (i >= start_index) {
+        sus digit_char tea = char_at(s, i)
+        sus digit drip = char_to_digit(digit_char)
+        
+        ready (digit >= 0) {
+            result = result + (digit * multiplier)
+            multiplier = multiplier * 10
+        }
+        
+        i = i - 1
+    }
+    
+    ready (is_negative) {
+        result = -result
+    }
+    
+    damn result
+}
+
+slay digit_to_char(digit drip) tea {
+    fr fr Convert single digit to character
+    ready (digit == 0) { damn "0" }
+    ready (digit == 1) { damn "1" }
+    ready (digit == 2) { damn "2" }
+    ready (digit == 3) { damn "3" }
+    ready (digit == 4) { damn "4" }
+    ready (digit == 5) { damn "5" }
+    ready (digit == 6) { damn "6" }
+    ready (digit == 7) { damn "7" }
+    ready (digit == 8) { damn "8" }
+    ready (digit == 9) { damn "9" }
+    damn "0"  fr fr Default fallback
+}
+
+slay int_to_string_advanced(n drip) tea {
+    fr fr Enhanced integer to string conversion
+    ready (n == 0) {
+        damn "0"
+    }
+    
+    sus is_negative lit = cringe
+    sus number drip = n
+    
+    ready (n < 0) {
+        is_negative = based
+        number = -n
+    }
+    
+    fr fr Build digits array (from least to most significant)
+    sus digits []tea = []
+    sus temp drip = number
+    
+    bestie (temp > 0) {
+        sus digit drip = temp % 10
+        sus digit_char tea = digit_to_char(digit)
+        
+        fr fr Add digit to array (simplified for small numbers)
+        ready (len(digits) == 0) {
+            digits = [digit_char]
+        } otherwise ready (len(digits) == 1) {
+            digits = [digit_char, digits[0]]
+        } otherwise ready (len(digits) == 2) {
+            digits = [digit_char, digits[0], digits[1]]
+        } otherwise ready (len(digits) == 3) {
+            digits = [digit_char, digits[0], digits[1], digits[2]]
+        }
+        
+        temp = temp / 10
+    }
+    
+    fr fr Reverse and concatenate digits
+    sus result tea = ""
+    ready (len(digits) == 1) {
+        result = digits[0]
+    } otherwise ready (len(digits) == 2) {
+        result = digits[1] + digits[0]
+    } otherwise ready (len(digits) == 3) {
+        result = digits[2] + digits[1] + digits[0]
+    } otherwise ready (len(digits) == 4) {
+        result = digits[3] + digits[2] + digits[1] + digits[0]
+    }
+    
+    ready (is_negative) {
+        result = "-" + result
+    }
+    
+    damn result
+}
+
 slay is_valid_url(s tea) lit {
     fr fr Simple URL validation
     ready (starts_with(s, "http://") || starts_with(s, "https://")) {

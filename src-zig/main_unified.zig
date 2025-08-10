@@ -27,6 +27,13 @@ const crash_handler = @import("crash_handler.zig");
 const safe_operations = @import("safe_operations.zig");
 const repl = @import("repl.zig");
 
+// Windows async I/O integration (Windows-only)
+const windows_async = if (@import("builtin").target.os.tag == .windows) 
+    @import("windows_async_integration.zig") 
+else 
+    struct {};
+const platform = @import("platform_abstraction.zig");
+
 // Interface and Struct types for the interpreter
 const StructInstance = struct {
     type_name: []const u8,
@@ -543,6 +550,14 @@ pub fn main() !void {
     }){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    
+    // Initialize Windows async I/O runtime if on Windows
+    if (@import("builtin").target.os.tag == .windows) {
+        windows_async.Hooks.onApplicationStartup(allocator, null) catch |err| {
+            std.log.warn("Failed to initialize Windows async runtime: {}", .{err});
+        };
+        defer windows_async.Hooks.onApplicationShutdown(allocator);
+    }
 
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
@@ -740,7 +755,7 @@ pub fn main() !void {
 
 
 
-fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbose: bool, _: ?[]const u8) !void {
+fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbose: bool, stdlib_path: ?[]const u8) !void {
     if (verbose) print("🚀 Interpreting CURSED program with advanced error handling...\n", .{});
     
     // Create enhanced error handling system
@@ -804,9 +819,24 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         structs.deinit();
     }
     
-    // Initialize module loader for module imports
-    var simple_loader = module_loader.ModuleLoader.init(allocator, verbose);
+    // Initialize module loader for module imports with stdlib path if provided
+    var simple_loader = if (stdlib_path != null) 
+        module_loader.ModuleLoader.initWithStdlibPath(allocator, verbose, stdlib_path)
+    else 
+        module_loader.ModuleLoader.init(allocator, verbose);
     defer simple_loader.deinit();
+    
+    // Initialize concurrency system for potential Windows async I/O integration
+    concurrency_handlers.initGlobalConcurrency(allocator);
+    defer concurrency_handlers.deinitGlobalConcurrency();
+    
+    // If Windows async runtime is available, enhance it with concurrency integration
+    if (@import("builtin").target.os.tag == .windows) {
+        if (windows_async.get()) |_| {
+            // Integration would happen here if we had access to the scheduler
+            if (verbose) print("🪟 Windows async I/O runtime detected and ready\n", .{});
+        }
+    }
     
     // Process imports first
     const imports = simple_import_resolver.extractImports(allocator, source) catch |err| {

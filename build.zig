@@ -648,6 +648,18 @@ pub fn build(b: *std.Build) void {
         exe.linkLibC();
         exe_stable.linkLibC();
         
+        // Add Windows-specific libraries for async I/O support
+        if (resolved_target.result.os.tag == .windows) {
+            exe.linkSystemLibrary("ws2_32");
+            exe.linkSystemLibrary("kernel32");
+            exe_stable.linkSystemLibrary("ws2_32");
+            exe_stable.linkSystemLibrary("kernel32");
+            
+            if (b.verbose) {
+                std.debug.print("🪟 Added Windows async I/O libraries (ws2_32, kernel32)\n", .{});
+            }
+        }
+        
         // Add LLVM support for native builds
         if (config.supports_llvm and !is_cross_compile) {
             addLlvm(b, exe, resolved_target);
@@ -687,6 +699,35 @@ pub fn build(b: *std.Build) void {
     
     if (supports_libc) {
         unit_tests.linkLibC();
+        
+        // Add Windows-specific libraries for async I/O tests
+        if (resolved_target.result.os.tag == .windows) {
+            unit_tests.linkSystemLibrary("ws2_32");
+            unit_tests.linkSystemLibrary("kernel32");
+        }
+    }
+    
+    // Windows-specific async I/O tests
+    if (resolved_target.result.os.tag == .windows) {
+        const windows_async_tests = b.addTest(.{
+            .root_source_file = b.path("src-zig/windows_async_test.zig"),
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        });
+        
+        if (supports_libc) {
+            windows_async_tests.linkLibC();
+            windows_async_tests.linkSystemLibrary("ws2_32");
+            windows_async_tests.linkSystemLibrary("kernel32");
+        }
+        
+        const run_windows_async_tests = b.addRunArtifact(windows_async_tests);
+        const windows_test_step = b.step("test-windows-async", "Run Windows async I/O tests");
+        windows_test_step.dependOn(&run_windows_async_tests.step);
+        
+        if (b.verbose) {
+            std.debug.print("🪟 Added Windows async I/O test suite\n", .{});
+        }
     }
     
     const run_unit_tests = b.addRunArtifact(unit_tests);

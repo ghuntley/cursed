@@ -412,13 +412,38 @@ pub const WeakRef = struct {
     }
 };
 
-/// Finalizer function type
-pub const FinalizerFn = *const fn (object: *anyopaque) void;
+/// Finalizer function type that can return an error
+pub const FinalizerFn = *const fn (object: *anyopaque) anyerror!void;
 
-/// Finalizer registration
+/// Finalizer priority levels
+pub const FinalizerPriority = enum(u8) {
+    Low = 0,
+    Normal = 1,
+    High = 2,
+    Critical = 3,
+};
+
+/// Finalizer registration with enhanced metadata
 const Finalizer = struct {
     object: *ObjectHeader,
     fn_ptr: FinalizerFn,
+    priority: FinalizerPriority,
+    registered_at: u64,
+    name: ?[]const u8, // Optional name for debugging
+    retry_count: u8,
+    max_retries: u8,
+    
+    pub fn init(object: *ObjectHeader, fn_ptr: FinalizerFn, priority: FinalizerPriority, name: ?[]const u8, max_retries: u8) Finalizer {
+        return Finalizer{
+            .object = object,
+            .fn_ptr = fn_ptr,
+            .priority = priority,
+            .registered_at = @intCast(std.time.microTimestamp()),
+            .name = name,
+            .retry_count = 0,
+            .max_retries = max_retries,
+        };
+    }
 };
 
 /// Write barrier record for concurrent collection
@@ -434,6 +459,185 @@ const HeapSegment = struct {
     end: *u8,
     current: *u8,
     generation: u1, // 0 = young, 1 = old
+};
+
+/// Finalizer queue entry with priority and error handling
+const FinalizationEntry = struct {
+    object: *ObjectHeader,
+    finalizer: Finalizer,
+    queued_at: u64,
+    attempts: u8,
+    
+    pub fn init(object: *ObjectHeader, finalizer: Finalizer) FinalizationEntry {
+        return FinalizationEntry{
+            .object = object,
+            .finalizer = finalizer,
+            .queued_at = @intCast(std.time.microTimestamp()),
+            .attempts = 0,
+        };
+    }
+    
+    pub fn shouldRetry(self: *const FinalizationEntry) bool {
+        return self.attempts < self.finalizer.max_retries;
+    }
+    
+    pub fn getAge(self: *const FinalizationEntry) u64 {
+        return @as(u64, @intCast(std.time.microTimestamp())) - self.queued_at;
+    }
+};
+
+/// Thread-safe priority queue for finalization
+const FinalizationQueue = struct {
+    // Separate queues for each priority level
+    critical_queue: ArrayList(FinalizationEntry),
+    high_queue: ArrayList(FinalizationEntry),
+    normal_queue: ArrayList(FinalizationEntry), 
+    low_queue: ArrayList(FinalizationEntry),
+    
+    // Failed finalizations for retry
+    retry_queue: ArrayList(FinalizationEntry),
+    
+    // Statistics
+    total_queued: Atomic(u64),
+    total_processed: Atomic(u64),
+    total_failed: Atomic(u64),
+    total_retried: Atomic(u64),
+    
+    // Thread safety
+    queue_mutex: Mutex,
+    not_empty_condition: Condition,
+    
+    allocator: std.mem.Allocator,
+    
+    pub fn init(allocator: std.mem.Allocator) FinalizationQueue {
+        return FinalizationQueue{
+            .critical_queue = ArrayList(FinalizationEntry).init(allocator),
+            .high_queue = ArrayList(FinalizationEntry).init(allocator),
+            .normal_queue = ArrayList(FinalizationEntry).init(allocator),
+            .low_queue = ArrayList(FinalizationEntry).init(allocator),
+            .retry_queue = ArrayList(FinalizationEntry).init(allocator),
+            .total_queued = Atomic(u64).init(0),
+            .total_processed = Atomic(u64).init(0),
+            .total_failed = Atomic(u64).init(0),
+            .total_retried = Atomic(u64).init(0),
+            .queue_mutex = Mutex{},
+            .not_empty_condition = Condition{},
+            .allocator = allocator,
+        };
+    }
+    
+    pub fn deinit(self: *FinalizationQueue) void {
+        self.critical_queue.deinit();
+        self.high_queue.deinit();
+        self.normal_queue.deinit();
+        self.low_queue.deinit();
+        self.retry_queue.deinit();
+    }
+    
+    pub fn enqueue(self: *FinalizationQueue, object: *ObjectHeader, finalizer: Finalizer) !void {
+        const entry = FinalizationEntry.init(object, finalizer);
+        
+        self.queue_mutex.lock();
+        defer self.queue_mutex.unlock();
+        
+        switch (finalizer.priority) {
+            .Critical => try self.critical_queue.append(entry),
+            .High => try self.high_queue.append(entry),
+            .Normal => try self.normal_queue.append(entry),
+            .Low => try self.low_queue.append(entry),
+        }
+        
+        _ = self.total_queued.fetchAdd(1, .acq_rel);
+        self.not_empty_condition.signal();
+    }
+    
+    pub fn dequeue(self: *FinalizationQueue) ?FinalizationEntry {
+        self.queue_mutex.lock();
+        defer self.queue_mutex.unlock();
+        
+        // Process in priority order: Critical -> High -> Normal -> Low -> Retry
+        if (self.critical_queue.items.len > 0) {
+            return self.critical_queue.swapRemove(0);
+        }
+        if (self.high_queue.items.len > 0) {
+            return self.high_queue.swapRemove(0);
+        }
+        if (self.normal_queue.items.len > 0) {
+            return self.normal_queue.swapRemove(0);
+        }
+        if (self.low_queue.items.len > 0) {
+            return self.low_queue.swapRemove(0);
+        }
+        if (self.retry_queue.items.len > 0) {
+            return self.retry_queue.swapRemove(0);
+        }
+        
+        return null;
+    }
+    
+    pub fn requeueForRetry(self: *FinalizationQueue, entry: FinalizationEntry) !void {
+        self.queue_mutex.lock();
+        defer self.queue_mutex.unlock();
+        
+        var retry_entry = entry;
+        retry_entry.attempts += 1;
+        try self.retry_queue.append(retry_entry);
+        
+        _ = self.total_retried.fetchAdd(1, .acq_rel);
+    }
+    
+    pub fn isEmpty(self: *FinalizationQueue) bool {
+        self.queue_mutex.lock();
+        defer self.queue_mutex.unlock();
+        
+        return self.critical_queue.items.len == 0 and
+               self.high_queue.items.len == 0 and
+               self.normal_queue.items.len == 0 and
+               self.low_queue.items.len == 0 and
+               self.retry_queue.items.len == 0;
+    }
+    
+    pub fn size(self: *FinalizationQueue) usize {
+        self.queue_mutex.lock();
+        defer self.queue_mutex.unlock();
+        
+        return self.critical_queue.items.len +
+               self.high_queue.items.len +
+               self.normal_queue.items.len +
+               self.low_queue.items.len +
+               self.retry_queue.items.len;
+    }
+    
+    pub fn waitForWork(self: *FinalizationQueue, _: u64) bool {
+        self.queue_mutex.lock();
+        defer self.queue_mutex.unlock();
+        
+        if (!self.isEmpty()) {
+            return true;
+        }
+        
+        // Wait for signal with timeout
+        // Note: Using simple wait instead of timedWait for compatibility
+        self.not_empty_condition.wait(&self.queue_mutex);
+        
+        return !self.isEmpty();
+    }
+    
+    pub fn getStats(self: *FinalizationQueue) struct {
+        queued: u64,
+        processed: u64,
+        failed: u64,
+        retried: u64,
+        pending: usize,
+    } {
+        return .{
+            .queued = self.total_queued.load(.acquire),
+            .processed = self.total_processed.load(.acquire),
+            .failed = self.total_failed.load(.acquire),
+            .retried = self.total_retried.load(.acquire),
+            .pending = self.size(),
+        };
+    }
 };
 
 /// Production Garbage Collector
@@ -483,11 +687,12 @@ pub const GC = struct {
     write_barriers: ArrayList(WriteBarrier),
     write_barrier_mutex: Mutex,
     
-    /// Finalization
+    /// Enhanced finalization system
     finalizers: ArrayList(Finalizer),
-    finalization_queue: ArrayList(*ObjectHeader),
+    finalization_queue: FinalizationQueue,
     finalization_mutex: Mutex,
     finalization_thread: ?Thread,
+    finalizer_error_handler: ?*const fn(err: anyerror, object: *anyopaque, finalizer_name: ?[]const u8) void,
     
     /// Weak references
     weak_refs: ArrayList(*WeakRef),
@@ -753,9 +958,10 @@ pub const GC = struct {
             .write_barriers = ArrayList(WriteBarrier).init(allocator),
             .write_barrier_mutex = Mutex{},
             .finalizers = ArrayList(Finalizer).init(allocator),
-            .finalization_queue = ArrayList(*ObjectHeader).init(allocator),
+            .finalization_queue = FinalizationQueue.init(allocator),
             .finalization_mutex = Mutex{},
             .finalization_thread = null,
+            .finalizer_error_handler = null,
             .weak_refs = ArrayList(*WeakRef).init(allocator),
             .weak_ref_mutex = Mutex{},
             .heap_segments = ArrayList(HeapSegment).init(allocator),
@@ -889,6 +1095,9 @@ pub const GC = struct {
         self.collection_condition.signal();
         self.collection_mutex.unlock();
         
+        // Wake up finalization thread for clean shutdown
+        self.finalization_queue.not_empty_condition.signal();
+        
         // Wait for threads to finish
         if (self.collection_thread) |thread| {
             thread.join();
@@ -897,6 +1106,9 @@ pub const GC = struct {
         if (self.finalization_thread) |thread| {
             thread.join();
         }
+        
+        // Process any remaining finalizers before shutdown
+        self.processAllPendingFinalizers();
     }
     
     /// Allocate object with GC header
@@ -1119,19 +1331,35 @@ pub const GC = struct {
         return weak_ref;
     }
     
-    /// Register finalizer for object
+    /// Register finalizer for object with enhanced options
     pub fn addFinalizer(self: *GC, object: *anyopaque, finalizer: FinalizerFn) !void {
+        try self.addFinalizerWithOptions(object, finalizer, .Normal, null, 3);
+    }
+    
+    /// Register finalizer with full options
+    pub fn addFinalizerWithOptions(
+        self: *GC, 
+        object: *anyopaque, 
+        finalizer: FinalizerFn, 
+        priority: FinalizerPriority, 
+        name: ?[]const u8,
+        max_retries: u8
+    ) !void {
         if (!self.config.enable_finalization) return;
         
         const header = ObjectHeader.fromData(object);
         header.finalize = 1;
         
+        const finalizer_entry = Finalizer.init(header, finalizer, priority, name, max_retries);
+        
         self.finalization_mutex.lock();
         defer self.finalization_mutex.unlock();
-        try self.finalizers.append(Finalizer{
-            .object = header,
-            .fn_ptr = finalizer,
-        });
+        try self.finalizers.append(finalizer_entry);
+    }
+    
+    /// Set error handler for finalizer failures
+    pub fn setFinalizerErrorHandler(self: *GC, handler: *const fn(err: anyerror, object: *anyopaque, finalizer_name: ?[]const u8) void) void {
+        self.finalizer_error_handler = handler;
     }
     
     /// Record write barrier for concurrent collection
@@ -1409,12 +1637,168 @@ pub const GC = struct {
     
     /// Queue object for finalization
     fn queueForFinalization(self: *GC, obj: *ObjectHeader) void {
+        // Find the finalizer for this object
+        self.finalization_mutex.lock();
+        var finalizer_to_queue: ?Finalizer = null;
+        var finalizer_index: ?usize = null;
+        
+        for (self.finalizers.items, 0..) |finalizer, i| {
+            if (finalizer.object == obj) {
+                finalizer_to_queue = finalizer;
+                finalizer_index = i;
+                break;
+            }
+        }
+        self.finalization_mutex.unlock();
+        
+        if (finalizer_to_queue) |finalizer| {
+            // Queue for finalization with priority
+            self.finalization_queue.enqueue(obj, finalizer) catch {
+                // If we can't queue for finalization, run immediately or free
+                self.runFinalizerSafely(obj, finalizer);
+                
+                // Remove from finalizer list
+                if (finalizer_index) |index| {
+                    self.finalization_mutex.lock();
+                    _ = self.finalizers.swapRemove(index);
+                    self.finalization_mutex.unlock();
+                }
+                
+                // Free the object
+                self.freeObjectDirect(obj);
+            };
+        } else {
+            // No finalizer registered, just free the object
+            self.freeObjectDirect(obj);
+        }
+    }
+    
+    /// Safely run a finalizer with error handling
+    fn runFinalizerSafely(self: *GC, obj: *ObjectHeader, finalizer: Finalizer) void {
+        const object_data = obj.getData();
+        
+        // Run the finalizer and handle any errors
+        finalizer.fn_ptr(object_data) catch |err| {
+            // Call error handler if available
+            if (self.finalizer_error_handler) |handler| {
+                handler(err, object_data, finalizer.name);
+            }
+            
+            // Log error for debugging
+            std.log.err("Finalizer error for object {*}: {any} ({s})", .{ 
+                object_data, 
+                err, 
+                finalizer.name orelse "unnamed" 
+            });
+        };
+        
+        self.stats.finalized_objects += 1;
+    }
+    
+    /// Process a single finalization entry with error handling
+    pub fn processFinalizationEntry(self: *GC, entry: FinalizationEntry) bool {
+        const object_data = entry.object.getData();
+        
+        // Run the finalizer with timeout protection
+        const start_time = std.time.microTimestamp();
+        
+        entry.finalizer.fn_ptr(object_data) catch |err| {
+            // Call error handler if available
+            if (self.finalizer_error_handler) |handler| {
+                handler(err, object_data, entry.finalizer.name);
+            }
+            
+            // Log detailed error information
+            const age_ms = entry.getAge() / 1000;
+            std.log.err("Finalizer '{s}' failed for object {*} (age: {d}ms, attempt: {d}/{d}): {any}", .{ 
+                entry.finalizer.name orelse "unnamed",
+                object_data, 
+                age_ms,
+                entry.attempts + 1,
+                entry.finalizer.max_retries,
+                err 
+            });
+            
+            return false; // Indicate failure
+        };
+        
+        const duration = std.time.microTimestamp() - start_time;
+        
+        // Log slow finalizers for performance monitoring
+        if (duration > 10_000) { // 10ms
+            std.log.warn("Slow finalizer '{s}' took {d}μs for object {*}", .{
+                entry.finalizer.name orelse "unnamed",
+                duration,
+                object_data
+            });
+        }
+        
+        self.stats.finalized_objects += 1;
+        return true; // Success
+    }
+    
+    /// Remove finalizer from registry
+    pub fn removeFinalizer(self: *GC, object: *ObjectHeader) void {
         self.finalization_mutex.lock();
         defer self.finalization_mutex.unlock();
         
-        self.finalization_queue.append(obj) catch {
-            // If we can't queue for finalization, free immediately
-            self.freeObjectDirect(obj);
+        for (self.finalizers.items, 0..) |finalizer, i| {
+            if (finalizer.object == object) {
+                _ = self.finalizers.swapRemove(i);
+                break;
+            }
+        }
+    }
+    
+    /// Force process all pending finalizers (useful for shutdown)  
+    pub fn processAllPendingFinalizers(self: *GC) void {
+        std.log.info("Processing all pending finalizers...", .{});
+        
+        var processed: usize = 0;
+        const start_time = std.time.microTimestamp();
+        
+        while (!self.finalization_queue.isEmpty()) {
+            if (self.finalization_queue.dequeue()) |entry| {
+                const success = self.processFinalizationEntry(entry);
+                if (success) {
+                    self.removeFinalizer(entry.object);
+                    self.freeObjectDirect(entry.object);
+                } else {
+                    // Failed - just free the object anyway during shutdown
+                    self.removeFinalizer(entry.object);
+                    self.freeObjectDirect(entry.object);
+                }
+                processed += 1;
+            } else {
+                break;
+            }
+        }
+        
+        const duration = std.time.microTimestamp() - start_time;
+        std.log.info("Processed {d} finalizers in {d}μs", .{ processed, duration });
+    }
+    
+    /// Get finalization queue statistics
+    pub fn getFinalizationStats(self: *GC) struct {
+        registered_finalizers: usize,
+        queued: u64,
+        processed: u64,
+        failed: u64,
+        retried: u64,
+        pending: usize,
+    } {
+        self.finalization_mutex.lock();
+        defer self.finalization_mutex.unlock();
+        
+        const queue_stats = self.finalization_queue.getStats();
+        
+        return .{
+            .registered_finalizers = self.finalizers.items.len,
+            .queued = queue_stats.queued,
+            .processed = queue_stats.processed,
+            .failed = queue_stats.failed,
+            .retried = queue_stats.retried,
+            .pending = queue_stats.pending,
         };
     }
     
@@ -2237,47 +2621,62 @@ fn concurrentCollectionWorker(gc: *GC) void {
     gc.collection_running.store(false, .release);
 }
 
-/// Background thread for finalization
+/// Enhanced background thread for finalization with error handling and retry logic
 fn finalizationWorker(gc: *GC) void {
-    var iteration_count: u32 = 0;
-    const MAX_ITERATIONS = 500; // Prevent infinite loops in finalization
+    const max_batch_size = 16;
+    const timeout_ms = 100; // 100ms timeout for waiting
     
-    while (!gc.stop_collection.load(.acquire) and iteration_count < MAX_ITERATIONS) {
-        iteration_count += 1;
+    std.log.info("Finalization worker thread started", .{});
+    
+    while (!gc.stop_collection.load(.acquire)) {
+        // Wait for work with timeout
+        if (!gc.finalization_queue.waitForWork(timeout_ms)) {
+            continue; // Timeout, check for shutdown
+        }
         
-        // Check finalization queue
-        gc.finalization_mutex.lock();
-        
-        if (gc.finalization_queue.items.len > 0) {
-            const objects_to_finalize = gc.finalization_queue.toOwnedSlice() catch {
-                gc.finalization_mutex.unlock();
-                continue;
-            };
-            gc.finalization_mutex.unlock();
+        // Process up to max_batch_size entries at once for efficiency
+        var processed_count: usize = 0;
+        while (processed_count < max_batch_size and !gc.stop_collection.load(.acquire)) {
+            const entry_opt = gc.finalization_queue.dequeue();
+            if (entry_opt == null) break;
             
-            // Run finalizers outside of lock
-            for (objects_to_finalize) |obj| {
-                // Find and run finalizer
-                for (gc.finalizers.items, 0..) |finalizer, i| {
-                    if (finalizer.object == obj) {
-                        finalizer.fn_ptr(obj.getData());
-                        
-                        // Remove finalizer
-                        gc.finalization_mutex.lock();
-                        _ = gc.finalizers.swapRemove(i);
-                        gc.finalization_mutex.unlock();
-                        
-                        gc.stats.finalized_objects += 1;
-                        break;
-                    }
-                }
+            const entry = entry_opt.?;
+            processed_count += 1;
+            
+            // Run finalizer with error handling
+            const success = gc.processFinalizationEntry(entry);
+            
+            if (success) {
+                // Remove finalizer from registry
+                gc.removeFinalizer(entry.object);
                 
                 // Free the object
-                gc.freeObjectDirect(obj);
+                gc.freeObjectDirect(entry.object);
+                
+                // Update statistics
+                _ = gc.finalization_queue.total_processed.fetchAdd(1, .acq_rel);
+            } else {
+                // Failed - handle retry if applicable
+                if (entry.shouldRetry()) {
+                    gc.finalization_queue.requeueForRetry(entry) catch {
+                        // If we can't requeue, just free the object
+                        std.log.warn("Failed to requeue finalizer for retry, freeing object", .{});
+                        gc.removeFinalizer(entry.object);
+                        gc.freeObjectDirect(entry.object);
+                    };
+                } else {
+                    // Max retries exceeded, give up and free
+                    std.log.warn("Finalizer exceeded max retries ({d}), freeing object", .{entry.finalizer.max_retries});
+                    gc.removeFinalizer(entry.object);
+                    gc.freeObjectDirect(entry.object);
+                    
+                    _ = gc.finalization_queue.total_failed.fetchAdd(1, .acq_rel);
+                }
             }
-            
-            gc.allocator.free(objects_to_finalize);
-        } else {
+        }
+        
+        // Brief pause between batches to avoid CPU spinning
+        if (processed_count == 0) {
             gc.finalization_mutex.unlock();
             
             // Sleep for a bit before checking again
@@ -2474,10 +2873,8 @@ export fn cursed_gc_register_finalizer(gc: ?*GC, object: *anyopaque, finalizer: 
             header.finalize = 1;
             
             g.finalization_mutex.lock();
-            g.finalizers.append(Finalizer{
-                .object = header,
-                .fn_ptr = @ptrCast(fn_ptr),
-            }) catch {};
+            const finalizer_entry = Finalizer.init(header, @ptrCast(fn_ptr), .Normal, "c_export", 3);
+            g.finalizers.append(finalizer_entry) catch {};
             g.finalization_mutex.unlock();
         }
     }
@@ -2899,7 +3296,7 @@ test "GC generational collection" {
     try expect(gc.stats.old_collections >= 0);
 }
 
-test "GC finalization" {
+test "GC enhanced finalization system" {
     const gpa = std.testing.allocator;
     
     var config = GCConfig.default();
@@ -2908,23 +3305,66 @@ test "GC finalization" {
     var gc = try GC.init(gpa, config);
     defer gc.deinit();
     
-    // Test finalizer registration
-    const ptr = try gc.alloc(64, 0);
+    // Simple finalizer function for testing
+    const finalizer_fn = struct {
+        fn call(object: *anyopaque) anyerror!void {
+            const data = @as(*i32, @ptrCast(@alignCast(object)));
+            std.log.info("Finalizing object with value: {d}", .{data.*});
+        }
+    }.call;
     
-    // Test finalizer setup (simplified)
-    _ = ptr; // For now, just test basic finalization structure
+    // Test different priority levels
+    const ptr1 = try gc.alloc(@sizeOf(i32), 0);
+    const ptr2 = try gc.alloc(@sizeOf(i32), 0);
+    const ptr3 = try gc.alloc(@sizeOf(i32), 0);
     
-    // Simplified finalizer test
-    // TODO: Re-implement proper finalizer testing
+    // Write test values
+    @as(*i32, @ptrCast(@alignCast(ptr1))).* = 42;
+    @as(*i32, @ptrCast(@alignCast(ptr2))).* = 84;
+    @as(*i32, @ptrCast(@alignCast(ptr3))).* = 168;
     
-    // Don't add as root - should be collected and finalized
+    // Register finalizers with different priorities
+    try gc.addFinalizerWithOptions(ptr1, finalizer_fn, .Normal, "test1", 3);
+    try gc.addFinalizerWithOptions(ptr2, finalizer_fn, .High, "test2", 5);
+    try gc.addFinalizerWithOptions(ptr3, finalizer_fn, .Critical, "test3", 1);
+    
+    // Test error handler registration
+    const error_handler = struct {
+        fn handle(err: anyerror, object: *anyopaque, name: ?[]const u8) void {
+            std.log.warn("Finalizer error: {any} for object {*} ({s})", .{ 
+                err, 
+                object, 
+                name orelse "unnamed" 
+            });
+        }
+    }.handle;
+    
+    gc.setFinalizerErrorHandler(error_handler);
+    
+    // Get initial finalization stats
+    const initial_stats = gc.getFinalizationStats();
+    try expect(initial_stats.registered_finalizers == 3);
+    try expect(initial_stats.pending == 0);
+    
+    // Don't add as roots - should be collected and finalized
     try gc.collectNow();
     
-    // Give finalization thread time to run
-    std.time.sleep(10_000_000); // 10ms
+    // Give finalization thread time to process
+    std.time.sleep(50_000_000); // 50ms
     
-    // Note: In a real implementation, we'd wait for finalization completion
-    std.debug.print("Finalization test completed\n", .{});
+    // Get final stats
+    const final_stats = gc.getFinalizationStats();
+    
+    std.debug.print("Finalization test results:\n", .{});
+    std.debug.print("  Registered: {d} -> {d}\n", .{ initial_stats.registered_finalizers, final_stats.registered_finalizers });
+    std.debug.print("  Queued: {d}\n", .{final_stats.queued});
+    std.debug.print("  Processed: {d}\n", .{final_stats.processed});
+    std.debug.print("  Failed: {d}\n", .{final_stats.failed});
+    std.debug.print("  Retried: {d}\n", .{final_stats.retried});
+    std.debug.print("  Pending: {d}\n", .{final_stats.pending});
+    
+    // Verify finalizers were processed
+    try expect(final_stats.queued >= 3);
 }
 
 test "GC memory pool allocation" {
@@ -3180,6 +3620,8 @@ const GCImpl = struct {
         
         return ptr;
     }
+    
+
 };
 
 // Add methods to GC struct

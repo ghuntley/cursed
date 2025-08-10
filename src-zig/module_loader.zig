@@ -20,6 +20,7 @@ pub const ModuleLoader = struct {
     verbose: bool,
     telemetry: ?*crash_handler.CrashTelemetry,
     safe_file_ops: safe_operations.SafeFileOperations,
+    stdlib_path: ?[]const u8,
     
     const LoadedModule = struct {
         name: []const u8,
@@ -48,6 +49,18 @@ pub const ModuleLoader = struct {
             .verbose = verbose,
             .telemetry = null,
             .safe_file_ops = undefined, // Will be initialized when telemetry is set
+            .stdlib_path = null,
+        };
+    }
+    
+    pub fn initWithStdlibPath(allocator: Allocator, verbose: bool, stdlib_path: ?[]const u8) ModuleLoader {
+        return ModuleLoader{
+            .allocator = allocator,
+            .loaded_modules = HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .verbose = verbose,
+            .telemetry = null,
+            .safe_file_ops = undefined, // Will be initialized when telemetry is set
+            .stdlib_path = stdlib_path,
         };
     }
     
@@ -58,6 +71,7 @@ pub const ModuleLoader = struct {
             .verbose = verbose,
             .telemetry = telemetry,
             .safe_file_ops = safe_operations.SafeFileOperations.init(allocator, telemetry),
+            .stdlib_path = null,
         };
     }
     
@@ -114,24 +128,43 @@ pub const ModuleLoader = struct {
     
     /// Find the path to a module file
     fn findModulePath(self: *ModuleLoader, module_name: []const u8) ![]const u8 {
-        // Check if it's a stdlib module
-        if (simple_import_resolver.resolveStdlibImport(self.allocator, module_name) catch false) {
-            // Build stdlib path
+        // Try to resolve stdlib module first with custom path if available
+        if (simple_import_resolver.resolveStdlibImportWithPath(self.allocator, module_name, self.stdlib_path) catch false) {
+            // Build stdlib path using consistent method
             var path_buf = ArrayList(u8).init(self.allocator);
             defer path_buf.deinit();
             
-            // Find project root
-            const project_root = try self.findProjectRoot();
-            defer self.allocator.free(project_root);
+            if (self.stdlib_path) |custom_path| {
+                // Use provided stdlib path
+                if (self.verbose) print("📁 Using custom stdlib path: {s}\n", .{custom_path});
+                try path_buf.appendSlice(custom_path);
+                try path_buf.append('/');
+                try path_buf.appendSlice(module_name);
+                try path_buf.appendSlice("/mod.csd");
+            } else {
+                // Find project root and build standard path
+                const project_root = try self.findProjectRoot();
+                defer self.allocator.free(project_root);
+                
+                try path_buf.appendSlice(project_root);
+                try path_buf.appendSlice("/stdlib/");
+                try path_buf.appendSlice(module_name);
+                try path_buf.appendSlice("/mod.csd");
+            }
             
-            try path_buf.appendSlice(project_root);
-            try path_buf.appendSlice("/stdlib/");
-            try path_buf.appendSlice(module_name);
-            try path_buf.appendSlice("/mod.csd");
+            // Double-check that the file actually exists before returning path
+            const potential_path = try self.allocator.dupe(u8, path_buf.items);
+            std.fs.cwd().access(potential_path, .{}) catch |err| {
+                self.allocator.free(potential_path);
+                if (self.verbose) print("❌ Module file not found at expected path: {s} - {any}\n", .{ path_buf.items, err });
+                return error.ModuleNotFound;
+            };
             
-            return try self.allocator.dupe(u8, path_buf.items);
+            if (self.verbose) print("✅ Found stdlib module '{s}' at: {s}\n", .{ module_name, potential_path });
+            return potential_path;
         } else {
-            // Module not found
+            // Not a stdlib module, try other resolution methods
+            if (self.verbose) print("❌ Module '{s}' not recognized as stdlib module\n", .{module_name});
             return error.ModuleNotFound;
         }
     }
@@ -145,9 +178,11 @@ pub const ModuleLoader = struct {
         // Look for marker files that indicate project root
         const markers = [_][]const u8{
             "build.zig",
-            "AGENT.md",
+            "AGENT.md", 
             ".git",
-            "stdlib"
+            "stdlib",
+            "Cargo.toml",
+            "CursedPackage.toml"
         };
         
         var path_components = ArrayList([]const u8).init(self.allocator);
@@ -161,6 +196,8 @@ pub const ModuleLoader = struct {
             }
         }
         
+        if (self.verbose) print("🔍 Searching for project root from: {s}\n", .{current_path});
+        
         // Walk up the directory tree
         while (path_components.items.len > 0) {
             // Build current test path
@@ -172,6 +209,8 @@ pub const ModuleLoader = struct {
                 try test_path.appendSlice(component);
                 try test_path.append('/');
             }
+            
+            if (self.verbose) print("🔍 Checking directory: {s}\n", .{test_path.items});
             
             // Check for marker files
             for (markers) |marker| {
@@ -185,7 +224,9 @@ pub const ModuleLoader = struct {
                 cwd.access(marker_path.items, .{}) catch continue;
                 
                 // Found project root
-                return try self.allocator.dupe(u8, test_path.items[0..test_path.items.len-1]); // Remove trailing slash
+                const root_path = try self.allocator.dupe(u8, test_path.items[0..test_path.items.len-1]); // Remove trailing slash
+                if (self.verbose) print("✅ Found project root at: {s} (marker: {s})\n", .{ root_path, marker });
+                return root_path;
             }
             
             // Remove last component and try parent directory
@@ -193,6 +234,7 @@ pub const ModuleLoader = struct {
         }
         
         // Fallback to current directory
+        if (self.verbose) print("⚠️ No project root found, using current directory: {s}\n", .{current_path});
         return try self.allocator.dupe(u8, current_path);
     }
     

@@ -8,8 +8,8 @@ use crate::error::{CursedError, Result};
 use crate::imports::resolver::{ImportResolver, ImportConfig, ResolvedImport};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-// Note: TypeChecker and LLVMCodeGenerator would be used for actual compilation
-// For now, we'll use placeholder implementations
+use crate::type_system::checker::TypeChecker;
+use crate::codegen::llvm::main::LLVMCodeGenerator;
 use crate::optimization::OptimizationConfig;
 use crate::ast::Program;
 use std::collections::{HashMap, HashSet};
@@ -133,6 +133,10 @@ pub struct BuildPipeline {
     resolver: ImportResolver,
     /// Build cache
     cache: BuildCache,
+    /// Type checker for AST validation
+    type_checker: TypeChecker,
+    /// LLVM code generator for IR generation
+    llvm_generator: LLVMCodeGenerator,
 }
 
 impl Default for BuildConfig {
@@ -193,10 +197,19 @@ impl BuildPipeline {
         let resolver = ImportResolver::with_config(import_config)?;
         let cache = Self::load_cache(&config.output_dir)?;
         
+        // Initialize type checker
+        let type_checker = TypeChecker::new();
+        
+        // Initialize LLVM code generator with target configuration
+        let target_triple = config.target.clone().unwrap_or_else(|| "x86_64-unknown-linux-gnu".to_string());
+        let llvm_generator = LLVMCodeGenerator::new(target_triple);
+        
         Ok(Self {
             config,
             resolver,
             cache,
+            type_checker,
+            llvm_generator,
         })
     }
 
@@ -510,26 +523,145 @@ impl BuildPipeline {
         // Resolve imports
         let _resolved_imports = self.resolver.resolve_imports(&unit.program.imports).await?;
         
-        // For now, generate placeholder IR (actual compilation would use TypeChecker and LLVMCodeGenerator)
-        let placeholder_ir = format!(
-            "; Generated IR for {}\n; Source: {}\n\ndefine i32 @main() {{\n  ret i32 0\n}}\n",
-            unit.path.display(),
-            unit.source.len()
-        );
-        unit.llvm_ir = Some(placeholder_ir);
+        // Step 1: Type checking
+        println!("🔍 Type checking {}", unit.path.display());
+        if let Err(type_errors) = self.type_checker.check_program(&unit.program) {
+            let error_msg = format!("Type checking failed for {}: {:?}", unit.path.display(), type_errors);
+            return Err(CursedError::TypeError(error_msg));
+        }
         
-        // Compile to object file if needed
+        // Step 2: LLVM IR generation
+        println!("⚙️  Generating LLVM IR for {}", unit.path.display());
+        let llvm_ir = self.llvm_generator.generate_ir(&unit.program)
+            .map_err(|e| CursedError::CompilationError(format!("LLVM IR generation failed: {}", e)))?;
+        
+        unit.llvm_ir = Some(llvm_ir);
+        
+        // Step 3: Compile to object file if needed
         if self.config.build_mode != BuildMode::Test {
             let object_path = self.get_object_path(&unit.path);
             
-            // For now, just save the IR (actual object compilation would use LLVM)
+            // Save the IR file for debugging
             let ir_path = object_path.with_extension("ll");
             fs::write(&ir_path, unit.llvm_ir.as_ref().unwrap())?;
+            println!("💾 Saved LLVM IR to {}", ir_path.display());
             
-            unit.object_file = Some(object_path);
+            // Compile IR to object file using LLVM
+            let success = self.compile_ir_to_object(&ir_path, &object_path)?;
+            if success {
+                unit.object_file = Some(object_path);
+                println!("🎯 Compiled to object file {}", object_path.display());
+            } else {
+                warnings.push(format!("Failed to compile {} to object file", unit.path.display()));
+            }
         }
         
         Ok(warnings)
+    }
+
+    /// Compile LLVM IR to object file using LLVM tools
+    fn compile_ir_to_object(&self, ir_path: &Path, object_path: &Path) -> Result<bool> {
+        use std::process::Command;
+        
+        // Ensure output directory exists
+        if let Some(parent) = object_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        
+        // Use llc to compile IR to object file
+        let mut cmd = Command::new("llc");
+        cmd.arg("-filetype=obj")
+           .arg("-o").arg(object_path)
+           .arg(ir_path);
+        
+        // Add target triple if specified
+        if let Some(target) = &self.config.target {
+            cmd.arg("-mtriple").arg(target);
+        }
+        
+        // Add optimization flags based on build mode
+        match self.config.build_mode {
+            BuildMode::Release => {
+                cmd.arg("-O3");
+            }
+            BuildMode::Debug => {
+                cmd.arg("-O0");
+            }
+            BuildMode::Test => {
+                cmd.arg("-O1");
+            }
+        }
+        
+        // Execute llc command
+        let output = cmd.output()
+            .map_err(|e| CursedError::CompilationError(format!("Failed to run llc: {}", e)))?;
+        
+        if output.status.success() {
+            Ok(true)
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            eprintln!("llc error: {}", stderr);
+            Ok(false)
+        }
+    }
+
+    /// Link object files into executable using system linker
+    fn link_object_files(&self, object_files: &[PathBuf], output_path: &Path) -> Result<()> {
+        use std::process::Command;
+        
+        // Ensure output directory exists
+        if let Some(parent) = output_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        
+        // Try clang first, then gcc as fallback
+        let linkers = ["clang", "gcc"];
+        let mut last_error = None;
+        
+        for linker in &linkers {
+            let mut cmd = Command::new(linker);
+            
+            // Add object files
+            for obj_file in object_files {
+                cmd.arg(obj_file);
+            }
+            
+            // Output file
+            cmd.arg("-o").arg(output_path);
+            
+            // Add standard libraries
+            cmd.arg("-lc");
+            
+            // Add target triple if specified
+            if let Some(target) = &self.config.target {
+                cmd.arg("-target").arg(target);
+            }
+            
+            // Add debug info if requested
+            if self.config.debug_info {
+                cmd.arg("-g");
+            }
+            
+            // Execute linker command
+            match cmd.output() {
+                Ok(output) => {
+                    if output.status.success() {
+                        println!("✅ Successfully linked with {}", linker);
+                        return Ok(());
+                    } else {
+                        let stderr = String::from_utf8_lossy(&output.stderr);
+                        last_error = Some(format!("{} failed: {}", linker, stderr));
+                    }
+                }
+                Err(e) => {
+                    last_error = Some(format!("Failed to run {}: {}", linker, e));
+                }
+            }
+        }
+        
+        Err(CursedError::CompilationError(
+            last_error.unwrap_or_else(|| "All linkers failed".to_string())
+        ))
     }
 
     /// Get object file path for a source file
@@ -549,23 +681,32 @@ impl BuildPipeline {
         );
         
         // Find main unit
-        let main_unit = units.iter()
+        let _main_unit = units.iter()
             .find(|u| u.path == *main_file)
             .ok_or_else(|| CursedError::CompilerError("Main file not found in compilation units".to_string()))?;
         
-        // Create a simple executable by combining IR (placeholder implementation)
-        let mut combined_ir = String::new();
+        println!("🔗 Linking executable {}", executable_path.display());
         
+        // Collect all object files
+        let mut object_files = Vec::new();
         for unit in units {
-            if let Some(ir) = &unit.llvm_ir {
-                combined_ir.push_str(ir);
-                combined_ir.push('\n');
+            if let Some(obj_path) = &unit.object_file {
+                if obj_path.exists() {
+                    object_files.push(obj_path.clone());
+                } else {
+                    return Err(CursedError::CompilationError(
+                        format!("Object file not found: {}", obj_path.display())
+                    ));
+                }
             }
         }
         
-        // Save combined IR
-        let ir_path = executable_path.with_extension("ll");
-        fs::write(&ir_path, combined_ir)?;
+        if object_files.is_empty() {
+            return Err(CursedError::CompilationError("No object files to link".to_string()));
+        }
+        
+        // Link using clang or gcc
+        self.link_object_files(&object_files, &executable_path)?;
         
         // Create build artifact
         let artifact = BuildArtifact {

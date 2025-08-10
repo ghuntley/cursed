@@ -727,12 +727,14 @@ pub fn shutdown_gc() -> Result<(), CursedError> {
 }
 
 /// Object metadata for GC compatibility
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ObjectMetadata {
     pub size: usize,
     pub marked: bool,
     pub ref_count: usize,
     pub tag: crate::memory::Tag,
+    pub has_finalizer: bool,
+    pub finalizer_fn: Option<fn(*mut u8) -> Result<(), String>>,
 }
 
 impl ObjectMetadata {
@@ -742,6 +744,8 @@ impl ObjectMetadata {
             marked: false,
             ref_count: 0,
             tag: crate::memory::Tag::Object,
+            has_finalizer: false,
+            finalizer_fn: None,
         }
     }
     
@@ -751,6 +755,19 @@ impl ObjectMetadata {
             marked: false,
             ref_count: 0,
             tag,
+            has_finalizer: false,
+            finalizer_fn: None,
+        }
+    }
+    
+    pub fn with_finalizer(size: usize, tag: crate::memory::Tag, finalizer: fn(*mut u8) -> Result<(), String>) -> Self {
+        Self {
+            size,
+            marked: false,
+            ref_count: 0,
+            tag,
+            has_finalizer: true,
+            finalizer_fn: Some(finalizer),
         }
     }
 }
