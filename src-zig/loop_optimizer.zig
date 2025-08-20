@@ -105,7 +105,7 @@ pub const LoopOptimizer = struct {
         const end_time = std.time.nanoTimestamp();
         self.stats.optimization_time_ns = end_time - start_time;
         
-        std.debug.print("✅ Loop optimization: {} loops optimized, {} vectorized\n", 
+        std.debug.print("✅ Loop optimization: {d} loops optimized, {d} vectorized\n", 
                        .{ result.loops_optimized, result.loops_vectorized });
         
         return result;

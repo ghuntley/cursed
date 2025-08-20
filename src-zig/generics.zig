@@ -409,12 +409,31 @@ pub const Monomorphizer = struct {
             if (self.const_generics_manager.instantiation.getValue(param_name)) |value| {
                 // Validate the value against bounds - critical for preventing ICE
                 bounds.validate(value) catch |err| {
-                    std.log.err("CRITICAL: Const generic bounds violation for '{}' would cause optimizer ICE: {}", 
+                    std.log.err("CRITICAL: Const generic bounds violation for '{s}' would cause optimizer ICE: {}", 
                         .{param_name, err});
                     std.log.err("  Value: {}", .{value});
                     std.log.err("  This violation would cause Internal Compiler Error in optimizer");
                     return const_generics.ConstGenericError.BoundsCheckFailed;
                 };
+                
+                // Additional safety checks for LLVM optimizer compatibility
+                switch (value) {
+                    .Integer => |int_val| {
+                        // Prevent integer overflow that causes optimizer ICE
+                        if (int_val < std.math.minInt(i32) or int_val > std.math.maxInt(i32)) {
+                            std.log.err("CRITICAL: Integer const generic {} exceeds i32 bounds - would cause optimizer ICE", .{int_val});
+                            return const_generics.ConstGenericError.OptimizerICE;
+                        }
+                    },
+                    .Array => |arr_val| {
+                        // Prevent arrays that are too large for optimizer
+                        if (arr_val.length > 1024) {
+                            std.log.err("CRITICAL: Array const generic length {} too large - would cause optimizer ICE", .{arr_val.length});
+                            return const_generics.ConstGenericError.OptimizerICE;
+                        }
+                    },
+                    else => {}, // Other types are generally safe
+                }
                 
                 // Additional checks for optimizer-problematic values
                 switch (value) {
@@ -472,6 +491,22 @@ pub const Monomorphizer = struct {
         }
         
         std.log.info("All const generics validated as optimizer-safe");
+    }
+    
+    /// CRITICAL FIX: Validate LLVM IR for basic block terminator issues that cause optimizer ICE
+    fn validateLLVMBasicBlocks(self: *Monomorphizer, llvm_function: c.LLVMValueRef) !void {
+        _ = llvm_function; // Individual function validation happens in the comprehensive fix
+        
+        const llvm_ice_fix = @import("llvm_optimizer_ice_fix.zig");
+        
+        // Apply comprehensive LLVM optimizer ICE fixes to the entire module
+        try llvm_ice_fix.fixLLVMOptimizerICE(
+            self.allocator,
+            self.const_generics_manager.context,
+            self.module
+        );
+        
+        std.log.info("LLVM module validated and fixed for optimizer ICE prevention");
     }
     
     /// Check if type supports comparison operations
@@ -811,12 +846,15 @@ pub const Monomorphizer = struct {
         // Create LLVM function
         const llvm_function = c.LLVMAddFunction(self.module, func_decl.name.ptr, function_type);
         
+        // CRITICAL FIX: Validate LLVM function for optimizer ICE prevention
+        try self.validateLLVMBasicBlocks(llvm_function);
+        
         // Store in instance
         if (self.instances.getPtr(func_decl.name)) |instance| {
             instance.llvm_function = llvm_function;
         }
         
-        std.log.info("Generated specialized function: {s}", .{func_decl.name});
+        std.log.info("Generated specialized function: {s} with optimizer safety validation", .{func_decl.name});
     }
     
     /// Generate LLVM struct type for specialized generic struct

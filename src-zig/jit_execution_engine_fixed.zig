@@ -376,6 +376,8 @@ pub const JITExecutionEngine = struct {
             
             // Evaluate arguments
             var args = ArrayList(Value).init(arg_allocator);
+            defer args.deinit();
+            errdefer args.deinit(); // Clean up on error
             
             for (call.arguments.items) |arg| {
                 const arg_value = try self.evaluateExpression(arg.*);

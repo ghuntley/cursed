@@ -155,8 +155,13 @@ pub const WorkingCodeGen = struct {
         // Verify the module
         var error_msg: [*c]u8 = undefined;
         if (c.LLVMVerifyModule(self.module, c.LLVMReturnStatusAction, &error_msg) != 0) {
-            std.debug.print("Module verification failed: {s}\n", .{error_msg});
-            c.LLVMDisposeMessage(error_msg);
+            defer c.LLVMDisposeMessage(error_msg);
+            const error_str = std.mem.span(error_msg);
+            if (error_str.len > 0) {
+                std.debug.print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
+            } else {
+                std.debug.print("❌ CRITICAL: LLVM module verification failed with unknown error\n");
+            }
             return CodeGenError.LLVMError;
         }
         
@@ -186,8 +191,13 @@ pub const WorkingCodeGen = struct {
         // Verify the module
         var error_msg: [*c]u8 = undefined;
         if (c.LLVMVerifyModule(self.module, c.LLVMReturnStatusAction, &error_msg) != 0) {
-            std.debug.print("Module verification failed: {s}\n", .{error_msg});
-            c.LLVMDisposeMessage(error_msg);
+            defer c.LLVMDisposeMessage(error_msg);
+            const error_str = std.mem.span(error_msg);
+            if (error_str.len > 0) {
+                std.debug.print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
+            } else {
+                std.debug.print("❌ CRITICAL: LLVM module verification failed with unknown error\n");
+            }
             return CodeGenError.LLVMError;
         }
         

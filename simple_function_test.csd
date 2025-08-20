@@ -1,6 +1,9 @@
-slay add(a drip, b drip) drip { 
-    damn a + b 
+slay add(a drip, b drip) drip {
+    damn a + b
 }
 
-sus result drip = add(3, 4)
-vibez.spill(result)
+slay main_character() {
+    vibez.spill("Testing simple function")
+    sus result drip = add(5, 3)
+    vibez.spill("Result:", result)
+}

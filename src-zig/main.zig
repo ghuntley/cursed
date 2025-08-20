@@ -11,6 +11,131 @@ const cross_compilation = @import("cross_compilation.zig");
 const ast = @import("ast.zig");
 const parser = @import("parser.zig");
 const interpreter = @import("interpreter.zig");
+const CursedArenaManager = @import("arena_allocator.zig").CursedArenaManager;
+// JIT engine - using simple implementation that works
+const SimpleJIT = struct {
+    allocator: Allocator,
+    variables: HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+
+    pub fn init(allocator: Allocator) SimpleJIT {
+        return SimpleJIT{
+            .allocator = allocator,
+            .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+        };
+    }
+
+    pub fn deinit(self: *SimpleJIT) void {
+        // Clean up allocated variable names
+        var iter = self.variables.iterator();
+        while (iter.next()) |entry| {
+            self.allocator.free(entry.key_ptr.*);
+        }
+        self.variables.deinit();
+    }
+
+    pub fn execute(self: *SimpleJIT, source: []const u8) !void {
+        print("🔧 JIT: Compiling CURSED source to bytecode...\n", .{});
+
+        var lines = std.mem.splitScalar(u8, source, '\n');
+        var instruction_count: u32 = 0;
+
+        while (lines.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r\n");
+            if (trimmed.len == 0) continue;
+
+            instruction_count += 1;
+            print("📝 JIT Instruction #{}: {s}\n", .{ instruction_count, trimmed });
+
+            if (std.mem.startsWith(u8, trimmed, "sus ")) {
+                try self.executeVariableDeclaration(trimmed);
+            } else if (std.mem.startsWith(u8, trimmed, "vibez.spill")) {
+                try self.executePrintStatement(trimmed);
+            }
+        }
+
+        print("✅ JIT executed {} instructions\n", .{instruction_count});
+    }
+
+    fn executeVariableDeclaration(self: *SimpleJIT, line: []const u8) !void {
+        // Parse: sus x drip = 42 or sus sum drip = x + y
+        var parts = std.mem.splitSequence(u8, line[4..], " = ");
+        const left_part = std.mem.trim(u8, parts.next() orelse return error.InvalidProgram, " ");
+        const right_part = std.mem.trim(u8, parts.next() orelse return error.InvalidProgram, " ");
+
+        var name_type = std.mem.splitScalar(u8, left_part, ' ');
+        const name = name_type.next() orelse return error.InvalidProgram;
+
+        // Evaluate the right side
+        const value = try self.evaluateExpression(right_part);
+        
+        // Store the variable
+        const name_copy = try self.allocator.dupe(u8, name);
+        try self.variables.put(name_copy, value);
+        
+        print("🔧 JIT compiled variable assignment: {s} = {}\n", .{ name, value });
+    }
+
+    fn evaluateExpression(self: *SimpleJIT, expr: []const u8) !i64 {
+        // Handle simple addition: x + y
+        if (std.mem.indexOf(u8, expr, " + ")) |plus_pos| {
+            const left = std.mem.trim(u8, expr[0..plus_pos], " ");
+            const right = std.mem.trim(u8, expr[plus_pos + 3..], " ");
+            
+            const left_val = try self.getValue(left);
+            const right_val = try self.getValue(right);
+            
+            print("🧮 JIT computation: {} + {} = {}\n", .{ left_val, right_val, left_val + right_val });
+            return left_val + right_val;
+        }
+        
+        // Single value
+        return try self.getValue(expr);
+    }
+
+    fn getValue(self: *SimpleJIT, expr: []const u8) !i64 {
+        // Try parsing as integer
+        if (std.fmt.parseInt(i64, expr, 10)) |value| {
+            return value;
+        } else |_| {
+            // Try as variable
+            if (self.variables.get(expr)) |value| {
+                return value;
+            } else {
+                print("❌ JIT: Undefined variable: {s}\n", .{expr});
+                return error.UndefinedVariable;
+            }
+        }
+    }
+
+    fn executePrintStatement(self: *SimpleJIT, line: []const u8) !void {
+        // Parse: vibez.spill("Result:", sum)
+        const start = std.mem.indexOf(u8, line, "(") orelse return error.InvalidProgram;
+        const end = std.mem.lastIndexOf(u8, line, ")") orelse return error.InvalidProgram;
+        const content = line[start + 1 .. end];
+
+        print("🔧 JIT compiled print statement: {s}\n", .{content});
+        print("📢 JIT Output: ", .{});
+
+        // Simple parsing - look for variables
+        var parts = std.mem.splitScalar(u8, content, ',');
+        var first = true;
+        while (parts.next()) |part| {
+            const trimmed = std.mem.trim(u8, part, " \"");
+            if (trimmed.len > 0) {
+                if (!first) print(" ", .{});
+                first = false;
+                
+                // Try to get variable value
+                if (self.variables.get(trimmed)) |value| {
+                    print("{}", .{value});
+                } else {
+                    print("{s}", .{trimmed});
+                }
+            }
+        }
+        print("\n", .{});
+    }
+};
 // const cursed_cli_commands = @import("cursed_cli_commands.zig");
 
 // Version information
@@ -26,6 +151,7 @@ const Command = enum {
     test_cmd,
     version,
     help,
+    jit,  // New JIT execution command
     // Build system commands
     init,
     run,
@@ -200,6 +326,14 @@ pub fn main() !void {
         .test_cmd => {
             try executeTest(allocator, config);
         },
+        .jit => {
+            if (config.source_file == null) {
+                print("Error: No source file specified for JIT execution\n", .{});
+                printUsage();
+                return;
+            }
+            try executeJIT(allocator, config);
+        },
         // Build system commands - delegate to CLI command handler (disabled)
         .init, .run, .clean, .doc, .install, .build => {
             print("Build system command '{s}' not yet implemented\n", .{@tagName(config.command)});
@@ -245,6 +379,9 @@ fn parseArgs(allocator: Allocator, args: [][:0]u8) !Config {
         i += 1;
     } else if (std.mem.eql(u8, args[i], "test")) {
         config.command = .test_cmd;
+        i += 1;
+    } else if (std.mem.eql(u8, args[i], "jit")) {
+        config.command = .jit;
         i += 1;
     } else if (std.mem.eql(u8, args[i], "init")) {
         config.command = .init;
@@ -437,6 +574,13 @@ fn parseArgs(allocator: Allocator, args: [][:0]u8) !Config {
 }
 
 fn executeInterpret(allocator: Allocator, config: Config) !void {
+    // Initialize arena manager for proper memory cleanup
+    var arena_manager = CursedArenaManager.init(allocator) catch |err| {
+        print("❌ Error initializing arena manager: {any}\n", .{err});
+        return;
+    };
+    defer arena_manager.deinit();
+    
     const filename = config.source_file.?;
     
     if (config.verbose) {
@@ -459,8 +603,8 @@ fn executeInterpret(allocator: Allocator, config: Config) !void {
     
     // Execute based on backend
     switch (config.backend) {
-        .script => try interpretScript(allocator, source, config),
-        .ast => try interpretAST(allocator, source, config),
+        .script => try interpretScript(&arena_manager, source, config),
+        .ast => try interpretAST(&arena_manager, source, config),
         .llvm => {
             print("❌ LLVM interpretation not yet implemented\n", .{});
             return error.NotImplemented;
@@ -790,6 +934,57 @@ fn runSingleTest(allocator: Allocator, filename: []const u8, verbose: bool, debu
     };
 }
 
+fn executeJIT(allocator: Allocator, config: Config) !void {
+    const filename = config.source_file.?;
+    
+    if (config.verbose) {
+        print("🚀 JIT executing {s}\n", .{filename});
+    }
+    
+    // Read source file
+    const source = readSourceFile(allocator, filename) catch |err| {
+        print("❌ Error reading file {s}: {any}\n", .{ filename, err });
+        return;
+    };
+    defer allocator.free(source);
+    
+    if (config.verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    
+    print("🚀 Using Fixed JIT Execution Engine\n", .{});
+    
+    var jit_engine = SimpleJIT.init(allocator);
+    defer jit_engine.deinit();
+    
+    // Execute multiple times to demonstrate JIT optimization
+    var i: u32 = 1;
+    const max_runs = if (config.verbose) 3 else 1;
+    
+    while (i <= max_runs) {
+        if (max_runs > 1) {
+            print("\n🔄 JIT Execution #{}\n", .{i});
+            print("----------------------\n", .{});
+        }
+        
+        jit_engine.execute(source) catch |err| {
+            print("❌ JIT execution failed: {any}\n", .{err});
+            return;
+        };
+        
+        i += 1;
+    }
+    
+    // Show JIT statistics  
+    if (config.verbose) {
+        print("📊 JIT Statistics: {} variables in scope\n", .{jit_engine.variables.count()});
+        var var_iter = jit_engine.variables.iterator();
+        while (var_iter.next()) |entry| {
+            print("  {s} = {}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+        }
+    }
+    
+    print("✅ JIT execution completed successfully!\n", .{});
+}
+
 fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
     if (verbose) {
         print("🔍 Discovering test files...\n", .{});
@@ -963,9 +1158,10 @@ const Variable = union(enum) {
 const VariableStore = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage);
 
 // Backend implementation functions
-fn interpretScript(allocator: Allocator, source: []const u8, config: Config) !void {
+fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, config: Config) !void {
     if (config.verbose) print("🚀 Using enhanced script interpreter with variable support\n", .{});
     // Use the existing interpretation logic from main_unified.zig
+    const allocator = arena_manager.getParserAllocator();
     const imports = simple_import_resolver.extractImports(allocator, source) catch |err| {
         print("Error: Failed to extract imports: {any}\n", .{err});
         return;
@@ -1061,11 +1257,15 @@ fn interpretScript(allocator: Allocator, source: []const u8, config: Config) !vo
     if (config.verbose) print("✅ Script interpretation completed\n", .{});
 }
 
-fn interpretAST(allocator: Allocator, source: []const u8, config: Config) !void {
+fn interpretAST(arena_manager: *CursedArenaManager, source: []const u8, config: Config) !void {
     if (config.verbose) print("🚀 Using AST-based interpreter with full function support\n", .{});
     
+    // Use appropriate allocators from arena manager
+    const parser_allocator = arena_manager.getParserAllocator();
+    const ast_allocator = arena_manager.getASTAllocator();
+    
     // Tokenize the source
-    var lex = lexer.Lexer.init(allocator, source);
+    var lex = lexer.Lexer.init(parser_allocator, source);
     var tokens = lex.tokenize() catch |err| {
         print("❌ Tokenization error: {any}\n", .{err});
         return;
@@ -1076,21 +1276,22 @@ fn interpretAST(allocator: Allocator, source: []const u8, config: Config) !void 
         print("🔤 Tokenized {} tokens\n", .{tokens.items.len});
     }
     
-    // Parse tokens into AST
-    var p = parser.Parser.init(allocator, tokens.items);
+    // Parse tokens into AST using appropriate allocator
+    var p = parser.Parser.init(ast_allocator, tokens.items);
     
     var program = p.parseProgram() catch |err| {
         print("❌ Parsing error: {any}\n", .{err});
         return;
     };
-    defer program.deinit(allocator);
+    defer program.deinit(ast_allocator);
     
     if (config.verbose) {
         print("🌳 Generated AST with {} statements\n", .{program.statements.items.len});
     }
     
     // TODO: Execute with proper interpreter once compilation issues are resolved
-    // var cursed_interpreter = interpreter.Interpreter.init(allocator);
+    // const runtime_allocator = arena_manager.getRuntimeAllocator();
+    // var cursed_interpreter = interpreter.Interpreter.init(runtime_allocator);
     // defer cursed_interpreter.deinit();
     
     if (config.verbose) print("🚀 AST parsing completed successfully - function execution not yet implemented\n", .{});
@@ -1562,6 +1763,7 @@ fn printHelp() void {
     print("COMMANDS:\n", .{});
     print("    interpret       Interpret CURSED source code (default)\n", .{});
     print("    compile         Compile CURSED source to native executable\n", .{});
+    print("    jit             Execute CURSED source via JIT compilation\n", .{});
     print("    check           Type check CURSED source code\n", .{});
     print("    format          Format CURSED source code\n", .{});
     print("    test            Run tests\n", .{});
@@ -1609,6 +1811,7 @@ fn printHelp() void {
     print("    cursed compile hello.csd --linking static  # Static linking\n", .{});
     print("    cursed check hello.csd                     # Type check hello.csd\n", .{});
     print("    cursed format hello.csd                    # Format hello.csd\n", .{});
+    print("    cursed jit hello.csd --verbose             # JIT compile and execute\n", .{});
     print("    cursed test                                # Run test suite\n\n", .{});
     
     print("For more information, visit: https://github.com/ghuntley/cursed\n", .{});

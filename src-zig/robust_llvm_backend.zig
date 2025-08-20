@@ -832,7 +832,6 @@ pub const RobustLLVMBackend = struct {
     
     // Placeholder implementations for missing methods
     fn generateExpression(self: *RobustLLVMBackend, expr: ast.Expression) !c.LLVMValueRef {
-        _ = self;
         _ = expr;
         return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 42, 0);
     }

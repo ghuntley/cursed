@@ -436,6 +436,8 @@ pub const GoroutineFunctionExecutor = struct {
     fn handleFunctionCall(self: *GoroutineFunctionExecutor, call: ast.CallExpression, env: *Environment) !Value {
         // Evaluate arguments
         var args = ArrayList(Value).init(self.arena_allocator);
+        defer args.deinit();
+        errdefer args.deinit(); // Clean up on error
         for (call.arguments.items) |arg| {
             const value = try self.evaluateExpression(arg.*, env);
             try args.append(value);

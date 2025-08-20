@@ -24,7 +24,7 @@ var runtime_initialized: bool = false;
 var runtime_mutex: std.Thread.Mutex = std.Thread.Mutex{};
 
 // Channel registry for C runtime
-var channel_registry: std.HashMap(u64, *anyopaque, std.hash_map.AutoContext, std.hash_map.default_max_load_percentage) = undefined;
+var channel_registry: std.HashMap(u64, *anyopaque, std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage) = undefined;
 var next_channel_id: u64 = 1;
 
 // Error handling
@@ -54,7 +54,7 @@ export fn cursed_runtime_init() void {
     global_allocator = gpa.allocator();
     
     // Initialize channel registry
-    channel_registry = std.HashMap(u64, *anyopaque, std.hash_map.AutoContext, std.hash_map.default_max_load_percentage).init(global_allocator.?);
+    channel_registry = std.HashMap(u64, *anyopaque, std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(global_allocator.?);
     
     // Initialize garbage collector with proper error cleanup
     global_gc = global_allocator.?.create(gc.GC) catch |err| {

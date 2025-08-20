@@ -1057,6 +1057,8 @@ pub const Parser = struct {
             return ast.Type{ .Map = ast.MapType{
                 .key_type = key_type_ptr,
                 .value_type = value_type_ptr,
+                ._key_owned = true,   // Parser owns these types
+                ._value_owned = true, // Parser owns these types
             }};
         }
 
@@ -1381,7 +1383,7 @@ pub const Parser = struct {
     }
 
     fn parseUnary(self: *Parser) ParserError!Expression {
-        if (self.match(.Bang) or self.match(.Minus) or self.match(.Plus)) {
+        if (self.match(.Bang) or self.match(.Minus) or self.match(.Plus) or self.match(.Star) or self.match(.Amp)) {
             const operator = self.previous().lexeme;
             const right = try self.parseUnary();
             

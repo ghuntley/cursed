@@ -137,11 +137,11 @@ pub const MemoryOptimizer = struct {
         
         // CRITICAL: Validate effect system integration for comprehensive static analysis
         if (self.effect_system != null) {
-            std.debug.print("✅ Memory optimization with effect system: {} allocations optimized, {} stack conversions\n", 
+            std.debug.print("✅ Memory optimization with effect system: {d} allocations optimized, {d} stack conversions\n", 
                            .{ result.allocations_optimized, result.stack_conversions });
             std.debug.print("🔒 Effect-system integrated borrow checking enabled for memory safety\n", .{});
         } else {
-            std.debug.print("✅ Memory optimization: {} allocations optimized, {} stack conversions\n", 
+            std.debug.print("✅ Memory optimization: {d} allocations optimized, {d} stack conversions\n", 
                            .{ result.allocations_optimized, result.stack_conversions });
         }
         
