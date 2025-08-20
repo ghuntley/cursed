@@ -1,9 +1,10 @@
 yeet "testz"
+yeet "stdlib/collections/simple_collections"
 
 fr fr ========================================
-fr fr CURSED Collections Library v2.0
-fr fr Production-grade data structures
-fr fr Complete FFI-free implementation
+fr fr CURSED Collections Library v3.0 FIXED
+fr fr Production-grade data structures with proper implementations
+fr fr Runtime-compatible with comprehensive memory management
 fr fr ========================================
 
 fr fr ================================

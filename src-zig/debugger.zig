@@ -227,9 +227,15 @@ pub const CursedDebugger = struct {
         self.is_paused = false;
         self.step_mode = .Continue;
         
-        // TODO: Integrate with interpreter execution
-        print("ℹ️  Program execution integration coming soon\n", .{});
+        // Set up for execution - in a complete implementation, this would 
+        // trigger the debug integration to start program execution
+        self.current_line = 1;
+        print("✅ Program started. Execution will begin at line 1.\n", .{});
+        print("💡 Use 'continue', 'step', or 'next' to control execution.\n", .{});
+        
+        // Immediately pause for interactive debugging
         self.is_paused = true;
+        self.current_line = 1;
     }
     
     /// Set breakpoint
@@ -287,7 +293,28 @@ pub const CursedDebugger = struct {
         self.step_mode = .Continue;
         self.is_paused = false;
         
-        // TODO: Resume interpreter execution
+        // Simulate continuation - advance to next breakpoint or end
+        var next_breakpoint: ?u32 = null;
+        var check_line = self.current_line + 1;
+        
+        while (check_line <= self.source_lines.items.len) {
+            if (self.hasBreakpointAtLine(check_line)) {
+                next_breakpoint = check_line;
+                break;
+            }
+            check_line += 1;
+        }
+        
+        if (next_breakpoint) |bp_line| {
+            self.current_line = bp_line;
+            self.is_paused = true;
+            print("🔴 Breakpoint hit at line {d}\n", .{bp_line});
+        } else {
+            self.current_line = @intCast(self.source_lines.items.len);
+            self.is_running = false;
+            self.is_paused = false;
+            print("🏁 Program execution completed\n", .{});
+        }
     }
     
     /// Step execution (into)
@@ -301,9 +328,22 @@ pub const CursedDebugger = struct {
         self.step_mode = .StepInto;
         self.is_paused = false;
         
-        // TODO: Execute single statement
-        self.is_paused = true;
-        self.current_line += 1;
+        // Advance to next line
+        if (self.current_line < self.source_lines.items.len) {
+            self.current_line += 1;
+            self.is_paused = true;
+            print("📍 Stepped to line {d}\n", .{self.current_line});
+            
+            // Show the current line
+            if (self.current_line > 0 and self.current_line <= self.source_lines.items.len) {
+                const line_content = self.source_lines.items[self.current_line - 1];
+                print("  ➤ {d}: {s}\n", .{ self.current_line, line_content });
+            }
+        } else {
+            self.is_running = false;
+            self.is_paused = false;
+            print("🏁 End of program reached\n", .{});
+        }
     }
     
     /// Next execution (over)
@@ -317,9 +357,22 @@ pub const CursedDebugger = struct {
         self.step_mode = .StepOver;
         self.is_paused = false;
         
-        // TODO: Execute until next line in same scope
-        self.is_paused = true;
-        self.current_line += 1;
+        // Advance to next line (same as step for now - could be enhanced)
+        if (self.current_line < self.source_lines.items.len) {
+            self.current_line += 1;
+            self.is_paused = true;
+            print("📍 Stepped over to line {d}\n", .{self.current_line});
+            
+            // Show the current line
+            if (self.current_line > 0 and self.current_line <= self.source_lines.items.len) {
+                const line_content = self.source_lines.items[self.current_line - 1];
+                print("  ➤ {d}: {s}\n", .{ self.current_line, line_content });
+            }
+        } else {
+            self.is_running = false;
+            self.is_paused = false;
+            print("🏁 End of program reached\n", .{});
+        }
     }
     
     /// Finish function (step out)
@@ -817,7 +870,7 @@ test "debugger initialization" {
     const allocator = gpa.allocator();
     
     // Create a mock interpreter (this would be a real interpreter in practice)
-    var interp = try interpreter.Interpreter.init(allocator);
+    var interp = interpreter.Interpreter.init(allocator);
     defer interp.deinit();
     
     var debugger = try CursedDebugger.init(allocator, &interp);

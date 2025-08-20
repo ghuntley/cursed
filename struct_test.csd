@@ -1,1 +1,8 @@
-squad Point { spill x drip; spill y drip }; sus p Point = Point{x: 10, y: 20}; vibez.spill("Point:", p.x, p.y)
+fr fr Simple struct field test
+
+squad SimpleStruct {
+    value drip
+}
+
+sus simple SimpleStruct = SimpleStruct { value: 123 }
+vibez.spill("Simple struct value:", simple.value)

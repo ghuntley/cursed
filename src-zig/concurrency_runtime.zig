@@ -56,11 +56,20 @@ pub const SimpleChannel = struct {
     }
 
     pub fn send(self: *SimpleChannel, value: Variable) !void {
+        return self.sendTimeout(value, 30_000_000_000); // 30 second timeout
+    }
+
+    pub fn sendTimeout(self: *SimpleChannel, value: Variable, timeout_ns: u64) !void {
         if (self.closed.load(.acquire)) {
             return RuntimeError.ChannelClosed;
         }
 
-        self.mutex.lock();
+        const start_time = std.time.nanoTimestamp();
+
+        // Use tryLock with timeout to prevent deadlock
+        if (!self.tryLockWithTimeout(timeout_ns)) {
+            return RuntimeError.ChannelClosed; // Treat timeout as closed for now
+        }
         defer self.mutex.unlock();
 
         // For unbuffered channels (capacity 0), wait for receiver
@@ -70,9 +79,15 @@ pub const SimpleChannel = struct {
             return;
         }
 
-        // For buffered channels, wait for space
+        // For buffered channels, wait for space with timeout
         while (self.buffer.items.len >= self.capacity and !self.closed.load(.acquire)) {
-            self.send_condition.wait(&self.mutex);
+            const elapsed = @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
+            if (elapsed >= timeout_ns) {
+                return RuntimeError.ChannelClosed; // Timeout
+            }
+            
+            // Use timed wait instead of indefinite wait
+            self.send_condition.timedWait(&self.mutex, 100_000_000) catch {}; // 100ms chunks
         }
 
         if (self.closed.load(.acquire)) {
@@ -83,12 +98,41 @@ pub const SimpleChannel = struct {
         self.recv_condition.signal();
     }
 
+    fn tryLockWithTimeout(self: *SimpleChannel, timeout_ns: u64) bool {
+        const start_time = std.time.nanoTimestamp();
+        const end_time = start_time + @as(i64, @intCast(timeout_ns));
+        
+        while (std.time.nanoTimestamp() < end_time) {
+            if (self.mutex.tryLock()) {
+                return true;
+            }
+            std.time.sleep(100_000); // 100 microseconds
+        }
+        
+        return false;
+    }
+
     pub fn receive(self: *SimpleChannel) !?Variable {
-        self.mutex.lock();
+        return self.receiveTimeout(30_000_000_000); // 30 second timeout
+    }
+
+    pub fn receiveTimeout(self: *SimpleChannel, timeout_ns: u64) !?Variable {
+        const start_time = std.time.nanoTimestamp();
+
+        // Use tryLock with timeout to prevent deadlock
+        if (!self.tryLockWithTimeout(timeout_ns)) {
+            return null; // Timeout
+        }
         defer self.mutex.unlock();
 
         while (self.buffer.items.len == 0 and !self.closed.load(.acquire)) {
-            self.recv_condition.wait(&self.mutex);
+            const elapsed = @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
+            if (elapsed >= timeout_ns) {
+                return null; // Timeout
+            }
+            
+            // Use timed wait instead of indefinite wait
+            self.recv_condition.timedWait(&self.mutex, 100_000_000) catch {}; // 100ms chunks
         }
 
         if (self.buffer.items.len > 0) {
@@ -180,33 +224,65 @@ pub fn createChannel(capacity: usize) !u64 {
 
 /// Send value to channel
 pub fn sendToChannel(channel_id: u64, value: Variable) !void {
-    registry_mutex.lock();
-    defer registry_mutex.unlock();
+    return sendToChannelTimeout(channel_id, value, 30_000_000_000); // 30 second timeout
+}
 
-    if (channel_registry) |*registry| {
-        if (registry.get(channel_id)) |channel| {
-            try channel.send(value);
-            return;
+/// Send value to channel with timeout
+pub fn sendToChannelTimeout(channel_id: u64, value: Variable, timeout_ns: u64) !void {
+    // Use tryLock with timeout on registry to prevent deadlock
+    const start_time = std.time.nanoTimestamp();
+    const registry_timeout = @min(timeout_ns, 1_000_000_000); // Max 1 second for registry lock
+    
+    while (std.time.nanoTimestamp() - start_time < registry_timeout) {
+        if (registry_mutex.tryLock()) {
+            defer registry_mutex.unlock();
+            
+            if (channel_registry) |*registry| {
+                if (registry.get(channel_id)) |channel| {
+                    const remaining_timeout = timeout_ns - @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
+                    try channel.sendTimeout(value, remaining_timeout);
+                    return;
+                }
+            }
+            
+            return RuntimeError.ChannelNotFound;
         }
+        std.time.sleep(100_000); // 100 microseconds
     }
 
-    return RuntimeError.ChannelNotFound;
+    return RuntimeError.ChannelNotFound; // Timeout on registry lock
 }
 
 /// Receive value from channel
 pub fn receiveFromChannel(channel_id: u64) !?Variable {
-    registry_mutex.lock();
-    const channel_ptr = blk: {
-        if (channel_registry) |*registry| {
-            if (registry.get(channel_id)) |channel| {
-                break :blk channel;
-            }
-        }
-        return RuntimeError.ChannelNotFound;
-    };
-    registry_mutex.unlock();
+    return receiveFromChannelTimeout(channel_id, 30_000_000_000); // 30 second timeout
+}
 
-    return try channel_ptr.receive();
+/// Receive value from channel with timeout
+pub fn receiveFromChannelTimeout(channel_id: u64, timeout_ns: u64) !?Variable {
+    // Use tryLock with timeout on registry to prevent deadlock
+    const start_time = std.time.nanoTimestamp();
+    const registry_timeout = @min(timeout_ns, 1_000_000_000); // Max 1 second for registry lock
+    
+    while (std.time.nanoTimestamp() - start_time < registry_timeout) {
+        if (registry_mutex.tryLock()) {
+            const channel_ptr = blk: {
+                defer registry_mutex.unlock();
+                if (channel_registry) |*registry| {
+                    if (registry.get(channel_id)) |channel| {
+                        break :blk channel;
+                    }
+                }
+                return RuntimeError.ChannelNotFound;
+            };
+            
+            const remaining_timeout = timeout_ns - @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
+            return try channel_ptr.receiveTimeout(remaining_timeout);
+        }
+        std.time.sleep(100_000); // 100 microseconds
+    }
+    
+    return RuntimeError.ChannelNotFound; // Timeout on registry lock
 }
 
 /// Close channel

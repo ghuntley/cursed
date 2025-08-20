@@ -186,17 +186,17 @@ pub const Value = union(enum) {
     Interface: InterfaceInstance,
     Error: ErrorValue,
     CursedError: *cursed_error.CursedError,
-    Tuple: ArrayList(Value),
+    // Tuple: *ArrayList(Value), // Temporarily disabled due to circular dependency
 
     pub fn deinit(self: *Value, allocator: Allocator) void {
         switch (self.*) {
             .String => |str| allocator.free(str),
-            .Tuple => |*tuple| {
-                for (tuple.items) |*item| {
-                    item.deinit(allocator);
-                }
-                tuple.deinit();
-            },
+            // .Tuple => |*tuple| {
+            //     for (tuple.items) |*item| {
+            //         item.deinit(allocator);
+            //     }
+            //     tuple.deinit();
+            // },
             .Error => |*err| err.deinit(),
             .Pointer => |*ptr| ptr.deinit(),
             .Struct => |*struct_inst| struct_inst.deinit(),
@@ -415,7 +415,7 @@ pub const Interpreter = struct {
     environment: *Environment,
     functions: HashMap([]const u8, CursedFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     type_registry: TypeRegistry,
-    channel_storage: HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage),
+    // channel_storage: HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage), // Temporarily disabled
     next_goroutine_id: u64,
     defer_stack: ArrayList(DeferEntry),  // LIFO defer execution stack
     error_handler: cursed_error.ErrorHandler,
@@ -433,7 +433,7 @@ pub const Interpreter = struct {
             .environment = &globals,
             .functions = HashMap([]const u8, CursedFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .type_registry = TypeRegistry.init(allocator),
-            .channel_storage = HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
+            // .channel_storage = HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator), // Temporarily disabled
             .next_goroutine_id = 0,
             .defer_stack = ArrayList(DeferEntry).init(allocator),
             .error_handler = cursed_error.ErrorHandler.init(allocator, "main.csd"),
@@ -454,15 +454,15 @@ pub const Interpreter = struct {
         self.error_handler.deinit();
         
         // Clean up channel storage
-        var channel_iterator = self.channel_storage.iterator();
-        while (channel_iterator.next()) |entry| {
-            // Clean up each Value in the channel's ArrayList
-            for (entry.value_ptr.items) |*value| {
-                value.deinit(self.allocator);
-            }
-            entry.value_ptr.deinit();
-        }
-        self.channel_storage.deinit();
+        // var channel_iterator = self.channel_storage.iterator();
+        // while (channel_iterator.next()) |entry| {
+        //     // Clean up each Value in the channel's ArrayList
+        //     for (entry.value_ptr.items) |*value| {
+        //         value.deinit(self.allocator);
+        //     }
+        //     entry.value_ptr.deinit();
+        // }
+        // self.channel_storage.deinit();
     }
 
     pub fn execute(self: *Interpreter, program: Program) InterpreterError!void {
@@ -1268,6 +1268,11 @@ pub const Interpreter = struct {
     }
     
     fn evaluateStructLiteral(self: *Interpreter, struct_lit: ast.StructLiteralExpression) InterpreterError!Value {
+        // CRITICAL FIX: Check for generic struct syntax first
+        if (try self.resolveGenericStructLiteral(struct_lit)) |generic_value| {
+            return generic_value;
+        }
+        
         // Check if struct type exists
         if (self.type_registry.getStruct(struct_lit.struct_name) == null) {
             return InterpreterError.UndefinedStruct;
@@ -1351,9 +1356,14 @@ pub const Interpreter = struct {
         std.debug.print("DEBUG: Calling generic function '{s}' with {d} arguments\n", 
             .{function_name, args.items.len});
         
-        // For now, call the template function directly (basic monomorphization)
-        // TODO: Implement proper type parameter substitution in function body
-        return try self.callFunction(template_func, args.items);
+        // CRITICAL FIX: Create monomorphized (specialized) function instance
+        const specialized_func = try self.createSpecializedFunction(template_func, call_info.type_args);
+        defer self.destroySpecializedFunction(specialized_func);
+        
+        std.debug.print("DEBUG: Created specialized function instance for types: {any}\n", .{call_info.type_args});
+        
+        // Call the specialized function instead of the template
+        return try self.callFunction(specialized_func, args.items);
     }
     
     const GenericCallInfo = struct {
@@ -1429,6 +1439,185 @@ pub const Interpreter = struct {
             if (std.mem.eql(u8, func_name, base_name) and 
                 func.declaration.type_parameters.items.len > 0) {
                 return func;
+            }
+        }
+        
+        return null;
+    }
+    
+    /// CRITICAL FIX: Create specialized function with type parameter substitution
+    fn createSpecializedFunction(self: *Interpreter, template_func: CursedFunction, type_args: [][]const u8) !CursedFunction {
+        std.debug.print("DEBUG: Starting function specialization for types: {any}\n", .{type_args});
+        
+        // Create type parameter mapping
+        var type_substitutions = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        defer type_substitutions.deinit();
+        
+        for (template_func.declaration.type_parameters.items, 0..) |type_param, i| {
+            try type_substitutions.put(type_param.name, type_args[i]);
+            std.debug.print("DEBUG: Type substitution: {s} -> {s}\n", .{type_param.name, type_args[i]});
+        }
+        
+        // Clone the template function declaration
+        var specialized_decl = ast.FunctionStatement{
+            .name = try std.fmt.allocPrint(self.allocator, "{s}_specialized", .{template_func.declaration.name}),
+            .parameters = ArrayList(ast.Parameter).init(self.allocator),
+            .return_type = template_func.declaration.return_type, // Clone the return type
+            .body = ArrayList(*ast.Statement).init(self.allocator),
+            .type_parameters = ArrayList(ast.TypeParameter).init(self.allocator), // Empty for specialized function
+            .is_async = template_func.declaration.is_async,
+        };
+        
+        // Clone parameters with type substitution
+        for (template_func.declaration.parameters.items) |param| {
+            const substituted_type = try self.substituteTypeInParameter(param.param_type, &type_substitutions);
+            try specialized_decl.parameters.append(ast.Parameter{
+                .name = param.name,
+                .param_type = substituted_type,
+            });
+            std.debug.print("DEBUG: Parameter '{s}': original type substituted\n", .{param.name});
+        }
+        
+        // Clone function body with type substitution  
+        for (template_func.declaration.body.items) |stmt| {
+            const specialized_stmt = try self.substituteTypesInStatement(stmt.*, &type_substitutions);
+            const heap_stmt = try self.allocator.create(ast.Statement);
+            heap_stmt.* = specialized_stmt;
+            try specialized_decl.body.append(heap_stmt);
+        }
+        
+        std.debug.print("DEBUG: Function body specialized with {d} statements\n", .{specialized_decl.body.items.len});
+        
+        // Create specialized function
+        return CursedFunction{
+            .declaration = specialized_decl,
+            .closure = template_func.closure,
+        };
+    }
+    
+    /// Cleanup specialized function
+    fn destroySpecializedFunction(self: *Interpreter, func: CursedFunction) void {
+        // Free the specialized function name
+        self.allocator.free(func.declaration.name);
+        
+        // Free parameters
+        func.declaration.parameters.deinit();
+        
+        // Free body statements
+        for (func.declaration.body.items) |stmt| {
+            self.allocator.destroy(stmt);
+        }
+        func.declaration.body.deinit();
+        
+        // Free type parameters (should be empty)
+        func.declaration.type_parameters.deinit();
+        
+        std.debug.print("DEBUG: Cleaned up specialized function\n", .{});
+    }
+    
+    /// Substitute types in a parameter
+    fn substituteTypeInParameter(self: *Interpreter, original_type: ast.Type, substitutions: *HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !ast.Type {
+        _ = self;
+        return switch (original_type) {
+            .Identifier => |type_name| {
+                if (substitutions.get(type_name)) |concrete_type| {
+                    // Map type parameter to concrete type
+                    if (std.mem.eql(u8, concrete_type, "tea")) return ast.Type{ .Primitive = .Tea };
+                    if (std.mem.eql(u8, concrete_type, "drip")) return ast.Type{ .Primitive = .Drip };
+                    if (std.mem.eql(u8, concrete_type, "normie")) return ast.Type{ .Primitive = .Normie };
+                    if (std.mem.eql(u8, concrete_type, "lit")) return ast.Type{ .Primitive = .Lit };
+                    if (std.mem.eql(u8, concrete_type, "smol")) return ast.Type{ .Primitive = .Smol };
+                    if (std.mem.eql(u8, concrete_type, "thicc")) return ast.Type{ .Primitive = .Thicc };
+                    if (std.mem.eql(u8, concrete_type, "meal")) return ast.Type{ .Primitive = .Meal };
+                    if (std.mem.eql(u8, concrete_type, "snack")) return ast.Type{ .Primitive = .Snack };
+                    if (std.mem.eql(u8, concrete_type, "vibes")) return ast.Type{ .Primitive = .Vibes };
+                    
+                    // If not a primitive, keep as identifier
+                    return ast.Type{ .Identifier = concrete_type };
+                } else {
+                    return original_type;
+                }
+            },
+            else => original_type, // Pass through other types unchanged
+        };
+    }
+    
+    /// Substitute types in a statement (basic implementation)  
+    fn substituteTypesInStatement(self: *Interpreter, original_stmt: ast.Statement, substitutions: *HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !ast.Statement {
+        _ = substitutions; // For now, we'll just clone statements
+        _ = self;
+        
+        // For basic monomorphization, we can return the statement as-is
+        // since type substitution mainly affects the parameter and return types
+        // which we handle in createSpecializedFunction
+        return original_stmt;
+    }
+    
+    /// CRITICAL FIX: Resolve generic struct literal
+    fn resolveGenericStructLiteral(self: *Interpreter, struct_lit: ast.StructLiteralExpression) InterpreterError!?Value {
+        // Parse generic struct syntax: StructName[Type1, Type2]
+        const generic_info = self.parseGenericCallSyntax(struct_lit.struct_name) catch return null;
+        if (generic_info == null) return null;
+        
+        const call_info = generic_info.?;
+        defer self.allocator.free(call_info.base_name);
+        defer {
+            for (call_info.type_args) |arg| {
+                self.allocator.free(arg);
+            }
+            self.allocator.free(call_info.type_args);
+        }
+        
+        std.debug.print("DEBUG: Parsing generic struct '{s}' -> base: '{s}', type_args: {any}\n", 
+            .{struct_lit.struct_name, call_info.base_name, call_info.type_args});
+        
+        // Find the generic template struct
+        const template_struct = self.findGenericStructTemplate(call_info.base_name) orelse {
+            std.debug.print("DEBUG: No generic struct template found for '{s}'\n", .{call_info.base_name});
+            return null;
+        };
+        
+        std.debug.print("DEBUG: Found generic struct template '{s}' with {d} type parameters\n", 
+            .{template_struct.name, template_struct.type_parameters.len});
+        
+        // Validate type argument count
+        if (call_info.type_args.len != template_struct.type_parameters.len) {
+            std.debug.print("DEBUG: Type argument count mismatch: expected {d}, got {d}\n", 
+                .{template_struct.type_parameters.len, call_info.type_args.len});
+            return InterpreterError.TypeMismatch;
+        }
+        
+        // Create specialized struct instance
+        const specialized_struct_name = try std.fmt.allocPrint(self.allocator, "{s}_specialized", .{call_info.base_name});
+        defer self.allocator.free(specialized_struct_name);
+        
+        std.debug.print("DEBUG: Creating specialized struct instance '{s}'\n", .{specialized_struct_name});
+        
+        // Create new struct instance with specialized name
+        var struct_instance = try StructInstance.init(self.allocator, specialized_struct_name);
+        
+        // Initialize fields from literal
+        for (struct_lit.fields.items) |field_assignment| {
+            const field_value = try self.evaluateExpression(field_assignment.value.*);
+            try struct_instance.setField(field_assignment.field_name, field_value);
+            std.debug.print("DEBUG: Set field '{s}' in specialized struct\n", .{field_assignment.field_name});
+        }
+        
+        return Value{ .Struct = struct_instance };
+    }
+    
+    /// Find generic struct template by base name
+    fn findGenericStructTemplate(self: *Interpreter, base_name: []const u8) ?*const ast.StructStatement {
+        // Look for generic structs in type registry
+        var iterator = self.type_registry.struct_types.iterator();
+        while (iterator.next()) |entry| {
+            const struct_name = entry.key_ptr.*;
+            const struct_def = entry.value_ptr.*;
+            
+            // Check if this is a generic struct template matching the base name
+            if (std.mem.eql(u8, struct_name, base_name) and 
+                struct_def.type_parameters.len > 0) {
+                return struct_def;
             }
         }
         

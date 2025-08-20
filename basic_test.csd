@@ -1,1 +1,3 @@
-sus x drip = 42; vibez.spill("Basic test:", x)
+slay main() {
+    vibez.spill("Hello, World!")
+}

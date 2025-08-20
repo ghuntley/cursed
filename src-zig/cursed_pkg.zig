@@ -65,17 +65,24 @@ const CliArgs = struct {
     verbose: bool = false,
     dry_run: bool = false,
     cache_dir: []const u8 = ".cursed/cache",
+    allocator: std.mem.Allocator,
     
     pub fn init(allocator: std.mem.Allocator) CliArgs {
         return CliArgs{
             .command = .help,
             .packages = &[_][:0]const u8{},
             .options = std.StringHashMap([]const u8).init(allocator),
+            .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *CliArgs) void {
         self.options.deinit();
+        // Free the packages slice that was allocated with toOwnedSlice()
+        // Even empty slices from toOwnedSlice need to be freed
+        if (self.packages.ptr != &[_][:0]const u8{}) {
+            self.allocator.free(self.packages);
+        }
     }
 };
 
@@ -223,36 +230,54 @@ fn cmdInfo(allocator: std.mem.Allocator, args: CliArgs) !void {
 }
 
 fn cmdList(allocator: std.mem.Allocator, args: CliArgs) !void {
-    _ = allocator;
+    _ = args;
     
     print("📦 Installed packages:\n", .{});
     
-    // Check if CursedPackage.toml exists
-    _ = std.fs.cwd().statFile("CursedPackage.toml") catch {
+    // Check if CursedPackage.toml exists and read dependencies
+    if (std.fs.cwd().readFileAlloc(allocator, "CursedPackage.toml", 8192)) |content| {
+        defer allocator.free(content);
+        
+        // Simple TOML parsing - look for dependencies section
+        var in_dependencies = false;
+        var dep_count: usize = 0;
+        var lines = std.mem.splitScalar(u8, content, '\n');
+        
+        print("\nDependencies:\n", .{});
+        while (lines.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t");
+            if (std.mem.eql(u8, trimmed, "[dependencies]")) {
+                in_dependencies = true;
+                continue;
+            }
+            if (std.mem.startsWith(u8, trimmed, "[") and in_dependencies) {
+                in_dependencies = false;
+                continue;
+            }
+            if (in_dependencies and trimmed.len > 0 and !std.mem.startsWith(u8, trimmed, "#")) {
+                print("  • {s}\n", .{trimmed});
+                dep_count += 1;
+            }
+        }
+        
+        if (dep_count == 0) {
+            print("  (no dependencies)\n", .{});
+        }
+        
+        print("\nProject structure:\n", .{});
+        if (std.fs.cwd().statFile("src/main.csd")) |_| {
+            print("  ✅ src/main.csd\n", .{});
+        } else |_| {}
+        
+        if (std.fs.cwd().statFile("tests")) |_| {
+            print("  ✅ tests/ directory\n", .{});
+        } else |_| {}
+        
+    } else |_| {
         print("No CursedPackage.toml found in current directory\n", .{});
         print("Run 'cursed-pkg init' to initialize a new package\n", .{});
         return;
-    };
-    
-    // Demo package listing
-    print("\nDependencies:\n", .{});
-    print("  json-parser ^1.2.0\n", .{});
-    print("  http-client ~2.1.0\n", .{});
-    print("  crypto-utils >=1.0.0\n", .{});
-    
-    print("\nDevelopment dependencies:\n", .{});
-    print("  testz ^0.3.0\n", .{});
-    print("  benchmark-suite ~1.0.0\n", .{});
-    
-    // Show cache information
-    print("\nCache location: {s}\n", .{args.cache_dir});
-    
-    const cache_stat = std.fs.cwd().statFile(args.cache_dir) catch {
-        print("Cache status: not found\n", .{});
-        return;
-    };
-    
-    print("Cache status: exists ({} bytes)\n", .{cache_stat.size});
+    }
 }
 
 fn cmdClean(allocator: std.mem.Allocator, args: CliArgs) !void {
@@ -353,10 +378,60 @@ test "command parsing" {
 // ===== Basic Command Implementations =====
 
 fn cmdInitBasic(allocator: std.mem.Allocator, args: [][]const u8) !void {
-    _ = allocator;
     const project_name = if (args.len > 0) args[0] else "new-cursed-package";
-    print("📦 Initializing basic CURSED package: {s}\n", .{project_name});
+    print("📦 Initializing CURSED package: {s}\n", .{project_name});
+    
+    // Check if already initialized
+    if (std.fs.cwd().statFile("CursedPackage.toml")) |_| {
+        print("❌ Package already initialized (CursedPackage.toml exists)\n", .{});
+        return;
+    } else |_| {
+        // Not initialized, proceed
+    }
+    
+    // Create basic CursedPackage.toml
+    const toml_content = try std.fmt.allocPrint(allocator, 
+        \\[package]
+        \\name = "{s}"
+        \\version = "0.1.0"
+        \\description = "A CURSED package"
+        \\authors = ["CURSED Developer <dev@cursed.dev>"]
+        \\license = "MIT"
+        \\
+        \\[dependencies]
+        \\
+        \\[dev-dependencies]
+        \\
+    , .{project_name});
+    defer allocator.free(toml_content);
+    
+    // Write CursedPackage.toml
+    try std.fs.cwd().writeFile(.{ .sub_path = "CursedPackage.toml", .data = toml_content });
+    
+    // Create basic directory structure
+    const dirs = [_][]const u8{ "src", "tests" };
+    for (dirs) |dir| {
+        std.fs.cwd().makeDir(dir) catch |err| switch (err) {
+            error.PathAlreadyExists => {}, // OK if exists
+            else => return err,
+        };
+    }
+    
+    // Create basic main.csd file
+    const main_content =
+        \\yeet "vibez"
+        \\
+        \\slay main() tea {
+        \\    vibez.spill("Hello from CURSED!")
+        \\    damn "success"
+        \\}
+        \\
+    ;
+    try std.fs.cwd().writeFile(.{ .sub_path = "src/main.csd", .data = main_content });
+    
     print("✅ Package initialized successfully\n", .{});
+    print("📁 Created: CursedPackage.toml, src/, tests/\n", .{});
+    print("🚀 Next steps: cursed-pkg add <dependency>\n", .{});
 }
 
 fn cmdAddBasic(allocator: std.mem.Allocator, args: [][]const u8) !void {

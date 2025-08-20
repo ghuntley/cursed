@@ -6,6 +6,7 @@ const print = std.debug.print;
 
 const Variable = @import("main_unified.zig").Variable;
 const stdlib_core = @import("stdlib_core.zig");
+const missing_impl = @import("missing_impl_functions.zig");
 
 /// Bridge between CURSED stdlib modules and Zig runtime
 /// Converts between CURSED Variable types and native Zig types
@@ -180,6 +181,46 @@ pub const StdlibBridge = struct {
         return Variable{ .type = .Float, .float = result };
     }
     
+    // ===== NEW MISSING BRIDGE FUNCTIONS =====
+    
+    /// Bridge for mathz.pow_meal() - power function using missing impl
+    pub fn mathz_pow_meal_impl(self: *StdlibBridge, base: Variable, exponent: Variable) !Variable {
+        const base_val = try self.variableToFloat(base);
+        const exp_val = try self.variableToFloat(exponent);
+        const result = missing_impl.math_pow_impl(base_val, exp_val);
+        return Variable{ .type = .Float, .float = result };
+    }
+    
+    /// Bridge for mathz.log_meal() - logarithm using missing impl
+    pub fn mathz_log_meal_impl(self: *StdlibBridge, value: Variable) !Variable {
+        const val = try self.variableToFloat(value);
+        const result = missing_impl.math_log_impl(val);
+        return Variable{ .type = .Float, .float = result };
+    }
+    
+    /// Bridge for mathz.sqrt_meal() - square root using missing impl
+    pub fn mathz_sqrt_meal_impl(self: *StdlibBridge, value: Variable) !Variable {
+        const val = try self.variableToFloat(value);
+        const result = missing_impl.math_sqrt_impl(val);
+        return Variable{ .type = .Float, .float = result };
+    }
+    
+    /// Bridge for mathz.random_meal() - random float
+    pub fn mathz_random_meal(self: *StdlibBridge) !Variable {
+        _ = self;
+        const result = missing_impl.random_float_impl();
+        return Variable{ .type = .Float, .float = result };
+    }
+    
+    /// Bridge for mathz.random_int_range() - random integer in range
+    pub fn mathz_random_int_range(self: *StdlibBridge, min: Variable, max: Variable) !Variable {
+        _ = self;
+        const min_val = try self.variableToInt(min);
+        const max_val = try self.variableToInt(max);
+        const result = missing_impl.random_int_range_impl(min_val, max_val);
+        return Variable{ .type = .Integer, .integer = result };
+    }
+    
     // ===== ARRAYZ MODULE BRIDGE FUNCTIONS =====
     
     /// Bridge for arrayz.len() - array length
@@ -328,6 +369,31 @@ pub const StdlibBridge = struct {
                 if (args.len == 0) return Variable{ .type = .Float, .float = 0.0 };
                 return try bridge.mathz_ln_meal(args[0]);
             }
+            
+            pub fn pow_meal_impl(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len < 2) return Variable{ .type = .Float, .float = 0.0 };
+                return try bridge.mathz_pow_meal_impl(args[0], args[1]);
+            }
+            
+            pub fn log_meal_impl(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len == 0) return Variable{ .type = .Float, .float = 0.0 };
+                return try bridge.mathz_log_meal_impl(args[0]);
+            }
+            
+            pub fn sqrt_meal_impl(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len == 0) return Variable{ .type = .Float, .float = 0.0 };
+                return try bridge.mathz_sqrt_meal_impl(args[0]);
+            }
+            
+            pub fn random_meal(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                _ = args;
+                return try bridge.mathz_random_meal();
+            }
+            
+            pub fn random_int_range(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len < 2) return Variable{ .type = .Integer, .integer = 0 };
+                return try bridge.mathz_random_int_range(args[0], args[1]);
+            }
         };
         
         pub const arrayz = struct {
@@ -339,6 +405,94 @@ pub const StdlibBridge = struct {
             pub fn append(bridge: *StdlibBridge, args: []const Variable) !Variable {
                 if (args.len < 2) return args[0];
                 return try bridge.arrayz_append(args[0], args[1]);
+            }
+        };
+        
+        // ===== NEW MISSING FUNCTION REGISTRY =====
+        
+        pub const filez = struct {
+            pub fn exists(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len == 0) return Variable{ .type = .Boolean, .boolean = false };
+                const path_str = try bridge.variableToString(args[0]);
+                defer if (args[0].type != .String) bridge.allocator.free(path_str);
+                const result = bridge.core.file_exists(path_str);
+                return Variable{ .type = .Boolean, .boolean = result };
+            }
+            
+            pub fn is_directory(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len == 0) return Variable{ .type = .Boolean, .boolean = false };
+                const path_str = try bridge.variableToString(args[0]);
+                defer if (args[0].type != .String) bridge.allocator.free(path_str);
+                const result = missing_impl.is_directory_impl(path_str);
+                return Variable{ .type = .Boolean, .boolean = result };
+            }
+            
+            pub fn copy_file(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len < 2) return Variable{ .type = .Boolean, .boolean = false };
+                const src_str = try bridge.variableToString(args[0]);
+                defer if (args[0].type != .String) bridge.allocator.free(src_str);
+                const dest_str = try bridge.variableToString(args[1]);
+                defer if (args[1].type != .String) bridge.allocator.free(dest_str);
+                const result = missing_impl.copy_file_impl(src_str, dest_str);
+                return Variable{ .type = .Boolean, .boolean = result };
+            }
+        };
+        
+        pub const envz = struct {
+            pub fn getenv(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len == 0) return Variable{ .type = .String, .string = try bridge.allocator.dupe(u8, "") };
+                const name_str = try bridge.variableToString(args[0]);
+                defer if (args[0].type != .String) bridge.allocator.free(name_str);
+                const result = missing_impl.getenv_impl(bridge.allocator, name_str) catch null;
+                if (result) |val| {
+                    return Variable{ .type = .String, .string = val };
+                } else {
+                    return Variable{ .type = .String, .string = try bridge.allocator.dupe(u8, "") };
+                }
+            }
+            
+            pub fn setenv(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len < 2) return Variable{ .type = .Boolean, .boolean = false };
+                const name_str = try bridge.variableToString(args[0]);
+                defer if (args[0].type != .String) bridge.allocator.free(name_str);
+                const value_str = try bridge.variableToString(args[1]);
+                defer if (args[1].type != .String) bridge.allocator.free(value_str);
+                const result = missing_impl.setenv_impl(name_str, value_str);
+                return Variable{ .type = .Boolean, .boolean = result };
+            }
+            
+            pub fn getcwd(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                _ = args;
+                const result = missing_impl.getcwd_impl(bridge.allocator) catch return Variable{ .type = .String, .string = try bridge.allocator.dupe(u8, "") };
+                return Variable{ .type = .String, .string = result };
+            }
+        };
+        
+        pub const jsonz = struct {
+            pub fn parse(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len == 0) return Variable{ .type = .String, .string = try bridge.allocator.dupe(u8, "{}") };
+                const json_str = try bridge.variableToString(args[0]);
+                defer if (args[0].type != .String) bridge.allocator.free(json_str);
+                const result = try missing_impl.json_parse_impl(bridge.allocator, json_str);
+                return Variable{ .type = .String, .string = result };
+            }
+            
+            pub fn stringify(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len == 0) return Variable{ .type = .String, .string = try bridge.allocator.dupe(u8, "\"\"") };
+                const data_str = try bridge.variableToString(args[0]);
+                defer if (args[0].type != .String) bridge.allocator.free(data_str);
+                const result = try missing_impl.json_stringify_impl(bridge.allocator, data_str);
+                return Variable{ .type = .String, .string = result };
+            }
+        };
+        
+        pub const cryptz = struct {
+            pub fn hash_string(bridge: *StdlibBridge, args: []const Variable) !Variable {
+                if (args.len == 0) return Variable{ .type = .String, .string = try bridge.allocator.dupe(u8, "") };
+                const input_str = try bridge.variableToString(args[0]);
+                defer if (args[0].type != .String) bridge.allocator.free(input_str);
+                const result = try missing_impl.hash_string_impl(bridge.allocator, input_str);
+                return Variable{ .type = .String, .string = result };
             }
         };
     };
@@ -385,6 +539,16 @@ pub const StdlibBridge = struct {
                 return try function_registry.mathz.cos_meal(self, args);
             } else if (std.mem.eql(u8, function_name, "ln_meal")) {
                 return try function_registry.mathz.ln_meal(self, args);
+            } else if (std.mem.eql(u8, function_name, "pow_meal_impl")) {
+                return try function_registry.mathz.pow_meal_impl(self, args);
+            } else if (std.mem.eql(u8, function_name, "log_meal_impl")) {
+                return try function_registry.mathz.log_meal_impl(self, args);
+            } else if (std.mem.eql(u8, function_name, "sqrt_meal_impl")) {
+                return try function_registry.mathz.sqrt_meal_impl(self, args);
+            } else if (std.mem.eql(u8, function_name, "random_meal")) {
+                return try function_registry.mathz.random_meal(self, args);
+            } else if (std.mem.eql(u8, function_name, "random_int_range")) {
+                return try function_registry.mathz.random_int_range(self, args);
             }
         }
         
@@ -394,6 +558,44 @@ pub const StdlibBridge = struct {
                 return try function_registry.arrayz.len(self, args);
             } else if (std.mem.eql(u8, function_name, "append")) {
                 return try function_registry.arrayz.append(self, args);
+            }
+        }
+        
+        // Filez module functions
+        if (std.mem.eql(u8, module_name, "filez")) {
+            if (std.mem.eql(u8, function_name, "exists")) {
+                return try function_registry.filez.exists(self, args);
+            } else if (std.mem.eql(u8, function_name, "is_directory")) {
+                return try function_registry.filez.is_directory(self, args);
+            } else if (std.mem.eql(u8, function_name, "copy_file")) {
+                return try function_registry.filez.copy_file(self, args);
+            }
+        }
+        
+        // Envz module functions
+        if (std.mem.eql(u8, module_name, "envz")) {
+            if (std.mem.eql(u8, function_name, "getenv")) {
+                return try function_registry.envz.getenv(self, args);
+            } else if (std.mem.eql(u8, function_name, "setenv")) {
+                return try function_registry.envz.setenv(self, args);
+            } else if (std.mem.eql(u8, function_name, "getcwd")) {
+                return try function_registry.envz.getcwd(self, args);
+            }
+        }
+        
+        // Jsonz module functions
+        if (std.mem.eql(u8, module_name, "jsonz")) {
+            if (std.mem.eql(u8, function_name, "parse")) {
+                return try function_registry.jsonz.parse(self, args);
+            } else if (std.mem.eql(u8, function_name, "stringify")) {
+                return try function_registry.jsonz.stringify(self, args);
+            }
+        }
+        
+        // Cryptz module functions
+        if (std.mem.eql(u8, module_name, "cryptz")) {
+            if (std.mem.eql(u8, function_name, "hash_string")) {
+                return try function_registry.cryptz.hash_string(self, args);
             }
         }
         

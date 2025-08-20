@@ -203,12 +203,16 @@ pub const WindowsAsyncNetwork = struct {
     pub fn createTcpSocket(self: *Self) !SOCKET {
         const socket = ws2_32.socket(ws2_32.AF.INET, ws2_32.SOCK.STREAM, ws2_32.IPPROTO.TCP);
         if (socket == INVALID_SOCKET) {
+            const error_code = WSAGetLastError();
+            std.log.err("IOCP FIX: Failed to create TCP socket, error: {}", .{error_code});
             return error.SocketCreationFailed;
         }
         
-        // Associate socket with IOCP
-        try self.poller.associateHandle(@ptrFromInt(@intFromPtr(&socket)), @ptrFromInt(@intFromPtr(&socket)));
+        // CRITICAL FIX: Associate socket handle properly with IOCP
+        const socket_handle: windows.HANDLE = @ptrFromInt(@as(usize, @bitCast(@as(isize, socket))));
+        try self.poller.associateHandle(socket_handle, @ptrFromInt(@as(usize, @bitCast(@as(isize, socket)))));
         
+        std.log.debug("IOCP: TCP socket created and associated with completion port");
         return socket;
     }
     
@@ -216,12 +220,16 @@ pub const WindowsAsyncNetwork = struct {
     pub fn createUdpSocket(self: *Self) !SOCKET {
         const socket = ws2_32.socket(ws2_32.AF.INET, ws2_32.SOCK.DGRAM, ws2_32.IPPROTO.UDP);
         if (socket == INVALID_SOCKET) {
+            const error_code = WSAGetLastError();
+            std.log.err("IOCP FIX: Failed to create UDP socket, error: {}", .{error_code});
             return error.SocketCreationFailed;
         }
         
-        // Associate socket with IOCP
-        try self.poller.associateHandle(@ptrFromInt(@intFromPtr(&socket)), @ptrFromInt(@intFromPtr(&socket)));
+        // CRITICAL FIX: Associate socket handle properly with IOCP
+        const socket_handle: windows.HANDLE = @ptrFromInt(@as(usize, @bitCast(@as(isize, socket))));
+        try self.poller.associateHandle(socket_handle, @ptrFromInt(@as(usize, @bitCast(@as(isize, socket)))));
         
+        std.log.debug("IOCP: UDP socket created and associated with completion port");
         return socket;
     }
     

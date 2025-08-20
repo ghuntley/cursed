@@ -857,43 +857,9 @@ pub fn build(b: *std.Build) void {
         }
     }
     
-    // Create P2 Advanced Optimization Demo executable
-    const p2_demo_exe = b.addExecutable(.{
-        .name = "cursed-p2-optimization-demo",
-        .root_source_file = b.path("src-zig/main_unified.zig"),
-        .target = resolved_target,
-        .optimize = .ReleaseFast, // Always use fast optimization for demo
-    });
-    
-    if (supports_libc) {
-        p2_demo_exe.linkLibC();
-        
-        // Add Windows-specific libraries
-        if (resolved_target.result.os.tag == .windows) {
-            p2_demo_exe.linkSystemLibrary("ws2_32");
-            p2_demo_exe.linkSystemLibrary("kernel32");
-        }
-        
-        // Add LLVM support for native builds, or stub LLVM for cross-compilation
-        if (config.supports_llvm and !is_cross_compile) {
-            addLlvm(b, p2_demo_exe, resolved_target);
-        } else if (is_cross_compile) {
-            // For cross-compilation, we need LLVM function stubs
-            addLlvmStubs(b, p2_demo_exe);
-        }
-    }
-    
-    // Apply advanced optimization flags for P2 demo
-    p2_demo_exe.want_lto = true;
-    p2_demo_exe.root_module.addCMacro("CURSED_P2_DEMO", "1");
-    p2_demo_exe.root_module.addCMacro("CURSED_ENABLE_PGO", "1");
-    p2_demo_exe.root_module.addCMacro("CURSED_ENABLE_LTO", "1");
-    p2_demo_exe.root_module.addCMacro("CURSED_ENABLE_CROSS_PLATFORM", "1");
-    
     // Install artifacts
     b.installArtifact(exe);
     b.installArtifact(exe_stable);
-    b.installArtifact(p2_demo_exe);
     
     // Create run steps
     const run_cmd = b.addRunArtifact(exe);
@@ -915,23 +881,7 @@ pub fn build(b: *std.Build) void {
     const run_stable_step = b.step("run-stable", "Run the stable CURSED compiler");
     run_stable_step.dependOn(&run_stable_cmd.step);
     
-    // Create P2 demo run step
-    const run_p2_demo_cmd = b.addRunArtifact(p2_demo_exe);
-    run_p2_demo_cmd.step.dependOn(b.getInstallStep());
-    run_p2_demo_cmd.addArg("advanced_p2_optimization_demo.csd");
-    run_p2_demo_cmd.addArg("--optimize=ReleaseFast");
-    run_p2_demo_cmd.addArg("--enable-pgo");
-    run_p2_demo_cmd.addArg("--enable-lto=full");
-    run_p2_demo_cmd.addArg("--cross-platform");
-    run_p2_demo_cmd.addArg("--vectorize");
-    run_p2_demo_cmd.addArg("--aggressive-inline");
-    run_p2_demo_cmd.addArg("--verbose");
-    if (b.args) |args| {
-        run_p2_demo_cmd.addArgs(args);
-    }
-    
-    const run_p2_demo_step = b.step("run-p2-demo", "Run the P2 Advanced Optimization Demo");
-    run_p2_demo_step.dependOn(&run_p2_demo_cmd.step);
+
 
     // Unit tests
     const unit_tests = b.addTest(.{
@@ -1009,6 +959,32 @@ pub fn build(b: *std.Build) void {
     
     const run_jit_step = b.step("run-jit", "Run the fixed JIT execution engine");
     run_jit_step.dependOn(&run_jit_cmd.step);
+
+    // Create interactive debugger executable
+    const debugger_exe = b.addExecutable(.{
+        .name = "cursed-debug",
+        .root_source_file = b.path("src-zig/standalone_debugger_main.zig"),
+        .target = resolved_target,
+        .optimize = actual_optimize,
+    });
+
+    if (supports_libc) {
+        debugger_exe.linkLibC();
+        
+        // Add Windows-specific libraries if needed
+        if (resolved_target.result.os.tag == .windows) {
+            debugger_exe.linkSystemLibrary("ws2_32");
+            debugger_exe.linkSystemLibrary("kernel32");
+        }
+    }
+    
+    // Apply ReleaseSmall fix to debugger
+    if (actual_optimize == .ReleaseSmall) {
+        debugger_exe.want_lto = true;
+        debugger_exe.root_module.addCMacro("NDEBUG", "1");
+    }
+
+    b.installArtifact(debugger_exe);
 
     // Initialize CURSED builder helper
     const cursed_builder = CursedBuilder.init(b);
@@ -1105,6 +1081,40 @@ pub fn build(b: *std.Build) void {
     };
     
     b.installArtifact(lsp_exe);
+
+    // Enhanced LSP Server with complete features
+    const enhanced_lsp_root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
+        b.path("src-zig/freestanding_main.zig")
+    else if (is_wasm) 
+        b.path("src-zig/wasm_minimal_compiler.zig") 
+    else 
+        b.path("src-zig/enhanced_lsp_main.zig");
+        
+    const enhanced_lsp_exe = b.addExecutable(.{
+        .name = "cursed-lsp-enhanced",
+        .root_source_file = enhanced_lsp_root_source,
+        .target = resolved_target,
+        .optimize = actual_optimize,
+    });
+    
+    if (supports_libc) {
+        enhanced_lsp_exe.linkLibC();
+    }
+    
+    // Apply ReleaseSmall fix to Enhanced LSP
+    if (actual_optimize == .ReleaseSmall) {
+        enhanced_lsp_exe.want_lto = true;
+        enhanced_lsp_exe.root_module.addCMacro("NDEBUG", "1");
+    }
+    
+    // Apply linker configuration to Enhanced LSP
+    linker_manager.applyLinkerConfig(enhanced_lsp_exe, target_triple_str, b) catch |err| {
+        if (b.verbose) {
+            std.debug.print("⚠️ Failed to apply linker config to Enhanced LSP executable: {}\n", .{err});
+        }
+    };
+    
+    b.installArtifact(enhanced_lsp_exe);
     
     const run_lsp = b.addRunArtifact(lsp_exe);
     run_lsp.step.dependOn(b.getInstallStep());
@@ -1112,8 +1122,17 @@ pub fn build(b: *std.Build) void {
         run_lsp.addArgs(args);
     }
     
+    const run_enhanced_lsp = b.addRunArtifact(enhanced_lsp_exe);
+    run_enhanced_lsp.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_enhanced_lsp.addArgs(args);
+    }
+    
     const lsp_step = b.step("lsp", "Run the CURSED Language Server");
     lsp_step.dependOn(&run_lsp.step);
+    
+    const enhanced_lsp_step = b.step("lsp-enhanced", "Run the Enhanced CURSED Language Server with complete IDE features");
+    enhanced_lsp_step.dependOn(&run_enhanced_lsp.step);
 
     // Performance Optimization CLI
     const perf_cli_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
