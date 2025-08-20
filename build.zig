@@ -595,6 +595,23 @@ fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.Resolv
     }
 }
 
+// Add LLVM function stubs for cross-compilation
+fn addLlvmStubs(b: *std.Build, exe: *std.Build.Step.Compile) void {
+    // Create a stub LLVM library using Zig instead of C for better integration
+    const stub_lib = b.addObject(.{
+        .name = "llvm-stub",
+        .root_source_file = b.path("src-zig/llvm_stub.zig"),
+        .target = exe.root_module.resolved_target.?,
+        .optimize = exe.root_module.optimize.?,
+    });
+    
+    exe.addObject(stub_lib);
+    
+    if (b.verbose) {
+        std.debug.print("🔧 Added LLVM stub library for cross-compilation\n", .{});
+    }
+}
+
 // Auto-detect optimal job count for parallel builds
 fn getOptimalJobCount() u32 {
     // Get CPU count
@@ -629,9 +646,9 @@ pub fn build(b: *std.Build) void {
     
     // Check ninja max jobs and print recommendation
     if (std.process.getEnvVarOwned(b.allocator, "NINJA_MAX_JOBS")) |ninja_env| {
-        b.allocator.free(ninja_env);
+        defer b.allocator.free(ninja_env);
         if (b.verbose) {
-            std.debug.print("🔧 NINJA_MAX_JOBS already set\n", .{});
+            std.debug.print("🔧 NINJA_MAX_JOBS already set to: {s}\n", .{ninja_env});
         }
     } else |_| {
         if (b.verbose) {
@@ -640,7 +657,15 @@ pub fn build(b: *std.Build) void {
     }
     
     // Get target, defaulting to native/host target when none specified
-    const target = b.standardTargetOptions(.{});
+    // Fix architecture mismatch: Force glibc ABI on Linux to prevent musl linking issues
+    const default_query = std.Target.Query{
+        .os_tag = @import("builtin").target.os.tag,
+        .cpu_arch = @import("builtin").target.cpu.arch,
+        .abi = if (@import("builtin").target.os.tag == .linux) .gnu else null,
+    };
+    const target = b.standardTargetOptions(.{
+        .default_target = default_query,
+    });
     const optimize = b.standardOptimizeOption(.{});
     
     // Performance optimization options and cache configuration
@@ -698,10 +723,11 @@ pub fn build(b: *std.Build) void {
                             resolved_target.result.os.tag != @import("builtin").target.os.tag;
     
     // Generate normalized target triple for linker script selection
+    // Force GNU ABI for Linux to prevent architecture mismatches  
     const target_triple_str = switch (resolved_target.result.os.tag) {
         .linux => switch (resolved_target.result.cpu.arch) {
-            .x86_64 => "x86_64-unknown-linux-gnu",
-            .aarch64 => "aarch64-unknown-linux-gnu",
+            .x86_64 => "x86_64-unknown-linux-gnu",  // Always use GNU, never musl
+            .aarch64 => "aarch64-unknown-linux-gnu", // Always use GNU, never musl  
             .x86 => "i386-unknown-linux-gnu",
             else => "unknown-unknown-linux-gnu",
         },
@@ -822,9 +848,12 @@ pub fn build(b: *std.Build) void {
             }
         }
         
-        // Add LLVM support for native builds
+        // Add LLVM support for native builds, or stub LLVM for cross-compilation
         if (config.supports_llvm and !is_cross_compile) {
             addLlvm(b, exe, resolved_target);
+        } else if (is_cross_compile) {
+            // For cross-compilation, we need LLVM function stubs
+            addLlvmStubs(b, exe);
         }
     }
     
@@ -845,9 +874,12 @@ pub fn build(b: *std.Build) void {
             p2_demo_exe.linkSystemLibrary("kernel32");
         }
         
-        // Add LLVM support for native builds
+        // Add LLVM support for native builds, or stub LLVM for cross-compilation
         if (config.supports_llvm and !is_cross_compile) {
             addLlvm(b, p2_demo_exe, resolved_target);
+        } else if (is_cross_compile) {
+            // For cross-compilation, we need LLVM function stubs
+            addLlvmStubs(b, p2_demo_exe);
         }
     }
     
@@ -951,6 +983,32 @@ pub fn build(b: *std.Build) void {
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
+    
+    // Add fixed JIT execution engine
+    const jit_main = b.addExecutable(.{
+        .name = "cursed-jit",
+        .root_source_file = b.path("src-zig/jit_main.zig"),
+        .target = resolved_target,
+        .optimize = actual_optimize,
+    });
+    
+    // Link LLVM for JIT engine if available
+    if (supports_libc) {
+        jit_main.linkLibC();
+        // Try to link LLVM - this may fail on some systems
+        // jit_main.linkSystemLibrary("LLVM");
+    }
+    
+    b.installArtifact(jit_main);
+    
+    const run_jit_cmd = b.addRunArtifact(jit_main);
+    run_jit_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_jit_cmd.addArgs(args);
+    }
+    
+    const run_jit_step = b.step("run-jit", "Run the fixed JIT execution engine");
+    run_jit_step.dependOn(&run_jit_cmd.step);
 
     // Initialize CURSED builder helper
     const cursed_builder = CursedBuilder.init(b);
@@ -1274,6 +1332,34 @@ pub fn build(b: *std.Build) void {
     });
     validate_linker_step.dependOn(&validate_linker_cmd.step);
     
+    // Architecture mismatch validation step
+    const validate_arch_step = b.step("validate-arch", "Validate binary architecture compatibility");
+    const validate_arch_cmd = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        b.fmt(
+            \\echo "🔍 Validating binary architecture compatibility..."
+            \\if [ -f ./zig-out/bin/cursed-zig ]; then
+            \\  echo "📁 Binary file info:"
+            \\  file ./zig-out/bin/cursed-zig
+            \\  echo ""
+            \\  echo "📚 Dynamic linker requirements:"
+            \\  ldd ./zig-out/bin/cursed-zig | head -3 || echo "No dynamic linking detected"
+            \\  echo ""
+            \\  echo "🧪 Execution test:"
+            \\  ./zig-out/bin/cursed-zig --version || echo "❌ Execution failed - architecture mismatch detected"
+            \\  echo ""
+            \\  echo "🔧 System compatibility:"
+            \\  echo "  Target ABI: {s}" 
+            \\  echo "  glibc available: $(test -f /lib64/ld-linux-x86-64.so.2 && echo 'Yes' || echo 'No')"
+            \\  echo "  musl available: $(test -f /lib/ld-musl-x86_64.so.1 && echo 'Yes' || echo 'No')"
+            \\else
+            \\  echo "❌ Binary not found - run 'zig build' first"
+            \\fi
+        , .{target_triple_str})
+    });
+    validate_arch_cmd.step.dependOn(b.getInstallStep());
+    validate_arch_step.dependOn(&validate_arch_cmd.step);
+    
     // Build validation step  
     const validate_step = b.step("validate", "Validate build configuration and dependencies");
     const validate_cmd = b.addSystemCommand(&[_][]const u8{
@@ -1292,6 +1378,7 @@ pub fn build(b: *std.Build) void {
     validate_cmd.step.dependOn(b.getInstallStep());
     validate_step.dependOn(&validate_cmd.step);
     validate_step.dependOn(&validate_linker_cmd.step);
+    validate_step.dependOn(&validate_arch_cmd.step);
     
     // Performance optimization steps
     const perf_optimize_step = b.step("perf-optimize", "Run performance optimization on CURSED programs");

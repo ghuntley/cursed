@@ -220,7 +220,7 @@ pub const CodeGen = struct {
     interface_types: std.HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
     // CURSED-specific runtime support
-    goroutines: std.HashMap(u32, GoroutineInfo, std.hash_map.AutoContext, std.hash_map.default_max_load_percentage),
+    goroutines: std.HashMap(u32, GoroutineInfo, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
     channels: std.HashMap([]const u8, ChannelInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     loop_stack: ArrayList(LoopContext),
     defer_stack: ArrayList(DeferInfo),
@@ -254,7 +254,7 @@ pub const CodeGen = struct {
             .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .struct_types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .interface_types = std.HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .goroutines = std.HashMap(u32, GoroutineInfo, std.hash_map.AutoContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .goroutines = std.HashMap(u32, GoroutineInfo, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
             .channels = std.HashMap([]const u8, ChannelInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .loop_stack = ArrayList(LoopContext).init(allocator),
             .defer_stack = ArrayList(DeferInfo).init(allocator),

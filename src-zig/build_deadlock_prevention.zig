@@ -757,7 +757,8 @@ pub fn optimizeBuildParallelism(b: *std.Build) u32 {
 
     // Set environment variable for ninja builds
     if (std.process.getEnvVarOwned(b.allocator, "NINJA_MAX_JOBS")) |ninja_env| {
-        b.allocator.free(ninja_env);
+        defer b.allocator.free(ninja_env);
+        // Environment variable already set, no action needed
     } else |_| {
         // Set optimal job count
         const job_count_str = std.fmt.allocPrint(b.allocator, "{d}", .{optimal_jobs}) catch "4";

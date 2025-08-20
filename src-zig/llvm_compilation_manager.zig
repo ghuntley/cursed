@@ -97,6 +97,16 @@ pub const LLVMCompilationManager = struct {
         // Generate program
         try codegen.generateProgram(program);
         
+        // CRITICAL FIX: Apply LLVM optimizer ICE prevention fixes
+        const llvm_ice_fix = @import("llvm_optimizer_ice_fix.zig");
+        try llvm_ice_fix.fixLLVMOptimizerICE(
+            self.allocator,
+            @ptrCast(codegen.context),
+            @ptrCast(codegen.module)
+        );
+        
+        if (self.verbose) print("✅ Applied LLVM optimizer ICE prevention fixes\n", .{});
+        
         // Write to bitcode file and compile
         const bc_file = try std.fmt.allocPrint(self.allocator, "{s}.bc", .{output_file});
         defer self.allocator.free(bc_file);

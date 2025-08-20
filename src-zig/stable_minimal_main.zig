@@ -236,30 +236,84 @@ fn printUsage() void {
 }
 
 fn interpretProgram(ctx: *Context, source: []const u8) !void {
-    var lines = std.mem.splitScalar(u8, source, '\n');
-    
-    while (lines.next()) |line| {
-        const trimmed = std.mem.trim(u8, line, " \t\r\n");
+    // Parse multi-line statements properly
+    var i: usize = 0;
+    while (i < source.len) {
+        // Skip whitespace and newlines
+        while (i < source.len and (source[i] == ' ' or source[i] == '\t' or source[i] == '\r' or source[i] == '\n')) {
+            i += 1;
+        }
+        if (i >= source.len) break;
         
-        // Skip empty lines and comments
-        if (trimmed.len == 0 or std.mem.startsWith(u8, trimmed, "fr fr")) {
+        // Skip comments
+        if (i + 5 < source.len and std.mem.eql(u8, source[i..i+5], "fr fr")) {
+            // Skip to end of line
+            while (i < source.len and source[i] != '\n') {
+                i += 1;
+            }
             continue;
         }
         
         // Skip module imports (yeet statements) - make them no-ops
-        if (std.mem.startsWith(u8, trimmed, "yeet ")) {
-            // print("Info: Skipping module import (not supported in stable mode): {s}\n", .{trimmed});
+        if (i + 5 < source.len and std.mem.eql(u8, source[i..i+5], "yeet ")) {
+            // Skip to end of line
+            while (i < source.len and source[i] != '\n') {
+                i += 1;
+            }
             continue;
         }
         
-        // Split line by semicolons to handle multiple statements
-        var statements = std.mem.splitScalar(u8, trimmed, ';');
-        while (statements.next()) |stmt| {
-            const stmt_trimmed = std.mem.trim(u8, stmt, " \t\r\n");
-            if (stmt_trimmed.len == 0) continue;
+        // Check for function declaration (slay)
+        if (i + 5 < source.len and std.mem.eql(u8, source[i..i+5], "slay ")) {
+            const func_start = i;
+            // Find matching braces
+            var brace_count: i32 = 0;
+            var found_opening = false;
+            var func_end = i;
             
-            try executeStatement(ctx, stmt_trimmed);
+            while (func_end < source.len) {
+                if (source[func_end] == '{') {
+                    brace_count += 1;
+                    found_opening = true;
+                } else if (source[func_end] == '}') {
+                    brace_count -= 1;
+                    if (found_opening and brace_count == 0) {
+                        func_end += 1;
+                        break;
+                    }
+                }
+                func_end += 1;
+            }
+            
+            if (found_opening and brace_count == 0) {
+                const function_code = std.mem.trim(u8, source[func_start..func_end], " \t\r\n");
+                try handleFunctionDeclaration(ctx, function_code);
+            }
+            i = func_end;
+            continue;
         }
+        
+        // For other statements, read until end of line or semicolon
+        const stmt_start = i;
+        while (i < source.len and source[i] != '\n' and source[i] != ';') {
+            i += 1;
+        }
+        
+        const statement = std.mem.trim(u8, source[stmt_start..i], " \t\r\n");
+        if (statement.len > 0) {
+            try executeStatement(ctx, statement);
+        }
+        
+        if (i < source.len and source[i] == ';') {
+            i += 1;
+        }
+    }
+    
+    // Execute main_character function if it exists
+    if (ctx.functions.get("main_character")) |main_func| {
+        _ = evaluateUserFunction(ctx, main_func, "") catch |err| {
+            print("Error executing main_character: {}\n", .{err});
+        };
     }
 }
 
@@ -381,9 +435,45 @@ fn handleVariableDeclaration(ctx: *Context, statement: []const u8) ParseError!vo
     try ctx.setVariable(name, value);
 }
 
+fn handleVariableDeclarationWithGlobalContext(ctx: *Context, statement: []const u8, global_ctx: *Context) ParseError!void {
+    // Parse: sus name type = value
+    const parts_iter = std.mem.tokenizeAny(u8, statement[4..], " \t"); // Skip "sus "
+    var parts = ArrayList([]const u8).init(ctx.allocator);
+    defer parts.deinit();
+    
+    var iter = parts_iter;
+    while (iter.next()) |part| {
+        try parts.append(part);
+    }
+    
+    if (parts.items.len < 4) { // name, type, "=", value
+        print("Error: Invalid variable declaration: {s}\n", .{statement});
+        return;
+    }
+    
+    const name = parts.items[0];
+    // Skip type for now - parts.items[1]
+    if (!std.mem.eql(u8, parts.items[2], "=")) {
+        print("Error: Expected '=' in variable declaration: {s}\n", .{statement});
+        return;
+    }
+    
+    // Join remaining parts as value expression
+    var value_expr = ArrayList(u8).init(ctx.allocator);
+    defer value_expr.deinit();
+    
+    for (parts.items[3..], 0..) |part, i| {
+        if (i > 0) try value_expr.append(' ');
+        try value_expr.appendSlice(part);
+    }
+    
+    const value = try evaluateExpressionWithGlobalContext(ctx, value_expr.items, global_ctx);
+    try ctx.setVariable(name, value);
+}
+
 fn handleFunctionDeclaration(ctx: *Context, statement: []const u8) ParseError!void {
     // Parse: slay name(params) type { body }
-    const content = std.mem.trim(u8, statement[5..], " \t"); // Skip "slay "
+    const content = std.mem.trim(u8, statement[5..], " \t\r\n"); // Skip "slay "
     
     const paren_start = std.mem.indexOf(u8, content, "(") orelse {
         print("Error: Missing opening parenthesis in function declaration\n", .{});
@@ -411,16 +501,22 @@ fn handleFunctionDeclaration(ctx: *Context, statement: []const u8) ParseError!vo
     
     const body = std.mem.trim(u8, content[brace_start + 1..brace_end], " \t\r\n");
     
-    // Parse parameters
+    // Parse parameters correctly by handling type annotations
     var params = ArrayList([]const u8).init(ctx.allocator);
     if (params_str.len > 0) {
         var param_iter = std.mem.splitSequence(u8, params_str, ",");
         while (param_iter.next()) |param| {
             const trimmed_param = std.mem.trim(u8, param, " \t");
             // Extract parameter name (before type)
-            const space_pos = std.mem.indexOf(u8, trimmed_param, " ") orelse trimmed_param.len;
-            const param_name = trimmed_param[0..space_pos];
-            try params.append(try ctx.allocator.dupe(u8, param_name));
+            const space_pos = std.mem.indexOf(u8, trimmed_param, " ") orelse {
+                // If no space, the whole thing is the parameter name (no type annotation)
+                try params.append(try ctx.allocator.dupe(u8, trimmed_param));
+                continue;
+            };
+            const param_name = std.mem.trim(u8, trimmed_param[0..space_pos], " \t");
+            if (param_name.len > 0) {
+                try params.append(try ctx.allocator.dupe(u8, param_name));
+            }
         }
     }
     
@@ -432,6 +528,8 @@ fn handleFunctionDeclaration(ctx: *Context, statement: []const u8) ParseError!vo
     
     const func_key = try ctx.allocator.dupe(u8, name);
     try ctx.functions.put(func_key, func_def);
+    
+    print("✅ Registered function '{s}' with {d} parameters\n", .{name, params.items.len});
 }
 
 fn handleAssignment(ctx: *Context, statement: []const u8, equals_pos: usize) ParseError!void {
@@ -671,11 +769,113 @@ fn evaluateUserFunction(ctx: *Context, func_def: FunctionDef, args_str: []const 
         }
     }
     
-    // Execute function body
-    try executeStatementBlock(&func_ctx, func_def.body);
+    // Execute function body with access to global context for function lookups
+    try executeStatementBlockWithGlobalContext(&func_ctx, func_def.body, ctx);
     
     // Look for return value (damn statement)
-    return try findReturnValue(&func_ctx, func_def.body);
+    return try findReturnValueWithGlobalContext(&func_ctx, func_def.body, ctx);
+}
+
+fn executeStatementBlockWithGlobalContext(ctx: *Context, body: []const u8, global_ctx: *Context) ParseError!void {
+    var lines = std.mem.splitAny(u8, body, "\n;");
+    
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r\n");
+        if (trimmed.len == 0) continue;
+        
+        try executeStatementWithGlobalContext(ctx, trimmed, global_ctx);
+    }
+}
+
+fn executeStatementWithGlobalContext(ctx: *Context, statement: []const u8, global_ctx: *Context) ParseError!void {
+    const trimmed = std.mem.trim(u8, statement, " \t\r\n");
+    if (trimmed.len == 0) return;
+    
+    // Handle variable declarations
+    if (std.mem.startsWith(u8, trimmed, "sus ")) {
+        try handleVariableDeclarationWithGlobalContext(ctx, trimmed, global_ctx);
+        return;
+    }
+    
+    // Handle variable assignments
+    if (std.mem.indexOf(u8, trimmed, "=")) |equals_pos| {
+        const prev_char = if (equals_pos > 0) trimmed[equals_pos - 1] else 0;
+        const next_char = if (equals_pos < trimmed.len - 1) trimmed[equals_pos + 1] else 0;
+        if (prev_char != '!' and prev_char != '=' and prev_char != '<' and prev_char != '>' and 
+            next_char != '=') {
+            try handleAssignment(ctx, trimmed, equals_pos);
+            return;
+        }
+    }
+    
+    // Handle vibez.spill
+    if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |_| {
+        try handlePrintWithGlobalContext(ctx, trimmed, global_ctx);
+        return;
+    }
+    
+    // Handle function calls with global context
+    if (std.mem.indexOf(u8, trimmed, "(")) |_| {
+        _ = try evaluateExpressionWithGlobalContext(ctx, trimmed, global_ctx);
+        return;
+    }
+}
+
+fn handlePrintWithGlobalContext(ctx: *Context, statement: []const u8, global_ctx: *Context) ParseError!void {
+    const start = std.mem.indexOf(u8, statement, "vibez.spill(") orelse return;
+    const end = std.mem.lastIndexOf(u8, statement, ")") orelse return;
+    
+    const args_str = std.mem.trim(u8, statement[start + 12..end], " \t");
+    
+    if (args_str.len == 0) {
+        print("\n", .{});
+        return;
+    }
+    
+    var arg_iter = std.mem.splitSequence(u8, args_str, ",");
+    var is_first = true;
+    
+    while (arg_iter.next()) |arg| {
+        const trimmed_arg = std.mem.trim(u8, arg, " \t");
+        if (trimmed_arg.len == 0) continue;
+        
+        if (!is_first) {
+            print(" ", .{});
+        }
+        is_first = false;
+        
+        const value = try evaluateExpressionWithGlobalContext(ctx, trimmed_arg, global_ctx);
+        defer { var temp = value; temp.deinit(ctx.allocator); }
+        print("{}", .{value});
+    }
+    print("\n", .{});
+}
+
+fn evaluateExpressionWithGlobalContext(ctx: *Context, expr: []const u8, global_ctx: *Context) ParseError!Variable {
+    const trimmed = std.mem.trim(u8, expr, " \t");
+    
+    // Handle function calls with global context for function lookup
+    if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
+        const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
+        const paren_end = std.mem.lastIndexOf(u8, trimmed, ")") orelse return error.InvalidSyntax;
+        const args_str = std.mem.trim(u8, trimmed[paren_pos + 1..paren_end], " \t");
+        
+        // Check global context for functions first
+        if (global_ctx.functions.get(func_name)) |func_def| {
+            return try evaluateUserFunction(global_ctx, func_def, args_str);
+        }
+        
+        // Built-in functions
+        if (std.mem.eql(u8, func_name, "len")) {
+            return try evaluateBuiltinLen(ctx, args_str);
+        }
+        
+        print("Error: Unknown function: {s}\n", .{func_name});
+        return error.UnknownIdentifier;
+    }
+    
+    // For non-function calls, use regular evaluation
+    return try evaluateExpression(ctx, expr);
 }
 
 fn findReturnValue(ctx: *Context, body: []const u8) ParseError!Variable {
@@ -687,6 +887,22 @@ fn findReturnValue(ctx: *Context, body: []const u8) ParseError!Variable {
         if (std.mem.startsWith(u8, trimmed, "damn ")) {
             const return_expr = std.mem.trim(u8, trimmed[5..], " \t");
             return try evaluateExpression(ctx, return_expr);
+        }
+    }
+    
+    // Default return value
+    return Variable{ .Integer = 0 };
+}
+
+fn findReturnValueWithGlobalContext(ctx: *Context, body: []const u8, global_ctx: *Context) ParseError!Variable {
+    // Simple implementation: look for "damn expression" and evaluate it
+    var lines = std.mem.splitAny(u8, body, "\n;");
+    
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r\n");
+        if (std.mem.startsWith(u8, trimmed, "damn ")) {
+            const return_expr = std.mem.trim(u8, trimmed[5..], " \t");
+            return try evaluateExpressionWithGlobalContext(ctx, return_expr, global_ctx);
         }
     }
     

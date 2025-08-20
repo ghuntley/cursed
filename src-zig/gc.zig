@@ -547,7 +547,12 @@ const FinalizationQueue = struct {
     pub fn enqueue(self: *FinalizationQueue, object: *ObjectHeader, finalizer: Finalizer) !void {
         const entry = FinalizationEntry.init(object, finalizer);
         
-        self.queue_mutex.lock();
+        // Use try_lock to prevent deadlock during memory pressure
+        const lock_acquired = self.queue_mutex.tryLock();
+        if (!lock_acquired) {
+            // If queue is busy, fail fast rather than block GC collection
+            return error.FinalizationQueueBusy;
+        }
         defer self.queue_mutex.unlock();
         
         switch (finalizer.priority) {
@@ -562,7 +567,11 @@ const FinalizationQueue = struct {
     }
     
     pub fn dequeue(self: *FinalizationQueue) ?FinalizationEntry {
-        self.queue_mutex.lock();
+        // Use try_lock with timeout to avoid blocking GC collection
+        const lock_acquired = self.queue_mutex.tryLock();
+        if (!lock_acquired) {
+            return null; // Queue busy, try again later
+        }
         defer self.queue_mutex.unlock();
         
         // Process in priority order: Critical -> High -> Normal -> Low -> Retry
@@ -1351,7 +1360,7 @@ pub const GC = struct {
         try self.addFinalizerWithOptions(object, finalizer, .Normal, null, 3);
     }
     
-    /// Register finalizer with full options
+    /// Register finalizer with full options (deadlock-safe)
     pub fn addFinalizerWithOptions(
         self: *GC, 
         object: *anyopaque, 
@@ -1367,8 +1376,14 @@ pub const GC = struct {
         
         const finalizer_entry = Finalizer.init(header, finalizer, priority, name, max_retries);
         
-        self.finalization_mutex.lock();
+        // Use try_lock to prevent deadlock during GC collection
+        const lock_acquired = self.finalization_mutex.tryLock();
+        if (!lock_acquired) {
+            // During GC collection, defer finalizer registration
+            return error.FinalizationRegistrationDeferred;
+        }
         defer self.finalization_mutex.unlock();
+        
         try self.finalizers.append(finalizer_entry);
     }
     
@@ -1813,12 +1828,20 @@ pub const GC = struct {
         return FinalizerResult{ .success = {} };
     }
     
-    /// Enhanced finalizer queue processing with improved error recovery
+    /// Enhanced finalizer queue processing with deadlock prevention
     pub fn processFinalizationQueueWithRecovery(self: *GC) void {
         var processed_count: u32 = 0;
         
         while (processed_count < 32) { // Process up to 32 entries per batch
-            self.finalization_mutex.lock();
+            // Use try_lock with timeout to prevent deadlock with collection thread
+            const lock_acquired = self.finalization_mutex.tryLock();
+            if (!lock_acquired) {
+                // If we can't get the lock immediately, yield to GC collection
+                std.time.sleep(1_000_000); // 1ms
+                continue;
+            }
+            
+            defer self.finalization_mutex.unlock();
             
             // Try to get next entry from priority queues
             var entry_opt: ?FinalizationEntry = null;
@@ -1835,8 +1858,6 @@ pub const GC = struct {
             } else if (self.finalization_queue.low_queue.items.len > 0) {
                 entry_opt = self.finalization_queue.low_queue.orderedRemove(0);
             }
-            
-            self.finalization_mutex.unlock();
             
             if (entry_opt) |*entry| {
                 processed_count += 1;

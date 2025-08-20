@@ -16,6 +16,7 @@ const ast = @import("ast.zig");
 const parser = @import("parser.zig");
 const error_handling = @import("error_handling.zig");
 const error_diagnostics = @import("error_diagnostics.zig");
+const error_execution_fixed = @import("error_execution_fixed.zig");
 const generics = @import("generics.zig");
 const concurrency = @import("concurrency.zig");
 const concurrency_runtime = @import("concurrency_runtime.zig");
@@ -507,7 +508,10 @@ fn copyType(allocator: Allocator, original: ast.Type) !ast.Type {
         .Array => |array| {
             const element_type = try allocator.create(ast.Type);
             element_type.* = try copyType(allocator, array.element_type.*);
-            return ast.Type{ .Array = ast.ArrayType{ .element_type = element_type } };
+            return ast.Type{ .Array = ast.ArrayType{ 
+                .element_type = element_type,
+                ._owned = true  // This copy owns the element type
+            } };
         },
         .Function => |func| {
             var new_params = ArrayList(ast.Type).init(allocator);
@@ -765,6 +769,10 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
     
     var error_recovery = error_handling.ErrorRecovery.init(allocator, 50);
     defer error_recovery.deinit();
+    
+    // Initialize fixed error state for proper yikes/shook/fam handling
+    var error_state = error_execution_fixed.ErrorState.init(allocator);
+    defer error_state.deinit();
     
     // Set current file for error reporting
     try error_handler.setCurrentFile("main.csd", source);
@@ -1058,7 +1066,24 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         // Handle yikes error creation: yikes "message"
         if (std.mem.startsWith(u8, trimmed, "yikes ")) {
             if (verbose) print("🔍 Processing yikes error: {s}\n", .{trimmed});
-            try handleYikesStatement(&variables, &error_handler, &error_recovery, allocator, trimmed, @intCast(line_index + 1), verbose);
+            const message_expr = std.mem.trim(u8, trimmed[6..], " \t");
+            const result = try error_execution_fixed.executeYikes(
+                &error_state, allocator, &variables, &functions,
+                message_expr, @intCast(line_index + 1), 0, "main.csd", verbose
+            );
+            switch (result) {
+                .Exception => |err_val| {
+                    if (verbose) print("🚨 Yikes exception created: {s}\n", .{err_val.message});
+                    // Store error for potential fam blocks to catch
+                    try variables.put("__last_error__", Variable{ 
+                        .String = ManagedString.fromOwned(try allocator.dupe(u8, err_val.message))
+                    });
+                    // For naked yikes outside of fam blocks, this should terminate execution
+                    std.debug.print("❌ Uncaught YIKES: {s}\n", .{err_val.message});
+                    return;
+                },
+                else => {},
+            }
             line_index += 1;
             continue;
         }
@@ -1066,7 +1091,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         // Handle fam try-catch blocks: fam { ... } shook error { ... }
         if (std.mem.startsWith(u8, trimmed, "fam {")) {
             if (verbose) print("🔍 Processing fam try-catch block: {s}\n", .{trimmed});
-            const lines_consumed = try handleShookFamBlock(&variables, &functions, &error_handler, &error_recovery, allocator, source_lines, line_index, verbose);
+            const lines_consumed = try handleFamBlock(&variables, &functions, &error_state, allocator, source_lines, line_index, verbose);
             line_index += lines_consumed;
             continue;
         }
@@ -1074,7 +1099,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         // Handle shook error propagation: shook { ... } fam err { ... }
         if (std.mem.startsWith(u8, trimmed, "shook ")) {
             if (verbose) print("🔍 Processing shook/fam block: {s}\n", .{trimmed});
-            const lines_consumed = try handleShookFamBlock(&variables, &functions, &error_handler, &error_recovery, allocator, source_lines, line_index, verbose);
+            const lines_consumed = try handleFamBlock(&variables, &functions, &error_state, allocator, source_lines, line_index, verbose);
             line_index += lines_consumed;
             continue;
         }
@@ -1762,6 +1787,29 @@ pub fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, 
         }
     }
     
+    if (std.mem.startsWith(u8, trimmed, "!") and trimmed.len > 1) {
+        // Logical not operator
+        const operand_str = std.mem.trim(u8, trimmed[1..], " \t");
+        if (operand_str.len > 0) {
+            if (verbose) print("🔍 Found logical not operator: '!{s}'\n", .{operand_str});
+            
+            const operand = try evaluateExpression(variables, functions, allocator, operand_str, verbose);
+            errdefer { var op = operand; op.deinit(allocator); }
+            
+            const result = switch (operand) {
+                .Integer => |int_val| Variable{ .Boolean = int_val == 0 },
+                .Float => |float_val| Variable{ .Boolean = float_val == 0.0 },
+                .Boolean => |bool_val| Variable{ .Boolean = !bool_val },
+                .String => |str_val| Variable{ .Boolean = str_val.data.len == 0 },
+                else => Variable{ .Boolean = false },
+            };
+            
+            // Clean up operand
+            { var op = operand; op.deinit(allocator); }
+            return result;
+        }
+    }
+    
     // Look for binary operators in correct precedence order (lowest to highest precedence)
     // We need to find the lowest precedence operator first to split correctly
     // For "2 + 3 * 4", we want to split on "+" first: 2 + (3 * 4), not (* 4): (2 + 3) * 4
@@ -2171,7 +2219,7 @@ fn performBinaryOperation(left: Variable, right: Variable, op: []const u8, alloc
     return error.InvalidOperation;
 }
 
-fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, value_str: []const u8, verbose: bool) !Variable {
+fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, value_str: []const u8, verbose: bool) anyerror!Variable {
     // Check if this is a function call first
     if (std.mem.indexOf(u8, value_str, "(") != null and std.mem.indexOf(u8, value_str, ")") != null) {
         // Try stdlib functions first (they don't require function store entries)
@@ -2265,6 +2313,42 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
     } else if (std.mem.eql(u8, value_str, "cringe")) {
         if (verbose) print("📊 Parsed as boolean: false\n", .{});
         return Variable{ .Boolean = false };
+    }
+    
+    // Try to parse as array literal [a, b, c]
+    if (value_str.len >= 2 and value_str[0] == '[' and value_str[value_str.len - 1] == ']') {
+        if (verbose) print("📊 Parsing array literal: {s}\n", .{value_str});
+        
+        const elements_str = std.mem.trim(u8, value_str[1..value_str.len - 1], " \t");
+        if (elements_str.len == 0) {
+            // Empty array
+            if (verbose) print("📊 Created empty array\n", .{});
+            return Variable{ .Array = ArrayList(Variable).init(allocator) };
+        }
+        
+        var array = ArrayList(Variable).init(allocator);
+        var iterator = std.mem.splitSequence(u8, elements_str, ",");
+        
+        while (iterator.next()) |element| {
+            const trimmed_element = std.mem.trim(u8, element, " \t");
+            if (trimmed_element.len > 0) {
+                // Recursively evaluate each element (could be variables, literals, or expressions)
+                const evaluated_element = evaluateExpression(variables, functions, allocator, trimmed_element, verbose) catch |err| {
+                    if (verbose) print("❌ Failed to evaluate array element '{s}': {any}\n", .{trimmed_element, err});
+                    // Clean up partial array
+                    for (array.items) |*item| {
+                        item.deinit(allocator);
+                    }
+                    array.deinit();
+                    return err;
+                };
+                try array.append(evaluated_element);
+                if (verbose) print("📊 Added array element: {any}\n", .{evaluated_element});
+            }
+        }
+        
+        if (verbose) print("📊 Created array with {} elements\n", .{array.items.len});
+        return Variable{ .Array = array };
     }
     
     if (verbose) print("❌ Could not evaluate '{s}' as any known type\n", .{value_str});
@@ -2554,28 +2638,75 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                     const trimmed_element = std.mem.trim(u8, element, " \t");
                     
                     if (std.mem.eql(u8, element_type, "normie") or std.mem.eql(u8, element_type, "drip")) {
-                        const int_val = std.fmt.parseInt(i64, trimmed_element, 10) catch {
-                            if (verbose) print("❌ Error parsing array element '{s}'\n", .{trimmed_element});
+                        // Use expression evaluation to support variables and expressions
+                        const element_var = evaluateExpression(variables, functions, allocator, trimmed_element, verbose) catch {
+                            if (verbose) print("❌ Error evaluating array element '{s}'\n", .{trimmed_element});
                             continue;
                         };
-                        try array.append(Variable{ .Integer = int_val });
-                    } else if (std.mem.eql(u8, element_type, "tea")) {
-                        // String elements - handle quoted strings
-                        var clean_element = trimmed_element;
-                        if (clean_element.len >= 2 and clean_element[0] == '"' and clean_element[clean_element.len - 1] == '"') {
-                            clean_element = clean_element[1..clean_element.len - 1];
+                        
+                        // Convert result to integer if needed
+                        switch (element_var) {
+                            .Integer => try array.append(element_var),
+                            .Float => |f| try array.append(Variable{ .Integer = @as(i64, @intFromFloat(f)) }),
+                            else => {
+                                if (verbose) print("❌ Array element '{s}' is not numeric, got: {any}\n", .{trimmed_element, element_var});
+                                var temp_var = element_var;
+                                temp_var.deinit(allocator);
+                                continue;
+                            }
                         }
-                        const string_copy = try allocator.dupe(u8, clean_element);
-                        try array.append(Variable{ .String = ManagedString.fromOwned(string_copy) });
-                    } else if (std.mem.eql(u8, element_type, "meal")) {
-                        const float_val = std.fmt.parseFloat(f64, trimmed_element) catch {
-                            if (verbose) print("❌ Error parsing float array element '{s}'\n", .{trimmed_element});
+                    } else if (std.mem.eql(u8, element_type, "tea")) {
+                        // Use expression evaluation to support variables and expressions
+                        const element_var = evaluateExpression(variables, functions, allocator, trimmed_element, verbose) catch {
+                            if (verbose) print("❌ Error evaluating string array element '{s}'\n", .{trimmed_element});
                             continue;
                         };
-                        try array.append(Variable{ .Float = float_val });
+                        
+                        // Convert result to string if needed
+                        switch (element_var) {
+                            .String => try array.append(element_var),
+                            else => {
+                                const str_val = try element_var.toString(allocator);
+                                var temp_var = element_var;
+                                temp_var.deinit(allocator);
+                                try array.append(Variable{ .String = ManagedString.fromOwned(str_val) });
+                            }
+                        }
+                    } else if (std.mem.eql(u8, element_type, "meal")) {
+                        // Use expression evaluation to support variables and expressions
+                        const element_var = evaluateExpression(variables, functions, allocator, trimmed_element, verbose) catch {
+                            if (verbose) print("❌ Error evaluating float array element '{s}'\n", .{trimmed_element});
+                            continue;
+                        };
+                        
+                        // Convert result to float if needed
+                        switch (element_var) {
+                            .Float => try array.append(element_var),
+                            .Integer => |i| try array.append(Variable{ .Float = @as(f64, @floatFromInt(i)) }),
+                            else => {
+                                if (verbose) print("❌ Array element '{s}' is not numeric, got: {any}\n", .{trimmed_element, element_var});
+                                var temp_var = element_var;
+                                temp_var.deinit(allocator);
+                                continue;
+                            }
+                        }
                     } else if (std.mem.eql(u8, element_type, "lit")) {
-                        const bool_val = std.mem.eql(u8, trimmed_element, "based");
-                        try array.append(Variable{ .Boolean = bool_val });
+                        // Use expression evaluation to support variables and expressions
+                        const element_var = evaluateExpression(variables, functions, allocator, trimmed_element, verbose) catch {
+                            if (verbose) print("❌ Error evaluating boolean array element '{s}'\n", .{trimmed_element});
+                            continue;
+                        };
+                        
+                        // Convert result to boolean if needed
+                        switch (element_var) {
+                            .Boolean => try array.append(element_var),
+                            else => {
+                                if (verbose) print("❌ Array element '{s}' is not boolean, got: {any}\n", .{trimmed_element, element_var});
+                                var temp_var = element_var;
+                                temp_var.deinit(allocator);
+                                continue;
+                            }
+                        }
                     } else {
                         if (verbose) print("❌ Unsupported array element type: {s}\n", .{element_type});
                     }
@@ -5132,66 +5263,65 @@ fn handleYikesStatement(
 }
 
 /// Handle shook/fam error blocks  
-fn handleShookFamBlock(
+fn handleFamBlock(
     variables: *VariableStore,
     functions: *FunctionStore,
-    error_handler: *error_diagnostics.ErrorHandler,
-    error_recovery: *error_handling.ErrorRecovery,
+    error_state: *error_execution_fixed.ErrorState,
     allocator: Allocator,
     source_lines: ArrayList([]const u8),
     start_line_index: usize,
     verbose: bool
 ) !usize {
-    if (verbose) print("🔄 Processing shook/fam error handling block\n", .{});
+    if (verbose) print("🔄 Processing fam try-catch error handling block\n", .{});
     
     var line_index = start_line_index;
     var lines_consumed: usize = 1;
-    var in_shook_block = false;
-    var in_fam_block = false;
+    var in_try_block = false;
+    var in_catch_block = false;
     var brace_depth: i32 = 0;
-    var shook_start_line: usize = 0;
-    var fam_start_line: usize = 0;
+    var try_start_line: usize = 0;
+    var catch_start_line: usize = 0;
     var error_variable_name: ?[]const u8 = null;
     
-    // Find the shook block
+    // Find the try block (starts with "fam {")
     while (line_index < source_lines.items.len) {
         const line = std.mem.trim(u8, source_lines.items[line_index], " \t\r\n");
         
         if (std.mem.indexOf(u8, line, "{")) |_| {
-            if (!in_shook_block) {
-                in_shook_block = true;
-                shook_start_line = line_index + 1;
-                if (verbose) print("📍 Shook block starts at line {}\n", .{shook_start_line});
+            if (!in_try_block) {
+                in_try_block = true;
+                try_start_line = line_index + 1;
+                if (verbose) print("📍 Try block starts at line {}\n", .{try_start_line});
             }
             brace_depth += 1;
         }
         
         if (std.mem.indexOf(u8, line, "}")) |_| {
-            // Special case: check if this is a } fam line before adjusting brace depth
-            const is_fam_line = std.mem.indexOf(u8, line, "} fam ") != null;
+            // Special case: check if this is a } shook line before adjusting brace depth
+            const is_shook_line = std.mem.indexOf(u8, line, "} shook ") != null;
             
             brace_depth -= 1;
-            if (verbose) print("🔧 Found '}}' at line {d}, brace_depth now: {d}, in_shook_block: {}, is_fam_line: {}\n", .{line_index + 1, brace_depth, in_shook_block, is_fam_line});
+            if (verbose) print("🔧 Found '}}' at line {d}, brace_depth now: {d}, in_try_block: {}, is_shook_line: {}\n", .{line_index + 1, brace_depth, in_try_block, is_shook_line});
             
-            // Handle fam line that starts immediately after shook block
-            if (is_fam_line and in_shook_block) {
-                in_shook_block = false;
-                if (verbose) print("📍 Shook block ends with fam at line {}: '{s}'\n", .{line_index + 1, line});
+            // Handle shook line that starts immediately after try block
+            if (is_shook_line and in_try_block) {
+                in_try_block = false;
+                if (verbose) print("📍 Try block ends with shook at line {}: '{s}'\n", .{line_index + 1, line});
                 
-                // Parse error variable: } fam err {
-                if (std.mem.indexOf(u8, line, "fam ")) |fam_pos| {
-                    const after_fam = line[fam_pos + 4..];
-                    if (std.mem.indexOf(u8, after_fam, " {")) |var_end| {
-                        error_variable_name = std.mem.trim(u8, after_fam[0..var_end], " \t");
-                        if (verbose) print("📍 Fam error variable: {s}\n", .{error_variable_name.?});
+                // Parse error variable: } shook err {
+                if (std.mem.indexOf(u8, line, "shook ")) |shook_pos| {
+                    const after_shook = line[shook_pos + 6..];
+                    if (std.mem.indexOf(u8, after_shook, " {")) |var_end| {
+                        error_variable_name = std.mem.trim(u8, after_shook[0..var_end], " \t");
+                        if (verbose) print("📍 Shook error variable: {s}\n", .{error_variable_name.?});
                     }
                 }
-                fam_start_line = line_index + 1;
-                in_fam_block = true;
+                catch_start_line = line_index + 1;
+                in_catch_block = true;
                 // Don't break, continue to count opening brace if present
-            } else if (brace_depth == 0 and in_shook_block) {
-                in_shook_block = false;
-                if (verbose) print("📍 Shook block ends at line {}: '{s}'\n", .{line_index + 1, line});
+            } else if (brace_depth == 0 and in_try_block) {
+                in_try_block = false;
+                if (verbose) print("📍 Try block ends at line {}: '{s}'\n", .{line_index + 1, line});
                 break;
             }
         }
@@ -5201,8 +5331,8 @@ fn handleShookFamBlock(
     }
     
     // Continue processing fam block if it was detected inline
-    if (in_fam_block and fam_start_line > 0) {
-        if (verbose) print("📍 Processing fam block body starting at line {}\n", .{fam_start_line});
+    if (in_catch_block and catch_start_line > 0) {
+        if (verbose) print("📍 Processing fam block body starting at line {}\n", .{catch_start_line});
         
         while (line_index < source_lines.items.len and brace_depth > 0) {
             line_index += 1;
@@ -5241,9 +5371,9 @@ fn handleShookFamBlock(
                 // Process fam block
                 line_index += 1;
                 lines_consumed += 1;
-                fam_start_line = line_index;
+                catch_start_line = line_index;
                 brace_depth = 1;
-                in_fam_block = true;
+                in_catch_block = true;
                 
                 while (line_index < source_lines.items.len and brace_depth > 0) {
                     const line = std.mem.trim(u8, source_lines.items[line_index], " \t\r\n");
@@ -5264,72 +5394,87 @@ fn handleShookFamBlock(
         }
     }
     
-    // Execute shook block and handle errors
-    try error_recovery.pushFunction("shook_block");
-    defer error_recovery.popFunction();
+    // Collect try and catch statements for execution
+    var try_statements = ArrayList([]const u8).init(allocator);
+    defer try_statements.deinit();
     
-    var error_occurred = false;
+    var catch_statements = ArrayList([]const u8).init(allocator);
+    defer catch_statements.deinit();
     
-    // Execute shook block lines
-    for (shook_start_line..shook_start_line + (line_index - shook_start_line)) |exec_line_idx| {
-        if (exec_line_idx >= source_lines.items.len) break;
-        
-        const exec_line = std.mem.trim(u8, source_lines.items[exec_line_idx], " \t\r\n");
-        if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
-        
-        if (verbose) print("  🔍 Executing in shook block: {s}\n", .{exec_line});
-        
-        // Check for yikes statements in shook block
-        if (std.mem.startsWith(u8, exec_line, "yikes ")) {
-            error_occurred = true;
-            try handleYikesStatement(variables, error_handler, error_recovery, allocator, exec_line, @intCast(exec_line_idx + 1), verbose);
-            if (verbose) print("🚨 Error occurred in shook block, jumping to fam\n", .{});
-            break;
-        }
-        
-        // Execute other statements
-        if (std.mem.indexOf(u8, exec_line, "vibez.spill(")) |start| {
-            try handleVibesSpill(variables, functions, allocator, exec_line, start, verbose);
-        } else if (std.mem.startsWith(u8, exec_line, "sus ")) {
-            var temp_structs = StructStore.init(allocator);
-            defer temp_structs.deinit();
-            try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, exec_line, verbose);
-        }
-    }
-    
-    // If error occurred and we have a fam block, execute it
-    if (error_occurred and fam_start_line > 0) {
-        if (verbose) print("🔧 Executing fam error recovery block\n", .{});
-        
-        // Set error variable if specified
-        if (error_variable_name) |err_var| {
-            if (variables.get("__last_error__")) |last_error| {
-                try variables.put(err_var, last_error);
-                if (verbose) print("  📌 Set error variable {s}\n", .{err_var});
-            }
-        }
-        
-        // Execute fam block lines
-        for (fam_start_line..line_index) |exec_line_idx| {
+    // Collect try block statements
+    if (try_start_line > 0) {
+        for (try_start_line..line_index) |exec_line_idx| {
             if (exec_line_idx >= source_lines.items.len) break;
             
             const exec_line = std.mem.trim(u8, source_lines.items[exec_line_idx], " \t\r\n");
             if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
             
-            if (verbose) print("  🔧 Executing in fam block: {s}\n", .{exec_line});
-            
-            if (std.mem.indexOf(u8, exec_line, "vibez.spill(")) |start| {
-                try handleVibesSpill(variables, functions, allocator, exec_line, start, verbose);
-            } else if (std.mem.startsWith(u8, exec_line, "sus ")) {
-                var temp_structs = StructStore.init(allocator);
-                defer temp_structs.deinit();
-                try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, exec_line, verbose);
-            }
+            try try_statements.append(exec_line);
+            if (verbose) print("  📝 Collected try statement: {s}\n", .{exec_line});
         }
     }
     
-    if (verbose) print("✅ Shook/fam block processed, consumed {} lines\n", .{lines_consumed});
+    // Collect catch block statements  
+    if (catch_start_line > 0) {
+        for (catch_start_line..line_index) |exec_line_idx| {
+            if (exec_line_idx >= source_lines.items.len) break;
+            
+            const exec_line = std.mem.trim(u8, source_lines.items[exec_line_idx], " \t\r\n");
+            if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
+            
+            try catch_statements.append(exec_line);
+            if (verbose) print("  📝 Collected catch statement: {s}\n", .{exec_line});
+        }
+    }
+    
+    // Execute the fam try-catch block using fixed error handling
+    _ = try error_execution_fixed.executeFamBlock(
+        error_state,
+        allocator,
+        variables,
+        functions,
+        try_statements.items,
+        error_variable_name,
+        catch_statements.items,
+        executeStatementWrapper,
+        verbose
+    );
+    
+    if (verbose) print("✅ Fam try-catch block processed, consumed {} lines\n", .{lines_consumed});
     return lines_consumed;
+}
+
+// Wrapper function to execute statements from the fixed error handler
+fn executeStatementWrapper(
+    variables: anytype,
+    functions: anytype, 
+    allocator: Allocator,
+    statement: []const u8,
+    verbose: bool
+) !error_execution_fixed.ExecutionResult {
+    if (std.mem.indexOf(u8, statement, "vibez.spill(")) |start| {
+        try handleVibesSpill(variables, functions, allocator, statement, start, verbose);
+    } else if (std.mem.startsWith(u8, statement, "sus ")) {
+        var temp_structs = StructStore.init(allocator);
+        defer temp_structs.deinit();
+        try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, statement, verbose);
+    } else if (std.mem.startsWith(u8, statement, "yikes ")) {
+        const message_expr = std.mem.trim(u8, statement[6..], " \t");
+        return try error_execution_fixed.executeYikes(
+            undefined, // Error state handled elsewhere 
+            allocator,
+            variables,
+            functions,
+            message_expr,
+            0, 0, "main.csd",
+            verbose
+        );
+    } else {
+        // Try to process as generic statement
+        try processStatements(variables, functions, undefined, allocator, allocator, statement, verbose);
+    }
+    
+    return error_execution_fixed.ExecutionResult{ .Ok = {} };
 }
 
 /// Handle ready/otherwise (if/else) control flow blocks
@@ -6305,15 +6450,47 @@ fn handleBestieLoop(
         
         if (verbose and iteration_count == 0) print("🔄 Starting loop execution\n", .{});
         
-        // Execute loop body
+        // Execute loop body using the main interpreter logic to handle nested structures
         if (verbose) print("🐛 DEBUG: Executing loop body lines {} to {}\n", .{loop_body_start, loop_body_end});
+        
+        // Create a sub-array of lines for the loop body
+        var body_lines = std.ArrayList([]const u8).init(allocator);
+        defer body_lines.deinit();
+        
         for (loop_body_start..loop_body_end) |line_idx| {
             if (line_idx >= source_lines.items.len) break;
             const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
-            if (verbose) print("🐛 DEBUG: Loop line {}: '{s}'\n", .{line_idx, exec_line});
-            if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
+            try body_lines.append(exec_line);
+        }
+        
+        // Execute the body using the main interpreter logic
+        var body_line_idx: usize = 0;
+        while (body_line_idx < body_lines.items.len) {
+            const exec_line = std.mem.trim(u8, body_lines.items[body_line_idx], " \t\r\n");
+            if (verbose) print("🐛 DEBUG: Loop line {}: '{s}'\n", .{body_line_idx, exec_line});
             
+            if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) {
+                body_line_idx += 1;
+                continue;
+            }
+            
+            // Handle nested control structures
+            if (std.mem.startsWith(u8, exec_line, "bestie ")) {
+                const lines_consumed = try handleBestieLoop(variables, functions, allocator, body_lines, body_line_idx, verbose);
+                body_line_idx += lines_consumed;
+                continue;
+            }
+            
+            if (std.mem.startsWith(u8, exec_line, "ready ")) {
+                // For now, handle nested ready statements as regular statements
+                try executeBlockLine(variables, functions, allocator, exec_line, verbose);
+                body_line_idx += 1;
+                continue;
+            }
+            
+            // Execute regular statements
             try executeBlockLine(variables, functions, allocator, exec_line, verbose);
+            body_line_idx += 1;
         }
         
         iteration_count += 1;

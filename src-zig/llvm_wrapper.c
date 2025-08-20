@@ -111,11 +111,32 @@ void* llvm_build_call2(void* builder, void* function_type, void* function, void*
 
 int llvm_verify_module(void* module) {
     char* error_message = NULL;
-    int result = LLVMVerifyModule((LLVMModuleRef)module, LLVMPrintMessageAction, &error_message);
-    if (error_message) {
-        printf("LLVM verification error: %s\n", error_message);
+    // Use ReturnStatusAction to capture errors instead of printing directly
+    int result = LLVMVerifyModule((LLVMModuleRef)module, LLVMReturnStatusAction, &error_message);
+    
+    if (result != 0 && error_message) {
+        // Only print if we have meaningful error content
+        size_t len = strlen(error_message);
+        if (len > 0) {
+            // Trim whitespace to check if message is meaningful
+            char* trimmed = error_message;
+            while (*trimmed == ' ' || *trimmed == '\t' || *trimmed == '\n' || *trimmed == '\r') {
+                trimmed++;
+            }
+            if (*trimmed != '\0') {
+                printf("❌ CRITICAL LLVM verification error: %s\n", error_message);
+            } else {
+                printf("❌ CRITICAL LLVM verification failed with unknown error\n");
+            }
+        } else {
+            printf("❌ CRITICAL LLVM verification failed with empty error message\n");
+        }
         LLVMDisposeMessage(error_message);
+    } else if (result != 0) {
+        // Verification failed but no error message provided
+        printf("❌ CRITICAL LLVM verification failed without error details\n");
     }
+    
     return result;
 }
 

@@ -1,1 +1,1 @@
-sus x drip = 123; vibez.spill("Value:", x)
+yeet "vibez"; vibez.spill("Testing LLVM verification");

@@ -66,7 +66,7 @@ pub const ConstantFolder = struct {
         
         self.constants_folded = total_folded;
         
-        std.debug.print("✅ Constant folding: {} constants folded, {} expressions simplified\n",
+        std.debug.print("✅ Constant folding: {d} constants folded, {d} expressions simplified\n",
                        .{ self.constants_folded, self.expressions_simplified });
         
         return total_folded;

@@ -36,27 +36,89 @@ pub const ImportSpec = struct {
     line: u32,
     column: u32,
     
-    // Flag to track ownership of resolved_path to prevent double-free
+    // Ownership tracking flags to prevent double-free
     owns_resolved_path: bool = true,
+    owns_raw_path: bool = true,
+    owns_source_file: bool = true,
+    owns_alias: bool = true,
+    owns_version_req: bool = true,
+    
+    // Safe initialization with proper ownership tracking
+    pub fn init(allocator: Allocator, raw_path: []const u8, source_file: []const u8, line: u32, column: u32) !ImportSpec {
+        return ImportSpec{
+            .raw_path = try allocator.dupe(u8, raw_path),
+            .resolved_path = null,
+            .module_type = .stdlib,  // Default, will be determined during resolution
+            .version_req = null,
+            .alias = null,
+            .source_file = try allocator.dupe(u8, source_file),
+            .line = line,
+            .column = column,
+            .owns_resolved_path = true,
+            .owns_raw_path = true,
+            .owns_source_file = true,
+            .owns_alias = true,
+            .owns_version_req = true,
+        };
+    }
+    
+    // Initialize from borrowed strings (non-owning)
+    pub fn initBorrowed(raw_path: []const u8, source_file: []const u8, line: u32, column: u32) ImportSpec {
+        return ImportSpec{
+            .raw_path = raw_path,
+            .resolved_path = null,
+            .module_type = .stdlib,
+            .version_req = null,
+            .alias = null,
+            .source_file = source_file,
+            .line = line,
+            .column = column,
+            .owns_resolved_path = false,
+            .owns_raw_path = false,
+            .owns_source_file = false,
+            .owns_alias = false,
+            .owns_version_req = false,
+        };
+    }
     
     pub fn deinit(self: *ImportSpec, allocator: Allocator) void {
+        // Only free if we own the memory and haven't already freed it
         if (self.owns_resolved_path) {
             if (self.resolved_path) |path| {
                 allocator.free(path);
                 self.resolved_path = null;
+                self.owns_resolved_path = false;
             }
         }
-        if (self.alias) |alias| {
-            allocator.free(alias);
-            self.alias = null;
+        
+        if (self.owns_alias) {
+            if (self.alias) |alias| {
+                allocator.free(alias);
+                self.alias = null;
+                self.owns_alias = false;
+            }
         }
-        // Clean up raw_path (always owned)
-        allocator.free(self.raw_path);
-        // Clean up source_file (always owned)
-        allocator.free(self.source_file);
+        
+        // Check ownership before freeing to prevent double-free
+        if (self.owns_raw_path and self.raw_path.len > 0) {
+            allocator.free(self.raw_path);
+            self.raw_path = "";
+            self.owns_raw_path = false;
+        }
+        
+        if (self.owns_source_file and self.source_file.len > 0) {
+            allocator.free(self.source_file);
+            self.source_file = "";
+            self.owns_source_file = false;
+        }
+        
         // Clean up version requirement if present
-        if (self.version_req) |*version_req| {
-            version_req.deinit(allocator);
+        if (self.owns_version_req) {
+            if (self.version_req) |*version_req| {
+                version_req.deinit(allocator);
+                self.version_req = null;
+                self.owns_version_req = false;
+            }
         }
     }
     
@@ -71,7 +133,11 @@ pub const ImportSpec = struct {
             .source_file = self.source_file,
             .line = self.line,
             .column = self.column,
-            .owns_resolved_path = false,  // Copy doesn't own the memory
+            .owns_resolved_path = false,  // Copy doesn't own any memory
+            .owns_raw_path = false,
+            .owns_source_file = false,
+            .owns_alias = false,
+            .owns_version_req = false,
         };
     }
 };
@@ -113,7 +179,11 @@ pub const ModuleCache = struct {
         while (resolved_iter.next()) |entry| {
             var import_spec = entry.value_ptr;
             import_spec.deinit(self.allocator);
-            self.allocator.free(entry.key_ptr.*);
+            // Only free if the key is owned by the map
+            if (entry.key_ptr.*.len > 0) {
+                self.allocator.free(entry.key_ptr.*);
+                entry.key_ptr.* = "";  // Clear to prevent double-free
+            }
         }
         self.resolved_modules.deinit();
         
@@ -122,10 +192,16 @@ pub const ModuleCache = struct {
         while (graph_iter.next()) |entry| {
             var deps = entry.value_ptr;
             for (deps.items) |dep| {
-                self.allocator.free(dep);
+                if (dep.len > 0) {  // Check for valid string before freeing
+                    self.allocator.free(dep);
+                }
             }
             deps.deinit();
-            self.allocator.free(entry.key_ptr.*);
+            // Only free if the key is owned by the map
+            if (entry.key_ptr.*.len > 0) {
+                self.allocator.free(entry.key_ptr.*);
+                entry.key_ptr.* = "";  // Clear to prevent double-free
+            }
         }
         self.import_graph.deinit();
     }
@@ -226,14 +302,21 @@ pub const AdvancedImportResolver = struct {
         // Clean up aliases
         var alias_iter = self.aliases.iterator();
         while (alias_iter.next()) |entry| {
-            self.allocator.free(entry.key_ptr.*);
-            self.allocator.free(entry.value_ptr.*);
+            if (entry.key_ptr.*.len > 0) {
+                self.allocator.free(entry.key_ptr.*);
+                entry.key_ptr.* = "";  // Clear to prevent double-free
+            }
+            if (entry.value_ptr.*.len > 0) {
+                self.allocator.free(entry.value_ptr.*);
+                entry.value_ptr.* = "";  // Clear to prevent double-free
+            }
         }
         self.aliases.deinit();
         
         // Clean up package manifest
         if (self.package_manifest) |*manifest| {
             manifest.deinit(self.allocator);
+            self.package_manifest = null;
         }
     }
     

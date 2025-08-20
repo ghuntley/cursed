@@ -163,6 +163,17 @@ pub const ErrorValue = struct {
     }
 };
 
+pub const PointerValue = struct {
+    pointee_value: Value,
+    allocator: Allocator,
+    
+    pub fn deinit(self: *PointerValue) void {
+        // Note: We store the value directly, so no additional cleanup needed
+        // In a real implementation, this might need to handle reference counting
+        _ = self;
+    }
+};
+
 pub const Value = union(enum) {
     Integer: i64,
     Float: f64,
@@ -170,6 +181,7 @@ pub const Value = union(enum) {
     Boolean: bool,
     Character: u8,
     Null,
+    Pointer: PointerValue,
     Struct: StructInstance,
     Interface: InterfaceInstance,
     Error: ErrorValue,
@@ -186,6 +198,7 @@ pub const Value = union(enum) {
                 tuple.deinit();
             },
             .Error => |*err| err.deinit(),
+            .Pointer => |*ptr| ptr.deinit(),
             .Struct => |*struct_inst| struct_inst.deinit(),
             .Interface => |*interface_inst| interface_inst.deinit(),
             .CursedError => |cursed_err| {
@@ -443,6 +456,10 @@ pub const Interpreter = struct {
         // Clean up channel storage
         var channel_iterator = self.channel_storage.iterator();
         while (channel_iterator.next()) |entry| {
+            // Clean up each Value in the channel's ArrayList
+            for (entry.value_ptr.items) |*value| {
+                value.deinit(self.allocator);
+            }
             entry.value_ptr.deinit();
         }
         self.channel_storage.deinit();
@@ -600,10 +617,48 @@ pub const Interpreter = struct {
                         // Update the struct instance in the environment
                         try self.environment.set(obj_name, object_value);
                     },
+                    .Pointer => |*ptr| {
+                        // Dereference pointer and assign to field
+                        switch (ptr.pointee_value) {
+                            .Struct => |*struct_inst| {
+                                try struct_inst.setField(member.property, value);
+                                // Update the pointer's pointee value
+                                ptr.pointee_value = Value{ .Struct = struct_inst.* };
+                            },
+                            else => {
+                                std.debug.print("Cannot assign to field of dereferenced non-struct: {s}\n", .{@tagName(ptr.pointee_value)});
+                                return InterpreterError.TypeMismatch;
+                            }
+                        }
+                    },
                     else => {
                         std.debug.print("Cannot assign to field of non-struct type: {s}\n", .{@tagName(object_value)});
                         return InterpreterError.TypeMismatch;
                     }
+                }
+            },
+            .Unary => |unary| {
+                // Handle dereferenced member access: (*ptr).field = value
+                if (std.mem.eql(u8, unary.operator, "*")) {
+                    const ptr_value = try self.evaluateExpression(unary.operand.*);
+                    switch (ptr_value) {
+                        .Pointer => |*ptr| {
+                            switch (ptr.pointee_value) {
+                                .Struct => |*struct_inst| {
+                                    try struct_inst.setField(member.property, value);
+                                    ptr.pointee_value = Value{ .Struct = struct_inst.* };
+                                },
+                                else => {
+                                    return InterpreterError.TypeMismatch;
+                                }
+                            }
+                        },
+                        else => {
+                            return InterpreterError.TypeMismatch;
+                        }
+                    }
+                } else {
+                    return InterpreterError.TypeMismatch;
                 }
             },
             else => {
@@ -735,6 +790,7 @@ pub const Interpreter = struct {
                 }
             },
             .Binary => |bin| return try self.evaluateBinary(bin),
+            .Unary => |unary| return try self.evaluateUnary(unary.*),
             .Call => |call| return try self.evaluateCall(call),
             .MemberAccess => |member| return try self.evaluateMemberAccess(member.*),
             .StructLiteral => |struct_lit| return try self.evaluateStructLiteral(struct_lit),
@@ -816,6 +872,52 @@ pub const Interpreter = struct {
         }
         
         return InterpreterError.TypeMismatch;
+    }
+
+    fn evaluateUnary(self: *Interpreter, unary: ast.UnaryExpression) InterpreterError!Value {
+        const operand = try self.evaluateExpression(unary.operand.*);
+        
+        if (std.mem.eql(u8, unary.operator, "-")) {
+            // Unary minus
+            if (operand.isNumber()) {
+                const num = try operand.toNumber();
+                return Value{ .Float = -num };
+            } else {
+                return InterpreterError.TypeMismatch;
+            }
+        } else if (std.mem.eql(u8, unary.operator, "+")) {
+            // Unary plus (no-op for numbers)
+            if (operand.isNumber()) {
+                return operand;
+            } else {
+                return InterpreterError.TypeMismatch;
+            }
+        } else if (std.mem.eql(u8, unary.operator, "!")) {
+            // Logical not
+            return Value{ .Boolean = !operand.toBool() };
+        } else if (std.mem.eql(u8, unary.operator, "*")) {
+            // Dereference pointer
+            switch (operand) {
+                .Pointer => |ptr| {
+                    // For simplicity, we'll store the pointed-to value directly
+                    // In a real implementation, this would dereference memory
+                    return ptr.pointee_value;
+                },
+                else => {
+                    std.debug.print("ERROR: Cannot dereference non-pointer value: {s}\n", .{@tagName(operand)});
+                    return InterpreterError.TypeMismatch;
+                }
+            }
+        } else if (std.mem.eql(u8, unary.operator, "&")) {
+            // Address-of operator - create a pointer to the operand
+            return Value{ .Pointer = PointerValue{
+                .pointee_value = operand,
+                .allocator = self.allocator,
+            }};
+        } else {
+            std.debug.print("ERROR: Unsupported unary operator: {s}\n", .{unary.operator});
+            return InterpreterError.TypeMismatch;
+        }
     }
 
     fn evaluateCall(self: *Interpreter, call: ast.CallExpression) InterpreterError!Value {
@@ -940,6 +1042,7 @@ pub const Interpreter = struct {
                         // Evaluate arguments
                         var args = ArrayList(Value).init(self.allocator);
                         defer args.deinit();
+                        errdefer args.deinit(); // Clean up on error
                         
                         for (call.arguments.items) |arg_expr| {
                             const arg = try self.evaluateExpression(arg_expr.*);
@@ -988,6 +1091,24 @@ pub const Interpreter = struct {
                 }
                 return InterpreterError.UndefinedField;
             },
+            .Pointer => |ptr| {
+                // Automatically dereference pointer for member access
+                switch (ptr.pointee_value) {
+                    .Struct => |struct_inst| {
+                        if (struct_inst.fields.get(member.property)) |field_value| {
+                            std.debug.print("DEBUG: Found field '{s}' via pointer dereference with value type: {s}\n", .{member.property, @tagName(field_value)});
+                            return field_value;
+                        } else {
+                            std.debug.print("DEBUG: Field '{s}' not found in dereferenced struct\n", .{member.property});
+                            return InterpreterError.UndefinedField;
+                        }
+                    },
+                    else => {
+                        std.debug.print("DEBUG: Member access on pointer to non-struct: {s}\n", .{@tagName(ptr.pointee_value)});
+                        return InterpreterError.TypeMismatch;
+                    }
+                }
+            },
             else => {
                 std.debug.print("DEBUG: Member access on non-struct type: {s}\n", .{@tagName(object)});
                 return InterpreterError.TypeMismatch;
@@ -1010,6 +1131,7 @@ pub const Interpreter = struct {
                             // Call the struct method
                             var method_args = try std.ArrayList(Value).initCapacity(self.allocator, args.len + 1);
                             defer method_args.deinit();
+                            errdefer method_args.deinit(); // Clean up on error
                             
                             // First argument is self (the struct instance)
                             try method_args.append(Value{ .Struct = struct_inst });
@@ -1031,6 +1153,7 @@ pub const Interpreter = struct {
                 // Use interface dispatch through vtable
                 var method_args = try std.ArrayList(Value).initCapacity(self.allocator, args.len + 1);
                 defer method_args.deinit();
+                errdefer method_args.deinit(); // Clean up on error
                 
                 // First argument is self (the underlying struct)
                 try method_args.append(Value{ .Struct = interface_inst.underlying_struct.* });
@@ -1218,6 +1341,7 @@ pub const Interpreter = struct {
         // Evaluate function arguments
         var args = ArrayList(Value).init(self.allocator);
         defer args.deinit();
+        errdefer args.deinit(); // Clean up on error
         
         for (arguments) |arg_expr| {
             const arg_value = try self.evaluateExpression(arg_expr);
@@ -1353,6 +1477,7 @@ pub const Interpreter = struct {
         // Track multiple return values for tuple returns
         var return_values = ArrayList(Value).init(self.allocator);
         defer return_values.deinit();
+        errdefer return_values.deinit(); // Clean up on error
         
         for (func.declaration.body.items) |stmt| {
             switch (stmt.*) {
@@ -2090,6 +2215,7 @@ pub const Interpreter = struct {
             try channel_list.append(value);
         } else {
             var new_list = ArrayList(Value).init(self.allocator);
+            errdefer new_list.deinit(); // Clean up on error
             try new_list.append(value);
             try self.channel_storage.put(channel_id, new_list);
         }
@@ -2115,6 +2241,7 @@ pub const Interpreter = struct {
     
     fn evaluateTuple(self: *Interpreter, tuple: ast.TupleExpression) InterpreterError!Value {
         var tuple_values = ArrayList(Value).init(self.allocator);
+        errdefer tuple_values.deinit(); // Clean up on error
         
         for (tuple.elements.items) |element_expr| {
             const element_value = try self.evaluateExpression(element_expr.*);

@@ -298,9 +298,10 @@ pub const ArenaAllocator = struct {
     /// Push a new stack frame for stack-like allocation
     pub fn pushStackFrame(self: *ArenaAllocator) !void {
         const frame = try self.frame_allocator.allocator().create(StackFrame);
+        const buffer = self.current_buffer orelse try self.addBuffer(self.config.initial_size);
         frame.* = StackFrame{
-            .buffer = self.current_buffer orelse try self.addBuffer(self.config.initial_size),
-            .saved_used = frame.buffer.used,
+            .buffer = buffer,
+            .saved_used = buffer.used,
             .prev_frame = self.current_frame,
         };
         self.current_frame = frame;

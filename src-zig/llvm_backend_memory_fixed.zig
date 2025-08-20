@@ -146,16 +146,19 @@ pub const MemoryTracker = struct {
 
 /// Memory-Safe LLVM Backend Implementation
 pub const MemorySafeLLVMBackend = struct {
-    allocator: Allocator,
-    memory_tracker: MemoryTracker,
-    arena: std.heap.ArenaAllocator,
+allocator: Allocator,
+memory_tracker: MemoryTracker,
+arena: std.heap.ArenaAllocator,
+
+// Core LLVM components
+context: LLVMContextRef,
+module: LLVMModuleRef,
+builder: LLVMBuilderRef,
+pass_manager: LLVMPassManagerRef,
+target_machine: ?LLVMTargetMachineRef,
     
-    // Core LLVM components
-    context: LLVMContextRef,
-    module: LLVMModuleRef,
-    builder: LLVMBuilderRef,
-    pass_manager: LLVMPassManagerRef,
-    target_machine: ?LLVMTargetMachineRef,
+    // Arena allocator cleanup tracking
+    arena_cleanup_callbacks: ArrayList(*const fn () void),
     
     // Caches for performance (use arena allocator)
     type_cache: HashMap([]const u8, LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
@@ -275,6 +278,7 @@ pub const MemorySafeLLVMBackend = struct {
             .builder = builder,
             .pass_manager = pass_manager,
             .target_machine = target_machine,
+            .arena_cleanup_callbacks = ArrayList(*const fn () void).init(arena_allocator),
             .type_cache = HashMap([]const u8, LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
             .function_cache = HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
             .debug_enabled = false,
@@ -290,6 +294,11 @@ pub const MemorySafeLLVMBackend = struct {
     pub fn deinit(self: *MemorySafeLLVMBackend) void {
         print("🧹 Starting memory-safe LLVM backend cleanup...\n");
         
+        // Execute arena cleanup callbacks before arena destruction
+        for (self.arena_cleanup_callbacks.items) |callback| {
+            callback();
+        }
+        
         // Clean up memory tracker (handles all LLVM resources)
         self.memory_tracker.deinit();
         
@@ -300,6 +309,11 @@ pub const MemorySafeLLVMBackend = struct {
         self.allocator.destroy(self);
         
         print("✅ Memory-safe LLVM backend cleanup complete\n");
+    }
+    
+    /// Register a cleanup callback to be executed before arena destruction
+    pub fn registerArenaCleanup(self: *MemorySafeLLVMBackend, callback: *const fn () void) !void {
+        try self.arena_cleanup_callbacks.append(callback);
     }
     
     /// Enable debug information with proper memory management

@@ -85,6 +85,7 @@ pub fn executeInterpretedFunctionSafe(
     // Convert usize arguments to Value arguments based on parameter types
     var cursed_args = ArrayList(Value).init(allocator);
     defer cursed_args.deinit();
+    errdefer cursed_args.deinit(); // Clean up on error
     
     for (args, 0..) |arg, i| {
         const value = if (i < param_types.len) blk: {

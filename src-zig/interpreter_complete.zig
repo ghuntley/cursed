@@ -687,6 +687,7 @@ pub const CursedInterpreter = struct {
 
     fn evaluateArrayExpression(self: *CursedInterpreter, array: ast.ArrayExpression) InterpreterError!Value {
         var values = ArrayList(Value).init(self.allocator);
+        errdefer values.deinit(); // Clean up on error
         for (array.elements.items) |elem_ptr| {
             const elem_expr: *Expression = @ptrCast(@alignCast(elem_ptr));
             try values.append(try self.evaluateExpression(elem_expr.*));
@@ -738,6 +739,7 @@ pub const CursedInterpreter = struct {
 
     fn evaluateTuple(self: *CursedInterpreter, tuple: ast.TupleExpression) InterpreterError!Value {
         var values = ArrayList(Value).init(self.allocator);
+        errdefer values.deinit(); // Clean up on error
         for (tuple.elements.items) |elem_ptr| {
             const elem_expr: *Expression = @ptrCast(@alignCast(elem_ptr));
             try values.append(try self.evaluateExpression(elem_expr.*));
