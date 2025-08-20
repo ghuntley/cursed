@@ -9,7 +9,7 @@ const concurrency = @import("concurrency.zig");
 
 // Only compile on Windows
 comptime {
-    if (!builtin.target.os.tag.windows) {
+    if (builtin.target.os.tag != .windows) {
         @compileError("IOCP poller only supports Windows platforms");
     }
 }
@@ -79,6 +79,40 @@ extern "kernel32" fn WriteFileEx(
     nNumberOfBytesToWrite: DWORD,
     lpOverlapped: *OVERLAPPED,
     lpCompletionRoutine: ?*const fn(*anyopaque, DWORD, *OVERLAPPED) callconv(windows.WINAPI) void,
+) callconv(windows.WINAPI) BOOL;
+
+// CRITICAL FIX: Add proper IOCP-compatible file I/O APIs
+extern "kernel32" fn ReadFile(
+    hFile: HANDLE,
+    lpBuffer: [*]u8,
+    nNumberOfBytesToRead: DWORD,
+    lpNumberOfBytesRead: ?*DWORD,
+    lpOverlapped: ?*OVERLAPPED,
+) callconv(windows.WINAPI) BOOL;
+
+extern "kernel32" fn WriteFile(
+    hFile: HANDLE,
+    lpBuffer: [*]const u8,
+    nNumberOfBytesToWrite: DWORD,
+    lpNumberOfBytesWritten: ?*DWORD,
+    lpOverlapped: ?*OVERLAPPED,
+) callconv(windows.WINAPI) BOOL;
+
+extern "ntdll" fn RtlNtStatusToDosError(Status: DWORD) callconv(windows.WINAPI) DWORD;
+
+extern "kernel32" fn CreateWaitableTimerW(
+    lpTimerAttributes: ?*anyopaque,
+    bManualReset: BOOL,
+    lpTimerName: ?[*:0]const u16,
+) callconv(windows.WINAPI) ?HANDLE;
+
+extern "kernel32" fn SetWaitableTimer(
+    hTimer: HANDLE,
+    lpDueTime: *const i64,
+    lPeriod: i32,
+    pfnCompletionRoutine: ?*anyopaque,
+    lpArgToCompletionRoutine: ?*anyopaque,
+    fResume: BOOL,
 ) callconv(windows.WINAPI) BOOL;
 
 // Async operation types
@@ -280,23 +314,31 @@ pub const IOCPPoller = struct {
             return IOCPError.InvalidOperation;
         }
         
-        // Associate handle with completion port if needed
-        self.associateHandle(operation.handle, @ptrCast(operation)) catch {};
+        // CRITICAL FIX: Ensure handle is properly associated with completion port
+        self.associateHandle(operation.handle, @ptrCast(operation)) catch |err| {
+            std.log.err("IOCP FIX: Failed to associate file handle with completion port: {}", .{err});
+            return err;
+        };
         
-        const success = ReadFileEx(
+        // CRITICAL FIX: Use ReadFile instead of ReadFileEx for IOCP
+        // ReadFileEx is for APCs, ReadFile with OVERLAPPED is for IOCP
+        const success = windows.ReadFile(
             operation.handle,
             operation.buffer.ptr,
             @intCast(operation.buffer.len),
+            null, // Don't need immediate bytes read with async
             &operation.overlapped,
-            null, // No completion routine, use IOCP
         );
         
         if (success == 0) {
             const error_code = windows.GetLastError();
             if (error_code != .IO_PENDING) {
+                std.log.err("IOCP FIX: ReadFile failed with error: {}", .{error_code});
                 return IOCPError.InvalidOperation;
             }
         }
+        
+        std.log.debug("IOCP: Async file read initiated successfully");
     }
     
     // Async file write
@@ -305,23 +347,69 @@ pub const IOCPPoller = struct {
             return IOCPError.InvalidOperation;
         }
         
-        // Associate handle with completion port if needed
-        self.associateHandle(operation.handle, @ptrCast(operation)) catch {};
+        // CRITICAL FIX: Ensure handle is properly associated with completion port
+        self.associateHandle(operation.handle, @ptrCast(operation)) catch |err| {
+            std.log.err("IOCP FIX: Failed to associate file handle with completion port: {}", .{err});
+            return err;
+        };
         
-        const success = WriteFileEx(
+        // CRITICAL FIX: Use WriteFile instead of WriteFileEx for IOCP
+        // WriteFileEx is for APCs, WriteFile with OVERLAPPED is for IOCP
+        const success = windows.WriteFile(
             operation.handle,
             data.ptr,
             @intCast(data.len),
+            null, // Don't need immediate bytes written with async
             &operation.overlapped,
-            null, // No completion routine, use IOCP
         );
         
         if (success == 0) {
             const error_code = windows.GetLastError();
             if (error_code != .IO_PENDING) {
+                std.log.err("IOCP FIX: WriteFile failed with error: {}", .{error_code});
                 return IOCPError.InvalidOperation;
             }
         }
+        
+        std.log.debug("IOCP: Async file write initiated successfully");
+    }
+    
+    // CRITICAL FIX: Add async timer operations
+    pub fn timerAsync(self: *Self, operation: *AsyncOperation, delay_ms: u32) IOCPError!void {
+        // Create waitable timer
+        const timer_handle = CreateWaitableTimerW(null, windows.FALSE, null) orelse {
+            std.log.err("IOCP FIX: Failed to create waitable timer");
+            return IOCPError.SystemResourceLimit;
+        };
+        
+        // Associate timer with completion port
+        self.associateHandle(timer_handle, @ptrCast(operation)) catch |err| {
+            _ = windows.CloseHandle(timer_handle);
+            return err;
+        };
+        
+        // Set timer to fire after delay
+        const due_time: i64 = -@as(i64, delay_ms) * 10000; // Negative for relative time in 100ns units
+        const success = SetWaitableTimer(
+            timer_handle,
+            &due_time,
+            0, // No period (one-shot timer)
+            null, // No completion routine
+            null, // No argument
+            windows.FALSE, // Don't resume system
+        );
+        
+        if (success == 0) {
+            const error_code = windows.GetLastError();
+            _ = windows.CloseHandle(timer_handle);
+            std.log.err("IOCP FIX: SetWaitableTimer failed with error: {}", .{error_code});
+            return IOCPError.InvalidOperation;
+        }
+        
+        // Store timer handle in operation for cleanup
+        operation.handle = timer_handle;
+        
+        std.log.debug("IOCP: Async timer set for {}ms", .{delay_ms});
     }
     
     // Post custom completion event
@@ -377,15 +465,31 @@ pub const IOCPPoller = struct {
         // Check for shutdown signal
         const completion_key = @intFromPtr(entry.lpCompletionKey);
         if (completion_key == 0xFFFFFFFF) {
+            std.log.debug("IOCP: Received shutdown signal");
             return; // Shutdown signal
+        }
+        
+        // CRITICAL FIX: Validate completion key before casting
+        if (entry.lpCompletionKey == null) {
+            std.log.err("IOCP FIX: Received null completion key - invalid operation");
+            return;
         }
         
         // Cast completion key back to operation
         const operation: *AsyncOperation = @ptrCast(@alignCast(entry.lpCompletionKey));
         
+        // CRITICAL FIX: Proper error code extraction from NTSTATUS
+        // The Internal field contains NTSTATUS, not Win32 error code
+        const ntstatus = @as(u32, @intCast(@intFromPtr(entry.Internal)));
+        const win32_error = if (ntstatus == 0) @as(u32, 0) else windows.RtlNtStatusToDosError(ntstatus);
+        
         // Update operation results
         operation.bytes_transferred = entry.dwBytesTransferred;
-        operation.error_code = @intFromPtr(entry.Internal);
+        operation.error_code = win32_error;
+        
+        std.log.debug("IOCP: Operation completed - bytes: {}, error: {}, ntstatus: 0x{X}", .{
+            operation.bytes_transferred, operation.error_code, ntstatus
+        });
         
         // Create result
         const result = AsyncResult{
@@ -400,6 +504,14 @@ pub const IOCPPoller = struct {
     }
     
     fn handleCompletion(self: *Self, operation: *AsyncOperation, result: AsyncResult) void {
+        // CRITICAL FIX: Clean up timer handles
+        if (operation.op_type == .timer) {
+            if (operation.handle != windows.INVALID_HANDLE_VALUE) {
+                _ = windows.CloseHandle(operation.handle);
+                std.log.debug("IOCP: Timer handle cleaned up");
+            }
+        }
+        
         // Execute callback if provided
         if (operation.completion_callback) |callback| {
             callback(operation);
@@ -691,11 +803,75 @@ pub const AsyncRuntime = struct {
             };
         }
     }
+    
+    // CRITICAL FIX: Add async timer functionality
+    pub fn asyncTimer(self: *Self, delay_ms: u32) IOCPError!AsyncResult {
+        const operation = self.poller.allocator.create(AsyncOperation) catch {
+            return IOCPError.OutOfMemory;
+        };
+        defer self.poller.allocator.destroy(operation);
+        
+        operation.* = AsyncOperation.init(.timer, windows.INVALID_HANDLE_VALUE);
+        
+        // If running in goroutine context, set up channel-based waiting
+        if (self.scheduler) |scheduler| {
+            if (scheduler.getCurrentGoroutine()) |current_goroutine| {
+                const result_channel = concurrency.Channel(AsyncResult).init(self.poller.allocator, 1) catch {
+                    return IOCPError.OutOfMemory;
+                };
+                defer result_channel.deinit();
+                
+                operation.bindGoroutine(current_goroutine.id, result_channel);
+                
+                // Start async timer
+                try self.poller.timerAsync(operation, delay_ms);
+                
+                // Wait for completion
+                const result = result_channel.receive() catch |recv_err| {
+                    std.log.err("CRITICAL P0 #12 FIX: Timer channel receive failed with {}", .{recv_err});
+                    return AsyncResult{
+                        .success = false,
+                        .bytes_transferred = 0,
+                        .error_code = @intFromEnum(windows.Win32Error.OPERATION_ABORTED),
+                        .operation = operation,
+                    };
+                };
+                
+                return result;
+            }
+        }
+        
+        // Fallback: start timer and block wait
+        try self.poller.timerAsync(operation, delay_ms);
+        
+        // Simple busy wait with timeout (not ideal but works)
+        const start_time = std.time.milliTimestamp();
+        const timeout_ms = delay_ms + 5000; // Extra 5s timeout
+        
+        while (std.time.milliTimestamp() - start_time < timeout_ms) {
+            if (operation.bytes_transferred > 0 or operation.error_code != 0) {
+                return AsyncResult{
+                    .success = operation.error_code == 0,
+                    .bytes_transferred = operation.bytes_transferred,
+                    .error_code = operation.error_code,
+                    .operation = operation,
+                };
+            }
+            std.time.sleep(10 * std.time.ns_per_ms); // 10ms sleep
+        }
+        
+        return AsyncResult{
+            .success = false,
+            .bytes_transferred = 0,
+            .error_code = @intFromEnum(windows.Win32Error.WAIT_TIMEOUT),
+            .operation = operation,
+        };
+    }
 };
 
 // Tests and examples
 test "IOCP poller initialization" {
-    if (!builtin.target.os.tag.windows) return; // Skip on non-Windows
+    if (builtin.target.os.tag != .windows) return; // Skip on non-Windows
     
     const allocator = std.testing.allocator;
     var poller = try IOCPPoller.init(allocator);
@@ -705,7 +881,7 @@ test "IOCP poller initialization" {
 }
 
 test "async runtime integration" {
-    if (!builtin.target.os.tag.windows) return; // Skip on non-Windows
+    if (builtin.target.os.tag != .windows) return; // Skip on non-Windows
     
     const allocator = std.testing.allocator;
     var runtime = try AsyncRuntime.init(allocator);

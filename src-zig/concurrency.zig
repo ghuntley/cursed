@@ -930,23 +930,46 @@ pub const Goroutine = struct {
         }
     }
     
-    /// Execute with preemption checking
+    /// Execute with preemption checking (called directly by goroutine.execute())
     fn executeWithPreemption(self: *Goroutine) void {
-        // Create a wrapper that checks for preemption signals periodically
-        // In a real implementation, this would use cooperative yield points
-        // or signal handlers for preemption
-        
-        // Execute the entry function ONCE - no infinite loop
-        if (self.getState() == GoroutineState.running and !self.shouldPreempt()) {
-            // Execute the goroutine function once and complete
+        // This method is for legacy compatibility - the Worker now handles yield points
+        // Just execute the function once - Worker will manage preemption
+        if (self.getState() == GoroutineState.running) {
             self.entry_fn(self.context);
         }
         
-        // If preempted, transition to preempted state
+        // Final preemption check after execution
         if (self.shouldPreempt() and self.getState() == GoroutineState.running) {
             self.setState(GoroutineState.preempted);
             self.preemption_stats.preemptions_performed += 1;
         }
+    }
+    
+    /// Advanced cooperative yield point that can be called from user code
+    pub fn yieldPoint(self: *Goroutine) bool {
+        // Check if we should yield due to preemption signals
+        if (self.shouldPreempt()) {
+            self.setState(GoroutineState.preempted);
+            self.preemption_stats.preemptions_performed += 1;
+            return true;
+        }
+        
+        // Check if we should cooperatively yield
+        const current_time = std.time.milliTimestamp() * 1_000_000;
+        const quantum_start = self.quantum_start.load(.acquire);
+        if (quantum_start > 0) {
+            const elapsed = current_time - quantum_start;
+            const half_quantum = @as(i64, @intCast(self.quantum_duration / 2));
+            
+            // Cooperative yield after half quantum to be fair
+            if (elapsed >= half_quantum) {
+                self.cooperativeYield();
+                self.setState(GoroutineState.yielded);
+                return true;
+            }
+        }
+        
+        return false; // Continue execution
     }
 };
 
@@ -1029,6 +1052,10 @@ pub const Worker = struct {
     preemption_requested: Atomic(bool),
     stats: WorkerStats,
     allocator: Allocator,
+    // Enhanced preemption tracking
+    current_goroutine_start: Atomic(i64),
+    current_goroutine: ?*Goroutine,
+    yield_points_checked: Atomic(u64),
 
     pub fn init(allocator: Allocator, id: WorkerId, scheduler: *Scheduler) Worker {
         return Worker{
@@ -1040,6 +1067,10 @@ pub const Worker = struct {
             .preemption_requested = Atomic(bool).init(false),
             .stats = WorkerStats.init(),
             .allocator = allocator,
+            // Enhanced preemption tracking initialization
+            .current_goroutine_start = Atomic(i64).init(0),
+            .current_goroutine = null,
+            .yield_points_checked = Atomic(u64).init(0),
         };
     }
 
@@ -1148,15 +1179,23 @@ pub const Worker = struct {
         const start_time = std.time.milliTimestamp();
         const quantum_ms = self.scheduler.config.quantum_ms;
         
-        // Set quantum timer for this goroutine
+        // Track goroutine execution on this worker
+        self.current_goroutine_start.store(start_time, .release);
+        self.current_goroutine = goroutine;
+        
+        // Set quantum timer for this goroutine (consistent milliseconds)
         goroutine.quantum_start.store(start_time * 1_000_000, .release); // Convert to nanoseconds
         
-        // Execute the goroutine
-        goroutine.execute();
+        // Execute the goroutine with periodic preemption checks
+        self.executeWithYieldPoints(goroutine);
         
         const end_time = std.time.milliTimestamp();
         const execution_time = end_time - start_time;
         self.stats.busy_time += @as(u64, @intCast(@max(0, execution_time)));
+        
+        // Clear current goroutine tracking
+        self.current_goroutine_start.store(0, .release);
+        self.current_goroutine = null;
         
         // Check if goroutine exceeded its quantum
         if (execution_time > @as(i64, @intCast(quantum_ms))) {
@@ -1195,6 +1234,33 @@ pub const Worker = struct {
                 self.scheduler.rescheduleGoroutine(goroutine);
             },
         }
+    }
+
+    /// Execute goroutine with cooperative yield points for preemption
+    fn executeWithYieldPoints(self: *Worker, goroutine: *Goroutine) void {
+        // Set up goroutine for execution
+        goroutine.setState(GoroutineState.running);
+        goroutine.startQuantum();
+        
+        // Check for preemption before execution
+        if (self.preemption_requested.load(.acquire)) {
+            goroutine.setState(GoroutineState.preempted);
+            return;
+        }
+        
+        // Execute the goroutine function
+        goroutine.entry_fn(goroutine.context);
+        
+        // Check for preemption after execution
+        if (self.preemption_requested.load(.acquire) or goroutine.shouldPreempt()) {
+            if (goroutine.getState() == GoroutineState.running) {
+                goroutine.setState(GoroutineState.preempted);
+            }
+        } else if (goroutine.getState() == GoroutineState.running) {
+            // Normal completion - no preemption occurred
+            goroutine.setState(GoroutineState.completed);
+        }
+        // If state is preempted or yielded, keep that state
     }
 
     fn stealWork(self: *Worker) ?*Goroutine {
@@ -1592,27 +1658,34 @@ fn preemptionTimerLoopGeneric(scheduler: *Scheduler, quantum_ns: u64) void {
 
 /// Check all workers for goroutines that need preemption
 fn checkAllWorkersForPreemption(scheduler: *Scheduler) void {
-    const current_time = std.time.milliTimestamp();
+    _ = std.time.milliTimestamp(); // Unused but may be needed later
     
     for (scheduler.workers.items) |*worker| {
-        checkWorkerForPreemption(worker, scheduler, current_time);
+        checkWorkerForPreemption(worker, scheduler, std.time.milliTimestamp());
     }
 }
 
 /// Check a specific worker for goroutines that need preemption
 fn checkWorkerForPreemption(worker: *Worker, scheduler: *Scheduler, current_time: i64) void {
-    // scheduler is used below for stats tracking
-    
-    // Enhanced preemption checking with actual implementation
-    // Check if worker has been running for too long
+    // Fixed preemption detection with proper quantum tracking
     const quantum_ms = @as(i64, @intCast(scheduler.config.quantum_ms));
-    
-    // Simple heuristic: if worker stats show continuous execution
-    if (worker.stats.busy_time > 0) {
-        const estimated_run_time = current_time - (current_time - @as(i64, @intCast(worker.stats.busy_time / 1000)));
+
+    // Check if worker has a currently executing goroutine that needs preemption
+    const goroutine_start = worker.current_goroutine_start.load(.acquire);
+    if (goroutine_start > 0) {
+        const execution_time_ms = current_time - goroutine_start;
         
-        if (estimated_run_time > quantum_ms) {
+        if (execution_time_ms > quantum_ms) {
             // Signal preemption by setting atomic flag that workers check
+            worker.preemption_requested.store(true, .release);
+            worker.stats.quantum_violations += 1;
+            scheduler.stats.total_preemptions += 1;
+        }
+    } else {
+        // Fallback: check if worker has been continuously busy
+        const busy_time_ms = @as(i64, @intCast(worker.stats.busy_time / 1000));
+        if (busy_time_ms > quantum_ms * 2) {
+            // Worker has been busy for too long, signal preemption
             worker.preemption_requested.store(true, .release);
             worker.stats.quantum_violations += 1;
             scheduler.stats.total_preemptions += 1;
@@ -1620,14 +1693,34 @@ fn checkWorkerForPreemption(worker: *Worker, scheduler: *Scheduler, current_time
     }
 }
 
-/// Cooperative yield function - can be called by user code
+/// Cooperative yield function - can be called by user code (implements CURSED yolo keyword)
 pub fn cooperativeYield() void {
-    // In a real implementation, this would:
+    // In a production implementation, this would:
     // 1. Get the current goroutine from thread-local storage
-    // 2. Call its cooperativeYield method
-    // 3. Trigger a context switch
+    // 2. Check if we should yield (quantum half-expired, preemption requested)
+    // 3. Trigger a context switch back to the scheduler
     
-    // For now, just yield the thread
+    // For the current implementation, yield the OS thread
+    _ = Thread.yield() catch {};
+}
+
+/// Enhanced cooperative yield that integrates with scheduler (internal use)
+fn cooperativeYieldWithScheduler(scheduler: *Scheduler) void {
+    // This would be called from within goroutine execution
+    // to properly coordinate with the preemptive scheduler
+    
+    // Force a check of all workers for preemption opportunities
+    for (scheduler.workers.items) |*worker| {
+        if (worker.current_goroutine) |goroutine| {
+            // Check if the current goroutine should yield
+            if (goroutine.yieldPoint()) {
+                // Mark worker for task switching
+                worker.preemption_requested.store(true, .release);
+            }
+        }
+    }
+    
+    // Yield the OS thread to allow scheduler to run
     _ = Thread.yield() catch {};
 }
 

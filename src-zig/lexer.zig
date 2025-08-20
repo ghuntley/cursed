@@ -48,6 +48,7 @@ pub const TokenKind = enum {
     Extends, // interface inheritance
     With, // interface composition
     As, // alias in composition
+    From, // from keyword for selective imports
     Except, // exclusion in composition
     Rename, // method renaming in composition
     ForImpl, // for (used in impl for)
@@ -780,6 +781,7 @@ pub const Lexer = struct {
         if (std.mem.eql(u8, text, "extends")) return .Extends;
         if (std.mem.eql(u8, text, "with")) return .With;
         if (std.mem.eql(u8, text, "as")) return .As;
+        if (std.mem.eql(u8, text, "from")) return .From;
         if (std.mem.eql(u8, text, "except")) return .Except;
         if (std.mem.eql(u8, text, "rename")) return .Rename;
         if (std.mem.eql(u8, text, "vibe")) return .Vibe;

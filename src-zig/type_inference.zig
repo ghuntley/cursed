@@ -275,6 +275,41 @@ pub const TypeInferenceContext = struct {
                     .Primitive => |prim2| {
                         return self.areCompatiblePrimitives(prim1, prim2);
                     },
+                    .Identifier => |name| {
+                        // Type variable can unify with any primitive
+                        _ = name;
+                        return true;
+                    },
+                    else => return false,
+                }
+            },
+            .Identifier => |name| {
+                // Type variables are compatible with anything for inference
+                _ = name;
+                return true;
+            },
+            .Array => |arr1| {
+                switch (type2) {
+                    .Array => |arr2| {
+                        if (arr1.size != arr2.size) return false;
+                        return self.typesAreCompatible(arr1.element_type.*, arr2.element_type.*);
+                    },
+                    .Identifier => return true, // Type variable
+                    else => return false,
+                }
+            },
+            .Generic => |gen1| {
+                switch (type2) {
+                    .Generic => |gen2| {
+                        if (!std.mem.eql(u8, gen1.name, gen2.name)) return false;
+                        if (gen1.type_arguments.items.len != gen2.type_arguments.items.len) return false;
+                        
+                        for (gen1.type_arguments.items, gen2.type_arguments.items) |arg1, arg2| {
+                            if (!self.typesAreCompatible(arg1, arg2)) return false;
+                        }
+                        return true;
+                    },
+                    .Identifier => return true, // Type variable
                     else => return false,
                 }
             },
@@ -289,12 +324,38 @@ pub const GenericCallResolver = struct {
     monomorphizer: *generics.Monomorphizer,
     allocator: Allocator,
     
+    // Scope information for type resolution
+    current_scope: ?*ScopeInfo = null,
+    global_types: HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    
+    const ScopeInfo = struct {
+        variables: HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+        
+        pub fn init(allocator: Allocator) ScopeInfo {
+            return ScopeInfo{
+                .variables = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            };
+        }
+        
+        pub fn deinit(self: *ScopeInfo) void {
+            self.variables.deinit();
+        }
+    };
+    
     pub fn init(allocator: Allocator, inference_context: *TypeInferenceContext, monomorphizer: *generics.Monomorphizer) GenericCallResolver {
         return GenericCallResolver{
             .inference_context = inference_context,
             .monomorphizer = monomorphizer,
             .allocator = allocator,
+            .global_types = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
+    }
+    
+    pub fn deinit(self: *GenericCallResolver) void {
+        if (self.current_scope) |scope| {
+            scope.deinit();
+        }
+        self.global_types.deinit();
     }
     
     /// Resolve generic function call with automatic type inference
@@ -466,9 +527,6 @@ test "basic generic function type inference" {
     defer inference_ctx.deinit();
     
     // Test inferring T from function call: foo[T](arg: T) with arg of type normie
-    const arg_types = [_]ast.Type{
-        ast.Type{ .Primitive = .Normie },
-    };
     
     // This would require a proper generic function declaration in the test
     // For now, just test the constraint generation mechanism

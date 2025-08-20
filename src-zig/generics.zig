@@ -11,6 +11,7 @@ const c = @cImport({
 const ast = @import("ast.zig");
 const type_system = @import("type_system_runtime.zig");
 const const_generics = @import("const_generics.zig");
+const generic_constraints = @import("generic_constraint_system.zig");
 
 /// Generic type parameter with constraints
 pub const TypeParameter = struct {
@@ -155,6 +156,9 @@ pub const Monomorphizer = struct {
     // CRITICAL FIX: Const generics manager to prevent ICE in optimizer
     const_generics_manager: const_generics.ConstGenericsManager,
     
+    // Enhanced constraint validator for comprehensive type checking
+    constraint_validator: generic_constraints.ConstraintValidator,
+    
     pub const InstantiationRequest = struct {
         generic_name: []const u8,
         type_arguments: ArrayList(ast.Type),
@@ -174,7 +178,7 @@ pub const Monomorphizer = struct {
         }
     };
     
-    pub fn init(allocator: Allocator, context: c.LLVMContextRef, module: c.LLVMModuleRef) Monomorphizer {
+    pub fn init(allocator: Allocator, context: c.LLVMContextRef, module: c.LLVMModuleRef, type_registry: *type_system.GCTypeRegistry) Monomorphizer {
         return Monomorphizer{
             .allocator = allocator,
             .context = context,
@@ -183,6 +187,7 @@ pub const Monomorphizer = struct {
             .instances = HashMap([]const u8, MonomorphizedInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .work_queue = ArrayList(InstantiationRequest).init(allocator),
             .const_generics_manager = const_generics.ConstGenericsManager.init(allocator, context),
+            .constraint_validator = generic_constraints.ConstraintValidator.init(allocator, type_registry),
         };
     }
     
@@ -206,6 +211,9 @@ pub const Monomorphizer = struct {
         
         // CRITICAL FIX: Clean up const generics manager
         self.const_generics_manager.deinit();
+        
+        // Clean up constraint validator
+        self.constraint_validator.deinit();
     }
     
     /// Register a generic declaration
@@ -355,49 +363,85 @@ pub const Monomorphizer = struct {
         }
     }
     
-    /// CRITICAL FIX: Enhanced type constraint validation with const generics bounds checking
+    /// CRITICAL FIX: Enhanced type constraint validation with comprehensive constraint checking
     /// This prevents ICE in optimizer when invalid constant values are used
     fn validateConstraints(self: *Monomorphizer, generic_decl: GenericDeclaration, type_arguments: []ast.Type) !void {
         // Validate all const generics first to prevent optimizer ICE
         try self.const_generics_manager.validateAllConstGenerics();
         
-        for (generic_decl.type_parameters.items, 0..) |param, i| {
-            // Bounds check for array access - prevent ICE
-            if (i >= type_arguments.len) {
-                std.log.err("Type parameter index {} out of bounds for type arguments array of length {}", 
-                    .{i, type_arguments.len});
-                return error.ConstraintViolation;
+        // Convert old constraint format to new format for validation
+        var type_params = std.ArrayList(generic_constraints.GenericTypeParameter).init(self.allocator);
+        defer {
+            for (type_params.items) |*param| {
+                param.deinit();
             }
+            type_params.deinit();
+        }
+        
+        for (generic_decl.type_parameters.items) |old_param| {
+            var new_param = generic_constraints.GenericTypeParameter.init(self.allocator, old_param.name);
             
-            const type_arg = type_arguments[i];
-            
-            for (param.constraints.items) |constraint| {
-                // CRITICAL: Check for const generic constraints first
-                if (constraint.kind == .ConstGeneric) {
-                    try self.validateConstGenericConstraint(param.name, constraint, type_arg);
-                    continue;
-                }
-                
-                const valid = switch (constraint.kind) {
-                    .Any => true,
-                    .Comparable => try self.isComparable(type_arg),
-                    .Numeric => try self.isNumeric(type_arg),
-                    .Ordered => try self.isOrdered(type_arg),
-                    .Interface => try self.implementsInterface(type_arg, constraint.interface_name.?),
-                    .Sized => try self.isSized(type_arg),
-                    .ConstGeneric => unreachable, // Already handled above
+            // Convert old constraints to new constraint format
+            for (old_param.constraints.items) |old_constraint| {
+                const new_constraint = switch (old_constraint.kind) {
+                    .Any => generic_constraints.TypeConstraint.init(.Any),
+                    .Comparable => generic_constraints.TypeConstraint.init(.Comparable),
+                    .Numeric => generic_constraints.TypeConstraint.init(.Numeric),
+                    .Ordered => generic_constraints.TypeConstraint.init(.Ordered),
+                    .Interface => generic_constraints.TypeConstraint.initInterface(old_constraint.interface_name.?),
+                    .Sized => generic_constraints.TypeConstraint.init(.Sized),
+                    .ConstGeneric => blk: {
+                        const const_bounds = generic_constraints.TypeConstraint.ConstGenericBounds{
+                            .min_value = if (old_constraint.const_bounds) |bounds| bounds.min_value else null,
+                            .max_value = if (old_constraint.const_bounds) |bounds| bounds.max_value else null,
+                        };
+                        break :blk generic_constraints.TypeConstraint.initConstGeneric(const_bounds);
+                    },
                 };
                 
-                if (!valid) {
-                    std.log.err("Type constraint violation: {s} does not satisfy constraint {}", 
-                        .{try self.typeToString(type_arg), constraint.kind});
-                    return error.ConstraintViolation;
+                try new_param.addConstraint(new_constraint);
+            }
+            
+            try type_params.append(new_param);
+        }
+        
+        // Use comprehensive constraint validator
+        const validation_results = self.constraint_validator.validateGenericInstantiation(type_params.items, type_arguments) catch |err| {
+            std.log.err("Generic instantiation validation failed: {}", .{err});
+            return error.ConstraintViolation;
+        };
+        defer self.allocator.free(validation_results);
+        
+        // Check if any constraints failed
+        var has_failures = false;
+        for (validation_results, type_params.items) |result, param| {
+            if (!result.valid) {
+                has_failures = true;
+                std.log.err("CONSTRAINT VIOLATION for parameter '{s}': {s}", .{ param.name, result.error_message.? });
+                
+                if (result.suggestion) |suggestion| {
+                    std.log.info("SUGGESTION: {s}", .{suggestion});
+                }
+                
+                // Provide helpful error messages with type suggestions
+                const suggested_types = self.constraint_validator.getSuggestedTypes(param.constraints.items[0]);
+                if (suggested_types.len > 0) {
+                    std.log.info("Valid types for this constraint:");
+                    for (suggested_types) |suggested_type| {
+                        std.log.info("  - {s}", .{suggested_type});
+                    }
                 }
             }
         }
         
+        if (has_failures) {
+            return error.ConstraintViolation;
+        }
+        
         // Final validation to ensure optimizer-safe constants
         try self.validateOptimizerSafeConstants();
+        
+        std.log.info("All generic constraints validated successfully");
     }
     
     /// CRITICAL FIX: Validate const generic constraint to prevent optimizer ICE

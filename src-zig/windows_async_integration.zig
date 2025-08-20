@@ -136,6 +136,11 @@ pub const WindowsAsyncRuntime = struct {
         return self.network_runtime.createTcpClient();
     }
     
+    // CRITICAL FIX: Add high-level async timer operations
+    pub fn sleepAsync(self: *Self, delay_ms: u32) !iocp.AsyncResult {
+        return self.iocp_runtime.asyncTimer(delay_ms);
+    }
+    
     // Helper for opening files with proper flags for async I/O
     fn openFileForAsync(self: *Self, file_path: []const u8, mode: enum { read, write, append }) !windows.HANDLE {
         _ = self;
@@ -311,6 +316,19 @@ pub const CursedAsyncBindings = struct {
         client.connect(connect_addr) catch return -4; // Connection failed
         
         return 0; // Success
+    }
+    
+    // CRITICAL FIX: Add async timer binding for CURSED stdlib
+    pub fn cursed_async_sleep(delay_ms: u32) callconv(.C) i32 {
+        const runtime = getGlobalAsyncRuntime() orelse return -1; // Runtime not initialized
+        
+        const result = runtime.sleepAsync(delay_ms) catch return -2; // Sleep failed
+        
+        if (result.success) {
+            return 0; // Success
+        } else {
+            return -3; // Operation failed
+        }
     }
     
     // Default connection handler for TCP servers

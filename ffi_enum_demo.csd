@@ -102,6 +102,21 @@ enum Priority {
 // Type alias for short (maps to smol in CURSED for 16-bit)
 type Priority_Raw = smol
 
+// Conversion functions for Priority
+slay Priority_to_raw(value Priority) Priority_Raw {
+    sus raw normie = @intFromEnum(value)
+    // Validate fits in short range (-32768 to 32767)
+    ready (raw < -32768 || raw > 32767) {
+        yikes "Priority value out of range for short"
+    }
+    damn @as(smol, raw)
+}
+
+slay raw_to_Priority(value Priority_Raw) Priority {
+    sus int_val normie = @as(normie, value)
+    damn @enumFromInt(int_val)
+}
+
 // FFI function declarations using the enum types
 extern "C" {
     library "graphics"
@@ -147,7 +162,7 @@ slay demo_enum_ffi() {
     sus priority Priority = Priority.High
     sus priority_raw Priority_Raw = Priority_to_raw(priority)
     set_log_priority(priority_raw)
-    vibez.spill("Set log priority to High (", priority_raw, ")")
+    vibez.spill("Set log priority to High (", @as(normie, priority_raw), ")")
     
     // Demonstrate size validation
     fam {

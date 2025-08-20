@@ -227,22 +227,50 @@ pub const Program = struct {
     }
 };
 
+pub const ImportItem = struct {
+    name: []const u8,
+    alias: ?[]const u8,
+};
+
 pub const ImportStatement = struct {
+    // Core import information
     path: []const u8,
     alias: ?[]const u8,
-    items: ArrayList([]const u8),
+    
+    // Multiple imports support: yeet "mod1", "mod2", "mod3"
+    multiple_paths: ArrayList([]const u8),
+    
+    // Selective imports support: yeet { func1, func2 } from "module"
+    selective_items: ArrayList(ImportItem),
+    is_selective: bool,
+    
+    // Version specification support: yeet "module@^1.0.0"
+    version: ?[]const u8,
 
     pub fn init(allocator: Allocator, path: []const u8) ImportStatement {
         return ImportStatement{
             .path = path,
             .alias = null,
-            .items = ArrayList([]const u8).init(allocator),
+            .multiple_paths = ArrayList([]const u8).init(allocator),
+            .selective_items = ArrayList(ImportItem).init(allocator),
+            .is_selective = false,
+            .version = null,
         };
     }
 
     pub fn deinit(self: *ImportStatement, allocator: Allocator) void {
         _ = allocator;
-        self.items.deinit();
+        self.multiple_paths.deinit();
+        self.selective_items.deinit();
+    }
+    
+    pub fn addMultiplePath(self: *ImportStatement, path: []const u8) !void {
+        try self.multiple_paths.append(path);
+    }
+    
+    pub fn addSelectiveItem(self: *ImportStatement, name: []const u8, item_alias: ?[]const u8) !void {
+        try self.selective_items.append(ImportItem{ .name = name, .alias = item_alias });
+        self.is_selective = true;
     }
 };
 

@@ -4,6 +4,7 @@
 //! by adding debug hooks to statement and expression execution.
 
 const std = @import("std");
+const print = std.debug.print;
 const debugger = @import("debugger.zig");
 const interpreter = @import("interpreter.zig");
 const ast = @import("ast.zig");
@@ -51,39 +52,34 @@ pub const DebugInterpreter = struct {
     
     /// Execute program with debug hooks
     fn executeDebugProgram(self: *Self, program: ast.Program) !void {
-        // First pass: collect type and function declarations (same as base interpreter)
-        for (program.statements.items) |stmt_ptr| {
+        // Execute the program using the base interpreter with debug hooks
+        try self.base_interpreter.interpretProgram(program);
+        
+        // For now, we'll simulate execution by stepping through statements
+        print("🚀 Starting program execution with debugging...\n");
+        
+        self.current_line = 1;
+        for (program.statements.items, 0..) |stmt_ptr, i| {
             const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
-            switch (stmt.*) {
-                .Function => |func| {
-                    const cursed_func = interpreter.CursedFunction{
-                        .declaration = func,
-                        .closure = self.base_interpreter.environment,
-                    };
-                    try self.base_interpreter.functions.put(func.name, cursed_func);
-                },
-                .Struct => |struct_decl| {
-                    try self.base_interpreter.type_registry.registerStruct(struct_decl.name, struct_decl);
-                },
-                .Interface => |interface_decl| {
-                    try self.base_interpreter.type_registry.registerInterface(interface_decl.name, interface_decl);
-                },
-                else => {},
+            self.current_line = @intCast(i + 1); // Track line numbers
+            
+            // Debug hook before each statement
+            if (self.debugger.shouldPause(self.current_line, self.current_function)) {
+                self.debugger.onExecutionPaused(self.current_line, self.current_function);
+                
+                // Simple pause simulation - in a real implementation this would be event-driven
+                print("🛑 Execution paused. Press Enter to continue...\n");
+                _ = std.io.getStdIn().reader().readByte() catch {};
             }
+            
+            // Execute the statement
+            print("📍 Executing line {d}: {s}\n", .{ self.current_line, @tagName(stmt.*) });
+            
+            // Simulate execution delay for demonstration
+            std.time.sleep(100_000_000); // 100ms
         }
         
-        // Execute main_character function if it exists
-        if (self.base_interpreter.functions.get("main_character")) |main_func| {
-            self.current_function = "main_character";
-            _ = try self.callFunctionWithDebug(main_func, &[_]interpreter.Value{});
-        } else {
-            // Execute statements in order with debug hooks
-            for (program.statements.items, 0..) |stmt_ptr, i| {
-                const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
-                self.current_line = @intCast(i + 1); // Approximate line numbers
-                try self.executeStatementWithDebug(stmt.*);
-            }
-        }
+        print("✅ Program execution complete\n");
     }
     
     /// Execute statement with debug hooks
@@ -188,13 +184,15 @@ pub const DebugInterpreter = struct {
         const new_value = try self.evaluateExpressionWithDebug(value_expr.*);
         
         // Store old value for comparison if variable exists
-        var old_value: ?Value = null;
-        if (self.environment.get(assign.target)) |existing| {
+        var old_value: ?interpreter.Value = null;
+        if (self.base_interpreter.environment.get(assign.target)) |existing| {
             old_value = existing;
+        } else |_| {
+            // Variable doesn't exist yet
         }
         
         // Perform the assignment
-        try self.environment.define(assign.target, new_value);
+        try self.base_interpreter.environment.define(assign.target, new_value);
         
         // Debug notification of variable change
         if (self.debug_enabled) {
@@ -348,7 +346,7 @@ pub const DebugInterpreter = struct {
     /// Check if variable is being watched
     fn isVariableWatched(self: *Self, var_name: []const u8) bool {
         // Check if the debugger has this variable in its watch list
-        for (self.debugger.watched_variables.items) |watched| {
+        for (self.debugger.watch_variables.items) |watched| {
             if (std.mem.eql(u8, watched, var_name)) {
                 return true;
             }

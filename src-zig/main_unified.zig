@@ -4,6 +4,7 @@ const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 const HashMap = std.HashMap;
 const memory_safety = @import("memory_safety_runtime.zig");
+const ffi_bridge = @import("ffi_runtime_bridge.zig");
 
 const lexer = @import("lexer.zig");
 const simple_import_resolver = @import("simple_import_resolver.zig");
@@ -223,6 +224,7 @@ pub const Variable = union(enum) {
     Interface: InterfaceInstance,  // Interface instance with vtable
     Channel: concurrency.ChannelId,  // Channel for concurrency
     GoroutineId: concurrency.GoroutineId,  // Goroutine identifier
+    Void: void,  // Unit type for functions that return nothing
     
     pub fn toString(self: Variable, allocator: Allocator) ![]u8 {
         switch (self) {
@@ -262,6 +264,7 @@ pub const Variable = union(enum) {
             },
             .Channel => |channel_id| return std.fmt.allocPrint(allocator, "channel<{}>", .{channel_id}),
             .GoroutineId => |goroutine_id| return std.fmt.allocPrint(allocator, "goroutine<{}>", .{goroutine_id}),
+            .Void => return allocator.dupe(u8, "()"),
         }
     }
     
@@ -321,6 +324,7 @@ pub const Variable = union(enum) {
             },
             .Channel => |v| return Variable{ .Channel = v },
             .GoroutineId => |v| return Variable{ .GoroutineId = v },
+            .Void => return Variable{ .Void = {} },
         }
     }
 
@@ -556,6 +560,12 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
+    // Initialize FFI runtime
+    ffi_bridge.initializeFfiRuntime(allocator) catch |err| {
+        std.log.warn("Failed to initialize FFI runtime: {}", .{err});
+    };
+    defer ffi_bridge.deinitializeFfiRuntime();
+
     // Initialize Windows async I/O runtime if on Windows
     if (@import("builtin").target.os.tag == .windows) {
         windows_async.Hooks.onApplicationStartup(allocator, null) catch |err| {
@@ -1155,31 +1165,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             continue;
         }
         
-        // Handle test_start() function calls
-        if (std.mem.indexOf(u8, trimmed, "test_start(")) |start| {
-            if (std.mem.indexOf(u8, trimmed[start..], "(")) |paren_start| {
-                if (std.mem.lastIndexOf(u8, trimmed, ")")) |paren_end| {
-                    const content_start = start + paren_start + 1;
-                    const content = trimmed[content_start..paren_end];
-                    
-                    // Remove quotes if present
-                    if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
-                        print("🧪 Starting test: {s}\n", .{content[1..content.len - 1]});
-                    } else {
-                        print("🧪 Starting test: {s}\n", .{content});
-                    }
-                }
-            }
-            line_index += 1;
-            continue;
-        }
-        
-        // Handle print_test_summary() function calls
-        if (std.mem.indexOf(u8, trimmed, "print_test_summary()") != null) {
-            print("📊 Test Summary\nTotal tests: 1\nPassed: 1\nFailed: 0\n", .{});
-            line_index += 1;
-            continue;
-        }
+        // REMOVED: Hardcoded test function handlers - now using stdlib testz module
         
         // Process all other statements (including semicolon-separated ones) through the unified processor
         try processStatements(&variables, &functions, &structs, allocator, variable_allocator, trimmed, verbose);
@@ -1269,6 +1255,17 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
         
         if (verbose) print("📝 Processing statement: '{s}'\n", .{stmt_trimmed});
         
+        // Check if this statement should be executed (pattern matching context)
+        const should_execute = shouldExecuteStatement(verbose);
+        if (verbose) {
+            if (pattern_match_context != null) {
+                const ctx = pattern_match_context.?;
+                print("🔍 Pattern context: matched={any}, executing={any}, should_execute={any} for '{s}'\n", .{ ctx.matched, ctx.currently_executing, should_execute, stmt_trimmed });
+            } else {
+                print("🔍 No pattern context, should_execute={any} for '{s}'\n", .{ should_execute, stmt_trimmed });
+            }
+        }
+        
         // Handle variable declarations: sus varname type = value
         // Handle defer statements: defer statement (store for later execution)
         if (std.mem.startsWith(u8, stmt_trimmed, "defer ")) {
@@ -1315,13 +1312,17 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
         
         // Handle vibez.spill() BEFORE assignment checks to avoid conflicts with strings containing =
         if (std.mem.indexOf(u8, stmt_trimmed, "vibez.spill(")) |vibez_start| {
-            try handleVibesSpill(variables, functions, allocator, stmt_trimmed, vibez_start, verbose);
+            if (should_execute) {
+                try handleVibesSpill(variables, functions, allocator, stmt_trimmed, vibez_start, verbose);
+            }
             continue;
         }
         
         // Handle facts() function - print function with multiple arguments
         if (std.mem.indexOf(u8, stmt_trimmed, "facts(")) |facts_start| {
-            try handleFacts(variables, functions, allocator, stmt_trimmed, facts_start, verbose);
+            if (should_execute) {
+                try handleFacts(variables, functions, allocator, stmt_trimmed, facts_start, verbose);
+            }
             continue;
         }
         
@@ -1418,6 +1419,13 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
                 _ = try handleFunctionCall(functions, variables, allocator, stmt_trimmed, verbose);
                 continue;
             }
+            
+            // Check if it's an FFI function call
+            if (isExternFunction(func_name)) {
+                if (verbose) print("🔗 Found extern function call: {s}\n", .{func_name});
+                _ = try handleExternFunctionCall(variables, allocator, stmt_trimmed, verbose);
+                continue;
+            }
         }
         
         // Handle stdlib function calls
@@ -1442,6 +1450,34 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
         // Handle struct field declarations: spill fieldname type
         if (std.mem.startsWith(u8, stmt_trimmed, "spill ")) {
             try handleStructFieldDeclaration(structs, allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
+        // Handle vibe_check pattern matching statements
+        if (std.mem.startsWith(u8, stmt_trimmed, "vibe_check ")) {
+            if (verbose) print("🔍 Processing vibe_check pattern matching: {s}\n", .{stmt_trimmed});
+            try handleVibeCheckStatement(variables, functions, allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
+        // Handle mood pattern case (part of vibe_check)
+        if (std.mem.startsWith(u8, stmt_trimmed, "mood ")) {
+            if (verbose) print("🔍 Processing mood pattern case: {s}\n", .{stmt_trimmed});
+            try handleMoodCase(variables, functions, allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
+        // Handle basic default case (part of vibe_check)
+        if (std.mem.startsWith(u8, stmt_trimmed, "basic:")) {
+            if (verbose) print("🔍 Processing basic default case: {s}\n", .{stmt_trimmed});
+            try handleBasicCase(variables, functions, allocator, stmt_trimmed, verbose);
+            continue;
+        }
+        
+        // Handle closing brace - end vibe_check context
+        if (std.mem.eql(u8, stmt_trimmed, "}") and pattern_match_context != null and pattern_match_context.?.in_vibe_check) {
+            if (verbose) print("🔍 Ending vibe_check pattern matching context\n", .{});
+            pattern_match_context = null;
             continue;
         }
         
@@ -1505,12 +1541,26 @@ fn handleMethodCall(variables: *VariableStore, functions: *FunctionStore, alloca
 
 // Expression evaluation function
 pub fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, expr_str: []const u8, verbose: bool) !Variable {
-    const trimmed = std.mem.trim(u8, expr_str, " \t");
+    var trimmed = std.mem.trim(u8, expr_str, " \t");
+    
+    // CRITICAL FIX: Strip inline comments from expressions to prevent parsing failures
+    // Comments (# or //) in expressions cause identifier parsing errors
+    if (std.mem.indexOf(u8, trimmed, "#")) |comment_start| {
+        trimmed = std.mem.trim(u8, trimmed[0..comment_start], " \t");
+    } else if (std.mem.indexOf(u8, trimmed, "//")) |comment_start| {
+        trimmed = std.mem.trim(u8, trimmed[0..comment_start], " \t");
+    }
     
     if (verbose) print("🧮 EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
     
     // DEBUG: Always show expression evaluation for debugging  
     if (verbose) print("🐛 DEBUG EXPR_EVAL: Evaluating expression: '{s}'\n", .{trimmed});
+    
+    // CRITICAL FIX: Handle conditional expressions ready/otherwise as expressions
+    if (std.mem.indexOf(u8, trimmed, "ready") != null and std.mem.indexOf(u8, trimmed, "otherwise") != null) {
+        if (verbose) print("🔍 Found conditional expression: '{s}'\n", .{trimmed});
+        return try evaluateConditionalExpression(variables, functions, allocator, trimmed, verbose);
+    }
     
     // PRIORITY FIX: Early check for generic function calls to prevent operator confusion
     // Generic functions like generic_function<drip>(100) were being parsed as comparison operators
@@ -1553,9 +1603,21 @@ pub fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, 
             }
         }
         
-        // Only consider it a function call if the function name starts at the beginning of the expression
-        // This prevents "n * factorial(args)" from being treated as a function call
-        if (func_name_start == 0) {
+        // IMPROVED: Allow function calls that start at beginning OR right after certain operators/delimiters
+        // This enables nested function calls like max(min(10, 20), 5 + 3)
+        var is_valid_func_start = func_name_start == 0;
+        if (!is_valid_func_start and func_name_start > 0) {
+            const char_before = trimmed[func_name_start - 1];
+            // Allow function calls after: ( , + - * / % = < > ! space
+            is_valid_func_start = (char_before == '(' or char_before == ',' or 
+                                  char_before == '+' or char_before == '-' or
+                                  char_before == '*' or char_before == '/' or
+                                  char_before == '%' or char_before == '=' or
+                                  char_before == '<' or char_before == '>' or
+                                  char_before == '!' or char_before == ' ');
+        }
+        
+        if (is_valid_func_start) {
             const potential_func_name = std.mem.trim(u8, trimmed[func_name_start..paren_pos], " \t");
             
             // Simple check: if the part is a single identifier (no spaces/operators)
@@ -2071,6 +2133,182 @@ pub fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, 
     // No operators found - evaluate as single value
     if (verbose) print("🐛 DEBUG: No operators found, falling back to evaluateSingleValue for: '{s}'\n", .{trimmed});
     return try evaluateSingleValue(variables, functions, allocator, trimmed, verbose);
+}
+
+// CRITICAL FIX: Handle conditional expressions like ready (condition) { then } otherwise { else }
+pub fn evaluateConditionalExpression(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, expr: []const u8, verbose: bool) anyerror!Variable {
+    if (verbose) print("🔍 Parsing conditional expression: '{s}'\n", .{expr});
+    
+    const ready_pos = std.mem.indexOf(u8, expr, "ready") orelse return error.InvalidConditional;
+    const otherwise_pos = std.mem.indexOf(u8, expr, "otherwise") orelse return error.InvalidConditional;
+    
+    if (otherwise_pos <= ready_pos) return error.InvalidConditional;
+    
+    // Extract the condition part: ready (condition)
+    const after_ready = std.mem.trim(u8, expr[ready_pos + 5..], " \t"); // Skip "ready"
+    
+    // Handle both parenthesized and already-evaluated conditions
+    var condition_str_var: []const u8 = undefined;
+    var after_condition: []const u8 = undefined;
+    var is_true: bool = false;
+    
+    if (std.mem.startsWith(u8, after_ready, "(")) {
+        // Normal form: ready (condition) - proceed as before
+    } else if (std.mem.startsWith(u8, after_ready, "based")) {
+        // Already evaluated: ready based
+        is_true = true;
+        condition_str_var = "based";
+        after_condition = std.mem.trim(u8, after_ready[5..], " \t"); // Skip "based"
+        if (verbose) print("🔍 Pre-evaluated condition: based (true)\n", .{});
+        // Skip to branch selection
+        return try evaluateConditionalBranches(variables, functions, allocator, expr, otherwise_pos, after_condition, is_true, verbose);
+    } else if (std.mem.startsWith(u8, after_ready, "cringe")) {
+        // Already evaluated: ready cringe
+        is_true = false;
+        condition_str_var = "cringe";  
+        after_condition = std.mem.trim(u8, after_ready[6..], " \t"); // Skip "cringe"
+        if (verbose) print("🔍 Pre-evaluated condition: cringe (false)\n", .{});
+        // Skip to branch selection
+        return try evaluateConditionalBranches(variables, functions, allocator, expr, otherwise_pos, after_condition, is_true, verbose);
+    } else {
+        return error.InvalidConditional;
+    }
+    
+    // Find matching parenthesis for condition
+    var paren_count: i32 = 0;
+    var condition_end: ?usize = null;
+    for (after_ready, 0..) |char, i| {
+        if (char == '(') {
+            paren_count += 1;
+        } else if (char == ')') {
+            paren_count -= 1;
+            if (paren_count == 0) {
+                condition_end = i;
+                break;
+            }
+        }
+    }
+    
+    if (condition_end == null) return error.InvalidConditional;
+    
+    const condition_str = std.mem.trim(u8, after_ready[1..condition_end.?], " \t");
+    if (verbose) print("🔍 Condition extracted: '{s}'\n", .{condition_str});
+    
+    // Evaluate condition
+    const condition_result = try evaluateExpression(variables, functions, allocator, condition_str, verbose);
+    defer { var temp = condition_result; temp.deinit(allocator); }
+    
+    is_true = switch (condition_result) {
+        .Boolean => |b| b,
+        .Integer => |i| i != 0,
+        .Float => |f| f != 0.0,
+        .String => |s| s.data.len > 0,
+        else => false,
+    };
+    
+    // Extract the then and else parts
+    after_condition = std.mem.trim(u8, after_ready[condition_end.? + 1..], " \t");
+    
+    // Find the then block: { ... }
+    if (!std.mem.startsWith(u8, after_condition, "{")) return error.InvalidConditional;
+    
+    var brace_count: i32 = 0;
+    var then_end: ?usize = null;
+    for (after_condition, 0..) |char, i| {
+        if (char == '{') {
+            brace_count += 1;
+        } else if (char == '}') {
+            brace_count -= 1;
+            if (brace_count == 0) {
+                then_end = i;
+                break;
+            }
+        }
+    }
+    
+    if (then_end == null) return error.InvalidConditional;
+    
+    const then_content = std.mem.trim(u8, after_condition[1..then_end.?], " \t");
+    
+    // Find the else block after "otherwise"
+    const remaining = std.mem.trim(u8, expr[otherwise_pos + 9..], " \t"); // Skip "otherwise"
+    if (!std.mem.startsWith(u8, remaining, "{")) return error.InvalidConditional;
+    
+    brace_count = 0;
+    var else_end: ?usize = null;
+    for (remaining, 0..) |char, i| {
+        if (char == '{') {
+            brace_count += 1;
+        } else if (char == '}') {
+            brace_count -= 1;
+            if (brace_count == 0) {
+                else_end = i;
+                break;
+            }
+        }
+    }
+    
+    if (else_end == null) return error.InvalidConditional;
+    
+    const else_content = std.mem.trim(u8, remaining[1..else_end.?], " \t");
+    
+    if (verbose) print("🔍 Then: '{s}', Else: '{s}', Condition: {}\n", .{ then_content, else_content, is_true });
+    
+    // Evaluate the appropriate branch
+    const result_content = if (is_true) then_content else else_content;
+    return try evaluateExpression(variables, functions, allocator, result_content, verbose);
+}
+
+// Helper function to evaluate conditional branches
+fn evaluateConditionalBranches(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, expr: []const u8, otherwise_pos: usize, after_condition: []const u8, is_true: bool, verbose: bool) anyerror!Variable {
+    // Find the then block: { ... }
+    if (!std.mem.startsWith(u8, after_condition, "{")) return error.InvalidConditional;
+    
+    var brace_count: i32 = 0;
+    var then_end: ?usize = null;
+    for (after_condition, 0..) |char, i| {
+        if (char == '{') {
+            brace_count += 1;
+        } else if (char == '}') {
+            brace_count -= 1;
+            if (brace_count == 0) {
+                then_end = i;
+                break;
+            }
+        }
+    }
+    
+    if (then_end == null) return error.InvalidConditional;
+    
+    const then_content = std.mem.trim(u8, after_condition[1..then_end.?], " \t");
+    
+    // Find the else block after "otherwise"
+    const remaining = std.mem.trim(u8, expr[otherwise_pos + 9..], " \t"); // Skip "otherwise"
+    if (!std.mem.startsWith(u8, remaining, "{")) return error.InvalidConditional;
+    
+    brace_count = 0;
+    var else_end: ?usize = null;
+    for (remaining, 0..) |char, i| {
+        if (char == '{') {
+            brace_count += 1;
+        } else if (char == '}') {
+            brace_count -= 1;
+            if (brace_count == 0) {
+                else_end = i;
+                break;
+            }
+        }
+    }
+    
+    if (else_end == null) return error.InvalidConditional;
+    
+    const else_content = std.mem.trim(u8, remaining[1..else_end.?], " \t");
+    
+    if (verbose) print("🔍 Then: '{s}', Else: '{s}', Condition: {}\n", .{ then_content, else_content, is_true });
+    
+    // Evaluate the appropriate branch
+    const result_content = if (is_true) then_content else else_content;
+    return try evaluateExpression(variables, functions, allocator, result_content, verbose);
 }
 
 fn performBinaryOperation(left: Variable, right: Variable, op: []const u8, allocator: Allocator, verbose: bool) !Variable {
@@ -2801,6 +3039,193 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
     try variables.put(name_copy, variable_value);
     
     if (verbose) print("✅ Variable {s} stored successfully\n", .{var_name});
+}
+
+// Pattern matching context for vibe_check statements
+const PatternMatchContext = struct {
+    expression_value: Variable,
+    matched: bool,
+    in_vibe_check: bool,
+    currently_executing: bool, // Whether we're in a matched case and should execute statements
+};
+
+var pattern_match_context: ?PatternMatchContext = null;
+
+pub fn handleVibeCheckStatement(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    if (verbose) print("🔍 DEBUG: handleVibeCheckStatement called with line: '{s}'\n", .{line});
+    
+    // Parse the vibe_check expression: vibe_check variable_name {
+    if (std.mem.indexOf(u8, line, " ")) |space_pos| {
+        if (std.mem.indexOf(u8, line, "{")) |brace_pos| {
+            const expr_part = std.mem.trim(u8, line[space_pos + 1..brace_pos], " \t");
+            
+            if (verbose) print("🔍 Pattern matching on expression: '{s}'\n", .{expr_part});
+            
+            // Evaluate the expression to match against
+            const match_value = evaluateExpression(variables, functions, allocator, expr_part, verbose) catch |err| {
+                if (verbose) print("❌ Failed to evaluate vibe_check expression: {any}\n", .{err});
+                return;
+            };
+            
+            if (verbose) print("🔍 Match value: {any}\n", .{match_value});
+            
+            // Store the pattern matching context globally for subsequent mood/basic statements
+            pattern_match_context = PatternMatchContext{
+                .expression_value = match_value,
+                .matched = false,
+                .in_vibe_check = true,
+                .currently_executing = false,
+            };
+            
+            if (verbose) print("✅ Pattern matching context initialized\n", .{});
+        }
+    }
+}
+
+pub fn handleMoodCase(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    _ = allocator;
+    _ = functions;
+    _ = variables;
+    
+    if (pattern_match_context == null) {
+        if (verbose) print("❌ mood case found outside vibe_check context\n", .{});
+        return;
+    }
+    
+    var context = &pattern_match_context.?;
+    if (context.matched) {
+        // Already matched a previous case, skip execution
+        context.currently_executing = false; // Turn off execution for this case
+        if (verbose) print("🔍 Skipping mood case - already matched\n", .{});
+        return;
+    }
+    
+    // Parse: mood pattern:
+    if (std.mem.indexOf(u8, line, ":")) |colon_pos| {
+        const pattern_str = std.mem.trim(u8, line[5..colon_pos], " \t"); // Skip "mood "
+        
+        if (verbose) print("🔍 Checking pattern: '{s}' against value: {any}\n", .{ pattern_str, context.expression_value });
+        
+        // Simple pattern matching for literals
+        var pattern_matches = false;
+        
+        // Check if pattern contains multiple values: mood 1, 2, 3:
+        if (std.mem.indexOf(u8, pattern_str, ",")) |_| {
+            var iter = std.mem.splitSequence(u8, pattern_str, ",");
+            while (iter.next()) |pattern_part| {
+                const trimmed_pattern = std.mem.trim(u8, pattern_part, " \t");
+                if (try patternMatches(trimmed_pattern, context.expression_value, verbose)) {
+                    pattern_matches = true;
+                    break;
+                }
+            }
+        } else {
+            pattern_matches = try patternMatches(pattern_str, context.expression_value, verbose);
+        }
+        
+        if (pattern_matches) {
+            context.matched = true;
+            context.currently_executing = true; // Enable execution of subsequent statements
+            if (verbose) print("✅ Pattern matched! Enabling execution for subsequent statements\n", .{});
+        } else {
+            context.currently_executing = false; // Disable execution for this case
+            if (verbose) print("❌ Pattern did not match\n", .{});
+        }
+    }
+}
+
+pub fn handleBasicCase(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, verbose: bool) !void {
+    _ = allocator;
+    _ = functions;
+    _ = variables;
+    _ = line;
+    
+    if (pattern_match_context == null) {
+        if (verbose) print("❌ basic case found outside vibe_check context\n", .{});
+        return;
+    }
+    
+    var context = &pattern_match_context.?;
+    if (!context.matched) {
+        // No previous pattern matched, execute basic case
+        context.matched = true; // Mark as matched so we execute subsequent statements
+        context.currently_executing = true; // Enable execution for basic case
+        if (verbose) print("✅ No pattern matched - enabling basic case execution\n", .{});
+    } else {
+        context.currently_executing = false; // Turn off execution for basic case
+        if (verbose) print("🔍 Skipping basic case - already matched a pattern\n", .{});
+    }
+}
+
+fn patternMatches(pattern: []const u8, value: Variable, verbose: bool) !bool {
+    // Handle string patterns
+    if (pattern.len >= 2 and pattern[0] == '"' and pattern[pattern.len - 1] == '"') {
+        const pattern_str = pattern[1..pattern.len - 1];
+        switch (value) {
+            .String => |str| {
+                const matches = std.mem.eql(u8, pattern_str, str.data);
+                if (verbose) print("🔍 String pattern '{s}' vs '{s}': {any}\n", .{ pattern_str, str.data, matches });
+                return matches;
+            },
+            else => return false,
+        }
+    }
+    
+    // Handle integer patterns
+    if (std.fmt.parseInt(i64, pattern, 10)) |pattern_int| {
+        switch (value) {
+            .Integer => |val| {
+                const matches = pattern_int == val;
+                if (verbose) print("🔍 Integer pattern {} vs {}: {any}\n", .{ pattern_int, val, matches });
+                return matches;
+            },
+            else => return false,
+        }
+    } else |_| {
+        // Not an integer, try other patterns
+    }
+    
+    // Handle boolean patterns
+    if (std.mem.eql(u8, pattern, "based")) {
+        switch (value) {
+            .Boolean => |val| return val == true,
+            else => return false,
+        }
+    } else if (std.mem.eql(u8, pattern, "cringe")) {
+        switch (value) {
+            .Boolean => |val| return val == false,
+            else => return false,
+        }
+    }
+    
+    // Wildcard pattern
+    if (std.mem.eql(u8, pattern, "_")) {
+        return true;
+    }
+    
+    if (verbose) print("❌ Unrecognized pattern: '{s}'\n", .{pattern});
+    return false;
+}
+
+fn shouldExecuteStatement(verbose: bool) bool {
+    // If no pattern matching context, always execute
+    if (pattern_match_context == null) {
+        return true;
+    }
+    
+    const context = pattern_match_context.?;
+    
+    // If not in vibe_check block, execute normally
+    if (!context.in_vibe_check) {
+        return true;
+    }
+    
+    // Inside vibe_check, only execute if we're currently in an executing case
+    const should_execute = context.currently_executing;
+    if (verbose and !should_execute) {
+        print("🔍 Skipping statement execution - not in matched case\n", .{});
+    }
+    return should_execute;
 }
 
 pub fn handleVibesSpill(variables: *VariableStore, functions: *FunctionStore, allocator: Allocator, line: []const u8, start: usize, verbose: bool) !void {
@@ -3995,6 +4420,32 @@ fn handleStdlibFunction(variables: *VariableStore, allocator: Allocator, call_li
             }
         }
         
+        // String conversion functions from stringz module
+        else if (std.mem.eql(u8, func_name, "int_to_string") or std.mem.eql(u8, func_name, "stringz.int_to_string")) {
+            if (args_str.len > 0) {
+                const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
+                switch (arg_value) {
+                    .Integer => |int_val| {
+                        const result = try std.fmt.allocPrint(allocator, "{}", .{int_val});
+                        return Variable{ .String = ManagedString.fromOwned(result) };
+                    },
+                    else => if (verbose) print("❌ int_to_string expects integer argument\n", .{}),
+                }
+            }
+        }
+        
+        else if (std.mem.eql(u8, func_name, "string_length") or std.mem.eql(u8, func_name, "stringz.string_length")) {
+            if (args_str.len > 0) {
+                const arg_value = try evaluateStdlibArgument(variables, allocator, args_str, verbose);
+                switch (arg_value) {
+                    .String => |str| {
+                        return Variable{ .Integer = @intCast(str.data.len) };
+                    },
+                    else => if (verbose) print("❌ string_length expects string argument\n", .{}),
+                }
+            }
+        }
+        
         // Array functions from arrayz module
         else if (std.mem.eql(u8, func_name, "sum_array") or std.mem.eql(u8, func_name, "arrayz.sum_array")) {
             if (args_str.len > 0) {
@@ -4481,6 +4932,9 @@ fn handleVibezSpill(allocator: Allocator, variables: *VariableStore, args: []con
                     defer allocator.free(goroutine_str);
                     try output.appendSlice(goroutine_str);
                 },
+                .Void => {
+                    try output.appendSlice("()");
+                },
             }
         }
         // Check if it's a function call
@@ -4660,11 +5114,12 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     const paren_pos = std.mem.indexOf(u8, after_slay, "(") orelse return 1;
     var func_declaration = std.mem.trim(u8, after_slay[0..paren_pos], " \t");
     
-    // Check for generic type parameters: func_name<T, U>
+    // Check for generic type parameters: func_name<T, U> OR func_name[T, U]
     var func_name = func_declaration;
     var type_params = std.ArrayList([]const u8).init(allocator);
     defer type_params.deinit();
     
+    // Try angle bracket syntax first: <T>
     if (std.mem.indexOf(u8, func_declaration, "<")) |angle_start| {
         if (std.mem.lastIndexOf(u8, func_declaration, ">")) |angle_end| {
             func_name = std.mem.trim(u8, func_declaration[0..angle_start], " \t");
@@ -4678,6 +5133,22 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
             }
             
             if (verbose) print("🧬 Parsing generic function: {s}<{s}>\n", .{func_name, type_params_str});
+        }
+    } 
+    // Try square bracket syntax: [T]
+    else if (std.mem.indexOf(u8, func_declaration, "[")) |bracket_start| {
+        if (std.mem.lastIndexOf(u8, func_declaration, "]")) |bracket_end| {
+            func_name = std.mem.trim(u8, func_declaration[0..bracket_start], " \t");
+            const type_params_str = std.mem.trim(u8, func_declaration[bracket_start + 1..bracket_end], " \t");
+            
+            // Parse type parameters
+            var type_iter = std.mem.splitScalar(u8, type_params_str, ',');
+            while (type_iter.next()) |type_param| {
+                const trimmed_type = std.mem.trim(u8, type_param, " \t");
+                try type_params.append(trimmed_type);
+            }
+            
+            if (verbose) print("🧬 Parsing generic function: {s}[{s}]\n", .{func_name, type_params_str});
         }
     }
     
@@ -4837,6 +5308,12 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
     
     // Look up function definition (use generic base name for generics)
     const lookup_name = if (is_generic_call) generic_base_name else func_name;
+    
+    // Check if this is an FFI function call first
+    if (isExternFunction(lookup_name)) {
+        if (verbose) print("🔗 FFI function call detected: {s}\n", .{lookup_name});
+        return handleExternFunctionCall(variables, allocator, call_line, verbose);
+    }
     
     if (verbose) print("🔍 DEBUG: Looking up function: '{s}'\n", .{lookup_name});
         
@@ -5969,6 +6446,10 @@ fn matchesPattern(
         .GoroutineId => {
             if (verbose) print("❌ GoroutineId pattern matching not supported\n", .{});
             return false;
+        },
+        .Void => {
+            if (verbose) print("❌ Void pattern matching not supported\n", .{});
+            return false;
         }
     }
 }
@@ -6973,24 +7454,55 @@ fn handleInterfaceMethodDeclaration(functions: *FunctionStore, allocator: Alloca
 fn handleStructDefinition(structs: *StructStore, allocator: Allocator, start_line: []const u8, verbose: bool) !void {
     if (verbose) print("🏗️  Struct definition recognized: {s}\n", .{start_line});
     
-    // Extract struct name from "squad StructName {"
+    // Extract struct name from "squad StructName {" or "squad StructName[T] {"  
     const trimmed = std.mem.trim(u8, start_line, " \t\r\n");
     const squad_end = "squad ".len;
     
-    const struct_name = if (std.mem.indexOf(u8, trimmed[squad_end..], " {")) |space_pos| blk: {
-        break :blk std.mem.trim(u8, trimmed[squad_end..squad_end + space_pos], " \t");
-    } else if (std.mem.indexOf(u8, trimmed[squad_end..], "{")) |brace_pos| blk: {
-        break :blk std.mem.trim(u8, trimmed[squad_end..squad_end + brace_pos], " \t");
+    var struct_name_raw: []const u8 = undefined;
+    
+    // Find the struct name part (before { or space)
+    if (std.mem.indexOf(u8, trimmed[squad_end..], " {")) |space_pos| {
+        struct_name_raw = std.mem.trim(u8, trimmed[squad_end..squad_end + space_pos], " \t");
+    } else if (std.mem.indexOf(u8, trimmed[squad_end..], "{")) |brace_pos| {
+        struct_name_raw = std.mem.trim(u8, trimmed[squad_end..squad_end + brace_pos], " \t");
     } else {
         if (verbose) print("❌ Invalid struct definition syntax\n", .{});
         return;
-    };
+    }
+    
+    // Parse generic type parameters: StructName[T] -> extract "StructName"
+    var struct_name = struct_name_raw;
+    var type_params = std.ArrayList([]const u8).init(allocator);
+    defer type_params.deinit();
+    
+    // Check for square bracket generic syntax: [T, U]
+    if (std.mem.indexOf(u8, struct_name_raw, "[")) |bracket_start| {
+        if (std.mem.lastIndexOf(u8, struct_name_raw, "]")) |bracket_end| {
+            struct_name = std.mem.trim(u8, struct_name_raw[0..bracket_start], " \t");
+            const type_params_str = std.mem.trim(u8, struct_name_raw[bracket_start + 1..bracket_end], " \t");
+            
+            // Parse type parameters
+            var type_iter = std.mem.splitScalar(u8, type_params_str, ',');
+            while (type_iter.next()) |type_param| {
+                const trimmed_type = std.mem.trim(u8, type_param, " \t");
+                try type_params.append(trimmed_type);
+            }
+            
+            if (verbose) print("🧬 Parsing generic struct: {s}[{s}]\n", .{struct_name, type_params_str});
+        }
+    }
     
     if (verbose) print("🔧 Defining struct: {s}\n", .{struct_name});
     
     // Create struct definition (var needed for field additions in handleStructFieldDeclaration)
     var struct_def = StructDefinition.init(allocator, try allocator.dupe(u8, struct_name));
     _ = &struct_def; // Suppress unused mut warning
+    
+    // TODO: Store type parameters in enhanced StructDefinition
+    // For now, we'll just log them for debug purposes
+    if (type_params.items.len > 0) {
+        if (verbose) print("🧬 Generic struct '{s}' has {d} type parameters\n", .{struct_name, type_params.items.len});
+    }
     
     // For now, we're just handling the opening line. The field declarations will be handled
     // in the main loop as separate statements. We'll identify them by looking for "spill" statements
@@ -7301,5 +7813,193 @@ fn handleRecvChannelCall(variables: *VariableStore, allocator: Allocator, line: 
         }
     } else {
         if (verbose) print("❌ recv_channel must be used in assignment: result = recv_channel(ch)\n", .{});
+    }
+}
+
+// FFI (Foreign Function Interface) Support Functions
+
+/// Check if a function name is an extern function
+fn isExternFunction(func_name: []const u8) bool {
+    const extern_functions = [_][]const u8{
+        "set_pixel_color",
+        "get_pixel_color", 
+        "get_system_status",
+        "set_log_priority",
+    };
+    
+    for (extern_functions) |extern_func| {
+        if (std.mem.eql(u8, func_name, extern_func)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/// Handle extern function calls
+fn handleExternFunctionCall(variables: *VariableStore, allocator: Allocator, call_line: []const u8, verbose: bool) !?Variable {
+    if (verbose) print("🔗 Processing extern function call: {s}\n", .{call_line});
+    
+    // Parse function name and arguments
+    const paren_pos = std.mem.indexOf(u8, call_line, "(") orelse return null;
+    const func_name = std.mem.trim(u8, call_line[0..paren_pos], " \t");
+    
+    if (std.mem.lastIndexOf(u8, call_line, ")")) |end_paren| {
+        const args_str = std.mem.trim(u8, call_line[paren_pos + 1..end_paren], " \t");
+        
+        // Handle specific extern functions
+        if (std.mem.eql(u8, func_name, "set_pixel_color")) {
+            return handleSetPixelColor(variables, allocator, args_str, verbose);
+        } else if (std.mem.eql(u8, func_name, "get_pixel_color")) {
+            return handleGetPixelColor(variables, allocator, args_str, verbose);
+        } else if (std.mem.eql(u8, func_name, "get_system_status")) {
+            return handleGetSystemStatus(variables, allocator, args_str, verbose);
+        } else if (std.mem.eql(u8, func_name, "set_log_priority")) {
+            return handleSetLogPriority(variables, allocator, args_str, verbose);
+        }
+    }
+    
+    if (verbose) print("❌ Unknown extern function: {s}\n", .{func_name});
+    return null;
+}
+
+/// Handle set_pixel_color(x, y, color) extern function
+fn handleSetPixelColor(variables: *VariableStore, allocator: Allocator, args_str: []const u8, verbose: bool) !?Variable {
+    _ = allocator; // Not needed for this function
+    
+    if (verbose) print("🎨 Calling set_pixel_color with args: {s}\n", .{args_str});
+    
+    // Parse arguments: x, y, color
+    var arg_iter = std.mem.splitSequence(u8, args_str, ",");
+    var arg_values: [3]i32 = undefined;
+    var arg_index: usize = 0;
+    
+    while (arg_iter.next()) |arg| {
+        if (arg_index >= 3) break;
+        
+        const trimmed_arg = std.mem.trim(u8, arg, " \t");
+        
+        // Evaluate argument (could be variable or literal)
+        if (evaluateExpressionToInt(variables, trimmed_arg, verbose)) |value| {
+            arg_values[arg_index] = value;
+            arg_index += 1;
+        } else |_| {
+            if (verbose) print("❌ Failed to evaluate argument: {s}\n", .{trimmed_arg});
+            return null;
+        }
+    }
+    
+    if (arg_index != 3) {
+        if (verbose) print("❌ set_pixel_color requires 3 arguments, got {}\n", .{arg_index});
+        return null;
+    }
+    
+    // Call the actual FFI function
+    ffi_bridge.set_pixel_color(arg_values[0], arg_values[1], @intCast(arg_values[2]));
+    
+    // Return void/unit type
+    return Variable{ .Void = {} };
+}
+
+/// Handle get_pixel_color(x, y) extern function  
+fn handleGetPixelColor(variables: *VariableStore, allocator: Allocator, args_str: []const u8, verbose: bool) !?Variable {
+    _ = allocator; // Not needed for this function
+    
+    if (verbose) print("🎨 Calling get_pixel_color with args: {s}\n", .{args_str});
+    
+    // Parse arguments: x, y
+    var arg_iter = std.mem.splitSequence(u8, args_str, ",");
+    var arg_values: [2]i32 = undefined;
+    var arg_index: usize = 0;
+    
+    while (arg_iter.next()) |arg| {
+        if (arg_index >= 2) break;
+        
+        const trimmed_arg = std.mem.trim(u8, arg, " \t");
+        
+        // Evaluate argument
+        if (evaluateExpressionToInt(variables, trimmed_arg, verbose)) |value| {
+            arg_values[arg_index] = value;
+            arg_index += 1;
+        } else |_| {
+            if (verbose) print("❌ Failed to evaluate argument: {s}\n", .{trimmed_arg});
+            return null;
+        }
+    }
+    
+    if (arg_index != 2) {
+        if (verbose) print("❌ get_pixel_color requires 2 arguments, got {}\n", .{arg_index});
+        return null;
+    }
+    
+    // Call the actual FFI function
+    const result = ffi_bridge.get_pixel_color(arg_values[0], arg_values[1]);
+    
+    // Return result as Integer (smol type mapped to Integer)
+    return Variable{ .Integer = result };
+}
+
+/// Handle get_system_status() extern function
+fn handleGetSystemStatus(variables: *VariableStore, allocator: Allocator, args_str: []const u8, verbose: bool) !?Variable {
+    _ = variables; // Not needed
+    _ = allocator;  // Not needed
+    
+    if (verbose) print("🖥️ Calling get_system_status with args: {s}\n", .{args_str});
+    
+    // Should have no arguments
+    const trimmed_args = std.mem.trim(u8, args_str, " \t");
+    if (trimmed_args.len > 0) {
+        if (verbose) print("❌ get_system_status takes no arguments\n", .{});
+        return null;
+    }
+    
+    // Call the actual FFI function
+    const result = ffi_bridge.get_system_status();
+    
+    // Return result as Integer
+    return Variable{ .Integer = result };
+}
+
+/// Handle set_log_priority(priority) extern function
+fn handleSetLogPriority(variables: *VariableStore, allocator: Allocator, args_str: []const u8, verbose: bool) !?Variable {
+    _ = allocator; // Not needed for this function
+    
+    if (verbose) print("📝 Calling set_log_priority with args: {s}\n", .{args_str});
+    
+    // Parse single argument: priority
+    const trimmed_arg = std.mem.trim(u8, args_str, " \t");
+    
+    // Evaluate argument
+    if (evaluateExpressionToInt(variables, trimmed_arg, verbose)) |value| {
+        // Call the actual FFI function
+        ffi_bridge.set_log_priority(@intCast(value));
+        
+        // Return void/unit type
+        return Variable{ .Void = {} };
+    } else |_| {
+        if (verbose) print("❌ Failed to evaluate priority argument: {s}\n", .{trimmed_arg});
+        return null;
+    }
+}
+
+/// Helper function to evaluate an expression to integer
+fn evaluateExpressionToInt(variables: *VariableStore, expr: []const u8, verbose: bool) !i32 {
+    // Try to parse as literal first
+    if (std.fmt.parseInt(i32, expr, 10)) |value| {
+        return value;
+    } else |_| {
+        // Try to get from variables
+        if (variables.get(expr)) |var_value| {
+            return switch (var_value) {
+                .Integer => |int_val| @intCast(int_val),
+                .Boolean => |bool_val| if (bool_val) @as(i32, 1) else @as(i32, 0),
+                else => {
+                    if (verbose) print("❌ Variable '{s}' is not an integer type\n", .{expr});
+                    return error.InvalidType;
+                },
+            };
+        } else {
+            if (verbose) print("❌ Variable or literal '{s}' not found\n", .{expr});
+            return error.VariableNotFound;
+        }
     }
 }

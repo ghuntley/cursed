@@ -3,6 +3,7 @@ const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const HashMap = std.HashMap;
 const print = std.debug.print;
+const missing_impl = @import("missing_impl_functions.zig");
 
 /// Core Zig FFI implementation for CURSED standard library
 /// Provides the essential runtime functions that CURSED stdlib modules depend on
@@ -133,6 +134,48 @@ pub const StdlibCore = struct {
     pub fn cos(self: *StdlibCore, value: f64) f64 {
         _ = self;
         return std.math.cos(value);
+    }
+    
+    /// Tangent function
+    pub fn tan(self: *StdlibCore, value: f64) f64 {
+        _ = self;
+        return std.math.tan(value);
+    }
+    
+    /// Arc sine function  
+    pub fn asin(self: *StdlibCore, value: f64) f64 {
+        _ = self;
+        return std.math.asin(value);
+    }
+    
+    /// Arc cosine function
+    pub fn acos(self: *StdlibCore, value: f64) f64 {
+        _ = self;
+        return std.math.acos(value);
+    }
+    
+    /// Arc tangent function
+    pub fn atan(self: *StdlibCore, value: f64) f64 {
+        _ = self;
+        return std.math.atan(value);
+    }
+    
+    /// Arc tangent 2 function
+    pub fn atan2(self: *StdlibCore, y: f64, x: f64) f64 {
+        _ = self;
+        return std.math.atan2(f64, y, x);
+    }
+    
+    /// Random float generation
+    pub fn random_float(self: *StdlibCore) f64 {
+        _ = self;
+        return missing_impl.random_float_impl();
+    }
+    
+    /// Random integer in range
+    pub fn random_int_range(self: *StdlibCore, min: i64, max: i64) i64 {
+        _ = self;
+        return missing_impl.random_int_range_impl(min, max);
     }
     
     // ===== FILE OPERATIONS (vibez/filez modules) =====

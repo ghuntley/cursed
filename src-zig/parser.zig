@@ -572,51 +572,122 @@ pub const Parser = struct {
     fn parseImportStatement(self: *Parser) ParserError!ast.ImportStatement {
         _ = try self.consume(.Yeet, "Expected 'yeet'");
         
-        // Handle first import path
+        // Check if this is a selective import: yeet { items } from "module"
+        if (self.match(.LeftBrace)) {
+            return self.parseSelectiveImport();
+        }
+        
+        // Parse regular import(s)
+        return self.parseRegularImport();
+    }
+
+    fn parseSelectiveImport(self: *Parser) ParserError!ast.ImportStatement {
+        // Parse: yeet { item1, item2 as alias, item3 } from "module"
+        var import_stmt = ast.ImportStatement.init(self.allocator, "");
+        
+        // Parse selective items
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            if (!self.check(.Identifier)) {
+                _ = self.reportErrorWithContext("Expected identifier in selective import", "parseSelectiveImport") catch {};
+                return ParserError.UnexpectedToken;
+            }
+            
+            const item_name = self.advance().lexeme;
+            var item_alias: ?[]const u8 = null;
+            
+            // Check for item-level alias: item as alias
+            if (self.match(.As)) {
+                if (!self.check(.Identifier)) {
+                    _ = self.reportErrorWithContext("Expected identifier after 'as' in selective import", "parseSelectiveImport") catch {};
+                    return ParserError.UnexpectedToken;
+                }
+                item_alias = self.advance().lexeme;
+            }
+            
+            try import_stmt.addSelectiveItem(item_name, item_alias);
+            
+            // Handle comma separator or end of list
+            if (self.match(.Comma)) {
+                continue;
+            } else if (self.check(.RightBrace)) {
+                break;
+            } else {
+                _ = self.reportErrorWithContext("Expected ',' or '}' in selective import", "parseSelectiveImport") catch {};
+                return ParserError.UnexpectedToken;
+            }
+        }
+        
+        _ = try self.consume(.RightBrace, "Expected '}' after selective import items");
+        _ = try self.consume(.From, "Expected 'from' after selective import items");
+        
         if (!self.check(.StringLiteral) and !self.check(.String)) {
+            _ = self.reportErrorWithContext("Expected string literal after 'from'", "parseSelectiveImport") catch {};
+            return ParserError.UnexpectedToken;
+        }
+        
+        const path_token = self.advance();
+        const path = self.extractStringLiteral(path_token.lexeme);
+        import_stmt.path = path;
+        
+        return import_stmt;
+    }
+
+    fn parseRegularImport(self: *Parser) ParserError!ast.ImportStatement {
+        // Parse regular imports: single, multiple, or aliased
+        if (!self.check(.StringLiteral) and !self.check(.String)) {
+            _ = self.reportErrorWithContext("Expected string literal in import statement", "parseRegularImport") catch {};
             return ParserError.UnexpectedToken;
         }
         
         const first_path_token = self.advance();
-        const first_path = if (first_path_token.lexeme.len >= 2 and 
-                              first_path_token.lexeme[0] == '"' and 
-                              first_path_token.lexeme[first_path_token.lexeme.len-1] == '"')
-                           first_path_token.lexeme[1..first_path_token.lexeme.len-1] // Remove quotes
-                           else first_path_token.lexeme;
+        var first_path = self.extractStringLiteral(first_path_token.lexeme);
+        
+        // Check for version specification: "module@^1.0.0"
+        var version: ?[]const u8 = null;
+        if (std.mem.indexOf(u8, first_path, "@")) |at_index| {
+            version = first_path[at_index + 1..];
+            first_path = first_path[0..at_index];
+        }
         
         var import_stmt = ast.ImportStatement.init(self.allocator, first_path);
+        import_stmt.version = version;
         
-        // Handle comma-separated additional imports
+        // Check for multiple imports: "mod1", "mod2", "mod3"
         while (self.match(.Comma)) {
             if (!self.check(.StringLiteral) and !self.check(.String)) {
-                _ = self.reportErrorWithContext("Expected string literal after comma in import statement", "parseImportStatement") catch {};
+                _ = self.reportErrorWithContext("Expected string literal after comma in import statement", "parseRegularImport") catch {};
                 return ParserError.UnexpectedToken;
             }
             
             const path_token = self.advance();
-            const path = if (path_token.lexeme.len >= 2 and 
-                            path_token.lexeme[0] == '"' and 
-                            path_token.lexeme[path_token.lexeme.len-1] == '"')
-                         path_token.lexeme[1..path_token.lexeme.len-1] // Remove quotes
-                         else path_token.lexeme;
+            var path = self.extractStringLiteral(path_token.lexeme);
             
-            import_stmt.items.append(path) catch {
-                _ = self.reportErrorWithContext("Out of memory adding import item", "parseImportStatement") catch {};
-                return ParserError.OutOfMemory;
-            };
+            // Handle version in multiple imports
+            if (std.mem.indexOf(u8, path, "@")) |at_index| {
+                path = path[0..at_index]; // Strip version for multiple imports (not currently supported)
+            }
+            
+            try import_stmt.addMultiplePath(path);
         }
         
-        // Handle alias (as name) - only for simple single imports
-        if (import_stmt.items.items.len == 0 and self.match(.As)) {
-            if (self.check(.Identifier)) {
-                import_stmt.alias = self.advance().lexeme;
-            } else {
-                _ = self.reportErrorWithContext("Expected identifier after 'as' in import statement", "parseImportStatement") catch {};
+        // Handle alias: "module" as alias (only for single imports)
+        if (import_stmt.multiple_paths.items.len == 0 and self.match(.As)) {
+            if (!self.check(.Identifier)) {
+                _ = self.reportErrorWithContext("Expected identifier after 'as' in import statement", "parseRegularImport") catch {};
                 return ParserError.UnexpectedToken;
             }
+            import_stmt.alias = self.advance().lexeme;
         }
         
         return import_stmt;
+    }
+    
+    fn extractStringLiteral(self: *Parser, lexeme: []const u8) []const u8 {
+        _ = self; // Mark parameter as used
+        if (lexeme.len >= 2 and lexeme[0] == '"' and lexeme[lexeme.len-1] == '"') {
+            return lexeme[1..lexeme.len-1]; // Remove quotes
+        }
+        return lexeme;
     }
 
     fn parseStatement(self: *Parser) ParserError!Statement {
