@@ -8,7 +8,7 @@ const simple_interpreter = @import("simple_interpreter.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -85,7 +85,7 @@ pub fn main() !void {
         print("🚀 Executing CURSED program via interpreter...\n", .{});
         
         var simple_interp = simple_interpreter.SimpleInterpreter.init(allocator);
-        defer simple_interp.deinit(allocator);
+        defer simple_interp.deinit();
         
         simple_interp.execute(tokens.items) catch |err| {
             print("Interpreter error: {}\n", .{err});

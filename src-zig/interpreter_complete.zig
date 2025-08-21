@@ -28,7 +28,7 @@ pub const CursedInterpreter = struct {
 
     const MAX_RECURSION_DEPTH = 1000;
 
-    pub fn init(allocator: Allocator) CursedInterpreter {
+    pub fn init() CursedInterpreter {
         var globals = Environment.init(allocator, null);
         
         return CursedInterpreter{
@@ -49,34 +49,34 @@ pub const CursedInterpreter = struct {
         // Execute all remaining deferred statements
         self.executeAllDefers();
         
-        self.globals.deinit(allocator);
+        self.globals.deinit();
         
         // Clean up functions
         var func_iter = self.functions.iterator();
         while (func_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.functions.deinit(allocator);
+        self.functions.deinit();
         
         // Clean up struct definitions
         var struct_iter = self.struct_definitions.iterator();
         while (struct_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.struct_definitions.deinit(allocator);
+        self.struct_definitions.deinit();
         
         // Clean up interface definitions
         var interface_iter = self.interface_definitions.iterator();
         while (interface_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.interface_definitions.deinit(allocator);
+        self.interface_definitions.deinit();
         
-        self.defer_stack.deinit(allocator);
-        self.call_stack.deinit(allocator);
+        self.defer_stack.deinit();
+        self.call_stack.deinit();
     }
 
     /// Execute a complete program
@@ -361,11 +361,11 @@ pub const CursedInterpreter = struct {
             // Handle user-defined functions
             if (self.functions.get(func_name)) |func| {
                 var args = .empty;
-                defer args.deinit(allocator);
+                defer args.deinit();
                 
                 for (call.arguments.items) |arg_ptr| {
                     const arg_expr: *Expression = @ptrCast(@alignCast(arg_ptr));
-                    try args.append(allocator, try self.evaluateExpression(arg_expr.*));
+                    try args.append(try self.evaluateExpression(arg_expr.*));
                 }
                 
                 return try self.callFunction(func, args.items);
@@ -426,7 +426,7 @@ pub const CursedInterpreter = struct {
         
         // Create new environment for function execution
         var func_env = Environment.init(self.allocator, self.environment);
-        defer func_env.deinit(allocator);
+        defer func_env.deinit();
         
         // Bind parameters
         for (func.parameters, args) |param, arg| {
@@ -549,7 +549,7 @@ pub const CursedInterpreter = struct {
             .expression = expr_ptr.*,
             .environment = self.environment,
         };
-        try self.defer_stack.append(allocator, defer_entry);
+        try self.defer_stack.append(defer_entry);
         return ExecutionFlow{ .Continue = Value.Nil };
     }
 
@@ -687,10 +687,10 @@ pub const CursedInterpreter = struct {
 
     fn evaluateArrayExpression(self: *CursedInterpreter, array: ast.ArrayExpression) InterpreterError!Value {
         var values = .empty;
-        errdefer values.deinit(allocator); // Clean up on error
+        errdefer values.deinit(); // Clean up on error
         for (array.elements.items) |elem_ptr| {
             const elem_expr: *Expression = @ptrCast(@alignCast(elem_ptr));
-            try values.append(allocator, try self.evaluateExpression(elem_expr.*));
+            try values.append(try self.evaluateExpression(elem_expr.*));
         }
         return Value{ .Array = values };
     }
@@ -739,10 +739,10 @@ pub const CursedInterpreter = struct {
 
     fn evaluateTuple(self: *CursedInterpreter, tuple: ast.TupleExpression) InterpreterError!Value {
         var values = .empty;
-        errdefer values.deinit(allocator); // Clean up on error
+        errdefer values.deinit(); // Clean up on error
         for (tuple.elements.items) |elem_ptr| {
             const elem_expr: *Expression = @ptrCast(@alignCast(elem_ptr));
-            try values.append(allocator, try self.evaluateExpression(elem_expr.*));
+            try values.append(try self.evaluateExpression(elem_expr.*));
         }
         return Value{ .Tuple = values };
     }
@@ -803,19 +803,19 @@ pub const Value = union(enum) {
             .String => |str| allocator.free(str),
             .Array => |*arr| {
                 for (arr.items) |*item| {
-                    item.deinit(allocator);
+                    item.deinit();
                 }
-                arr.deinit(allocator);
+                arr.deinit();
             },
             .Tuple => |*tuple| {
                 for (tuple.items) |*item| {
-                    item.deinit(allocator);
+                    item.deinit();
                 }
-                tuple.deinit(allocator);
+                tuple.deinit();
             },
-            .Struct => |*struct_inst| struct_inst.deinit(allocator),
-            .Interface => |*interface_inst| interface_inst.deinit(allocator),
-            .Error => |*err| err.deinit(allocator),
+            .Struct => |*struct_inst| struct_inst.deinit(),
+            .Interface => |*interface_inst| interface_inst.deinit(),
+            .Error => |*err| err.deinit(),
             else => {},
         }
     }
@@ -839,9 +839,9 @@ pub const Environment = struct {
         var iter = self.variables.iterator();
         while (iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
 
     pub fn define(self: *Environment, name: []const u8, value: Value) !void {
@@ -894,7 +894,7 @@ pub const StructDefinition = struct {
     fields: ArrayList(FieldDefinition),
 
     pub fn deinit(self: *StructDefinition) void {
-        self.fields.deinit(allocator);
+        self.fields.deinit();
     }
 };
 
@@ -910,7 +910,7 @@ pub const InterfaceDefinition = struct {
     methods: ArrayList(MethodDefinition),
 
     pub fn deinit(self: *InterfaceDefinition) void {
-        self.methods.deinit(allocator);
+        self.methods.deinit();
     }
 };
 
@@ -931,7 +931,7 @@ pub const StructInstance = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit(std.heap.page_allocator); // TODO: pass proper allocator
         }
-        self.fields.deinit(allocator);
+        self.fields.deinit();
     }
 };
 

@@ -96,7 +96,7 @@ pub const Parser = struct {
     }
 
     pub fn deinit(self: *Parser) void {
-        self.arena.deinit(allocator);
+        self.arena.deinit();
     }
 
     /// Check if the current token is a keyword that can be used as a method name
@@ -169,7 +169,7 @@ pub const Parser = struct {
                     0,
                     @src().fn_name
                 ) catch return error.AlignmentError;
-                defer context.deinit(allocator);
+                defer context.deinit();
                 
                 telemetry.recordCrash(context) catch {};
             }
@@ -194,7 +194,7 @@ pub const Parser = struct {
                     0,
                     @src().fn_name
                 ) catch return error.AlignmentError;
-                defer context.deinit(allocator);
+                defer context.deinit();
                 
                 telemetry.recordCrash(context) catch {};
             }
@@ -228,7 +228,7 @@ pub const Parser = struct {
 
     pub fn parseProgram(self: *Parser) ParserError!Program {
         var program = Program.init(self.allocator);
-        errdefer program.deinit(allocator);
+        errdefer program.deinit();
         
         var statement_count: usize = 0;
         const max_statements = 10000; // Prevent infinite loops/excessive memory usage
@@ -258,7 +258,7 @@ pub const Parser = struct {
             // Parse import statement with error recovery
             if (self.check(.Yeet)) {
                 if (self.parseImportStatement()) |import_stmt| {
-                    program.imports.append(allocator, import_stmt) catch {
+                    program.imports.append(import_stmt) catch {
                         _ = self.reportErrorWithContext("Out of memory adding import", "parseProgram") catch {};
                         return ParserError.OutOfMemory;
                     };
@@ -696,6 +696,12 @@ pub const Parser = struct {
             _ = self.advance();
         }
         
+        // CRITICAL FIX: Block statement parsing - handle standalone braces
+        // This prevents complex expressions from being misinterpreted
+        if (self.check(.LeftBrace)) {
+            return try self.parseBlockStatement();
+        }
+        
         // Function declaration (slay) with enhanced error recovery
         if (self.check(.Slay)) {
             return Statement{ .Function = self.parseFunctionStatement() catch |err| {
@@ -865,6 +871,41 @@ pub const Parser = struct {
         }};
     }
 
+    // CRITICAL FIX: Parse standalone block statements
+    // This handles cases where braces follow expressions but should be separate statements
+    fn parseBlockStatement(self: *Parser) ParserError!Statement {
+        _ = try self.consume(.LeftBrace, "Expected '{'");
+        
+        var statements = .empty;
+        errdefer {
+            for (statements.items) |stmt_ptr| {
+                self.allocator.destroy(@as(*Statement, @ptrCast(@alignCast(stmt_ptr))));
+            }
+            statements.deinit(self.allocator);
+        }
+        
+        // Parse statements within the block
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            // Skip newlines and comments
+            if (self.match(.Newline) or self.match(.LineComment) or self.match(.BlockComment)) {
+                continue;
+            }
+            
+            const stmt = try self.parseStatement();
+            const stmt_ptr = try self.allocator.create(Statement);
+            errdefer self.allocator.destroy(stmt_ptr);
+            stmt_ptr.* = stmt;
+            
+            try statements.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+        }
+        
+        _ = try self.consume(.RightBrace, "Expected '}'");
+        
+        return Statement{ .Block = ast.BlockStatement{
+            .statements = statements,
+        }};
+    }
+
     fn parseFunctionStatement(self: *Parser) ParserError!FunctionStatement {
         _ = try self.consume(.Slay, "Expected 'slay'");
         
@@ -897,12 +938,12 @@ pub const Parser = struct {
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle) and !self.check(.RightShift)) {
                             const constraint = try self.parseType();
-                            try type_param.constraints.append(allocator, constraint);
+                            try type_param.constraints.append(constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }
                     
-                    try func.type_parameters.append(allocator, type_param);
+                    try func.type_parameters.append(type_param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -920,7 +961,7 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             while (true) {
                 const param = try self.parseParameter();
-                try func.parameters.append(allocator, param);
+                try func.parameters.append(param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -1171,7 +1212,7 @@ pub const Parser = struct {
                 if (!self.check(.RightParen)) {
                     while (true) {
                         const param_type = try self.parseType();
-                        try param_types.append(allocator, param_type);
+                        try param_types.append(param_type);
                         
                         if (!self.match(.Comma)) break;
                     }
@@ -1202,7 +1243,7 @@ pub const Parser = struct {
             if (!self.check(.RightParen)) {
                 while (true) {
                     const elem_type = try self.parseType();
-                    try elements.append(allocator, elem_type);
+                    try elements.append(elem_type);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -1213,7 +1254,7 @@ pub const Parser = struct {
             // Single element in parens is just grouped, not a tuple
             if (elements.items.len == 1) {
                 const single_type = elements.items[0];
-                elements.deinit(allocator);
+                elements.deinit();
                 return single_type;
             }
             
@@ -1262,7 +1303,7 @@ pub const Parser = struct {
             // Parse parameter types
             while (!self.check(.RightParen) and !self.isAtEnd()) {
                 const param_type = try self.parseType();
-                try param_types.append(allocator, param_type);
+                try param_types.append(param_type);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -1781,7 +1822,7 @@ pub const Parser = struct {
             if (!self.check(.RightBracket)) {
                 while (true) {
                     const elem = try self.parseExpression();
-                    try elements.append(allocator, elem);
+                    try elements.append(elem);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -1811,7 +1852,7 @@ pub const Parser = struct {
             while (true) {
                 // Parse expression with full precedence
                 const elem = try self.parseExpression();
-                try elements.append(allocator, elem);
+                try elements.append(elem);
                 
                 if (self.match(.Comma)) {
                     has_comma = true;
@@ -1826,7 +1867,7 @@ pub const Parser = struct {
             // Single element without comma is just grouped expression
             if (elements.items.len == 1 and !has_comma) {
                 const single_expr = elements.items[0];
-                elements.deinit(allocator);
+                elements.deinit();
                 return single_expr;
             }
             
@@ -1882,7 +1923,7 @@ pub const Parser = struct {
                         return ParserError.UnexpectedToken;
                     }
                     
-                    try params.append(allocator, self.advance().lexeme);
+                    try params.append(self.advance().lexeme);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -1963,6 +2004,7 @@ pub const Parser = struct {
                 } else {
                     // This might be part of a complex expression that was incorrectly parsed
                     // Return the identifier and let the caller handle the brace
+                    // The brace will be handled by parseBlockStatement in parseStatement
                     return Expression{ .Identifier = name };
                 }
             }
@@ -2080,16 +2122,16 @@ pub const Parser = struct {
         var patterns = .empty;
         
         const first_pattern = try self.parsePatternRange();
-        try patterns.append(allocator, first_pattern);
+        try patterns.append(first_pattern);
         
         while (self.match(.Pipe)) {
             const pattern = try self.parsePatternRange();
-            try patterns.append(allocator, pattern);
+            try patterns.append(pattern);
         }
         
         if (patterns.items.len == 1) {
             const single_pattern = patterns.items[0];
-            patterns.deinit(allocator);
+            patterns.deinit();
             return single_pattern;
         }
         
@@ -2216,7 +2258,7 @@ pub const Parser = struct {
             if (!self.check(.RightBracket)) {
                 while (true) {
                     const pattern = try self.parsePattern();
-                    try patterns.append(allocator, pattern);
+                    try patterns.append(pattern);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -2233,7 +2275,7 @@ pub const Parser = struct {
             if (!self.check(.RightParen)) {
                 while (true) {
                     const pattern = try self.parsePattern();
-                    try patterns.append(allocator, pattern);
+                    try patterns.append(pattern);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -2261,7 +2303,7 @@ pub const Parser = struct {
                         _ = try self.consume(.Colon, "Expected ':' after field name");
                         const pattern = try self.parsePattern();
                         
-                        try fields.append(allocator, ast.FieldPattern{
+                        try fields.append(ast.FieldPattern{
                             .name = field_name,
                             .pattern = pattern,
                         });
@@ -2532,13 +2574,13 @@ pub const Parser = struct {
         
         // Parse first variable
         if (self.check(.Identifier)) {
-            try variables.append(allocator, self.advance().lexeme);
+            try variables.append(self.advance().lexeme);
         }
         
         // Parse second variable if comma present
         if (self.match(.Comma)) {
             if (self.check(.Identifier)) {
-                try variables.append(allocator, self.advance().lexeme);
+                try variables.append(self.advance().lexeme);
             }
         }
         
@@ -2605,12 +2647,12 @@ pub const Parser = struct {
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
                             const constraint = try self.parseType();
-                            try param.constraints.append(allocator, constraint);
+                            try param.constraints.append(constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }
                     
-                    try type_parameters.append(allocator, param);
+                    try type_parameters.append(param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -2637,7 +2679,7 @@ pub const Parser = struct {
             // Check for method definition (slay keyword)
             if (self.check(.Slay)) {
                 const method = try self.parseStructMethod();
-                try methods.append(allocator, method);
+                try methods.append(method);
                 continue;
             }
             
@@ -2653,7 +2695,7 @@ pub const Parser = struct {
             
             // Parse field
             const field = try self.parseStructField(visibility);
-            try fields.append(allocator, field);
+            try fields.append(field);
             
             // Optional comma
             _ = self.match(.Comma);
@@ -2707,7 +2749,7 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             while (true) {
                 const param = try self.parseParameter();
-                try parameters.append(allocator, param);
+                try parameters.append(param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -2770,7 +2812,7 @@ pub const Parser = struct {
                         .name = param_name,
                         .constraints = .empty,
                     };
-                    try type_parameters.append(allocator, param);
+                    try type_parameters.append(param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -2789,7 +2831,7 @@ pub const Parser = struct {
                     return ParserError.UnexpectedToken;
                 }
                 const parent_interface = self.advance().lexeme;
-                try extends.append(allocator, parent_interface);
+                try extends.append(parent_interface);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -2803,7 +2845,7 @@ pub const Parser = struct {
                     return ParserError.UnexpectedToken;
                 }
                 const composed_interface = self.advance().lexeme;
-                try compositions.append(allocator, composed_interface);
+                try compositions.append(composed_interface);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -2823,7 +2865,7 @@ pub const Parser = struct {
             
             // Parse method signature
             const method = try self.parseMethodSignature();
-            try methods.append(allocator, method);
+            try methods.append(method);
             
             // Optional semicolon
             _ = self.match(.Semicolon);
@@ -2860,7 +2902,7 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             while (true) {
                 const param = try self.parseParameter();
-                try parameters.append(allocator, param);
+                try parameters.append(param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -2912,7 +2954,7 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const method = try self.parseFunctionStatement();
-            try methods.append(allocator, method);
+            try methods.append(method);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -3240,7 +3282,7 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try try_body.append(allocator, stmt);
+            try try_body.append(stmt);
         }
         _ = try self.consume(.RightBrace, "Expected '}'");
         
@@ -3270,11 +3312,11 @@ pub const Parser = struct {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                try catch_body.append(allocator, stmt);
+                try catch_body.append(stmt);
             }
             _ = try self.consume(.RightBrace, "Expected '}'");
             
-            try catch_blocks.append(allocator, ast.FamStatement.CatchBlock{
+            try catch_blocks.append(ast.FamStatement.CatchBlock{
                 .error_variable = error_variable,
                 .error_type = error_type,
                 .body = catch_body,
@@ -3342,7 +3384,7 @@ pub const Parser = struct {
                     return ParserError.UnexpectedToken;
                 }
                 
-                try names.append(allocator, self.advance().lexeme);
+                try names.append(self.advance().lexeme);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -3354,14 +3396,14 @@ pub const Parser = struct {
                 return ParserError.UnexpectedToken;
             }
             
-            try names.append(allocator, self.advance().lexeme);
+            try names.append(self.advance().lexeme);
             
             while (self.match(.Comma)) {
                 if (!self.check(.Identifier)) {
                     return ParserError.UnexpectedToken;
                 }
                 
-                try names.append(allocator, self.advance().lexeme);
+                try names.append(self.advance().lexeme);
             }
         }
         
@@ -3678,7 +3720,7 @@ pub const Parser = struct {
     }
 
     // CRITICAL FIX: Validate assignment targets to prevent complex expressions being treated as assignable
-    fn isValidAssignmentTarget(self: *Parser, target: Expression) bool {
+    fn isValidAssignmentTarget(_: *Parser, target: Expression) bool {
         switch (target) {
             .Identifier => return true,
             .MemberAccess => return true,
@@ -3835,7 +3877,7 @@ pub const Parser = struct {
             try pointers.append(self.allocator, ptr);
         }
         
-        expressions.deinit(allocator);
+        expressions.deinit();
         return pointers;
     }
 
@@ -3850,7 +3892,7 @@ pub const Parser = struct {
         if (!self.check(.Greater) and !self.check(.RightAngle) and !self.check(.RightShift)) {
             while (true) {
                 const type_arg = try self.parseType();
-                try type_arguments.append(allocator, type_arg);
+                try type_arguments.append(type_arg);
                 
                 // Check for end of type arguments
                 if (self.check(.Greater) or self.check(.RightAngle)) {
@@ -3955,7 +3997,7 @@ pub const Parser = struct {
             while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
                 const token = self.advance();
                 try where_clause.appendSlice(token.lexeme);
-                try where_clause.append(allocator, ' ');
+                try where_clause.append(' ');
             }
             return ast.TypeConstraint{ .WhereClause = where_clause.items };
         }
@@ -3969,11 +4011,11 @@ pub const Parser = struct {
         
         if (self.match(.Pipe)) {
             var union_types = .empty;
-            try union_types.append(allocator, base_type);
+            try union_types.append(base_type);
             
             while (true) {
                 const union_member = try self.parseBasicType();
-                try union_types.append(allocator, union_member);
+                try union_types.append(union_member);
                 
                 if (!self.match(.Pipe)) break;
             }
@@ -4061,7 +4103,7 @@ pub const Parser = struct {
             // Parse parameter types
             while (!self.check(.RightParen) and !self.isAtEnd()) {
                 const param_type = try self.parseType();
-                try param_types.append(allocator, param_type);
+                try param_types.append(param_type);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -4130,7 +4172,7 @@ pub const Parser = struct {
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
                             const constraint = try self.parseTypeConstraint();
-                            try type_param.constraints.append(allocator, constraint);
+                            try type_param.constraints.append(constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }
@@ -4140,7 +4182,7 @@ pub const Parser = struct {
                         type_param.default_type = try self.parseType();
                     }
                     
-                    try func.type_parameters.append(allocator, type_param);
+                    try func.type_parameters.append(type_param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -4157,7 +4199,7 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             while (true) {
                 const param = try self.parseAdvancedParameter();
-                try func.parameters.append(allocator, param);
+                try func.parameters.append(param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -4256,7 +4298,7 @@ pub const Parser = struct {
                 // Add remaining literal text
                 if (pos < str_content.len) {
                     const text_part = str_content[pos..];
-                    try interpolation.parts.append(allocator, ast.InterpolationPart{
+                    try interpolation.parts.append(ast.InterpolationPart{
                         .text = text_part,
                         .expression = null,
                         .format_spec = null,
@@ -4287,7 +4329,7 @@ test "parser basic program" {
     
     var parser = Parser.init(allocator, &tokens);
     var program = try parser.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try std.testing.expect(program.statements.items.len == 1);
     
@@ -4313,7 +4355,7 @@ test "parser expressions" {
     
     var parser = Parser.init(allocator, &tokens);
     var program = try parser.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try std.testing.expect(program.statements.items.len == 1);
     
@@ -4351,7 +4393,7 @@ test "parser CURSED function" {
     
     var parser = Parser.init(allocator, &tokens);
     var program = try parser.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try std.testing.expect(program.statements.items.len == 1);
     

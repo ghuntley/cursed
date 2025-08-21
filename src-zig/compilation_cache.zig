@@ -43,10 +43,10 @@ pub const CompilationCache = struct {
     }
     
     pub fn deinit(self: *CompilationCache) void {
-        self.dependency_graph.deinit(allocator);
-        self.object_cache.deinit(allocator);
-        self.ast_cache.deinit(allocator);
-        self.source_cache.deinit(allocator);
+        self.dependency_graph.deinit();
+        self.object_cache.deinit();
+        self.ast_cache.deinit();
+        self.source_cache.deinit();
         self.allocator.free(self.cache_dir);
     }
     
@@ -285,9 +285,9 @@ pub const CompilationCache = struct {
         const total_entries = self.source_cache.count() + self.ast_cache.count() + self.object_cache.count();
         
         // Clear all in-memory caches
-        self.source_cache.clearAndFree(allocator);
-        self.ast_cache.clearAndFree(allocator);
-        self.object_cache.clearAndFree(allocator);
+        self.source_cache.clearAndFree();
+        self.ast_cache.clearAndFree();
+        self.object_cache.clearAndFree();
         self.dependency_graph.clearAll();
         
         // Remove all disk cache files
@@ -325,16 +325,16 @@ pub const CompilationCache = struct {
             },
             .optimization_level_changed => {
                 // Only invalidate object cache (AST can be reused)
-                self.object_cache.clearAndFree(allocator);
+                self.object_cache.clearAndFree();
             },
         }
     }
     
     /// Internal invalidate all without mutex
     fn invalidateAllInternal(self: *CompilationCache) !void {
-        self.source_cache.clearAndFree(allocator);
-        self.ast_cache.clearAndFree(allocator);
-        self.object_cache.clearAndFree(allocator);
+        self.source_cache.clearAndFree();
+        self.ast_cache.clearAndFree();
+        self.object_cache.clearAndFree();
         self.dependency_graph.clearAll();
         
         if (self.config.enable_disk_cache) {
@@ -713,9 +713,9 @@ const DependencyGraph = struct {
             for (entry.value_ptr.items) |dep| {
                 self.allocator.free(dep);
             }
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.dependencies.deinit(allocator);
+        self.dependencies.deinit();
         
         // Clean up dependents
         var dependents_iter = self.dependents.iterator();
@@ -723,9 +723,9 @@ const DependencyGraph = struct {
             for (entry.value_ptr.items) |dependent| {
                 self.allocator.free(dependent);
             }
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.dependents.deinit(allocator);
+        self.dependents.deinit();
     }
     
     fn updateDependencies(self: *DependencyGraph, file_path: []const u8, dependencies: []const []const u8) !void {
@@ -767,7 +767,7 @@ const DependencyGraph = struct {
             for (entry.value_ptr.items) |dep| {
                 self.allocator.free(dep);
             }
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
         self.dependencies.clearAndFree(self.allocator);
@@ -778,7 +778,7 @@ const DependencyGraph = struct {
             for (entry.value_ptr.items) |dependent| {
                 self.allocator.free(dependent);
             }
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
         self.dependents.clearAndFree(self.allocator);
@@ -899,7 +899,7 @@ test "CompilationCache basic operations" {
     const config = CacheConfig.development();
     
     var cache = try CompilationCache.init(allocator, "/tmp/cursed_test_cache", config);
-    defer cache.deinit(allocator);
+    defer cache.deinit();
     
     // Test cache miss
     try std.testing.expect(try cache.needsRecompilation("test.csd"));

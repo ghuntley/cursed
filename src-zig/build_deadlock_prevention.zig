@@ -132,7 +132,7 @@ pub const ResourcePool = struct {
     allocator: Allocator,
     mutex: Mutex,
 
-    pub fn init(allocator: Allocator) ResourcePool {
+    pub fn init() ResourcePool {
         return ResourcePool{
             .resources = HashMap([]const u8, Resource, std.hash_map.StringContext, 80).init(allocator),
             .allocator = allocator,

@@ -40,27 +40,27 @@ pub const BuildDependency = struct {
     }
     
     pub fn deinit(self: *BuildDependency) void {
-        self.include_dirs.deinit(allocator);
-        self.lib_dirs.deinit(allocator);
-        self.system_libs.deinit(allocator);
-        self.frameworks.deinit(allocator);
-        self.defines.deinit(allocator);
+        self.include_dirs.deinit();
+        self.lib_dirs.deinit();
+        self.system_libs.deinit();
+        self.frameworks.deinit();
+        self.defines.deinit();
     }
     
     pub fn addIncludeDir(self: *BuildDependency, dir: []const u8) !void {
-        try self.include_dirs.append(allocator, dir);
+        try self.include_dirs.append(dir);
     }
     
     pub fn addLibDir(self: *BuildDependency, dir: []const u8) !void {
-        try self.lib_dirs.append(allocator, dir);
+        try self.lib_dirs.append(dir);
     }
     
     pub fn addSystemLib(self: *BuildDependency, lib: []const u8) !void {
-        try self.system_libs.append(allocator, lib);
+        try self.system_libs.append(lib);
     }
     
     pub fn addFramework(self: *BuildDependency, framework: []const u8) !void {
-        try self.frameworks.append(allocator, framework);
+        try self.frameworks.append(framework);
     }
     
     pub fn addDefine(self: *BuildDependency, name: []const u8, value: ?[]const u8) !void {
@@ -88,16 +88,16 @@ pub const BuildIntegration = struct {
     
     pub fn deinit(self: *BuildIntegration) void {
         for (self.dependencies.items) |*dep| {
-            dep.deinit(allocator);
+            dep.deinit();
         }
-        self.dependencies.deinit(allocator);
+        self.dependencies.deinit();
         
         if (self.manifest) |*manifest| {
-            manifest.deinit(allocator);
+            manifest.deinit();
         }
         
         if (self.lock_file) |*lock_file| {
-            lock_file.deinit(allocator);
+            lock_file.deinit();
         }
     }
     
@@ -171,7 +171,7 @@ pub const BuildIntegration = struct {
         
         var parser = package_manager.TomlParser.init(self.allocator, content);
         var toml = try parser.parse();
-        defer toml.deinit(allocator);
+        defer toml.deinit();
         
         if (toml.table.get("build")) |build_val| {
             if (build_val == .table) {
@@ -353,7 +353,7 @@ pub const BuildIntegration = struct {
         defer self.allocator.free(src_dir);
         
         var src_files = .empty;
-        defer src_files.deinit(allocator);
+        defer src_files.deinit();
         
         // Look for main library file
         const main_lib_files = [_][]const u8{ "lib.zig", "main.zig", "mod.zig" };
@@ -487,7 +487,7 @@ pub const BuildIntegration = struct {
 // Helper function to integrate with build.zig
 pub fn integrateBuildSystem(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !void {
     var integration = BuildIntegration.init(b.allocator, ".cursed/cache");
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     try integration.loadProject();
     
@@ -511,7 +511,7 @@ test "build integration initialization" {
     const allocator = std.testing.allocator;
     
     var integration = BuildIntegration.init(allocator, "test_cache");
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     try std.testing.expect(integration.dependencies.items.len == 0);
     try std.testing.expectEqualStrings("test_cache", integration.cache_dir);
@@ -522,7 +522,7 @@ test "build dependency management" {
     
     const version = package_manager.Version{ .major = 1, .minor = 0, .patch = 0 };
     var dep = BuildDependency.init(allocator, "test-dep", version, "/path/to/dep");
-    defer dep.deinit(allocator);
+    defer dep.deinit();
     
     try dep.addIncludeDir("/path/to/include");
     try dep.addSystemLib("m");

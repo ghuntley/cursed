@@ -498,7 +498,7 @@ pub const MemoryPool = struct {
             entry.value_ptr.*.deinit(self.backing_allocator);
             self.backing_allocator.destroy(entry.value_ptr.*);
         }
-        self.thread_caches.deinit(allocator);
+        self.thread_caches.deinit();
         
         // Clean up size classes
         for (self.size_classes) |*size_class| {
@@ -1012,7 +1012,7 @@ export fn cursed_memory_pool_create(config: *const PoolConfig) ?*MemoryPool {
 
 export fn cursed_memory_pool_destroy(pool: ?*MemoryPool) void {
     if (pool) |p| {
-        p.deinit(allocator);
+        p.deinit();
         std.heap.page_allocator.destroy(p);
     }
 }

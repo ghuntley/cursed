@@ -23,7 +23,7 @@ pub const IntegratedSafeLoader = struct {
     }
     
     pub fn deinit(self: *IntegratedSafeLoader) void {
-        self.safe_loader.deinit(allocator);
+        self.safe_loader.deinit();
     }
     
     /// Load a module safely with cycle detection
@@ -100,7 +100,7 @@ test "integrated safe loader compatibility" {
     const allocator = std.testing.allocator;
     
     var loader = IntegratedSafeLoader.init(allocator, true);
-    defer loader.deinit(allocator);
+    defer loader.deinit();
     
     // Test basic functionality
     try std.testing.expect(!loader.isModuleLoaded("test_module"));

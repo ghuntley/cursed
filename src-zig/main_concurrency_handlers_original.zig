@@ -21,14 +21,14 @@ pub fn initGlobalConcurrency(allocator: Allocator) void {
 
 pub fn deinitGlobalConcurrency() void {
     if (global_channels) |*channels| {
-        channels.deinit(allocator);
+        channels.deinit();
         global_channels = null;
     }
     if (global_goroutines) |*goroutines| {
         for (goroutines.items) |*thread| {
             thread.join();
         }
-        goroutines.deinit(allocator);
+        goroutines.deinit();
         global_goroutines = null;
     }
     global_allocator = null;
@@ -50,7 +50,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         
         // Extract the body of the stan block (simplified for now)
         var body_lines = .empty;
-        defer body_lines.deinit(allocator);
+        defer body_lines.deinit();
         
         // Find the corresponding closing brace (simplified)
         var current_line = line_index + 1;
@@ -59,7 +59,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
             if (std.mem.eql(u8, block_line, "}")) {
                 break;
             }
-            try body_lines.append(allocator, block_line);
+            try body_lines.append(block_line);
             current_line += 1;
         }
         
@@ -117,7 +117,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         
         const thread = try std.Thread.spawn(.{}, goroutine_fn, .{context});
         if (global_goroutines) |*goroutines| {
-            try goroutines.append(allocator, thread);
+            try goroutines.append(thread);
         }
         
         if (verbose) print("✅ Goroutine spawned\n", .{});

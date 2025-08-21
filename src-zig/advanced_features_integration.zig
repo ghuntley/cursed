@@ -153,7 +153,7 @@ pub const AdvancedFeaturesCompiler = struct {
         return CompilationResult{
             .success = true,
             .generated_code = generated_code,
-            .compilation_units = compilation_units.toOwnedSlice(allocator),
+            .compilation_units = compilation_units.toOwnedSlice(),
             .runtime_requirements = RuntimeRequirements{
                 .requires_async_runtime = ast_tree.hasAsyncFeatures(),
                 .requires_actor_system = ast_tree.hasActorFeatures(),
@@ -186,7 +186,7 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractPatternDependencies(compiled_match),
             };
             
-            try units.append(allocator, unit);
+            try units.append(unit);
         }
         
         return units.toOwnedSlice(self.allocator);
@@ -209,7 +209,7 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractAsyncDependencies(compiled_async),
             };
             
-            try units.append(allocator, unit);
+            try units.append(unit);
         }
         
         for (async_items.await_expressions) |await_expr| {
@@ -222,7 +222,7 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractAwaitDependencies(compiled_await),
             };
             
-            try units.append(allocator, unit);
+            try units.append(unit);
         }
         
         return units.toOwnedSlice(self.allocator);
@@ -245,7 +245,7 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractActorDependencies(compiled_actor),
             };
             
-            try units.append(allocator, unit);
+            try units.append(unit);
         }
         
         return units.toOwnedSlice(self.allocator);
@@ -268,7 +268,7 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractTestDependencies(compiled_test),
             };
             
-            try units.append(allocator, unit);
+            try units.append(unit);
         }
         
         for (test_items.benchmark_cases) |benchmark_case| {
@@ -281,7 +281,7 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractBenchmarkDependencies(compiled_benchmark),
             };
             
-            try units.append(allocator, unit);
+            try units.append(unit);
         }
         
         return units.toOwnedSlice(self.allocator);
@@ -304,10 +304,10 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractReflectionDependencies(compiled_reflection),
             };
             
-            try units.append(allocator, unit);
+            try units.append(unit);
         }
         
-        return units.toOwnedSlice(allocator);
+        return units.toOwnedSlice();
     }
     
     // Helper functions for compilation phases
@@ -479,7 +479,7 @@ pub const Diagnostic = struct {
 pub const AsyncCompiler = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) AsyncCompiler {
+    pub fn init() AsyncCompiler {
         return AsyncCompiler{ .allocator = allocator };
     }
     
@@ -519,7 +519,7 @@ pub const AsyncCompiler = struct {
 pub const MacroProcessor = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) MacroProcessor {
+    pub fn init() MacroProcessor {
         return MacroProcessor{ .allocator = allocator };
     }
     
@@ -532,7 +532,7 @@ pub const MacroProcessor = struct {
 pub const ModuleResolver = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) ModuleResolver {
+    pub fn init() ModuleResolver {
         return ModuleResolver{ .allocator = allocator };
     }
     
@@ -546,7 +546,7 @@ pub const ModuleResolver = struct {
 pub const TestCompiler = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) TestCompiler {
+    pub fn init() TestCompiler {
         return TestCompiler{ .allocator = allocator };
     }
     
@@ -590,7 +590,7 @@ pub const TestCompiler = struct {
 pub const ActorCompiler = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) ActorCompiler {
+    pub fn init() ActorCompiler {
         return ActorCompiler{ .allocator = allocator };
     }
     
@@ -614,7 +614,7 @@ pub const ActorCompiler = struct {
 pub const ReflectionEngine = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) ReflectionEngine {
+    pub fn init() ReflectionEngine {
         return ReflectionEngine{ .allocator = allocator };
     }
     
@@ -638,7 +638,7 @@ pub const ReflectionEngine = struct {
 pub const RuntimeBridge = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) RuntimeBridge {
+    pub fn init() RuntimeBridge {
         return RuntimeBridge{ .allocator = allocator };
     }
 };
@@ -647,7 +647,7 @@ pub const RuntimeBridge = struct {
 pub const PatternMatchingFinder = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) PatternMatchingFinder {
+    pub fn init() PatternMatchingFinder {
         return PatternMatchingFinder{ .allocator = allocator };
     }
     
@@ -661,7 +661,7 @@ pub const PatternMatchingFinder = struct {
 pub const AsyncFinder = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) AsyncFinder {
+    pub fn init() AsyncFinder {
         return AsyncFinder{ .allocator = allocator };
     }
     
@@ -683,7 +683,7 @@ pub const AsyncFinder = struct {
 pub const ActorFinder = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) ActorFinder {
+    pub fn init() ActorFinder {
         return ActorFinder{ .allocator = allocator };
     }
     
@@ -703,7 +703,7 @@ pub const ActorFinder = struct {
 pub const TestFinder = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) TestFinder {
+    pub fn init() TestFinder {
         return TestFinder{ .allocator = allocator };
     }
     
@@ -725,7 +725,7 @@ pub const TestFinder = struct {
 pub const ReflectionFinder = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) ReflectionFinder {
+    pub fn init() ReflectionFinder {
         return ReflectionFinder{ .allocator = allocator };
     }
     

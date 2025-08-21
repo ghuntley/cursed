@@ -15,7 +15,7 @@ pub fn main() !void {
         std.debug.print("Platform initialization failed: {any}\n", .{err});
         return;
     };
-    defer platform.PlatformInit.deinit(allocator);
+    defer platform.PlatformInit.deinit();
     
     // Test platform detection
     const current_platform = platform.Platform.current();

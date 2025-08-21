@@ -89,7 +89,7 @@ pub const EnumVariantRegistry = struct {
         }
     };
     
-    pub fn init(allocator: Allocator) EnumVariantRegistry {
+    pub fn init() EnumVariantRegistry {
         return EnumVariantRegistry{
             .variants = HashMap(VariantKey, usize, VariantKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
             .enum_variants = HashMap([]const u8, ArrayList([]const u8), StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -100,10 +100,10 @@ pub const EnumVariantRegistry = struct {
     pub fn deinit(self: *EnumVariantRegistry) void {
         var enum_iterator = self.enum_variants.iterator();
         while (enum_iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.enum_variants.deinit(allocator);
-        self.variants.deinit(allocator);
+        self.enum_variants.deinit();
+        self.variants.deinit();
     }
     
     /// Register an enum with its variants in order
@@ -116,7 +116,7 @@ pub const EnumVariantRegistry = struct {
                 .variant_name = variant_name,
             };
             try self.variants.put(key, index);
-            try variant_list.append(allocator, variant_name);
+            try variant_list.append(variant_name);
         }
         
         try self.enum_variants.put(enum_name, variant_list);
@@ -206,9 +206,9 @@ pub const PatternCompiler = struct {
     }
     
     pub fn deinit(self: *PatternCompiler) void {
-        self.variable_bindings.deinit(allocator);
-        self.pattern_variables.deinit(allocator);
-        self.arena.deinit(allocator);
+        self.variable_bindings.deinit();
+        self.pattern_variables.deinit();
+        self.arena.deinit();
     }
     
     pub fn setLLVMContext(self: *PatternCompiler, context: c.LLVMContextRef, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef) void {
@@ -239,9 +239,9 @@ pub const PatternCompiler = struct {
         // Generate conditional branch
         try self.output.writer().print("    if ({s}) {{\n", .{cmp_var});
         try self.output.writer().print("        goto {s};\n", .{success_label});
-        try self.output.writer().print("    }} else {{\n");
+        try self.output.writer().print("    }} else {{\n", .{});
         try self.output.writer().print("        goto {s};\n", .{fail_label});
-        try self.output.writer().print("    }}\n");
+        try self.output.writer().print("    }}\n", .{});
         
         // Clean up allocated strings
         self.allocator.free(tag_var);
@@ -264,9 +264,9 @@ pub const PatternCompiler = struct {
             }
         }
         
-        try self.output.writer().print("        default:\n");
-        try self.output.writer().print("            goto match_fail;\n");
-        try self.output.writer().print("    }}\n");
+        try self.output.writer().print("        default:\n", .{});
+        try self.output.writer().print("            goto match_fail;\n", .{});
+        try self.output.writer().print("    }}\n", .{});
     }
     
     /// Main pattern compilation entry point with optimization
@@ -289,7 +289,7 @@ pub const PatternCompiler = struct {
 
     /// Complete switch statement compilation with pattern matching and exhaustiveness checking
     pub fn compileSwitchStatement(self: *PatternCompiler, switch_stmt: ast.PatternSwitchStatement) !void {
-        try self.output.writer().print("    // Pattern matching switch statement with exhaustiveness checking\n");
+        try self.output.writer().print("    // Pattern matching switch statement with exhaustiveness checking\n", .{});
         
         const value_temp = try self.getTempVar();
         defer self.allocator.free(value_temp);
@@ -299,7 +299,7 @@ pub const PatternCompiler = struct {
         
         // Extract patterns for exhaustiveness analysis
         var patterns = .empty;
-        defer patterns.deinit(allocator);
+        defer patterns.deinit();
         
         for (switch_stmt.cases.items) |case| {
             try patterns.append(self.allocator, case.pattern);
@@ -307,7 +307,7 @@ pub const PatternCompiler = struct {
         
         // Perform exhaustiveness checking
         const exhaustiveness_result = try self.checkExhaustiveness(patterns.items, null);
-        defer exhaustiveness_result.missing_patterns.deinit(allocator);
+        defer exhaustiveness_result.missing_patterns.deinit();
         
         // Generate exhaustiveness report
         try self.generateExhaustivenessReport(exhaustiveness_result);
@@ -357,12 +357,12 @@ pub const PatternCompiler = struct {
         }
         
         // Generate default case based on exhaustiveness
-        try self.output.writer().print("match_fail:\n");
+        try self.output.writer().print("match_fail:\n", .{});
         if (!has_default) {
-            try self.output.writer().print("    // Non-exhaustive pattern match - runtime error\n");
+            try self.output.writer().print("    // Non-exhaustive pattern match - runtime error\n", .{});
             try self.output.writer().print("    cursed_runtime_error(\"Pattern match failed: non-exhaustive patterns\");\n");
         } else {
-            try self.output.writer().print("    // Exhaustive pattern match - this should never be reached\n");
+            try self.output.writer().print("    // Exhaustive pattern match - this should never be reached\n", .{});
             try self.output.writer().print("    cursed_unreachable(\"Exhaustive pattern match fallthrough\");\n");
         }
         
@@ -371,7 +371,7 @@ pub const PatternCompiler = struct {
     
     /// Compile match expression with return value
     pub fn compileMatchExpression(self: *PatternCompiler, match_expr: ast.MatchExpression) ![]const u8 {
-        try self.output.writer().print("    // Match expression with return value\n");
+        try self.output.writer().print("    // Match expression with return value\n", .{});
         
         const value_temp = try self.getTempVar();
         defer self.allocator.free(value_temp);
@@ -403,7 +403,7 @@ pub const PatternCompiler = struct {
             // Generate case result
             try self.output.writer().print("{s}:\n", .{case_label});
             if (case.guard) |guard| {
-                try self.output.writer().print("    // Guard condition check\n");
+                try self.output.writer().print("    // Guard condition check\n", .{});
                 try self.output.writer().print("    if (!evaluate_guard_condition({})) goto {s};\n", .{ @intFromPtr(guard), next_case_label });
             }
             
@@ -417,10 +417,10 @@ pub const PatternCompiler = struct {
         
         // Handle default case if provided
         if (match_expr.default_case) |default| {
-            try self.output.writer().print("match_no_default:\n");
+            try self.output.writer().print("match_no_default:\n", .{});
             try self.output.writer().print("    {s} = evaluate_expression({});\n", .{ result_temp, @intFromPtr(default) });
         } else {
-            try self.output.writer().print("match_no_default:\n");
+            try self.output.writer().print("match_no_default:\n", .{});
             try self.output.writer().print("    cursed_runtime_error(\"Match expression: no pattern matched\");\n");
         }
         
@@ -479,20 +479,20 @@ pub const PatternCompiler = struct {
             .is_mutable = var_pattern.is_mutable,
         };
         try self.variable_bindings.put(binding_name, binding);
-        try self.pattern_variables.append(allocator, binding_name);
+        try self.pattern_variables.append(binding_name);
         
         try self.output.writer().print("    goto {s};\n", .{success_label});
     }
     
     /// Compile wildcard patterns (catch-all)
     fn compileWildcardPattern(self: *PatternCompiler, success_label: []const u8) !void {
-        try self.output.writer().print("    // Wildcard pattern - matches anything\n");
+        try self.output.writer().print("    // Wildcard pattern - matches anything\n", .{});
         try self.output.writer().print("    goto {s};\n", .{success_label});
     }
     
     /// Compile tuple destructuring patterns
     fn compileTuplePattern(self: *PatternCompiler, tuple: ast.Pattern.TuplePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Tuple pattern destructuring\n");
+        try self.output.writer().print("    // Tuple pattern destructuring\n", .{});
         
         // Check tuple length first
         const len_temp = try self.getTempVar();
@@ -544,7 +544,7 @@ pub const PatternCompiler = struct {
     
     /// Compile array patterns with rest elements and bounds checking
     fn compileArrayPattern(self: *PatternCompiler, array: ast.Pattern.ArrayPattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Enhanced array pattern matching with bounds checking\n");
+        try self.output.writer().print("    // Enhanced array pattern matching with bounds checking\n", .{});
         
         // Check minimum length with proper bounds validation
         const min_len = array.patterns.len;
@@ -555,7 +555,7 @@ pub const PatternCompiler = struct {
         try self.output.writer().print("    if ({s} == NULL) {{\n", .{value_var});
         try self.output.writer().print("        cursed_pattern_error(\"Array pattern: null array\");\n");
         try self.output.writer().print("        goto {s};\n", .{fail_label});
-        try self.output.writer().print("    }}\n");
+        try self.output.writer().print("    }}\n", .{});
         
         // Length validation with overflow protection
         try self.output.writer().print("    size_t array_len = {s}->length;\n", .{value_var});
@@ -567,7 +567,7 @@ pub const PatternCompiler = struct {
         try self.output.writer().print("    if (!{s}) {{\n", .{len_temp});
         try self.output.writer().print("        cursed_pattern_length_mismatch(\"Array length mismatch: expected {}, got %zu\", array_len);\n", .{min_len});
         try self.output.writer().print("        goto {s};\n", .{fail_label});
-        try self.output.writer().print("    }}\n");
+        try self.output.writer().print("    }}\n", .{});
         
         // Match each specified element
         for (array.patterns, 0..) |element_pattern, i| {
@@ -602,14 +602,14 @@ pub const PatternCompiler = struct {
     
     /// Compile slice patterns
     fn compileSlicePattern(self: *PatternCompiler, slice: ast.Pattern.SlicePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Slice pattern matching\n");
+        try self.output.writer().print("    // Slice pattern matching\n", .{});
         // Similar to array pattern but for slice types
         try self.compileArrayPattern(.{ .patterns = slice.patterns, .rest = slice.rest }, value_var, success_label, fail_label);
     }
     
     /// Compile OR patterns (multiple alternatives)
     fn compileOrPattern(self: *PatternCompiler, or_pattern: ast.Pattern.OrPattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // OR pattern - try alternatives\n");
+        try self.output.writer().print("    // OR pattern - try alternatives\n", .{});
         
         for (or_pattern.patterns, 0..) |alternative, i| {
             const alt_fail = if (i == or_pattern.patterns.len - 1) fail_label else try std.fmt.allocPrint(self.allocator, "or_alt_{}_fail", .{i});
@@ -804,21 +804,21 @@ pub const PatternCompiler = struct {
                 try self.output.writer().print("        case {}: goto {s};\n", .{ case.value, case.label });
             }
             
-            try self.output.writer().print("        default: goto match_fail;\n");
-            try self.output.writer().print("    }}\n");
+            try self.output.writer().print("        default: goto match_fail;\n", .{});
+            try self.output.writer().print("    }}\n", .{});
         } else {
             // Use if-else chain for small number of cases
             for (literal_cases, 0..) |case, i| {
                 const cond = if (i == 0) "if" else "else if";
                 try self.output.writer().print("    {s} ({s} == {}) goto {s};\n", .{ cond, value_var, case.value, case.label });
             }
-            try self.output.writer().print("    else goto match_fail;\n");
+            try self.output.writer().print("    else goto match_fail;\n", .{});
         }
     }
     
     /// Compile type patterns (instanceof checks)
     fn compileTypePattern(self: *PatternCompiler, type_pattern: ast.Pattern.TypePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Type pattern matching\n");
+        try self.output.writer().print("    // Type pattern matching\n", .{});
         
         const temp_var = try self.getTempVar();
         defer self.allocator.free(temp_var);
@@ -838,7 +838,7 @@ pub const PatternCompiler = struct {
                 .is_mutable = false,
             };
             try self.variable_bindings.put(var_name, binding);
-            try self.pattern_variables.append(allocator, var_name);
+            try self.pattern_variables.append(var_name);
         }
         
         try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ temp_var, success_label, fail_label });
@@ -866,7 +866,7 @@ pub const PatternCompiler = struct {
 
     /// Enhanced range pattern implementation with 0..10 syntax support
     fn compileRangePatternEnhanced(self: *PatternCompiler, range: ast.Pattern.RangePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Enhanced range pattern matching with 0..10 syntax\n");
+        try self.output.writer().print("    // Enhanced range pattern matching with 0..10 syntax\n", .{});
         
         const temp_var = try self.getTempVar();
         defer self.allocator.free(temp_var);
@@ -887,20 +887,20 @@ pub const PatternCompiler = struct {
         try self.output.writer().print("    int {s} = ({s} >= {s} && {s} {s} {s});\n", .{ temp_var, value_var, start_temp, value_var, op, end_temp });
         
         // Add optimized bounds checking for integer ranges
-        try self.output.writer().print("    // Optimized integer range checking\n");
+        try self.output.writer().print("    // Optimized integer range checking\n", .{});
         try self.output.writer().print("    if (cursed_is_integer({s}) && cursed_is_integer({s}) && cursed_is_integer({s})) {{\n", .{ value_var, start_temp, end_temp });
         try self.output.writer().print("        int64_t val = cursed_to_int({s});\n", .{value_var});
         try self.output.writer().print("        int64_t start_val = cursed_to_int({s});\n", .{start_temp});
         try self.output.writer().print("        int64_t end_val = cursed_to_int({s});\n", .{end_temp});
         try self.output.writer().print("        {s} = (val >= start_val && val {s} end_val);\n", .{ temp_var, op });
-        try self.output.writer().print("    }}\n");
+        try self.output.writer().print("    }}\n", .{});
         
         try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ temp_var, success_label, fail_label });
     }
 
     /// Compile guard patterns with 'when' condition support
     fn compileGuardPatternEfficient(self: *PatternCompiler, guard: ast.Pattern.GuardPattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Guard pattern with 'when' condition support\n");
+        try self.output.writer().print("    // Guard pattern with 'when' condition support\n", .{});
         
         // First match the inner pattern
         const inner_success = try std.fmt.allocPrint(self.allocator, "guard_inner_success_{}", .{self.temp_counter});
@@ -910,26 +910,26 @@ pub const PatternCompiler = struct {
         try self.compilePattern(guard.pattern.*, value_var, inner_success, fail_label);
         
         try self.output.writer().print("{s}:\n", .{inner_success});
-        try self.output.writer().print("    // Evaluate 'when' condition with variable binding context\n");
+        try self.output.writer().print("    // Evaluate 'when' condition with variable binding context\n", .{});
         
         const guard_temp = try self.getTempVar();
         defer self.allocator.free(guard_temp);
         
         // Enhanced guard evaluation with pattern variable access
-        try self.output.writer().print("    // Set up guard evaluation context with pattern variables\n");
+        try self.output.writer().print("    // Set up guard evaluation context with pattern variables\n", .{});
         for (self.pattern_variables.items) |var_name| {
             try self.output.writer().print("    cursed_set_guard_variable(\"{s}\", {s});\n", .{ var_name, var_name });
         }
         
         try self.output.writer().print("    int {s} = evaluate_guard_expression({});\n", .{ guard_temp, @intFromPtr(guard.condition) });
-        try self.output.writer().print("    cursed_clear_guard_context();\n");
+        try self.output.writer().print("    cursed_clear_guard_context();\n", .{});
         try self.output.writer().print("    if ({s}) goto {s}; else goto {s};\n", .{ guard_temp, success_label, fail_label });
     }
 
     /// Generate comprehensive exhaustiveness checking for pattern matches
     pub fn checkExhaustiveness(self: *PatternCompiler, patterns: []const ast.Pattern, matched_type: ?TypeInfo) !ExhaustivenessResult {
         var coverage = ExhaustivenessAnalysis.init(self.allocator);
-        defer coverage.deinit(allocator);
+        defer coverage.deinit();
         
         // Analyze each pattern for coverage
         for (patterns) |pattern| {
@@ -962,7 +962,7 @@ pub const PatternCompiler = struct {
             .Range => |range| {
                 // Mark range coverage (simplified)
                 coverage.has_range_pattern = true;
-                try coverage.range_patterns.append(allocator, range);
+                try coverage.range_patterns.append(range);
             },
             .Or => |or_pattern| {
                 // Recursively analyze OR alternatives
@@ -1012,8 +1012,8 @@ pub const PatternCompiler = struct {
         if (matched_type) |type_info| {
             switch (type_info) {
                 .boolean => {
-                    if (!coverage.has_true) try missing_patterns.append(allocator, "based");
-                    if (!coverage.has_false) try missing_patterns.append(allocator, "cringe");
+                    if (!coverage.has_true) try missing_patterns.append("based");
+                    if (!coverage.has_false) try missing_patterns.append("cringe");
                 },
                 .integer => |bits| {
                     // For small integer types, check if all values are covered
@@ -1062,7 +1062,7 @@ pub const PatternCompiler = struct {
             if (self.enum_registry.getEnumVariants(enum_name)) |all_variants| {
                 // Track which variants are actually covered
                 var covered_variant_names = std.HashSet([]const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-                defer covered_variant_names.deinit(allocator);
+                defer covered_variant_names.deinit();
                 
                 // Collect covered variants
                 var covered_iterator = coverage.covered_enum_variants.iterator();
@@ -1101,29 +1101,29 @@ pub const PatternCompiler = struct {
     /// Generate comprehensive pattern coverage analysis (legacy method)
     pub fn analyzePatternCoverage(self: *PatternCompiler, patterns: []const ast.Pattern) !bool {
         const result = try self.checkExhaustiveness(patterns, null);
-        defer result.missing_patterns.deinit(allocator);
+        defer result.missing_patterns.deinit();
         return result.is_exhaustive;
     }
     
     /// Generate exhaustiveness warning/error messages
     pub fn generateExhaustivenessReport(self: *PatternCompiler, result: ExhaustivenessResult) !void {
         if (!result.is_exhaustive) {
-            try self.output.writer().print("    // EXHAUSTIVENESS WARNING: Missing patterns detected\n");
+            try self.output.writer().print("    // EXHAUSTIVENESS WARNING: Missing patterns detected\n", .{});
             try self.output.writer().print("    cursed_compiler_warning(\"Non-exhaustive pattern match\");\n");
             
             if (result.missing_patterns.items.len > 0) {
-                try self.output.writer().print("    // Missing patterns: ");
+                try self.output.writer().print("    // Missing patterns: ", .{});
                 for (result.missing_patterns.items, 0..) |pattern, i| {
-                    if (i > 0) try self.output.writer().print(", ");
+                    if (i > 0) try self.output.writer().print(", ", .{});
                     try self.output.writer().print("{s}", .{pattern});
                 }
-                try self.output.writer().print("\n");
+                try self.output.writer().print("\n", .{});
             }
             
             // Generate runtime exhaustiveness check
-            try self.output.writer().print("    cursed_runtime_exhaustiveness_check();\n");
+            try self.output.writer().print("    cursed_runtime_exhaustiveness_check();\n", .{});
         } else {
-            try self.output.writer().print("    // EXHAUSTIVENESS: Pattern match is exhaustive\n");
+            try self.output.writer().print("    // EXHAUSTIVENESS: Pattern match is exhaustive\n", .{});
         }
     }
     
@@ -1186,11 +1186,11 @@ pub const PatternCompiler = struct {
         }
         
         fn deinit(self: *ExhaustivenessAnalysis) void {
-            self.covered_integers.deinit(allocator);
-            self.covered_strings.deinit(allocator);
-            self.covered_enum_variants.deinit(allocator);
-            self.covered_struct_types.deinit(allocator);
-            self.range_patterns.deinit(allocator);
+            self.covered_integers.deinit();
+            self.covered_strings.deinit();
+            self.covered_enum_variants.deinit();
+            self.covered_struct_types.deinit();
+            self.range_patterns.deinit();
         }
     };
     
@@ -1213,7 +1213,7 @@ pub const PatternCompiler = struct {
     
     /// Compile slice patterns (similar to array patterns)
     fn compileSlicePattern(self: *PatternCompiler, slice: ast.Pattern.SlicePattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // Slice pattern matching (converted to array pattern)\n");
+        try self.output.writer().print("    // Slice pattern matching (converted to array pattern)\n", .{});
         
         // Convert slice pattern to array pattern for similar handling
         const array_pattern = ast.Pattern.ArrayPattern{
@@ -1226,7 +1226,7 @@ pub const PatternCompiler = struct {
     
     /// Compile OR patterns (multiple alternatives)
     fn compileOrPattern(self: *PatternCompiler, or_pattern: ast.Pattern.OrPattern, value_var: []const u8, success_label: []const u8, fail_label: []const u8) !void {
-        try self.output.writer().print("    // OR pattern matching with alternatives\n");
+        try self.output.writer().print("    // OR pattern matching with alternatives\n", .{});
         
         // Try each alternative, if any succeeds, go to success
         for (or_pattern.patterns, 0..) |alternative, i| {
@@ -1267,7 +1267,7 @@ pub const PatternCompiler = struct {
 // Test cases for the enum variant registry
 test "enum variant registry basic functionality" {
     var registry = EnumVariantRegistry.init(std.testing.allocator);
-    defer registry.deinit(allocator);
+    defer registry.deinit();
     
     // Register Color enum with variants
     const color_variants = [_][]const u8{ "Red", "Green", "Blue", "Custom" };
@@ -1286,7 +1286,7 @@ test "enum variant registry basic functionality" {
 
 test "multiple enums support" {
     var registry = EnumVariantRegistry.init(std.testing.allocator);
-    defer registry.deinit(allocator);
+    defer registry.deinit();
     
     // Register multiple enums
     const status_variants = [_][]const u8{ "Success", "Error", "Pending" };

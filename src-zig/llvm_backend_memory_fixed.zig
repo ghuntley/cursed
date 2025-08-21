@@ -55,7 +55,7 @@ pub const MemoryTracker = struct {
     llvm_target_machines: ArrayList(LLVMTargetMachineRef),
     arena_allocations: ArrayList([]u8),
     
-    pub fn init(allocator: Allocator) MemoryTracker {
+    pub fn init() MemoryTracker {
         return MemoryTracker{
             .allocator = allocator,
             .llvm_strings = .empty,
@@ -73,45 +73,45 @@ pub const MemoryTracker = struct {
         for (self.llvm_strings.items) |str| {
             c.LLVMDisposeMessage(str);
         }
-        self.llvm_strings.deinit(allocator);
+        self.llvm_strings.deinit();
         
         // Clean up LLVM target machines
         for (self.llvm_target_machines.items) |tm| {
             c.LLVMDisposeTargetMachine(tm);
         }
-        self.llvm_target_machines.deinit(allocator);
+        self.llvm_target_machines.deinit();
         
         // Clean up LLVM pass managers
         for (self.llvm_pass_managers.items) |pm| {
             c.LLVMDisposePassManager(pm);
         }
-        self.llvm_pass_managers.deinit(allocator);
+        self.llvm_pass_managers.deinit();
         
         // Clean up LLVM builders
         for (self.llvm_builders.items) |builder| {
             c.LLVMDisposeBuilder(builder);
         }
-        self.llvm_builders.deinit(allocator);
+        self.llvm_builders.deinit();
         
         // Clean up LLVM modules
         for (self.llvm_modules.items) |module| {
             c.LLVMDisposeModule(module);
         }
-        self.llvm_modules.deinit(allocator);
+        self.llvm_modules.deinit();
         
         // Clean up LLVM contexts (must be last)
         for (self.llvm_contexts.items) |context| {
             c.LLVMContextDispose(context);
         }
-        self.llvm_contexts.deinit(allocator);
+        self.llvm_contexts.deinit();
         
         // Clean up arena allocations
         for (self.arena_allocations.items) |allocation| {
             self.allocator.free(allocation);
         }
-        self.arena_allocations.deinit(allocator);
+        self.arena_allocations.deinit();
         
-        print("✅ Memory tracker cleanup complete - all LLVM resources disposed\n");
+        print("✅ Memory tracker cleanup complete - all LLVM resources disposed\n", .{});
     }
     
     // Track LLVM allocations for proper cleanup
@@ -120,27 +120,27 @@ pub const MemoryTracker = struct {
     }
     
     pub fn trackContext(self: *MemoryTracker, context: LLVMContextRef) !void {
-        try self.llvm_contexts.append(allocator, context);
+        try self.llvm_contexts.append(context);
     }
     
     pub fn trackModule(self: *MemoryTracker, module: LLVMModuleRef) !void {
-        try self.llvm_modules.append(allocator, module);
+        try self.llvm_modules.append(module);
     }
     
     pub fn trackBuilder(self: *MemoryTracker, builder: LLVMBuilderRef) !void {
-        try self.llvm_builders.append(allocator, builder);
+        try self.llvm_builders.append(builder);
     }
     
     pub fn trackPassManager(self: *MemoryTracker, pm: LLVMPassManagerRef) !void {
-        try self.llvm_pass_managers.append(allocator, pm);
+        try self.llvm_pass_managers.append(pm);
     }
     
     pub fn trackTargetMachine(self: *MemoryTracker, tm: LLVMTargetMachineRef) !void {
-        try self.llvm_target_machines.append(allocator, tm);
+        try self.llvm_target_machines.append(tm);
     }
     
     pub fn trackAllocation(self: *MemoryTracker, allocation: []u8) !void {
-        try self.arena_allocations.append(allocator, allocation);
+        try self.arena_allocations.append(allocation);
     }
 };
 
@@ -189,8 +189,8 @@ target_machine: ?LLVMTargetMachineRef,
         // Create LLVM context with error checking
         const context = c.LLVMContextCreate();
         if (context == null) {
-            arena.deinit(allocator);
-            memory_tracker.deinit(allocator);
+            arena.deinit();
+            memory_tracker.deinit();
             return LLVMBackendError.LLVMContextCreationFailed;
         }
         try memory_tracker.trackContext(context);
@@ -199,8 +199,8 @@ target_machine: ?LLVMTargetMachineRef,
         const module_name_z = try arena_allocator.dupeZ(u8, module_name);
         const module = c.LLVMModuleCreateWithNameInContext(module_name_z.ptr, context);
         if (module == null) {
-            arena.deinit(allocator);
-            memory_tracker.deinit(allocator);
+            arena.deinit();
+            memory_tracker.deinit();
             return LLVMBackendError.LLVMModuleCreationFailed;
         }
         try memory_tracker.trackModule(module);
@@ -208,8 +208,8 @@ target_machine: ?LLVMTargetMachineRef,
         // Create builder with error checking
         const builder = c.LLVMCreateBuilderInContext(context);
         if (builder == null) {
-            arena.deinit(allocator);
-            memory_tracker.deinit(allocator);
+            arena.deinit();
+            memory_tracker.deinit();
             return LLVMBackendError.LLVMBuilderCreationFailed;
         }
         try memory_tracker.trackBuilder(builder);
@@ -217,8 +217,8 @@ target_machine: ?LLVMTargetMachineRef,
         // Create pass manager with error checking
         const pass_manager = c.LLVMCreateFunctionPassManagerForModule(module);
         if (pass_manager == null) {
-            arena.deinit(allocator);
-            memory_tracker.deinit(allocator);
+            arena.deinit();
+            memory_tracker.deinit();
             return LLVMBackendError.LLVMPassManagerCreationFailed;
         }
         try memory_tracker.trackPassManager(pass_manager);
@@ -292,7 +292,7 @@ target_machine: ?LLVMTargetMachineRef,
     }
     
     pub fn deinit(self: *MemorySafeLLVMBackend) void {
-        print("🧹 Starting memory-safe LLVM backend cleanup...\n");
+        print("🧹 Starting memory-safe LLVM backend cleanup...\n", .{});
         
         // Execute arena cleanup callbacks before arena destruction
         for (self.arena_cleanup_callbacks.items) |callback| {
@@ -300,15 +300,15 @@ target_machine: ?LLVMTargetMachineRef,
         }
         
         // Clean up memory tracker (handles all LLVM resources)
-        self.memory_tracker.deinit(allocator);
+        self.memory_tracker.deinit();
         
         // Clean up arena allocator (handles all temporary allocations)
-        self.arena.deinit(allocator);
+        self.arena.deinit();
         
         // Destroy the backend structure itself
         self.allocator.destroy(self);
         
-        print("✅ Memory-safe LLVM backend cleanup complete\n");
+        print("✅ Memory-safe LLVM backend cleanup complete\n", .{});
     }
     
     /// Register a cleanup callback to be executed before arena destruction
@@ -496,7 +496,7 @@ target_machine: ?LLVMTargetMachineRef,
     /// Generate native object file with memory safety
     pub fn generateNativeCode(self: *MemorySafeLLVMBackend, output_file: []const u8) !void {
         if (self.target_machine == null) {
-            print("⚠️ No target machine available, skipping native code generation\n");
+            print("⚠️ No target machine available, skipping native code generation\n", .{});
             return;
         }
         
@@ -553,7 +553,7 @@ target_machine: ?LLVMTargetMachineRef,
                 }
             },
             else => {
-                print("❌ Linker process failed\n");
+                print("❌ Linker process failed\n", .{});
             },
         }
     }
@@ -561,11 +561,11 @@ target_machine: ?LLVMTargetMachineRef,
 
 /// Main compilation function with comprehensive memory safety
 pub fn compileWithMemorySafety(allocator: Allocator, source: []const u8, output_base: []const u8) !void {
-    print("🚀 Starting memory-safe LLVM compilation...\n");
+    print("🚀 Starting memory-safe LLVM compilation...\n", .{});
     
     // Create backend with automatic memory management
     var backend = try MemorySafeLLVMBackend.init(allocator, "cursed_program");
-    defer backend.deinit(allocator); // Guarantees proper cleanup
+    defer backend.deinit(); // Guarantees proper cleanup
     
     // Enable debug info
     try backend.enableDebugInfo("source.csd");
@@ -601,7 +601,7 @@ pub fn compileWithMemorySafety(allocator: Allocator, source: []const u8, output_
     // Generate executable
     try backend.generateExecutable(obj_file, exe_file);
     
-    print("✅ Memory-safe compilation complete!\n");
+    print("✅ Memory-safe compilation complete!\n", .{});
     print("   LLVM IR: {s}\n", .{ir_file});
     print("   Object:  {s}\n", .{obj_file});
     print("   Binary:  {s}\n", .{exe_file});
@@ -616,7 +616,7 @@ pub fn testMemorySafety() !void {
     // Test 1: Basic backend creation and destruction
     {
         var backend = try MemorySafeLLVMBackend.init(allocator, "test_module");
-        defer backend.deinit(allocator);
+        defer backend.deinit();
         
         try backend.enableDebugInfo("test.csd");
         _ = try backend.createMainFunction();
@@ -627,10 +627,10 @@ pub fn testMemorySafety() !void {
     // Test 2: Multiple backends (tests resource isolation)
     {
         var backend1 = try MemorySafeLLVMBackend.init(allocator, "test1");
-        defer backend1.deinit(allocator);
+        defer backend1.deinit();
         
         var backend2 = try MemorySafeLLVMBackend.init(allocator, "test2");
-        defer backend2.deinit(allocator);
+        defer backend2.deinit();
         
         _ = try backend1.createMainFunction();
         _ = try backend2.createMainFunction();

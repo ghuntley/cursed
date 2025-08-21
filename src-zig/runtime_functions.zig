@@ -78,7 +78,7 @@ pub const Variable = union(enum) {
     pub fn deinit(self: *Variable, allocator: Allocator) void {
         switch (self.*) {
             .String => |str| allocator.free(str),
-            .Array => |*arr| arr.deinit(allocator),
+            .Array => |*arr| arr.deinit(),
             else => {},
         }
     }
@@ -92,7 +92,7 @@ pub const Variable = union(enum) {
             .Array => |arr| {
                 var new_array = .empty;
                 for (arr.items) |item| {
-                    try new_array.append(allocator, try item.clone(allocator));
+                    try new_array.append(try item.clone(allocator));
                 }
                 return Variable{ .Array = new_array };
             },
@@ -105,7 +105,7 @@ pub fn array_length(array: []const Variable) i64 {
 }
 
 pub fn array_push(array: *ArrayList(Variable), item: Variable) !void {
-    try array.append(allocator, item);
+    try array.append(item);
 }
 
 pub fn array_pop(array: *ArrayList(Variable)) ?Variable {
@@ -118,7 +118,7 @@ pub fn array_sort(allocator: Allocator, array: *ArrayList(Variable)) !void {
 }
 
 pub fn array_append(array: *ArrayList(Variable), item: Variable) !void {
-    try array.append(allocator, item);
+    try array.append(item);
 }
 
 pub fn array_contains(array: []const Variable, item: Variable) bool {
@@ -143,7 +143,7 @@ pub fn array_slice(allocator: Allocator, array: []const Variable, start: i64, en
     const end_idx = @min(@as(usize, @intCast(end)), array.len);
     
     for (array[start_idx..end_idx]) |item| {
-        try result.append(allocator, try item.clone(allocator));
+        try result.append(try item.clone(allocator));
     }
     return result;
 }
@@ -442,8 +442,7 @@ pub fn runtime_http_post(allocator: Allocator, url: []const u8, body: []const u8
 
 pub fn runtime_tcp_connect(allocator: Allocator, host: []const u8, port: u16) ![]u8 {
     // Simulated TCP connection
-    _ = allocator;
-    if (std.mem.eql(u8, host, "localhost") or std.mem.eql(u8, host, "127.0.0.1")) {
+        if (std.mem.eql(u8, host, "localhost") or std.mem.eql(u8, host, "127.0.0.1")) {
         return std.fmt.allocPrint(allocator, "{{\"connected\": true, \"socket_id\": 12345, \"error\": \"\"}}", .{});
     }
     
@@ -482,7 +481,7 @@ pub fn registerStdlibFunctions() void {
 // Test function to verify runtime functions work
 pub fn test_runtime_functions() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit(allocator);
+    defer arena.deinit();
     const allocator = arena.allocator();
     
     // Test string functions
@@ -504,4 +503,52 @@ pub fn test_runtime_functions() !void {
     print("2^3 = {}\n", .{power_result});
     
     print("✅ Runtime functions test completed\n", .{});
+}
+
+// === ARRAY BOUNDS CHECKING RUNTIME ===
+
+/// Runtime bounds error handler - provides detailed error information
+/// before program termination. This function is called from LLVM IR
+/// when array bounds violations are detected at runtime.
+export fn cursed_bounds_error(index: i64, length: i64) callconv(.C) void {
+    // Print detailed bounds error information to stderr
+    std.debug.print("\n💀 CURSED RUNTIME ERROR: Array bounds violation detected!\n", .{});
+    std.debug.print("   ├─ Attempted index: {d}\n", .{index});
+    std.debug.print("   ├─ Array length: {d}\n", .{length});
+    
+    // Provide helpful diagnostic information
+    if (index < 0) {
+        std.debug.print("   ├─ Error type: Negative index access\n", .{});
+        std.debug.print("   └─ Fix: Ensure index >= 0\n", .{});
+    } else if (index >= length) {
+        std.debug.print("   ├─ Error type: Index exceeds array bounds\n", .{});
+        std.debug.print("   ├─ Valid range: [0, {d})\n", .{length});
+        std.debug.print("   └─ Fix: Ensure index < {d}\n", .{length});
+    }
+    
+    std.debug.print("\n🔥 Memory safety violation - terminating program immediately!\n\n", .{});
+    std.debug.print("Stack trace:\n", .{});
+    
+    // Print stack trace for debugging
+    std.debug.dumpCurrentStackTrace(@returnAddress());
+    
+    // Flush all output before termination
+    if (std.io.getStdErr().writer().context.file) |file| {
+        _ = std.os.fsync(file.handle) catch {};
+    }
+}
+
+/// Fast bounds checking validation for performance-critical code
+/// Returns true if bounds are valid, false otherwise
+export fn cursed_bounds_check_fast(index: i64, length: i64) callconv(.C) bool {
+    return index >= 0 and index < length;
+}
+
+/// Bounds check with automatic recovery - attempts to clamp to valid range
+/// Returns clamped index within [0, length) or -1 if length is 0
+export fn cursed_bounds_check_clamp(index: i64, length: i64) callconv(.C) i64 {
+    if (length <= 0) return -1;
+    if (index < 0) return 0;
+    if (index >= length) return length - 1;
+    return index;
 }

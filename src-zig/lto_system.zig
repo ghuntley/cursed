@@ -127,7 +127,7 @@ pub const LTOSystem = struct {
                     const name_ptr = c.LLVMGetValueName(function);
                     if (name_ptr != null) {
                         const name = std.mem.span(name_ptr);
-                        try self.exported_symbols.append(allocator, try allocator.dupe(u8, name));
+                        try self.exported_symbols.append(try allocator.dupe(u8, name));
                     }
                 }
                 
@@ -145,7 +145,7 @@ pub const LTOSystem = struct {
                     const name_ptr = c.LLVMGetValueName(global);
                     if (name_ptr != null) {
                         const name = std.mem.span(name_ptr);
-                        try self.exported_symbols.append(allocator, try allocator.dupe(u8, name));
+                        try self.exported_symbols.append(try allocator.dupe(u8, name));
                     }
                 }
                 
@@ -189,8 +189,8 @@ pub const LTOSystem = struct {
         }
         
         pub fn printSummary(self: *const LTOMetrics) void {
-            print("\n🔗 Link-Time Optimization Metrics\n");
-            print("==================================\n");
+            print("\n🔗 Link-Time Optimization Metrics\n", .{});
+            print("==================================\n", .{});
             print("Total LTO time: {} ms\n", .{self.total_lto_time_ms});
             print("  Module linking: {} ms\n", .{self.module_linking_time_ms});
             print("  Optimization: {} ms\n", .{self.optimization_time_ms});
@@ -233,7 +233,7 @@ pub const LTOSystem = struct {
         // Initialize target machine
         try system.initializeTargetMachine();
         
-        print("🔗 LTO System initialized\n");
+        print("🔗 LTO System initialized\n", .{});
         print("  Mode: {s}\n", .{mode.toString()});
         print("  Optimization level: {}\n", .{opt_level});
         print("  Target: {s}\n", .{target_triple});
@@ -248,9 +248,9 @@ pub const LTOSystem = struct {
     pub fn deinit(self: *Self) void {
         // Cleanup modules
         for (self.modules.items) |*module| {
-            module.deinit(allocator);
+            module.deinit();
         }
-        self.modules.deinit(allocator);
+        self.modules.deinit();
         
         // Cleanup LLVM resources
         if (self.linked_module) |module| {
@@ -267,7 +267,7 @@ pub const LTOSystem = struct {
         
         self.allocator.free(self.target_triple);
         
-        print("✅ LTO System cleaned up\n");
+        print("✅ LTO System cleaned up\n", .{});
     }
     
     /// Add module for LTO processing
@@ -314,7 +314,7 @@ pub const LTOSystem = struct {
         print("🚀 Starting Link-Time Optimization ({s})...\n", .{self.lto_mode.toString()});
         
         if (self.modules.items.len == 0) {
-            print("⚠️  No modules to optimize\n");
+            print("⚠️  No modules to optimize\n", .{});
             return LTOResult{
                 .success = false,
                 .linked_module = null,
@@ -390,7 +390,7 @@ pub const LTOSystem = struct {
     
     /// Perform whole-program optimization
     fn performWholeProgramOptimization(self: *Self) !void {
-        print("  Phase 2: Whole-program optimization...\n");
+        print("  Phase 2: Whole-program optimization...\n", .{});
         
         if (self.linked_module == null) return;
         
@@ -414,7 +414,7 @@ pub const LTOSystem = struct {
         // Run optimization passes
         const optimization_success = c.LLVMRunPassManager(self.lto_pass_manager.?, self.linked_module.?);
         if (optimization_success == 0) {
-            print("⚠️  Some optimization passes may have failed\n");
+            print("⚠️  Some optimization passes may have failed\n", .{});
         }
         
         // Verify module after optimization
@@ -425,7 +425,7 @@ pub const LTOSystem = struct {
             return error.OptimizationVerificationFailed;
         }
         
-        print("    Whole-program optimization completed\n");
+        print("    Whole-program optimization completed\n", .{});
     }
     
     /// Add LTO-specific optimization passes
@@ -493,7 +493,7 @@ pub const LTOSystem = struct {
         c.LLVMAddCFGSimplificationPass(pm);
         c.LLVMAddDeadStoreEliminationPass(pm);
         
-        print("    Added LTO optimization passes\n");
+        print("    Added LTO optimization passes\n", .{});
     }
     
     /// Apply mode-specific LTO optimizations
@@ -511,7 +511,7 @@ pub const LTOSystem = struct {
     /// Apply Thin LTO optimizations
     fn applyThinLTOOptimizations(self: *Self) !void {
         // Thin LTO focuses on scalable optimizations
-        print("    Applying Thin LTO optimizations...\n");
+        print("    Applying Thin LTO optimizations...\n", .{});
         
         // TODO: Implement Thin LTO specific optimizations
         // - Parallel optimization of modules
@@ -524,7 +524,7 @@ pub const LTOSystem = struct {
     /// Apply Full LTO optimizations
     fn applyFullLTOOptimizations(self: *Self) !void {
         // Full LTO performs comprehensive whole-program optimization
-        print("    Applying Full LTO optimizations...\n");
+        print("    Applying Full LTO optimizations...\n", .{});
         
         // Additional aggressive optimizations for Full LTO
         if (self.linked_module) |module| {
@@ -551,7 +551,7 @@ pub const LTOSystem = struct {
     /// Apply Fat LTO optimizations
     fn applyFatLTOOptimizations(self: *Self) !void {
         // Fat LTO embeds bitcode in object files for later optimization
-        print("    Applying Fat LTO optimizations...\n");
+        print("    Applying Fat LTO optimizations...\n", .{});
         
         // TODO: Implement Fat LTO specific handling
         // - Embed bitcode in object files
@@ -629,7 +629,7 @@ pub const LTOSystem = struct {
             return error.BitcodeWriteFailed;
         }
         
-        print("✅ Optimized bitcode generated\n");
+        print("✅ Optimized bitcode generated\n", .{});
     }
     
     /// Get comprehensive LTO statistics
@@ -678,12 +678,12 @@ pub const LTOStatistics = struct {
     interprocedural_optimization: bool,
     
     pub fn printDetailedReport(self: *const LTOStatistics) void {
-        print("\n📊 Comprehensive LTO Statistics Report\n");
-        print("======================================\n");
+        print("\n📊 Comprehensive LTO Statistics Report\n", .{});
+        print("======================================\n", .{});
         print("LTO Mode: {s}\n", .{self.lto_mode.toString()});
         print("Optimization Level: {}\n", .{self.optimization_level});
         print("Modules Processed: {}\n", .{self.modules_processed});
-        print("\n⏱️  Timing Breakdown:\n");
+        print("\n⏱️  Timing Breakdown:\n", .{});
         print("  Total LTO time: {} ms\n", .{self.total_lto_time_ms});
         print("  Module linking: {} ms ({:.1}%)\n", .{
             self.linking_time_ms,
@@ -697,21 +697,21 @@ pub const LTOStatistics = struct {
             self.code_generation_time_ms,
             if (self.total_lto_time_ms > 0) @as(f64, @floatFromInt(self.code_generation_time_ms)) / @as(f64, @floatFromInt(self.total_lto_time_ms)) * 100.0 else 0.0
         });
-        print("\n🎯 Optimization Results:\n");
+        print("\n🎯 Optimization Results:\n", .{});
         print("  Functions optimized: {}\n", .{self.functions_optimized});
         print("  Cross-module inlines: {}\n", .{self.cross_module_inlines});
         print("  Dead functions eliminated: {}\n", .{self.dead_functions_eliminated});
         print("  Estimated runtime improvement: {:.2}x\n", .{self.estimated_improvement});
-        print("\n🔧 Configuration:\n");
+        print("\n🔧 Configuration:\n", .{});
         print("  Whole-program optimization: {}\n", .{self.whole_program_optimization});
         print("  Interprocedural optimization: {}\n", .{self.interprocedural_optimization});
         
         if (self.estimated_improvement > 1.3) {
-            print("\n✨ Excellent LTO results achieved!\n");
+            print("\n✨ Excellent LTO results achieved!\n", .{});
         } else if (self.estimated_improvement > 1.15) {
-            print("\n✅ Good LTO results achieved.\n");
+            print("\n✅ Good LTO results achieved.\n", .{});
         } else {
-            print("\n⚠️  Limited LTO benefits - consider Full LTO mode.\n");
+            print("\n⚠️  Limited LTO benefits - consider Full LTO mode.\n", .{});
         }
     }
 };

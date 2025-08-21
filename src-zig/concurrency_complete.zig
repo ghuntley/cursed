@@ -97,15 +97,15 @@ pub const ConcurrencyRuntime = struct {
             // Each channel type would have its own cleanup method
             self.allocator.destroy(@as(*anyopaque, @ptrCast(entry.value_ptr.*)));
         }
-        self.channel_registry.deinit(allocator);
+        self.channel_registry.deinit();
         
         // Cleanup scheduler
-        self.scheduler.deinit(allocator);
+        self.scheduler.deinit();
         self.allocator.destroy(self.scheduler);
         
         // Final GC cleanup
         self.gc_instance.collectNow() catch {};
-        self.gc_instance.deinit(allocator);
+        self.gc_instance.deinit();
         self.allocator.destroy(self.gc_instance);
         
         const allocator = self.allocator;
@@ -128,7 +128,7 @@ pub const ConcurrencyRuntime = struct {
         
         self.shutdown_requested.store(true, .release);
         self.scheduler.stop();
-        print("[CONCURRENCY] ✅ Runtime shutdown completed\n");
+        print("[CONCURRENCY] ✅ Runtime shutdown completed\n", .{});
     }
     
     /// Spawn a new goroutine using the 'stan' keyword semantics
@@ -238,7 +238,7 @@ pub const SelectStatement = struct {
     timeout_ms: ?u64 = null,
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .cases = .empty,
             .allocator = allocator,
@@ -246,11 +246,11 @@ pub const SelectStatement = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.cases.deinit(allocator);
+        self.cases.deinit();
     }
     
     pub fn addSendCase(self: *Self, comptime T: type, channel_id: ChannelId, value: T, case_id: u32) !void {
-        try self.cases.append(allocator, SelectCase{
+        try self.cases.append(SelectCase{
             .type = .send,
             .channel_id = channel_id,
             .data = @ptrCast(&value),
@@ -260,7 +260,7 @@ pub const SelectStatement = struct {
     }
     
     pub fn addReceiveCase(self: *Self, comptime T: type, channel_id: ChannelId, case_id: u32) !void {
-        try self.cases.append(allocator, SelectCase{
+        try self.cases.append(SelectCase{
             .type = .receive,
             .channel_id = channel_id,
             .data = null,
@@ -416,7 +416,7 @@ export fn cursed_concurrency_init() bool {
     
     global_runtime.?.start() catch |err| {
         print("[CONCURRENCY] Failed to start runtime: {}\n", .{err});
-        global_runtime.?.deinit(allocator);
+        global_runtime.?.deinit();
         global_runtime = null;
         return false;
     };
@@ -430,7 +430,7 @@ export fn cursed_concurrency_shutdown() void {
     defer global_mutex.unlock();
     
     if (global_runtime) |runtime| {
-        runtime.deinit(allocator);
+        runtime.deinit();
         global_runtime = null;
     }
 }
@@ -441,7 +441,7 @@ export fn cursed_stan(func: ?*const fn (?*anyopaque) callconv(.C) void, context:
     defer global_mutex.unlock();
     
     const runtime = global_runtime orelse {
-        print("[CONCURRENCY] Runtime not initialized for stan\n");
+        print("[CONCURRENCY] Runtime not initialized for stan\n", .{});
         return 0;
     };
     
@@ -476,7 +476,7 @@ export fn cursed_dm_create(element_size: u32, capacity: u32) u64 {
     defer global_mutex.unlock();
     
     const runtime = global_runtime orelse {
-        print("[CONCURRENCY] Runtime not initialized for dm_create\n");
+        print("[CONCURRENCY] Runtime not initialized for dm_create\n", .{});
         return 0;
     };
     
@@ -567,7 +567,7 @@ test "concurrency runtime initialization" {
     const allocator = std.testing.allocator;
     
     var runtime = try ConcurrencyRuntime.init(allocator);
-    defer runtime.deinit(allocator);
+    defer runtime.deinit();
     
     try runtime.start();
     
@@ -580,7 +580,7 @@ test "goroutine spawning" {
     const allocator = std.testing.allocator;
     
     var runtime = try ConcurrencyRuntime.init(allocator);
-    defer runtime.deinit(allocator);
+    defer runtime.deinit();
     
     try runtime.start();
     
@@ -613,7 +613,7 @@ test "channel creation and operations" {
     const allocator = std.testing.allocator;
     
     var runtime = try ConcurrencyRuntime.init(allocator);
-    defer runtime.deinit(allocator);
+    defer runtime.deinit();
     
     try runtime.start();
     
@@ -639,12 +639,12 @@ test "select statement basic functionality" {
     const allocator = std.testing.allocator;
     
     var select_stmt = SelectStatement.init(allocator);
-    defer select_stmt.deinit(allocator);
+    defer select_stmt.deinit();
     
     select_stmt.addDefaultCase(0);
     
     var runtime = try ConcurrencyRuntime.init(allocator);
-    defer runtime.deinit(allocator);
+    defer runtime.deinit();
     
     try runtime.start();
     

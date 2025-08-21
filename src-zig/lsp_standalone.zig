@@ -21,7 +21,7 @@ const SimpleLexer = struct {
     
     pub fn tokenize(self: *SimpleLexer, allocator: Allocator) ![][]const u8 {
         var tokens = .empty;
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
         
         var current_pos: usize = 0;
         while (current_pos < self.input.len) {
@@ -46,20 +46,20 @@ const SimpleLexer = struct {
             }
             
             if (current_pos > start) {
-                try tokens.append(allocator, self.input[start..current_pos]);
+                try tokens.append(self.input[start..current_pos]);
             }
             
             // Handle single character tokens
             if (current_pos < self.input.len) {
                 const ch = self.input[current_pos];
                 if (ch == '(' or ch == ')' or ch == '{' or ch == '}' or ch == ';') {
-                    try tokens.append(allocator, self.input[current_pos..current_pos + 1]);
+                    try tokens.append(self.input[current_pos..current_pos + 1]);
                     current_pos += 1;
                 }
             }
         }
         
-        return tokens.toOwnedSlice(allocator);
+        return tokens.toOwnedSlice();
     }
 };
 
@@ -103,7 +103,7 @@ const CursedLspServer = struct {
     allocator: Allocator,
     keywords: []const []const u8,
     
-    pub fn init(allocator: Allocator) CursedLspServer {
+    pub fn init() CursedLspServer {
         const keywords = [_][]const u8{
             "sus", "damn", "slay", "vibez", "yeet", "bestie", "stan", "dm",
             "ready", "vibe", "yikes", "shook", "fam", "based", "cap", "cringe",
@@ -122,7 +122,7 @@ const CursedLspServer = struct {
             std.log.err("JSON parse error: {}", .{err});
             return;
         };
-        defer parsed.deinit(allocator);
+        defer parsed.deinit();
         
         const root = parsed.value;
         
@@ -168,7 +168,7 @@ const CursedLspServer = struct {
         
         // Simple syntax checking
         var diagnostics = .empty;
-        defer diagnostics.deinit(allocator);
+        defer diagnostics.deinit();
         
         var lexer = SimpleLexer.init(text);
         const tokens = lexer.tokenize(self.allocator) catch {
@@ -200,7 +200,7 @@ const CursedLspServer = struct {
         const id = request.object.get("id").?.integer;
         
         var completions = .empty;
-        defer completions.deinit(allocator);
+        defer completions.deinit();
         
         // Add CURSED keywords as completions
         for (self.keywords) |keyword| {
@@ -265,7 +265,7 @@ pub fn runLspServer(allocator: Allocator) !void {
     std.log.info("CURSED LSP Server starting...", .{});
     
     var buffer = .empty;
-    defer buffer.deinit(allocator);
+    defer buffer.deinit();
     
     while (true) {
         // Read Content-Length header

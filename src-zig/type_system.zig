@@ -37,6 +37,13 @@ pub const TypeKind = enum {
     }
 };
 
+pub const StructFieldInfo = struct {
+    name: []const u8,
+    field_type: TypeExpression,
+    offset: usize,
+    is_required: bool,
+};
+
 pub const TypeExpression = struct {
     kind: TypeKind,
     name: ?[]const u8,
@@ -56,14 +63,14 @@ pub const TypeExpression = struct {
 
     pub fn deinit(self: *TypeExpression) void {
         for (self.parameters.items) |*param| {
-            param.deinit(allocator);
+            param.deinit();
         }
-        self.parameters.deinit(allocator);
+        self.parameters.deinit();
         if (self.name) |name| {
             self.allocator.free(name);
         }
         if (self.return_type) |ret_type| {
-            ret_type.deinit(allocator);
+            ret_type.deinit();
             self.allocator.destroy(ret_type);
         }
     }
@@ -80,28 +87,28 @@ pub const TypeExpression = struct {
         var arr_type = TypeExpression.init(allocator, .Array, "Array");
         // Make a copy of the element type to avoid double free
         const element_copy = TypeExpression.init(allocator, element_type.kind, element_type.name);
-        try arr_type.parameters.append(allocator, element_copy);
+        try arr_type.parameters.append(element_copy);
         return arr_type;
     }
 
     pub fn tuple(allocator: Allocator, element_types: []const TypeExpression) !TypeExpression {
         var tuple_type = TypeExpression.init(allocator, .Tuple, "Tuple");
         for (element_types) |element| {
-            try tuple_type.parameters.append(allocator, element);
+            try tuple_type.parameters.append(element);
         }
         return tuple_type;
     }
 
     pub fn map(allocator: Allocator, key_type: TypeExpression, value_type: TypeExpression) !TypeExpression {
         var map_type = TypeExpression.init(allocator, .Map, "Map");
-        try map_type.parameters.append(allocator, key_type);
-        try map_type.parameters.append(allocator, value_type);
+        try map_type.parameters.append(key_type);
+        try map_type.parameters.append(value_type);
         return map_type;
     }
 
     pub fn pointer(allocator: Allocator, pointee_type: TypeExpression) !TypeExpression {
         var ptr_type = TypeExpression.init(allocator, .Pointer, "Pointer");
-        try ptr_type.parameters.append(allocator, pointee_type);
+        try ptr_type.parameters.append(pointee_type);
         return ptr_type;
     }
 
@@ -173,12 +180,35 @@ pub const MethodSignature = struct {
     pub fn deinit(self: *MethodSignature) void {
         self.allocator.free(self.name);
         for (self.parameters.items) |*param| {
-            param.deinit(allocator);
+            param.deinit();
         }
-        self.parameters.deinit(allocator);
+        self.parameters.deinit();
         if (self.return_type) |*ret_type| {
-            ret_type.deinit(allocator);
+            ret_type.deinit();
         }
+    }
+};
+
+pub const StructFieldDefinition = struct {
+    name: []const u8,
+    field_type: TypeExpression,
+    visibility: ast.Visibility,
+    default_value: ?ast.Expression,
+    is_mutable: bool,
+
+    pub fn init(allocator: Allocator, name: []const u8, field_type: TypeExpression, visibility: ast.Visibility) StructFieldDefinition {
+        return StructFieldDefinition{
+            .name = allocator.dupe(u8, name) catch name,
+            .field_type = field_type,
+            .visibility = visibility,
+            .default_value = null,
+            .is_mutable = true,
+        };
+    }
+
+    pub fn deinit(self: *StructFieldDefinition, allocator: Allocator) void {
+        allocator.free(self.name);
+        self.field_type.deinit();
     }
 };
 
@@ -186,6 +216,7 @@ pub const TypeDefinition = struct {
     name: []const u8,
     kind: TypeKind,
     methods: ArrayList(MethodSignature),
+    fields: ArrayList(StructFieldDefinition), // Added field storage
     is_builtin: bool,
     allocator: Allocator,
 
@@ -194,6 +225,7 @@ pub const TypeDefinition = struct {
             .name = allocator.dupe(u8, name) catch name,
             .kind = kind,
             .methods = .empty,
+            .fields = .empty,
             .is_builtin = false,
             .allocator = allocator,
         };
@@ -202,9 +234,13 @@ pub const TypeDefinition = struct {
     pub fn deinit(self: *TypeDefinition) void {
         self.allocator.free(self.name);
         for (self.methods.items) |*method| {
-            method.deinit(allocator);
+            method.deinit(self.allocator);
         }
-        self.methods.deinit(allocator);
+        self.methods.deinit(self.allocator);
+        for (self.fields.items) |*field| {
+            field.deinit(self.allocator);
+        }
+        self.fields.deinit(self.allocator);
     }
 
     pub fn addMethod(self: *TypeDefinition, method: MethodSignature) !void {
@@ -218,6 +254,24 @@ pub const TypeDefinition = struct {
             }
         }
         return null;
+    }
+
+    pub fn addField(self: *TypeDefinition, field: StructFieldDefinition) !void {
+        try self.fields.append(self.allocator, field);
+    }
+
+    pub fn getField(self: *const TypeDefinition, name: []const u8) ?*const StructFieldDefinition {
+        for (self.fields.items) |*field| {
+            if (std.mem.eql(u8, field.name, name)) {
+                return field;
+            }
+        }
+        return null;
+    }
+
+    pub fn hasField(self: *const TypeDefinition, name: []const u8) bool {
+        return self.getField(name) != null;
+    }
     }
 };
 
@@ -237,7 +291,7 @@ pub const TypeEnvironment = struct {
         }
     };
 
-    pub fn init(allocator: Allocator) TypeEnvironment {
+    pub fn init() TypeEnvironment {
         return TypeEnvironment{
             .type_definitions = HashMap([]const u8, TypeDefinition, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
@@ -248,9 +302,9 @@ pub const TypeEnvironment = struct {
         var iter = self.type_definitions.iterator();
         while (iter.next()) |entry| {
             var type_def = entry.value_ptr;
-            type_def.deinit(allocator);
+            type_def.deinit();
         }
-        self.type_definitions.deinit(allocator);
+        self.type_definitions.deinit();
     }
 
     pub fn addBuiltinType(self: *TypeEnvironment, name: []const u8, kind: TypeKind) !void {
@@ -376,7 +430,7 @@ pub const TypeChecker = struct {
         try environment.addTypeDefinition(vibez_type);
 
         var scopes = ArrayList(HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage)).init(allocator);
-        try scopes.append(allocator, HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage).init(allocator));
+        try scopes.append(HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage).init(allocator));
 
         return TypeChecker{
             .environment = environment,
@@ -386,16 +440,16 @@ pub const TypeChecker = struct {
     }
 
     pub fn deinit(self: *TypeChecker) void {
-        self.environment.deinit(allocator);
+        self.environment.deinit();
         for (self.scopes.items) |*scope| {
             var iter = scope.iterator();
             while (iter.next()) |entry| {
                 var var_info = entry.value_ptr;
-                var_info.deinit(allocator);
+                var_info.deinit();
             }
-            scope.deinit(allocator);
+            scope.deinit();
         }
-        self.scopes.deinit(allocator);
+        self.scopes.deinit();
     }
 
     pub fn enterScope(self: *TypeChecker) !void {
@@ -408,9 +462,9 @@ pub const TypeChecker = struct {
             var iter = scope.iterator();
             while (iter.next()) |entry| {
                 var var_info = entry.value_ptr;
-                var_info.deinit(allocator);
+                var_info.deinit();
             }
-            scope.deinit(allocator);
+            scope.deinit();
         }
     }
 
@@ -466,7 +520,7 @@ pub const TypeChecker = struct {
             },
             .Tuple => |tuple_info| {
                 var element_types = .empty;
-                defer element_types.deinit(allocator);
+                defer element_types.deinit();
                 
                 for (tuple_info.elements.items) |*elem_type| {
                     try element_types.append(self.allocator, try self.astTypeToTypeExpression(elem_type));
@@ -678,7 +732,7 @@ pub const TypeChecker = struct {
 
     fn checkTupleExpression(self: *TypeChecker, tuple_expr: *const ast.TupleExpression) !TypeExpression {
         var element_types = .empty;
-        defer element_types.deinit(allocator);
+        defer element_types.deinit();
         
         for (tuple_expr.elements.items) |element| {
             try element_types.append(self.allocator, try self.checkExpression(element));
@@ -808,7 +862,7 @@ pub const TypeChecker = struct {
         defer self.exitScope();
         
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         // Add parameters to scope
         for (lambda.parameters.items) |*param| {
@@ -916,7 +970,7 @@ pub const TypeChecker = struct {
         defer self.exitScope();
         
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         // Add parameters to scope and collect their types
         for (func_decl.parameters.items) |*param| {
@@ -955,23 +1009,113 @@ pub const TypeChecker = struct {
     }
 
     fn checkStructDeclaration(self: *TypeChecker, struct_decl: *const ast.StructDeclaration) !TypeExpression {
-        // Validate field types
+        // Create struct field validation table
+        var field_map = std.HashMap([]const u8, TypeExpression, std.hash_map.StringContext, 80).init(self.allocator);
+        defer field_map.deinit(self.allocator);
+        
+        // Validate field types and check for duplicates
         for (struct_decl.fields.items) |*field| {
+            // Check for duplicate field names
+            if (field_map.contains(field.name)) {
+                return error.DuplicateFieldName;
+            }
+            
             if (field.field_type) |field_type| {
                 const field_type_expr = try self.astTypeToTypeExpression(field_type);
-                _ = field_type_expr; // Validate type exists
+                
+                // Validate field type is resolvable and not self-referential at depth 0
+                try self.validateFieldType(field_type_expr, struct_decl.name, 0);
+                
+                // Store validated field type
+                try field_map.put(field.name, field_type_expr);
+            } else {
+                return error.MissingFieldType;
             }
         }
         
-        // Create struct type definition
-        const struct_type_def = TypeDefinition.init(self.allocator, struct_decl.name, .Struct);
+        // Create struct type definition with validated fields
+        var struct_type_def = TypeDefinition.init(self.allocator, struct_decl.name, .Struct);
         
-        // TODO: Add field information to struct definition
+        // Store field information in struct definition  
+        var fields_iter = field_map.iterator();
+        while (fields_iter.next()) |entry| {
+            const field_def = StructFieldDefinition{
+                .name = try self.allocator.dupe(u8, entry.key_ptr.*),
+                .field_type = entry.value_ptr.*,
+                .is_required = true,
+            };
+            try struct_type_def.addField(field_def);
+        }
         
         // Add struct type to environment
         try self.environment.addTypeDefinition(struct_type_def);
         
         return TypeExpression.named(self.allocator, struct_decl.name);
+    }
+
+    /// Validate that a field type is valid and prevent infinite recursion
+    fn validateFieldType(self: *TypeChecker, field_type: TypeExpression, struct_name: []const u8, depth: u8) !void {
+        if (depth > 10) {
+            return error.RecursiveTypeDefinition;
+        }
+        
+        switch (field_type.kind) {
+            .Named => {
+                if (field_type.name) |type_name| {
+                    // Check for direct self-reference at depth 0
+                    if (depth == 0 and std.mem.eql(u8, type_name, struct_name)) {
+                        return error.SelfReferencingField;
+                    }
+                    
+                    // Validate that the named type exists
+                    if (self.environment.getType(type_name) == null) {
+                        // Allow forward references by checking if it's a known primitive
+                        if (!self.isPrimitiveType(type_name)) {
+                            return error.UndefinedType;
+                        }
+                    }
+                }
+            },
+            .Array => {
+                // Validate array element type
+                if (field_type.parameters.items.len > 0) {
+                    try self.validateFieldType(field_type.parameters.items[0], struct_name, depth + 1);
+                }
+            },
+            .Pointer => {
+                // Allow pointer to self-type (breaks recursion)
+                if (field_type.parameters.items.len > 0) {
+                    try self.validateFieldType(field_type.parameters.items[0], struct_name, depth + 1);
+                }
+            },
+            .Struct => {
+                // Nested struct validation
+                if (field_type.name) |type_name| {
+                    if (std.mem.eql(u8, type_name, struct_name)) {
+                        return error.RecursiveStructNesting;
+                    }
+                }
+            },
+            .Primitive => {
+                // Primitives are always valid
+            },
+            else => {
+                // Other types require specific validation
+                return error.UnsupportedFieldType;
+            }
+        }
+    }
+
+    /// Check if a type name represents a primitive type
+    fn isPrimitiveType(self: *TypeChecker, type_name: []const u8) bool {
+        _ = self;
+        const primitives = [_][]const u8{ "drip", "tea", "lit", "sus", "i32", "f64", "bool", "string" };
+        for (primitives) |primitive| {
+            if (std.mem.eql(u8, type_name, primitive)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     fn checkInterfaceDeclaration(self: *TypeChecker, interface_decl: *const ast.InterfaceDeclaration) !TypeExpression {
@@ -1127,7 +1271,7 @@ pub fn createTypeChecker(allocator: Allocator) !*TypeChecker {
 }
 
 pub fn destroyTypeChecker(allocator: Allocator, checker: *TypeChecker) void {
-    checker.deinit(allocator);
+    checker.deinit();
     allocator.destroy(checker);
 }
 
@@ -1143,7 +1287,7 @@ pub fn checkProgram(checker: *TypeChecker, program: *const ast.Program) !void {
 test "type checker initialization" {
     const allocator = std.testing.allocator;
     var checker = try TypeChecker.init(allocator);
-    defer checker.deinit(allocator);
+    defer checker.deinit();
     
     // Test built-in types exist
     try std.testing.expect(checker.environment.hasType("lit"));
@@ -1155,11 +1299,11 @@ test "type checker initialization" {
 test "variable type checking" {
     const allocator = std.testing.allocator;
     var checker = try TypeChecker.init(allocator);
-    defer checker.deinit(allocator);
+    defer checker.deinit();
     
     // Test variable addition and lookup
     var var_type = TypeExpression.named(allocator, "drip");
-    defer var_type.deinit(allocator);
+    defer var_type.deinit();
     try checker.addVariable("x", var_type, false);
     
     const retrieved = checker.getVariable("x");
@@ -1170,14 +1314,14 @@ test "variable type checking" {
 test "type compatibility" {
     const allocator = std.testing.allocator;
     var checker = try TypeChecker.init(allocator);
-    defer checker.deinit(allocator);
+    defer checker.deinit();
     
     var drip_type = TypeExpression.named(allocator, "drip");
-    defer drip_type.deinit(allocator);
+    defer drip_type.deinit();
     var normie_type = TypeExpression.named(allocator, "normie");
-    defer normie_type.deinit(allocator);
+    defer normie_type.deinit();
     var tea_type = TypeExpression.named(allocator, "tea");
-    defer tea_type.deinit(allocator);
+    defer tea_type.deinit();
     
     // Test numeric type compatibility
     try std.testing.expect(checker.typesCompatible(&drip_type, &normie_type));

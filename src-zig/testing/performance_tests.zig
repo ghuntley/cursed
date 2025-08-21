@@ -48,7 +48,7 @@ pub const PerformanceTester = struct {
     results: std.ArrayList(BenchmarkResult),
     baseline_data: std.HashMap(u64, PerformanceMetrics, std.hash_map.DefaultContext),
 
-    pub fn init(allocator: Allocator) PerformanceTester {
+    pub fn init() PerformanceTester {
         return PerformanceTester{
             .allocator = allocator,
             .results = std.ArrayList(BenchmarkResult).init(allocator),
@@ -57,8 +57,8 @@ pub const PerformanceTester = struct {
     }
 
     pub fn deinit(self: *PerformanceTester) void {
-        self.results.deinit(allocator);
-        self.baseline_data.deinit(allocator);
+        self.results.deinit();
+        self.baseline_data.deinit();
     }
 
     pub fn runBenchmark(self: *PerformanceTester, suite: PerformanceTestSuite) !void {
@@ -158,21 +158,21 @@ pub const PerformanceTester = struct {
 
         // Lexer
         var lex = try lexer.Lexer.init(self.allocator, source_code);
-        defer lex.deinit(allocator);
+        defer lex.deinit();
 
         const tokens = try lex.tokenize();
         defer self.allocator.free(tokens);
 
         // Parser
         var parse = try parser.Parser.init(self.allocator, tokens);
-        defer parse.deinit(allocator);
+        defer parse.deinit();
 
         const program = try parse.parseProgram();
-        defer program.deinit(allocator);
+        defer program.deinit();
 
         // Codegen
         var generator = try codegen.CodeGenerator.init(self.allocator);
-        defer generator.deinit(allocator);
+        defer generator.deinit();
 
         const c_code = try generator.generateC(program);
         defer self.allocator.free(c_code);
@@ -184,7 +184,7 @@ pub const PerformanceTester = struct {
         const exec_start = std.time.nanoTimestamp();
 
         var interpreter = try runtime.Interpreter.init(self.allocator);
-        defer interpreter.deinit(allocator);
+        defer interpreter.deinit();
 
         _ = interpreter.executeString(source_code) catch |err| {
             std.debug.print("Execution error: {}\n", .{err});
@@ -230,11 +230,11 @@ pub const PerformanceTester = struct {
             const change_indicator = if (result.performance_change_percent < 0) "🚀 IMPROVEMENT" else "📊 CHANGE";
             std.debug.print("    {} {d:.1}% vs baseline\n", .{ change_indicator, std.math.fabs(result.performance_change_percent) });
         }
-        std.debug.print("\n");
+        std.debug.print("\n", .{});
     }
 
     pub fn printOverallSummary(self: *PerformanceTester) void {
-        std.debug.print("📊 Performance Test Summary\n");
+        std.debug.print("📊 Performance Test Summary\n", .{});
         std.debug.print("=" ** 50 ++ "\n");
 
         var total_compilation_time: u64 = 0;
@@ -268,7 +268,7 @@ pub const PerformanceTester = struct {
         std.debug.print("Regressions Detected: {}\n", .{regression_count});
 
         if (regression_count > 0) {
-            std.debug.print("\n⚠️  Performance Regressions:\n");
+            std.debug.print("\n⚠️  Performance Regressions:\n", .{});
             for (self.results.items) |result| {
                 if (result.regression_detected) {
                     std.debug.print("  • {s}: {d:.1}% slower\n", .{ result.name, result.performance_change_percent });
@@ -422,11 +422,11 @@ fn generateLargeProgram() []const u8 {
 
 // Main performance test runner
 pub fn runAllPerformanceTests(allocator: Allocator) !void {
-    std.debug.print("🚀 Starting CURSED Performance Test Suite\n");
+    std.debug.print("🚀 Starting CURSED Performance Test Suite\n", .{});
     std.debug.print("=" ** 60 ++ "\n");
 
     var tester = PerformanceTester.init(allocator);
-    defer tester.deinit(allocator);
+    defer tester.deinit();
 
     // Run standard performance tests
     for (performance_test_suites) |suite| {
@@ -434,7 +434,7 @@ pub fn runAllPerformanceTests(allocator: Allocator) !void {
     }
 
     // Run stress tests
-    std.debug.print("💪 Running stress tests...\n");
+    std.debug.print("💪 Running stress tests...\n", .{});
     try tester.runBenchmark(memory_stress_test);
     try tester.runBenchmark(compiler_stress_test);
 
@@ -444,7 +444,7 @@ pub fn runAllPerformanceTests(allocator: Allocator) !void {
 // Zig test integration
 test "Performance Benchmarks" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     try runAllPerformanceTests(allocator);
@@ -452,22 +452,22 @@ test "Performance Benchmarks" {
 
 test "Memory Usage Benchmark" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var tester = PerformanceTester.init(allocator);
-    defer tester.deinit(allocator);
+    defer tester.deinit();
 
     try tester.runBenchmark(memory_stress_test);
 }
 
 test "Compiler Performance Benchmark" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var tester = PerformanceTester.init(allocator);
-    defer tester.deinit(allocator);
+    defer tester.deinit();
 
     try tester.runBenchmark(compiler_stress_test);
 }

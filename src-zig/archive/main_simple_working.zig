@@ -6,7 +6,7 @@ const parser = @import("parser.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -67,7 +67,7 @@ pub fn main() !void {
 
     // Parse
     var p = parser.Parser.init(allocator, tokens.items);
-    defer p.deinit(allocator);
+    defer p.deinit();
 
     const program = p.parseProgram() catch |err| {
         print("Parser error: {}\n", .{err});

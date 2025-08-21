@@ -187,7 +187,7 @@ pub const CollisionResistantTypeRegistry = struct {
         }
     };
     
-    pub fn init(allocator: Allocator) CollisionResistantTypeRegistry {
+    pub fn init() CollisionResistantTypeRegistry {
         return CollisionResistantTypeRegistry{
             .primary_table = HashMap(u64, TypeEntry, HashContext, std.hash_map.default_max_load_percentage).init(allocator),
             .overflow_table = HashMap(u64, ArrayList(TypeEntry), HashContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -203,38 +203,38 @@ pub const CollisionResistantTypeRegistry = struct {
         // Clean up primary table
         var primary_iter = self.primary_table.iterator();
         while (primary_iter.next()) |entry| {
-            entry.value_ptr.type_id.deinit(allocator);
-            entry.value_ptr.type_info.deinit(allocator);
+            entry.value_ptr.type_id.deinit();
+            entry.value_ptr.type_info.deinit();
         }
-        self.primary_table.deinit(allocator);
+        self.primary_table.deinit();
         
         // Clean up overflow table
         var overflow_iter = self.overflow_table.iterator();
         while (overflow_iter.next()) |entry| {
             for (entry.value_ptr.items) |*type_entry| {
-                type_entry.type_id.deinit(allocator);
-                type_entry.type_info.deinit(allocator);
+                type_entry.type_id.deinit();
+                type_entry.type_info.deinit();
             }
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.overflow_table.deinit(allocator);
+        self.overflow_table.deinit();
         
         // Clean up name index
         var name_iter = self.name_index.iterator();
         while (name_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.name_index.deinit(allocator);
+        self.name_index.deinit();
         
         // Clean up fingerprint index
         var fp_iter = self.fingerprint_index.iterator();
         while (fp_iter.next()) |entry| {
             for (entry.value_ptr.items) |*type_id| {
-                type_id.deinit(allocator);
+                type_id.deinit();
             }
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.fingerprint_index.deinit(allocator);
+        self.fingerprint_index.deinit();
     }
     
     /// Register a new type with collision detection and prevention
@@ -306,11 +306,11 @@ pub const CollisionResistantTypeRegistry = struct {
             }
             
             // Add to existing overflow list
-            try overflow_list.append(allocator, entry);
+            try overflow_list.append(entry);
         } else {
             // Create new overflow list
             var new_list = .empty;
-            try new_list.append(allocator, entry);
+            try new_list.append(entry);
             try self.overflow_table.put(hash, new_list);
         }
         
@@ -576,7 +576,7 @@ pub const InterfaceImplRegistry = struct {
         }
     };
     
-    pub fn init(allocator: Allocator) InterfaceImplRegistry {
+    pub fn init() InterfaceImplRegistry {
         return InterfaceImplRegistry{
             .impl_table = HashMap(ImplKey, bool, ImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
             .collision_table = HashMap(u64, ArrayList(ImplEntry), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
@@ -587,18 +587,18 @@ pub const InterfaceImplRegistry = struct {
     pub fn deinit(self: *InterfaceImplRegistry) void {
         var iter = self.impl_table.iterator();
         while (iter.next()) |entry| {
-            entry.key_ptr.deinit(allocator);
+            entry.key_ptr.deinit();
         }
-        self.impl_table.deinit(allocator);
+        self.impl_table.deinit();
         
         var collision_iter = self.collision_table.iterator();
         while (collision_iter.next()) |entry| {
             for (entry.value_ptr.items) |*impl_entry| {
-                impl_entry.key.deinit(allocator);
+                impl_entry.key.deinit();
             }
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.collision_table.deinit(allocator);
+        self.collision_table.deinit();
     }
     
     /// Register interface implementation with collision detection
@@ -612,7 +612,7 @@ pub const InterfaceImplRegistry = struct {
             if (!result.key_ptr.equals(key)) {
                 try self.handleImplCollision(key, true);
             } else {
-                key.deinit(allocator);
+                key.deinit();
             }
         } else {
             result.value_ptr.* = true;
@@ -630,7 +630,7 @@ pub const InterfaceImplRegistry = struct {
         };
         
         if (self.collision_table.getPtr(hash)) |collision_list| {
-            try collision_list.append(allocator, entry);
+            try collision_list.append(entry);
         } else {
             var new_list = .empty;
             try new_list.append(self.allocator, entry);
@@ -641,7 +641,7 @@ pub const InterfaceImplRegistry = struct {
     /// Check if type implements interface with collision-aware lookup
     pub fn isImplemented(self: *InterfaceImplRegistry, type_name: []const u8, interface_name: []const u8) !bool {
         const temp_key = try ImplKey.init(self.allocator, type_name, interface_name);
-        defer temp_key.deinit(allocator);
+        defer temp_key.deinit();
         
         // Check main table
         if (self.impl_table.get(temp_key)) |result| {
@@ -666,7 +666,7 @@ test "type ID collision handling" {
     const allocator = std.testing.allocator;
     
     var registry = CollisionResistantTypeRegistry.init(allocator);
-    defer registry.deinit(allocator);
+    defer registry.deinit();
     
     // Create test types with potential collision
     const type_info1 = try RuntimeTypeInfo.init(allocator, 1, "TestType1", .Basic);
@@ -697,7 +697,7 @@ test "interface implementation collision handling" {
     const allocator = std.testing.allocator;
     
     var registry = InterfaceImplRegistry.init(allocator);
-    defer registry.deinit(allocator);
+    defer registry.deinit();
     
     // Register some implementations
     try registry.registerImplementation("MyStruct", "Displayable");

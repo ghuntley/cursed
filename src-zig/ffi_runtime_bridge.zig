@@ -18,7 +18,7 @@ pub fn initializeFfiRuntime(allocator: Allocator) !void {
 }
 
 pub fn deinitializeFfiRuntime() void {
-    mock_pixel_colors.deinit(allocator);
+    mock_pixel_colors.deinit();
 }
 
 // Mock graphics library functions
@@ -76,7 +76,7 @@ pub fn cursed_ffi_call(library_name: []const u8, function_name: []const u8, args
         }
     }
     
-    print("FFI function not found or wrong argument count\n");
+    print("FFI function not found or wrong argument count\n", .{});
     return -1;
 }
 
@@ -105,7 +105,7 @@ pub export fn ffi_runtime_init() void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     initializeFfiRuntime(allocator) catch {
-        print("Failed to initialize FFI runtime\n");
+        print("Failed to initialize FFI runtime\n", .{});
     };
 }
 

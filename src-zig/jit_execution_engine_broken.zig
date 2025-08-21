@@ -39,19 +39,19 @@ pub const JITExecutionEngine = struct {
     }
     
     pub fn deinit(self: *JITExecutionEngine) void {
-        self.global_env.deinit(allocator);
-        self.functions.deinit(allocator);
+        self.global_env.deinit();
+        self.functions.deinit();
     }
     
     /// Execute CURSED source code
     pub fn executeSource(self: *JITExecutionEngine, source: []const u8) !void {
         var lex = lexer.Lexer.init(self.allocator, source);
-        defer lex.deinit(allocator);
+        defer lex.deinit();
         
         const tokens = try lex.tokenize();
         
         var parse = try parser.Parser.init(self.allocator, tokens);
-        defer parse.deinit(allocator);
+        defer parse.deinit();
         
         const program = try parse.parseProgram();
         defer parse.freeProgram(program);
@@ -264,11 +264,11 @@ pub const JITExecutionEngine = struct {
         if (self.functions.get(call.function_name)) |func| {
             // Evaluate arguments
             var args = .empty;
-            defer args.deinit(allocator);
+            defer args.deinit();
             
             for (call.arguments.items) |arg| {
                 const arg_value = try self.evaluateExpression(arg.*);
-                try args.append(allocator, arg_value);
+                try args.append(arg_value);
             }
             
             return try self.callFunction(func, args.items);
@@ -301,7 +301,7 @@ pub const JITExecutionEngine = struct {
     fn callFunction(self: *JITExecutionEngine, func: ast.FunctionStatement, args: []const Value) !Value {
         // Create new environment for function scope
         var func_env = Environment.init(self.allocator, self.current_env);
-        defer func_env.deinit(allocator);
+        defer func_env.deinit();
         
         // Bind parameters to arguments
         for (func.parameters.items, 0..) |param, i| {
@@ -332,7 +332,7 @@ pub const JITExecutionEngine = struct {
     /// Built-in function: vibez.spill (print)
     fn builtinVibesSpill(self: *JITExecutionEngine, arguments: ArrayList(*ast.Expression)) !Value {
         for (arguments.items, 0..) |arg, i| {
-            if (i > 0) print(" ");
+            if (i > 0) print(" ", .{});
             
             const value = try self.evaluateExpression(arg.*);
             const str = try value.toString(self.allocator);
@@ -340,7 +340,7 @@ pub const JITExecutionEngine = struct {
             
             print("{s}", .{str});
         }
-        print("\n");
+        print("\n", .{});
         
         return Value.Null;
     }
@@ -508,21 +508,21 @@ pub const JITExecutionEngine = struct {
 
 /// Test the JIT execution engine with a simple CURSED program
 pub fn testJITExecutionEngine(allocator: Allocator) !void {
-    print("\n🧪 Testing JIT Execution Engine\n");
-    print("==============================\n");
+    print("\n🧪 Testing JIT Execution Engine\n", .{});
+    print("==============================\n", .{});
     
     var engine = try JITExecutionEngine.init(allocator);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     // Test 1: Simple expression evaluation
-    print("\n📝 Test 1: Simple expression\n");
+    print("\n📝 Test 1: Simple expression\n", .{});
     const simple_program = 
         \\vibez.spill("Hello, CURSED!")
     ;
     try engine.executeSource(simple_program);
     
     // Test 2: Variable declaration and usage
-    print("\n📝 Test 2: Variables\n");
+    print("\n📝 Test 2: Variables\n", .{});
     const variable_program = 
         \\sus x drip = 42
         \\vibez.spill("Value of x:", x)
@@ -530,7 +530,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     try engine.executeSource(variable_program);
     
     // Test 3: Arithmetic operations
-    print("\n📝 Test 3: Arithmetic\n");
+    print("\n📝 Test 3: Arithmetic\n", .{});
     const arithmetic_program = 
         \\sus a drip = 10
         \\sus b drip = 5
@@ -541,7 +541,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     try engine.executeSource(arithmetic_program);
     
     // Test 4: Function definition and call
-    print("\n📝 Test 4: Functions\n");
+    print("\n📝 Test 4: Functions\n", .{});
     const function_program = 
         \\slay add(x drip, y drip) drip {
         \\    damn x + y
@@ -552,7 +552,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     try engine.executeSource(function_program);
     
     // Test 5: Control flow
-    print("\n📝 Test 5: Control flow\n");
+    print("\n📝 Test 5: Control flow\n", .{});
     const control_program = 
         \\sus number drip = 7
         \\bestie (number > 5) {
@@ -563,5 +563,5 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     ;
     try engine.executeSource(control_program);
     
-    print("\n✅ JIT Execution Engine tests completed!\n");
+    print("\n✅ JIT Execution Engine tests completed!\n", .{});
 }

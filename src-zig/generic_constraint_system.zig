@@ -92,11 +92,11 @@ pub const GenericTypeParameter = struct {
     }
     
     pub fn deinit(self: *GenericTypeParameter) void {
-        self.constraints.deinit(allocator);
+        self.constraints.deinit();
     }
     
     pub fn addConstraint(self: *GenericTypeParameter, constraint: TypeConstraint) !void {
-        try self.constraints.append(allocator, constraint);
+        try self.constraints.append(constraint);
     }
 };
 
@@ -167,7 +167,7 @@ pub const ConstraintViolationReport = struct {
     help_text: ?[]const u8 = null,
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) ConstraintViolationReport {
+    pub fn init() ConstraintViolationReport {
         return ConstraintViolationReport{
             .main_error = "",
             .allocator = allocator,
@@ -179,7 +179,7 @@ pub const ConstraintViolationReport = struct {
             for (suggestions.items) |suggestion| {
                 self.allocator.free(suggestion);
             }
-            suggestions.deinit(allocator);
+            suggestions.deinit();
         }
         if (self.context_info) |context| {
             self.allocator.free(context);
@@ -195,7 +195,7 @@ pub const ConstraintViolationReport = struct {
         }
         
         if (self.suggestions) |suggestions| {
-            try writer.print("Suggestions:\n");
+            try writer.print("Suggestions:\n", .{});
             for (suggestions.items) |suggestion| {
                 try writer.print("  - {s}\n", .{suggestion});
             }
@@ -214,7 +214,7 @@ pub const DetailedConstraintResult = struct {
     
     pub fn deinit(self: *DetailedConstraintResult) void {
         if (self.report) |*report| {
-            report.deinit(allocator);
+            report.deinit();
         }
     }
 };
@@ -234,14 +234,14 @@ pub const ConstraintValidator = struct {
             return_type: ?ast.Type,
         };
         
-        pub fn init(allocator: Allocator) InterfaceInfo {
+        pub fn init() InterfaceInfo {
             return InterfaceInfo{
                 .methods = .empty,
             };
         }
         
         pub fn deinit(self: *InterfaceInfo) void {
-            self.methods.deinit(allocator);
+            self.methods.deinit();
         }
     };
     
@@ -262,9 +262,9 @@ pub const ConstraintValidator = struct {
     pub fn deinit(self: *ConstraintValidator) void {
         var iter = self.builtin_interfaces.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.builtin_interfaces.deinit(allocator);
+        self.builtin_interfaces.deinit();
     }
     
     /// Initialize built-in constraint interfaces
@@ -527,7 +527,7 @@ pub const ConstraintValidator = struct {
             // Validate each constraint for this type parameter
             for (type_param.constraints.items) |constraint| {
                 const result = self.validateConstraint(concrete_type, constraint);
-                try results.append(allocator, result);
+                try results.append(result);
                 
                 // If any constraint fails, we could early exit or collect all errors
                 if (!result.valid) {
@@ -539,7 +539,7 @@ pub const ConstraintValidator = struct {
             }
         }
         
-        return results.toOwnedSlice(allocator);
+        return results.toOwnedSlice();
     }
     
     /// Check if a type satisfies multiple constraints
@@ -733,27 +733,27 @@ pub const GenericFunctionSignature = struct {
     
     pub fn deinit(self: *GenericFunctionSignature) void {
         for (self.type_parameters.items) |*param| {
-            param.deinit(allocator);
+            param.deinit();
         }
-        self.type_parameters.deinit(allocator);
-        self.parameters.deinit(allocator);
+        self.type_parameters.deinit();
+        self.parameters.deinit();
     }
     
     pub fn addTypeParameter(self: *GenericFunctionSignature, type_param: GenericTypeParameter) !void {
-        try self.type_parameters.append(allocator, type_param);
+        try self.type_parameters.append(type_param);
     }
     
     pub fn addParameter(self: *GenericFunctionSignature, param: FunctionParameter) !void {
-        try self.parameters.append(allocator, param);
+        try self.parameters.append(param);
     }
 };
 
 test "constraint validation - numeric types" {
     var type_registry = type_system.GCTypeRegistry.init(std.testing.allocator);
-    defer type_registry.deinit(allocator);
+    defer type_registry.deinit();
     
     var validator = ConstraintValidator.init(std.testing.allocator, &type_registry);
-    defer validator.deinit(allocator);
+    defer validator.deinit();
     
     const numeric_constraint = TypeConstraint.init(.Numeric);
     
@@ -770,10 +770,10 @@ test "constraint validation - numeric types" {
 
 test "constraint validation - const generics" {
     var type_registry = type_system.GCTypeRegistry.init(std.testing.allocator);
-    defer type_registry.deinit(allocator);
+    defer type_registry.deinit();
     
     var validator = ConstraintValidator.init(std.testing.allocator, &type_registry);
-    defer validator.deinit(allocator);
+    defer validator.deinit();
     
     const const_bounds = TypeConstraint.ConstGenericBounds{
         .min_value = 0,

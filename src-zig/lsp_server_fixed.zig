@@ -50,7 +50,7 @@ const FileTracker = struct {
     files: HashMap([]const u8, FileInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) FileTracker {
+    pub fn init() FileTracker {
         return FileTracker{
             .files = HashMap([]const u8, FileInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
@@ -61,9 +61,9 @@ const FileTracker = struct {
         var iterator = self.files.iterator();
         while (iterator.next()) |entry| {
             var file_info = entry.value_ptr;
-            file_info.deinit(allocator);
+            file_info.deinit();
         }
-        self.files.deinit(allocator);
+        self.files.deinit();
     }
     
     pub fn addOrUpdateFile(self: *FileTracker, uri: []const u8, version: i32, content: []const u8) !void {
@@ -81,7 +81,7 @@ const FileTracker = struct {
     pub fn removeFile(self: *FileTracker, uri: []const u8) bool {
         if (self.files.fetchRemove(uri)) |kv| {
             var file_info = kv.value;
-            file_info.deinit(allocator);
+            file_info.deinit();
             self.allocator.free(kv.key);
             return true;
         }
@@ -158,7 +158,7 @@ pub const CursedLSPServer = struct {
     initialized: bool,
     shutdown_requested: bool,
     
-    pub fn init(allocator: Allocator) CursedLSPServer {
+    pub fn init() CursedLSPServer {
         return CursedLSPServer{
             .allocator = allocator,
             .file_tracker = FileTracker.init(allocator),
@@ -168,7 +168,7 @@ pub const CursedLSPServer = struct {
     }
     
     pub fn deinit(self: *CursedLSPServer) void {
-        self.file_tracker.deinit(allocator);
+        self.file_tracker.deinit();
     }
     
     // Safe AST parsing with error handling
@@ -444,7 +444,7 @@ pub const CursedLSPServer = struct {
             std.log.warn("Failed to parse LSP message: {}", .{err});
             return null;
         };
-        defer parsed.deinit(allocator);
+        defer parsed.deinit();
         
         const root = parsed.value;
         const method = root.object.get("method");
@@ -525,7 +525,7 @@ pub const CursedLSPServer = struct {
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
         var buffer: std.ArrayList(u8) = .empty;
-        defer buffer.deinit(allocator);
+        defer buffer.deinit();
         
         while (!self.shutdown_requested) {
             // Read Content-Length header
@@ -594,11 +594,11 @@ pub const CursedLSPServer = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var server = CursedLSPServer.init(allocator);
-    defer server.deinit(allocator);
+    defer server.deinit();
     
     try server.run();
 }

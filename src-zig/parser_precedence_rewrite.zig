@@ -237,7 +237,7 @@ fn parseBinary(parser: *Parser, left: ast.Expression) anyerror!ast.Expression {
 }
 
 fn parseCall(parser: *Parser, callee: ast.Expression) anyerror!ast.Expression {
-    var arguments = std.ArrayList(*ast.Expression).init(parser.allocator);
+    var arguments: std.ArrayList(*ast.Expression) = .empty;
     
     if (!parser.check(.RightParen)) {
         while (true) {
@@ -307,7 +307,7 @@ fn parseAssignment(parser: *Parser, left: ast.Expression) anyerror!ast.Expressio
 }
 
 fn parseArrayLiteral(parser: *Parser) anyerror!ast.Expression {
-    var elements = std.ArrayList(*ast.Expression).init(parser.allocator);
+    var elements: std.ArrayList(*ast.Expression) = .empty;
     
     if (!parser.check(.RightBracket)) {
         while (true) {
@@ -328,7 +328,7 @@ fn parseArrayLiteral(parser: *Parser) anyerror!ast.Expression {
 }
 
 fn parseStructLiteral(parser: *Parser) anyerror!ast.Expression {
-    var fields = std.ArrayList(ast.StructField).init(parser.allocator);
+    var fields: std.ArrayList(ast.StructField) = .empty;
     
     while (!parser.check(.RightBrace) and !parser.isAtEnd()) {
         if (parser.match(.Newline)) continue;
@@ -381,7 +381,7 @@ fn parseShook(parser: *Parser) anyerror!ast.Expression {
 fn parseFam(parser: *Parser) anyerror!ast.Expression {
     _ = try parser.consume(.LeftBrace, "Expected '{' after 'fam'");
     
-    var try_body = std.ArrayList(*anyopaque).init(parser.allocator);
+    var try_body: std.ArrayList(*anyopaque) = .empty;
     
     while (!parser.check(.RightBrace) and !parser.isAtEnd()) {
         if (parser.match(.Newline)) continue;

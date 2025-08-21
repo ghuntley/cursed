@@ -13,7 +13,7 @@ const PackageManifest = struct {
     main: []const u8,
     dependencies: std.StringHashMap([]const u8),
     
-    pub fn init(allocator: Allocator) PackageManifest {
+    pub fn init() PackageManifest {
         return PackageManifest{
             .name = "",
             .version = "0.1.0",
@@ -24,7 +24,7 @@ const PackageManifest = struct {
     }
     
     pub fn deinit(self: *PackageManifest) void {
-        self.dependencies.deinit(allocator);
+        self.dependencies.deinit();
     }
 };
 
@@ -32,7 +32,7 @@ const PackageManifest = struct {
 pub fn cmdInit(allocator: Allocator, project_name: []const u8) !void {
     // Create package.json
     var manifest = PackageManifest.init(allocator);
-    defer manifest.deinit(allocator);
+    defer manifest.deinit();
     
     const json_content = try std.fmt.allocPrint(allocator,
         \\{{
@@ -68,27 +68,23 @@ pub fn cmdInit(allocator: Allocator, project_name: []const u8) !void {
 }
 
 pub fn cmdAdd(allocator: Allocator, package_name: []const u8, version: []const u8) !void {
-    _ = allocator;
-    std.log.info("Adding dependency: {s}@{s}", .{ package_name, version });
+        std.log.info("Adding dependency: {s}@{s}", .{ package_name, version });
     std.log.info("Note: Actual package installation not implemented in demo", .{});
 }
 
 pub fn cmdRemove(allocator: Allocator, package_name: []const u8) !void {
-    _ = allocator;
-    std.log.info("Removing dependency: {s}", .{package_name});
+        std.log.info("Removing dependency: {s}", .{package_name});
 }
 
 pub fn cmdInstall(allocator: Allocator) !void {
-    _ = allocator;
-    // Create node_modules directory
+        // Create node_modules directory
     std.fs.cwd().makePath("node_modules") catch {};
     std.log.info("Installing dependencies...", .{});
     std.log.info("Dependencies installed (demo mode)", .{});
 }
 
 pub fn cmdSearch(allocator: Allocator, query: []const u8) !void {
-    _ = allocator;
-    std.log.info("Searching for packages matching: {s}", .{query});
+        std.log.info("Searching for packages matching: {s}", .{query});
     
     // Mock search results
     const mock_results = [_]struct { name: []const u8, version: []const u8, description: []const u8 }{
@@ -107,7 +103,7 @@ pub fn cmdSearch(allocator: Allocator, query: []const u8) !void {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);

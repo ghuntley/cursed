@@ -472,9 +472,9 @@ pub const EnhancedSemaphore = struct {
         self.condition.broadcast();
         
         // Clean up resources
-        self.mutex.deinit(allocator);
-        self.condition.deinit(allocator);
-        self.waiting_threads.deinit(allocator);
+        self.mutex.deinit();
+        self.condition.deinit();
+        self.waiting_threads.deinit();
     }
     
     /// Acquire semaphore with timeout
@@ -490,7 +490,7 @@ pub const EnhancedSemaphore = struct {
         
         // Add to waiting queue for priority handling
         const current_thread = Thread.getCurrentId();
-        try self.waiting_threads.append(allocator, current_thread);
+        try self.waiting_threads.append(current_thread);
         defer _ = self.removeFromWaitingQueue(current_thread);
         
         // Define predicate for condition wait
@@ -677,9 +677,9 @@ pub const ChannelSyncBridge = struct {
             wait_count += 1;
         }
         
-        self.mutex.deinit(allocator);
-        self.condition.deinit(allocator);
-        self.channel_states.deinit(allocator);
+        self.mutex.deinit();
+        self.condition.deinit();
+        self.channel_states.deinit();
     }
     
     /// Register a channel with the sync bridge
@@ -820,7 +820,7 @@ test "enhanced mutex basic operations" {
     const allocator = std.testing.allocator;
     
     var mutex = EnhancedMutex.init();
-    defer mutex.deinit(allocator);
+    defer mutex.deinit();
     
     // Test basic lock/unlock
     try mutex.lock();
@@ -841,10 +841,10 @@ test "enhanced condition variable spurious wakeup handling" {
     const allocator = std.testing.allocator;
     
     var mutex = EnhancedMutex.init();
-    defer mutex.deinit(allocator);
+    defer mutex.deinit();
     
     var condition = EnhancedCondition.init();
-    defer condition.deinit(allocator);
+    defer condition.deinit();
     
     var flag = false;
     
@@ -868,7 +868,7 @@ test "enhanced semaphore operations" {
     const allocator = std.testing.allocator;
     
     var semaphore = try EnhancedSemaphore.init(allocator, 2, 5);
-    defer semaphore.deinit(allocator);
+    defer semaphore.deinit();
     
     // Test acquire/release
     try semaphore.acquire();
@@ -892,7 +892,7 @@ test "channel sync bridge" {
     const allocator = std.testing.allocator;
     
     var bridge = try ChannelSyncBridge.init(allocator);
-    defer bridge.deinit(allocator);
+    defer bridge.deinit();
     
     // Register a channel
     try bridge.registerChannel(1);
@@ -919,7 +919,7 @@ export fn cursed_sync_mutex_create() ?*EnhancedMutex {
 
 export fn cursed_sync_mutex_destroy(mutex_ptr: ?*EnhancedMutex) void {
     if (mutex_ptr) |mutex| {
-        mutex.deinit(allocator);
+        mutex.deinit();
         std.heap.c_allocator.destroy(mutex);
     }
 }
@@ -949,7 +949,7 @@ export fn cursed_sync_condition_create() ?*EnhancedCondition {
 
 export fn cursed_sync_condition_destroy(condition_ptr: ?*EnhancedCondition) void {
     if (condition_ptr) |condition| {
-        condition.deinit(allocator);
+        condition.deinit();
         std.heap.c_allocator.destroy(condition);
     }
 }

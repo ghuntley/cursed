@@ -135,16 +135,16 @@ pub const StdlibIntegration = struct {
     }
 
     pub fn deinit(self: *StdlibIntegration) void {
-        self.runtime.deinit(allocator);
-        self.jit_engine.deinit(allocator);
-        self.function_registry.deinit(allocator);
+        self.runtime.deinit();
+        self.jit_engine.deinit();
+        self.function_registry.deinit();
         
         // Clean up function metadata
         var metadata_iter = self.function_metadata.iterator();
         while (metadata_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.function_metadata.deinit(allocator);
+        self.function_metadata.deinit();
         
         // Clean up module dependencies
         var deps_iter = self.module_dependencies.iterator();
@@ -152,9 +152,9 @@ pub const StdlibIntegration = struct {
             for (entry.value_ptr.items) |dep| {
                 self.allocator.free(dep);
             }
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.module_dependencies.deinit(allocator);
+        self.module_dependencies.deinit();
     }
 
     /// Resolve a stdlib function call at compile time
@@ -333,7 +333,7 @@ pub const StdlibIntegration = struct {
             for (modules.items) |module_name| {
                 self.allocator.free(module_name);
             }
-            modules.deinit(allocator);
+            modules.deinit();
         }
         
         for (modules.items) |module_name| {
@@ -487,7 +487,7 @@ pub fn testStdlibIntegration(allocator: Allocator) !void {
     print("===================================\n", .{});
     
     var integration = try createStdlibIntegration(allocator, "stdlib");
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     // Test function resolution
     const test_calls = [_]StdlibCall{

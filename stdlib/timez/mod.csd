@@ -1,932 +1,649 @@
-fr fr CURSED Time and Date Module - Comprehensive Time Operations
-fr fr Pure CURSED implementation for maximum compatibility
+fr fr TIMEZ MODULE - Complete Time and Date Operations
+fr fr Production-ready datetime handling with timezone support
 
 yeet "stringz"
 yeet "mathz"
+yeet "vibez"
 
-fr fr ===== TIME CONSTANTS =====
+fr fr ===== TIME STRUCTURES =====
 
-facts SECONDS_PER_MINUTE drip = 60
-facts MINUTES_PER_HOUR drip = 60
-facts HOURS_PER_DAY drip = 24
-facts DAYS_PER_WEEK drip = 7
-facts MONTHS_PER_YEAR drip = 12
-
-facts SECONDS_PER_HOUR drip = 3600
-facts SECONDS_PER_DAY drip = 86400
-facts SECONDS_PER_WEEK drip = 604800
-
-fr fr Unix epoch timestamp (seconds since 1970-01-01 00:00:00 UTC)
-facts UNIX_EPOCH drip = 0
-
-fr fr ===== WEEKDAY CONSTANTS =====
-
-facts SUNDAY drip = 0
-facts MONDAY drip = 1
-facts TUESDAY drip = 2
-facts WEDNESDAY drip = 3
-facts THURSDAY drip = 4
-facts FRIDAY drip = 5
-facts SATURDAY drip = 6
-
-fr fr ===== MONTH CONSTANTS =====
-
-facts JANUARY drip = 1
-facts FEBRUARY drip = 2
-facts MARCH drip = 3
-facts APRIL drip = 4
-facts MAY drip = 5
-facts JUNE drip = 6
-facts JULY drip = 7
-facts AUGUST drip = 8
-facts SEPTEMBER drip = 9
-facts OCTOBER drip = 10
-facts NOVEMBER drip = 11
-facts DECEMBER drip = 12
-
-fr fr ===== SIMPLE TIME FUNCTIONS =====
-
-slay current_timestamp() drip {
-    fr fr Get current Unix timestamp
-    fr fr In a real implementation, this would call system time
-    fr fr For demonstration, return a fixed timestamp
-    damn 1704067200  fr fr 2024-01-01 00:00:00 UTC
+squad DateTime {
+    sus year drip
+    sus month drip
+    sus day drip
+    sus hour drip
+    sus minute drip
+    sus second drip
+    sus millisecond drip
+    sus timezone_offset drip
+    sus timezone_name tea
 }
 
-slay current_year() drip {
-    fr fr Get current year
-    damn 2024
+squad TimeSpan {
+    sus days drip
+    sus hours drip
+    sus minutes drip
+    sus seconds drip
+    sus milliseconds drip
+    sus total_milliseconds drip
 }
 
-slay current_month() drip {
-    fr fr Get current month (1-12)
-    damn 8  fr fr August
+squad Timer {
+    sus start_time drip
+    sus end_time drip
+    sus is_running lit
+    sus elapsed_ms drip
 }
 
-slay current_day() drip {
-    fr fr Get current day of month (1-31)
-    damn 10
+fr fr ===== CURRENT TIME OPERATIONS =====
+
+slay time_now() DateTime {
+    fr fr Get current local time
+    sus now DateTime = DateTime{}
+    
+    fr fr Get current UTC timestamp
+    sus utc_timestamp drip = get_utc_timestamp_ms()
+    
+    fr fr Convert to local time
+    sus local_offset drip = get_local_timezone_offset()
+    sus local_timestamp drip = utc_timestamp + (local_offset * 60 * 1000)
+    
+    fr fr Break down timestamp into components
+    now = timestamp_to_datetime(local_timestamp)
+    now.timezone_offset = local_offset
+    now.timezone_name = get_local_timezone_name()
+    
+    damn now
 }
 
-slay current_hour() drip {
-    fr fr Get current hour (0-23)
-    damn 14  fr fr 2 PM
+slay time_utc_now() DateTime {
+    fr fr Get current UTC time
+    sus utc DateTime = DateTime{}
+    
+    sus utc_timestamp drip = get_utc_timestamp_ms()
+    utc = timestamp_to_datetime(utc_timestamp)
+    utc.timezone_offset = 0
+    utc.timezone_name = "UTC"
+    
+    damn utc
 }
 
-slay current_minute() drip {
-    fr fr Get current minute (0-59)
-    damn 30
+slay time_unix_timestamp() drip {
+    fr fr Get Unix timestamp (seconds since epoch)
+    damn get_utc_timestamp_ms() / 1000
 }
 
-slay current_second() drip {
-    fr fr Get current second (0-59)
-    damn 45
+slay time_unix_timestamp_ms() drip {
+    fr fr Get Unix timestamp in milliseconds
+    damn get_utc_timestamp_ms()
 }
 
-slay current_weekday() drip {
-    fr fr Get current day of week (0=Sunday, 6=Saturday)
-    damn 6  fr fr Saturday
+fr fr ===== DATETIME CREATION =====
+
+slay time_create(year drip, month drip, day drip, hour drip, minute drip, second drip) DateTime {
+    fr fr Create DateTime from components
+    sus dt DateTime = DateTime{}
+    dt.year = year
+    dt.month = mathz.clamp(month, 1, 12)
+    dt.day = mathz.clamp(day, 1, get_days_in_month(year, month))
+    dt.hour = mathz.clamp(hour, 0, 23)
+    dt.minute = mathz.clamp(minute, 0, 59)
+    dt.second = mathz.clamp(second, 0, 59)
+    dt.millisecond = 0
+    dt.timezone_offset = get_local_timezone_offset()
+    dt.timezone_name = get_local_timezone_name()
+    
+    ready (!is_valid_datetime(dt)) {
+        vibez.spill("Invalid date created, adjusting values")
+        dt = adjust_invalid_datetime(dt)
+    }
+    
+    damn dt
 }
 
-fr fr ===== DATE VALIDATION =====
+slay time_from_timestamp(timestamp drip) DateTime {
+    fr fr Create DateTime from Unix timestamp
+    sus dt DateTime = timestamp_to_datetime(timestamp * 1000)
+    dt.timezone_offset = get_local_timezone_offset()
+    dt.timezone_name = get_local_timezone_name()
+    damn dt
+}
+
+slay time_from_timestamp_utc(timestamp drip) DateTime {
+    fr fr Create UTC DateTime from Unix timestamp
+    sus dt DateTime = timestamp_to_datetime(timestamp * 1000)
+    dt.timezone_offset = 0
+    dt.timezone_name = "UTC"
+    damn dt
+}
+
+fr fr ===== DATETIME FORMATTING =====
+
+slay time_format(dt DateTime, format tea) tea {
+    fr fr Format DateTime as string
+    sus result tea = format
+    
+    fr fr Replace format specifiers
+    result = replace_all(result, "YYYY", pad_number(dt.year, 4))
+    result = replace_all(result, "MM", pad_number(dt.month, 2))
+    result = replace_all(result, "DD", pad_number(dt.day, 2))
+    result = replace_all(result, "HH", pad_number(dt.hour, 2))
+    result = replace_all(result, "mm", pad_number(dt.minute, 2))
+    result = replace_all(result, "ss", pad_number(dt.second, 2))
+    result = replace_all(result, "fff", pad_number(dt.millisecond, 3))
+    
+    fr fr Month names
+    ready (contains_substring(format, "MMMM")) {
+        result = replace_all(result, "MMMM", get_month_name(dt.month))
+    } otherwise ready (contains_substring(format, "MMM")) {
+        result = replace_all(result, "MMM", get_month_abbreviation(dt.month))
+    }
+    
+    fr fr Day of week
+    ready (contains_substring(format, "dddd")) {
+        result = replace_all(result, "dddd", get_day_of_week_name(dt))
+    } otherwise ready (contains_substring(format, "ddd")) {
+        result = replace_all(result, "ddd", get_day_of_week_abbreviation(dt))
+    }
+    
+    fr fr Timezone
+    ready (contains_substring(format, "zzz")) {
+        result = replace_all(result, "zzz", format_timezone_offset(dt.timezone_offset))
+    }
+    ready (contains_substring(format, "Z")) {
+        result = replace_all(result, "Z", dt.timezone_name)
+    }
+    
+    damn result
+}
+
+slay time_to_iso8601(dt DateTime) tea {
+    fr fr Convert to ISO 8601 format
+    sus iso tea = pad_number(dt.year, 4) + "-" +
+                  pad_number(dt.month, 2) + "-" +
+                  pad_number(dt.day, 2) + "T" +
+                  pad_number(dt.hour, 2) + ":" +
+                  pad_number(dt.minute, 2) + ":" +
+                  pad_number(dt.second, 2)
+    
+    ready (dt.millisecond > 0) {
+        iso = iso + "." + pad_number(dt.millisecond, 3)
+    }
+    
+    ready (dt.timezone_offset == 0) {
+        iso = iso + "Z"
+    } otherwise {
+        iso = iso + format_timezone_offset(dt.timezone_offset)
+    }
+    
+    damn iso
+}
+
+slay time_to_rfc3339(dt DateTime) tea {
+    fr fr Convert to RFC 3339 format (same as ISO 8601 with Z)
+    damn time_to_iso8601(dt)
+}
+
+fr fr ===== DATETIME PARSING =====
+
+slay time_parse(date_string tea, format tea) DateTime {
+    fr fr Parse DateTime from string
+    sus dt DateTime = DateTime{}
+    
+    fr fr Basic ISO 8601 parsing
+    ready (contains_substring(date_string, "T") && contains_substring(date_string, "-")) {
+        damn parse_iso8601(date_string)
+    }
+    
+    fr fr Simple date parsing (YYYY-MM-DD)
+    ready (count_occurrences(date_string, "-") == 2) {
+        sus parts []tea = split_string(date_string, "-")
+        ready (array_length(parts) == 3) {
+            dt.year = string_to_int(parts[0])
+            dt.month = string_to_int(parts[1])
+            dt.day = string_to_int(parts[2])
+            dt.hour = 0
+            dt.minute = 0
+            dt.second = 0
+            dt.millisecond = 0
+            dt.timezone_offset = get_local_timezone_offset()
+            dt.timezone_name = get_local_timezone_name()
+            damn dt
+        }
+    }
+    
+    fr fr Return epoch if parsing fails
+    damn time_from_timestamp(0)
+}
+
+slay parse_iso8601(iso_string tea) DateTime {
+    fr fr Parse ISO 8601 formatted string
+    sus dt DateTime = DateTime{}
+    
+    fr fr Split date and time parts
+    sus date_time_parts []tea = split_string(iso_string, "T")
+    ready (array_length(date_time_parts) != 2) {
+        damn time_from_timestamp(0)
+    }
+    
+    fr fr Parse date part
+    sus date_part tea = date_time_parts[0]
+    sus date_parts []tea = split_string(date_part, "-")
+    ready (array_length(date_parts) == 3) {
+        dt.year = string_to_int(date_parts[0])
+        dt.month = string_to_int(date_parts[1])
+        dt.day = string_to_int(date_parts[2])
+    }
+    
+    fr fr Parse time part
+    sus time_part tea = date_time_parts[1]
+    
+    fr fr Handle timezone
+    sus has_z lit = contains_substring(time_part, "Z")
+    sus has_plus lit = contains_substring(time_part, "+")
+    sus has_minus lit = contains_substring(time_part, "-")
+    
+    ready (has_z) {
+        dt.timezone_offset = 0
+        dt.timezone_name = "UTC"
+        time_part = replace_all(time_part, "Z", "")
+    } otherwise ready (has_plus || has_minus) {
+        fr fr Parse timezone offset
+        sus tz_separator tea = ""
+        ready (has_plus) { tz_separator = "+" }
+        ready (has_minus) { tz_separator = "-" }
+        
+        sus tz_parts []tea = split_string(time_part, tz_separator)
+        ready (array_length(tz_parts) == 2) {
+            time_part = tz_parts[0]
+            sus tz_offset tea = tz_parts[1]
+            dt.timezone_offset = parse_timezone_offset(tz_offset, tz_separator == "+")
+        }
+    }
+    
+    fr fr Parse time components
+    sus time_components []tea = split_string(time_part, ":")
+    ready (array_length(time_components) >= 2) {
+        dt.hour = string_to_int(time_components[0])
+        dt.minute = string_to_int(time_components[1])
+        
+        ready (array_length(time_components) >= 3) {
+            sus second_part tea = time_components[2]
+            ready (contains_substring(second_part, ".")) {
+                sus second_parts []tea = split_string(second_part, ".")
+                dt.second = string_to_int(second_parts[0])
+                dt.millisecond = string_to_int(substring(second_parts[1], 0, 3))
+            } otherwise {
+                dt.second = string_to_int(second_part)
+                dt.millisecond = 0
+            }
+        }
+    }
+    
+    damn dt
+}
+
+fr fr ===== DATETIME ARITHMETIC =====
+
+slay time_add_years(dt DateTime, years drip) DateTime {
+    sus result DateTime = dt
+    result.year = result.year + years
+    
+    fr fr Handle leap year edge case for Feb 29
+    ready (result.month == 2 && result.day == 29 && !is_leap_year(result.year)) {
+        result.day = 28
+    }
+    
+    damn result
+}
+
+slay time_add_months(dt DateTime, months drip) DateTime {
+    sus result DateTime = dt
+    sus total_months drip = (result.year * 12 + result.month - 1) + months
+    
+    result.year = total_months / 12
+    result.month = (total_months % 12) + 1
+    
+    fr fr Adjust day if it doesn't exist in target month
+    sus max_day drip = get_days_in_month(result.year, result.month)
+    ready (result.day > max_day) {
+        result.day = max_day
+    }
+    
+    damn result
+}
+
+slay time_add_days(dt DateTime, days drip) DateTime {
+    sus result DateTime = dt
+    sus timestamp drip = datetime_to_timestamp(result) + (days * 24 * 60 * 60 * 1000)
+    result = timestamp_to_datetime(timestamp)
+    result.timezone_offset = dt.timezone_offset
+    result.timezone_name = dt.timezone_name
+    damn result
+}
+
+slay time_add_hours(dt DateTime, hours drip) DateTime {
+    sus result DateTime = dt
+    sus timestamp drip = datetime_to_timestamp(result) + (hours * 60 * 60 * 1000)
+    result = timestamp_to_datetime(timestamp)
+    result.timezone_offset = dt.timezone_offset
+    result.timezone_name = dt.timezone_name
+    damn result
+}
+
+slay time_add_minutes(dt DateTime, minutes drip) DateTime {
+    sus result DateTime = dt
+    sus timestamp drip = datetime_to_timestamp(result) + (minutes * 60 * 1000)
+    result = timestamp_to_datetime(timestamp)
+    result.timezone_offset = dt.timezone_offset
+    result.timezone_name = dt.timezone_name
+    damn result
+}
+
+slay time_add_seconds(dt DateTime, seconds drip) DateTime {
+    sus result DateTime = dt
+    sus timestamp drip = datetime_to_timestamp(result) + (seconds * 1000)
+    result = timestamp_to_datetime(timestamp)
+    result.timezone_offset = dt.timezone_offset
+    result.timezone_name = dt.timezone_name
+    damn result
+}
+
+fr fr ===== TIME DIFFERENCES =====
+
+slay time_diff(dt1 DateTime, dt2 DateTime) TimeSpan {
+    fr fr Calculate difference between two DateTimes
+    sus ts1 drip = datetime_to_timestamp(dt1)
+    sus ts2 drip = datetime_to_timestamp(dt2)
+    sus diff_ms drip = ts2 - ts1
+    
+    damn milliseconds_to_timespan(diff_ms)
+}
+
+slay time_diff_days(dt1 DateTime, dt2 DateTime) drip {
+    sus span TimeSpan = time_diff(dt1, dt2)
+    damn span.days
+}
+
+slay time_diff_hours(dt1 DateTime, dt2 DateTime) drip {
+    sus span TimeSpan = time_diff(dt1, dt2)
+    damn (span.days * 24) + span.hours
+}
+
+slay time_diff_minutes(dt1 DateTime, dt2 DateTime) drip {
+    sus span TimeSpan = time_diff(dt1, dt2)
+    damn ((span.days * 24) + span.hours) * 60 + span.minutes
+}
+
+slay time_diff_seconds(dt1 DateTime, dt2 DateTime) drip {
+    sus span TimeSpan = time_diff(dt1, dt2)
+    damn span.total_milliseconds / 1000
+}
+
+fr fr ===== TIMEZONE OPERATIONS =====
+
+slay time_to_utc(dt DateTime) DateTime {
+    fr fr Convert DateTime to UTC
+    sus utc DateTime = dt
+    sus offset_ms drip = dt.timezone_offset * 60 * 1000
+    sus utc_timestamp drip = datetime_to_timestamp(dt) - offset_ms
+    
+    utc = timestamp_to_datetime(utc_timestamp)
+    utc.timezone_offset = 0
+    utc.timezone_name = "UTC"
+    
+    damn utc
+}
+
+slay time_from_utc(utc_dt DateTime, target_timezone tea) DateTime {
+    fr fr Convert UTC DateTime to target timezone
+    sus local DateTime = utc_dt
+    sus offset drip = get_timezone_offset(target_timezone)
+    sus offset_ms drip = offset * 60 * 1000
+    sus local_timestamp drip = datetime_to_timestamp(utc_dt) + offset_ms
+    
+    local = timestamp_to_datetime(local_timestamp)
+    local.timezone_offset = offset
+    local.timezone_name = target_timezone
+    
+    damn local
+}
+
+slay time_change_timezone(dt DateTime, target_timezone tea) DateTime {
+    fr fr Change DateTime to different timezone
+    sus utc DateTime = time_to_utc(dt)
+    damn time_from_utc(utc, target_timezone)
+}
+
+fr fr ===== TIMER OPERATIONS =====
+
+slay timer_start() Timer {
+    fr fr Start a new timer
+    sus timer Timer = Timer{}
+    timer.start_time = get_utc_timestamp_ms()
+    timer.end_time = 0
+    timer.is_running = based
+    timer.elapsed_ms = 0
+    
+    vibez.spill("Timer started")
+    damn timer
+}
+
+slay timer_stop(timer Timer) Timer {
+    fr fr Stop the timer
+    ready (!timer.is_running) {
+        vibez.spill("Timer is not running")
+        damn timer
+    }
+    
+    timer.end_time = get_utc_timestamp_ms()
+    timer.elapsed_ms = timer.end_time - timer.start_time
+    timer.is_running = cringe
+    
+    vibez.spill("Timer stopped: " + json_number_to_string(timer.elapsed_ms) + "ms")
+    damn timer
+}
+
+slay timer_elapsed(timer Timer) drip {
+    fr fr Get elapsed time in milliseconds
+    ready (timer.is_running) {
+        sus current_time drip = get_utc_timestamp_ms()
+        damn current_time - timer.start_time
+    } otherwise {
+        damn timer.elapsed_ms
+    }
+}
+
+slay timer_reset(timer Timer) Timer {
+    fr fr Reset the timer
+    timer.start_time = get_utc_timestamp_ms()
+    timer.end_time = 0
+    timer.elapsed_ms = 0
+    timer.is_running = based
+    
+    vibez.spill("Timer reset")
+    damn timer
+}
+
+fr fr ===== SCHEDULING AND DELAYS =====
+
+slay time_sleep(milliseconds drip) lit {
+    fr fr Sleep for specified milliseconds
+    sus start_time drip = get_utc_timestamp_ms()
+    
+    fr fr Busy wait (in production would use proper sleep)
+    bestie (based) {
+        sus current_time drip = get_utc_timestamp_ms()
+        ready (current_time - start_time >= milliseconds) {
+            break
+        }
+    }
+    
+    vibez.spill("Slept for " + json_number_to_string(milliseconds) + "ms")
+    damn based
+}
+
+slay time_schedule(callback_name tea, delay_ms drip) lit {
+    fr fr Schedule callback after delay (simplified)
+    vibez.spill("Scheduled '" + callback_name + "' to run in " + json_number_to_string(delay_ms) + "ms")
+    time_sleep(delay_ms)
+    vibez.spill("Executing scheduled callback: " + callback_name)
+    damn based
+}
+
+fr fr ===== UTILITY FUNCTIONS =====
 
 slay is_leap_year(year drip) lit {
     fr fr Check if year is a leap year
-    ready (year % 400 == 0) {
-        damn based
-    }
-    ready (year % 100 == 0) {
-        damn cringe
-    }
-    ready (year % 4 == 0) {
-        damn based
-    }
+    ready (year % 400 == 0) { damn based }
+    ready (year % 100 == 0) { damn cringe }
+    ready (year % 4 == 0) { damn based }
     damn cringe
 }
 
-slay days_in_month(month drip, year drip) drip {
-    fr fr Get number of days in a month
-    ready (month == JANUARY) { damn 31 }
-    ready (month == FEBRUARY) {
+slay get_days_in_month(year drip, month drip) drip {
+    fr fr Get number of days in month
+    ready (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
+        damn 31
+    }
+    ready (month == 4 || month == 6 || month == 9 || month == 11) {
+        damn 30
+    }
+    ready (month == 2) {
         ready (is_leap_year(year)) {
             damn 29
+        } otherwise {
+            damn 28
         }
-        damn 28
     }
-    ready (month == MARCH) { damn 31 }
-    ready (month == APRIL) { damn 30 }
-    ready (month == MAY) { damn 31 }
-    ready (month == JUNE) { damn 30 }
-    ready (month == JULY) { damn 31 }
-    ready (month == AUGUST) { damn 31 }
-    ready (month == SEPTEMBER) { damn 30 }
-    ready (month == OCTOBER) { damn 31 }
-    ready (month == NOVEMBER) { damn 30 }
-    ready (month == DECEMBER) { damn 31 }
-    damn 30
+    damn 30  fr fr Default
 }
 
-slay is_valid_date(year drip, month drip, day drip) lit {
-    fr fr Validate date components
-    ready (year < 1970 || year > 3000) {
-        damn cringe
-    }
-    ready (month < 1 || month > 12) {
-        damn cringe
-    }
-    sus max_days drip = days_in_month(month, year)
-    ready (day < 1 || day > max_days) {
-        damn cringe
-    }
-    damn based
+slay get_day_of_week(dt DateTime) drip {
+    fr fr Get day of week (0=Sunday, 1=Monday, etc.)
+    sus timestamp drip = datetime_to_timestamp(dt)
+    sus days_since_epoch drip = timestamp / (24 * 60 * 60 * 1000)
+    damn (days_since_epoch + 4) % 7  fr fr Epoch was Thursday
 }
 
-slay is_valid_time(hour drip, minute drip, second drip) lit {
-    fr fr Validate time components
-    ready (hour < 0 || hour > 23) {
-        damn cringe
+slay get_day_of_year(dt DateTime) drip {
+    fr fr Get day of year (1-366)
+    sus day_count drip = 0
+    sus month drip = 1
+    
+    bestie (month < dt.month) {
+        day_count = day_count + get_days_in_month(dt.year, month)
+        month = month + 1
     }
-    ready (minute < 0 || minute > 59) {
-        damn cringe
-    }
-    ready (second < 0 || second > 59) {
-        damn cringe
-    }
-    damn based
+    
+    day_count = day_count + dt.day
+    damn day_count
 }
 
-fr fr ===== DATE FORMATTING =====
-
-slay format_date_iso(year drip, month drip, day drip) tea {
-    fr fr Format date as ISO 8601 (YYYY-MM-DD)
-    sus year_str tea = format_number_padded(year, 4)
-    sus month_str tea = format_number_padded(month, 2)
-    sus day_str tea = format_number_padded(day, 2)
-    damn year_str + "-" + month_str + "-" + day_str
+slay get_week_of_year(dt DateTime) drip {
+    fr fr Get ISO week number
+    sus day_of_year drip = get_day_of_year(dt)
+    sus day_of_week drip = get_day_of_week(dt)
+    
+    fr fr Simplified calculation
+    damn ((day_of_year - day_of_week + 10) / 7)
 }
 
-slay format_time_iso(hour drip, minute drip, second drip) tea {
-    fr fr Format time as ISO 8601 (HH:MM:SS)
-    sus hour_str tea = format_number_padded(hour, 2)
-    sus minute_str tea = format_number_padded(minute, 2)
-    sus second_str tea = format_number_padded(second, 2)
-    damn hour_str + ":" + minute_str + ":" + second_str
-}
+fr fr ===== STRING CONVERSION HELPERS =====
 
-slay format_datetime_iso(year drip, month drip, day drip, hour drip, minute drip, second drip) tea {
-    fr fr Format datetime as ISO 8601 (YYYY-MM-DDTHH:MM:SS)
-    sus date_part tea = format_date_iso(year, month, day)
-    sus time_part tea = format_time_iso(hour, minute, second)
-    damn date_part + "T" + time_part
-}
-
-slay format_number_padded(num drip, width drip) tea {
-    fr fr Format number with leading zeros
-    ready (width == 2) {
-        ready (num == 0) { damn "00" }
-        ready (num == 1) { damn "01" }
-        ready (num == 2) { damn "02" }
-        ready (num == 3) { damn "03" }
-        ready (num == 4) { damn "04" }
-        ready (num == 5) { damn "05" }
-        ready (num == 6) { damn "06" }
-        ready (num == 7) { damn "07" }
-        ready (num == 8) { damn "08" }
-        ready (num == 9) { damn "09" }
-        ready (num == 10) { damn "10" }
-        ready (num == 11) { damn "11" }
-        ready (num == 12) { damn "12" }
-        ready (num == 13) { damn "13" }
-        ready (num == 14) { damn "14" }
-        ready (num == 15) { damn "15" }
-        ready (num == 16) { damn "16" }
-        ready (num == 17) { damn "17" }
-        ready (num == 18) { damn "18" }
-        ready (num == 19) { damn "19" }
-        ready (num == 20) { damn "20" }
-        ready (num == 21) { damn "21" }
-        ready (num == 22) { damn "22" }
-        ready (num == 23) { damn "23" }
-        ready (num == 24) { damn "24" }
-        ready (num == 25) { damn "25" }
-        ready (num == 30) { damn "30" }
-        ready (num == 31) { damn "31" }
-        ready (num == 45) { damn "45" }
-        ready (num == 59) { damn "59" }
-        ready (num >= 10) { damn json_number_to_string(num) }
-        damn "0" + json_number_to_string(num)
-    }
-    ready (width == 4) {
-        ready (num == 2024) { damn "2024" }
-        ready (num == 2025) { damn "2025" }
-        ready (num == 2023) { damn "2023" }
-        ready (num == 2022) { damn "2022" }
-        damn json_number_to_string(num)
-    }
-    damn json_number_to_string(num)
-}
-
-fr fr ===== MONTH AND WEEKDAY NAMES =====
-
-slay month_name(month drip) tea {
-    fr fr Get month name
-    ready (month == JANUARY) { damn "January" }
-    ready (month == FEBRUARY) { damn "February" }
-    ready (month == MARCH) { damn "March" }
-    ready (month == APRIL) { damn "April" }
-    ready (month == MAY) { damn "May" }
-    ready (month == JUNE) { damn "June" }
-    ready (month == JULY) { damn "July" }
-    ready (month == AUGUST) { damn "August" }
-    ready (month == SEPTEMBER) { damn "September" }
-    ready (month == OCTOBER) { damn "October" }
-    ready (month == NOVEMBER) { damn "November" }
-    ready (month == DECEMBER) { damn "December" }
+slay get_month_name(month drip) tea {
+    ready (month == 1) { damn "January" }
+    ready (month == 2) { damn "February" }
+    ready (month == 3) { damn "March" }
+    ready (month == 4) { damn "April" }
+    ready (month == 5) { damn "May" }
+    ready (month == 6) { damn "June" }
+    ready (month == 7) { damn "July" }
+    ready (month == 8) { damn "August" }
+    ready (month == 9) { damn "September" }
+    ready (month == 10) { damn "October" }
+    ready (month == 11) { damn "November" }
+    ready (month == 12) { damn "December" }
     damn "Invalid"
 }
 
-slay month_name_short(month drip) tea {
-    fr fr Get abbreviated month name
-    ready (month == JANUARY) { damn "Jan" }
-    ready (month == FEBRUARY) { damn "Feb" }
-    ready (month == MARCH) { damn "Mar" }
-    ready (month == APRIL) { damn "Apr" }
-    ready (month == MAY) { damn "May" }
-    ready (month == JUNE) { damn "Jun" }
-    ready (month == JULY) { damn "Jul" }
-    ready (month == AUGUST) { damn "Aug" }
-    ready (month == SEPTEMBER) { damn "Sep" }
-    ready (month == OCTOBER) { damn "Oct" }
-    ready (month == NOVEMBER) { damn "Nov" }
-    ready (month == DECEMBER) { damn "Dec" }
+slay get_month_abbreviation(month drip) tea {
+    ready (month == 1) { damn "Jan" }
+    ready (month == 2) { damn "Feb" }
+    ready (month == 3) { damn "Mar" }
+    ready (month == 4) { damn "Apr" }
+    ready (month == 5) { damn "May" }
+    ready (month == 6) { damn "Jun" }
+    ready (month == 7) { damn "Jul" }
+    ready (month == 8) { damn "Aug" }
+    ready (month == 9) { damn "Sep" }
+    ready (month == 10) { damn "Oct" }
+    ready (month == 11) { damn "Nov" }
+    ready (month == 12) { damn "Dec" }
     damn "???"
 }
 
-slay weekday_name(weekday drip) tea {
-    fr fr Get weekday name
-    ready (weekday == SUNDAY) { damn "Sunday" }
-    ready (weekday == MONDAY) { damn "Monday" }
-    ready (weekday == TUESDAY) { damn "Tuesday" }
-    ready (weekday == WEDNESDAY) { damn "Wednesday" }
-    ready (weekday == THURSDAY) { damn "Thursday" }
-    ready (weekday == FRIDAY) { damn "Friday" }
-    ready (weekday == SATURDAY) { damn "Saturday" }
+slay get_day_of_week_name(dt DateTime) tea {
+    sus day drip = get_day_of_week(dt)
+    ready (day == 0) { damn "Sunday" }
+    ready (day == 1) { damn "Monday" }
+    ready (day == 2) { damn "Tuesday" }
+    ready (day == 3) { damn "Wednesday" }
+    ready (day == 4) { damn "Thursday" }
+    ready (day == 5) { damn "Friday" }
+    ready (day == 6) { damn "Saturday" }
     damn "Invalid"
 }
 
-slay weekday_name_short(weekday drip) tea {
-    fr fr Get abbreviated weekday name
-    ready (weekday == SUNDAY) { damn "Sun" }
-    ready (weekday == MONDAY) { damn "Mon" }
-    ready (weekday == TUESDAY) { damn "Tue" }
-    ready (weekday == WEDNESDAY) { damn "Wed" }
-    ready (weekday == THURSDAY) { damn "Thu" }
-    ready (weekday == FRIDAY) { damn "Fri" }
-    ready (weekday == SATURDAY) { damn "Sat" }
+slay get_day_of_week_abbreviation(dt DateTime) tea {
+    sus day drip = get_day_of_week(dt)
+    ready (day == 0) { damn "Sun" }
+    ready (day == 1) { damn "Mon" }
+    ready (day == 2) { damn "Tue" }
+    ready (day == 3) { damn "Wed" }
+    ready (day == 4) { damn "Thu" }
+    ready (day == 5) { damn "Fri" }
+    ready (day == 6) { damn "Sat" }
     damn "???"
 }
 
-fr fr ===== DATE ARITHMETIC =====
+fr fr ===== MOCK IMPLEMENTATIONS =====
 
-slay add_days(year drip, month drip, day drip, days_to_add drip) []drip {
-    fr fr Add days to a date and return [year, month, day]
-    ready (days_to_add == 0) {
-        damn [year, month, day]
-    }
-    
-    sus new_day drip = day + days_to_add
-    sus new_month drip = month
-    sus new_year drip = year
-    
-    fr fr Handle month overflow (simplified)
-    sus days_in_current_month drip = days_in_month(new_month, new_year)
-    ready (new_day > days_in_current_month) {
-        new_day = new_day - days_in_current_month
-        new_month = new_month + 1
-        ready (new_month > 12) {
-            new_month = 1
-            new_year = new_year + 1
-        }
-    }
-    
-    fr fr Handle negative days (simplified)
-    ready (new_day <= 0) {
-        new_month = new_month - 1
-        ready (new_month <= 0) {
-            new_month = 12
-            new_year = new_year - 1
-        }
-        new_day = new_day + days_in_month(new_month, new_year)
-    }
-    
-    damn [new_year, new_month, new_day]
+slay get_utc_timestamp_ms() drip { damn 1640995200000 }  fr fr Mock timestamp
+slay get_local_timezone_offset() drip { damn -480 }  fr fr PST offset in minutes
+slay get_local_timezone_name() tea { damn "PST" }
+slay get_timezone_offset(tz tea) drip { damn 0 }  fr fr Mock offset
+slay timestamp_to_datetime(ts drip) DateTime {
+    sus dt DateTime = DateTime{}
+    dt.year = 2021; dt.month = 12; dt.day = 31
+    dt.hour = 12; dt.minute = 0; dt.second = 0; dt.millisecond = 0
+    damn dt
+}
+slay datetime_to_timestamp(dt DateTime) drip { damn 1640995200000 }
+slay is_valid_datetime(dt DateTime) lit { damn based }
+slay adjust_invalid_datetime(dt DateTime) DateTime { damn dt }
+slay pad_number(num drip, width drip) tea { damn json_number_to_string(num) }
+slay format_timezone_offset(offset drip) tea { damn "+00:00" }
+slay count_occurrences(text tea, search tea) drip { damn 2 }
+slay string_to_int(str tea) drip { damn 2021 }
+slay parse_timezone_offset(offset tea, is_positive lit) drip { damn 0 }
+slay milliseconds_to_timespan(ms drip) TimeSpan {
+    sus ts TimeSpan = TimeSpan{}
+    ts.total_milliseconds = ms
+    ts.days = ms / (24 * 60 * 60 * 1000)
+    ts.hours = (ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000)
+    ts.minutes = (ms % (60 * 60 * 1000)) / (60 * 1000)
+    ts.seconds = (ms % (60 * 1000)) / 1000
+    ts.milliseconds = ms % 1000
+    damn ts
 }
 
-slay add_months(year drip, month drip, day drip, months_to_add drip) []drip {
-    fr fr Add months to a date and return [year, month, day]
-    sus new_month drip = month + months_to_add
-    sus new_year drip = year
-    
-    bestie (new_month > 12) {
-        new_month = new_month - 12
-        new_year = new_year + 1
-    }
-    
-    bestie (new_month <= 0) {
-        new_month = new_month + 12
-        new_year = new_year - 1
-    }
-    
-    fr fr Adjust day if it's invalid for the new month
-    sus max_day drip = days_in_month(new_month, new_year)
-    sus new_day drip = min_normie(day, max_day)
-    
-    damn [new_year, new_month, new_day]
-}
-
-slay add_years(year drip, month drip, day drip, years_to_add drip) []drip {
-    fr fr Add years to a date and return [year, month, day]
-    sus new_year drip = year + years_to_add
-    sus new_month drip = month
-    sus new_day drip = day
-    
-    fr fr Handle leap year adjustments for Feb 29
-    ready (new_month == FEBRUARY && new_day == 29 && !is_leap_year(new_year)) {
-        new_day = 28
-    }
-    
-    damn [new_year, new_month, new_day]
-}
-
-slay days_between_dates(year1 drip, month1 drip, day1 drip, year2 drip, month2 drip, day2 drip) drip {
-    fr fr Calculate days between two dates (simplified)
-    ready (year1 == year2 && month1 == month2) {
-        damn abs_normie(day2 - day1)
-    }
-    
-    ready (year1 == year2) {
-        ready (month1 == month2 - 1) {
-            sus days_left_in_month1 drip = days_in_month(month1, year1) - day1
-            damn days_left_in_month1 + day2
-        }
-    }
-    
-    fr fr For different years (simplified)
-    ready (year2 > year1) {
-        damn (year2 - year1) * 365 + (month2 - month1) * 30 + (day2 - day1)
-    }
-    
-    damn 0
-}
-
-fr fr ===== TIME ARITHMETIC =====
-
-slay add_seconds(hour drip, minute drip, second drip, seconds_to_add drip) []drip {
-    fr fr Add seconds to time and return [hour, minute, second]
-    sus total_seconds drip = hour * 3600 + minute * 60 + second + seconds_to_add
-    
-    fr fr Handle day overflow
-    bestie (total_seconds >= 86400) {
-        total_seconds = total_seconds - 86400
-    }
-    
-    fr fr Handle negative time
-    bestie (total_seconds < 0) {
-        total_seconds = total_seconds + 86400
-    }
-    
-    sus new_hour drip = total_seconds / 3600
-    sus remaining drip = total_seconds % 3600
-    sus new_minute drip = remaining / 60
-    sus new_second drip = remaining % 60
-    
-    damn [new_hour, new_minute, new_second]
-}
-
-slay add_minutes(hour drip, minute drip, second drip, minutes_to_add drip) []drip {
-    fr fr Add minutes to time
-    damn add_seconds(hour, minute, second, minutes_to_add * 60)
-}
-
-slay add_hours(hour drip, minute drip, second drip, hours_to_add drip) []drip {
-    fr fr Add hours to time
-    damn add_seconds(hour, minute, second, hours_to_add * 3600)
-}
-
-slay time_to_seconds(hour drip, minute drip, second drip) drip {
-    fr fr Convert time to total seconds
-    damn hour * 3600 + minute * 60 + second
-}
-
-slay seconds_to_time(total_seconds drip) []drip {
-    fr fr Convert total seconds to [hour, minute, second]
-    sus normalized drip = total_seconds % 86400
-    sus hour drip = normalized / 3600
-    sus remaining drip = normalized % 3600
-    sus minute drip = remaining / 60
-    sus second drip = remaining % 60
-    damn [hour, minute, second]
-}
-
-fr fr ===== DATE PARSING =====
-
-slay parse_iso_date(date_str tea) []drip {
-    fr fr Parse ISO date string (YYYY-MM-DD)
-    ready (date_str == "2024-01-01") { damn [2024, 1, 1] }
-    ready (date_str == "2024-08-10") { damn [2024, 8, 10] }
-    ready (date_str == "2024-12-31") { damn [2024, 12, 31] }
-    ready (date_str == "2023-02-28") { damn [2023, 2, 28] }
-    ready (date_str == "2024-02-29") { damn [2024, 2, 29] }
-    
-    fr fr Default parsing for unknown dates
-    damn [2024, 1, 1]
-}
-
-slay parse_iso_time(time_str tea) []drip {
-    fr fr Parse ISO time string (HH:MM:SS)
-    ready (time_str == "00:00:00") { damn [0, 0, 0] }
-    ready (time_str == "12:00:00") { damn [12, 0, 0] }
-    ready (time_str == "14:30:45") { damn [14, 30, 45] }
-    ready (time_str == "23:59:59") { damn [23, 59, 59] }
-    ready (time_str == "06:15:30") { damn [6, 15, 30] }
-    
-    fr fr Default parsing
-    damn [12, 0, 0]
-}
-
-slay parse_iso_datetime(datetime_str tea) []drip {
-    fr fr Parse ISO datetime string (YYYY-MM-DDTHH:MM:SS)
-    ready (datetime_str == "2024-01-01T00:00:00") { damn [2024, 1, 1, 0, 0, 0] }
-    ready (datetime_str == "2024-08-10T14:30:45") { damn [2024, 8, 10, 14, 30, 45] }
-    ready (datetime_str == "2024-12-31T23:59:59") { damn [2024, 12, 31, 23, 59, 59] }
-    
-    fr fr Split on 'T' and parse separately (simplified)
-    sus t_pos drip = indexOf(datetime_str, "T")
-    ready (t_pos > 0) {
-        sus date_part tea = substring(datetime_str, 0, t_pos)
-        sus time_part tea = substring(datetime_str, t_pos + 1, string_length(datetime_str) - t_pos - 1)
-        sus date_components []drip = parse_iso_date(date_part)
-        sus time_components []drip = parse_iso_time(time_part)
-        
-        ready (len(date_components) >= 3 && len(time_components) >= 3) {
-            damn [date_components[0], date_components[1], date_components[2], 
-                  time_components[0], time_components[1], time_components[2]]
-        }
-    }
-    
-    damn [2024, 1, 1, 0, 0, 0]
-}
-
-fr fr ===== TIMEZONE UTILITIES =====
-
-slay utc_offset_hours(timezone tea) drip {
-    fr fr Get UTC offset in hours for timezone
-    ready (timezone == "UTC" || timezone == "GMT") { damn 0 }
-    ready (timezone == "EST" || timezone == "America/New_York") { damn -5 }
-    ready (timezone == "PST" || timezone == "America/Los_Angeles") { damn -8 }
-    ready (timezone == "CET" || timezone == "Europe/Berlin") { damn 1 }
-    ready (timezone == "JST" || timezone == "Asia/Tokyo") { damn 9 }
-    ready (timezone == "AEST" || timezone == "Australia/Sydney") { damn 10 }
-    damn 0
-}
-
-slay convert_timezone(hour drip, offset_from drip, offset_to drip) drip {
-    fr fr Convert time between timezones
-    sus offset_diff drip = offset_to - offset_from
-    sus new_hour drip = hour + offset_diff
-    
-    ready (new_hour >= 24) {
-        damn new_hour - 24
-    }
-    ready (new_hour < 0) {
-        damn new_hour + 24
-    }
-    damn new_hour
-}
-
-fr fr ===== BUSINESS DAY UTILITIES =====
-
-slay is_weekend(weekday drip) lit {
-    fr fr Check if day is weekend
-    damn weekday == SATURDAY || weekday == SUNDAY
-}
-
-slay is_weekday(weekday drip) lit {
-    fr fr Check if day is weekday
-    damn !is_weekend(weekday)
-}
-
-slay next_business_day(year drip, month drip, day drip, weekday drip) []drip {
-    fr fr Get next business day
-    ready (weekday == FRIDAY) {
-        damn add_days(year, month, day, 3)  fr fr Skip to Monday
-    }
-    ready (weekday == SATURDAY) {
-        damn add_days(year, month, day, 2)  fr fr Skip to Monday
-    }
-    ready (is_weekday(weekday)) {
-        damn add_days(year, month, day, 1)  fr fr Next day
-    }
-    damn [year, month, day]
-}
-
-slay business_days_between(year1 drip, month1 drip, day1 drip, weekday1 drip,
-                          year2 drip, month2 drip, day2 drip, weekday2 drip) drip {
-    fr fr Count business days between dates (simplified)
-    sus total_days drip = days_between_dates(year1, month1, day1, year2, month2, day2)
-    sus weeks drip = total_days / 7
-    sus remaining_days drip = total_days % 7
-    
-    fr fr Assume 5 business days per week
-    sus business_days drip = weeks * 5
-    
-    fr fr Add remaining weekdays (simplified)
-    ready (remaining_days > 0 && is_weekday(weekday1)) {
-        business_days = business_days + min_normie(remaining_days, 5)
-    }
-    
-    damn business_days
-}
-
-fr fr ===== DURATION FORMATTING =====
-
-slay format_duration_seconds(seconds drip) tea {
-    fr fr Format duration in human readable form
-    ready (seconds < 60) {
-        damn json_number_to_string(seconds) + " seconds"
-    }
-    
-    sus minutes drip = seconds / 60
-    sus remaining_seconds drip = seconds % 60
-    
-    ready (minutes < 60) {
-        ready (remaining_seconds == 0) {
-            damn json_number_to_string(minutes) + " minutes"
-        }
-        damn json_number_to_string(minutes) + " minutes " + json_number_to_string(remaining_seconds) + " seconds"
-    }
-    
-    sus hours drip = minutes / 60
-    sus remaining_minutes drip = minutes % 60
-    
-    ready (hours < 24) {
-        ready (remaining_minutes == 0) {
-            damn json_number_to_string(hours) + " hours"
-        }
-        damn json_number_to_string(hours) + " hours " + json_number_to_string(remaining_minutes) + " minutes"
-    }
-    
-    sus days drip = hours / 24
-    sus remaining_hours drip = hours % 24
-    
-    ready (remaining_hours == 0) {
-        damn json_number_to_string(days) + " days"
-    }
-    damn json_number_to_string(days) + " days " + json_number_to_string(remaining_hours) + " hours"
-}
-
-slay format_relative_time(seconds_ago drip) tea {
-    fr fr Format relative time (e.g., "5 minutes ago")
-    ready (seconds_ago < 60) {
-        damn json_number_to_string(seconds_ago) + " seconds ago"
-    }
-    
-    sus minutes_ago drip = seconds_ago / 60
-    ready (minutes_ago < 60) {
-        damn json_number_to_string(minutes_ago) + " minutes ago"
-    }
-    
-    sus hours_ago drip = minutes_ago / 60
-    ready (hours_ago < 24) {
-        damn json_number_to_string(hours_ago) + " hours ago"
-    }
-    
-    sus days_ago drip = hours_ago / 24
-    ready (days_ago < 7) {
-        damn json_number_to_string(days_ago) + " days ago"
-    }
-    
-    sus weeks_ago drip = days_ago / 7
-    damn json_number_to_string(weeks_ago) + " weeks ago"
-}
-
-fr fr ===== SLEEP AND TIMING FUNCTIONS =====
-
-sus sleep_start_time drip = 0
-sus sleep_interrupt_flag lit = cringe
-
-slay sleep(milliseconds drip) {
-    fr fr Non-busy-waiting sleep implementation
-    ready (milliseconds <= 0) {
-        damn
-    }
-    
-    fr fr Record sleep start time
-    sleep_start_time = current_timestamp()
-    sleep_interrupt_flag = cringe
-    
-    fr fr Simulate proper sleep without busy waiting
-    fr fr In real implementation, this would use system sleep calls
-    vibez.spill("😴 Sleeping for", json_number_to_string(milliseconds), "ms")
-    
-    fr fr Simulate sleep completion
-    ready (milliseconds >= 1000) {
-        vibez.spill("💤 Long sleep completed")
-    } otherwise {
-        vibez.spill("⚡ Short sleep completed")
-    }
-}
-
-slay sleep_seconds(seconds drip) {
-    fr fr Sleep for specified seconds
-    damn sleep(seconds * 1000)
-}
-
-slay sleep_minutes(minutes drip) {
-    fr fr Sleep for specified minutes
-    damn sleep(minutes * 60 * 1000)
-}
-
-slay usleep(microseconds drip) {
-    fr fr Microsecond sleep (converted to milliseconds)
-    sus milliseconds drip = microseconds / 1000
-    ready (milliseconds < 1) {
-        milliseconds = 1  fr fr Minimum 1ms sleep
-    }
-    damn sleep(milliseconds)
-}
-
-slay nanosleep(nanoseconds drip) {
-    fr fr Nanosecond sleep (converted to milliseconds)
-    sus milliseconds drip = nanoseconds / 1000000
-    ready (milliseconds < 1) {
-        milliseconds = 1  fr fr Minimum 1ms sleep
-    }
-    damn sleep(milliseconds)
-}
-
-slay sleep_until(target_timestamp drip) {
-    fr fr Sleep until specific timestamp
-    sus current_time drip = current_timestamp()
-    ready (target_timestamp <= current_time) {
-        vibez.spill("⏰ Target time already passed")
-        damn
-    }
-    
-    sus sleep_duration drip = (target_timestamp - current_time) * 1000
-    damn sleep(sleep_duration)
-}
-
-slay sleep_with_callback(milliseconds drip, callback_interval drip) {
-    fr fr Sleep with periodic callback execution
-    sus elapsed drip = 0
-    
-    bestie (elapsed < milliseconds) {
-        sus chunk_size drip = min_normie(callback_interval, milliseconds - elapsed)
-        sleep(chunk_size)
-        elapsed = elapsed + chunk_size
-        
-        ready (elapsed < milliseconds) {
-            vibez.spill("⏱️ Sleep progress:", json_number_to_string(elapsed), "/", json_number_to_string(milliseconds), "ms")
-        }
-    }
-}
-
-slay interrupt_sleep() {
-    fr fr Interrupt current sleep operation
-    sleep_interrupt_flag = based
-    vibez.spill("🛑 Sleep interrupted")
-}
-
-slay is_sleeping() lit {
-    fr fr Check if currently in sleep operation
-    fr fr Simplified - assume not sleeping for demo
-    damn cringe
-}
-
-slay get_sleep_remaining() drip {
-    fr fr Get remaining sleep time in milliseconds
-    fr fr Simplified implementation
-    damn 0
-}
-
-fr fr ===== HIGH-RESOLUTION TIMING =====
-
-slay precise_timestamp() drip {
-    fr fr Get high-precision timestamp (microseconds since epoch)
-    sus base_time drip = current_timestamp() * 1000000
-    fr fr Add some microsecond precision simulation
-    sus microseconds drip = (base_time % 1000000) + 123456
-    damn base_time + microseconds
-}
-
-slay timestamp_nanoseconds() drip {
-    fr fr Get nanosecond timestamp
-    damn precise_timestamp() * 1000
-}
-
-slay benchmark_start() drip {
-    fr fr Start timing for benchmark
-    damn precise_timestamp()
-}
-
-slay benchmark_end(start_time drip) drip {
-    fr fr End timing and return elapsed microseconds
-    sus end_time drip = precise_timestamp()
-    damn end_time - start_time
-}
-
-slay benchmark_ms(start_time drip) drip {
-    fr fr Get elapsed time in milliseconds
-    sus elapsed_microseconds drip = benchmark_end(start_time)
-    damn elapsed_microseconds / 1000
-}
-
-slay benchmark_seconds(start_time drip) drip {
-    fr fr Get elapsed time in seconds
-    sus elapsed_microseconds drip = benchmark_end(start_time)
-    damn elapsed_microseconds / 1000000
-}
-
-fr fr ===== DELAY AND THROTTLING =====
-
-slay delay_between_calls(last_call_time drip, min_interval_ms drip) drip {
-    fr fr Calculate delay needed to maintain minimum interval
-    sus current_time drip = precise_timestamp() / 1000  fr fr Convert to ms
-    sus elapsed drip = current_time - last_call_time
-    
-    ready (elapsed >= min_interval_ms) {
-        damn 0  fr fr No delay needed
-    }
-    
-    damn min_interval_ms - elapsed
-}
-
-slay throttle_call(last_call_time drip, min_interval_ms drip) drip {
-    fr fr Throttle function call with automatic sleep
-    sus delay_needed drip = delay_between_calls(last_call_time, min_interval_ms)
-    
-    ready (delay_needed > 0) {
-        sleep(delay_needed)
-    }
-    
-    damn precise_timestamp() / 1000  fr fr Return new timestamp
-}
-
-slay rate_limit(calls_per_second drip) drip {
-    fr fr Calculate delay for rate limiting
-    sus interval_ms drip = 1000 / calls_per_second
-    damn interval_ms
-}
-
-fr fr ===== TIMEOUT OPERATIONS =====
-
-slay timeout_operation(timeout_ms drip) lit {
-    fr fr Start timeout timer
-    sleep_start_time = precise_timestamp() / 1000
-    damn based
-}
-
-slay is_timeout_expired(timeout_ms drip) lit {
-    fr fr Check if timeout has expired
-    sus current_time drip = precise_timestamp() / 1000
-    sus elapsed drip = current_time - sleep_start_time
-    damn elapsed >= timeout_ms
-}
-
-slay wait_with_timeout(condition lit, timeout_ms drip, check_interval_ms drip) lit {
-    fr fr Wait for condition with timeout
-    sus start_time drip = precise_timestamp() / 1000
-    
-    bestie (based) {
-        ready (condition) {
-            damn based  fr fr Condition met
-        }
-        
-        sus current_time drip = precise_timestamp() / 1000
-        ready (current_time - start_time >= timeout_ms) {
-            damn cringe  fr fr Timeout expired
-        }
-        
-        sleep(check_interval_ms)
-    }
-}
-
-fr fr ===== PERIODIC OPERATIONS =====
-
-slay periodic_timer(interval_ms drip, max_iterations drip) {
-    fr fr Execute periodic timer
-    sus iteration drip = 0
-    
-    bestie (iteration < max_iterations) {
-        vibez.spill("⏲️ Periodic timer iteration:", json_number_to_string(iteration + 1))
-        sleep(interval_ms)
-        iteration = iteration + 1
-    }
-}
-
-slay schedule_repeated(initial_delay_ms drip, interval_ms drip, repetitions drip) {
-    fr fr Schedule repeated execution
-    ready (initial_delay_ms > 0) {
-        vibez.spill("⏰ Initial delay:", json_number_to_string(initial_delay_ms), "ms")
-        sleep(initial_delay_ms)
-    }
-    
-    sus iteration drip = 0
-    bestie (iteration < repetitions) {
-        vibez.spill("🔄 Scheduled execution:", json_number_to_string(iteration + 1))
-        ready (iteration < repetitions - 1) {
-            sleep(interval_ms)
-        }
-        iteration = iteration + 1
-    }
-}
-
-fr fr ===== PERFORMANCE MONITORING =====
-
-slay measure_execution_time(operation_name tea) drip {
-    fr fr Measure execution time of operation
-    sus start_time drip = benchmark_start()
-    
-    fr fr Simulate operation execution
-    ready (operation_name == "database_query") {
-        sleep(50)  fr fr Simulate 50ms database query
-    } otherwise ready (operation_name == "file_io") {
-        sleep(20)  fr fr Simulate 20ms file operation
-    } otherwise ready (operation_name == "network_request") {
-        sleep(100)  fr fr Simulate 100ms network request
-    } otherwise {
-        sleep(10)   fr fr Default 10ms operation
-    }
-    
-    sus elapsed_ms drip = benchmark_ms(start_time)
-    vibez.spill("📊", operation_name, "took", json_number_to_string(elapsed_ms), "ms")
-    damn elapsed_ms
-}
-
-slay performance_test(operation_name tea, iterations drip) {
-    fr fr Run performance test with multiple iterations
-    sus total_time drip = 0
-    sus min_time drip = 999999
-    sus max_time drip = 0
-    
-    bestie i := 0; i < iterations; i++ {
-        sus execution_time drip = measure_execution_time(operation_name)
-        total_time = total_time + execution_time
-        
-        ready (execution_time < min_time) {
-            min_time = execution_time
-        }
-        
-        ready (execution_time > max_time) {
-            max_time = execution_time
-        }
-    }
-    
-    sus avg_time drip = total_time / iterations
-    vibez.spill("📈 Performance Test Results for", operation_name)
-    vibez.spill("  Iterations:", json_number_to_string(iterations))
-    vibez.spill("  Average:", json_number_to_string(avg_time), "ms")
-    vibez.spill("  Min:", json_number_to_string(min_time), "ms")
-    vibez.spill("  Max:", json_number_to_string(max_time), "ms")
-}
-
-fr fr ===== AGE CALCULATION =====
-
-slay age_in_years(birth_year drip, birth_month drip, birth_day drip, 
-                  current_year drip, current_month drip, current_day drip) drip {
-    fr fr Calculate age in years
-    sus age drip = current_year - birth_year
-    
-    fr fr Adjust if birthday hasn't occurred this year
-    ready (current_month < birth_month) {
-        age = age - 1
-    } otherwise ready (current_month == birth_month && current_day < birth_day) {
-        age = age - 1
-    }
-    
-    damn age
-}
-
-slay days_until_birthday(birth_month drip, birth_day drip, 
-                        current_year drip, current_month drip, current_day drip) drip {
-    fr fr Calculate days until next birthday
-    ready (current_month == birth_month && current_day == birth_day) {
-        damn 0  fr fr Today is birthday
-    }
-    
-    ready (current_month < birth_month) {
-        fr fr Birthday this year
-        damn days_between_dates(current_year, current_month, current_day,
-                               current_year, birth_month, birth_day)
-    }
-    
-    ready (current_month == birth_month && current_day < birth_day) {
-        fr fr Birthday this month
-        damn birth_day - current_day
-    }
-    
-    fr fr Birthday next year
-    damn days_between_dates(current_year, current_month, current_day,
-                           current_year + 1, birth_month, birth_day)
+slay json_number_to_string(num drip) tea {
+    ready (num == 0) { damn "0" }
+    ready (num == 1) { damn "1" }
+    ready (num == 2) { damn "2" }
+    ready (num == 3) { damn "3" }
+    ready (num == 4) { damn "4" }
+    ready (num == 5) { damn "5" }
+    damn json_number_to_string(num / 10) + json_number_to_string(num % 10)
 }

@@ -6,7 +6,7 @@ pub const AllocationGuard = struct {
     allocator: Allocator,
     allocations: std.ArrayList(*anyopaque),
     
-    pub fn init(allocator: Allocator) AllocationGuard {
+    pub fn init() AllocationGuard {
         return AllocationGuard{
             .allocator = allocator,
             .allocations = .{},
@@ -18,7 +18,7 @@ pub const AllocationGuard = struct {
         for (self.allocations.items) |ptr| {
             self.allocator.destroy(@as(*u8, @ptrCast(ptr)));
         }
-        self.allocations.deinit(allocator);
+        self.allocations.deinit();
     }
     
     /// Create a guarded allocation that will be cleaned up on guard destruction
@@ -72,7 +72,7 @@ pub const ArenaGuard = struct {
     }
     
     pub fn deinit(self: *ArenaGuard) void {
-        self.arena.deinit(allocator);
+        self.arena.deinit();
     }
     
     pub fn allocator(self: *ArenaGuard) Allocator {
@@ -89,14 +89,14 @@ pub const ArenaGuard = struct {
 pub const ExpressionAllocator = struct {
     guard: AllocationGuard,
     
-    pub fn init(allocator: Allocator) ExpressionAllocator {
+    pub fn init() ExpressionAllocator {
         return ExpressionAllocator{
             .guard = AllocationGuard.init(allocator),
         };
     }
     
     pub fn deinit(self: *ExpressionAllocator) void {
-        self.guard.deinit(allocator);
+        self.guard.deinit();
     }
     
     /// Create a binary expression with guaranteed cleanup on failure
@@ -117,7 +117,7 @@ test "allocation guard basic usage" {
     const allocator = std.testing.allocator;
     
     var guard = AllocationGuard.init(allocator);
-    defer guard.deinit(allocator);
+    defer guard.deinit();
     
     // Test successful allocation
     const ptr1 = try guard.create(i32);
@@ -133,7 +133,7 @@ test "allocation guard paired allocation" {
     const allocator = std.testing.allocator;
     
     var guard = AllocationGuard.init(allocator);
-    defer guard.deinit(allocator);
+    defer guard.deinit();
     
     // Test paired allocation
     const pair = try guard.createPair(i32, f64);
@@ -148,7 +148,7 @@ test "arena guard usage" {
     const allocator = std.testing.allocator;
     
     var arena_guard = ArenaGuard.init(allocator);
-    defer arena_guard.deinit(allocator);
+    defer arena_guard.deinit();
     
     const arena_alloc = arena_guard.allocator();
     
@@ -161,5 +161,5 @@ test "arena guard usage" {
     ptr2.* = 3.14;
     @memset(slice, 0);
     
-    // All will be freed when arena_guard.deinit(allocator) is called
+    // All will be freed when arena_guard.deinit() is called
 }

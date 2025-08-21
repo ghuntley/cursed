@@ -18,7 +18,7 @@ const simple_interpreter = @import("simple_interpreter.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -167,7 +167,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     
     // Generate optimized C code
     var c_code = std.ArrayList(u8).init(allocator);
-    defer c_code.deinit(allocator);
+    defer c_code.deinit();
     
     try c_code.appendSlice("#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n");
     
@@ -308,7 +308,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8, tokens: ArrayList(
     if (use_parser) {
         // Use parser for advanced syntax
         var p = parser.Parser.init(allocator, tokens.items);
-        defer p.deinit(allocator);
+        defer p.deinit();
         
         if (p.parseProgram()) |program| {
             if (debug_ast) {

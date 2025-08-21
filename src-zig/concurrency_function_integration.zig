@@ -47,8 +47,8 @@ pub const EnhancedGoroutineContext = struct {
     }
     
     pub fn deinit(self: *EnhancedGoroutineContext) void {
-        self.function_executor.deinit(allocator);
-        self.function_registry.deinit(allocator);
+        self.function_executor.deinit();
+        self.function_registry.deinit();
         self.allocator.destroy(self);
     }
     
@@ -80,12 +80,12 @@ pub fn executeInterpretedFunctionSafe(
         print("Failed to create goroutine context: {}\n", .{err});
         return 0; // Safe fallback
     };
-    defer context.deinit(allocator);
+    defer context.deinit();
     
     // Convert usize arguments to Value arguments based on parameter types
     var cursed_args = .empty;
-    defer cursed_args.deinit(allocator);
-    errdefer cursed_args.deinit(allocator); // Clean up on error
+    defer cursed_args.deinit();
+    errdefer cursed_args.deinit(); // Clean up on error
     
     for (args, 0..) |arg, i| {
         const value = if (i < param_types.len) blk: {
@@ -120,7 +120,7 @@ pub fn executeInterpretedFunctionSafe(
             Value{ .Integer = @as(i64, @intCast(arg)) }
         };
         
-        cursed_args.append(allocator, value) catch |err| {
+        cursed_args.append(value) catch |err| {
             print("Failed to convert argument {}: {}\n", .{ i, err });
             continue;
         };
@@ -163,12 +163,11 @@ pub fn executeInterpretedFunctionSafe(
 
 /// Create a test function for demonstration
 fn createTestFunction(allocator: Allocator, name: []const u8) !ast.FunctionStatement {
-    _ = allocator;
-    
+        
     // Create a simple function that adds its parameters
     var parameters = .empty;
-    try parameters.append(allocator, ast.Parameter{ .name = "a", .type_name = "drip" });
-    try parameters.append(allocator, ast.Parameter{ .name = "b", .type_name = "drip" });
+    try parameters.append(ast.Parameter{ .name = "a", .type_name = "drip" });
+    try parameters.append(ast.Parameter{ .name = "b", .type_name = "drip" });
     
     var body = .empty;
     
@@ -186,7 +185,7 @@ fn createTestFunction(allocator: Allocator, name: []const u8) !ast.FunctionState
         .right = right_expr,
     }};
     
-    try body.append(allocator, ast.Statement{ .Return = binary_expr });
+    try body.append(ast.Statement{ .Return = binary_expr });
     
     return ast.FunctionStatement{
         .name = name,
@@ -219,11 +218,11 @@ pub const EnhancedGoroutineRuntime = struct {
         // Clean up all goroutine contexts
         var iterator = self.goroutine_contexts.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.*.deinit(allocator);
+            entry.value_ptr.*.deinit();
         }
-        self.goroutine_contexts.deinit(allocator);
+        self.goroutine_contexts.deinit();
         
-        self.base_runtime.deinit(allocator);
+        self.base_runtime.deinit();
         self.allocator.destroy(self);
     }
     
@@ -261,16 +260,16 @@ pub const EnhancedGoroutineRuntime = struct {
 
 /// Dummy goroutine function for testing
 fn dummyGoroutineFunction() void {
-    print("Dummy goroutine function executing\n");
+    print("Dummy goroutine function executing\n", .{});
 }
 
 /// Test the integration
 pub fn testConcurrencyFunctionIntegration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
-    print("Testing concurrency function integration...\n");
+    print("Testing concurrency function integration...\n", .{});
     
     // Test safe interpreted function execution
     const args = [_]usize{ 42, 24 };
@@ -285,10 +284,10 @@ pub fn testConcurrencyFunctionIntegration() !void {
     
     // Test enhanced runtime
     var enhanced_runtime = try EnhancedGoroutineRuntime.init(allocator);
-    defer enhanced_runtime.deinit(allocator);
+    defer enhanced_runtime.deinit();
     
     const goroutine_id = try enhanced_runtime.spawnWithFunctions("test_function");
     print("Spawned enhanced goroutine: {}\n", .{goroutine_id});
     
-    print("Concurrency function integration test completed successfully\n");
+    print("Concurrency function integration test completed successfully\n", .{});
 }

@@ -238,8 +238,8 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         }
         
         pub fn printSummary(self: *const OptimizationMetrics) void {
-            print("\n🚀 Optimization Metrics Summary\n");
-            print("===============================\n");
+            print("\n🚀 Optimization Metrics Summary\n", .{});
+            print("===============================\n", .{});
             print("Optimization time: {:.2} ms\n", .{@as(f64, @floatFromInt(self.total_optimization_time_ns)) / 1_000_000.0});
             print("Passes executed: {}\n", .{self.passes_executed});
             print("Functions optimized: {}\n", .{self.functions_optimized});
@@ -296,7 +296,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         // Initialize platform-specific optimizations
         try engine.initializePlatformOptimizations();
         
-        print("🎯 Advanced LLVM Optimization Engine initialized\n");
+        print("🎯 Advanced LLVM Optimization Engine initialized\n", .{});
         print("  Optimization level: {}\n", .{config.level});
         print("  Vectorization: {}\n", .{config.enable_vectorization});
         print("  Function inlining: {}\n", .{config.enable_function_inlining});
@@ -318,7 +318,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         
         // Cleanup PGO system
         if (self.pgo_system) |pgo| {
-            pgo.deinit(allocator);
+            pgo.deinit();
             self.allocator.destroy(pgo);
         }
         
@@ -327,9 +327,9 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         self.allocator.free(self.target_cpu);
         self.allocator.free(self.target_features);
         
-        self.platform_specific_optimizations.deinit(allocator);
+        self.platform_specific_optimizations.deinit();
         
-        print("✅ Advanced LLVM Optimization Engine cleaned up\n");
+        print("✅ Advanced LLVM Optimization Engine cleaned up\n", .{});
     }
     
     /// Enable Profile-Guided Optimization
@@ -341,7 +341,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         self.pgo_system = try self.allocator.create(PGOSystem);
         self.pgo_system.?.* = try PGOSystem.init(self.allocator, profile_path);
         
-        print("✅ Profile-Guided Optimization enabled\n");
+        print("✅ Profile-Guided Optimization enabled\n", .{});
         print("  Profile data path: {s}\n", .{profile_path});
     }
     
@@ -402,65 +402,65 @@ pub const AdvancedLLVMOptimizationEngine = struct {
     /// Enable cross-platform optimization strategies
     pub fn enableCrossPlatformOptimizations(self: *Self) void {
         self.cross_platform_enabled = true;
-        print("✅ Cross-platform optimization strategies enabled\n");
+        print("✅ Cross-platform optimization strategies enabled\n", .{});
     }
     
     /// Run comprehensive optimization pipeline
     pub fn runOptimizationPipeline(self: *Self) !OptimizationResult {
         const start_time = std.time.nanoTimestamp();
         
-        print("🚀 Starting comprehensive optimization pipeline...\n");
+        print("🚀 Starting comprehensive optimization pipeline...\n", .{});
         
         // Phase 1: PGO Analysis (if enabled)
         var pgo_result: ?PGOAnalysisResult = null;
         if (self.pgo_enabled and self.pgo_system != null) {
-            print("  Phase 1: Profile-Guided Optimization analysis...\n");
+            print("  Phase 1: Profile-Guided Optimization analysis...\n", .{});
             pgo_result = try self.pgo_system.?.analyzeProfiles();
         }
-        defer if (pgo_result) |*result| result.deinit(allocator);
+        defer if (pgo_result) |*result| result.deinit();
         
         // Phase 2: Dead Code Elimination (early)
         if (self.optimization_config.enable_dead_code_elimination) {
-            print("  Phase 2: Early dead code elimination...\n");
+            print("  Phase 2: Early dead code elimination...\n", .{});
             try self.addDeadCodeEliminationPasses();
         }
         
         // Phase 3: Constant Propagation
         if (self.optimization_config.enable_constant_propagation) {
-            print("  Phase 3: Constant propagation...\n");
+            print("  Phase 3: Constant propagation...\n", .{});
             try self.addConstantPropagationPasses();
         }
         
         // Phase 4: Function Inlining (with PGO guidance)
         if (self.optimization_config.enable_function_inlining) {
-            print("  Phase 4: Function inlining optimization...\n");
+            print("  Phase 4: Function inlining optimization...\n", .{});
             try self.addFunctionInliningPasses(pgo_result);
         }
         
         // Phase 5: Loop Optimizations
         if (self.optimization_config.enable_loop_unrolling) {
-            print("  Phase 5: Loop optimization...\n");
+            print("  Phase 5: Loop optimization...\n", .{});
             try self.addLoopOptimizationPasses(pgo_result);
         }
         
         // Phase 6: Vectorization
         if (self.optimization_config.enable_vectorization) {
-            print("  Phase 6: Vectorization optimization...\n");
+            print("  Phase 6: Vectorization optimization...\n", .{});
             try self.addVectorizationPasses(pgo_result);
         }
         
         // Phase 7: Platform-specific optimizations
         if (self.cross_platform_enabled) {
-            print("  Phase 7: Platform-specific optimizations...\n");
+            print("  Phase 7: Platform-specific optimizations...\n", .{});
             try self.addPlatformSpecificPasses();
         }
         
         // Phase 8: Final cleanup and optimizations
-        print("  Phase 8: Final optimization passes...\n");
+        print("  Phase 8: Final optimization passes...\n", .{});
         try self.addFinalOptimizationPasses();
         
         // Execute all passes
-        print("  Executing optimization passes...\n");
+        print("  Executing optimization passes...\n", .{});
         const pass_result = try self.executeOptimizationPasses();
         
         const end_time = std.time.nanoTimestamp();
@@ -589,7 +589,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         
         // Use PGO data to guide vectorization decisions
         if (pgo_result) |pgo| {
-            print("    📊 Using PGO data for vectorization guidance\n");
+            print("    📊 Using PGO data for vectorization guidance\n", .{});
             
             // Prioritize hot loops for vectorization
             var hot_loop_count: u32 = 0;
@@ -610,7 +610,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
             } else {
                 // Conservative vectorization without hot loops
                 c.LLVMAddSLPVectorizePass(self.function_pass_manager);
-                print("    ⚡ Added conservative vectorization (no hot loops detected)\n");
+                print("    ⚡ Added conservative vectorization (no hot loops detected)\n", .{});
                 self.optimization_metrics.estimated_speedup *= 1.4;
             }
         } else {
@@ -618,7 +618,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
             c.LLVMAddLoopVectorizePass(self.function_pass_manager);
             c.LLVMAddSLPVectorizePass(self.function_pass_manager);
             c.LLVMAddLoadStoreVectorizerPass(self.function_pass_manager);
-            print("    ⚡ Added standard vectorization (no PGO data)\n");
+            print("    ⚡ Added standard vectorization (no PGO data)\n", .{});
             self.optimization_metrics.estimated_speedup *= 1.8;
         }
         
@@ -632,15 +632,15 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         // Add target-specific passes based on current platform
         if (std.mem.indexOf(u8, self.target_triple, "x86_64") != null) {
             // x86_64 specific optimizations
-            print("    Adding x86_64-specific optimizations...\n");
+            print("    Adding x86_64-specific optimizations...\n", .{});
             try self.addX86_64SpecificPasses();
         } else if (std.mem.indexOf(u8, self.target_triple, "aarch64") != null) {
             // ARM64 specific optimizations
-            print("    Adding ARM64-specific optimizations...\n");
+            print("    Adding ARM64-specific optimizations...\n", .{});
             try self.addARM64SpecificPasses();
         } else if (std.mem.indexOf(u8, self.target_triple, "wasm32") != null) {
             // WebAssembly specific optimizations
-            print("    Adding WebAssembly-specific optimizations...\n");
+            print("    Adding WebAssembly-specific optimizations...\n", .{});
             try self.addWASMSpecificPasses();
         }
         
@@ -668,7 +668,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         // Branch prediction optimization
         c.LLVMAddJumpThreadingPass(self.function_pass_manager);
         
-        print("      ✅ Added x86_64 vectorization and cache optimizations\n");
+        print("      ✅ Added x86_64 vectorization and cache optimizations\n", .{});
         self.optimization_metrics.passes_executed += 4;
     }
     
@@ -690,7 +690,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         // Load/store optimization for ARM64 memory model
         c.LLVMAddLoadStoreVectorizerPass(self.function_pass_manager);
         
-        print("      ✅ Added ARM64 NEON and memory model optimizations\n");
+        print("      ✅ Added ARM64 NEON and memory model optimizations\n", .{});
         self.optimization_metrics.passes_executed += 5;
     }
     
@@ -716,7 +716,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         // Strip debug info for production WASM builds
         c.LLVMAddStripSymbolsPass(self.module_pass_manager);
         
-        print("      ✅ Added WebAssembly size and SIMD optimizations\n");
+        print("      ✅ Added WebAssembly size and SIMD optimizations\n", .{});
         self.optimization_metrics.passes_executed += 7;
     }
     
@@ -825,7 +825,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
             return error.BitcodeWriteFailed;
         }
         
-        print("✅ LTO bitcode generated successfully\n");
+        print("✅ LTO bitcode generated successfully\n", .{});
     }
     
     /// Apply Link-Time Optimization
@@ -841,7 +841,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
             .Fat => try self.applyFatLTO(modules),
         }
         
-        print("✅ Link-Time Optimization applied successfully\n");
+        print("✅ Link-Time Optimization applied successfully\n", .{});
     }
     
     /// Apply Thin LTO
@@ -852,11 +852,11 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         // Thin LTO performs incremental linking and optimization
         // 1. Create summary index for each module
         var summaries: std.ArrayList(ThinLTOSummary) = .empty;
-        defer summaries.deinit(allocator);
+        defer summaries.deinit();
         
         for (modules) |module| {
             const summary = try self.createModuleSummary(module);
-            try summaries.append(allocator, summary);
+            try summaries.append(summary);
         }
         
         // 2. Perform global analysis across all summaries
@@ -888,7 +888,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         while (function != null) {
             const name = c.LLVMGetValueName(function);
             if (c.LLVMGetLinkage(function) != c.LLVMInternalLinkage) {
-                try summary.exported_functions.append(allocator, std.mem.span(name));
+                try summary.exported_functions.append(std.mem.span(name));
             }
             function = c.LLVMGetNextFunction(function);
         }
@@ -909,7 +909,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
             for (summary.exported_functions.items) |func_name| {
                 // Check if function should be inlined across modules
                 if (self.shouldInlineAcrossModules(func_name)) {
-                    try analysis.inlinable_functions.append(allocator, func_name);
+                    try analysis.inlinable_functions.append(func_name);
                 }
             }
         }
@@ -1066,8 +1066,8 @@ pub const OptimizationStatistics = struct {
     cross_platform_enabled: bool,
     
     pub fn printDetailedReport(self: *const OptimizationStatistics) void {
-        print("\n📊 Detailed Optimization Statistics Report\n");
-        print("===========================================\n");
+        print("\n📊 Detailed Optimization Statistics Report\n", .{});
+        print("===========================================\n", .{});
         print("🕒 Total optimization time: {:.2} ms\n", .{self.total_optimization_time_ms});
         print("🔧 Optimization passes executed: {}\n", .{self.passes_executed});
         print("⚡ Functions optimized: {}\n", .{self.functions_optimized});
@@ -1081,11 +1081,11 @@ pub const OptimizationStatistics = struct {
         print("🌐 Cross-platform optimizations: {}\n", .{if (self.cross_platform_enabled) "Enabled" else "Disabled"});
         
         if (self.estimated_speedup > 1.5) {
-            print("✨ Excellent optimization results achieved!\n");
+            print("✨ Excellent optimization results achieved!\n", .{});
         } else if (self.estimated_speedup > 1.2) {
-            print("✅ Good optimization results achieved.\n");
+            print("✅ Good optimization results achieved.\n", .{});
         } else {
-            print("⚠️  Limited optimization opportunities found.\n");
+            print("⚠️  Limited optimization opportunities found.\n", .{});
         }
     }
 };

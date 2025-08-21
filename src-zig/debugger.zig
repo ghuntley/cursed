@@ -70,19 +70,19 @@ pub const CursedDebugger = struct {
                 self.allocator.free(condition);
             }
         }
-        self.breakpoints.deinit(allocator);
+        self.breakpoints.deinit(self.allocator);
         
         for (self.watch_variables.items) |var_name| {
             self.allocator.free(var_name);
         }
-        self.watch_variables.deinit(allocator);
+        self.watch_variables.deinit(self.allocator);
         
-        self.execution_stack.deinit(allocator);
+        self.execution_stack.deinit(self.allocator);
         
         for (self.source_lines.items) |line| {
             self.allocator.free(line);
         }
-        self.source_lines.deinit(allocator);
+        self.source_lines.deinit(self.allocator);
     }
     
     /// Start interactive debugging session
@@ -120,8 +120,7 @@ pub const CursedDebugger = struct {
     
     /// Main command loop
     fn commandLoop(self: *Self) !void {
-        var stdin_buffer: [4096]u8 = undefined;
-        const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
+        const stdin = std.io.getStdIn().reader();
         var input_buffer: [256]u8 = undefined;
         
         while (true) {
@@ -867,15 +866,15 @@ fn HashMap(comptime K: type, comptime V: type) type {
 test "debugger initialization" {
     const testing = std.testing;
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Create a mock interpreter (this would be a real interpreter in practice)
     var interp = interpreter.Interpreter.init(allocator);
-    defer interp.deinit(allocator);
+    defer interp.deinit();
     
     var debugger = try CursedDebugger.init(allocator, &interp);
-    defer debugger.deinit(allocator);
+    defer debugger.deinit();
     
     try testing.expect(debugger.breakpoints.count() == 0);
     try testing.expect(debugger.watch_variables.items.len == 0);

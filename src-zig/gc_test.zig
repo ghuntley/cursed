@@ -23,7 +23,7 @@ const TestObject = struct {
 test "gc basic initialization" {
     const config = GCConfig.default();
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     const stats = gc.getStats();
     try testing.expect(stats.total_allocations == 0);
@@ -35,7 +35,7 @@ test "gc basic initialization" {
 test "gc simple allocation" {
     const config = GCConfig.default();
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Allocate a test object
     const obj_ptr = try gc.alloc(@sizeOf(TestObject), 1);
@@ -55,7 +55,7 @@ test "gc simple allocation" {
 test "gc root registration" {
     const config = GCConfig.default();
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Allocate test objects
     const obj1_ptr = try gc.alloc(@sizeOf(TestObject), 1);
@@ -86,7 +86,7 @@ test "gc root registration" {
 test "gc object traversal" {
     const config = GCConfig.default();
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Create linked list of objects
     const obj1_ptr = try gc.alloc(@sizeOf(TestObject), 1);
@@ -121,7 +121,7 @@ test "gc generational collection" {
     config.promotion_threshold = 2;
     
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Allocate several objects to trigger promotion
     var objects: [10]*TestObject = undefined;
@@ -162,7 +162,7 @@ test "gc generational collection" {
 test "gc weak references" {
     const config = GCConfig.default();
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Allocate test object
     const obj_ptr = try gc.alloc(@sizeOf(TestObject), 1);
@@ -191,7 +191,7 @@ test "gc finalization" {
     config.enable_finalization = true;
     
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Allocate test object with finalizer
     const obj_ptr = try gc.alloc(@sizeOf(TestObject), 1);
@@ -218,7 +218,7 @@ test "gc write barriers" {
     config.enable_write_barriers = true;
     
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Allocate test objects
     const obj1_ptr = try gc.alloc(@sizeOf(TestObject), 1);
@@ -253,7 +253,7 @@ test "gc write barriers" {
 test "gc large objects" {
     const config = GCConfig.default();
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Allocate large object (should go directly to old generation)
     const large_size = 64 * 1024; // 64KB
@@ -281,11 +281,11 @@ test "gc stress test" {
     config.gc_trigger_threshold = 0.5; // Trigger GC more frequently
     
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     const num_objects = 1000;
     var live_objects: std.ArrayList(*TestObject) = .empty;
-    defer live_objects.deinit(allocator);
+    defer live_objects.deinit();
     
     // Allocate many objects, keeping some as roots
     for (0..num_objects) |i| {
@@ -296,7 +296,7 @@ test "gc stress test" {
         
         // Keep every 10th object as a root
         if (i % 10 == 0) {
-            try live_objects.append(allocator, obj);
+            try live_objects.append(obj);
             var root_ptr: ?*anyopaque = obj_ptr;
             try gc.addRoot(&root_ptr, 1);
         }
@@ -329,10 +329,10 @@ test "gc heap management" {
     config.initial_heap_size = 1024; // Very small initial heap
     
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     var objects: std.ArrayList(*TestObject) = .empty;
-    defer objects.deinit(allocator);
+    defer objects.deinit();
     
     // Allocate objects to force heap growth
     for (0..100) |i| {
@@ -348,7 +348,7 @@ test "gc heap management" {
         obj.value = @intCast(i);
         obj.next = null;
         
-        try objects.append(allocator, obj);
+        try objects.append(obj);
         var root_ptr: ?*anyopaque = obj_ptr;
         try gc.addRoot(&root_ptr, 1);
     }
@@ -377,7 +377,7 @@ test "gc concurrent safety" {
     config.enable_write_barriers = true;
     
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     const AllocatorThread = struct {
         gc: *GC,
@@ -390,7 +390,7 @@ test "gc concurrent safety" {
                 obj.value = @intCast(i);
                 obj.next = null;
                 
-                try self.objects.append(allocator, obj);
+                try self.objects.append(obj);
                 
                 // Occasionally trigger collection
                 if (i % 20 == 0) {
@@ -408,13 +408,13 @@ test "gc concurrent safety" {
         .gc = gc,
         .objects = .{},
     };
-    defer thread1.objects.deinit(allocator);
+    defer thread1.objects.deinit();
     
     var thread2 = AllocatorThread{
         .gc = gc,
         .objects = .{},
     };
-    defer thread2.objects.deinit(allocator);
+    defer thread2.objects.deinit();
     
     // Run threads concurrently
     const t1 = try std.Thread.spawn(.{}, AllocatorThread.run, .{&thread1});
@@ -435,7 +435,7 @@ test "gc concurrent safety" {
 test "gc allocation benchmark" {
     const config = GCConfig.default();
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     const num_allocations = 10000;
     const start_time = std.time.nanoTimestamp();
@@ -466,12 +466,12 @@ test "gc collection benchmark" {
     config.young_gen_size = 1024 * 1024; // 1MB young generation
     
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Fill heap with objects
     const num_objects = 10000;
     var roots: std.ArrayList(?*anyopaque) = .empty;
-    defer roots.deinit(allocator);
+    defer roots.deinit();
     
     for (0..num_objects) |i| {
         const obj_ptr = try gc.alloc(@sizeOf(TestObject), 1);
@@ -481,7 +481,7 @@ test "gc collection benchmark" {
         
         // Keep some objects alive
         if (i % 100 == 0) {
-            try roots.append(allocator, obj_ptr);
+            try roots.append(obj_ptr);
             try gc.addRoot(&roots.items[roots.items.len - 1], 1);
         }
     }
@@ -515,7 +515,7 @@ test "gc collection benchmark" {
 test "gc memory leak detection" {
     const config = GCConfig.default();
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     _ = gc.getStats(); // Get baseline stats
     
@@ -550,7 +550,7 @@ test "gc memory leak detection" {
 test "gc stack scanning" {
     const config = GCConfig.default();
     const gc = try GC.init(test_allocator, config);
-    defer gc.deinit(allocator);
+    defer gc.deinit();
     
     // Allocate object and keep reference on "stack"
     const obj_ptr = try gc.alloc(@sizeOf(TestObject), 1);

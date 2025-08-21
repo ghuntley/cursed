@@ -114,7 +114,7 @@ pub const BuildThreadPool = struct {
         // Create worker threads
         for (0..thread_count) |i| {
             const thread = try std.Thread.spawn(.{}, workerThread, .{ &pool, i });
-            try pool.threads.append(allocator, thread);
+            try pool.threads.append(thread);
         }
 
         return pool;

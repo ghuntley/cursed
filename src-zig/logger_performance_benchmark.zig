@@ -11,7 +11,7 @@ pub const LoggerBenchmark = struct {
     allocator: Allocator,
     results: ArrayList(BenchmarkResult),
     
-    pub fn init(allocator: Allocator) LoggerBenchmark {
+    pub fn init() LoggerBenchmark {
         return LoggerBenchmark{
             .allocator = allocator,
             .results = .empty,
@@ -19,7 +19,7 @@ pub const LoggerBenchmark = struct {
     }
     
     pub fn deinit(self: *LoggerBenchmark) void {
-        self.results.deinit(allocator);
+        self.results.deinit();
     }
     
     /// Run comprehensive performance comparison
@@ -35,19 +35,19 @@ pub const LoggerBenchmark = struct {
             
             // Test 1: Optimized logger (pool bypassing)
             const optimized_result = try self.benchmarkOptimizedLogger(size);
-            try self.results.append(allocator, optimized_result);
+            try self.results.append(optimized_result);
             
             // Test 2: Standard logger (with memory pools)
             const standard_result = try self.benchmarkStandardLogger(size);
-            try self.results.append(allocator, standard_result);
+            try self.results.append(standard_result);
             
             // Test 3: Arena allocator baseline
             const arena_result = try self.benchmarkArenaLogger(size);
-            try self.results.append(allocator, arena_result);
+            try self.results.append(arena_result);
             
             // Test 4: Batch processing optimization
             const batch_result = try self.benchmarkBatchLogger(size);
-            try self.results.append(allocator, batch_result);
+            try self.results.append(batch_result);
             
             self.printComparisonResults(size, optimized_result, standard_result, arena_result, batch_result);
         }
@@ -61,7 +61,7 @@ pub const LoggerBenchmark = struct {
         const start_time = timer.read();
         
         var logger = try optimized.OptimizedJsonLogger.init(self.allocator);
-        defer logger.deinit(allocator);
+        defer logger.deinit();
         
         logger.enableHighPerformanceMode();
         
@@ -118,11 +118,11 @@ pub const LoggerBenchmark = struct {
         
         // Simulate standard logging with memory pools
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         
         // Memory pool simulation
         var memory_pool = try MemoryPool.init(self.allocator, 1024);
-        defer memory_pool.deinit(allocator);
+        defer memory_pool.deinit();
         
         var total_bytes: usize = 0;
         var allocations: usize = 0;
@@ -165,7 +165,7 @@ pub const LoggerBenchmark = struct {
         const start_time = timer.read();
         
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
         
         var total_bytes: usize = 0;
@@ -206,7 +206,7 @@ pub const LoggerBenchmark = struct {
         const start_time = timer.read();
         
         var logger = try optimized.OptimizedJsonLogger.init(self.allocator);
-        defer logger.deinit(allocator);
+        defer logger.deinit();
         
         logger.enableHighPerformanceMode();
         
@@ -275,8 +275,8 @@ pub const LoggerBenchmark = struct {
     ) void {
         
         std.debug.print("\n┌─ Results for {} iterations ─┐\n", .{iterations});
-        std.debug.print("│ Method                 │ Throughput (ops/s) │ Latency (ns) │ Memory (MB) │ Speedup │\n");
-        std.debug.print("├────────────────────────┼────────────────────┼──────────────┼─────────────┼─────────┤\n");
+        std.debug.print("│ Method                 │ Throughput (ops/s) │ Latency (ns) │ Memory (MB) │ Speedup │\n", .{});
+        std.debug.print("├────────────────────────┼────────────────────┼──────────────┼─────────────┼─────────┤\n", .{});
         
         const baseline_throughput = standard_result.throughput_ops_per_sec;
         
@@ -285,13 +285,13 @@ pub const LoggerBenchmark = struct {
         self.printResultRow(arena_result, baseline_throughput);
         self.printResultRow(batch_result, baseline_throughput);
         
-        std.debug.print("└────────────────────────┴────────────────────┴──────────────┴─────────────┴─────────┘\n");
+        std.debug.print("└────────────────────────┴────────────────────┴──────────────┴─────────────┴─────────┘\n", .{});
         
         // Performance insights
         const optimized_speedup = optimized_result.throughput_ops_per_sec / standard_result.throughput_ops_per_sec;
         const batch_speedup = batch_result.throughput_ops_per_sec / standard_result.throughput_ops_per_sec;
         
-        std.debug.print("\n💡 Performance Insights:\n");
+        std.debug.print("\n💡 Performance Insights:\n", .{});
         std.debug.print("   • Pool bypass optimization: {d:.2f}x faster than standard approach\n", .{optimized_speedup});
         std.debug.print("   • Batch processing: {d:.2f}x faster than standard approach\n", .{batch_speedup});
         std.debug.print("   • Memory efficiency: {d:.1f}% reduction in allocations\n", .{
@@ -317,9 +317,9 @@ pub const LoggerBenchmark = struct {
     
     /// Generate comprehensive performance report
     fn generatePerformanceReport(self: *LoggerBenchmark) !void {
-        std.debug.print("\n📈 Comprehensive Performance Analysis\n");
+        std.debug.print("\n📈 Comprehensive Performance Analysis\n", .{});
         std.debug.print("=" ** 50);
-        std.debug.print("\n");
+        std.debug.print("\n", .{});
         
         // Find best performing methods
         var best_throughput: f64 = 0;
@@ -338,16 +338,16 @@ pub const LoggerBenchmark = struct {
             }
         }
         
-        std.debug.print("🏆 Best Performance Metrics:\n");
+        std.debug.print("🏆 Best Performance Metrics:\n", .{});
         std.debug.print("   • Highest Throughput: {d:.0} ops/second\n", .{best_throughput});
         std.debug.print("   • Lowest Latency: {d} nanoseconds\n", .{best_latency});
         std.debug.print("   • Minimum Allocations: {} allocations\n", .{best_memory});
         
-        std.debug.print("\n🎯 Oracle Optimization Effectiveness:\n");
-        std.debug.print("   • Pool bypassing provides consistent performance gains\n");
-        std.debug.print("   • Direct allocation reduces memory management overhead\n");
-        std.debug.print("   • Batch processing maximizes cache efficiency\n");
-        std.debug.print("   • Pre-allocated buffers eliminate runtime allocation\n");
+        std.debug.print("\n🎯 Oracle Optimization Effectiveness:\n", .{});
+        std.debug.print("   • Pool bypassing provides consistent performance gains\n", .{});
+        std.debug.print("   • Direct allocation reduces memory management overhead\n", .{});
+        std.debug.print("   • Batch processing maximizes cache efficiency\n", .{});
+        std.debug.print("   • Pre-allocated buffers eliminate runtime allocation\n", .{});
     }
 };
 
@@ -382,7 +382,7 @@ const MemoryPool = struct {
         for (self.allocated_blocks.items) |block| {
             self.allocator.free(block);
         }
-        self.allocated_blocks.deinit(allocator);
+        self.allocated_blocks.deinit();
     }
     
     fn allocate(self: *MemoryPool, size: usize) ![]u8 {
@@ -414,22 +414,22 @@ fn formatJsonStandard(buffer: []u8, iteration: usize) !usize {
 /// Main benchmark runner
 pub fn runLoggerBenchmarks(allocator: Allocator) !void {
     var benchmark = LoggerBenchmark.init(allocator);
-    defer benchmark.deinit(allocator);
+    defer benchmark.deinit();
     
     try benchmark.runPerformanceComparison();
     
-    std.debug.print("\n✅ JSON Logger Performance Benchmark Complete\n");
-    std.debug.print("📊 Oracle optimization analysis confirms pool bypassing improves performance\n");
+    std.debug.print("\n✅ JSON Logger Performance Benchmark Complete\n", .{});
+    std.debug.print("📊 Oracle optimization analysis confirms pool bypassing improves performance\n", .{});
 }
 
 /// Stress test for high-throughput scenarios
 pub fn runStressTest(allocator: Allocator) !void {
-    std.debug.print("\n🔥 High-Throughput Stress Test\n");
+    std.debug.print("\n🔥 High-Throughput Stress Test\n", .{});
     std.debug.print("=" ** 40);
-    std.debug.print("\n");
+    std.debug.print("\n", .{});
     
     var logger = try optimized.OptimizedJsonLogger.init(allocator);
-    defer logger.deinit(allocator);
+    defer logger.deinit();
     
     logger.enableHighPerformanceMode();
     
@@ -463,12 +463,12 @@ pub fn runStressTest(allocator: Allocator) !void {
     
     const metrics = logger.getPerformanceMetrics();
     
-    std.debug.print("\n🏁 Stress Test Results:\n");
+    std.debug.print("\n🏁 Stress Test Results:\n", .{});
     std.debug.print("   • Total Entries: {} million\n", .{test_iterations / 1_000_000});
     std.debug.print("   • Total Time: {d:.2f} seconds\n", .{total_time_s});
     std.debug.print("   • Throughput: {d:.0} ops/second\n", .{final_throughput});
     std.debug.print("   • Avg Latency: {} nanoseconds\n", .{metrics.avg_format_time_ns});
     std.debug.print("   • Total Data: {d:.2f} MB\n", .{@as(f64, @floatFromInt(metrics.bytes_written)) / (1024.0 * 1024.0)});
     
-    std.debug.print("\n✅ Stress test demonstrates stable high-throughput performance\n");
+    std.debug.print("\n✅ Stress test demonstrates stable high-throughput performance\n", .{});
 }

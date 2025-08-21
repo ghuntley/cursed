@@ -16,7 +16,7 @@ pub const LLVMCompilationManager = struct {
     optimization_level: u32,
     debug_info: bool,
     
-    pub fn init(allocator: Allocator) LLVMCompilationManager {
+    pub fn init() LLVMCompilationManager {
         return LLVMCompilationManager{
             .allocator = allocator,
             .verbose = false,
@@ -76,15 +76,15 @@ pub const LLVMCompilationManager = struct {
         // Parse the source into AST
         var lex = lexer.Lexer.init(self.allocator, source);
         const tokens = try lex.tokenize();
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
         
         var parse = parser.Parser.init(self.allocator, tokens.items);
-        defer parse.deinit(allocator);
+        defer parse.deinit();
         
         const program = try parse.parseProgram();
         defer {
             var mut_program = program;
-            mut_program.deinit(allocator);
+            mut_program.deinit();
         }
         
         // Initialize real LLVM codegen
@@ -92,7 +92,7 @@ pub const LLVMCompilationManager = struct {
             if (self.verbose) print("❌ Failed to initialize real LLVM backend: {any}\n", .{err});
             return err;
         };
-        defer codegen.deinit(allocator);
+        defer codegen.deinit();
         
         // Generate program
         try codegen.generateProgram(program);
@@ -166,7 +166,7 @@ pub const LLVMCompilationManager = struct {
         
         // Create LLVM IR generator
         var generator = SimpleLLVMIRGenerator.init(self.allocator);
-        defer generator.deinit(allocator);
+        defer generator.deinit();
         
         generator.setVerbose(self.verbose);
         
@@ -196,7 +196,7 @@ pub const LLVMCompilationManager = struct {
         
         // Create LLVM IR generator
         var generator = SimpleLLVMIRGenerator.init(self.allocator);
-        defer generator.deinit(allocator);
+        defer generator.deinit();
         
         generator.setVerbose(self.verbose);
         
@@ -243,7 +243,7 @@ pub const LLVMCompilationManager = struct {
     
     /// Run LLVM compilation tests
     pub fn runTests(self: *LLVMCompilationManager) !void {
-        print("🧪 Running LLVM compilation tests...\n");
+        print("🧪 Running LLVM compilation tests...\n", .{});
         
         // Test 1: Basic arithmetic
         const test1_source = 
@@ -255,7 +255,7 @@ pub const LLVMCompilationManager = struct {
             \\}
         ;
         
-        print("Test 1: Basic arithmetic\n");
+        print("Test 1: Basic arithmetic\n", .{});
         try self.compileSource(test1_source, "test1_arithmetic");
         
         // Test 2: String output
@@ -265,7 +265,7 @@ pub const LLVMCompilationManager = struct {
             \\}
         ;
         
-        print("Test 2: String output\n");
+        print("Test 2: String output\n", .{});
         try self.compileSource(test2_source, "test2_string");
         
         // Test 3: Function calls
@@ -280,19 +280,19 @@ pub const LLVMCompilationManager = struct {
             \\}
         ;
         
-        print("Test 3: Function calls\n");
+        print("Test 3: Function calls\n", .{});
         try self.compileSource(test3_source, "test3_functions");
         
-        print("✅ All LLVM compilation tests passed!\n");
+        print("✅ All LLVM compilation tests passed!\n", .{});
     }
 };
 
 // Test function for the compilation manager
 pub fn testLLVMCompilation() !void {
-    print("🔥 Testing LLVM IR Pipeline Integration...\n");
+    print("🔥 Testing LLVM IR Pipeline Integration...\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var manager = LLVMCompilationManager.init(allocator);
@@ -301,12 +301,12 @@ pub fn testLLVMCompilation() !void {
     
     // Check LLVM availability
     if (!manager.checkLLVMAvailability()) {
-        print("❌ LLVM not available, skipping tests\n");
+        print("❌ LLVM not available, skipping tests\n", .{});
         return;
     }
     
     // Run compilation tests
     try manager.runTests();
     
-    print("🎉 LLVM IR Pipeline integration test completed!\n");
+    print("🎉 LLVM IR Pipeline integration test completed!\n", .{});
 }

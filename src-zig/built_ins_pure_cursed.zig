@@ -48,13 +48,13 @@ pub const BuiltInRegistry = struct {
         }
 
         pub fn deinit(self: *Channel) void {
-            self.buffer.deinit(allocator);
+            self.buffer.deinit();
         }
 
         pub fn send(self: *Channel, value: Value) !bool {
             if (self.closed) return false;
             if (self.buffer.items.len >= self.capacity) return false;
-            try self.buffer.append(allocator, value);
+            try self.buffer.append(value);
             return true;
         }
 
@@ -75,7 +75,7 @@ pub const BuiltInRegistry = struct {
     }
 
     pub fn deinit(self: *BuiltInRegistry) void {
-        self.functions.deinit(allocator);
+        self.functions.deinit();
     }
 
     fn registerBuiltIns(self: *BuiltInRegistry) !void {
@@ -570,7 +570,7 @@ test "pure cursed built-in functions" {
     const allocator = std.testing.allocator;
     
     var registry = try BuiltInRegistry.init(allocator);
-    defer registry.deinit(allocator);
+    defer registry.deinit();
     
     // Test pure CURSED math.add
     const args = [_]BuiltInRegistry.Value{

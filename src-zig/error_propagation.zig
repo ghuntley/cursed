@@ -38,7 +38,7 @@ pub const ErrorPropagation = struct {
         
         fn deinit(self: *DeferStack) void {
             self.executeAll();
-            self.entries.deinit(allocator);
+            self.entries.deinit();
         }
         
         fn enterScope(self: *DeferStack) !void {
@@ -98,7 +98,7 @@ pub const ErrorPropagation = struct {
         };
     };
     
-    pub fn init(allocator: Allocator) ErrorPropagation {
+    pub fn init() ErrorPropagation {
         return ErrorPropagation{
             .allocator = allocator,
             .error_stack = .empty,
@@ -114,26 +114,26 @@ pub const ErrorPropagation = struct {
     
     pub fn deinit(self: *ErrorPropagation) void {
         for (self.error_stack.items) |*error_ctx| {
-            error_ctx.deinit(allocator);
+            error_ctx.deinit();
         }
-        self.error_stack.deinit(allocator);
+        self.error_stack.deinit();
         
         for (self.try_catch_stack.items) |*frame| {
             for (frame.catch_blocks.items) |*catch_block| {
-                catch_block.body.deinit(allocator);
+                catch_block.body.deinit();
             }
-            frame.catch_blocks.deinit(allocator);
+            frame.catch_blocks.deinit();
             if (frame.finally_block) |*finally| {
-                finally.deinit(allocator);
+                finally.deinit();
             }
             if (frame.error_occurred) |*err| {
-                err.deinit(allocator);
+                err.deinit();
             }
         }
-        self.try_catch_stack.deinit(allocator);
+        self.try_catch_stack.deinit();
         
-        self.defer_entries.deinit(allocator);
-        self.propagation_handlers.deinit(allocator);
+        self.defer_entries.deinit();
+        self.propagation_handlers.deinit();
         
         if (self.current_file) |file| {
             self.allocator.free(file);
@@ -170,7 +170,7 @@ pub const ErrorPropagation = struct {
             
             // Store error in current frame
             if (current_frame.error_occurred) |*existing_err| {
-                existing_err.deinit(allocator);
+                existing_err.deinit();
             }
             current_frame.error_occurred = try ErrorContext.initWithInner(
                 self.allocator,
@@ -185,7 +185,7 @@ pub const ErrorPropagation = struct {
         
         if (propagate_immediately) {
             // No try-catch frame, propagate error up the call stack
-            try self.error_stack.append(allocator, error_ctx);
+            try self.error_stack.append(error_ctx);
             return CursedError.RuntimeError;
         }
         
@@ -232,11 +232,11 @@ pub const ErrorPropagation = struct {
         const frame: TryCatchFrame = self.try_catch_stack.pop() orelse return null;
         defer {
             for (frame.catch_blocks.items) |*catch_block| {
-                catch_block.body.deinit(allocator);
+                catch_block.body.deinit();
             }
-            frame.catch_blocks.deinit(allocator);
+            frame.catch_blocks.deinit();
             if (frame.finally_block) |*finally| {
-                finally.deinit(allocator);
+                finally.deinit();
             }
         }
         
@@ -309,7 +309,7 @@ pub const ErrorPropagation = struct {
     /// Clear error stack (useful for error recovery)
     pub fn clearErrors(self: *ErrorPropagation) void {
         for (self.error_stack.items) |*error_ctx| {
-            error_ctx.deinit(allocator);
+            error_ctx.deinit();
         }
         self.error_stack.clearRetainingCapacity();
     }
@@ -601,7 +601,7 @@ test "error propagation system" {
     const allocator = std.testing.allocator;
     
     var error_prop = ErrorPropagation.init(allocator);
-    defer error_prop.deinit(allocator);
+    defer error_prop.deinit();
     
     // Test yikes error creation
     const location = ErrorContext.SourceLocation{

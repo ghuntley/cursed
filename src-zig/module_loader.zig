@@ -107,9 +107,9 @@ pub const ModuleLoader = struct {
                 if (func.name.len > 0) {
                     allocator.free(func.name);
                 }
-                // Skip func.deinit(allocator) to prevent double-free crashes
+                // Skip func.deinit() to prevent double-free crashes
             }
-            self.functions.deinit(allocator);
+            self.functions.deinit();
             
             // Safe cleanup of variables - skip initializer cleanup to prevent double-free
             for (self.variables.items) |*var_stmt| {
@@ -117,9 +117,9 @@ pub const ModuleLoader = struct {
                 if (var_stmt.name.len > 0) {
                     allocator.free(var_stmt.name);
                 }
-                // Skip var_stmt.deinit(allocator) to prevent double-free crashes
+                // Skip var_stmt.deinit() to prevent double-free crashes
             }
-            self.variables.deinit(allocator);
+            self.variables.deinit();
         }
     };
     
@@ -161,13 +161,13 @@ pub const ModuleLoader = struct {
         while (iter.next()) |entry| {
             var module = entry.value_ptr;
             // Safe module cleanup that prevents double-free crashes
-            module.deinit(allocator);
+            module.deinit();
             // Free the key (module name) to prevent memory leak
             if (entry.key_ptr.*.len > 0) {
                 self.allocator.free(entry.key_ptr.*);
             }
         }
-        self.loaded_modules.deinit(allocator);
+        self.loaded_modules.deinit();
     }
     
     /// Load a module and return the functions it exports
@@ -234,7 +234,7 @@ pub const ModuleLoader = struct {
             
             // Clean up the new module since we're not storing it
             var cleanup_module = loaded_module;
-            cleanup_module.deinit(allocator);
+            cleanup_module.deinit();
             self.allocator.free(cached_name);
             
             return error.ModuleNameCollision;
@@ -253,7 +253,7 @@ pub const ModuleLoader = struct {
         if (simple_import_resolver.resolveStdlibImportWithPath(self.allocator, module_name, self.stdlib_path) catch false) {
             // Build stdlib path using consistent method
             var path_buf = .empty;
-            defer path_buf.deinit(allocator);
+            defer path_buf.deinit();
             
             if (self.stdlib_path) |custom_path| {
                 // Use provided stdlib path
@@ -307,13 +307,13 @@ pub const ModuleLoader = struct {
         };
         
         var path_components = .empty;
-        defer path_components.deinit(allocator);
+        defer path_components.deinit();
         
         // Split path into components
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(allocator, component);
+                try path_components.append(component);
             }
         }
         
@@ -323,12 +323,12 @@ pub const ModuleLoader = struct {
         while (path_components.items.len > 0) {
             // Build current test path
             var test_path = .empty;
-            defer test_path.deinit(allocator);
+            defer test_path.deinit();
             
-            try test_path.append(allocator, '/');
+            try test_path.append('/');
             for (path_components.items) |component| {
                 try test_path.appendSlice(component);
-                try test_path.append(allocator, '/');
+                try test_path.append('/');
             }
             
             if (self.verbose) print("🔍 Checking directory: {s}\n", .{test_path.items});
@@ -336,7 +336,7 @@ pub const ModuleLoader = struct {
             // Check for marker files
             for (markers) |marker| {
                 var marker_path = .empty;
-                defer marker_path.deinit(allocator);
+                defer marker_path.deinit();
                 
                 try marker_path.appendSlice(test_path.items);
                 try marker_path.appendSlice(marker);
@@ -388,7 +388,7 @@ pub const ModuleLoader = struct {
     fn parseModule(self: *ModuleLoader, module_name: []const u8, module_path: []const u8, source: []const u8) anyerror!LoadedModule {
         // Use an arena allocator for temporary parsing to prevent use-after-free
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
         
         // Tokenize the source
@@ -474,14 +474,14 @@ pub const ModuleLoader = struct {
     /// Get list of loaded modules
     pub fn getLoadedModules(self: *ModuleLoader) []const []const u8 {
         var names = .empty;
-        defer names.deinit(allocator);
+        defer names.deinit();
         
         var iter = self.loaded_modules.iterator();
         while (iter.next()) |entry| {
-            names.append(allocator, entry.key_ptr.*) catch continue;
+            names.append(entry.key_ptr.*) catch continue;
         }
         
-        return names.toOwnedSlice(allocator) catch &[_][]const u8{};
+        return names.toOwnedSlice() catch &[_][]const u8{};
     }
     
 

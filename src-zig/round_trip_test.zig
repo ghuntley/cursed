@@ -32,11 +32,11 @@ pub fn testRoundTrip(allocator: Allocator, source: []const u8) RoundTripError!vo
     var program = p.parseProgram() catch |err| switch (err) {
         else => return RoundTripError.ParseError,
     };
-    defer program.deinit(allocator);
+    defer program.deinit();
 
     // Step 2: Pretty-print AST back to source
     var pretty_printed = .empty;
-    defer pretty_printed.deinit(allocator);
+    defer pretty_printed.deinit();
     
     try prettyPrintProgram(&pretty_printed, program);
     
@@ -51,11 +51,11 @@ pub fn testRoundTrip(allocator: Allocator, source: []const u8) RoundTripError!vo
     var program2 = p2.parseProgram() catch |err| switch (err) {
         else => return RoundTripError.ReparseError,
     };
-    defer program2.deinit(allocator);
+    defer program2.deinit();
 
     // Step 4: Compare ASTs (simplified comparison)
     if (!programsEqual(program, program2)) {
-        std.debug.print("Round-trip test failed!\n");
+        std.debug.print("Round-trip test failed!\n", .{});
         std.debug.print("Original: {s}\n", .{source});
         std.debug.print("Pretty-printed: {s}\n", .{pretty_printed.items});
         return RoundTripError.MismatchError;
@@ -196,7 +196,7 @@ pub fn testRejectNonCanonical(allocator: Allocator) !void {
             std.debug.print("✓ Correctly rejected non-canonical syntax: {s}\n", .{test_case});
             continue;
         };
-        program.deinit(allocator);
+        program.deinit();
         
         // If we reach here, the parser accepted non-canonical syntax - this is bad!
         std.debug.print("✗ Parser incorrectly accepted non-canonical syntax: {s}\n", .{test_case});

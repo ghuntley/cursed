@@ -77,7 +77,7 @@ pub const I18nPanicContext = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.custom_data.deinit(allocator);
+        self.custom_data.deinit();
 
         if (self.stack_trace) |trace| {
             for (trace) |frame| {
@@ -112,7 +112,7 @@ pub const I18nPanicContext = struct {
 
     pub fn formatMessage(self: I18nPanicContext, i18n: *I18nManager, base_message: []const u8) ![]u8 {
         var values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer values.deinit(allocator);
+        defer values.deinit();
 
         // Add base message
         try values.put("message", base_message);
@@ -131,7 +131,7 @@ pub const I18nPanicContext = struct {
         // Format main error message
         const message_key = self.error_type.getMessageKey();
         var result = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
 
         const main_message = try i18n.formatPanicMessage(message_key, values);
         defer self.allocator.free(main_message);
@@ -142,7 +142,7 @@ pub const I18nPanicContext = struct {
         // Add location information if available
         if (self.source_location) |loc| {
             var location_values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-            defer location_values.deinit(allocator);
+            defer location_values.deinit();
 
             try location_values.put("function", loc.function);
             try location_values.put("file", loc.file);
@@ -165,7 +165,7 @@ pub const I18nPanicContext = struct {
         // Add stack trace if available
         if (self.stack_trace) |trace| {
             var empty_values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-            defer empty_values.deinit(allocator);
+            defer empty_values.deinit();
 
             const trace_header = try i18n.formatPanicMessage("panic.stack_trace", empty_values);
             defer self.allocator.free(trace_header);
@@ -216,8 +216,8 @@ pub const I18nYikesError = struct {
     }
 
     pub fn deinit(self: *I18nYikesError) void {
-        self.base_error.deinit(allocator);
-        self.context.deinit(allocator);
+        self.base_error.deinit();
+        self.context.deinit();
         if (self.formatted_message) |msg| {
             self.context.allocator.free(msg);
         }
@@ -322,7 +322,7 @@ pub const I18nPanicHandler = struct {
     panic_hook: ?*const fn(context: *I18nPanicContext, formatted_message: []const u8) void,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) I18nPanicHandler {
+    pub fn init() I18nPanicHandler {
         return I18nPanicHandler{
             .i18n_manager = null,
             .panic_hook = null,
@@ -387,13 +387,13 @@ pub const I18nPanicHandler = struct {
 
     fn cleanInvalidUTF8(self: *I18nPanicHandler, input: []const u8) ![]u8 {
         var result = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
 
         var i: usize = 0;
         while (i < input.len) {
             if (input[i] < 128) {
                 // ASCII character, safe to include
-                try result.append(allocator, input[i]);
+                try result.append(input[i]);
                 i += 1;
             } else {
                 // Non-ASCII, try to decode as UTF-8
@@ -473,7 +473,7 @@ pub fn panicWithI18n(message: []const u8, error_type: I18nPanicContext.ErrorType
     } else {
         // Fallback handling
         std.debug.print("🚨 CURSED PANIC: {s}\n", .{message});
-        panic_error.deinit(allocator);
+        panic_error.deinit();
         std.process.exit(1);
     }
 }
@@ -527,7 +527,7 @@ test "i18n panic context" {
     const allocator = std.testing.allocator;
     
     var context = I18nPanicContext.init(allocator, .Yikes, 42);
-    defer context.deinit(allocator);
+    defer context.deinit();
 
     try context.setLocation("test_function", "test.csd", 10, 5);
     try context.addData("extra", "test_data");
@@ -541,7 +541,7 @@ test "i18n yikes error" {
     const allocator = std.testing.allocator;
     
     var err = try I18nYikesError.init(allocator, "Test error", 123);
-    defer err.deinit(allocator);
+    defer err.deinit();
 
     try err.addContextData("test_key", "test_value");
     try std.testing.expect(err.base_error.getCode() == 123);
@@ -552,13 +552,13 @@ test "panic utils functions" {
     const allocator = std.testing.allocator;
     
     var div_error = try I18nPanicUtils.createDivisionByZeroError(allocator);
-    defer div_error.deinit(allocator);
+    defer div_error.deinit();
     
     try std.testing.expect(div_error.context.error_type == .DivisionByZero);
     try std.testing.expect(div_error.context.error_code == 300);
 
     var index_error = try I18nPanicUtils.createIndexOutOfBoundsError(allocator, 5, 3);
-    defer index_error.deinit(allocator);
+    defer index_error.deinit();
     
     try std.testing.expect(index_error.context.error_type == .IndexOutOfBounds);
     try std.testing.expect(index_error.context.custom_data.contains("index"));

@@ -546,8 +546,8 @@ pub const AdvancedLexer = struct {
     }
     
     pub fn deinit(self: *AdvancedLexer) void {
-        self.tokens.deinit(allocator);
-        self.keywords.deinit(allocator);
+        self.tokens.deinit();
+        self.keywords.deinit();
     }
     
     fn initializeKeywords(self: *AdvancedLexer) !void {
@@ -722,9 +722,9 @@ pub const AdvancedLexer = struct {
         
         // Add EOF token
         const eof_token = Token.init(.Eof, "", self.state.line, self.state.column, self.state.position);
-        try self.tokens.append(allocator, eof_token);
+        try self.tokens.append(eof_token);
         
-        return self.tokens.toOwnedSlice(allocator);
+        return self.tokens.toOwnedSlice();
     }
     
     fn scanToken(self: *AdvancedLexer) !void {
@@ -1147,7 +1147,7 @@ pub const AdvancedLexer = struct {
     fn addToken(self: *AdvancedLexer, token_kind: TokenKind, start_pos: u32, line: u32, column: u32) !void {
         const lexeme = self.state.input[start_pos..self.state.position];
         const token = Token.init(token_kind, lexeme, line, column, start_pos);
-        try self.tokens.append(allocator, token);
+        try self.tokens.append(token);
     }
 };
 

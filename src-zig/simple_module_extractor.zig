@@ -43,7 +43,7 @@ pub fn extractFunctionNames(allocator: Allocator, source: []const u8) !ArrayList
                 // Validate function name
                 if (func_name.len > 0 and func_name.len <= 64 and isValidIdentifier(func_name)) {
                     const name_copy = try allocator.dupe(u8, func_name);
-                    try functions.append(allocator, SimpleFunctionInfo{
+                    try functions.append(SimpleFunctionInfo{
                         .name = name_copy,
                         .available = true,
                     });

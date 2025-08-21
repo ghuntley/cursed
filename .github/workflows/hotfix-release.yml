@@ -1,0 +1,136 @@
+name: Hotfix Release Process
+
+on:
+  workflow_dispatch:
+    inputs:
+      hotfix_version:
+        description: 'Hotfix version (e.g., v1.0.1)'
+        required: true
+        type: string
+      severity:
+        description: 'Issue severity'
+        required: true
+        type: choice
+        options:
+          - 'P0-Critical'
+          - 'P1-High'
+      description:
+        description: 'Brief description of the fix'
+        required: true
+        type: string
+
+jobs:
+  validate-hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.13.0
+      
+      - name: Validate version format
+        run: |
+          if ! echo "${{ inputs.hotfix_version }}" | grep -E '^v1\.0\.[0-9]+$'; then
+            echo "Invalid version format. Must be v1.0.x"
+            exit 1
+          fi
+      
+      - name: Create hotfix branch
+        run: |
+          git checkout -b hotfix/${{ inputs.hotfix_version }}
+          git push origin hotfix/${{ inputs.hotfix_version }}
+      
+      - name: Build and test
+        run: |
+          zig build
+          zig build test
+      
+      - name: Run regression tests
+        run: |
+          ./zig-out/bin/cursed-zig comprehensive_stdlib_test.csd
+          bash scripts/regression-test-suite.sh
+      
+      - name: Security scan
+        run: |
+          # Run security vulnerability checks
+          bash scripts/security-scan.sh
+      
+      - name: Performance regression check
+        run: |
+          python scripts/performance-regression.py --baseline v1.0.0
+  
+  create-release:
+    needs: validate-hotfix
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/${{ inputs.hotfix_version }}
+      
+      - name: Create release notes
+        run: |
+          cat > release-notes.md << EOF
+          # CURSED ${{ inputs.hotfix_version }} - Hotfix Release
+          
+          **Severity:** ${{ inputs.severity }}
+          **Release Date:** $(date -u +"%Y-%m-%d")
+          
+          ## Changes
+          ${{ inputs.description }}
+          
+          ## Installation
+          \`\`\`bash
+          curl -sSf https://install.cursedlang.org | sh -s -- --version ${{ inputs.hotfix_version }}
+          \`\`\`
+          
+          ## Verification
+          \`\`\`bash
+          cursed-zig --version
+          # Should output: CURSED ${{ inputs.hotfix_version }}
+          \`\`\`
+          EOF
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.hotfix_version }}
+          release_name: CURSED ${{ inputs.hotfix_version }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+  
+  notify-community:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord notification
+        if: inputs.severity == 'P0-Critical'
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "🚨 Critical Hotfix Released",
+                "description": "CURSED ${{ inputs.hotfix_version }} addresses critical issues",
+                "color": 15158332,
+                "fields": [{
+                  "name": "Fix Description",
+                  "value": "${{ inputs.description }}"
+                }]
+              }]
+            }'
+      
+      - name: Update documentation
+        run: |
+          # Trigger documentation rebuild with new version
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.DOCS_DEPLOY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            https://api.cursedlang.org/docs/rebuild

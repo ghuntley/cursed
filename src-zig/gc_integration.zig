@@ -42,11 +42,64 @@ const c = struct {
 /// - Write barrier insertion
 /// - Root set management for LLVM-generated code
 
+/// Oracle's Week 2: Stack Map Registry for runtime GC integration
+pub const StackMapRegistry = struct {
+    maps: std.HashMap(u64, StackMapInfo, std.hash_map.DefaultContext(u64), std.hash_map.default_max_load_percentage),
+    allocator: std.mem.Allocator,
+    
+    pub const StackMapInfo = struct {
+        function_id: u64,
+        root_count: u32,
+        function_name: []const u8,
+        generated_at: i64,
+    };
+    
+    pub fn init(allocator: std.mem.Allocator) StackMapRegistry {
+        return StackMapRegistry{
+            .maps = std.HashMap(u64, StackMapInfo, std.hash_map.DefaultContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
+            .allocator = allocator,
+        };
+    }
+    
+    pub fn deinit(self: *StackMapRegistry) void {
+        var iterator = self.maps.iterator();
+        while (iterator.next()) |entry| {
+            self.allocator.free(entry.value_ptr.function_name);
+        }
+        self.maps.deinit(self.allocator);
+    }
+    
+    pub fn registerStackMap(self: *StackMapRegistry, function_id: u64, root_count: u32, function_name: []const u8) !void {
+        const owned_name = try self.allocator.dupe(u8, function_name);
+        const info = StackMapInfo{
+            .function_id = function_id,
+            .root_count = root_count,
+            .function_name = owned_name,
+            .generated_at = std.time.timestamp(),
+        };
+        try self.maps.put(function_id, info);
+    }
+    
+    pub fn getStackMapInfo(self: *StackMapRegistry, function_id: u64) ?StackMapInfo {
+        return self.maps.get(function_id);
+    }
+    
+    pub fn getTotalRootCount(self: *StackMapRegistry) u32 {
+        var total: u32 = 0;
+        var iterator = self.maps.iterator();
+        while (iterator.next()) |entry| {
+            total += entry.value_ptr.root_count;
+        }
+        return total;
+    }
+};
+
 pub const GCIntegration = struct {
     gc: *GC,
     llvm_context: c.LLVMContextRef,
     llvm_module: c.LLVMModuleRef,
     llvm_builder: c.LLVMBuilderRef,
+    stackmap_registry: ?*StackMapRegistry,
     
     // Function metadata storage for root tables
     function_root_tables: std.HashMap(c.LLVMValueRef, c.LLVMValueRef, std.hash_map.DefaultContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage),
@@ -98,7 +151,7 @@ pub const GCIntegration = struct {
     
     /// Clean up GC integration
     pub fn deinit(self: *GCIntegration) void {
-        self.function_root_tables.deinit(allocator);
+        self.function_root_tables.deinit();
         self.allocator.destroy(self);
     }
     
@@ -358,53 +411,175 @@ pub const GCIntegration = struct {
         );
     }
     
-    /// Generate LLVM stackmaps for precise garbage collection
+    /// Generate LLVM stackmaps for precise garbage collection - Oracle's Week 2 Implementation
     pub fn generateStackMap(self: *GCIntegration, function: c.LLVMValueRef, live_pointers: []c.LLVMValueRef) !void {
         const context = self.context;
         const module = self.module;
         const builder = self.builder;
         
         // Generate precise LLVM stack map for GC root scanning
-        const stack_map_func = c.LLVMAddFunction(module, "llvm.experimental.stackmap", 
-            c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 1)); // Variadic
+        const i64_type = c.LLVMInt64TypeInContext(context);
+        const i32_type = c.LLVMInt32TypeInContext(context);
+        const void_type = c.LLVMVoidTypeInContext(context);
         
-        // Create unique stack map ID for this function
+        const stack_map_func = c.LLVMGetNamedFunction(module, "llvm.experimental.stackmap") orelse {
+            // Create stackmap intrinsic with proper signature
+            const stackmap_type = c.LLVMFunctionType(void_type, 
+                &[_]c.LLVMTypeRef{i64_type, i32_type}, 2, 1); // Variadic for live roots
+            return c.LLVMAddFunction(module, "llvm.experimental.stackmap", stackmap_type);
+        };
+        
+        // Create unique stack map ID for this function using Oracle's hashing strategy
         const function_name = c.LLVMGetValueName(function);
-        const stack_map_id = std.hash_map.hashString(std.mem.sliceTo(function_name, 0));
+        const name_slice = if (function_name != null) std.mem.sliceTo(function_name, 0) else "anonymous";
+        const stack_map_id = @as(u64, @truncate(std.hash_map.hashString(name_slice)));
         
         // Prepare stackmap arguments: ID, shadow bytes, followed by live roots
-        var total_args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+        var total_args: std.ArrayList(c.LLVMValueRef) = .empty;
         defer total_args.deinit();
         
-        try total_args.append(c.LLVMConstInt(c.LLVMInt64TypeInContext(context), stack_map_id, 0)); // Unique ID
-        try total_args.append(c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 0, 0)); // Shadow bytes (0 = unlimited)
+        // Oracle's Week 2: Precise stackmap metadata
+        try total_args.append(c.LLVMConstInt(i64_type, stack_map_id, 0)); // Unique function ID
+        try total_args.append(c.LLVMConstInt(i32_type, 0, 0)); // Shadow bytes (0 = scan all)
         
-        // Add all live pointer locations as GC roots
+        // Add all live pointer locations as GC roots - with type validation
+        var valid_pointers: u32 = 0;
         for (live_pointers) |ptr| {
-            // Only add actual pointer types to the stackmap
+            if (ptr == null) continue;
+            
             const ptr_type = c.LLVMTypeOf(ptr);
-            if (c.LLVMGetTypeKind(ptr_type) == c.LLVMPointerTypeKind) {
+            const type_kind = c.LLVMGetTypeKind(ptr_type);
+            
+            // Oracle's Week 2: Only track actual heap pointers for precise scanning
+            if (type_kind == c.LLVMPointerTypeKind) {
                 try total_args.append(ptr);
+                valid_pointers += 1;
             }
         }
         
-        // Generate the stackmap intrinsic call
-        _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(stack_map_func), 
-            stack_map_func, total_args.items.ptr, @intCast(total_args.items.len), "gc_stackmap");
-            
-        // Add metadata to mark this as a GC safepoint
-        const safepoint_kind = c.LLVMGetMDKindIDInContext(context, "gc.safepoint", 12);
-        const safepoint_metadata = c.LLVMMDStringInContext(context, "precise", 7);
-        const safepoint_node = c.LLVMMDNodeInContext(context, &[_]c.LLVMValueRef{safepoint_metadata}, 1);
-        
-        // Get the current instruction to attach metadata
-        const current_inst = c.LLVMGetLastInstruction(c.LLVMGetInsertBlock(builder));
-        if (current_inst != null) {
-            c.LLVMSetMetadata(current_inst, safepoint_kind, safepoint_node);
+        // Generate the stackmap intrinsic call with proper builder setup
+        const current_block = c.LLVMGetInsertBlock(builder);
+        if (current_block == null) {
+            std.debug.print("⚠️  Warning: No insert block for stackmap generation\n", .{});
+            return;
         }
         
-        std.debug.print("✅ Generated stackmap for function '{}' with {} live pointers\n", 
-            .{function_name, live_pointers.len});
+        const stackmap_call = c.LLVMBuildCall2(builder, 
+            c.LLVMGlobalGetValueType(stack_map_func), 
+            stack_map_func, 
+            total_args.items.ptr, 
+            @intCast(total_args.items.len), 
+            "oracle_gc_stackmap");
+            
+        // Oracle's Week 2: Add comprehensive metadata for GC safepoints
+        if (stackmap_call != null) {
+            // Mark as GC safepoint with precise scanning metadata
+            const safepoint_kind = c.LLVMGetMDKindIDInContext(context, "gc.safepoint", 12);
+            const safepoint_metadata = c.LLVMMDStringInContext(context, "oracle_precise", 14);
+            const safepoint_node = c.LLVMMDNodeInContext(context, &[_]c.LLVMValueRef{safepoint_metadata}, 1);
+            c.LLVMSetMetadata(stackmap_call, safepoint_kind, safepoint_node);
+            
+            // Add function-level GC strategy metadata  
+            const gc_strategy_kind = c.LLVMGetMDKindIDInContext(context, "gc.strategy", 11);
+            const gc_strategy_metadata = c.LLVMMDStringInContext(context, "cursed-precise", 14);
+            const gc_strategy_node = c.LLVMMDNodeInContext(context, &[_]c.LLVMValueRef{gc_strategy_metadata}, 1);
+            c.LLVMSetMetadata(function, gc_strategy_kind, gc_strategy_node);
+            
+            // Oracle's Week 2: Root count metadata for validation
+            const root_count_kind = c.LLVMGetMDKindIDInContext(context, "gc.root_count", 12);
+            const root_count_metadata = c.LLVMConstInt(i32_type, valid_pointers, 0);
+            const root_count_node = c.LLVMMDNodeInContext(context, &[_]c.LLVMValueRef{root_count_metadata}, 1);
+            c.LLVMSetMetadata(stackmap_call, root_count_kind, root_count_node);
+        }
+        
+        // Record stackmap for runtime integration
+        if (self.stackmap_registry) |registry| {
+            try registry.registerStackMap(stack_map_id, valid_pointers, name_slice);
+        }
+        
+        std.debug.print("✅ Oracle's Week 2: Generated precise stackmap for '{}' with {} validated roots (ID: 0x{x})\n", 
+            .{name_slice, valid_pointers, stack_map_id});
+    }
+    
+    /// Oracle's Week 2: Object lifetime management with precise tracking
+    pub fn trackObjectLifetime(self: *GCIntegration, obj_ptr: c.LLVMValueRef, size: c.LLVMValueRef) !void {
+        const context = self.llvm_context;
+        const builder = self.llvm_builder;
+        const module = self.llvm_module;
+        
+        // Create or get object tracking function
+        const track_func = c.LLVMGetNamedFunction(module, "cursed_gc_track_object") orelse {
+            const void_type = c.LLVMVoidTypeInContext(context);
+            const ptr_type = c.LLVMPointerTypeInContext(context, 0);
+            const size_type = c.LLVMInt64TypeInContext(context);
+            
+            const track_type = c.LLVMFunctionType(void_type, 
+                &[_]c.LLVMTypeRef{ptr_type, size_type}, 2, 0);
+            return c.LLVMAddFunction(module, "cursed_gc_track_object", track_type);
+        };
+        
+        // Generate tracking call
+        _ = c.LLVMBuildCall2(builder,
+            c.LLVMGlobalGetValueType(track_func),
+            track_func,
+            &[_]c.LLVMValueRef{obj_ptr, size},
+            2,
+            "gc_track");
+    }
+    
+    /// Oracle's Week 2: GC root scanning with stack map integration
+    pub fn generateRootScanning(self: *GCIntegration, function: c.LLVMValueRef, live_objects: []c.LLVMValueRef) !void {
+        const context = self.llvm_context;
+        const builder = self.llvm_builder; 
+        const module = self.llvm_module;
+        
+        // Create GC root scanning function
+        const scan_func = c.LLVMGetNamedFunction(module, "cursed_gc_scan_roots") orelse {
+            const void_type = c.LLVMVoidTypeInContext(context);
+            const ptr_type = c.LLVMPointerTypeInContext(context, 0);
+            const count_type = c.LLVMInt32TypeInContext(context);
+            
+            const scan_type = c.LLVMFunctionType(void_type,
+                &[_]c.LLVMTypeRef{ptr_type, count_type}, 2, 0);
+            return c.LLVMAddFunction(module, "cursed_gc_scan_roots", scan_type);
+        };
+        
+        // Create root array for scanning
+        const ptr_type = c.LLVMPointerTypeInContext(context, 0);
+        const array_type = c.LLVMArrayType(ptr_type, @intCast(live_objects.len));
+        
+        // Allocate stack space for root array
+        const root_array = c.LLVMBuildAlloca(builder, array_type, "gc_root_array");
+        
+        // Populate root array with live objects
+        for (live_objects, 0..) |obj, i| {
+            if (obj == null) continue;
+            
+            const index_val = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), i, 0);
+            const elem_ptr = c.LLVMBuildInBoundsGEP2(builder, array_type, root_array, 
+                &[_]c.LLVMValueRef{c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 0, 0), index_val}, 2, "root_elem");
+            
+            // Cast object to pointer if needed
+            const obj_as_ptr = if (c.LLVMGetTypeKind(c.LLVMTypeOf(obj)) == c.LLVMPointerTypeKind)
+                obj
+            else
+                c.LLVMBuildIntToPtr(builder, obj, ptr_type, "obj_as_ptr");
+                
+            _ = c.LLVMBuildStore(builder, obj_as_ptr, elem_ptr);
+        }
+        
+        // Generate root scanning call
+        const root_array_ptr = c.LLVMBuildBitCast(builder, root_array, ptr_type, "root_array_ptr");
+        const count_val = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @intCast(live_objects.len), 0);
+        
+        _ = c.LLVMBuildCall2(builder,
+            c.LLVMGlobalGetValueType(scan_func),
+            scan_func,
+            &[_]c.LLVMValueRef{root_array_ptr, count_val},
+            2,
+            "gc_scan_call");
+            
+        std.debug.print("✅ Oracle's Week 2: Generated root scanning for {} live objects\n", .{live_objects.len});
     }
     
     /// Generate GC statepoints for function prologue/epilogue
@@ -475,7 +650,7 @@ pub const GCIntegration = struct {
     pub fn wireGCIntegration(self: *GCIntegration, module_functions: []c.LLVMValueRef) !void {
         for (module_functions) |function| {
             // Generate stackmaps for all functions
-            var live_pointers = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+            var live_pointers: std.ArrayList(c.LLVMValueRef) = .empty;
             defer live_pointers.deinit();
             
             // Collect all pointer values in function as potential GC roots
@@ -668,7 +843,7 @@ export fn cursed_gc_runtime_init(initial_heap_size: usize) c_int {
 /// Cleanup the global GC instance
 export fn cursed_gc_runtime_deinit() void {
     if (global_gc) |gc| {
-        gc.deinit(allocator);
+        gc.deinit();
         global_gc = null;
     }
 }

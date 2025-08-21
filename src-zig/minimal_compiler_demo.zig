@@ -37,7 +37,7 @@ const c = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -112,14 +112,14 @@ fn demonstrateFullPipeline(allocator: Allocator, source: []const u8, filename: [
     // Step 2: LLVM IR Generation
     print("\n2️⃣ LLVM IR Generation\n", .{});
     var compiler = LLVMCompiler.init(allocator);
-    defer compiler.deinit(allocator);
+    defer compiler.deinit();
     
     try compiler.generateIR(source);
     print("   ✅ Generated LLVM module with main function\n", .{});
     
     // Write IR to file for inspection
     var ir_filename = .empty;
-    defer ir_filename.deinit(allocator);
+    defer ir_filename.deinit();
     try ir_filename.appendSlice(output_name);
     try ir_filename.appendSlice(".ll");
     
@@ -163,7 +163,7 @@ const LLVMCompiler = struct {
     module: c.LLVMModuleRef,
     builder: c.LLVMBuilderRef,
 
-    pub fn init(allocator: Allocator) LLVMCompiler {
+    pub fn init() LLVMCompiler {
         const context = c.LLVMContextCreate();
         const module = c.LLVMModuleCreateWithNameInContext("cursed_module", context);
         const builder = c.LLVMCreateBuilderInContext(context);
@@ -312,7 +312,7 @@ const LLVMCompiler = struct {
 
         // Generate object file
         var obj_filename = .empty;
-        defer obj_filename.deinit(allocator);
+        defer obj_filename.deinit();
         try obj_filename.appendSlice(output_base);
         try obj_filename.appendSlice(".o");
 
@@ -328,19 +328,19 @@ const LLVMCompiler = struct {
 
 fn linkToExecutable(allocator: Allocator, output_base: []const u8) !void {
     var obj_filename = .empty;
-    defer obj_filename.deinit(allocator);
+    defer obj_filename.deinit();
     try obj_filename.appendSlice(output_base);
     try obj_filename.appendSlice(".o");
 
     // Link using gcc
     var link_args = .empty;
-    defer link_args.deinit(allocator);
+    defer link_args.deinit();
     
-    try link_args.append(allocator, "gcc");
-    try link_args.append(allocator, "-o");
-    try link_args.append(allocator, output_base);
-    try link_args.append(allocator, obj_filename.items);
-    try link_args.append(allocator, "-no-pie");
+    try link_args.append("gcc");
+    try link_args.append("-o");
+    try link_args.append(output_base);
+    try link_args.append(obj_filename.items);
+    try link_args.append("-no-pie");
 
     var child = std.ChildProcess.init(link_args.items, allocator);
     child.stdout_behavior = .Ignore;

@@ -27,8 +27,8 @@ const ImplementationValidationResult = struct {
     signature_mismatches: ArrayList(SignatureMismatch),
     
     pub fn deinit(self: *ImplementationValidationResult) void {
-        self.missing_methods.deinit(allocator);
-        self.signature_mismatches.deinit(allocator);
+        self.missing_methods.deinit();
+        self.signature_mismatches.deinit();
     }
 };
 
@@ -103,23 +103,23 @@ pub const InterfaceDispatcher = struct {
         // Clean up vtables
         var vtable_iterator = self.vtables.iterator();
         while (vtable_iterator.next()) |entry| {
-            entry.value_ptr.*.deinit(allocator);
+            entry.value_ptr.*.deinit();
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.vtables.deinit(allocator);
+        self.vtables.deinit();
         
         // Clean up interface types
         var interface_iterator = self.interface_types.iterator();
         while (interface_iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.interface_types.deinit(allocator);
+        self.interface_types.deinit();
         
         // Clean up implementations
-        self.implementations.deinit(allocator);
+        self.implementations.deinit();
         
         // Clean up method cache
-        self.method_cache.deinit(allocator);
+        self.method_cache.deinit();
     }
 
     /// Register an interface type
@@ -189,7 +189,7 @@ pub const InterfaceDispatcher = struct {
             }
             
             if (!found) {
-                vtable.deinit(allocator);
+                vtable.deinit();
                 self.allocator.destroy(vtable);
                 return InterfaceDispatchError.MethodNotImplemented;
             }
@@ -212,7 +212,7 @@ pub const InterfaceDispatcher = struct {
                     // Validate method signature compatibility
                     const signature_result = try self.validateMethodSignature(interface_method, method_impl);
                     if (!signature_result.compatible) {
-                        try signature_mismatches.append(allocator, SignatureMismatch{
+                        try signature_mismatches.append(SignatureMismatch{
                             .method_name = interface_method.name,
                             .expected_signature = interface_method,
                             .actual_signature = method_impl.signature,
@@ -224,7 +224,7 @@ pub const InterfaceDispatcher = struct {
             }
             
             if (!found) {
-                try missing_methods.append(allocator, interface_method.name);
+                try missing_methods.append(interface_method.name);
             }
         }
         
@@ -659,11 +659,11 @@ pub const InterfaceType = struct {
     }
 
     pub fn deinit(self: *InterfaceType) void {
-        self.methods.deinit(allocator);
+        self.methods.deinit();
     }
 
     pub fn addMethod(self: *InterfaceType, method: MethodSignature) !void {
-        try self.methods.append(allocator, method);
+        try self.methods.append(method);
     }
 };
 
@@ -752,10 +752,10 @@ test "interface dispatch vtable generation" {
     const allocator = testing.allocator;
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit(allocator);
+    defer interface_registry.deinit();
     
     var dispatcher = InterfaceDispatcher.init(allocator, &interface_registry);
-    defer dispatcher.deinit(allocator);
+    defer dispatcher.deinit();
     
     // Register Drawable interface
     const drawable_methods = [_]MethodSignature{
@@ -787,10 +787,10 @@ test "vtable creation and method dispatch" {
     const allocator = testing.allocator;
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit(allocator);
+    defer interface_registry.deinit();
     
     var dispatcher = InterfaceDispatcher.init(allocator, &interface_registry);
-    defer dispatcher.deinit(allocator);
+    defer dispatcher.deinit();
     
     // Register interface
     const methods = [_]MethodSignature{

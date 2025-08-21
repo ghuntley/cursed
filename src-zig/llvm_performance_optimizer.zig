@@ -353,7 +353,7 @@ pub const LLVMPerformanceOptimizer = struct {
             .optimization_potential = calculateOptimizationPotential(self.module),
         };
         
-        std.debug.print("📊 Optimization Analysis:\n");
+        std.debug.print("📊 Optimization Analysis:\n", .{});
         std.debug.print("  Functions: {d}\n", .{analysis.functions_analyzed});
         std.debug.print("  Basic blocks: {d}\n", .{analysis.basic_blocks_analyzed});
         std.debug.print("  Instructions: {d}\n", .{analysis.instructions_analyzed});
@@ -402,13 +402,13 @@ pub const OptimizationStats = struct {
     optimization_level: LLVMPerformanceOptimizer.OptimizationLevel,
     
     pub fn print(self: *const OptimizationStats) void {
-        std.debug.print("=== LLVM OPTIMIZATION STATS ===\n");
+        std.debug.print("=== LLVM OPTIMIZATION STATS ===\n", .{});
         std.debug.print("Optimization level: {s}\n", .{@tagName(self.optimization_level)});
         std.debug.print("Passes applied: {d}\n", .{self.passes_applied});
         std.debug.print("Optimization time: {d:.3}ms\n", .{
             @as(f64, @floatFromInt(self.optimization_time_ns)) / 1_000_000
         });
-        std.debug.print("===============================\n");
+        std.debug.print("===============================\n", .{});
     }
 };
 

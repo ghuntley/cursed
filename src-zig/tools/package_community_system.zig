@@ -17,7 +17,7 @@ pub const CommunitySystem = struct {
     user_profiles: HashMap([]const u8, UserProfile, std.hash_map.StringContext, 80),
     moderation_queue: ArrayList(ModerationItem),
     
-    pub fn init(allocator: Allocator) CommunitySystem {
+    pub fn init() CommunitySystem {
         return CommunitySystem{
             .allocator = allocator,
             .reviews = HashMap([]const u8, ArrayList(Review), std.hash_map.StringContext, 80).init(allocator),
@@ -32,21 +32,21 @@ pub const CommunitySystem = struct {
         var review_iter = self.reviews.iterator();
         while (review_iter.next()) |entry| {
             for (entry.value_ptr.items) |*review| {
-                review.deinit(allocator);
+                review.deinit();
             }
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.reviews.deinit(allocator);
+        self.reviews.deinit();
         
         // Clean up user profiles
         var profile_iter = self.user_profiles.iterator();
         while (profile_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.user_profiles.deinit(allocator);
+        self.user_profiles.deinit();
         
-        self.ratings.deinit(allocator);
-        self.moderation_queue.deinit(allocator);
+        self.ratings.deinit();
+        self.moderation_queue.deinit();
     }
     
     // ===== Review System =====
@@ -362,7 +362,7 @@ pub const CommunitySystem = struct {
         if (self.reviews.get(package_name)) |package_reviews| {
             // Filter reviews
             var filtered_reviews = ArrayList(*Review).init(self.allocator);
-            defer filtered_reviews.deinit(allocator);
+            defer filtered_reviews.deinit();
             
             for (package_reviews.items) |*review| {
                 if (review.status != .approved and !options.include_pending) continue;
@@ -583,7 +583,7 @@ pub const Review = struct {
     pub const ReviewStatus = enum { pending_moderation, approved, rejected, edited, flagged };
     
     pub fn deinit(self: *Review) void {
-        self.tags.deinit(allocator);
+        self.tags.deinit();
     }
 };
 
@@ -659,7 +659,7 @@ pub const UserProfile = struct {
     }
     
     pub fn deinit(self: *UserProfile) void {
-        self.downloads.deinit(allocator);
+        self.downloads.deinit();
     }
 };
 
@@ -679,7 +679,7 @@ pub const ReviewList = struct {
     total_count: u32,
     rating_stats: ?RatingStats,
     
-    pub fn init(allocator: Allocator) ReviewList {
+    pub fn init() ReviewList {
         return ReviewList{
             .reviews = ArrayList(Review).init(allocator),
             .total_count = 0,
@@ -689,9 +689,9 @@ pub const ReviewList = struct {
     
     pub fn deinit(self: *ReviewList) void {
         for (self.reviews.items) |*review| {
-            review.deinit(allocator);
+            review.deinit();
         }
-        self.reviews.deinit(allocator);
+        self.reviews.deinit();
     }
 };
 
@@ -723,9 +723,8 @@ pub const CommunityStats = struct {
     average_rating: f32,
     rating_distribution: [5]u32,
     
-    pub fn init(allocator: Allocator) CommunityStats {
-        _ = allocator;
-        return CommunityStats{
+    pub fn init() CommunityStats {
+                return CommunityStats{
             .total_reviews = 0,
             .approved_reviews = 0,
             .total_packages = 0,
@@ -742,7 +741,7 @@ test "review submission validation" {
     const allocator = std.testing.allocator;
     
     var community = CommunitySystem.init(allocator);
-    defer community.deinit(allocator);
+    defer community.deinit();
     
     const invalid_review = ReviewSubmission{
         .package_name = "test-package",
@@ -771,7 +770,7 @@ test "rating statistics calculation" {
     const allocator = std.testing.allocator;
     
     var community = CommunitySystem.init(allocator);
-    defer community.deinit(allocator);
+    defer community.deinit();
     
     // Add some ratings
     try community.updateRatingStats("test-package", 5);

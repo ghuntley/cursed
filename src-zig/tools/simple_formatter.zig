@@ -8,7 +8,7 @@ const Allocator = std.mem.Allocator;
 // Simple formatter that works with basic CURSED syntax
 pub fn formatCursedCode(allocator: Allocator, source: []const u8) ![]const u8 {
     var formatted = ArrayList(u8).init(allocator);
-    defer formatted.deinit(allocator);
+    defer formatted.deinit();
     
     var lines = std.mem.splitScalar(u8, source, '\n');
     var indent_level: u32 = 0;
@@ -47,7 +47,7 @@ pub fn formatCursedCode(allocator: Allocator, source: []const u8) ![]const u8 {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);

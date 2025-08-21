@@ -67,7 +67,7 @@ const Config = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var args = try std.process.argsAlloc(allocator);
@@ -88,7 +88,7 @@ pub fn main() !void {
             if (config.source_file) |source_file| {
                 try runTypeCheck(allocator, source_file, config);
             } else {
-                print("Error: typecheck command requires a source file\n");
+                print("Error: typecheck command requires a source file\n", .{});
                 std.process.exit(1);
             }
         },
@@ -96,7 +96,7 @@ pub fn main() !void {
             if (config.source_file) |source_file| {
                 try runTypeInference(allocator, source_file, config);
             } else {
-                print("Error: infer command requires a source file\n");
+                print("Error: infer command requires a source file\n", .{});
                 std.process.exit(1);
             }
         },
@@ -104,7 +104,7 @@ pub fn main() !void {
             if (config.source_file) |source_file| {
                 try runConstraintResolution(allocator, source_file, config);
             } else {
-                print("Error: constraints command requires a source file\n");
+                print("Error: constraints command requires a source file\n", .{});
                 std.process.exit(1);
             }
         },
@@ -112,7 +112,7 @@ pub fn main() !void {
             if (config.source_file) |source_file| {
                 try runSyntaxCheck(allocator, source_file, config);
             } else {
-                print("Error: check command requires a source file\n");
+                print("Error: check command requires a source file\n", .{});
                 std.process.exit(1);
             }
         },
@@ -120,7 +120,7 @@ pub fn main() !void {
             if (config.source_file) |source_file| {
                 try runInterpret(allocator, source_file, config);
             } else {
-                print("Error: interpret command requires a source file\n");
+                print("Error: interpret command requires a source file\n", .{});
                 std.process.exit(1);
             }
         },
@@ -128,7 +128,7 @@ pub fn main() !void {
             if (config.source_file) |source_file| {
                 try runCompile(allocator, source_file, config);
             } else {
-                print("Error: compile command requires a source file\n");
+                print("Error: compile command requires a source file\n", .{});
                 std.process.exit(1);
             }
         },
@@ -188,7 +188,7 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
         } else if (std.mem.eql(u8, arg, "--backend")) {
             i += 1;
             if (i >= args.len) {
-                print("Error: --backend requires a value\n");
+                print("Error: --backend requires a value\n", .{});
                 std.process.exit(1);
             }
             const backend_str = args[i];
@@ -207,14 +207,14 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
         } else if (std.mem.eql(u8, arg, "--output") or std.mem.eql(u8, arg, "-o")) {
             i += 1;
             if (i >= args.len) {
-                print("Error: --output requires a value\n");
+                print("Error: --output requires a value\n", .{});
                 std.process.exit(1);
             }
             config.output_file = args[i];
         } else if (std.mem.eql(u8, arg, "--stdlib-path")) {
             i += 1;
             if (i >= args.len) {
-                print("Error: --stdlib-path requires a value\n");
+                print("Error: --stdlib-path requires a value\n", .{});
                 std.process.exit(1);
             }
             config.stdlib_path = args[i];
@@ -226,7 +226,7 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
             if (config.source_file == null) {
                 config.source_file = arg;
             } else {
-                print("Error: multiple source files not supported\n");
+                print("Error: multiple source files not supported\n", .{});
                 std.process.exit(1);
             }
         }
@@ -244,40 +244,40 @@ fn parseArgs(allocator: Allocator, args: [][]const u8) !Config {
 
 fn printHelp() void {
     print("CURSED Compiler with Advanced Type System v{s}\n", .{VERSION});
-    print("\n");
-    print("USAGE:\n");
-    print("    cursed [COMMAND] [OPTIONS] <source-file>\n");
-    print("\n");
-    print("COMMANDS:\n");
-    print("    interpret    Interpret CURSED source code (default)\n");
-    print("    compile      Compile to native binary\n");
-    print("    check        Check syntax without execution\n");
-    print("    typecheck    Perform comprehensive type checking\n");
-    print("    infer        Show type inference results\n");
-    print("    constraints  Resolve and display type constraints\n");
-    print("    version      Show version information\n");
-    print("    help         Show this help message\n");
-    print("\n");
-    print("OPTIONS:\n");
-    print("    --backend <backend>  Choose compilation backend (script, llvm, c, wasm)\n");
-    print("    --output, -o <file>  Specify output file\n");
-    print("    --verbose            Enable verbose output\n");
-    print("    --debug              Enable debug mode\n");
-    print("    --tokens             Show tokenization results\n");
-    print("    --ast                Show AST structure\n");
-    print("    --types              Show detailed type information\n");
-    print("    --no-strict-types    Disable strict type checking\n");
-    print("    --no-generics        Disable generic type support\n");
-    print("    --no-inference       Disable type inference\n");
-    print("    --stdlib-path <path> Specify custom standard library path\n");
-    print("\n");
-    print("EXAMPLES:\n");
-    print("    cursed hello.csd                    # Interpret file\n");
-    print("    cursed compile hello.csd -o hello   # Compile to native binary\n");
-    print("    cursed typecheck program.csd        # Check types thoroughly\n");
-    print("    cursed infer --types expression.csd # Show type inference\n");
-    print("    cursed check --verbose program.csd  # Syntax check with details\n");
-    print("\n");
+    print("\n", .{});
+    print("USAGE:\n", .{});
+    print("    cursed [COMMAND] [OPTIONS] <source-file>\n", .{});
+    print("\n", .{});
+    print("COMMANDS:\n", .{});
+    print("    interpret    Interpret CURSED source code (default)\n", .{});
+    print("    compile      Compile to native binary\n", .{});
+    print("    check        Check syntax without execution\n", .{});
+    print("    typecheck    Perform comprehensive type checking\n", .{});
+    print("    infer        Show type inference results\n", .{});
+    print("    constraints  Resolve and display type constraints\n", .{});
+    print("    version      Show version information\n", .{});
+    print("    help         Show this help message\n", .{});
+    print("\n", .{});
+    print("OPTIONS:\n", .{});
+    print("    --backend <backend>  Choose compilation backend (script, llvm, c, wasm)\n", .{});
+    print("    --output, -o <file>  Specify output file\n", .{});
+    print("    --verbose            Enable verbose output\n", .{});
+    print("    --debug              Enable debug mode\n", .{});
+    print("    --tokens             Show tokenization results\n", .{});
+    print("    --ast                Show AST structure\n", .{});
+    print("    --types              Show detailed type information\n", .{});
+    print("    --no-strict-types    Disable strict type checking\n", .{});
+    print("    --no-generics        Disable generic type support\n", .{});
+    print("    --no-inference       Disable type inference\n", .{});
+    print("    --stdlib-path <path> Specify custom standard library path\n", .{});
+    print("\n", .{});
+    print("EXAMPLES:\n", .{});
+    print("    cursed hello.csd                    # Interpret file\n", .{});
+    print("    cursed compile hello.csd -o hello   # Compile to native binary\n", .{});
+    print("    cursed typecheck program.csd        # Check types thoroughly\n", .{});
+    print("    cursed infer --types expression.csd # Show type inference\n", .{});
+    print("    cursed check --verbose program.csd  # Syntax check with details\n", .{});
+    print("\n", .{});
 }
 
 fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !void {
@@ -297,14 +297,14 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
         print("Tokenization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer token_list.deinit(allocator);
+    defer token_list.deinit();
 
     if (config.show_tokens) {
-        print("\n📝 Tokens:\n");
+        print("\n📝 Tokens:\n", .{});
         for (token_list.items, 0..) |token, i| {
             print("{}: {} '{}'\n", .{ i, token.type, token.value });
         }
-        print("\n");
+        print("\n", .{});
     }
 
     // Parse
@@ -313,12 +313,12 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
         print("Parse error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer program.deinit(allocator);
+    defer program.deinit();
 
     if (config.show_ast) {
-        print("\n🌳 AST Structure:\n");
+        print("\n🌳 AST Structure:\n", .{});
         try printAST(program, 0);
-        print("\n");
+        print("\n", .{});
     }
 
     // Type check with comprehensive system
@@ -326,39 +326,39 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
         print("Type checker initialization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer type_integration.deinit(allocator);
+    defer type_integration.deinit();
 
     const type_result = type_integration.checkProgram(&program) catch |err| {
         print("Type checking error: {}\n", .{err});
         std.process.exit(1);
     };
     defer {
-        type_result.errors.deinit(allocator);
-        type_result.warnings.deinit(allocator);
+        type_result.errors.deinit();
+        type_result.warnings.deinit();
     }
 
     // Display results
     if (type_result.success) {
-        print("✅ Type checking passed successfully!\n");
+        print("✅ Type checking passed successfully!\n", .{});
         
         if (config.show_types) {
-            print("\n📊 Type Information:\n");
+            print("\n📊 Type Information:\n", .{});
             print("- Strict type checking: {}\n", .{config.strict_types});
             print("- Generic types enabled: {}\n", .{config.enable_generics});
             print("- Type inference enabled: {}\n", .{config.enable_inference});
         }
         
         if (type_result.warnings.items.len > 0) {
-            print("\n⚠️  Warnings:\n");
+            print("\n⚠️  Warnings:\n", .{});
             for (type_result.warnings.items) |warning| {
                 print("  Line {}, Column {}: {s}\n", .{ warning.line, warning.column, warning.message });
             }
         }
     } else {
-        print("❌ Type checking failed!\n");
+        print("❌ Type checking failed!\n", .{});
         
         if (type_result.errors.items.len > 0) {
-            print("\n🚨 Type Errors:\n");
+            print("\n🚨 Type Errors:\n", .{});
             for (type_result.errors.items, 0..) |error_detail, i| {
                 print("{}. [{s}] Line {}, Column {}: {s}\n", .{
                     i + 1,
@@ -390,24 +390,24 @@ fn runTypeInference(allocator: Allocator, source_file: []const u8, config: Confi
         print("Tokenization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer token_list.deinit(allocator);
+    defer token_list.deinit();
 
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {
         print("Parse error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer program.deinit(allocator);
+    defer program.deinit();
 
     // Initialize type system for inference analysis
     var type_integration = type_checker_integration.TypeCheckerIntegration.init(allocator) catch |err| {
         print("Type system initialization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer type_integration.deinit(allocator);
+    defer type_integration.deinit();
 
-    print("📋 Type Inference Results:\n");
-    print("========================\n");
+    print("📋 Type Inference Results:\n", .{});
+    print("========================\n", .{});
 
     // Analyze each statement for type inference
     for (program.statements.items, 0..) |stmt, i| {
@@ -440,13 +440,13 @@ fn runTypeInference(allocator: Allocator, source_file: []const u8, config: Confi
                     print("  Generic check error: {}\n", .{err});
                     continue;
                 };
-                defer generic_result.deinit(allocator);
+                defer generic_result.deinit();
                 
                 print("  Is generic: {}\n", .{generic_result.is_generic});
                 print("  Monomorphization needed: {}\n", .{generic_result.monomorphization_needed});
             },
             .Expression => |expr_stmt| {
-                print("  Expression statement\n");
+                print("  Expression statement\n", .{});
                 const expr_result = type_integration.checkExpression(expr_stmt.expression) catch |err| {
                     print("  Inference error: {}\n", .{err});
                     continue;
@@ -461,7 +461,7 @@ fn runTypeInference(allocator: Allocator, source_file: []const u8, config: Confi
         }
     }
 
-    print("\n✨ Type inference analysis complete!\n");
+    print("\n✨ Type inference analysis complete!\n", .{});
 }
 
 fn runConstraintResolution(allocator: Allocator, source_file: []const u8, config: Config) !void {
@@ -480,36 +480,36 @@ fn runConstraintResolution(allocator: Allocator, source_file: []const u8, config
         print("Tokenization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer token_list.deinit(allocator);
+    defer token_list.deinit();
 
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {
         print("Parse error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer program.deinit(allocator);
+    defer program.deinit();
 
     var type_integration = type_checker_integration.TypeCheckerIntegration.init(allocator) catch |err| {
         print("Type system initialization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer type_integration.deinit(allocator);
+    defer type_integration.deinit();
 
     // Run constraint resolution
     const constraint_result = type_integration.resolveConstraints() catch |err| {
         print("Constraint resolution error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer constraint_result.deinit(allocator);
+    defer constraint_result.deinit();
 
-    print("🔍 Constraint Resolution Results:\n");
-    print("=================================\n");
+    print("🔍 Constraint Resolution Results:\n", .{});
+    print("=================================\n", .{});
     print("Resolution successful: {}\n", .{constraint_result.success});
     print("Resolved constraints: {}\n", .{constraint_result.resolved_constraints.items.len});
     print("Remaining unknowns: {}\n", .{constraint_result.remaining_unknowns});
 
     if (constraint_result.resolved_constraints.items.len > 0) {
-        print("\n📋 Resolved Type Variables:\n");
+        print("\n📋 Resolved Type Variables:\n", .{});
         for (constraint_result.resolved_constraints.items, 0..) |resolved, i| {
             print("{}. T{} = {}\n", .{ i + 1, resolved.type_var_id, resolved.resolved_type });
         }
@@ -517,10 +517,10 @@ fn runConstraintResolution(allocator: Allocator, source_file: []const u8, config
 
     if (constraint_result.remaining_unknowns > 0) {
         print("\n⚠️  {} type variables remain unresolved\n", .{constraint_result.remaining_unknowns});
-        print("This may indicate incomplete type information or circular constraints.\n");
+        print("This may indicate incomplete type information or circular constraints.\n", .{});
     }
 
-    print("\n✨ Constraint resolution analysis complete!\n");
+    print("\n✨ Constraint resolution analysis complete!\n", .{});
 }
 
 fn runSyntaxCheck(allocator: Allocator, source_file: []const u8, config: Config) !void {
@@ -538,17 +538,17 @@ fn runSyntaxCheck(allocator: Allocator, source_file: []const u8, config: Config)
         print("Tokenization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer token_list.deinit(allocator);
+    defer token_list.deinit();
 
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {
         print("Parse error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer program.deinit(allocator);
+    defer program.deinit();
 
-    print("✅ Syntax check passed successfully!\n");
-    print("📊 Program statistics:\n");
+    print("✅ Syntax check passed successfully!\n", .{});
+    print("📊 Program statistics:\n", .{});
     print("  - Statements: {}\n", .{program.statements.items.len});
     
     // Count different statement types
@@ -589,20 +589,20 @@ fn runCompile(allocator: Allocator, source_file: []const u8, config: Config) !vo
 
     switch (config.backend) {
         .script => {
-            print("Note: Script backend is interpretation mode\n");
+            print("Note: Script backend is interpretation mode\n", .{});
             try runInterpret(allocator, source_file, config);
         },
         .llvm => {
-            print("LLVM compilation not yet implemented in enhanced compiler\n");
-            print("Use 'cursed-zig' for LLVM compilation\n");
+            print("LLVM compilation not yet implemented in enhanced compiler\n", .{});
+            print("Use 'cursed-zig' for LLVM compilation\n", .{});
             std.process.exit(1);
         },
         .c => {
-            print("C transpilation not yet implemented\n");
+            print("C transpilation not yet implemented\n", .{});
             std.process.exit(1);
         },
         .wasm => {
-            print("WebAssembly compilation not yet implemented\n");
+            print("WebAssembly compilation not yet implemented\n", .{});
             std.process.exit(1);
         },
     }

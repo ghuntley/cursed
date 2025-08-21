@@ -19,7 +19,7 @@ const concurrency = @import("concurrency.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -114,7 +114,7 @@ pub fn main() !void {
 
     // Parse
     var p = parser.Parser.init(allocator, tokens);
-    defer p.deinit(allocator);
+    defer p.deinit();
 
     const program = p.parseProgram() catch |err| {
         print("❌ Parser error: {}\n", .{err});
@@ -149,7 +149,7 @@ fn executeWithInterpreter(allocator: Allocator, program: *ast.Program, debug_mod
         print("❌ Failed to initialize concurrency interpreter: {}\n", .{err});
         return;
     };
-    defer interpreter.deinit(allocator);
+    defer interpreter.deinit();
 
     if (debug_mode) {
         print("📊 Concurrency runtime initialized\n", .{});
@@ -187,7 +187,7 @@ fn compileWithConcurrency(allocator: Allocator, program: *ast.Program, filename:
 
     // Generate LLVM IR with concurrency support
     var concurrency_gen = concurrency_codegen.ConcurrencyCodeGen.init(allocator);
-    defer concurrency_gen.deinit(allocator);
+    defer concurrency_gen.deinit();
 
     concurrency_gen.generateProgram(program) catch |err| {
         print("❌ Concurrency code generation error: {}\n", .{err});
@@ -253,7 +253,7 @@ fn runConcurrencyBenchmark(allocator: Allocator) !void {
     const num_goroutines = 1000;
     
     var spawned_goroutines = ArrayList(concurrency.GoroutineId).init(allocator);
-    defer spawned_goroutines.deinit(allocator);
+    defer spawned_goroutines.deinit();
 
     const spawn_start = std.time.milliTimestamp();
     for (0..num_goroutines) |_| {

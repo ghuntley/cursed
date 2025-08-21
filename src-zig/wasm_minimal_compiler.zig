@@ -18,12 +18,12 @@ export fn interpret_cursed(source_ptr: [*]const u8, source_len: usize) void {
     while (i < source.len) : (i += 1) {
         const char = source[i];
         if (char == '\n') {
-            std.debug.print("\\n");
+            std.debug.print("\\n", .{});
         } else {
             std.debug.print("{c}", .{char});
         }
     }
-    std.debug.print("\n");
+    std.debug.print("\n", .{});
 }
 
 export fn get_version() [*:0]const u8 {

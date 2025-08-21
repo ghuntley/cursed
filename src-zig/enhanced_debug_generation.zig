@@ -110,19 +110,19 @@ pub const DebugFunction = struct {
     }
     
     pub fn deinit(self: *DebugFunction) void {
-        self.parameters.deinit(allocator);
-        self.local_variables.deinit(allocator);
+        self.parameters.deinit();
+        self.local_variables.deinit();
     }
     
     pub fn addParameter(self: *DebugFunction, variable: DebugVariable) !void {
         var param = variable;
         param.is_parameter = true;
         param.is_local = false;
-        try self.parameters.append(allocator, param);
+        try self.parameters.append(param);
     }
     
     pub fn addLocalVariable(self: *DebugFunction, variable: DebugVariable) !void {
-        try self.local_variables.append(allocator, variable);
+        try self.local_variables.append(variable);
     }
 };
 
@@ -147,11 +147,11 @@ pub const DebugScope = struct {
     
     pub fn deinit(self: *DebugScope) void {
         for (self.children.items) |child| {
-            child.deinit(allocator);
+            child.deinit();
             self.allocator.destroy(child);
         }
-        self.children.deinit(allocator);
-        self.variables.deinit(allocator);
+        self.children.deinit();
+        self.variables.deinit();
     }
     
     pub fn createChildScope(self: *DebugScope, location: SourceLocation) !*DebugScope {
@@ -191,14 +191,14 @@ pub const CompilationUnit = struct {
     
     pub fn deinit(self: *CompilationUnit) void {
         for (self.functions.items) |*func| {
-            func.deinit(allocator);
+            func.deinit();
         }
-        self.functions.deinit(allocator);
-        self.global_variables.deinit(allocator);
+        self.functions.deinit();
+        self.global_variables.deinit();
         for (self.types.items) |*debug_type| {
-            debug_type.deinit(allocator);
+            debug_type.deinit();
         }
-        self.types.deinit(allocator);
+        self.types.deinit();
     }
 };
 
@@ -277,9 +277,9 @@ pub const DebugInfoGenerator = struct {
     }
     
     pub fn deinit(self: *DebugInfoGenerator) void {
-        self.compilation_unit.deinit(allocator);
+        self.compilation_unit.deinit();
         if (self.current_scope) |scope| {
-            scope.deinit(allocator);
+            scope.deinit();
             self.allocator.destroy(scope);
         }
         llvm.LLVMDisposeDIBuilder(self.di_builder);
@@ -502,7 +502,7 @@ pub fn initDebugGeneration(allocator: Allocator, llvm_context: llvm.LLVMContextR
 pub fn deinitDebugGeneration() void {
     if (global_debug_generator) |*generator| {
         generator.finalize();
-        generator.deinit(allocator);
+        generator.deinit();
         global_debug_generator = null;
     }
 }
@@ -542,7 +542,7 @@ export fn cursed_debug_set_location(line: u32, column: u32) void {
 
 // Testing
 pub fn testDebugGeneration() !void {
-    print("Testing debug information generation...\n");
+    print("Testing debug information generation...\n", .{});
     
     // Test basic LLVM debug info creation
     const context = llvm.LLVMContextCreate();
@@ -552,11 +552,11 @@ pub fn testDebugGeneration() !void {
     defer llvm.LLVMDisposeModule(module);
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var generator = try DebugInfoGenerator.init(allocator, context, module, "test.csd", "/tmp");
-    defer generator.deinit(allocator);
+    defer generator.deinit();
     
     try generator.createCompileUnit();
     try generator.createCursedTypes();
@@ -564,10 +564,10 @@ pub fn testDebugGeneration() !void {
     // Create a test function
     const location = SourceLocation.init("test.csd", "/tmp", 1, 1);
     var test_func = DebugFunction.init(allocator, "test_function", "test_function", "void", location);
-    defer test_func.deinit(allocator);
+    defer test_func.deinit();
     
     try generator.createFunction(&test_func);
     generator.finalize();
     
-    print("Debug generation tests passed!\n");
+    print("Debug generation tests passed!\n", .{});
 }

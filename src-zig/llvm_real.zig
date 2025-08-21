@@ -110,8 +110,8 @@ pub const RealLLVMCodeGen = struct {
     }
     
     pub fn deinit(self: *RealLLVMCodeGen) void {
-        self.functions.deinit(allocator);
-        self.variables.deinit(allocator);
+        self.functions.deinit();
+        self.variables.deinit();
         
         if (self.builder) |builder| llvm_dispose_builder(builder);
         if (self.module) |module| llvm_dispose_module(module);
@@ -129,7 +129,7 @@ pub const RealLLVMCodeGen = struct {
     pub fn generateProgram(self: *RealLLVMCodeGen, program: Program) LLVMError!void {
         // Separate functions from global statements
         var global_statements: std.ArrayList(*Statement) = .empty;
-        defer global_statements.deinit(allocator);
+        defer global_statements.deinit();
         
         // Process statements - functions are generated immediately, others saved for main
         for (program.statements.items) |stmt_ptr| {
@@ -139,7 +139,7 @@ pub const RealLLVMCodeGen = struct {
                     try self.generateStatement(stmt.*);
                 },
                 else => {
-                    try global_statements.append(allocator, stmt);
+                    try global_statements.append(stmt);
                 },
             }
         }
@@ -411,12 +411,12 @@ pub const RealLLVMCodeGen = struct {
             if (self.functions.get(func_name)) |func| {
                 // Generate arguments
                 var args: std.ArrayList(?*anyopaque) = .empty;
-                defer args.deinit(allocator);
+                defer args.deinit();
                 
                 for (call.arguments) |arg_ptr| {
                     const arg_expr: *Expression = @ptrCast(@alignCast(arg_ptr));
                     const arg_value = try self.generateExpression(arg_expr.*);
-                    try args.append(allocator, arg_value);
+                    try args.append(arg_value);
                 }
                 
                 const func_type = llvm_get_function_type(func);
@@ -439,11 +439,11 @@ pub const RealLLVMCodeGen = struct {
         
         // Generate arguments
         var args = .empty;
-        defer args.deinit(allocator);
+        defer args.deinit();
         
         for (call.arguments) |arg| {
             const arg_value = try self.generateExpression(arg.*);
-            try args.append(allocator, arg_value);
+            try args.append(arg_value);
         }
         
         // Create format string based on argument types (simplified)
@@ -878,7 +878,7 @@ test "real llvm basic" {
         std.debug.print("Failed to initialize LLVM: {}\n", .{err});
         return;
     };
-    defer codegen.deinit(allocator);
+    defer codegen.deinit();
     
     // Test basic initialization
     try std.testing.expect(codegen.context != null);

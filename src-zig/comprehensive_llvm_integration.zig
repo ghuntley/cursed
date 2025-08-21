@@ -67,7 +67,7 @@ pub const CompilationResult = struct {
         codegen_time_ms: u64 = 0,
     };
     
-    pub fn init(allocator: Allocator) CompilationResult {
+    pub fn init() CompilationResult {
         return CompilationResult{
             .success = false,
             .output_files = .empty,
@@ -83,25 +83,25 @@ pub const CompilationResult = struct {
         for (self.errors.items) |error_msg| allocator.free(error_msg);
         for (self.warnings.items) |warning_msg| allocator.free(warning_msg);
         
-        self.output_files.deinit(allocator);
-        self.errors.deinit(allocator);
-        self.warnings.deinit(allocator);
+        self.output_files.deinit();
+        self.errors.deinit();
+        self.warnings.deinit();
     }
     
     pub fn addError(self: *CompilationResult, allocator: Allocator, message: []const u8) !void {
         const owned_message = try allocator.dupe(u8, message);
-        try self.errors.append(allocator, owned_message);
+        try self.errors.append(owned_message);
         self.success = false;
     }
     
     pub fn addWarning(self: *CompilationResult, allocator: Allocator, message: []const u8) !void {
         const owned_message = try allocator.dupe(u8, message);
-        try self.warnings.append(allocator, owned_message);
+        try self.warnings.append(owned_message);
     }
     
     pub fn addOutputFile(self: *CompilationResult, allocator: Allocator, file_path: []const u8) !void {
         const owned_path = try allocator.dupe(u8, file_path);
-        try self.output_files.append(allocator, owned_path);
+        try self.output_files.append(owned_path);
     }
 };
 
@@ -130,8 +130,8 @@ pub const ComprehensiveLLVMCompiler = struct {
     }
     
     pub fn deinit(self: *ComprehensiveLLVMCompiler) void {
-        self.type_inference_engine.deinit(allocator);
-        self.llvm_backend.deinit(allocator);
+        self.type_inference_engine.deinit();
+        self.llvm_backend.deinit();
     }
     
     /// Compile CURSED source code with comprehensive error handling
@@ -212,9 +212,9 @@ pub const ComprehensiveLLVMCompiler = struct {
         var expressions = .empty;
         
         // Example expressions for testing
-        try expressions.append(allocator, ast.Expression{ .Integer = 42 });
-        try expressions.append(allocator, ast.Expression{ .String = "Hello, World!" });
-        try expressions.append(allocator, ast.Expression{ .Boolean = true });
+        try expressions.append(ast.Expression{ .Integer = 42 });
+        try expressions.append(ast.Expression{ .String = "Hello, World!" });
+        try expressions.append(ast.Expression{ .Boolean = true });
         
         return expressions.toOwnedSlice(self.allocator);
     }
@@ -393,7 +393,7 @@ pub const ComprehensiveLLVMCompiler = struct {
             try self.validatePatternMatches(result);
         }
         
-        std.debug.print("✅ Final validation passed\n");
+        std.debug.print("✅ Final validation passed\n", .{});
     }
     
     /// Validate ARM64-specific code generation
@@ -406,7 +406,7 @@ pub const ComprehensiveLLVMCompiler = struct {
         }
         
         // Additional ARM64 validations would go here
-        std.debug.print("✅ ARM64 code validation passed\n");
+        std.debug.print("✅ ARM64 code validation passed\n", .{});
     }
     
     /// Validate pattern matching code generation
@@ -534,7 +534,7 @@ pub fn compileWithComprehensiveErrorHandling(
     config: CompilationConfig,
 ) !CompilationResult {
     var compiler = try ComprehensiveLLVMCompiler.init(allocator, config);
-    defer compiler.deinit(allocator);
+    defer compiler.deinit();
     
     return compiler.compile(source, output_path);
 }
@@ -583,7 +583,7 @@ test "comprehensive compilation with all fixes" {
     ;
     
     var result = try quickCompile(allocator, source, "test_output");
-    defer result.deinit(allocator);
+    defer result.deinit();
     
     // Compilation should succeed or provide detailed errors
     if (!result.success) {
@@ -603,7 +603,7 @@ test "ARM64 cross-compilation" {
     const source = "sus x drip = 42; vibez.spill(x)";
     
     var result = try crossCompile(allocator, source, "test_arm64", "aarch64-unknown-linux-gnu");
-    defer result.deinit(allocator);
+    defer result.deinit();
     
     // Should handle ARM64 target without errors
     try std.testing.expect(result.llvm_stats.codegen_time_ms >= 0);

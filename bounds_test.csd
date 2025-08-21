@@ -1,0 +1,1 @@
+sus data []normie = [10, 20, 30, 40, 50]; sus index normie = 2; sus value normie = data[index]; vibez.spill("Array bounds test - data[", index, "] =", value); sus invalid_index normie = 10; vibez.spill("Testing bounds with invalid index:", invalid_index)

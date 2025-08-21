@@ -18,7 +18,7 @@ const DocItem = struct {
 // Simple documentation extractor
 pub fn extractDocumentation(allocator: Allocator, source: []const u8, file_path: []const u8) ![]DocItem {
     var items = ArrayList(DocItem).init(allocator);
-    defer items.deinit(allocator);
+    defer items.deinit();
     
     var lines = std.mem.splitScalar(u8, source, '\n');
     var line_number: u32 = 0;
@@ -136,9 +136,9 @@ pub fn generateHTML(allocator: Allocator, items: []DocItem, output_dir: []const 
     var functions = ArrayList(DocItem).init(allocator);
     var structs = ArrayList(DocItem).init(allocator);
     var interfaces = ArrayList(DocItem).init(allocator);
-    defer functions.deinit(allocator);
-    defer structs.deinit(allocator);
-    defer interfaces.deinit(allocator);
+    defer functions.deinit();
+    defer structs.deinit();
+    defer interfaces.deinit();
     
     for (items) |item| {
         if (std.mem.eql(u8, item.type, "function")) {
@@ -208,7 +208,7 @@ pub fn generateHTML(allocator: Allocator, items: []DocItem, output_dir: []const 
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -234,7 +234,7 @@ pub fn main() !void {
     }
     
     var all_items = ArrayList(DocItem).init(allocator);
-    defer all_items.deinit(allocator);
+    defer all_items.deinit();
     
     // Process files in directory
     var dir = std.fs.cwd().openDir(source_dir, .{ .iterate = true }) catch |err| {

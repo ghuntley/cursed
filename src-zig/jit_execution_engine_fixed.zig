@@ -50,7 +50,7 @@ pub const JITExecutionEngine = struct {
         
         // Add built-in functions to global environment with error handling
         global_env.define("vibez", Value{ .String = "built_in_vibez" }) catch |err| {
-            arena.deinit(allocator);
+            arena.deinit();
             return err;
         };
         
@@ -73,14 +73,14 @@ pub const JITExecutionEngine = struct {
     
     pub fn deinit(self: *JITExecutionEngine) void {
         // Arena allocator automatically frees all memory
-        self.arena.deinit(allocator);
+        self.arena.deinit();
     }
     
     /// Execute CURSED source code with proper memory management
     pub fn executeSource(self: *JITExecutionEngine, source: []const u8) !void {
         // Create a scoped arena for this execution
         var exec_arena = ArenaAllocator.init(self.allocator);
-        defer exec_arena.deinit(allocator);
+        defer exec_arena.deinit();
         const exec_allocator = exec_arena.allocator();
         
         var lex = lexer.Lexer.init(exec_allocator, source);
@@ -240,7 +240,7 @@ pub const JITExecutionEngine = struct {
         
         while (true) {
             if (iteration_count >= max_iterations) {
-                print("Warning: While loop exceeded maximum iterations\n");
+                print("Warning: While loop exceeded maximum iterations\n", .{});
                 break;
             }
             
@@ -371,17 +371,17 @@ pub const JITExecutionEngine = struct {
         if (self.functions.get(call.function_name)) |func| {
             // Create temporary arena for arguments to prevent memory leaks
             var arg_arena = ArenaAllocator.init(self.allocator);
-            defer arg_arena.deinit(allocator);
+            defer arg_arena.deinit();
             const arg_allocator = arg_arena.allocator();
             
             // Evaluate arguments
             var args = .empty;
-            defer args.deinit(allocator);
-            errdefer args.deinit(allocator); // Clean up on error
+            defer args.deinit();
+            errdefer args.deinit(); // Clean up on error
             
             for (call.arguments.items) |arg| {
                 const arg_value = try self.evaluateExpression(arg.*);
-                try args.append(allocator, arg_value);
+                try args.append(arg_value);
             }
             
             return try self.callFunction(func, args.items);
@@ -404,7 +404,7 @@ pub const JITExecutionEngine = struct {
                 }
             },
             else => {
-                print("Property access on non-struct type\n");
+                print("Property access on non-struct type\n", .{});
                 return error.InvalidPropertyAccess;
             },
         }
@@ -466,11 +466,11 @@ pub const JITExecutionEngine = struct {
     fn builtinVibesSpill(self: *JITExecutionEngine, arguments: ArrayList(*ast.Expression)) !Value {
         // Create temporary arena for string operations
         var print_arena = ArenaAllocator.init(self.allocator);
-        defer print_arena.deinit(allocator);
+        defer print_arena.deinit();
         const print_allocator = print_arena.allocator();
         
         for (arguments.items, 0..) |arg, i| {
-            if (i > 0) print(" ");
+            if (i > 0) print(" ", .{});
             
             const value = try self.evaluateExpression(arg.*);
             const str = value.toString(print_allocator) catch |err| {
@@ -480,7 +480,7 @@ pub const JITExecutionEngine = struct {
             
             print("{s}", .{str});
         }
-        print("\n");
+        print("\n", .{});
         
         return Value.Null;
     }
@@ -723,21 +723,21 @@ pub const ExecutionStats = struct {
 
 /// Test the fixed JIT execution engine
 pub fn testJITExecutionEngine(allocator: Allocator) !void {
-    print("\n🧪 Testing Fixed JIT Execution Engine\n");
-    print("=====================================\n");
+    print("\n🧪 Testing Fixed JIT Execution Engine\n", .{});
+    print("=====================================\n", .{});
     
     var engine = try JITExecutionEngine.init(allocator);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     // Test 1: Simple expression evaluation
-    print("\n📝 Test 1: Simple expression\n");
+    print("\n📝 Test 1: Simple expression\n", .{});
     const simple_program = 
         \\vibez.spill("Hello, CURSED!")
     ;
     try engine.executeSource(simple_program);
     
     // Test 2: Variable declaration and usage
-    print("\n📝 Test 2: Variables\n");
+    print("\n📝 Test 2: Variables\n", .{});
     const variable_program = 
         \\sus x drip = 42
         \\vibez.spill("Value of x:", x)
@@ -745,7 +745,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     try engine.executeSource(variable_program);
     
     // Test 3: Arithmetic operations with overflow protection
-    print("\n📝 Test 3: Arithmetic\n");
+    print("\n📝 Test 3: Arithmetic\n", .{});
     const arithmetic_program = 
         \\sus a drip = 10
         \\sus b drip = 5
@@ -756,7 +756,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     try engine.executeSource(arithmetic_program);
     
     // Test 4: Function definition and call
-    print("\n📝 Test 4: Functions\n");
+    print("\n📝 Test 4: Functions\n", .{});
     const function_program = 
         \\slay add(x drip, y drip) drip {
         \\    damn x + y
@@ -767,7 +767,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     try engine.executeSource(function_program);
     
     // Test 5: Control flow
-    print("\n📝 Test 5: Control flow\n");
+    print("\n📝 Test 5: Control flow\n", .{});
     const control_program = 
         \\sus number drip = 7
         \\bestie (number > 5) {
@@ -779,11 +779,11 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     try engine.executeSource(control_program);
     
     // Test 6: Memory management
-    print("\n📝 Test 6: Memory management\n");
+    print("\n📝 Test 6: Memory management\n", .{});
     const stats = engine.getStats();
     print("Memory used: {} bytes\n", .{stats.memory_used});
     print("Memory budget: {} bytes\n", .{stats.memory_budget});
     print("Call stack depth: {}\n", .{stats.call_stack_depth});
     
-    print("\n✅ Fixed JIT Execution Engine tests completed!\n");
+    print("\n✅ Fixed JIT Execution Engine tests completed!\n", .{});
 }

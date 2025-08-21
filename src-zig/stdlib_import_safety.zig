@@ -76,16 +76,16 @@ pub const SafeImportManager = struct {
         var iter = self.import_cache.iterator();
         while (iter.next()) |entry| {
             var result = entry.value_ptr;
-            result.deinit(allocator);
+            result.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.import_cache.deinit(allocator);
+        self.import_cache.deinit();
 
         // Clean up module loader
-        self.module_loader_instance.deinit(allocator);
+        self.module_loader_instance.deinit();
 
         if (self.verbose) {
-            print("📊 Memory Guard Final Report:\n");
+            print("📊 Memory Guard Final Report:\n", .{});
             print("  Remaining allocations: {}\n", .{self.memory_guard.current_allocations});
         }
     }
@@ -223,13 +223,13 @@ pub const SafeImportManager = struct {
         var iter = self.import_cache.iterator();
         while (iter.next()) |entry| {
             var result = entry.value_ptr;
-            result.deinit(allocator);
+            result.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
         self.import_cache.clearAndFree(self.allocator);
 
         if (self.verbose) {
-            print("🧹 Import cache cleared\n");
+            print("🧹 Import cache cleared\n", .{});
         }
     }
 
@@ -253,7 +253,7 @@ pub const ImportStats = struct {
     memory_allocations: u32,
 
     pub fn print(self: ImportStats) void {
-        std.debug.print("📊 Import Statistics:\n");
+        std.debug.print("📊 Import Statistics:\n", .{});
         std.debug.print("  Successful imports: {}\n", .{self.successful_imports});
         std.debug.print("  Failed imports: {}\n", .{self.failed_imports});
         std.debug.print("  Total functions loaded: {}\n", .{self.total_functions});
@@ -274,7 +274,7 @@ pub fn extractImportsSafely(allocator: Allocator, source: []const u8) !ArrayList
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit(allocator);
+        imports.deinit();
     }
 
     // Input validation
@@ -324,7 +324,7 @@ pub fn extractImportsSafely(allocator: Allocator, source: []const u8) !ArrayList
                                 
                                 if (valid) {
                                     const module_copy = try allocator.dupe(u8, module_name);
-                                    try imports.append(allocator, module_copy);
+                                    try imports.append(module_copy);
                                 }
                             }
                         }
@@ -345,7 +345,7 @@ pub fn validateImportsSafely(allocator: Allocator, imports: ArrayList([]const u8
 
     // Use safe import manager for validation
     var safe_manager = SafeImportManager.init(allocator, false); // Non-verbose for validation
-    defer safe_manager.deinit(allocator);
+    defer safe_manager.deinit();
 
     var all_valid = true;
 
@@ -362,10 +362,10 @@ pub fn validateImportsSafely(allocator: Allocator, imports: ArrayList([]const u8
 
 /// Test the safe import system
 pub fn testSafeImportSystem(allocator: Allocator) !void {
-    print("🧪 Testing Safe Import System...\n");
+    print("🧪 Testing Safe Import System...\n", .{});
 
     var safe_manager = SafeImportManager.init(allocator, true);
-    defer safe_manager.deinit(allocator);
+    defer safe_manager.deinit();
 
     // Test importing standard modules
     const test_modules = [_][]const u8{ "mathz", "stringz", "arrayz" };
@@ -386,10 +386,10 @@ pub fn testSafeImportSystem(allocator: Allocator) !void {
     // Validate all imports
     const all_valid = try safe_manager.validateAllImports();
     if (all_valid) {
-        print("✅ All imports validated successfully\n");
+        print("✅ All imports validated successfully\n", .{});
     } else {
-        print("❌ Some imports failed validation\n");
+        print("❌ Some imports failed validation\n", .{});
     }
 
-    print("🧪 Safe import system test completed\n");
+    print("🧪 Safe import system test completed\n", .{});
 }

@@ -98,7 +98,7 @@ pub const ExecutionFrame = struct {
     }
     
     pub fn deinit(self: *ExecutionFrame) void {
-        self.env.deinit(allocator);
+        self.env.deinit();
     }
 };
 
@@ -153,11 +153,11 @@ pub const GoroutineFunctionExecutor = struct {
     pub fn deinit(self: *GoroutineFunctionExecutor) void {
         // Clean up all stack frames
         for (self.call_stack.items) |*frame| {
-            frame.deinit(allocator);
+            frame.deinit();
         }
         
         // Arena handles the rest of the cleanup
-        self.arena.deinit(allocator);
+        self.arena.deinit();
     }
     
     /// Register a function for interpreted execution
@@ -248,7 +248,7 @@ pub const GoroutineFunctionExecutor = struct {
         };
         
         // Update stack tracking
-        try self.call_stack.append(allocator, frame);
+        try self.call_stack.append(frame);
         self.stack_depth += 1;
         self.total_frame_size += frame.frame_size;
         
@@ -257,7 +257,7 @@ pub const GoroutineFunctionExecutor = struct {
             if (self.call_stack.items.len > 0) {
                 var popped_frame = self.call_stack.pop();
                 self.total_frame_size -= popped_frame.frame_size;
-                popped_frame.deinit(allocator);
+                popped_frame.deinit();
                 self.stack_depth -= 1;
             }
         }
@@ -372,7 +372,7 @@ pub const GoroutineFunctionExecutor = struct {
             },
             
             else => {
-                print("Unsupported statement type in goroutine executor\n");
+                print("Unsupported statement type in goroutine executor\n", .{});
                 return null;
             },
         }
@@ -426,7 +426,7 @@ pub const GoroutineFunctionExecutor = struct {
             },
             
             else => {
-                print("Unsupported expression type in goroutine executor\n");
+                print("Unsupported expression type in goroutine executor\n", .{});
                 return Value.Null;
             },
         }
@@ -436,11 +436,11 @@ pub const GoroutineFunctionExecutor = struct {
     fn handleFunctionCall(self: *GoroutineFunctionExecutor, call: ast.CallExpression, env: *Environment) !Value {
         // Evaluate arguments
         var args = .empty;
-        defer args.deinit(allocator);
-        errdefer args.deinit(allocator); // Clean up on error
+        defer args.deinit();
+        errdefer args.deinit(); // Clean up on error
         for (call.arguments.items) |arg| {
             const value = try self.evaluateExpression(arg.*, env);
-            try args.append(allocator, value);
+            try args.append(value);
         }
         
         // Check if it's a built-in function
@@ -604,7 +604,7 @@ pub const GoroutineFunctionExecutor = struct {
     fn callBuiltinFunction(self: *GoroutineFunctionExecutor, name: []const u8, args: []const Value) !Value {
         if (std.mem.eql(u8, name, "vibez.spill") or std.mem.eql(u8, name, "print")) {
             for (args, 0..) |arg, i| {
-                if (i > 0) print(" ");
+                if (i > 0) print(" ", .{});
                 switch (arg) {
                     .Integer => |i| print("{}", .{i}),
                     .Float => |f| print("{d}", .{f}),
@@ -615,7 +615,7 @@ pub const GoroutineFunctionExecutor = struct {
                     else => print("[complex value]"),
                 }
             }
-            print("\n");
+            print("\n", .{});
             return Value.Null;
         } else if (std.mem.eql(u8, name, "len")) {
             if (args.len > 0) {
@@ -706,11 +706,11 @@ pub const GoroutineFunctionExecutor = struct {
 /// Test the goroutine function executor
 pub fn testGoroutineFunctionExecutor() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var executor = try GoroutineFunctionExecutor.init(allocator, 1);
-    defer executor.deinit(allocator);
+    defer executor.deinit();
     
-    print("Goroutine function executor test completed successfully\n");
+    print("Goroutine function executor test completed successfully\n", .{});
 }

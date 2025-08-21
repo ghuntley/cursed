@@ -12,7 +12,7 @@ const missing_impl = @import("missing_impl_functions.zig");
 pub const StdlibCore = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) StdlibCore {
+    pub fn init() StdlibCore {
         return StdlibCore{
             .allocator = allocator,
         };
@@ -91,7 +91,7 @@ pub const StdlibCore = struct {
     /// Append to dynamic array (simplified)
     pub fn array_append(self: *StdlibCore, list: *ArrayList([]const u8), item: []const u8) !void {
         _ = self;
-        try list.append(allocator, item);
+        try list.append(item);
     }
     
     // ===== MATH FUNCTIONS (mathz module) =====
@@ -482,11 +482,11 @@ export fn runtime_cos(value: f64) f64 {
 
 /// Test the stdlib core functionality
 pub fn test_stdlib_core() !void {
-    print("\n🧪 Testing CURSED Stdlib Core Implementation\n");
-    print("=========================================\n");
+    print("\n🧪 Testing CURSED Stdlib Core Implementation\n", .{});
+    print("=========================================\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Initialize core
@@ -494,7 +494,7 @@ pub fn test_stdlib_core() !void {
     var core = get_stdlib_core();
     
     // Test string functions
-    print("Testing string functions...\n");
+    print("Testing string functions...\n", .{});
     const test_string = "Hello";
     const char_at_2 = core.string_char_at(test_string, 2);
     print("Character at index 2 of 'Hello': {c}\n", .{char_at_2});
@@ -504,31 +504,31 @@ pub fn test_stdlib_core() !void {
     print("Integer 42 as string: {s}\n", .{int_string});
     
     // Test math functions
-    print("Testing math functions...\n");
+    print("Testing math functions...\n", .{});
     print("abs(-5): {}\n", .{core.abs_int(-5)});
     print("sqrt(16): {}\n", .{core.sqrt(16.0)});
     print("sin(0): {}\n", .{core.sin(0.0)});
     
     // Test file operations
-    print("Testing file operations...\n");
+    print("Testing file operations...\n", .{});
     const test_file = "test_stdlib_core.txt";
     const test_content = "Hello from CURSED stdlib core!";
     
     if (try core.write_file_content(test_file, test_content)) {
-        print("Successfully wrote test file\n");
+        print("Successfully wrote test file\n", .{});
         
         if (core.file_exists(test_file)) {
-            print("File exists check: passed\n");
+            print("File exists check: passed\n", .{});
             
             const read_content = try core.read_file_content(test_file);
             defer allocator.free(read_content);
             print("Read content: {s}\n", .{read_content});
             
             if (core.delete_file(test_file)) {
-                print("Successfully deleted test file\n");
+                print("Successfully deleted test file\n", .{});
             }
         }
     }
     
-    print("\n✅ Stdlib Core tests completed successfully\n");
+    print("\n✅ Stdlib Core tests completed successfully\n", .{});
 }

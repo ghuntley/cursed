@@ -108,8 +108,8 @@ const GoroutineTracker = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.*.deinit(self.goroutines.allocator);
         }
-        self.goroutines.deinit(allocator);
-        self.pending_cleanups.deinit(allocator);
+        self.goroutines.deinit();
+        self.pending_cleanups.deinit();
     }
     
     pub fn register(self: *Self, id: concurrency_fixed.GoroutineId, function_ptr: ?*anyopaque, context: ?*anyopaque) !void {
@@ -146,7 +146,7 @@ const GoroutineTracker = struct {
         
         // Add to pending cleanup queue (thread-safe)
         self.mutex.lock();
-        self.pending_cleanups.append(allocator, id) catch return; // Ignore error for cleanup
+        self.pending_cleanups.append(id) catch return; // Ignore error for cleanup
         self.mutex.unlock();
     }
     
@@ -239,7 +239,7 @@ pub export fn cursed_concurrency_init() void {
     // Initialize tracker
     goroutine_tracker = global_allocator.create(GoroutineTracker) catch {
         std.debug.print("Failed to allocate goroutine tracker\n", .{});
-        runtime.?.deinit(allocator);
+        runtime.?.deinit();
         global_allocator.destroy(runtime.?);
         runtime = null;
         return;
@@ -249,7 +249,7 @@ pub export fn cursed_concurrency_init() void {
         std.debug.print("Failed to initialize goroutine tracker\n", .{});
         global_allocator.destroy(goroutine_tracker.?);
         goroutine_tracker = null;
-        runtime.?.deinit(allocator);
+        runtime.?.deinit();
         global_allocator.destroy(runtime.?);
         runtime = null;
         return;
@@ -269,14 +269,14 @@ pub export fn cursed_concurrency_cleanup() void {
     
     // Cleanup tracker first
     if (goroutine_tracker) |tracker| {
-        tracker.deinit(allocator);
+        tracker.deinit();
         global_allocator.destroy(tracker);
         goroutine_tracker = null;
     }
     
     // Cleanup runtime
     if (runtime) |rt| {
-        rt.deinit(allocator);
+        rt.deinit();
         global_allocator.destroy(rt);
         runtime = null;
     }

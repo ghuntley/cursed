@@ -37,11 +37,11 @@ pub const ParallelCompiler = struct {
     }
     
     pub fn deinit(self: *ParallelCompiler) void {
-        self.codegen_phase.deinit(allocator);
-        self.parsing_phase.deinit(allocator);
-        self.lexing_phase.deinit(allocator);
-        self.work_queue.deinit(allocator);
-        self.thread_pool.deinit(allocator);
+        self.codegen_phase.deinit();
+        self.parsing_phase.deinit();
+        self.lexing_phase.deinit();
+        self.work_queue.deinit();
+        self.thread_pool.deinit();
     }
     
     /// Compile multiple files in parallel
@@ -52,17 +52,17 @@ pub const ParallelCompiler = struct {
         std.debug.print("🚀 Starting parallel compilation of {d} files...\n", .{files.len});
         
         // Phase 1: Parallel Lexing
-        std.debug.print("📝 Phase 1: Parallel lexing...\n");
+        std.debug.print("📝 Phase 1: Parallel lexing...\n", .{});
         const lexing_results = try self.parallelLexing(files);
         defer self.allocator.free(lexing_results);
         
         // Phase 2: Parallel Parsing
-        std.debug.print("🌳 Phase 2: Parallel parsing...\n");
+        std.debug.print("🌳 Phase 2: Parallel parsing...\n", .{});
         const parsing_results = try self.parallelParsing(lexing_results);
         defer self.allocator.free(parsing_results);
         
         // Phase 3: Parallel Code Generation
-        std.debug.print("⚡ Phase 3: Parallel code generation...\n");
+        std.debug.print("⚡ Phase 3: Parallel code generation...\n", .{});
         const codegen_results = try self.parallelCodegen(parsing_results);
         defer self.allocator.free(codegen_results);
         
@@ -81,7 +81,7 @@ pub const ParallelCompiler = struct {
             .memory_usage_mb = self.metrics.peak_memory_usage / (1024 * 1024),
         };
         
-        std.debug.print("✅ Parallel compilation completed:\n");
+        std.debug.print("✅ Parallel compilation completed:\n", .{});
         result.print();
         
         return result;
@@ -340,14 +340,14 @@ const WorkQueue = struct {
     }
     
     fn deinit(self: *WorkQueue) void {
-        self.queue.deinit(allocator);
+        self.queue.deinit();
     }
     
     fn enqueue(self: *WorkQueue, item: WorkItem) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        try self.queue.append(allocator, item);
+        try self.queue.append(item);
         self.condition.signal();
     }
     
@@ -474,7 +474,7 @@ pub const ParallelCompilationResult = struct {
     memory_usage_mb: usize,
     
     pub fn print(self: *const ParallelCompilationResult) void {
-        std.debug.print("=== PARALLEL COMPILATION RESULTS ===\n");
+        std.debug.print("=== PARALLEL COMPILATION RESULTS ===\n", .{});
         std.debug.print("Files compiled: {d}\n", .{self.files_compiled});
         std.debug.print("Total time: {d:.3}ms\n", .{@as(f64, @floatFromInt(self.total_time_ns)) / 1_000_000});
         std.debug.print("  Lexing: {d:.3}ms\n", .{@as(f64, @floatFromInt(self.lexing_time_ns)) / 1_000_000});
@@ -483,7 +483,7 @@ pub const ParallelCompilationResult = struct {
         std.debug.print("Speedup: {d:.2}x\n", .{self.parallelization_speedup});
         std.debug.print("Thread utilization: {d:.1}%\n", .{self.thread_utilization * 100});
         std.debug.print("Memory usage: {d}MB\n", .{self.memory_usage_mb});
-        std.debug.print("====================================\n");
+        std.debug.print("====================================\n", .{});
     }
 };
 
@@ -606,7 +606,7 @@ test "ParallelCompiler initialization" {
     const allocator = std.testing.allocator;
     
     var compiler = try ParallelCompiler.init(allocator, 4);
-    defer compiler.deinit(allocator);
+    defer compiler.deinit();
     
     const stats = compiler.getCompilationStats();
     try std.testing.expect(stats.thread_count == 4);

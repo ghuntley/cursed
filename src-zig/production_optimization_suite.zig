@@ -207,31 +207,31 @@ pub const ProductionOptimizationSuite = struct {
         }
         
         pub fn deinit(self: *SuiteMetrics) void {
-            self.phase_times_ms.deinit(allocator);
+            self.phase_times_ms.deinit();
         }
         
         pub fn printComprehensiveReport(self: *const SuiteMetrics) void {
-            print("\n🎯 Production Optimization Suite Report\n");
-            print("=======================================\n");
+            print("\n🎯 Production Optimization Suite Report\n", .{});
+            print("=======================================\n", .{});
             print("Total optimization time: {} ms\n", .{self.total_optimization_time_ms});
             print("Estimated total speedup: {:.2}x\n", .{self.estimated_total_speedup});
             print("Code size reduction: {:.1}%\n", .{self.code_size_reduction_percent});
             print("Peak memory usage: {:.1} MB\n", .{self.memory_usage_peak_mb});
             
-            print("\n📊 Optimization Breakdown:\n");
+            print("\n📊 Optimization Breakdown:\n", .{});
             print("  Functions optimized: {}\n", .{self.functions_optimized});
             print("  Instructions eliminated: {}\n", .{self.instructions_eliminated});
             print("  Branches optimized: {}\n", .{self.branches_optimized});
             print("  Loops vectorized: {}\n", .{self.loops_vectorized});
             
-            print("\n🔧 System Contributions:\n");
+            print("\n🔧 System Contributions:\n", .{});
             print("  PGO recommendations applied: {}\n", .{self.pgo_recommendations_applied});
             print("  LTO optimizations applied: {}\n", .{self.lto_optimizations_applied});
             print("  Cross-platform optimizations: {}\n", .{self.cross_platform_optimizations});
             print("  Vectorization opportunities: {}\n", .{self.vectorization_opportunities});
             
             if (self.phase_times_ms.count() > 0) {
-                print("\n⏱️  Phase Timing Breakdown:\n");
+                print("\n⏱️  Phase Timing Breakdown:\n", .{});
                 var iter = self.phase_times_ms.iterator();
                 while (iter.next()) |entry| {
                     const percentage = if (self.total_optimization_time_ms > 0)
@@ -243,13 +243,13 @@ pub const ProductionOptimizationSuite = struct {
             
             // Performance assessment
             if (self.estimated_total_speedup > 2.0) {
-                print("\n✨ Excellent optimization results achieved!\n");
+                print("\n✨ Excellent optimization results achieved!\n", .{});
             } else if (self.estimated_total_speedup > 1.5) {
-                print("\n✅ Good optimization results achieved.\n");
+                print("\n✅ Good optimization results achieved.\n", .{});
             } else if (self.estimated_total_speedup > 1.2) {
-                print("\n👍 Moderate optimization improvements.\n");
+                print("\n👍 Moderate optimization improvements.\n", .{});
             } else {
-                print("\n⚠️  Limited optimization opportunities found.\n");
+                print("\n⚠️  Limited optimization opportunities found.\n", .{});
             }
         }
     };
@@ -272,7 +272,7 @@ pub const ProductionOptimizationSuite = struct {
         // Initialize optimization phases
         try suite.initializeOptimizationPhases();
         
-        print("🚀 Production Optimization Suite initialized\n");
+        print("🚀 Production Optimization Suite initialized\n", .{});
         print("  Optimization level: {}\n", .{config.optimization_level});
         print("  Target platform: {}\n", .{config.target_platform});
         print("  PGO enabled: {}\n", .{config.enable_pgo});
@@ -287,29 +287,29 @@ pub const ProductionOptimizationSuite = struct {
     pub fn deinit(self: *Self) void {
         // Cleanup subsystems
         if (self.llvm_optimizer) |optimizer| {
-            optimizer.deinit(allocator);
+            optimizer.deinit();
             self.allocator.destroy(optimizer);
         }
         
         if (self.pgo_system) |pgo| {
-            pgo.deinit(allocator);
+            pgo.deinit();
             self.allocator.destroy(pgo);
         }
         
         if (self.lto_system) |lto| {
-            lto.deinit(allocator);
+            lto.deinit();
             self.allocator.destroy(lto);
         }
         
         if (self.cross_platform_optimizer) |cross_opt| {
-            cross_opt.deinit(allocator);
+            cross_opt.deinit();
             self.allocator.destroy(cross_opt);
         }
         
-        self.suite_metrics.deinit(allocator);
-        self.optimization_phases.deinit(allocator);
+        self.suite_metrics.deinit();
+        self.optimization_phases.deinit();
         
-        print("✅ Production Optimization Suite cleaned up\n");
+        print("✅ Production Optimization Suite cleaned up\n", .{});
     }
     
     /// Set LLVM module for optimization
@@ -317,7 +317,7 @@ pub const ProductionOptimizationSuite = struct {
         self.context = context;
         self.module = module;
         
-        print("📦 LLVM module set for optimization\n");
+        print("📦 LLVM module set for optimization\n", .{});
     }
     
     /// Run comprehensive optimization pipeline
@@ -328,7 +328,7 @@ pub const ProductionOptimizationSuite = struct {
         
         const start_time = std.time.milliTimestamp();
         
-        print("🚀 Starting production optimization pipeline...\n");
+        print("🚀 Starting production optimization pipeline...\n", .{});
         
         // Initialize subsystems
         try self.initializeSubsystems();
@@ -375,7 +375,7 @@ pub const ProductionOptimizationSuite = struct {
     
     /// Initialize optimization subsystems
     fn initializeSubsystems(self: *Self) !void {
-        print("  Initializing optimization subsystems...\n");
+        print("  Initializing optimization subsystems...\n", .{});
         
         // Initialize LLVM optimizer
         const llvm_config = self.createLLVMConfig();
@@ -432,13 +432,13 @@ pub const ProductionOptimizationSuite = struct {
             self.llvm_optimizer.?.enableCrossPlatformOptimizations();
         }
         
-        print("    All subsystems initialized\n");
+        print("    All subsystems initialized\n", .{});
     }
     
     /// Run Profile-Guided Optimization phase
     fn runPGOPhase(self: *Self) !PGOAnalysisResult {
         const phase_start = std.time.milliTimestamp();
-        print("  Phase 1: Profile-Guided Optimization analysis...\n");
+        print("  Phase 1: Profile-Guided Optimization analysis...\n", .{});
         
         if (self.pgo_system == null) return error.PGOSystemNotInitialized;
         
@@ -460,7 +460,7 @@ pub const ProductionOptimizationSuite = struct {
     /// Run Advanced LLVM Optimization phase
     fn runLLVMOptimizationPhase(self: *Self) !@import("advanced_llvm_optimization_engine.zig").OptimizationResult {
         const phase_start = std.time.milliTimestamp();
-        print("  Phase 2: Advanced LLVM optimizations...\n");
+        print("  Phase 2: Advanced LLVM optimizations...\n", .{});
         
         if (self.llvm_optimizer == null) return error.LLVMOptimizerNotInitialized;
         
@@ -483,7 +483,7 @@ pub const ProductionOptimizationSuite = struct {
     /// Run Cross-Platform Optimization phase
     fn runCrossPlatformPhase(self: *Self) !CrossPlatformOptimizationResult {
         const phase_start = std.time.milliTimestamp();
-        print("  Phase 3: Cross-platform optimizations...\n");
+        print("  Phase 3: Cross-platform optimizations...\n", .{});
         
         if (self.cross_platform_optimizer == null) return error.CrossPlatformOptimizerNotInitialized;
         
@@ -504,7 +504,7 @@ pub const ProductionOptimizationSuite = struct {
     /// Run Link-Time Optimization phase
     fn runLTOPhase(self: *Self) !LTOResult {
         const phase_start = std.time.milliTimestamp();
-        print("  Phase 4: Link-Time Optimization...\n");
+        print("  Phase 4: Link-Time Optimization...\n", .{});
         
         if (self.lto_system == null) return error.LTOSystemNotInitialized;
         
@@ -529,7 +529,7 @@ pub const ProductionOptimizationSuite = struct {
     /// Run verification phase
     fn runVerificationPhase(self: *Self) !void {
         const phase_start = std.time.milliTimestamp();
-        print("  Phase 5: Final verification...\n");
+        print("  Phase 5: Final verification...\n", .{});
         
         // Verify module integrity
         var error_message: [*c]u8 = undefined;
@@ -545,7 +545,7 @@ pub const ProductionOptimizationSuite = struct {
         const phase_end = std.time.milliTimestamp();
         try self.suite_metrics.phase_times_ms.put("Verification", @intCast(phase_end - phase_start));
         
-        print("    Verification completed successfully\n");
+        print("    Verification completed successfully\n", .{});
     }
     
     /// Calculate overall optimization results
@@ -576,11 +576,11 @@ pub const ProductionOptimizationSuite = struct {
     
     /// Initialize optimization phases
     fn initializeOptimizationPhases(self: *Self) !void {
-        try self.optimization_phases.append(allocator, OptimizationPhase.init("PGO Analysis"));
-        try self.optimization_phases.append(allocator, OptimizationPhase.init("LLVM Optimization"));
-        try self.optimization_phases.append(allocator, OptimizationPhase.init("Cross-Platform"));
-        try self.optimization_phases.append(allocator, OptimizationPhase.init("Link-Time Optimization"));
-        try self.optimization_phases.append(allocator, OptimizationPhase.init("Verification"));
+        try self.optimization_phases.append(OptimizationPhase.init("PGO Analysis"));
+        try self.optimization_phases.append(OptimizationPhase.init("LLVM Optimization"));
+        try self.optimization_phases.append(OptimizationPhase.init("Cross-Platform"));
+        try self.optimization_phases.append(OptimizationPhase.init("Link-Time Optimization"));
+        try self.optimization_phases.append(OptimizationPhase.init("Verification"));
     }
     
     /// Create LLVM configuration from suite configuration
@@ -605,18 +605,18 @@ pub const ProductionOptimizationSuite = struct {
                     // Use LLVM optimizer's target machine for object generation
                     // TODO: Implement object file generation
                     _ = optimizer;
-                    print("✅ Object file generation completed\n");
+                    print("✅ Object file generation completed\n", .{});
                 }
             },
             .Bitcode => {
                 if (c.LLVMWriteBitcodeToFile(self.module.?, output_path.ptr) != 0) {
                     return error.BitcodeWriteFailed;
                 }
-                print("✅ Bitcode generation completed\n");
+                print("✅ Bitcode generation completed\n", .{});
             },
             .Assembly => {
                 // TODO: Implement assembly generation
-                print("✅ Assembly generation completed\n");
+                print("✅ Assembly generation completed\n", .{});
             },
             .LLVMIR => {
                 // Print LLVM IR to file
@@ -625,7 +625,7 @@ pub const ProductionOptimizationSuite = struct {
                     defer c.LLVMDisposeMessage(error_message);
                     return error.IRWriteFailed;
                 }
-                print("✅ LLVM IR generation completed\n");
+                print("✅ LLVM IR generation completed\n", .{});
             },
         }
     }
@@ -708,21 +708,21 @@ pub const OptimizationSuiteResult = struct {
     
     pub fn deinit(self: *OptimizationSuiteResult) void {
         if (self.pgo_result) |*result| {
-            result.deinit(allocator);
+            result.deinit();
         }
         if (self.cross_platform_result) |*result| {
-            result.deinit(allocator);
+            result.deinit();
         }
     }
     
     pub fn printExecutiveSummary(self: *const OptimizationSuiteResult) void {
-        print("\n📈 Executive Summary - Production Optimization Suite\n");
-        print("===================================================\n");
+        print("\n📈 Executive Summary - Production Optimization Suite\n", .{});
+        print("===================================================\n", .{});
         print("Overall Success: {}\n", .{if (self.overall_success) "✅ Yes" else "❌ No"});
         print("Performance Classification: {} ({:.2}x speedup)\n", .{ self.performance_classification.toString(), self.overall_estimated_speedup });
         print("Total Optimization Time: {} ms\n", .{self.total_optimization_time_ms});
         
-        print("\n🔧 System Contributions:\n");
+        print("\n🔧 System Contributions:\n", .{});
         if (self.pgo_result) |pgo| {
             print("  PGO: {} recommendations in {} ms\n", .{ 
                 pgo.inlining_recommendations.items.len + pgo.unrolling_recommendations.items.len, 
@@ -746,7 +746,7 @@ pub const OptimizationSuiteResult = struct {
         }
         
         // Recommendations
-        print("\n💡 Recommendations:\n");
+        print("\n💡 Recommendations:\n", .{});
         switch (self.performance_classification) {
             .Excellent => print("  🌟 Outstanding optimization results! Consider this configuration for production.\n"),
             .Good => print("  ✅ Good optimization results. Minor tweaks may yield additional improvements.\n"),
@@ -771,21 +771,21 @@ pub const SuiteStatistics = struct {
     subsystems_active: u32,
     
     pub fn printTechnicalReport(self: *const SuiteStatistics) void {
-        print("\n🔬 Technical Report - Optimization Suite Statistics\n");
-        print("==================================================\n");
-        print("Configuration:\n");
+        print("\n🔬 Technical Report - Optimization Suite Statistics\n", .{});
+        print("==================================================\n", .{});
+        print("Configuration:\n", .{});
         print("  Optimization Level: {}\n", .{self.suite_config.optimization_level});
         print("  Target Platform: {}\n", .{self.suite_config.target_platform});
         print("  Compilation Speed Priority: {:.1}\n", .{self.suite_config.compilation_speed_priority});
         print("  Max Memory Usage: {} MB\n", .{self.suite_config.max_memory_usage_mb});
         
-        print("\nSubsystems Status:\n");
+        print("\nSubsystems Status:\n", .{});
         print("  Active Subsystems: {} / 4\n", .{self.subsystems_active});
         print("  PGO: {}\n", .{if (self.pgo_enabled) "Enabled" else "Disabled"});
         print("  LTO: {} ({})\n", .{ if (self.lto_enabled) "Enabled" else "Disabled", self.suite_config.lto_mode });
         print("  Cross-Platform: {}\n", .{if (self.cross_platform_enabled) "Enabled" else "Disabled"});
         
-        print("\nPerformance Metrics:\n");
+        print("\nPerformance Metrics:\n", .{});
         print("  Total Optimization Time: {} ms\n", .{self.total_optimization_time_ms});
         print("  Estimated Total Speedup: {:.2}x\n", .{self.estimated_total_speedup});
         print("  Code Size Reduction: {:.1}%\n", .{self.code_size_reduction_percent});
@@ -797,15 +797,15 @@ pub const SuiteStatistics = struct {
         const efficiency = if (self.total_optimization_time_ms > 0)
             (self.estimated_total_speedup - 1.0) / (@as(f64, @floatFromInt(self.total_optimization_time_ms)) / 1000.0)
         else 0.0;
-        print("\nEfficiency Analysis:\n");
+        print("\nEfficiency Analysis:\n", .{});
         print("  Optimization Efficiency: {:.3} speedup per second\n", .{efficiency});
         
         if (efficiency > 0.5) {
-            print("  🎯 Excellent optimization efficiency!\n");
+            print("  🎯 Excellent optimization efficiency!\n", .{});
         } else if (efficiency > 0.2) {
-            print("  ✅ Good optimization efficiency.\n");
+            print("  ✅ Good optimization efficiency.\n", .{});
         } else {
-            print("  ⚠️  Consider faster optimization settings for iterative development.\n");
+            print("  ⚠️  Consider faster optimization settings for iterative development.\n", .{});
         }
     }
 };

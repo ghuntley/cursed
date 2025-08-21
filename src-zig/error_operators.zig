@@ -65,7 +65,7 @@ pub const YikesError = struct {
             self.allocator.free(trace);
         }
         if (self.inner_error) |inner| {
-            inner.deinit(allocator);
+            inner.deinit();
             self.allocator.destroy(inner);
         }
     }
@@ -78,12 +78,12 @@ pub const YikesError = struct {
         }
         
         if (self.inner_error) |inner| {
-            try writer.print("Caused by:\n");
+            try writer.print("Caused by:\n", .{});
             try inner.format(writer);
         }
         
         if (self.stack_trace) |trace| {
-            try writer.print("Stack trace:\n");
+            try writer.print("Stack trace:\n", .{});
             for (trace) |frame| {
                 try writer.print("  {s}\n", .{frame});
             }
@@ -92,7 +92,7 @@ pub const YikesError = struct {
 
     pub fn toString(self: YikesError, allocator: Allocator) ![]u8 {
         var buffer = .empty;
-        defer buffer.deinit(allocator);
+        defer buffer.deinit();
         
         const writer = buffer.writer();
         try self.format(writer);
@@ -223,7 +223,7 @@ pub const ShookResult = union(enum) {
                     else => {},
                 }
             },
-            .Error => |*error_value| error_value.deinit(allocator),
+            .Error => |*error_value| error_value.deinit(),
         }
     }
 };
@@ -286,7 +286,7 @@ pub const FamBlock = struct {
         finally_body: ArrayList(Statement),
     };
 
-    pub fn init(allocator: Allocator) FamBlock {
+    pub fn init() FamBlock {
         return FamBlock{
             .try_body = .empty,
             .catch_handler = null,
@@ -300,14 +300,14 @@ pub const FamBlock = struct {
         for (self.try_body.items) |*stmt| {
             self.deinitStatement(stmt);
         }
-        self.try_body.deinit(allocator);
+        self.try_body.deinit();
 
         // Deinitialize catch handler
         if (self.catch_handler) |*catch_handler| {
             for (catch_handler.handler_body.items) |*stmt| {
                 self.deinitStatement(stmt);
             }
-            catch_handler.handler_body.deinit(allocator);
+            catch_handler.handler_body.deinit();
         }
 
         // Deinitialize finally handler
@@ -315,7 +315,7 @@ pub const FamBlock = struct {
             for (finally_handler.finally_body.items) |*stmt| {
                 self.deinitStatement(stmt);
             }
-            finally_handler.finally_body.deinit(allocator);
+            finally_handler.finally_body.deinit();
         }
     }
 
@@ -325,17 +325,17 @@ pub const FamBlock = struct {
                 for (block.statements.items) |*nested_stmt| {
                     self.deinitStatement(nested_stmt);
                 }
-                block.statements.deinit(allocator);
+                block.statements.deinit();
             },
             .FunctionCall => |*call| {
-                call.arguments.deinit(allocator);
+                call.arguments.deinit();
             },
             else => {},
         }
     }
 
     pub fn addTryStatement(self: *FamBlock, stmt: Statement) !void {
-        try self.try_body.append(allocator, stmt);
+        try self.try_body.append(stmt);
     }
 
     pub fn setCatchHandler(self: *FamBlock, error_var: []const u8, handler_body: ArrayList(Statement)) void {
@@ -430,7 +430,7 @@ pub const ExecutionContext = struct {
     variables: std.HashMap([]const u8, YikesError, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) ExecutionContext {
+    pub fn init() ExecutionContext {
         return ExecutionContext{
             .variables = std.HashMap([]const u8, YikesError, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
@@ -441,9 +441,9 @@ pub const ExecutionContext = struct {
         var iterator = self.variables.iterator();
         while (iterator.next()) |entry| {
             var err = entry.value_ptr;
-            err.deinit(allocator);
+            err.deinit();
         }
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
 
     pub fn setVariable(self: *ExecutionContext, name: []const u8, error_value: YikesError) void {
@@ -491,7 +491,7 @@ test "yikes error creation" {
     const allocator = std.testing.allocator;
     
     var err = try yikes(allocator, "Test error", 42);
-    defer err.deinit(allocator);
+    defer err.deinit();
     
     try std.testing.expect(err.isError());
     try std.testing.expect(err.getCode() == 42);
@@ -503,7 +503,7 @@ test "shook error propagation" {
     
     const error_val = try yikes(allocator, "Test propagation", 1);
     var shook_result = ShookResult.err(error_val);
-    defer shook_result.deinit(allocator);
+    defer shook_result.deinit();
     
     try std.testing.expect(shook_result.isError());
     try std.testing.expect(!shook_result.isOk());
@@ -516,10 +516,10 @@ test "fam block execution" {
     const allocator = std.testing.allocator;
     
     var fam = famBlock(allocator);
-    defer fam.deinit(allocator);
+    defer fam.deinit();
     
     var context = ExecutionContext.init(allocator);
-    defer context.deinit(allocator);
+    defer context.deinit();
     
     const result = fam.execute(&context);
     try std.testing.expect(result.isOk());
@@ -530,7 +530,7 @@ test "complete error handling flow" {
     
     // Create yikes error
     var original_err = try yikes(allocator, "Original error", 100);
-    defer original_err.deinit(allocator);
+    defer original_err.deinit();
     
     // Create shook result
     const shook_result = ShookResult.err(original_err);
@@ -538,10 +538,10 @@ test "complete error handling flow" {
     
     // Test fam block with error handling
     var fam = famBlock(allocator);
-    defer fam.deinit(allocator);
+    defer fam.deinit();
     
     var context = ExecutionContext.init(allocator);
-    defer context.deinit(allocator);
+    defer context.deinit();
     
     // Execute fam block
     const fam_result = fam.execute(&context);

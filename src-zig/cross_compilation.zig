@@ -7,7 +7,7 @@ const ArrayList = std.ArrayList;
 pub const CrossCompiler = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) CrossCompiler {
+    pub fn init() CrossCompiler {
         return CrossCompiler{
             .allocator = allocator,
         };
@@ -112,11 +112,11 @@ pub const CrossCompiler = struct {
                 3 => "-O3",
                 else => "-O2",
             };
-            try command_parts.append(allocator, opt_arg);
+            try command_parts.append(opt_arg);
             
             // Add linking mode for static linking
             if (std.mem.eql(u8, linking_mode, "static")) {
-                try command_parts.append(allocator, "-static");
+                try command_parts.append("-static");
             }
             
             // Add output file specification
@@ -306,7 +306,7 @@ pub const CrossCompiler = struct {
 pub const CrossCompilationTester = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) CrossCompilationTester {
+    pub fn init() CrossCompilationTester {
         return CrossCompilationTester{
             .allocator = allocator,
         };
@@ -342,7 +342,7 @@ pub const CrossCompilationTester = struct {
         defer std.fs.cwd().deleteFile(test_file) catch {};
         
         var cross_compiler = CrossCompiler.init(self.allocator);
-        defer cross_compiler.deinit(allocator);
+        defer cross_compiler.deinit();
         
         const test_targets = [_]struct {
             name: []const u8,

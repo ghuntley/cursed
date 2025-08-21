@@ -197,7 +197,7 @@ pub const DiagnosticMessage = struct {
     // No manual deinit needed - arena handles cleanup
     
     pub fn addSuggestion(self: *DiagnosticMessage, suggestion: Suggestion) !void {
-        try self.suggestions.append(allocator, suggestion);
+        try self.suggestions.append(suggestion);
     }
     
     pub fn setSourceSnippet(self: *DiagnosticMessage, snippet: []const u8) !void {
@@ -317,7 +317,7 @@ pub const ErrorReporter = struct {
     
     pub fn deinit(self: *ErrorReporter) void {
         // Arena automatically cleans up all allocated memory
-        self.arena.deinit(allocator);
+        self.arena.deinit();
     }
     
     pub fn addSourceFile(self: *ErrorReporter, file_path: []const u8, contents: []const u8) !void {
@@ -381,7 +381,7 @@ pub const ErrorReporter = struct {
         // Add helpful suggestions based on error code
         try self.addSuggestionsForError(&diagnostic);
         
-        try self.diagnostics.append(allocator, diagnostic);
+        try self.diagnostics.append(diagnostic);
     }
     
     fn extractSourceLine(self: *ErrorReporter, source: []const u8, line_num: u32) ![]const u8 {
@@ -571,7 +571,7 @@ pub const DebugInfo = struct {
     pub fn addLineInfo(self: *DebugInfo, line: u32, column: u32, file_path: []const u8, offset: u32) !void {
         if (self.level == .None) return;
         
-        try self.line_table.append(allocator, LineInfo{
+        try self.line_table.append(LineInfo{
             .line = line,
             .column = column,
             .file_path = file_path,
@@ -583,7 +583,7 @@ pub const DebugInfo = struct {
         if (self.level != .Full) return;
         
         const arena_allocator = self.arena.allocator();
-        try self.variable_table.append(allocator, VariableInfo{
+        try self.variable_table.append(VariableInfo{
             .name = try arena_allocator.dupe(u8, name),
             .type_name = try arena_allocator.dupe(u8, type_name),
             .scope_id = scope_id,
@@ -596,7 +596,7 @@ pub const DebugInfo = struct {
         if (self.level == .None) return 0;
         
         const scope_id = self.scope_table.items.len;
-        try self.scope_table.append(allocator, ScopeInfo{
+        try self.scope_table.append(ScopeInfo{
             .start_offset = start_offset,
             .end_offset = 0, // Will be set when scope ends
             .parent_scope = parent,
@@ -700,7 +700,7 @@ test "memory safe error reporting system" {
     
     // Test error reporter
     var reporter = ErrorReporter.init(allocator, 10);
-    defer reporter.deinit(allocator);
+    defer reporter.deinit();
     
     const location = SourceLocation.init("test.csd", 1, 5, 4);
     
@@ -714,7 +714,7 @@ test "memory safe error reporting system" {
     
     // Test debug info
     var debug_arena = ArenaAllocator.init(allocator);
-    defer debug_arena.deinit(allocator);
+    defer debug_arena.deinit();
     
     var debug_info = DebugInfo.init(&debug_arena, .Full);
     

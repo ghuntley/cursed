@@ -98,11 +98,11 @@ pub const OptimizationEngine = struct {
     }
 
     pub fn deinit(self: *OptimizationEngine) void {
-        self.inlining_analyzer.deinit(allocator);
-        self.dead_code_tracker.deinit(allocator);
-        self.constant_folder.deinit(allocator);
-        self.loop_optimizer.deinit(allocator);
-        self.memory_optimizer.deinit(allocator);
+        self.inlining_analyzer.deinit();
+        self.dead_code_tracker.deinit();
+        self.constant_folder.deinit();
+        self.loop_optimizer.deinit();
+        self.memory_optimizer.deinit();
         
         if (self.pass_manager) |pm| {
             c.LLVMDisposePassManager(pm);
@@ -303,7 +303,7 @@ pub const OptimizationEngine = struct {
         // Strip debug info in size mode
         c.LLVMAddStripSymbolsPass(self.pass_manager);
         
-        std.debug.print("✅ Size optimization passes added\n");
+        std.debug.print("✅ Size optimization passes added\n", .{});
     }
 
     /// Add CURSED-specific optimization passes
@@ -323,7 +323,7 @@ pub const OptimizationEngine = struct {
         // CURSED garbage collection optimization
         try self.addGCOptimizationPass();
         
-        std.debug.print("✅ CURSED-specific optimization passes added\n");
+        std.debug.print("✅ CURSED-specific optimization passes added\n", .{});
     }
 
     /// Add link-time optimization passes
@@ -348,7 +348,7 @@ pub const OptimizationEngine = struct {
             c.LLVMAddInternalizePass(self.pass_manager, 0);
         }
         
-        std.debug.print("✅ Link-time optimization passes added\n");
+        std.debug.print("✅ Link-time optimization passes added\n", .{});
     }
 
     /// Add debug information passes
@@ -361,7 +361,7 @@ pub const OptimizationEngine = struct {
             c.LLVMAddStripSymbolsPass(self.pass_manager);
         }
         
-        std.debug.print("✅ Debug information passes configured\n");
+        std.debug.print("✅ Debug information passes configured\n", .{});
     }
 
     /// Get total number of configured passes
@@ -392,7 +392,7 @@ pub const OptimizationEngine = struct {
         // Indirect call promotion
         try self.addIndirectCallPromotionPass();
         
-        std.debug.print("✅ Profile-guided optimization passes added\n");
+        std.debug.print("✅ Profile-guided optimization passes added\n", .{});
     }
 
     /// Run all optimization passes
@@ -674,14 +674,14 @@ pub const OptimizationEngine = struct {
         
         const writer = file.writer();
         
-        try writer.print("CURSED Compiler Optimization Report\n");
-        try writer.print("===================================\n\n");
+        try writer.print("CURSED Compiler Optimization Report\n", .{});
+        try writer.print("===================================\n\n", .{});
         
         try writer.print("Optimization Level: O{}\n", .{self.config.optimization_level});
         try writer.print("Size Optimizations: {}\n", .{self.config.size_optimizations});
         try writer.print("PGO Enabled: {}\n\n", .{self.config.pgo_enabled});
         
-        try writer.print("Performance Metrics:\n");
+        try writer.print("Performance Metrics:\n", .{});
         try writer.print("  Functions Optimized: {}\n", .{self.metrics.functions_optimized});
         try writer.print("  Instructions Eliminated: {}\n", .{self.metrics.instructions_eliminated});
         try writer.print("  Constants Folded: {}\n", .{self.metrics.constants_folded});
@@ -690,7 +690,7 @@ pub const OptimizationEngine = struct {
         try writer.print("  Loops Vectorized: {}\n", .{self.metrics.loops_vectorized});
         try writer.print("  Memory Allocations Optimized: {}\n", .{self.metrics.memory_allocations_optimized});
         
-        try writer.print("\nTiming Information:\n");
+        try writer.print("\nTiming Information:\n", .{});
         try writer.print("  Total Optimization Time: {d:.2} ms\n", .{@as(f64, @floatFromInt(self.metrics.total_optimization_time)) / 1_000_000.0});
         try writer.print("  Inlining Time: {d:.2} ms\n", .{@as(f64, @floatFromInt(self.metrics.inlining_time)) / 1_000_000.0});
         try writer.print("  Dead Code Elimination Time: {d:.2} ms\n", .{@as(f64, @floatFromInt(self.metrics.dead_code_elimination_time)) / 1_000_000.0});
@@ -794,7 +794,7 @@ pub const ProfileData = struct {
     call_frequencies: HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     branch_probabilities: HashMap([]const u8, f64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
-    pub fn init(allocator: Allocator) ProfileData {
+    pub fn init() ProfileData {
         return ProfileData{
             .hot_functions = .empty,
             .cold_functions = .empty,
@@ -804,10 +804,10 @@ pub const ProfileData = struct {
     }
     
     pub fn deinit(self: *ProfileData) void {
-        self.hot_functions.deinit(allocator);
-        self.cold_functions.deinit(allocator);
-        self.call_frequencies.deinit(allocator);
-        self.branch_probabilities.deinit(allocator);
+        self.hot_functions.deinit();
+        self.cold_functions.deinit();
+        self.call_frequencies.deinit();
+        self.branch_probabilities.deinit();
     }
 };
 
@@ -829,7 +829,7 @@ test "optimization engine initialization" {
     defer c.LLVMDisposeModule(module);
     
     var engine = try OptimizationEngine.init(allocator, context, module);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     try std.testing.expect(engine.config.optimization_level == 2);
     try std.testing.expect(engine.config.aggressive_optimizations == true);
@@ -845,7 +845,7 @@ test "optimization level configuration" {
     defer c.LLVMDisposeModule(module);
     
     var engine = try OptimizationEngine.init(allocator, context, module);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     engine.setOptimizationLevel(3);
     try std.testing.expect(engine.config.optimization_level == 3);

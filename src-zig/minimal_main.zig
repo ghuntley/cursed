@@ -153,13 +153,11 @@ fn handleSpillStatement(allocator: std.mem.Allocator, statement: []const u8, lin
 }
 
 fn handleSusStatement(allocator: std.mem.Allocator, statement: []const u8, line_number: u32) !void {
-    _ = allocator;
-    std.debug.print("[Line {}] Variable declaration: {s}\n", .{ line_number, statement });
+        std.debug.print("[Line {}] Variable declaration: {s}\n", .{ line_number, statement });
 }
 
 fn handleYeetStatement(allocator: std.mem.Allocator, statement: []const u8, line_number: u32) !void {
-    _ = allocator;
-    std.debug.print("[Line {}] Import statement: {s}\n", .{ line_number, statement });
+        std.debug.print("[Line {}] Import statement: {s}\n", .{ line_number, statement });
 }
 
 // Test function to verify the build system works

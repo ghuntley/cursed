@@ -652,7 +652,7 @@ export fn cursed_runtime_init_with_syscalls(allocator: *anyopaque) void {
     syscall_interface.cursed_syscall_init(allocator);
     syscall_interface.cursed_syscall_init_registries();
     
-    std.debug.print("[RUNTIME] CURSED runtime with syscalls initialized\n");
+    std.debug.print("[RUNTIME] CURSED runtime with syscalls initialized\n", .{});
 }
 
 export fn cursed_runtime_cleanup_with_syscalls() void {
@@ -663,5 +663,5 @@ export fn cursed_runtime_cleanup_with_syscalls() void {
     // Cleanup concurrency runtime
     concurrency_bridge.cursed_runtime_cleanup();
     
-    std.debug.print("[RUNTIME] CURSED runtime with syscalls cleaned up\n");
+    std.debug.print("[RUNTIME] CURSED runtime with syscalls cleaned up\n", .{});
 }

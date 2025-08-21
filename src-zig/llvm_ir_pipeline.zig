@@ -60,7 +60,7 @@ pub const LLVMIRPipeline = struct {
         const arena_allocator = arena.allocator();
         
         // Initialize LLVM
-        print("🔧 Initializing LLVM components...\n");
+        print("🔧 Initializing LLVM components...\n", .{});
         c.LLVMInitializeCore(c.LLVMGetGlobalPassRegistry());
         c.LLVMInitializeNativeTarget();
         c.LLVMInitializeNativeAsmPrinter();
@@ -153,21 +153,21 @@ pub const LLVMIRPipeline = struct {
         // Setup standard library declarations
         try pipeline.setupStandardLibrary();
         
-        print("✅ LLVM IR Pipeline initialized successfully\n");
+        print("✅ LLVM IR Pipeline initialized successfully\n", .{});
         return pipeline;
     }
     
     pub fn deinit(self: *LLVMIRPipeline) void {
-        print("🧹 Cleaning up LLVM IR Pipeline...\n");
+        print("🧹 Cleaning up LLVM IR Pipeline...\n", .{});
         
         // Clean up hash maps first
-        self.functions.deinit(allocator);
-        self.variables.deinit(allocator);
-        self.global_strings.deinit(allocator);
-        self.type_cache.deinit(allocator);
+        self.functions.deinit();
+        self.variables.deinit();
+        self.global_strings.deinit();
+        self.type_cache.deinit();
         
         // Clean up type system components
-        self.type_checker.deinit(allocator);
+        self.type_checker.deinit();
         
         // Dispose LLVM objects in proper order
         if (self.pass_manager) |pm| {
@@ -187,48 +187,48 @@ pub const LLVMIRPipeline = struct {
         }
         
         // Clean up arena and self
-        self.arena.deinit(allocator);
+        self.arena.deinit();
         self.allocator.destroy(self);
         
-        print("✅ LLVM IR Pipeline cleanup complete\n");
+        print("✅ LLVM IR Pipeline cleanup complete\n", .{});
     }
     
     /// Complete compilation pipeline: Source -> AST -> Type Check -> LLVM IR -> Binary
     pub fn compileSource(self: *LLVMIRPipeline, source: []const u8, output_file: []const u8, verbose: bool) !void {
-        print("🚀 Starting complete LLVM compilation pipeline...\n");
+        print("🚀 Starting complete LLVM compilation pipeline...\n", .{});
         
         // Step 1: Tokenize source
-        if (verbose) print("📝 Step 1: Tokenizing source code...\n");
+        if (verbose) print("📝 Step 1: Tokenizing source code...\n", .{});
         var lex = try lexer.Lexer.init(self.allocator, source);
-        defer lex.deinit(allocator);
+        defer lex.deinit();
         
         // Step 2: Parse into AST
-        if (verbose) print("🌳 Step 2: Parsing AST...\n");
+        if (verbose) print("🌳 Step 2: Parsing AST...\n", .{});
         var parse = try parser.Parser.init(self.allocator, &lex);
-        defer parse.deinit(allocator);
+        defer parse.deinit();
         const program = try parse.parseProgram();
         
         // Step 3: Type checking
-        if (verbose) print("🔍 Step 3: Type checking...\n");
+        if (verbose) print("🔍 Step 3: Type checking...\n", .{});
         try self.runTypeChecking(program);
         
         // Step 4: Generate LLVM IR
-        if (verbose) print("⚡ Step 4: Generating LLVM IR...\n");
+        if (verbose) print("⚡ Step 4: Generating LLVM IR...\n", .{});
         try self.generateIR(program);
         
         // Step 5: Optimize IR
-        if (verbose) print("🔧 Step 5: Optimizing IR...\n");
+        if (verbose) print("🔧 Step 5: Optimizing IR...\n", .{});
         try self.optimizeIR();
         
         // Step 6: Verify module
-        if (verbose) print("✅ Step 6: Verifying module...\n");
+        if (verbose) print("✅ Step 6: Verifying module...\n", .{});
         try self.verifyModule();
         
         // Step 7: Compile to binary
-        if (verbose) print("🔥 Step 7: Compiling to binary...\n");
+        if (verbose) print("🔥 Step 7: Compiling to binary...\n", .{});
         try self.compileToExecutable(output_file);
         
-        print("🎉 Compilation pipeline completed successfully!\n");
+        print("🎉 Compilation pipeline completed successfully!\n", .{});
     }
     
     /// Run type checking on the AST
@@ -329,7 +329,7 @@ pub const LLVMIRPipeline = struct {
                 _ = try self.generateExpression(expr);
             },
             else => {
-                print("⚠️ Unhandled statement type in IR generation\n");
+                print("⚠️ Unhandled statement type in IR generation\n", .{});
             },
         }
     }
@@ -338,11 +338,11 @@ pub const LLVMIRPipeline = struct {
     fn generateFunction(self: *LLVMIRPipeline, func_decl: ast.FunctionDeclaration) !void {
         // Create function type
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         for (func_decl.parameters.items) |param| {
             const llvm_type = try self.cursedTypeToLLVM(param.param_type);
-            try param_types.append(allocator, llvm_type);
+            try param_types.append(llvm_type);
         }
         
         const return_type = if (func_decl.return_type) |ret_type|
@@ -443,7 +443,7 @@ pub const LLVMIRPipeline = struct {
                 return try self.generateFunctionCall(call);
             },
             else => {
-                print("⚠️ Unhandled expression type in IR generation\n");
+                print("⚠️ Unhandled expression type in IR generation\n", .{});
                 return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
             },
         }
@@ -514,7 +514,7 @@ pub const LLVMIRPipeline = struct {
             .LessThan => c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp"),
             .GreaterThan => c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp"),
             else => {
-                print("⚠️ Unhandled binary operator\n");
+                print("⚠️ Unhandled binary operator\n", .{});
                 return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
             },
         };
@@ -530,11 +530,11 @@ pub const LLVMIRPipeline = struct {
         // Look up user-defined function
         if (self.functions.get(call.name)) |function| {
             var args = .empty;
-            defer args.deinit(allocator);
+            defer args.deinit();
             
             for (call.arguments.items) |arg| {
                 const arg_val = try self.generateExpression(arg);
-                try args.append(allocator, arg_val);
+                try args.append(arg_val);
             }
             
             const func_type = c.LLVMGetElementType(c.LLVMTypeOf(function));
@@ -564,7 +564,7 @@ pub const LLVMIRPipeline = struct {
         if (c.LLVMGetTypeKind(arg_type) == c.LLVMPointerTypeKind) {
             // String print using puts
             const puts_func = self.functions.get("puts") orelse {
-                print("❌ puts function not found\n");
+                print("❌ puts function not found\n", .{});
                 return error.UndefinedFunction;
             };
             
@@ -573,7 +573,7 @@ pub const LLVMIRPipeline = struct {
         } else {
             // Integer print using printf
             const printf_func = self.functions.get("printf") orelse {
-                print("❌ printf function not found\n");
+                print("❌ printf function not found\n", .{});
                 return error.UndefinedFunction;
             };
             
@@ -611,7 +611,7 @@ pub const LLVMIRPipeline = struct {
                 return c.LLVMPointerType(target_type, 0);
             },
             else => {
-                print("⚠️ Unhandled type conversion to LLVM\n");
+                print("⚠️ Unhandled type conversion to LLVM\n", .{});
                 return c.LLVMInt64TypeInContext(self.context); // Default fallback
             },
         }
@@ -732,7 +732,7 @@ pub const LLVMIRPipeline = struct {
     
     /// Dump LLVM IR to stdout for debugging
     pub fn dumpIR(self: *LLVMIRPipeline) void {
-        print("🔍 LLVM IR:\n");
+        print("🔍 LLVM IR:\n", .{});
         c.LLVMDumpModule(self.module);
     }
 };

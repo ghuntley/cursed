@@ -82,7 +82,7 @@ const WasmLexer = struct {
             const token_type = self.scanToken();
             const lexeme = self.source[start..self.current];
             
-            try tokens.append(allocator, Token{
+            try tokens.append(Token{
                 .type = token_type,
                 .lexeme = lexeme,
                 .line = start_line,
@@ -90,7 +90,7 @@ const WasmLexer = struct {
             });
         }
         
-        try tokens.append(allocator, Token{
+        try tokens.append(Token{
             .type = .eof,
             .lexeme = "",
             .line = self.line,
@@ -248,14 +248,14 @@ const WasmLexer = struct {
 // WASM exports with no dependencies
 export fn cursed_wasm_compile(source_ptr: [*]const u8, source_len: usize) i32 {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const source = source_ptr[0..source_len];
     
     var lexer = WasmLexer.init(allocator, source);
     const tokens = lexer.tokenize() catch return -1;
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
 
     return @intCast(tokens.items.len);
 }

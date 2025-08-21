@@ -11,7 +11,7 @@ pub const ErrorState = struct {
     
     const Allocator = std.mem.Allocator;
     
-    pub fn init(allocator: Allocator) ErrorState {
+    pub fn init() ErrorState {
         return ErrorState{
             .current_error = null,
             .allocator = allocator,
@@ -20,7 +20,7 @@ pub const ErrorState = struct {
     
     pub fn deinit(self: *ErrorState) void {
         if (self.current_error) |*err| {
-            err.deinit(allocator);
+            err.deinit();
         }
     }
     
@@ -40,7 +40,7 @@ pub const ErrorState = struct {
     
     pub fn clearError(self: *ErrorState) void {
         if (self.current_error) |*err| {
-            err.deinit(allocator);
+            err.deinit();
         }
         self.current_error = null;
     }

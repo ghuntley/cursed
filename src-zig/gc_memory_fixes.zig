@@ -191,7 +191,7 @@ pub const FixedGC = struct {
         errdefer allocator.destroy(gc_instance);
         
         var arena = ArenaAllocator.init(allocator);
-        errdefer arena.deinit(allocator);
+        errdefer arena.deinit();
         const arena_allocator = arena.allocator();
         
         // Allocate heap memory
@@ -260,7 +260,7 @@ pub const FixedGC = struct {
         self.allocator.free(self.heap_memory);
         
         // Clean up arena
-        self.arena.deinit(allocator);
+        self.arena.deinit();
         
         // Free the GC instance
         self.allocator.destroy(self);
@@ -437,7 +437,7 @@ pub const FixedGC = struct {
     /// Mark phase with proper error handling
     fn markPhase(self: *FixedGC) !void {
         // Clear mark stack
-        self.mark_stack.clearAndFree(allocator);
+        self.mark_stack.clearAndFree();
         
         // Mark roots
         try self.markRoots();
@@ -460,7 +460,7 @@ pub const FixedGC = struct {
                     const header = FixedObjectHeader.fromData(obj_ptr) catch continue;
                     if (header.color == 0) { // White
                         header.color = 1; // Gray
-                        try self.mark_stack.append(allocator, header);
+                        try self.mark_stack.append(header);
                     }
                 }
             }
@@ -491,7 +491,7 @@ pub const FixedGC = struct {
                         
                         if (header.color == 0) { // White
                             header.color = 1; // Gray
-                            self.mark_stack.append(allocator, header) catch {};
+                            self.mark_stack.append(header) catch {};
                         }
                     }
                 }
@@ -538,7 +538,7 @@ pub const FixedGC = struct {
                     
                     if (child_header.color == 0) { // White
                         child_header.color = 1; // Gray
-                        try self.mark_stack.append(allocator, child_header);
+                        try self.mark_stack.append(child_header);
                     }
                 }
             }
@@ -590,7 +590,7 @@ pub const FixedGC = struct {
         self.finalization_mutex.lock();
         defer self.finalization_mutex.unlock();
         
-        self.finalization_queue.append(allocator, obj) catch {
+        self.finalization_queue.append(obj) catch {
             // If we can't queue for finalization, free immediately
             self.freeObjectDirect(obj);
         };
@@ -682,15 +682,15 @@ pub const FixedGC = struct {
             self.freeObjectDirect(obj);
         }
         
-        self.finalization_queue.clearAndFree(allocator);
-        self.finalizers.clearAndFree(allocator);
+        self.finalization_queue.clearAndFree();
+        self.finalizers.clearAndFree();
     }
     
     /// Add root reference safely
     pub fn addRoot(self: *FixedGC, ptr: *?*anyopaque) !void {
         self.roots_mutex.lock();
         defer self.roots_mutex.unlock();
-        try self.roots.append(allocator, ptr);
+        try self.roots.append(ptr);
     }
     
     /// Remove root reference safely  
@@ -800,7 +800,7 @@ fn finalizationWorker(gc_instance: *FixedGC) void {
         
         if (gc_instance.finalization_queue.items.len > 0) {
             // Take ownership of objects to finalize
-            const objects_to_finalize = gc_instance.finalization_queue.toOwnedSlice(allocator) catch {
+            const objects_to_finalize = gc_instance.finalization_queue.toOwnedSlice() catch {
                 gc_instance.finalization_mutex.unlock();
                 std.time.sleep(10_000_000); // 10ms
                 continue;
@@ -843,7 +843,7 @@ export fn cursed_fixed_gc_init(initial_heap_size: usize) ?*FixedGC {
 
 export fn cursed_fixed_gc_deinit(gc_instance: ?*FixedGC) void {
     if (gc_instance) |gc| {
-        gc.deinit(allocator);
+        gc.deinit();
     }
 }
 
@@ -886,7 +886,7 @@ test "fixed gc initialization and cleanup" {
     config.initial_heap_size = 1024 * 1024; // 1MB for testing
     
     const gc_instance = try FixedGC.init(allocator, config);
-    defer gc_instance.deinit(allocator);
+    defer gc_instance.deinit();
     
     const stats = gc_instance.getStats();
     try std.testing.expect(stats.total_allocations == 0);
@@ -900,7 +900,7 @@ test "fixed gc allocation and collection" {
     config.young_gen_size = 512 * 1024;     // 512KB
     
     const gc_instance = try FixedGC.init(allocator, config);
-    defer gc_instance.deinit(allocator);
+    defer gc_instance.deinit();
     
     // Allocate some objects
     const obj1 = try gc_instance.alloc(100, 1);
@@ -919,7 +919,7 @@ test "fixed gc root management" {
     config.initial_heap_size = 1024 * 1024;
     
     const gc_instance = try FixedGC.init(allocator, config);
-    defer gc_instance.deinit(allocator);
+    defer gc_instance.deinit();
     
     var root: ?*anyopaque = null;
     try gc_instance.addRoot(&root);

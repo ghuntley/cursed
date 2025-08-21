@@ -32,13 +32,13 @@ var current_scope_id: u32 = 0;
 pub fn init() void {
     defer_stack_count = 0;
     current_scope_id = 0;
-    std.debug.print("✅ Defer runtime initialized\n");
+    std.debug.print("✅ Defer runtime initialized\n", .{});
 }
 
 /// Defer runtime cleanup
 pub fn deinit() void {
     executeAll();
-    std.debug.print("✅ Defer runtime cleanup complete\n");
+    std.debug.print("✅ Defer runtime cleanup complete\n", .{});
 }
 
 /// Push a cleanup function onto the defer stack
@@ -75,7 +75,7 @@ pub fn executeAll() void {
         defer_stack_count -= 1;
         const entry = global_defer_stack[defer_stack_count];
         
-        std.debug.print("Executing defer function\n");
+        std.debug.print("Executing defer function\n", .{});
         
         // Execute cleanup function with error protection
         // Execute cleanup function with error protection
@@ -86,7 +86,7 @@ pub fn executeAll() void {
 
 /// Execute defer functions during error unwinding
 pub fn executeOnError() void {
-    std.debug.print("Executing defer functions due to error unwinding\n");
+    std.debug.print("Executing defer functions due to error unwinding\n", .{});
     executeAll();
 }
 
@@ -98,7 +98,7 @@ pub fn executeToCount(target_count: usize) void {
         defer_stack_count -= 1;
         const entry = global_defer_stack[defer_stack_count];
         
-        std.debug.print("Executing scoped defer function\n");
+        std.debug.print("Executing scoped defer function\n", .{});
         entry.cleanup_func();
     }
 }
@@ -143,14 +143,14 @@ pub fn exitScope(scope_id: u32) void {
 /// Clear all defer functions (emergency cleanup)
 pub fn clearAll() void {
     defer_stack_count = 0;
-    std.debug.print("Defer stack cleared\n");
+    std.debug.print("Defer stack cleared\n", .{});
 }
 
 // C-compatible export functions for LLVM integration
 export fn cursed_defer_push(cleanup_func: ?CleanupFuncPtr) void {
     if (cleanup_func) |func| {
         push(func) catch {
-            std.debug.print("Error: Failed to push defer function\n");
+            std.debug.print("Error: Failed to push defer function\n", .{});
         };
     }
 }
@@ -215,7 +215,7 @@ pub fn testBasicDefer() !void {
         return error.DeferNotExecuted;
     }
     
-    std.debug.print("✅ Basic defer test passed\n");
+    std.debug.print("✅ Basic defer test passed\n", .{});
 }
 
 pub fn testDeferOrder() !void {
@@ -274,7 +274,7 @@ pub fn testDeferOrder() !void {
         return error.IncorrectDeferOrder;
     }
     
-    std.debug.print("✅ Defer order test passed\n");
+    std.debug.print("✅ Defer order test passed\n", .{});
 }
 
 // ==================== ENHANCED DEFER STATEMENT FEATURES ====================
@@ -299,7 +299,7 @@ export fn cursed_later_with_capture(
     capture_size: usize
 ) void {
     if (enhanced_defer_count >= MAX_DEFER_STACK_SIZE) {
-        std.debug.print("Error: Enhanced defer stack overflow\n");
+        std.debug.print("Error: Enhanced defer stack overflow\n", .{});
         return;
     }
     
@@ -324,7 +324,7 @@ export fn cursed_later_execute_all() void {
         enhanced_defer_count -= 1;
         const entry = enhanced_defer_stack[enhanced_defer_count];
         
-        std.debug.print("Executing enhanced defer function\n");
+        std.debug.print("Executing enhanced defer function\n", .{});
         
         // Set up captured variables context if present
         if (entry.captured_vars != null) {
@@ -357,7 +357,7 @@ export fn cursed_later_early_return(target_scope: u32) void {
             
             // Set up captured variables if present
             if (entry.captured_vars != null) {
-                std.debug.print("Restoring captured variables for early return\n");
+                std.debug.print("Restoring captured variables for early return\n", .{});
             }
             
             entry.cleanup_func();
@@ -416,8 +416,8 @@ export fn cursed_later_exit_nested_scope(scope_id: u32) void {
 
 // Run tests
 pub fn runTests() !void {
-    std.debug.print("Running defer runtime tests...\n");
+    std.debug.print("Running defer runtime tests...\n", .{});
     try testBasicDefer();
     try testDeferOrder();
-    std.debug.print("✅ All defer runtime tests passed\n");
+    std.debug.print("✅ All defer runtime tests passed\n", .{});
 }

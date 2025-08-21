@@ -6,7 +6,7 @@ const working_jit = @import("working_jit_engine.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -33,7 +33,7 @@ pub fn main() !void {
         print("🚀 Using Working JIT Execution Engine\n", .{});
         
         var jit_engine = working_jit.WorkingJITEngine.init(allocator);
-        defer jit_engine.deinit(allocator);
+        defer jit_engine.deinit();
         
         jit_engine.compileAndExecute(source) catch |err| {
             print("❌ JIT execution failed: {any}\n", .{err});

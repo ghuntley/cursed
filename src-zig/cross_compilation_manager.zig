@@ -83,7 +83,7 @@ pub const CrossCompilationManager = struct {
         };
     };
     
-    pub fn init(allocator: Allocator) CrossCompilationManager {
+    pub fn init() CrossCompilationManager {
         return CrossCompilationManager{
             .allocator = allocator,
             .normalizer = TargetTripleNormalizer.init(allocator),
@@ -96,18 +96,18 @@ pub const CrossCompilationManager = struct {
         // Clean up toolchain cache
         var toolchain_iter = self.toolchain_cache.iterator();
         while (toolchain_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.toolchain_cache.deinit(allocator);
+        self.toolchain_cache.deinit();
         
         // Clean up compilation cache
         var compilation_iter = self.compilation_cache.iterator();
         while (compilation_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.compilation_cache.deinit(allocator);
+        self.compilation_cache.deinit();
         
-        self.normalizer.deinit(allocator);
+        self.normalizer.deinit();
     }
     
     /// Discover and cache available toolchains for cross-compilation
@@ -1089,10 +1089,10 @@ pub const CrossCompilationManager = struct {
                 print("  ❌ Failed: {} errors\n", .{result.errors.len});
             }
             
-            try results.append(allocator, result);
+            try results.append(result);
         }
         
-        return results.toOwnedSlice(allocator);
+        return results.toOwnedSlice();
     }
     
     /// Generate a comprehensive cross-compilation report
@@ -1101,7 +1101,7 @@ pub const CrossCompilationManager = struct {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        try stdout.print("\n=== Cross-Compilation Report ===\n\n");
+        try stdout.print("\n=== Cross-Compilation Report ===\n\n", .{});
         
         var successful = @as(u32, 0);
         var total_build_time = @as(u64, 0);
@@ -1116,13 +1116,13 @@ pub const CrossCompilationManager = struct {
             try stdout.print("  Errors: {}\n", .{result.errors.len});
             
             if (result.errors.len > 0) {
-                try stdout.print("  Error Messages:\n");
+                try stdout.print("  Error Messages:\n", .{});
                 for (result.errors) |error_msg| {
                     try stdout.print("    {s}\n", .{error_msg});
                 }
             }
             
-            try stdout.print("\n");
+            try stdout.print("\n", .{});
             
             if (result.success) {
                 successful += 1;
@@ -1131,7 +1131,7 @@ pub const CrossCompilationManager = struct {
             }
         }
         
-        try stdout.print("Summary:\n");
+        try stdout.print("Summary:\n", .{});
         try stdout.print("  Successful: {}/{} targets ({d:.1}%)\n", .{ successful, results.len, @as(f64, @floatFromInt(successful)) / @as(f64, @floatFromInt(results.len)) * 100.0 });
         try stdout.print("  Total Build Time: {} ms\n", .{total_build_time});
         try stdout.print("  Total Output Size: {} bytes\n", .{total_output_size});

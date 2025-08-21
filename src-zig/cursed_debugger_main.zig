@@ -29,7 +29,7 @@ const DebuggerOptions = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.initial_breakpoints.deinit(allocator);
+        self.initial_breakpoints.deinit();
     }
 };
 
@@ -67,7 +67,7 @@ fn parseArguments(allocator: std.mem.Allocator, args: [][:0]u8) !DebuggerOptions
                 print("❌ Error: Invalid line number: {s}\n", .{line_str});
                 return error.InvalidArguments;
             };
-            try options.initial_breakpoints.append(allocator, line_num);
+            try options.initial_breakpoints.append(line_num);
             i += 1;
         } else if (std.mem.eql(u8, arg, "--script") or std.mem.eql(u8, arg, "-s")) {
             if (i + 1 >= args.len) {
@@ -157,11 +157,11 @@ fn parseSourceFile(allocator: std.mem.Allocator, file_path: []const u8) !ast.Pro
     // Tokenize
     var tokenizer = lexer.Lexer.init(allocator, source_content);
     var tokens: std.ArrayList(lexer.Token) = .empty;
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     while (true) {
         const token = try tokenizer.nextToken();
-        try tokens.append(allocator, token);
+        try tokens.append(token);
         if (token.kind == .Eof) break;
     }
     
@@ -169,7 +169,7 @@ fn parseSourceFile(allocator: std.mem.Allocator, file_path: []const u8) !ast.Pro
     
     // Parse into AST
     var parse_engine = parser.Parser.init(allocator, tokens.items);
-    defer parse_engine.deinit(allocator);
+    defer parse_engine.deinit();
     
     const program = try parse_engine.parseProgram();
     print("🌳 AST parsing complete ({d} statements)\n", .{program.statements.items.len});
@@ -223,7 +223,7 @@ fn executeDebugScript(allocator: std.mem.Allocator, script_file: []const u8, deb
 /// Main entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Parse command line arguments
@@ -237,7 +237,7 @@ pub fn main() !void {
     };
     defer {
         var mut_options = options;
-        mut_options.deinit(allocator);
+        mut_options.deinit();
     }
     
     // Print banner
@@ -279,7 +279,7 @@ pub fn main() !void {
             // Note: In a real implementation, we'd need proper cleanup
             _ = stmt_ptr;
         }
-        program.statements.deinit(allocator);
+        program.statements.deinit();
     }
     
     // Create debug interpreter
@@ -287,7 +287,7 @@ pub fn main() !void {
         print("❌ Failed to initialize debugger: {!}\n", .{err});
         return;
     };
-    defer debug_interpreter.deinit(allocator);
+    defer debug_interpreter.deinit();
     
     // Set initial breakpoints
     if (options.initial_breakpoints.items.len > 0) {
@@ -352,13 +352,13 @@ fn handleError(err: anyerror) void {
 test "argument parsing" {
     const testing = std.testing;
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Test basic usage
     const args1 = [_][]const u8{ "cursed-debug", "test.csd" };
     var options1 = try parseArguments(allocator, &args1);
-    defer options1.deinit(allocator);
+    defer options1.deinit();
     
     try testing.expect(std.mem.eql(u8, options1.source_file, "test.csd"));
     try testing.expect(options1.interactive);
@@ -367,7 +367,7 @@ test "argument parsing" {
     // Test with breakpoints
     const args2 = [_][]const u8{ "cursed-debug", "test.csd", "--breakpoint", "10", "-b", "20" };
     var options2 = try parseArguments(allocator, &args2);
-    defer options2.deinit(allocator);
+    defer options2.deinit();
     
     try testing.expect(options2.initial_breakpoints.items.len == 2);
     try testing.expect(options2.initial_breakpoints.items[0] == 10);

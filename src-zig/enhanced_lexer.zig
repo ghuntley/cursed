@@ -182,8 +182,8 @@ pub const Lexer = struct {
     }
     
     pub fn deinit(self: *Lexer) void {
-        self.tokens.deinit(allocator);
-        self.keywords.deinit(allocator);
+        self.tokens.deinit();
+        self.keywords.deinit();
     }
     
     fn initKeywords(self: *Lexer) !void {
@@ -238,9 +238,9 @@ pub const Lexer = struct {
         
         // Add EOF token
         const eof_location = SourceLocation.init(self.file_path, self.line, self.column, @intCast(self.char_offset));
-        try self.tokens.append(allocator, Token.init(.EOF, "", eof_location));
+        try self.tokens.append(Token.init(.EOF, "", eof_location));
         
-        return self.tokens.toOwnedSlice(allocator);
+        return self.tokens.toOwnedSlice();
     }
     
     fn scanToken(self: *Lexer) !void {
@@ -254,7 +254,7 @@ pub const Lexer = struct {
             },
             '\n' => {
                 const location = SourceLocation.init(self.file_path, self.line, start_column, @intCast(start_offset));
-                try self.tokens.append(allocator, Token.init(.Newline, self.source[start_offset..self.char_offset], location));
+                try self.tokens.append(Token.init(.Newline, self.source[start_offset..self.char_offset], location));
                 self.line += 1;
                 self.column = 1;
             },
@@ -630,12 +630,12 @@ test "enhanced lexer with error reporting" {
     const allocator = std.testing.allocator;
     
     var error_reporter = ErrorReporter.init(allocator, 10);
-    defer error_reporter.deinit(allocator);
+    defer error_reporter.deinit();
     
     // Test valid tokens
     const source = "slay main() { sus x normie = 42; vibez.spill(\"Hello!\"); }";
     var lexer = try Lexer.init(allocator, source, "test.csd", &error_reporter);
-    defer lexer.deinit(allocator);
+    defer lexer.deinit();
     
     const tokens = try lexer.tokenize();
     defer allocator.free(tokens);
@@ -647,7 +647,7 @@ test "enhanced lexer with error reporting" {
     // Test error recovery
     const invalid_source = "slay main() { sus x = \"unterminated string; }";
     var error_lexer = try Lexer.init(allocator, invalid_source, "error_test.csd", &error_reporter);
-    defer error_lexer.deinit(allocator);
+    defer error_lexer.deinit();
     
     const error_tokens = try error_lexer.tokenize();
     defer allocator.free(error_tokens);

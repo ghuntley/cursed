@@ -25,9 +25,9 @@ const Variable = union(enum) {
             .String => |s| allocator.free(s),
             .Array => |*arr| {
                 for (arr.items) |*item| {
-                    item.deinit(allocator);
+                    item.deinit();
                 }
-                arr.deinit(allocator);
+                arr.deinit();
             },
             else => {},
         }
@@ -41,7 +41,7 @@ const Variable = union(enum) {
             .Array => |arr| {
                 var new_array: ArrayList(Variable) = .empty;
                 for (arr.items) |item| {
-                    try new_array.append(allocator, try item.clone(allocator));
+                    try new_array.append(try item.clone(allocator));
                 }
                 return Variable{ .Array = new_array };
             },
@@ -77,7 +77,7 @@ const FunctionDef = struct {
         for (self.params.items) |param| {
             allocator.free(param);
         }
-        self.params.deinit(allocator);
+        self.params.deinit();
         allocator.free(self.body);
     }
 };
@@ -88,7 +88,7 @@ const Context = struct {
     defer_stack: ArrayList([]const u8),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) Context {
+    pub fn init() Context {
         return Context{
             .variables = std.HashMap([]const u8, Variable, std.hash_map.StringContext, 80).init(allocator),
             .functions = std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, 80).init(allocator),
@@ -107,7 +107,7 @@ const Context = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit(self.allocator);
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
         
         // Clean up functions
         var func_iter = self.functions.iterator();
@@ -115,7 +115,7 @@ const Context = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit(self.allocator);
         }
-        self.functions.deinit();
+        self.functions.deinit(self.allocator);
         
         // Clean up defer stack
         for (self.defer_stack.items) |statement| {
@@ -167,7 +167,7 @@ const Context = struct {
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(self.allocator);
 
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
@@ -801,7 +801,7 @@ fn evaluateUserFunction(ctx: *Context, func_def: FunctionDef, args_str: []const 
     
     // Create new scope for function execution
     var func_ctx = Context.init(ctx.allocator);
-    defer func_ctx.deinit();
+    defer func_ctx.deinit(ctx.allocator);
     
     // Bind parameters to arguments
     for (func_def.params.items, 0..) |param, i| {

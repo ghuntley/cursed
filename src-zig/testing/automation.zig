@@ -59,14 +59,14 @@ pub const TestSummary = struct {
         duration_ms: u64,
     };
 
-    pub fn init(allocator: Allocator) TestSummary {
+    pub fn init() TestSummary {
         return TestSummary{
             .category_results = std.HashMap(TestCategory, CategoryResult, std.hash_map.DefaultContext).init(allocator),
         };
     }
 
     pub fn deinit(self: *TestSummary) void {
-        self.category_results.deinit(allocator);
+        self.category_results.deinit();
     }
 
     pub fn addCategoryResult(self: *TestSummary, category: TestCategory, result: CategoryResult) !void {
@@ -96,21 +96,21 @@ pub const TestAutomation = struct {
     }
 
     pub fn deinit(self: *TestAutomation) void {
-        self.summary.deinit(allocator);
+        self.summary.deinit();
     }
 
     pub fn runTests(self: *TestAutomation) !bool {
         const start_time = std.time.milliTimestamp();
 
-        std.debug.print("🤖 CURSED Test Automation Starting\n");
+        std.debug.print("🤖 CURSED Test Automation Starting\n", .{});
         std.debug.print("=" ** 60 ++ "\n");
-        std.debug.print("Configuration:\n");
+        std.debug.print("Configuration:\n", .{});
         std.debug.print("  Category: {}\n", .{self.config.category});
         std.debug.print("  Parallel: {}\n", .{self.config.parallel_execution});
         std.debug.print("  Timeout: {}s\n", .{self.config.timeout_seconds});
         std.debug.print("  Output: {}\n", .{self.config.output_format});
         std.debug.print("  Coverage: {}\n", .{self.config.coverage_enabled});
-        std.debug.print("\n");
+        std.debug.print("\n", .{});
 
         // Run tests based on category
         var overall_success = true;
@@ -148,7 +148,7 @@ pub const TestAutomation = struct {
     }
 
     fn runUnitTests(self: *TestAutomation) !bool {
-        std.debug.print("🧪 Running Unit Tests\n");
+        std.debug.print("🧪 Running Unit Tests\n", .{});
         std.debug.print("-" ** 30 ++ "\n");
 
         const start_time = std.time.milliTimestamp();
@@ -175,7 +175,7 @@ pub const TestAutomation = struct {
     }
 
     fn runIntegrationTests(self: *TestAutomation) !bool {
-        std.debug.print("🔗 Running Integration Tests\n");
+        std.debug.print("🔗 Running Integration Tests\n", .{});
         std.debug.print("-" ** 30 ++ "\n");
 
         const start_time = std.time.milliTimestamp();
@@ -200,7 +200,7 @@ pub const TestAutomation = struct {
     }
 
     fn runStdlibTests(self: *TestAutomation) !bool {
-        std.debug.print("📚 Running Standard Library Tests\n");
+        std.debug.print("📚 Running Standard Library Tests\n", .{});
         std.debug.print("-" ** 30 ++ "\n");
 
         const start_time = std.time.milliTimestamp();
@@ -210,7 +210,7 @@ pub const TestAutomation = struct {
             std.debug.print("❌ Stdlib test runner init failed: {}\n", .{err});
             return false;
         };
-        defer runner.deinit(allocator);
+        defer runner.deinit();
 
         runner.runAllModuleTests() catch |err| {
             std.debug.print("❌ Stdlib tests failed: {}\n", .{err});
@@ -232,7 +232,7 @@ pub const TestAutomation = struct {
     }
 
     fn runPerformanceTests(self: *TestAutomation) !bool {
-        std.debug.print("⚡ Running Performance Tests\n");
+        std.debug.print("⚡ Running Performance Tests\n", .{});
         std.debug.print("-" ** 30 ++ "\n");
 
         const start_time = std.time.milliTimestamp();
@@ -266,7 +266,7 @@ pub const TestAutomation = struct {
     }
 
     fn generateConsoleReport(self: *TestAutomation) !void {
-        std.debug.print("\n🎯 Test Automation Summary\n");
+        std.debug.print("\n🎯 Test Automation Summary\n", .{});
         std.debug.print("=" ** 60 ++ "\n");
         std.debug.print("Total Tests: {}\n", .{self.summary.total_tests});
         std.debug.print("Passed: {} ({d:.1}%)\n", .{ self.summary.passed_tests, self.summary.success_rate });
@@ -274,7 +274,7 @@ pub const TestAutomation = struct {
         std.debug.print("Skipped: {}\n", .{self.summary.skipped_tests});
         std.debug.print("Total Time: {d:.2}s\n", .{@as(f64, @floatFromInt(self.summary.execution_time_ms)) / 1000.0});
 
-        std.debug.print("\n📊 Category Breakdown:\n");
+        std.debug.print("\n📊 Category Breakdown:\n", .{});
         var iterator = self.summary.category_results.iterator();
         while (iterator.next()) |entry| {
             const category = entry.key_ptr.*;
@@ -294,11 +294,11 @@ pub const TestAutomation = struct {
 
         // CI/CD status output
         if (self.summary.success_rate >= 90.0) {
-            std.debug.print("\n✅ Build Status: PASS\n");
+            std.debug.print("\n✅ Build Status: PASS\n", .{});
         } else if (self.summary.success_rate >= 75.0) {
-            std.debug.print("\n⚠️  Build Status: WARNING\n");
+            std.debug.print("\n⚠️  Build Status: WARNING\n", .{});
         } else {
-            std.debug.print("\n❌ Build Status: FAIL\n");
+            std.debug.print("\n❌ Build Status: FAIL\n", .{});
         }
     }
 
@@ -329,7 +329,7 @@ pub const TestAutomation = struct {
         defer self.allocator.free(json_content);
 
         try std.fs.cwd().writeFile("test_results.json", json_content);
-        std.debug.print("📄 JSON report written to test_results.json\n");
+        std.debug.print("📄 JSON report written to test_results.json\n", .{});
     }
 
     fn generateXmlReport(self: *TestAutomation) !void {
@@ -351,7 +351,7 @@ pub const TestAutomation = struct {
         defer self.allocator.free(xml_content);
 
         try std.fs.cwd().writeFile("test_results.xml", xml_content);
-        std.debug.print("📄 XML report written to test_results.xml\n");
+        std.debug.print("📄 XML report written to test_results.xml\n", .{});
     }
 
     fn generateHtmlReport(self: *TestAutomation) !void {
@@ -391,7 +391,7 @@ pub const TestAutomation = struct {
         defer self.allocator.free(xml_content);
 
         try std.fs.cwd().writeFile("test_results.html", html_content);
-        std.debug.print("📄 HTML report written to test_results.html\n");
+        std.debug.print("📄 HTML report written to test_results.html\n", .{});
     }
 };
 
@@ -425,7 +425,7 @@ pub fn runAutomatedTests(allocator: Allocator, args: []const []const u8) !bool {
     }
 
     var automation = TestAutomation.init(allocator, config);
-    defer automation.deinit(allocator);
+    defer automation.deinit();
 
     return try automation.runTests();
 }
@@ -433,7 +433,7 @@ pub fn runAutomatedTests(allocator: Allocator, args: []const []const u8) !bool {
 // Main entry point for standalone test runner
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -447,7 +447,7 @@ pub fn main() !void {
 // Zig test integration
 test "Test Automation Framework" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const config = TestConfig{
@@ -457,7 +457,7 @@ test "Test Automation Framework" {
     };
 
     var automation = TestAutomation.init(allocator, config);
-    defer automation.deinit(allocator);
+    defer automation.deinit();
 
     // Test basic automation functionality
     const success = try automation.runTests();

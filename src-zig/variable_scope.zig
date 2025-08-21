@@ -69,7 +69,7 @@ pub const Scope = struct {
             var var_info = entry.value_ptr;
             var_info.deinit(self.variables.allocator);
         }
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
     
     /// Look up a variable in this scope or parent scopes
@@ -108,7 +108,7 @@ pub const VariableScopeManager = struct {
     current_scope: ?*Scope,
     next_scope_id: u32,
     
-    pub fn init(allocator: Allocator) VariableScopeManager {
+    pub fn init() VariableScopeManager {
         return VariableScopeManager{
             .allocator = allocator,
             .scopes = .empty,
@@ -120,10 +120,10 @@ pub const VariableScopeManager = struct {
     pub fn deinit(self: *VariableScopeManager) void {
         // Clean up all scopes
         for (self.scopes.items) |scope| {
-            scope.deinit(allocator);
+            scope.deinit();
             self.allocator.destroy(scope);
         }
-        self.scopes.deinit(allocator);
+        self.scopes.deinit();
     }
     
     /// Enter a new scope

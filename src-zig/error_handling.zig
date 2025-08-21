@@ -131,7 +131,7 @@ pub const ErrorContext = struct {
             self.allocator.free(trace);
         }
         if (self.inner_error) |inner| {
-            inner.deinit(allocator);
+            inner.deinit();
             self.allocator.destroy(inner);
         }
     }
@@ -158,7 +158,7 @@ pub const ErrorContext = struct {
     
     pub fn toString(self: ErrorContext, allocator: Allocator) ![]u8 {
         var buffer = .empty;
-        defer buffer.deinit(allocator);
+        defer buffer.deinit();
         
         const writer = buffer.writer(&[_]u8{});
         try self.format(writer);
@@ -385,9 +385,9 @@ pub const ErrorRecovery = struct {
     
     pub fn deinit(self: *ErrorRecovery) void {
         for (self.errors.items) |*error_ctx| {
-            error_ctx.deinit(allocator);
+            error_ctx.deinit();
         }
-        self.errors.deinit(allocator);
+        self.errors.deinit();
         
         for (self.stack_traces.items) |trace| {
             for (trace) |frame| {
@@ -395,12 +395,12 @@ pub const ErrorRecovery = struct {
             }
             self.allocator.free(trace);
         }
-        self.stack_traces.deinit(allocator);
+        self.stack_traces.deinit();
         
         for (self.current_function_stack.items) |func_name| {
             self.allocator.free(func_name);
         }
-        self.current_function_stack.deinit(allocator);
+        self.current_function_stack.deinit();
     }
     
     pub fn pushFunction(self: *ErrorRecovery, function_name: []const u8) !void {
@@ -431,7 +431,7 @@ pub const ErrorRecovery = struct {
         // Capture current stack trace
         ctx.stack_trace = try self.captureStackTrace();
         
-        try self.errors.append(allocator, ctx);
+        try self.errors.append(ctx);
     }
     
     pub fn hasErrors(self: *ErrorRecovery) bool {
@@ -445,7 +445,7 @@ pub const ErrorRecovery = struct {
     pub fn printErrors(self: *ErrorRecovery, writer: anytype) !void {
         for (self.errors.items) |error_ctx| {
             try error_ctx.format(writer);
-            try writer.print("\n");
+            try writer.print("\n", .{});
         }
     }
     
@@ -476,7 +476,7 @@ pub const ErrorHandlingLLVM = struct {
     
     const Self = @This();
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .allocator = allocator,
         };
@@ -688,14 +688,14 @@ test "error handling system" {
     
     // Test basic error context
     var ctx = try ErrorContext.init(allocator, CursedError.OutOfMemory, "Test error message");
-    defer ctx.deinit(allocator);
+    defer ctx.deinit();
     
     try std.testing.expect(ctx.error_code == CursedError.OutOfMemory);
     try std.testing.expect(std.mem.eql(u8, ctx.message, "Test error message"));
     
     // Test error recovery
     var recovery = ErrorRecovery.init(allocator, 10);
-    defer recovery.deinit(allocator);
+    defer recovery.deinit();
     
     const error1 = try ErrorContext.init(allocator, CursedError.ParseError, "Parse failed");
     try recovery.addError(error1);

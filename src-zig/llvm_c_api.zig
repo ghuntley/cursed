@@ -91,8 +91,7 @@ pub const LLVMReturnStatusAction = c.LLVMReturnStatusAction;
 
 // Helper functions for pass management
 pub fn createOptimizedPassManager(allocator: std.mem.Allocator) !*PassManager {
-    _ = allocator;
-    
+        
     const pm = PassManager{
         .module_pm = c.LLVMCreatePassManager(),
         .function_pm = null,

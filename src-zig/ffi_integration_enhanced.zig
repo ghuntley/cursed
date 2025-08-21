@@ -35,7 +35,7 @@ pub const EnhancedFFIManager = struct {
         wrapper_generated: bool,
     };
     
-    pub fn init(allocator: Allocator) EnhancedFFIManager {
+    pub fn init() EnhancedFFIManager {
         var manager = EnhancedFFIManager{
             .allocator = allocator,
             .cabi_bridge = extern_abi.CABIBridge.init(allocator),
@@ -50,9 +50,9 @@ pub const EnhancedFFIManager = struct {
     }
     
     pub fn deinit(self: *EnhancedFFIManager) void {
-        self.cabi_bridge.deinit(allocator);
-        self.variadic_integration.deinit(allocator);
-        self.standard_functions.deinit(allocator);
+        self.cabi_bridge.deinit();
+        self.variadic_integration.deinit();
+        self.standard_functions.deinit();
     }
     
     /// Initialize common C standard library functions
@@ -173,10 +173,10 @@ pub const EnhancedFFIManager = struct {
     /// Generate comprehensive FFI module for CURSED
     pub fn generateFFIModule(self: *EnhancedFFIManager) ![]const u8 {
         var module = .empty;
-        defer module.deinit(allocator);
+        defer module.deinit();
         
-        try module.writer().print("//! Auto-generated CURSED FFI Module with Variadic Support\n");
-        try module.writer().print("//! Provides safe wrappers for C standard library functions\n\n");
+        try module.writer().print("//! Auto-generated CURSED FFI Module with Variadic Support\n", .{});
+        try module.writer().print("//! Provides safe wrappers for C standard library functions\n\n", .{});
         
         // Generate extern declarations
         try module.writer().print("extern \"C\" {{\n");
@@ -192,7 +192,7 @@ pub const EnhancedFFIManager = struct {
                 
                 // Fixed parameters
                 for (func.arg_types, 0..) |arg_type, i| {
-                    if (i > 0) try module.writer().print(", ");
+                    if (i > 0) try module.writer().print(", ", .{});
                     try module.writer().print("arg{} {s}", .{ i, arg_type });
                 }
                 
@@ -202,7 +202,7 @@ pub const EnhancedFFIManager = struct {
                 try module.writer().print("    slay {s}(", .{func.name});
                 
                 for (func.arg_types, 0..) |arg_type, i| {
-                    if (i > 0) try module.writer().print(", ");
+                    if (i > 0) try module.writer().print(", ", .{});
                     try module.writer().print("arg{} {s}", .{ i, arg_type });
                 }
                 
@@ -210,10 +210,10 @@ pub const EnhancedFFIManager = struct {
             }
         }
         
-        try module.writer().print("}}\n\n");
+        try module.writer().print("}}\n\n", .{});
         
         // Generate safe wrappers
-        try module.writer().print("// Safe wrapper functions with error handling\n\n");
+        try module.writer().print("// Safe wrapper functions with error handling\n\n", .{});
         
         iterator = self.standard_functions.iterator();
         while (iterator.next()) |entry| {
@@ -241,7 +241,7 @@ pub const EnhancedFFIManager = struct {
         try module.writer().print("slay safe_{s}(", .{func.name});
         
         for (func.arg_types, 0..) |arg_type, i| {
-            if (i > 0) try module.writer().print(", ");
+            if (i > 0) try module.writer().print(", ", .{});
             try module.writer().print("arg{} {s}", .{ i, arg_type });
         }
         
@@ -252,115 +252,115 @@ pub const EnhancedFFIManager = struct {
             if (std.mem.eql(u8, arg_type, "tea") or std.mem.eql(u8, arg_type, "*vibes")) {
                 try module.writer().print("    ready (arg{} == null) {{\n", .{i});
                 try module.writer().print("        yikes \"Argument {} cannot be null\"\n", .{i});
-                try module.writer().print("    }}\n");
+                try module.writer().print("    }}\n", .{});
             }
         }
         
-        try module.writer().print("\n    // Call native function\n");
+        try module.writer().print("\n    // Call native function\n", .{});
         
         if (!std.mem.eql(u8, func.return_type, "vibes")) {
             try module.writer().print("    sus result {s} = ", .{func.return_type});
         } else {
-            try module.writer().print("    ");
+            try module.writer().print("    ", .{});
         }
         
         try module.writer().print("{s}(", .{func.name});
         for (func.arg_types, 0..) |_, i| {
-            if (i > 0) try module.writer().print(", ");
+            if (i > 0) try module.writer().print(", ", .{});
             try module.writer().print("arg{}", .{i});
         }
-        try module.writer().print(")\n");
+        try module.writer().print(")\n", .{});
         
         if (!std.mem.eql(u8, func.return_type, "vibes")) {
-            try module.writer().print("    damn result\n");
+            try module.writer().print("    damn result\n", .{});
         }
         
-        try module.writer().print("}}\n\n");
+        try module.writer().print("}}\n\n", .{});
     }
     
     /// Generate utility functions for FFI
     fn generateUtilityFunctions(self: *EnhancedFFIManager, module: *ArrayList(u8)) !void {
         _ = self;
-        try module.writer().print("// Utility functions for FFI operations\n\n");
+        try module.writer().print("// Utility functions for FFI operations\n\n", .{});
         
         // String conversion utilities
-        try module.writer().print("// Convert CURSED string to C string (null-terminated)\n");
-        try module.writer().print("slay cursed_to_c_string(str tea) tea {{\n");
-        try module.writer().print("    ready (str == null) {{ damn null }}\n");
-        try module.writer().print("    // Ensure null termination\n");
-        try module.writer().print("    sus len normie = string_length(str)\n");
-        try module.writer().print("    sus c_str tea = allocate_string(len + 1)\n");
-        try module.writer().print("    copy_string(c_str, str, len)\n");
-        try module.writer().print("    set_char_at(c_str, len, 0)  // Null terminator\n");
-        try module.writer().print("    damn c_str\n");
-        try module.writer().print("}}\n\n");
+        try module.writer().print("// Convert CURSED string to C string (null-terminated)\n", .{});
+        try module.writer().print("slay cursed_to_c_string(str tea) tea {{\n", .{});
+        try module.writer().print("    ready (str == null) {{ damn null }}\n", .{});
+        try module.writer().print("    // Ensure null termination\n", .{});
+        try module.writer().print("    sus len normie = string_length(str)\n", .{});
+        try module.writer().print("    sus c_str tea = allocate_string(len + 1)\n", .{});
+        try module.writer().print("    copy_string(c_str, str, len)\n", .{});
+        try module.writer().print("    set_char_at(c_str, len, 0)  // Null terminator\n", .{});
+        try module.writer().print("    damn c_str\n", .{});
+        try module.writer().print("}}\n\n", .{});
         
         // Buffer management
-        try module.writer().print("// Safe buffer allocation with size tracking\n");
-        try module.writer().print("slay allocate_safe_buffer(size normie) *vibes {{\n");
-        try module.writer().print("    ready (size <= 0 || size > 1048576) {{  // 1MB limit\n");
+        try module.writer().print("// Safe buffer allocation with size tracking\n", .{});
+        try module.writer().print("slay allocate_safe_buffer(size normie) *vibes {{\n", .{});
+        try module.writer().print("    ready (size <= 0 || size > 1048576) {{  // 1MB limit\n", .{});
         try module.writer().print("        yikes \"Invalid buffer size\"\n");
-        try module.writer().print("    }}\n");
-        try module.writer().print("    sus buffer *vibes = safe_malloc(size)\n");
-        try module.writer().print("    ready (buffer == null) {{\n");
+        try module.writer().print("    }}\n", .{});
+        try module.writer().print("    sus buffer *vibes = safe_malloc(size)\n", .{});
+        try module.writer().print("    ready (buffer == null) {{\n", .{});
         try module.writer().print("        yikes \"Memory allocation failed\"\n");
-        try module.writer().print("    }}\n");
-        try module.writer().print("    zero_memory(buffer, size)\n");
-        try module.writer().print("    damn buffer\n");
-        try module.writer().print("}}\n\n");
+        try module.writer().print("    }}\n", .{});
+        try module.writer().print("    zero_memory(buffer, size)\n", .{});
+        try module.writer().print("    damn buffer\n", .{});
+        try module.writer().print("}}\n\n", .{});
         
         // Error handling utilities
-        try module.writer().print("// Get last FFI error message\n");
-        try module.writer().print("slay get_ffi_error() tea {{\n");
-        try module.writer().print("    damn get_last_error_message()\n");
-        try module.writer().print("}}\n\n");
+        try module.writer().print("// Get last FFI error message\n", .{});
+        try module.writer().print("slay get_ffi_error() tea {{\n", .{});
+        try module.writer().print("    damn get_last_error_message()\n", .{});
+        try module.writer().print("}}\n\n", .{});
         
         // Type validation
-        try module.writer().print("// Validate variadic argument types\n");
-        try module.writer().print("slay validate_varargs(format tea, args []vibes) lit {{\n");
-        try module.writer().print("    ready (format == null) {{ damn cringe }}\n");
-        try module.writer().print("    \n");
-        try module.writer().print("    sus expected_count normie = count_format_specifiers(format)\n");
-        try module.writer().print("    ready (args.len != expected_count) {{ damn cringe }}\n");
-        try module.writer().print("    \n");
-        try module.writer().print("    damn based\n");
-        try module.writer().print("}}\n\n");
+        try module.writer().print("// Validate variadic argument types\n", .{});
+        try module.writer().print("slay validate_varargs(format tea, args []vibes) lit {{\n", .{});
+        try module.writer().print("    ready (format == null) {{ damn cringe }}\n", .{});
+        try module.writer().print("    \n", .{});
+        try module.writer().print("    sus expected_count normie = count_format_specifiers(format)\n", .{});
+        try module.writer().print("    ready (args.len != expected_count) {{ damn cringe }}\n", .{});
+        try module.writer().print("    \n", .{});
+        try module.writer().print("    damn based\n", .{});
+        try module.writer().print("}}\n\n", .{});
     }
     
     /// Generate LLVM backend integration
     pub fn generateLLVMIntegration(self: *EnhancedFFIManager) ![]const u8 {
         var code = .empty;
-        defer code.deinit(allocator);
+        defer code.deinit();
         
-        try code.writer().print("//! LLVM Backend Integration for Enhanced FFI\n\n");
+        try code.writer().print("//! LLVM Backend Integration for Enhanced FFI\n\n", .{});
         try code.writer().print("const std = @import(\"std\");\n");
-        try code.writer().print("const llvm_c = @cImport({{\n");
+        try code.writer().print("const llvm_c = @cImport({{\n", .{});
         try code.writer().print("    @cInclude(\"llvm-c/Core.h\");\n");
         try code.writer().print("    @cInclude(\"llvm-c/Target.h\");\n");
-        try code.writer().print("}})\n\n");
+        try code.writer().print("}})\n\n", .{});
         
-        try code.writer().print("pub const EnhancedFFIBackend = struct {{\n");
-        try code.writer().print("    context: llvm_c.LLVMContextRef,\n");
-        try code.writer().print("    module: llvm_c.LLVMModuleRef,\n");
-        try code.writer().print("    builder: llvm_c.LLVMBuilderRef,\n");
-        try code.writer().print("    declared_functions: std.HashMap([]const u8, llvm_c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),\n\n");
+        try code.writer().print("pub const EnhancedFFIBackend = struct {{\n", .{});
+        try code.writer().print("    context: llvm_c.LLVMContextRef,\n", .{});
+        try code.writer().print("    module: llvm_c.LLVMModuleRef,\n", .{});
+        try code.writer().print("    builder: llvm_c.LLVMBuilderRef,\n", .{});
+        try code.writer().print("    declared_functions: std.HashMap([]const u8, llvm_c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),\n\n", .{});
         
-        try code.writer().print("    pub fn init(allocator: std.mem.Allocator, context: llvm_c.LLVMContextRef, module: llvm_c.LLVMModuleRef, builder: llvm_c.LLVMBuilderRef) EnhancedFFIBackend {{\n");
-        try code.writer().print("        return EnhancedFFIBackend{{\n");
-        try code.writer().print("            .context = context,\n");
-        try code.writer().print("            .module = module,\n");
-        try code.writer().print("            .builder = builder,\n");
-        try code.writer().print("            .declared_functions = std.HashMap([]const u8, llvm_c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),\n");
-        try code.writer().print("        }};\n");
-        try code.writer().print("    }}\n\n");
+        try code.writer().print("    pub fn init(allocator: std.mem.Allocator, context: llvm_c.LLVMContextRef, module: llvm_c.LLVMModuleRef, builder: llvm_c.LLVMBuilderRef) EnhancedFFIBackend {{\n", .{});
+        try code.writer().print("        return EnhancedFFIBackend{{\n", .{});
+        try code.writer().print("            .context = context,\n", .{});
+        try code.writer().print("            .module = module,\n", .{});
+        try code.writer().print("            .builder = builder,\n", .{});
+        try code.writer().print("            .declared_functions = std.HashMap([]const u8, llvm_c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),\n", .{});
+        try code.writer().print("        }};\n", .{});
+        try code.writer().print("    }}\n\n", .{});
         
-        try code.writer().print("    pub fn deinit(self: *EnhancedFFIBackend) void {{\n");
-        try code.writer().print("        self.declared_functions.deinit(allocator);\n");
-        try code.writer().print("    }}\n\n");
+        try code.writer().print("    pub fn deinit(self: *EnhancedFFIBackend) void {{\n", .{});
+        try code.writer().print("        self.declared_functions.deinit();\n", .{});
+        try code.writer().print("    }}\n\n", .{});
         
         // Generate function declaration methods
-        try code.writer().print("    /// Declare all standard C library functions\n");
-        try code.writer().print("    pub fn declareStandardFunctions(self: *EnhancedFFIBackend) !void {{\n");
+        try code.writer().print("    /// Declare all standard C library functions\n", .{});
+        try code.writer().print("    pub fn declareStandardFunctions(self: *EnhancedFFIBackend) !void {{\n", .{});
         
         var iterator = self.standard_functions.iterator();
         while (iterator.next()) |entry| {
@@ -368,7 +368,7 @@ pub const EnhancedFFIManager = struct {
             try code.writer().print("        try self.declare{s}Function();\n", .{capitalizeFirst(func.name)});
         }
         
-        try code.writer().print("    }}\n\n");
+        try code.writer().print("    }}\n\n", .{});
         
         // Generate individual declaration methods
         iterator = self.standard_functions.iterator();
@@ -378,23 +378,23 @@ pub const EnhancedFFIManager = struct {
         }
         
         // Generate call methods
-        try code.writer().print("    /// Generate call to variadic function\n");
-        try code.writer().print("    pub fn callVariadicFunction(self: *EnhancedFFIBackend, func_name: []const u8, args: []llvm_c.LLVMValueRef) !llvm_c.LLVMValueRef {{\n");
-        try code.writer().print("        const func = self.declared_functions.get(func_name) orelse return error.FunctionNotDeclared;\n");
-        try code.writer().print("        \n");
-        try code.writer().print("        return llvm_c.LLVMBuildCall2(\n");
-        try code.writer().print("            self.builder,\n");
-        try code.writer().print("            llvm_c.LLVMGlobalGetValueType(func),\n");
-        try code.writer().print("            func,\n");
-        try code.writer().print("            args.ptr,\n");
-        try code.writer().print("            @intCast(args.len),\n");
+        try code.writer().print("    /// Generate call to variadic function\n", .{});
+        try code.writer().print("    pub fn callVariadicFunction(self: *EnhancedFFIBackend, func_name: []const u8, args: []llvm_c.LLVMValueRef) !llvm_c.LLVMValueRef {{\n", .{});
+        try code.writer().print("        const func = self.declared_functions.get(func_name) orelse return error.FunctionNotDeclared;\n", .{});
+        try code.writer().print("        \n", .{});
+        try code.writer().print("        return llvm_c.LLVMBuildCall2(\n", .{});
+        try code.writer().print("            self.builder,\n", .{});
+        try code.writer().print("            llvm_c.LLVMGlobalGetValueType(func),\n", .{});
+        try code.writer().print("            func,\n", .{});
+        try code.writer().print("            args.ptr,\n", .{});
+        try code.writer().print("            @intCast(args.len),\n", .{});
         try code.writer().print("            \"variadic_call\"\n");
-        try code.writer().print("        );\n");
-        try code.writer().print("    }}\n");
+        try code.writer().print("        );\n", .{});
+        try code.writer().print("    }}\n", .{});
         
-        try code.writer().print("}};\n");
+        try code.writer().print("}};\n", .{});
         
-        return code.toOwnedSlice(allocator);
+        return code.toOwnedSlice();
     }
     
     /// Generate LLVM function declaration
@@ -403,29 +403,29 @@ pub const EnhancedFFIManager = struct {
         try code.writer().print("    fn declare{s}Function(self: *EnhancedFFIBackend) !void {{\n", .{capitalizeFirst(func.name)});
         
         // Generate return type
-        try code.writer().print("        const return_type = ");
+        try code.writer().print("        const return_type = ", .{});
         try code.writer().print("{s};\n", .{self.cursedTypeToLLVMType(func.return_type)});
         
         // Generate parameter types
-        try code.writer().print("        const param_types = [_]llvm_c.LLVMTypeRef{{\n");
+        try code.writer().print("        const param_types = [_]llvm_c.LLVMTypeRef{{\n", .{});
         for (func.arg_types) |arg_type| {
             try code.writer().print("            {s},\n", .{self.cursedTypeToLLVMType(arg_type)});
         }
-        try code.writer().print("        }};\n");
+        try code.writer().print("        }};\n", .{});
         
         // Create function type
-        try code.writer().print("        const func_type = llvm_c.LLVMFunctionType(\n");
-        try code.writer().print("            return_type,\n");
-        try code.writer().print("            @ptrCast(&param_types),\n");
+        try code.writer().print("        const func_type = llvm_c.LLVMFunctionType(\n", .{});
+        try code.writer().print("            return_type,\n", .{});
+        try code.writer().print("            @ptrCast(&param_types),\n", .{});
         try code.writer().print("            {},\n", .{func.arg_types.len});
         try code.writer().print("            {} // is_variadic\n", .{if (func.is_variadic) 1 else 0});
-        try code.writer().print("        );\n");
+        try code.writer().print("        );\n", .{});
         
         // Add function to module
         try code.writer().print("        const func = llvm_c.LLVMAddFunction(self.module, \"{s}\", func_type);\n", .{func.name});
         try code.writer().print("        try self.declared_functions.put(\"{s}\", func);\n", .{func.name});
         
-        try code.writer().print("    }}\n\n");
+        try code.writer().print("    }}\n\n", .{});
     }
     
     /// Convert CURSED type to LLVM type expression
@@ -460,9 +460,9 @@ pub const EnhancedFFIManager = struct {
         
         // This is a simplified version - in practice you'd want proper memory management
         var result: std.ArrayList(u8) = .empty;
-        result.append(allocator, std.ascii.toUpper(input[0])) catch return input;
+        result.append(std.ascii.toUpper(input[0])) catch return input;
         result.appendSlice(input[1..]) catch return input;
-        return result.toOwnedSlice(allocator) catch input;
+        return result.toOwnedSlice() catch input;
     }
     
     /// Check if function is variadic
@@ -490,7 +490,7 @@ pub const EnhancedFFIManager = struct {
 // Test integration
 test "enhanced FFI manager initialization" {
     var manager = EnhancedFFIManager.init(std.testing.allocator);
-    defer manager.deinit(allocator);
+    defer manager.deinit();
     
     // Test that standard functions are registered
     try std.testing.expect(manager.isVariadicFunction("printf"));
@@ -508,7 +508,7 @@ test "enhanced FFI manager initialization" {
 
 test "FFI module generation" {
     var manager = EnhancedFFIManager.init(std.testing.allocator);
-    defer manager.deinit(allocator);
+    defer manager.deinit();
     
     const module = try manager.generateFFIModule();
     defer std.testing.allocator.free(module);
@@ -522,7 +522,7 @@ test "FFI module generation" {
 
 test "LLVM integration generation" {
     var manager = EnhancedFFIManager.init(std.testing.allocator);
-    defer manager.deinit(allocator);
+    defer manager.deinit();
     
     const llvm_code = try manager.generateLLVMIntegration();
     defer std.testing.allocator.free(llvm_code);

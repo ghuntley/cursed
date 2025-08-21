@@ -51,7 +51,7 @@ const WasmRuntime = struct {
     
     const Self = @This();
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .allocator = allocator,
             .variables = VariableStore.init(allocator),
@@ -65,9 +65,9 @@ const WasmRuntime = struct {
         var var_iter = self.variables.iterator();
         while (var_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.variables.deinit(allocator);
+        self.variables.deinit();
         
         // Clean up functions
         var func_iter = self.functions.iterator();
@@ -75,15 +75,15 @@ const WasmRuntime = struct {
             self.allocator.free(entry.key_ptr.*);
             // Functions are managed by AST cleanup
         }
-        self.functions.deinit(allocator);
+        self.functions.deinit();
         
-        self.output_buffer.deinit(allocator);
+        self.output_buffer.deinit();
     }
     
     // WASM print implementation - writes to buffer instead of stdout
     pub fn wasmPrint(self: *Self, text: []const u8) !void {
         try self.output_buffer.appendSlice(text);
-        try self.output_buffer.append(allocator, '\n');
+        try self.output_buffer.append('\n');
     }
     
     // Get output buffer contents
@@ -192,11 +192,11 @@ export fn wasm_init() i32 {
 
 export fn wasm_deinit() void {
     if (global_runtime) |*runtime| {
-        runtime.deinit(allocator);
+        runtime.deinit();
         global_runtime = null;
     }
     if (global_arena) |*arena| {
-        arena.deinit(allocator);
+        arena.deinit();
         global_arena = null;
     }
 }
@@ -212,13 +212,13 @@ export fn wasm_execute_source(source_ptr: [*]const u8, source_len: usize) i32 {
     
     // Parse source code
     var token_lexer = lexer.Lexer.init(allocator, source);
-    defer token_lexer.deinit(allocator);
+    defer token_lexer.deinit();
     
     const tokens = token_lexer.tokenize() catch return -3;
     defer allocator.free(tokens);
     
     var ast_parser = parser.Parser.init(allocator, tokens);
-    defer ast_parser.deinit(allocator);
+    defer ast_parser.deinit();
     
     const ast_nodes = ast_parser.parseProgram() catch return -5;
     defer allocator.free(ast_nodes);
@@ -261,7 +261,7 @@ export fn wasm_tokenize(source_ptr: [*]const u8, source_len: usize) i32 {
     const source = source_ptr[0..source_len];
     
     var token_lexer = lexer.Lexer.init(allocator, source) catch return -2;
-    defer token_lexer.deinit(allocator);
+    defer token_lexer.deinit();
     
     const tokens = token_lexer.tokenize() catch return -3;
     defer allocator.free(tokens);
@@ -279,14 +279,14 @@ export fn wasm_check_syntax(source_ptr: [*]const u8, source_len: usize) i32 {
     
     // Tokenize
     var token_lexer = lexer.Lexer.init(allocator, source);
-    defer token_lexer.deinit(allocator);
+    defer token_lexer.deinit();
     
     const tokens = token_lexer.tokenize() catch return -3;
     defer allocator.free(tokens);
     
     // Parse
     var ast_parser = parser.Parser.init(allocator, tokens);
-    defer ast_parser.deinit(allocator);
+    defer ast_parser.deinit();
     
     const ast_nodes = ast_parser.parseProgram() catch return -5;
     defer allocator.free(ast_nodes);

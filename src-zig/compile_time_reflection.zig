@@ -107,7 +107,7 @@ pub const CompileTimeReflection = struct {
         function_decl: ?*ast.FunctionStatement = null,
     };
     
-    pub fn init(allocator: Allocator) CompileTimeReflection {
+    pub fn init() CompileTimeReflection {
         return CompileTimeReflection{
             .allocator = allocator,
             .type_info_cache = HashMap([]const u8, CompileTimeTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -118,10 +118,10 @@ pub const CompileTimeReflection = struct {
     pub fn deinit(self: *CompileTimeReflection) void {
         var type_iterator = self.type_info_cache.iterator();
         while (type_iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.type_info_cache.deinit(allocator);
-        self.ast_cache.deinit(allocator);
+        self.type_info_cache.deinit();
+        self.ast_cache.deinit();
     }
     
     /// Register struct declaration for compile-time reflection
@@ -227,17 +227,17 @@ pub const CompileTimeReflection = struct {
         if (type_info.fields == null) return null;
         
         var result = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
         
-        try result.writer().print("[\n");
+        try result.writer().print("[\n", .{});
         for (type_info.fields.?, 0..) |field, i| {
-            if (i > 0) try result.writer().print(",\n");
+            if (i > 0) try result.writer().print(",\n", .{});
             try result.writer().print("  {{ .name = \"{s}\", .type = \"{s}\", .offset = {d}, .size = {d} }}", 
                 .{ field.name, field.field_type, field.offset, field.size });
         }
-        try result.writer().print("\n]");
+        try result.writer().print("\n]", .{});
         
-        return result.toOwnedSlice(allocator);
+        return result.toOwnedSlice();
     }
     
     /// Generate type.methods information at compile time
@@ -247,23 +247,23 @@ pub const CompileTimeReflection = struct {
         if (type_info.methods == null) return null;
         
         var result = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
         
-        try result.writer().print("[\n");
+        try result.writer().print("[\n", .{});
         for (type_info.methods.?, 0..) |method, i| {
-            if (i > 0) try result.writer().print(",\n");
+            if (i > 0) try result.writer().print(",\n", .{});
             try result.writer().print("  {{ .name = \"{s}\", .return_type = \"{s}\", .parameters = [", 
                 .{ method.name, method.return_type });
             
             for (method.parameters, 0..) |param, j| {
-                if (j > 0) try result.writer().print(", ");
+                if (j > 0) try result.writer().print(", ", .{});
                 try result.writer().print("{{ .name = \"{s}\", .type = \"{s}\" }}", 
                     .{ param.name, param.param_type });
             }
             
-            try result.writer().print("] }}");
+            try result.writer().print("] }}", .{});
         }
-        try result.writer().print("\n]");
+        try result.writer().print("\n]", .{});
         
         return result.toOwnedSlice(self.allocator);
     }
@@ -378,7 +378,7 @@ pub const CompileTimeCodeGen = struct {
         if (type_info.fields == null) return null;
         
         var code = .empty;
-        defer code.deinit(allocator);
+        defer code.deinit();
         
         try code.writer().print("// Auto-generated field accessors for {s}\n\n", .{type_name});
         
@@ -386,15 +386,15 @@ pub const CompileTimeCodeGen = struct {
             // Generate getter
             try code.writer().print("slay get_{s}_{s}(obj *{s}) {s} {{\n", .{ type_name, field.name, type_name, field.field_type });
             try code.writer().print("    damn obj.{s}\n", .{field.name});
-            try code.writer().print("}}\n\n");
+            try code.writer().print("}}\n\n", .{});
             
             // Generate setter (if not immutable)
             try code.writer().print("slay set_{s}_{s}(obj *{s}, value {s}) {{\n", .{ type_name, field.name, type_name, field.field_type });
             try code.writer().print("    obj.{s} = value\n", .{field.name});
-            try code.writer().print("}}\n\n");
+            try code.writer().print("}}\n\n", .{});
         }
         
-        return code.toOwnedSlice(allocator);
+        return code.toOwnedSlice();
     }
     
     /// Generate type information constants at compile time
@@ -402,7 +402,7 @@ pub const CompileTimeCodeGen = struct {
         const type_info = self.reflection.getTypeInfo(type_name) orelse return null;
         
         var code = .empty;
-        defer code.deinit(allocator);
+        defer code.deinit();
         
         try code.writer().print("// Auto-generated type constants for {s}\n\n", .{type_name});
         
@@ -424,7 +424,7 @@ pub const CompileTimeCodeGen = struct {
             }
         }
         
-        return code.toOwnedSlice(allocator);
+        return code.toOwnedSlice();
     }
     
     /// Generate serialization functions at compile time
@@ -434,7 +434,7 @@ pub const CompileTimeCodeGen = struct {
         if (type_info.fields == null) return null;
         
         var code = .empty;
-        defer code.deinit(allocator);
+        defer code.deinit();
         
         try code.writer().print("// Auto-generated serialization for {s}\n\n", .{type_name});
         
@@ -450,10 +450,10 @@ pub const CompileTimeCodeGen = struct {
         }
         
         try code.writer().print("    result = result + \" }}\"\n");
-        try code.writer().print("    damn result\n");
-        try code.writer().print("}}\n\n");
+        try code.writer().print("    damn result\n", .{});
+        try code.writer().print("}}\n\n", .{});
         
-        return code.toOwnedSlice(allocator);
+        return code.toOwnedSlice();
     }
 };
 
@@ -495,20 +495,20 @@ pub const ReflectionMacros = struct {
 // Test cases for compile-time reflection
 test "compile-time type info registration" {
     var reflection = CompileTimeReflection.init(std.testing.allocator);
-    defer reflection.deinit(allocator);
+    defer reflection.deinit();
     
     // Create a mock struct declaration
     var fields = .empty;
-    defer fields.deinit(allocator);
+    defer fields.deinit();
     
-    try fields.append(allocator, ast.StructField{
+    try fields.append(ast.StructField{
         .name = "name",
         .field_type = ast.Type{ .Primitive = .Tea },
         .visibility = .Public,
         .default_value = null,
     });
     
-    try fields.append(allocator, ast.StructField{
+    try fields.append(ast.StructField{
         .name = "age",
         .field_type = ast.Type{ .Primitive = .Normie },
         .visibility = .Public,
@@ -520,7 +520,7 @@ test "compile-time type info registration" {
         .fields = fields,
         .generic_params = .empty,
     };
-    defer mock_struct.generic_params.deinit(allocator);
+    defer mock_struct.generic_params.deinit();
     
     // Register struct
     try reflection.registerStruct(&mock_struct);
@@ -535,7 +535,7 @@ test "compile-time type info registration" {
 
 test "field info generation" {
     var reflection = CompileTimeReflection.init(std.testing.allocator);
-    defer reflection.deinit(allocator);
+    defer reflection.deinit();
     
     // This test would require a complete struct registration
     // For now, just test the basic structure

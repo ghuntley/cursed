@@ -10,7 +10,7 @@ const lexer = @import("lexer.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -55,7 +55,7 @@ pub fn main() !void {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator); // Fix memory leak
+    defer tokens.deinit(); // Fix memory leak
 
     if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 
@@ -101,7 +101,7 @@ fn compileProgram(allocator: Allocator, filename: []const u8, tokens: ArrayList(
     defer allocator.free(c_filename);
     
     var c_code: std.ArrayList(u8) = .empty;
-    defer c_code.deinit(allocator);
+    defer c_code.deinit();
     
     // Generate basic C code with concurrency stubs
     try c_code.appendSlice("#include <stdio.h>\n#include <stdlib.h>\n#include <pthread.h>\n\n");

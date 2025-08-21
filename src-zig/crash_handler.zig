@@ -74,9 +74,9 @@ pub const CrashTelemetry = struct {
     pub fn deinit(self: *CrashTelemetry) void {
         // Clean up crash log items
         for (self.crash_log.items) |*crash| {
-            crash.deinit(allocator);
+            crash.deinit();
         }
-        self.crash_log.deinit(allocator);
+        self.crash_log.deinit();
         
         // Clean up crash file path
         if (self.crash_file_path) |path| {
@@ -92,7 +92,7 @@ pub const CrashTelemetry = struct {
         // Limit crash log size
         if (self.crash_log.items.len >= self.max_crashes) {
             var oldest = self.crash_log.orderedRemove(0);
-            oldest.deinit(allocator);
+            oldest.deinit();
         }
         
         // Create a deep copy of the context for storage
@@ -173,7 +173,7 @@ pub const FatalErrorHandler = struct {
     }
     
     pub fn deinit(self: *FatalErrorHandler) void {
-        self.recovery_strategies.deinit(allocator);
+        self.recovery_strategies.deinit();
     }
     
     pub fn installPanicHandler(self: *FatalErrorHandler) void {
@@ -186,7 +186,7 @@ pub const FatalErrorHandler = struct {
     
     pub fn handleFatalError(self: *FatalErrorHandler, severity: CrashSeverity, message: []const u8, source_file: []const u8, source_line: u32, source_column: u32, function_name: []const u8) !void {
         var context = try CrashContext.init(self.allocator, severity, message, source_file, source_line, source_column, function_name);
-        defer context.deinit(allocator);
+        defer context.deinit();
         
         // Capture stack trace
         context.stack_trace = try self.captureStackTrace();
@@ -207,15 +207,15 @@ pub const FatalErrorHandler = struct {
         
         // For fatal errors and panics, terminate gracefully
         if (severity == .Fatal or severity == .Panic) {
-            print("\n💥 CURSED compiler encountered a fatal error and cannot continue.\n");
-            print("📋 Crash details have been logged for debugging.\n");
+            print("\n💥 CURSED compiler encountered a fatal error and cannot continue.\n", .{});
+            print("📋 Crash details have been logged for debugging.\n", .{});
             std.process.exit(1);
         }
     }
     
     fn captureStackTrace(self: *FatalErrorHandler) !?[][]const u8 {
         var stack_trace = .empty;
-        defer stack_trace.deinit(allocator);
+        defer stack_trace.deinit();
         
         // Use builtin stack trace if available
         if (builtin.mode == .Debug) {
@@ -276,7 +276,7 @@ pub const FatalErrorHandler = struct {
         }
         
         if (context.stack_trace) |trace| {
-            print("📚 Stack Trace:\n");
+            print("📚 Stack Trace:\n", .{});
             for (trace, 0..) |frame, i| {
                 print("  {d}: {s}\n", .{ i, frame });
             }
@@ -296,7 +296,7 @@ pub const FatalErrorHandler = struct {
             }
         }
         
-        print("❌ No recovery strategy available for this error.\n");
+        print("❌ No recovery strategy available for this error.\n", .{});
     }
     
     pub fn addRecoveryStrategy(self: *FatalErrorHandler, error_type: []const u8, recovery_fn: *const fn (allocator: Allocator, context: CrashContext) anyerror!void) !void {
@@ -313,15 +313,15 @@ fn customPanicHandler(message: []const u8, stack_trace: ?*std.builtin.StackTrace
     _ = stack_trace; // Not used in this implementation
     _ = ret_addr; // Not used
     
-    print("\n💥 CURSED COMPILER PANIC 💥\n");
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    print("\n💥 CURSED COMPILER PANIC 💥\n", .{});
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n", .{});
     print("💬 Panic Message: {s}\n", .{message});
     print("🕒 Timestamp: {d}\n", .{std.time.milliTimestamp()});
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-    print("🔧 This is a bug in the CURSED compiler.\n");
-    print("📋 Please report this panic with the above information.\n");
-    print("🌐 Repository: https://github.com/ghuntley/cursed\n");
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n", .{});
+    print("🔧 This is a bug in the CURSED compiler.\n", .{});
+    print("📋 Please report this panic with the above information.\n", .{});
+    print("🌐 Repository: https://github.com/ghuntley/cursed\n", .{});
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n", .{});
     
     std.process.exit(1);
 }
@@ -341,7 +341,7 @@ pub const MemoryErrorDetector = struct {
         timestamp: i64,
     };
     
-    pub fn init(allocator: Allocator) MemoryErrorDetector {
+    pub fn init() MemoryErrorDetector {
         return MemoryErrorDetector{
             .allocator = allocator,
             .allocations = std.HashMap(usize, AllocationInfo, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
@@ -352,7 +352,7 @@ pub const MemoryErrorDetector = struct {
     }
     
     pub fn deinit(self: *MemoryErrorDetector) void {
-        self.allocations.deinit(allocator);
+        self.allocations.deinit();
     }
     
     pub fn trackAllocation(self: *MemoryErrorDetector, ptr: usize, size: usize, file: []const u8, line: u32) !void {
@@ -388,7 +388,7 @@ pub const MemoryErrorDetector = struct {
             try leaks.append(self.allocator, entry.value_ptr.*);
         }
         
-        return try leaks.toOwnedSlice(allocator);
+        return try leaks.toOwnedSlice();
     }
     
     pub fn getCurrentUsage(self: *MemoryErrorDetector) usize {
@@ -407,13 +407,13 @@ pub fn attemptGracefulRecovery(allocator: Allocator, context: CrashContext) !voi
     
     // Basic recovery strategies based on error type
     if (std.mem.indexOf(u8, context.message, "OutOfMemory") != null) {
-        print("💾 Memory exhaustion detected - suggesting cleanup\n");
+        print("💾 Memory exhaustion detected - suggesting cleanup\n", .{});
         // Could trigger garbage collection or memory cleanup here
     } else if (std.mem.indexOf(u8, context.message, "FileNotFound") != null) {
-        print("📁 File not found - checking alternative paths\n");
+        print("📁 File not found - checking alternative paths\n", .{});
         // Could suggest alternative file paths or create missing directories
     } else if (std.mem.indexOf(u8, context.message, "InvalidSyntax") != null) {
-        print("📝 Syntax error detected - providing suggestions\n");
+        print("📝 Syntax error detected - providing suggestions\n", .{});
         // Could provide syntax suggestions or partial parsing results
     }
 }
@@ -421,18 +421,18 @@ pub fn attemptGracefulRecovery(allocator: Allocator, context: CrashContext) !voi
 /// Convenience macros for error handling
 pub fn CURSED_FATAL(allocator: Allocator, telemetry: *CrashTelemetry, comptime message: []const u8, comptime file: []const u8, comptime line: u32, comptime function: []const u8) !void {
     var handler = FatalErrorHandler.init(allocator, telemetry);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
     try handler.handleFatalError(.Fatal, message, file, line, 0, function);
 }
 
 pub fn CURSED_ERROR(allocator: Allocator, telemetry: *CrashTelemetry, comptime message: []const u8, comptime file: []const u8, comptime line: u32, comptime function: []const u8) !void {
     var handler = FatalErrorHandler.init(allocator, telemetry);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
     try handler.handleFatalError(.Error, message, file, line, 0, function);
 }
 
 pub fn CURSED_WARNING(allocator: Allocator, telemetry: *CrashTelemetry, comptime message: []const u8, comptime file: []const u8, comptime line: u32, comptime function: []const u8) !void {
     var handler = FatalErrorHandler.init(allocator, telemetry);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
     try handler.handleFatalError(.Warning, message, file, line, 0, function);
 }

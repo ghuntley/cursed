@@ -101,7 +101,7 @@ pub fn Channel(comptime T: type) type {
                 // For complex types, would need proper cleanup
                 _ = item;
             }
-            self.buffer.deinit(allocator);
+            self.buffer.deinit();
             
             // Mark cleanup as completed
             self.cleanup_completed.store(true, .release);
@@ -169,7 +169,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
                 
-                try self.buffer.append(allocator, value);
+                try self.buffer.append(value);
                 self.recv_condition.signal();
                 return SendResult.sent;
             }
@@ -185,7 +185,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
             
-            try self.buffer.append(allocator, value);
+            try self.buffer.append(value);
             self.recv_condition.signal();
             return SendResult.sent;
         }
@@ -284,7 +284,7 @@ pub const SafeGoroutine = struct {
     channels: std.ArrayList(*anyopaque), // Store channel pointers for cleanup
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .thread = null,
             .channels = .{},
@@ -306,12 +306,12 @@ pub const SafeGoroutine = struct {
             channel.release();
         }
         
-        self.channels.deinit(allocator);
+        self.channels.deinit();
     }
     
     /// Add a channel reference to this goroutine
     pub fn addChannelRef(self: *Self, channel: *anyopaque) !void {
-        try self.channels.append(allocator, channel);
+        try self.channels.append(channel);
     }
     
     /// Start the goroutine with a function
@@ -327,10 +327,10 @@ pub fn testChannelRaceConditions() !void {
     // Test 1: Channel cleanup with early goroutine termination
     {
         var channel_guard = try ChannelGuard(i32).init(allocator, 0);
-        defer channel_guard.deinit(allocator);
+        defer channel_guard.deinit();
         
         var goroutine = SafeGoroutine.init(allocator);
-        defer goroutine.deinit(allocator);
+        defer goroutine.deinit();
         
         // Add channel reference to goroutine
         try goroutine.addChannelRef(channel_guard.channel);
@@ -359,7 +359,7 @@ pub fn testChannelRaceConditions() !void {
     // Test 2: Stress test with multiple goroutines
     {
         var channel_guard = try ChannelGuard(i32).init(allocator, 10);
-        defer channel_guard.deinit(allocator);
+        defer channel_guard.deinit();
         
         const num_goroutines = 100;
         var goroutines: [num_goroutines]SafeGoroutine = undefined;
@@ -372,7 +372,7 @@ pub fn testChannelRaceConditions() !void {
         // Cleanup goroutines
         defer {
             for (&goroutines) |*g| {
-                g.deinit(allocator);
+                g.deinit();
             }
         }
         
@@ -414,7 +414,7 @@ pub fn testChannelRaceConditions() !void {
         std.time.sleep(100_000_000); // 100ms
     }
     
-    std.debug.print("✅ All channel race condition tests passed!\n");
+    std.debug.print("✅ All channel race condition tests passed!\n", .{});
 }
 
 // Export for testing

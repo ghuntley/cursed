@@ -11,7 +11,7 @@ pub const MemoryManager = struct {
     ref_counts: HashMap(usize, u32, std.hash_map.DefaultHashContext(usize), std.hash_map.default_max_load_percentage),
     allocated_objects: HashMap(usize, *anyopaque, std.hash_map.DefaultHashContext(usize), std.hash_map.default_max_load_percentage),
 
-    pub fn init(allocator: Allocator) MemoryManager {
+    pub fn init() MemoryManager {
         return MemoryManager{
             .allocator = allocator,
             .ref_counts = HashMap(usize, u32, std.hash_map.DefaultHashContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
@@ -27,8 +27,8 @@ pub const MemoryManager = struct {
             self.allocator.destroy(@as(*anyopaque, @ptrCast(ptr)));
         }
         
-        self.ref_counts.deinit(allocator);
-        self.allocated_objects.deinit(allocator);
+        self.ref_counts.deinit();
+        self.allocated_objects.deinit();
     }
 
     pub fn createManaged(self: *MemoryManager, comptime T: type) !*T {
@@ -95,7 +95,7 @@ pub fn initGlobalManager(allocator: Allocator) void {
 
 pub fn deinitGlobalManager() void {
     if (thread_local_manager) |*manager| {
-        manager.deinit(allocator);
+        manager.deinit();
         thread_local_manager = null;
     }
 }

@@ -66,18 +66,18 @@ pub fn bool_to_string_impl(allocator: std.mem.Allocator, value: bool) ![]u8 {
 /// Convert array to string representation
 pub fn array_to_string_impl(allocator: std.mem.Allocator, array: []const i64) ![]u8 {
     var result: std.ArrayList(u8) = .empty;
-    defer result.deinit(allocator);
+    defer result.deinit();
     
-    try result.append(allocator, '[');
+    try result.append('[');
     for (array, 0..) |item, i| {
         if (i > 0) try result.appendSlice(", ");
         const item_str = try std.fmt.allocPrint(allocator, "{d}", .{item});
         defer allocator.free(item_str);
         try result.appendSlice(item_str);
     }
-    try result.append(allocator, ']');
+    try result.append(']');
     
-    return result.toOwnedSlice(allocator);
+    return result.toOwnedSlice();
 }
 
 /// Missing file operations implementations
@@ -207,11 +207,11 @@ pub fn json_stringify_impl(allocator: std.mem.Allocator, data: []const u8) ![]u8
 
 /// Test all missing implementations
 pub fn test_missing_implementations() !void {
-    print("\n🧪 Testing Missing Implementation Functions\n");
-    print("==========================================\n");
+    print("\n🧪 Testing Missing Implementation Functions\n", .{});
+    print("==========================================\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Test math functions
@@ -247,5 +247,5 @@ pub fn test_missing_implementations() !void {
     defer allocator.free(cwd);
     print("Current directory: {s}\n", .{cwd});
     
-    print("\n✅ Missing implementation tests completed\n");
+    print("\n✅ Missing implementation tests completed\n", .{});
 }

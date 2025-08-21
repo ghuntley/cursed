@@ -26,7 +26,7 @@ pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filena
         print("❌ Lexer error during compilation: {}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     if (verbose) print("📝 Lexed {} tokens for compilation\n", .{tokens.items.len});
     
@@ -57,7 +57,7 @@ pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filena
             allocator.free(var_info.name);
             allocator.free(var_info.var_type);
         }
-        variables.deinit(allocator);
+        variables.deinit();
     }
     
     var lines = std.mem.splitScalar(u8, source, '\n');
@@ -136,7 +136,7 @@ pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filena
             // Add variable to our tracking list
             const var_name_copy = try allocator.dupe(u8, var_name);
             const var_type_copy = try allocator.dupe(u8, var_type);
-            try variables.append(allocator, VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
+            try variables.append(VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
             
             if (std.mem.eql(u8, var_type, "drip")) {
                 // Integer type

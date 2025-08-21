@@ -49,9 +49,9 @@ pub const FinalWorkingCodeGen = struct {
         std.debug.print("🧹 Starting FinalWorkingCodeGen cleanup (memory-safe)...\n", .{});
         
         // Clean up Zig data structures first
-        self.ir_buffer.deinit(allocator);
-        self.string_constants.deinit(allocator);
-        self.variables.deinit(allocator);
+        self.ir_buffer.deinit();
+        self.string_constants.deinit();
+        self.variables.deinit();
         
         // Critical: Cleanup LLVM resources in proper order
         // Builder depends on context, module depends on context
@@ -142,7 +142,7 @@ pub const FinalWorkingCodeGen = struct {
     pub fn writeExecutable(self: *FinalWorkingCodeGen, output_path: []const u8) !void {
         // First write IR to temporary file
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const temp_allocator = arena.allocator();
         
         const ir_file = try std.fmt.allocPrint(temp_allocator, "{s}.ll", .{output_path});
@@ -520,7 +520,7 @@ pub fn testFinalCodegen() !void {
     const allocator = std.heap.page_allocator;
     
     var codegen = try FinalWorkingCodeGen.init(allocator);
-    defer codegen.deinit(allocator);
+    defer codegen.deinit();
     
     std.debug.print("Testing Final Working CURSED Codegen...\n", .{});
     
@@ -542,7 +542,7 @@ pub fn testAdvancedFeatures() !void {
     const allocator = std.heap.page_allocator;
     
     var codegen = try FinalWorkingCodeGen.init(allocator);
-    defer codegen.deinit(allocator);
+    defer codegen.deinit();
     
     std.debug.print("Testing Advanced CURSED Features...\n", .{});
     

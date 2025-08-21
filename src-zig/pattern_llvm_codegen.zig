@@ -79,7 +79,7 @@ pub const PatternLLVMCodeGen = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.pattern_bindings.deinit(allocator);
+        self.pattern_bindings.deinit();
     }
     
     pub fn setCurrentFunction(self: *Self, function: c.LLVMValueRef) void {
@@ -106,8 +106,8 @@ pub const PatternLLVMCodeGen = struct {
         
         var phi_values = .empty;
         var phi_blocks = .empty;
-        defer phi_values.deinit(allocator);
-        defer phi_blocks.deinit(allocator);
+        defer phi_values.deinit();
+        defer phi_blocks.deinit();
         
         if (optimization.use_jump_table) {
             try self.generateJumpTableDispatch(discriminant, match_expr.cases.items, result_phi, &phi_values, &phi_blocks, merge_block, default_block);
@@ -477,8 +477,8 @@ pub const PatternLLVMCodeGen = struct {
                 
                 c.LLVMPositionBuilderAtEnd(self.builder, case_block);
                 const result = try self.generateExpression(case.result);
-                try phi_values.append(allocator, result);
-                try phi_blocks.append(allocator, c.LLVMGetInsertBlock(self.builder));
+                try phi_values.append(result);
+                try phi_blocks.append(c.LLVMGetInsertBlock(self.builder));
                 _ = c.LLVMBuildBr(self.builder, merge_block);
             }
         }
@@ -498,8 +498,8 @@ pub const PatternLLVMCodeGen = struct {
             
             c.LLVMPositionBuilderAtEnd(self.builder, case_block);
             const result = try self.generateExpression(case.result);
-            try phi_values.append(allocator, result);
-            try phi_blocks.append(allocator, c.LLVMGetInsertBlock(self.builder));
+            try phi_values.append(result);
+            try phi_blocks.append(c.LLVMGetInsertBlock(self.builder));
             _ = c.LLVMBuildBr(self.builder, merge_block);
             
             current_block = next_block;
@@ -565,7 +565,7 @@ pub const ExhaustivenessChecker = struct {
         Type: []const u8,
     };
     
-    pub fn init(allocator: Allocator) ExhaustivenessChecker {
+    pub fn init() ExhaustivenessChecker {
         return ExhaustivenessChecker{
             .allocator = allocator,
             .covered_patterns = .empty,
@@ -573,7 +573,7 @@ pub const ExhaustivenessChecker = struct {
     }
     
     pub fn deinit(self: *ExhaustivenessChecker) void {
-        self.covered_patterns.deinit(allocator);
+        self.covered_patterns.deinit();
     }
     
     /// Check if pattern matching is exhaustive
@@ -592,13 +592,13 @@ pub const ExhaustivenessChecker = struct {
     
     fn analyzePattern(self: *ExhaustivenessChecker, pattern: ast.Pattern) !void {
         switch (pattern) {
-            .Literal => |literal| try self.covered_patterns.append(allocator, .{ .Literal = literal.value }),
-            .Wildcard => try self.covered_patterns.append(allocator, .{ .Wildcard = {} }),
+            .Literal => |literal| try self.covered_patterns.append(.{ .Literal = literal.value }),
+            .Wildcard => try self.covered_patterns.append(.{ .Wildcard = {} }),
             .Range => |range| {
                 // Would need to extract range values from expressions
-                try self.covered_patterns.append(allocator, .{ .Range = .{ .start = 0, .end = 100, .inclusive = range.is_inclusive } });
+                try self.covered_patterns.append(.{ .Range = .{ .start = 0, .end = 100, .inclusive = range.is_inclusive } });
             },
-            .Variable => try self.covered_patterns.append(allocator, .{ .Wildcard = {} }),
+            .Variable => try self.covered_patterns.append(.{ .Wildcard = {} }),
             else => {}, // Other patterns contribute to coverage differently
         }
     }

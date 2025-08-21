@@ -128,7 +128,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
         
         pub fn deinit(self: *Self) void {
             self.close();
-            self.buffer.deinit(allocator);
+            self.buffer.deinit();
         }
         
         /// Send with comprehensive deadlock prevention
@@ -180,7 +180,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
                 
                 // For buffered channels, check capacity
                 if (self.buffer.items.len < self.capacity) {
-                    try self.buffer.append(allocator, value);
+                    try self.buffer.append(value);
                     self.notifyReceivers();
                     self.stats.recordOperation(.success);
                     return SendResult.sent;
@@ -316,7 +316,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
                 
                 // Check for waiting receivers
                 if (self.receiver_count.load(.acquire) > 0) {
-                    try self.buffer.append(allocator, value);
+                    try self.buffer.append(value);
                     self.notifyReceivers();
                     return SendResult.sent;
                 }
@@ -337,7 +337,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
             
             while (@as(i64, @intCast(std.time.nanoTimestamp())) < end_time and !self.closed.load(.acquire)) {
                 if (self.buffer.items.len < self.capacity) {
-                    try self.buffer.append(allocator, value);
+                    try self.buffer.append(value);
                     self.notifyReceivers();
                     return SendResult.sent;
                 }
@@ -467,7 +467,7 @@ pub const DeadlockDetector = struct {
     thread: ?Thread,
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) DeadlockDetector {
+    pub fn init() DeadlockDetector {
         return DeadlockDetector{
             .channels = .empty,
             .mutex = Mutex{},
@@ -479,7 +479,7 @@ pub const DeadlockDetector = struct {
     
     pub fn deinit(self: *DeadlockDetector) void {
         self.stop();
-        self.channels.deinit(allocator);
+        self.channels.deinit();
     }
     
     pub fn start(self: *DeadlockDetector) !void {
@@ -519,13 +519,13 @@ pub const DeadlockDetector = struct {
     pub fn registerChannel(self: *DeadlockDetector, channel: *anyopaque) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        try self.channels.append(allocator, channel);
+        try self.channels.append(channel);
     }
 };
 
 /// High-contention test for deadlock prevention
 pub fn runHighContentionTest(allocator: Allocator) !void {
-    print("=== CURSED High-Contention Deadlock Prevention Test ===\n");
+    print("=== CURSED High-Contention Deadlock Prevention Test ===\n", .{});
     
     const num_channels = 5;
     const num_goroutines = 50;
@@ -545,7 +545,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
     }
     defer {
         for (channels) |ch| {
-            ch.deinit(allocator);
+            ch.deinit();
             allocator.destroy(ch);
         }
     }
@@ -553,7 +553,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
     // Start deadlock detector
     var detector = DeadlockDetector.init(allocator);
     try detector.start();
-    defer detector.deinit(allocator);
+    defer detector.deinit();
     
     for (channels) |ch| {
         try detector.registerChannel(ch);
@@ -567,7 +567,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
         for (threads.items) |thread| {
             thread.join();
         }
-        threads.deinit(allocator);
+        threads.deinit();
     }
     
     const TestContext = struct {
@@ -586,7 +586,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
         };
         
         const thread = try Thread.spawn(.{}, senderWorker, .{context});
-        try threads.append(allocator, thread);
+        try threads.append(thread);
     }
     
     // Spawn receiver threads
@@ -599,7 +599,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
         };
         
         const thread = try Thread.spawn(.{}, receiverWorker, .{context});
-        try threads.append(allocator, thread);
+        try threads.append(thread);
     }
     
     print("⏳ Waiting for {} goroutines to complete...\n", .{threads.items.len});
@@ -640,7 +640,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
         });
     }
     
-    print("=== Final Results ===\n");
+    print("=== Final Results ===\n", .{});
     print("Total operations: {}\n", .{total_stats.total_operations});
     print("Successful: {}\n", .{total_stats.successful_operations});
     print("Blocked: {}\n", .{total_stats.blocked_operations});
@@ -654,12 +654,12 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
     print("Success rate: {}%\n", .{success_rate});
     
     if (success_rate >= 80) {
-        print("✅ HIGH-CONTENTION TEST PASSED!\n");
+        print("✅ HIGH-CONTENTION TEST PASSED!\n", .{});
     } else {
-        print("❌ HIGH-CONTENTION TEST FAILED!\n");
+        print("❌ HIGH-CONTENTION TEST FAILED!\n", .{});
     }
     
-    print("=== Deadlock Prevention Test Complete ===\n");
+    print("=== Deadlock Prevention Test Complete ===\n", .{});
 }
 
 fn senderWorker(context: *anyopaque) void {

@@ -171,7 +171,7 @@ pub const CompletePatternLLVMCodeGen = struct {
             }
         };
         
-        pub fn init(allocator: Allocator) EnumVariantRegistry {
+        pub fn init() EnumVariantRegistry {
             return EnumVariantRegistry{
                 .variants = HashMap(VariantKey, VariantInfo, VariantKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
                 .enum_definitions = HashMap([]const u8, EnumDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -182,10 +182,10 @@ pub const CompletePatternLLVMCodeGen = struct {
         pub fn deinit(self: *EnumVariantRegistry) void {
             var enum_iterator = self.enum_definitions.iterator();
             while (enum_iterator.next()) |entry| {
-                entry.value_ptr.variants.deinit(allocator);
+                entry.value_ptr.variants.deinit();
             }
-            self.enum_definitions.deinit(allocator);
-            self.variants.deinit(allocator);
+            self.enum_definitions.deinit();
+            self.variants.deinit();
         }
         
         pub fn registerEnum(self: *EnumVariantRegistry, enum_name: []const u8, variant_names: []const VariantInfo) !void {
@@ -207,7 +207,7 @@ pub const CompletePatternLLVMCodeGen = struct {
                 };
                 
                 try self.variants.put(key, info);
-                try definition.variants.append(allocator, variant_info.variant_name);
+                try definition.variants.append(variant_info.variant_name);
             }
             
             try self.enum_definitions.put(enum_name, definition);
@@ -238,9 +238,9 @@ pub const CompletePatternLLVMCodeGen = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.pattern_helpers.deinit(allocator);
-        self.enum_registry.deinit(allocator);
-        self.pattern_bindings.deinit(allocator);
+        self.pattern_helpers.deinit();
+        self.enum_registry.deinit();
+        self.pattern_bindings.deinit();
     }
     
     pub fn setCurrentFunction(self: *Self, function: c.LLVMValueRef) void {
@@ -268,8 +268,8 @@ pub const CompletePatternLLVMCodeGen = struct {
         
         var phi_values = .empty;
         var phi_blocks = .empty;
-        defer phi_values.deinit(allocator);
-        defer phi_blocks.deinit(allocator);
+        defer phi_values.deinit();
+        defer phi_blocks.deinit();
         
         // Generate case blocks
         for (enum_patterns) |pattern_case| {
@@ -292,8 +292,8 @@ pub const CompletePatternLLVMCodeGen = struct {
             
             // Execute case body
             const case_result = try self.generateExpression(pattern_case.body);
-            try phi_values.append(allocator, case_result);
-            try phi_blocks.append(allocator, c.LLVMGetInsertBlock(self.builder));
+            try phi_values.append(case_result);
+            try phi_blocks.append(c.LLVMGetInsertBlock(self.builder));
             
             _ = c.LLVMBuildBr(self.builder, merge_block);
         }
@@ -475,7 +475,7 @@ pub const CompletePatternLLVMCodeGen = struct {
                 }
             }
             if (!found) {
-                try missing_variants.append(allocator, variant_name);
+                try missing_variants.append(variant_name);
             }
         }
         

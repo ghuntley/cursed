@@ -20,7 +20,7 @@ const Codegen = @import("advanced_codegen.zig").CodeGenerator;
 /// Optimized CURSED compiler with performance enhancements
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Parse command line arguments
@@ -34,7 +34,7 @@ pub fn main() !void {
     
     // Initialize performance optimization system
     var performance_optimizer = try PerformanceOptimizer.init(allocator);
-    defer performance_optimizer.deinit(allocator);
+    defer performance_optimizer.deinit();
     
     // Apply compilation speed optimizations
     std.debug.print("🚀 Optimizing compiler performance...\n", .{});
@@ -47,7 +47,7 @@ pub fn main() !void {
     
     // Initialize compilation cache
     var compilation_cache = try CompilationCache.init(allocator, ".cursed_cache");
-    defer compilation_cache.deinit(allocator);
+    defer compilation_cache.deinit();
     
     // Enable compilation caching for faster rebuilds
     try performance_optimizer.enableCompilationCaching(".cursed_cache");
@@ -58,7 +58,7 @@ pub fn main() !void {
     var enable_parallel = false;
     var llvm_opt_level: []const u8 = "O2";
     var input_files = .empty;
-    defer input_files.deinit(allocator);
+    defer input_files.deinit();
     
     while (i < args.len) : (i += 1) {
         const arg = args[i];
@@ -100,7 +100,7 @@ pub fn main() !void {
             try runPerformanceBenchmarks(allocator, &performance_optimizer);
             return;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
-            try input_files.append(allocator, arg);
+            try input_files.append(arg);
         }
     }
     
@@ -155,13 +155,13 @@ fn compileFileOptimized(
     
     // Initialize optimized memory pool
     var memory_pool = try OptimizedMemoryPool.init(allocator);
-    defer memory_pool.deinit(allocator);
+    defer memory_pool.deinit();
     
     // Phase 1: Optimized Lexing
     if (profiler) |*p| p.startTiming(.lexing);
     
     var lexer = FastLexer.init(allocator, source);
-    defer lexer.deinit(allocator);
+    defer lexer.deinit();
     
     const tokens = try lexer.tokenizeOptimized();
     defer allocator.free(tokens);
@@ -174,14 +174,14 @@ fn compileFileOptimized(
     if (profiler) |*p| p.startTiming(.parsing);
     
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit(allocator);
+    defer arena.deinit();
     const arena_allocator = arena.allocator();
     
     // Convert FastLexer tokens to Parser tokens (adapter)
     const parser_tokens = try convertTokensToParserFormat(arena_allocator, tokens);
     
     var parser = Parser.init(arena_allocator);
-    defer parser.deinit(allocator);
+    defer parser.deinit();
     
     const ast = try parser.parseTokens(parser_tokens);
     
@@ -196,7 +196,7 @@ fn compileFileOptimized(
     
     // Phase 3: Fast Type Checking
     var type_system = try TypeSystem.init(arena_allocator);
-    defer type_system.deinit(allocator);
+    defer type_system.deinit();
     
     // Enable fast type checking optimizations
     try type_system.enableFastTypeChecking();
@@ -206,13 +206,13 @@ fn compileFileOptimized(
         return;
     }
     
-    std.debug.print("✅ Type checking passed with optimizations\n");
+    std.debug.print("✅ Type checking passed with optimizations\n", .{});
     
     // Phase 4: Optimized Code Generation
     if (profiler) |*p| p.startTiming(.codegen);
     
     var codegen = try Codegen.init(arena_allocator);
-    defer codegen.deinit(allocator);
+    defer codegen.deinit();
     
     // Configure LLVM optimization level
     try codegen.setOptimizationLevel(llvm_opt_level);
@@ -255,7 +255,7 @@ fn compileFileOptimized(
         // Profile compilation bottlenecks and suggest improvements
         const bottleneck_analysis = try optimizer.profileCompilationBottlenecks();
         if (bottleneck_analysis.bottlenecks.items.len > 0) {
-            std.debug.print("\n🔍 Performance Analysis:\n");
+            std.debug.print("\n🔍 Performance Analysis:\n", .{});
             for (bottleneck_analysis.bottlenecks.items) |bottleneck| {
                 std.debug.print("  - {s}: {d:.1}ms (suggestion: {s}, estimated improvement: {d:.1}x)\n", 
                     .{ bottleneck.phase, @as(f64, @floatFromInt(bottleneck.time_ns)) / 1_000_000, 
@@ -285,13 +285,13 @@ fn checkFileOptimized(
     
     // Initialize optimized memory pool
     var memory_pool = try OptimizedMemoryPool.init(allocator);
-    defer memory_pool.deinit(allocator);
+    defer memory_pool.deinit();
     
     // Phase 1: Fast Lexing
     if (profiler) |*p| p.startTiming(.lexing);
     
     var lexer = FastLexer.init(allocator, source);
-    defer lexer.deinit(allocator);
+    defer lexer.deinit();
     
     const tokens = try lexer.tokenizeOptimized();
     defer allocator.free(tokens);
@@ -302,26 +302,26 @@ fn checkFileOptimized(
     if (profiler) |*p| p.startTiming(.parsing);
     
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit(allocator);
+    defer arena.deinit();
     const arena_allocator = arena.allocator();
     
     const parser_tokens = try convertTokensToParserFormat(arena_allocator, tokens);
     
     var parser = Parser.init(arena_allocator);
-    defer parser.deinit(allocator);
+    defer parser.deinit();
     
     const ast = try parser.parseTokens(parser_tokens);
     
     if (profiler) |*p| p.endTiming(.parsing, if (ast) |a| countASTNodes(a) else 0);
     
     if (ast == null) {
-        std.debug.print("❌ Parsing failed\n");
+        std.debug.print("❌ Parsing failed\n", .{});
         return;
     }
     
     // Phase 3: Fast Type Checking
     var type_system = try TypeSystem.init(arena_allocator);
-    defer type_system.deinit(allocator);
+    defer type_system.deinit();
     
     try type_system.enableFastTypeChecking();
     
@@ -333,7 +333,7 @@ fn checkFileOptimized(
     const end_time = timer.read();
     const total_time = end_time - start_time;
     
-    std.debug.print("✅ Type checking passed\n");
+    std.debug.print("✅ Type checking passed\n", .{});
     std.debug.print("⏱️  Total time: {d:.3}ms\n", .{
         @as(f64, @floatFromInt(total_time)) / 1_000_000
     });
@@ -366,13 +366,13 @@ fn interpretFileOptimized(
     
     // Initialize optimized memory pool
     var memory_pool = try OptimizedMemoryPool.init(allocator);
-    defer memory_pool.deinit(allocator);
+    defer memory_pool.deinit();
     
     // Phase 1: Fast Lexing
     if (profiler) |*p| p.startTiming(.lexing);
     
     var lexer = FastLexer.init(allocator, source);
-    defer lexer.deinit(allocator);
+    defer lexer.deinit();
     
     const tokens = try lexer.tokenizeOptimized();
     defer allocator.free(tokens);
@@ -383,20 +383,20 @@ fn interpretFileOptimized(
     if (profiler) |*p| p.startTiming(.parsing);
     
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit(allocator);
+    defer arena.deinit();
     const arena_allocator = arena.allocator();
     
     const parser_tokens = try convertTokensToParserFormat(arena_allocator, tokens);
     
     var parser = Parser.init(arena_allocator);
-    defer parser.deinit(allocator);
+    defer parser.deinit();
     
     const ast = try parser.parseTokens(parser_tokens);
     
     if (profiler) |*p| p.endTiming(.parsing, if (ast) |a| countASTNodes(a) else 0);
     
     if (ast == null) {
-        std.debug.print("❌ Parsing failed\n");
+        std.debug.print("❌ Parsing failed\n", .{});
         return;
     }
     
@@ -406,7 +406,7 @@ fn interpretFileOptimized(
     const end_time = timer.read();
     const total_time = end_time - start_time;
     
-    std.debug.print("✅ Interpretation completed\n");
+    std.debug.print("✅ Interpretation completed\n", .{});
     std.debug.print("⏱️  Total time: {d:.3}ms\n", .{
         @as(f64, @floatFromInt(total_time)) / 1_000_000
     });
@@ -419,7 +419,7 @@ fn interpretFileOptimized(
 
 /// Run comprehensive performance benchmarks
 fn runPerformanceBenchmarks(allocator: Allocator, optimizer: *PerformanceOptimizer) !void {
-    std.debug.print("🏃 Running performance benchmarks...\n\n");
+    std.debug.print("🏃 Running performance benchmarks...\n\n", .{});
     
     // Benchmark 1: Lexing performance
     const test_source = 
@@ -437,14 +437,14 @@ fn runPerformanceBenchmarks(allocator: Allocator, optimizer: *PerformanceOptimiz
         \\}
     ;
     
-    std.debug.print("📝 Lexing Benchmark:\n");
+    std.debug.print("📝 Lexing Benchmark:\n", .{});
     const lexing_profile = try @import("performance_optimizer.zig").benchmarkLexer(allocator, test_source, 1000);
     lexing_profile.print();
     
     // Benchmark 2: Memory allocation performance
-    std.debug.print("🧠 Memory Allocation Benchmark:\n");
+    std.debug.print("🧠 Memory Allocation Benchmark:\n", .{});
     var memory_pool = try OptimizedMemoryPool.init(allocator);
-    defer memory_pool.deinit(allocator);
+    defer memory_pool.deinit();
     
     var timer = try Timer.start();
     const start_time = timer.read();
@@ -464,12 +464,12 @@ fn runPerformanceBenchmarks(allocator: Allocator, optimizer: *PerformanceOptimiz
     });
     
     // Benchmark 3: LLVM optimization passes
-    std.debug.print("\n⚡ LLVM Optimization Benchmark:\n");
+    std.debug.print("\n⚡ LLVM Optimization Benchmark:\n", .{});
     // This would benchmark the actual LLVM optimization passes
-    std.debug.print("  LLVM passes configured for maximum performance\n");
+    std.debug.print("  LLVM passes configured for maximum performance\n", .{});
     
     // Display overall optimization results
-    std.debug.print("\n🎯 Overall Optimization Results:\n");
+    std.debug.print("\n🎯 Overall Optimization Results:\n", .{});
     const bottleneck_analysis = try optimizer.profileCompilationBottlenecks();
     if (bottleneck_analysis.bottlenecks.items.len > 0) {
         for (bottleneck_analysis.bottlenecks.items) |bottleneck| {
@@ -477,10 +477,10 @@ fn runPerformanceBenchmarks(allocator: Allocator, optimizer: *PerformanceOptimiz
                 .{ bottleneck.phase, bottleneck.estimated_improvement });
         }
     } else {
-        std.debug.print("  - All compilation phases optimized\n");
+        std.debug.print("  - All compilation phases optimized\n", .{});
     }
     
-    std.debug.print("\n✅ Performance benchmarking completed\n");
+    std.debug.print("\n✅ Performance benchmarking completed\n", .{});
 }
 
 // Helper functions

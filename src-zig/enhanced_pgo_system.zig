@@ -344,7 +344,7 @@ pub const EnhancedPGOSystem = struct {
         }
         
         pub fn deinit(self: *CriticalPath) void {
-            self.basic_blocks.deinit(allocator);
+            self.basic_blocks.deinit();
         }
     };
     
@@ -430,7 +430,7 @@ pub const EnhancedPGOSystem = struct {
             print("📝 Creating new PGO database: {} ({})\n", .{ database_path, err });
         };
         
-        print("🎯 Enhanced PGO System initialized\n");
+        print("🎯 Enhanced PGO System initialized\n", .{});
         print("  Database path: {s}\n", .{database_path});
         print("  Hot function threshold: {}\n", .{system.hot_function_threshold});
         print("  Cold function threshold: {}\n", .{system.cold_function_threshold});
@@ -446,41 +446,41 @@ pub const EnhancedPGOSystem = struct {
         };
         
         // Cleanup data structures
-        self.function_profiles.deinit(allocator);
-        self.basic_block_profiles.deinit(allocator);
-        self.call_edge_profiles.deinit(allocator);
-        self.loop_profiles.deinit(allocator);
-        self.memory_access_profiles.deinit(allocator);
-        self.hot_functions.deinit(allocator);
-        self.cold_functions.deinit(allocator);
+        self.function_profiles.deinit();
+        self.basic_block_profiles.deinit();
+        self.call_edge_profiles.deinit();
+        self.loop_profiles.deinit();
+        self.memory_access_profiles.deinit();
+        self.hot_functions.deinit();
+        self.cold_functions.deinit();
         
         for (self.critical_paths.items) |*path| {
-            path.deinit(allocator);
+            path.deinit();
         }
-        self.critical_paths.deinit(allocator);
+        self.critical_paths.deinit();
         
-        self.inlining_candidates.deinit(allocator);
-        self.unrolling_candidates.deinit(allocator);
-        self.vectorization_candidates.deinit(allocator);
-        self.prefetch_candidates.deinit(allocator);
+        self.inlining_candidates.deinit();
+        self.unrolling_candidates.deinit();
+        self.vectorization_candidates.deinit();
+        self.prefetch_candidates.deinit();
         
         self.allocator.free(self.profile_database_path);
         
-        print("💾 Enhanced PGO System cleaned up\n");
+        print("💾 Enhanced PGO System cleaned up\n", .{});
     }
     
     /// Enable profile generation mode
     pub fn enableProfileGeneration(self: *Self) void {
         self.profile_generation_mode = true;
         self.profile_use_mode = false;
-        print("📊 Profile generation mode enabled\n");
+        print("📊 Profile generation mode enabled\n", .{});
     }
     
     /// Enable profile use mode for optimization
     pub fn enableProfileUse(self: *Self) void {
         self.profile_generation_mode = false;
         self.profile_use_mode = true;
-        print("🎯 Profile use mode enabled for optimization\n");
+        print("🎯 Profile use mode enabled for optimization\n", .{});
     }
     
     /// Enable LLVM instrumentation for automatic profiling
@@ -499,7 +499,7 @@ pub const EnhancedPGOSystem = struct {
         // Run instrumentation passes
         _ = c.LLVMRunPassManager(pass_manager, module);
         
-        print("🔧 LLVM instrumentation enabled for automatic profiling\n");
+        print("🔧 LLVM instrumentation enabled for automatic profiling\n", .{});
     }
     
     /// Record function execution profile
@@ -587,7 +587,7 @@ pub const EnhancedPGOSystem = struct {
     pub fn analyzeProfiles(self: *Self) !PGOAnalysisResult {
         const start_time = std.time.milliTimestamp();
         
-        print("🔍 Performing comprehensive PGO analysis...\n");
+        print("🔍 Performing comprehensive PGO analysis...\n", .{});
         
         var result = PGOAnalysisResult.init(self.allocator);
         
@@ -629,21 +629,21 @@ pub const EnhancedPGOSystem = struct {
     
     /// Analyze hot and cold functions
     fn analyzeHotColdFunctions(self: *Self, result: *PGOAnalysisResult) !void {
-        print("  Analyzing hot/cold functions...\n");
+        print("  Analyzing hot/cold functions...\n", .{});
         
         var iter = self.function_profiles.iterator();
         while (iter.next()) |entry| {
             const profile = entry.value_ptr;
             
             if (profile.isHotFunction(self.hot_function_threshold)) {
-                try self.hot_functions.append(allocator, profile.function_hash);
-                try result.hot_functions.append(allocator, profile.function_hash);
+                try self.hot_functions.append(profile.function_hash);
+                try result.hot_functions.append(profile.function_hash);
                 
                 // Calculate inlining score for hot functions
                 _ = profile.calculateInliningScore();
             } else if (profile.isColdFunction(self.cold_function_threshold)) {
-                try self.cold_functions.append(allocator, profile.function_hash);
-                try result.cold_functions.append(allocator, profile.function_hash);
+                try self.cold_functions.append(profile.function_hash);
+                try result.cold_functions.append(profile.function_hash);
             }
         }
         
@@ -653,7 +653,7 @@ pub const EnhancedPGOSystem = struct {
     
     /// Analyze function inlining opportunities
     fn analyzeInliningOpportunities(self: *Self, result: *PGOAnalysisResult) !void {
-        print("  Analyzing inlining opportunities...\n");
+        print("  Analyzing inlining opportunities...\n", .{});
         
         var edge_iter = self.call_edge_profiles.iterator();
         while (edge_iter.next()) |entry| {
@@ -694,8 +694,8 @@ pub const EnhancedPGOSystem = struct {
                     .recommendation = recommendation,
                 };
                 
-                try self.inlining_candidates.append(allocator, candidate);
-                try result.inlining_recommendations.append(allocator, candidate);
+                try self.inlining_candidates.append(candidate);
+                try result.inlining_recommendations.append(candidate);
             }
         }
         
@@ -704,7 +704,7 @@ pub const EnhancedPGOSystem = struct {
     
     /// Analyze loop optimization opportunities
     fn analyzeLoopOptimizations(self: *Self, result: *PGOAnalysisResult) !void {
-        print("  Analyzing loop optimizations...\n");
+        print("  Analyzing loop optimizations...\n", .{});
         
         var iter = self.loop_profiles.iterator();
         while (iter.next()) |entry| {
@@ -724,8 +724,8 @@ pub const EnhancedPGOSystem = struct {
                     .confidence = @min(@as(f64, @floatFromInt(loop_profile.execution_count)) / 100.0, 1.0),
                 };
                 
-                try self.unrolling_candidates.append(allocator, candidate);
-                try result.unrolling_recommendations.append(allocator, candidate);
+                try self.unrolling_candidates.append(candidate);
+                try result.unrolling_recommendations.append(candidate);
             }
             
             // Vectorization analysis
@@ -746,8 +746,8 @@ pub const EnhancedPGOSystem = struct {
                     .confidence = if (loop_profile.vectorizable) 0.9 else 0.5,
                 };
                 
-                try self.vectorization_candidates.append(allocator, candidate);
-                try result.vectorization_recommendations.append(allocator, candidate);
+                try self.vectorization_candidates.append(candidate);
+                try result.vectorization_recommendations.append(candidate);
             }
         }
         
@@ -757,7 +757,7 @@ pub const EnhancedPGOSystem = struct {
     
     /// Analyze memory access patterns for prefetching
     fn analyzeMemoryAccessPatterns(self: *Self, result: *PGOAnalysisResult) !void {
-        print("  Analyzing memory access patterns...\n");
+        print("  Analyzing memory access patterns...\n", .{});
         
         var iter = self.memory_access_profiles.iterator();
         while (iter.next()) |entry| {
@@ -774,8 +774,8 @@ pub const EnhancedPGOSystem = struct {
                     .confidence = estimated_benefit,
                 };
                 
-                try self.prefetch_candidates.append(allocator, candidate);
-                try result.prefetch_recommendations.append(allocator, candidate);
+                try self.prefetch_candidates.append(candidate);
+                try result.prefetch_recommendations.append(candidate);
             }
         }
         
@@ -784,11 +784,11 @@ pub const EnhancedPGOSystem = struct {
     
     /// Analyze critical execution paths
     fn analyzeCriticalPaths(self: *Self, result: *PGOAnalysisResult) !void {
-        print("  Analyzing critical execution paths...\n");
+        print("  Analyzing critical execution paths...\n", .{});
         
         // Build execution graph from basic block profiles
         var path_frequencies = std.HashMap([]const u8, f64, std.StringContext, 80).init(self.allocator);
-        defer path_frequencies.deinit();
+        defer path_frequencies.deinit(self.allocator);
         
         // Identify hot paths based on basic block sequence frequency
         var bb_iter = self.basic_block_profiles.iterator();
@@ -798,7 +798,7 @@ pub const EnhancedPGOSystem = struct {
             
             if (profile.execution_count > 1000) {  // Hot basic block threshold
                 try path_frequencies.put(bb_name, @floatFromInt(profile.execution_count));
-                try self.critical_paths.append(.{
+                try self.critical_paths.append(self.allocator, .{
                     .path_name = try self.allocator.dupe(u8, bb_name),
                     .frequency = @floatFromInt(profile.execution_count),
                     .optimization_potential = profile.execution_count * 0.1,
@@ -820,11 +820,11 @@ pub const EnhancedPGOSystem = struct {
     
     /// Analyze cross-function optimization opportunities
     fn analyzeCrossFunctionOptimizations(self: *Self, result: *PGOAnalysisResult) !void {
-        print("  Analyzing cross-function optimizations...\n");
+        print("  Analyzing cross-function optimizations...\n", .{});
         
         // Analyze call edge frequency patterns for inlining opportunities
-        var inline_candidates = std.ArrayList(CrossFunctionOptimization).init(self.allocator);
-        defer inline_candidates.deinit();
+        var inline_candidates: std.ArrayList(CrossFunctionOptimization) = .empty;
+        defer inline_candidates.deinit(self.allocator);
         
         var edge_iter = self.call_edge_profiles.iterator();
         while (edge_iter.next()) |entry| {
@@ -833,7 +833,7 @@ pub const EnhancedPGOSystem = struct {
             
             // High-frequency small functions are inline candidates
             if (profile.call_count > 100 and profile.call_frequency > 0.8) {
-                try inline_candidates.append(.{
+                try inline_candidates.append(self.allocator, .{
                     .optimization_type = .Inlining,
                     .caller_function = try self.extractCallerName(edge_name),
                     .callee_function = try self.extractCalleeName(edge_name),
@@ -861,7 +861,7 @@ pub const EnhancedPGOSystem = struct {
         // Read binary format: [magic:u32][version:u32][sections...]
         const magic = reader.readIntLittle(u32) catch return;
         if (magic != 0x50474F44) { // "PGOD" magic
-            print("  Error: Invalid profile database format\n");
+            print("  Error: Invalid profile database format\n", .{});
             return;
         }
         
@@ -953,17 +953,17 @@ pub const PGOAnalysisResult = struct {
     }
     
     pub fn deinit(self: *PGOAnalysisResult) void {
-        self.hot_functions.deinit(allocator);
-        self.cold_functions.deinit(allocator);
-        self.inlining_recommendations.deinit(allocator);
-        self.unrolling_recommendations.deinit(allocator);
-        self.vectorization_recommendations.deinit(allocator);
-        self.prefetch_recommendations.deinit(allocator);
+        self.hot_functions.deinit();
+        self.cold_functions.deinit();
+        self.inlining_recommendations.deinit();
+        self.unrolling_recommendations.deinit();
+        self.vectorization_recommendations.deinit();
+        self.prefetch_recommendations.deinit();
     }
     
     pub fn printComprehensiveSummary(self: *const PGOAnalysisResult) void {
-        print("\n📊 Comprehensive PGO Analysis Summary\n");
-        print("=====================================\n");
+        print("\n📊 Comprehensive PGO Analysis Summary\n", .{});
+        print("=====================================\n", .{});
         print("Analysis time: {} ms\n", .{self.analysis_time_ms});
         print("Hot functions: {}\n", .{self.hot_functions.items.len});
         print("Cold functions: {}\n", .{self.cold_functions.items.len});
@@ -974,7 +974,7 @@ pub const PGOAnalysisResult = struct {
         
         // Show top recommendations
         if (self.inlining_recommendations.items.len > 0) {
-            print("\n🎯 Top Inlining Recommendations:\n");
+            print("\n🎯 Top Inlining Recommendations:\n", .{});
             for (self.inlining_recommendations.items[0..@min(3, self.inlining_recommendations.items.len)]) |rec| {
                 print("  {} -> {} (benefit: {:.2}, confidence: {:.2})\n", .{
                     rec.caller_hash, rec.callee_hash, rec.estimated_benefit, rec.confidence
@@ -983,7 +983,7 @@ pub const PGOAnalysisResult = struct {
         }
         
         if (self.vectorization_recommendations.items.len > 0) {
-            print("\n⚡ Top Vectorization Opportunities:\n");
+            print("\n⚡ Top Vectorization Opportunities:\n", .{});
             for (self.vectorization_recommendations.items[0..@min(3, self.vectorization_recommendations.items.len)]) |rec| {
                 print("  Loop {} (speedup: {:.2}x, width: {})\n", .{
                     rec.loop_hash, rec.estimated_speedup, rec.vector_width
@@ -1011,8 +1011,8 @@ pub const ProfilingStatistics = struct {
     prefetch_candidates: usize,
     
     pub fn printDetailedReport(self: *const ProfilingStatistics) void {
-        print("\n📈 Detailed Profiling Statistics\n");
-        print("================================\n");
+        print("\n📈 Detailed Profiling Statistics\n", .{});
+        print("================================\n", .{});
         print("Total samples collected: {}\n", .{self.total_samples});
         print("Profiling overhead: {:.2} ms\n", .{self.profiling_overhead_ms});
         print("Analysis time: {:.2} ms\n", .{self.analysis_time_ms});
@@ -1023,7 +1023,7 @@ pub const ProfilingStatistics = struct {
         print("Memory access profiles: {}\n", .{self.memory_access_profiles});
         print("Hot functions identified: {}\n", .{self.hot_functions});
         print("Cold functions identified: {}\n", .{self.cold_functions});
-        print("Optimization candidates:\n");
+        print("Optimization candidates:\n", .{});
         print("  Inlining: {}\n", .{self.inlining_candidates});
         print("  Loop unrolling: {}\n", .{self.unrolling_candidates});
         print("  Vectorization: {}\n", .{self.vectorization_candidates});

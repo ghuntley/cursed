@@ -277,19 +277,19 @@ pub fn initializePerformanceHooks(allocator: Allocator, is_production: bool) !vo
 pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) !void {
     if (performance_hooks.getGlobalHooks()) |hooks| {
         const metrics = try hooks.getCurrentMetrics();
-        defer metrics.deinit(allocator);
+        defer metrics.deinit();
         
         // Create report content
         var report: std.ArrayList(u8) = .empty;
-        defer report.deinit(allocator);
+        defer report.deinit();
         
         const writer = report.writer();
         
-        try writer.print("# CURSED Performance Report\n\n");
+        try writer.print("# CURSED Performance Report\n\n", .{});
         try writer.print("Generated: {}\n", .{std.time.timestamp()});
         try writer.print("Uptime: {d:.2}s\n\n", .{@as(f64, @floatFromInt(metrics.timestamp)) / 1_000_000_000.0});
         
-        try writer.print("## Summary\n");
+        try writer.print("## Summary\n", .{});
         try writer.print("- Function Calls: {d}\n", .{metrics.total_function_calls});
         try writer.print("- Memory Allocations: {d}\n", .{metrics.total_memory_allocations});
         try writer.print("- Goroutines Created: {d}\n", .{metrics.total_goroutines_created});
@@ -297,7 +297,7 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
         try writer.print("- Errors: {d}\n", .{metrics.total_errors});
         try writer.print("- Average Function Time: {d:.3}ms\n", .{@as(f64, @floatFromInt(metrics.average_function_time)) / 1_000_000.0});
         
-        try writer.print("\n## Hot Paths\n");
+        try writer.print("\n## Hot Paths\n", .{});
         for (metrics.hot_paths, 0..) |hot_path, i| {
             if (i >= 20) break; // Top 20 hot paths
             try writer.print("{}. **{}**: {} calls, {d:.3}ms avg, {d:.1} calls/sec\n", .{
@@ -309,7 +309,7 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
             });
         }
         
-        try writer.print("\n## Bottlenecks\n");
+        try writer.print("\n## Bottlenecks\n", .{});
         for (metrics.bottlenecks, 0..) |bottleneck, i| {
             try writer.print("{}. **{}** ({}): {s}\n", .{
                 i + 1,
@@ -322,7 +322,7 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
             try writer.print("   - Suggested Fix: {s}\n\n", .{bottleneck.suggested_fix});
         }
         
-        try writer.print("## Resource Usage\n");
+        try writer.print("## Resource Usage\n", .{});
         try writer.print("- CPU Usage: {d:.1}%\n", .{metrics.resource_usage.cpu_usage_percent});
         try writer.print("- Memory Usage: {d:.2} MB\n", .{@as(f64, @floatFromInt(metrics.resource_usage.memory_usage_bytes)) / 1_048_576.0});
         try writer.print("- Heap Usage: {d:.2} MB\n", .{@as(f64, @floatFromInt(metrics.resource_usage.heap_usage_bytes)) / 1_048_576.0});
@@ -336,14 +336,14 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
         
         print("Performance report saved to: {s}\n", .{output_path});
     } else {
-        print("Performance hooks not initialized\n");
+        print("Performance hooks not initialized\n", .{});
     }
 }
 
 /// Cleanup performance hooks
 pub fn cleanupPerformanceHooks() void {
     performance_hooks.deinitGlobalHooks();
-    print("Performance hooks cleaned up\n");
+    print("Performance hooks cleaned up\n", .{});
 }
 
 /// Test function for performance hooks integration
@@ -379,5 +379,5 @@ pub fn testPerformanceIntegration(allocator: Allocator) !void {
     // Print summary
     performance_hooks.printGlobalReport();
     
-    print("Performance integration test completed successfully\n");
+    print("Performance integration test completed successfully\n", .{});
 }

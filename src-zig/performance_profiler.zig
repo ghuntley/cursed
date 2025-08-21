@@ -78,11 +78,11 @@ pub const PerformanceProfiler = struct {
                 .cpu_usage_percent = 0.0, // TODO: Get actual CPU usage
             };
             
-            try self.samples.append(allocator, sample);
+            try self.samples.append(sample);
         }
         
         pub fn deinit(self: *FunctionProfile) void {
-            self.samples.deinit(allocator);
+            self.samples.deinit();
         }
         
         pub fn isHotFunction(self: *const FunctionProfile) bool {
@@ -202,7 +202,7 @@ pub const PerformanceProfiler = struct {
         }
         
         pub fn deinit(self: *HotPath) void {
-            self.function_sequence.deinit(allocator);
+            self.function_sequence.deinit();
         }
         
         pub fn addExecution(self: *HotPath, time_ns: u64) void {
@@ -251,7 +251,7 @@ pub const PerformanceProfiler = struct {
         };
         
         if (profiler.profiling_enabled) {
-            print("📊 Performance profiler initialized\n");
+            print("📊 Performance profiler initialized\n", .{});
             print("  Sampling rate: {} Hz\n", .{profiler.sampling_rate_hz});
             print("  Hot path threshold: {} executions\n", .{profiler.hot_path_threshold});
             print("  Output format: {}\n", .{profiler.output_format});
@@ -275,19 +275,19 @@ pub const PerformanceProfiler = struct {
         // Cleanup data structures
         var func_iter = self.function_profiles.iterator();
         while (func_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.function_profiles.deinit(allocator);
+        self.function_profiles.deinit();
         
         var hot_path_iter = self.hot_paths.iterator();
         while (hot_path_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.hot_paths.deinit(allocator);
+        self.hot_paths.deinit();
         
-        self.memory_profiles.deinit(allocator);
-        self.cpu_profiles.deinit(allocator);
-        self.compilation_profiles.deinit(allocator);
+        self.memory_profiles.deinit();
+        self.cpu_profiles.deinit();
+        self.compilation_profiles.deinit();
         
         if (self.output_file) |file| {
             self.allocator.free(file);
@@ -337,7 +337,7 @@ pub const PerformanceProfiler = struct {
         snapshot.heap_size_bytes = 1024 * 1024; // 1MB placeholder
         snapshot.stack_size_bytes = 8 * 1024;   // 8KB placeholder
         
-        try self.memory_profiles.append(allocator, snapshot);
+        try self.memory_profiles.append(snapshot);
     }
     
     /// Take CPU snapshot
@@ -391,7 +391,7 @@ pub const PerformanceProfiler = struct {
     
     /// Identify hot paths from function call patterns
     pub fn identifyHotPaths(self: *Self) !HotPathAnalysis {
-        print("🔥 Identifying hot execution paths...\n");
+        print("🔥 Identifying hot execution paths...\n", .{});
         
         var analysis = HotPathAnalysis.init(self.allocator);
         
@@ -414,7 +414,7 @@ pub const PerformanceProfiler = struct {
         while (hot_path_iter.next()) |entry| {
             const path = entry.value_ptr;
             if (path.execution_count >= self.hot_path_threshold) {
-                try analysis.hot_paths.append(allocator, path.*);
+                try analysis.hot_paths.append(path.*);
                 print("  🛤️ Hot path {}: {} executions, {:.2} ms avg\n", .{
                     path.path_id,
                     path.execution_count,
@@ -459,8 +459,8 @@ pub const PerformanceProfiler = struct {
     fn saveTextFormat(self: *Self, file: std.fs.File) !void {
         var writer = file.writer(&[_]u8{});
         
-        try writer.print("CURSED Compiler Performance Profile\n");
-        try writer.print("===================================\n\n");
+        try writer.print("CURSED Compiler Performance Profile\n", .{});
+        try writer.print("===================================\n\n", .{});
         
         try writer.print("Profiling Duration: {:.2} seconds\n", .{
             @as(f64, @floatFromInt(std.time.nanoTimestamp() - self.start_time)) / 1_000_000_000.0
@@ -470,8 +470,8 @@ pub const PerformanceProfiler = struct {
             @as(f64, @floatFromInt(self.profiling_overhead_ns)) / 1_000_000.0
         });
         
-        try writer.print("Function Profiles:\n");
-        try writer.print("------------------\n");
+        try writer.print("Function Profiles:\n", .{});
+        try writer.print("------------------\n", .{});
         
         var func_iter = self.function_profiles.iterator();
         while (func_iter.next()) |entry| {
@@ -482,7 +482,7 @@ pub const PerformanceProfiler = struct {
             try writer.print("  Average time: {:.2} ms\n", .{@as(f64, @floatFromInt(profile.average_time_ns)) / 1_000_000.0});
             try writer.print("  Min time: {:.2} ms\n", .{@as(f64, @floatFromInt(profile.min_time_ns)) / 1_000_000.0});
             try writer.print("  Max time: {:.2} ms\n", .{@as(f64, @floatFromInt(profile.max_time_ns)) / 1_000_000.0});
-            try writer.print("\n");
+            try writer.print("\n", .{});
         }
     }
     
@@ -490,7 +490,7 @@ pub const PerformanceProfiler = struct {
     fn saveJSONFormat(self: *Self, file: std.fs.File) !void {
         var writer = file.writer(&[_]u8{});
         
-        try writer.print("{{\n");
+        try writer.print("{{\n", .{});
         try writer.print("  \"profiling_duration_ns\": {},\n", .{std.time.nanoTimestamp() - self.start_time});
         try writer.print("  \"total_samples\": {},\n", .{self.total_samples});
         try writer.print("  \"profiling_overhead_ns\": {},\n", .{self.profiling_overhead_ns});
@@ -500,28 +500,28 @@ pub const PerformanceProfiler = struct {
         var first = true;
         while (func_iter.next()) |entry| {
             const profile = entry.value_ptr;
-            if (!first) try writer.print(",\n");
+            if (!first) try writer.print(",\n", .{});
             first = false;
             
-            try writer.print("    {{\n");
+            try writer.print("    {{\n", .{});
             try writer.print("      \"name\": \"{s}\",\n", .{profile.name});
             try writer.print("      \"call_count\": {},\n", .{profile.call_count});
             try writer.print("      \"total_time_ns\": {},\n", .{profile.total_time_ns});
             try writer.print("      \"average_time_ns\": {},\n", .{profile.average_time_ns});
             try writer.print("      \"min_time_ns\": {},\n", .{profile.min_time_ns});
             try writer.print("      \"max_time_ns\": {}\n", .{profile.max_time_ns});
-            try writer.print("    }}");
+            try writer.print("    }}", .{});
         }
         
-        try writer.print("\n  ]\n");
-        try writer.print("}}\n");
+        try writer.print("\n  ]\n", .{});
+        try writer.print("}}\n", .{});
     }
     
     /// Save results in CSV format
     fn saveCSVFormat(self: *Self, file: std.fs.File) !void {
         var writer = file.writer(&[_]u8{});
         
-        try writer.print("function_name,call_count,total_time_ns,average_time_ns,min_time_ns,max_time_ns\n");
+        try writer.print("function_name,call_count,total_time_ns,average_time_ns,min_time_ns,max_time_ns\n", .{});
         
         var func_iter = self.function_profiles.iterator();
         while (func_iter.next()) |entry| {
@@ -542,7 +542,7 @@ pub const PerformanceProfiler = struct {
         var writer = file.writer(&[_]u8{});
         
         // TODO: Generate proper flamegraph SVG
-        try writer.print("<!-- Flamegraph for CURSED Compiler Performance -->\n");
+        try writer.print("<!-- Flamegraph for CURSED Compiler Performance -->\n", .{});
         try writer.print("<svg width=\"1200\" height=\"600\">\n");
         
         var func_iter = self.function_profiles.iterator();
@@ -552,14 +552,14 @@ pub const PerformanceProfiler = struct {
             _ = profile; // TODO: Implement actual flamegraph generation
         }
         
-        try writer.print("</svg>\n");
+        try writer.print("</svg>\n", .{});
     }
     
     /// Save results in Chrome tracing format
     fn saveChromeTracingFormat(self: *Self, file: std.fs.File) !void {
         var writer = file.writer(&[_]u8{});
         
-        try writer.print("{{\n");
+        try writer.print("{{\n", .{});
         try writer.print("  \"traceEvents\": [\n");
         
         // Generate Chrome tracing events from function profiles
@@ -567,29 +567,29 @@ pub const PerformanceProfiler = struct {
         var first = true;
         while (func_iter.next()) |entry| {
             const profile = entry.value_ptr;
-            if (!first) try writer.print(",\n");
+            if (!first) try writer.print(",\n", .{});
             first = false;
             
-            try writer.print("    {{\n");
+            try writer.print("    {{\n", .{});
             try writer.print("      \"name\": \"{s}\",\n", .{profile.name});
             try writer.print("      \"ph\": \"X\",\n"); // Complete event
             try writer.print("      \"ts\": {},\n", .{profile.last_call_timestamp});
             try writer.print("      \"dur\": {},\n", .{profile.average_time_ns / 1000}); // Convert to microseconds
             try writer.print("      \"pid\": 1,\n");
             try writer.print("      \"tid\": 1\n");
-            try writer.print("    }}");
+            try writer.print("    }}", .{});
         }
         
-        try writer.print("\n  ]\n");
-        try writer.print("}}\n");
+        try writer.print("\n  ]\n", .{});
+        try writer.print("}}\n", .{});
     }
     
     /// Print comprehensive profiling summary
     pub fn printSummary(self: *const Self) void {
         const duration_s = @as(f64, @floatFromInt(std.time.nanoTimestamp() - self.start_time)) / 1_000_000_000.0;
         
-        print("\n📊 Performance Profiling Summary\n");
-        print("================================\n");
+        print("\n📊 Performance Profiling Summary\n", .{});
+        print("================================\n", .{});
         print("Profiling duration: {:.2} seconds\n", .{duration_s});
         print("Total samples collected: {}\n", .{self.total_samples});
         print("Sampling rate: {:.1} samples/second\n", .{@as(f64, @floatFromInt(self.total_samples)) / duration_s});
@@ -598,7 +598,7 @@ pub const PerformanceProfiler = struct {
             @as(f64, @floatFromInt(self.profiling_overhead_ns)) / @as(f64, @floatFromInt(std.time.nanoTimestamp() - self.start_time)) * 100.0,
         });
         
-        print("\n🔍 Function Analysis:\n");
+        print("\n🔍 Function Analysis:\n", .{});
         print("Functions profiled: {}\n", .{self.function_profiles.count()});
         print("Memory snapshots: {}\n", .{self.memory_profiles.items.len});
         print("CPU snapshots: {}\n", .{self.cpu_profiles.items.len});
@@ -607,7 +607,7 @@ pub const PerformanceProfiler = struct {
         
         // Show top 5 most time-consuming functions
         if (self.function_profiles.count() > 0) {
-            print("\n🔥 Top Time-Consuming Functions:\n");
+            print("\n🔥 Top Time-Consuming Functions:\n", .{});
             // TODO: Sort functions by total time and show top 5
             var count: u8 = 0;
             var func_iter = self.function_profiles.iterator();
@@ -626,7 +626,7 @@ pub const PerformanceProfiler = struct {
         
         // Show compilation phase timings
         if (self.compilation_profiles.items.len > 0) {
-            print("\n⏱️ Compilation Phase Timings:\n");
+            print("\n⏱️ Compilation Phase Timings:\n", .{});
             for (self.compilation_profiles.items) |phase| {
                 print("  {s}: {} ms\n", .{ phase.phase_name, phase.duration_ms });
             }
@@ -710,8 +710,8 @@ pub const HotPathAnalysis = struct {
     }
     
     pub fn deinit(self: *HotPathAnalysis) void {
-        self.hot_functions.deinit(allocator);
-        self.hot_paths.deinit(allocator);
+        self.hot_functions.deinit();
+        self.hot_paths.deinit();
     }
 };
 

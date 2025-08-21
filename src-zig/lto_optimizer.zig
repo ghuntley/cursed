@@ -82,9 +82,9 @@ pub const LTOOptimizer = struct {
         }
         
         pub fn deinit(self: *IRModule) void {
-            self.functions.deinit(allocator);
-            self.global_variables.deinit(allocator);
-            self.dependencies.deinit(allocator);
+            self.functions.deinit();
+            self.global_variables.deinit();
+            self.dependencies.deinit();
         }
     };
     
@@ -134,9 +134,9 @@ pub const LTOOptimizer = struct {
         pub fn deinit(self: *CallGraph) void {
             var iter = self.nodes.iterator();
             while (iter.next()) |entry| {
-                entry.value_ptr.deinit(allocator);
+                entry.value_ptr.deinit();
             }
-            self.nodes.deinit(allocator);
+            self.nodes.deinit();
         }
         
         pub fn addFunction(self: *CallGraph, function_name: []const u8) !void {
@@ -177,8 +177,8 @@ pub const LTOOptimizer = struct {
         }
         
         pub fn deinit(self: *CallGraphNode) void {
-            self.callers.deinit(allocator);
-            self.callees.deinit(allocator);
+            self.callers.deinit();
+            self.callees.deinit();
         }
     };
     
@@ -197,9 +197,9 @@ pub const LTOOptimizer = struct {
         pub fn deinit(self: *DependencyGraph) void {
             var iter = self.modules.iterator();
             while (iter.next()) |entry| {
-                entry.value_ptr.deinit(allocator);
+                entry.value_ptr.deinit();
             }
-            self.modules.deinit(allocator);
+            self.modules.deinit();
         }
     };
     
@@ -229,11 +229,11 @@ pub const LTOOptimizer = struct {
     /// Cleanup LTO optimizer
     pub fn deinit(self: *Self) void {
         for (self.module_ir.items) |*module| {
-            module.deinit(allocator);
+            module.deinit();
         }
-        self.module_ir.deinit(allocator);
-        self.call_graph.deinit(allocator);
-        self.dependency_graph.deinit(allocator);
+        self.module_ir.deinit();
+        self.call_graph.deinit();
+        self.dependency_graph.deinit();
         
         self.printStatistics();
     }
@@ -267,7 +267,7 @@ pub const LTOOptimizer = struct {
             .hot_function = true,
             .complexity_score = 5.0,
         };
-        try module.functions.append(allocator, placeholder_func);
+        try module.functions.append(placeholder_func);
         
         const placeholder_global = GlobalVarInfo{
             .name = "global_var",
@@ -283,7 +283,7 @@ pub const LTOOptimizer = struct {
     pub fn optimize(self: *Self) !LTOResult {
         const start_time = std.time.milliTimestamp();
         
-        print("🚀 Starting Link-Time Optimization...\n");
+        print("🚀 Starting Link-Time Optimization...\n", .{});
         
         var result = LTOResult.init(self.allocator);
         
@@ -314,7 +314,7 @@ pub const LTOOptimizer = struct {
     
     /// Perform interprocedural analysis
     fn performAnalysis(self: *Self) !void {
-        print("🔍 Performing interprocedural analysis...\n");
+        print("🔍 Performing interprocedural analysis...\n", .{});
         
         // Build call graph
         for (self.module_ir.items) |*module| {
@@ -366,7 +366,7 @@ pub const LTOOptimizer = struct {
             // TODO: Extract actual dependencies from IR
             // For now, create placeholder dependencies
             if (!std.mem.eql(u8, module.name, "main")) {
-                try deps.append(allocator, "main");
+                try deps.append("main");
             }
             
             try self.dependency_graph.modules.put(module.name, deps);
@@ -375,7 +375,7 @@ pub const LTOOptimizer = struct {
     
     /// Apply comprehensive LTO optimizations
     fn applyOptimizations(self: *Self, result: *LTOResult) !void {
-        print("⚡ Applying LTO optimizations...\n");
+        print("⚡ Applying LTO optimizations...\n", .{});
         
         // 1. Function inlining
         try self.performFunctionInlining(result);
@@ -398,7 +398,7 @@ pub const LTOOptimizer = struct {
     
     /// Perform aggressive function inlining
     fn performFunctionInlining(self: *Self, result: *LTOResult) !void {
-        print("  🔗 Performing function inlining...\n");
+        print("  🔗 Performing function inlining...\n", .{});
         
         var inlined_count: u32 = 0;
         
@@ -502,7 +502,7 @@ pub const LTOOptimizer = struct {
     
     /// Eliminate dead code across modules
     fn performDeadCodeElimination(self: *Self, result: *LTOResult) !void {
-        print("  🗑️ Performing dead code elimination...\n");
+        print("  🗑️ Performing dead code elimination...\n", .{});
         const c = @import("llvm_c_api.zig");
         
         var eliminated_bytes: u64 = 0;
@@ -523,9 +523,9 @@ pub const LTOOptimizer = struct {
         if (eliminated != 0) {
             // Estimate eliminated bytes (approximation)
             eliminated_bytes = 1024; // Conservative estimate
-            print("    ✅ Dead code elimination completed\n");
+            print("    ✅ Dead code elimination completed\n", .{});
         } else {
-            print("    ℹ️  No dead code found\n");
+            print("    ℹ️  No dead code found\n", .{});
         }
         
         // Phase 1: Mark-and-sweep for dead globals (additional cleanup)
@@ -664,7 +664,7 @@ pub const LTOOptimizer = struct {
     
     /// Propagate constants across module boundaries
     fn performConstantPropagation(self: *Self, result: *LTOResult) !void {
-        print("  📊 Performing constant propagation...\n");
+        print("  📊 Performing constant propagation...\n", .{});
         
         var propagated_count: u32 = 0;
         
@@ -719,7 +719,7 @@ pub const LTOOptimizer = struct {
     fn performSCCP(self: *Self) !u32 {
         var propagated_count: u32 = 0;
         var work_list: std.ArrayList(SCCPWorkItem) = .empty;
-        defer work_list.deinit(allocator);
+        defer work_list.deinit();
         
         // Initialize SCCP algorithm
         try self.initializeSCCP(&work_list);
@@ -847,7 +847,7 @@ pub const LTOOptimizer = struct {
     
     /// Optimize global variables
     fn optimizeGlobalVariables(self: *Self, result: *LTOResult) !void {
-        print("  🌐 Optimizing global variables...\n");
+        print("  🌐 Optimizing global variables...\n", .{});
         
         var optimized_count: u32 = 0;
         
@@ -873,14 +873,14 @@ pub const LTOOptimizer = struct {
         _ = self;
         _ = result;
         
-        print("  🔄 Performing interprocedural optimization...\n");
+        print("  🔄 Performing interprocedural optimization...\n", .{});
         
         // TODO: Implement sophisticated interprocedural analysis
         // - Alias analysis
         // - Escape analysis  
         // - Side effect analysis
         
-        print("    ✅ Interprocedural optimization completed\n");
+        print("    ✅ Interprocedural optimization completed\n", .{});
     }
     
     /// Optimize tail calls
@@ -888,16 +888,16 @@ pub const LTOOptimizer = struct {
         _ = self;
         _ = result;
         
-        print("  🔚 Performing tail call optimization...\n");
+        print("  🔚 Performing tail call optimization...\n", .{});
         
         // TODO: Identify and optimize tail calls
         
-        print("    ✅ Tail call optimization completed\n");
+        print("    ✅ Tail call optimization completed\n", .{});
     }
     
     /// Generate optimized code
     fn generateOptimizedCode(self: *Self, result: *LTOResult) !void {
-        print("🏗️ Generating optimized code...\n");
+        print("🏗️ Generating optimized code...\n", .{});
         
         var total_size: u64 = 0;
         
@@ -925,18 +925,18 @@ pub const LTOOptimizer = struct {
     
     /// Print comprehensive LTO statistics
     pub fn printStatistics(self: *const Self) void {
-        print("\n🔗 Link-Time Optimization Statistics\n");
-        print("====================================\n");
+        print("\n🔗 Link-Time Optimization Statistics\n", .{});
+        print("====================================\n", .{});
         print("Optimization level: {}\n", .{self.optimization_level});
         print("Analysis time: {} ms\n", .{self.analysis_time_ms});
         print("Optimization time: {} ms\n", .{self.optimization_time_ms});
         print("Code generation time: {} ms\n", .{self.code_generation_time_ms});
-        print("\n📊 Optimizations Applied:\n");
+        print("\n📊 Optimizations Applied:\n", .{});
         print("Functions inlined: {}\n", .{self.functions_inlined});
         print("Dead code eliminated: {} bytes\n", .{self.dead_code_eliminated_bytes});
         print("Constants propagated: {}\n", .{self.constants_propagated});
         print("Global variables optimized: {}\n", .{self.global_variables_optimized});
-        print("\n📈 Analysis Results:\n");
+        print("\n📈 Analysis Results:\n", .{});
         print("Modules processed: {}\n", .{self.module_ir.items.len});
         print("Call graph nodes: {}\n", .{self.call_graph.nodes.count()});
         print("Dependency relationships: {}\n", .{self.dependency_graph.modules.count()});
@@ -991,22 +991,22 @@ pub const LTOResult = struct {
         for (self.optimized_modules.items) |module| {
             self.allocator.free(module.optimized_ir);
         }
-        self.optimized_modules.deinit(allocator);
+        self.optimized_modules.deinit();
     }
     
     pub fn printSummary(self: *const LTOResult) void {
-        print("\n📋 LTO Optimization Summary\n");
-        print("===========================\n");
+        print("\n📋 LTO Optimization Summary\n", .{});
+        print("===========================\n", .{});
         print("Total time: {} ms\n", .{self.total_time_ms});
         print("  Analysis: {} ms\n", .{self.analysis_time_ms});
         print("  Optimization: {} ms\n", .{self.optimization_time_ms});
         print("  Code generation: {} ms\n", .{self.code_generation_time_ms});
-        print("\n🎯 Optimizations:\n");
+        print("\n🎯 Optimizations:\n", .{});
         print("Functions inlined: {}\n", .{self.functions_inlined});
         print("Dead code eliminated: {} bytes\n", .{self.dead_code_eliminated_bytes});
         print("Constants propagated: {}\n", .{self.constants_propagated});
         print("Global variables optimized: {}\n", .{self.global_variables_optimized});
-        print("\n📦 Output:\n");
+        print("\n📦 Output:\n", .{});
         print("Optimized modules: {}\n", .{self.optimized_modules.items.len});
         print("Total output size: {} bytes\n", .{self.total_output_size});
         

@@ -165,7 +165,7 @@ pub const LSPHandler = struct {
     initialized: bool,
     shutdown_requested: bool,
 
-    pub fn init(allocator: Allocator) LSPHandler {
+    pub fn init() LSPHandler {
         return LSPHandler{
             .allocator = allocator,
             .documents = HashMap([]const u8, DocumentInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -179,21 +179,21 @@ pub const LSPHandler = struct {
         var iterator = self.documents.iterator();
         while (iterator.next()) |entry| {
             var doc = entry.value_ptr;
-            doc.deinit(allocator);
+            doc.deinit();
         }
-        self.documents.deinit(allocator);
+        self.documents.deinit();
     }
 
     pub fn handleMessage(self: *LSPHandler, message_text: []const u8) !?[]u8 {
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
 
         const parsed = json.parseFromSlice(LSPMessage, arena_allocator, message_text, .{}) catch |err| {
             std.log.err("Failed to parse LSP message: {}", .{err});
             return null;
         };
-        defer parsed.deinit(allocator);
+        defer parsed.deinit();
 
         if (parsed.value.method) |method| {
             if (parsed.value.id != null) {
@@ -273,7 +273,7 @@ pub const LSPHandler = struct {
         }
         
         var items = ArrayList([]const u8).init(self.allocator);
-        defer items.deinit(allocator);
+        defer items.deinit();
         
         // Add keywords
         for (self.language_data.keywords) |keyword| {
@@ -304,7 +304,7 @@ pub const LSPHandler = struct {
         
         // Build response
         var response_builder = ArrayList(u8).init(self.allocator);
-        defer response_builder.deinit(allocator);
+        defer response_builder.deinit();
         
         try response_builder.appendSlice("{\"jsonrpc\":\"2.0\",\"id\":");
         const id_str = try std.fmt.allocPrint(self.allocator, "{}", .{id.Integer});
@@ -400,11 +400,11 @@ pub const LSPHandler = struct {
 // Main LSP Server Entry Point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var handler = LSPHandler.init(allocator);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
 
     std.log.info("CURSED Language Server starting...", .{});
 
@@ -414,7 +414,7 @@ pub fn main() !void {
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
     var buffer = ArrayList(u8).init(allocator);
-    defer buffer.deinit(allocator);
+    defer buffer.deinit();
 
     while (!handler.shutdown_requested) {
         // Read Content-Length header

@@ -133,7 +133,7 @@ pub const NativeCompiler = struct {
         if (self.target_machine) |tm| {
             c.LLVMDisposeTargetMachine(tm);
         }
-        self.codegen.deinit(allocator);
+        self.codegen.deinit();
     }
     
     pub fn setOptimizationLevel(self: *NativeCompiler, level: OptimizationLevel) void {
@@ -335,7 +335,7 @@ pub const NativeCompiler = struct {
             error.OutOfMemory => return CompilationError.OutOfMemory,
             else => return CompilationError.DebugInfoError,
         };
-        defer debug_gen.deinit(allocator);
+        defer debug_gen.deinit();
         
         // Initialize debug compilation unit
         debug_gen.createCompileUnit("main.csd", ".") catch |err| switch (err) {
@@ -437,7 +437,7 @@ pub const NativeCompiler = struct {
                 std.debug.print("Failed to initialize compiler for {s}: {}\n", .{ target.getTriple(), err });
                 continue;
             };
-            defer compiler.deinit(allocator);
+            defer compiler.deinit();
             
             const output_name = try std.fmt.allocPrint(allocator, "{s}/cursed_{s}", .{ 
                 output_dir, 
@@ -673,14 +673,14 @@ pub const NativeCompiler = struct {
         defer file.close();
         
         const writer = file.writer();
-        try writer.print("# CURSED Profile Data (Generated)\n");
-        try writer.print("total_execution_time: 1000000\n");
-        try writer.print("\n[function_counts]\n");
-        try writer.print("main: 1\n");
-        try writer.print("vibez.spill: 10\n");
-        try writer.print("\n[basic_block_counts]\n");
-        try writer.print("main_entry: 1\n");
-        try writer.print("vibez_spill_entry: 10\n");
+        try writer.print("# CURSED Profile Data (Generated)\n", .{});
+        try writer.print("total_execution_time: 1000000\n", .{});
+        try writer.print("\n[function_counts]\n", .{});
+        try writer.print("main: 1\n", .{});
+        try writer.print("vibez.spill: 10\n", .{});
+        try writer.print("\n[basic_block_counts]\n", .{});
+        try writer.print("main_entry: 1\n", .{});
+        try writer.print("vibez_spill_entry: 10\n", .{});
         
         std.debug.print("Created profile data file: {s}\n", .{profile_data_path});
     }
@@ -721,7 +721,7 @@ pub const NativeCompiler = struct {
         
         // Parse profile data to identify hot functions
         var hot_functions: std.ArrayList([]const u8) = .empty;
-        defer hot_functions.deinit(allocator);
+        defer hot_functions.deinit();
         
         try self.parseProfileData(profile_data, &hot_functions);
         
@@ -863,7 +863,7 @@ pub const NativeCompiler = struct {
 pub const PerformanceBenchmark = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) PerformanceBenchmark {
+    pub fn init() PerformanceBenchmark {
         return PerformanceBenchmark{ .allocator = allocator };
     }
     
@@ -871,7 +871,7 @@ pub const PerformanceBenchmark = struct {
         const start_time = std.time.nanoTimestamp();
         
         var compiler = try NativeCompiler.init(self.allocator, target);
-        defer compiler.deinit(allocator);
+        defer compiler.deinit();
         
         const temp_output = "/tmp/cursed_benchmark";
         try compiler.compileProgram(program, temp_output);
@@ -902,7 +902,7 @@ test "native compiler initialization" {
     const allocator = std.testing.allocator;
     
     var compiler = try NativeCompiler.init(allocator, .Linux_x64);
-    defer compiler.deinit(allocator);
+    defer compiler.deinit();
     
     try std.testing.expect(compiler.target_machine != null);
     try std.testing.expect(compiler.optimization_level == .Default);

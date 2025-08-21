@@ -182,7 +182,7 @@ pub const TargetTripleNormalizer = struct {
         }
     };
     
-    pub fn init(allocator: Allocator) TargetTripleNormalizer {
+    pub fn init() TargetTripleNormalizer {
         return TargetTripleNormalizer{
             .allocator = allocator,
         };

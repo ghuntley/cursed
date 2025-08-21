@@ -6,7 +6,7 @@ const std = @import("std");
 // Simple LSP server that responds to basic requests
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     
     var stdin_buffer: [4096]u8 = undefined;
     const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);

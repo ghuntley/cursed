@@ -34,8 +34,8 @@ pub const LLVMBackendMinimal = struct {
         for (self.globals.items) |global| {
             self.allocator.free(global);
         }
-        self.functions.deinit(allocator);
-        self.globals.deinit(allocator);
+        self.functions.deinit();
+        self.globals.deinit();
     }
     
     pub fn addFunction(self: *LLVMBackendMinimal, name: []const u8, return_type: []const u8, params: []const u8, body: []const u8) !void {
@@ -116,7 +116,7 @@ pub const LLVMBackendMinimal = struct {
             for (main_statements.items) |stmt| {
                 self.allocator.free(stmt);
             }
-            main_statements.deinit(allocator);
+            main_statements.deinit();
         }
         
         while (lines.next()) |line| {
@@ -155,7 +155,7 @@ pub const LLVMBackendMinimal = struct {
     
     fn generateMainFunction(self: *LLVMBackendMinimal, statements: [][]const u8, has_functions: bool) !void {
         var main_body: std.ArrayList(u8) = .empty;
-        defer main_body.deinit(allocator);
+        defer main_body.deinit();
         
         for (statements) |stmt| {
             if (std.mem.indexOf(u8, stmt, "vibez.spill(") != null) {
@@ -243,7 +243,7 @@ pub fn compileToLLVM(allocator: Allocator, source: []const u8, output_file: []co
     print("[LLVM] Compiling CURSED program without C imports...\n", .{});
     
     var backend = try LLVMBackendMinimal.init(allocator, "cursed_module");
-    defer backend.deinit(allocator);
+    defer backend.deinit();
     
     // Parse the source to extract variable assignments and arithmetic
     try backend.compileProgram(source);

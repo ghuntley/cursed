@@ -217,7 +217,7 @@ pub const AdvancedParser = struct {
     
     pub fn parseProgram(self: *AdvancedParser) ParserError!Program {
         var program = Program.init(self.allocator);
-        errdefer program.deinit(allocator); // Clean up on error
+        errdefer program.deinit(); // Clean up on error
         
         while (!self.isAtEnd()) {
             if (self.recovery_state.error_count >= self.recovery_state.max_errors) {
@@ -250,7 +250,7 @@ pub const AdvancedParser = struct {
                 return err;
             };
             stmt_ptr.* = stmt;
-            program.statements.append(allocator, stmt_ptr) catch |err| {
+            program.statements.append(stmt_ptr) catch |err| {
                 program.allocator().destroy(stmt_ptr);
                 return err;
             };
@@ -322,7 +322,7 @@ pub const AdvancedParser = struct {
         if (self.match(.Less) or self.match(.LeftAngle)) {
             while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
                 const type_param = try self.parseTypeParameter();
-                try type_parameters.append(allocator, type_param);
+                try type_parameters.append(type_param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -335,7 +335,7 @@ pub const AdvancedParser = struct {
         
         while (!self.check(.RightParen) and !self.isAtEnd()) {
             const param = try self.parseParameter();
-            try parameters.append(allocator, param);
+            try parameters.append(param);
             
             if (!self.match(.Comma)) break;
         }
@@ -355,7 +355,7 @@ pub const AdvancedParser = struct {
             _ = self.advance();
             while (!self.check(.LeftBrace) and !self.isAtEnd()) {
                 const constraint = try self.parseWhereConstraint();
-                try where_constraints.append(allocator, constraint);
+                try where_constraints.append(constraint);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -389,7 +389,7 @@ pub const AdvancedParser = struct {
         if (self.match(.Colon)) {
             while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
                 const constraint = try self.parseTypeConstraint();
-                try constraints.append(allocator, constraint);
+                try constraints.append(constraint);
                 
                 if (!self.match(.Plus)) break;
             }
@@ -403,7 +403,7 @@ pub const AdvancedParser = struct {
         
         return TypeParameter{
             .name = name,
-            .constraints = try constraints.toOwnedSlice(allocator),
+            .constraints = try constraints.toOwnedSlice(),
             .default_type = default_type,
         };
     }
@@ -422,14 +422,14 @@ pub const AdvancedParser = struct {
         var bounds = .empty;
         while (!self.check(.Comma) and !self.check(.LeftBrace) and !self.isAtEnd()) {
             const bound = try self.parseTypeConstraint();
-            try bounds.append(allocator, bound);
+            try bounds.append(bound);
             
             if (!self.match(.Plus)) break;
         }
         
         return TypeConstraint{ .Where = TypeConstraint.WhereConstraint{
             .type_param = type_param,
-            .bounds = try bounds.toOwnedSlice(allocator),
+            .bounds = try bounds.toOwnedSlice(),
         }};
     }
     
@@ -444,7 +444,7 @@ pub const AdvancedParser = struct {
         if (self.match(.Less) or self.match(.LeftAngle)) {
             while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
                 const type_param = try self.parseTypeParameter();
-                try type_parameters.append(allocator, type_param);
+                try type_parameters.append(type_param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -463,7 +463,7 @@ pub const AdvancedParser = struct {
             }
             
             const field = try self.parseStructField();
-            try fields.append(allocator, field);
+            try fields.append(field);
             
             // Optional comma or newline
             if (self.check(.Comma) or self.check(.Newline)) {
@@ -521,7 +521,7 @@ pub const AdvancedParser = struct {
         if (self.match(.Less) or self.match(.LeftAngle)) {
             while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
                 const type_param = try self.parseTypeParameter();
-                try type_parameters.append(allocator, type_param);
+                try type_parameters.append(type_param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -534,7 +534,7 @@ pub const AdvancedParser = struct {
             _ = self.advance();
             while (!self.check(.LeftBrace) and !self.isAtEnd()) {
                 const parent = try self.parseIdentifier();
-                try extends.append(allocator, parent);
+                try extends.append(parent);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -552,7 +552,7 @@ pub const AdvancedParser = struct {
             }
             
             const method = try self.parseInterfaceMethod();
-            try methods.append(allocator, method);
+            try methods.append(method);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after interface body");
@@ -579,7 +579,7 @@ pub const AdvancedParser = struct {
         
         while (!self.check(.RightParen) and !self.isAtEnd()) {
             const param = try self.parseParameter();
-            try parameters.append(allocator, param);
+            try parameters.append(param);
             
             if (!self.match(.Comma)) break;
         }
@@ -625,7 +625,7 @@ pub const AdvancedParser = struct {
             }
             
             const arm = try self.parseMatchArm();
-            try arms.append(allocator, arm);
+            try arms.append(arm);
         }
         
         self.in_match = false;
@@ -634,7 +634,7 @@ pub const AdvancedParser = struct {
         
         _ = MatchExpression{
             .expr = expr,
-            .arms = try arms.toOwnedSlice(allocator),
+            .arms = try arms.toOwnedSlice(),
         };
         
         return Expression.Match;
@@ -678,17 +678,17 @@ pub const AdvancedParser = struct {
         
         if (self.match(.Pipe)) {
             var patterns = .empty;
-            try patterns.append(allocator, pattern);
+            try patterns.append(pattern);
             
             while (true) {
                 const next_pattern = try self.parseStructPattern();
-                try patterns.append(allocator, next_pattern);
+                try patterns.append(next_pattern);
                 
                 if (!self.match(.Pipe)) break;
             }
             
             return Pattern{ .Or = Pattern.OrPattern{
-                .patterns = try patterns.toOwnedSlice(allocator),
+                .patterns = try patterns.toOwnedSlice(),
             }};
         }
         
@@ -708,7 +708,7 @@ pub const AdvancedParser = struct {
                 _ = try self.consume(.Colon, "Expected ':' after field name");
                 const field_pattern = try self.parsePattern();
                 
-                try fields.append(allocator, Pattern.FieldPattern{
+                try fields.append(Pattern.FieldPattern{
                     .name = field_name,
                     .pattern = field_pattern,
                 });
@@ -720,7 +720,7 @@ pub const AdvancedParser = struct {
             
             return Pattern{ .Struct = Pattern.StructPattern{
                 .type_name = type_name,
-                .fields = try fields.toOwnedSlice(allocator),
+                .fields = try fields.toOwnedSlice(),
             }};
         }
         
@@ -734,7 +734,7 @@ pub const AdvancedParser = struct {
             
             while (!self.check(.RightParen) and !self.isAtEnd()) {
                 const pattern = try self.parsePattern();
-                try patterns.append(allocator, pattern);
+                try patterns.append(pattern);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -742,7 +742,7 @@ pub const AdvancedParser = struct {
             _ = try self.consume(.RightParen, "Expected ')' after tuple pattern");
             
             return Pattern{ .Tuple = Pattern.TuplePattern{
-                .patterns = try patterns.toOwnedSlice(allocator),
+                .patterns = try patterns.toOwnedSlice(),
             }};
         }
         
@@ -765,7 +765,7 @@ pub const AdvancedParser = struct {
                 }
                 
                 const pattern = try self.parsePattern();
-                try patterns.append(allocator, pattern);
+                try patterns.append(pattern);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -773,7 +773,7 @@ pub const AdvancedParser = struct {
             _ = try self.consume(.RightBracket, "Expected ']' after array pattern");
             
             return Pattern{ .Array = Pattern.ArrayPattern{
-                .patterns = try patterns.toOwnedSlice(allocator),
+                .patterns = try patterns.toOwnedSlice(),
                 .rest = rest,
             }};
         }
@@ -902,10 +902,10 @@ pub const AdvancedParser = struct {
                 var statements = .empty;
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     const stmt = try self.parseStatement();
-                    try statements.append(allocator, stmt);
+                    try statements.append(stmt);
                 }
                 
-                try cases.append(allocator, ast.SelectCase{
+                try cases.append(ast.SelectCase{
                     .channel_op = ast.ChannelOperation{ .Send = .{ 
                         .channel = Expression.Identifier, 
                         .value = Expression.Literal 
@@ -920,10 +920,10 @@ pub const AdvancedParser = struct {
                 var statements = .empty;
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     const stmt = try self.parseStatement();
-                    try statements.append(allocator, stmt);
+                    try statements.append(stmt);
                 }
                 
-                try cases.append(allocator, ast.SelectCase{
+                try cases.append(ast.SelectCase{
                     .channel_op = ast.ChannelOperation{ .Send = .{ 
                         .channel = Expression.Identifier, 
                         .value = Expression.Literal 
@@ -1121,10 +1121,10 @@ pub const AdvancedParser = struct {
             }
             
             const stmt = try self.parseStatement();
-            try statements.append(allocator, stmt);
+            try statements.append(stmt);
         }
         
-        return statements.toOwnedSlice(allocator);
+        return statements.toOwnedSlice();
     }
     
     fn parseForStatement(self: *AdvancedParser) ParserError!Statement {

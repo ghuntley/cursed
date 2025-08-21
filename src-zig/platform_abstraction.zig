@@ -596,7 +596,7 @@ pub fn runTests() !void {
     std.debug.print("Current platform: {s}\n", .{platform.name()});
     
     // Test capabilities
-    std.debug.print("Capabilities:\n");
+    std.debug.print("Capabilities:\n", .{});
     std.debug.print("  Threading: {}\n", .{Capabilities.hasThreading()});
     std.debug.print("  Networking: {}\n", .{Capabilities.hasNetworking()});
     std.debug.print("  File System: {}\n", .{Capabilities.hasFileSystem()});

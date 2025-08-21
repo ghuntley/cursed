@@ -159,7 +159,7 @@ pub const CABISignature = struct {
     }
     
     pub fn deinit(self: *CABISignature) void {
-        self.parameters.deinit(allocator);
+        self.parameters.deinit();
     }
 };
 
@@ -188,9 +188,9 @@ pub const ExternLibrary = struct {
     pub fn deinit(self: *ExternLibrary) void {
         var iterator = self.functions.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.signature.deinit(allocator);
+            entry.value_ptr.signature.deinit();
         }
-        self.functions.deinit(allocator);
+        self.functions.deinit();
         
         if (self.handle) |handle| {
             c.closeLibrary(handle);
@@ -249,7 +249,7 @@ pub const CABIBridge = struct {
     // Enhanced enum support
     enum_mapper: ffi_enum.FFIEnumMapper,
     
-    pub fn init(allocator: Allocator) CABIBridge {
+    pub fn init() CABIBridge {
         var bridge = CABIBridge{
             .allocator = allocator,
             .libraries = HashMap([]const u8, ExternLibrary, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -267,19 +267,19 @@ pub const CABIBridge = struct {
     pub fn deinit(self: *CABIBridge) void {
         var lib_iterator = self.libraries.iterator();
         while (lib_iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.libraries.deinit(allocator);
+        self.libraries.deinit();
         
-        self.type_mappings.deinit(allocator);
+        self.type_mappings.deinit();
         
         for (self.generated_wrappers.items) |wrapper| {
             self.allocator.free(wrapper);
         }
-        self.generated_wrappers.deinit(allocator);
+        self.generated_wrappers.deinit();
         
         // Clean up enum mapper
-        self.enum_mapper.deinit(allocator);
+        self.enum_mapper.deinit();
     }
     
     /// Initialize CURSED to C type mappings
@@ -373,7 +373,7 @@ pub const CABIBridge = struct {
     /// Generate CURSED wrapper for extern function
     pub fn generateWrapper(self: *CABIBridge, signature: CABISignature, library_name: []const u8) ![]const u8 {
         var wrapper = .empty;
-        defer wrapper.deinit(allocator);
+        defer wrapper.deinit();
         
         try wrapper.writer().print("// Auto-generated wrapper for extern function {s}\n", .{signature.name});
         try wrapper.writer().print("slay {s}(", .{signature.name});
@@ -409,8 +409,8 @@ pub const CABIBridge = struct {
         
         try wrapper.writer().print("}}\n\n", .{});
         
-        const result = try wrapper.toOwnedSlice(allocator);
-        try self.generated_wrappers.append(allocator, result);
+        const result = try wrapper.toOwnedSlice();
+        try self.generated_wrappers.append(result);
         return result;
     }
     
@@ -458,13 +458,13 @@ pub const CABIBridge = struct {
     /// Generate C header for CURSED functions
     pub fn generateCHeader(self: *CABIBridge, cursed_functions: []const ast.FunctionStatement) ![]const u8 {
         var header = .empty;
-        defer header.deinit(allocator);
+        defer header.deinit();
         
-        try header.writer().print("#ifndef CURSED_C_BINDINGS_H\n");
-        try header.writer().print("#define CURSED_C_BINDINGS_H\n\n");
-        try header.writer().print("#ifdef __cplusplus\n");
+        try header.writer().print("#ifndef CURSED_C_BINDINGS_H\n", .{});
+        try header.writer().print("#define CURSED_C_BINDINGS_H\n\n", .{});
+        try header.writer().print("#ifdef __cplusplus\n", .{});
         try header.writer().print("extern \"C\" {\n");
-        try header.writer().print("#endif\n\n");
+        try header.writer().print("#endif\n\n", .{});
         
         for (cursed_functions) |func| {
             // Generate C function declaration
@@ -472,20 +472,20 @@ pub const CABIBridge = struct {
             try header.writer().print("{s} cursed_{s}(", .{ c_return_type, func.name });
             
             for (func.parameters.items, 0..) |param, i| {
-                if (i > 0) try header.writer().print(", ");
+                if (i > 0) try header.writer().print(", ", .{});
                 const c_param_type = self.cursedTypeToCType(param.param_type);
                 try header.writer().print("{s} {s}", .{ c_param_type, param.name });
             }
             
-            try header.writer().print(");\n");
+            try header.writer().print(");\n", .{});
         }
         
-        try header.writer().print("\n#ifdef __cplusplus\n");
-        try header.writer().print("}\n");
-        try header.writer().print("#endif\n\n");
-        try header.writer().print("#endif // CURSED_C_BINDINGS_H\n");
+        try header.writer().print("\n#ifdef __cplusplus\n", .{});
+        try header.writer().print("}\n", .{});
+        try header.writer().print("#endif\n\n", .{});
+        try header.writer().print("#endif // CURSED_C_BINDINGS_H\n", .{});
         
-        return header.toOwnedSlice(allocator);
+        return header.toOwnedSlice();
     }
     
     /// Convert CURSED type to C type
@@ -515,30 +515,30 @@ pub const CABIBridge = struct {
     /// Generate FFI call implementation
     pub fn generateFFIRuntime(self: *CABIBridge) ![]const u8 {
         var runtime = .empty;
-        defer runtime.deinit(allocator);
+        defer runtime.deinit();
         
-        try runtime.writer().print("// Auto-generated FFI runtime for C interop\n\n");
+        try runtime.writer().print("// Auto-generated FFI runtime for C interop\n\n", .{});
         try runtime.writer().print("yeet \"cursed_ffi_internal\"\n\n");
         
-        try runtime.writer().print("// FFI call dispatcher\n");
-        try runtime.writer().print("slay cursed_ffi_call(library_name tea, function_name tea, ...args) tea {{\n");
-        try runtime.writer().print("    // Load library if not already loaded\n");
-        try runtime.writer().print("    sus lib_handle vibes = load_dynamic_library(library_name)\n");
-        try runtime.writer().print("    lowkey lib_handle == null {{\n");
+        try runtime.writer().print("// FFI call dispatcher\n", .{});
+        try runtime.writer().print("slay cursed_ffi_call(library_name tea, function_name tea, ...args) tea {{\n", .{});
+        try runtime.writer().print("    // Load library if not already loaded\n", .{});
+        try runtime.writer().print("    sus lib_handle vibes = load_dynamic_library(library_name)\n", .{});
+        try runtime.writer().print("    lowkey lib_handle == null {{\n", .{});
         try runtime.writer().print("        damn \"ERROR: Could not load library \" + library_name\n");
-        try runtime.writer().print("    }}\n\n");
+        try runtime.writer().print("    }}\n\n", .{});
         
-        try runtime.writer().print("    // Get function pointer\n");
-        try runtime.writer().print("    sus func_ptr vibes = get_function_symbol(lib_handle, function_name)\n");
-        try runtime.writer().print("    lowkey func_ptr == null {{\n");
+        try runtime.writer().print("    // Get function pointer\n", .{});
+        try runtime.writer().print("    sus func_ptr vibes = get_function_symbol(lib_handle, function_name)\n", .{});
+        try runtime.writer().print("    lowkey func_ptr == null {{\n", .{});
         try runtime.writer().print("        damn \"ERROR: Could not find function \" + function_name\n");
-        try runtime.writer().print("    }}\n\n");
+        try runtime.writer().print("    }}\n\n", .{});
         
-        try runtime.writer().print("    // Call function with arguments\n");
-        try runtime.writer().print("    damn call_c_function(func_ptr, args)\n");
-        try runtime.writer().print("}}\n\n");
+        try runtime.writer().print("    // Call function with arguments\n", .{});
+        try runtime.writer().print("    damn call_c_function(func_ptr, args)\n", .{});
+        try runtime.writer().print("}}\n\n", .{});
         
-        return runtime.toOwnedSlice(allocator);
+        return runtime.toOwnedSlice();
     }
     
     /// Enhanced enum support methods
@@ -634,11 +634,11 @@ pub const ExternParser = struct {
 // Test cases for extern ABI
 test "basic extern function parsing" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit(allocator);
+    defer bridge.deinit();
     
     const decl = "extern \"C\" int add(int a, int b)";
     var signature = try bridge.parseExternDeclaration(decl);
-    defer signature.deinit(allocator);
+    defer signature.deinit();
     
     try std.testing.expectEqualStrings("add", signature.name);
     try std.testing.expect(signature.return_type == .Int32);
@@ -649,13 +649,13 @@ test "basic extern function parsing" {
 
 test "wrapper generation" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit(allocator);
+    defer bridge.deinit();
     
     var signature = CABISignature.init(std.testing.allocator, "strlen");
-    defer signature.deinit(allocator);
+    defer signature.deinit();
     
     signature.return_type = .Int32;
-    try signature.parameters.append(allocator, CABISignature.CABIParameter{
+    try signature.parameters.append(CABISignature.CABIParameter{
         .name = "str",
         .param_type = .String,
     });
@@ -670,7 +670,7 @@ test "wrapper generation" {
 
 test "enum type parsing and mapping" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit(allocator);
+    defer bridge.deinit();
     
     // Test basic enum parsing
     const enum_decl = 
@@ -697,7 +697,7 @@ test "enum type parsing and mapping" {
 
 test "enum with different sizes" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit(allocator);
+    defer bridge.deinit();
     
     // Test char-sized enum
     const char_enum = 
@@ -720,7 +720,7 @@ test "enum with different sizes" {
 
 test "enum binding generation" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit(allocator);
+    defer bridge.deinit();
     
     const enum_decl = 
         \\enum FileMode {

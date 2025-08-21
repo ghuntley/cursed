@@ -35,7 +35,7 @@ test "parse simple variable declaration" {
     };
     defer {
         var mut_program = program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
     
     try testing.expect(program.statements.items.len == 1);
@@ -76,7 +76,7 @@ test "parse simple function definition" {
     };
     defer {
         var mut_program = program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
     
     try testing.expect(program.statements.items.len == 1);
@@ -123,7 +123,7 @@ test "parse function with parameters" {
     };
     defer {
         var mut_program = program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
     
     try testing.expect(program.statements.items.len == 1);
@@ -166,7 +166,7 @@ test "parse function call expression" {
     };
     defer {
         var mut_program = program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
     
     try testing.expect(program.statements.items.len == 1);
@@ -239,7 +239,7 @@ test "parse if statement" {
     };
     defer {
         var mut_program = program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
     
     try testing.expect(program.statements.items.len == 1);
@@ -277,7 +277,7 @@ test "parse binary expression" {
     };
     defer {
         var mut_program = program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
     
     try testing.expect(program.statements.items.len == 1);
@@ -333,7 +333,7 @@ test "parse string and identifier literals" {
     };
     defer {
         var mut_program = string_program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
     
     try testing.expect(string_program.statements.items.len == 1);
@@ -381,7 +381,7 @@ test "parse complex nested expression" {
     };
     defer {
         var mut_program = program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
     
     try testing.expect(program.statements.items.len == 1);
@@ -443,11 +443,11 @@ pub fn runAllTests(allocator: Allocator) !void {
             failed += 1;
             continue;
         };
-        std.debug.print("PASSED\n");
+        std.debug.print("PASSED\n", .{});
         passed += 1;
     }
     
-    std.debug.print("\n=== Test Results ===\n");
+    std.debug.print("\n=== Test Results ===\n", .{});
     std.debug.print("Passed: {}\n", .{passed});
     std.debug.print("Failed: {}\n", .{failed});
     std.debug.print("Total:  {}\n", .{tests.len});
@@ -478,7 +478,7 @@ fn test_simple_variable_declaration() !void {
     };
     defer {
         var mut_program = program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
     
     try testing.expect(program.statements.items.len == 1);

@@ -43,12 +43,12 @@ pub const Parser = struct {
     }
     
     pub fn deinit(self: *Parser) void {
-        self.arena.deinit(allocator);
+        self.arena.deinit();
     }
     
     pub fn parseProgram(self: *Parser) !Program {
         var program = Program.init(self.allocator);
-        errdefer program.deinit(allocator); // Clean up on error
+        errdefer program.deinit(); // Clean up on error
         
         while (!self.isAtEnd()) {
             // Skip error tokens and newlines for recovery
@@ -72,7 +72,7 @@ pub const Parser = struct {
             if (self.check(.Yeet)) {
                 if (self.parseImportStatement()) |import_stmt| {
                     program.imports.append(self.allocator, import_stmt) catch |err| {
-                        import_stmt.deinit(allocator);
+                        import_stmt.deinit();
                         return err;
                     };
                 } else |err| {
@@ -85,7 +85,7 @@ pub const Parser = struct {
             // Parse regular statements
             if (self.parseStatement()) |stmt| {
                 program.statements.append(self.allocator, stmt) catch |err| {
-                    stmt.deinit(allocator);
+                    stmt.deinit();
                     return err;
                 };
             } else |err| {
@@ -223,13 +223,13 @@ pub const Parser = struct {
         _ = try self.consume(.LeftParen, "Expected '(' after function name");
         
         var parameters = .empty;
-        errdefer parameters.deinit(allocator); // Clean up on error
+        errdefer parameters.deinit(); // Clean up on error
         
         if (!self.check(.RightParen)) {
             while (true) {
                 if (self.parseParameter()) |param| {
                     parameters.append(self.allocator, param) catch |err| {
-                        param.deinit(allocator);
+                        param.deinit();
                         return err;
                     };
                 } else |err| {
@@ -272,7 +272,7 @@ pub const Parser = struct {
         var body = .empty;
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.parseStatement()) |stmt| {
-                try body.append(allocator, stmt);
+                try body.append(stmt);
             } else |err| {
                 try self.handleParseError(err, "Failed to parse statement in function body");
                 self.synchronize();
@@ -354,7 +354,7 @@ pub const Parser = struct {
             
             while (true) {
                 const param_type = try self.parseType();
-                try type_params.append(allocator, param_type);
+                try type_params.append(param_type);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -364,7 +364,7 @@ pub const Parser = struct {
             return ast.Type{
                 .Generic = .{
                     .name = type_token.lexeme,
-                    .type_params = try type_params.toOwnedSlice(allocator),
+                    .type_params = try type_params.toOwnedSlice(),
                 }
             };
         }
@@ -662,7 +662,7 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             while (true) {
                 const arg = try self.parseExpression();
-                try arguments.append(allocator, arg);
+                try arguments.append(arg);
                 
                 if (!self.match(.Comma)) break;
                 
@@ -917,12 +917,12 @@ test "enhanced parser with error reporting" {
     const allocator = std.testing.allocator;
     
     var error_reporter = ErrorReporter.init(allocator, 10);
-    defer error_reporter.deinit(allocator);
+    defer error_reporter.deinit();
     
     // Test valid parsing
     const source = "slay main() normie { sus x normie = 42; damn x; }";
     var lexer = try enhanced_lexer.Lexer.init(allocator, source, "test.csd", &error_reporter);
-    defer lexer.deinit(allocator);
+    defer lexer.deinit();
     
     const tokens = try lexer.tokenize();
     defer allocator.free(tokens);
@@ -930,7 +930,7 @@ test "enhanced parser with error reporting" {
     var parser = Parser.init(allocator, tokens, &error_reporter);
     
     const program = try parser.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try std.testing.expect(program.statements.len > 0);
     try std.testing.expect(!error_reporter.hasErrors());

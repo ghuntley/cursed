@@ -143,7 +143,7 @@ const Lexer = struct {
             switch (ch) {
                 '(' => {
                     _ = self.advance();
-                    try tokens.append(allocator, Token{
+                    try tokens.append(Token{
                         .type = .LPAREN,
                         .value = self.input[start_pos..self.position],
                         .line = start_line,
@@ -152,7 +152,7 @@ const Lexer = struct {
                 },
                 ')' => {
                     _ = self.advance();
-                    try tokens.append(allocator, Token{
+                    try tokens.append(Token{
                         .type = .RPAREN,
                         .value = self.input[start_pos..self.position],
                         .line = start_line,
@@ -161,7 +161,7 @@ const Lexer = struct {
                 },
                 '{' => {
                     _ = self.advance();
-                    try tokens.append(allocator, Token{
+                    try tokens.append(Token{
                         .type = .LBRACE,
                         .value = self.input[start_pos..self.position],
                         .line = start_line,
@@ -170,7 +170,7 @@ const Lexer = struct {
                 },
                 '}' => {
                     _ = self.advance();
-                    try tokens.append(allocator, Token{
+                    try tokens.append(Token{
                         .type = .RBRACE,
                         .value = self.input[start_pos..self.position],
                         .line = start_line,
@@ -179,7 +179,7 @@ const Lexer = struct {
                 },
                 ',' => {
                     _ = self.advance();
-                    try tokens.append(allocator, Token{
+                    try tokens.append(Token{
                         .type = .COMMA,
                         .value = self.input[start_pos..self.position],
                         .line = start_line,
@@ -188,7 +188,7 @@ const Lexer = struct {
                 },
                 ';' => {
                     _ = self.advance();
-                    try tokens.append(allocator, Token{
+                    try tokens.append(Token{
                         .type = .SEMICOLON,
                         .value = self.input[start_pos..self.position],
                         .line = start_line,
@@ -197,7 +197,7 @@ const Lexer = struct {
                 },
                 '=' => {
                     _ = self.advance();
-                    try tokens.append(allocator, Token{
+                    try tokens.append(Token{
                         .type = .EQUAL,
                         .value = self.input[start_pos..self.position],
                         .line = start_line,
@@ -206,7 +206,7 @@ const Lexer = struct {
                 },
                 '.' => {
                     _ = self.advance();
-                    try tokens.append(allocator, Token{
+                    try tokens.append(Token{
                         .type = .DOT,
                         .value = self.input[start_pos..self.position],
                         .line = start_line,
@@ -220,7 +220,7 @@ const Lexer = struct {
                     _ = self.advance();
                     self.line += 1;
                     self.column = 1;
-                    try tokens.append(allocator, Token{
+                    try tokens.append(Token{
                         .type = .NEWLINE,
                         .value = self.input[start_pos..self.position],
                         .line = start_line,
@@ -240,7 +240,7 @@ const Lexer = struct {
             }
         }
         
-        try tokens.append(allocator, Token{
+        try tokens.append(Token{
             .type = .EOF,
             .value = "",
             .line = self.line,
@@ -282,7 +282,7 @@ const Lexer = struct {
         
         if (self.position < self.input.len) {
             self.advance(); // Skip closing quote
-            try tokens.append(allocator, Token{
+            try tokens.append(Token{
                 .type = .STRING,
                 .value = self.input[start_pos..self.position],
                 .line = line,
@@ -290,7 +290,7 @@ const Lexer = struct {
             });
         } else {
             // Unterminated string - error recovery
-            try tokens.append(allocator, Token{
+            try tokens.append(Token{
                 .type = .UNTERMINATED_STRING,
                 .value = self.input[start_pos..self.position],
                 .line = line,
@@ -323,7 +323,7 @@ const Lexer = struct {
         
         const token_type: TokenType = if (is_valid) .NUMBER else .INVALID_NUMBER;
         
-        try tokens.append(allocator, Token{
+        try tokens.append(Token{
             .type = token_type,
             .value = self.input[start_pos..self.position],
             .line = line,
@@ -342,7 +342,7 @@ const Lexer = struct {
         const value = self.input[start_pos..self.position];
         const token_type = self.getKeywordType(value);
         
-        try tokens.append(allocator, Token{
+        try tokens.append(Token{
             .type = token_type,
             .value = value,
             .line = line,
@@ -492,10 +492,10 @@ const Parser = struct {
     pub fn deinit(self: *Parser) void {
         for (self.errors.items) |error_info| {
             self.allocator.free(error_info.message);
-            error_info.suggestions.deinit(allocator);
+            error_info.suggestions.deinit();
         }
-        self.errors.deinit(allocator);
-        self.recovery_points.deinit(allocator);
+        self.errors.deinit();
+        self.recovery_points.deinit();
     }
     
     pub fn setPGOData(self: *Parser, pgo_data: *ProfileGuidedOptimizer) void {
@@ -514,7 +514,7 @@ const Parser = struct {
             for (statements.items) |stmt| {
                 self.freeASTNode(stmt);
             }
-            statements.deinit(allocator);
+            statements.deinit();
         }
         
         while (!self.isAtEnd()) {
@@ -529,7 +529,7 @@ const Parser = struct {
             
             // Parse statement with recovery
             if (self.parseStatementWithRecovery()) |stmt| {
-                try statements.append(allocator, stmt);
+                try statements.append(stmt);
                 self.removeLastRecoveryPoint();
             } else |err| {
                 // Handle error with recovery strategies
@@ -562,7 +562,7 @@ const Parser = struct {
             .scope_depth = self.scope_depth,
             .error_count = self.errors.items.len,
         };
-        try self.recovery_points.append(allocator, point);
+        try self.recovery_points.append(point);
     }
     
     fn removeLastRecoveryPoint(self: *Parser) void {
@@ -582,7 +582,7 @@ const Parser = struct {
                     while (self.errors.items.len > point.error_count) {
                         const error_info = self.errors.pop();
                         self.allocator.free(error_info.message);
-                        error_info.suggestions.deinit(allocator);
+                        error_info.suggestions.deinit();
                     }
                     return true;
                 }
@@ -658,7 +658,7 @@ const Parser = struct {
             .severity = self.getErrorSeverity(err),
         };
         
-        try self.errors.append(allocator, error_info);
+        try self.errors.append(error_info);
         
         // Apply recovery strategy
         return self.recoverToPoint(strategy);
@@ -774,7 +774,7 @@ const Parser = struct {
             print("{s} Error {}: {s}\n", .{ severity_icon, i + 1, error_info.message });
             
             if (error_info.suggestions.items.len > 0) {
-                print("   Suggestions:\n");
+                print("   Suggestions:\n", .{});
                 for (error_info.suggestions.items) |suggestion| {
                     print("   - {s}\n", .{suggestion});
                 }
@@ -836,7 +836,7 @@ const Parser = struct {
                 continue;
             }
             const stmt = try self.parseStatement();
-            try body.append(allocator, stmt);
+            try body.append(stmt);
         }
         
         if (self.peek().type == .RBRACE) {
@@ -890,11 +890,11 @@ const Parser = struct {
     fn parseFunctionCall(self: *Parser) !ASTNode {
         const start = self.current;
         var name_parts = .empty;
-        defer name_parts.deinit(allocator);
+        defer name_parts.deinit();
         
         // Parse vibez.spill pattern
         if (self.peek().type == .VIBEZ) {
-            try name_parts.append(allocator, self.advance().value);
+            try name_parts.append(self.advance().value);
             
             if (self.peek().type == .DOT) {
                 _ = self.advance(); // consume '.'
@@ -975,7 +975,7 @@ const Parser = struct {
                 for (call.args.items) |arg| {
                     self.freeASTNode(arg);
                 }
-                call.args.deinit(allocator);
+                call.args.deinit();
             },
             .YikesStatement => |yikes| {
                 if (yikes.value) |value| {
@@ -991,12 +991,12 @@ const Parser = struct {
                 for (fam.body.items) |stmt| {
                     self.freeASTNode(stmt);
                 }
-                fam.body.deinit(allocator);
+                fam.body.deinit();
                 if (fam.recovery) |recovery| {
                     for (recovery.items) |stmt| {
                         self.freeASTNode(stmt);
                     }
-                    recovery.deinit(allocator);
+                    recovery.deinit();
                 }
             },
             else => {
@@ -1011,7 +1011,7 @@ const Interpreter = struct {
     allocator: Allocator,
     errors: ArrayList([]const u8),
 
-    pub fn init(allocator: Allocator) Interpreter {
+    pub fn init() Interpreter {
         return Interpreter{
             .allocator = allocator,
             .errors = .empty,
@@ -1022,7 +1022,7 @@ const Interpreter = struct {
         for (self.errors.items) |error_msg| {
             self.allocator.free(error_msg);
         }
-        self.errors.deinit(allocator);
+        self.errors.deinit();
     }
 
     pub fn execute(self: *Interpreter, ast: ArrayList(ASTNode)) !void {
@@ -1067,7 +1067,7 @@ const Interpreter = struct {
     fn executeYikesStatement(self: *Interpreter, yikes: anytype) !void {
         print("Error created: {s}", .{yikes.name});
         if (yikes.value) |value| {
-            print(" = ");
+            print(" = ", .{});
             try printNode(value.*);
         }
         print("\n", .{});
@@ -1137,7 +1137,7 @@ const ProfileGuidedOptimizer = struct {
         hot_functions: ArrayList([]const u8),
         cold_functions: ArrayList([]const u8),
         
-        pub fn init(allocator: Allocator) ProfileData {
+        pub fn init() ProfileData {
             return ProfileData{
                 .function_counts = std.HashMap([]const u8, u64, std.hash_map.StringContext, 80).init(allocator),
                 .basic_block_counts = std.HashMap([]const u8, u64, std.hash_map.StringContext, 80).init(allocator),
@@ -1148,14 +1148,14 @@ const ProfileGuidedOptimizer = struct {
         }
         
         pub fn deinit(self: *ProfileData) void {
-            self.function_counts.deinit(allocator);
-            self.basic_block_counts.deinit(allocator);
-            self.hot_functions.deinit(allocator);
-            self.cold_functions.deinit(allocator);
+            self.function_counts.deinit();
+            self.basic_block_counts.deinit();
+            self.hot_functions.deinit();
+            self.cold_functions.deinit();
         }
     };
     
-    pub fn init(allocator: Allocator) ProfileGuidedOptimizer {
+    pub fn init() ProfileGuidedOptimizer {
         return ProfileGuidedOptimizer{
             .allocator = allocator,
             .profile_data = ProfileData.init(allocator),
@@ -1164,7 +1164,7 @@ const ProfileGuidedOptimizer = struct {
     }
     
     pub fn deinit(self: *ProfileGuidedOptimizer) void {
-        self.profile_data.deinit(allocator);
+        self.profile_data.deinit();
     }
     
     pub fn setOptimizationLevel(self: *ProfileGuidedOptimizer, level: OptimizationLevel) void {
@@ -1192,9 +1192,9 @@ const ProfileGuidedOptimizer = struct {
         
         while (iterator.next()) |entry| {
             if (entry.value_ptr.* >= hot_threshold) {
-                try self.profile_data.hot_functions.append(allocator, entry.key_ptr.*);
+                try self.profile_data.hot_functions.append(entry.key_ptr.*);
             } else {
-                try self.profile_data.cold_functions.append(allocator, entry.key_ptr.*);
+                try self.profile_data.cold_functions.append(entry.key_ptr.*);
             }
         }
     }
@@ -1234,7 +1234,7 @@ const ProfileGuidedOptimizer = struct {
             }
         }
         
-        return recommendations.toOwnedSlice(allocator);
+        return recommendations.toOwnedSlice();
     }
     
     pub fn exportProfileData(self: *ProfileGuidedOptimizer, file_path: []const u8) !void {
@@ -1244,16 +1244,16 @@ const ProfileGuidedOptimizer = struct {
         var buffered_writer = std.io.bufferedWriter(file.writer());
         const writer = buffered_writer.writer();
         
-        try writer.print("# CURSED Profile Data\n");
+        try writer.print("# CURSED Profile Data\n", .{});
         try writer.print("total_execution_time: {}\n", .{self.profile_data.total_execution_time});
-        try writer.print("\n[function_counts]\n");
+        try writer.print("\n[function_counts]\n", .{});
         
         var iterator = self.profile_data.function_counts.iterator();
         while (iterator.next()) |entry| {
             try writer.print("{s}: {}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
         }
         
-        try writer.print("\n[basic_block_counts]\n");
+        try writer.print("\n[basic_block_counts]\n", .{});
         var bb_iterator = self.profile_data.basic_block_counts.iterator();
         while (bb_iterator.next()) |entry| {
             try writer.print("{s}: {}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
@@ -1303,7 +1303,7 @@ const IncrementalParser = struct {
     cached_asts: std.HashMap(usize, ArrayList(ASTNode), std.hash_map.AutoContext(usize), 80),
     file_fingerprints: std.HashMap([]const u8, u64, std.hash_map.StringContext, 80),
     
-    pub fn init(allocator: Allocator) IncrementalParser {
+    pub fn init() IncrementalParser {
         return IncrementalParser{
             .allocator = allocator,
             .cached_tokens = std.HashMap(usize, ArrayList(Token), std.hash_map.AutoContext(usize), 80).init(allocator),
@@ -1313,9 +1313,9 @@ const IncrementalParser = struct {
     }
     
     pub fn deinit(self: *IncrementalParser) void {
-        self.cached_tokens.deinit(allocator);
-        self.cached_asts.deinit(allocator);
-        self.file_fingerprints.deinit(allocator);
+        self.cached_tokens.deinit();
+        self.cached_asts.deinit();
+        self.file_fingerprints.deinit();
     }
     
     pub fn parseIncremental(self: *IncrementalParser, file_path: []const u8, content: []const u8) !ArrayList(ASTNode) {
@@ -1337,10 +1337,10 @@ const IncrementalParser = struct {
         // File changed or not cached, parse and cache
         var lexer = Lexer.init(self.allocator, content);
         const tokens = try lexer.tokenize();
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
         
         var parser = Parser.init(self.allocator, tokens.items);
-        defer parser.deinit(allocator);
+        defer parser.deinit();
         const ast = try parser.parseWithRecovery();
         
         // Cache results
@@ -1368,7 +1368,7 @@ const IncrementalParser = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -1396,7 +1396,7 @@ pub fn main() !void {
     // Lexical analysis
     var lexer = Lexer.init(allocator, file_content);
     const tokens = try lexer.tokenize();
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
 
     print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 
@@ -1419,13 +1419,13 @@ pub fn main() !void {
         print("❌ Parser error: {any}\n", .{err});
         return;
     };
-    defer ast.deinit(allocator);
+    defer ast.deinit();
 
     print("🌳 Generated AST with {} statements\n", .{ast.items.len});
 
     // Execute with enhanced interpreter
     var interpreter = Interpreter.init(allocator);
-    defer interpreter.deinit(allocator);
+    defer interpreter.deinit();
 
     print("🚀 Interpreting CURSED program with error handling...\n", .{});
     interpreter.execute(ast) catch |err| {

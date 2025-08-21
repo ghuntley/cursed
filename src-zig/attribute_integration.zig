@@ -28,7 +28,7 @@ pub const AttributeIntegration = struct {
     allocator: Allocator,
     attribute_codegen: ?*AttributeCodeGen = null,
     
-    pub fn init(allocator: Allocator) AttributeIntegration {
+    pub fn init() AttributeIntegration {
         return AttributeIntegration{
             .allocator = allocator,
         };
@@ -36,7 +36,7 @@ pub const AttributeIntegration = struct {
     
     pub fn deinit(self: *AttributeIntegration) void {
         if (self.attribute_codegen) |codegen| {
-            codegen.deinit(allocator);
+            codegen.deinit();
             self.allocator.destroy(codegen);
         }
     }
@@ -307,11 +307,11 @@ pub fn createTestIntegration(allocator: Allocator) AttributeIntegration {
 
 test "attribute integration basic functionality" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var integration = createTestIntegration(allocator);
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     // Test that integration can be created and destroyed without issues
     try std.testing.expect(integration.attribute_codegen == null);
@@ -319,15 +319,15 @@ test "attribute integration basic functionality" {
 
 test "attribute validation" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var integration = createTestIntegration(allocator);
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     // Create a valid function attribute list
     var attrs = AttributeList.init(allocator);
-    defer attrs.deinit(allocator);
+    defer attrs.deinit();
     
     var perf_attr = try attribute_system.createPerformanceAttribute(allocator, "high", ast.SourceLocation.unknown());
     try attrs.addAttribute(perf_attr);

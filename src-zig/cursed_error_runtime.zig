@@ -84,7 +84,7 @@ pub const CursedError = struct {
         }
         
         if (self.inner_error) |inner| {
-            inner.deinit(allocator);
+            inner.deinit();
             self.allocator.destroy(inner);
         }
         
@@ -119,7 +119,7 @@ pub const CursedError = struct {
     
     pub fn toString(self: *const CursedError) ![]u8 {
         var buffer = .empty;
-        defer buffer.deinit(allocator);
+        defer buffer.deinit();
         
         const writer = buffer.writer(&[_]u8{});
         try self.format(writer);
@@ -145,14 +145,14 @@ pub const ErrorHandler = struct {
     
     pub fn deinit(self: *ErrorHandler) void {
         for (self.error_stack.items) |error_obj| {
-            error_obj.deinit(allocator);
+            error_obj.deinit();
         }
-        self.error_stack.deinit(allocator);
+        self.error_stack.deinit();
         
         for (self.function_stack.items) |func_name| {
             self.allocator.free(func_name);
         }
-        self.function_stack.deinit(allocator);
+        self.function_stack.deinit();
     }
     
     pub fn pushFunction(self: *ErrorHandler, function_name: []const u8) !void {
@@ -214,7 +214,7 @@ pub const ErrorHandler = struct {
         
         // Add contextual information
         var context = .empty;
-        defer context.deinit(allocator);
+        defer context.deinit();
         
         try context.append(self.allocator, CursedError.Context{
             .key = try self.allocator.dupe(u8, "error_location"),
@@ -228,7 +228,7 @@ pub const ErrorHandler = struct {
         
         error_obj.context = try self.allocator.dupe(CursedError.Context, context.items);
         
-        stack_trace.deinit(allocator);
+        stack_trace.deinit();
         
         try self.error_stack.append(self.allocator, error_obj);
         return error_obj;
@@ -270,7 +270,7 @@ pub const ErrorHandler = struct {
                 self.allocator.free(trace);
                 
                 error_obj.stack_trace = try self.allocator.dupe(CursedError.StackFrame, new_trace.items);
-                new_trace.deinit(allocator);
+                new_trace.deinit();
             }
         }
         
@@ -349,7 +349,7 @@ pub const ErrorHandler = struct {
 };
 
 /// C-compatible API for LLVM integration
-export fn cursed_create_error(message: [*:0]const u8, error_type: u32, code: i64) callconv(.C) ?*CursedError {
+export fn cursed_create_error(message: [*:0]const u8, error_type: u32, code: i64) callconv(.c) ?*CursedError {
     const allocator = std.heap.c_allocator; // Use C allocator for export functions
     const msg = std.mem.span(message);
     const err_type: CursedErrorType = @enumFromInt(error_type);
@@ -358,11 +358,11 @@ export fn cursed_create_error(message: [*:0]const u8, error_type: u32, code: i64
     return error_obj;
 }
 
-export fn cursed_is_error(value: ?*anyopaque) callconv(.C) bool {
+export fn cursed_is_error(value: ?*anyopaque) callconv(.c) bool {
     return value != null;
 }
 
-export fn cursed_propagate_error(error_obj: ?*CursedError) callconv(.C) void {
+export fn cursed_propagate_error(error_obj: ?*CursedError) callconv(.c) void {
     if (error_obj) |err| {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
@@ -370,11 +370,11 @@ export fn cursed_propagate_error(error_obj: ?*CursedError) callconv(.C) void {
     }
 }
 
-export fn cursed_try_begin() callconv(.C) void {
+export fn cursed_try_begin() callconv(.c) void {
     // Set up try block context
 }
 
-export fn cursed_capture_stack_trace(error_obj: ?*CursedError) callconv(.C) void {
+export fn cursed_capture_stack_trace(error_obj: ?*CursedError) callconv(.c) void {
     _ = error_obj;
     // Capture and attach stack trace
 }
@@ -391,7 +391,7 @@ pub const PropagationResult = union(enum) {
 var global_error_handler: ?*ErrorHandler = null;
 
 /// Initialize global error handler for ? operator
-export fn cursed_init_error_propagation(file_name: [*:0]const u8) callconv(.C) void {
+export fn cursed_init_error_propagation(file_name: [*:0]const u8) callconv(.c) void {
     const allocator = std.heap.c_allocator;
     const file_span = std.mem.span(file_name);
     
@@ -402,9 +402,9 @@ export fn cursed_init_error_propagation(file_name: [*:0]const u8) callconv(.C) v
 }
 
 /// Cleanup global error handler
-export fn cursed_cleanup_error_propagation() callconv(.C) void {
+export fn cursed_cleanup_error_propagation() callconv(.c) void {
     if (global_error_handler) |handler| {
-        handler.deinit(allocator);
+        handler.deinit();
         std.heap.c_allocator.destroy(handler);
         global_error_handler = null;
     }
@@ -417,7 +417,7 @@ export fn cursed_error_propagate(
     function_name: [*:0]const u8,
     _: u32,  // line (unused)
     _: u32   // column (unused)
-) callconv(.C) ?*anyopaque {
+) callconv(.c) ?*anyopaque {
     if (!is_error) {
         return result; // Not an error, return the value
     }
@@ -436,7 +436,7 @@ export fn cursed_error_propagate(
 }
 
 /// Enhanced try/catch block implementation
-export fn cursed_try_catch_begin() callconv(.C) ?*anyopaque {
+export fn cursed_try_catch_begin() callconv(.c) ?*anyopaque {
     // Return try context handle
     if (global_error_handler) |handler| {
         return @ptrCast(handler);
@@ -448,7 +448,7 @@ export fn cursed_try_catch_end(
     context: ?*anyopaque,
     had_error: bool,
     error_obj: ?*anyopaque
-) callconv(.C) void {
+) callconv(.c) void {
     _ = context;
     if (had_error and error_obj != null) {
         const err: *CursedError = @ptrCast(@alignCast(error_obj.?));
@@ -464,7 +464,7 @@ export fn cursed_create_runtime_error(
     function_name: [*:0]const u8,
     line: u32,
     column: u32
-) callconv(.C) ?*anyopaque {
+) callconv(.c) ?*anyopaque {
 
     if (global_error_handler) |handler| {
         const msg_span = std.mem.span(message);
@@ -482,7 +482,7 @@ export fn cursed_create_runtime_error(
 }
 
 /// Check if value is an error for conditional compilation
-export fn cursed_check_error(value: ?*anyopaque) callconv(.C) bool {
+export fn cursed_check_error(value: ?*anyopaque) callconv(.c) bool {
     if (value == null) return false;
     
     // Simple heuristic: if it's a CursedError pointer
@@ -495,7 +495,7 @@ test "CURSED error handling system" {
     
     // Test error creation
     var handler = ErrorHandler.init(allocator, "test.csd");
-    defer handler.deinit(allocator);
+    defer handler.deinit();
     
     const error_obj = try handler.yikes("Test error", .Runtime, 100, 1, 10);
     

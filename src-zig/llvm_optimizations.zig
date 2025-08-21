@@ -341,7 +341,7 @@ pub const LLVMOptimizationEngine = struct {
         
         // Loop-heavy code recommendations
         if (code_analysis.loop_count > 10) {
-            recommendations.append(allocator, .{
+            recommendations.append(.{
                 .pass_name = "loop-vectorize",
                 .reason = "High loop count detected",
                 .estimated_benefit = 2.5,
@@ -351,7 +351,7 @@ pub const LLVMOptimizationEngine = struct {
         
         // Function call heavy code
         if (code_analysis.function_call_count > 50) {
-            recommendations.append(allocator, .{
+            recommendations.append(.{
                 .pass_name = "inline",
                 .reason = "High function call overhead",
                 .estimated_benefit = 1.9,
@@ -361,7 +361,7 @@ pub const LLVMOptimizationEngine = struct {
         
         // Memory intensive code
         if (code_analysis.memory_operations > 100) {
-            recommendations.append(allocator, .{
+            recommendations.append(.{
                 .pass_name = "memcpyopt",
                 .reason = "Memory operation optimization needed",
                 .estimated_benefit = 1.3,
@@ -369,7 +369,7 @@ pub const LLVMOptimizationEngine = struct {
             }) catch {};
         }
         
-        return recommendations.toOwnedSlice(allocator) catch &[_]OptimizationRecommendation{};
+        return recommendations.toOwnedSlice() catch &[_]OptimizationRecommendation{};
     }
 };
 

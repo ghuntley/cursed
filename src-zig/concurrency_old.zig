@@ -129,7 +129,7 @@ pub fn Channel(comptime T: type) type {
 
         pub fn deinit(self: *Self) void {
             self.close();
-            self.buffer.deinit(allocator);
+            self.buffer.deinit();
             
             // Unregister from global registry
             if (getChannelRegistry()) |registry| {
@@ -156,7 +156,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
 
-                try self.buffer.append(allocator, value);
+                try self.buffer.append(value);
                 self.recv_condition.signal();
                 self.stats.total_sent += 1;
                 return SendResult.sent;
@@ -171,7 +171,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
 
-            try self.buffer.append(allocator, value);
+            try self.buffer.append(value);
             self.recv_condition.signal();
             self.stats.total_sent += 1;
             return SendResult.sent;
@@ -197,7 +197,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
 
-                try self.buffer.append(allocator, value);
+                try self.buffer.append(value);
                 self.recv_condition.signal();
                 self.stats.total_sent += 1;
                 return SendResult.sent;
@@ -213,7 +213,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
 
-            try self.buffer.append(allocator, value);
+            try self.buffer.append(value);
             self.recv_condition.signal();
             self.stats.total_sent += 1;
             return SendResult.sent;
@@ -381,7 +381,7 @@ pub const WorkStealingDeque = struct {
     bottom: Atomic(usize),
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .items = .empty,
             .mutex = Mutex{},
@@ -392,7 +392,7 @@ pub const WorkStealingDeque = struct {
     }
 
     pub fn deinit(self: *Self) void {
-        self.items.deinit(allocator);
+        self.items.deinit();
     }
 
     /// Push goroutine to bottom (owner thread only)
@@ -400,7 +400,7 @@ pub const WorkStealingDeque = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
 
-        try self.items.append(allocator, goroutine);
+        try self.items.append(goroutine);
         self.bottom.store(self.items.items.len, .release);
     }
 
@@ -464,7 +464,7 @@ pub const Worker = struct {
 
     pub fn deinit(self: *Worker) void {
         self.stop();
-        self.deque.deinit(allocator);
+        self.deque.deinit();
     }
 
     pub fn start(self: *Worker) !void {
@@ -615,15 +615,15 @@ pub const Scheduler = struct {
         self.stop();
         
         for (self.workers.items) |*worker| {
-            worker.deinit(allocator);
+            worker.deinit();
         }
-        self.workers.deinit(allocator);
+        self.workers.deinit();
         
         // Clean up remaining goroutines
         for (self.global_queue.items) |goroutine| {
             self.allocator.destroy(goroutine);
         }
-        self.global_queue.deinit(allocator);
+        self.global_queue.deinit();
     }
 
     pub fn start(self: *Scheduler) !void {
@@ -688,7 +688,7 @@ pub const Scheduler = struct {
             // Fallback to global queue
             self.global_mutex.lock();
             defer self.global_mutex.unlock();
-            try self.global_queue.append(allocator, goroutine);
+            try self.global_queue.append(goroutine);
         }
     }
 
@@ -743,7 +743,7 @@ pub const Select = struct {
     has_default: bool,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) Select {
+    pub fn init() Select {
         return Select{
             .operations = .empty,
             .timeout_ms = null,
@@ -753,24 +753,24 @@ pub const Select = struct {
     }
 
     pub fn deinit(self: *Select) void {
-        self.operations.deinit(allocator);
+        self.operations.deinit();
     }
 
     pub fn addSend(self: *Select, channel_id: ChannelId, case_index: usize) !void {
-        try self.operations.append(allocator, SelectOperation{
+        try self.operations.append(SelectOperation{
             .send = .{ .channel_id = channel_id, .case_index = case_index },
         });
     }
 
     pub fn addReceive(self: *Select, channel_id: ChannelId, case_index: usize) !void {
-        try self.operations.append(allocator, SelectOperation{
+        try self.operations.append(SelectOperation{
             .receive = .{ .channel_id = channel_id, .case_index = case_index },
         });
     }
 
     pub fn addDefault(self: *Select, case_index: usize) !void {
         self.has_default = true;
-        try self.operations.append(allocator, SelectOperation{
+        try self.operations.append(SelectOperation{
             .default = .{ .case_index = case_index },
         });
     }
@@ -793,24 +793,24 @@ pub const Select = struct {
 
             // Try all operations
             var ready_ops = .empty;
-            defer ready_ops.deinit(allocator);
+            defer ready_ops.deinit();
 
             for (self.operations.items, 0..) |op, i| {
                 switch (op) {
                     .send => |send_op| {
                         // Check if send is possible
                         if (canSendToChannel(send_op.channel_id)) {
-                            try ready_ops.append(allocator, i);
+                            try ready_ops.append(i);
                         }
                     },
                     .receive => |recv_op| {
                         // Check if receive is possible
                         if (canReceiveFromChannel(recv_op.channel_id)) {
-                            try ready_ops.append(allocator, i);
+                            try ready_ops.append(i);
                         }
                     },
                     .default => {
-                        try ready_ops.append(allocator, i);
+                        try ready_ops.append(i);
                     },
                 }
             }
@@ -865,7 +865,7 @@ pub const ChannelRegistry = struct {
     mutex: Mutex,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) ChannelRegistry {
+    pub fn init() ChannelRegistry {
         return ChannelRegistry{
             .channels = std.AutoHashMap(ChannelId, *anyopaque).init(allocator),
             .mutex = Mutex{},
@@ -876,7 +876,7 @@ pub const ChannelRegistry = struct {
     pub fn deinit(self: *ChannelRegistry) void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        self.channels.deinit(allocator);
+        self.channels.deinit();
     }
 
     pub fn register(self: *ChannelRegistry, channel_id: ChannelId, channel_ptr: *anyopaque) !void {
@@ -933,7 +933,7 @@ fn shutdownChannelRegistry(allocator: Allocator) void {
     defer channel_registry_mutex.unlock();
 
     if (global_channel_registry) |registry| {
-        registry.deinit(allocator);
+        registry.deinit();
         allocator.destroy(registry);
         global_channel_registry = null;
     }
@@ -974,7 +974,7 @@ pub fn shutdownScheduler(allocator: Allocator) void {
     defer scheduler_mutex.unlock();
 
     if (global_scheduler) |scheduler| {
-        scheduler.deinit(allocator);
+        scheduler.deinit();
         allocator.destroy(scheduler);
         global_scheduler = null;
     }
@@ -1090,7 +1090,7 @@ test "channel send and receive" {
     
     var channel = try makeChannel(i32, allocator, 3);
     defer {
-        channel.deinit(allocator);
+        channel.deinit();
         allocator.destroy(channel);
     }
 
@@ -1110,7 +1110,7 @@ test "channel close behavior" {
     
     var channel = try makeChannel(i32, allocator, 1);
     defer {
-        channel.deinit(allocator);
+        channel.deinit();
         allocator.destroy(channel);
     }
 
@@ -1129,7 +1129,7 @@ test "select statement creation" {
     const allocator = std.testing.allocator;
     
     var select_stmt = Select.init(allocator);
-    defer select_stmt.deinit(allocator);
+    defer select_stmt.deinit();
 
     try select_stmt.addDefault(0);
     try std.testing.expect(select_stmt.has_default);
@@ -1142,7 +1142,7 @@ test "work-stealing deque" {
     const allocator = std.testing.allocator;
     
     var deque = WorkStealingDeque.init(allocator);
-    defer deque.deinit(allocator);
+    defer deque.deinit();
 
     var goroutine = Goroutine.init(allocator, 1, undefined, null);
     

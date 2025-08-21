@@ -4,8 +4,7 @@ const std = @import("std");
 test "parser basic functionality" {
     // Basic test to ensure build system works
     const allocator = std.testing.allocator;
-    _ = allocator;
-    
+        
     // Test that we can run tests
     try std.testing.expect(true);
 }

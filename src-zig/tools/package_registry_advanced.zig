@@ -37,11 +37,11 @@ pub const PackageRegistry = struct {
     pub fn deinit(self: *PackageRegistry) void {
         self.allocator.free(self.registry_url);
         if (self.auth_token) |token| self.allocator.free(token);
-        self.cache.deinit(allocator);
-        self.analytics.deinit(allocator);
-        self.security_scanner.deinit(allocator);
-        self.curator.deinit(allocator);
-        self.discovery.deinit(allocator);
+        self.cache.deinit();
+        self.analytics.deinit();
+        self.security_scanner.deinit();
+        self.curator.deinit();
+        self.discovery.deinit();
     }
     
     pub fn setAuthToken(self: *PackageRegistry, token: []const u8) !void {
@@ -200,7 +200,7 @@ pub const PackageMetadata = struct {
         verified_download: bool,
     };
     
-    pub fn init(allocator: Allocator) PackageMetadata {
+    pub fn init() PackageMetadata {
         return PackageMetadata{
             .name = "",
             .version = "",
@@ -226,12 +226,12 @@ pub const PackageMetadata = struct {
     }
     
     pub fn deinit(self: *PackageMetadata) void {
-        self.authors.deinit(allocator);
-        self.keywords.deinit(allocator);
-        self.categories.deinit(allocator);
-        self.dependencies.deinit(allocator);
-        self.security_status.vulnerabilities.deinit(allocator);
-        self.reviews.deinit(allocator);
+        self.authors.deinit();
+        self.keywords.deinit();
+        self.categories.deinit();
+        self.dependencies.deinit();
+        self.security_status.vulnerabilities.deinit();
+        self.reviews.deinit();
     }
 };
 
@@ -244,7 +244,7 @@ pub const RegistryCache = struct {
     ttl_cache: HashMap([]const u8, i64, std.hash_map.StringContext, 80),
     cache_duration: i64 = 3600, // 1 hour in seconds
     
-    pub fn init(allocator: Allocator) RegistryCache {
+    pub fn init() RegistryCache {
         return RegistryCache{
             .allocator = allocator,
             .package_cache = HashMap([]const u8, PackageMetadata, std.hash_map.StringContext, 80).init(allocator),
@@ -258,18 +258,18 @@ pub const RegistryCache = struct {
         var package_iter = self.package_cache.iterator();
         while (package_iter.next()) |entry| {
             var metadata = entry.value_ptr;
-            metadata.deinit(allocator);
+            metadata.deinit();
         }
         
         var search_iter = self.search_cache.iterator();
         while (search_iter.next()) |entry| {
             var result = entry.value_ptr;
-            result.deinit(allocator);
+            result.deinit();
         }
         
-        self.package_cache.deinit(allocator);
-        self.search_cache.deinit(allocator);
-        self.ttl_cache.deinit(allocator);
+        self.package_cache.deinit();
+        self.search_cache.deinit();
+        self.ttl_cache.deinit();
     }
     
     pub fn get(self: *RegistryCache, key: []const u8) ?PackageMetadata {
@@ -295,7 +295,7 @@ pub const RegistryCache = struct {
     
     fn invalidate(self: *RegistryCache, key: []const u8) void {
         if (self.package_cache.getPtr(key)) |metadata| {
-            metadata.deinit(allocator);
+            metadata.deinit();
         }
         _ = self.package_cache.remove(key);
         _ = self.ttl_cache.remove(key);
@@ -330,7 +330,7 @@ pub const SearchQuery = struct {
     }
     
     pub fn deinit(self: *SearchQuery) void {
-        self.categories.deinit(allocator);
+        self.categories.deinit();
     }
 };
 
@@ -340,7 +340,7 @@ pub const SearchResult = struct {
     query_time_ms: u32,
     suggestions: ArrayList([]const u8),
     
-    pub fn init(allocator: Allocator) SearchResult {
+    pub fn init() SearchResult {
         return SearchResult{
             .packages = ArrayList(PackageMetadata).init(allocator),
             .total_count = 0,
@@ -351,10 +351,10 @@ pub const SearchResult = struct {
     
     pub fn deinit(self: *SearchResult) void {
         for (self.packages.items) |*pkg| {
-            pkg.deinit(allocator);
+            pkg.deinit();
         }
-        self.packages.deinit(allocator);
-        self.suggestions.deinit(allocator);
+        self.packages.deinit();
+        self.suggestions.deinit();
     }
 };
 
@@ -373,7 +373,7 @@ pub const SecurityScanner = struct {
         quarantine_critical: bool = true,
     };
     
-    pub fn init(allocator: Allocator) SecurityScanner {
+    pub fn init() SecurityScanner {
         return SecurityScanner{
             .allocator = allocator,
             .vulnerability_db = HashMap([]const u8, ArrayList(PackageMetadata.SecurityStatus.Vulnerability), std.hash_map.StringContext, 80).init(allocator),
@@ -384,9 +384,9 @@ pub const SecurityScanner = struct {
     pub fn deinit(self: *SecurityScanner) void {
         var iter = self.vulnerability_db.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.vulnerability_db.deinit(allocator);
+        self.vulnerability_db.deinit();
     }
     
     pub fn scanPackage(self: *SecurityScanner, package_name: []const u8, version: []const u8) !PackageMetadata.SecurityStatus {
@@ -467,7 +467,7 @@ pub const PackageCurator = struct {
         security_weight: f32 = 0.10,
     };
     
-    pub fn init(allocator: Allocator) PackageCurator {
+    pub fn init() PackageCurator {
         var curator = PackageCurator{
             .allocator = allocator,
             .curation_rules = ArrayList(CurationRule).init(allocator),
@@ -481,7 +481,7 @@ pub const PackageCurator = struct {
     }
     
     pub fn deinit(self: *PackageCurator) void {
-        self.curation_rules.deinit(allocator);
+        self.curation_rules.deinit();
     }
     
     fn initDefaultRules(self: *PackageCurator) !void {
@@ -627,7 +627,7 @@ pub const AnalyticsEngine = struct {
         };
     };
     
-    pub fn init(allocator: Allocator) AnalyticsEngine {
+    pub fn init() AnalyticsEngine {
         return AnalyticsEngine{
             .allocator = allocator,
             .events = ArrayList(AnalyticsEvent).init(allocator),
@@ -637,17 +637,17 @@ pub const AnalyticsEngine = struct {
     
     pub fn deinit(self: *AnalyticsEngine) void {
         for (self.events.items) |*event| {
-            event.metadata.deinit(allocator);
+            event.metadata.deinit();
         }
-        self.events.deinit(allocator);
+        self.events.deinit();
         
         var stats_iter = self.aggregated_stats.iterator();
         while (stats_iter.next()) |entry| {
             var stats = entry.value_ptr;
-            stats.daily_downloads.deinit(allocator);
-            stats.geographic_distribution.deinit(allocator);
+            stats.daily_downloads.deinit();
+            stats.geographic_distribution.deinit();
         }
-        self.aggregated_stats.deinit(allocator);
+        self.aggregated_stats.deinit();
     }
     
     pub fn recordEvent(self: *AnalyticsEngine, event: AnalyticsEvent) !void {
@@ -708,7 +708,7 @@ pub const DiscoveryEngine = struct {
         category: PackageMetadata.Category,
     };
     
-    pub fn init(allocator: Allocator) DiscoveryEngine {
+    pub fn init() DiscoveryEngine {
         return DiscoveryEngine{
             .allocator = allocator,
             .recommendation_cache = HashMap([]const u8, ArrayList([]const u8), std.hash_map.StringContext, 80).init(allocator),
@@ -719,10 +719,10 @@ pub const DiscoveryEngine = struct {
     pub fn deinit(self: *DiscoveryEngine) void {
         var iter = self.recommendation_cache.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.recommendation_cache.deinit(allocator);
-        self.trending_packages.deinit(allocator);
+        self.recommendation_cache.deinit();
+        self.trending_packages.deinit();
     }
     
     pub fn getRecommendations(self: *DiscoveryEngine, context: RecommendationContext) !ArrayList([]const u8) {
@@ -733,7 +733,7 @@ pub const DiscoveryEngine = struct {
         // Category-based recommendations
         for (context.user_categories.items) |category| {
             const category_recs = try self.getCategoryRecommendations(category);
-            defer category_recs.deinit(allocator);
+            defer category_recs.deinit();
             
             for (category_recs.items) |rec| {
                 try recommendations.append(try self.allocator.dupe(u8, rec));
@@ -743,7 +743,7 @@ pub const DiscoveryEngine = struct {
         // Usage pattern recommendations
         if (context.current_dependencies.items.len > 0) {
             const pattern_recs = try self.getPatternRecommendations(context.current_dependencies);
-            defer pattern_recs.deinit(allocator);
+            defer pattern_recs.deinit();
             
             for (pattern_recs.items) |rec| {
                 try recommendations.append(try self.allocator.dupe(u8, rec));
@@ -837,7 +837,7 @@ pub const RecommendationContext = struct {
     
     pub const ProjectType = enum { web_app, cli_tool, library, game, desktop_app };
     
-    pub fn init(allocator: Allocator) RecommendationContext {
+    pub fn init() RecommendationContext {
         return RecommendationContext{
             .user_categories = ArrayList(PackageMetadata.Category).init(allocator),
             .current_dependencies = ArrayList([]const u8).init(allocator),
@@ -845,8 +845,8 @@ pub const RecommendationContext = struct {
     }
     
     pub fn deinit(self: *RecommendationContext) void {
-        self.user_categories.deinit(allocator);
-        self.current_dependencies.deinit(allocator);
+        self.user_categories.deinit();
+        self.current_dependencies.deinit();
     }
 };
 
