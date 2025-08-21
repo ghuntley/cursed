@@ -90,6 +90,7 @@ pub const MacroHygieneContext = struct {
         symbols_introduced: ArrayList([]const u8),
         
         pub fn init(allocator: Allocator, id: u32, macro_name: []const u8, location: []const u8) MacroExpansion {
+            _ = allocator;
             return MacroExpansion{
                 .id = id,
                 .macro_name = macro_name,
@@ -451,7 +452,7 @@ pub const MacroHygieneContext = struct {
         
         // 5. Check for temporal scope violations in nested contexts
         if (self.expansion_stack.items.len > 1) {
-            const current_time = @intCast(u64, std.time.timestamp());
+            const current_time = @as(u64, @intCast(std.time.timestamp()));
             if (self.symbolAccessedAfterScopeEnd(symbol_name, expansion, current_time)) {
                 return true; // Temporal scope violation
             }

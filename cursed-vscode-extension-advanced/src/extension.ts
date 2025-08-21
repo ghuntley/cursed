@@ -1,202 +1,121 @@
+/**
+ * Advanced CURSED Language Extension for VS Code
+ * World-class IDE support with refactoring, code generation, and analysis
+ */
+
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { 
-    LanguageClient, 
-    LanguageClientOptions, 
+import {
+    LanguageClient,
+    LanguageClientOptions,
     ServerOptions,
-    TransportKind
+    TransportKind,
+    RevealOutputChannelOn,
+    InitializeParams,
+    ExecuteCommandParams,
+    TextDocumentPositionParams,
+    Range,
+    Position,
+    TextEdit,
+    WorkspaceEdit,
+    CodeLens,
+    CodeAction,
+    CodeActionKind,
+    Diagnostic,
+    DocumentSymbol,
+    SymbolInformation,
+    Location,
+    Hover,
+    CompletionList,
+    SignatureHelp,
+    ReferenceContext,
+    CallHierarchyItem,
+    TypeHierarchyItem,
+    InlayHint,
 } from 'vscode-languageclient/node';
-import { CursedProjectExplorer } from './projectExplorer';
-import { CursedDependencyProvider } from './dependencyProvider';
-import { CursedDebugProvider } from './debugProvider';
+
 import { CursedTaskProvider } from './taskProvider';
-import { CursedTerminalManager } from './terminalManager';
-import { CursedPerformanceAnalyzer } from './performanceAnalyzer';
-import { CursedCodeLensProvider } from './codeLensProvider';
-import { CursedDocumentFormatter } from './formatter';
-import { CursedDocumentSymbolProvider } from './symbolProvider';
-import { CursedReferenceProvider } from './referenceProvider';
-import { CursedRenameProvider } from './renameProvider';
-import { CursedDefinitionProvider } from './definitionProvider';
-import { CursedHoverProvider } from './hoverProvider';
-import { CursedCompletionProvider } from './completionProvider';
-import { CursedDiagnosticProvider } from './diagnosticProvider';
-import { CursedSemanticTokensProvider } from './semanticTokensProvider';
+import { CursedDebugAdapterDescriptorFactory } from './debugAdapter';
+import { CursedTestController } from './testController';
+import { CursedCodeActionProvider } from './codeActionProvider';
+import { CursedRefactoringProvider } from './refactoringProvider';
+import { CursedCodeGenerationProvider } from './codeGenerationProvider';
+import { CursedAnalysisProvider } from './analysisProvider';
 
 let client: LanguageClient;
-let projectExplorer: CursedProjectExplorer;
-let dependencyProvider: CursedDependencyProvider;
-let terminalManager: CursedTerminalManager;
-let performanceAnalyzer: CursedPerformanceAnalyzer;
+let outputChannel: vscode.OutputChannel;
+let taskProvider: vscode.Disposable;
+let debugAdapterFactory: vscode.Disposable;
+let testController: CursedTestController;
 
-export async function activate(context: vscode.ExtensionContext) {
-    console.log('CURSED Advanced Extension activating...');
-
-    // Initialize terminal manager
-    terminalManager = new CursedTerminalManager();
+export function activate(context: vscode.ExtensionContext) {
+    console.log('Advanced CURSED Language Extension is activating...');
     
-    // Initialize performance analyzer
-    performanceAnalyzer = new CursedPerformanceAnalyzer(context);
+    // Create output channel
+    outputChannel = vscode.window.createOutputChannel('CURSED Language Server');
+    context.subscriptions.push(outputChannel);
     
-    // Check if CURSED compiler is available
-    const compilerPath = vscode.workspace.getConfiguration('cursed').get<string>('compiler.path', 'cursed-zig');
-    const compilerAvailable = await checkCompilerAvailability(compilerPath);
-    
-    if (!compilerAvailable) {
-        vscode.window.showWarningMessage(
-            'CURSED compiler not found. Some features may not work properly.',
-            'Install CURSED',
-            'Configure Path'
-        ).then(selection => {
-            if (selection === 'Install CURSED') {
-                vscode.env.openExternal(vscode.Uri.parse('https://cursed-lang.org/install'));
-            } else if (selection === 'Configure Path') {
-                vscode.commands.executeCommand('workbench.action.openSettings', 'cursed.compiler.path');
-            }
-        });
-    }
-
-    // Start Language Server
-    await startLanguageServer(context);
-    
-    // Initialize project explorer
-    projectExplorer = new CursedProjectExplorer(context);
-    vscode.window.registerTreeDataProvider('cursedProjectExplorer', projectExplorer);
-    
-    // Initialize dependency provider
-    dependencyProvider = new CursedDependencyProvider(context);
-    vscode.window.registerTreeDataProvider('cursedDependencies', dependencyProvider);
+    // Initialize LSP client
+    initializeLanguageClient(context);
     
     // Register providers
-    const documentSelector = [
-        { language: 'cursed', scheme: 'file' },
-        { language: 'cursed', scheme: 'untitled' }
-    ];
-    
-    // Code lens provider for performance hints and actions
-    context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider(
-            documentSelector,
-            new CursedCodeLensProvider()
-        )
-    );
-    
-    // Document formatter
-    context.subscriptions.push(
-        vscode.languages.registerDocumentFormattingEditProvider(
-            documentSelector,
-            new CursedDocumentFormatter()
-        )
-    );
-    
-    // Symbol provider for outline view
-    context.subscriptions.push(
-        vscode.languages.registerDocumentSymbolProvider(
-            documentSelector,
-            new CursedDocumentSymbolProvider()
-        )
-    );
-    
-    // Reference provider
-    context.subscriptions.push(
-        vscode.languages.registerReferenceProvider(
-            documentSelector,
-            new CursedReferenceProvider()
-        )
-    );
-    
-    // Rename provider
-    context.subscriptions.push(
-        vscode.languages.registerRenameProvider(
-            documentSelector,
-            new CursedRenameProvider()
-        )
-    );
-    
-    // Definition provider
-    context.subscriptions.push(
-        vscode.languages.registerDefinitionProvider(
-            documentSelector,
-            new CursedDefinitionProvider()
-        )
-    );
-    
-    // Hover provider
-    context.subscriptions.push(
-        vscode.languages.registerHoverProvider(
-            documentSelector,
-            new CursedHoverProvider()
-        )
-    );
-    
-    // Completion provider
-    context.subscriptions.push(
-        vscode.languages.registerCompletionItemProvider(
-            documentSelector,
-            new CursedCompletionProvider(),
-            '.', ' ', '\n'
-        )
-    );
-    
-    // Semantic tokens provider for advanced syntax highlighting
-    context.subscriptions.push(
-        vscode.languages.registerDocumentSemanticTokensProvider(
-            documentSelector,
-            new CursedSemanticTokensProvider(),
-            CursedSemanticTokensProvider.legend
-        )
-    );
-    
-    // Diagnostic provider for real-time error checking
-    const diagnosticProvider = new CursedDiagnosticProvider();
-    context.subscriptions.push(diagnosticProvider);
-    
-    // Debug configuration provider
-    context.subscriptions.push(
-        vscode.debug.registerDebugConfigurationProvider(
-            'cursed',
-            new CursedDebugProvider()
-        )
-    );
-    
-    // Task provider
-    context.subscriptions.push(
-        vscode.tasks.registerTaskProvider(
-            'cursed',
-            new CursedTaskProvider()
-        )
-    );
+    registerProviders(context);
     
     // Register commands
     registerCommands(context);
     
-    // Set up file watchers
+    // Setup task provider
+    setupTaskProvider(context);
+    
+    // Setup debug adapter
+    setupDebugAdapter(context);
+    
+    // Setup test controller
+    setupTestController(context);
+    
+    // Setup file watchers
     setupFileWatchers(context);
     
-    // Check if we're in a CURSED project
-    updateProjectContext();
+    // Setup workspace events
+    setupWorkspaceEvents(context);
     
-    console.log('CURSED Advanced Extension activated successfully!');
+    console.log('Advanced CURSED Language Extension is now active!');
 }
 
-async function startLanguageServer(context: vscode.ExtensionContext): Promise<void> {
-    const lspEnabled = vscode.workspace.getConfiguration('cursed').get<boolean>('lsp.enabled', true);
-    if (!lspEnabled) {
-        return;
+export function deactivate(): Thenable<void> | undefined {
+    if (!client) {
+        return undefined;
     }
-
-    // Find LSP server executable
-    const serverPath = await findLspServer();
-    if (!serverPath) {
-        vscode.window.showErrorMessage('CURSED Language Server not found');
-        return;
+    
+    // Dispose of providers
+    if (taskProvider) {
+        taskProvider.dispose();
     }
+    if (debugAdapterFactory) {
+        debugAdapterFactory.dispose();
+    }
+    if (testController) {
+        testController.dispose();
+    }
+    
+    return client.stop();
+}
 
+function initializeLanguageClient(context: vscode.ExtensionContext) {
+    const config = vscode.workspace.getConfiguration('cursed');
+    const lspPath = config.get<string>('lsp.path', 'cursed-lsp');
+    const traceLevel = config.get<string>('lsp.trace', 'off');
+    
+    // Server options - either use the configured path or try to find it
     const serverOptions: ServerOptions = {
-        run: { command: serverPath, transport: TransportKind.stdio },
-        debug: { command: serverPath, transport: TransportKind.stdio }
+        command: lspPath,
+        args: [],
+        options: {
+            env: process.env
+        }
     };
-
+    
+    // Client options
     const clientOptions: LanguageClientOptions = {
         documentSelector: [
             { scheme: 'file', language: 'cursed' },
@@ -205,458 +124,719 @@ async function startLanguageServer(context: vscode.ExtensionContext): Promise<vo
         synchronize: {
             fileEvents: [
                 vscode.workspace.createFileSystemWatcher('**/*.csd'),
-                vscode.workspace.createFileSystemWatcher('**/CursedPackage.toml'),
-                vscode.workspace.createFileSystemWatcher('**/CursedWorkspace.toml')
+                vscode.workspace.createFileSystemWatcher('**/cursed.toml'),
+                vscode.workspace.createFileSystemWatcher('**/Cursed.toml')
             ]
         },
+        outputChannel: outputChannel,
+        revealOutputChannelOn: RevealOutputChannelOn.Never,
         initializationOptions: {
-            enableSemanticTokens: true,
-            enableCodeLens: true,
-            enableInlayHints: true,
-            enableDiagnostics: true,
-            experimentalFeatures: vscode.workspace.getConfiguration('cursed').get('experimental.features', false)
+            features: {
+                completion: true,
+                hover: true,
+                definition: true,
+                references: true,
+                formatting: true,
+                rename: true,
+                semanticTokens: true,
+                codeLens: config.get('codeLens.enabled', true),
+                inlayHints: config.get('inlayHints.enabled', true),
+                codeAction: true,
+                callHierarchy: true,
+                typeHierarchy: true,
+                workspaceSymbol: true,
+                // Advanced CURSED features
+                cursedFeatures: {
+                    securityAnalysis: config.get('analysis.security.enabled', true),
+                    performanceAnalysis: config.get('analysis.performance.enabled', true),
+                    memoryAnalysis: config.get('analysis.memory.enabled', true),
+                    concurrencyAnalysis: config.get('analysis.concurrency.enabled', true),
+                    refactoring: {
+                        extractFunction: config.get('refactoring.extractFunction.enabled', true),
+                        inlineVariable: config.get('refactoring.inlineVariable.enabled', true)
+                    },
+                    codeGeneration: {
+                        autoImport: config.get('codeGeneration.autoImport.enabled', true),
+                        generateTests: config.get('codeGeneration.generateTests.enabled', true)
+                    }
+                }
+            }
+        },
+        middleware: {
+            // Enhanced completion middleware
+            provideCompletionItem: async (document, position, context, token, next) => {
+                const result = await next(document, position, context, token);
+                if (result && 'items' in result) {
+                    // Post-process completion items for better UX
+                    return enhanceCompletionItems(result);
+                }
+                return result;
+            },
+            
+            // Enhanced hover middleware
+            provideHover: async (document, position, token, next) => {
+                const result = await next(document, position, token);
+                if (result) {
+                    return enhanceHover(result, document, position);
+                }
+                return result;
+            },
+            
+            // Enhanced diagnostics middleware
+            handleDiagnostics: (uri, diagnostics, next) => {
+                // Filter and enhance diagnostics based on user preferences
+                const filteredDiagnostics = filterDiagnostics(diagnostics);
+                next(uri, filteredDiagnostics);
+            }
         }
     };
-
+    
+    // Create and start the language client
     client = new LanguageClient(
-        'cursed-lsp',
+        'cursedLanguageServer',
         'CURSED Language Server',
         serverOptions,
         clientOptions
     );
-
+    
     // Start the client and server
-    try {
-        await client.start();
-        console.log('CURSED Language Server started successfully');
-    } catch (error) {
-        console.error('Failed to start CURSED Language Server:', error);
+    client.start().then(() => {
+        outputChannel.appendLine('CURSED Language Server started successfully');
+        
+        // Register for client events
+        client.onReady().then(() => {
+            outputChannel.appendLine('CURSED Language Server is ready');
+            
+            // Setup custom request handlers
+            setupCustomRequestHandlers();
+        });
+    }).catch((error) => {
+        outputChannel.appendLine(`Failed to start CURSED Language Server: ${error}`);
         vscode.window.showErrorMessage(`Failed to start CURSED Language Server: ${error}`);
-    }
+    });
+    
+    context.subscriptions.push(client);
 }
 
-async function findLspServer(): Promise<string | null> {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (workspaceFolder) {
-        // Try local build first
-        const localPath = path.join(workspaceFolder.uri.fsPath, 'zig-out', 'bin', 'cursed-lsp');
-        if (await fileExists(localPath)) {
-            return localPath;
-        }
-    }
+function registerProviders(context: vscode.ExtensionContext) {
+    // Register code action provider
+    const codeActionProvider = new CursedCodeActionProvider();
+    context.subscriptions.push(
+        vscode.languages.registerCodeActionsProvider('cursed', codeActionProvider, {
+            providedCodeActionKinds: [
+                CodeActionKind.QuickFix,
+                CodeActionKind.Refactor,
+                CodeActionKind.RefactorExtract,
+                CodeActionKind.RefactorInline,
+                CodeActionKind.RefactorRewrite,
+                CodeActionKind.Source,
+                CodeActionKind.SourceOrganizeImports
+            ]
+        })
+    );
     
-    // Try global installation
-    const globalPaths = [
-        'cursed-lsp',
-        '/usr/local/bin/cursed-lsp',
-        '/opt/cursed/bin/cursed-lsp'
-    ];
+    // Register refactoring provider
+    const refactoringProvider = new CursedRefactoringProvider(client);
+    context.subscriptions.push(refactoringProvider);
     
-    for (const path of globalPaths) {
-        if (await commandExists(path)) {
-            return path;
-        }
-    }
+    // Register code generation provider
+    const codeGenerationProvider = new CursedCodeGenerationProvider(client);
+    context.subscriptions.push(codeGenerationProvider);
     
-    return null;
+    // Register analysis provider
+    const analysisProvider = new CursedAnalysisProvider(client, outputChannel);
+    context.subscriptions.push(analysisProvider);
+    
+    // Register document formatting provider with cursed-fmt integration
+    context.subscriptions.push(
+        vscode.languages.registerDocumentFormattingEditProvider('cursed', {
+            async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
+                return await formatDocument(document);
+            }
+        })
+    );
+    
+    // Register document range formatting provider
+    context.subscriptions.push(
+        vscode.languages.registerDocumentRangeFormattingEditProvider('cursed', {
+            async provideDocumentRangeFormattingEdits(
+                document: vscode.TextDocument,
+                range: vscode.Range
+            ): Promise<vscode.TextEdit[]> {
+                return await formatDocumentRange(document, range);
+            }
+        })
+    );
+    
+    // Register on-type formatting provider
+    context.subscriptions.push(
+        vscode.languages.registerOnTypeFormattingEditProvider('cursed', {
+            async provideOnTypeFormattingEdits(
+                document: vscode.TextDocument,
+                position: vscode.Position,
+                ch: string
+            ): Promise<vscode.TextEdit[]> {
+                return await formatOnType(document, position, ch);
+            }
+        }, '}', '\n', ';')
+    );
+    
+    // Register inlay hints provider
+    context.subscriptions.push(
+        vscode.languages.registerInlayHintsProvider('cursed', {
+            async provideInlayHints(
+                document: vscode.TextDocument,
+                range: vscode.Range,
+                token: vscode.CancellationToken
+            ): Promise<vscode.InlayHint[]> {
+                if (!vscode.workspace.getConfiguration('cursed').get('inlayHints.enabled', true)) {
+                    return [];
+                }
+                return await client.sendRequest('textDocument/inlayHint', {
+                    textDocument: { uri: document.uri.toString() },
+                    range: {
+                        start: { line: range.start.line, character: range.start.character },
+                        end: { line: range.end.line, character: range.end.character }
+                    }
+                }) || [];
+            }
+        })
+    );
+    
+    // Register semantic tokens provider
+    const legend = new vscode.SemanticTokensLegend(
+        ['keyword', 'string', 'number', 'comment', 'operator', 'namespace', 'type', 'class', 'interface', 'enum', 'function', 'method', 'variable', 'parameter', 'property', 'struct', 'typeParameter', 'decorator'],
+        ['declaration', 'definition', 'readonly', 'static', 'deprecated', 'abstract', 'async', 'modification', 'documentation', 'defaultLibrary', 'generic']
+    );
+    
+    context.subscriptions.push(
+        vscode.languages.registerDocumentSemanticTokensProvider('cursed', {
+            async provideDocumentSemanticTokens(
+                document: vscode.TextDocument,
+                token: vscode.CancellationToken
+            ): Promise<vscode.SemanticTokens> {
+                const result = await client.sendRequest('textDocument/semanticTokens/full', {
+                    textDocument: { uri: document.uri.toString() }
+                });
+                return new vscode.SemanticTokens(new Uint32Array(result?.data || []));
+            }
+        }, legend)
+    );
 }
 
 function registerCommands(context: vscode.ExtensionContext) {
-    // Core commands
+    // Language server commands
     context.subscriptions.push(
-        vscode.commands.registerCommand('cursed.run', runCurrentFile),
-        vscode.commands.registerCommand('cursed.build', buildCurrentFile),
-        vscode.commands.registerCommand('cursed.buildRelease', buildRelease),
-        vscode.commands.registerCommand('cursed.test', runTests),
-        vscode.commands.registerCommand('cursed.format', formatCurrentFile),
-        vscode.commands.registerCommand('cursed.lint', lintCurrentFile),
-        vscode.commands.registerCommand('cursed.newProject', createNewProject),
-        vscode.commands.registerCommand('cursed.newPackage', createNewPackage),
-        vscode.commands.registerCommand('cursed.showDocumentation', showDocumentation),
-        
-        // Debug commands
-        vscode.commands.registerCommand('cursed.showAST', showAST),
-        vscode.commands.registerCommand('cursed.showTokens', showTokens),
-        
-        // Performance commands
-        vscode.commands.registerCommand('cursed.analyzePerformance', analyzePerformance),
-        vscode.commands.registerCommand('cursed.benchmarkCode', benchmarkCode),
-        vscode.commands.registerCommand('cursed.profile', profileCode),
-        vscode.commands.registerCommand('cursed.memoryCheck', memoryCheck),
-        
-        // Cross-compilation
-        vscode.commands.registerCommand('cursed.crossCompile', crossCompile),
-        
-        // Project management
-        vscode.commands.registerCommand('cursed.projectExplorer.refresh', () => projectExplorer.refresh()),
-        vscode.commands.registerCommand('cursed.dependencies.add', addDependency),
-        vscode.commands.registerCommand('cursed.dependencies.update', updateDependencies)
+        vscode.commands.registerCommand('cursed.restartLanguageServer', async () => {
+            await client.stop();
+            await client.start();
+            vscode.window.showInformationMessage('CURSED Language Server restarted');
+        })
     );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.showOutput', () => {
+            outputChannel.show();
+        })
+    );
+    
+    // Formatting commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.format', async () => {
+            await vscode.commands.executeCommand('editor.action.formatDocument');
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.organizeImports', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.languageId !== 'cursed') {
+                return;
+            }
+            
+            const actions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
+                'vscode.executeCodeActionProvider',
+                editor.document.uri,
+                editor.selection,
+                CodeActionKind.SourceOrganizeImports
+            );
+            
+            if (actions && actions.length > 0) {
+                const edit = actions[0].edit;
+                if (edit) {
+                    await vscode.workspace.applyEdit(edit);
+                }
+            }
+        })
+    );
+    
+    // Refactoring commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.extractFunction', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.languageId !== 'cursed') {
+                return;
+            }
+            
+            if (editor.selection.isEmpty) {
+                vscode.window.showErrorMessage('Please select code to extract into a function');
+                return;
+            }
+            
+            const result = await client.sendRequest('cursed/extractFunction', {
+                textDocument: { uri: editor.document.uri.toString() },
+                range: {
+                    start: { line: editor.selection.start.line, character: editor.selection.start.character },
+                    end: { line: editor.selection.end.line, character: editor.selection.end.character }
+                }
+            });
+            
+            if (result && result.edit) {
+                await vscode.workspace.applyEdit(result.edit);
+            }
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.extractVariable', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.languageId !== 'cursed') {
+                return;
+            }
+            
+            // TODO: Implement extract variable
+            vscode.window.showInformationMessage('Extract variable feature coming soon!');
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.inlineVariable', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.languageId !== 'cursed') {
+                return;
+            }
+            
+            // TODO: Implement inline variable
+            vscode.window.showInformationMessage('Inline variable feature coming soon!');
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.renameSymbol', async () => {
+            await vscode.commands.executeCommand('editor.action.rename');
+        })
+    );
+    
+    // Code generation commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.generateFunction', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.languageId !== 'cursed') {
+                return;
+            }
+            
+            const functionName = await vscode.window.showInputBox({
+                prompt: 'Enter function name',
+                placeHolder: 'function_name'
+            });
+            
+            if (!functionName) {
+                return;
+            }
+            
+            const result = await client.sendRequest('cursed/generateFunction', {
+                textDocument: { uri: editor.document.uri.toString() },
+                position: { line: editor.selection.active.line, character: editor.selection.active.character },
+                functionName: functionName
+            });
+            
+            if (result && result.edit) {
+                await vscode.workspace.applyEdit(result.edit);
+            }
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.generateConstructor', async () => {
+            // TODO: Implement generate constructor
+            vscode.window.showInformationMessage('Generate constructor feature coming soon!');
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.generateTests', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.languageId !== 'cursed') {
+                return;
+            }
+            
+            const result = await client.sendRequest('cursed/generateTests', {
+                textDocument: { uri: editor.document.uri.toString() }
+            });
+            
+            if (result && result.edit) {
+                await vscode.workspace.applyEdit(result.edit);
+            }
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.generateInterface', async () => {
+            // TODO: Implement generate interface
+            vscode.window.showInformationMessage('Generate interface feature coming soon!');
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.addErrorHandling', async () => {
+            // TODO: Implement add error handling
+            vscode.window.showInformationMessage('Add error handling feature coming soon!');
+        })
+    );
+    
+    // Navigation commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.showCallHierarchy', async () => {
+            await vscode.commands.executeCommand('references-view.showCallHierarchy');
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.showTypeHierarchy', async () => {
+            await vscode.commands.executeCommand('references-view.showTypeHierarchy');
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.showReferences', async () => {
+            await vscode.commands.executeCommand('editor.action.goToReferences');
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.showImplementations', async () => {
+            await vscode.commands.executeCommand('editor.action.goToImplementation');
+        })
+    );
+    
+    // Analysis commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.analysis.security', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.languageId !== 'cursed') {
+                return;
+            }
+            
+            outputChannel.show();
+            outputChannel.appendLine('Running security analysis...');
+            
+            const result = await client.sendRequest('cursed/securityAnalysis', {
+                textDocument: { uri: editor.document.uri.toString() }
+            });
+            
+            if (result && result.vulnerabilities) {
+                outputChannel.appendLine(`Found ${result.vulnerabilities.length} security issues`);
+                for (const vuln of result.vulnerabilities) {
+                    outputChannel.appendLine(`- ${vuln.message} (${vuln.category})`);
+                }
+            } else {
+                outputChannel.appendLine('No security issues found');
+            }
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.analysis.performance', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.languageId !== 'cursed') {
+                return;
+            }
+            
+            outputChannel.show();
+            outputChannel.appendLine('Running performance analysis...');
+            
+            const result = await client.sendRequest('cursed/performanceHints', {
+                textDocument: { uri: editor.document.uri.toString() }
+            });
+            
+            if (result && result.hints) {
+                outputChannel.appendLine(`Found ${result.hints.length} performance suggestions`);
+                for (const hint of result.hints) {
+                    outputChannel.appendLine(`- ${hint.message}: ${hint.suggestion}`);
+                }
+            } else {
+                outputChannel.appendLine('No performance issues found');
+            }
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.analysis.memory', async () => {
+            // TODO: Implement memory analysis
+            vscode.window.showInformationMessage('Memory analysis feature coming soon!');
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.analysis.concurrency', async () => {
+            // TODO: Implement concurrency analysis
+            vscode.window.showInformationMessage('Concurrency analysis feature coming soon!');
+        })
+    );
+    
+    // Build and run commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.build', async () => {
+            const terminal = vscode.window.createTerminal('CURSED Build');
+            terminal.sendText('zig build');
+            terminal.show();
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.run', async () => {
+            const terminal = vscode.window.createTerminal('CURSED Run');
+            terminal.sendText('zig build && ./zig-out/bin/cursed-zig main.csd');
+            terminal.show();
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.test', async () => {
+            const terminal = vscode.window.createTerminal('CURSED Test');
+            terminal.sendText('zig test');
+            terminal.show();
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.benchmark', async () => {
+            const terminal = vscode.window.createTerminal('CURSED Benchmark');
+            terminal.sendText('zig build benchmark');
+            terminal.show();
+        })
+    );
+    
+    // Project commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.newProject', async () => {
+            const projectName = await vscode.window.showInputBox({
+                prompt: 'Enter project name',
+                placeHolder: 'my-cursed-project'
+            });
+            
+            if (!projectName) {
+                return;
+            }
+            
+            const folderUri = await vscode.window.showOpenDialog({
+                canSelectFolders: true,
+                canSelectFiles: false,
+                canSelectMany: false,
+                openLabel: 'Select Project Location'
+            });
+            
+            if (!folderUri || folderUri.length === 0) {
+                return;
+            }
+            
+            // TODO: Create new CURSED project structure
+            vscode.window.showInformationMessage(`Creating new CURSED project: ${projectName}`);
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cursed.newFile', async () => {
+            const fileName = await vscode.window.showInputBox({
+                prompt: 'Enter file name',
+                placeHolder: 'example.csd'
+            });
+            
+            if (!fileName) {
+                return;
+            }
+            
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder open');
+                return;
+            }
+            
+            const filePath = path.join(workspaceFolder.uri.fsPath, fileName);
+            const fileUri = vscode.Uri.file(filePath);
+            
+            try {
+                await vscode.workspace.fs.writeFile(fileUri, new Uint8Array());
+                const document = await vscode.workspace.openTextDocument(fileUri);
+                await vscode.window.showTextDocument(document);
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to create file: ${error}`);
+            }
+        })
+    );
+}
+
+function setupTaskProvider(context: vscode.ExtensionContext) {
+    taskProvider = vscode.tasks.registerTaskProvider('cursed', new CursedTaskProvider());
+}
+
+function setupDebugAdapter(context: vscode.ExtensionContext) {
+    debugAdapterFactory = vscode.debug.registerDebugAdapterDescriptorFactory(
+        'cursed',
+        new CursedDebugAdapterDescriptorFactory()
+    );
+}
+
+function setupTestController(context: vscode.ExtensionContext) {
+    testController = new CursedTestController(context);
 }
 
 function setupFileWatchers(context: vscode.ExtensionContext) {
-    // Watch for CURSED package files
-    const packageWatcher = vscode.workspace.createFileSystemWatcher('**/CursedPackage.toml');
-    packageWatcher.onDidChange(() => updateProjectContext());
-    packageWatcher.onDidCreate(() => updateProjectContext());
-    packageWatcher.onDidDelete(() => updateProjectContext());
-    context.subscriptions.push(packageWatcher);
+    // Watch for CURSED files
+    const cursedWatcher = vscode.workspace.createFileSystemWatcher('**/*.csd');
     
-    // Watch for CURSED source files
-    const sourceWatcher = vscode.workspace.createFileSystemWatcher('**/*.csd');
-    sourceWatcher.onDidChange((uri) => {
-        // Real-time analysis on file changes
-        if (vscode.workspace.getConfiguration('cursed').get('lint.onType', false)) {
-            setTimeout(() => lintFile(uri), 500); // Debounce
-        }
+    cursedWatcher.onDidCreate((uri) => {
+        outputChannel.appendLine(`Created: ${uri.fsPath}`);
     });
-    context.subscriptions.push(sourceWatcher);
-}
-
-function updateProjectContext() {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-        vscode.commands.executeCommand('setContext', 'cursed.projectOpen', false);
-        return;
-    }
     
-    const packageFile = path.join(workspaceFolder.uri.fsPath, 'CursedPackage.toml');
-    fileExists(packageFile).then(exists => {
-        vscode.commands.executeCommand('setContext', 'cursed.projectOpen', exists);
-        if (exists) {
-            projectExplorer?.refresh();
-            dependencyProvider?.refresh();
-        }
+    cursedWatcher.onDidChange((uri) => {
+        outputChannel.appendLine(`Changed: ${uri.fsPath}`);
     });
+    
+    cursedWatcher.onDidDelete((uri) => {
+        outputChannel.appendLine(`Deleted: ${uri.fsPath}`);
+    });
+    
+    context.subscriptions.push(cursedWatcher);
+    
+    // Watch for project files
+    const projectWatcher = vscode.workspace.createFileSystemWatcher('**/cursed.toml');
+    
+    projectWatcher.onDidChange(() => {
+        // Restart language server when project configuration changes
+        vscode.commands.executeCommand('cursed.restartLanguageServer');
+    });
+    
+    context.subscriptions.push(projectWatcher);
 }
 
-// Command implementations
-async function runCurrentFile() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        vscode.window.showErrorMessage('Please open a CURSED file first');
-        return;
-    }
-    
-    await editor.document.save();
-    const filePath = editor.document.fileName;
-    
-    terminalManager.executeCommand(`cursed-zig "${filePath}"`, 'CURSED Run');
-}
-
-async function buildCurrentFile() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        vscode.window.showErrorMessage('Please open a CURSED file first');
-        return;
-    }
-    
-    await editor.document.save();
-    const filePath = editor.document.fileName;
-    const optimization = vscode.workspace.getConfiguration('cursed').get('build.optimization', 'debug');
-    
-    terminalManager.executeCommand(
-        `cursed-zig --compile --optimize=${optimization} "${filePath}"`, 
-        'CURSED Build'
-    );
-}
-
-async function buildRelease() {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-        vscode.window.showErrorMessage('No workspace folder open');
-        return;
-    }
-    
-    terminalManager.executeCommand('zig build -Doptimize=ReleaseFast', 'CURSED Release Build');
-}
-
-async function runTests() {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-        vscode.window.showErrorMessage('No workspace folder open');
-        return;
-    }
-    
-    terminalManager.executeCommand('zig build test', 'CURSED Tests');
-}
-
-async function formatCurrentFile() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        return;
-    }
-    
-    await editor.document.save();
-    const filePath = editor.document.fileName;
-    
-    terminalManager.executeCommand(`cursed-fmt "${filePath}"`, 'CURSED Format');
-}
-
-async function lintCurrentFile() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        return;
-    }
-    
-    const filePath = editor.document.fileName;
-    await lintFile(vscode.Uri.file(filePath));
-}
-
-async function lintFile(uri: vscode.Uri) {
-    terminalManager.executeCommand(`cursed-lint "${uri.fsPath}"`, 'CURSED Lint');
-}
-
-async function createNewProject() {
-    const name = await vscode.window.showInputBox({
-        prompt: 'Enter project name',
-        validateInput: (value) => {
-            if (!value) return 'Project name is required';
-            if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(value)) {
-                return 'Invalid project name. Use letters, numbers, hyphens, and underscores only.';
+function setupWorkspaceEvents(context: vscode.ExtensionContext) {
+    // Auto-format on save
+    context.subscriptions.push(
+        vscode.workspace.onWillSaveTextDocument((event) => {
+            const document = event.document;
+            if (document.languageId !== 'cursed') {
+                return;
             }
-            return null;
-        }
-    });
-    
-    if (!name) return;
-    
-    const location = await vscode.window.showOpenDialog({
-        canSelectFiles: false,
-        canSelectFolders: true,
-        canSelectMany: false,
-        openLabel: 'Select Project Location'
-    });
-    
-    if (!location || location.length === 0) return;
-    
-    const projectPath = path.join(location[0].fsPath, name);
-    terminalManager.executeCommand(
-        `cursed-pkg new "${name}"`,
-        'CURSED New Project',
-        location[0].fsPath
-    );
-    
-    // Open the new project
-    setTimeout(() => {
-        vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(projectPath));
-    }, 2000);
-}
-
-async function createNewPackage() {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-        vscode.window.showErrorMessage('No workspace folder open');
-        return;
-    }
-    
-    const name = await vscode.window.showInputBox({
-        prompt: 'Enter package name',
-        validateInput: (value) => {
-            if (!value) return 'Package name is required';
-            if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(value)) {
-                return 'Invalid package name';
+            
+            const config = vscode.workspace.getConfiguration('cursed');
+            if (config.get('format.onSave', true)) {
+                event.waitUntil(formatDocument(document));
             }
-            return null;
-        }
-    });
+        })
+    );
     
-    if (!name) return;
-    
-    terminalManager.executeCommand(`cursed-pkg new-package "${name}"`, 'CURSED New Package');
-}
-
-async function showDocumentation() {
-    const selection = await vscode.window.showQuickPick([
-        'Language Reference',
-        'Standard Library',
-        'Getting Started',
-        'Advanced Topics',
-        'API Documentation'
-    ], {
-        placeHolder: 'Select documentation topic'
-    });
-    
-    const baseUrl = 'https://docs.cursed-lang.org';
-    const urls: { [key: string]: string } = {
-        'Language Reference': `${baseUrl}/language`,
-        'Standard Library': `${baseUrl}/stdlib`,
-        'Getting Started': `${baseUrl}/getting-started`,
-        'Advanced Topics': `${baseUrl}/advanced`,
-        'API Documentation': `${baseUrl}/api`
-    };
-    
-    if (selection && urls[selection]) {
-        vscode.env.openExternal(vscode.Uri.parse(urls[selection]));
-    }
-}
-
-async function showAST() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        vscode.window.showErrorMessage('Please open a CURSED file first');
-        return;
-    }
-    
-    const filePath = editor.document.fileName;
-    const result = await terminalManager.executeCommandSilent(`cursed-zig --ast "${filePath}"`);
-    
-    const doc = await vscode.workspace.openTextDocument({
-        content: result,
-        language: 'json'
-    });
-    
-    vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.Beside });
-}
-
-async function showTokens() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        vscode.window.showErrorMessage('Please open a CURSED file first');
-        return;
-    }
-    
-    const filePath = editor.document.fileName;
-    const result = await terminalManager.executeCommandSilent(`cursed-zig --tokens "${filePath}"`);
-    
-    const doc = await vscode.workspace.openTextDocument({
-        content: result,
-        language: 'json'
-    });
-    
-    vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.Beside });
-}
-
-async function analyzePerformance() {
-    if (!performanceAnalyzer) return;
-    
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        vscode.window.showErrorMessage('Please open a CURSED file first');
-        return;
-    }
-    
-    await performanceAnalyzer.analyzeFile(editor.document.fileName);
-}
-
-async function benchmarkCode() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        vscode.window.showErrorMessage('Please open a CURSED file first');
-        return;
-    }
-    
-    await editor.document.save();
-    const filePath = editor.document.fileName;
-    
-    terminalManager.executeCommand(`cursed-zig --benchmark "${filePath}"`, 'CURSED Benchmark');
-}
-
-async function profileCode() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        vscode.window.showErrorMessage('Please open a CURSED file first');
-        return;
-    }
-    
-    await editor.document.save();
-    const filePath = editor.document.fileName;
-    
-    terminalManager.executeCommand(`cursed-zig --profile "${filePath}"`, 'CURSED Profile');
-}
-
-async function memoryCheck() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        vscode.window.showErrorMessage('Please open a CURSED file first');
-        return;
-    }
-    
-    await editor.document.save();
-    const filePath = editor.document.fileName;
-    
-    terminalManager.executeCommand(`valgrind --leak-check=full cursed-zig "${filePath}"`, 'CURSED Memory Check');
-}
-
-async function crossCompile() {
-    const targets = vscode.workspace.getConfiguration('cursed').get<string[]>('crossCompile.targets', []);
-    
-    const target = await vscode.window.showQuickPick(targets, {
-        placeHolder: 'Select cross-compilation target'
-    });
-    
-    if (!target) return;
-    
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'cursed') {
-        vscode.window.showErrorMessage('Please open a CURSED file first');
-        return;
-    }
-    
-    await editor.document.save();
-    const filePath = editor.document.fileName;
-    
-    terminalManager.executeCommand(
-        `cursed-zig --compile --target=${target} "${filePath}"`, 
-        'CURSED Cross Compile'
+    // Configuration changes
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration((event) => {
+            if (event.affectsConfiguration('cursed')) {
+                // Restart language server on configuration changes
+                vscode.commands.executeCommand('cursed.restartLanguageServer');
+            }
+        })
     );
 }
 
-async function addDependency() {
-    const name = await vscode.window.showInputBox({
-        prompt: 'Enter dependency name',
-        placeHolder: 'e.g., httpz, jsonz, cryptz'
-    });
-    
-    if (!name) return;
-    
-    const version = await vscode.window.showInputBox({
-        prompt: 'Enter version (optional)',
-        placeHolder: 'e.g., 1.0.0, latest'
-    });
-    
-    const command = version 
-        ? `cursed-pkg add "${name}@${version}"`
-        : `cursed-pkg add "${name}"`;
-    
-    terminalManager.executeCommand(command, 'CURSED Add Dependency');
+function setupCustomRequestHandlers() {
+    // Handle custom LSP requests here if needed
 }
 
-async function updateDependencies() {
-    terminalManager.executeCommand('cursed-pkg update', 'CURSED Update Dependencies');
-}
+// Helper functions
 
-// Utility functions
-async function checkCompilerAvailability(compilerPath: string): Promise<boolean> {
+async function formatDocument(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
     try {
-        const result = await terminalManager.executeCommandSilent(`${compilerPath} --version`);
-        return result.includes('CURSED');
-    } catch {
-        return false;
+        const result = await client.sendRequest('textDocument/formatting', {
+            textDocument: { uri: document.uri.toString() },
+            options: {
+                tabSize: vscode.workspace.getConfiguration('editor').get('tabSize', 4),
+                insertSpaces: vscode.workspace.getConfiguration('editor').get('insertSpaces', true),
+                insertFinalNewline: vscode.workspace.getConfiguration('cursed').get('format.insertFinalNewline', true),
+                trimTrailingWhitespace: vscode.workspace.getConfiguration('cursed').get('format.trimTrailingWhitespace', true)
+            }
+        });
+        
+        return result || [];
+    } catch (error) {
+        outputChannel.appendLine(`Format error: ${error}`);
+        return [];
     }
 }
 
-async function fileExists(path: string): Promise<boolean> {
+async function formatDocumentRange(document: vscode.TextDocument, range: vscode.Range): Promise<vscode.TextEdit[]> {
     try {
-        await vscode.workspace.fs.stat(vscode.Uri.file(path));
+        const result = await client.sendRequest('textDocument/rangeFormatting', {
+            textDocument: { uri: document.uri.toString() },
+            range: {
+                start: { line: range.start.line, character: range.start.character },
+                end: { line: range.end.line, character: range.end.character }
+            },
+            options: {
+                tabSize: vscode.workspace.getConfiguration('editor').get('tabSize', 4),
+                insertSpaces: vscode.workspace.getConfiguration('editor').get('insertSpaces', true)
+            }
+        });
+        
+        return result || [];
+    } catch (error) {
+        outputChannel.appendLine(`Range format error: ${error}`);
+        return [];
+    }
+}
+
+async function formatOnType(document: vscode.TextDocument, position: vscode.Position, ch: string): Promise<vscode.TextEdit[]> {
+    try {
+        const result = await client.sendRequest('textDocument/onTypeFormatting', {
+            textDocument: { uri: document.uri.toString() },
+            position: { line: position.line, character: position.character },
+            ch: ch,
+            options: {
+                tabSize: vscode.workspace.getConfiguration('editor').get('tabSize', 4),
+                insertSpaces: vscode.workspace.getConfiguration('editor').get('insertSpaces', true)
+            }
+        });
+        
+        return result || [];
+    } catch (error) {
+        outputChannel.appendLine(`On-type format error: ${error}`);
+        return [];
+    }
+}
+
+function enhanceCompletionItems(completionList: CompletionList): CompletionList {
+    // Add custom enhancement logic for completion items
+    return completionList;
+}
+
+function enhanceHover(hover: Hover, document: vscode.TextDocument, position: vscode.Position): Hover {
+    // Add custom enhancement logic for hover information
+    return hover;
+}
+
+function filterDiagnostics(diagnostics: Diagnostic[]): Diagnostic[] {
+    const config = vscode.workspace.getConfiguration('cursed');
+    
+    // Filter diagnostics based on user preferences
+    return diagnostics.filter(diagnostic => {
+        // Filter security diagnostics if disabled
+        if (diagnostic.source === 'cursed-security' && !config.get('analysis.security.enabled', true)) {
+            return false;
+        }
+        
+        // Filter performance diagnostics if disabled
+        if (diagnostic.source === 'cursed-performance' && !config.get('analysis.performance.enabled', true)) {
+            return false;
+        }
+        
         return true;
-    } catch {
-        return false;
-    }
-}
-
-async function commandExists(command: string): Promise<boolean> {
-    try {
-        await terminalManager.executeCommandSilent(`which ${command}`);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-export function deactivate(): Thenable<void> | undefined {
-    if (!client) {
-        return undefined;
-    }
-    return client.stop();
+    });
 }

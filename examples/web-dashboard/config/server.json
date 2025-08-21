@@ -1,0 +1,13 @@
+{
+  "server_port": 8080,
+  "database_path": "data/dashboard",
+  "session_timeout": 3600,
+  "max_file_size": 10485760,
+  "allowed_origins": [
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8080"
+  ],
+  "log_level": "info"
+}

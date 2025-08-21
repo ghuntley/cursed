@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CURSED Programming Playground 🔥</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: calc(100vh - 80px);
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .editor-panel, .output-panel {
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #f8f9fa;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .editor-container {
+            flex: 1;
+            position: relative;
+        }
+
+        .CodeMirror {
+            height: 100% !important;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .output-container {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: #f8f9fa;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .output-line {
+            margin-bottom: 0.25rem;
+            white-space: pre-wrap;
+        }
+
+        .output-error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin: 0.25rem 0;
+        }
+
+        .output-success {
+            color: #155724;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .examples-dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-radius: 6px;
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f3f4;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: #6c757d;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+        }
+
+        .share-link {
+            font-size: 0.875rem;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .share-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .toolbar {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔥 CURSED Programming Playground</h1>
+    </div>
+
+    <div class="container">
+        <div class="editor-panel">
+            <div class="panel-header">
+                <span class="panel-title">Code Editor</span>
+                <div class="toolbar">
+                    <div class="examples-dropdown">
+                        <button class="btn btn-secondary" onclick="toggleExamples()">
+                            Examples ▼
+                        </button>
+                        <div class="dropdown-content" id="examplesDropdown">
+                            <div class="dropdown-item" onclick="loadExample('hello')">Hello World</div>
+                            <div class="dropdown-item" onclick="loadExample('calculator')">Calculator</div>
+                            <div class="dropdown-item" onclick="loadExample('functions')">Functions</div>
+                            <div class="dropdown-item" onclick="loadExample('arrays')">Arrays</div>
+                            <div class="dropdown-item" onclick="loadExample('structs')">Structs</div>
+                            <div class="dropdown-item" onclick="loadExample('concurrency')">Concurrency</div>
+                            <div class="dropdown-item" onclick="loadExample('webserver')">Web Server</div>
+                            <div class="dropdown-item" onclick="loadExample('advanced')">Advanced Features</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="runCode()">
+                        ▶ Run Code
+                    </button>
+                    <button class="btn" onclick="shareCode()">
+                        🔗 Share
+                    </button>
+                </div>
+            </div>
+            <div class="editor-container">
+                <textarea id="code-editor"># Welcome to the CURSED Programming Playground! 🔥
+# 
+# Try editing this code and clicking "Run Code" to see the output.
+# Use the "Examples" dropdown to explore different CURSED features.
+
+yeet "vibez"
+
+vibez.spill("🔥 Welcome to CURSED! 🔥")
+vibez.spill("This is your interactive playground.")
+vibez.spill("Ready to write some CURSED code?", based)
+
+sus greeting tea = "Hello from the playground!"
+vibez.spill(greeting)
+</textarea>
+            </div>
+        </div>
+
+        <div class="output-panel">
+            <div class="panel-header">
+                <span class="panel-title">Output</span>
+                <div class="toolbar">
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <span>Running...</span>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>Ready</span>
+                    </div>
+                    <button class="btn btn-secondary" onclick="clearOutput()">
+                        Clear
+                    </button>
+                </div>
+            </div>
+            <div class="output-container" id="output">
+                <div class="output-line">🔥 CURSED Playground ready!</div>
+                <div class="output-line">Click "Run Code" to execute your CURSED program.</div>
+                <div class="output-line">Try the examples to explore different features.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CodeMirror -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/rust/rust.min.js"></script>
+
+    <script>
+        // Initialize CodeMirror editor
+        const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+            mode: 'rust', // Close enough syntax highlighting
+            theme: 'dracula',
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            indentUnit: 4,
+            tabSize: 4,
+            lineWrapping: true,
+            extraKeys: {
+                'Ctrl-Enter': runCode,
+                'Cmd-Enter': runCode
+            }
+        });
+
+        // Example code snippets
+        const examples = {
+            hello: `# Hello World in CURSED
+yeet "vibez"
+
+vibez.spill("🔥 Hello, CURSED World! 🔥")
+vibez.spill("Welcome to the most expressive language!")
+vibez.spill("CURSED is:", "awesome", "fast", "and fun!")`,
+
+            calculator: `# Interactive Calculator
+yeet "vibez"
+
+slay add(a drip, b drip) drip {
+    damn a + b
+}
+
+slay multiply(a drip, b drip) drip {
+    damn a * b
+}
+
+slay divide(a drip, b drip) drip yikes<tea> {
+    ready (b == 0) {
+        yikes "Cannot divide by zero!"
+    }
+    damn a / b
+}
+
+sus x drip = 10
+sus y drip = 5
+
+vibez.spill("Addition:", add(x, y))
+vibez.spill("Multiplication:", multiply(x, y))
+
+sus result drip = divide(x, y) fam {
+    when err -> {
+        vibez.spill("Error:", err)
+        damn 0
+    }
+}
+vibez.spill("Division:", result)`,
+
+            functions: `# Functions and Control Flow
+yeet "vibez"
+
+slay greet(name tea, age drip) tea {
+    ready (age < 18) {
+        damn "Hey " + name + "! You're young!"
+    } otherwise ready (age < 65) {
+        damn "Hello " + name + "! You're in your prime!"
+    } otherwise {
+        damn "Greetings " + name + "! Wise and experienced!"
+    }
+}
+
+slay factorial(n drip) drip {
+    ready (n <= 1) {
+        damn 1
+    }
+    damn n * factorial(n - 1)
+}
+
+vibez.spill(greet("Alice", 25))
+vibez.spill(greet("Bob", 17))
+vibez.spill(greet("Carol", 70))
+
+vibez.spill("Factorial of 5:", factorial(5))`,
+
+            arrays: `# Arrays and Collections
+yeet "vibez"
+yeet "arrayz"
+
+sus fruits []tea = ["apple", "banana", "orange", "grape"]
+sus numbers []drip = [1, 2, 3, 4, 5]
+
+vibez.spill("Fruits:", fruits)
+vibez.spill("First fruit:", fruits[0])
+vibez.spill("Array length:", arrayz.len(fruits))
+
+# Add elements
+arrayz.push(fruits, "kiwi")
+vibez.spill("After adding kiwi:", fruits)
+
+# Process arrays
+sus doubled []drip = []
+bestie (num in numbers) {
+    arrayz.push(doubled, num * 2)
+}
+vibez.spill("Doubled numbers:", doubled)
+
+# Find maximum
+sus max_num drip = numbers[0]
+bestie (num in numbers) {
+    ready (num > max_num) {
+        max_num = num
+    }
+}
+vibez.spill("Maximum number:", max_num)`,
+
+            structs: `# Structs and Methods
+yeet "vibez"
+
+squad Person {
+    name tea,
+    age drip,
+    active lit
+}
+
+squad Rectangle {
+    width drip,
+    height drip
+}
+
+slay area(rect Rectangle) drip {
+    damn rect.width * rect.height
+}
+
+slay perimeter(rect Rectangle) drip {
+    damn 2 * (rect.width + rect.height)
+}
+
+# Create instances
+sus person Person = Person{
+    name: "Alice",
+    age: 30,
+    active: based
+}
+
+sus rect Rectangle = Rectangle{
+    width: 10,
+    height: 5
+}
+
+vibez.spill("Person:", person.name, "Age:", person.age)
+vibez.spill("Rectangle area:", area(rect))
+vibez.spill("Rectangle perimeter:", perimeter(rect))
+
+# Update fields
+person.age = person.age + 1
+vibez.spill("After birthday:", person.name, "is now", person.age)`,
+
+            concurrency: `# Concurrency with Goroutines
+yeet "vibez"
+yeet "concurrenz"
+
+# Create a channel
+sus ch chan<drip> = make_channel()
+
+# Producer goroutine
+go {
+    bestie (i in 1..6) {
+        vibez.spill("Sending:", i)
+        ch <- i
+        concurrenz.sleep(500)  # Sleep 500ms
+    }
+    close(ch)
+}
+
+# Consumer goroutine
+go {
+    bestie (value := <-ch) {
+        vibez.spill("Received:", value)
+        vibez.spill("Processing value:", value * 2)
+    }
+    vibez.spill("Channel closed, consumer done")
+}
+
+# Main thread waits
+vibez.spill("Starting concurrent processing...")
+concurrenz.sleep(4000)  # Wait 4 seconds
+vibez.spill("All done!")`,
+
+            webserver: `# Simple Web Server
+yeet "vibez"
+yeet "networkz"
+yeet "jsonz"
+
+squad ApiResponse {
+    message tea,
+    timestamp tea,
+    data map<tea, any>
+}
+
+slay handle_request(path tea) ApiResponse {
+    yeet "timez"
+    sus now tea = timez.format_iso(timez.now())
+    
+    ready (path == "/") {
+        damn ApiResponse{
+            message: "Welcome to CURSED Web Server! 🔥",
+            timestamp: now,
+            data: {"version": "1.0", "status": "running"}
+        }
+    } otherwise ready (path == "/api/hello") {
+        damn ApiResponse{
+            message: "Hello from CURSED API!",
+            timestamp: now,
+            data: {"greeting": "Hello, World!", "language": "CURSED"}
+        }
+    } otherwise {
+        damn ApiResponse{
+            message: "Endpoint not found",
+            timestamp: now,
+            data: {"error": "404", "path": path}
+        }
+    }
+}
+
+# Simulate server requests
+sus response1 = handle_request("/")
+sus response2 = handle_request("/api/hello")
+sus response3 = handle_request("/unknown")
+
+vibez.spill("Response 1:", jsonz.stringify(response1, indent: 2))
+vibez.spill("Response 2:", jsonz.stringify(response2, indent: 2))
+vibez.spill("Response 3:", jsonz.stringify(response3, indent: 2))`,
+
+            advanced: `# Advanced CURSED Features
+yeet "vibez"
+yeet "concurrenz"
+
+# Generic function
+slay max<T>(a T, b T) T {
+    ready (a > b) { damn a }
+    damn b
+}
+
+# Error handling chain
+slay process_data(input tea) tea yikes<tea> {
+    ready (len(input) == 0) {
+        yikes "Empty input not allowed"
+    }
+    
+    ready (len(input) < 3) {
+        yikes "Input too short"
+    }
+    
+    damn "Processed: " + input
+}
+
+# Pattern matching simulation
+slay classify_number(n drip) tea {
+    ready (n == 0) { damn "zero" }
+    otherwise ready (n > 0) { damn "positive" }
+    otherwise { damn "negative" }
+}
+
+# Demonstrate features
+vibez.spill("Max of 5 and 10:", max(5, 10))
+vibez.spill("Max of strings:", max("apple", "zebra"))
+
+sus data tea = "hello world"
+sus result = process_data(data) fam {
+    when "Empty input not allowed" -> damn "Error: No data"
+    when "Input too short" -> damn "Error: Need more data"
+    when _ -> damn "Unknown error"
+}
+vibez.spill("Process result:", result)
+
+vibez.spill("Classify 5:", classify_number(5))
+vibez.spill("Classify -3:", classify_number(-3))
+vibez.spill("Classify 0:", classify_number(0))
+
+# Concurrent map-reduce style
+sus numbers []drip = [1, 2, 3, 4, 5]
+sus sum drip = 0
+
+bestie (num in numbers) {
+    sum = sum + num * num  # Sum of squares
+}
+
+vibez.spill("Sum of squares:", sum)`
+        };
+
+        let isRunning = false;
+
+        function runCode() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            const loading = document.getElementById('loading');
+            const output = document.getElementById('output');
+            
+            loading.style.display = 'flex';
+            
+            // Get code from editor
+            const code = editor.getValue();
+            
+            // Simulate CURSED interpreter
+            setTimeout(() => {
+                try {
+                    const result = simulateCursedExecution(code);
+                    displayOutput(result);
+                } catch (error) {
+                    displayError(error.message);
+                } finally {
+                    loading.style.display = 'none';
+                    isRunning = false;
+                }
+            }, 500 + Math.random() * 1000); // Simulate processing time
+        }
+
+        function simulateCursedExecution(code) {
+            // Simple CURSED code simulator
+            const lines = code.split('\n');
+            const output = [];
+            let variables = {};
+            
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) continue;
+                
+                // Simulate vibez.spill output
+                if (trimmed.includes('vibez.spill(')) {
+                    const match = trimmed.match(/vibez\.spill\((.*)\)/);
+                    if (match) {
+                        const args = match[1].split(',').map(arg => {
+                            const cleaned = arg.trim().replace(/"/g, '');
+                            return cleaned;
+                        });
+                        output.push(args.join(' '));
+                    }
+                }
+                
+                // Simulate variable declarations
+                if (trimmed.startsWith('sus ') && trimmed.includes('=')) {
+                    const parts = trimmed.split('=');
+                    const varName = parts[0].replace('sus ', '').split(' ')[0];
+                    const value = parts[1].trim().replace(/"/g, '');
+                    variables[varName] = value;
+                }
+            }
+            
+            if (output.length === 0) {
+                output.push("Code executed successfully!");
+                output.push("(No output generated)");
+            }
+            
+            return output;
+        }
+
+        function displayOutput(lines) {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+            
+            lines.forEach(line => {
+                const div = document.createElement('div');
+                div.className = 'output-line output-success';
+                div.textContent = line;
+                output.appendChild(div);
+            });
+            
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function displayError(message) {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+            
+            const div = document.createElement('div');
+            div.className = 'output-error';
+            div.textContent = '❌ Error: ' + message;
+            output.appendChild(div);
+        }
+
+        function clearOutput() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<div class="output-line">Output cleared. Run some code to see results!</div>';
+        }
+
+        function toggleExamples() {
+            const dropdown = document.getElementById('examplesDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function loadExample(exampleKey) {
+            if (examples[exampleKey]) {
+                editor.setValue(examples[exampleKey]);
+                toggleExamples(); // Close dropdown
+                clearOutput();
+            }
+        }
+
+        function shareCode() {
+            const code = editor.getValue();
+            const encoded = btoa(encodeURIComponent(code));
+            const url = `${window.location.origin}${window.location.pathname}?code=${encoded}`;
+            
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Share link copied to clipboard!');
+            }).catch(() => {
+                prompt('Copy this link to share your code:', url);
+            });
+        }
+
+        // Load code from URL parameter
+        function loadFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const codeParam = params.get('code');
+            
+            if (codeParam) {
+                try {
+                    const decoded = decodeURIComponent(atob(codeParam));
+                    editor.setValue(decoded);
+                } catch (e) {
+                    console.error('Failed to load code from URL:', e);
+                }
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('examplesDropdown');
+            const button = event.target.closest('.examples-dropdown');
+            
+            if (!button) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                event.preventDefault();
+                runCode();
+            }
+        });
+
+        // Initialize
+        loadFromUrl();
+        
+        // Auto-save to localStorage
+        editor.on('change', function() {
+            localStorage.setItem('cursed-playground-code', editor.getValue());
+        });
+
+        // Load saved code
+        const saved = localStorage.getItem('cursed-playground-code');
+        if (saved && !new URLSearchParams(window.location.search).get('code')) {
+            editor.setValue(saved);
+        }
+    </script>
+</body>
+</html>

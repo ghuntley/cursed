@@ -1,0 +1,347 @@
+{
+    "Function Definition": {
+        "prefix": "slay",
+        "body": [
+            "slay ${1:function_name}(${2:params}) ${3:return_type} {",
+            "    ${4:// TODO: Implement function}",
+            "    damn ${5:return_value}",
+            "}"
+        ],
+        "description": "CURSED function definition"
+    },
+    "Variable Declaration": {
+        "prefix": "sus",
+        "body": [
+            "sus ${1:variable_name} ${2:type} = ${3:value}"
+        ],
+        "description": "CURSED variable declaration"
+    },
+    "If Statement": {
+        "prefix": "ready",
+        "body": [
+            "ready (${1:condition}) {",
+            "    ${2:// TODO: Add code}",
+            "}"
+        ],
+        "description": "CURSED if statement"
+    },
+    "If-Else Statement": {
+        "prefix": "readyelse",
+        "body": [
+            "ready (${1:condition}) {",
+            "    ${2:// TODO: Add code}",
+            "} otherwise {",
+            "    ${3:// TODO: Add else code}",
+            "}"
+        ],
+        "description": "CURSED if-else statement"
+    },
+    "While Loop": {
+        "prefix": "bestie",
+        "body": [
+            "bestie (${1:condition}) {",
+            "    ${2:// TODO: Add loop body}",
+            "}"
+        ],
+        "description": "CURSED while loop"
+    },
+    "For Loop": {
+        "prefix": "for",
+        "body": [
+            "bestie (${1:i} := 0; ${1:i} < ${2:length}; ${1:i}++) {",
+            "    ${3:// TODO: Add loop body}",
+            "}"
+        ],
+        "description": "CURSED for loop"
+    },
+    "Struct Definition": {
+        "prefix": "squad",
+        "body": [
+            "squad ${1:StructName} {",
+            "    ${2:field1} ${3:type1}",
+            "    ${4:field2} ${5:type2}",
+            "}"
+        ],
+        "description": "CURSED struct definition"
+    },
+    "Interface Definition": {
+        "prefix": "collab",
+        "body": [
+            "collab ${1:InterfaceName} {",
+            "    slay ${2:method_name}(${3:params}) ${4:return_type}",
+            "}"
+        ],
+        "description": "CURSED interface definition"
+    },
+    "Pattern Matching": {
+        "prefix": "sick",
+        "body": [
+            "sick (${1:value}) {",
+            "    when ${2:pattern1} -> ${3:result1}",
+            "    when ${4:pattern2} -> ${5:result2}",
+            "    when _ -> ${6:default_result}",
+            "}"
+        ],
+        "description": "CURSED pattern matching"
+    },
+    "Import Statement": {
+        "prefix": "yeet",
+        "body": [
+            "yeet \"${1:module_name}\""
+        ],
+        "description": "CURSED import statement"
+    },
+    "Return Statement": {
+        "prefix": "damn",
+        "body": [
+            "damn ${1:value}"
+        ],
+        "description": "CURSED return statement"
+    },
+    "Print Statement": {
+        "prefix": "spill",
+        "body": [
+            "vibez.spill(${1:value})"
+        ],
+        "description": "CURSED print statement"
+    },
+    "Error Handling": {
+        "prefix": "fam",
+        "body": [
+            "${1:expression} fam {",
+            "    when ${2:error_pattern} -> {",
+            "        ${3:// Handle error}",
+            "        damn ${4:fallback_value}",
+            "    }",
+            "}"
+        ],
+        "description": "CURSED error handling"
+    },
+    "Test Function": {
+        "prefix": "test",
+        "body": [
+            "slay test_${1:function_name}() lit {",
+            "    // Arrange",
+            "    ${2:// Setup test data}",
+            "    ",
+            "    // Act",
+            "    ${3:// Call function under test}",
+            "    ",
+            "    // Assert",
+            "    ${4:// Verify results}",
+            "    ",
+            "    damn based",
+            "}"
+        ],
+        "description": "CURSED test function template"
+    },
+    "Goroutine": {
+        "prefix": "go",
+        "body": [
+            "go {",
+            "    ${1:// Concurrent code}",
+            "}"
+        ],
+        "description": "CURSED goroutine"
+    },
+    "Channel Declaration": {
+        "prefix": "chan",
+        "body": [
+            "sus ${1:channel_name} chan<${2:type}> = make_channel()"
+        ],
+        "description": "CURSED channel declaration"
+    },
+    "Select Statement": {
+        "prefix": "select",
+        "body": [
+            "sick (channel_operation) {",
+            "    when ${1:channel1} <- ${2:value} -> {",
+            "        ${3:// Handle send}",
+            "    }",
+            "    when ${4:value} = <-${5:channel2} -> {",
+            "        ${6:// Handle receive}",
+            "    }",
+            "    when timeout(${7:duration}) -> {",
+            "        ${8:// Handle timeout}",
+            "    }",
+            "}"
+        ],
+        "description": "CURSED select statement for channels"
+    },
+    "Web Server Handler": {
+        "prefix": "handler",
+        "body": [
+            "slay handle_${1:route}(req httpz.Request) httpz.Response {",
+            "    ${2:// Process request}",
+            "    damn httpz.response(${3:200}, \"${4:Response body}\")",
+            "}"
+        ],
+        "description": "CURSED web server handler"
+    },
+    "JSON Response": {
+        "prefix": "jsonresp",
+        "body": [
+            "damn httpz.json_response(${1:200}, {",
+            "    \"${2:key}\": \"${3:value}\"",
+            "})"
+        ],
+        "description": "CURSED JSON response"
+    },
+    "Database Query": {
+        "prefix": "dbquery",
+        "body": [
+            "sus ${1:result} []${2:RecordType} = db.query(\"${3:SELECT * FROM table}\") fam {",
+            "    when _ -> {",
+            "        vibez.spill(\"Database query failed\")",
+            "        damn []",
+            "    }",
+            "}"
+        ],
+        "description": "CURSED database query with error handling"
+    },
+    "File Read": {
+        "prefix": "fileread",
+        "body": [
+            "sus ${1:content} tea = filez.read_file(\"${2:filename}\") fam {",
+            "    when _ -> {",
+            "        vibez.spill(\"Failed to read file\")",
+            "        damn \"\"",
+            "    }",
+            "}"
+        ],
+        "description": "CURSED file reading with error handling"
+    },
+    "HTTP GET Request": {
+        "prefix": "httpget",
+        "body": [
+            "sus ${1:response} httpz.Response = httpz.get(\"${2:url}\") fam {",
+            "    when _ -> {",
+            "        vibez.spill(\"HTTP request failed\")",
+            "        damn httpz.empty_response()",
+            "    }",
+            "}"
+        ],
+        "description": "CURSED HTTP GET request"
+    },
+    "Constructor Function": {
+        "prefix": "constructor",
+        "body": [
+            "slay new_${1:StructName}(${2:params}) ${1:StructName} {",
+            "    damn ${1:StructName} {",
+            "        ${3:field1}: ${4:value1},",
+            "        ${5:field2}: ${6:value2}",
+            "    }",
+            "}"
+        ],
+        "description": "CURSED constructor function"
+    },
+    "Method Definition": {
+        "prefix": "method",
+        "body": [
+            "slay ${1:method_name}(self *${2:StructName}${3:, params}) ${4:return_type} {",
+            "    ${5:// TODO: Implement method}",
+            "    damn ${6:return_value}",
+            "}"
+        ],
+        "description": "CURSED method definition"
+    },
+    "Constants": {
+        "prefix": "const",
+        "body": [
+            "sus ${1:CONSTANT_NAME} ${2:type} = ${3:value}"
+        ],
+        "description": "CURSED constant declaration"
+    },
+    "Enum Pattern": {
+        "prefix": "enum",
+        "body": [
+            "// Enum-like pattern using constants",
+            "sus ${1:ENUM_NAME}_${2:VALUE1} drip = 0",
+            "sus ${1:ENUM_NAME}_${3:VALUE2} drip = 1",
+            "sus ${1:ENUM_NAME}_${4:VALUE3} drip = 2"
+        ],
+        "description": "CURSED enum-like pattern"
+    },
+    "Main Function": {
+        "prefix": "main",
+        "body": [
+            "slay main() void {",
+            "    ${1:// Program entry point}",
+            "}"
+        ],
+        "description": "CURSED main function"
+    },
+    "Comment Block": {
+        "prefix": "comment",
+        "body": [
+            "/**",
+            " * ${1:Description}",
+            " * ",
+            " * @param ${2:param_name} - ${3:description}",
+            " * @returns ${4:return_description}",
+            " */"
+        ],
+        "description": "CURSED documentation comment block"
+    },
+    "Module Header": {
+        "prefix": "module",
+        "body": [
+            "// Module: ${1:module_name}",
+            "// Description: ${2:module_description}",
+            "// Author: ${3:author}",
+            "// Created: ${CURRENT_DATE}",
+            "",
+            "${4:// Module imports}",
+            "",
+            "${5:// Module code}"
+        ],
+        "description": "CURSED module header template"
+    },
+    "Performance Test": {
+        "prefix": "perftest",
+        "body": [
+            "slay benchmark_${1:function_name}() void {",
+            "    sus start_time drip = timez.now()",
+            "    ",
+            "    bestie (i := 0; i < ${2:1000}; i++) {",
+            "        ${3:// Code to benchmark}",
+            "    }",
+            "    ",
+            "    sus duration drip = timez.now() - start_time",
+            "    vibez.spill(\"Benchmark completed in\", duration, \"ms\")",
+            "}"
+        ],
+        "description": "CURSED performance test template"
+    },
+    "CLI Argument Parsing": {
+        "prefix": "cliparse",
+        "body": [
+            "sus args []tea = argz.get_args()",
+            "sus ${1:verbose} lit = argz.has_flag(\"--verbose\", args)",
+            "sus ${2:input_file} tea = argz.get_value(\"--input\", args)",
+            "sus ${3:output_file} tea = argz.get_value(\"--output\", args)"
+        ],
+        "description": "CURSED CLI argument parsing"
+    },
+    "Configuration Struct": {
+        "prefix": "config",
+        "body": [
+            "squad ${1:App}Config {",
+            "    ${2:host} tea",
+            "    ${3:port} drip",
+            "    ${4:debug} lit",
+            "    ${5:timeout} drip",
+            "}",
+            "",
+            "slay default_config() ${1:App}Config {",
+            "    damn ${1:App}Config {",
+            "        ${2:host}: \"localhost\",",
+            "        ${3:port}: 8080,",
+            "        ${4:debug}: cringe,",
+            "        ${5:timeout}: 30000",
+            "    }",
+            "}"
+        ],
+        "description": "CURSED configuration struct with defaults"
+    }
+}

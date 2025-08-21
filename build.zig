@@ -196,4 +196,32 @@ pub fn build(b: *std.Build) void {
     wasm_all_step.dependOn(wasm_browser_step);
     wasm_all_step.dependOn(wasm_wasi_step);
     wasm_all_step.dependOn(wasm_lib_step);
+    
+    // Enterprise toolkit examples
+    if (b.option(bool, "enterprise-examples", "Build enterprise examples") orelse false) {
+        const enterprise_microservices = b.addExecutable(.{
+            .name = "enterprise-microservices",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/enterprise_microservices.csd"),
+                .target = target,
+                .optimize = optimize,
+            }),
+        });
+        
+        const enterprise_benchmark = b.addExecutable(.{
+            .name = "enterprise-benchmark", 
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/enterprise_performance_benchmark.csd"),
+                .target = target,
+                .optimize = optimize,
+            }),
+        });
+        
+        b.installArtifact(enterprise_microservices);
+        b.installArtifact(enterprise_benchmark);
+        
+        if (b.verbose) {
+            std.debug.print("✅ Enterprise examples built\n", .{});
+        }
+    }
 }
