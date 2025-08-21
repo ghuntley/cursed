@@ -1,6 +1,8 @@
-yeet "vibez"
+fr fr Basic compilation test for native executable
 
-slay main() {
-    vibez.spill("Hello, CURSED world!")
-    damn 0
-}
+sus x drip = 42
+sus message tea = "Hello from compiled CURSED!"
+
+vibez.spill(message)
+vibez.spill("x =", x)
+vibez.spill("Sum:", x + 8)

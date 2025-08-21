@@ -1,438 +1,643 @@
-# CURSED Networking Standard Library (networkz)
+# NetworkZ - CURSED Standard Library Network Module
 
-The `networkz` module provides basic networking functionality for CURSED applications, including HTTP client operations, TCP socket management, URL parsing, and network utility functions.
-
-**Status**: Basic implementation complete and working. This module demonstrates core networking patterns in pure CURSED without external dependencies.
+The NetworkZ module provides comprehensive HTTP client/server functionality and basic networking operations for the CURSED programming language. This module is implemented entirely in pure CURSED with no external dependencies.
 
 ## Features
 
-### 🌐 HTTP Client Operations
-- **HTTP Methods**: GET, POST, PUT, DELETE, PATCH support
-- **Request Management**: Custom headers, body content, timeouts
-- **Response Handling**: Status codes, headers, body content, error handling
-- **Content Types**: JSON, form data, plain text support
-- **Error Handling**: Comprehensive timeout and error management
+- **HTTP Client**: GET, POST, and custom HTTP requests
+- **HTTP Server**: Basic server functionality with request handlers
+- **URL Parsing**: Complete URL parsing and manipulation
+- **TCP Connections**: Low-level TCP socket management
+- **Network Utilities**: Ping, port checking, and diagnostics
+- **JSON/Form Support**: Convenience functions for API interactions
+- **Error Handling**: Comprehensive network error management
 
-### 🔌 TCP Socket Operations  
-- **Connection Management**: Connect, send, receive, close operations
-- **Error Handling**: Connection timeouts, refused connections
-- **Data Transfer**: Reliable data sending and receiving
-- **Status Monitoring**: Connection state tracking
-
-### 🔗 URL Parsing and Validation
-- **Full URL Parsing**: Scheme, host, port, path, query, fragment extraction
-- **URL Building**: Reconstruct URLs from components
-- **Validation**: Comprehensive URL format validation
-- **Multiple Schemes**: HTTP, HTTPS, FTP, FTPS support
-
-### 🛠 Network Utilities
-- **IP Address Validation**: IPv4 address format checking
-- **Hostname Validation**: Domain name format validation
-- **Port Management**: Port range validation, well-known port detection
-- **Protocol Mapping**: Default ports for common protocols
-
-## Installation
-
-```cursed
-yeet "networkz"
-```
-
-## Quick Start Guide
-
-### Basic HTTP Requests
+## Quick Start
 
 ```cursed
 yeet "networkz"
 
-fr fr Simple GET request
-sus response HTTPResponse = http_get("https://api.example.com/users")
-lowkey http_is_success(response) {
-    vibez.spill("Success:", response.body)
-} highkey {
-    vibez.spill("Error:", response.error)
+// Simple HTTP GET request
+sus response HttpResponse = networkz.http_get("http://api.example.com/data") fam {
+    when err -> {
+        vibez.spill("Request failed:", err.message)
+        damn
+    }
 }
 
-fr fr POST request with data
-sus post_resp HTTPResponse = http_post("https://api.example.com/users", "name=John&email=john@example.com")
-vibez.spill("Status:", http_status_text(post_resp.status_code))
-
-fr fr JSON POST request
-sus json_resp HTTPResponse = http_post_json("https://api.example.com/users", "{\"name\":\"John\",\"email\":\"john@example.com\"}")
+vibez.spill("Status:", response.status_code)
+vibez.spill("Body:", response.body)
 ```
-
-### Custom HTTP Requests
-
-```cursed
-fr fr Create custom request with headers
-sus request HTTPRequest = http_request_new("GET", "https://api.example.com/protected")
-http_request_add_header(&request, "Authorization", "Bearer your-token-here")
-http_request_add_header(&request, "User-Agent", "MyApp/1.0")
-http_request_set_timeout(&request, 10000)  fr fr 10 second timeout
-
-sus response HTTPResponse = http_send_request(request)
-```
-
-### TCP Socket Communication
-
-```cursed
-fr fr Connect to a TCP server
-sus conn TCPConnection = tcp_connect("localhost", 8080)
-lowkey tcp_is_connected(conn) {
-    fr fr Send data
-    sus bytes_sent normie = tcp_send(&conn, "Hello, Server!")
-    vibez.spill("Sent", bytes_sent, "bytes")
-    
-    fr fr Receive response
-    sus response tea = tcp_receive(&conn, 1024)
-    vibez.spill("Received:", response)
-    
-    fr fr Close connection
-    tcp_close(&conn)
-} highkey {
-    vibez.spill("Connection failed:", conn.error)
-}
-```
-
-### URL Parsing
-
-```cursed
-fr fr Parse a complex URL
-sus url_parts URLParts = parse_url("https://api.example.com:8443/v1/users?active=true&role=admin#results")
-
-lowkey url_parts.is_valid {
-    vibez.spill("Scheme:", url_parts.scheme)      fr fr "https"
-    vibez.spill("Host:", url_parts.host)          fr fr "api.example.com"  
-    vibez.spill("Port:", url_parts.port)          fr fr 8443
-    vibez.spill("Path:", url_parts.path)          fr fr "/v1/users"
-    vibez.spill("Query:", url_parts.query)        fr fr "active=true&role=admin"
-    vibez.spill("Fragment:", url_parts.fragment)  fr fr "results"
-} highkey {
-    vibez.spill("Invalid URL:", url_parts.error)
-}
-
-fr fr Rebuild URL from parts
-sus rebuilt_url tea = build_url(url_parts)
-vibez.spill("Rebuilt:", rebuilt_url)
-```
-
-## API Reference
-
-### HTTP Client Functions
-
-#### `http_request_new(method tea, url tea) HTTPRequest`
-Create a new HTTP request with the specified method and URL.
-
-#### `http_request_add_header(request *HTTPRequest, key tea, value tea) lit`
-Add a custom header to the HTTP request.
-
-#### `http_request_set_body(request *HTTPRequest, body tea, content_type tea) lit`
-Set the request body and content type.
-
-#### `http_request_set_timeout(request *HTTPRequest, timeout_ms normie) lit`
-Set the request timeout in milliseconds.
-
-#### `http_get(url tea) HTTPResponse`
-Perform a GET request to the specified URL.
-
-#### `http_post(url tea, data tea) HTTPResponse`
-Perform a POST request with form data.
-
-#### `http_post_json(url tea, json_data tea) HTTPResponse`
-Perform a POST request with JSON data.
-
-#### `http_put(url tea, data tea) HTTPResponse`
-Perform a PUT request with data.
-
-#### `http_delete(url tea) HTTPResponse`
-Perform a DELETE request.
-
-#### `http_patch(url tea, data tea) HTTPResponse`
-Perform a PATCH request with JSON data.
-
-#### `http_send_request(request HTTPRequest) HTTPResponse`
-Send a custom HTTP request.
-
-### HTTP Utility Functions
-
-#### `http_is_success(response HTTPResponse) lit`
-Check if the response indicates success (2xx status code).
-
-#### `http_is_client_error(response HTTPResponse) lit`
-Check if the response indicates a client error (4xx status code).
-
-#### `http_is_server_error(response HTTPResponse) lit`
-Check if the response indicates a server error (5xx status code).
-
-#### `http_has_error(response HTTPResponse) lit`
-Check if the response has any error condition.
-
-#### `http_status_text(status_code normie) tea`
-Get the text description for an HTTP status code.
-
-#### `http_get_header(response HTTPResponse, header_name tea) tea`
-Extract a specific header value from the response.
-
-#### `http_get_content_type(response HTTPResponse) tea`
-Get the content type from the response.
-
-#### `http_get_content_length(response HTTPResponse) normie`
-Get the content length from the response.
-
-### TCP Socket Functions
-
-#### `tcp_connect(host tea, port normie) TCPConnection`
-Create a TCP connection to the specified host and port.
-
-#### `tcp_send(conn *TCPConnection, data tea) normie`
-Send data over the TCP connection. Returns bytes sent or -1 on error.
-
-#### `tcp_receive(conn *TCPConnection, buffer_size normie) tea`
-Receive data from the TCP connection up to buffer_size bytes.
-
-#### `tcp_close(conn *TCPConnection) lit`
-Close the TCP connection.
-
-#### `tcp_is_connected(conn TCPConnection) lit`
-Check if the TCP connection is active.
-
-### URL Functions
-
-#### `parse_url(url tea) URLParts`
-Parse a URL into its component parts.
-
-#### `is_valid_url(url tea) lit`
-Check if a URL is valid.
-
-#### `is_valid_scheme(scheme tea) lit`
-Check if a URL scheme is supported.
-
-#### `build_url(parts URLParts) tea`
-Build a URL from its component parts.
-
-### Network Utility Functions
-
-#### `is_valid_ip(ip tea) lit`
-Validate an IPv4 address format.
-
-#### `is_valid_host(host tea) lit`
-Validate a hostname or IP address.
-
-#### `is_valid_port(port normie) lit`
-Check if a port number is in valid range (1-65535).
-
-#### `is_well_known_port(port normie) lit`
-Check if a port is in the well-known range (1-1023).
-
-#### `get_default_port(scheme tea) normie`
-Get the default port for a URL scheme.
-
-#### `get_scheme_from_port(port normie) tea`
-Get the likely scheme for a port number.
 
 ## Data Structures
 
-### HTTPRequest
+### NetworkError
 ```cursed
-squad HTTPRequest {
-    spill method tea          fr fr HTTP method (GET, POST, etc.)
-    spill url tea            fr fr Request URL
-    spill headers tea        fr fr Custom headers
-    spill body tea           fr fr Request body
-    spill content_type tea   fr fr Content type
-    spill timeout_ms normie  fr fr Timeout in milliseconds
-    spill user_agent tea     fr fr User agent string
+squad NetworkError {
+    sus kind tea        // Error type (e.g., "tcp_connect", "http_parse")
+    sus message tea     // Human-readable error message
+    sus code drip       // HTTP status code or system error code
 }
 ```
 
-### HTTPResponse
+### HttpRequest
 ```cursed
-squad HTTPResponse {
-    spill status_code normie      fr fr HTTP status code
-    spill headers tea            fr fr Response headers
-    spill body tea               fr fr Response body
-    spill error tea              fr fr Error message
-    spill response_time_ms normie fr fr Response time
+squad HttpRequest {
+    sus method tea      // HTTP method (GET, POST, etc.)
+    sus url tea         // Complete URL
+    sus headers []tea   // HTTP headers array
+    sus body tea        // Request body content
+    sus timeout drip    // Timeout in seconds
 }
 ```
 
-### TCPConnection
+### HttpResponse
 ```cursed
-squad TCPConnection {
-    spill socket_id normie    fr fr Socket identifier
-    spill host tea           fr fr Connected host
-    spill port normie        fr fr Connected port
-    spill is_connected lit   fr fr Connection status
-    spill error tea          fr fr Error message
+squad HttpResponse {
+    sus status_code drip    // HTTP status code (200, 404, etc.)
+    sus headers []tea       // Response headers array
+    sus body tea            // Response body content
+    sus content_length drip // Content length in bytes
 }
 ```
 
-### URLParts
+### UrlParts
 ```cursed
-squad URLParts {
-    spill scheme tea     fr fr URL scheme (http, https)
-    spill host tea       fr fr Hostname or IP
-    spill port normie    fr fr Port number
-    spill path tea       fr fr URL path
-    spill query tea      fr fr Query string
-    spill fragment tea   fr fr URL fragment
-    spill is_valid lit   fr fr Validation status
-    spill error tea      fr fr Error message
+squad UrlParts {
+    sus scheme tea      // Protocol (http, https)
+    sus host tea        // Hostname or IP address
+    sus port drip       // Port number
+    sus path tea        // URL path
+    sus query tea       // Query string
+    sus fragment tea    // Fragment identifier
+}
+```
+
+### TcpConnection
+```cursed
+squad TcpConnection {
+    sus host tea        // Remote host
+    sus port drip       // Remote port
+    sus socket_fd drip  // Socket file descriptor
+    sus is_connected lit // Connection status
+}
+```
+
+### HttpServer
+```cursed
+squad HttpServer {
+    sus host tea        // Bind address
+    sus port drip       // Listen port
+    sus socket_fd drip  // Server socket descriptor
+    sus is_running lit  // Server status
+    sus request_handler slay(HttpRequest) HttpResponse // Request handler
+}
+```
+
+## HTTP Client Functions
+
+### Basic HTTP Operations
+
+#### `http_get(url tea) yikes<HttpResponse>`
+Performs an HTTP GET request to the specified URL.
+
+```cursed
+sus response HttpResponse = networkz.http_get("https://api.github.com/users/octocat") fam {
+    when err -> {
+        vibez.spill("GET request failed:", err.message)
+        damn
+    }
+}
+
+ready (networkz.is_success_status(response.status_code)) {
+    vibez.spill("Success! Body:", response.body)
+} otherwise {
+    vibez.spill("HTTP error:", response.status_code)
+}
+```
+
+#### `http_post(url tea, body tea, content_type tea) yikes<HttpResponse>`
+Performs an HTTP POST request with the specified body and content type.
+
+```cursed
+sus json_data tea = "{\"name\": \"John\", \"email\": \"john@example.com\"}"
+sus response HttpResponse = networkz.http_post(
+    "https://api.example.com/users",
+    json_data,
+    "application/json"
+) fam {
+    when err -> {
+        vibez.spill("POST request failed:", err.message)
+        damn
+    }
+}
+```
+
+#### `http_request_advanced(method tea, url tea, headers []tea, body tea, timeout drip) yikes<HttpResponse>`
+Advanced HTTP request with custom headers and timeout.
+
+```cursed
+sus custom_headers []tea = [
+    "Authorization: Bearer abc123",
+    "User-Agent: MyApp/1.0",
+    "Accept: application/json"
+]
+
+sus response HttpResponse = networkz.http_request_advanced(
+    "PUT",
+    "https://api.example.com/resource/123",
+    custom_headers,
+    "{\"status\": \"updated\"}",
+    60  // 60 second timeout
+) fam {
+    when err -> {
+        vibez.spill("Advanced request failed:", err.message)
+        damn
+    }
+}
+```
+
+### JSON API Convenience Functions
+
+#### `json_get(url tea) yikes<HttpResponse>`
+GET request with JSON headers automatically set.
+
+```cursed
+sus response HttpResponse = networkz.json_get("https://api.example.com/data") fam {
+    when err -> {
+        vibez.spill("JSON GET failed:", err.message)
+        damn
+    }
+}
+```
+
+#### `json_post(url tea, json_body tea) yikes<HttpResponse>`
+POST request with JSON content type and accept headers.
+
+```cursed
+sus user_data tea = "{\"name\": \"Alice\", \"role\": \"admin\"}"
+sus response HttpResponse = networkz.json_post("https://api.example.com/users", user_data) fam {
+    when err -> {
+        vibez.spill("JSON POST failed:", err.message)
+        damn
+    }
+}
+```
+
+### Form Data Functions
+
+#### `form_post(url tea, form_data []tea) yikes<HttpResponse>`
+POST request with form-encoded data.
+
+```cursed
+sus form_fields []tea = [
+    "username=johndoe",
+    "password=secret123",
+    "remember=true"
+]
+
+sus response HttpResponse = networkz.form_post("https://example.com/login", form_fields) fam {
+    when err -> {
+        vibez.spill("Form POST failed:", err.message)
+        damn
+    }
+}
+```
+
+## URL Parsing and Manipulation
+
+#### `parse_url(url tea) yikes<UrlParts>`
+Parses a URL into its component parts.
+
+```cursed
+sus url_parts UrlParts = networkz.parse_url("https://api.example.com:8080/v1/users?limit=10#section1") fam {
+    when err -> {
+        vibez.spill("URL parsing failed:", err.message)
+        damn
+    }
+}
+
+vibez.spill("Scheme:", url_parts.scheme)    // "https"
+vibez.spill("Host:", url_parts.host)        // "api.example.com"
+vibez.spill("Port:", url_parts.port)        // 8080
+vibez.spill("Path:", url_parts.path)        // "/v1/users"
+vibez.spill("Query:", url_parts.query)      // "limit=10"
+vibez.spill("Fragment:", url_parts.fragment) // "section1"
+```
+
+#### `encode_url_params(params []tea) tea`
+Encodes parameters for URL query strings.
+
+```cursed
+sus params []tea = ["name=John Doe", "city=New York", "age=30"]
+sus encoded tea = networkz.encode_url_params(params)
+vibez.spill("Encoded:", encoded)  // "name=John%20Doe&city=New%20York&age=30"
+```
+
+#### `decode_url_params(encoded tea) []tea`
+Decodes URL-encoded parameter string.
+
+```cursed
+sus encoded tea = "name=John%20Doe&city=New%20York"
+sus decoded []tea = networkz.decode_url_params(encoded)
+// decoded[0] = "name=John Doe"
+// decoded[1] = "city=New York"
+```
+
+## TCP Connection Management
+
+#### `tcp_connect(host tea, port drip) yikes<TcpConnection>`
+Establishes a TCP connection to a remote host.
+
+```cursed
+sus conn TcpConnection = networkz.tcp_connect("example.com", 80) fam {
+    when err -> {
+        vibez.spill("Connection failed:", err.message)
+        damn
+    }
+}
+
+vibez.spill("Connected to:", conn.host, "on port", conn.port)
+```
+
+#### `tcp_send(conn TcpConnection, data tea) yikes<drip>`
+Sends data over a TCP connection.
+
+```cursed
+sus bytes_sent drip = networkz.tcp_send(conn, "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n") fam {
+    when err -> {
+        vibez.spill("Send failed:", err.message)
+        damn
+    }
+}
+
+vibez.spill("Sent", bytes_sent, "bytes")
+```
+
+#### `tcp_receive(conn TcpConnection, buffer_size drip) yikes<tea>`
+Receives data from a TCP connection.
+
+```cursed
+sus response tea = networkz.tcp_receive(conn, 4096) fam {
+    when err -> {
+        vibez.spill("Receive failed:", err.message)
+        damn
+    }
+}
+
+vibez.spill("Received:", response)
+```
+
+#### `tcp_close(conn TcpConnection) yikes<lit>`
+Closes a TCP connection.
+
+```cursed
+networkz.tcp_close(conn) fam {
+    when err -> {
+        vibez.spill("Close failed:", err.message)
+    }
+}
+```
+
+## HTTP Server Functions
+
+#### `create_http_server(host tea, port drip, handler slay(HttpRequest) HttpResponse) yikes<HttpServer>`
+Creates an HTTP server with a request handler.
+
+```cursed
+// Define request handler
+slay handle_request(req HttpRequest) HttpResponse {
+    ready (stringz.equals(req.url, "/hello")) {
+        damn HttpResponse{
+            status_code: 200,
+            headers: ["Content-Type: text/plain"],
+            body: "Hello, World!",
+            content_length: 13
+        }
+    } otherwise {
+        damn HttpResponse{
+            status_code: 404,
+            headers: ["Content-Type: text/plain"],
+            body: "Not Found",
+            content_length: 9
+        }
+    }
+}
+
+sus server HttpServer = networkz.create_http_server("127.0.0.1", 8080, handle_request) fam {
+    when err -> {
+        vibez.spill("Server creation failed:", err.message)
+        damn
+    }
+}
+```
+
+#### `start_http_server(server HttpServer) yikes<lit>`
+Starts the HTTP server.
+
+```cursed
+networkz.start_http_server(server) fam {
+    when err -> {
+        vibez.spill("Server start failed:", err.message)
+        damn
+    }
+}
+
+vibez.spill("Server running on", server.host, ":", server.port)
+```
+
+#### `stop_http_server(server HttpServer) yikes<lit>`
+Stops the HTTP server.
+
+```cursed
+networkz.stop_http_server(server) fam {
+    when err -> {
+        vibez.spill("Server stop failed:", err.message)
+    }
+}
+```
+
+## Response Utilities
+
+#### `get_response_header(response HttpResponse, header_name tea) tea`
+Extracts a specific header from an HTTP response.
+
+```cursed
+sus content_type tea = networkz.get_response_header(response, "Content-Type")
+ready (stringz.len(content_type) > 0) {
+    vibez.spill("Content type:", content_type)
+}
+```
+
+#### Status Code Checking Functions
+
+```cursed
+// Check if response indicates success (2xx)
+ready (networkz.is_success_status(response.status_code)) {
+    vibez.spill("Request succeeded")
+}
+
+// Check if response is a redirect (3xx)
+ready (networkz.is_redirect_status(response.status_code)) {
+    sus location tea = networkz.get_response_header(response, "Location")
+    vibez.spill("Redirect to:", location)
+}
+
+// Check for client error (4xx)
+ready (networkz.is_client_error_status(response.status_code)) {
+    vibez.spill("Client error:", response.status_code)
+}
+
+// Check for server error (5xx)
+ready (networkz.is_server_error_status(response.status_code)) {
+    vibez.spill("Server error:", response.status_code)
+}
+```
+
+## File Operations
+
+#### `download_file(url tea, local_path tea) yikes<drip>`
+Downloads a file from a URL to local storage.
+
+```cursed
+sus bytes_written drip = networkz.download_file(
+    "https://example.com/file.pdf",
+    "/tmp/downloaded_file.pdf"
+) fam {
+    when err -> {
+        vibez.spill("Download failed:", err.message)
+        damn
+    }
+}
+
+vibez.spill("Downloaded", bytes_written, "bytes")
+```
+
+## Network Diagnostics
+
+#### `ping_host(host tea) yikes<drip>`
+Tests network connectivity to a host (returns ping time in milliseconds).
+
+```cursed
+sus ping_time drip = networkz.ping_host("google.com") fam {
+    when err -> {
+        vibez.spill("Ping failed:", err.message)
+        damn
+    }
+}
+
+vibez.spill("Ping time:", ping_time, "ms")
+```
+
+#### `check_port_open(host tea, port drip) yikes<lit>`
+Checks if a specific port is open on a host.
+
+```cursed
+sus is_open lit = networkz.check_port_open("example.com", 80) fam {
+    when err -> {
+        vibez.spill("Port check failed:", err.message)
+        damn
+    }
+}
+
+ready (is_open) {
+    vibez.spill("Port 80 is open")
+} otherwise {
+    vibez.spill("Port 80 is closed")
 }
 ```
 
 ## Error Handling
 
-The networking module provides comprehensive error handling:
+NetworkZ provides comprehensive error handling through the `NetworkError` structure:
 
-### HTTP Errors
-- **Connection Errors**: Network timeouts, DNS resolution failures
-- **HTTP Errors**: 4xx client errors, 5xx server errors
-- **Validation Errors**: Invalid URLs, malformed requests
+### Common Error Types
 
-### TCP Errors
-- **Connection Failures**: Host unreachable, connection refused
-- **Data Transfer Errors**: Send/receive failures
-- **Validation Errors**: Invalid hosts, ports
+- **`url_parse`**: URL parsing errors
+- **`tcp_connect`**: Connection establishment errors
+- **`tcp_send`**: Data transmission errors  
+- **`tcp_receive`**: Data reception errors
+- **`http_parse`**: HTTP response parsing errors
+- **`http_request`**: General HTTP request errors
+- **`server_create`**: Server creation errors
+- **`server_start`**: Server startup errors
+- **`download`**: File download errors
+- **`ping`**: Network connectivity errors
 
-### URL Parsing Errors
-- **Format Errors**: Missing scheme, invalid characters
-- **Component Errors**: Invalid ports, empty hosts
-- **Scheme Errors**: Unsupported protocols
-
-## Examples
-
-### Complete HTTP Client Example
+### Error Handling Patterns
 
 ```cursed
-yeet "networkz"
-
-fr fr API client with error handling
-slay make_api_request(endpoint tea, data tea) HTTPResponse {
-    sus request HTTPRequest = http_request_new("POST", "https://api.example.com" + endpoint)
-    http_request_add_header(&request, "Content-Type", "application/json")
-    http_request_add_header(&request, "Authorization", "Bearer your-token")
-    http_request_set_body(&request, data, "application/json")
-    http_request_set_timeout(&request, 15000)
-    
-    damn http_send_request(request)
+// Pattern 1: Simple error handling
+sus response HttpResponse = networkz.http_get(url) fam {
+    when err -> {
+        vibez.spill("Request failed:", err.message, "(", err.kind, ")")
+        damn
+    }
 }
 
-sus response HTTPResponse = make_api_request("/users", "{\"name\":\"John\",\"email\":\"john@example.com\"}")
-
-lowkey http_is_success(response) {
-    vibez.spill("User created successfully!")
-    vibez.spill("Response:", response.body)
-} highkey http_is_client_error(response) {
-    vibez.spill("Client error:", http_status_text(response.status_code))
-} highkey http_is_server_error(response) {
-    vibez.spill("Server error:", http_status_text(response.status_code))
-} highkey {
-    vibez.spill("Network error:", response.error)
-}
-```
-
-### TCP Server Communication
-
-```cursed
-yeet "networkz"
-
-fr fr Simple TCP client
-slay communicate_with_server(host tea, port normie, message tea) tea {
-    sus conn TCPConnection = tcp_connect(host, port)
-    
-    check !tcp_is_connected(conn) {
-        damn "Connection failed: " + conn.error
-    }
-    
-    sus bytes_sent normie = tcp_send(&conn, message)
-    check bytes_sent == -1 {
-        tcp_close(&conn)
-        damn "Send failed"
-    }
-    
-    sus response tea = tcp_receive(&conn, 4096)
-    tcp_close(&conn)
-    
-    damn response
-}
-
-sus server_response tea = communicate_with_server("localhost", 8080, "Hello Server!")
-vibez.spill("Server replied:", server_response)
-```
-
-### URL Manipulation
-
-```cursed
-yeet "networkz"
-
-fr fr URL builder and parser
-slay build_api_url(base_url tea, endpoint tea, params []tea) tea {
-    sus base URLParts = parse_url(base_url)
-    check !base.is_valid {
-        damn ""
-    }
-    
-    base.path = endpoint
-    
-    lowkey len(params) > 0 {
-        sus query tea = ""
-        sus i normie = 0
-        bestie i < len(params) {
-            lowkey i > 0 {
-                query = query + "&"
-            }
-            query = query + params[i]
-            i = i + 1
+// Pattern 2: Specific error handling
+sus response HttpResponse = networkz.http_get(url) fam {
+    when err -> {
+        ready (stringz.equals(err.kind, "tcp_connect")) {
+            vibez.spill("Connection error - server may be down")
+        } otherwise ready (stringz.equals(err.kind, "http_parse")) {
+            vibez.spill("Invalid response from server")
+        } otherwise {
+            vibez.spill("Unexpected error:", err.message)
         }
-        base.query = query
+        damn
     }
-    
-    damn build_url(base)
 }
 
-sus api_url tea = build_api_url("https://api.example.com", "/users", ["active=true", "limit=10"])
-vibez.spill("API URL:", api_url)  fr fr "https://api.example.com/users?active=true&limit=10"
+// Pattern 3: Retry logic with exponential backoff
+slay http_get_with_retry(url tea, max_attempts drip) yikes<HttpResponse> {
+    sus attempt drip = 0
+    bestie (attempt < max_attempts) {
+        sus response HttpResponse = networkz.http_get(url) fam {
+            when err -> {
+                attempt = attempt + 1
+                ready (attempt >= max_attempts) {
+                    yikes err
+                }
+                // Exponential backoff: wait 2^attempt seconds
+                sus wait_time drip = mathz.power(2, attempt) * 1000
+                // In real implementation, would actually sleep
+                damn // Continue to next iteration
+            }
+        }
+        damn response
+    }
+    yikes networkz.create_network_error("retry", "Max retries exceeded", 503)
+}
 ```
-
-## Testing
-
-Run the comprehensive test suite:
-
-```bash
-./zig-out/bin/cursed stdlib/networkz/test_networkz.csd
-```
-
-The test suite covers:
-- HTTP client operations with various methods
-- TCP socket connection and data transfer
-- URL parsing and validation with edge cases
-- Network utility functions
-- Error handling scenarios
-- Integration testing between components
 
 ## Performance Considerations
 
-- **Connection Reuse**: For multiple requests to the same host, consider implementing connection pooling
-- **Timeouts**: Set appropriate timeouts based on your application needs
-- **Buffer Sizes**: Choose TCP receive buffer sizes based on expected data volumes
-- **Error Handling**: Always check return values and error conditions
+### Connection Reuse
+```cursed
+// For multiple requests to same host, consider connection pooling
+slay make_multiple_requests(base_url tea, endpoints []tea) []HttpResponse {
+    sus responses []HttpResponse = []
+    sus i drip = 0
+    
+    bestie (i < arrayz.len(endpoints)) {
+        sus full_url tea = stringz.concat([base_url, endpoints[i]])
+        sus response HttpResponse = networkz.http_get(full_url) fam {
+            when err -> {
+                // Log error but continue with other requests
+                vibez.spill("Request to", endpoints[i], "failed:", err.message)
+                i = i + 1
+                damn // Continue loop
+            }
+        }
+        responses = arrayz.push(responses, response)
+        i = i + 1
+    }
+    
+    damn responses
+}
+```
 
-## Security Notes
+### Timeout Configuration
+```cursed
+// Use appropriate timeouts for different scenarios
+sus quick_response HttpResponse = networkz.http_request_advanced(
+    "GET", 
+    "https://fast-api.example.com/health", 
+    [], 
+    "", 
+    5  // 5 second timeout for health checks
+)
 
-- **HTTPS**: Use HTTPS for sensitive data transmission
-- **Input Validation**: Always validate URLs and hostnames before use
-- **Timeouts**: Set reasonable timeouts to prevent hanging connections
-- **Headers**: Be careful with custom headers to avoid injection attacks
+sus large_download HttpResponse = networkz.http_request_advanced(
+    "GET", 
+    "https://cdn.example.com/large-file.zip", 
+    [], 
+    "", 
+    300  // 5 minute timeout for large downloads
+)
+```
 
-## Contributing
+### Memory Management
+```cursed
+// For large responses, consider streaming or chunked processing
+slay process_large_response(response HttpResponse) lit {
+    ready (response.content_length > 10 * 1024 * 1024) {  // 10MB
+        vibez.spill("Warning: Large response size:", response.content_length, "bytes")
+        // In real implementation, process in chunks
+    }
+    
+    // Process response body
+    damn based
+}
+```
 
-This module follows CURSED stdlib conventions:
-- Pure CURSED implementation without external dependencies
-- Comprehensive error handling with meaningful messages
-- Extensive test coverage with edge cases
-- Clear documentation with examples
-- Performance-conscious design
+## Best Practices
 
-## License
+1. **Always handle errors**: Network operations can fail in many ways
+2. **Use appropriate timeouts**: Prevent hanging requests
+3. **Validate URLs**: Parse and validate URLs before making requests  
+4. **Handle redirects**: Check for 3xx status codes and Location headers
+5. **Set proper headers**: Include User-Agent, Accept, and Content-Type headers
+6. **Connection cleanup**: Always close connections when done
+7. **Retry logic**: Implement exponential backoff for transient failures
+8. **Security**: Validate certificates in production (HTTPS)
+9. **Rate limiting**: Respect server rate limits and implement client-side throttling
+10. **Logging**: Log request/response details for debugging
 
-This module is part of the CURSED standard library and follows the same license terms.
+## Thread Safety
+
+NetworkZ operations are designed to be thread-safe when used properly:
+
+- Each connection should be used by only one goroutine at a time
+- Server instances can handle multiple concurrent requests
+- Stateless functions (like `http_get`, `parse_url`) are safe to call concurrently
+- Shared connection pools should be protected with appropriate synchronization
+
+## Integration Examples
+
+### REST API Client
+```cursed
+squad ApiClient {
+    sus base_url tea
+    sus auth_token tea
+    sus timeout drip
+}
+
+slay create_api_client(base_url tea, auth_token tea) ApiClient {
+    damn ApiClient{
+        base_url: base_url,
+        auth_token: auth_token,
+        timeout: 30
+    }
+}
+
+slay api_get(client ApiClient, endpoint tea) yikes<HttpResponse> {
+    sus full_url tea = stringz.concat([client.base_url, endpoint])
+    sus headers []tea = [
+        stringz.concat(["Authorization: Bearer ", client.auth_token]),
+        "Accept: application/json"
+    ]
+    
+    damn networkz.http_request_advanced("GET", full_url, headers, "", client.timeout)
+}
+```
+
+### Web Scraper
+```cursed
+slay scrape_page(url tea) yikes<[]tea> {
+    sus response HttpResponse = networkz.http_get(url) fam {
+        when err -> yikes err
+    }
+    
+    ready (!networkz.is_success_status(response.status_code)) {
+        yikes networkz.create_network_error("scrape", "HTTP error", response.status_code)
+    }
+    
+    // Extract links (simplified)
+    sus links []tea = stringz.extract_all(response.body, "href=\"", "\"")
+    damn links
+}
+```
+
+This documentation provides comprehensive coverage of the NetworkZ module's capabilities for building robust networked applications in CURSED.

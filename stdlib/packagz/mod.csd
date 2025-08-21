@@ -1,11 +1,14 @@
 # Package Manager Module for CURSED
-# Provides package installation, dependency resolution, and registry management
+# Provides comprehensive package installation, dependency resolution, and registry management
 yeet "filez"
 yeet "networkz"
 yeet "jsonz"
 yeet "arrayz"
 yeet "stringz"
 yeet "vibez"
+yeet "registry"  # Enhanced registry functionality
+yeet "resolver"  # Dependency resolution engine
+yeet "lockfile"  # Lock file management
 
 # Package registry configuration
 squad RegistryConfig {

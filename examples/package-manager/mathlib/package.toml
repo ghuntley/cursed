@@ -1,0 +1,29 @@
+[package]
+name = "mathlib"
+version = "1.2.0"
+description = "Extended mathematical functions and utilities for CURSED"
+authors = ["CURSED Community <community@cursedlang.org>"]
+license = "MIT"
+homepage = "https://github.com/cursed-lang/mathlib"
+repository = "https://github.com/cursed-lang/mathlib.git"
+keywords = ["math", "mathematics", "utilities", "algorithms"]
+categories = ["mathematics", "algorithms"]
+
+[dependencies]
+# No dependencies for this basic math library
+
+[dev-dependencies]
+testz = "^1.0.0"
+
+[build]
+# No special build requirements
+
+[features]
+default = ["std"]
+std = []
+advanced = ["complex-numbers", "statistics"]
+complex-numbers = []
+statistics = []
+
+[metadata]
+minimum_cursed_version = "1.0.0"

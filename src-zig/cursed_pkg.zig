@@ -24,7 +24,7 @@ pub fn main() !void {
 
     // Create lexer and parse the source
     var lex = lexer.Lexer.init(allocator, pkg_manager_source);
-    var tokens = std.ArrayList(lexer.Token).init(self.allocator);
+    var tokens = std.ArrayList(lexer.Token).init(allocator);
     defer tokens.deinit();
 
     // Tokenize the source
@@ -46,7 +46,7 @@ pub fn main() !void {
     defer interp.deinit();
 
     // Set up command line arguments in interpreter environment
-    var arg_array = std.ArrayList(interpreter.Value).init(self.allocator);
+    var arg_array = std.ArrayList(interpreter.Value).init(allocator);
     defer arg_array.deinit();
 
     for (pkg_args) |arg| {
@@ -72,11 +72,11 @@ pub fn main() !void {
     };
 
     // Exit with the return code from the main function
-    const exit_code = switch (result) {
+    const exit_code: i32 = switch (result) {
         .Integer => |i| @intCast(i),
         .Float => |f| @intFromFloat(f),
         else => 0,
     };
 
-    std.process.exit(@intCast(exit_code));
+    std.process.exit(@as(u8, @intCast(exit_code)));
 }

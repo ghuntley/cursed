@@ -876,12 +876,12 @@ pub const Parser = struct {
     fn parseBlockStatement(self: *Parser) ParserError!Statement {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        const statements = .empty;
+        var statements = ArrayList(*anyopaque).init(self.allocator);
         errdefer {
             for (statements.items) |stmt_ptr| {
                 self.allocator.destroy(@as(*Statement, @ptrCast(@alignCast(stmt_ptr))));
             }
-            statements.deinit(self.allocator);
+            statements.deinit();
         }
         
         // Parse statements within the block
@@ -2059,7 +2059,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{' after match value");
         
-        var cases = .empty;
+        var cases = ArrayList(ast.MatchCase).init(self.allocator);
         var default_case: ?*Expression = null;
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -2366,7 +2366,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var then_branch = .empty;
+        var then_branch = ArrayList(*anyopaque).init(self.allocator);
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
@@ -2441,7 +2441,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = .empty;
+        var body = ArrayList(*anyopaque).init(self.allocator);
         self.in_loop = true;
         defer { self.in_loop = false; }
         
@@ -2633,14 +2633,14 @@ pub const Parser = struct {
         const name = self.advance().lexeme;
         
         // Parse generic type parameters <T, U>
-        var type_parameters = .empty;
+        var type_parameters = ArrayList(ast.TypeParameter).init(self.allocator);
         if (self.match(.Less) or self.match(.LeftAngle)) {
             while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
                 if (self.check(.Identifier)) {
                     const param_name = self.advance().lexeme;
                     var param = ast.TypeParameter{
                         .name = param_name,
-                        .constraints = .empty,
+                        .constraints = ArrayList(ast.Type).init(self.allocator),
                     };
                     
                     // Parse constraints (T: Interface1 + Interface2)
@@ -2803,14 +2803,14 @@ pub const Parser = struct {
         const name = self.advance().lexeme;
         
         // Parse generic type parameters
-        var type_parameters = .empty;
+        var type_parameters = ArrayList(ast.TypeParameter).init(self.allocator);
         if (self.match(.Less) or self.match(.LeftAngle)) {
             while (!self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
                 if (self.check(.Identifier)) {
                     const param_name = self.advance().lexeme;
                     const param = ast.TypeParameter{
                         .name = param_name,
-                        .constraints = .empty,
+                        .constraints = ArrayList(ast.Type).init(self.allocator),
                     };
                     try type_parameters.append(param);
                 }
@@ -2948,7 +2948,7 @@ pub const Parser = struct {
         // Parse implementation body
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var methods = .empty;
+        var methods = ArrayList(ast.FunctionStatement).init(self.allocator);
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
@@ -3002,7 +3002,7 @@ pub const Parser = struct {
         // Parse block: stan { ... }
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = .empty;
+        var body = ArrayList(*anyopaque).init(self.allocator);
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
@@ -3060,7 +3060,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var patterns = .empty;
+        var patterns = ArrayList(ast.PatternCase).init(self.allocator);
         var default_case: ?ArrayList(*Statement) = null;
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -3132,7 +3132,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var cases = .empty;
+        var cases = ArrayList(ast.SelectCase).init(self.allocator);
         var default_case: ?ArrayList(*Statement) = null;
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -3277,7 +3277,7 @@ pub const Parser = struct {
         // Parse try body block
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var try_body = .empty;
+        var try_body = ArrayList(ast.Statement).init(self.allocator);
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
@@ -3374,7 +3374,7 @@ pub const Parser = struct {
     }
 
     fn parseShortDeclaration(self: *Parser) ParserError!Statement {
-        var names = .empty;
+        var names = ArrayList([]const u8).init(self.allocator);
         
         // Parse variable names (can be tuple destructuring)
         if (self.match(.LeftParen)) {

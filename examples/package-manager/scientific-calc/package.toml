@@ -1,0 +1,39 @@
+[package]
+name = "scientific-calc"
+version = "2.1.0"
+description = "Advanced scientific calculator built with CURSED"
+authors = ["Dr. Sarah Johnson <sarah@cursedlang.org>", "Mike Chen <mike@cursedlang.org>"]
+license = "MIT"
+homepage = "https://github.com/cursed-lang/scientific-calc"
+repository = "https://github.com/cursed-lang/scientific-calc.git"
+keywords = ["calculator", "scientific", "math", "engineering"]
+categories = ["mathematics", "applications", "science"]
+
+[dependencies]
+mathlib = "^1.2.0"
+stringz = "^1.0.0"
+vibez = "^1.0.0"
+
+[dev-dependencies]
+testz = "^1.0.0"
+benchmark = "^0.5.0"
+
+[build]
+# No special build requirements
+
+[features]
+default = ["std", "trigonometry"]
+std = []
+trigonometry = []
+complex = ["mathlib/complex-numbers"]
+statistics = ["mathlib/statistics"]
+graphing = ["plotting"]
+plotting = []
+
+[metadata]
+minimum_cursed_version = "1.0.0"
+executable = true
+
+[bin]
+name = "calc"
+path = "src/mod.csd"
