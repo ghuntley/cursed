@@ -187,7 +187,7 @@ pub const CollisionResistantTypeRegistry = struct {
         }
     };
     
-    pub fn init() CollisionResistantTypeRegistry {
+    pub fn init(allocator: std.mem.Allocator) CollisionResistantTypeRegistry {
         return CollisionResistantTypeRegistry{
             .primary_table = HashMap(u64, TypeEntry, HashContext, std.hash_map.default_max_load_percentage).init(allocator),
             .overflow_table = HashMap(u64, ArrayList(TypeEntry), HashContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -576,7 +576,7 @@ pub const InterfaceImplRegistry = struct {
         }
     };
     
-    pub fn init() InterfaceImplRegistry {
+    pub fn init(allocator: std.mem.Allocator) InterfaceImplRegistry {
         return InterfaceImplRegistry{
             .impl_table = HashMap(ImplKey, bool, ImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
             .collision_table = HashMap(u64, ArrayList(ImplEntry), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),

@@ -879,7 +879,7 @@ pub const Parser = struct {
     fn parseBlockStatement(self: *Parser) ParserError!Statement {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var statements = ArrayList(*anyopaque).init(self.allocator);
+        var statements = ArrayList(*anyopaque){};
         errdefer {
             for (statements.items) |stmt_ptr| {
                 self.allocator.destroy(@as(*Statement, @ptrCast(@alignCast(stmt_ptr))));
@@ -946,7 +946,7 @@ pub const Parser = struct {
                         }
                     }
                     
-                    try func.type_parameters.append(type_param);
+                    try func.type_parameters.append(self.allocator, type_param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -1215,7 +1215,7 @@ pub const Parser = struct {
                 if (!self.check(.RightParen)) {
                     while (true) {
                         const param_type = try self.parseType();
-                        try param_types.append(param_type);
+                        try param_types.append(self.allocator, param_type);
                         
                         if (!self.match(.Comma)) break;
                     }
@@ -1301,12 +1301,12 @@ pub const Parser = struct {
             // Parse function type: slay() return_type or slay(param_types) return_type
             _ = try self.consume(.LeftParen, "Expected '(' after 'slay'");
             
-            var param_types = .empty;
+            var param_types = ArrayList(ast.Type){};
             
             // Parse parameter types
             while (!self.check(.RightParen) and !self.isAtEnd()) {
                 const param_type = try self.parseType();
-                try param_types.append(param_type);
+                try param_types.append(self.allocator, param_type);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -1825,7 +1825,7 @@ pub const Parser = struct {
             if (!self.check(.RightBracket)) {
                 while (true) {
                     const elem = try self.parseExpression();
-                    try elements.append(elem);
+                    try elements.append(self.allocator, elem);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -1855,7 +1855,7 @@ pub const Parser = struct {
             while (true) {
                 // Parse expression with full precedence
                 const elem = try self.parseExpression();
-                try elements.append(elem);
+                try elements.append(self.allocator, elem);
                 
                 if (self.match(.Comma)) {
                     has_comma = true;
@@ -2062,7 +2062,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{' after match value");
         
-        var cases = ArrayList(ast.MatchCase).init(self.allocator);
+        var cases = ArrayList(ast.MatchCase){};
         var default_case: ?*Expression = null;
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -4101,12 +4101,12 @@ pub const Parser = struct {
             // Parse function type: slay() return_type or slay(param_types) return_type
             _ = try self.consume(.LeftParen, "Expected '(' after 'slay'");
             
-            var param_types = .empty;
+            var param_types = ArrayList(ast.Type){};
             
             // Parse parameter types
             while (!self.check(.RightParen) and !self.isAtEnd()) {
                 const param_type = try self.parseType();
-                try param_types.append(param_type);
+                try param_types.append(self.allocator, param_type);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -4185,7 +4185,7 @@ pub const Parser = struct {
                         type_param.default_type = try self.parseType();
                     }
                     
-                    try func.type_parameters.append(type_param);
+                    try func.type_parameters.append(self.allocator, type_param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -4301,7 +4301,7 @@ pub const Parser = struct {
                 // Add remaining literal text
                 if (pos < str_content.len) {
                     const text_part = str_content[pos..];
-                    try interpolation.parts.append(ast.InterpolationPart{
+                    try interpolation.parts.append(self.allocator, ast.InterpolationPart{
                         .text = text_part,
                         .expression = null,
                         .format_spec = null,

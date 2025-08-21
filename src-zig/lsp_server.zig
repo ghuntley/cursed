@@ -945,12 +945,12 @@ pub fn runLspServer(allocator: Allocator) !void {
     var stdin_buffer: [4096]u8 = undefined;
     const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
     var stdout_buffer: [4096]u8 = undefined;
-    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-    const writer = stdout.any();
+    const stdout_file = std.fs.File.stdout();
+    const writer = stdout_file.writer(stdout_buffer[0..]);
 
     std.log.info("CURSED LSP Server starting...", .{});
 
-    var buffer = .empty;
+    var buffer = ArrayList(u8){};
     defer buffer.deinit();
 
     while (true) {

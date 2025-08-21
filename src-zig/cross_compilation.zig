@@ -27,7 +27,8 @@ pub const CrossCompiler = struct {
         linking_mode: []const u8,
         verbose: bool
     ) ![][]const u8 {
-        var command_parts = .empty;
+        var command_parts = std.ArrayListUnmanaged([]const u8){};
+        defer command_parts.deinit(self.allocator);
         
         try command_parts.append(self.allocator, "zig");
         try command_parts.append(self.allocator, "build-exe");
@@ -80,7 +81,7 @@ pub const CrossCompiler = struct {
         linking_mode: []const u8,
         verbose: bool
     ) ![][]const u8 {
-        var command_parts = .empty;
+        const command_parts = std.ArrayListUnmanaged([]const u8){};
         
         // Use llc to compile LLVM IR to object file, then link
         if (std.mem.eql(u8, target_platform, "wasm32-freestanding")) {

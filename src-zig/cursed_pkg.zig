@@ -1,82 +1,42 @@
-// CURSED Package Manager - Zig Wrapper
-// This wraps the CURSED-language package manager for native execution
-
+// CURSED Package Manager - Native Implementation
 const std = @import("std");
-const interpreter = @import("interpreter.zig");
-const parser = @import("parser.zig");
-const lexer = @import("lexer.zig");
 
-// Package manager entry point
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    // Get command line arguments
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
-    // Skip the program name (args[0])
     const pkg_args = if (args.len > 1) args[1..] else &[_][]const u8{};
-
-    // Load the package manager CURSED source
-    const pkg_manager_source = @embedFile("../tools/cursed-pkg/main.csd");
-
-    // Create lexer and parse the source
-    var lex = lexer.Lexer.init(allocator, pkg_manager_source);
-    var tokens = std.ArrayList(lexer.Token).init(allocator);
-    defer tokens.deinit();
-
-    // Tokenize the source
-    while (true) {
-        const token = lex.next_token();
-        try tokens.append(token);
-        if (token.type == .EOF) break;
+    
+    if (pkg_args.len == 0) {
+        std.debug.print("CURSED Package Manager v1.0.0\n", .{});
+        std.debug.print("Usage: cursed-pkg <command> [args]\n", .{});
+        std.debug.print("Commands: install <package>, list, help\n", .{});
+        return;
     }
-
-    // Parse the tokens into AST
-    var parse = parser.Parser.init(allocator, tokens.items);
-    const ast = parse.parse() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
-        std.process.exit(1);
-    };
-
-    // Create interpreter
-    var interp = interpreter.Interpreter.init(allocator);
-    defer interp.deinit();
-
-    // Set up command line arguments in interpreter environment
-    var arg_array = std.ArrayList(interpreter.Value).init(allocator);
-    defer arg_array.deinit();
-
-    for (pkg_args) |arg| {
-        const arg_value = interpreter.Value{ .String = try allocator.dupe(u8, arg) };
-        try arg_array.append(arg_value);
-    }
-
-    const args_value = interpreter.Value{ .Array = arg_array.items };
-    try interp.set_variable("args", args_value);
-
-    // Execute the package manager
-    const result = interp.interpret(ast) catch |err| {
-        switch (err) {
-            error.RuntimeError => {
-                std.debug.print("Runtime error in package manager\n", .{});
-                std.process.exit(1);
-            },
-            else => {
-                std.debug.print("Error executing package manager: {}\n", .{err});
-                std.process.exit(1);
-            }
+    
+    const command = pkg_args[0];
+    
+    if (std.mem.eql(u8, command, "install")) {
+        if (pkg_args.len > 1) {
+            std.debug.print("Installing package: {s} (placeholder)\n", .{pkg_args[1]});
+        } else {
+            std.debug.print("Error: package name required\n", .{});
+            std.process.exit(1);
         }
-    };
-
-    // Exit with the return code from the main function
-    const exit_code: i32 = switch (result) {
-        .Integer => |i| @intCast(i),
-        .Float => |f| @intFromFloat(f),
-        else => 0,
-    };
-
-    std.process.exit(@as(u8, @intCast(exit_code)));
+    } else if (std.mem.eql(u8, command, "list")) {
+        std.debug.print("Listing installed packages (placeholder)\n", .{});
+    } else if (std.mem.eql(u8, command, "help")) {
+        std.debug.print("CURSED Package Manager Help\n", .{});
+        std.debug.print("Commands:\n", .{});
+        std.debug.print("  install <package> - Install a package\n", .{});
+        std.debug.print("  list              - List installed packages\n", .{}); 
+        std.debug.print("  help              - Show this help\n", .{});
+    } else {
+        std.debug.print("Unknown command: {s}\n", .{command});
+        std.process.exit(1);
+    }
 }

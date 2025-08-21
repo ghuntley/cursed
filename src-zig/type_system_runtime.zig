@@ -148,7 +148,7 @@ pub const GCTypeRegistry = struct {
     
     allocator: Allocator,
 
-    pub fn init() GCTypeRegistry {
+    pub fn init(allocator: std.mem.Allocator) GCTypeRegistry {
         return GCTypeRegistry{
             .types = std.HashMap(u32, RuntimeTypeInfo, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
             .collision_resistant_registry = CollisionResistantTypeRegistry.init(allocator),
@@ -341,7 +341,7 @@ pub const TypedAllocator = struct {
             }
         }
 
-        pub fn release(self: *TypedObject, allocator: Allocator) CursedError!void {
+        pub fn release(self: *TypedObject, _: Allocator) CursedError!void {
             // Atomic decrement with acquire-release ordering
             const old_count = self.ref_count.fetchSub(1, .acq_rel);
             
@@ -476,7 +476,7 @@ pub const InterfaceRegistry = struct {
         }
     };
 
-    pub fn init() InterfaceRegistry {
+    pub fn init(allocator: std.mem.Allocator) InterfaceRegistry {
         return InterfaceRegistry{
             .implementations = HashMap(InterfaceImplKey, VTablePtr, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
             .collision_resistant_impls = type_collision.InterfaceImplRegistry.init(allocator),

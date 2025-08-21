@@ -68,7 +68,7 @@ pub const Statement = union(enum) {
     Select: SelectStatement,
     Block: BlockStatement,
     
-    pub fn deinit(self: *Statement, allocator: Allocator) void {
+    pub fn deinit(self: *Statement, _: Allocator) void {
         switch (self.*) {
             .Function => |*func| func.deinit(),
             .Struct => |*struct_stmt| struct_stmt.deinit(),
