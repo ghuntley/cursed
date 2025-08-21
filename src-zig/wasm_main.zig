@@ -14,10 +14,10 @@ export fn cursed_compile(source_ptr: [*]const u8, source_len: usize) i32 {
     
     // Basic lexical analysis
     var lex = lexer.Lexer.init(allocator, source);
-    const tokens = lex.tokenize() catch {
+    var tokens = lex.tokenize() catch {
         return -1; // Error code
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     // For WASM, just return success for now
     return 0;

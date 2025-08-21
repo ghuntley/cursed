@@ -1,5 +1,10 @@
-fr fr FILEZ MODULE - Complete File System Operations
-fr fr Production-ready file I/O with async support and safety features
+fr fr FILEZ MODULE - Pure CURSED File System Operations  
+fr fr Enhanced implementation with comprehensive error handling and security
+
+fr fr Import the complete filez implementation
+yeet "filez"
+
+fr fr Re-export all functions for backward compatibility
 
 yeet "stringz"
 yeet "mathz"

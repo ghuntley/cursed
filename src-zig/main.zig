@@ -555,6 +555,7 @@ fn parseArgs(_: Allocator, args: [][:0]u8) !Config {
             config.preserve_debug_info = true;
         } else if (std.mem.eql(u8, arg, "--compile")) {
             config.command = .compile;
+            if (config.verbose) print("🐛 DEBUG: --compile flag detected, switching to compile command\n", .{});
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             // Assume it's a source file if no source file is set yet
             if (config.source_file == null) {
@@ -680,7 +681,7 @@ fn executeCompile(allocator: Allocator, config: Config) !void {
             print("❌ AST backend does not support compilation\n", .{});
             return error.InvalidBackend;
         },
-        .llvm => try compileWithLLVMCrossCompilation(source, filename, adjusted_config, &cross_compiler, zig_target, output_file),
+        .llvm => try compileWithSmartLLVM(allocator, source, filename, adjusted_config, output_file),
         .c => try compileWithCCrossCompilation(allocator, source, filename, adjusted_config, &cross_compiler, zig_target, output_file),
         .wasm => try compileWithWASMCrossCompilation(source, filename, adjusted_config, &cross_compiler, zig_target, output_file),
     }
@@ -1822,8 +1823,21 @@ fn printHelp() void {
 
 // Cross-compilation implementation functions
 
-
-
+fn compileWithSmartLLVM(allocator: Allocator, source: []const u8, filename: []const u8, config: Config, output_file: []const u8) !void {
+    if (config.verbose) {
+        print("🔨 Compiling with Smart LLVM backend\n", .{});
+    }
+    
+    const smart_llvm = @import("llvm_backend_smart.zig");
+    
+    var backend = smart_llvm.SmartLLVMBackend.init(allocator);
+    
+    try backend.compileToNative(source, filename, output_file, config.verbose);
+    
+    if (config.verbose) {
+        print("✅ Smart LLVM compilation completed: {s}\n", .{output_file});
+    }
+}
 
 fn compileWithLLVMCrossCompilation(
     source: []const u8, 

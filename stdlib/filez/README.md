@@ -1,58 +1,65 @@
-# filez Module
+# filez Module - Pure CURSED File System Operations
 
-The `filez` module provides comprehensive file and directory operations with runtime bridge integration for optimal performance and system compatibility. It offers production-ready file I/O capabilities for CURSED applications.
+The `filez` module provides comprehensive, cross-platform file and directory operations implemented in pure CURSED language. It offers production-ready file I/O capabilities with proper error handling, security validation, and atomic operations for system programming and application development.
 
 ## Features
 
 ### Core File Operations
-- File reading and writing (text and binary)
-- File existence checking and metadata retrieval
-- File copying, moving, and deletion
-- File permission management
-- Atomic file operations with proper error handling
+- **File I/O**: Reading, writing, and appending text files with full error handling
+- **Binary Operations**: Reading and writing binary data with size limits and safety checks  
+- **File Management**: Copying, moving, renaming, and deleting files with validation
+- **Metadata Access**: File size, modification time, permissions, and comprehensive file info
+- **Atomic Operations**: Safe file operations with proper resource cleanup and sync support
 
 ### Directory Operations
-- Directory creation and removal
-- Directory listing and traversal
-- Working directory management
-- Recursive directory operations
-- Directory existence checking
+- **Directory Management**: Creating, removing, and listing directories with error handling
+- **Recursive Operations**: Deep directory copying with full subdirectory support
+- **Working Directory**: Getting and setting current working directory safely  
+- **Directory Validation**: Existence checking and type verification
+- **Cross-Platform Paths**: Automatic path separator handling for all platforms
 
 ### Advanced Features
-- Line-based file operations
-- Binary file handling with size limits
-- Temporary file and directory management
-- File synchronization to disk
-- Comprehensive file metadata access
+- **Line-Based I/O**: Reading and writing files as arrays of lines with proper newline handling
+- **Binary File Support**: Byte array operations with configurable size limits and safety checks
+- **Temporary Files**: System temp directory access and unique temporary file creation
+- **File Synchronization**: Force file sync to disk for data persistence guarantees
+- **Security Validation**: Filename validation to prevent path traversal and injection attacks
 
-### Runtime Bridge Integration
-- High-performance system call integration via Zig runtime
-- Pure CURSED fallback implementations for compatibility
-- Automatic error handling and resource cleanup
-- Cross-platform file system abstraction
+### Error Handling & Safety
+- **Comprehensive Error Returns**: All operations return descriptive error messages on failure
+- **Input Validation**: Rigorous checking of all filenames, paths, and content parameters
+- **Resource Safety**: Automatic cleanup and proper handling of system resources
+- **Atomic Operations**: Safe file operations that maintain consistency during failures
 
 ## Usage Examples
 
 ### Basic File Operations
 ```cursed
 yeet "filez"
+yeet "vibez"
 
-// Write content to file
-sus content tea = "Hello, CURSED!"
-sus write_err tea = filez.write_file("hello.txt", content)
+fr fr Write content to file
+sus content tea = "Hello, CURSED file system!"
+sus write_err tea = write_file("hello.txt", content)
 ready (write_err == "") {
     vibez.spill("File written successfully")
+} otherwise {
+    vibez.spill("Write error:", write_err)
 }
 
-// Read content from file
-(read_content, read_err) := filez.read_file("hello.txt")
+fr fr Read content from file  
+(read_content, read_err) := read_file("hello.txt")
 ready (read_err == "") {
     vibez.spill("File content:", read_content)
+} otherwise {
+    vibez.spill("Read error:", read_err)
 }
 
-// Check if file exists
-ready (filez.file_exists("hello.txt")) {
-    vibez.spill("File exists")
+fr fr Check if file exists
+ready (file_exists("hello.txt")) {
+    vibez.spill("File exists and is accessible")
+} otherwise {
+    vibez.spill("File does not exist")
 }
 ```
 

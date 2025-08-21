@@ -131,7 +131,7 @@ pub const CursedLanguageServer = struct {
         }
     };
 
-    pub fn init() CursedLanguageServer {
+    pub fn init(allocator: Allocator) CursedLanguageServer {
         return CursedLanguageServer{
             .allocator = allocator,
             .documents = HashMap([]const u8, DocumentData, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -685,6 +685,7 @@ pub const CursedLanguageServer = struct {
 
     /// Format CURSED code (basic implementation)
     fn formatCursedCode(self: *CursedLanguageServer, code: []const u8) ![]u8 {
+        _ = self;
         var formatted = .empty;
         defer formatted.deinit();
         
