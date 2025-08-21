@@ -1,0 +1,81 @@
+{
+    "version": "1.0.0",
+    "description": "CURSED Programming Language: A production-ready systems programming language with ergonomic syntax",
+    "homepage": "https://cursedlang.org",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/ghuntley/cursed/releases/download/v1.0.0/cursed-1.0.0-x86_64-pc-windows-gnu.zip",
+            "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "extract_dir": "cursed-1.0.0-x86_64-pc-windows-gnu"
+        }
+    },
+    "bin": [
+        ["bin/cursed.exe", "cursed"],
+        ["bin/cursed-lsp.exe", "cursed-lsp"],
+        ["bin/cursed-fmt.exe", "cursed-fmt"],
+        ["bin/cursed-lint.exe", "cursed-lint"],
+        ["bin/cursed-doc.exe", "cursed-doc"],
+        ["bin/cursed-pkg.exe", "cursed-pkg"]
+    ],
+    "shortcuts": [
+        ["bin/cursed.exe", "CURSED Compiler"],
+        ["bin/cursed-lsp.exe", "CURSED Language Server"],
+        ["bin/cursed-doc.exe", "CURSED Documentation Generator"]
+    ],
+    "env_add_path": "bin",
+    "env_set": {
+        "CURSED_HOME": "$dir",
+        "CURSED_STDLIB_PATH": "$dir\\stdlib"
+    },
+    "persist": [
+        "config\\cursed.toml",
+        "cache"
+    ],
+    "suggest": {
+        "VS Code": "vscode",
+        "Git": "git",
+        "LLVM": "llvm",
+        "Visual Studio Build Tools": "vcredist2022"
+    },
+    "notes": [
+        "🎉 CURSED Programming Language v1.0.0 installed successfully!",
+        "",
+        "Quick Start:",
+        "  1. Create a new file: hello.csd",
+        "  2. Add content: yeet \"vibez\"; vibez.spill(\"Hello, Windows!\");",
+        "  3. Run it: cursed hello.csd",
+        "",
+        "Available Commands:",
+        "  cursed        - CURSED compiler",
+        "  cursed-lsp    - Language Server Protocol for IDEs",
+        "  cursed-fmt    - Code formatter", 
+        "  cursed-lint   - Static analyzer and linter",
+        "  cursed-doc    - Documentation generator",
+        "  cursed-pkg    - Package manager",
+        "",
+        "IDE Integration:",
+        "  VS Code: Install 'CURSED Language Support' extension",
+        "  Other editors: Use cursed-lsp for Language Server Protocol support",
+        "",
+        "Resources:",
+        "  Website: https://cursedlang.org",
+        "  Documentation: https://docs.cursedlang.org",
+        "  Community: https://discord.gg/cursedlang",
+        "  Examples: $dir\\examples\\",
+        "  Standard Library: $dir\\stdlib\\",
+        "",
+        "Happy coding with CURSED! 🚀"
+    ],
+    "checkver": {
+        "github": "https://github.com/ghuntley/cursed"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/ghuntley/cursed/releases/download/v$version/cursed-$version-x86_64-pc-windows-gnu.zip",
+                "extract_dir": "cursed-$version-x86_64-pc-windows-gnu"
+            }
+        }
+    }
+}

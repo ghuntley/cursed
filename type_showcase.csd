@@ -1,0 +1,1 @@
+sus message tea = "Testing CURSED v1.0"; sus count normie = 42; sus pi meal = 3.14159; sus ready lit = based; vibez.spill(message); vibez.spill("Integer:", count); vibez.spill("Float:", pi); vibez.spill("Boolean:", ready)

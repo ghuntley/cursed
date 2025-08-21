@@ -1,0 +1,59 @@
+CURSED Interpreter (Oracle P2 Migration Build)
+Executing: examples/fibonacci.csd
+File size: 1633 bytes
+
+[Line 1] Processing: fr fr/ Fibonacci calculation example in CURSED
+[Line 2] Processing: fr fr/
+[Line 3] Processing: fr fr/ This example demonstrates the CURSED programming language
+[Line 4] Processing: fr fr/ syntax including function definitions, control flow, and
+[Line 5] Processing: fr fr/ recursive function calls.
+[Line 7] Processing: fr fr Fibonacci example
+[Line 9] Processing: fr fr/ Calculate the nth Fibonacci number recursively
+[Line 10] Processing: fr fr/
+[Line 11] Processing: fr fr/ This is a classic recursive implementation that demonstrates
+[Line 12] Processing: fr fr/ the CURSED language's control flow constructs.
+[Line 13] Processing: fr fr/
+[Line 14] Processing: fr fr/ @param n - The position in the Fibonacci sequence
+[Line 15] Processing: fr fr/ @return - The Fibonacci number at position n
+[Line 16] Processing: fr fr/
+[Line 17] Processing: fr fr/ # Examples
+[Line 18] Processing: fr fr/ ```cursed
+[Line 19] Processing: fr fr/ let result = fibonacci(10)
+[Line 20] Processing: fr fr/ assert(result == 55)
+[Line 21] Processing: fr fr/ ```
+[Line 22] Processing: fr fr/
+[Line 23] Processing: fr fr/ # Time Complexity
+[Line 24] Processing: fr fr/ O(2^n) - This is an inefficient implementation for demonstration
+[Line 25] Processing: slay fibonacci(n normie) -> normie {
+[Line 26] Processing: lowkey n <= 1 {
+[Line 27] Processing: damn n
+[Line 28] Processing: }
+[Line 29] Processing: damn fibonacci(n - 1) + fibonacci(n - 2)
+[Line 30] Processing: }
+[Line 32] Processing: fr fr/ Iterative fibonacci implementation for better performance
+[Line 33] Processing: fr fr/
+[Line 34] Processing: fr fr/ @param n - The position in the Fibonacci sequence
+[Line 35] Processing: fr fr/ @return - The Fibonacci number at position n
+[Line 36] Processing: slay fibonacci_iterative(n normie) -> normie {
+[Line 37] Processing: lowkey n <= 1 {
+[Line 38] Processing: damn n
+[Line 39] Processing: }
+[Line 41] Variable declaration: sus a = 0
+[Line 42] Variable declaration: sus b = 1
+[Line 44] Processing: bestie i := 2; i <= n; i++ {
+[Line 45] Variable declaration: sus temp = a + b
+[Line 46] Processing: a = b
+[Line 47] Processing: b = temp
+[Line 48] Processing: }
+[Line 50] Processing: damn b
+[Line 51] Processing: }
+[Line 53] Processing: fr fr/ Main function to demonstrate fibonacci calculations
+[Line 54] Processing: slay main() {
+[Line 55] Processing: facts n = 10
+[Line 57] Variable declaration: sus recursive_result = fibonacci(n)
+[Line 58] Variable declaration: sus iterative_result = fibonacci_iterative(n)
+[Line 60] Processing: println("Fibonacci({}) recursive: {}", n, recursive_result)
+[Line 61] Processing: println("Fibonacci({}) iterative: {}", n, iterative_result)
+[Line 62] Processing: }
+
+✓ Execution completed

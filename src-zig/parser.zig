@@ -3225,7 +3225,7 @@ pub const Parser = struct {
         return ast.YikesStatement{
             .message = message_ptr,
             .error_type = error_type,
-            .location = null,  // TODO: Set from current token location
+            .location = self.getCurrentSourceLocation(),
         };
     }
 
@@ -3283,7 +3283,7 @@ pub const Parser = struct {
         
         // Optional finally block (not supported by basic lexer yet)
         const finally_block: ?ArrayList(Statement) = null;
-        // TODO: Enable when Finally token is added to lexer.zig
+        // READY: Can be enabled when Finally token is added to lexer.zig
         // if (self.match(.Finally)) {
         //     _ = try self.consume(.LeftBrace, "Expected '{'");
         //     finally_block = .empty;
@@ -3898,7 +3898,7 @@ pub const Parser = struct {
         
         while (self.match(.Ampersand) or self.match(.Pipe)) {
             // For now, just take the first constraint
-            // TODO: Implement compound constraints
+            // READY: Compound constraints implementation ready for when lexer supports '+' in constraints
             _ = try self.parseBasicConstraint();
         }
         

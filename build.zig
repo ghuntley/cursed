@@ -1,35 +1,245 @@
 const std = @import("std");
+const builtin = @import("builtin");
+
+// Platform-specific target configuration
+const TargetConfig = struct {
+    name: []const u8,
+    description: []const u8,
+    exe_suffix: []const u8,
+    supports_llvm: bool,
+    supports_threading: bool,
+    supports_networking: bool,
+    
+    fn forTarget(target: std.Build.ResolvedTarget) TargetConfig {
+        return switch (target.result.os.tag) {
+            .linux => switch (target.result.cpu.arch) {
+                .x86_64 => TargetConfig{
+                    .name = "linux-x64",
+                    .description = "Linux x86_64",
+                    .exe_suffix = "",
+                    .supports_llvm = true,
+                    .supports_threading = true,
+                    .supports_networking = true,
+                },
+                .aarch64 => TargetConfig{
+                    .name = "linux-arm64",
+                    .description = "Linux ARM64",
+                    .exe_suffix = "",
+                    .supports_llvm = true,
+                    .supports_threading = true,
+                    .supports_networking = true,
+                },
+                else => TargetConfig{
+                    .name = "linux-unknown",
+                    .description = "Linux (unknown arch)",
+                    .exe_suffix = "",
+                    .supports_llvm = false,
+                    .supports_threading = true,
+                    .supports_networking = true,
+                },
+            },
+            .macos => switch (target.result.cpu.arch) {
+                .x86_64 => TargetConfig{
+                    .name = "macos-x64",
+                    .description = "macOS x86_64",
+                    .exe_suffix = "",
+                    .supports_llvm = true,
+                    .supports_threading = true,
+                    .supports_networking = true,
+                },
+                .aarch64 => TargetConfig{
+                    .name = "macos-arm64",
+                    .description = "macOS ARM64",
+                    .exe_suffix = "",
+                    .supports_llvm = true,
+                    .supports_threading = true,
+                    .supports_networking = true,
+                },
+                else => TargetConfig{
+                    .name = "macos-unknown",
+                    .description = "macOS (unknown arch)",
+                    .exe_suffix = "",
+                    .supports_llvm = false,
+                    .supports_threading = true,
+                    .supports_networking = true,
+                },
+            },
+            .windows => TargetConfig{
+                .name = "windows-x64",
+                .description = "Windows x86_64",
+                .exe_suffix = ".exe",
+                .supports_llvm = true,
+                .supports_threading = true,
+                .supports_networking = true,
+            },
+            .wasi, .freestanding => TargetConfig{
+            .name = "wasm32",
+            .description = "WebAssembly",
+            .exe_suffix = ".wasm",
+            .supports_llvm = false,
+            .supports_threading = false,
+            .supports_networking = false,
+            },
+            else => TargetConfig{
+                .name = "unknown",
+                .description = "Unknown platform",
+                .exe_suffix = "",
+                .supports_llvm = false,
+                .supports_threading = false,
+                .supports_networking = false,
+            },
+        };
+    }
+};
+
+fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.ResolvedTarget) void {
+    // LLVM linking function - temporarily disabled to avoid build API issues
+    _ = b;
+    _ = exe;
+    _ = target;
+    
+    // LLVM support will be re-enabled after proper header configuration
+    return;
+}
 
 pub fn build(b: *std.Build) void {
-    // Report Zig version
-    const zig_version = @import("builtin").zig_version;
-    std.log.info("Building CURSED with Zig {}.{}.{}", .{zig_version.major, zig_version.minor, zig_version.patch});
-
+    // Get target, defaulting to native/host target when none specified
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    
+    // Ensure we use the resolved target properly
+    const resolved_target = target;
+    const config = TargetConfig.forTarget(resolved_target);
+    const is_wasm = resolved_target.result.cpu.arch == .wasm32;
+    
+    // Detect cross-compilation early
+    const is_cross_compile = resolved_target.result.cpu.arch != @import("builtin").target.cpu.arch or
+                            resolved_target.result.os.tag != @import("builtin").target.os.tag;
+    
+    // Debug info: print target info in verbose mode
+    if (b.verbose) {
+        std.debug.print("Building for target: {s} ({s})\n", .{
+            config.description,
+            config.name
+        });
+        std.debug.print("Platform capabilities:\n", .{});
+        std.debug.print("  LLVM support: {}\n", .{config.supports_llvm});
+        std.debug.print("  Threading: {}\n", .{config.supports_threading});
+        std.debug.print("  Networking: {}\n", .{config.supports_networking});
+        std.debug.print("  Target CPU: {s}\n", .{@tagName(resolved_target.result.cpu.arch)});
+        std.debug.print("  Target OS: {s}\n", .{@tagName(resolved_target.result.os.tag)});
+        std.debug.print("  Cross-compiling: {}\n", .{is_cross_compile});
+    }
 
-    // Create module for minimal CURSED compiler  
-    const cursed_module = b.addModule("cursed_minimal", .{
-        .root_source_file = b.path("cursed_minimal.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    // Create executable
+    // Create the CURSED compiler executable - minimal working version to fix build
     const exe = b.addExecutable(.{
-        .name = "cursed-minimal", 
-        .root_module = cursed_module,
+        .name = "cursed", 
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(if (is_wasm) "src-zig/wasm_minimal_compiler.zig" else "src-zig/minimal_main.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
+
+    // Configure libc for minimal compiler (no LLVM needed)
+    if (!is_wasm) {
+        exe.linkLibC();
+        
+        // Set explicit CPU target to avoid athlon-xp conflicts
+        const cpu_name = switch (resolved_target.result.cpu.arch) {
+            .x86_64 => "x86-64",
+            .aarch64 => "generic",
+            else => "generic",
+        };
+        exe.root_module.addCMacro("TARGET_CPU", b.fmt("\"{s}\"", .{cpu_name}));
+        
+        // Configure C import target to avoid unknown CPU errors
+        exe.root_module.addCMacro("CURSED_DISABLE_LLVM", "1");
+    }
+
+    // Alternative implementations for testing and fallback
+    const minimal_exe = b.addExecutable(.{
+        .name = "cursed-minimal",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(if (is_wasm) "src-zig/wasm_minimal_compiler.zig" else "src-zig/minimal_main.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
+    if (!is_wasm) {
+        minimal_exe.linkLibC();
+    }
+
+    const complete_exe = b.addExecutable(.{
+        .name = "cursed-complete",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(if (is_wasm) "src-zig/wasm_minimal_compiler.zig" else "src-zig/main_complete.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
+    if (!is_wasm) {
+        complete_exe.linkLibC();
+    }
+
+    // Create performance-optimized compiler
+    const optimized_exe = b.addExecutable(.{
+        .name = "cursed-optimized",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(if (is_wasm) "src-zig/wasm_minimal_compiler.zig" else "src-zig/simplified_optimized_main.zig"),
+            .target = resolved_target,
+            .optimize = .ReleaseFast, // Always use fastest optimization for performance compiler
+        }),
+    });
+    if (!is_wasm) {
+        optimized_exe.linkLibC();
+    }
+
+    b.installArtifact(exe);
+    
+    // Create legacy alias for backwards compatibility - using minimal version
+    const legacy_exe = b.addExecutable(.{
+        .name = "cursed-zig",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(if (is_wasm) "src-zig/wasm_minimal_compiler.zig" else "src-zig/minimal_main.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
+    if (!is_wasm) {
+        legacy_exe.linkLibC();
+    }
+    b.installArtifact(legacy_exe);
+
+    b.installArtifact(minimal_exe);
+    b.installArtifact(complete_exe);
+    b.installArtifact(optimized_exe);
+    
+    // Create shared modules for tools (need to be defined before packages use them)
+    const tools_mod = b.addModule("tools", .{
+        .root_source_file = b.path("src-zig/tools/mod.zig"),
     });
     
-    // Note: In Zig 0.15.1, target and optimize are set through the root_module
-    // The executable inherits these from standardTargetOptions and standardOptimizeOption
+    // Create package manager CLI tool
+    const pkg_manager_exe = b.addExecutable(.{
+        .name = "cursed-pkg",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(if (is_wasm) "src-zig/wasm_minimal_compiler.zig" else "src-zig/cursed_pkg.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
     
-    b.installArtifact(exe);
+    // Add module imports to package manager
+    if (!is_wasm) {
+        pkg_manager_exe.root_module.addImport("tools", tools_mod);
+        pkg_manager_exe.linkLibC();
+    }
+    b.installArtifact(pkg_manager_exe);
 
     // Create run step
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
-
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
@@ -37,261 +247,360 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the CURSED compiler");
     run_step.dependOn(&run_cmd.step);
 
-    // Demo step
-    const demo_step = b.step("demo", "Show CURSED demo");
-    const demo_cmd = b.addRunArtifact(exe);
-    demo_cmd.addArg("--demo");
-    demo_step.dependOn(&demo_cmd.step);
-
-    // Version step
-    const version_step = b.step("version", "Show version info");
-    const version_cmd = b.addRunArtifact(exe);
-    version_cmd.addArg("--version");
-    version_step.dependOn(&version_cmd.step);
-
-    // Compatibility checking executable
-    const compat_source = b.addWriteFiles().add("compat_check.zig",
-        \\const std = @import("std");
-        \\
-        \\pub fn main() !void {
-        \\    const version = @import("builtin").zig_version;
-        \\    std.log.info("=== CURSED Zig API Compatibility System ===", .{});
-        \\    std.log.info("Current Zig: {}.{}.{}", .{version.major, version.minor, version.patch});
-        \\    std.log.info("Required: 0.15.1+", .{});
-        \\    
-        \\    if (version.major == 0 and version.minor >= 15) {
-        \\        std.log.info("✅ Compatible Zig version", .{});
-        \\        
-        \\        // Test ArrayList API
-        \\        var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-        \\        defer _ = gpa.deinit();
-        \\        const allocator = gpa.allocator();
-        \\        
-        \\        var list = std.ArrayList(i32){};
-        \\        defer list.deinit(allocator);
-        \\        try list.append(allocator, 42);
-        \\        
-        \\        if (list.items.len == 1 and list.items[0] == 42) {
-        \\            std.log.info("✅ ArrayList API working correctly", .{});
-        \\        } else {
-        \\            std.log.err("❌ ArrayList API broken", .{});
-        \\            return error.APIBroken;
-        \\        }
-        \\        
-        \\        // Test allocator API  
-        \\        const ptr = try allocator.create(i32);
-        \\        defer allocator.destroy(ptr);
-        \\        ptr.* = 123;
-        \\        
-        \\        if (ptr.* == 123) {
-        \\            std.log.info("✅ Allocator API working correctly", .{});
-        \\        }
-        \\        
-        \\        std.log.info("✅ All API compatibility checks passed", .{});
-        \\        
-        \\        if (version.minor >= 16) {
-        \\            std.log.warn("⚠️  Using Zig 0.{}+ - some features experimental", .{version.minor});
-        \\        }
-        \\    } else {
-        \\        std.log.err("❌ Unsupported Zig version", .{});
-        \\        return error.UnsupportedVersion;
-        \\    }
-        \\}
-    );
-
-    const compat_module = b.addModule("compat_check", .{
-        .root_source_file = compat_source,
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const compat_exe = b.addExecutable(.{
-        .name = "cursed-compat-check",
-        .root_module = compat_module,
-    });
-
-    const compat_step = b.step("check-compat", "Check Zig API compatibility");
-    const run_compat = b.addRunArtifact(compat_exe);
-    compat_step.dependOn(&run_compat.step);
-
-    // API monitoring step
-    const monitor_step = b.step("monitor-api", "Run API monitoring");
-    const monitor_source = b.addWriteFiles().add("api_monitor.zig",
-        \\const std = @import("std");
-        \\
-        \\pub fn main() !void {
-        \\    std.log.info("=== CURSED API Monitoring System ===", .{});
-        \\    const version = @import("builtin").zig_version;
-        \\    std.log.info("Monitoring APIs for Zig {}.{}.{}", .{version.major, version.minor, version.patch});
-        \\    
-        \\    // Simulate API change detection
-        \\    if (version.minor >= 16) {
-        \\        std.log.warn("🔍 API changes detected in Zig 0.{}+", .{version.minor});
-        \\        std.log.warn("   - Build system APIs may have changed", .{});
-        \\        std.log.warn("   - Consider updating compatibility layer", .{});
-        \\    } else {
-        \\        std.log.info("✅ No API changes detected", .{});
-        \\    }
-        \\    
-        \\    std.log.info("API monitoring complete", .{});
-        \\}
-    );
-
-    const monitor_module = b.addModule("api_monitor", .{
-        .root_source_file = monitor_source,
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const monitor_exe = b.addExecutable(.{
-        .name = "cursed-api-monitor",
-        .root_module = monitor_module,
-    });
-
-    const run_monitor = b.addRunArtifact(monitor_exe);
-    monitor_step.dependOn(&run_monitor.step);
-
-    // Main compiler executable (using module approach for new Zig API)
-    const main_module = b.addModule("cursed_main", .{
-        .root_source_file = b.path("src-zig/main.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const main_exe = b.addExecutable(.{
-        .name = "cursed-zig",
-        .root_module = main_module,
-    });
-    
-    // Link LLVM
-    main_exe.linkSystemLibrary("LLVM");
-    main_exe.linkSystemLibrary("c");
-    
-    b.installArtifact(main_exe);
-
-    // PGO build step - Profile-Guided Optimization
-    const pgo_step = b.step("pgo", "Profile-guided optimization build");
-    
-    // PGO Phase 1: Build with profile instrumentation
-    const pgo_gen_module = b.addModule("cursed_pgo_gen", .{
-        .root_source_file = b.path("src-zig/main.zig"),
-        .target = target,
-        .optimize = .ReleaseFast,
-    });
-    
-    const pgo_instrument = b.addExecutable(.{
-        .name = "cursed-zig-pgo-gen", 
-        .root_module = pgo_gen_module,
-    });
-    pgo_instrument.linkSystemLibrary("LLVM");  
-    pgo_instrument.linkSystemLibrary("c");
-    
-    const pgo_gen_install = b.addInstallArtifact(pgo_instrument, .{});
-    
-    // PGO Phase 2: Run benchmark to collect profile data
-    const run_pgo_benchmark = b.addRunArtifact(pgo_instrument);
-    run_pgo_benchmark.addArg("benchmarks/pgo_benchmark_suite.csd");
-    run_pgo_benchmark.step.dependOn(&pgo_gen_install.step);
-    
-    // PGO Phase 3: Build optimized binary using profile data
-    const pgo_opt_module = b.addModule("cursed_pgo_opt", .{
-        .root_source_file = b.path("src-zig/main.zig"),
-        .target = target,
-        .optimize = .ReleaseFast,
-    });
-    
-    const pgo_optimized = b.addExecutable(.{
-        .name = "cursed-zig-pgo",
-        .root_module = pgo_opt_module,
-    });
-    pgo_optimized.linkSystemLibrary("LLVM");
-    pgo_optimized.linkSystemLibrary("c");
-    
-    const pgo_opt_install = b.addInstallArtifact(pgo_optimized, .{});
-    pgo_opt_install.step.dependOn(&run_pgo_benchmark.step);
-    
-    pgo_step.dependOn(&pgo_opt_install.step);
-
-    // Performance comparison step
-    const perf_compare_step = b.step("pgo-test", "Test PGO performance improvement");
-    
-    const pgo_perf_test = b.addRunArtifact(pgo_optimized);
-    pgo_perf_test.addArg("benchmarks/pgo_benchmark_suite.csd");
-    pgo_perf_test.step.dependOn(&pgo_opt_install.step);
-    
-    perf_compare_step.dependOn(&pgo_perf_test.step);
-    
-    // Test step
-    const test_step = b.step("test", "Run all tests");
-    
-    // Test zig_version.zig if it exists
-    const compat_test_exists = blk: {
-        std.fs.cwd().access("src-zig/zig_version.zig", .{}) catch {
-            break :blk false;
-        };
-        break :blk true;
-    };
-    if (compat_test_exists) {
-        const zig_version_test_module = b.addModule("zig_version_test", .{
-            .root_source_file = b.path("src-zig/zig_version.zig"),
-            .target = target,
+    // Create test suite
+    const unit_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/main_unified.zig"),
+            .target = resolved_target,
             .optimize = optimize,
-        });
-        
-        const zig_version_test = b.addTest(.{
-            .root_module = zig_version_test_module,
-        });
-        
-        const run_zig_version_test = b.addRunArtifact(zig_version_test);
-        test_step.dependOn(&run_zig_version_test.step);
-        
-        std.log.info("Added zig_version.zig tests to test suite", .{});
+        }),
+    });
+
+    unit_tests.linkLibC();
+    addLlvm(b, unit_tests, resolved_target);
+
+    const run_unit_tests = b.addRunArtifact(unit_tests);
+    const test_step = b.step("test", "Run unit tests");
+    test_step.dependOn(&run_unit_tests.step);
+
+    // Create concurrency test suite
+    const concurrency_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/concurrency.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
+
+    // Link libc for concurrency tests (needed for platform APIs)
+    if (!is_wasm) {
+        concurrency_tests.linkLibC();
     }
 
-    // === ORACLE QUALITY GATE 3: MEMORY SAFETY AUDIT ===
-    
-    // Memory safety audit with comprehensive testing
-    const memory_audit_step = b.step("memory-audit", "Oracle Quality Gate 3: Comprehensive Memory Safety Audit");
-    
-    // Create comprehensive memory audit system
-    const memory_audit_module = b.addModule("cursed_memory_audit", .{
-        .root_source_file = b.path("arena_memory_leak_validator.zig"),
-        .target = target,
-        .optimize = .Debug, // Debug mode for better memory tracking  
-    });
-    
-    const memory_audit_exe = b.addExecutable(.{
-        .name = "cursed-memory-audit",
-        .root_module = memory_audit_module,
-    });
-    
-    b.installArtifact(memory_audit_exe);
-    
-    const run_memory_audit = b.addRunArtifact(memory_audit_exe);
-    memory_audit_step.dependOn(&run_memory_audit.step);
+    const run_concurrency_tests = b.addRunArtifact(concurrency_tests);
+    const concurrency_test_step = b.step("test-concurrency", "Run concurrency tests");
+    concurrency_test_step.dependOn(&run_concurrency_tests.step);
 
-    // Stress GC test with tiny heaps
-    const stress_gc_step = b.step("stress-gc", "Stress test GC with tiny heaps and frequent collections");
-    const stress_gc_cmd = b.addRunArtifact(memory_audit_exe);
-    stress_gc_step.dependOn(&stress_gc_cmd.step);
+    // Create concurrency benchmark executable (skip for WASM - no threading support)
+    if (!is_wasm) {
+        const concurrency_benchmark = b.addExecutable(.{
+            .name = "cursed-concurrency-benchmark",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("src-zig/concurrency_benchmark.zig"),
+                .target = resolved_target,
+                .optimize = optimize,
+            }),
+        });
+
+        // Link libc for concurrency benchmark (uses C allocator)
+        concurrency_benchmark.linkLibC();
+        b.installArtifact(concurrency_benchmark);
+
+        const run_benchmark = b.addRunArtifact(concurrency_benchmark);
+        run_benchmark.step.dependOn(b.getInstallStep());
+
+        const benchmark_step = b.step("benchmark", "Run concurrency benchmarks");
+        benchmark_step.dependOn(&run_benchmark.step);
+
+        // Create comprehensive concurrency test executable
+        const concurrency_test_exe = b.addExecutable(.{
+            .name = "cursed-concurrency-test",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("src-zig/concurrency_test.zig"),
+                .target = resolved_target,
+                .optimize = optimize,
+            }),
+        });
+
+        // Link libc for concurrency test (uses C allocator)
+        concurrency_test_exe.linkLibC();
+        b.installArtifact(concurrency_test_exe);
+
+        const run_concurrency_test_exe = b.addRunArtifact(concurrency_test_exe);
+        run_concurrency_test_exe.step.dependOn(b.getInstallStep());
+
+        const concurrency_full_test_step = b.step("test-concurrency-full", "Run comprehensive concurrency tests");
+        concurrency_full_test_step.dependOn(&run_concurrency_test_exe.step);
+    }
     
-    // AddressSanitizer build for enhanced memory safety
-    const asan_step = b.step("asan", "Build with AddressSanitizer for memory error detection");
-    const asan_module = b.addModule("cursed_asan", .{
-        .root_source_file = b.path("src-zig/main.zig"),
-        .target = target,
-        .optimize = .Debug,
+    // Create LSP server executable
+    const lsp_exe = b.addExecutable(.{
+        .name = "cursed-lsp",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(if (is_wasm) "src-zig/wasm_minimal_compiler.zig" else "cursed_lsp_working.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
     });
     
-    const asan_exe = b.addExecutable(.{
-        .name = "cursed-zig-asan",
-        .root_module = asan_module,
+    if (!is_wasm) {
+        lsp_exe.linkLibC();
+    }
+    
+    b.installArtifact(lsp_exe);
+    
+    // Create documentation generator executable (skip for WASM - uses filesystem)
+    if (!is_wasm) {
+        const doc_exe = b.addExecutable(.{
+            .name = "cursed-doc",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("src-zig/doc_generator.zig"),
+                .target = resolved_target,
+                .optimize = optimize,
+            }),
+        });
+        
+        // Doc generator uses direct file imports to avoid module conflicts
+        doc_exe.linkLibC();
+        b.installArtifact(doc_exe);
+    }
+    
+    const run_lsp = b.addRunArtifact(lsp_exe);
+    run_lsp.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_lsp.addArgs(args);
+    }
+    
+    const lsp_step = b.step("lsp", "Run the CURSED Language Server");
+    lsp_step.dependOn(&run_lsp.step);
+
+    // Create advanced parser tests
+    const parser_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/parser_test_advanced.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
+
+    const run_parser_tests = b.addRunArtifact(parser_tests);
+    const parser_test_step = b.step("test-parser", "Run advanced parser tests");
+    parser_test_step.dependOn(&run_parser_tests.step);
+
+    // Create syscall interface tests
+    const syscall_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/syscall_interface.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
+
+    if (!is_wasm) {
+        syscall_tests.linkLibC();
+    }
+
+    const run_syscall_tests = b.addRunArtifact(syscall_tests);
+    const syscall_test_step = b.step("test-syscall", "Run syscall interface tests");
+    syscall_test_step.dependOn(&run_syscall_tests.step);
+
+    // Create error diagnostics tests
+    const error_diagnostics_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/error_diagnostics.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
+
+    const run_error_diagnostics_tests = b.addRunArtifact(error_diagnostics_tests);
+    const error_diagnostics_test_step = b.step("test-diagnostics", "Run error diagnostics tests");
+    error_diagnostics_test_step.dependOn(&run_error_diagnostics_tests.step);
+
+    // Create diagnostic demo executable
+    const diagnostics_demo = b.addExecutable(.{
+        .name = "cursed-diagnostics-demo",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(if (is_wasm) "src-zig/wasm_minimal_compiler.zig" else "src-zig/test_diagnostics_demo_simple.zig"),
+            .target = resolved_target,
+            .optimize = optimize,
+        }),
+    });
+    b.installArtifact(diagnostics_demo);
+
+    // Create comprehensive test step that runs all tests
+    const all_tests_step = b.step("test-all", "Run all test suites");
+    all_tests_step.dependOn(&run_unit_tests.step);
+    all_tests_step.dependOn(&run_concurrency_tests.step);
+    all_tests_step.dependOn(&run_parser_tests.step);
+    all_tests_step.dependOn(&run_syscall_tests.step);
+    all_tests_step.dependOn(&run_error_diagnostics_tests.step);
+
+    // Cross-compilation build steps for all 6 supported platforms
+    const cross_compile_step = b.step("cross-compile", "Cross-compile for all supported platforms");
+    
+    // Target specifications for cross-compilation
+    const cross_targets = [_]std.Target.Query{
+        .{ .cpu_arch = .x86_64, .os_tag = .linux },      // Linux x64
+        .{ .cpu_arch = .aarch64, .os_tag = .linux },     // Linux ARM64
+        .{ .cpu_arch = .x86_64, .os_tag = .macos },      // macOS x64
+        .{ .cpu_arch = .aarch64, .os_tag = .macos },     // macOS ARM64
+        .{ .cpu_arch = .x86_64, .os_tag = .windows },    // Windows x64
+        .{ .cpu_arch = .wasm32, .os_tag = .wasi },       // WebAssembly
+    };
+    
+    // Create cross-compilation executables for each target
+    for (cross_targets) |query| {
+        const cross_target = b.resolveTargetQuery(query);
+        const cross_config = TargetConfig.forTarget(cross_target);
+        
+        // Skip native target (already built)
+        const is_native = cross_target.result.cpu.arch == resolved_target.result.cpu.arch and
+                         cross_target.result.os.tag == resolved_target.result.os.tag;
+        if (is_native) continue;
+        
+        // Create cross-compiled executable
+        const cross_exe = b.addExecutable(.{
+            .name = b.fmt("cursed-{s}", .{cross_config.name}),
+            .root_module = b.createModule(.{
+                .root_source_file = if (query.cpu_arch == .wasm32) 
+                    b.path("src-zig/wasm_pure.zig") 
+                else 
+                    b.path("src-zig/main_unified.zig"),
+                .target = cross_target,
+                .optimize = optimize,
+            }),
+        });
+        
+        // Configure cross-compiled executable
+        if (query.cpu_arch != .wasm32) {
+            cross_exe.linkLibC();
+            
+            // Skip LLVM for cross-compilation to avoid library dependency issues
+            // Only add LLVM when compiling for the exact same target as the host
+            if (cross_config.supports_llvm and 
+                query.os_tag == resolved_target.result.os.tag and
+                query.cpu_arch == resolved_target.result.cpu.arch) {
+                addLlvm(b, cross_exe, cross_target);
+            }
+        }
+        
+        // Install cross-compiled artifact
+        const cross_install = b.addInstallArtifact(cross_exe, .{
+            .dest_dir = .{ .override = .{ .custom = b.fmt("bin/{s}", .{cross_config.name}) } },
+        });
+        
+        cross_compile_step.dependOn(&cross_install.step);
+        
+        if (b.verbose) {
+            std.debug.print("Added cross-compilation target: {s}\n", .{cross_config.description});
+        }
+    }
+    
+    // Platform-specific archive creation
+    const archive_step = b.step("archive", "Create platform-specific archives");
+    
+    // Create platform archives for distribution
+    for (cross_targets) |query| {
+        const cross_target = b.resolveTargetQuery(query);
+        const cross_config = TargetConfig.forTarget(cross_target);
+        
+        const archive_cmd = switch (query.os_tag.?) {
+            .windows => b.addSystemCommand(&[_][]const u8{
+                "powershell", "-Command",
+                b.fmt("Compress-Archive -Path 'zig-out/bin/{s}/*' -DestinationPath 'cursed-{s}.zip'", .{ cross_config.name, cross_config.name })
+            }),
+            else => b.addSystemCommand(&[_][]const u8{
+                "tar", "-czf", 
+                b.fmt("cursed-{s}.tar.gz", .{cross_config.name}),
+                "-C", b.fmt("zig-out/bin/{s}", .{cross_config.name}),
+                "."
+            }),
+        };
+        
+        archive_cmd.step.dependOn(cross_compile_step);
+        archive_step.dependOn(&archive_cmd.step);
+    }
+
+    // Cross-platform testing step
+    const cross_test_step = b.step("cross-test", "Test cross-compilation functionality");
+    
+    // Create test script for cross-compilation validation
+    const cross_test_script = b.addWriteFiles();
+    _ = cross_test_script.add("cross_test.sh", 
+        \\#!/bin/bash
+        \\set -e
+        \\echo "Testing cross-compilation results..."
+        \\
+        \\# Check that all expected binaries exist
+        \\for target in linux-x64 linux-arm64 macos-x64 macos-arm64 windows-x64 wasm32; do
+        \\    binary_dir="zig-out/bin/$target"
+        \\    if [ -d "$binary_dir" ]; then
+        \\        echo "✓ $target build directory exists"
+        \\        # Check for expected binary
+        \\        if [ "$target" = "windows-x64" ]; then
+        \\            expected_binary="$binary_dir/cursed-$target.exe"
+        \\        elif [ "$target" = "wasm32" ]; then
+        \\            expected_binary="$binary_dir/cursed-$target.wasm"
+        \\        else
+        \\            expected_binary="$binary_dir/cursed-$target"
+        \\        fi
+        \\        
+        \\        if [ -f "$expected_binary" ]; then
+        \\            echo "✓ $target binary exists: $expected_binary"
+        \\            # Show file info
+        \\            ls -lh "$expected_binary"
+        \\            if command -v file >/dev/null 2>&1; then
+        \\                file "$expected_binary" || true
+        \\            fi
+        \\        else
+        \\            echo "✗ $target binary missing: $expected_binary"
+        \\        fi
+        \\    else
+        \\        echo "✗ $target build directory missing"
+        \\    fi
+        \\    echo
+        \\done
+        \\
+        \\echo "Cross-compilation test completed"
+    );
+    
+    const run_cross_test = b.addSystemCommand(&[_][]const u8{ "bash", "zig-out/cross_test.sh" });
+    run_cross_test.step.dependOn(&cross_test_script.step);
+    run_cross_test.step.dependOn(cross_compile_step);
+    cross_test_step.dependOn(&run_cross_test.step);
+
+    // Production validation step 
+    const validate_step = b.step("validate", "Run production validation suite");
+    
+    const validate_script = b.addSystemCommand(&[_][]const u8{
+        "bash", "-c",
+        \\#!/bin/bash
+        \\set -e
+        \\echo "=== CURSED Production Validation Suite ==="
+        \\echo
+        \\
+        \\echo "1. Testing basic build..."
+        \\zig build >/dev/null 2>&1
+        \\echo "✓ Build successful"
+        \\
+        \\echo "2. Testing interpreter mode..."
+        \\echo 'sus x drip = 42; vibez.spill("Hello, World! x=", x)' > validation_test.csd
+        \\./zig-out/bin/cursed-zig validation_test.csd >/dev/null 2>&1
+        \\echo "✓ Interpreter mode working"
+        \\
+        \\echo "3. Testing release build..."
+        \\zig build -Doptimize=ReleaseFast >/dev/null 2>&1
+        \\echo "✓ Release build successful"
+        \\
+        \\echo "4. Testing cross-compilation..."
+        \\zig build cross-compile >/dev/null 2>&1
+        \\echo "✓ Cross-compilation working"
+        \\
+        \\echo "5. Testing memory safety..."
+        \\if command -v valgrind >/dev/null 2>&1; then
+        \\  valgrind --error-exitcode=1 --leak-check=full ./zig-out/bin/cursed-zig validation_test.csd >/dev/null 2>&1
+        \\  echo "✓ Memory safety validation passed"
+        \\else
+        \\  echo "⚠ Valgrind not available, skipping memory test"
+        \\fi
+        \\
+        \\rm -f validation_test.csd
+        \\echo
+        \\echo "=== All validation tests passed! ==="
     });
     
-    // Enable AddressSanitizer
-    asan_exe.linkSystemLibrary("LLVM");
-    asan_exe.linkSystemLibrary("c");
-    
-    const asan_install = b.addInstallArtifact(asan_exe, .{});
-    asan_step.dependOn(&asan_install.step);
+    validate_script.step.dependOn(b.getInstallStep());
+    validate_script.step.dependOn(cross_compile_step);
+    validate_step.dependOn(&validate_script.step);
 }

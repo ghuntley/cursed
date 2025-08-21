@@ -1,0 +1,100 @@
+{
+  "timestamp": 1755751767.0266144,
+  "cursed_version": "1.0.0",
+  "system_info": {
+    "platform": "linux",
+    "python_version": "3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]"
+  },
+  "benchmarks": [
+    {
+      "file": "benchmarks/cursed/simple_arithmetic.csd",
+      "compile_time_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "runtime_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "benchmark_runtime_us": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      }
+    },
+    {
+      "file": "benchmarks/cursed/simple_functions.csd",
+      "compile_time_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "runtime_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "benchmark_runtime_us": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      }
+    },
+    {
+      "file": "benchmarks/cursed/simple_arrays.csd",
+      "compile_time_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "runtime_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "benchmark_runtime_us": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      }
+    },
+    {
+      "file": "benchmarks/cursed/simple_strings.csd",
+      "compile_time_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "runtime_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "benchmark_runtime_us": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      }
+    },
+    {
+      "file": "benchmarks/cursed/simple_control_flow.csd",
+      "compile_time_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "runtime_ms": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      },
+      "benchmark_runtime_us": {
+        "mean": 0,
+        "stdev": 0,
+        "runs": []
+      }
+    }
+  ]
+}

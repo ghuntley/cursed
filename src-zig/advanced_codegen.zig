@@ -1814,7 +1814,21 @@ pub const AdvancedCodeGen = struct {
                 return try self.generateAdvancedTuple(tuple);
             },
             .TupleAccess => |tuple_access| {
-                return try self.generateAdvancedTupleAccess(tuple_access);
+                const complete_ir = @import("complete_ir_nodes.zig");
+                var generator = complete_ir.CompleteIRNodeGenerator.init(self);
+                return try generator.generateTupleAccess(tuple_access);
+            },
+            
+            .SliceAccess => |slice_access| {
+                const complete_ir = @import("complete_ir_nodes.zig");
+                var generator = complete_ir.CompleteIRNodeGenerator.init(self);
+                return try generator.generateSliceAccess(slice_access);
+            },
+            
+            .TernaryOperator => |ternary| {
+                const complete_ir = @import("complete_ir_nodes.zig");
+                var generator = complete_ir.CompleteIRNodeGenerator.init(self);
+                return try generator.generateTernaryExpression(ternary.condition.*, ternary.true_expr.*, ternary.false_expr.*);
             },
             
             // Concurrency expressions
@@ -4672,7 +4686,59 @@ pub const AdvancedCodeGen = struct {
         const builder = self.base_codegen.builder;
         const module = self.base_codegen.module;
         
-        // Fast-path null check
+        // Fast-path null check with comprehensive error handling
+        const null_check_func = try self.getOrCreateFunction("cursed_vtable_null_check");
+        const null_check_result = c.LLVMBuildCall2(builder, 
+            c.LLVMGlobalGetValueType(null_check_func), 
+            null_check_func, 
+            &[_]c.LLVMValueRef{object_ptr}, 1, "null_check_result");
+        
+        // Create error handling blocks
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+        const vtable_valid_block = c.LLVMAppendBasicBlockInContext(context, current_func, "vtable_valid");
+        const vtable_error_block = c.LLVMAppendBasicBlockInContext(context, current_func, "vtable_error");
+        
+        // Branch based on null check
+        const is_valid = c.LLVMBuildICmp(builder, c.LLVMIntEQ, null_check_result, 
+            c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 0, 0), "is_vtable_valid");
+        _ = c.LLVMBuildCondBr(builder, is_valid, vtable_valid_block, vtable_error_block);
+        
+        // Error block - generate runtime error
+        c.LLVMPositionBuilderAtEnd(builder, vtable_error_block);
+        const error_func = try self.getOrCreateFunction("cursed_vtable_error");
+        _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(error_func), error_func, 
+            &[_]c.LLVMValueRef{
+                c.LLVMConstInt(c.LLVMInt32TypeInContext(context), method_index, 0),
+                object_ptr
+            }, 2, "");
+        _ = c.LLVMBuildUnreachable(builder);
+        
+        // Valid block - proceed with vtable lookup
+        c.LLVMPositionBuilderAtEnd(builder, vtable_valid_block);
+        
+        // Load vtable pointer from object (assuming first field is vtable*)
+        const ptr_type = c.LLVMPointerTypeInContext(context, 0);
+        const vtable_ptr_ptr = c.LLVMBuildBitCast(builder, object_ptr, 
+            c.LLVMPointerType(ptr_type, 0), "vtable_ptr_ptr");
+        const vtable_ptr = c.LLVMBuildLoad2(builder, ptr_type, vtable_ptr_ptr, "vtable_ptr");
+        
+        // Calculate method address: vtable_ptr + (method_index + 1) * sizeof(function_ptr)
+        // +1 to skip the vtable validation magic number at offset 0
+        const method_offset = c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 
+            @intCast(method_index + 1), 0);
+        
+        // Get method function pointer from vtable
+        const method_ptr_array = c.LLVMBuildBitCast(builder, vtable_ptr, 
+            c.LLVMPointerType(ptr_type, 0), "method_ptr_array");
+        const method_ptr_ptr = c.LLVMBuildGEP2(builder, ptr_type, method_ptr_array, 
+            &[_]c.LLVMValueRef{method_offset}, 1, "method_ptr_ptr");
+        const method_func_ptr = c.LLVMBuildLoad2(builder, ptr_type, method_ptr_ptr, "method_func_ptr");
+        
+        // Add performance monitoring instrumentation
+        const perf_start = try self.generatePerfCounterStart("vtable_lookup");
+        defer self.generatePerfCounterEnd("vtable_lookup", perf_start) catch {};
+        
+        return method_func_ptr;
         const null_ptr = c.LLVMConstNull(c.LLVMPointerTypeInContext(context, 0));
         const is_null = c.LLVMBuildICmp(builder, c.LLVMIntEQ, object_ptr, null_ptr, "obj_null_check");
         

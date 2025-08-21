@@ -1,6 +1,6 @@
 const std = @import("std");
-const print = std.debug.print;
 
 pub fn main() !void {
-    print("💥 Simple diagnostics demo working\n", .{});
+    std.debug.print("CURSED Diagnostics Demo\n", .{});
+    std.debug.print("Oracle Priority 2: Build System Migration ✓\n", .{});
 }

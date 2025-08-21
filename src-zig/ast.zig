@@ -62,6 +62,7 @@ pub const Expression = union(enum) {
     TupleAccess: TupleAccessExpression,
     ArrayAccess: ArrayAccessExpression,
     SliceAccess: SliceAccessExpression,
+    TernaryOperator: TernaryExpression,
     TypeAssertion: TypeAssertionExpression,
     Increment: IncrementExpression,
     Decrement: DecrementExpression,
@@ -1032,6 +1033,12 @@ pub const SliceAccessExpression = struct {
     array: *Expression,
     start: ?*Expression,
     end: ?*Expression,
+};
+
+pub const TernaryExpression = struct {
+    condition: *Expression,
+    true_expr: *Expression,
+    false_expr: *Expression,
 };
 
 pub const TypeAssertionExpression = struct {
