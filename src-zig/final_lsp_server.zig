@@ -22,7 +22,7 @@ const FinalLSPServer = struct {
     
     const Self = @This();
     
-    pub fn init() Self {
+    pub fn init(allocator: std.mem.Allocator) Self {
         return Self{
             .allocator = allocator,
             .documents = HashMap([]const u8, DocumentData, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -42,7 +42,7 @@ const FinalLSPServer = struct {
     
     /// Main LSP message processing loop
     pub fn run(self: *Self) !void {
-        const stdin = std.io.getStdIn();
+        const stdin = std.io.getStdIn().reader();
         const stdout = std.io.getStdOut().writer();
         var buf: [8192]u8 = undefined;
         
@@ -200,8 +200,8 @@ const FinalLSPServer = struct {
         const params = message.object.get("params").?.object;
         const position = params.get("position").?.object;
         
-        const line = @as(u32, @intCast(position.get("line").?.integer));
-        const character = @as(u32, @intCast(position.get("character").?.integer));
+        _ = @as(u32, @intCast(position.get("line").?.integer));
+        _ = @as(u32, @intCast(position.get("character").?.integer));
         
         // Fast completion items - CURSED language constructs
         const completions = [_][]const u8{
@@ -333,7 +333,7 @@ const FinalLSPServer = struct {
     }
     
     /// Publish diagnostics to client (<200ms requirement)
-    fn publishDiagnostics(self: *Self, writer: std.io.AnyWriter, uri: []const u8, diagnostics: *ArrayList(Diagnostic)) !void {
+    fn publishDiagnostics(self: *Self, writer: std.io.AnyWriter, uri: []const u8, _: *ArrayList(Diagnostic)) !void {
         const notification = 
             \\{{
             \\  "jsonrpc": "2.0",

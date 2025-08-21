@@ -87,7 +87,7 @@ pub const Expression = union(enum) {
     If: IfExpression,
     FunctionCall: FunctionCallExpression,
 
-    pub fn deinit(self: *pub fn deinit(self: *Expression, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *Expression, allocator: Allocator) void {
         // Memory cleanup is now handled properly without circular dependencies
         // Using type-erased pointers with runtime casting for safe cleanup
         switch (self.*) {
@@ -190,7 +190,7 @@ pub const Program = struct {
         };
     }
 
-    pub fn deinit(self: *pub fn deinit(self: *Program, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *Program, allocator: Allocator) void {
         for (self.statements.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
             stmt_ptr.deinit();
@@ -259,7 +259,7 @@ pub const ImportStatement = struct {
         };
     }
 
-    pub fn deinit(self: *pub fn deinit(self: *ImportStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *ImportStatement, _: Allocator) void {
         self.multiple_paths.deinit();
         self.selective_items.deinit();
     }
@@ -278,7 +278,7 @@ pub const PackageDeclaration = struct {
     name: []const u8,
     version: ?[]const u8,
 
-    pub fn deinit(self: *pub fn deinit(self: *PackageDeclaration, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *PackageDeclaration, allocator: Allocator) void {
                 _ = self;
     }
 };
@@ -310,7 +310,7 @@ pub const Type = union(enum) {
     Generic: GenericType,
     Tuple: TupleType,
 
-    pub fn deinit(self: *pub fn deinit(self: *Type, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *Type, allocator: Allocator) void {
         switch (self.*) {
             .Array => |*arr| arr.deinit(),
             .Map => |*map| map.deinit(),
@@ -350,7 +350,7 @@ pub const ArrayType = struct {
     size: ?usize,
     _owned: bool = true, // Track ownership to prevent double-free
 
-    pub fn deinit(self: *pub fn deinit(self: *ArrayType, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *ArrayType, allocator: Allocator) void {
         // TEMPORARY FIX: Skip cleanup entirely to prevent double-free
         // The module loader manages the lifetime of these type pointers
         // This causes a small memory leak but prevents crashes
@@ -369,7 +369,7 @@ pub const MapType = struct {
     _key_owned: bool = true,    // Track key ownership to prevent double-free
     _value_owned: bool = true,  // Track value ownership to prevent double-free
 
-    pub fn deinit(self: *pub fn deinit(self: *MapType, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *MapType, allocator: Allocator) void {
         // TEMPORARY FIX: Skip cleanup entirely to prevent double-free
         // The module loader manages the lifetime of these type pointers
         _ = self;
@@ -386,7 +386,7 @@ pub const FunctionType = struct {
     return_type: ?*Type,
     _return_owned: bool = true, // Track return type ownership
 
-    pub fn deinit(self: *pub fn deinit(self: *FunctionType, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *FunctionType, allocator: Allocator) void {
         // Clean up parameters (these are value types, safe to cleanup)
         for (self.parameters.items) |*param| {
             param.deinit();
@@ -418,7 +418,7 @@ pub const GenericType = struct {
 pub const TupleType = struct {
     elements: ArrayList(Type),
 
-    pub fn deinit(self: *pub fn deinit(self: *TupleType, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *TupleType, allocator: Allocator) void {
         for (self.elements.items) |*elem| {
             elem.deinit();
         }
@@ -483,7 +483,7 @@ pub const Statement = union(enum) {
     Const: ConstDecl,
     Block: BlockStatement,
 
-    pub fn deinit(self: *pub fn deinit(self: *Statement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *Statement, allocator: Allocator) void {
         switch (self.*) {
             .Expression => |expr| {
                 const expr_ptr: *Expression = @ptrCast(@alignCast(expr));
@@ -559,7 +559,7 @@ pub const LetStatement = struct {
     is_mutable: bool,
     location: SourceLocation = SourceLocation.unknown(), // Debug location for DWARF
 
-    pub fn deinit(self: *pub fn deinit(self: *LetStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *LetStatement, allocator: Allocator) void {
         // TEMPORARY FIX: Skip type cleanup to prevent double-free
         // The module loader manages type lifetimes
         _ = self.var_type;
@@ -579,7 +579,7 @@ pub const AssignmentStatement = struct {
     value: *anyopaque,
     operator: []const u8,
 
-    pub fn deinit(self: *pub fn deinit(self: *AssignmentStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *AssignmentStatement, allocator: Allocator) void {
         const target_expr: *Expression = @ptrCast(@alignCast(self.target));
         target_expr.deinit();
         allocator.destroy(target_expr);
@@ -593,7 +593,7 @@ pub const AssignmentStatement = struct {
 pub const ReturnStatement = struct {
     value: ?*anyopaque,
 
-    pub fn deinit(self: *pub fn deinit(self: *ReturnStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *ReturnStatement, allocator: Allocator) void {
         if (self.value) |val| {
             const expr_ptr: *Expression = @ptrCast(@alignCast(val));
             expr_ptr.deinit();
@@ -607,7 +607,7 @@ pub const IfStatement = struct {
     then_branch: ArrayList(*anyopaque),
     else_branch: ?ArrayList(*anyopaque),
 
-    pub fn deinit(self: *pub fn deinit(self: *IfStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *IfStatement, allocator: Allocator) void {
         const condition_expr: *Expression = @ptrCast(@alignCast(self.condition));
         condition_expr.deinit();
         allocator.destroy(condition_expr);
@@ -648,7 +648,7 @@ pub const FunctionStatement = struct {
         };
     }
 
-    pub fn deinit(self: *pub fn deinit(self: *FunctionStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *FunctionStatement, allocator: Allocator) void {
         for (self.parameters.items) |*param| {
             param.param_type.deinit();
             if (param.default_value) |default| {
@@ -688,7 +688,7 @@ pub const WhileStatement = struct {
     condition: *Expression,
     body: ArrayList(*Statement),
 
-    pub fn deinit(self: *pub fn deinit(self: *WhileStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *WhileStatement, allocator: Allocator) void {
         self.condition.deinit();
         allocator.destroy(self.condition);
         for (self.body.items) |stmt| {
@@ -731,7 +731,7 @@ pub const GoroutineStatement = struct {
 pub const StanStatement = struct {
     body: ArrayList(*anyopaque),
     
-    pub fn deinit(self: *pub fn deinit(self: *StanStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *StanStatement, allocator: Allocator) void {
         for (self.body.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
             stmt_ptr.deinit();
@@ -759,7 +759,7 @@ pub const StructStatement = struct {
     type_parameters: ArrayList(TypeParameter),
     attributes: ?AttributeList = null, // Attribute decorations for memory layout and optimization
     
-    pub fn deinit(self: *pub fn deinit(self: *StructStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *StructStatement, allocator: Allocator) void {
         for (self.fields.items) |*field| {
             field.field_type.deinit();
         }
@@ -787,7 +787,7 @@ pub const InterfaceStatement = struct {
     extends: ArrayList([]const u8), // Interface inheritance  
     compositions: ArrayList([]const u8), // Interface composition with "with"
     
-    pub fn deinit(self: *pub fn deinit(self: *InterfaceStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *InterfaceStatement, allocator: Allocator) void {
                 self.methods.deinit();
         self.type_parameters.deinit();
         self.extends.deinit();
@@ -801,7 +801,7 @@ pub const ImplementationStatement = struct {
     methods: ArrayList(FunctionStatement),
     where_clause: ?[]const u8,
     
-    pub fn deinit(self: *pub fn deinit(self: *ImplementationStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *ImplementationStatement, allocator: Allocator) void {
         for (self.methods.items) |*method| {
             method.deinit();
         }
@@ -881,7 +881,7 @@ pub const BlockStatement = struct {
         };
     }
     
-    pub fn deinit(self: *pub fn deinit(self: *BlockStatement, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *BlockStatement, allocator: Allocator) void {
         for (self.statements.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
             stmt_ptr.deinit();
@@ -897,7 +897,7 @@ pub const BinaryExpression = struct {
     operator: []const u8,
     right: *Expression,
 
-    pub fn deinit(self: *pub fn deinit(self: *BinaryExpression, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *BinaryExpression, allocator: Allocator) void {
         self.left.deinit();
         self.right.deinit();
         allocator.destroy(self.left);
@@ -909,7 +909,7 @@ pub const CallExpression = struct {
     function: *Expression,
     arguments: ArrayList(*Expression),
 
-    pub fn deinit(self: *pub fn deinit(self: *CallExpression, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *CallExpression, allocator: Allocator) void {
         self.function.deinit();
         allocator.destroy(self.function);
         
@@ -969,7 +969,7 @@ pub const StructExpression = struct {
     struct_name: []const u8,
     fields: ArrayList(FieldInitializer),
     
-    pub fn deinit(self: *pub fn deinit(self: *StructExpression, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *StructExpression, allocator: Allocator) void {
         for (self.fields.items) |*field| {
             field.value.deinit();
             allocator.destroy(field.value);
@@ -983,7 +983,7 @@ pub const MethodCallExpression = struct {
     method_name: []const u8,
     arguments: ArrayList(*Expression),
     
-    pub fn deinit(self: *pub fn deinit(self: *MethodCallExpression, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *MethodCallExpression, allocator: Allocator) void {
         self.object.deinit();
         allocator.destroy(self.object);
         
@@ -1239,7 +1239,7 @@ pub const StringInterpolationExpression = struct {
         };
     }
     
-    pub fn deinit(self: *pub fn deinit(self: *StringInterpolationExpression, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *StringInterpolationExpression, allocator: Allocator) void {
         for (self.parts.items) |part| {
             if (part.expression) |expr| {
                 const expr_ptr: *Expression = @ptrCast(@alignCast(expr));

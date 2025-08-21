@@ -341,7 +341,7 @@ pub const MemoryErrorDetector = struct {
         timestamp: i64,
     };
     
-    pub fn init() MemoryErrorDetector {
+    pub fn init(allocator: std.mem.Allocator) MemoryErrorDetector {
         return MemoryErrorDetector{
             .allocator = allocator,
             .allocations = std.HashMap(usize, AllocationInfo, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),

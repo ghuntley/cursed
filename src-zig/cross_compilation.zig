@@ -7,7 +7,7 @@ const ArrayList = std.ArrayList;
 pub const CrossCompiler = struct {
     allocator: Allocator,
     
-    pub fn init() CrossCompiler {
+    pub fn init(allocator: Allocator) CrossCompiler {
         return CrossCompiler{
             .allocator = allocator,
         };
@@ -306,7 +306,7 @@ pub const CrossCompiler = struct {
 pub const CrossCompilationTester = struct {
     allocator: Allocator,
     
-    pub fn init() CrossCompilationTester {
+    pub fn init(allocator: Allocator) CrossCompilationTester {
         return CrossCompilationTester{
             .allocator = allocator,
         };
@@ -323,7 +323,7 @@ pub const CrossCompilationTester = struct {
             \\const std = @import("std");
             \\
             \\pub fn main() !void {
-            var stdout_buffer: [4096]u8 = undefined;
+            \\    var stdout_buffer: [4096]u8 = undefined;
             \\    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
             \\    try stdout.print("Cross-compilation test successful!\n", .{});
             \\}

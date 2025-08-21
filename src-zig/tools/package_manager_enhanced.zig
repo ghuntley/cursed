@@ -413,7 +413,7 @@ pub const VersionRequirement = struct {
         },
     };
 
-    pub fn deinit(self: *VersionRequirement, allocator: Allocator) void {
+    pub fn deinit(self: *VersionRequirement, _: Allocator) void {
         switch (self.constraint) {
             .exact => |*v| v.deinit(),
             .caret => |*v| v.deinit(),
@@ -595,7 +595,7 @@ pub const PackageManifest = struct {
         crate_type: ArrayList([]const u8),
     };
 
-    pub fn init() PackageManifest {
+    pub fn init(allocator: Allocator) PackageManifest {
         return PackageManifest{
             .name = "",
             .version = Version{ .major = 0, .minor = 1, .patch = 0 },

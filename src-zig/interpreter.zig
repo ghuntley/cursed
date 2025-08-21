@@ -358,7 +358,7 @@ pub const TypeRegistry = struct {
     vtables: HashMap([]const u8, VTable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
     
-    pub fn init() TypeRegistry {
+    pub fn init(allocator: Allocator) TypeRegistry {
         return TypeRegistry{
             .struct_types = HashMap([]const u8, ast.StructStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .interface_types = HashMap([]const u8, ast.InterfaceStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -425,7 +425,7 @@ pub const Interpreter = struct {
 
     const MAX_CALL_STACK_DEPTH = 1000;
 
-    pub fn init() Interpreter {
+    pub fn init(allocator: Allocator) Interpreter {
         var globals = Environment.init(allocator, null);
         
         return Interpreter{

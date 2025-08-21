@@ -15,10 +15,10 @@ pub const SimpleLLVMIRGenerator = struct {
     string_counter: u32,
     verbose: bool,
     
-    pub fn init() SimpleLLVMIRGenerator {
+    pub fn init(allocator: std.mem.Allocator) SimpleLLVMIRGenerator {
         return SimpleLLVMIRGenerator{
             .allocator = allocator,
-            .ir_buffer = .empty,
+            .ir_buffer = ArrayList(u8).init(allocator),
             .string_counter = 0,
             .verbose = false,
         };

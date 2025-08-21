@@ -258,7 +258,7 @@ const MemoryTracker = struct {
         }
     }
     
-    pub fn detectLeaks(self: *MemoryTracker, allocator: std.mem.Allocator) ![]LeakInfo {
+    pub fn detectLeaks(self: *MemoryTracker, _: std.mem.Allocator) ![]LeakInfo {
         self.tracker_mutex.lock();
         defer self.tracker_mutex.unlock();
         

@@ -476,7 +476,7 @@ pub const ErrorHandlingLLVM = struct {
     
     const Self = @This();
     
-    pub fn init() Self {
+    pub fn init(allocator: Allocator) Self {
         return Self{
             .allocator = allocator,
         };
