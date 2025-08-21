@@ -1,0 +1,1 @@
+const std = @import("std"); pub fn main() !void { const stdin = std.fs.File.stdin(); var buf: [100]u8 = undefined; var rbuf: [100]u8 = undefined; var reader = stdin.reader(&rbuf); _ = try reader.read(&buf); }

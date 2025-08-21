@@ -428,7 +428,7 @@ pub const AdvancedCursedLanguageServer = struct {
             .allocator = allocator,
             .documents = HashMap([]const u8, DocumentData, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .workspace_root = null,
-            .workspace_symbols = ArrayList(SymbolInfo).init(allocator),
+            .workspace_symbols = ArrayList(SymbolInfo){},
             .type_hierarchy = HashMap([]const u8, ArrayList([]const u8), StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .call_hierarchy = HashMap([]const u8, ArrayList([]const u8), StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .initialized = false,
@@ -1855,9 +1855,9 @@ pub fn runAdvancedLspServer(allocator: Allocator) !void {
     var server = AdvancedCursedLanguageServer.init(allocator);
     defer server.deinit();
 
+    const stdin = std.fs.File.stdin();
     var stdin_buffer: [4096]u8 = undefined;
-    const stdin_file = std.fs.File.stdin();
-    const stdin = stdin_file.reader(stdin_buffer[0..]);
+    const stdin_reader = stdin.reader(stdin_buffer[0..]);
     var stdout_buffer: [4096]u8 = undefined;
     const stdout_file = std.fs.File.stdout();
     const stdout = stdout_file.writer(stdout_buffer[0..]);
@@ -1872,8 +1872,11 @@ pub fn runAdvancedLspServer(allocator: Allocator) !void {
         // Read Content-Length header
         var content_length: usize = 0;
         while (true) {
-            const line = try stdin.readUntilDelimiterAlloc(allocator, '\n', 1024);
-            defer allocator.free(line);
+            var line_buf: [1024]u8 = undefined;
+            const line = stdin_reader.readUntilDelimiter(line_buf[0..], '\n') catch |err| switch (err) {
+                error.EndOfStream => break,
+                else => return err,
+            };
             
             const trimmed = std.mem.trim(u8, line, "\r\n");
             if (trimmed.len == 0) break;

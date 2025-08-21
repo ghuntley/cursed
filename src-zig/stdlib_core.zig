@@ -29,9 +29,9 @@ pub const StdlibCore = struct {
     /// Read a line from stdin - core function for vibez.scanln()
     pub fn read_line(self: *StdlibCore) ![]u8 {
         var stdin_buffer: [4096]u8 = undefined;
-        const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
-        const input = try stdin.readUntilDelimiterAlloc(self.allocator, '\n', 4096);
-        return input;
+        const stdin = std.io.stdin;
+        const line = try stdin.reader().readUntilDelimiterOrEof(stdin_buffer[0..], '\n') orelse return "";
+        return try self.allocator.dupe(u8, line);
     }
     
     /// Read a single character from stdin
