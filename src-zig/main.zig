@@ -17,7 +17,7 @@ const SimpleJIT = struct {
     allocator: Allocator,
     variables: HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
 
-    pub fn init() SimpleJIT {
+    pub fn init(allocator: Allocator) SimpleJIT {
         return SimpleJIT{
             .allocator = allocator,
             .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -341,7 +341,7 @@ pub fn main() !void {
     }
 }
 
-fn parseArgs(allocator: Allocator, args: [][:0]u8) !Config {
+fn parseArgs(_: Allocator, args: [][:0]u8) !Config {
         var config = Config.init();
     
     if (args.len < 2) {
@@ -1346,7 +1346,7 @@ fn compileWithLLVM(allocator: Allocator, source: []const u8, filename: []const u
     print("🚀 Run with: ./{s}\n", .{output_file});
 }
 
-fn compileWithC(allocator: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
+fn compileWithC(_: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
         _ = source;
     _ = filename;
     _ = config;
@@ -1354,7 +1354,7 @@ fn compileWithC(allocator: Allocator, source: []const u8, filename: []const u8, 
     return error.NotImplemented;
 }
 
-fn compileWithWASM(allocator: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
+fn compileWithWASM(_: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
         _ = source;
     _ = filename;
     _ = config;
@@ -1617,7 +1617,7 @@ fn hasCommaOutsideQuotes(text: []const u8) bool {
     return false;
 }
 
-fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8) {
+fn parseArguments(_: Allocator, text: []const u8) !ArrayList([]const u8) {
     var args = .empty;
     var start: usize = 0;
     var in_quotes = false;
@@ -1888,7 +1888,7 @@ fn compileWithLLVMCrossCompilation(
 }
 
 fn compileWithCCrossCompilation(
-    allocator: Allocator, 
+    _: Allocator, 
     source: []const u8, 
     filename: []const u8, 
     config: Config,

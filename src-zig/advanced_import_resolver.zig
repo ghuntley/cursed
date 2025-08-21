@@ -44,7 +44,7 @@ pub const ImportSpec = struct {
     owns_version_req: bool = true,
     
     // Safe initialization with proper ownership tracking
-    pub fn init(_: Allocator, raw_path: []const u8, source_file: []const u8, line: u32, column: u32) !ImportSpec {
+    pub fn init(allocator: Allocator, raw_path: []const u8, source_file: []const u8, line: u32, column: u32) !ImportSpec {
         return ImportSpec{
             .raw_path = try allocator.dupe(u8, raw_path),
             .resolved_path = null,
@@ -81,7 +81,7 @@ pub const ImportSpec = struct {
         };
     }
     
-    pub fn deinit(self: *pub fn deinit(self: *ImportSpec, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *ImportSpec, allocator: Allocator) void {
         // Only free if we own the memory and haven't already freed it
         if (self.owns_resolved_path) {
             if (self.resolved_path) |path| {
@@ -148,14 +148,14 @@ pub const ModuleSearchPath = struct {
     is_stdlib: bool = false,
     is_cache: bool = false,
     
-    pub fn init(_: Allocator, path: []const u8, priority: u32) !ModuleSearchPath {
+    pub fn init(allocator: Allocator, path: []const u8, priority: u32) !ModuleSearchPath {
         return ModuleSearchPath{
             .path = try allocator.dupe(u8, path),
             .priority = priority,
         };
     }
     
-    pub fn deinit(self: *pub fn deinit(self: *ModuleSearchPath, _: Allocator), _: Allocator) void {
+    pub fn deinit(self: *ModuleSearchPath, allocator: Allocator) void {
         allocator.free(self.path);
     }
 };
@@ -280,12 +280,12 @@ pub const AdvancedImportResolver = struct {
     aliases: HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     current_file: ?[]const u8 = null,
     
-    pub fn init() AdvancedImportResolver {
+    pub fn init(allocator: Allocator) AdvancedImportResolver {
         return AdvancedImportResolver{
-            .allocator = _allocator,
-            .search_paths = .empty,
-            .module_cache = ModuleCache.init(_allocator),
-            .aliases = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(_allocator),
+            .allocator = allocator,
+            .search_paths = ArrayList(ModuleSearchPath).init(allocator),
+            .module_cache = ModuleCache.init(allocator),
+            .aliases = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
     }
     
@@ -322,7 +322,7 @@ pub const AdvancedImportResolver = struct {
     
     // Initialize with default search paths
     pub fn initWithDefaults(allocator: Allocator) !AdvancedImportResolver {
-        var resolver = AdvancedImportResolver.init(_allocator);
+        var resolver = AdvancedImportResolver.init(allocator);
         
         // Add default search paths in priority order
         try resolver.addStdlibPath();
@@ -925,7 +925,7 @@ test "advanced import resolver basic functionality" {
 test "version requirement parsing and matching" {
     const allocator = std.testing.allocator;
     
-    var resolver = AdvancedImportResolver.init(_allocator);
+    var resolver = AdvancedImportResolver.init(allocator);
     defer resolver.deinit();
     
     const import_spec = try resolver.parseImportStatement("json@^1.0.0", "test.csd");
@@ -941,7 +941,7 @@ test "version requirement parsing and matching" {
 test "cycle detection" {
     const allocator = std.testing.allocator;
     
-    var resolver = AdvancedImportResolver.init(_allocator);
+    var resolver = AdvancedImportResolver.init(allocator);
     defer resolver.deinit();
     
     // Create a cycle: A -> B -> C -> A

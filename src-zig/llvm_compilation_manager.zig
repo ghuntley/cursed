@@ -16,7 +16,7 @@ pub const LLVMCompilationManager = struct {
     optimization_level: u32,
     debug_info: bool,
     
-    pub fn init() LLVMCompilationManager {
+    pub fn init(allocator: std.mem.Allocator) LLVMCompilationManager {
         return LLVMCompilationManager{
             .allocator = allocator,
             .verbose = false,

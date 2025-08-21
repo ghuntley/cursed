@@ -98,12 +98,12 @@ pub const ErrorPropagation = struct {
         };
     };
     
-    pub fn init() ErrorPropagation {
+    pub fn init(allocator: Allocator) ErrorPropagation {
         return ErrorPropagation{
             .allocator = allocator,
-            .error_stack = .empty,
-            .propagation_handlers = .empty,
-            .try_catch_stack = .empty,
+            .error_stack = ArrayList(ErrorContext).init(allocator),
+            .propagation_handlers = ArrayList(PropagationHandler).init(allocator),
+            .try_catch_stack = ArrayList(TryCatchFrame).init(allocator),
             .current_scope_id = 0,
             .defer_entries = DeferStack.init(allocator),
             .current_file = null,

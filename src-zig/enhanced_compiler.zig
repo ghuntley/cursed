@@ -740,7 +740,7 @@ fn translateVariableDeclarationToC(allocator: Allocator, line: []const u8, write
 }
 
 /// Translate vibez.spill() to LLVM IR with pre-declared constants
-fn translateVibesSpillToLLVMWithConstants(allocator: Allocator, line: []const u8, start: usize, writer: anytype, variables: *std.ArrayList(VariableInfo), string_counter: *u32, string_constants: *std.ArrayList([]const u8)) !void {
+fn translateVibesSpillToLLVMWithConstants(_: Allocator, line: []const u8, start: usize, writer: anytype, variables: *std.ArrayList(VariableInfo), string_counter: *u32, string_constants: *std.ArrayList([]const u8)) !void {
         if (std.mem.indexOf(u8, line[start..], "(")) |paren_start| {
         if (std.mem.lastIndexOf(u8, line, ")")) |paren_end| {
             const content_start = start + paren_start + 1;
@@ -1048,7 +1048,7 @@ fn extractStringLiteralsSimple(args: []const u8, string_literals: *std.ArrayList
     }
 }
 
-fn escapeLLVMString(input: []const u8, allocator: Allocator) ![]u8 {
+fn escapeLLVMString(input: []const u8, _: Allocator) ![]u8 {
     var result: std.ArrayList(u8) = .empty;
     defer result.deinit();
     
@@ -2094,7 +2094,7 @@ fn generateReturnExpression(return_expr: []const u8, param_names: [][]const u8, 
 }
 
 /// Generate return statement with function call
-fn generateReturnWithFunctionCall(return_expr: []const u8, param_names: [][]const u8, return_type: []const u8, writer: anytype, allocator: Allocator, verbose: bool) !void {
+fn generateReturnWithFunctionCall(return_expr: []const u8, param_names: [][]const u8, return_type: []const u8, writer: anytype, _: Allocator, verbose: bool) !void {
     _ = param_names;
         _ = verbose;
     
@@ -2112,7 +2112,7 @@ fn generateReturnWithFunctionCall(return_expr: []const u8, param_names: [][]cons
 }
 
 /// Generate conditional return statement
-fn generateConditionalReturn(body: []const u8, param_names: [][]const u8, return_type: []const u8, writer: anytype, allocator: Allocator, verbose: bool) !void {
+fn generateConditionalReturn(body: []const u8, param_names: [][]const u8, return_type: []const u8, writer: anytype, _: Allocator, verbose: bool) !void {
     _ = body;
     _ = param_names;
         _ = verbose;

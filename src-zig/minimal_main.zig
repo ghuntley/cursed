@@ -152,11 +152,11 @@ fn handleSpillStatement(allocator: std.mem.Allocator, statement: []const u8, lin
     std.debug.print("OUTPUT: [vibez.spill statement]\n", .{});
 }
 
-fn handleSusStatement(allocator: std.mem.Allocator, statement: []const u8, line_number: u32) !void {
+fn handleSusStatement(_: std.mem.Allocator, statement: []const u8, line_number: u32) !void {
         std.debug.print("[Line {}] Variable declaration: {s}\n", .{ line_number, statement });
 }
 
-fn handleYeetStatement(allocator: std.mem.Allocator, statement: []const u8, line_number: u32) !void {
+fn handleYeetStatement(_: std.mem.Allocator, statement: []const u8, line_number: u32) !void {
         std.debug.print("[Line {}] Import statement: {s}\n", .{ line_number, statement });
 }
 
