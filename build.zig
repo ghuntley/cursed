@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) void {
     const main_file = if (target.result.cpu.arch == .wasm32 or wasm_backend) 
         b.path("src-zig/wasm_main.zig") 
     else 
-        b.path("src-zig/main_minimal.zig");
+        b.path("src-zig/main_ast_enabled.zig");
 
     // Create main executable
     const exe = b.addExecutable(.{
@@ -55,6 +55,7 @@ pub fn build(b: *std.Build) void {
     if (enable_llvm) {
         // Try different LLVM versions and paths
         const llvm_paths = [_][]const u8{
+            "/usr/lib/llvm-18",
             "/usr/lib/llvm-16",
             "/usr/lib/llvm-15", 
             "/usr/lib/llvm-14",
@@ -67,9 +68,14 @@ pub fn build(b: *std.Build) void {
             if (std.fs.cwd().access(llvm_path, .{})) |_| {
                 const include_path = b.fmt("{s}/include", .{llvm_path});
                 const lib_path = b.fmt("{s}/lib", .{llvm_path});
-                exe.addIncludePath(b.path(include_path));
-                exe.addLibraryPath(b.path(lib_path));
+                exe.addIncludePath(.{ .cwd_relative = include_path });
+                exe.addLibraryPath(.{ .cwd_relative = lib_path });
                 llvm_found = true;
+                
+                // Also add LLVM C headers path for LLVM 18
+                if (std.mem.eql(u8, llvm_path, "/usr/lib/llvm-18")) {
+                    exe.addIncludePath(.{ .cwd_relative = "/usr/include/llvm-c-18" });
+                }
                 break;
             } else |_| continue;
         }

@@ -558,8 +558,17 @@ pub const AdvancedCursedLanguageServer = struct {
             } else if (std.mem.eql(u8, method_str, "exit")) {
                 return;
             }
-        }
-    }
+            }
+}
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    
+    
+    try runAdvancedLspServer(allocator);
+}
 
     /// Enhanced initialize with all capabilities
     fn handleInitialize(self: *AdvancedCursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
@@ -749,8 +758,8 @@ pub const AdvancedCursedLanguageServer = struct {
         }
         doc_data.imports.clearAndFree();
         
-        for (doc_data.exports.items) |export| {
-            doc_data.allocator.free(export);
+        for (doc_data.exports.items) |export_item| {
+            doc_data.allocator.free(export_item);
         }
         doc_data.exports.clearAndFree();
     }
@@ -847,7 +856,7 @@ pub const AdvancedCursedLanguageServer = struct {
             const func_name = std.mem.trim(u8, after_slay[0..paren_pos], " \t");
             if (func_name.len > 0) {
                 // Extract full signature
-                var signature = try std.fmt.allocPrint(self.allocator, "{s}", .{line});
+                const signature = try std.fmt.allocPrint(self.allocator, "{s}", .{line});
                 
                 // Create symbol with detailed information
                 var symbol = try SymbolInfo.init(self.allocator, func_name, 12, Location{
@@ -862,7 +871,7 @@ pub const AdvancedCursedLanguageServer = struct {
                 symbol.documentation = try std.fmt.allocPrint(self.allocator, "Function: {s}", .{func_name});
                 
                 // Create type information
-                var type_info = try TypeInfo.init(self.allocator, func_name, TypeInfo.TypeKind.Function);
+                const type_info = try TypeInfo.init(self.allocator, func_name, TypeInfo.TypeKind.Function);
                 try doc_data.types.put(func_name, type_info);
                 
                 try doc_data.symbols.append(symbol);
@@ -920,7 +929,7 @@ pub const AdvancedCursedLanguageServer = struct {
                 symbol.documentation = try std.fmt.allocPrint(self.allocator, "CURSED struct definition: {s}", .{struct_name});
                 
                 // Create type information
-                var type_info = try TypeInfo.init(self.allocator, struct_name, TypeInfo.TypeKind.Struct);
+                const type_info = try TypeInfo.init(self.allocator, struct_name, TypeInfo.TypeKind.Struct);
                 try doc_data.types.put(struct_name, type_info);
                 
                 try doc_data.symbols.append(symbol);
@@ -946,7 +955,7 @@ pub const AdvancedCursedLanguageServer = struct {
                 symbol.documentation = try std.fmt.allocPrint(self.allocator, "CURSED interface definition: {s}", .{interface_name});
                 
                 // Create type information
-                var type_info = try TypeInfo.init(self.allocator, interface_name, TypeInfo.TypeKind.Interface);
+                const type_info = try TypeInfo.init(self.allocator, interface_name, TypeInfo.TypeKind.Interface);
                 try doc_data.types.put(interface_name, type_info);
                 
                 try doc_data.symbols.append(symbol);
@@ -994,7 +1003,7 @@ pub const AdvancedCursedLanguageServer = struct {
         var line_iter = lines;
         while (line_iter.next()) |line| {
             // Add type hints for variable declarations without explicit types
-            if (std.mem.indexOf(u8, line, "sus ")) |sus_pos| {
+            if (std.mem.indexOf(u8, line, "sus ")) |_| {
                 if (std.mem.indexOf(u8, line, " = ")) |equals_pos| {
                     // Infer type from value
                     const value_part = line[equals_pos + 3..];
@@ -1846,13 +1855,17 @@ pub fn runAdvancedLspServer(allocator: Allocator) !void {
     var server = AdvancedCursedLanguageServer.init(allocator);
     defer server.deinit();
 
-    const stdin = std.io.getStdIn().reader();
-    const stdout = std.io.getStdOut().writer();
-    const writer = stdout.any();
+    var stdin_buffer: [4096]u8 = undefined;
+    const stdin_file = std.fs.File.stdin();
+    const stdin = stdin_file.reader(stdin_buffer[0..]);
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout_file = std.fs.File.stdout();
+    const stdout = stdout_file.writer(stdout_buffer[0..]);
+    const writer = stdout;
 
     std.log.info("Advanced CURSED LSP Server starting with full IDE features...", .{});
 
-    var buffer = ArrayList(u8).init(allocator);
+    var buffer = ArrayList(u8){};
     defer buffer.deinit();
 
     while (true) {
@@ -1881,4 +1894,13 @@ pub fn runAdvancedLspServer(allocator: Allocator) !void {
         // Handle the request
         try server.handleRequest(buffer.items, writer);
     }
+}
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    
+    
+    try runAdvancedLspServer(allocator);
 }
