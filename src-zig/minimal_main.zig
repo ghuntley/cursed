@@ -1,13 +1,23 @@
 const std = @import("std");
+const concurrency_bridge = @import("concurrency_runtime_bridge_p1.zig");
 
 // Minimal CURSED compiler implementation for Zig 0.15.1 compatibility
 // This file provides a working baseline during Oracle Priority 2 migration
+// Enhanced with P1 Concurrency Runtime Bridge integration
 
 pub fn main() !void {
     // Use GPA for basic memory management
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    
+    // Initialize P1 Concurrency Runtime Bridge
+    if (!concurrency_bridge.cursed_runtime_bridge_init()) {
+        std.debug.print("Warning: Failed to initialize concurrency runtime bridge\n", .{});
+    } else {
+        std.debug.print("✓ P1 Concurrency Runtime Bridge initialized\n", .{});
+    }
+    defer concurrency_bridge.cursed_runtime_bridge_cleanup();
     
     // Parse command line arguments
     const args = try std.process.argsAlloc(allocator);

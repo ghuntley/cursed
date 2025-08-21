@@ -58,9 +58,9 @@ pub const TypeInferenceContext = struct {
             .allocator = allocator,
             .monomorphizer = monomorphizer,
             .type_registry = type_registry,
-            .inferred_types = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .inferred_types = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .constraint_queue = .empty,
-            .unification_cache = HashMap(UnificationKey, bool, UnificationKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .unification_cache = HashMap(UnificationKey, bool, UnificationKeyContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
@@ -503,7 +503,7 @@ pub const TypeInferenceContext = struct {
                     return replacement;
                 }
                 // Recursively substitute in type arguments
-                var new_args = std.ArrayList(ast.Type).init(self.allocator);
+                var new_args = std.ArrayList(ast.Type).init(allocator);
                 for (generic.type_args.items) |arg| {
                     try new_args.append(self.substituteType(arg, param_name, replacement));
                 }
@@ -585,7 +585,7 @@ pub const GenericCallResolver = struct {
         
         pub fn init() ScopeInfo {
             return ScopeInfo{
-                .variables = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .variables = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             };
         }
         
@@ -599,7 +599,7 @@ pub const GenericCallResolver = struct {
             .inference_context = inference_context,
             .monomorphizer = monomorphizer,
             .allocator = allocator,
-            .global_types = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .global_types = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
@@ -698,7 +698,7 @@ pub const GenericCallResolver = struct {
         if (self.inference_context.monomorphizer.generic_declarations.get(call.name)) |generic_decl| {
             if (generic_decl.kind == .Function) {
                 // Extract argument types for generic inference
-                var arg_types = std.ArrayList(ast.Type).init(self.allocator);
+                var arg_types = std.ArrayList(ast.Type).init(allocator);
                 defer arg_types.deinit();
                 
                 for (call.arguments.items) |arg| {
@@ -782,7 +782,7 @@ pub const GenericCallResolver = struct {
             },
             .Function => |func_type| {
                 // Substitute in parameter and return types
-                var new_param_types = std.ArrayList(ast.Type).init(self.allocator);
+                var new_param_types = std.ArrayList(ast.Type).init(allocator);
                 defer new_param_types.deinit(self.allocator);
                 
                 for (func_type.parameter_types.items) |param_type| {

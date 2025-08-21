@@ -92,7 +92,7 @@ pub const CrashTelemetry = struct {
         // Limit crash log size
         if (self.crash_log.items.len >= self.max_crashes) {
             var oldest = self.crash_log.orderedRemove(0);
-            oldest.deinit();
+            oldest.deinit(self.allocator);
         }
         
         // Create a deep copy of the context for storage

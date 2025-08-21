@@ -115,7 +115,7 @@ pub const ImportSpec = struct {
         // Clean up version requirement if present
         if (self.owns_version_req) {
             if (self.version_req) |*version_req| {
-                version_req.deinit();
+                version_req.deinit(allocator);
                 self.version_req = null;
                 self.owns_version_req = false;
             }
@@ -178,7 +178,7 @@ pub const ModuleCache = struct {
         var resolved_iter = self.resolved_modules.iterator();
         while (resolved_iter.next()) |entry| {
             var import_spec = entry.value_ptr;
-            import_spec.deinit();
+            import_spec.deinit(self.allocator);
             // Only free if the key is owned by the map
             if (entry.key_ptr.*.len > 0) {
                 self.allocator.free(entry.key_ptr.*);
@@ -196,7 +196,7 @@ pub const ModuleCache = struct {
                     self.allocator.free(dep);
                 }
             }
-            deps.deinit();
+            deps.deinit(self.allocator);
             // Only free if the key is owned by the map
             if (entry.key_ptr.*.len > 0) {
                 self.allocator.free(entry.key_ptr.*);
@@ -212,7 +212,7 @@ pub const ModuleCache = struct {
             try dependencies.append(self.allocator, try self.allocator.dupe(u8, to_module));
         } else {
             const from_key = try self.allocator.dupe(u8, from_module);
-            var new_deps = .empty;
+            var new_deps = ArrayList([]const u8){};
             try new_deps.append(self.allocator, try self.allocator.dupe(u8, to_module));
             try self.import_graph.put(from_key, new_deps);
         }
@@ -225,14 +225,14 @@ pub const ModuleCache = struct {
         var rec_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
         defer rec_stack.deinit();
         
-        var path = .empty;
+        var path = ArrayList([]const u8){};
         
         const has_cycle = try self.detectCycleRecursive(start_module, &visited, &rec_stack, &path);
         
         if (has_cycle) {
             return path;
         } else {
-            path.deinit();
+            path.deinit(self.allocator);
             return null;
         }
     }
@@ -246,13 +246,13 @@ pub const ModuleCache = struct {
     ) !bool {
         try visited.put(module, true);
         try rec_stack.put(module, true);
-        try path.append(module);
+        try path.append(self.allocator, module);
         
         if (self.import_graph.get(module)) |dependencies| {
             for (dependencies.items) |dep| {
                 if (rec_stack.get(dep) orelse false) {
                     // Found cycle
-                    try path.append(dep);
+                    try path.append(self.allocator, dep);
                     return true;
                 }
                 
@@ -283,18 +283,22 @@ pub const AdvancedImportResolver = struct {
     pub fn init(allocator: Allocator) AdvancedImportResolver {
         return AdvancedImportResolver{
             .allocator = allocator,
-            .search_paths = ArrayList(ModuleSearchPath).init(allocator),
+            .search_paths = ArrayList(ModuleSearchPath){},
             .module_cache = ModuleCache.init(allocator),
-            .aliases = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .aliases = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){
+                .unmanaged = .{},
+                .allocator = allocator,
+                .ctx = std.hash_map.StringContext{},
+            },
         };
     }
     
     pub fn deinit(self: *AdvancedImportResolver) void {
         // Clean up search paths
         for (self.search_paths.items) |*path| {
-            path.deinit();
+            path.deinit(self.allocator);
         }
-        self.search_paths.deinit();
+        self.search_paths.deinit(self.allocator);
         
         // Clean up module cache
         self.module_cache.deinit();
@@ -315,7 +319,7 @@ pub const AdvancedImportResolver = struct {
         
         // Clean up package manifest
         if (self.package_manifest) |*manifest| {
-            manifest.deinit();
+            manifest.deinit(self.allocator);
             self.package_manifest = null;
         }
     }
@@ -394,32 +398,32 @@ pub const AdvancedImportResolver = struct {
             "AGENT.md"
         };
         
-        var path_components = .empty;
-        defer path_components.deinit();
+        var path_components = ArrayList([]const u8){};
+        defer path_components.deinit(self.allocator);
         
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(component);
+                try path_components.append(self.allocator, component);
             }
         }
         
         while (path_components.items.len > 0) {
-            var test_path = .empty;
-            defer test_path.deinit();
+            var test_path = ArrayList(u8){};
+            defer test_path.deinit(self.allocator);
             
             for (path_components.items) |component| {
-                try test_path.append('/');
-                try test_path.appendSlice(component);
+                try test_path.append(self.allocator, '/');
+                try test_path.appendSlice(self.allocator, component);
             }
             
             for (markers) |marker| {
-                var marker_path = .empty;
-                defer marker_path.deinit();
+                var marker_path = ArrayList(u8){};
+                defer marker_path.deinit(self.allocator);
                 
-                try marker_path.appendSlice(test_path.items);
+                try marker_path.appendSlice(self.allocator, test_path.items);
                 try marker_path.append(self.allocator, '/');
-                try marker_path.appendSlice(marker);
+                try marker_path.appendSlice(self.allocator, marker);
                 
                 cwd.access(marker_path.items, .{}) catch continue;
                 return try self.allocator.dupe(u8, test_path.items);
@@ -484,8 +488,9 @@ pub const AdvancedImportResolver = struct {
         try self.module_cache.addToGraph(current_file, import_spec.resolved_path.?);
         
         // Check for import cycles
-        if (try self.module_cache.detectCycle(current_file)) |cycle| {
-            defer cycle.deinit();
+        if (try self.module_cache.detectCycle(current_file)) |cycle_result| {
+            var cycle = cycle_result;
+            defer cycle.deinit(self.allocator);
             
             print("Error: Import cycle detected:\n", .{});
             for (cycle.items, 0..) |module, i| {
@@ -496,7 +501,7 @@ pub const AdvancedImportResolver = struct {
                 }
             }
             // Clean up allocated memory in import_spec before returning error
-            import_spec.deinit();
+            import_spec.deinit(self.allocator);
             return error.ImportCycle;
         }
         
@@ -526,7 +531,7 @@ pub const AdvancedImportResolver = struct {
             import_spec.raw_path = try self.allocator.dupe(u8, module_name);
             import_spec.version_req = VersionRequirement.parse(self.allocator, version_spec) catch |err| {
                 // Clean up on error
-                import_spec.deinit();
+                import_spec.deinit(self.allocator);
                 return err;
             };
         }
@@ -627,13 +632,13 @@ pub const AdvancedImportResolver = struct {
             };
             
             for (pattern_formats) |format| {
-                var test_path = std.ArrayList(u8).init(self.allocator);
-                defer test_path.deinit();
+                var test_path = std.ArrayList(u8){};
+                defer test_path.deinit(self.allocator);
                 
-                try test_path.appendSlice(search_path.path);
-                try test_path.append('/');
-                try test_path.appendSlice(import_spec.raw_path);
-                try test_path.appendSlice(format.middle);
+                try test_path.appendSlice(self.allocator, search_path.path);
+                try test_path.append(self.allocator, '/');
+                try test_path.appendSlice(self.allocator, import_spec.raw_path);
+                try test_path.appendSlice(self.allocator, format.middle);
                 
                 std.fs.cwd().access(test_path.items, .{}) catch continue;
                 
@@ -676,13 +681,13 @@ pub const AdvancedImportResolver = struct {
             };
             
             for (pattern_formats) |format| {
-                var test_path = std.ArrayList(u8).init(self.allocator);
-                defer test_path.deinit();
+                var test_path = std.ArrayList(u8){};
+                defer test_path.deinit(self.allocator);
                 
-                try test_path.appendSlice(search_path.path);
+                try test_path.appendSlice(self.allocator, search_path.path);
                 try test_path.append(self.allocator, '/');
-                try test_path.appendSlice(import_spec.raw_path);
-                try test_path.appendSlice(format.prefix);
+                try test_path.appendSlice(self.allocator, import_spec.raw_path);
+                try test_path.appendSlice(self.allocator, format.prefix);
                 
                 std.fs.cwd().access(test_path.items, .{}) catch continue;
                 
@@ -733,7 +738,7 @@ pub const AdvancedImportResolver = struct {
     
     // Extract all imports from a source file
     pub fn extractImports(self: *AdvancedImportResolver, source: []const u8) !ArrayList(ImportSpec) {
-        var imports = .empty;
+        var imports = ArrayList(ImportSpec){};
         
         var line_num: u32 = 1;
         var lines = std.mem.splitScalar(u8, source, '\n');
@@ -744,10 +749,10 @@ pub const AdvancedImportResolver = struct {
             // Look for "yeet" statements
             if (std.mem.startsWith(u8, trimmed, "yeet ")) {
                 var import_specs = try self.parseYeetStatementMultiple(trimmed, line_num);
-                defer import_specs.deinit();
+                defer import_specs.deinit(self.allocator);
                 
                 for (import_specs.items) |import_spec| {
-                    try imports.append(import_spec);
+                    try imports.append(self.allocator, import_spec);
                 }
             }
             
@@ -758,7 +763,7 @@ pub const AdvancedImportResolver = struct {
     }
     
     fn parseYeetStatementMultiple(self: *AdvancedImportResolver, line: []const u8, line_num: u32) !ArrayList(ImportSpec) {
-        var imports = .empty;
+        var imports = ArrayList(ImportSpec){};
         
         const import_part = line[5..]; // Skip "yeet "
         
@@ -842,7 +847,7 @@ pub const AdvancedImportResolver = struct {
             extracted_imports.deinit();
         }
         
-        var resolved_imports = .empty;
+        var resolved_imports = ArrayList(ImportSpec){};
         
         for (extracted_imports.items) |import| {
             const resolved = self.resolveImport(import.raw_path, file_path) catch |err| {
@@ -850,7 +855,7 @@ pub const AdvancedImportResolver = struct {
                 continue;
             };
             
-            try resolved_imports.append(resolved);
+            try resolved_imports.append(self.allocator, resolved);
         }
         
         return resolved_imports;
@@ -885,8 +890,9 @@ pub const AdvancedImportResolver = struct {
             
             if (checked.get(module) orelse false) continue;
             
-            if (try self.module_cache.detectCycle(module)) |cycle| {
-                defer cycle.deinit();
+            if (try self.module_cache.detectCycle(module)) |cycle_result| {
+                var cycle = cycle_result;
+                defer cycle.deinit(self.allocator);
                 
                 print("Cycle detected starting from {s}:\n", .{module});
                 for (cycle.items) |cycle_module| {

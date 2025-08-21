@@ -169,7 +169,7 @@ pub const Parser = struct {
                     0,
                     @src().fn_name
                 ) catch return error.AlignmentError;
-                defer context.deinit();
+                defer context.deinit(self.allocator);
                 
                 telemetry.recordCrash(context) catch {};
             }
@@ -194,7 +194,7 @@ pub const Parser = struct {
                     0,
                     @src().fn_name
                 ) catch return error.AlignmentError;
-                defer context.deinit();
+                defer context.deinit(self.allocator);
                 
                 telemetry.recordCrash(context) catch {};
             }
@@ -228,7 +228,7 @@ pub const Parser = struct {
 
     pub fn parseProgram(self: *Parser) ParserError!Program {
         var program = Program.init(self.allocator);
-        errdefer program.deinit();
+        errdefer program.deinit(self.allocator);
         
         var statement_count: usize = 0;
         const max_statements = 10000; // Prevent infinite loops/excessive memory usage
@@ -258,7 +258,7 @@ pub const Parser = struct {
             // Parse import statement with error recovery
             if (self.check(.Yeet)) {
                 if (self.parseImportStatement()) |import_stmt| {
-                    program.imports.append(import_stmt) catch {
+                    program.imports.append(self.allocator, import_stmt) catch {
                         _ = self.reportErrorWithContext("Out of memory adding import", "parseProgram") catch {};
                         return ParserError.OutOfMemory;
                     };
@@ -604,7 +604,7 @@ pub const Parser = struct {
                 item_alias = self.advance().lexeme;
             }
             
-            try import_stmt.addSelectiveItem(item_name, item_alias);
+            try import_stmt.addSelectiveItem(self.allocator, item_name, item_alias);
             
             // Handle comma separator or end of list
             if (self.match(.Comma)) {
@@ -667,7 +667,7 @@ pub const Parser = struct {
                 path = path[0..at_index]; // Strip version for multiple imports (not currently supported)
             }
             
-            try import_stmt.addMultiplePath(path);
+            try import_stmt.addMultiplePath(self.allocator, path);
         }
         
         // Handle alias: "module" as alias (only for single imports)
@@ -876,7 +876,7 @@ pub const Parser = struct {
     fn parseBlockStatement(self: *Parser) ParserError!Statement {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var statements = .empty;
+        const statements = .empty;
         errdefer {
             for (statements.items) |stmt_ptr| {
                 self.allocator.destroy(@as(*Statement, @ptrCast(@alignCast(stmt_ptr))));
@@ -938,7 +938,7 @@ pub const Parser = struct {
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle) and !self.check(.RightShift)) {
                             const constraint = try self.parseType();
-                            try type_param.constraints.append(constraint);
+                            try type_param.constraints.append(self.allocator, constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }
@@ -1207,7 +1207,7 @@ pub const Parser = struct {
             if (self.isFunctionType()) {
                 _ = self.advance(); // consume '('
                 
-                var param_types = .empty;
+                const param_types = .empty;
                 
                 if (!self.check(.RightParen)) {
                     while (true) {
@@ -1557,7 +1557,7 @@ pub const Parser = struct {
         // Parse fam { try_body } catch(error_var) { catch_body } finally { finally_body }
         _ = try self.consume(.LeftBrace, "Expected '{' after 'fam'");
         
-        var try_body = .empty;
+        const try_body = .empty;
         
         // Parse try body statements
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -1651,7 +1651,7 @@ pub const Parser = struct {
                 if (self.check(.LeftParen)) {
                     _ = self.advance(); // consume '('
                     
-                    var arguments = .empty;
+                    const arguments = .empty;
                     
                     if (!self.check(.RightParen)) {
                         while (true) {
@@ -1710,7 +1710,7 @@ pub const Parser = struct {
     }
 
     fn finishCall(self: *Parser, callee: Expression) ParserError!Expression {
-        var arguments = .empty;
+        const arguments = .empty;
 
         if (!self.check(.RightParen)) {
             while (true) {
@@ -1817,7 +1817,7 @@ pub const Parser = struct {
 
         // Array literals [1, 2, 3]
         if (self.match(.LeftBracket)) {
-            var elements = .empty;
+            const elements = .empty;
             
             if (!self.check(.RightBracket)) {
                 while (true) {
@@ -4259,7 +4259,7 @@ pub const Parser = struct {
     
     /// Parse string interpolation "Hello ${name}!" 
     fn parseStringInterpolation(self: *Parser, str_content: []const u8) ParserError!Expression {
-        var interpolation = ast.StringInterpolationExpression.init(self.allocator);
+        var interpolation = ast.StringInterpolationExpression.init();
         
         var pos: usize = 0;
         while (pos < str_content.len) {

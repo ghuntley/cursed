@@ -237,3 +237,7 @@ void* llvm_global_get_value_type(void* global) {
 int llvm_get_type_kind(void* type_ref) {
     return LLVMGetTypeKind((LLVMTypeRef)type_ref);
 }
+
+void* llvm_build_icmp(void* builder, int predicate, void* left, void* right, const char* name) {
+    return LLVMBuildICmp((LLVMBuilderRef)builder, (LLVMIntPredicate)predicate, (LLVMValueRef)left, (LLVMValueRef)right, name);
+}
