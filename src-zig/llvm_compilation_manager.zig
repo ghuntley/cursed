@@ -75,8 +75,8 @@ pub const LLVMCompilationManager = struct {
         
         // Parse the source into AST
         var lex = lexer.Lexer.init(self.allocator, source);
-        const tokens = try lex.tokenize();
-        defer tokens.deinit();
+        var tokens = try lex.tokenize();
+        defer tokens.deinit(self.allocator);
         
         var parse = parser.Parser.init(self.allocator, tokens.items);
         defer parse.deinit();
@@ -84,7 +84,7 @@ pub const LLVMCompilationManager = struct {
         const program = try parse.parseProgram();
         defer {
             var mut_program = program;
-            mut_program.deinit();
+            mut_program.deinit(self.allocator);
         }
         
         // Initialize real LLVM codegen

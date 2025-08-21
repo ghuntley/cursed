@@ -151,7 +151,7 @@ fn cmdExtract(allocator: Allocator, args: [][]const u8) !void {
     defer {
         for (imports.items) |*import| {
             var import_spec = import;
-            import_spec.deinit();
+            import_spec.deinit(allocator);
         }
         imports.deinit();
     }
@@ -207,7 +207,7 @@ fn cmdValidate(allocator: Allocator, args: [][]const u8) !void {
     defer {
         for (resolved_imports.items) |*import| {
             var import_spec = import;
-            import_spec.deinit();
+            import_spec.deinit(allocator);
         }
         resolved_imports.deinit();
     }
@@ -289,7 +289,7 @@ fn cmdReport(allocator: Allocator, args: [][]const u8) !void {
         defer {
             for (resolved_imports.items) |*import| {
                 var import_spec = import;
-                import_spec.deinit();
+                import_spec.deinit(allocator);
             }
             resolved_imports.deinit();
         }

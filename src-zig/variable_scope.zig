@@ -59,7 +59,7 @@ pub const Scope = struct {
         return Scope{
             .id = id,
             .parent = parent,
-            .variables = HashMap([]const u8, VariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = HashMap([]const u8, VariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     

@@ -24,9 +24,9 @@ pub const TomlValue = union(enum) {
             },
             .array => |*arr| {
                 for (arr.items) |*item| {
-                    item.deinit();
+                    item.deinit(allocator);
                 }
-                arr.deinit();
+                arr.deinit(allocator);
             },
             .table => |*table| {
                 var iterator = table.iterator();
@@ -34,7 +34,7 @@ pub const TomlValue = union(enum) {
                     // Free the key (allocated string)
                     allocator.free(entry.key_ptr.*);
                     // Free the value
-                    entry.value_ptr.deinit();
+                    entry.value_ptr.deinit(allocator);
                 }
                 table.deinit();
             },
@@ -197,13 +197,13 @@ pub const TomlParser = struct {
 
     fn parseArray(self: *TomlParser) anyerror!TomlValue {
         self.pos += 1; // Skip '['
-        var array = ArrayList(TomlValue).init(self.allocator);
+        var array = ArrayList(TomlValue){};
         
         self.skipWhitespace();
         
         while (self.pos < self.content.len and self.content[self.pos] != ']') {
             const value = try self.parseValue();
-            try array.append(value);
+            try array.append(self.allocator, value);
             
             self.skipWhitespace();
             
@@ -295,13 +295,13 @@ pub const Version = struct {
         const patch_part_start = parts.next() orelse return error.InvalidVersion;
         
         // Reconstruct patch part including any remaining parts (for build metadata with dots)
-        var patch_part_builder = std.ArrayList(u8).init(allocator);
-        defer patch_part_builder.deinit();
+        var patch_part_builder = std.ArrayList(u8){};
+        defer patch_part_builder.deinit(allocator);
         
-        try patch_part_builder.appendSlice(patch_part_start);
+        try patch_part_builder.appendSlice(allocator, patch_part_start);
         while (parts.next()) |remaining_part| {
-            try patch_part_builder.append('.');
-            try patch_part_builder.appendSlice(remaining_part);
+            try patch_part_builder.append(allocator, '.');
+            try patch_part_builder.appendSlice(allocator, remaining_part);
         }
         
         const patch_part = patch_part_builder.items;
@@ -324,13 +324,13 @@ pub const Version = struct {
         // Collect remaining parts as pre-release (there could be multiple dashes)
         var pre_release: ?[]const u8 = null;
         if (patch_parts.next()) |first_part| {
-            var pre_release_parts = std.ArrayList(u8).init(allocator);
-            defer pre_release_parts.deinit();
+            var pre_release_parts = std.ArrayList(u8){};
+            defer pre_release_parts.deinit(allocator);
             
-            try pre_release_parts.appendSlice(first_part);
+            try pre_release_parts.appendSlice(allocator, first_part);
             while (patch_parts.next()) |part| {
-                try pre_release_parts.append('-');
-                try pre_release_parts.appendSlice(part);
+                try pre_release_parts.append(allocator, '-');
+                try pre_release_parts.appendSlice(allocator, part);
             }
             
             pre_release = try allocator.dupe(u8, pre_release_parts.items);
@@ -413,15 +413,15 @@ pub const VersionRequirement = struct {
         },
     };
 
-    pub fn deinit(self: *VersionRequirement, _: Allocator) void {
+    pub fn deinit(self: *VersionRequirement, allocator: Allocator) void {
         switch (self.constraint) {
-            .exact => |*v| v.deinit(),
-            .caret => |*v| v.deinit(),
-            .tilde => |*v| v.deinit(),
-            .greater => |*v| v.deinit(),
-            .greater_eq => |*v| v.deinit(),
-            .less => |*v| v.deinit(),
-            .less_eq => |*v| v.deinit(),
+            .exact => |*v| v.deinit(allocator),
+            .caret => |*v| v.deinit(allocator),
+            .tilde => |*v| v.deinit(allocator),
+            .greater => |*v| v.deinit(allocator),
+            .greater_eq => |*v| v.deinit(allocator),
+            .less => |*v| v.deinit(allocator),
+            .less_eq => |*v| v.deinit(allocator),
             .wildcard => {}, // No allocated memory
         }
     }
@@ -544,17 +544,17 @@ pub const Dependency = struct {
     dev_only: bool = false,
     features: ArrayList([]const u8),
 
-    pub fn init(allocator: Allocator, name: []const u8, version_req: VersionRequirement, source: PackageSource) Dependency {
+    pub fn init(_: Allocator, name: []const u8, version_req: VersionRequirement, source: PackageSource) Dependency {
         return Dependency{
             .name = name,
             .version_req = version_req,
             .source = source,
-            .features = ArrayList([]const u8).init(allocator),
+            .features = ArrayList([]const u8){},
         };
     }
 
-    pub fn deinit(self: *Dependency) void {
-        self.features.deinit();
+    pub fn deinit(self: *Dependency, allocator: Allocator) void {
+        self.features.deinit(allocator);
     }
 };
 
@@ -599,16 +599,32 @@ pub const PackageManifest = struct {
         return PackageManifest{
             .name = "",
             .version = Version{ .major = 0, .minor = 1, .patch = 0 },
-            .authors = ArrayList([]const u8).init(allocator),
-            .keywords = ArrayList([]const u8).init(allocator),
-            .categories = ArrayList([]const u8).init(allocator),
-            .dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .dev_dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .build_dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .features = HashMap([]const u8, ArrayList([]const u8), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .bin = ArrayList(BinTarget).init(allocator),
-            .include_files = ArrayList([]const u8).init(allocator),
-            .exclude_files = ArrayList([]const u8).init(allocator),
+            .authors = ArrayList([]const u8){},
+            .keywords = ArrayList([]const u8){},
+            .categories = ArrayList([]const u8){},
+            .dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){
+                .unmanaged = .{},
+                .allocator = allocator,
+                .ctx = std.hash_map.StringContext{},
+            },
+            .dev_dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){
+                .unmanaged = .{},
+                .allocator = allocator,
+                .ctx = std.hash_map.StringContext{},
+            },
+            .build_dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){
+                .unmanaged = .{},
+                .allocator = allocator,
+                .ctx = std.hash_map.StringContext{},
+            },
+            .features = HashMap([]const u8, ArrayList([]const u8), std.hash_map.StringContext, std.hash_map.default_max_load_percentage){
+                .unmanaged = .{},
+                .allocator = allocator,
+                .ctx = std.hash_map.StringContext{},
+            },
+            .bin = ArrayList(BinTarget){},
+            .include_files = ArrayList([]const u8){},
+            .exclude_files = ArrayList([]const u8){},
         };
     }
 
@@ -643,56 +659,56 @@ pub const PackageManifest = struct {
         }
         
         // Free version pre_release if allocated
-        self.version.deinit();
+        self.version.deinit(allocator);
         
         // Free authors array contents
         for (self.authors.items) |author| {
             allocator.free(author);
         }
-        self.authors.deinit();
+        self.authors.deinit(allocator);
         
         // Free keywords array contents
         for (self.keywords.items) |keyword| {
             allocator.free(keyword);
         }
-        self.keywords.deinit();
+        self.keywords.deinit(allocator);
         
         // Free categories array contents
         for (self.categories.items) |category| {
             allocator.free(category);
         }
-        self.categories.deinit();
+        self.categories.deinit(allocator);
         
         var dep_iter = self.dependencies.iterator();
         while (dep_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
         self.dependencies.deinit();
         
         var dev_dep_iter = self.dev_dependencies.iterator();
         while (dev_dep_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
         self.dev_dependencies.deinit();
         
         var build_dep_iter = self.build_dependencies.iterator();
         while (build_dep_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
         self.build_dependencies.deinit();
         
         var features_iter = self.features.iterator();
         while (features_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
         self.features.deinit();
         
-        self.bin.deinit();
+        self.bin.deinit(allocator);
         if (self.lib) |*lib| {
-            lib.crate_type.deinit();
+            lib.crate_type.deinit(allocator);
         }
-        self.include_files.deinit();
-        self.exclude_files.deinit();
+        self.include_files.deinit(allocator);
+        self.exclude_files.deinit(allocator);
     }
 
     pub fn loadFromToml(allocator: Allocator, file_path: []const u8) !PackageManifest {
@@ -704,7 +720,7 @@ pub const PackageManifest = struct {
 
         var parser = TomlParser.init(allocator, content);
         var toml = try parser.parse();
-        defer toml.deinit();
+        defer toml.deinit(allocator);
 
         return try PackageManifest.fromToml(allocator, toml);
     }
@@ -948,7 +964,7 @@ pub const LockFile = struct {
                 .version = Version{ .major = 0, .minor = 0, .patch = 0 },
                 .source = PackageSource{ .registry = .{ .url = "", .name = "" } },
                 .checksum = "",
-                .dependencies = ArrayList([]const u8).init(allocator),
+                .dependencies = ArrayList([]const u8){},
             };
         }
         
@@ -1001,7 +1017,7 @@ pub const LockFile = struct {
 
     pub fn init() LockFile {
         return LockFile{
-            .packages = ArrayList(LockedPackage).init(allocator),
+            .packages = ArrayList(LockedPackage){},
         };
     }
 
@@ -1034,7 +1050,7 @@ pub const LockFile = struct {
 
         var parser = TomlParser.init(allocator, content);
         var toml = try parser.parse();
-        defer toml.deinit();
+        defer toml.deinit(allocator);
 
         return try LockFile.fromToml(allocator, toml);
     }
@@ -1111,7 +1127,7 @@ pub const DependencyResolver = struct {
     allocator: Allocator,
     registry_cache: HashMap([]const u8, ArrayList(Version), std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
-    pub fn init() DependencyResolver {
+    pub fn init(allocator: Allocator) DependencyResolver {
         return DependencyResolver{
             .allocator = allocator,
             .registry_cache = HashMap([]const u8, ArrayList(Version), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -1153,7 +1169,7 @@ pub const DependencyResolver = struct {
                 .name = "",
                 .version = Version{ .major = 0, .minor = 0, .patch = 0 },
                 .source = PackageSource{ .registry = .{ .url = "", .name = "" } },
-                .dependencies = ArrayList([]const u8).init(allocator),
+                .dependencies = ArrayList([]const u8){},
             };
         }
         
@@ -1327,17 +1343,17 @@ pub const PackageCache = struct {
     }
     
     fn cloneFromGit(self: *PackageCache, dest_path: []const u8, git: anytype) !void {
-        var args = ArrayList([]const u8).init(self.allocator);
-        defer args.deinit();
+        var args = ArrayList([]const u8){};
+        defer args.deinit(self.allocator);
         
-        try args.appendSlice(&[_][]const u8{ "git", "clone", git.url, dest_path });
+        try args.appendSlice(self.allocator, &[_][]const u8{ "git", "clone", git.url, dest_path });
         
         if (git.branch) |branch| {
-            try args.appendSlice(&[_][]const u8{ "--branch", branch });
+            try args.appendSlice(self.allocator, &[_][]const u8{ "--branch", branch });
         }
         
         if (git.tag) |tag| {
-            try args.appendSlice(&[_][]const u8{ "--branch", tag });
+            try args.appendSlice(self.allocator, &[_][]const u8{ "--branch", tag });
         }
         
         const result = try std.process.Child.run(.{
@@ -1553,7 +1569,7 @@ pub fn cmdInit(allocator: Allocator, args: [][]const u8) !void {
     manifest.version = Version{ .major = 0, .minor = 1, .patch = 0 };
     manifest.description = "A new CURSED package";
     
-    try manifest.authors.append("Your Name <your.email@example.com>");
+    try manifest.authors.append(allocator, "Your Name <your.email@example.com>");
     
     try manifest.saveToToml(allocator, "CursedPackage.toml");
     
@@ -1745,7 +1761,7 @@ pub fn cmdRemove(allocator: Allocator, args: [][]const u8) !void {
     print("Run 'cursed pkg install' to update lock file\n", .{});
 }
 
-pub fn cmdSearch(allocator: Allocator, args: [][]const u8) !void {
+pub fn cmdSearch(_: Allocator, args: [][]const u8) !void {
         if (args.len == 0) {
         print("Usage: cursed pkg search <query>\n", .{});
         return;

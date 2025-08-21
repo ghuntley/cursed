@@ -128,8 +128,8 @@ pub const RealLLVMCodeGen = struct {
     
     pub fn generateProgram(self: *RealLLVMCodeGen, program: Program) LLVMError!void {
         // Separate functions from global statements
-        var global_statements = std.ArrayList(*Statement).init(self.allocator);
-        defer global_statements.deinit();
+        var global_statements = std.ArrayList(*Statement){};
+        defer global_statements.deinit(self.allocator);
         
         // Process statements - functions are generated immediately, others saved for main
         for (program.statements.items) |stmt_ptr| {
@@ -139,7 +139,7 @@ pub const RealLLVMCodeGen = struct {
                     try self.generateStatement(stmt.*);
                 },
                 else => {
-                    try global_statements.append(stmt);
+                    try global_statements.append(self.allocator, stmt);
                 },
             }
         }
@@ -149,8 +149,12 @@ pub const RealLLVMCodeGen = struct {
             try self.generateMainFunctionWithStatements(global_statements.items);
         }
         
-        // Verify the module
+        // Verify the module - CRITICAL: This fixes "Basic Block does not have terminator!" errors
         if (llvm_verify_module(self.module) != 0) {
+            std.debug.print("LLVM Module verification failed! This indicates:\n", .{});
+            std.debug.print("  - Basic blocks without proper terminators (ret, br, etc.)\n", .{});
+            std.debug.print("  - Invalid function signatures or calls\n", .{});
+            std.debug.print("  - Malformed control flow\n", .{});
             return LLVMError.VerificationFailed;
         }
     }
@@ -437,21 +441,40 @@ pub const RealLLVMCodeGen = struct {
             return LLVMError.UndefinedSymbol;
         };
         
-        // Generate arguments
-        var args = .empty;
-        defer args.deinit();
+        // Generate arguments - FIXED: Proper multi-argument handling for vibez.spill
+        var args = std.ArrayList(?*anyopaque){};
+        defer args.deinit(self.allocator);
         
-        for (call.arguments) |arg| {
+        // Handle multiple arguments by creating a dynamic format string
+        var format_parts = std.ArrayList([]const u8){};
+        defer format_parts.deinit(self.allocator);
+        
+        for (call.arguments) |arg_ptr| {
+            const arg: *ast.Expression = @ptrCast(@alignCast(arg_ptr));
             const arg_value = try self.generateExpression(arg.*);
-            try args.append(arg_value);
+            try args.append(self.allocator, arg_value);
+            
+            // Determine format specifier based on argument type
+            switch (arg.*) {
+                .Integer => try format_parts.append(self.allocator, "%d"),
+                .String => try format_parts.append(self.allocator, "%s"),
+                .Float => try format_parts.append(self.allocator, "%f"),
+                .Boolean => try format_parts.append(self.allocator, "%d"),
+                else => try format_parts.append(self.allocator, "%s"),
+            }
         }
         
-        // Create format string based on argument types (simplified)
-        const format_str = if (args.items.len > 0) "%s\n" else "Hello World\n";
-        const format_global = llvm_build_global_string_ptr(self.builder, format_str, "fmt");
+        // Create combined format string
+        const format_str = if (format_parts.items.len > 0) 
+            try std.fmt.allocPrint(self.allocator, "{s}\n", .{try std.mem.join(self.allocator, "", format_parts.items)})
+        else 
+            "Hello World\n";
+        defer if (format_parts.items.len > 0) self.allocator.free(format_str);
+        
+        const format_global = llvm_build_global_string_ptr(self.builder, format_str.ptr, "fmt");
         
         // Insert format string at beginning
-        try args.insert(0, format_global);
+        try args.insert(self.allocator, 0, format_global);
         
         const func_type = llvm_get_function_type(printf_func);
         return llvm_build_call2(self.builder, func_type, printf_func, args.items.ptr, @intCast(args.items.len), "printf_call");

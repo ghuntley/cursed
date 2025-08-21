@@ -182,8 +182,8 @@ pub const Monomorphizer = struct {
             .allocator = allocator,
             .context = context,
             .module = module,
-            .generic_declarations = HashMap([]const u8, GenericDeclaration, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .instances = HashMap([]const u8, MonomorphizedInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .generic_declarations = HashMap([]const u8, GenericDeclaration, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .instances = HashMap([]const u8, MonomorphizedInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .work_queue = .empty,
             .const_generics_manager = const_generics.ConstGenericsManager.init(allocator, context),
             .constraint_validator = generic_constraints.ConstraintValidator.init(allocator, type_registry),
@@ -369,7 +369,7 @@ pub const Monomorphizer = struct {
         try self.const_generics_manager.validateAllConstGenerics();
         
         // Convert old constraint format to new format for validation
-        var type_params = std.ArrayList(generic_constraints.GenericTypeParameter).init(self.allocator);
+        var type_params = std.ArrayList(generic_constraints.GenericTypeParameter).init(allocator);
         defer {
             for (type_params.items) |*param| {
                 param.deinit();
@@ -701,7 +701,7 @@ pub const Monomorphizer = struct {
         const func_decl = generic_decl.ast_node.Function;
         
         // Create substitution map
-        var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer substitution_map.deinit();
         
         for (generic_decl.type_parameters.items, 0..) |param, i| {
@@ -740,7 +740,7 @@ pub const Monomorphizer = struct {
         const struct_decl = generic_decl.ast_node.Struct;
         
         // Create substitution map
-        var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer substitution_map.deinit();
         
         for (generic_decl.type_parameters.items, 0..) |param, i| {
@@ -776,7 +776,7 @@ pub const Monomorphizer = struct {
         const interface_decl = generic_decl.ast_node.Interface;
         
         // Create substitution map
-        var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer substitution_map.deinit();
         
         for (generic_decl.type_parameters.items, 0..) |param, i| {

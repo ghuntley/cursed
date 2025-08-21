@@ -230,14 +230,14 @@ pub const Lexer = struct {
     }
 
     pub fn tokenize(self: *Lexer) !ArrayList(Token) {
-        var tokens = ArrayList(Token).init(self.allocator);
-        errdefer tokens.deinit(); // Clean up on error
+        var tokens = ArrayList(Token){};
+        errdefer tokens.deinit(self.allocator); // Clean up on error
         
         while (!self.isAtEnd()) {
             const token = try self.nextToken();
             // Skip comments and newlines like the Rust version
             if (token.kind != .Newline and token.kind != .LineComment and token.kind != .BlockComment) {
-                try tokens.append(token);
+                try tokens.append(self.allocator, token);
             }
             if (token.kind == .Eof) break;
         }

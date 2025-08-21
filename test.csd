@@ -1,1 +1,1 @@
-vibez.spill("Hello, World!")
+sus x drip = 42; vibez.spill(x);

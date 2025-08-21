@@ -109,11 +109,11 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     // Step 1: Lexical Analysis
     print("[1/5] Lexical Analysis...\n", .{});
     var l = lexer.Lexer.init(allocator, source);
-    const tokens = l.tokenize() catch |err| {
+    var tokens = l.tokenize() catch |err| {
         print("❌ Lexer error during compilation: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     
     if (config.verbose) print("📝 Lexed {} tokens for compilation\n", .{tokens.items.len});
     
@@ -129,18 +129,21 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     };
     defer c_file.close();
     
-    const writer = c_file.writer();
-    try writer.writeAll("#include <stdio.h>\n");
-    try writer.writeAll("#include <stdlib.h>\n");
-    try writer.writeAll("#include <string.h>\n");
-    try writer.writeAll("int main() {\n");
+    try c_file.writeAll("#include <stdio.h>\n");
+    try c_file.writeAll("#include <stdlib.h>\n");
+    try c_file.writeAll("#include <string.h>\n");
+    try c_file.writeAll("int main() {\n");
     
     // Step 3: Enhanced CURSED-to-C translation with better parsing
     print("[3/5] Translating CURSED to C...\n", .{});
+    var buf: [8192]u8 = undefined;
+    var fbs = std.io.fixedBufferStream(&buf);
+    const writer = fbs.writer();
     try translateCursedToC(allocator, source, writer, config.verbose);
+    try c_file.writeAll(fbs.getWritten());
     
-    try writer.writeAll("    return 0;\n");
-    try writer.writeAll("}\n");
+    try c_file.writeAll("    return 0;\n");
+    try c_file.writeAll("}\n");
     
     if (config.verbose) print("✅ Generated C code: {s}\n", .{c_filename});
     
@@ -247,19 +250,19 @@ fn generateTargetSpecificLLVMIR(allocator: Allocator, source: []const u8, filena
 
 /// Compile IR to native executable with target-specific settings
 fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, output_filename: []const u8, target_triple: []const u8, config: CompilerConfig) !void {
-    var compile_args = std.ArrayList([]const u8).init(allocator);
-    defer compile_args.deinit();
+    var compile_args = std.ArrayList([]const u8){};
+    defer compile_args.deinit(allocator);
     
     // Base clang command - use versioned clang if available
     const clang_cmd = if (std.process.hasEnvVar(allocator, "CLANG") catch false) 
         std.process.getEnvVarOwned(allocator, "CLANG") catch "clang-18"
     else 
         "clang-18";
-    try compile_args.append(clang_cmd);
+    try compile_args.append(allocator, clang_cmd);
     
     // Target specification
-    try compile_args.append("-target");
-    try compile_args.append(target_triple);
+    try compile_args.append(allocator, "-target");
+    try compile_args.append(allocator, target_triple);
     
     // Get target-specific CPU and features
     const cpu_features = target_mapping.getTargetCpuAndFeatures(target_triple);
@@ -272,13 +275,13 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
     // Target features - skip for compatibility
     if (config.target_features) |features| {
         _ = features; // Skip for now
-        // try compile_args.append("-mattr");
-        // try compile_args.append(features);
+        // try compile_args.append(allocator, "-mattr");
+        // try compile_args.append(allocator, features);
     }
     // Skip cpu_features for now - clang compatibility issues
     // else if (cpu_features.features.len > 0) {
-    //     try compile_args.append("-mattr");
-    //     try compile_args.append(cpu_features.features);
+    //     try compile_args.append(allocator, "-mattr");
+    //     try compile_args.append(allocator, cpu_features.features);
     // }
     
     // Optimization level
@@ -289,21 +292,21 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
         3 => "-O3",
         else => "-O2",
     };
-    try compile_args.append(opt_flag);
+    try compile_args.append(allocator, opt_flag);
     
     // Debug information
     if (config.debug_info) {
-        try compile_args.append("-g");
+        try compile_args.append(allocator, "-g");
     }
     
     // Static linking for cross-compilation
     if (config.static_link or !std.mem.eql(u8, target_triple, target_mapping.getNativeTriple())) {
-        try compile_args.append("-static");
+        try compile_args.append(allocator, "-static");
     }
     
     // Input and output
-    try compile_args.append(ir_filename);
-    try compile_args.append("-o");
+    try compile_args.append(allocator, ir_filename);
+    try compile_args.append(allocator, "-o");
     
     // Add appropriate file extension for target
     const extension = target_mapping.getExecutableExtension(target_triple);
@@ -313,18 +316,18 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
         output_filename;
     defer if (!std.mem.eql(u8, final_output, output_filename)) allocator.free(final_output);
     
-    try compile_args.append(final_output);
+    try compile_args.append(allocator, final_output);
     
     // WebAssembly specific flags
     if (std.mem.startsWith(u8, target_triple, "wasm32")) {
-        try compile_args.append("--no-standard-libraries");
-        try compile_args.append("-Wl,--export-all");
-        try compile_args.append("-Wl,--no-entry");
+        try compile_args.append(allocator, "--no-standard-libraries");
+        try compile_args.append(allocator, "-Wl,--export-all");
+        try compile_args.append(allocator, "-Wl,--no-entry");
     }
     
     // Windows specific flags
     if (std.mem.containsAtLeast(u8, target_triple, 1, "windows")) {
-        try compile_args.append("-lmsvcrt");
+        try compile_args.append(allocator, "-lmsvcrt");
     }
     
     if (config.verbose) {
@@ -371,23 +374,23 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
 /// Compile LLVM IR to native executable using clang
 fn compileLLVMIRToExecutable(allocator: Allocator, ir_filename: []const u8, executable_name: []const u8, debug_info: bool, verbose: bool) !void {
     // First try with clang directly on LLVM IR
-    var compile_args = std.ArrayList([]const u8).init(allocator);
-    defer compile_args.deinit();
+    var compile_args = std.ArrayList([]const u8){};
+    defer compile_args.deinit(allocator);
     
     const clang_cmd = if (std.process.hasEnvVar(allocator, "CLANG") catch false) 
         std.process.getEnvVarOwned(allocator, "CLANG") catch "clang-18"
     else 
         "clang-18";
-    try compile_args.append(clang_cmd);
+    try compile_args.append(allocator, clang_cmd);
     if (debug_info) {
-        try compile_args.append("-g");
-        try compile_args.append("-O0");
+        try compile_args.append(allocator, "-g");
+        try compile_args.append(allocator, "-O0");
     } else {
-        try compile_args.append("-O2");
+        try compile_args.append(allocator, "-O2");
     }
-    try compile_args.append("-o");
-    try compile_args.append(executable_name);
-    try compile_args.append(ir_filename);
+    try compile_args.append(allocator, "-o");
+    try compile_args.append(allocator, executable_name);
+    try compile_args.append(allocator, ir_filename);
     
     if (verbose) {
         print("🔧 Compiling with: ", .{});
@@ -429,17 +432,17 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
     const obj_filename = try std.fmt.allocPrint(allocator, "{s}.o", .{executable_name});
     defer allocator.free(obj_filename);
     
-    var llc_args = std.ArrayList([]const u8).init(allocator);
-    defer llc_args.deinit();
+    var llc_args = std.ArrayList([]const u8){};
+    defer llc_args.deinit(allocator);
     
-    try llc_args.append("llc-18");
+    try llc_args.append(allocator, "llc-18");
     if (!debug_info) {
-        try llc_args.append("-O2");
+        try llc_args.append(allocator, "-O2");
     }
-    try llc_args.append("-filetype=obj");
-    try llc_args.append("-o");
-    try llc_args.append(obj_filename);
-    try llc_args.append(ir_filename);
+    try llc_args.append(allocator, "-filetype=obj");
+    try llc_args.append(allocator, "-o");
+    try llc_args.append(allocator, obj_filename);
+    try llc_args.append(allocator, ir_filename);
     
     if (verbose) {
         print("🔧 Step 1 - LLC: ", .{});
@@ -471,17 +474,17 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
     }
     
     // Step 2: Use gcc to link object file to executable
-    var gcc_args = std.ArrayList([]const u8).init(allocator);
-    defer gcc_args.deinit();
+    var gcc_args = std.ArrayList([]const u8){};
+    defer gcc_args.deinit(allocator);
     
-    try gcc_args.append("gcc");
+    try gcc_args.append(allocator, "gcc");
     if (debug_info) {
-        try gcc_args.append("-g");
+        try gcc_args.append(allocator, "-g");
     }
-    try gcc_args.append("-no-pie");  // Disable PIE to avoid relocation issues
-    try gcc_args.append("-o");
-    try gcc_args.append(executable_name);
-    try gcc_args.append(obj_filename);
+    try gcc_args.append(allocator, "-no-pie");  // Disable PIE to avoid relocation issues
+    try gcc_args.append(allocator, "-o");
+    try gcc_args.append(allocator, executable_name);
+    try gcc_args.append(allocator, obj_filename);
     
     if (verbose) {
         print("🔧 Step 2 - GCC: {s}", .{""});
@@ -518,13 +521,13 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
 
 /// Enhanced CURSED-to-C translation with better parsing
 fn translateCursedToC(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool) !void {
-    var variables = std.ArrayList(VariableInfo).init(allocator);
+    var variables = std.ArrayList(VariableInfo){};
     defer {
         for (variables.items) |var_info| {
             allocator.free(var_info.name);
             allocator.free(var_info.var_type);
         }
-        variables.deinit();
+        variables.deinit(allocator);
     }
     
     var lines = std.mem.splitScalar(u8, source, '\n');
@@ -570,21 +573,21 @@ fn generateLLVMHeader(writer: anytype, target_triple: []const u8) !void {
 
 /// Enhanced CURSED-to-LLVM IR translation
 fn translateCursedToLLVM(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool) !void {
-    var variables = std.ArrayList(VariableInfo).init(allocator);
+    var variables = std.ArrayList(VariableInfo){};
     defer {
         for (variables.items) |var_info| {
             allocator.free(var_info.name);
             allocator.free(var_info.var_type);
         }
-        variables.deinit();
+        variables.deinit(allocator);
     }
     
-    var string_constants = std.ArrayList([]const u8).init(allocator);
+    var string_constants = std.ArrayList([]const u8){};
     defer {
         for (string_constants.items) |str| {
             allocator.free(str);
         }
-        string_constants.deinit();
+        string_constants.deinit(allocator);
     }
     
     var string_counter: u32 = 0;
@@ -603,7 +606,7 @@ fn translateCursedToLLVM(allocator: Allocator, source: []const u8, writer: anyty
                     if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
                         const string_content = content[1..content.len - 1];
                         const string_copy = try allocator.dupe(u8, string_content);
-                        try string_constants.append(string_copy);
+                        try string_constants.append(allocator, string_copy);
                     }
                 }
             }
@@ -717,7 +720,7 @@ fn translateVariableDeclarationToC(allocator: Allocator, line: []const u8, write
     // Add variable to tracking list
     const var_name_copy = try allocator.dupe(u8, var_name);
     const var_type_copy = try allocator.dupe(u8, var_type);
-    try variables.append(VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
+    try variables.append(allocator, VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
     
     if (verbose) {
         try writer.print("    // Variable: {s} {s} = {s}\n", .{ var_name, var_type, value_str });
@@ -819,7 +822,7 @@ fn translateVariableDeclarationToLLVM(allocator: Allocator, line: []const u8, wr
     // Add variable to tracking list
     const var_name_copy = try allocator.dupe(u8, var_name);
     const var_type_copy = try allocator.dupe(u8, var_type);
-    try variables.append(VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
+    try variables.append(allocator, VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
     
     if (verbose) {
         try writer.print("  ; Variable: {s} {s} = {s}\n", .{ var_name, var_type, value_str });
@@ -926,12 +929,12 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     try writer.writeAll("declare i32 @puts(i8*)\n\n");
     
     // Collect string literals for global constants
-    var string_literals = std.ArrayList(StringLiteralInfo).init(allocator);
+    var string_literals = std.ArrayList(StringLiteralInfo){};
     defer {
         for (string_literals.items) |str_info| {
             allocator.free(str_info.content);
         }
-        string_literals.deinit();
+        string_literals.deinit(allocator);
     }
     
     try collectStringLiteralsForLLVM(source, &string_literals, allocator);
@@ -957,7 +960,7 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
         while (iter.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        temp_functions.deinit();
+        temp_functions.deinit(allocator);
     }
     
     // Parse source to get function definitions first
@@ -1038,7 +1041,7 @@ fn extractStringLiteralsSimple(args: []const u8, string_literals: *std.ArrayList
                 const string_content = args[start..end_pos];
                 const string_copy = try allocator.dupe(u8, string_content);
                 const actual_size = countActualStringBytes(string_content) + 1; // +1 for null terminator
-                try string_literals.append(StringLiteralInfo{
+                try string_literals.append(allocator, StringLiteralInfo{
                     .content = string_copy,
                     .actual_size = actual_size,
                 });
@@ -1049,8 +1052,8 @@ fn extractStringLiteralsSimple(args: []const u8, string_literals: *std.ArrayList
 }
 
 fn escapeLLVMString(input: []const u8, allocator: Allocator) ![]u8 {
-    var result = std.ArrayList(u8).init(allocator);
-    defer result.deinit();
+    var result = std.ArrayList(u8){};
+    defer result.deinit(allocator);
     
     for (input) |char| {
         switch (char) {
@@ -1059,7 +1062,7 @@ fn escapeLLVMString(input: []const u8, allocator: Allocator) ![]u8 {
             '\n' => try result.appendSlice("\\n"),
             '\r' => try result.appendSlice("\\r"),
             '\t' => try result.appendSlice("\\t"),
-            else => try result.append(char),
+            else => try result.append(allocator, char),
         }
     }
     
@@ -1133,12 +1136,12 @@ fn extractAndGenerateFunctionDefinitions(
     verbose: bool
 ) !void {
     // Parse statements to find function definitions, handling multi-line functions
-    var statements = std.ArrayList([]const u8).init(allocator);
+    var statements = std.ArrayList([]const u8){};
     defer {
         for (statements.items) |stmt| {
             allocator.free(stmt);
         }
-        statements.deinit();
+        statements.deinit(allocator);
     }
     
     // Process the source to extract complete function definitions
@@ -1195,7 +1198,7 @@ fn extractAndGenerateFunctionDefinitions(
                 }
                 
                 const func_def = std.mem.trim(u8, source[start..i], " \t\r\n");
-                try statements.append(try allocator.dupe(u8, func_def));
+                try statements.append(allocator, try allocator.dupe(u8, func_def));
             }
         } else {
             // Skip to next line for non-function content
@@ -1225,16 +1228,16 @@ fn generateLLVMMainStatements(
 ) !void {
     var variable_counter: u32 = 0;
     var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-    defer variables.deinit();
+    defer variables.deinit(allocator);
     
     // Parse statements properly - each line can contain a complete statement
     var lines = std.mem.splitScalar(u8, source, '\n');
-    var statements = std.ArrayList([]const u8).init(allocator);
+    var statements = std.ArrayList([]const u8){};
     defer {
         for (statements.items) |stmt| {
             allocator.free(stmt);
         }
-        statements.deinit();
+        statements.deinit(allocator);
     }
     
     while (lines.next()) |line| {
@@ -1246,7 +1249,7 @@ fn generateLLVMMainStatements(
         while (parts.next()) |part| {
             const stmt = std.mem.trim(u8, part, " \t\r\n");
             if (stmt.len > 0) {
-                try statements.append(try allocator.dupe(u8, stmt));
+                try statements.append(allocator, try allocator.dupe(u8, stmt));
             }
         }
     }
@@ -1290,7 +1293,7 @@ fn generateLLVMMainStatements(
 fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, writer: anytype, string_literals: *std.ArrayList([]const u8), verbose: bool) !void {
     var variable_counter: u32 = 0;
     var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-    defer variables.deinit();
+    defer variables.deinit(allocator);
     
     var functions = std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
     defer {
@@ -1298,17 +1301,17 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
         while (iter.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        functions.deinit();
+        functions.deinit(allocator);
     }
     
     // Parse statements properly - each line can contain a complete statement
     var lines = std.mem.splitScalar(u8, source, '\n');
-    var statements = std.ArrayList([]const u8).init(allocator);
+    var statements = std.ArrayList([]const u8){};
     defer {
         for (statements.items) |stmt| {
             allocator.free(stmt);
         }
-        statements.deinit();
+        statements.deinit(allocator);
     }
     
     while (lines.next()) |line| {
@@ -1320,7 +1323,7 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
         while (parts.next()) |part| {
             const stmt = std.mem.trim(u8, part, " \t\r\n");
             if (stmt.len > 0) {
-                try statements.append(try allocator.dupe(u8, stmt));
+                try statements.append(allocator, try allocator.dupe(u8, stmt));
             }
         }
     }
@@ -1857,10 +1860,10 @@ fn parseFunctionDefinition(stmt: []const u8, functions: *std.HashMap([]const u8,
     }
     
     // Parse parameters
-    var param_names = std.ArrayList([]const u8).init(allocator);
-    var param_types = std.ArrayList([]const u8).init(allocator);
-    defer param_names.deinit();
-    defer param_types.deinit();
+    var param_names = std.ArrayList([]const u8){};
+    var param_types = std.ArrayList([]const u8){};
+    defer param_names.deinit(allocator);
+    defer param_types.deinit(allocator);
     
     if (params_str.len > 0) {
         // Handle comma-separated parameters: "a drip, b drip"
@@ -1870,8 +1873,8 @@ fn parseFunctionDefinition(stmt: []const u8, functions: *std.HashMap([]const u8,
             var param_parts = std.mem.tokenizeScalar(u8, trimmed_group, ' ');
             if (param_parts.next()) |param_name| {
                 if (param_parts.next()) |param_type| {
-                    try param_names.append(try allocator.dupe(u8, param_name));
-                    try param_types.append(try allocator.dupe(u8, param_type));
+                    try param_names.append(allocator, try allocator.dupe(u8, param_name));
+                    try param_types.append(allocator, try allocator.dupe(u8, param_type));
                 }
             }
         }
@@ -1931,15 +1934,15 @@ fn generateFunctionBody(body: []const u8, param_names: [][]const u8, param_types
         try generateReturnExpression(return_expr, param_names, param_types, return_type, writer, allocator, verbose);
     } else {
         // Handle multi-statement body
-        var statements = std.ArrayList([]const u8).init(allocator);
-        defer statements.deinit();
+        var statements = std.ArrayList([]const u8){};
+        defer statements.deinit(allocator);
         
         // Split body into statements (simplified)
         var lines = std.mem.splitScalar(u8, body, '\n');
         while (lines.next()) |line| {
             const trimmed = std.mem.trim(u8, line, " \t\r\n");
             if (trimmed.len > 0) {
-                try statements.append(trimmed);
+                try statements.append(allocator, trimmed);
             }
         }
         

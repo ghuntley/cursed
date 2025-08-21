@@ -74,7 +74,7 @@ pub const AttributeValue = union(enum) {
     pub fn deinit(self: *AttributeValue, allocator: Allocator) void {
         switch (self.*) {
             .Expression => |expr| {
-                expr.deinit();
+                expr.deinit(allocator);
                 allocator.destroy(expr);
             },
             else => {},
@@ -87,8 +87,8 @@ pub const AttributeParameter = struct {
     name: []const u8,
     value: AttributeValue,
     
-    pub fn deinit(self: *AttributeParameter, _: Allocator) void {
-        self.value.deinit();
+    pub fn deinit(self: *AttributeParameter, allocator: Allocator) void {
+        self.value.deinit(allocator);
     }
 };
 
@@ -108,11 +108,11 @@ pub const Attribute = struct {
         };
     }
     
-    pub fn deinit(self: *Attribute, _: Allocator) void {
+    pub fn deinit(self: *Attribute, allocator: Allocator) void {
         for (self.parameters.items) |*param| {
-            param.deinit();
+            param.deinit(allocator);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
     }
     
     /// Add a parameter to this attribute
@@ -183,11 +183,11 @@ pub const AttributeList = struct {
         };
     }
     
-    pub fn deinit(self: *AttributeList, _: Allocator) void {
+    pub fn deinit(self: *AttributeList, allocator: Allocator) void {
         for (self.attributes.items) |*attr| {
-            attr.deinit();
+            attr.deinit(allocator);
         }
-        self.attributes.deinit();
+        self.attributes.deinit(allocator);
     }
     
     /// Add an attribute to the list

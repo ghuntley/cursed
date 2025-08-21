@@ -81,8 +81,8 @@ pub const WorkingCodeGen = struct {
             .context = context,
             .module = module,
             .builder = builder,
-            .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .current_function = null,
         };
     }
@@ -1063,7 +1063,7 @@ pub const WorkingCodeGen = struct {
             const case_name = try std.fmt.allocPrint(self.allocator, "select_case_{d}", .{i});
             defer self.allocator.free(case_name);
             const case_block = c.LLVMAppendBasicBlockInContext(self.context, function, case_name.ptr);
-            try case_blocks.append(self.allocator, case_block);
+            try case_blocks.append(case_block);
         }
         
         const default_block = c.LLVMAppendBasicBlockInContext(self.context, function, "select_default");

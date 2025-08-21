@@ -95,31 +95,31 @@ pub const CursedError = struct {
         _ = fmt;
         _ = options;
         
-        _ = writer.write("[CURSED ERROR] ") catch 0;
-        _ = writer.write(@tagName(self.error_type)) catch 0;
-        _ = writer.write(": ") catch 0;
-        _ = writer.write(self.message) catch 0;
-        _ = writer.write("\n  Error Code: ") catch 0;
+        _ = writer.writeAll("[CURSED ERROR] ") catch {};
+        _ = writer.writeAll(@tagName(self.error_type)) catch 0;
+        _ = writer.writeAll(": ") catch 0;
+        _ = writer.writeAll(self.message) catch 0;
+        _ = writer.writeAll("\n  Error Code: ") catch 0;
         
         var buf: [32]u8 = undefined;
         const code_str = std.fmt.bufPrint(buf[0..], "{}", .{self.code}) catch "?";
-        _ = writer.write(code_str) catch 0;
-        _ = writer.write("\n") catch 0;
+        _ = writer.writeAll(code_str) catch 0;
+        _ = writer.writeAll("\n") catch 0;
         
         if (self.stack_trace) |trace| {
-            _ = writer.write("  Stack Trace:\n") catch 0;
+            _ = writer.writeAll("  Stack Trace:\n") catch 0;
             for (trace) |frame| {
-                _ = writer.write("    at ") catch 0;
-                _ = writer.write(frame.function_name) catch 0;
-                _ = writer.write(" (") catch 0;
-                _ = writer.write(frame.file_name) catch 0;
-                _ = writer.write(":") catch 0;
+                _ = writer.writeAll("    at ") catch 0;
+                _ = writer.writeAll(frame.function_name) catch 0;
+                _ = writer.writeAll(" (") catch 0;
+                _ = writer.writeAll(frame.file_name) catch 0;
+                _ = writer.writeAll(":") catch 0;
                 const line_str = std.fmt.bufPrint(buf[0..], "{}", .{frame.line}) catch "?";
-                _ = writer.write(line_str) catch 0;
-                _ = writer.write(":") catch 0;
+                _ = writer.writeAll(line_str) catch 0;
+                _ = writer.writeAll(":") catch 0;
                 const col_str = std.fmt.bufPrint(buf[0..], "{}", .{frame.column}) catch "?";
-                _ = writer.write(col_str) catch 0;
-                _ = writer.write(")\n") catch 0;
+                _ = writer.writeAll(col_str) catch 0;
+                _ = writer.writeAll(")\n") catch 0;
             }
         }
         
@@ -185,7 +185,10 @@ pub const ErrorHandler = struct {
     pub fn popFunction(self: *ErrorHandler) void {
         if (self.function_stack.items.len > 0) {
             const func_name = self.function_stack.pop();
-            self.allocator.free(func_name);
+            // Free the duplicated string
+            if (func_name.len > 0) {
+                self.allocator.free(func_name);
+            }
         }
     }
     

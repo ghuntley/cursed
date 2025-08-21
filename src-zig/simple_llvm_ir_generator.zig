@@ -18,7 +18,7 @@ pub const SimpleLLVMIRGenerator = struct {
     pub fn init(allocator: std.mem.Allocator) SimpleLLVMIRGenerator {
         return SimpleLLVMIRGenerator{
             .allocator = allocator,
-            .ir_buffer = ArrayList(u8).init(allocator),
+            .ir_buffer = ArrayList(u8){},
             .string_counter = 0,
             .verbose = false,
         };

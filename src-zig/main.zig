@@ -553,6 +553,8 @@ fn parseArgs(_: Allocator, args: [][:0]u8) !Config {
             }
         } else if (std.mem.eql(u8, arg, "--preserve-debug-info")) {
             config.preserve_debug_info = true;
+        } else if (std.mem.eql(u8, arg, "--compile")) {
+            config.command = .compile;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             // Assume it's a source file if no source file is set yet
             if (config.source_file == null) {
@@ -1139,16 +1141,16 @@ const Variable = union(enum) {
             .String => |str| return allocator.dupe(u8, str),
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
             .Array => |arr| {
-                var result = std.ArrayList(u8).init(self.allocator);
-                try result.append('[');
+                var result = std.ArrayList(u8){};
+                try result.append(allocator, '[');
                 for (arr.items, 0..) |item, i| {
-                    if (i > 0) try result.appendSlice(", ");
+                    if (i > 0) try result.appendSlice(allocator, ", ");
                     const item_str = try item.toString(allocator);
                     defer allocator.free(item_str);
-                    try result.appendSlice(item_str);
+                    try result.appendSlice(allocator, item_str);
                 }
-                try result.append(']');
-                return result.toOwnedSlice();
+                try result.append(allocator, ']');
+                return result.toOwnedSlice(allocator);
             },
         }
     }
@@ -1161,7 +1163,7 @@ fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, confi
     if (config.verbose) print("🚀 Using enhanced script interpreter with variable support\n", .{});
     // Use the existing interpretation logic from main_unified.zig
     const allocator = arena_manager.getParserAllocator();
-    const imports = simple_import_resolver.extractImports(allocator, source) catch |err| {
+    var imports = simple_import_resolver.extractImports(allocator, source) catch |err| {
         print("Error: Failed to extract imports: {any}\n", .{err});
         return;
     };
@@ -1169,7 +1171,7 @@ fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, confi
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit();
+        imports.deinit(allocator);
     }
     
     // Validate imports
@@ -1202,14 +1204,14 @@ fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, confi
             // Free Variable values that contain allocated memory
             switch (entry.value_ptr.*) {
                 .String => |str| allocator.free(str),
-                .Array => |arr| {
+                .Array => |*arr| {
                     for (arr.items) |item| {
                         switch (item) {
                             .String => |str| allocator.free(str),
                             else => {},
                         }
                     }
-                    arr.deinit();
+                    arr.deinit(allocator);
                 },
                 else => {},
             }
@@ -1269,7 +1271,7 @@ fn interpretAST(arena_manager: *CursedArenaManager, source: []const u8, config: 
         print("❌ Tokenization error: {any}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(parser_allocator);
     
     if (config.verbose) {
         print("🔤 Tokenized {} tokens\n", .{tokens.items.len});
@@ -1369,11 +1371,11 @@ fn readSourceFile(allocator: Allocator, filename: []const u8) ![]u8 {
 
 fn showTokens(allocator: Allocator, source: []const u8) !void {
     var l = lexer.Lexer.init(allocator, source);
-    const tokens = l.tokenize() catch |err| {
+    var tokens = l.tokenize() catch |err| {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     
     print("=== TOKENS ({}) ===\n", .{tokens.items.len});
     for (tokens.items) |token| {
@@ -1385,11 +1387,11 @@ fn showTokens(allocator: Allocator, source: []const u8) !void {
 fn checkSyntax(allocator: Allocator, source: []const u8, config: Config) !void {
     // Basic syntax checking - tokenize and check imports
     var l = lexer.Lexer.init(allocator, source);
-    const tokens = l.tokenize() catch |err| {
+    var tokens = l.tokenize() catch |err| {
         print("❌ Syntax error during tokenization: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     
     if (config.verbose) {
         print("✅ Tokenization successful ({} tokens)\n", .{tokens.items.len});
@@ -1536,7 +1538,7 @@ fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, li
         
         if (trimmed_val.len >= 2 and trimmed_val[0] == '[' and trimmed_val[trimmed_val.len - 1] == ']') {
             // Parse array literal [1, 2, 3]
-            var array = .empty;
+            var array = ArrayList(Variable){};
             const content = trimmed_val[1..trimmed_val.len - 1];
             
             if (content.len > 0) {
@@ -1549,7 +1551,7 @@ fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, li
                             if (verbose) print("❌ Error parsing array element '{s}'\n", .{trimmed_element});
                             continue;
                         };
-                        try array.append(Variable{ .Integer = int_val });
+                        try array.append(allocator, Variable{ .Integer = int_val });
                     } else {
                         if (verbose) print("❌ Unsupported array element type: {s}\n", .{element_type});
                     }
@@ -1586,7 +1588,7 @@ fn handleVibesSpill(variables: *VariableStore, allocator: Allocator, line: []con
             if (hasCommaOutsideQuotes(trimmed_content)) {
                 // Handle multiple arguments - need to parse them properly respecting quotes
                 var args = try parseArguments(allocator, trimmed_content);
-                defer args.deinit();
+                defer args.deinit(allocator);
                 
                 var first_arg = true;
                 for (args.items) |arg| {
@@ -1617,8 +1619,8 @@ fn hasCommaOutsideQuotes(text: []const u8) bool {
     return false;
 }
 
-fn parseArguments(_: Allocator, text: []const u8) !ArrayList([]const u8) {
-    var args = .empty;
+fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8) {
+    var args = ArrayList([]const u8){};
     var start: usize = 0;
     var in_quotes = false;
     
@@ -1627,14 +1629,14 @@ fn parseArguments(_: Allocator, text: []const u8) !ArrayList([]const u8) {
             in_quotes = !in_quotes;
         } else if (char == ',' and !in_quotes) {
             const arg = std.mem.trim(u8, text[start..i], " \t");
-            try args.append(arg);
+            try args.append(allocator, arg);
             start = i + 1;
         }
     }
     
     // Add the last argument
     const arg = std.mem.trim(u8, text[start..], " \t");
-    try args.append(arg);
+    try args.append(allocator, arg);
     
     return args;
 }
@@ -1777,6 +1779,7 @@ fn printHelp() void {
     print("    --help, -h      Show this help message\n\n", .{});
     
     print("OPTIONS:\n", .{});
+    print("    --compile                Compile source to native executable (same as compile command)\n", .{});
     print("    --backend, -b BACKEND    Compilation backend [script, ast, llvm, c, wasm]\n", .{});
     print("    --target, -t TARGET      Target platform for cross-compilation\n", .{});
     print("    --linking, -l MODE       Linking mode [dynamic, static]\n", .{});
@@ -1802,8 +1805,11 @@ fn printHelp() void {
     print("EXAMPLES:\n", .{});
     print("    cursed hello.csd                          # Interpret hello.csd\n", .{});
     print("    cursed interpret hello.csd --verbose       # Interpret with verbose output\n", .{});
-    print("    cursed compile hello.csd -b llvm           # Compile with LLVM backend\n", .{});
-    print("    cursed compile hello.csd -t linux-x64      # Cross-compile for Linux x64\n", .{});
+    print("    cursed hello.csd --compile                 # Compile hello.csd to native executable\n", .{});
+    print("    cursed hello.csd --compile -b llvm         # Compile with LLVM backend\n", .{});
+    print("    cursed hello.csd --compile -t linux-x64    # Cross-compile for Linux x64\n", .{});
+    print("    cursed compile hello.csd -b llvm           # Compile with LLVM backend (subcommand)\n", .{});
+    print("    cursed compile hello.csd -t linux-x64      # Cross-compile for Linux x64 (subcommand)\n", .{});
     print("    cursed compile hello.csd -t wasm32         # Compile for WebAssembly\n", .{});
     print("    cursed compile hello.csd --linking static  # Static linking\n", .{});
     print("    cursed check hello.csd                     # Type check hello.csd\n", .{});
